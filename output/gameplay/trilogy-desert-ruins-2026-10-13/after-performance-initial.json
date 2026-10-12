@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-10-12T18:23:51.399Z",
+  "scenes": [
+    "film_real_desert"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 444,
+  "fps": 29.50422250009141,
+  "frameTime": {
+    "mean": 33.89345372503552,
+    "p95": 42.09999990463257
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.5477477645014858,
+      "p95": 1.3000001907348633
+    },
+    "agents": {
+      "mean": 3.402477467382276,
+      "p95": 7.599999904632568
+    },
+    "city": {
+      "mean": 0.14099099185015704,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 0.30405405083218134,
+      "p95": 0.5
+    },
+    "effects": {
+      "mean": 0.17927926725095455,
+      "p95": 0.40000009536743164
+    },
+    "render": {
+      "mean": 6.0486486645432205,
+      "p95": 9.900000095367432
+    },
+    "capture": {
+      "mean": 0.00045045002086742506,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "scene": {
+      "mean": 4.716441459483929,
+      "p95": 8.300000190734863
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.20292792663917886,
+      "p95": 0.40000009536743164
+    },
+    "occlusion.normals": {
+      "mean": 0.7792792878709398,
+      "p95": 1.3999996185302734
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.01171170913421356,
+      "p95": 0.09999990463256836
+    },
+    "occlusion": {
+      "mean": 1.1141891780200306,
+      "p95": 1.9000000953674316
+    },
+    "bloom": {
+      "mean": 0.163738735087283,
+      "p95": 0.3000001907348633
+    },
+    "output": {
+      "mean": 0.012387391683217642,
+      "p95": 0.09999990463256836
+    },
+    "antialias": {
+      "mean": 0.02409910403930389,
+      "p95": 0.10000038146972656
+    },
+    "worldMatrices": {
+      "mean": 1.202934550377908,
+      "p95": 2.700000286102295
+    }
+  },
+  "calls": {
+    "mean": 410,
+    "p95": 410
+  },
+  "triangles": {
+    "mean": 1326998,
+    "p95": 1326998
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 191,
+      "triangles": 493153
+    },
+    "scene": {
+      "calls": 105,
+      "triangles": 417197
+    },
+    "occlusion": {
+      "calls": 95,
+      "triangles": 416629
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 170646
+    },
+    {
+      "name": "desert-ruin-facades",
+      "parent": "desert-ruined-skyline",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 141948
+    },
+    {
+      "name": "",
+      "parent": "desert-chair-morpheus",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 109632
+    },
+    {
+      "name": "desert-ruin-facades",
+      "parent": "desert-ruined-skyline",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 90324
+    },
+    {
+      "name": "",
+      "parent": "desert-chair-morpheus",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 42336
+    },
+    {
+      "name": "",
+      "parent": "desert-chair-neo",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 36544
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34764
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "Close-cut_scalp_undercoat",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 23040
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 22992
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "",
+      "parent": "desert-television",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 20412
+    },
+    {
+      "name": "desert-cracked-ground",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 19440
+    },
+    {
+      "name": "",
+      "parent": "desert-chair-morpheus",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 17796
+    },
+    {
+      "name": "",
+      "parent": "desert-chair-neo",
+      "type": "Mesh",
+      "calls": 1,
+      "triangles": 14112
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 28.890600935112566,
+  "objects": 8976,
+  "visibleObjects": 469
+}

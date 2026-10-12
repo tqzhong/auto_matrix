@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-13",
+  "baseCommit": "792ff1f5b83736f94a6a085188797f0c6d1dbfb5",
+  "baselineRenderer": {
+    "passed": 6,
+    "failed": 0,
+    "log": "baseline.log"
+  },
+  "failFirstRenderer": {
+    "passed": 0,
+    "failed": 2,
+    "log": "reproduced.log",
+    "scope": "Only the two new regressions were selected; both fail on the original renderer/collision implementation."
+  },
+  "story": {
+    "passed": 129,
+    "failed": 0,
+    "log": "final-story.log",
+    "scope": "Before the final two structural support columns, which only change renderer geometry."
+  },
+  "renderAndPlayer": {
+    "passed": 17,
+    "failed": 0,
+    "log": "final-render-and-player.log",
+    "scope": "Before the final two structural support columns."
+  },
+  "finalRenderer": {
+    "passed": 8,
+    "failed": 0,
+    "log": "support-renderer.log"
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "typecheck.log"
+  },
+  "productionBuild": {
+    "passed": true,
+    "log": "final-build.log",
+    "scope": "Before the final two structural support columns."
+  },
+  "finalClientBuild": {
+    "passed": true,
+    "log": "support-client-build.log",
+    "existingLargeChunkWarning": true
+  },
+  "fullRepositorySuite": "Not run in this unit; the previous interrupted attempt and its four reproduced failures remain documented in the furniture unit.",
+  "finalPerformance": {
+    "file": "final-performance.json",
+    "fps": 29.800397339199588,
+    "p95Ms": 48.700000286102295,
+    "calls": 415,
+    "viewport": [
+      1280,
+      720
+    ],
+    "pixelRatio": 1.5,
+    "recording": false,
+    "scope": "Paused Neo reveal at 3.49 seconds after the Morpheus walking study; no build or test active. Not continuous gameplay."
+  },
+  "bankWalking": "bank-verification.json",
+  "coldRead": "cold-comparison.json",
+  "stateScope": "state-scope.json",
+  "protectedFiles": "protected-comparison.json",
+  "newVideo": false,
+  "trilogyComplete": false,
+  "group1_07Complete": false
+}

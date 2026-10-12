@@ -1,0 +1,24 @@
+{
+  "primaryCopyMatchesPrevious": true,
+  "primaryFiles": 8,
+  "primaryScene": "m1_truth_exit",
+  "primaryStep": 0,
+  "primaryTruthRecovery": {
+    "phase": "ready",
+    "elapsed": 0
+  },
+  "primaryTick": 6262,
+  "studyScene": "m1_desert",
+  "studyStep": 1,
+  "studyClock": {
+    "kind": "desert",
+    "elapsed": 3.4900000000000015,
+    "started": true
+  },
+  "studyTick": 6302,
+  "studyPaused": true,
+  "studyControllers": {
+    "neo": null,
+    "morpheus": null
+  }
+}

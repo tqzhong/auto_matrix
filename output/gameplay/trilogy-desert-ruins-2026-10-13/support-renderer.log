@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+ok 1 - the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+  ---
+  duration_ms: 1683.57
+  type: 'test'
+  ...
+# Subtest: the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+ok 2 - the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+  ---
+  duration_ms: 865.746959
+  type: 'test'
+  ...
+# Subtest: the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+ok 3 - the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+  ---
+  duration_ms: 3865.518583
+  type: 'test'
+  ...
+# Subtest: the desert reconstruction retains the physical Construct furniture beside its seated guide
+ok 4 - the desert reconstruction retains the physical Construct furniture beside its seated guide
+  ---
+  duration_ms: 2637.585458
+  type: 'test'
+  ...
+# Subtest: the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+ok 5 - the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+  ---
+  duration_ms: 8188.40875
+  type: 'test'
+  ...
+# Subtest: the ruined city exposes broken concrete sections and a real missing corner of its upper floor
+ok 6 - the ruined city exposes broken concrete sections and a real missing corner of its upper floor
+  ---
+  duration_ms: 2525.269041
+  type: 'test'
+  ...
+# Subtest: the desert bank matches the actual walking height and visible side debris has collision
+ok 7 - the desert bank matches the actual walking height and visible side debris has collision
+  ---
+  duration_ms: 4050.654834
+  type: 'test'
+  ...
+# Subtest: the television preview can become a correctly oriented transition frame
+ok 8 - the television preview can become a correctly oriented transition frame
+  ---
+  duration_ms: 1.056208
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27328.609542

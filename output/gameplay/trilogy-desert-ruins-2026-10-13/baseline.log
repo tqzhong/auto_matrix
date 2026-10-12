@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+ok 1 - the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+  ---
+  duration_ms: 113.742792
+  type: 'test'
+  ...
+# Subtest: the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+ok 2 - the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+  ---
+  duration_ms: 65.150375
+  type: 'test'
+  ...
+# Subtest: the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+ok 3 - the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+  ---
+  duration_ms: 227.511041
+  type: 'test'
+  ...
+# Subtest: the desert reconstruction retains the physical Construct furniture beside its seated guide
+ok 4 - the desert reconstruction retains the physical Construct furniture beside its seated guide
+  ---
+  duration_ms: 101.969041
+  type: 'test'
+  ...
+# Subtest: the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+ok 5 - the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+  ---
+  duration_ms: 203.624
+  type: 'test'
+  ...
+# Subtest: the television preview can become a correctly oriented transition frame
+ok 6 - the television preview can become a correctly oriented transition frame
+  ---
+  duration_ms: 0.258625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1034.450417

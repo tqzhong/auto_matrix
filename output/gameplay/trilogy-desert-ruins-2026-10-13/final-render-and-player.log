@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: every live character can be possessed; ownership is exclusive and disconnect releases AI
+ok 1 - every live character can be possessed; ownership is exclusive and disconnect releases AI
+  ---
+  duration_ms: 127.2375
+  type: 'test'
+  ...
+# Subtest: explicitly continuing in another page transfers control without resetting saved progress
+ok 2 - explicitly continuing in another page transfers control without resetting saved progress
+  ---
+  duration_ms: 74.075625
+  type: 'test'
+  ...
+# Subtest: continuing an invalid character cannot displace either active player
+ok 3 - continuing an invalid character cannot displace either active player
+  ---
+  duration_ms: 3.303209
+  type: 'test'
+  ...
+# Subtest: movement is server-integrated, input is bounded, and pauses stop the player
+ok 4 - movement is server-integrated, input is bounded, and pauses stop the player
+  ---
+  duration_ms: 111.902416
+  type: 'test'
+  ...
+# Subtest: choosing a fallen character reconstructs it without erasing its identity or history
+ok 5 - choosing a fallen character reconstructs it without erasing its identity or history
+  ---
+  duration_ms: 23.581875
+  type: 'test'
+  ...
+# Subtest: player cannot walk through rendered buildings and jumps land on the ground
+ok 6 - player cannot walk through rendered buildings and jumps land on the ground
+  ---
+  duration_ms: 172.707584
+  type: 'test'
+  ...
+# Subtest: locomotion accelerates, brakes and removes velocity into a wall
+ok 7 - locomotion accelerates, brakes and removes velocity into a wall
+  ---
+  duration_ms: 20.858709
+  type: 'test'
+  ...
+# Subtest: possessing a resident inside an old building footprint places them at a walkable entrance
+ok 8 - possessing a resident inside an old building footprint places them at a walkable entrance
+  ---
+  duration_ms: 2.682917
+  type: 'test'
+  ...
+# Subtest: checkpoints restore agent state and causal history atomically
+ok 9 - checkpoints restore agent state and causal history atomically
+  ---
+  duration_ms: 111.378625
+  type: 'test'
+  ...
+# Subtest: the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+ok 10 - the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+  ---
+  duration_ms: 1217.98775
+  type: 'test'
+  ...
+# Subtest: the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+ok 11 - the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+  ---
+  duration_ms: 676.014917
+  type: 'test'
+  ...
+# Subtest: the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+ok 12 - the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+  ---
+  duration_ms: 7173.383542
+  type: 'test'
+  ...
+# Subtest: the desert reconstruction retains the physical Construct furniture beside its seated guide
+ok 13 - the desert reconstruction retains the physical Construct furniture beside its seated guide
+  ---
+  duration_ms: 3717.397167
+  type: 'test'
+  ...
+# Subtest: the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+ok 14 - the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+  ---
+  duration_ms: 9267.944917
+  type: 'test'
+  ...
+# Subtest: the ruined city exposes broken concrete sections and a real missing corner of its upper floor
+ok 15 - the ruined city exposes broken concrete sections and a real missing corner of its upper floor
+  ---
+  duration_ms: 4624.267
+  type: 'test'
+  ...
+# Subtest: the desert bank matches the actual walking height and visible side debris has collision
+ok 16 - the desert bank matches the actual walking height and visible side debris has collision
+  ---
+  duration_ms: 2025.840875
+  type: 'test'
+  ...
+# Subtest: the television preview can become a correctly oriented transition frame
+ok 17 - the television preview can become a correctly oriented transition frame
+  ---
+  duration_ms: 0.560542
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30937.365709
