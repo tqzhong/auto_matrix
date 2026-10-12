@@ -2134,7 +2134,11 @@ export class FilmStorySystem {
       if (actor) this.awakeningFrame(actor, 0, this.world.simulationTick);
       return;
     }
-    if (state.awakening) return;
+    if (state.awakening || state.scene === 'm1_pod') {
+      const actor = this.world.agents.get(state.actor);
+      if (actor && awakeningLocked(state)) this.awakeningFrame(actor, 0, this.world.simulationTick);
+      return;
+    }
     const kind = state.scene === 'm1_recovery' && state.step === 0 ? 'recovery'
       : state.scene === 'm1_cabin' && state.step === 0 ? 'cabin'
       : state.scene === 'm1_cabin' && state.step === 2 ? 'core'

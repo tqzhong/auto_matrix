@@ -320,6 +320,8 @@ async function main(): Promise<void> {
     world.setPhase(checkpoint.phase);
     console.log(`[Auto Matrix] Restored world at tick ${checkpoint.tick}`);
   }
+  // Publish the initial street geometry before a paused snapshot or save can race the player timer.
+  if (!sandbox.state.traffic) sandbox.traffic.restore();
   evolution.evaluate(simLoop.getTick(), [...world.agents.values()], world.globalEvents);
   worldReady = true;
   simLoop.setTickRate(config.simulation.tickRateMs / speed);
