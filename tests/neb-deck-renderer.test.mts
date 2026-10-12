@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CABIN, CABIN_ROUTE, cabinBodyPose, FILM_SETS, MEDICAL_OPERATOR, RECOVERY_BED, recoveryCrewPose, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CABIN, CABIN_ROUTE, cabinBodyPose, FILM_SETS, MEDICAL_OPERATOR, RECOVERY_BED, RECOVERY_FRAME, recoveryCrewPose, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
 
@@ -91,13 +91,13 @@ test('room shadows cover the escort and chair approach continuously across both 
   } finally { renderer.dispose(); }
 });
 
-test('the Nebuchadnezzar recovery set has a solid medical bed, moving needle gantry and open route to the core', () => {
+test('the recovery set has a solid medical bed, low bedside rails and an open route to the core', () => {
   const root = new THREE.Group(); const renderer = new NebDeckRenderer(root); root.updateMatrixWorld(true);
   try {
     const bed = root.getObjectByName('neb-medical-bed');
-    const gantry = root.getObjectByName('neb-recovery-gantry');
+    const therapy = root.getObjectByName('neb-medical-therapy');
     assert.ok(bed, 'the recovery sequence needs a visible bed');
-    assert.ok(gantry, 'the needles need a physical support instead of a text prompt');
+    assert.ok(therapy, 'treatment needs physical equipment instead of a text prompt');
     assert.ok(root.getObjectByName('neb-core-chair-neo'));
     assert.ok(root.getObjectByName('neb-core-chair-morpheus'));
     const medicalLight = root.getObjectByName('neb-medical-task-light') as THREE.PointLight | undefined;
@@ -108,25 +108,35 @@ test('the Nebuchadnezzar recovery set has a solid medical bed, moving needle gan
     const journey = { version: 1, scene: 'm1_recovery', step: 0, actor: 'neo', completed: [], enteredAt: 0,
       checkpoint: filmPosition('film_neb_deck', RECOVERY_BED.x, RECOVERY_BED.z), reflections: {}, lastText: '',
       awakening: { kind: 'recovery', elapsed: 0, started: true } } satisfies FilmJourney;
-    renderer.update(journey, 0); const raised = gantry!.position.y;
+    renderer.update(journey, 0);
+    assert.equal(root.getObjectByName('neb-medical-needle-0')!.visible, false, 'waiting cannot start treatment');
     journey.awakening.elapsed = 4; renderer.update(journey, 4);
-    assert.ok(gantry!.position.y < raised - .5, 'the saved recovery clock lowers the needle rack toward Neo');
+    assert.equal(root.getObjectByName('neb-medical-needle-0')!.visible, true);
+    assert.equal(therapy!.position.y, 0, 'the apparatus stays beside the bed instead of hanging over Neo');
+    const rail = root.getObjectByName('neb-medical-side-rail-1')!;
+    assert.ok(Math.abs(new THREE.Box3().setFromObject(rail).max.y - RECOVERY_FRAME.height) < .001);
+    const post = new THREE.Box3().setFromObject(root.getObjectByName('neb-medical-post-1-1')!);
+    assert.ok(post.max.y <= new THREE.Box3().setFromObject(rail).min.y + .00001, 'post and painted rail cannot share a visible top face and flicker');
     journey.awakening.elapsed = 10; renderer.update(journey, 10); root.updateMatrixWorld(true);
-    assert.ok(gantry!.position.y > raised + 5, 'the frame retracts before Neo stands');
+    assert.equal(root.getObjectByName('neb-medical-needle-0')!.visible, false, 'the needles withdraw before the later scene');
     const obstacles = filmObstacles(FILM_SETS.film_neb_deck);
     assert.ok(obstacles.some(item => Math.abs(item.x - RECOVERY_BED.x) < .1 && Math.abs(item.z - RECOVERY_BED.z) < .1));
+    const beside = filmPosition('film_neb_deck', RECOVERY_BED.x + RECOVERY_FRAME.halfWidth, RECOVERY_BED.z);
+    assert.equal(playerBlocked(beside, false, .1), true, 'a player cannot pass through the visible bedside rail');
+    beside.y += RECOVERY_FRAME.height + .1;
+    assert.equal(playerBlocked(beside, false, .1), false, 'the removed overhead rack must not leave an invisible tall collider');
     assert.equal(playerBlocked(filmPosition('film_neb_deck', RECOVERY_BED.standingX, RECOVERY_BED.z), false), false, 'Neo can stand beside the bed');
     for (const z of [-15, -8, 0]) assert.equal(playerBlocked(filmPosition('film_neb_deck', 0, z), false), false, `the central aisle stays open at ${z}`);
   } finally { renderer.dispose(); }
 });
 
-test('the recovery frame and needles remain still when only the render clock advances', () => {
+test('the recovery needles and leads remain still when only the render clock advances', () => {
   const root = new THREE.Group(); const renderer = new NebDeckRenderer(root);
   const journey = { scene: 'm1_recovery', awakening: { kind: 'recovery', elapsed: 4, started: true } } as FilmJourney;
   const capture = () => {
     root.updateMatrixWorld(true);
-    return ['neb-recovery-gantry', ...Array.from({ length: 12 }, (_, i) => `neb-medical-needle-tip-${i}`)]
-      .map(name => root.getObjectByName(name)!.matrixWorld.toArray());
+    return { needles: Array.from({ length: 20 }, (_, i) => ['tip', 'carriage', 'signal'].map(part => root.getObjectByName(`neb-medical-needle-${part}-${i}`)!.matrixWorld.toArray())),
+      leads: ['red', 'gray'].map(color => Array.from((root.getObjectByName(`neb-medical-${color}-leads`) as THREE.InstancedMesh).instanceMatrix.array)) };
   };
   try {
     renderer.update(journey, 4); const paused = capture(); renderer.update(journey, 85);
@@ -158,6 +168,43 @@ test('the recovery needle tips follow Neo’s posed body instead of stopping abo
     assert.ok(contact.distanceTo(expected) < .035, `needle tip must meet the posed chest: ${contact.toArray()} vs ${expected.toArray()}`);
     const shaft = root.getObjectByName('neb-medical-needle-0')!;
     const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(shaft.getWorldQuaternion(new THREE.Quaternion()));
-    assert.ok(Math.abs(axis.dot(new THREE.Vector3(0, 1, 0))) > .96, `the sliding carriage must keep the needle nearly vertical, not crossed over the body: ${axis.toArray()}`);
+    assert.ok(Math.abs(axis.dot(new THREE.Vector3(0, 1, 0))) > .96, `the short needle must stand out from the skin: ${axis.toArray()}`);
+  } finally { renderer.dispose(); }
+});
+
+test('therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods', () => {
+  const root = new THREE.Group(), renderer = new NebDeckRenderer(root), neo = new THREE.Group();
+  const chest = new THREE.Bone(); chest.name = 'chest'; chest.position.set(RECOVERY_BED.x, 2.28, RECOVERY_BED.z - .72); neo.add(chest);
+  const journey = { scene: 'm1_recovery', awakening: { kind: 'recovery', elapsed: 4, started: true } } as FilmJourney;
+  try {
+    renderer.update(journey, 4, neo); root.updateMatrixWorld(true);
+    for (let i = 0; i < 20; i++) {
+      const shaft = root.getObjectByName(`neb-medical-needle-${i}`) as THREE.Mesh;
+      assert.ok(shaft, 'treatment also covers the cheeks and arms');
+      const bounds = new THREE.Box3().setFromObject(shaft);
+      assert.ok(bounds.max.y - bounds.min.y < .35, `needle ${i} is a long suspended rod`);
+      const hub = root.getObjectByName(`neb-medical-needle-carriage-${i}`)!;
+      const tip = root.getObjectByName(`neb-medical-needle-tip-${i}`)!;
+      assert.ok(hub.getWorldPosition(new THREE.Vector3()).distanceTo(tip.getWorldPosition(new THREE.Vector3())) < .4);
+      const signal = root.getObjectByName(`neb-medical-needle-signal-${i}`) as THREE.Mesh;
+      assert.ok(signal?.visible, 'the skin-mounted connector needs a readable blue indicator');
+      const color = (signal.material as THREE.MeshBasicMaterial).color;
+      assert.ok(color.b > color.r * 2 && color.b > color.g, 'the indicators are blue, not green or amber');
+    }
+    const leads = root.getObjectByName('neb-medical-red-leads') as THREE.InstancedMesh;
+    assert.ok(leads?.isInstancedMesh && leads.count > 20, 'curved insulated leads must connect the needles to bedside equipment');
+    const matrix = new THREE.Matrix4(); leads.getMatrixAt(0, matrix);
+    const start = leads.localToWorld(new THREE.Vector3(0, -.5, 0).applyMatrix4(matrix));
+    const next = leads.localToWorld(new THREE.Vector3(0, .5, 0).applyMatrix4(matrix));
+    const hub = root.getObjectByName('neb-medical-needle-carriage-0')!.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, .055, 0));
+    assert.ok(start.distanceTo(hub) < .00001, 'the first lead segment must leave the actual black hub');
+    assert.ok(next.y < start.y, 'a flexible wire must sag under gravity instead of arching like a rigid support');
+    leads.getMatrixAt(17, matrix);
+    const end = leads.localToWorld(new THREE.Vector3(0, .5, 0).applyMatrix4(matrix));
+    const port = root.getObjectByName('neb-medical-lead-port-0')!.getWorldPosition(new THREE.Vector3());
+    assert.ok(end.distanceTo(port) < .00001, 'the cable must finish at its bedside socket');
+    journey.awakening!.elapsed = 8.2; renderer.update(journey, 100, neo);
+    assert.equal(leads.visible, false, 'leads must leave with the needles before the later scene');
+    assert.equal(root.getObjectByName('neb-medical-needle-0')!.visible, false);
   } finally { renderer.dispose(); }
 });

@@ -39,7 +39,7 @@ export interface HeroRig {
   footHeight: number;
   glasses: THREE.Group;
   silver: { value: number };
-  trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry; firstPerson: THREE.BufferGeometry };
+  trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry; firstPerson: THREE.BufferGeometry; patientFirstPerson: THREE.BufferGeometry };
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; map: THREE.Texture | null; bumpMap: THREE.Texture | null; bumpScale: number;
     roughness: number; metalness: number; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier' | 'police';
@@ -256,6 +256,19 @@ export class HeroModels {
     const metadata = asset.parser.json.extras as { eye: number[]; head: number[]; waist: number[] };
     const eye = new THREE.Vector3().fromArray(metadata.eye).sub(new THREE.Vector3().fromArray(metadata.head));
     head.userData.cameraEye = eye.clone().setX(0);
+    if (id === 'neo' && !support) {
+      // The old eye markers sit behind the registered face. The exposed patient
+      // view needs its centre just outside that surface, before head culling.
+      root.updateMatrixWorld(true);
+      root.traverse(object => {
+        if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
+        object.skeleton.update(); object.computeBoundingBox(); object.computeBoundingSphere();
+        const point = head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone());
+        const outward = new THREE.Vector3(0, 0, 1).transformDirection(head.matrixWorld);
+        const hit = new THREE.Raycaster(point.addScaledVector(outward, .5), outward.clone().negate(), 0, 1).intersectObject(object)[0];
+        if (hit) head.userData.patientEye = head.worldToLocal(hit.point.addScaledVector(outward, .035));
+      });
+    }
     const glasses = new THREE.Group(); head.add(glasses); this.glasses(glasses, eye, id);
     if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
@@ -294,7 +307,23 @@ export class HeroModels {
           const triangle = indices.slice(i, i + 3); if (!triangle.some(head)) hands.push(...triangle);
         }
         firstPerson.setIndex(hands); firstPerson.attributes = original.attributes;
-        this.geometries.add(dressed); this.geometries.add(firstPerson); trackingSkin = { mesh: object, original, covered: dressed, firstPerson };
+        const patientFirstPerson = new THREE.BufferGeometry(), exposed: number[] = [];
+        // This asset also weights the lower neck to head. Keep that skin and
+        // the wrist rings when the patient is exposed, culling above the jaw.
+        const toHead = bones.get('head')!.matrixWorld.clone().invert().multiply(object.matrixWorld);
+        const skull = new Uint8Array(positions.count), point = new THREE.Vector3(); object.skeleton.update();
+        for (let vertex = 0; vertex < positions.count; vertex++) {
+          if (![0, 1, 2, 3].some(i => weights.getComponent(vertex, i) > .05 && object.skeleton.bones[joints.getComponent(vertex, i)].name === 'head')) continue;
+          object.getVertexPosition(vertex, point).applyMatrix4(toHead); if (point.y > -.24) skull[vertex] = 1;
+        }
+        for (let i = 0; i < index.count; i += 3) {
+          const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+          if (!triangle.some(vertex => skull[vertex])) exposed.push(...triangle);
+        }
+        patientFirstPerson.setIndex(exposed); patientFirstPerson.attributes = original.attributes;
+        object.userData.contactSkinGeometry = original;
+        this.geometries.add(dressed); this.geometries.add(firstPerson); this.geometries.add(patientFirstPerson);
+        trackingSkin = { mesh: object, original, covered: dressed, firstPerson, patientFirstPerson };
       }
       if (support === 'courier' && material.name === 'Office cotton') material.color.setHex(0x455c6b);
       if (police && /Office cotton|Trousers/.test(material.name)) material.color.setHex(0x202e36);
@@ -745,7 +774,7 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
-    const interactionView = Boolean(input.firstPerson && (input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
@@ -755,13 +784,13 @@ export class HeroModels {
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
-    if (rig.trackingSkin) {
-      const skin = rig.trackingSkin; skin.mesh.geometry = interactionView ? skin.firstPerson : trackingShirt ? skin.covered : skin.original;
-    }
     const pod = input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance);
     const recoveryComplete = input.performance === 'recover' && input.recovery !== undefined && input.recovery >= 11.7;
     const patient = Boolean(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)
       && !recoveryComplete);
+    if (rig.trackingSkin) {
+      const skin = rig.trackingSkin; skin.mesh.geometry = interactionView ? patient ? skin.patientFirstPerson : skin.firstPerson : trackingShirt ? skin.covered : skin.original;
+    }
     const completePatientBody = rig.wardrobe.some(part => part.mesh.userData.patientBody);
     const farewellAppearance = this.farewellAppearances.get(rig);
     for (const part of rig.wardrobe) {

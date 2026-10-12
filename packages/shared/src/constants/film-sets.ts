@@ -289,6 +289,8 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     { ...RECOVERY_CABINET, height: RECOVERY_CABINET.y + RECOVERY_CABINET.height / 2 },
     ...[-1, 1].flatMap(side => [-1, 1].map(end => ({ x: RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth,
       z: RECOVERY_BED.z + end * RECOVERY_FRAME.halfLength, width: RECOVERY_FRAME.post, depth: RECOVERY_FRAME.post, height: RECOVERY_FRAME.height }))),
+    ...[-1, 1].map(side => ({ x: RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth, z: RECOVERY_BED.z,
+      width: RECOVERY_FRAME.post, depth: RECOVERY_FRAME.halfLength * 2 + RECOVERY_FRAME.post, height: RECOVERY_FRAME.height })),
     ...[-1, 1].flatMap(side => [-5, 6].map(z => ({ x: side * 6.5, z, width: 3.2, depth: 3.8, height: 3.2 }))),
     { x: -8, z: 22, width: 10, depth: 4.5, height: 2.4 },
   ];

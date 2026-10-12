@@ -363,7 +363,8 @@ export class PlayerControls {
     this.yaw += turn;
     if (!this.dragging || this.dragPoint) this.movementYaw += turn;
     if (this.dragPoint) this.dragPoint = { x: event.clientX, y: event.clientY };
-    const recline = this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
+    const recline = this.firstPerson && this.motion.recovery !== undefined && !this.motion.download ? Math.PI / 2 * (1 - recoveryBodyPose(this.motion.recovery).sit)
+      : this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
     const podEye = this.firstPerson && (this.motion.performance === 'float' || this.motion.performance === 'lift');
     const podElevation = podEye ? 1.42 * (1 - podRescuePose(this.motion.podRescue ?? 0).board) : 0;
     const hammerGunner = this.motion.hammerPilot?.role === 'ghost' && this.motion.hammerPilot.flight.gunnery;
@@ -2250,11 +2251,13 @@ export class PlayerControls {
       const body = recoveryBodyPose(this.motion.recovery);
       if (this.firstPerson) {
         const eye = new THREE.Vector3(0, THREE.MathUtils.lerp(1.7, 3, body.sit) + .13 * body.rise, THREE.MathUtils.lerp(-1.78, .18, body.sit));
-        eye.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.rotation).add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
+        const head = group.getObjectByName('head'), localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
+        if (head && localEye) eye.copy(head.localToWorld(localEye.clone()));
+        else eye.applyAxisAngle(new THREE.Vector3(0, 1, 0), state.rotation).add(new THREE.Vector3(this.position.x, this.position.y, this.position.z));
         this.camera.position.copy(eye);
-        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
-        const lying = forward.clone().multiplyScalar(.24).add(new THREE.Vector3(0, .97, 0)).normalize();
-        forward.lerp(lying, 1 - body.sit).normalize(); this.camera.lookAt(eye.clone().add(forward));
+        const pitch = this.pitch - Math.PI / 2 * (1 - body.sit);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
+        this.camera.lookAt(eye.clone().add(forward));
       } else {
         const bedside = THREE.MathUtils.smoothstep(this.motion.recovery, 6.8, 8.4);
         const waking = this.motion.cabin?.kind === 'wake';

@@ -69,7 +69,7 @@ export const POD_BREATHER = { mouth: { x: 0, y: -.12, z: .267 }, radius: .085, a
   resting: { x: -1.25, y: 1.97, z: -13.1 } } as const;
 export const RECOVERY_BED = { x: -7, z: -22, standingX: -3.6, surface: 1.11 } as const;
 export const RECOVERY_CABINET = { x: -15.6, y: 3.4, z: -22, width: 6.2, height: 6.5, depth: 10.5 } as const;
-export const RECOVERY_FRAME = { halfWidth: 2.45, halfLength: 3.35, height: 12.6, post: .14 } as const;
+export const RECOVERY_FRAME = { halfWidth: 1.55, halfLength: 3.35, height: 2.3, post: .14 } as const;
 export const RECOVERY_CREW = {
   morpheus: { start: { x: -2.4, z: -18.5, yaw: -2.45 }, side: 1.32 },
   trinity: { start: { x: -10.5, z: -15.5, yaw: 2.7 }, side: -1.32 },
