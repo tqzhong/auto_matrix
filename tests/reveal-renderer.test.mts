@@ -1,16 +1,66 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT, FILM_SETS, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
 import { ConstructRenderer, renderTargetPreviewImage } from '../packages/client/src/engine/ConstructRenderer.js';
 import { DesertRenderer } from '../packages/client/src/engine/DesertRenderer.js';
 
 const canvasDocument = () => ({
   createElement: () => ({ width: 0, height: 0, getContext: () => ({
-    fillStyle: '', strokeStyle: '', lineWidth: 1, font: '', fillRect() {}, fillText() {}, beginPath() {}, arc() {}, ellipse() {}, fill() {}, stroke() {},
+    fillStyle: '', strokeStyle: '', lineWidth: 1, font: '', fillRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, arc() {}, ellipse() {}, fill() {}, stroke() {},
     createLinearGradient: () => ({ addColorStop() {} }),
   }) }),
 }) as unknown as Document;
+
+test('the Construct keeps its cabinet visible while maps load and ignores late maps after leaving', t => {
+  const savedDocument = globalThis.document;
+  globalThis.document = Object.assign(canvasDocument(), { createElementNS() {} });
+  const loaded: { url: string; texture: THREE.Texture; complete: () => void }[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url, onLoad) => {
+    const texture = new THREE.Texture(); loaded.push({ url, texture, complete: () => onLoad?.(texture) }); return texture;
+  });
+  const root = new THREE.Group(), renderer = new ConstructRenderer(root, 'm1_construct'); root.updateMatrixWorld(true);
+  try {
+    const tv = root.getObjectByName('construct-television')!;
+    const hit = new THREE.Raycaster(tv.localToWorld(new THREE.Vector3(2, 1.4, 0)), new THREE.Vector3(-1, 0, 0), 0, .5).intersectObject(tv, true)[0];
+    assert.ok(hit, 'the cabinet side must remain closed');
+    const wood = (hit.object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    assert.equal(wood.map, null, 'unfinished image requests must not turn the new veneer black');
+    const maps = loaded.filter(item => item.url.includes('old_wood_floor'));
+    maps[1].complete(); maps[2].complete(); assert.equal(wood.map, null, 'partial maps retain the wood fallback');
+    maps[0].complete(); assert.equal(wood.map, maps[0].texture); assert.equal(wood.normalMap, maps[1].texture);
+    assert.equal(wood.roughnessMap, maps[2].texture);
+    const leather = (root.getObjectByName('construct-chair-neo')!.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    renderer.dispose(); loaded.filter(item => item.url.includes('leather_red_03')).forEach(item => item.complete());
+    assert.equal(leather.map, null, 'late upholstery images cannot reattach to the departed lesson');
+  } finally { renderer.dispose(); globalThis.document = savedDocument; }
+});
+
+test('the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet', () => {
+  const savedDocument = globalThis.document; globalThis.document = canvasDocument();
+  const root = new THREE.Group(), renderer = new ConstructRenderer(root, 'm1_construct');
+  root.updateMatrixWorld(true);
+  try {
+    const tv = root.getObjectByName('construct-television')!;
+    const screen = root.getObjectByName('construct-television-screen') as THREE.Mesh;
+    screen.geometry.computeBoundingBox();
+    assert.ok(screen.geometry.boundingBox!.max.z - screen.geometry.boundingBox!.min.z > .05,
+      'a vintage picture tube must curve out of its surround, rather than read as a flat monitor');
+    const vertex = screen.geometry.attributes.position;
+    assert.ok(vertex.getX(0) > -1.35, 'the luminous image must follow the rounded tube corner instead of spilling into the bezel');
+    const bounds = new THREE.Box3().setFromObject(tv);
+    assert.ok(bounds.max.x - bounds.min.x <= CONSTRUCT.television.width + .02);
+    assert.ok(bounds.max.z - bounds.min.z <= CONSTRUCT.television.depth + .02,
+      'the cabinet and screen cannot protrude beyond the saved furniture collider');
+    assert.ok(bounds.min.y >= -.001 && bounds.max.y <= CONSTRUCT.television.height + .01);
+    const direction = new THREE.Vector3(0, 0, 1).transformDirection(tv.matrixWorld);
+    const throughVent = new THREE.Raycaster(tv.localToWorld(new THREE.Vector3(-.28, 2.53, -1.18)), direction, 0, .18);
+    assert.equal(throughVent.intersectObject(tv, true).length, 0, 'rear cooling slots need real openings, not dark marks on a solid box');
+    const throughCover = new THREE.Raycaster(tv.localToWorld(new THREE.Vector3(-.28, 1.5, -1.18)), direction, 0, .18);
+    assert.ok(throughCover.intersectObject(tv, true).length > 0, 'the lower label remains on a physical closed back cover');
+    assert.ok(tv.children.length <= 12, 'the small cabinet cannot add a separate draw call for every vent or moulding');
+  } finally { renderer.dispose(); globalThis.document = savedDocument; }
+});
 
 test('the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout', t => {
   const savedDocument = globalThis.document; globalThis.document = canvasDocument();

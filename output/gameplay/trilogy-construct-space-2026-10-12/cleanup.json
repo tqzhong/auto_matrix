@@ -1,0 +1,24 @@
+{
+  "owned_ports": [
+    3167,
+    5367,
+    3168,
+    5368
+  ],
+  "listeners_remaining": false,
+  "backend_exit_codes": [
+    0,
+    0
+  ],
+  "client_exit_codes": [
+    130,
+    130
+  ],
+  "reason": "Clients stopped with Ctrl-C; both backends stopped after paused released snapshots.",
+  "temporary_tabs_closed": [
+    47,
+    48,
+    49
+  ],
+  "viewport_override_set": false
+}

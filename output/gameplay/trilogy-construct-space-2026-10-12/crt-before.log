@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+not ok 1 - the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+  ---
+  duration_ms: 1106.371333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/reveal-renderer.test.mts:1:871'
+  failureType: 'testCodeFailure'
+  error: 'a vintage picture tube must curve out of its surround, rather than read as a flat monitor'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/reveal-renderer.test.mts:23:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+ok 2 - the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+  ---
+  duration_ms: 1729.435417
+  type: 'test'
+  ...
+# Subtest: the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+ok 3 - the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+  ---
+  duration_ms: 527.693958
+  type: 'test'
+  ...
+# Subtest: the television preview can become a correctly oriented transition frame
+ok 4 - the television preview can become a correctly oriented transition frame
+  ---
+  duration_ms: 2.4765
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5814.286958

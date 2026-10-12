@@ -1,0 +1,147 @@
+TAP version 13
+# Subtest: the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+not ok 1 - the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+  ---
+  duration_ms: 645.60275
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/reveal-renderer.test.mts:1:871'
+  failureType: 'testCodeFailure'
+  error: |-
+    unfinished image requests must not turn the new veneer black
+    + actual - expected
+    
+    + Texture {
+    +   anisotropy: 8,
+    +   center: Vector2 {
+    +     x: 0,
+    +     y: 0
+    +   },
+    +   channel: 0,
+    +   colorSpace: 'srgb',
+    +   flipY: true,
+    +   format: 1023,
+    +   generateMipmaps: true,
+    +   internalFormat: null,
+    +   isRenderTargetTexture: false,
+    +   isTexture: true,
+    +   magFilter: 1006,
+    +   mapping: 300,
+    +   matrix: Matrix3 {
+    +     elements: [
+    +       1,
+    +       0,
+    +       0,
+    +       0,
+    +       1,
+    +       0,
+    +       0,
+    +       0,
+    +       1
+    +     ]
+    +   },
+    +   matrixAutoUpdate: true,
+    +   minFilter: 1008,
+    +   mipmaps: [],
+    +   name: '',
+    +   offset: Vector2 {
+    +     x: 0,
+    +     y: 0
+    +   },
+    +   onUpdate: null,
+    +   pmremVersion: 0,
+    +   premultiplyAlpha: false,
+    +   repeat: Vector2 {
+    +     x: 1,
+    +     y: 1
+    +   },
+    +   rotation: 0,
+    +   source: Source {
+    +     data: null,
+    +     dataReady: true,
+    +     isSource: true,
+    +     uuid: 'a9d70d4f-5b14-48e3-881b-f608e861601f',
+    +     version: 0
+    +   },
+    +   type: 1009,
+    +   unpackAlignment: 4,
+    +   userData: {},
+    +   uuid: '3515282e-ccbd-4542-ad5c-ba1ab2151d81',
+    +   version: 0,
+    +   wrapS: 1000,
+    +   wrapT: 1000
+    + }
+    - null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual:
+    isTexture: true
+    uuid: '3515282e-ccbd-4542-ad5c-ba1ab2151d81'
+    name: ''
+    source:
+      isSource: true
+      uuid: 'a9d70d4f-5b14-48e3-881b-f608e861601f'
+      data: ~
+      dataReady: true
+      version: 0
+    mipmaps:
+    mapping: 300
+    channel: 0
+    wrapS: 1000
+    wrapT: 1000
+    magFilter: 1006
+    minFilter: 1008
+    anisotropy: 8
+    format: 1023
+    internalFormat: ~
+    type: 1009
+    offset:
+      x: 0
+      y: 0
+    repeat:
+      x: 1
+      y: 1
+    center:
+      x: 0
+      y: 0
+    rotation: 0
+    matrixAutoUpdate: true
+    matrix:
+      elements:
+        0: 1
+        1: 0
+        2: 0
+        3: 0
+        4: 1
+        5: 0
+        6: 0
+        7: 0
+        8: 1
+    generateMipmaps: true
+    premultiplyAlpha: false
+    flipY: true
+    unpackAlignment: 4
+    colorSpace: 'srgb'
+    userData:
+    version: 0
+    onUpdate: ~
+    isRenderTargetTexture: false
+    pmremVersion: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/reveal-renderer.test.mts:28:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1403.903083

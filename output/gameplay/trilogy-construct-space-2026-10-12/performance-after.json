@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-10-12T13:40:02.548Z",
+  "scenes": [
+    "film_white_construct"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 632,
+  "fps": 42.10849443807621,
+  "frameTime": {
+    "mean": 23.7481774958869,
+    "p95": 29.299999713897705
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.36202530393117593,
+      "p95": 0.7000002861022949
+    },
+    "agents": {
+      "mean": 2.1106012787999986,
+      "p95": 4.400000095367432
+    },
+    "city": {
+      "mean": 0.08718352981760533,
+      "p95": 0.20000028610229492
+    },
+    "film": {
+      "mean": 0.04746835744833645,
+      "p95": 0.19999980926513672
+    },
+    "effects": {
+      "mean": 0.07768988232069378,
+      "p95": 0.20000028610229492
+    },
+    "render": {
+      "mean": 3.5672468316705923,
+      "p95": 7.399999618530273
+    },
+    "capture": {
+      "mean": 0.001107594634913191,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 0.8025316362139545,
+      "p95": 1.5999999046325684
+    },
+    "scene": {
+      "mean": 2.7922468389136883,
+      "p95": 5.599999904632568
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.0977847998655295,
+      "p95": 0.2999997138977051
+    },
+    "occlusion.normals": {
+      "mean": 0.40110760399057893,
+      "p95": 0.8000001907348633
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0018987346299086944,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 0.5911392396009421,
+      "p95": 1.3000001907348633
+    },
+    "bloom": {
+      "mean": 0.13734177094471606,
+      "p95": 0.3000001907348633
+    },
+    "output": {
+      "mean": 0.012658225584633743,
+      "p95": 0.09999990463256836
+    },
+    "antialias": {
+      "mean": 0.02009493791604344,
+      "p95": 0.09999990463256836
+    }
+  },
+  "calls": {
+    "mean": 163,
+    "p95": 163
+  },
+  "triangles": {
+    "mean": 1139222,
+    "p95": 1139222
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 37,
+      "triangles": 376263
+    },
+    "scene": {
+      "calls": 59,
+      "triangles": 381607
+    },
+    "occlusion": {
+      "calls": 48,
+      "triangles": 381333
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 170646
+    },
+    {
+      "name": "",
+      "parent": "construct-chair-morpheus",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 109632
+    },
+    {
+      "name": "",
+      "parent": "construct-chair-neo",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 109632
+    },
+    {
+      "name": "",
+      "parent": "construct-chair-morpheus",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 42336
+    },
+    {
+      "name": "",
+      "parent": "construct-chair-neo",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 42336
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34764
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "Close-cut_scalp_undercoat",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 23040
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 22992
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "",
+      "parent": "construct-television",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 20412
+    },
+    {
+      "name": "",
+      "parent": "construct-chair-morpheus",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 17796
+    },
+    {
+      "name": "",
+      "parent": "construct-chair-neo",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 17796
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "",
+      "parent": "pelvis",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 7680
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 44.230769230769226,
+  "objects": 8825,
+  "visibleObjects": 344
+}

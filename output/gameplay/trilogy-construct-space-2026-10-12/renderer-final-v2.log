@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+ok 1 - Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+  ---
+  duration_ms: 2775.215833
+  type: 'test'
+  ...
+# Subtest: the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+ok 2 - the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+  ---
+  duration_ms: 6356.434833
+  type: 'test'
+  ...
+# Subtest: old completed medical saves can continue through the added cabin without repeating treatment
+ok 3 - old completed medical saves can continue through the added cabin without repeating treatment
+  ---
+  duration_ms: 48.629833
+  type: 'test'
+  ...
+# Subtest: medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+ok 4 - medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+  ---
+  duration_ms: 2708.675042
+  type: 'test'
+  ...
+# Subtest: the cabin doorway collision uses the same saved opening time as the visible door
+ok 5 - the cabin doorway collision uses the same saved opening time as the visible door
+  ---
+  duration_ms: 1093.778375
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+ok 6 - Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+  ---
+  duration_ms: 3651.636292
+  type: 'test'
+  ...
+# Subtest: film set walls use their base color until all three texture images are ready
+ok 7 - film set walls use their base color until all three texture images are ready
+  ---
+  duration_ms: 34.449042
+  type: 'test'
+  ...
+# Subtest: a previous film set cannot attach a late texture after disposal
+ok 8 - a previous film set cannot attach a late texture after disposal
+  ---
+  duration_ms: 23.449209
+  type: 'test'
+  ...
+# Subtest: the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+ok 9 - the Construct keeps its cabinet visible while maps load and ignores late maps after leaving
+  ---
+  duration_ms: 3905.140625
+  type: 'test'
+  ...
+# Subtest: the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+ok 10 - the Construct CRT has a rounded convex tube and open rear vents within its physical cabinet
+  ---
+  duration_ms: 1429.8715
+  type: 'test'
+  ...
+# Subtest: the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+ok 11 - the Construct has physical red chairs, an authored CRT reveal and a separate armoury layout
+  ---
+  duration_ms: 4054.492584
+  type: 'test'
+  ...
+# Subtest: the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+ok 12 - the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers
+  ---
+  duration_ms: 1160.489709
+  type: 'test'
+  ...
+# Subtest: the television preview can become a correctly oriented transition frame
+ok 13 - the television preview can become a correctly oriented transition frame
+  ---
+  duration_ms: 5.956291
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22109.777416

@@ -1,0 +1,17 @@
+{
+  "scene": "m1_desert",
+  "step": 0,
+  "tick": 6070,
+  "added_completed": [
+    "m1_construct"
+  ],
+  "lost_completed": [],
+  "previous_reflections_preserved": true,
+  "new_reflections": {
+    "m1_construct:1": "agency"
+  },
+  "agency_change": 1,
+  "inventory_unchanged": true,
+  "inventory_comparison_path": "sandbox.profiles.neo.inventory",
+  "audit_note": "Replaced the initial nonexistent sandbox.inventories lookup with the actual Neo profile inventory before reporting this invariant."
+}

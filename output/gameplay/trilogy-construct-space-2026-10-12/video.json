@@ -1,0 +1,25 @@
+{
+  "path": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-12T13-41-32-093Z.webm",
+  "bytes": 12582400,
+  "sha256": "5a5657d2987e961f1790edbb4b05dfe99635bdb9a0457a80c0d7ea84f7e0dce0",
+  "duration_by_video_packets_seconds": 125.664,
+  "video_packet_count": 1723,
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "opus",
+      "codec_type": "audio",
+      "sample_rate": "48000",
+      "nb_read_frames": "2097"
+    },
+    {
+      "index": 1,
+      "codec_name": "vp9",
+      "codec_type": "video",
+      "width": 1280,
+      "height": 720,
+      "nb_read_frames": "1723"
+    }
+  ],
+  "scope": "Native image inspection, walk and CRT reveal; long idle and paused stretches; ends before philosophical choice. Not continuous trilogy playthrough."
+}

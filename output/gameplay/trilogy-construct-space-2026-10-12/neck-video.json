@@ -1,0 +1,25 @@
+{
+  "path": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-12T14-06-24-664Z.webm",
+  "bytes": 918900,
+  "sha256": "953a001f4b77f58aa01e1651d09b1ac95b4c54ba68db1e26a3c7b9e3408175dc",
+  "duration_by_video_packets_seconds": 13.216,
+  "video_packet_count": 102,
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "opus",
+      "codec_type": "audio",
+      "sample_rate": "48000",
+      "nb_read_frames": "224"
+    },
+    {
+      "index": 1,
+      "codec_name": "vp9",
+      "codec_type": "video",
+      "width": 1280,
+      "height": 720,
+      "nb_read_frames": "102"
+    }
+  ],
+  "scope": "Final neck gesture from a complete authentic entry copy; G inspection, movement remains locked, paused dual views; ends at image elapsed 4.845 seconds. Contains paused frames, not a continuous story completion."
+}
