@@ -10,7 +10,7 @@ import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRender
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
 import { CONSTRUCT, constructGuidePose } from '@auto_matrix/shared';
-import { CABIN, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
+import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
 import { truthRoot, truthUnplug, type TruthGesture } from '@auto_matrix/shared';
 import { downloadRoot, downloadHandPoint, DOWNLOAD_OPERATOR, type DownloadGesture } from '@auto_matrix/shared';
 import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryBodyPose, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
@@ -1063,6 +1063,37 @@ test('the first core connection restores a seated body without penetrating the c
       }
       assert.ok(penetration < .04, `core chair penetration ${penetration} at ${elapsed}s: ${deepest}`);
       assert.ok(floor > -.04, `core feet penetrate the floor by ${-floor}`);
+    }
+  } finally { deck.dispose(); models.dispose(); }
+});
+
+test('the delivered first-film crew bodies and knit sleeves clear the new pressure hatch during walking', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture()), stage = new THREE.Group(), deck = new NebDeckRenderer(stage);
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const frame = stage.getObjectByName('neb-cabin-hatch-frame')!; stage.updateMatrixWorld(true);
+    const walls = CABIN_WALLS.map(wall => new THREE.Box3(new THREE.Vector3(wall.x - wall.width / 2, 0, wall.z - wall.depth / 2),
+      new THREE.Vector3(wall.x + wall.width / 2, wall.height, wall.z + wall.depth / 2)));
+    for (const role of ['neo', 'morpheus'] as const) {
+      const rig = (await models.create(role))!, motion = newMotion();
+      rig.root.position.set(CABIN.door.x, 0, CABIN.door.z); rig.root.rotation.y = -Math.PI / 2;
+      for (const delta of [.08, .18, .18, .19, .19]) {
+        const input = { speed: 3.2, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, nebCrew: role, nebCrewEarly: true };
+        models.animate(rig, advanceMotion(motion, input, delta), motion, input, delta); rig.root.updateMatrixWorld(true);
+        let checked = 0;
+        rig.root.traverseVisible(object => {
+          if (!(object instanceof THREE.Mesh)) return;
+          if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+          for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+            const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())); checked++;
+            assert.ok(walls.every(wall => !wall.containsPoint(point)), `${role}/${motion.phase}: ${object.name} crosses the actual bulkhead envelope`);
+            if (Math.abs(point.x - CABIN.door.x) >= .225) continue;
+            const ray = new THREE.Raycaster(new THREE.Vector3(CABIN.door.x + 2, point.y, point.z), new THREE.Vector3(-1, 0, 0), 0, 4);
+            assert.equal(ray.intersectObject(frame, false).length, 0, `${role}/${motion.phase}: ${object.name} cuts the curved hatch surround`);
+          }
+        });
+        assert.ok(checked > 5000, 'sample the real delivered surfaces, including the new knit');
+      }
     }
   } finally { deck.dispose(); models.dispose(); }
 });

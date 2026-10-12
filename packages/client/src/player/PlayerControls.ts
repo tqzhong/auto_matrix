@@ -47,7 +47,7 @@ import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { officeClipboardPoint } from '@auto_matrix/shared';
-import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RUNOFF, podRunoffHeight, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RUNOFF, podRunoffHeight, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
@@ -2953,6 +2953,11 @@ export class PlayerControls {
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
       const followDistance = wreckCabin ? 4.2 : state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
+      const cabinCeiling = (point: THREE.Vector3) => cabinCenter
+        && Math.abs(point.x - cabinCenter.x - CABIN.deck.x) < CABIN.deck.width / 2 + .5
+        && Math.abs(point.z - cabinCenter.z - CABIN.deck.z) < CABIN.deck.depth / 2 + .5
+        ? cabinCenter.y - 1 + CABIN.ceiling.headroom - this.camera.near - .12 : Infinity;
       let cameraDistance = followDistance;
       for (let distance = 1; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);
@@ -2960,7 +2965,7 @@ export class PlayerControls {
         const blocked = state.currentLocation === 'film_power_station'
           ? primaryCameraBlocked(point.x - center.x, point.y - center.y + 1, point.z - center.z, .5)
           : playerBlocked(point, state.isInMatrix, 0.5, this.structures);
-        if (blocked) { cameraDistance = Math.max(2, distance - 1); break; }
+        if (blocked || point.y > cabinCeiling(point)) { cameraDistance = Math.max(2, distance - 1); break; }
       }
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
       if (wreckCabin) {
@@ -2973,6 +2978,7 @@ export class PlayerControls {
       }
       if (resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
+      this.camera.position.y = Math.min(this.camera.position.y, cabinCeiling(this.camera.position));
       this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }
     this.impactAge += delta;

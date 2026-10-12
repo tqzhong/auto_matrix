@@ -3,10 +3,11 @@ import { truthUnplug, truthRest, TRUTH_BEDSIDE, DOWNLOAD_OPERATOR, downloadDiskP
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
-import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
+import { CABIN, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
 import { relayPlugContact } from '../agents/TrinityRelayPerformance.js';
 import { NEB_ESCAPE, nebHatchHeight } from '@auto_matrix/shared';
 import { NebEscapeRenderer } from './NebEscapeRenderer.js';
+import { NebCabinRenderer } from './NebCabinRenderer.js';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -26,6 +27,7 @@ export class NebDeckRenderer {
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x879b94, transparent: true, opacity: .23, roughness: .18, metalness: .22, side: THREE.DoubleSide, depthWrite: false }));
   private therapyRig = new THREE.Group();
   private cabinDoor!: THREE.Mesh;
+  private cabinRoom?: NebCabinRenderer;
   private medicalLever!: THREE.Mesh;
   private truthSeat = new THREE.Group();
   private corePlug = new THREE.Group();
@@ -133,9 +135,21 @@ export class NebDeckRenderer {
   }
 
   private hull(): void {
-    this.box(this.root, this.dark, 0, -.35, 0, 44, .7, 90, 'neb-deck-floor');
+    const deck = CABIN.deck, left = deck.x - deck.width / 2, right = deck.x + deck.width / 2;
+    const rear = deck.z - deck.depth / 2, front = deck.z + deck.depth / 2;
+    const floor = new THREE.Shape(); floor.moveTo(-22, -45); floor.lineTo(22, -45); floor.lineTo(22, 45); floor.lineTo(-22, 45); floor.closePath();
+    const opening = new THREE.Path(); opening.moveTo(left, rear); opening.lineTo(left, front); opening.lineTo(right, front); opening.lineTo(right, rear); opening.closePath(); floor.holes.push(opening);
+    const geometry = new THREE.ExtrudeGeometry(floor, { depth: .7, bevelEnabled: false }); geometry.rotateX(Math.PI / 2);
+    this.mesh(this.root, geometry, this.dark, 'neb-deck-floor');
     for (let z = -42; z <= 42; z += 6) {
-      this.box(this.root, z % 12 ? this.worn : this.steel, 0, .02, z, 43, .05, 5.72);
+      const material = z % 12 ? this.worn : this.steel, start = z - 2.86, end = z + 2.86;
+      if (end <= rear || start >= front) this.box(this.root, material, 0, .02, z, 43, .05, 5.72);
+      else {
+        this.box(this.root, material, (left - 21.5) / 2, .02, z, left + 21.5, .05, 5.72);
+        this.box(this.root, material, (right + 21.5) / 2, .02, z, 21.5 - right, .05, 5.72);
+        if (start < rear) this.box(this.root, material, deck.x, .02, (start + rear) / 2, deck.width, .05, rear - start);
+        if (end > front) this.box(this.root, material, deck.x, .02, (front + end) / 2, deck.width, .05, end - front);
+      }
       this.box(this.root, this.dark, -21.6, 7.5, z, .8, 15, 5.8);
       this.box(this.root, this.dark, 21.6, 7.5, z, .8, 15, 5.8);
       const rib = this.pipe([new THREE.Vector3(-21, .2, z), new THREE.Vector3(-18, 12.2, z), new THREE.Vector3(-10, 15.5, z), new THREE.Vector3(10, 15.5, z), new THREE.Vector3(18, 12.2, z), new THREE.Vector3(21, .2, z)], .22, this.steel);
@@ -215,31 +229,7 @@ export class NebDeckRenderer {
   }
 
   private cabin(): void {
-    const wall = this.material(new THREE.MeshStandardMaterial({ color: 0x51524a, metalness: .42, roughness: .81 }));
-    const bedding = this.material(new THREE.MeshStandardMaterial({ color: 0x5e6258, roughness: .98 }));
-    CABIN_WALLS.forEach((part, i) => this.box(this.root, wall, part.x, part.height / 2, part.z, part.width, part.height, part.depth, `neb-cabin-wall-${i}`));
-    this.box(this.root, this.dark, 12, 6.9, -33, 12, .2, 14, 'neb-cabin-ceiling');
-    for (const x of [6.25, 17.75]) for (const z of [-38, -34, -27]) {
-      this.box(this.root, this.steel, x, 3.4, z, .18, 6.6, .12);
-      for (const y of [.4, 3.6, 6.3]) {
-        const bolt = this.cylinder(this.root, this.dark, x + (x < 12 ? .11 : -.11), y, z, .07, .08);
-        bolt.rotation.z = Math.PI / 2;
-      }
-    }
-    const { x, z, surface } = CABIN.bed;
-    this.box(this.root, this.dark, x, .32, z, 2.65, .54, 6.7, 'neb-cabin-bed-base');
-    this.box(this.root, this.steel, x, .66, z, 3.15, .14, 6.95, 'neb-cabin-bed-frame');
-    this.box(this.root, bedding, x, surface - .19, z, 2.85, .38, 6.35, 'neb-cabin-mattress');
-    const pillow = this.mesh(this.root, new RoundedBoxGeometry(1.55, .2, 1.12, 4, .07), this.linen, 'neb-cabin-pillow');
-    pillow.position.set(x, surface + .1, z + 2.05);
-    const blanket = this.box(this.root, this.linen, x, 1.21, z - 2.5, 2.72, .17, .9, 'neb-cabin-folded-blanket'); blanket.rotation.y = .025;
-    for (let row = 0; row < 6; row++) this.box(this.root, this.rubber, 12, 5.2 + row * .1, -39.78, 2.4, .035, .07);
-    const locker = CABIN.locker;
-    this.box(this.root, this.worn, locker.x, 2.2, locker.z, locker.width, 3.8, locker.depth, 'neb-cabin-locker');
-    this.box(this.root, this.steel, 16.97, 2.5, -38.3, .05, .4, .13);
-    this.cabinDoor = this.box(this.root, this.worn, CABIN.door.x, 2.9, CABIN.door.z, .22, 5.8, CABIN.door.width, 'neb-cabin-door');
-    this.box(this.root, this.dark, CABIN.door.x, 6.2, CABIN.door.z, .45, .9, 4.7, 'neb-cabin-door-lintel');
-    this.box(this.root, this.screen, 13.2, 6.5, -32, 3.6, .1, .22, 'neb-cabin-light-strip');
+    this.cabinRoom = new NebCabinRenderer(this.root); this.cabinDoor = this.cabinRoom.door;
     this.pointLight('neb-cabin-light', 0xe0dfcb, 105, 12, 13.2, 5.6, -32);
     this.pointLight('neb-cabin-bounce', 0xb1c4ce, 30, 10, 8.4, 4.8, -29.5);
     this.roomKey('neb-cabin-key-light', 0xe0dfcb, 80, 12, new THREE.Vector3(13.2, 6.35, -32), new THREE.Vector3(12, 1.1, -32), Math.PI * .4);
@@ -757,6 +747,7 @@ export class NebDeckRenderer {
   }
 
   dispose(): void {
+    this.cabinRoom?.dispose(); this.cabinRoom = undefined;
     this.escapeExterior.dispose();
     this.medicalLeads.forEach(leads => leads.dispose()); this.medicalLeads = [];
     this.downloadScreen?.dispose();
