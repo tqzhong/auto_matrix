@@ -4,6 +4,8 @@ export interface CabinEscort { progress: number }
 export interface CabinGesture { kind: 'wake' | 'core'; elapsed: number; role: 'neo' | 'morpheus'; target?: { x: number; y: number; z: number } }
 export const CABIN = {
   bed: { x: 12, z: -34, surface: 1.06 },
+  deck: { x: 12, z: -33, width: 11.2, depth: 13.2 },
+  ceiling: { height: 6.8, headroom: 6.25 },
   morpheus: { x: 15.6, z: -30.5, yaw: -2.3 },
   chair: { x: 6.5, z: -5, yaw: -Math.PI / 2 },
   connector: { x: 8.7, z: -4.45, yaw: -Math.PI / 2 },
@@ -12,11 +14,11 @@ export const CABIN = {
   locker: { x: 17.4, z: -38.4, width: .8, depth: 2.3, height: 4.1 },
 } as const;
 export const CABIN_WALLS = [
-  { x: 12, z: -40, width: 12, depth: .3, height: 6.8 },
-  { x: 12, z: -26, width: 12, depth: .3, height: 6.8 },
-  { x: 18, z: -33, width: .3, depth: 14, height: 6.8 },
-  { x: 6, z: -35.85, width: .3, depth: 8.3, height: 6.8 },
-  { x: 6, z: -26.65, width: .3, depth: 1.3, height: 6.8 },
+  { x: 12, z: -40, width: 12, depth: .8, height: 6.8 },
+  { x: 12, z: -26, width: 12, depth: .8, height: 6.8 },
+  { x: 18, z: -33, width: .8, depth: 14, height: 6.8 },
+  { x: 6, z: -35.85, width: .8, depth: 8.3, height: 6.8 },
+  { x: 6, z: -26.65, width: .8, depth: 1.3, height: 6.8 },
 ] as const;
 export const CABIN_ROUTE = [CABIN.morpheus, { x: 15.6, z: -28.7 }, { x: 9, z: -28.7 },
   { x: 8.2, z: -29.5 }, { x: 3.8, z: -29.5 }, { x: 0, z: -24 }, { x: 0, z: -12 },

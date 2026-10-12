@@ -1,0 +1,15 @@
+{
+  "method": "built-in image_gen",
+  "created": "2026-10-12",
+  "scope": "Generated surface albedos for the Neo waking cabin, not film frame textures or complete physical material scans.",
+  "assets": [
+    {
+      "file": "neb-cabin-painted-steel-v1.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: seamless albedo / base-color texture for a playable 3D game, square 1024x1024. Primary request: one continuous old dark charcoal-blue painted steel sheet from the interior of a heavily used industrial hovercraft, inspired by the cramped human ship interiors in The Matrix (1999). Orthographic straight-on close-up, surface fills the entire image edge to edge. Dense physically plausible tiny paint chips exposing dull steel, fine rubbed abrasion, subtle brushed metal grain, irregular soot and thin dusty grime, faint warm rust at a few chipped spots. Mid-dark neutral gray-blue paint with restrained desaturated brown traces. Uniform diffuse flat lighting; no baked shadows, no highlights, no vignette, no directional light, no perspective, no reflections. Perfectly seamless left-right and top-bottom tile. Only the material surface: no rivets, seams, borders, diamond tread, letters, objects, logos, watermark or UI. Full resolution natural microdetail and varied subtle wear, avoid exaggerated cracks or heavy orange rust."
+    },
+    {
+      "file": "neb-cabin-cotton-v1.png",
+      "prompt": "Use case: photorealistic-natural. Asset type: seamless game albedo/base-color material texture, square 1024x1024. One close, orthographic straight-on view of old unbleached cotton canvas used as bedding in a cramped industrial hovercraft, inspired by The Matrix (1999) human ship cabin. Natural closely woven coarse cotton fibers, restrained very fine random textile variation, worn washed gray-beige cloth, faint age discoloration and occasional loose fine fibers; quiet believable fabric, neither clean white nor strongly dirty. The fabric surface fills the frame edge to edge. Perfectly seamless horizontally and vertically. Absolutely uniform diffuse flat lighting, no baked highlights, shadows, creases, folds, seams, stitched borders, quilting, perspective, text, objects, logos or watermarks. Real natural textile microdetail, muted light warm gray color so it can be tinted by a physically based renderer. No image frame."
+    }
+  ]
+}

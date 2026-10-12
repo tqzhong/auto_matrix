@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+ok 1 - Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+  ---
+  duration_ms: 103.755042
+  type: 'test'
+  ...
+# Subtest: the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+ok 2 - the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+  ---
+  duration_ms: 270.828167
+  type: 'test'
+  ...
+# Subtest: old completed medical saves can continue through the added cabin without repeating treatment
+ok 3 - old completed medical saves can continue through the added cabin without repeating treatment
+  ---
+  duration_ms: 1.971916
+  type: 'test'
+  ...
+# Subtest: medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+ok 4 - medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+  ---
+  duration_ms: 143.110375
+  type: 'test'
+  ...
+# Subtest: the cabin doorway collision uses the same saved opening time as the visible door
+ok 5 - the cabin doorway collision uses the same saved opening time as the visible door
+  ---
+  duration_ms: 64.369625
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+ok 6 - Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+  ---
+  duration_ms: 173.6705
+  type: 'test'
+  ...
+# Subtest: film set walls use their base color until all three texture images are ready
+ok 7 - film set walls use their base color until all three texture images are ready
+  ---
+  duration_ms: 2.085
+  type: 'test'
+  ...
+# Subtest: a previous film set cannot attach a late texture after disposal
+ok 8 - a previous film set cannot attach a late texture after disposal
+  ---
+  duration_ms: 0.71975
+  type: 'test'
+  ...
+# Subtest: recovery and cabin shadows follow the current room rather than the whole deck
+ok 9 - recovery and cabin shadows follow the current room rather than the whole deck
+  ---
+  duration_ms: 90.974375
+  type: 'test'
+  ...
+# Subtest: local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+ok 10 - local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+  ---
+  duration_ms: 0.389625
+  type: 'test'
+  ...
+# Subtest: room shadows cover the escort and chair approach continuously across both room boundaries
+ok 11 - room shadows cover the escort and chair approach continuously across both room boundaries
+  ---
+  duration_ms: 134.230916
+  type: 'test'
+  ...
+# Subtest: the recovery set has a solid medical bed, low bedside rails and an open route to the core
+ok 12 - the recovery set has a solid medical bed, low bedside rails and an open route to the core
+  ---
+  duration_ms: 23.261458
+  type: 'test'
+  ...
+# Subtest: the recovery needles and leads remain still when only the render clock advances
+ok 13 - the recovery needles and leads remain still when only the render clock advances
+  ---
+  duration_ms: 18.289125
+  type: 'test'
+  ...
+# Subtest: both recovery helpers go around the bed before supporting Neo from the aisle
+ok 14 - both recovery helpers go around the bed before supporting Neo from the aisle
+  ---
+  duration_ms: 2.158958
+  type: 'test'
+  ...
+# Subtest: the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+ok 15 - the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+  ---
+  duration_ms: 16.372709
+  type: 'test'
+  ...
+# Subtest: therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+ok 16 - therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+  ---
+  duration_ms: 15.989875
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1277.812

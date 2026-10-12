@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+ok 1 - Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+  ---
+  duration_ms: 422.736625
+  type: 'test'
+  ...
+# Subtest: the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+ok 2 - the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+  ---
+  duration_ms: 1272.892334
+  type: 'test'
+  ...
+# Subtest: old completed medical saves can continue through the added cabin without repeating treatment
+ok 3 - old completed medical saves can continue through the added cabin without repeating treatment
+  ---
+  duration_ms: 55.281417
+  type: 'test'
+  ...
+# Subtest: medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+ok 4 - medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+  ---
+  duration_ms: 475.790417
+  type: 'test'
+  ...
+# Subtest: the cabin doorway collision uses the same saved opening time as the visible door
+ok 5 - the cabin doorway collision uses the same saved opening time as the visible door
+  ---
+  duration_ms: 148.616
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+ok 6 - Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+  ---
+  duration_ms: 373.194084
+  type: 'test'
+  ...
+# Subtest: film set walls use their base color until all three texture images are ready
+ok 7 - film set walls use their base color until all three texture images are ready
+  ---
+  duration_ms: 6.40125
+  type: 'test'
+  ...
+# Subtest: a previous film set cannot attach a late texture after disposal
+ok 8 - a previous film set cannot attach a late texture after disposal
+  ---
+  duration_ms: 2.120458
+  type: 'test'
+  ...
+# Subtest: the cabin grate is the visible walking surface rather than being buried underneath the older hull plates
+ok 9 - the cabin grate is the visible walking surface rather than being buried underneath the older hull plates
+  ---
+  duration_ms: 716.174042
+  type: 'test'
+  ...
+# Subtest: the worn cabin bulkheads retain real relief inside their shared collision envelope and leave the escort doorway open
+ok 10 - the worn cabin bulkheads retain real relief inside their shared collision envelope and leave the escort doorway open
+  ---
+  duration_ms: 176.280583
+  type: 'test'
+  ...
+# Subtest: cabin surfaces keep usable fallback colors until loaded, reject late images, and release shared image resources once
+ok 11 - cabin surfaces keep usable fallback colors until loaded, reject late images, and release shared image resources once
+  ---
+  duration_ms: 92.110208
+  type: 'test'
+  ...
+# Subtest: recovery and cabin shadows follow the current room rather than the whole deck
+ok 12 - recovery and cabin shadows follow the current room rather than the whole deck
+  ---
+  duration_ms: 750.716958
+  type: 'test'
+  ...
+# Subtest: local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+ok 13 - local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+  ---
+  duration_ms: 0.686125
+  type: 'test'
+  ...
+# Subtest: room shadows cover the escort and chair approach continuously across both room boundaries
+ok 14 - room shadows cover the escort and chair approach continuously across both room boundaries
+  ---
+  duration_ms: 390.970333
+  type: 'test'
+  ...
+# Subtest: the recovery set has a solid medical bed, low bedside rails and an open route to the core
+ok 15 - the recovery set has a solid medical bed, low bedside rails and an open route to the core
+  ---
+  duration_ms: 87.087625
+  type: 'test'
+  ...
+# Subtest: the recovery needles and leads remain still when only the render clock advances
+ok 16 - the recovery needles and leads remain still when only the render clock advances
+  ---
+  duration_ms: 92.564541
+  type: 'test'
+  ...
+# Subtest: both recovery helpers go around the bed before supporting Neo from the aisle
+ok 17 - both recovery helpers go around the bed before supporting Neo from the aisle
+  ---
+  duration_ms: 6.717
+  type: 'test'
+  ...
+# Subtest: the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+ok 18 - the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+  ---
+  duration_ms: 114.95975
+  type: 'test'
+  ...
+# Subtest: therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+ok 19 - therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+  ---
+  duration_ms: 188.629917
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4404.110125

@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: the ordinary follow view stays below the real cabin roof while Neo walks through its pressure hatch
+not ok 1 - the ordinary follow view stays below the real cabin roof while Neo walks through its pressure hatch
+  ---
+  duration_ms: 705.979666
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:187909'
+  failureType: 'testCodeFailure'
+  error: 'the 1.7777777777777777 hatch exit view at 4.5 is blocked by neb-cabin-ceiling-neb-cabin-painted-steel'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:2491:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3426.031959

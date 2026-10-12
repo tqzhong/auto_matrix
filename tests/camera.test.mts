@@ -2474,6 +2474,25 @@ test('first person follows the cabin sit and turn, keeps free look and restores 
   assert.ok(resumed.normalize().x > .99, 'resuming after the bed turn cannot rotate the view a second time');
 });
 
+test('the ordinary follow view stays below the real cabin roof while Neo walks through its pressure hatch', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const game = setup(t, -1.5559414332800228), center = FILM_SETS.film_neb_deck.center;
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z); const set = new NebDeckRenderer(root);
+  game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false; game.state.currentAction = null;
+  try {
+    set.update({ scene: 'm1_cabin', step: 1, awakening: { kind: 'cabin', elapsed: 12, started: true } } as FilmJourney, 12); root.updateMatrixWorld(true);
+    for (const aspect of [16 / 9, .65]) for (const x of [8.2, 6, 4.5, 2.5369683924991477]) {
+      game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+      game.state.position = filmPosition('film_neb_deck', x, -28.6887557689588);
+      game.controls.possess(game.state); game.step(.5, 1 / 60, false);
+      const chest = new THREE.Vector3(game.state.position.x, game.state.position.y + 2.1, game.state.position.z), sight = chest.clone().sub(game.camera.position);
+      const hit = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObject(root, true)
+        .find(hit => hit.object instanceof THREE.Mesh && !Array.isArray(hit.object.material) && !hit.object.material.transparent);
+      assert.ok(!hit, `the ${aspect} hatch exit view at ${x} is blocked by ${hit?.object.name || hit?.object.parent?.name}`);
+    }
+  } finally { set.dispose(); }
+});
+
 test('after recovery the ordinary follow camera cannot enter the medical equipment cabinet', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t, Math.PI / 2); const center = FILM_SETS.film_neb_deck.center;

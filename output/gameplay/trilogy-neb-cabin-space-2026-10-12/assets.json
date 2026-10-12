@@ -1,0 +1,20 @@
+[
+  {
+    "file": "neb-cabin-painted-steel-v1.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "bytes": 3449118,
+    "sha256": "de1530aac21c281f2385a4fa4f98f76bb31973b458bcdc126416896c79020f30"
+  },
+  {
+    "file": "neb-cabin-cotton-v1.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "bytes": 3901513,
+    "sha256": "de957ef685ee5e37857ddd11925ba69432385638463a6a10942147ce9ac087d6"
+  }
+]

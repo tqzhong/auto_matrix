@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: Neo keeps his dressed body above the mattress until his legs clear the side of the cabin bed
+ok 1 - Neo keeps his dressed body above the mattress until his legs clear the side of the cabin bed
+  ---
+  duration_ms: 4241.230375
+  type: 'test'
+  ...
+# Subtest: the first core connection restores a seated body without penetrating the chair or floor
+ok 2 - the first core connection restores a seated body without penetrating the chair or floor
+  ---
+  duration_ms: 6296.131875
+  type: 'test'
+  ...
+# Subtest: the delivered first-film crew bodies and knit sleeves clear the new pressure hatch during walking
+ok 3 - the delivered first-film crew bodies and knit sleeves clear the new pressure hatch during walking
+  ---
+  duration_ms: 13333.218542
+  type: 'test'
+  ...
+# Subtest: Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug
+ok 4 - Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug
+  ---
+  duration_ms: 1849.898625
+  type: 'test'
+  ...
+# Subtest: the cervical interface follows the skin at the nape and faces backwards
+ok 5 - the cervical interface follows the skin at the nape and faces backwards
+  ---
+  duration_ms: 1012.811625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27465.924208

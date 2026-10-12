@@ -1,0 +1,44 @@
+[
+  {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-12T11-58-00-308Z.webm",
+    "bytes": 30243487,
+    "duration": null,
+    "streams": [
+      {
+        "type": "audio",
+        "codec": "opus",
+        "width": null,
+        "height": null
+      },
+      {
+        "type": "video",
+        "codec": "vp9",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "durationByVideoPackets": 265.265,
+    "videoPackets": 3488
+  },
+  {
+    "file": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-12T11-25-56-538Z.webm",
+    "bytes": 91564283,
+    "duration": null,
+    "streams": [
+      {
+        "type": "audio",
+        "codec": "opus",
+        "width": null,
+        "height": null
+      },
+      {
+        "type": "video",
+        "codec": "vp9",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "durationByVideoPackets": 447.245,
+    "videoPackets": 6275
+  }
+]

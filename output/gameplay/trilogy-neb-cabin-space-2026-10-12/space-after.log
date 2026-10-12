@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+ok 1 - Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+  ---
+  duration_ms: 247.07075
+  type: 'test'
+  ...
+# Subtest: the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+ok 2 - the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+  ---
+  duration_ms: 742.465542
+  type: 'test'
+  ...
+# Subtest: old completed medical saves can continue through the added cabin without repeating treatment
+ok 3 - old completed medical saves can continue through the added cabin without repeating treatment
+  ---
+  duration_ms: 4.743375
+  type: 'test'
+  ...
+# Subtest: medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+ok 4 - medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+  ---
+  duration_ms: 343.160375
+  type: 'test'
+  ...
+# Subtest: the cabin doorway collision uses the same saved opening time as the visible door
+ok 5 - the cabin doorway collision uses the same saved opening time as the visible door
+  ---
+  duration_ms: 266.207792
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+ok 6 - Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+  ---
+  duration_ms: 350.631792
+  type: 'test'
+  ...
+# Subtest: the worn cabin bulkheads retain real relief inside their shared collision envelope and leave the escort doorway open
+not ok 7 - the worn cabin bulkheads retain real relief inside their shared collision envelope and leave the escort doorway open
+  ---
+  duration_ms: 233.407292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/neb-cabin-space.test.mts:1:286'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(box.min.toArray().every((value, axis) => value >= minimum.getComponent(axis) - .025))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/neb-cabin-space.test.mts:15:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: cabin surfaces keep usable fallback colors until loaded, reject late images, and release shared image resources once
+ok 8 - cabin surfaces keep usable fallback colors until loaded, reject late images, and release shared image resources once
+  ---
+  duration_ms: 153.544209
+  type: 'test'
+  ...
+# Subtest: recovery and cabin shadows follow the current room rather than the whole deck
+ok 9 - recovery and cabin shadows follow the current room rather than the whole deck
+  ---
+  duration_ms: 235.065875
+  type: 'test'
+  ...
+# Subtest: local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+ok 10 - local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+  ---
+  duration_ms: 1.637166
+  type: 'test'
+  ...
+# Subtest: room shadows cover the escort and chair approach continuously across both room boundaries
+ok 11 - room shadows cover the escort and chair approach continuously across both room boundaries
+  ---
+  duration_ms: 425.126541
+  type: 'test'
+  ...
+# Subtest: the recovery set has a solid medical bed, low bedside rails and an open route to the core
+ok 12 - the recovery set has a solid medical bed, low bedside rails and an open route to the core
+  ---
+  duration_ms: 66.408625
+  type: 'test'
+  ...
+# Subtest: the recovery needles and leads remain still when only the render clock advances
+ok 13 - the recovery needles and leads remain still when only the render clock advances
+  ---
+  duration_ms: 66.308584
+  type: 'test'
+  ...
+# Subtest: both recovery helpers go around the bed before supporting Neo from the aisle
+ok 14 - both recovery helpers go around the bed before supporting Neo from the aisle
+  ---
+  duration_ms: 6.269333
+  type: 'test'
+  ...
+# Subtest: the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+ok 15 - the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+  ---
+  duration_ms: 54.150333
+  type: 'test'
+  ...
+# Subtest: therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+ok 16 - therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+  ---
+  duration_ms: 55.060667
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 15
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2742.973834
