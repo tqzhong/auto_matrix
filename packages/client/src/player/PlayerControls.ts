@@ -2208,7 +2208,9 @@ export class PlayerControls {
     } else if (this.motion.construct) {
       const center = FILM_SETS.film_white_construct.center;
       if (this.firstPerson) {
-        const eye = new THREE.Vector3(this.position.x, this.position.y + 3.02, this.position.z);
+        const head = this.motion.construct.role === 'neo' && this.motion.construct.phase === 'image' ? group.getObjectByName('head') : undefined;
+        const localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
+        const eye = head && localEye ? head.localToWorld(localEye.clone()) : new THREE.Vector3(this.position.x, this.position.y + 3.02, this.position.z);
         this.camera.position.copy(eye);
         this.camera.lookAt(eye.clone().add(new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch))));
       } else {
@@ -2219,7 +2221,9 @@ export class PlayerControls {
     } else if (this.motion.reveal) {
       const gesture = this.motion.reveal; const center = FILM_SETS[gesture.kind === 'construct' ? 'film_white_construct' : 'film_real_desert'].center;
       if (this.firstPerson) {
-        const eye = new THREE.Vector3(this.position.x, this.position.y + 3.02, this.position.z);
+        const head = gesture.kind === 'construct' && gesture.role === 'neo' ? group.getObjectByName('head') : undefined;
+        const localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
+        const eye = head && localEye ? head.localToWorld(localEye.clone()) : new THREE.Vector3(this.position.x, this.position.y + 3.02, this.position.z);
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else if (gesture.kind === 'construct') {

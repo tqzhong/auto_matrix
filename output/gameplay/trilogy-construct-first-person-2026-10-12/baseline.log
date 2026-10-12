@@ -1,0 +1,478 @@
+TAP version 13
+# Subtest: Mobil reunion keeps both saved partners in the third-person frame and V preserves free first-person look
+ok 1 - Mobil reunion keeps both saved partners in the third-person frame and V preserves free first-person look
+  ---
+  duration_ms: 33.239708
+  type: 'test'
+  ...
+# Subtest: first-person chase keeps the bracing arm visible and restores the head when V leaves
+ok 2 - first-person chase keeps the bracing arm visible and restores the head when V leaves
+  ---
+  duration_ms: 55.058667
+  type: 'test'
+  ...
+# Subtest: first-person Hel pistol keeps the weapon visible, hides the own head and restores both view modes
+ok 3 - first-person Hel pistol keeps the weapon visible, hides the own head and restores both view modes
+  ---
+  duration_ms: 33.369125
+  type: 'test'
+  ...
+# Subtest: Hel surrender keeps first person looking into the room instead of forcing it down into its own arms
+ok 4 - Hel surrender keeps first person looking into the room instead of forcing it down into its own arms
+  ---
+  duration_ms: 13.022917
+  type: 'test'
+  ...
+# Subtest: the operator camera shows the crank above the console and permits first-person inspection
+ok 5 - the operator camera shows the crank above the console and permits first-person inspection
+  ---
+  duration_ms: 113.815458
+  type: 'test'
+  ...
+# Subtest: an unlocked browser can drag the first-person view without attacking (pointer lock API false)
+ok 6 - an unlocked browser can drag the first-person view without attacking (pointer lock API false)
+  ---
+  duration_ms: 29.594166
+  type: 'test'
+  ...
+# Subtest: an unlocked browser can drag the first-person view without attacking (pointer lock API true)
+ok 7 - an unlocked browser can drag the first-person view without attacking (pointer lock API true)
+  ---
+  duration_ms: 32.78475
+  type: 'test'
+  ...
+# Subtest: APU first-person crosshair and server hit ray agree
+ok 8 - APU first-person crosshair and server hit ray agree
+  ---
+  duration_ms: 19.923791
+  type: 'test'
+  ...
+# Subtest: Zee first-person view follows the saved hatch turn while retaining her mouse look offset
+ok 9 - Zee first-person view follows the saved hatch turn while retaining her mouse look offset
+  ---
+  duration_ms: 12.839958
+  type: 'test'
+  ...
+# zee detailed head could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/zee-head.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:924:24)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:787:12) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at EpilogueHeads.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/EpilogueHeads.ts:60:42)
+#       at EpilogueHeads.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/EpilogueHeads.ts:46:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:924:24) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zee-head.glb'
+#   }
+# }
+# zee detailed body could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/zee-body.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:1333:23)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:787:12) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at DiggerBodies.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/DiggerBodies.ts:81:42)
+#       at DiggerBodies.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/DiggerBodies.ts:57:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:1333:23) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zee-body.glb'
+#   }
+# }
+# Subtest: first-person descending at 19.844 follows Zee's actual eye
+ok 10 - first-person descending at 19.844 follows Zee's actual eye
+  ---
+  duration_ms: 51.04075
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 0 follows Zee's actual eye
+ok 11 - first-person mounting at 0 follows Zee's actual eye
+  ---
+  duration_ms: 369.740292
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 0.9 follows Zee's actual eye
+ok 12 - first-person mounting at 0.9 follows Zee's actual eye
+  ---
+  duration_ms: 165.422875
+  type: 'test'
+  ...
+# Subtest: first-person dismounting at 0.6 follows Zee's actual eye
+ok 13 - first-person dismounting at 0.6 follows Zee's actual eye
+  ---
+  duration_ms: 151.4645
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 1.522 follows Zee's actual eye
+ok 14 - first-person mounting at 1.522 follows Zee's actual eye
+  ---
+  duration_ms: 164.593041
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 3.15 follows Zee's actual eye
+ok 15 - first-person mounting at 3.15 follows Zee's actual eye
+  ---
+  duration_ms: 160.413542
+  type: 'test'
+  ...
+# Subtest: first-person dismounting at 1.2 follows Zee's actual eye
+ok 16 - first-person dismounting at 1.2 follows Zee's actual eye
+  ---
+  duration_ms: 160.279958
+  type: 'test'
+  ...
+# Subtest: first-person dismounting at 3.18 follows Zee's actual eye
+ok 17 - first-person dismounting at 3.18 follows Zee's actual eye
+  ---
+  duration_ms: 166.787417
+  type: 'test'
+  ...
+# charra detailed head could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/charra-head.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:924:24)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:795:14) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at EpilogueHeads.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/EpilogueHeads.ts:60:42)
+#       at EpilogueHeads.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/EpilogueHeads.ts:46:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:924:24) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/charra-head.glb'
+#   }
+# }
+# charra detailed body could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/charra-body.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:1333:23)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:795:14) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at DiggerBodies.load (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/DiggerBodies.ts:81:42)
+#       at DiggerBodies.update (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/DiggerBodies.ts:57:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/agents/CharacterModel.ts:1333:23) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/charra-body.glb'
+#   }
+# }
+# Subtest: first-person attack at 1.8 follows Zee's actual eye
+ok 18 - first-person attack at 1.8 follows Zee's actual eye
+  ---
+  duration_ms: 21.449542
+  type: 'test'
+  ...
+# Subtest: first-person attack at 2.05 follows Zee's actual eye
+ok 19 - first-person attack at 2.05 follows Zee's actual eye
+  ---
+  duration_ms: 17.782
+  type: 'test'
+  ...
+# Subtest: Charra aperture 1 first person mouse aims at the actual drill joint
+ok 20 - Charra aperture 1 first person mouse aims at the actual drill joint
+  ---
+  duration_ms: 161.292667
+  type: 'test'
+  ...
+# Subtest: Charra aperture 2 first person mouse aims at the actual drill joint
+ok 21 - Charra aperture 2 first person mouse aims at the actual drill joint
+  ---
+  duration_ms: 151.637959
+  type: 'test'
+  ...
+# Subtest: Gate Three upright first person can aim and fire at the actual high cable
+ok 22 - Gate Three upright first person can aim and fire at the actual high cable
+  ---
+  duration_ms: 134.071833
+  type: 'test'
+  ...
+# Subtest: Gate Three fallen first person can aim and fire at the actual high cable
+ok 23 - Gate Three fallen first person can aim and fire at the actual high cable
+  ---
+  duration_ms: 118.840417
+  type: 'test'
+  ...
+# Subtest: the fallen pilot can see the cable through the actual APU from his first person eye
+ok 24 - the fallen pilot can see the cable through the actual APU from his first person eye
+  ---
+  duration_ms: 138.144625
+  type: 'test'
+  ...
+# Subtest: the last stand camera sees Mifune past the APU armour and preserves a freely turning first-person eye
+ok 25 - the last stand camera sees Mifune past the APU armour and preserves a freely turning first-person eye
+  ---
+  duration_ms: 110.03675
+  type: 'test'
+  ...
+# Subtest: matrix duel keeps V first person tied to the player's live turn
+ok 26 - matrix duel keeps V first person tied to the player's live turn
+  ---
+  duration_ms: 14.360416
+  type: 'test'
+  ...
+# Subtest: matrix running keeps V first person tied to the player's live turn
+ok 27 - matrix running keeps V first person tied to the player's live turn
+  ---
+  duration_ms: 14.460542
+  type: 'test'
+  ...
+# Subtest: the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye
+ok 28 - the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye
+  ---
+  duration_ms: 33.040291
+  type: 'test'
+  ...
+# Subtest: the club whisper keeps Trinity visible beside Neo and first person can still look around
+ok 29 - the club whisper keeps Trinity visible beside Neo and first person can still look around
+  ---
+  duration_ms: 52.2985
+  type: 'test'
+  ...
+# Subtest: the first-person computer view lowers with the seated body and stays steerable while paused
+ok 30 - the first-person computer view lowers with the seated body and stays steerable while paused
+  ---
+  duration_ms: 36.412375
+  type: 'test'
+  ...
+# Subtest: the chair step turns first person with the saved body, preserves free look and freezes the body while paused
+ok 31 - the chair step turns first person with the saved body, preserves free look and freezes the body while paused
+  ---
+  duration_ms: 28.981333
+  type: 'test'
+  ...
+# Subtest: passenger first-person look follows a car turn while preserving the chosen look offset
+ok 32 - passenger first-person look follows a car turn while preserving the chosen look offset
+  ---
+  duration_ms: 28.338417
+  type: 'test'
+  ...
+# Subtest: first-person boarding ducks under the cabin light before settling into the rear seat
+ok 33 - first-person boarding ducks under the cabin light before settling into the rear seat
+  ---
+  duration_ms: 27.3715
+  type: 'test'
+  ...
+# Subtest: switching to first person during extraction frames Trinity’s scanner and still permits free look
+ok 34 - switching to first person during extraction frames Trinity’s scanner and still permits free look
+  ---
+  duration_ms: 25.600542
+  type: 'test'
+  ...
+# Subtest: the recovery camera frames the medical bed and first person moves to Neo eyes instead of standing height
+ok 35 - the recovery camera frames the medical bed and first person moves to Neo eyes instead of standing height
+  ---
+  duration_ms: 27.708416
+  type: 'test'
+  ...
+# Subtest: lying recovery first person can look down at treatment without moving the patient or saved clock
+ok 36 - lying recovery first person can look down at treatment without moving the patient or saved clock
+  ---
+  duration_ms: 24.11325
+  type: 'test'
+  ...
+# Subtest: first person follows the cabin sit and turn, keeps free look and restores the same direction after reconnecting
+ok 37 - first person follows the cabin sit and turn, keeps free look and restores the same direction after reconnecting
+  ---
+  duration_ms: 34.858083
+  type: 'test'
+  ...
+# Subtest: the Construct keeps movement locked when inspection hands off directly to the television
+ok 38 - the Construct keeps movement locked when inspection hands off directly to the television
+  ---
+  duration_ms: 22.216042
+  type: 'test'
+  ...
+# Subtest: first-person rest follows the cabin head end, retains free look and releases movement for training
+ok 39 - first-person rest follows the cabin head end, retains free look and releases movement for training
+  ---
+  duration_ms: 28.300917
+  type: 'test'
+  ...
+# Subtest: first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset
+ok 40 - first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset
+  ---
+  duration_ms: 28.088291
+  type: 'test'
+  ...
+# Subtest: the Construct and desert reveals use authored wide shots while first person remains at Neo eyes
+ok 41 - the Construct and desert reveals use authored wide shots while first person remains at Neo eyes
+  ---
+  duration_ms: 42.344791
+  type: 'test'
+  ...
+# Subtest: first-person camera follows KeyD without steering a held direction into circles
+ok 42 - first-person camera follows KeyD without steering a held direction into circles
+  ---
+  duration_ms: 80.424375
+  type: 'test'
+  ...
+# Subtest: first-person camera follows KeyA without steering a held direction into circles
+ok 43 - first-person camera follows KeyA without steering a held direction into circles
+  ---
+  duration_ms: 81.667666
+  type: 'test'
+  ...
+# Subtest: first-person camera follows KeyS without steering a held direction into circles
+ok 44 - first-person camera follows KeyS without steering a held direction into circles
+  ---
+  duration_ms: 81.22825
+  type: 'test'
+  ...
+# Subtest: first-person diagonal follow crosses the angle seam by the short route at 30 fps
+ok 45 - first-person diagonal follow crosses the angle seam by the short route at 30 fps
+  ---
+  duration_ms: 38.555375
+  type: 'test'
+  ...
+# Subtest: first-person diagonal follow crosses the angle seam by the short route at 60 fps
+ok 46 - first-person diagonal follow crosses the angle seam by the short route at 60 fps
+  ---
+  duration_ms: 55.738667
+  type: 'test'
+  ...
+# Subtest: first-person manual look has priority, then follow resumes while walking and leaves an idle view alone
+ok 47 - first-person manual look has priority, then follow resumes while walking and leaves an idle view alone
+  ---
+  duration_ms: 127.442708
+  type: 'test'
+  ...
+# Subtest: film scene entry aligns the first-person view with the new entrance
+ok 48 - film scene entry aligns the first-person view with the new entrance
+  ---
+  duration_ms: 22.509167
+  type: 'test'
+  ...
+# Subtest: first-person mouse steering turns the view and movement together after keyboard follow
+ok 49 - first-person mouse steering turns the view and movement together after keyboard follow
+  ---
+  duration_ms: 100.666541
+  type: 'test'
+  ...
+# Subtest: the bathroom sacrifice owns a readable two-shot and still supports Morpheus first person
+ok 50 - the bathroom sacrifice owns a readable two-shot and still supports Morpheus first person
+  ---
+  duration_ms: 27.565083
+  type: 'test'
+  ...
+# Subtest: armed first-person movement strafes without pulling the aim away
+ok 51 - armed first-person movement strafes without pulling the aim away
+  ---
+  duration_ms: 97.046084
+  type: 'test'
+  ...
+# Subtest: the pill camera supports seated first person and releases movement when the actor finishes before the journey snapshot
+ok 52 - the pill camera supports seated first person and releases movement when the actor finishes before the journey snapshot
+  ---
+  duration_ms: 35.113959
+  type: 'test'
+  ...
+# Subtest: the red pill hands the first-person camera to the tracking-room doorway when the performance ends
+ok 53 - the red pill hands the first-person camera to the tracking-room doorway when the performance ends
+  ---
+  duration_ms: 32.464875
+  type: 'test'
+  ...
+# Subtest: the tracking-chair entry carries first-person free look through the saved body turn
+ok 54 - the tracking-chair entry carries first-person free look through the saved body turn
+  ---
+  duration_ms: 28.331417
+  type: 'test'
+  ...
+# Subtest: first-person entry finds the mirror once Neo sits and leaves later free look alone
+ok 55 - first-person entry finds the mirror once Neo sits and leaves later free look alone
+  ---
+  duration_ms: 40.981875
+  type: 'test'
+  ...
+# Subtest: starting the mirror performance while already in first person finds the glass once
+ok 56 - starting the mirror performance while already in first person finds the glass once
+  ---
+  duration_ms: 29.024209
+  type: 'test'
+  ...
+# Subtest: the floating first-person view finds the descending rescue claw above the water
+ok 57 - the floating first-person view finds the descending rescue claw above the water
+  ---
+  duration_ms: 82.861458
+  type: 'test'
+  ...
+# Subtest: first person faces the receiving crew as Neo loses strength instead of looking at the ceiling
+ok 58 - first person faces the receiving crew as Neo loses strength instead of looking at the ceiling
+  ---
+  duration_ms: 28.968458
+  type: 'test'
+  ...
+# Subtest: pickup turns carry the first-person view with the body while preserving the player mouse offset
+ok 59 - pickup turns carry the first-person view with the body while preserving the player mouse offset
+  ---
+  duration_ms: 31.553542
+  type: 'test'
+  ...
+# Subtest: Trinity rescue first-person view responds to mouse yaw and pitch during flight and revival
+ok 60 - Trinity rescue first-person view responds to mouse yaw and pitch during flight and revival
+  ---
+  duration_ms: 25.379458
+  type: 'test'
+  ...
+# Subtest: the paused rescue first-person view uses the posed rig eye without erasing mouse direction
+ok 61 - the paused rescue first-person view uses the posed rig eye without erasing mouse direction
+  ---
+  duration_ms: 23.539834
+  type: 'test'
+  ...
+# Subtest: the rescue first-person camera preserves nearby sleeves and restores its regular clipping plane on exit
+ok 62 - the rescue first-person camera preserves nearby sleeves and restores its regular clipping plane on exit
+  ---
+  duration_ms: 23.331375
+  type: 'test'
+  ...
+# Subtest: Neo checks the back of his neck in the Construct instead of reaching into his throat
+ok 63 - Neo checks the back of his neck in the Construct instead of reaching into his throat
+  ---
+  duration_ms: 437.251083
+  type: 'test'
+  ...
+# Subtest: Neo touches the Construct leather with both palms while Morpheus sits with grounded feet
+ok 64 - Neo touches the Construct leather with both palms while Morpheus sits with grounded feet
+  ---
+  duration_ms: 401.813917
+  type: 'test'
+  ...
+1..64
+# tests 64
+# suites 0
+# pass 64
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4511.435209

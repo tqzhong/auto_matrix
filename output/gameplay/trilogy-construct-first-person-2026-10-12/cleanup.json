@@ -1,0 +1,11 @@
+{
+  "ports": [
+    3169,
+    5369
+  ],
+  "remaining_listeners": false,
+  "backend_exit_code": 0,
+  "client_exit_code": 130,
+  "temporary_tab_closed": 50,
+  "viewport_override_set": false
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "neo-2026-10-12T15-18-10-662Z.webm",
+    "bytes": 594596,
+    "seconds": 4.285,
+    "streams": [
+      {
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "nb_read_frames": "73"
+      },
+      {
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "nb_read_frames": "73"
+      }
+    ],
+    "scope": "Local short native play and paused observation, before the final inner-cloth correction; no full trilogy completion or stable FPS evidence."
+  },
+  {
+    "name": "neo-2026-10-12T15-27-05-367Z.webm",
+    "bytes": 1747668,
+    "seconds": 10.315,
+    "streams": [
+      {
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "nb_read_frames": "122"
+      },
+      {
+        "codec_name": "opus",
+        "codec_type": "audio",
+        "nb_read_frames": "173"
+      }
+    ],
+    "scope": "Local short native play and paused observation, before the final inner-cloth correction; no full trilogy completion or stable FPS evidence."
+  }
+]
