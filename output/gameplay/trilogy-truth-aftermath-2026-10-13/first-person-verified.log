@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: first-person Construct and truth aftermath retain the body and restore the ordinary view
+ok 1 - first-person Construct and truth aftermath retain the body and restore the ordinary view
+  ---
+  duration_ms: 380.167167
+  type: 'test'
+  ...
+# Subtest: the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline
+ok 2 - the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline
+  ---
+  duration_ms: 992.588666
+  type: 'test'
+  ...
+# Subtest: first-person rest follows the cabin head end, retains free look and releases movement for training
+ok 3 - first-person rest follows the cabin head end, retains free look and releases movement for training
+  ---
+  duration_ms: 90.758625
+  type: 'test'
+  ...
+# Subtest: first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset
+ok 4 - first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset
+  ---
+  duration_ms: 57.311334
+  type: 'test'
+  ...
+# Subtest: the Construct and truth aftermath use the registered body eye while keeping free look
+ok 5 - the Construct and truth aftermath use the registered body eye while keeping free look
+  ---
+  duration_ms: 73.375333
+  type: 'test'
+  ...
+# Subtest: the truth aftermath keeps the shipped body clear of the chair and floor while rising and kneeling
+ok 6 - the truth aftermath keeps the shipped body clear of the chair and floor while rising and kneeling
+  ---
+  duration_ms: 8735.115042
+  type: 'test'
+  ...
+# Subtest: Trinity holds the withdrawing plug and Dozer steadies Neo at the actual shoulder
+ok 7 - Trinity holds the withdrawing plug and Dozer steadies Neo at the actual shoulder
+  ---
+  duration_ms: 1635.594708
+  type: 'test'
+  ...
+# Subtest: the bedside aftermath rests Neo on the mattress and supports Morpheus on his stool
+ok 8 - the bedside aftermath rests Neo on the mattress and supports Morpheus on his stool
+  ---
+  duration_ms: 2738.006958
+  type: 'test'
+  ...
+# Subtest: first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+ok 9 - first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+  ---
+  duration_ms: 1562.773959
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 10 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 64.348083
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17043.61825

@@ -1,0 +1,30 @@
+[
+  {
+    "path": "agents.neo.currentAction",
+    "before": null,
+    "after": {
+      "type": "idle",
+      "parameters": {
+        "player": true,
+        "resolved": true,
+        "download": {
+          "phase": "greeting",
+          "elapsed": 0,
+          "progress": 0,
+          "role": "neo"
+        },
+        "recovery": 0,
+        "filmPose": "cabin",
+        "cabin": {
+          "kind": "wake",
+          "elapsed": 0,
+          "role": "neo"
+        },
+        "seated": false
+      },
+      "startedAt": 6384,
+      "duration": 1,
+      "progress": 0
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "ports": [
+    3173,
+    5373
+  ],
+  "closed": true,
+  "userTabUntouched": "http://127.0.0.1:5197/",
+  "remainingTrilogyGoal": "active"
+}

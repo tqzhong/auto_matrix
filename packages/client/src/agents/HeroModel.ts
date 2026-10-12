@@ -778,7 +778,8 @@ export class HeroModels {
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
-    const interactionView = Boolean(input.firstPerson && (constructView || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const truthView = input.truth?.role === 'neo';
+    const interactionView = Boolean(input.firstPerson && (constructView || truthView || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
@@ -814,7 +815,7 @@ export class HeroModels {
       const map = patientLegs ? this.patientSkin : part.map; const bumpMap = patientLegs ? this.patientSkin : part.bumpMap;
       if (!farewellAppearance?.garment(part.mesh, input) && (material.map !== map || material.bumpMap !== bumpMap)) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
       material.bumpScale = patientLegs ? .0013 : part.bumpScale;
-      const side = input.firstPerson && constructView && part.cloth ? THREE.DoubleSide : part.side;
+      const side = input.firstPerson && (constructView || truthView) && part.cloth ? THREE.DoubleSide : part.side;
       if (material.side !== side) { material.side = side; material.needsUpdate = true; }
       material.roughness = patientSurface ? .43 : part.roughness; material.metalness = patientSurface ? .01 : part.metalness;
       if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);

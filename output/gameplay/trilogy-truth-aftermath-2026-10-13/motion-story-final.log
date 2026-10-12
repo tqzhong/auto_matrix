@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 1 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 71.582625
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 2 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 15.3435
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 3 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 0.433125
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 4 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 8.874042
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 5 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 17.559
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 6 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 1.007667
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 7 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 9.691041
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 8 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 7.705375
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 9 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 1.659792
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 10 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 1.777458
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 11 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 0.770084
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 12 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 0.815333
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 13 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.93225
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 14 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.626917
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 15 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 1.023375
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 16 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 2.355875
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 17 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 3.718625
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 18 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.403625
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 19 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 1.676542
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 20 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.735625
+  type: 'test'
+  ...
+# Subtest: truth is followed by a requested exit, physical unplugging and a bedside answer before training
+ok 21 - truth is followed by a requested exit, physical unplugging and a bedside answer before training
+  ---
+  duration_ms: 1149.128959
+  type: 'test'
+  ...
+# Subtest: unplugging pauses for the player, world and occupied crew and resumes its physical checkpoint
+ok 22 - unplugging pauses for the player, world and occupied crew and resumes its physical checkpoint
+  ---
+  duration_ms: 656.075833
+  type: 'test'
+  ...
+# Subtest: existing training saves stay in training while completed desert saves include the new aftermath
+ok 23 - existing training saves stay in training while completed desert saves include the new aftermath
+  ---
+  duration_ms: 10.492916
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3027.60975

@@ -1,0 +1,24 @@
+{
+  "entry": {
+    "tick": 6262,
+    "scene": "m1_truth_exit",
+    "phase": "ready"
+  },
+  "completed": {
+    "tick": 6384,
+    "scene": "m1_download",
+    "step": 0,
+    "training": {
+      "kind": "download",
+      "elapsed": 0,
+      "started": false
+    }
+  },
+  "addedScenes": [
+    "m1_truth_exit",
+    "m1_truth_return"
+  ],
+  "agencyChange": 1,
+  "answer": "agency",
+  "paused": true
+}

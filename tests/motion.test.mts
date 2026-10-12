@@ -3,6 +3,20 @@ import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
 import { MELEE_COMBO } from '@auto_matrix/shared';
 
+test('the truth aftermath reconstructs the same pose from saved time after running and combat', () => {
+  for (const role of ['neo', 'morpheus', 'trinity', 'dozer'] as const) {
+    for (const [phase, elapsed] of [['ready', 0], ['exit', 2], ['unplug', 1], ['unplug', 6.5], ['unplug', 11], ['rest', 8], ['question', 0]] as const) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, truth: { phase, elapsed, role } };
+      const warm = newMotion();
+      for (let i = 0; i < 40; i++) advanceMotion(warm, { speed: 12, grounded: false, verticalVelocity: 8, turn: 2,
+        attack: i, hit: i, cast: i, skill: 'dodge' }, .03);
+      const cold = advanceMotion(newMotion(), input, 0);
+      assert.deepEqual(advanceMotion(warm, input, .016), cold, `${role}/${phase} cannot inherit a prior gait, hit or dodge`);
+      assert.deepEqual(advanceMotion(warm, input, 1), cold, `${role}/${phase} cannot animate beyond the saved clock`);
+    }
+  }
+});
+
 test('truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time', () => {
   const encounter = { phase: 'rescue' as const, elapsed: 10, rescueElapsed: 1.5, attempt: 0, lastTick: 0 };
   for (const role of ['neo', 'morpheus', 'keymaker'] as const) {

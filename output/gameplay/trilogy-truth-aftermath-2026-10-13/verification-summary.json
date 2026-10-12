@@ -1,0 +1,38 @@
+{
+  "scope": "Neo truth aftermath first-person body, registered eyes, free bedside gaze and deterministic saved-clock poses",
+  "baseline": {
+    "truthStory": {
+      "pass": 3,
+      "fail": 0
+    },
+    "relatedVisuals": {
+      "pass": 4,
+      "fail": 0
+    }
+  },
+  "red": {
+    "pass": 0,
+    "fail": 4
+  },
+  "final": {
+    "bodyCameraContactPose": {
+      "pass": 10,
+      "fail": 0
+    },
+    "motionAndTruthStory": {
+      "pass": 23,
+      "fail": 0
+    },
+    "typecheck": true,
+    "clientProductionBuild": true
+  },
+  "distinctFinalTests": 32,
+  "limitations": [
+    "not the full test suite",
+    "no new unrecorded performance benchmark",
+    "recordings include pauses and recording overhead",
+    "film collapse and personnel are not fully verified against a viewed movie clip",
+    "strict initial cold restart changes Neo temporary action; comparison remains 5/6",
+    "whole group 1-07 and trilogy fidelity remain incomplete"
+  ]
+}
