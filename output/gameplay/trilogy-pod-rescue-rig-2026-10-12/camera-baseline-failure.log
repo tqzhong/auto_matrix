@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: the floating first-person view finds the descending rescue claw above the water
+not ok 1 - the floating first-person view finds the descending rescue claw above the water
+  ---
+  duration_ms: 100.404458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.qa-baseline.test.mts:1:231943'
+  failureType: 'testCodeFailure'
+  error: 'document.createElementNS is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    createElementNS (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:1537:18)
+    ImageLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:45262:17)
+    TextureLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:45504:10)
+    new PodDrainRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/PodDrainRenderer.ts:28:49)
+    new PodSetRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/PodSetRenderer.qa-baseline.ts:92:18)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.qa-baseline.test.mts:3125:100)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 473.1405

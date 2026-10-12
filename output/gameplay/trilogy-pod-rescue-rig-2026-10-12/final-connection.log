@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the pod first-person eye follows the shipped head and keeps the support hands visible
+ok 1 - the pod first-person eye follows the shipped head and keeps the support hands visible
+  ---
+  duration_ms: 3040.44075
+  type: 'test'
+  ...
+# Subtest: the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+ok 2 - the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+  ---
+  duration_ms: 2001.783708
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8015.284292

@@ -1,0 +1,245 @@
+TAP version 13
+# Subtest: the rescue bay has an open passage for the body and closes below it after boarding
+ok 1 - the rescue bay has an open passage for the body and closes below it after boarding
+  ---
+  duration_ms: 252.773666
+  type: 'test'
+  ...
+# Subtest: nearby pods have an open upper basin instead of a closed ellipsoid over the occupant
+ok 2 - nearby pods have an open upper basin instead of a closed ellipsoid over the occupant
+  ---
+  duration_ms: 155.516458
+  type: 'test'
+  ...
+# Subtest: the default pod shot has a readable near bank behind Neo, not only distant dots
+ok 3 - the default pod shot has a readable near bank behind Neo, not only distant dots
+  ---
+  duration_ms: 92.7765
+  type: 'test'
+  ...
+# Subtest: the maintenance machine waits for neck inspection and withdraws before the water rescue
+ok 4 - the maintenance machine waits for neck inspection and withdraws before the water rescue
+  ---
+  duration_ms: 146.8885
+  type: 'test'
+  ...
+# Subtest: the floating first-person view sees a nearby pod bank beyond the rescue claw
+ok 5 - the floating first-person view sees a nearby pod bank beyond the rescue claw
+  ---
+  duration_ms: 101.429958
+  type: 'test'
+  ...
+# Subtest: the rescue claw approaches from overhead instead of covering the floating camera
+ok 6 - the rescue claw approaches from overhead instead of covering the floating camera
+  ---
+  duration_ms: 118.952291
+  type: 'test'
+  ...
+# Subtest: the drain encloses the falling body and has a real circular outlet through the receiving wall
+ok 7 - the drain encloses the falling body and has a real circular outlet through the receiving wall
+  ---
+  duration_ms: 102.58475
+  type: 'test'
+  ...
+# Subtest: the pod releases its physical basin and restores saved drain water and splash without reallocating surfaces
+ok 8 - the pod releases its physical basin and restores saved drain water and splash without reallocating surfaces
+  ---
+  duration_ms: 97.282209
+  type: 'test'
+  ...
+# Subtest: the rescue tether has a corrugated surface that follows the saved winch length without drift
+ok 9 - the rescue tether has a corrugated surface that follows the saved winch length without drift
+  ---
+  duration_ms: 82.387667
+  type: 'test'
+  ...
+# Subtest: the released rescue device stays below the winch instead of pulling the tether through the ceiling
+ok 10 - the released rescue device stays below the winch instead of pulling the tether through the ceiling
+  ---
+  duration_ms: 86.687666
+  type: 'test'
+  ...
+# Subtest: the thicker rescue arms and housing clear the shipped head, limbs and patient body during pickup and release
+ok 11 - the thicker rescue arms and housing clear the shipped head, limbs and patient body during pickup and release
+  ---
+  duration_ms: 1018.147375
+  type: 'test'
+  ...
+# Subtest: shutdown during memories loading must preserve the last complete world and memories
+ok 12 - shutdown during memories loading must preserve the last complete world and memories
+  ---
+  duration_ms: 1021.590417
+  type: 'test'
+  ...
+# Subtest: shutdown during checkpoint loading must preserve the last complete world and memories
+ok 13 - shutdown during checkpoint loading must preserve the last complete world and memories
+  ---
+  duration_ms: 658.197459
+  type: 'test'
+  ...
+# Subtest: shutdown after a rejected checkpoint preserves the original file for recovery
+ok 14 - shutdown after a rejected checkpoint preserves the original file for recovery
+  ---
+  duration_ms: 683.001708
+  type: 'test'
+  ...
+# Subtest: a fully loaded server saves and resumes the same story, memories and relationships across restarts
+ok 15 - a fully loaded server saves and resumes the same story, memories and relationships across restarts
+  ---
+  duration_ms: 1399.931
+  type: 'test'
+  ...
+# Subtest: a first startup without a world checkpoint still saves a usable new world
+ok 16 - a first startup without a world checkpoint still saves a usable new world
+  ---
+  duration_ms: 1289.018
+  type: 'test'
+  ...
+# Subtest: paused awakening checkpoints reconstruct their saved performance before any player reconnects
+    # Subtest: m1_pod entry 0
+    ok 1 - m1_pod entry 0
+      ---
+      duration_ms: 621.935584
+      type: 'test'
+      ...
+    # Subtest: m1_pod emerge 1.63
+    ok 2 - m1_pod emerge 1.63
+      ---
+      duration_ms: 573.379583
+      type: 'test'
+      ...
+    # Subtest: m1_pod emerge 5.2
+    ok 3 - m1_pod emerge 5.2
+      ---
+      duration_ms: 628.875458
+      type: 'test'
+      ...
+    # Subtest: m1_pod breather 2.4
+    ok 4 - m1_pod breather 2.4
+      ---
+      duration_ms: 701.747375
+      type: 'test'
+      ...
+    # Subtest: m1_pod breather 5.5
+    ok 5 - m1_pod breather 5.5
+      ---
+      duration_ms: 684.384166
+      type: 'test'
+      ...
+    # Subtest: m1_pod disconnect 5.861
+    ok 6 - m1_pod disconnect 5.861
+      ---
+      duration_ms: 696.8165
+      type: 'test'
+      ...
+    # Subtest: m1_pod disconnect 9
+    ok 7 - m1_pod disconnect 9
+      ---
+      duration_ms: 759.494417
+      type: 'test'
+      ...
+    # Subtest: m1_pod rescue 3.4
+    ok 8 - m1_pod rescue 3.4
+      ---
+      duration_ms: 677.156916
+      type: 'test'
+      ...
+    # Subtest: m1_mirror mirror 4.8
+    ok 9 - m1_mirror mirror 4.8
+      ---
+      duration_ms: 578.427833
+      type: 'test'
+      ...
+    # Subtest: m1_recovery recovery 0
+    ok 10 - m1_recovery recovery 0
+      ---
+      duration_ms: 538.381792
+      type: 'test'
+      ...
+    # Subtest: m1_cabin cabin 3.4
+    ok 11 - m1_cabin cabin 3.4
+      ---
+      duration_ms: 540.030125
+      type: 'test'
+      ...
+    1..11
+ok 17 - paused awakening checkpoints reconstruct their saved performance before any player reconnects
+  ---
+  duration_ms: 7002.309875
+  type: 'test'
+  ...
+# Subtest: a paused cabin walk does not complete the next objective while restoring the preceding performance
+ok 18 - a paused cabin walk does not complete the next objective while restoring the preceding performance
+  ---
+  duration_ms: 539.382791
+  type: 'test'
+  ...
+# Subtest: a paused world keeps its clock, selected speed and story across a server restart
+ok 19 - a paused world keeps its clock, selected speed and story across a server restart
+  ---
+  duration_ms: 888.962667
+  type: 'test'
+  ...
+# Subtest: a running world restarts running at its selected speed instead of being saved as paused by shutdown
+ok 20 - a running world restarts running at its selected speed instead of being saved as paused by shutdown
+  ---
+  duration_ms: 888.297
+  type: 'test'
+  ...
+# Subtest: an explicit pause reaches the atomic world checkpoint before the process shuts down
+ok 21 - an explicit pause reaches the atomic world checkpoint before the process shuts down
+  ---
+  duration_ms: 584.4515
+  type: 'test'
+  ...
+# Subtest: a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+ok 22 - a paused ground retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 1040.219083
+  type: 'test'
+  ...
+# Subtest: a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+ok 23 - a paused pit retry restores and saves the checkpoint without restarting time or allowing other actions
+  ---
+  duration_ms: 1181.639375
+  type: 'test'
+  ...
+# Subtest: invalid saved time controls are rejected without overwriting the recoverable checkpoint
+ok 24 - invalid saved time controls are rejected without overwriting the recoverable checkpoint
+  ---
+  duration_ms: 252.035667
+  type: 'test'
+  ...
+# Subtest: a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+ok 25 - a real server restart preserves an unfinished NPC conversation and replays it only to the reconnecting page
+  ---
+  duration_ms: 2445.333917
+  type: 'test'
+  ...
+# Subtest: legacy talk actions without a saved conversation are released instead of stranding their participants
+ok 26 - legacy talk actions without a saved conversation are released instead of stranding their participants
+  ---
+  duration_ms: 584.866709
+  type: 'test'
+  ...
+# Subtest: a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+ok 27 - a new conversation checkpoint also preserves NPCs still approaching their conversation partner
+  ---
+  duration_ms: 561.809792
+  type: 'test'
+  ...
+# Subtest: invalid saved NPC dialogue is rejected without replacing the recoverable world
+ok 28 - invalid saved NPC dialogue is rejected without replacing the recoverable world
+  ---
+  duration_ms: 199.851834
+  type: 'test'
+  ...
+1..28
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21603.054792

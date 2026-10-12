@@ -157,3 +157,42 @@ test('the pod releases its physical basin and restores saved drain water and spl
     at(3.9); assert.equal(splash.visible, false, 'landing feedback cannot precede the fall');
   } finally { set.dispose(); }
 });
+
+test('the rescue tether has a corrugated surface that follows the saved winch length without drift', () => {
+  const root = new THREE.Group(), set = new PodSetRenderer(root);
+  const at = (elapsed: number, wallTime = 100) => {
+    set.update({ scene: 'm1_pod', awakening: { kind: 'rescue', elapsed } } as Parameters<PodSetRenderer['update']>[0], wallTime);
+    root.updateMatrixWorld(true);
+  };
+  try {
+    at(3.497);
+    const ribs = root.getObjectByName('pod-rescue-cable-ribs') as THREE.InstancedMesh;
+    assert.ok(ribs instanceof THREE.InstancedMesh, 'the film tether needs physical corrugation rather than a single thin rod');
+    const saved = Array.from(ribs.instanceMatrix.array), cable = root.getObjectByName('pod-rescue-cable') as THREE.Mesh;
+    const bottom = cable.localToWorld(new THREE.Vector3(0, -.5, 0)), top = cable.localToWorld(new THREE.Vector3(0, .5, 0));
+    const axis = top.clone().sub(bottom), length = axis.length(); axis.normalize();
+    for (let i = 0; i < ribs.count; i++) {
+      const matrix = new THREE.Matrix4(); ribs.getMatrixAt(i, matrix);
+      const point = new THREE.Vector3().setFromMatrixPosition(matrix).applyMatrix4(ribs.matrixWorld), along = point.clone().sub(bottom).dot(axis);
+      assert.ok(along >= 0 && along <= length, 'the cable ribs cannot extend into the winch or claw housing');
+      assert.ok(point.distanceTo(bottom.clone().addScaledVector(axis, along)) < 1e-6, 'the ribbed sheath follows the loaded cable axis');
+    }
+    at(10.8); assert.notDeepEqual(Array.from(ribs.instanceMatrix.array), saved, 'the tether retracts as Neo enters the receiving deck');
+    at(3.497, 900); assert.deepEqual(Array.from(ribs.instanceMatrix.array), saved, 'a paused save reconstructs the same tether without wall-clock sway');
+    assert.ok(ribs.count <= 96, 'corrugation must remain one bounded instance batch');
+  } finally { set.dispose(); }
+});
+
+test('the released rescue device stays below the winch instead of pulling the tether through the ceiling', () => {
+  const root = new THREE.Group(), set = new PodSetRenderer(root);
+  try {
+    for (const elapsed of [7.2, 9.8, 10.8, 12.8, 13.4]) {
+      set.update({ scene: 'm1_pod', awakening: { kind: 'rescue', elapsed } } as Parameters<PodSetRenderer['update']>[0], 100);
+      root.updateMatrixWorld(true);
+      const cable = root.getObjectByName('pod-rescue-cable')!, housing = root.getObjectByName('pod-rescue-housing')!;
+      const bottom = cable.localToWorld(new THREE.Vector3(0, -.5, 0)), top = cable.localToWorld(new THREE.Vector3(0, .5, 0));
+      assert.ok(top.y > bottom.y, `at ${elapsed}s the retracted device must remain beneath its ceiling winch`);
+      assert.ok(new THREE.Box3().setFromObject(housing).max.y < 8.75, `at ${elapsed}s the housing cannot pierce the receiving bay roof`);
+    }
+  } finally { set.dispose(); }
+});

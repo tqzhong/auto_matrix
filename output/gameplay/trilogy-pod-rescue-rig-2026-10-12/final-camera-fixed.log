@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the pod descent camera stays outside the drain instead of collapsing against an obsolete floor
+ok 1 - the pod descent camera stays outside the drain instead of collapsing against an obsolete floor
+  ---
+  duration_ms: 34.511584
+  type: 'test'
+  ...
+# Subtest: the pod reveal frames Neo in the tank and V opens at the immersed eye line
+ok 2 - the pod reveal frames Neo in the tank and V opens at the immersed eye line
+  ---
+  duration_ms: 14.91825
+  type: 'test'
+  ...
+# Subtest: the rescue camera stays clear of the cultivation towers throughout the lift
+ok 3 - the rescue camera stays clear of the cultivation towers throughout the lift
+  ---
+  duration_ms: 1272.844291
+  type: 'test'
+  ...
+# Subtest: the floating first-person view finds the descending rescue claw above the water
+ok 4 - the floating first-person view finds the descending rescue claw above the water
+  ---
+  duration_ms: 77.857375
+  type: 'test'
+  ...
+# Subtest: first person faces the receiving crew as Neo loses strength instead of looking at the ceiling
+ok 5 - first person faces the receiving crew as Neo loses strength instead of looking at the ceiling
+  ---
+  duration_ms: 14.648417
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1792.768291

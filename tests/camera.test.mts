@@ -3115,6 +3115,7 @@ test('the rescue camera stays clear of the cultivation towers throughout the lif
 });
 
 test('the floating first-person view finds the descending rescue claw above the water', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const game = setup(t, Math.PI); const center = FILM_SETS.film_power_plant_pods.center;
   game.state.currentLocation = 'film_power_plant_pods'; game.state.isInMatrix = false;
   game.state.position = filmPosition('film_power_plant_pods', 0, 12); game.state.position.y += awakeningPose({ kind: 'disconnect', elapsed: 9 }).y;
