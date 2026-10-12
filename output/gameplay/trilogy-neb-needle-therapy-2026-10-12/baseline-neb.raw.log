@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: recovery and cabin shadows follow the current room rather than the whole deck
+ok 1 - recovery and cabin shadows follow the current room rather than the whole deck
+  ---
+  duration_ms: 50.366125
+  type: 'test'
+  ...
+# Subtest: local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+ok 2 - local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+  ---
+  duration_ms: 0.334958
+  type: 'test'
+  ...
+# Subtest: room shadows cover the escort and chair approach continuously across both room boundaries
+ok 3 - room shadows cover the escort and chair approach continuously across both room boundaries
+  ---
+  duration_ms: 103.285833
+  type: 'test'
+  ...
+# Subtest: the Nebuchadnezzar recovery set has a solid medical bed, moving needle gantry and open route to the core
+ok 4 - the Nebuchadnezzar recovery set has a solid medical bed, moving needle gantry and open route to the core
+  ---
+  duration_ms: 20.246084
+  type: 'test'
+  ...
+# Subtest: the recovery frame and needles remain still when only the render clock advances
+ok 5 - the recovery frame and needles remain still when only the render clock advances
+  ---
+  duration_ms: 15.451833
+  type: 'test'
+  ...
+# Subtest: both recovery helpers go around the bed before supporting Neo from the aisle
+ok 6 - both recovery helpers go around the bed before supporting Neo from the aisle
+  ---
+  duration_ms: 2.689709
+  type: 'test'
+  ...
+# Subtest: the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+ok 7 - the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+  ---
+  duration_ms: 14.661125
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 460.261583

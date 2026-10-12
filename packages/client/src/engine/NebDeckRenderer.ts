@@ -24,15 +24,17 @@ export class NebDeckRenderer {
   private screen = this.material(new THREE.MeshBasicMaterial({ color: 0x83be9b, toneMapped: false }));
   private amber = this.material(new THREE.MeshBasicMaterial({ color: 0xd49d5d, toneMapped: false }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x879b94, transparent: true, opacity: .23, roughness: .18, metalness: .22, side: THREE.DoubleSide, depthWrite: false }));
-  private gantry = new THREE.Group();
+  private therapyRig = new THREE.Group();
   private cabinDoor!: THREE.Mesh;
   private medicalLever!: THREE.Mesh;
   private truthSeat = new THREE.Group();
   private corePlug = new THREE.Group();
   private coreCable!: THREE.Mesh;
   private recoverySkin?: THREE.SkinnedMesh;
+  private recoveryHead?: THREE.SkinnedMesh;
   private skinContacts = new Map<number, THREE.Vector3>();
-  private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; support: THREE.Mesh; anchorY: number; bone: string; offset: THREE.Vector3 }[] = [];
+  private needles: { shaft: THREE.Mesh; tip: THREE.Mesh; hub: THREE.Mesh; signal: THREE.Mesh; port: THREE.Vector3; bone: string; offset: THREE.Vector3 }[] = [];
+  private medicalLeads: THREE.InstancedMesh[] = [];
   private downloadRig = new THREE.Group();
   private downloadDisk = new THREE.Group();
   private downloadScreen?: THREE.CanvasTexture;
@@ -165,30 +167,46 @@ export class NebDeckRenderer {
     const cabinet = RECOVERY_CABINET;
     this.box(this.root, this.dark, cabinet.x, cabinet.y, cabinet.z, cabinet.width, cabinet.height, cabinet.depth, 'neb-medical-cabinet');
     for (let row = 0; row < 3; row++) for (let column = 0; column < 2; column++) this.crt(-14.2 + column * 2.8, 2.4 + row * 2.05, -17.2, Math.PI, row === 2);
-    this.gantry.name = 'neb-recovery-gantry'; this.gantry.position.set(RECOVERY_BED.x, 6.2, RECOVERY_BED.z); this.root.add(this.gantry);
+    this.therapyRig.name = 'neb-medical-therapy'; this.therapyRig.position.set(RECOVERY_BED.x, 0, RECOVERY_BED.z); this.root.add(this.therapyRig);
     for (const side of [-1, 1]) {
-      this.box(this.gantry, this.steel, side * 2.45, 0, 0, .14, .18, 7.2, `neb-medical-side-rail-${side}`);
-      this.box(this.gantry, this.steel, 0, 0, side * 3.45, 5.1, .18, .14, `neb-medical-end-rail-${side}`);
-      for (const end of [-1, 1]) this.box(this.root, this.dark, RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth, RECOVERY_FRAME.height / 2,
-        RECOVERY_BED.z + end * RECOVERY_FRAME.halfLength, RECOVERY_FRAME.post, RECOVERY_FRAME.height, RECOVERY_FRAME.post, `neb-medical-post-${side}-${end}`);
-      this.pipe([new THREE.Vector3(RECOVERY_BED.x + side * 2.45, 6.2, RECOVERY_BED.z - 3.2), new THREE.Vector3(RECOVERY_BED.x + side * 4, 9.8, RECOVERY_BED.z - 4), new THREE.Vector3(side * 16, 14, -29)], .15, this.rubber);
+      this.box(this.therapyRig, this.linen, side * RECOVERY_FRAME.halfWidth, RECOVERY_FRAME.height - .06, 0,
+        RECOVERY_FRAME.post, .12, RECOVERY_FRAME.halfLength * 2 + RECOVERY_FRAME.post, `neb-medical-side-rail-${side}`);
+      const postHeight = RECOVERY_FRAME.height - .12;
+      for (const end of [-1, 1]) this.box(this.root, this.dark, RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth, postHeight / 2,
+        RECOVERY_BED.z + end * RECOVERY_FRAME.halfLength, RECOVERY_FRAME.post, postHeight, RECOVERY_FRAME.post, `neb-medical-post-${side}-${end}`);
+      this.pipe([new THREE.Vector3(RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth, RECOVERY_FRAME.height - .12, RECOVERY_BED.z - 3.2),
+        new THREE.Vector3(RECOVERY_BED.x + side * 3, .35, RECOVERY_BED.z - 4), new THREE.Vector3(MEDICAL_OPERATOR.control.x, .3, MEDICAL_OPERATOR.control.z - .65)], .035, this.rubber);
     }
     const contacts = [
       ['chest', -.24, .08, .06], ['chest', .24, .08, .06], ['spine', -.18, .07, .08], ['spine', .18, .07, .08],
       ['pelvis', -.2, .08, .05], ['pelvis', .2, .08, .05], ['hip_L', 0, .08, .04], ['hip_R', 0, .08, .04],
       ['knee_L', 0, .07, .04], ['knee_R', 0, .07, .04], ['ankle_L', 0, .06, .04], ['ankle_R', 0, .06, .04],
+      ['head', -.12, .05, .23], ['head', .12, .05, .23], ['head', -.11, -.08, .2], ['head', .11, -.08, .2],
+      ['elbow_L', 0, .06, .05], ['elbow_R', 0, .06, .05], ['wrist_L', 0, .04, .04], ['wrist_R', 0, .04, .04],
     ] as const;
+    const sockets = [.4, .4, -.4, -.4, -1.1, -1.1, -1.6, -1.6, -2.35, -2.35, -2.9, -2.9, 2.4, 2.4, 1.9, 1.9, .8, .8, .15, .15];
+    const blue = this.material(new THREE.MeshBasicMaterial({ color: 0x2999ff, toneMapped: false }));
     for (let i = 0; i < contacts.length; i++) {
-      const x = -1.5 + i % 4; const z = -2.1 + Math.floor(i / 4) * 2.1; const [bone, ox, oy, oz] = contacts[i];
-      const shaft = this.cylinder(this.gantry, this.steel, x, -1, z, .014, 1, `neb-medical-needle-${i}`);
-      const tip = this.mesh(this.gantry, new THREE.SphereGeometry(.035, 10, 7), i % 3 ? this.steel : this.amber, `neb-medical-needle-tip-${i}`);
-      const hub = this.cylinder(this.gantry, this.rubber, x, -.35, z, .1, .4, `neb-medical-needle-carriage-${i}`);
-      const support = this.box(this.gantry, this.steel, 0, -.08, z, 1, .07, .09, `neb-medical-carriage-arm-${i}`);
-      this.needles.push({ shaft, tip, hub, support, anchorY: -.55, bone, offset: new THREE.Vector3(ox, oy, oz) });
+      const [bone, ox, oy, oz] = contacts[i];
+      const shaft = this.cylinder(this.therapyRig, this.steel, 0, 0, 0, .009, .24, `neb-medical-needle-${i}`);
+      const tip = this.mesh(this.therapyRig, new THREE.SphereGeometry(.009, 8, 6), this.steel, `neb-medical-needle-tip-${i}`);
+      const hub = this.cylinder(this.therapyRig, this.rubber, 0, 0, 0, .048, .095, `neb-medical-needle-carriage-${i}`);
+      const signal = this.mesh(this.therapyRig, new THREE.SphereGeometry(.029, 10, 7), blue, `neb-medical-needle-signal-${i}`);
+      const side = bone.endsWith('_L') ? -1 : bone.endsWith('_R') ? 1 : ox < 0 ? 1 : -1;
+      const port = new THREE.Vector3(side * (RECOVERY_FRAME.halfWidth - .07), RECOVERY_FRAME.height - .06, sockets[i]);
+      const socket = this.cylinder(this.therapyRig, this.rubber, port.x, port.y, port.z, .035, .12, `neb-medical-lead-port-${i}`); socket.rotation.z = Math.PI / 2;
+      this.needles.push({ shaft, tip, hub, signal, port, bone, offset: new THREE.Vector3(ox, oy, oz) });
+    }
+    const leadGeometry = this.geometry(new THREE.CylinderGeometry(1, 1, 1, 6));
+    for (const [index, color] of [0x7a2528, 0x737b7d].entries()) {
+      const material = this.material(new THREE.MeshStandardMaterial({ color, roughness: .75 }));
+      const leads = new THREE.InstancedMesh(leadGeometry, material, contacts.length / 2 * 18);
+      leads.name = index ? 'neb-medical-gray-leads' : 'neb-medical-red-leads'; leads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      leads.castShadow = leads.receiveShadow = true; leads.visible = false; this.therapyRig.add(leads); this.medicalLeads.push(leads);
     }
     const curtain = this.box(this.root, this.glass, -1.1, 4.3, -22, .06, 7.4, 11); curtain.name = 'neb-medical-curtain';
-    this.pointLight('neb-medical-task-light', 0xd9e6dc, 260, 22, -5.5, 9.2, -20.5);
-    this.roomKey('neb-medical-key-light', 0xd9e6dc, 140, 18, new THREE.Vector3(-5.5, 9.2, -20.5), new THREE.Vector3(-7, 1.1, -22));
+    this.pointLight('neb-medical-task-light', 0xc5dbea, 260, 22, -5.5, 9.2, -20.5);
+    this.roomKey('neb-medical-key-light', 0xc5dbea, 140, 18, new THREE.Vector3(-5.5, 9.2, -20.5), new THREE.Vector3(-7, 1.1, -22));
     const control = MEDICAL_OPERATOR.control;
     this.box(this.root, this.dark, control.x, 1.12, control.z - .3, 1.4, 2.2, .8, 'neb-medical-controls');
     this.box(this.root, this.worn, control.x, 2.25, control.z - .3, 1.5, .15, .9);
@@ -553,47 +571,61 @@ export class NebDeckRenderer {
       if (link) relayPlugContact(link, this.corePlug.getWorldPosition(new THREE.Vector3()),
         THREE.MathUtils.smoothstep(relay.elapsed, 13.4, 14.4) * (1 - THREE.MathUtils.smoothstep(relay.elapsed, 15.8, 16.5)));
     }
-    let skin: THREE.SkinnedMesh | undefined;
-    if (recovery) recoverySubject?.traverse(object => { if (object instanceof THREE.SkinnedMesh && object.userData.patientBody) skin = object; });
-    if (skin !== this.recoverySkin) { this.recoverySkin = skin; this.skinContacts.clear(); }
+    let skin: THREE.SkinnedMesh | undefined, head: THREE.SkinnedMesh | undefined;
+    if (recovery) recoverySubject?.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      if (object.userData.patientBody) skin = object;
+      else if ((object.material as THREE.Material).name === 'Skin') head = object;
+    });
+    if (skin !== this.recoverySkin || head !== this.recoveryHead) { this.recoverySkin = skin; this.recoveryHead = head; this.skinContacts.clear(); }
     const relayActive = journey && !journey.visiting && ['m2_vigilant', 'm2_relay'].includes(journey.scene);
     const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting || relayActive;
     this.operatorCables.forEach(cable => { cable.visible = !consoleActive; });
-    const descend = active ? THREE.MathUtils.smoothstep(t, 1.8, 3.8) * (1 - THREE.MathUtils.smoothstep(t, 7, 8.2)) : 0;
-    const retract = active ? THREE.MathUtils.smoothstep(t, 7.5, 9.2) : 0;
-    this.gantry.position.y = 6.2 - descend * 1.15 + retract * 6;
-    this.gantry.rotation.z = Math.sin(t * 2.1) * .004 * descend;
-    this.root.updateWorldMatrix(true, true); recoverySubject?.updateWorldMatrix(true, true); this.gantry.updateWorldMatrix(true, true);
+    const mounted = Boolean(recovery && active && t >= 2.1 && t < 7.4);
+    this.root.updateWorldMatrix(true, true); recoverySubject?.updateWorldMatrix(true, true);
     if (skin && this.skinContacts.size === 0 && t >= 2.1 && t < 7) {
-      skin.updateMatrixWorld(true); skin.skeleton.update(); skin.computeBoundingBox(); skin.computeBoundingSphere();
+      // First person removes the head triangles from the visible skin. Contact
+      // sampling still uses the complete delivered geometry without changing that view.
+      const fullHead = head?.userData.contactSkinGeometry ? head.clone() : head;
+      if (fullHead && head) { fullHead.geometry = head.userData.contactSkinGeometry ?? head.geometry; fullHead.matrixWorld.copy(head.matrixWorld); }
+      for (const surface of [skin, fullHead]) if (surface) {
+        surface.skeleton.update(); surface.computeBoundingBox(); surface.computeBoundingSphere();
+      }
       // Sample the shipped skin once, then retain contacts in bone space as the body moves.
-      // Twelve skinned-mesh raycasts every render frame would make this sequence needlessly expensive.
+      // Retain skin contacts in bone space instead of raycasting every render frame.
       this.needles.forEach((needle, index) => {
         const bone = recoverySubject!.getObjectByName(needle.bone); if (!bone) return;
         const point = bone.localToWorld(needle.offset.clone());
         const ray = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0), 0, 3);
-        const hit = ray.intersectObject(skin!)[0];
-        if (hit) this.skinContacts.set(index, bone.worldToLocal(hit.point.add(new THREE.Vector3(0, -.012, 0))));
+        const surface = needle.bone === 'head' ? fullHead : skin;
+        const hit = surface && ray.intersectObject(surface)[0];
+        if (hit) this.skinContacts.set(index, bone.worldToLocal(hit.point.add(new THREE.Vector3(0, -.006, 0))));
       });
     }
     this.needles.forEach((needle, i) => {
       const bone = recoverySubject?.getObjectByName(needle.bone);
-      const fallback = new THREE.Vector3(RECOVERY_BED.x - this.gantry.position.x + (i % 2 ? .32 : -.32), 1.32 - this.gantry.position.y,
-        RECOVERY_BED.z - this.gantry.position.z - 2.1 + Math.floor(i / 4) * 2.1);
-      const target = bone ? this.gantry.worldToLocal(bone.localToWorld((this.skinContacts.get(i) ?? needle.offset).clone())) : fallback;
+      const fallback = new THREE.Vector3(i % 2 ? .32 : -.32, 1.32, needle.port.z);
+      const target = bone ? this.therapyRig.worldToLocal(bone.localToWorld((this.skinContacts.get(i) ?? needle.offset).clone())) : fallback;
       const insert = active ? THREE.MathUtils.smoothstep(t, 2.1 + i % 4 * .12, 3.25 + i % 4 * .12)
         * (1 - THREE.MathUtils.smoothstep(t, 6.1 + Math.floor(i / 4) * .08, 6.8 + Math.floor(i / 4) * .08)) : 0;
-      const anchor = new THREE.Vector3(target.x, needle.anchorY, target.z);
-      const tip = anchor.clone().add(new THREE.Vector3(0, -.72, 0)).lerp(target, insert);
-      const direction = tip.clone().sub(anchor); const length = direction.length();
-      needle.hub.position.set(anchor.x, -.35, anchor.z);
-      const railX = anchor.x < 0 ? -2.45 : 2.45;
-      needle.support.position.set((railX + anchor.x) / 2, -.08, anchor.z);
-      needle.support.scale.x = Math.abs(railX - anchor.x);
-      needle.shaft.position.copy(anchor).add(tip).multiplyScalar(.5);
-      needle.shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize()); needle.shaft.scale.y = length;
-      needle.tip.position.copy(tip); needle.shaft.visible = needle.tip.visible = Boolean(recovery);
+      const tip = target.clone().add(new THREE.Vector3(0, (1 - insert) * .35, 0));
+      needle.tip.position.copy(tip); needle.shaft.position.copy(tip).y += .12;
+      needle.hub.position.copy(tip).y += .28;
+      needle.signal.position.copy(needle.hub.position).add(new THREE.Vector3(0, -.005, .05));
+      for (const part of [needle.tip, needle.shaft, needle.hub, needle.signal]) part.visible = mounted;
+      if (!mounted) return;
+      const start = needle.hub.position.clone().add(new THREE.Vector3(0, .055, 0)), side = Math.sign(needle.port.x);
+      const curve = new THREE.CubicBezierCurve3(start, start.clone().add(new THREE.Vector3(side * .32, -.12, 0)),
+        new THREE.Vector3(needle.port.x - side * .3, needle.port.y - .32, needle.port.z), needle.port);
+      const leads = this.medicalLeads[i % 2], matrix = new THREE.Matrix4(), axis = new THREE.Vector3(0, 1, 0);
+      let a = curve.getPoint(0);
+      for (let segment = 0; segment < 18; segment++) {
+        const b = curve.getPoint((segment + 1) / 18), direction = b.clone().sub(a), length = direction.length();
+        matrix.compose(a.clone().add(b).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(axis, direction.normalize()), new THREE.Vector3(.009, length, .009));
+        leads.setMatrixAt(Math.floor(i / 2) * 18 + segment, matrix); a = b;
+      }
     });
+    for (const leads of this.medicalLeads) { leads.visible = mounted; if (mounted) { leads.instanceMatrix.needsUpdate = true; leads.computeBoundingSphere(); } }
     const training = journey?.scene === 'm1_download' && !journey.visiting && journey.training?.kind === 'download' ? journey.training : undefined;
     this.downloadRig.visible = Boolean(training);
     if (training) {
@@ -726,6 +758,7 @@ export class NebDeckRenderer {
 
   dispose(): void {
     this.escapeExterior.dispose();
+    this.medicalLeads.forEach(leads => leads.dispose()); this.medicalLeads = [];
     this.downloadScreen?.dispose();
     this.consoleScreen?.dispose();
     this.root.clear();

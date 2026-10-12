@@ -1,0 +1,74 @@
+TAP version 13
+# Subtest: recovery and cabin shadows follow the current room rather than the whole deck
+ok 1 - recovery and cabin shadows follow the current room rather than the whole deck
+  ---
+  duration_ms: 169.276708
+  type: 'test'
+  ...
+# Subtest: local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+ok 2 - local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+  ---
+  duration_ms: 0.945208
+  type: 'test'
+  ...
+# Subtest: room shadows cover the escort and chair approach continuously across both room boundaries
+ok 3 - room shadows cover the escort and chair approach continuously across both room boundaries
+  ---
+  duration_ms: 386.775167
+  type: 'test'
+  ...
+# Subtest: the recovery set has a solid medical bed, low bedside rails and an open route to the core
+ok 4 - the recovery set has a solid medical bed, low bedside rails and an open route to the core
+  ---
+  duration_ms: 80.928875
+  type: 'test'
+  ...
+# Subtest: the recovery needles and leads remain still when only the render clock advances
+ok 5 - the recovery needles and leads remain still when only the render clock advances
+  ---
+  duration_ms: 86.636791
+  type: 'test'
+  ...
+# Subtest: both recovery helpers go around the bed before supporting Neo from the aisle
+ok 6 - both recovery helpers go around the bed before supporting Neo from the aisle
+  ---
+  duration_ms: 9.672292
+  type: 'test'
+  ...
+# Subtest: the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+ok 7 - the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+  ---
+  duration_ms: 74.265666
+  type: 'test'
+  ...
+# Subtest: therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+ok 8 - therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+  ---
+  duration_ms: 71.722042
+  type: 'test'
+  ...
+# Subtest: twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+ok 9 - twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+  ---
+  duration_ms: 31727.133375
+  type: 'test'
+  ...
+# actual skin and lead clearance at 3.8s
+# actual skin and lead clearance at 4.073s
+# actual skin and lead clearance at 5.8s
+# Subtest: the first-person patient keeps a visible torso and hands while the head cannot mask the treatment
+ok 10 - the first-person patient keeps a visible torso and hands while the head cannot mask the treatment
+  ---
+  duration_ms: 940.246458
+  type: 'test'
+  ...
+# retained 25728 actual exposed skin triangles
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33835.946125

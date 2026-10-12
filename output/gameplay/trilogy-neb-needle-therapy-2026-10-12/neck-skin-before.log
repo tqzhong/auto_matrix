@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+not ok 1 - twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+  ---
+  duration_ms: 12341.118667
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/neb-therapy-contact.test.mts:1:1821'
+  failureType: 'testCodeFailure'
+  error: 'head culling cannot cut the lower neck out of the exposed body'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/neb-therapy-contact.test.mts:80:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# actual skin and lead clearance at 3.8s
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14119.029791

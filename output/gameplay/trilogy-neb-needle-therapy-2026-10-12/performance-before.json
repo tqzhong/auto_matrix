@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-10-12T05:51:23.592Z",
+  "scenes": [
+    "film_neb_deck"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 288,
+  "fps": 19.11651080406883,
+  "frameTime": {
+    "mean": 52.31080139306364,
+    "p95": 64.19999980926514
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.38923611574702793,
+      "p95": 0.6999998092651367
+    },
+    "agents": {
+      "mean": 2.1670138835906982,
+      "p95": 3.0999999046325684
+    },
+    "city": {
+      "mean": 0.06736110978656346,
+      "p95": 0.19999980926513672
+    },
+    "film": {
+      "mean": 0.5979166759385003,
+      "p95": 1
+    },
+    "effects": {
+      "mean": 0.11388888127273983,
+      "p95": 0.20000028610229492
+    },
+    "render": {
+      "mean": 4.438194450404909,
+      "p95": 6.099999904632568
+    },
+    "capture": {
+      "mean": 0.0006944437821706136,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "scene": {
+      "mean": 3.606597246395217,
+      "p95": 4.900000095367432
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.10347220632765028,
+      "p95": 0.20000028610229492
+    },
+    "occlusion.normals": {
+      "mean": 0.5482638859086566,
+      "p95": 0.8000001907348633
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0013888892200258044,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 0.7013888673649894,
+      "p95": 1
+    },
+    "bloom": {
+      "mean": 0.09722222553359137,
+      "p95": 0.20000028610229492
+    },
+    "output": {
+      "mean": 0.011111108793152703,
+      "p95": 0.09999990463256836
+    },
+    "antialias": {
+      "mean": 0.015277781420283847,
+      "p95": 0.09999990463256836
+    },
+    "worldMatrices": {
+      "mean": 1.1020906046292507,
+      "p95": 1.8000001907348633
+    }
+  },
+  "calls": {
+    "mean": 548,
+    "p95": 548
+  },
+  "triangles": {
+    "mean": 1023887,
+    "p95": 1023887
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 206,
+      "triangles": 400238
+    },
+    "scene": {
+      "calls": 176,
+      "triangles": 311980
+    },
+    "occlusion": {
+      "calls": 147,
+      "triangles": 311650
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Patient_body",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 136176
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 62256
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "trinity-logos-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 22128
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 6120
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 6120
+    },
+    {
+      "name": "short04",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 4200
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 3320
+    },
+    {
+      "name": "neb-medical-pillow",
+      "parent": "neb-medical-bed",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 2916
+    },
+    {
+      "name": "neb-hull-rib--42",
+      "parent": "neb-interior-deck",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 2304
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 19.409937895384612,
+  "objects": 9762,
+  "visibleObjects": 864
+}

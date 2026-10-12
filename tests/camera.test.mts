@@ -2386,10 +2386,33 @@ test('the recovery camera frames the medical bed and first person moves to Neo e
   game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(Math.abs(game.camera.position.y - position.y - 1.7) < .05, 'lying first-person camera sits at Neo actual eye height');
   assert.ok(Math.abs(game.camera.position.z - position.z - 1.78) < .05, 'lying eyes sit at the actual head end of the bed after actor rotation');
-  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y > .8, 'lying first person looks up at the needle gantry instead of into the mattress');
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y > .8, 'lying first person starts looking upward from the bed');
   game.key('KeyW'); game.key('Space'); game.key('KeyF'); game.step(.3);
   assert.deepEqual(game.group.position.toArray(), [position.x, position.y, position.z]);
   assert.equal(game.actions.length, 0);
+});
+
+test('lying recovery first person can look down at treatment without moving the patient or saved clock', t => {
+  const game = setup(t, Math.PI), position = filmPosition('film_neb_deck', -7, -22);
+  position.y += awakeningPose({ kind: 'recovery', elapsed: 4 }).y;
+  Object.assign(game.state, { position, isInMatrix: false, currentLocation: 'film_neb_deck',
+    currentAction: { type: 'idle', parameters: { filmPose: 'recover', recovery: 4 }, startedAt: 0, duration: 1, progress: 0 } });
+  game.controls.possess(game.state); game.controls.performing = true; game.step(.2, .05, false);
+  game.key('KeyV'); game.key('KeyV', false); game.step(.1, .05, false);
+  const eye = game.camera.position.clone();
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y > .8, 'the resting view starts looking up');
+  game.document.pointerLockElement = game.canvas;
+  game.event(game.document, 'mousemove', { movementX: 0, movementY: 900 }); game.step(.2, .05, false);
+  assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).y < -.15, 'mouse look must reach the body instead of staying in a narrow ceiling cone');
+  assert.ok(game.camera.position.distanceTo(eye) < .00001, 'looking down cannot leave the patient eye');
+  assert.deepEqual(game.group.position.toArray(), [position.x, position.y, position.z]);
+  assert.equal(game.state.currentAction!.parameters.recovery, 4);
+  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 1.55, 1.78);
+  head.userData.cameraEye = new THREE.Vector3(0, .13, .26); game.group.children[0].add(head);
+  head.userData.patientEye = new THREE.Vector3(0, .13, .35);
+  game.group.updateWorldMatrix(true, true); game.step(.1, .05, false);
+  const actualEye = head.localToWorld(head.userData.patientEye.clone());
+  assert.ok(game.camera.position.distanceTo(actualEye) < .00001, 'the delivered head anchor replaces the approximate eye height');
 });
 
 test('the recovery opening keeps Neo above subtitles and visible past the medical frame in both aspect ratios', t => {
