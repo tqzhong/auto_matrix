@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: the ruined lesson frames its seated guide above the subtitle area before surveying the skyline
+not ok 1 - the ruined lesson frames its seated guide above the subtitle area before surveying the skyline
+  ---
+  duration_ms: 162.974208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:205177'
+  failureType: 'testCodeFailure'
+  error: 'the seated guide falls behind HUD or off-screen at 0s / 1.7777777777777777: -0.6470761088433431,-0.4441248913006179,0.9339468143984305'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:2719:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2376.368459

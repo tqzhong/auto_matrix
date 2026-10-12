@@ -9,7 +9,7 @@ import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
-import { CONSTRUCT, constructGuidePose } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, constructGuidePose } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
 import { truthRoot, truthUnplug, type TruthGesture } from '@auto_matrix/shared';
 import { downloadRoot, downloadHandPoint, DOWNLOAD_OPERATOR, type DownloadGesture } from '@auto_matrix/shared';
@@ -1420,6 +1420,45 @@ test('Neo checks the back of his neck in the Construct instead of reaching into 
       assert.ok(palm.distanceTo(contact) < .07, `the palm floats or penetrates the actual rear neck at ${elapsed}s: ${palm.toArray()} vs ${contact.toArray()}`);
     }
   } finally { models.dispose(); }
+});
+
+test('Morpheus remains seated with his held remote throughout the ruined-world reconstruction', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  const chair = createLoungeChair(new THREE.MeshStandardMaterial());
+  chair.position.set(DESERT_REVEAL.morpheus.x, 0, DESERT_REVEAL.morpheus.z); chair.rotation.y = DESERT_REVEAL.morpheus.yaw; chair.updateMatrixWorld(true);
+  try {
+    const rig = (await models.create('morpheus'))!;
+    rig.root.position.set(DESERT_REVEAL.morpheus.x, 0, DESERT_REVEAL.morpheus.z); rig.root.rotation.y = DESERT_REVEAL.morpheus.yaw;
+    const point = new THREE.Vector3();
+    for (const elapsed of [0, 3.8, 8, 12.5]) {
+      const motion = newMotion(), input = { speed: 18, grounded: true, verticalVelocity: 0, turn: 0,
+        performance: 'desert' as const, reveal: { kind: 'desert' as const, elapsed, role: 'morpheus' as const } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      assert.equal(motion.seated, 1, 'a restored reveal must be seated immediately, without a client-time interpolation');
+      assert.equal(rig.root.getObjectByName('construct-held-remote')!.visible, true, 'Morpheus retains the remote carried out of the white space');
+      assert.ok(rig.bones.get('ankle_R')!.getWorldPosition(new THREE.Vector3()).y - rig.bones.get('ankle_L')!.getWorldPosition(new THREE.Vector3()).y > .2,
+        'the guide keeps one leg crossed above the grounded leg, rather than hovering both feet');
+      let low = Infinity;
+      for (const { mesh } of rig.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
+        mesh.skeleton.update();
+        for (let i = 0; i < mesh.geometry.attributes.position.count; i++) { mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld); low = Math.min(low, point.y); }
+      }
+      assert.ok(low > -.04 && low < .1, `the actual seated shoes must meet the rubble floor at ${elapsed}s: ${low}`);
+      const palm = rig.bones.get('wrist_L')!.localToWorld(new THREE.Vector3(-.09, -.18, .02));
+      const support = new THREE.Raycaster(palm.clone().add(new THREE.Vector3(0, .15, 0)), new THREE.Vector3(0, -1, 0), 0, .3).intersectObject(chair)[0];
+      assert.ok(support && Math.abs(support.distance - .15) < .08, `the free palm must rest on the chair arm at ${elapsed}s`);
+      const joints = ['head', 'ankle_L', 'ankle_R', 'wrist_L', 'wrist_R'].map(name => rig.bones.get(name)!.getWorldPosition(new THREE.Vector3()));
+      const later = Object.assign(newMotion(), { time: 40, speed: 18, phase: 2, turn: 3 });
+      models.animate(rig, advanceMotion(later, input, 1 / 60), later, input, 0); rig.root.updateMatrixWorld(true);
+      joints.forEach((point, i) => assert.ok(point.distanceTo(rig.bones.get(['head', 'ankle_L', 'ankle_R', 'wrist_L', 'wrist_R'][i])!.getWorldPosition(new THREE.Vector3())) < 1e-5,
+        'restored lesson joints must use the saved clock, not the time since this browser loaded'));
+    }
+  } finally {
+    models.dispose(); const materials = new Set<THREE.Material>();
+    chair.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); materials.add(object.material); } });
+    materials.forEach(material => material.dispose());
+  }
 });
 
 test('Neo touches the Construct leather with both palms while Morpheus sits with grounded feet', async () => {

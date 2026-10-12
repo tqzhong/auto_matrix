@@ -2117,11 +2117,35 @@ test('the Construct television and ruined-world lesson wait for Neo and preserve
   assert.equal(h.sandbox.life.film.state!.step, 1);
   assert.deepEqual(h.sandbox.life.film.state!.awakening, { kind: 'desert', elapsed: 0, started: false });
   const overlook = { ...h.actor().position }; h.advance(20); assert.deepEqual(h.actor().position, overlook);
+  assert.equal(h.world.agents.get('morpheus')!.currentAction?.parameters.seated, true, 'Morpheus remains in his armchair when the surroundings become ruined');
   h.command('act');
+  for (let frame = 0; frame < 38; frame++) h.players.step(.1, true, h.tick());
+  const ruined = JSON.parse(JSON.stringify(h.sandbox.state)), ruinedClock = h.sandbox.life.film.state!.awakening!.elapsed;
+  h.sandbox.restore(ruined); h.sandbox.life.film.awakeningFrame(h.actor(), 0, h.tick());
+  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, ruinedClock, 'restoring the ruined lesson cannot restart its clock');
+  assert.equal(h.world.agents.get('morpheus')!.currentAction?.parameters.seated, true, 'the seated performance must also survive a restored lesson');
   for (let frame = 0; frame < 140 && h.sandbox.life.film.state!.step === 1; frame++) h.players.step(.1, true, h.tick());
   assert.equal(h.sandbox.life.film.state!.scene, 'm1_truth_exit');
   assert.equal(h.sandbox.life.film.state!.truthRecovery?.phase, 'ready');
   assert.ok(h.sandbox.life.film.state!.completed.includes('m1_desert'));
+});
+
+test('taking control of the seated desert guide starts beside his chair and freezes Neo’s lesson', () => {
+  const h = setup(); h.command('continue');
+  Object.assign(h.sandbox.life.film.state!, { scene: 'm1_desert', actor: 'neo', step: 1, constructArrival: undefined,
+    awakening: { kind: 'desert', elapsed: 3.8, started: true } });
+  h.sandbox.life.film.awakeningFrame(h.actor(), 0, h.tick());
+  const guide = h.world.agents.get('morpheus')!, seated = { ...guide.position };
+  assert.equal(h.players.possess('guide-player', guide.id, h.tick()).agentId, guide.id);
+  assert.ok(distance(guide.position, seated) < 4, 'the new armchair collider cannot send its occupant back to the distant scene entrance');
+  assert.equal(playerBlocked(guide.position, guide.isInMatrix), false, 'the guide must begin on a usable spot in front of the chair');
+  h.players.receiveInput('guide-player', { x: 0, z: -1, yaw: Math.PI, sequence: 1 });
+  for (let frame = 0; frame < 20; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(distance(guide.position, seated) > 4, 'Morpheus must be able to walk away after being selected');
+  assert.equal(h.sandbox.life.film.state!.awakening!.elapsed, 3.8, 'Neo’s lesson waits for the occupied guide');
+  h.players.release('guide-player', h.tick()); h.players.step(.1, true, h.tick());
+  assert.ok(h.sandbox.life.film.state!.awakening!.elapsed > 3.8, 'releasing the guide allows the saved lesson to resume');
+  assert.equal(guide.currentAction?.parameters.seated, true);
 });
 
 test('old saves at authored reveal checkpoints are upgraded into explicit player-started performances', () => {

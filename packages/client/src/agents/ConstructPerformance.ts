@@ -20,13 +20,17 @@ export class ConstructPerformance {
   }
 
   update(input: MotionInput): void {
-    const arrival = input.construct, lesson = input.reveal?.kind === 'construct' ? input.reveal : undefined;
+    const arrival = input.construct, lesson = input.reveal;
     this.remote.visible = arrival?.role === 'morpheus' || lesson?.role === 'morpheus';
     if (this.remote.visible) {
       for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
         this.rig.bones.get(`finger${finger}-${segment}_R`)!.rotation.set(finger === 1 ? .35 : 0, 0, finger === 1 ? .2 : segment === 1 ? .4 : .7);
       }
       if (lesson) {
+        if (lesson.kind === 'desert') {
+          this.seatedFeet();
+          this.palm('L', this.rig.root.localToWorld(new THREE.Vector3(1.6, 2.88, 1.2).multiplyScalar(CONSTRUCT.chair.scale)), 1, 'leather');
+        }
         const pointing = THREE.MathUtils.smoothstep(lesson.elapsed, .2, 1) * (1 - THREE.MathUtils.smoothstep(lesson.elapsed, 7.5, 9));
         this.palm('R', this.rig.root.localToWorld(new THREE.Vector3(-.4, 2.05, 1.05)), pointing, 'remote');
       }
@@ -39,7 +43,7 @@ export class ConstructPerformance {
       const neckBlend = THREE.MathUtils.smoothstep(t, 2.3, 3.5);
       this.palm('R', forearm.lerp(neck, neckBlend), inspect, 'inspect', neckBlend);
     }
-    if (lesson?.role !== 'neo') return;
+    if (lesson?.kind !== 'construct' || lesson.role !== 'neo') return;
     const blend = THREE.MathUtils.smoothstep(lesson.elapsed, .65, 1.65) * (1 - THREE.MathUtils.smoothstep(lesson.elapsed, 6.5, 8));
     const center = FILM_SETS.film_white_construct.center;
     for (const [side, u] of [['L', .4], ['R', .96]] as const) {
@@ -49,6 +53,32 @@ export class ConstructPerformance {
       const y = (1.45 + 3.5 + .4 * (1 - u * u)) * scale;
       const z = CONSTRUCT.chair.z + (.94 + .55 - .62 * u ** 4 * Math.sin(Math.PI * .9)) * scale;
       this.palm(side, new THREE.Vector3(center.x + x, center.y - 1 + y + .025, center.z + z), blend, 'leather');
+    }
+  }
+
+  private seatedFeet(): void {
+    const bones = this.rig.bones; this.rig.root.updateWorldMatrix(true, true);
+    const left = this.rig.root.worldToLocal(bones.get('ankle_L')!.getWorldPosition(new THREE.Vector3()));
+    for (const side of ['L', 'R']) {
+      const hip = bones.get(`hip_${side}`)!, knee = bones.get(`knee_${side}`)!, ankle = bones.get(`ankle_${side}`)!;
+      const target = this.rig.root.worldToLocal(ankle.getWorldPosition(new THREE.Vector3()));
+      if (side === 'R') target.set(left.x + .16, .62, left.z - .15);
+      else target.y = this.rig.footHeight + .025;
+      this.rig.root.localToWorld(target);
+      const orientation = ankle.getWorldQuaternion(new THREE.Quaternion());
+      const start = hip.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(start);
+      const a = knee.position.length(), b = ankle.position.length(), reach = THREE.MathUtils.clamp(direction.length(), .02, a + b - .001);
+      direction.normalize(); target.copy(start).addScaledVector(direction, reach);
+      const along = (a * a - b * b + reach * reach) / (2 * reach);
+      const pole = new THREE.Vector3(0, side === 'R' ? .8 : 0, 1).applyQuaternion(this.rig.root.getWorldQuaternion(new THREE.Quaternion()));
+      pole.addScaledVector(direction, -pole.dot(direction)).normalize();
+      const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
+      hip.quaternion.setFromUnitVectors(knee.position.clone().normalize(), hip.parent!.worldToLocal(hinge.clone()).sub(hip.position).normalize());
+      hip.updateWorldMatrix(false, true);
+      knee.quaternion.setFromUnitVectors(ankle.position.clone().normalize(), knee.parent!.worldToLocal(target.clone()).sub(knee.position).normalize());
+      knee.updateWorldMatrix(false, true);
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+      ankle.updateWorldMatrix(false, true);
     }
   }
 

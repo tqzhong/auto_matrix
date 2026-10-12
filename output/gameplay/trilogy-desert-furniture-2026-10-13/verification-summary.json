@@ -1,0 +1,43 @@
+{
+  "finalRelated": {
+    "pass": 135,
+    "fail": 0
+  },
+  "finalViewAndContact": {
+    "pass": 8,
+    "fail": 0
+  },
+  "finalFraming": {
+    "pass": 1,
+    "fail": 0
+  },
+  "finalTakeoverClearance": {
+    "pass": 1,
+    "fail": 0,
+    "includedInRelated": true
+  },
+  "fullAttempt": {
+    "completed": false,
+    "recordedCases": 1455,
+    "failures": [
+      "not ok 387 - the park conversation frames its speakers and V follows the seated Oracle\u2019s actual eye line",
+      "not ok 441 - Neo floats chest-deep and the rescue pads support the shipped body throughout the lift",
+      "not ok 446 - Neo rests his shipped occiput on both ship pillows without sinking into their surfaces",
+      "not ok 631 - Link fires the EMP after Hammer enters; blackout persists through reunion and the briefing into Kid\u2019s evacuation"
+    ],
+    "reason": "Stopped the live broad run to fix the newly reproduced guide takeover and restore-pose issues; do not treat this as a final full-suite pass."
+  },
+  "preExistingEvidence": {
+    "park": "camera-baseline.log",
+    "rescueAndPillows": "pre-existing-contact-baseline.log",
+    "dockEMP": "dock-emp-head-baseline.log"
+  },
+  "typecheck": "final-typecheck-v2.log",
+  "build": "final-build-v2.log",
+  "serverAfterFinalClearance": "final-server-build.log",
+  "lastRenderer": "final-renderer-v4.log (6/6)",
+  "lastContact": "final-contact-v3.log (4/4)",
+  "lastClientBuild": "final-client-build-v4.log",
+  "weatherRegression": "weather-reproduced.log (local raw vector diff)",
+  "chairFeetRegression": "chair-feet-reproduced.log"
+}

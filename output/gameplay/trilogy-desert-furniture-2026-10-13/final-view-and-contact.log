@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: first-person Construct keeps inspection and leather-contact arms visible and restores the ordinary view
+ok 1 - first-person Construct keeps inspection and leather-contact arms visible and restores the ordinary view
+  ---
+  duration_ms: 379.8035
+  type: 'test'
+  ...
+# Subtest: the Construct keeps movement locked when inspection hands off directly to the television
+ok 2 - the Construct keeps movement locked when inspection hands off directly to the television
+  ---
+  duration_ms: 34.663542
+  type: 'test'
+  ...
+# Subtest: the Construct uses the registered body eye during inspection and leather contact while keeping free look
+ok 3 - the Construct uses the registered body eye during inspection and leather contact while keeping free look
+  ---
+  duration_ms: 40.721459
+  type: 'test'
+  ...
+# Subtest: the Construct and desert reveals use authored wide shots while first person remains at Neo eyes
+ok 4 - the Construct and desert reveals use authored wide shots while first person remains at Neo eyes
+  ---
+  duration_ms: 127.357667
+  type: 'test'
+  ...
+# Subtest: first-person Construct removes Neo head triangles while retaining both actual hands and restoring his full skin
+ok 5 - first-person Construct removes Neo head triangles while retaining both actual hands and restoring his full skin
+  ---
+  duration_ms: 1137.321042
+  type: 'test'
+  ...
+# Subtest: Neo checks the back of his neck in the Construct instead of reaching into his throat
+ok 6 - Neo checks the back of his neck in the Construct instead of reaching into his throat
+  ---
+  duration_ms: 3341.650708
+  type: 'test'
+  ...
+# Subtest: Morpheus remains seated with his held remote throughout the ruined-world reconstruction
+ok 7 - Morpheus remains seated with his held remote throughout the ruined-world reconstruction
+  ---
+  duration_ms: 1772.277625
+  type: 'test'
+  ...
+# Subtest: Neo touches the Construct leather with both palms while Morpheus sits with grounded feet
+ok 8 - Neo touches the Construct leather with both palms while Morpheus sits with grounded feet
+  ---
+  duration_ms: 2609.773666
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10194.184917

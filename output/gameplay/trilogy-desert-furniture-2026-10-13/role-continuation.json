@@ -1,0 +1,15 @@
+{
+  "selectedDistanceFromChair": 3.524999999999636,
+  "walkingDistance": 6.829776193632824,
+  "clockBefore": {
+    "kind": "desert",
+    "elapsed": 3.4900000000000015,
+    "started": true
+  },
+  "clockAfter": {
+    "kind": "desert",
+    "elapsed": 3.4900000000000015,
+    "started": true
+  },
+  "lessonFrozen": true
+}

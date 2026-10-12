@@ -18,6 +18,7 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   const seam = material(0x43221c, .88); const trim = material(0x604c32, .72, .3); const frame = material(0x281c17, .64);
   const leg = new THREE.LatheGeometry([[.18, .12], [.21, .18], [.17, .28], [.12, .38], [.11, .55], [.16, .78], [.2, .85]]
     .map(([radius, y]) => new THREE.Vector2(radius, y)), 16);
+  leg.translate(0, -.12, 0);
   for (const dx of [-1.35, 1.35]) for (const dz of [-1.05, 1.05]) {
     mesh(leg, frame, dx, 0, dz);
   }

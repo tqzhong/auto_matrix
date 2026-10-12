@@ -1,0 +1,19 @@
+{
+  "groups": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true
+  },
+  "timeOfDay": true,
+  "memories": true,
+  "memoryCount": 7,
+  "clock": {
+    "kind": "desert",
+    "elapsed": 3.4900000000000015,
+    "started": true
+  },
+  "tick": 6240
+}

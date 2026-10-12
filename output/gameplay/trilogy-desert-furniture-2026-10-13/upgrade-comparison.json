@@ -1,0 +1,17 @@
+{
+  "groups": {
+    "agents": false,
+    "chunks": true,
+    "locations": true,
+    "events": true,
+    "sandbox": true,
+    "simulation": true
+  },
+  "changes": [
+    {
+      "path": ".agents.morpheus.currentAction.parameters.seated",
+      "before": false,
+      "after": true
+    }
+  ]
+}

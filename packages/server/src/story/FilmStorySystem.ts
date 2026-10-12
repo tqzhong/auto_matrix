@@ -4231,7 +4231,7 @@ export class FilmStorySystem {
       const before = morpheus.position; morpheus.position = filmPosition(this.scene!.set, root.x, root.z); morpheus.rotation = root.yaw;
       morpheus.velocity = dt > 0 ? { x: (morpheus.position.x - before.x) / dt, y: 0, z: (morpheus.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       morpheus.currentLocation = this.scene!.set; morpheus.isInMatrix = FILM_SETS[this.scene!.set].world === 'matrix';
-      morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: beat.kind === 'construct',
+      morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: true,
         reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
     }
     state.lastText = occupied ? `${beat?.kind === 'rescue' ? '救援' : '恢复'}暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
@@ -7308,7 +7308,12 @@ export class FilmStorySystem {
         if (root) { actor.position = filmPosition(scene.set, root.x, root.z); actor.rotation = root.yaw; }
       }
       if (scene.id === 'm1_construct' && id === 'morpheus') { actor.position = filmPosition(scene.set, CONSTRUCT_REVEAL.morpheus.x, CONSTRUCT_REVEAL.morpheus.z); actor.rotation = CONSTRUCT_REVEAL.morpheus.yaw; }
-      if (scene.id === 'm1_desert' && id === 'morpheus') { actor.position = filmPosition(scene.set, DESERT_REVEAL.morpheus.x, DESERT_REVEAL.morpheus.z); actor.rotation = DESERT_REVEAL.morpheus.yaw; }
+      if (scene.id === 'm1_desert' && id === 'morpheus') {
+        actor.position = filmPosition(scene.set, DESERT_REVEAL.morpheus.x, DESERT_REVEAL.morpheus.z); actor.rotation = DESERT_REVEAL.morpheus.yaw;
+        actor.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: 'desert', seated: true,
+          reveal: { kind: 'desert', elapsed: this.state!.awakening?.kind === 'desert' ? this.state!.awakening.elapsed : 0, role: 'morpheus' } },
+          startedAt: this.state!.enteredAt, duration: 1e9, progress: 0 };
+      }
       if (!['m2_architect', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && !(scene.id === 'm1_interrogation' && this.state!.office?.outcome === 'captured')) {
         actor.status = 'alive';
         if (!(scene.id === 'm1_rescue_decision' && id === 'tank')) actor.health = actor.maxHealth;

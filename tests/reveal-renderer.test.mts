@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CONSTRUCT, FILM_SETS, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, FILM_SETS, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
 import { ConstructRenderer, renderTargetPreviewImage } from '../packages/client/src/engine/ConstructRenderer.js';
 import { DesertRenderer } from '../packages/client/src/engine/DesertRenderer.js';
 
@@ -113,6 +113,32 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
   } finally { armoury.dispose(); globalThis.document = savedDocument; }
 });
 
+test('the desert reconstruction retains the physical Construct furniture beside its seated guide', () => {
+  const root = new THREE.Group(), renderer = new DesertRenderer(root); root.updateMatrixWorld(true);
+  try {
+    const chair = root.getObjectByName('desert-chair-morpheus');
+    assert.ok(chair, 'the armchair must survive entering the ruined loading program');
+    assert.ok(root.getObjectByName('desert-chair-neo'), 'the empty second armchair remains beside the guide');
+    assert.equal(chair.position.x, DESERT_REVEAL.morpheus.x); assert.equal(chair.position.z, DESERT_REVEAL.morpheus.z);
+    assert.equal(chair.rotation.y, DESERT_REVEAL.morpheus.yaw);
+    const tv = root.getObjectByName('desert-television'); assert.ok(tv, 'the original cabinet is retained, rather than replaced by a screen overlay');
+    const tube = tv.getObjectByName('construct-television-screen') as THREE.Mesh;
+    tube.geometry.computeBoundingBox(); assert.ok(tube.geometry.boundingBox!.max.z > .05, 'the same curved CRT is loaded in both spaces');
+    for (const object of [chair, root.getObjectByName('desert-chair-neo')!, tv]) {
+      const bounds = new THREE.Box3().setFromObject(object), center = bounds.getCenter(new THREE.Vector3());
+      assert.equal(playerBlocked(filmPosition('film_real_desert', center.x, center.z), false), true, `${object.name} must stop ordinary walking`);
+      assert.ok(bounds.min.y >= -.01, `${object.name} cannot sink into the central rubble floor`);
+      assert.ok(bounds.min.y < .03, `${object.name} must rest on the rubble floor rather than float above it`);
+    }
+    const floor = new THREE.Raycaster(new THREE.Vector3(DESERT_REVEAL.neo.x, 1, DESERT_REVEAL.neo.z), new THREE.Vector3(0, -1, 0), 0, 2)
+      .intersectObject(root.getObjectByName('desert-cracked-ground')!)[0];
+    assert.ok(floor && Math.abs(floor.point.y) < .03, 'the visible ground must meet the saved standing height');
+    for (const z of [35, 15, 0, -15, -28]) assert.equal(playerBlocked(filmPosition('film_real_desert', 0, z), false), false, 'the arrival-to-overlook route remains usable');
+    assert.equal(playerBlocked(filmPosition('film_real_desert', DESERT_REVEAL.neo.x, DESERT_REVEAL.neo.z), false), false, 'the saved Neo reveal position cannot land inside new furniture');
+    assert.equal(root.getObjectByName('construct-infinite-floor'), undefined, 'retained furniture cannot bring the white loading floor into the wasteland');
+  } finally { renderer.dispose(); }
+});
+
 test('the desert reveal has a walkable overlook, collidable ruins, ash and operating harvesting towers', () => {
   const root = new THREE.Group(); const renderer = new DesertRenderer(root); root.updateMatrixWorld(true);
   try {
@@ -140,8 +166,20 @@ test('the desert reveal has a walkable overlook, collidable ruins, ash and opera
     assert.equal(playerBlocked(filmPosition('film_real_desert', obstacle.x, obstacle.z), false), true, 'rendered ruins share their footprint with server collision');
     const journey = { version: 1, scene: 'm1_desert', step: 1, actor: 'neo', completed: [], enteredAt: 0, checkpoint: filmPosition('film_real_desert'), reflections: {}, lastText: '',
       awakening: { kind: 'desert', elapsed: 8, started: true } } satisfies FilmJourney;
-    const before = ash.geometry.attributes.position.getY(0); renderer.update(journey, 8);
-    assert.ok(ash.geometry.attributes.position.getY(0) < before, 'ash moves through the saved reveal instead of remaining a painted backdrop');
+    const before = ash.geometry.attributes.position.getY(100); renderer.update(journey, 8);
+    assert.ok(ash.geometry.attributes.position.getY(100) < before, 'ash moves through the saved reveal instead of remaining a painted backdrop');
+    const positions = Array.from(ash.geometry.attributes.position.array);
+    const towers = (renderer as unknown as { towerGlow: THREE.MeshStandardMaterial }).towerGlow;
+    const intensity = towers.emissiveIntensity;
+    renderer.update(journey, 80);
+    assert.deepEqual(Array.from(ash.geometry.attributes.position.array), positions, 'the same paused revelation clock must freeze its weather independent of render frames');
+    assert.equal(towers.emissiveIntensity, intensity, 'harvesting lights must also use the saved revelation clock');
+    const restoredRoot = new THREE.Group(), restored = new DesertRenderer(restoredRoot);
+    try {
+      restored.update(journey, 800);
+      assert.deepEqual(Array.from((restoredRoot.getObjectByName('desert-falling-ash') as THREE.Points).geometry.attributes.position.array), positions,
+        'a cold reconstruction must resume the same visible ash field');
+    } finally { restored.dispose(); }
     const glow = (root.getObjectByName('desert-harvest-towers')!.getObjectByProperty('material', (renderer as unknown as { towerGlow: THREE.Material }).towerGlow) as THREE.Mesh | undefined);
     assert.ok(glow, 'harvesting towers expose real emissive machinery');
     const pods = root.getObjectByName('desert-harvester-pods') as THREE.InstancedMesh | undefined;

@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: taking control of the seated desert guide starts beside his chair and freezes Neo’s lesson
+ok 1 - taking control of the seated desert guide starts beside his chair and freezes Neo’s lesson
+  ---
+  duration_ms: 208.11725
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 923.435666

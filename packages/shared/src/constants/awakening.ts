@@ -77,6 +77,10 @@ export const RECOVERY_CREW = {
 } as const;
 export const CONSTRUCT_REVEAL = { neo: CONSTRUCT.neo, morpheus: { x: -4.4, z: -6.2, yaw: Math.PI }, television: CONSTRUCT.television } as const;
 export const DESERT_REVEAL = { neo: { x: 1.8, z: -28, yaw: Math.PI }, morpheus: { x: -3.2, z: -26.8, yaw: Math.PI }, towersZ: -70 } as const;
+export const DESERT_FURNITURE = {
+  chairs: { morpheus: DESERT_REVEAL.morpheus, neo: { x: 4.6, z: DESERT_REVEAL.morpheus.z, yaw: Math.PI } },
+  television: { ...CONSTRUCT.television, x: .7, z: DESERT_REVEAL.morpheus.z + CONSTRUCT.television.z - CONSTRUCT.chair.z },
+} as const;
 export type AwakeningPose = 'touch' | 'connect' | 'pod' | 'fall' | 'float' | 'lift' | 'recover' | 'cabin' | 'core' | 'construct' | 'desert';
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };

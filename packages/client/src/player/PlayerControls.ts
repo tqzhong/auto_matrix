@@ -2234,8 +2234,12 @@ export class PlayerControls {
         this.camera.lookAt(focus);
       } else {
         const reaction = THREE.MathUtils.smoothstep(gesture.elapsed, 10.1, 11.4);
-        const ideal = new THREE.Vector3(10, 7.2, -15).lerp(new THREE.Vector3(-6.5, 4.6, -20), reaction).add(new THREE.Vector3(center.x, center.y - 1, center.z));
-        const focus = new THREE.Vector3(-1, 5, -55).lerp(new THREE.Vector3(1.8, 2.5, -28), reaction).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        const greeting = THREE.MathUtils.smoothstep(gesture.elapsed, 1.3, 2.8) * (1 - THREE.MathUtils.smoothstep(gesture.elapsed, 4.1, 5.5));
+        const landscape = THREE.MathUtils.smoothstep(gesture.elapsed, 4.5, 6.2);
+        const ideal = new THREE.Vector3(10, 7.2, -15).lerp(new THREE.Vector3(1.4, 3.4, -31.5), greeting)
+          .lerp(new THREE.Vector3(-6.5, 4.6, -20), reaction).add(new THREE.Vector3(center.x, center.y - 1, center.z));
+        const focus = new THREE.Vector3(.7, 2.3, -29).lerp(new THREE.Vector3(-3.2, 2.4, -26.8), greeting)
+          .lerp(new THREE.Vector3(-1, 5, -55), landscape).lerp(new THREE.Vector3(1.8, 2.5, -28), reaction).add(new THREE.Vector3(center.x, center.y - 1, center.z));
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-5 * delta));
         this.camera.lookAt(focus);
       }

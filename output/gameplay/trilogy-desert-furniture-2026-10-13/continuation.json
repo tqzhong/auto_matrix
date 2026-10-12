@@ -1,0 +1,20 @@
+{
+  "before": {
+    "scene": "m1_desert",
+    "step": 1,
+    "tick": 6233
+  },
+  "after": {
+    "scene": "m1_truth_exit",
+    "step": 0,
+    "tick": 6262
+  },
+  "addedCompleted": [
+    "m1_desert"
+  ],
+  "oldCompletedRetained": true,
+  "reflections": true,
+  "choices": true,
+  "philosophy": true,
+  "inventory": true
+}

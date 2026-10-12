@@ -1154,7 +1154,7 @@ export class HeroModels {
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient, interactionView);
     if (input.medical !== undefined || input.cabin || input.truth || input.download || input.training?.kind === 'download') cabinContact(rig, input);
     this.truths.get(rig)?.contact(input.truth);
-    if ((input.construct || input.reveal?.kind === 'construct') && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
+    if ((input.construct || input.reveal) && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
     this.constructs.get(rig)?.update(input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
     if (input.farewell) { this.farewellSupport(rig, input.farewell); this.farewellContact(rig, input.farewell); }

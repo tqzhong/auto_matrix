@@ -19,7 +19,7 @@ import { CLUB_OBSTACLES } from './club.js';
 import { PILL_ROOM } from './pills.js';
 import { CONSTRUCT } from './construct.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
-import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME } from './awakening.js';
+import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, DESERT_FURNITURE } from './awakening.js';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR } from './cabin.js';
 import { AMBUSH_WALLS, AMBUSH_STAIRS, AMBUSH_STOREYS, WETWALL_SHAFT, ambushFloor, ambushStairsBlocked } from './ambush.js';
 import { MEETING_CAR, MEETING_DESTINATION, meetingCarPose, meetingRoadContains } from './meeting.js';
@@ -294,10 +294,11 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     ...[-1, 1].flatMap(side => [-5, 6].map(z => ({ x: side * 6.5, z, width: 3.2, depth: 3.8, height: 3.2 }))),
     { x: -8, z: 22, width: 10, depth: 4.5, height: 2.4 },
   ];
-  if (set.id === 'film_real_desert') return Array.from({ length: 28 }, (_, i) => ({
+  if (set.id === 'film_real_desert') return [...Array.from({ length: 28 }, (_, i) => ({
     x: (i % 2 ? 1 : -1) * (18 + i % 4 * 9), z: 38 - Math.floor(i / 2) * 10.5,
     width: 8 + i % 5 * 2, depth: 7 + i % 3 * 2, height: 17 + (i * 13) % 34,
-  }));
+  })), ...Object.values(DESERT_FURNITURE.chairs).map(chair => ({ x: chair.x, z: chair.z + CONSTRUCT.chair.backOffset,
+    width: CONSTRUCT.chair.width, depth: CONSTRUCT.chair.depth, height: CONSTRUCT.chair.height })), DESERT_FURNITURE.television];
   if (set.id === 'film_logos_wreck') return LOGOS_WRECK_WALLS;
   if (set.architecture === 'lobby') return LOBBY_COLUMNS;
   if (set.architecture === 'oracle') return [...(oracleLastKitchen ? ORACLE_FURNITURE.filter(item => item !== ORACLE_FURNITURE[2] && !ORACLE_KITCHEN_CHAIRS.includes(item)) : ORACLE_FURNITURE), ...Object.values(ORACLE_WAITING_FURNITURE), ...ORACLE_ENTRANCE_WALLS, ...(movingOracleDoor ? [] : [ORACLE_OPEN_DOOR]), ...[-1, 1].flatMap(side => [
