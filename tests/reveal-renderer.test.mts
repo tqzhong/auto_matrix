@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CONSTRUCT, DESERT_REVEAL, FILM_SETS, filmObstacles, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, FILM_SETS, filmObstacles, filmPosition, groundHeight, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
 import { ConstructRenderer, renderTargetPreviewImage } from '../packages/client/src/engine/ConstructRenderer.js';
 import { DesertRenderer } from '../packages/client/src/engine/DesertRenderer.js';
 
@@ -188,6 +188,43 @@ test('the desert reveal has a walkable overlook, collidable ruins, ash and opera
     const podBounds = new THREE.Box3().setFromBufferAttribute(pods.geometry.attributes.position).applyMatrix4(firstPod);
     assert.ok(podBounds.max.y - podBounds.min.y > 2, 'a pod must read as a suspended capsule at player distance');
     assert.ok(root.getObjectByName('desert-ruined-skyline')!.children.length <= 6, 'the rebuilt city must remain batched at player distance');
+  } finally { renderer.dispose(); }
+});
+
+test('the ruined city exposes broken concrete sections and a real missing corner of its upper floor', () => {
+  const root = new THREE.Group(), renderer = new DesertRenderer(root); root.updateMatrixWorld(true);
+  try {
+    const city = root.getObjectByName('desert-ruined-skyline')!;
+    const missingCorner = new THREE.Raycaster(new THREE.Vector3(-15.3, 13, 40.5), new THREE.Vector3(0, -1, 0), 0, 3.4);
+    assert.equal(missingCorner.intersectObject(city, true).length, 0, 'the exposed upper floor needs missing concrete, rather than a smaller intact rectangular slab');
+    assert.ok(new THREE.Raycaster(new THREE.Vector3(-20, 13, 40.5), new THREE.Vector3(0, -1, 0), 0, 3.4).intersectObject(city, true).length,
+      'part of that upper floor must remain beside the missing corner');
+    let tornEdges = 0;
+    city.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || (object.material as THREE.MeshStandardMaterial).roughness < .9) return;
+      const normal = object.geometry.attributes.normal;
+      for (let i = 0; i < normal.count; i++) if (Math.abs(normal.getX(i)) > .15 && Math.abs(normal.getY(i)) > .15) tornEdges++;
+    });
+    assert.ok(tornEdges > 200, 'collapsed walls need substantial irregular cut surfaces, not only tilted boxes or a painted crack');
+    assert.ok(city.children.length <= 6, 'the destruction stays batched instead of introducing a draw call for every chip');
+  } finally { renderer.dispose(); }
+});
+
+test('the desert bank matches the actual walking height and visible side debris has collision', () => {
+  const root = new THREE.Group(), renderer = new DesertRenderer(root); root.updateMatrixWorld(true);
+  try {
+    const floor = root.getObjectByName('desert-cracked-ground')!;
+    for (const [x, z] of [[12, 20], [-11, -24], [16, 5], [38, -4]]) {
+      const hit = new THREE.Raycaster(new THREE.Vector3(x, 6, z), new THREE.Vector3(0, -1, 0), 0, 12).intersectObject(floor)[0];
+      assert.ok(hit);
+      const physical = groundHeight(filmPosition('film_real_desert', x, z), false) - FILM_SETS.film_real_desert.center.y;
+      assert.ok(Math.abs(physical - hit.point.y) < .002, `the actor must not float or sink on the rendered bank at ${x},${z}: ${physical} vs ${hit.point.y}`);
+    }
+    for (const i of [0, 3, 11, 25]) {
+      const chunk = root.getObjectByName(`desert-rubble-${i}`)!;
+      const center = new THREE.Box3().setFromObject(chunk).getCenter(new THREE.Vector3());
+      assert.equal(playerBlocked(filmPosition('film_real_desert', center.x, center.z), false), true, `visible debris ${i} cannot be walked through`);
+    }
   } finally { renderer.dispose(); }
 });
 
