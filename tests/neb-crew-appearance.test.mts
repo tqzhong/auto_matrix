@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
+import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -112,4 +114,84 @@ test('the saved first-film cabin and its escort select the actual knit outfits f
   const neo = renderer.getAgentBody('neo')!, hair: THREE.Mesh[] = [];
   neo.traverse(object => { if (object instanceof THREE.Mesh && /Hair|hair|Groom|groom/.test((object.material as THREE.Material).name)) hair.push(object); });
   assert.ok(hair.every(part => part.visible), 'the early-film flag must clear in the later crew scene');
+});
+
+test('Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits', async t => {
+  const asset = await geometry('morpheus');
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
+  const actor = world.agents.get('morpheus')!; actor.currentLocation = 'film_white_construct'; actor.isInMatrix = false;
+  actor.position = { ...FILM_SETS.film_white_construct.center }; actor.currentAction = null;
+  renderer.setWorld(false); renderer.updateAgent(actor.id, actor); await new Promise(resolve => setImmediate(resolve));
+  const body = renderer.getAgentBody(actor.id)!, jacket = body.getObjectByName('Tailored_coat_upper') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const tails = body.getObjectByName('pelvis')!.children.filter(part => part instanceof THREE.Mesh);
+  assert.ok(tails.length, 'inspect the delivered pelvis-mounted coat surfaces');
+  const leatherRoughness = jacket.material.roughness;
+  const journey: FilmJourney = { version: 1, scene: 'm1_construct', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: actor.position };
+  for (const [scene, location] of [['m1_construct', 'film_white_construct'], ['m1_desert', 'film_real_desert'], ['m1_truth_exit', 'film_white_construct']] as const) {
+    journey.scene = scene; actor.currentLocation = location; actor.position = { ...FILM_SETS[location].center };
+    for (const player of [null, 'morpheus']) {
+      if (player) {
+        actor.controller = undefined;
+        actor.currentAction = { type: 'wait', parameters: { seated: true, reveal: { kind: scene === 'm1_desert' ? 'desert' : 'construct', role: 'morpheus', elapsed: 3, started: true } },
+          startedAt: 0, duration: 1, progress: 0 };
+        renderer.updateAgent(actor.id, actor); renderer.setPlayer(null); renderer.update(0, undefined, 0, 0, journey);
+        actor.currentAction = null;
+      }
+      actor.controller = player ? 'player' : undefined; renderer.updateAgent(actor.id, actor); renderer.setPlayer(player);
+      renderer.update(0, undefined, 0, 0, journey);
+      const tie = body.getObjectByName('morpheus-construct-tie') as THREE.SkinnedMesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+      const vest = body.getObjectByName('morpheus-construct-waistcoat') as THREE.SkinnedMesh;
+      assert.ok(tie?.visible && vest?.visible, `${scene}/${player}: use the same suit during the lecture and ordinary player movement`);
+      assert.ok(tie.isSkinnedMesh && vest.isSkinnedMesh, 'the cloth must follow the delivered body, rather than float as a chest-mounted badge');
+      assert.ok(tie.material.color.g > tie.material.color.r && tie.material.color.r > tie.material.color.b, 'the film tie is olive, not a black stock neck strip');
+      assert.ok(jacket.material.roughness >= .8 && jacket.visible, 'the short jacket is matte tailoring rather than a leather raincoat');
+      assert.ok(tails.every(part => !part.visible), 'the lesson suit has no long coat tails');
+      if (player) assert.ok(body.worldToLocal(body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3())).y > 3.8,
+        'paused free possession must release the old seated body, rather than leave Morpheus crouched in mid-air');
+    }
+  }
+  actor.controller = undefined; renderer.setPlayer(null); journey.scene = 'm1_cabin'; actor.currentLocation = 'film_neb_deck';
+  actor.position = { ...FILM_SETS.film_neb_deck.center }; renderer.updateAgent(actor.id, actor); renderer.update(0, undefined, 0, 0, journey);
+  assert.equal(body.getObjectByName('morpheus-construct-tie')!.visible, false);
+  assert.equal(body.getObjectByName('morpheus-hammer-sweater')!.visible, true, 'returning to the actual ship restores its knit clothes');
+  journey.scene = 'm1_pill_choice'; actor.currentLocation = 'film_lafayette'; actor.isInMatrix = true;
+  actor.position = { ...FILM_SETS.film_lafayette.center }; renderer.setWorld(true); renderer.updateAgent(actor.id, actor); renderer.update(0, undefined, 0, 0, journey);
+  assert.equal(body.getObjectByName('morpheus-construct-waistcoat')!.visible, false);
+  assert.ok(tails.every(part => part.visible));
+  assert.equal(jacket.material.roughness, leatherRoughness, 'the lesson material cannot leak into the original Matrix leather coat');
+});
+
+test('the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons', async () => {
+  const asset = await geometry('morpheus'), models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('morpheus'))!;
+    const tie = rig.root.getObjectByName('morpheus-construct-tie') as THREE.SkinnedMesh;
+    const collar = rig.root.getObjectByName('morpheus-construct-collar') as THREE.SkinnedMesh;
+    const targets = ['Black_crew_neck', 'Tailored_coat_upper', 'morpheus-construct-waistcoat'].map(name => rig.root.getObjectByName(name) as THREE.SkinnedMesh);
+    for (const kind of ['construct', 'desert'] as const) for (const elapsed of [0, 3.8, 8, 12.5]) {
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, constructSuit: true,
+        performance: kind, reveal: { kind, role: 'morpheus', elapsed, started: true } };
+      const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      rig.root.updateMatrixWorld(true); for (const mesh of [tie, collar, ...targets]) mesh.skeleton.update();
+      const front = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.bones.get('chest')!.getWorldQuaternion(new THREE.Quaternion()));
+      const samples = [2, 8, 12].map(row => tie.localToWorld(tie.getVertexPosition(row * 7 + 3, new THREE.Vector3())));
+      for (const start of [0, 49]) samples.push(collar.localToWorld([23, 30, 24].reduce((p, i) =>
+        p.add(collar.getVertexPosition(start + i, new THREE.Vector3())), new THREE.Vector3()).multiplyScalar(1 / 3)));
+      for (const [sample, point] of samples.entries()) {
+        const hit = new THREE.Raycaster(point.clone().addScaledVector(front, .1), front.clone().negate(), 0, .2).intersectObjects(targets)[0];
+        assert.ok(hit && hit.distance >= .098 && hit.distance <= .18,
+          `${kind}/${elapsed}/${sample}: the visible cloth must clear its actual skinned shirt/vest without hovering: ${hit?.distance}; point ${point.toArray()}; wider ray ${new THREE.Raycaster(point.clone().addScaledVector(front, .1), front.clone().negate(), 0, 3).intersectObjects(targets)[0]?.distance}`);
+      }
+    }
+  } finally { models.dispose(); }
 });

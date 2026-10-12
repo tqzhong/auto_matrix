@@ -61,6 +61,7 @@ export interface MotionInput {
   truth?: import('@auto_matrix/shared').TruthGesture;
   download?: import('@auto_matrix/shared').DownloadGesture;
   construct?: import('@auto_matrix/shared').ConstructGesture;
+  constructSuit?: boolean;
   reveal?: AwakeningReveal;
   training?: TrainingGesture;
   workday?: import('@auto_matrix/shared').OfficeWorkdayGesture;
