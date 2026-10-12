@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels
+not ok 1 - the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels
+  ---
+  duration_ms: 3899.884625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/farewell-appearance.test.mts:1:2410'
+  failureType: 'testCodeFailure'
+  error: 'early Neo must retain his shaved recovery scalp'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/farewell-appearance.test.mts:48:34)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+not ok 2 - the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+  ---
+  duration_ms: 4306.128291
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/neb-crew-appearance.test.mts:1:5167'
+  failureType: 'testCodeFailure'
+  error: |-
+    neo/0: the production renderer must choose the knit, not only a direct model fixture
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/neb-crew-appearance.test.mts:99:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9215.324583

@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+ok 1 - Dozer operates the recovery equipment and an occupied medic pauses its saved clock
+  ---
+  duration_ms: 83.879125
+  type: 'test'
+  ...
+# Subtest: the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+ok 2 - the cabin escort waits for Neo and the core connection requires consent, survives reload, and leads to the Construct
+  ---
+  duration_ms: 335.604917
+  type: 'test'
+  ...
+# Subtest: old completed medical saves can continue through the added cabin without repeating treatment
+ok 3 - old completed medical saves can continue through the added cabin without repeating treatment
+  ---
+  duration_ms: 2.221417
+  type: 'test'
+  ...
+# Subtest: medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+ok 4 - medical recovery ends in a separate cabin and waking preserves its paused and disconnected progress
+  ---
+  duration_ms: 182.282333
+  type: 'test'
+  ...
+# Subtest: the cabin doorway collision uses the same saved opening time as the visible door
+ok 5 - the cabin doorway collision uses the same saved opening time as the visible door
+  ---
+  duration_ms: 73.422208
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+ok 6 - Neo can walk from the cabin bed through the doorway and core aisle using ordinary player movement
+  ---
+  duration_ms: 184.434458
+  type: 'test'
+  ...
+# Subtest: neo wears real-world crew-neck geometry and restores the original Matrix silhouette
+ok 7 - neo wears real-world crew-neck geometry and restores the original Matrix silhouette
+  ---
+  duration_ms: 238.183458
+  type: 'test'
+  ...
+# Subtest: trinity wears real-world crew-neck geometry and restores the original Matrix silhouette
+ok 8 - trinity wears real-world crew-neck geometry and restores the original Matrix silhouette
+  ---
+  duration_ms: 97.255875
+  type: 'test'
+  ...
+# Subtest: real-world crew clothing cannot cover a saved patient recovery pose
+ok 9 - real-world crew clothing cannot cover a saved patient recovery pose
+  ---
+  duration_ms: 238.877125
+  type: 'test'
+  ...
+# Subtest: both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses
+ok 10 - both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses
+  ---
+  duration_ms: 755.926167
+  type: 'test'
+  ...
+# Subtest: healthy Hammer Neo retains his hair without changing the first-film recovery scalp
+ok 11 - healthy Hammer Neo retains his hair without changing the first-film recovery scalp
+  ---
+  duration_ms: 157.112
+  type: 'test'
+  ...
+# Subtest: Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture
+ok 12 - Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture
+  ---
+  duration_ms: 166.665667
+  type: 'test'
+  ...
+# Subtest: Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit
+ok 13 - Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit
+  ---
+  duration_ms: 609.609209
+  type: 'test'
+  ...
+# Subtest: Trinity wears a light knit upper with darker trousers and restores her Matrix materials
+ok 14 - Trinity wears a light knit upper with darker trousers and restores her Matrix materials
+  ---
+  duration_ms: 65.118583
+  type: 'test'
+  ...
+# Subtest: the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once
+ok 15 - the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once
+  ---
+  duration_ms: 144.858708
+  type: 'test'
+  ...
+# Subtest: paused farewell clothes keep stable material versions and restore original textures when leaving
+ok 16 - paused farewell clothes keep stable material versions and restore original textures when leaving
+  ---
+  duration_ms: 219.64325
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2970.716625

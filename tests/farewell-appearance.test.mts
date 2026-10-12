@@ -18,8 +18,8 @@ async function geometry(id: string) {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
-async function setup(t: test.TestContext, role: 'neo' | 'trinity') {
-  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club'].map(async id => [id, await geometry(id)] as const)));
+async function setup(t: test.TestContext, role: 'neo' | 'trinity' | 'morpheus') {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club', 'morpheus'].map(async id => [id, await geometry(id)] as const)));
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: (id: string) => Promise<unknown> }).load = async id => assets.get(id)!;
   const rig = (await models.create(role))!; t.after(() => models.dispose());
@@ -33,6 +33,26 @@ async function setup(t: test.TestContext, role: 'neo' | 'trinity') {
   return { rig, models, update, farewell, metadata: assets.get(role)!.parser.json.extras };
 }
 const material = (rig: HeroRig, name: RegExp) => rig.wardrobe.find(part => name.test(part.mesh.name))!.mesh.material as THREE.MeshStandardMaterial;
+
+test('the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels', async t => {
+  for (const role of ['neo', 'morpheus'] as const) {
+    const h = await setup(t, role), sweater = h.rig.root.getObjectByName(`${role}-${role === 'neo' ? 'logos' : 'hammer'}-sweater`) as THREE.SkinnedMesh;
+    const old = h.rig.wardrobe.filter(part => /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name));
+    for (const firstPerson of [false, true]) for (const cabin of [{ kind: 'wake' as const, elapsed: 6, role }, undefined, { kind: 'core' as const, elapsed: 4, role }]) {
+      h.update({ realWorld: true, nebCrew: role, nebCrewEarly: true, cabin, firstPerson });
+      assert.equal(sweater.visible, true, `${role}: the early ship must show the real knit mesh`);
+      assert.ok(old.every(part => !part.mesh.visible), 'suit lapels and old sleeves must not overlap the knit');
+      const cloth = sweater.material as THREE.MeshStandardMaterial;
+      assert.ok(cloth.bumpMap instanceof THREE.DataTexture && cloth.map === null, 'the visible sweater must retain its knit surface');
+      if (role === 'morpheus') assert.ok(cloth.color.r > cloth.color.b * 1.2, 'the cabin sweater has the warm brown tone seen in the film');
+      if (role === 'neo') assert.ok(h.rig.wardrobe.filter(part => part.hair).every(part => !part.mesh.visible), 'early Neo must retain his shaved recovery scalp');
+    }
+    h.update({ realWorld: true, nebCrew: role, performance: 'recover', recovery: 2 });
+    assert.equal(sweater.visible, false, 'a saved patient pose must still take priority');
+    h.update({ realWorld: false, nebCrew: role }); assert.equal(sweater.visible, false);
+    assert.ok(old.every(part => part.mesh.visible), 'returning to the Matrix restores the original outfit');
+  }
+});
 
 for (const role of ['neo', 'trinity'] as const) test(`${role} wears real-world crew-neck geometry and restores the original Matrix silhouette`, async t => {
   const h = await setup(t, role);

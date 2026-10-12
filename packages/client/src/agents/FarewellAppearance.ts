@@ -84,7 +84,7 @@ export class FarewellAppearance {
   garment(mesh: THREE.Mesh, input: MotionInput): 'upper' | 'trousers' | undefined {
     if (input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance)) return;
     const outfit = input.logosBane?.role ?? input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
-    if (input.realWorld !== true || (this.role === 'morpheus' ? !input.hammerBriefing && !input.hammerPilot && !input.dockBriefing : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
+    if (input.realWorld !== true || (this.role === 'morpheus' ? !(outfit === this.role && input.nebCrewEarly) && !input.hammerBriefing && !input.hammerPilot && !input.dockBriefing : outfit !== this.role && !(this.role === 'trinity' && !outfit))) return;
     const upper = this.role === 'morpheus' ? mesh.userData.hammerBriefingCostume === true : mesh.userData.logosCostume === true;
     return upper ? 'upper' : /Tailored.trousers/i.test(mesh.name) ? 'trousers' : undefined;
   }
@@ -92,11 +92,11 @@ export class FarewellAppearance {
   update(input: MotionInput): void {
     const outfit = input.logosBane?.role ?? input.farewellOutfit ?? input.farewell?.role ?? input.nebCrew;
     const active = input.realWorld === true && !(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance))
-      && (this.role === 'morpheus' ? Boolean(input.hammerBriefing || input.hammerPilot || input.dockBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
+      && (this.role === 'morpheus' ? outfit === this.role && input.nebCrewEarly || Boolean(input.hammerBriefing || input.hammerPilot || input.dockBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
     if (this.band) this.band.visible = active && Boolean(input.farewellOutfit ?? input.farewell) && !input.firstPerson;
     if (!active) return;
     for (const part of this.rig.wardrobe) {
-      if (part.hair) part.mesh.visible = !input.firstPerson;
+      if (part.hair) part.mesh.visible = !input.firstPerson && !(this.role === 'neo' && input.nebCrewEarly);
       if (this.role === 'morpheus' ? part.mesh.userData.hammerBriefingCostume : part.mesh.userData.logosCostume) part.mesh.visible = true;
       else if (this.role === 'trinity' ? /Fitted.leather.jacket/i.test(part.mesh.name) : /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name)) part.mesh.visible = false;
       const garment = this.garment(part.mesh, input);
@@ -109,7 +109,7 @@ export class FarewellAppearance {
       const collar = /-(hammer|logos)-collar$/.test(part.mesh.name);
       material.bumpScale = upper ? collar ? .002 : .009 : .003;
       material.roughness = .97; material.metalness = 0;
-      material.color.setHex(upper ? this.role === 'neo' ? collar ? 0x53565a : input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
+      material.color.setHex(upper ? this.role === 'neo' ? collar ? 0x53565a : input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? input.nebCrewEarly ? collar ? 0x887d67 : 0x645846 : collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
     }
   }
 

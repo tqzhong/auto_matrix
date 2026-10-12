@@ -982,9 +982,10 @@ test('Neo keeps his dressed body above the mattress until his legs clear the sid
       const root = cabinBodyPose(elapsed);
       rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = root.yaw;
       const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
-        performance: 'cabin' as const, recovery: root.clock, cabin: { kind: 'wake' as const, elapsed, role: 'neo' as const } };
+        nebCrew: 'neo' as const, nebCrewEarly: true, performance: 'cabin' as const, recovery: root.clock, cabin: { kind: 'wake' as const, elapsed, role: 'neo' as const } };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
       rig.root.updateMatrixWorld(true);
+      assert.equal(rig.root.getObjectByName('neo-logos-sweater')!.visible, true, 'sample the actual first-film sweater against the bed');
       let penetration = 0; let deepest = '';
       for (const { mesh } of rig.wardrobe) {
         if (!(mesh instanceof THREE.SkinnedMesh) || !mesh.visible) continue;
@@ -1043,8 +1044,9 @@ test('the first core connection restores a seated body without penetrating the c
       const root = awakeningPose({ kind: 'core', elapsed, started: true });
       rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = CABIN.chair.yaw;
       const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
-        performance: 'core' as const, seated: true, cabin: { kind: 'core' as const, elapsed, role: 'neo' as const } };
+        nebCrew: 'neo' as const, nebCrewEarly: true, performance: 'core' as const, seated: true, cabin: { kind: 'core' as const, elapsed, role: 'neo' as const } };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      assert.equal(rig.root.getObjectByName('neo-logos-sweater')!.visible, true, 'sample the actual first-film sweater against the chair');
       if (elapsed >= 2.1) assert.equal(motion.seated, 1, 'reloading a saved connection must immediately restore its authored sitting pose');
       let penetration = 0, floor = Infinity, deepest = '';
       for (const { mesh } of rig.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
@@ -1078,7 +1080,7 @@ test('Dozer touches the treatment control, Neo feels the neck interface and Morp
     const palm = dozer.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02));
     assert.ok(palm.distanceTo(control) < .035, `the hand misses the knob by ${palm.distanceTo(control)}: palm ${palm.toArray()}, target ${control.toArray()}`);
     const body = cabinBodyPose(6); neo.root.position.set(body.x, body.y, body.z); neo.root.rotation.y = body.yaw;
-    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, performance: 'cabin' as const,
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, nebCrew: 'neo' as const, nebCrewEarly: true, performance: 'cabin' as const,
       recovery: body.clock, cabin: { kind: 'wake' as const, elapsed: 6, role: 'neo' as const } };
     models.animate(neo, advanceMotion(motion, input, 0), motion, input, 0); neo.root.updateMatrixWorld(true);
     const socket = neo.root.getObjectByName('cervical-interface')!.getWorldPosition(new THREE.Vector3());
@@ -1089,7 +1091,7 @@ test('Dozer touches the treatment control, Neo feels the neck interface and Morp
     const neoMotion = newMotion(); models.animate(neo, advanceMotion(neoMotion, connected, 0), neoMotion, connected, 0); neo.root.updateMatrixWorld(true);
     const target = neo.root.getObjectByName('cervical-interface')!.getWorldPosition(new THREE.Vector3()); target.x += .49;
     morpheus.root.position.set(CABIN.connector.x, 0, CABIN.connector.z); morpheus.root.rotation.y = CABIN.connector.yaw;
-    const plugging = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+    const plugging = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, nebCrew: 'morpheus' as const, nebCrewEarly: true,
       cabin: { kind: 'core' as const, elapsed: 4.6, role: 'morpheus' as const, target } };
     const guideMotion = newMotion(); models.animate(morpheus, advanceMotion(guideMotion, plugging, 0), guideMotion, plugging, 0); morpheus.root.updateMatrixWorld(true);
     const gap = morpheus.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(.09, -.18, .02)).distanceTo(target);
