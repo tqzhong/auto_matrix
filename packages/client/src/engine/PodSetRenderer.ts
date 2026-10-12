@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { POD_WATER_DROP, POD_RUNOFF, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRunoffHeight, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
+import { POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { PodMembraneRenderer } from './PodMembraneRenderer.js';
 import { PodMaintenanceRenderer } from './PodMaintenanceRenderer.js';
+import { PodDrainRenderer } from './PodDrainRenderer.js';
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
@@ -11,6 +12,8 @@ export class PodSetRenderer {
   private materials = new Set<THREE.Material>();
   private robot = new THREE.Group();
   private maintenance: PodMaintenanceRenderer;
+  private drain: PodDrainRenderer;
+  private basinLeaves: THREE.Mesh[] = [];
   private neckFrame = new THREE.Group();
   private rotor = new THREE.Group();
   private neckPlug = new THREE.Group();
@@ -44,7 +47,12 @@ export class PodSetRenderer {
     this.steel = this.mat(0x46565b, .4, .45); this.dark = this.mat(0x131b1d, .57, .35);
     const rubber = this.mat(0x1c181c, .72); const pink = this.mat(0x59212b, .24, .25); pink.emissive.setHex(0x541723); pink.emissiveIntensity = .25;
     const wet = new THREE.MeshPhysicalMaterial({ color: 0x331923, roughness: .28, metalness: .18, clearcoat: .8, side: THREE.DoubleSide }); this.materials.add(wet);
-    this.mesh(this.podShell(48), wet, 0, 2.1, -12.8).scale.set(1.8, 1.25, 3.4);
+    const basin = new THREE.Group(); basin.name = 'pod-basin'; basin.position.set(0, 2.1, -12.8); basin.scale.set(1.8, 1.25, 3.4); this.root.add(basin);
+    for (const side of [-1, 1]) {
+      const geometry = new THREE.SphereGeometry(1, 24, 24, side < 0 ? -Math.PI / 2 : Math.PI / 2, Math.PI, Math.PI / 2, Math.PI / 2);
+      this.taperPod(geometry); geometry.translate(-side * .84, 0, 0);
+      const leaf = this.mesh(geometry, wet, side * .84, 0, 0, basin); leaf.name = `pod-basin-leaf-${side}`; this.basinLeaves.push(leaf);
+    }
     this.mesh(this.podRim(64), this.steel, 0, 2.1, -12.8).scale.set(1.8, 1.25, 3.4);
     const fluid = new THREE.MeshPhysicalMaterial({ color: 0x551b28, roughness: .2, metalness: .08, clearcoat: 1,
       transparent: true, opacity: .48, depthWrite: false, side: THREE.DoubleSide }); this.materials.add(fluid);
@@ -81,19 +89,9 @@ export class PodSetRenderer {
     }
     this.towers(pink);
     this.nearBank();
-    // A concave runoff channel descends to the water rather than an invisible flat floor.
-    const positions: number[] = []; const indices: number[] = [];
-    const { rows, columns, halfWidth, startZ, endZ } = POD_RUNOFF;
-    for (let row = 0; row <= rows; row++) for (let col = 0; col <= columns; col++) {
-      const x = (col / columns - .5) * 2 * halfWidth, z = startZ + row / rows * (endZ - startZ);
-      positions.push(x, podRunoffHeight(x, z)!, z);
-      if (row < rows && col < columns) { const a = row * (columns + 1) + col; indices.push(a, a + columns + 1, a + 1, a + 1, a + columns + 1, a + columns + 2); }
-    }
-    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(indices); geometry.computeVertexNormals();
-    const drain = this.mat(0x131b1d, .57, .55); drain.side = THREE.DoubleSide; this.mesh(geometry, drain, 0, 0, 0).name = 'pod-runoff-channel';
-    for (const side of [-1, 1]) this.tube([[side * 3.5, 1, -7], [side * 3.5, -4, 1], [side * 3.5, -18, 13]], .3, this.steel);
+    this.drain = new PodDrainRenderer(this.root);
     this.tube([[-7, 0, -12], [-9, -8, -2], [-9, -17, 12], [-25, -18, 30]], 1.1, this.dark);
-    const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x101e24, roughness: .18, metalness: .55, clearcoat: 1, transparent: true, opacity: .91 }); this.materials.add(waterMat);
+    const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x101e24, roughness: .23, metalness: .35, clearcoat: 1 }); this.materials.add(waterMat);
     this.water = this.mesh(new THREE.PlaneGeometry(200, 170, 1, 1), waterMat, 0, -POD_WATER_DROP + 1.7, 30); this.water.rotation.x = -Math.PI / 2;
     const rippleMat = new THREE.MeshBasicMaterial({ color: 0x66818a, transparent: true, opacity: .25, depthWrite: false }); this.materials.add(rippleMat);
     this.ripple = this.mesh(new THREE.RingGeometry(.96, 1, 64), rippleMat, 0, -POD_WATER_DROP + 1.73, 12); this.ripple.rotation.x = -Math.PI / 2;
@@ -341,6 +339,8 @@ export class PodSetRenderer {
     const beat = journey?.visiting ? undefined : journey?.awakening;
     const disconnect = beat?.kind === 'disconnect' ? beat.elapsed : beat?.kind === 'rescue' ? 9 : 0;
     const clock = beat ? (beat.kind === 'rescue' ? 9 : 0) + beat.elapsed : journey?.scene === 'm1_pod' ? 0 : elapsed;
+    this.drain.update(beat);
+    this.basinLeaves.forEach((leaf, i) => { leaf.rotation.z = (i ? 1 : -1) * Math.PI / 2 * THREE.MathUtils.smoothstep(disconnect, 3.95, 4.4); });
     const arrival = THREE.MathUtils.smoothstep(disconnect, 4.5, 7);
     this.bay.position.set(96 * (1 - arrival), 0, 36 * (1 - arrival));
     this.root.updateWorldMatrix(true, false); subject?.updateWorldMatrix(true, true);
@@ -441,6 +441,7 @@ export class PodSetRenderer {
   dispose(): void {
     this.membrane.dispose();
     this.maintenance.dispose();
+    this.drain.dispose();
     this.root.traverse(object => { if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.root.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
   }

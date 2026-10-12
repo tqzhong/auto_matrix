@@ -47,7 +47,7 @@ import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { officeClipboardPoint } from '@auto_matrix/shared';
-import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RUNOFF, podRunoffHeight, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
@@ -1252,11 +1252,13 @@ export class PlayerControls {
     const ladderWide = this.climbing && state.currentLocation === 'film_office_ledge' && !this.firstPerson;
     const pillDepartureWide = !this.firstPerson && this.motion.pills?.phase === 'taking' && this.motion.pills.elapsed >= 10;
     const podWide = !this.firstPerson && this.motion.performance === 'pod';
+    const drainWide = !this.firstPerson && this.motion.performance === 'fall' && state.currentLocation === 'film_power_plant_pods';
     const cabinWide = !this.firstPerson && Boolean(this.motion.cabin);
     const bathroomWide = !this.firstPerson && Boolean(this.motion.bathroom);
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    if (drainWide) this.camera.fov = this.camera.aspect < .85 ? 80 : 70;
     this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance) && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
@@ -2390,7 +2392,13 @@ export class PlayerControls {
           : new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z) : new THREE.Vector3(center.x, center.y + 3.45, center.z - 12.5);
         const ideal = falling ? focus.clone().add(new THREE.Vector3(6.2, 4.5, 4.5).multiplyScalar(Math.max(1, .8 / this.camera.aspect)))
           : new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
-        if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+        if (falling) {
+          const z = focus.z - center.z + 4;
+          ideal.set(center.x + .65, center.y - 1 + podRunoffHeight(0, Math.min(POD_RUNOFF.endZ, z))! + POD_RUNOFF.halfWidth, center.z + z);
+        }
+        // A boom outside the circular pipe would look through its roof. Saved poses
+        // place both cameras inside the same solid geometry, including cold loads.
+        if (resetCamera || falling) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
     } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&

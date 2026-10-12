@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test, type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, POD_BREATHER, podBreatherPose, awakeningPose, filmPosition, type FilmJourney, type AwakeningBeat } from '@auto_matrix/shared';
+import { FILM_SETS, POD_BREATHER, POD_RUNOFF, podRunoffHeight, podBreatherPose, awakeningPose, filmPosition, type FilmJourney, type AwakeningBeat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
@@ -675,7 +675,7 @@ test('the actual pod body stays continuous when support gives way, floating begi
     const body = h.at(beat.elapsed, 100, false, beat);
     return names.map(name => body.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()));
   };
-  for (const elapsed of [4, 5.2, 7]) {
+  for (const elapsed of [4, 4.6, 5.2, 6.6, 7, 8.6]) {
     const before = points({ kind: 'disconnect', elapsed: elapsed - .001, emerged: true, breatherRemoved: true });
     const after = points({ kind: 'disconnect', elapsed: elapsed + .001, emerged: true, breatherRemoved: true });
     before.forEach((point, i) => assert.ok(point.distanceTo(after[i]) < .08,
@@ -709,7 +709,7 @@ test('the falling and floating eye camera uses the actual head and preserves fre
     addEventListener: document.addEventListener.bind(document), removeEventListener: document.removeEventListener.bind(document) });
   const camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {});
   try {
-    for (const elapsed of [4.3, 4.8, 5.2, 6.4, 7.2, 9]) {
+    for (const elapsed of [4.3, 4.8, 5.2, 6.4, 6.7, 6.85, 7.2, 9]) {
       const beat: AwakeningBeat = { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true }, body = h.at(elapsed, 100, true, beat);
       const rotation = body.quaternion.clone();
       controls.possess(h.neo); controls.performing = true; controls.firstPerson = true;
@@ -717,6 +717,24 @@ test('the falling and floating eye camera uses the actual head and preserves fre
       assert.ok(body.quaternion.angleTo(rotation) < 1e-7, 'the player camera cannot rotate the saved descending body');
       const eye = body.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .1, .32));
       assert.ok(camera.position.distanceTo(eye) < .045, `the eye floats away from Neo at ${elapsed}s: ${camera.position.distanceTo(eye)}`);
+      if (elapsed >= 4.8 && elapsed < 7) {
+        controls.firstPerson = false; controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
+        const local = h.root.worldToLocal(camera.position.clone()), floor = podRunoffHeight(local.x, local.z);
+        if (local.z <= POD_RUNOFF.endZ + POD_RUNOFF.outletDepth) {
+          assert.ok(floor !== undefined && local.y > floor + .15 && local.y < 2 * (podRunoffHeight(0, local.z)! + POD_RUNOFF.halfWidth) - floor - .15,
+            `the third-person camera must actually stay inside the pipe at ${elapsed}s: ${local.toArray()}`);
+        } else {
+          assert.ok(Math.hypot(local.x, local.y - (podRunoffHeight(0, POD_RUNOFF.endZ)! + POD_RUNOFF.halfWidth)) < POD_RUNOFF.halfWidth - .15,
+            'the camera must leave through the circular opening rather than crossing the surrounding wall');
+        }
+        const pipe = h.root.getObjectByName('pod-runoff-channel')!, focus = body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3())
+          .lerp(body.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3()), .5), delta = focus.sub(camera.position);
+        assert.ok(delta.length() >= 3, `the third-person camera crowds Neo as he leaves the pipe at ${elapsed}s: ${delta.length()}`);
+        assert.equal(new THREE.Raycaster(camera.position, delta.clone().normalize(), .06, delta.length() - .06)
+          .intersectObjects([pipe, h.root.getObjectByName('pod-drain-outlet-wall')!], true).length, 0,
+          'the solid pipe cannot occlude the camera’s view of Neo');
+        controls.firstPerson = true;
+      }
     }
     const direction = camera.getWorldDirection(new THREE.Vector3());
     document.dispatchEvent(Object.assign(new Event('mousemove'), { movementX: 150, movementY: 850 }));
@@ -727,13 +745,10 @@ test('the falling and floating eye camera uses the actual head and preserves fre
 });
 
 test('the falling skin meets the real runoff channel without sinking through its rendered surface', async t => {
-  const h = await setup(t); let channel: THREE.Mesh | undefined;
-  h.root.traverse(object => {
-    if (object instanceof THREE.Mesh && object.geometry.getAttribute('position')?.count === 561) channel = object;
-  });
-  assert.ok(channel, 'the test must trace the shipped concave runoff mesh');
+  const h = await setup(t), channel = h.root.getObjectByName('pod-runoff-channel') as THREE.Mesh;
+  assert.ok(channel, 'the test must trace the shipped runoff mesh');
   const gaps: { elapsed: number; minimum: number; maximumPenetration: number; samples: number }[] = [];
-  for (const elapsed of [5.2, 5.8, 6.4, 6.6]) {
+  for (const elapsed of [4.6, 4.8, 5, 5.2, 5.4, 5.8, 6.2, 6.4, 6.6]) {
     const body = h.at(elapsed, 100, false, { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true });
     const envelope = new Map<string, THREE.Vector3>();
     body.traverse(object => {
@@ -742,14 +757,18 @@ test('the falling skin meets the real runoff channel without sinking through its
       const positions = object.geometry.getAttribute('position');
       for (let i = 0; i < positions.count; i++) {
         const point = h.root.worldToLocal(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
-        if (point.z < -6 || point.z > 12 || Math.abs(point.x) > 3.2) continue;
+        if (point.z < POD_RUNOFF.startZ || point.z > POD_RUNOFF.endZ || Math.abs(point.x) > POD_RUNOFF.halfWidth) continue;
+        const floor = podRunoffHeight(point.x, point.z)!;
+        if (point.z >= -9.5) assert.ok(point.y < 2 * (podRunoffHeight(0, point.z)! + POD_RUNOFF.halfWidth) - floor - .02,
+          `the actual ${object.name} skin crosses the pipe roof at ${elapsed}s: ${point.toArray()}`);
         const key = `${Math.floor(point.x / .35)}/${Math.floor(point.z / .6)}`;
         if (!envelope.has(key) || envelope.get(key)!.y > point.y) envelope.set(key, point);
       }
     });
     let minimum = Infinity, maximumPenetration = 0, samples = 0;
     for (const local of envelope.values()) {
-      const point = h.root.localToWorld(local.clone()), hit = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, 25, 0)), new THREE.Vector3(0, -1, 0), 0, 50).intersectObject(channel!)[0];
+      const point = h.root.localToWorld(local.clone()), origin = h.root.localToWorld(new THREE.Vector3(local.x, podRunoffHeight(0, local.z)! + POD_RUNOFF.halfWidth, local.z));
+      const hit = new THREE.Raycaster(origin, new THREE.Vector3(0, -1, 0), 0, POD_RUNOFF.halfWidth + .5).intersectObject(channel)[0];
       if (!hit) continue;
       minimum = Math.min(minimum, point.y - hit.point.y); maximumPenetration = Math.max(maximumPenetration, hit.point.y - point.y); samples++;
     }
@@ -757,6 +776,36 @@ test('the falling skin meets the real runoff channel without sinking through its
   }
   assert.ok(gaps.every(gap => gap.samples >= 8 && gap.maximumPenetration < .035 && gap.minimum < .15),
     `the real skin must rest on the chute rather than hovering or cutting through it: ${JSON.stringify(gaps)}`);
+});
+
+test('the entire patient clears the inlet, pipe ceiling and round wall opening throughout the saved fall', async t => {
+  const h = await setup(t), radius = POD_RUNOFF.halfWidth;
+  const outletY = podRunoffHeight(0, POD_RUNOFF.endZ)! + radius;
+  for (let sample = 0; sample <= 46; sample++) {
+    const elapsed = 4 + sample * .1, body = h.at(elapsed, 100, false, { kind: 'disconnect', elapsed, emerged: true, breatherRemoved: true });
+    body.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !object.visible || (object.material as THREE.Material).name !== 'Skin' && !object.userData.patientBody) return;
+      object.updateMatrixWorld(true); object.skeleton.update();
+      const positions = object.geometry.getAttribute('position'), point = new THREE.Vector3();
+      for (let i = 0; i < positions.count; i++) {
+        object.getVertexPosition(i, point); object.localToWorld(point); h.root.worldToLocal(point);
+        if (point.z > -9.5 && point.z <= POD_RUNOFF.endZ) {
+          const floor = podRunoffHeight(point.x, point.z);
+          assert.ok(floor !== undefined && point.y <= 2 * (podRunoffHeight(0, point.z)! + radius) - floor - .015,
+            `the ${object.name} skin crosses the enclosed wall/roof at ${elapsed}s: ${point.toArray()}`);
+        }
+        if (point.z >= POD_RUNOFF.endZ - .2 && point.z <= POD_RUNOFF.endZ + .85) {
+          let clearance = point.z <= POD_RUNOFF.endZ + POD_RUNOFF.outletDepth ? radius : Infinity;
+          for (const z of [POD_RUNOFF.endZ - .2, POD_RUNOFF.endZ + POD_RUNOFF.outletDepth]) {
+            const dz = Math.abs(point.z - z);
+            if (dz < .11) clearance = Math.min(clearance, radius + .11 - Math.sqrt(.11 ** 2 - dz ** 2));
+          }
+          assert.ok(Math.hypot(point.x, point.y - outletY) < clearance - .005,
+            `the ${object.name} skin crosses the circular outlet lip at ${elapsed}s: ${point.toArray()}`);
+        }
+      }
+    });
+  }
 });
 
 test('Neo recoils with the real cervical needle withdrawal and settles before losing support', async t => {

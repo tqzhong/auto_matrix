@@ -6,7 +6,7 @@ import { reach } from './SpoonPerformance.js';
 const runoffContacts = new WeakMap<HeroRig, { elapsed: number; frame: THREE.Matrix4; meshes: THREE.SkinnedMesh[]; correction: number }>();
 
 function placeRunoffBody(rig: HeroRig, elapsed: number): void {
-  const weight = THREE.MathUtils.smoothstep(elapsed, 4.5, 5.1) * (1 - THREE.MathUtils.smoothstep(elapsed, 7, 8.4));
+  const weight = THREE.MathUtils.smoothstep(elapsed, 4.25, 4.5) * (1 - THREE.MathUtils.smoothstep(elapsed, 7, 8.4));
   if (!weight) return;
   rig.root.updateWorldMatrix(true, true);
   const meshes = rig.wardrobe.map(part => part.mesh).filter((mesh): mesh is THREE.SkinnedMesh => mesh instanceof THREE.SkinnedMesh && ((mesh.material as THREE.Material).name === 'Skin' || mesh.userData.patientBody));
@@ -24,6 +24,7 @@ function placeRunoffBody(rig: HeroRig, elapsed: number): void {
       }
     }
     correction = Number.isFinite(minimum) ? .02 - minimum : 0;
+    if (elapsed < 4.6) correction = Math.max(0, correction);
     runoffContacts.set(rig, { elapsed, frame, meshes, correction });
   }
   const pelvis = rig.bones.get('pelvis')!, target = pelvis.getWorldPosition(new THREE.Vector3());

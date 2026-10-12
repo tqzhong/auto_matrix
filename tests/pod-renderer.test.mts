@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { POD_RUNOFF, podRunoffHeight } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
 test('the rescue bay has an open passage for the body and closes below it after boarding', () => {
@@ -109,4 +110,50 @@ test('the rescue claw approaches from overhead instead of covering the floating 
   set.update({ awakening: { kind: 'rescue', elapsed: 1 } } as Parameters<PodSetRenderer['update']>[0], 10, false);
   assert.equal(housing.visible, true, 'third-person view still needs the complete rescue machine');
   set.dispose();
+});
+
+test('the drain encloses the falling body and has a real circular outlet through the receiving wall', () => {
+  const root = new THREE.Group(), set = new PodSetRenderer(root);
+  try {
+    root.updateMatrixWorld(true);
+    const pipe = root.getObjectByName('pod-runoff-channel'), wall = root.getObjectByName('pod-drain-outlet-wall');
+    assert.ok(pipe && wall, 'an open chute cannot substitute for the pipe and pierced outlet wall');
+    const radius = POD_RUNOFF.halfWidth;
+    for (const z of [-6, 0, 5]) {
+      const center = new THREE.Vector3(0, podRunoffHeight(0, z)! + radius, z);
+      for (let i = 0; i < 16; i++) {
+        const direction = new THREE.Vector3(Math.sin(i * Math.PI / 8), Math.cos(i * Math.PI / 8), 0);
+        const hit = new THREE.Raycaster(center, direction, .01, radius + .4).intersectObject(pipe, true)[0];
+        assert.ok(hit && hit.distance >= radius - .025 && hit.distance <= radius + .025,
+          `the rendered pipe must enclose its actual interior at z ${z}, direction ${i}`);
+      }
+    }
+    const center = new THREE.Vector3(0, podRunoffHeight(0, POD_RUNOFF.endZ)! + radius, POD_RUNOFF.endZ - 1);
+    for (const [x, y] of [[0, 0], [1, 1], [-1, -1]]) {
+      assert.equal(new THREE.Raycaster(center.clone().add(new THREE.Vector3(x, y, 0)), new THREE.Vector3(0, 0, 1), .01, 2)
+        .intersectObject(wall, true).length, 0, 'the round outlet must be an opening in the wall geometry');
+    }
+    assert.ok(new THREE.Raycaster(center.clone().add(new THREE.Vector3(radius + .6, 0, 0)), new THREE.Vector3(0, 0, 1), .01, 2)
+      .intersectObject(wall, true).length, 'there must be a solid wall around the outlet');
+  } finally { set.dispose(); }
+});
+
+test('the pod releases its physical basin and restores saved drain water and splash without reallocating surfaces', () => {
+  const root = new THREE.Group(), set = new PodSetRenderer(root);
+  try {
+    const at = (elapsed: number, wallTime = 100) => { set.update({ scene: 'm1_pod', awakening: { kind: 'disconnect', elapsed } } as Parameters<PodSetRenderer['update']>[0], wallTime); root.updateMatrixWorld(true); };
+    const basin = root.getObjectByName('pod-basin'), flow = root.getObjectByName('pod-drain-water') as THREE.Mesh,
+      splash = root.getObjectByName('pod-drain-splash') as THREE.InstancedMesh;
+    assert.ok(basin && flow && splash, 'the drainage needs an opening basin, moving water and landing feedback');
+    const ray = new THREE.Raycaster(new THREE.Vector3(.2, 2.5, -12.8), new THREE.Vector3(0, -1, 0), .01, 5);
+    at(3.9); assert.ok(ray.intersectObject(basin, true).length, 'the basin must support Neo until the cables release');
+    at(4.55); assert.equal(ray.intersectObject(basin, true).length, 0, 'the physical floor must open before Neo enters the pipe');
+    const water = flow.geometry.getAttribute('position');
+    at(7.2); const positions = Array.from(water.array), droplets = Array.from(splash.instanceMatrix.array);
+    assert.ok(splash.visible, 'the landing must create water displacement');
+    at(8.6); assert.notDeepEqual(Array.from(water.array), positions, 'the water must move with the saved drainage time');
+    at(7.2, 900); assert.deepEqual(Array.from(water.array), positions); assert.deepEqual(Array.from(splash.instanceMatrix.array), droplets);
+    assert.equal(flow.geometry.getAttribute('position'), water, 'flow must update existing buffers');
+    at(3.9); assert.equal(splash.visible, false, 'landing feedback cannot precede the fall');
+  } finally { set.dispose(); }
 });
