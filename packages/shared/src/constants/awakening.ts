@@ -48,16 +48,20 @@ export function mirrorGuideProgress(point: { x: number; z: number }): number {
   return progress;
 }
 export const POD_WATER_DROP = 18;
-export const POD_RUNOFF = { startZ: -6, endZ: 12, halfWidth: 3.2, rows: 32, columns: 16, bank: .17 } as const;
-/** Height of the actual triangulated chute, including its curved side banks. */
+export const POD_RUNOFF = { startZ: -15.5, endZ: 8.5, halfWidth: 3.2, rows: 48, columns: 32, inletZ: -10.8,
+  floorStart: -6, floorDrop: 9, thickness: .18, outletDepth: .75, lipRadius: .11 } as const;
+/** Lower surface of the rendered circular pipe, interpolated on its actual rings. */
 export function podRunoffHeight(x: number, z: number): number | undefined {
-  const { startZ, endZ, halfWidth, rows, columns, bank } = POD_RUNOFF;
-  if (Math.abs(x) > halfWidth || z < startZ || z > endZ) return undefined;
-  const row = (z - startZ) / (endZ - startZ) * rows, column = (x + halfWidth) / (2 * halfWidth) * columns;
+  const { startZ, endZ, halfWidth, rows, columns, floorStart, floorDrop } = POD_RUNOFF;
+  if (Math.abs(x) > halfWidth || z < startZ || z > endZ + POD_RUNOFF.outletDepth + POD_RUNOFF.lipRadius) return undefined;
+  const edge = Math.max(0, z - endZ - POD_RUNOFF.outletDepth);
+  const radius = halfWidth + (edge ? POD_RUNOFF.lipRadius - Math.sqrt(Math.max(0, POD_RUNOFF.lipRadius ** 2 - edge ** 2)) : 0);
+  const row = (Math.min(z, endZ) - startZ) / (endZ - startZ) * rows, column = (Math.asin(x / radius) / Math.PI + .5) * columns;
   const a = Math.min(rows - 1, Math.floor(row)), b = Math.min(columns - 1, Math.floor(column));
-  const x0 = (b / columns - .5) * 2 * halfWidth, x1 = ((b + 1) / columns - .5) * 2 * halfWidth;
-  return -1 - POD_WATER_DROP * (a * a + ((a + 1) ** 2 - a * a) * (row - a)) / (rows * rows)
-    + bank * (x0 * x0 + (x1 * x1 - x0 * x0) * (column - b));
+  const angle0 = (b / columns - .5) * Math.PI, angle1 = ((b + 1) / columns - .5) * Math.PI;
+  const x0 = Math.sin(angle0) * radius, x1 = Math.sin(angle1) * radius, blend = (x - x0) / (x1 - x0);
+  return floorStart - floorDrop * (a * a + ((a + 1) ** 2 - a * a) * (row - a)) / (rows * rows) + halfWidth - radius
+    + radius * (1 - Math.cos(angle0) + (Math.cos(angle0) - Math.cos(angle1)) * blend);
 }
 export const POD_RESCUE = { immersion: 1.8, descend: 1, secured: 1.65, hoisted: 5, cleared: 7, closed: 7.8, lowered: 8.6, release: 9.4, fade: 13,
   hatch: { x: 0, y: 0, z: 12, half: 2.8 } } as const;
@@ -282,8 +286,13 @@ export function awakeningPose(beat?: AwakeningBeat): { x: number; y: number; z: 
       : '眼前的尺度压垮了旧有解释。Neo 的身体开始拒绝加载程序。';
     return { x: DESERT_REVEAL.neo.x, y: 0, z: DESERT_REVEAL.neo.z, pose: 'desert', text };
   }
-  const fall = clamp(((beat?.elapsed ?? 0) - 4) / 3);
-  const immersion = POD_RESCUE.immersion * smooth(((beat?.elapsed ?? 0) - 6.8) / 1.2);
-  return { x: 0, y: -POD_WATER_DROP * fall * fall - immersion, z: -12 + 24 * fall, pose: fall === 1 ? 'float' : fall > 0 ? 'fall' : 'pod',
-    text: !beat ? '薄膜贴在身体上。按住 G 顶破舱膜，松开会保留挣脱进度。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : fall < 1 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
+  const elapsed = beat?.elapsed ?? 0, entry = clamp((elapsed - 4) / .6), slide = smooth((elapsed - 4.6) / 2), exit = smooth((elapsed - 6.6) / .4);
+  const z = -12 + (POD_RUNOFF.inletZ + 12) * entry + (POD_RUNOFF.endZ - POD_RUNOFF.inletZ) * slide + (12 - POD_RUNOFF.endZ) * exit;
+  const pipeY = podRunoffHeight(0, Math.min(POD_RUNOFF.endZ, z))! - 2.2;
+  const exitY = podRunoffHeight(0, POD_RUNOFF.endZ)! - 2.2;
+  // Clear the thick outlet with the entire curled body before dropping to water.
+  const immersion = (POD_WATER_DROP + POD_RESCUE.immersion + exitY) * smooth((elapsed - 7) / 1.6);
+  const y = pipeY * entry * entry * (1 - exit) + exitY * exit - immersion;
+  return { x: 0, y, z, pose: elapsed >= 7 ? 'float' : elapsed > 4 ? 'fall' : 'pod',
+    text: !beat ? '薄膜贴在身体上。按住 G 顶破舱膜，松开会保留挣脱进度。' : beat.elapsed < 2 ? '维护机器锁定了异常信号，正在靠近培养舱。' : beat.elapsed < 4 ? '固定臂扶住后颈，连接管线逐一脱开。' : elapsed < 7 ? '舱底打开。水流把你冲入排放管道。' : '上方出现了探照灯。G 抓住下降的救援装置。' };
 }

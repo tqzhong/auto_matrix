@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the falling and floating eye camera uses the actual head and preserves free observation
+not ok 1 - the falling and floating eye camera uses the actual head and preserves free observation
+  ---
+  duration_ms: 1887.299084
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:1:44143'
+  failureType: 'testCodeFailure'
+  error: 'the third-person camera crowds Neo as he leaves the pipe at 6.4s: 2.4471070227838574'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-connection-contact.test.mts:727:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3968.317208

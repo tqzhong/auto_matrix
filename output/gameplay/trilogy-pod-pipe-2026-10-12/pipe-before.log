@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: the drain encloses the falling body and has a real circular outlet through the receiving wall
+not ok 1 - the drain encloses the falling body and has a real circular outlet through the receiving wall
+  ---
+  duration_ms: 103.7045
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-renderer.test.mts:1:6505'
+  failureType: 'testCodeFailure'
+  error: 'an open chute cannot substitute for the pipe and pierced outlet wall'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-renderer.test.mts:120:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the pod releases its physical basin and restores saved drain water and splash without reallocating surfaces
+not ok 2 - the pod releases its physical basin and restores saved drain water and splash without reallocating surfaces
+  ---
+  duration_ms: 53.105833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pod-renderer.test.mts:1:7927'
+  failureType: 'testCodeFailure'
+  error: 'the drainage needs an opening basin, moving water and landing feedback'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pod-renderer.test.mts:147:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 492.592833

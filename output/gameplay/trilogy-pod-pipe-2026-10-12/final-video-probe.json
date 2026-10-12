@@ -1,0 +1,33 @@
+{
+  "file": "neo-2026-10-12T02-23-52-424Z.webm",
+  "duration": 305.05310000038145,
+  "frames": 4686,
+  "width": 1280,
+  "height": 720,
+  "rendering": {
+    "frames": 7854,
+    "fps": 25.751509248966233,
+    "p95FrameMs": 163.40000009536743,
+    "includesRecordingOverhead": true
+  },
+  "markers": [],
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "opus",
+        "codec_type": "audio"
+      },
+      {
+        "codec_name": "vp9",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "format": {
+      "size": "41719537"
+    }
+  }
+}

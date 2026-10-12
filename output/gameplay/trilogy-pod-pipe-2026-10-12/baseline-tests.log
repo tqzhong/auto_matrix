@@ -1,0 +1,268 @@
+TAP version 13
+# Subtest: the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+    # Subtest: a new scene loaded mid-tear has exactly the same surface
+    ok 1 - a new scene loaded mid-tear has exactly the same surface
+      ---
+      duration_ms: 164.565833
+      type: 'test'
+      ...
+    1..1
+ok 1 - the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+  ---
+  duration_ms: 529.419625
+  type: 'test'
+  ...
+# Subtest: the pod neck hose seats against the shipped cervical socket before it is unlocked
+ok 2 - the pod neck hose seats against the shipped cervical socket before it is unlocked
+  ---
+  duration_ms: 193.795792
+  type: 'test'
+  ...
+# Subtest: both real palms remain beneath or against the stretching membrane without cutting through it
+ok 3 - both real palms remain beneath or against the stretching membrane without cutting through it
+  ---
+  duration_ms: 207.884959
+  type: 'test'
+  ...
+# Subtest: pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body
+ok 4 - pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body
+  ---
+  duration_ms: 174.858208
+  type: 'test'
+  ...
+# Subtest: the pressing hand skin stays below the intact pod membrane
+ok 5 - the pressing hand skin stays below the intact pod membrane
+  ---
+  duration_ms: 3875.9435
+  type: 'test'
+  ...
+# Subtest: a paused pod disconnection keeps its maintenance mechanism at the saved action clock
+ok 6 - a paused pod disconnection keeps its maintenance mechanism at the saved action clock
+  ---
+  duration_ms: 176.370292
+  type: 'test'
+  ...
+# Subtest: the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera
+ok 7 - the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera
+  ---
+  duration_ms: 145.99875
+  type: 'test'
+  ...
+# Subtest: maintenance clamps hold the neck locking collar without routing their links through Neo
+ok 8 - maintenance clamps hold the neck locking collar without routing their links through Neo
+  ---
+  duration_ms: 673.729292
+  type: 'test'
+  ...
+# Subtest: the maintenance arm surfaces clear the actual skin throughout approach, holding and withdrawal
+ok 9 - the maintenance arm surfaces clear the actual skin throughout approach, holding and withdrawal
+  ---
+  duration_ms: 600.09425
+  type: 'test'
+  ...
+# Subtest: body feeds seat in the four real chest ports and retract separately before the drain opens
+ok 10 - body feeds seat in the four real chest ports and retract separately before the drain opens
+  ---
+  duration_ms: 171.742
+  type: 'test'
+  ...
+# Subtest: the clear neck needle withdraws along the real socket axis without drawing inside the head
+ok 11 - the clear neck needle withdraws along the real socket axis without drawing inside the head
+  ---
+  duration_ms: 172.463791
+  type: 'test'
+  ...
+# Subtest: a restored mid-unplug scene reconstructs the same contacts and keeps its hose buffers
+    # Subtest: a newly loaded scene has the same saved connector pose
+    ok 1 - a newly loaded scene has the same saved connector pose
+      ---
+      duration_ms: 153.563459
+      type: 'test'
+      ...
+    1..1
+ok 12 - a restored mid-unplug scene reconstructs the same contacts and keeps its hose buffers
+  ---
+  duration_ms: 320.300542
+  type: 'test'
+  ...
+# Subtest: the pod disconnection camera keeps the real head and chest above the subtitle region in both aspect ratios
+ok 13 - the pod disconnection camera keeps the real head and chest above the subtitle region in both aspect ratios
+  ---
+  duration_ms: 189.095625
+  type: 'test'
+  ...
+# Subtest: Neo sits up inside the pod while his hips and lower body remain supported in the basin
+ok 14 - Neo sits up inside the pod while his hips and lower body remain supported in the basin
+  ---
+  duration_ms: 145.230916
+  type: 'test'
+  ...
+# Subtest: Neo braces both palms on the real pod rim during the sit-up
+ok 15 - Neo braces both palms on the real pod rim during the sit-up
+  ---
+  duration_ms: 198.694167
+  type: 'test'
+  ...
+# Subtest: the connected hose routes remain outside the shipped skin as Neo rises
+ok 16 - the connected hose routes remain outside the shipped skin as Neo rises
+  ---
+  duration_ms: 4092.484042
+  type: 'test'
+  ...
+# Subtest: the saved pod body pose is independent of wall time, earlier frames and a newly loaded model
+    # Subtest: cold loading restores the same supported pose
+    ok 1 - cold loading restores the same supported pose
+      ---
+      duration_ms: 158.721375
+      type: 'test'
+      ...
+    1..1
+ok 17 - the saved pod body pose is independent of wall time, earlier frames and a newly loaded model
+  ---
+  duration_ms: 312.202459
+  type: 'test'
+  ...
+# Subtest: the shipped support-hand surfaces do not sit inside the solid pod rim
+ok 18 - the shipped support-hand surfaces do not sit inside the solid pod rim
+  ---
+  duration_ms: 14298.56575
+  type: 'test'
+  ...
+# Subtest: the pod first-person eye follows the shipped head and keeps the support hands visible
+ok 19 - the pod first-person eye follows the shipped head and keeps the support hands visible
+  ---
+  duration_ms: 228.3
+  type: 'test'
+  ...
+# Subtest: the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+ok 20 - the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+  ---
+  duration_ms: 233.570542
+  type: 'test'
+  ...
+# Subtest: the breathing tube follows the actual lips, both grasping palms and the saved release clock
+    # Subtest: cold loading recreates the saved grasp and the same pipe surface
+    ok 1 - cold loading recreates the saved grasp and the same pipe surface
+      ---
+      duration_ms: 149.289667
+      type: 'test'
+      ...
+    1..1
+ok 21 - the breathing tube follows the actual lips, both grasping palms and the saved release clock
+  ---
+  duration_ms: 309.956541
+  type: 'test'
+  ...
+# Subtest: the grasping hand skin stays outside the breathing tube wall
+ok 22 - the grasping hand skin stays outside the breathing tube wall
+  ---
+  duration_ms: 527.074125
+  type: 'test'
+  ...
+# Subtest: the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw
+ok 23 - the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw
+  ---
+  duration_ms: 252.9645
+  type: 'test'
+  ...
+# Subtest: the chest feed surfaces avoid the moving arms during emergence, oral removal and release
+ok 24 - the chest feed surfaces avoid the moving arms during emergence, oral removal and release
+  ---
+  duration_ms: 30217.95875
+  type: 'test'
+  ...
+# Subtest: the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance
+    # Subtest: first-person patient shoulders retain the same skin surface as third person
+    ok 1 - first-person patient shoulders retain the same skin surface as third person
+      ---
+      duration_ms: 1030.878875
+      type: 'test'
+      ...
+    1..1
+ok 25 - the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance
+  ---
+  duration_ms: 1262.747208
+  type: 'test'
+  ...
+# Subtest: the actual pod body stays continuous when support gives way, floating begins and the winch arrives
+ok 26 - the actual pod body stays continuous when support gives way, floating begins and the winch arrives
+  ---
+  duration_ms: 293.541375
+  type: 'test'
+  ...
+# Subtest: the floating body restores the saved bones instead of continuing a generic idle animation
+    # Subtest: a cold model restores the same floating body
+    ok 1 - a cold model restores the same floating body
+      ---
+      duration_ms: 162.478167
+      type: 'test'
+      ...
+    1..1
+ok 27 - the floating body restores the saved bones instead of continuing a generic idle animation
+  ---
+  duration_ms: 320.650083
+  type: 'test'
+  ...
+# Subtest: the falling and floating eye camera uses the actual head and preserves free observation
+ok 28 - the falling and floating eye camera uses the actual head and preserves free observation
+  ---
+  duration_ms: 273.532125
+  type: 'test'
+  ...
+# Subtest: the falling skin meets the real runoff channel without sinking through its rendered surface
+ok 29 - the falling skin meets the real runoff channel without sinking through its rendered surface
+  ---
+  duration_ms: 434.753625
+  type: 'test'
+  ...
+# Subtest: Neo recoils with the real cervical needle withdrawal and settles before losing support
+ok 30 - Neo recoils with the real cervical needle withdrawal and settles before losing support
+  ---
+  duration_ms: 183.029041
+  type: 'test'
+  ...
+# Subtest: the rescue bay has an open passage for the body and closes below it after boarding
+ok 31 - the rescue bay has an open passage for the body and closes below it after boarding
+  ---
+  duration_ms: 136.736417
+  type: 'test'
+  ...
+# Subtest: nearby pods have an open upper basin instead of a closed ellipsoid over the occupant
+ok 32 - nearby pods have an open upper basin instead of a closed ellipsoid over the occupant
+  ---
+  duration_ms: 82.86025
+  type: 'test'
+  ...
+# Subtest: the default pod shot has a readable near bank behind Neo, not only distant dots
+ok 33 - the default pod shot has a readable near bank behind Neo, not only distant dots
+  ---
+  duration_ms: 55.066208
+  type: 'test'
+  ...
+# Subtest: the maintenance machine waits for neck inspection and withdraws before the water rescue
+ok 34 - the maintenance machine waits for neck inspection and withdraws before the water rescue
+  ---
+  duration_ms: 61.5765
+  type: 'test'
+  ...
+# Subtest: the floating first-person view sees a nearby pod bank beyond the rescue claw
+ok 35 - the floating first-person view sees a nearby pod bank beyond the rescue claw
+  ---
+  duration_ms: 53.748459
+  type: 'test'
+  ...
+# Subtest: the rescue claw approaches from overhead instead of covering the floating camera
+ok 36 - the rescue claw approaches from overhead instead of covering the floating camera
+  ---
+  duration_ms: 55.567417
+  type: 'test'
+  ...
+1..36
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61395.333667
