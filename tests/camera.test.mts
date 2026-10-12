@@ -184,6 +184,35 @@ test('first-person chase keeps the bracing arm visible and restores the head whe
   assert.equal(body.getObjectByName('seraph-head')!.visible, true, 'V restores the visible head');
 });
 
+test('first-person Construct keeps inspection and leather-contact arms visible and restores the ordinary view', t => {
+  const game = setup(t); t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const actor = world.agents.get('neo')!;
+  actor.currentLocation = 'film_white_construct'; actor.position = filmPosition('film_white_construct', 6.95, 5);
+  const renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+  renderer.updateAgent(actor.id, actor); renderer.setPlayer(actor.id, true);
+  const entry = (renderer as unknown as { agents: Map<string, { rig: CharacterRig }> }).agents.get(actor.id)!;
+  const base = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  for (const gesture of [{ construct: { phase: 'image' as const, elapsed: 2, role: 'neo' as const } },
+    { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } }]) {
+    actor.currentAction = { type: 'idle', parameters: gesture, startedAt: 0, duration: 1e9, progress: 0 };
+    renderer.updateAgent(actor.id, actor); renderer.setPlayer(actor.id, true); renderer.setPlayerMotion({ ...base, ...gesture }); renderer.update(0, undefined, 0, 0);
+    assert.equal(renderer.getAgentBody(actor.id)!.visible, true, 'V cannot hide the hands carrying out the Construct interaction');
+    assert.equal(entry.rig.head.visible, false, 'the fallback head must not cover the first-person camera while hero assets load');
+    renderer.setPlayer(actor.id, false); renderer.update(0, undefined, 0, 0);
+    assert.equal(entry.rig.head.visible, true, 'V must restore the third-person head');
+  }
+  renderer.setPlayer(actor.id, true); renderer.update(0, undefined, 0, 0);
+  actor.currentAction = undefined; actor.currentLocation = 'film_club_hel'; renderer.updateAgent(actor.id, actor);
+  renderer.setPlayerMotion({ ...base, armed: true, weaponStyle: 'hel_pistol' }); renderer.update(0, undefined, 0, 0);
+  assert.equal(entry.rig.head.visible, false, 'leaving Construct cannot restore the head over another active first-person interaction');
+  renderer.setPlayerMotion(base); renderer.update(0, undefined, 0, 0);
+  assert.equal(renderer.getAgentBody(actor.id)!.visible, false, 'leaving the Construct gesture restores ordinary first person');
+  assert.equal(entry.rig.head.visible, true, 'a completed gesture cannot leave the head hidden');
+});
+
 test('first-person Hel pistol keeps the weapon visible, hides the own head and restores both view modes', t => {
   const game = setup(t); t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
@@ -2655,6 +2684,28 @@ test('first person turns with Neo through unplugging and uses the animated head 
   const head = new THREE.Bone(); head.name = 'head'; head.position.set(.1, .85, .9); game.group.children[0].add(head);
   truth.elapsed = 11; game.step(.1);
   assert.ok(game.camera.position.distanceTo(head.localToWorld(new THREE.Vector3(0, .18, .17))) < .001, 'kneeling first person follows the rendered head, not a standing-height estimate');
+});
+
+test('the Construct uses the registered body eye during inspection and leather contact while keeping free look', t => {
+  const game = setup(t, Math.PI);
+  Object.assign(game.state, { position: filmPosition('film_white_construct', 6.95, 5), rotation: Math.PI,
+    isInMatrix: true, currentLocation: 'film_white_construct' });
+  const head = new THREE.Bone(); head.name = 'head'; head.position.set(0, 3.6, .1);
+  head.userData.cameraEye = new THREE.Vector3(0, .12, .2);
+  head.userData.patientEye = new THREE.Vector3(0, .12, .42); game.group.children[0].add(head);
+  const marker = head.userData.patientEye.clone();
+  for (const gesture of [{ construct: { phase: 'image', elapsed: 2, role: 'neo' } },
+    { reveal: { kind: 'construct', elapsed: 3, role: 'neo', started: true } }]) {
+    game.state.currentAction = { type: 'idle', parameters: gesture, startedAt: 0, duration: 1e9, progress: 0 };
+    game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);
+    assert.equal(game.controls.firstPerson, true, 'possession resets the view; exercise the camera after a real V switch');
+    const eye = head.localToWorld(marker.clone());
+    assert.ok(game.camera.position.distanceTo(eye) < 1e-6, 'the fallback body-origin camera can sit inside the collar instead of at the delivered eyes');
+    const direction = game.camera.getWorldDirection(new THREE.Vector3()); game.document.pointerLockElement = game.canvas;
+    game.event(game.document, 'mousemove', { movementX: 100, movementY: 140 }); game.step(.1, .1, false);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .2, 'the body eye cannot lock the player gaze');
+    assert.deepEqual(head.userData.patientEye.toArray(), marker.toArray(), 'camera transforms cannot mutate the reusable eye marker');
+  }
 });
 
 test('the Construct and desert reveals use authored wide shots while first person remains at Neo eyes', t => {

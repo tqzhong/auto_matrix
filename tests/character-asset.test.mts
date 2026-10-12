@@ -1351,6 +1351,45 @@ test('Trinity resumes in her club costume and restores her jacket after leaving'
   } finally { models.dispose(); }
 });
 
+test('first-person Construct removes Neo head triangles while retaining both actual hands and restoring his full skin', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('neo'))!, skin = rig.trackingSkin!;
+    const original = skin.mesh.geometry;
+    const base = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true };
+    for (const gesture of [{ construct: { phase: 'image' as const, elapsed: 2, role: 'neo' as const } },
+      { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } }]) {
+      const motion = newMotion(), input = { ...base, ...gesture, firstPerson: true };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      const geometry = skin.mesh.geometry, index = geometry.index!, joints = geometry.attributes.skinIndex, weights = geometry.attributes.skinWeight;
+      let left = 0, right = 0;
+      for (let i = 0; i < index.count; i++) {
+        const vertex = index.getX(i);
+        for (let component = 0; component < 4; component++) {
+          if (weights.getComponent(vertex, component) <= .05) continue;
+          const name = skin.mesh.skeleton.bones[joints.getComponent(vertex, component)].name;
+          assert.ok(!/^(head|neck)$/.test(name), 'the actual head skin cannot remain in the player view');
+          if (/^(wrist|finger).*_L$/.test(name)) left++;
+          if (/^(wrist|finger).*_R$/.test(name)) right++;
+        }
+      }
+      assert.ok(left > 100 && right > 100, 'both shipped hand surfaces must remain available to the inspection and chair gestures');
+      assert.ok(rig.wardrobe.filter(part => part.hair).every(part => !part.mesh.visible), 'own hair cannot enter the camera');
+      const cloth = rig.wardrobe.filter(part => part.cloth && part.mesh.visible);
+      assert.ok(cloth.length > 0);
+      assert.ok(cloth.every(part => (part.mesh.material as THREE.Material).side === THREE.DoubleSide),
+        'the first-person sleeves need their inner cloth surfaces instead of white backface openings');
+      const third = { ...input, firstPerson: false }; models.animate(rig, advanceMotion(motion, third, 0), motion, third, 0);
+      assert.equal(skin.mesh.geometry, original, 'V restores the full head and skin');
+      assert.ok(cloth.every(part => (part.mesh.material as THREE.Material).side === THREE.FrontSide), 'V restores the original shipped garment sides');
+    }
+    const idle = { ...base, firstPerson: true }, motion = newMotion();
+    models.animate(rig, advanceMotion(motion, idle, 0), motion, idle, 0);
+    assert.equal(skin.mesh.geometry, original, 'the Construct exception does not alter unrelated first-person appearances');
+  } finally { models.dispose(); }
+});
+
 test('Neo checks the back of his neck in the Construct instead of reaching into his throat', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
