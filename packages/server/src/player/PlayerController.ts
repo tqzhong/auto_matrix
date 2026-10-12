@@ -12,6 +12,7 @@ import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/shared';
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, filmPosition } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -149,6 +150,10 @@ export class PlayerController {
     }
     agent.controller = 'player';
     this.sandbox?.enter(agent);
+    if (id === 'morpheus' && agent.currentLocation === 'film_real_desert' && agent.currentAction?.parameters.seated) {
+      const chair = DESERT_REVEAL.morpheus, clearance = CONSTRUCT.chair.depth / 2 + 2.35;
+      agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
+    }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
     agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
     agent.velocity = { x: 0, y: 0, z: 0 };

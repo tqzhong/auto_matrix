@@ -575,8 +575,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const smithLocked = smithFinaleLocked(input.smithFinale);
   const welcomeWalking = input.welcome?.phase === 'approach' || input.welcome?.phase === 'departing' && input.welcome.role !== 'neo';
   const welcomeSpeed = input.welcome?.role === 'morpheus' ? 2.6 : input.welcome?.role === 'neo' ? 2.3 : 1.8;
-  const speed = input.farewell || deusPactLocked(input.deusPact) || smithFinaleLocked(input.smithFinale) || trilogyEpilogueLocked(input.epilogue) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
+  const speed = input.reveal || input.farewell || deusPactLocked(input.deusPact) || smithFinaleLocked(input.smithFinale) || trilogyEpilogueLocked(input.epilogue) ? 0 : input.pills ? exiting ? 1.7 : 0 : welcomeWalking ? welcomeSpeed : input.speed;
   state.time = input.farewell ? input.farewell.total : deusLocked ? input.deusPact!.total : smithLocked ? input.smithFinale!.total : state.time + dt;
+  if (input.reveal) { state.time = input.reveal.elapsed; state.speed = 0; state.phase = 0; state.turn = 0; state.airborne = 0; }
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
   if (input.farewell) { state.speed = 0; state.airborne = 0; state.seated = 0; }
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.speed = 2.2 * smooth(clamp(input.cabin.elapsed / .25)) * (1 - smooth(clamp((input.cabin.elapsed - .65) / .3)));
@@ -592,7 +593,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   if (input.performance === 'touch') state.seated = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.sit) - .65) / (MIRROR_TIMING.sit - .65)));
   if (input.mirrorRise !== undefined) state.seated = 1 - smooth(clamp(input.mirrorRise));
-  if (input.construct || input.reveal?.kind === 'construct') state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);
+  if (input.construct || input.reveal) state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);
   if (input.truth) state.seated = truthRoot(input.truth, input.truth.role).seated;
   if (input.spoonLesson?.role === 'boy') state.seated = 1;
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);

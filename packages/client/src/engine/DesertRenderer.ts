@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { DESERT_REVEAL, type FilmJourney } from '@auto_matrix/shared';
+import { DESERT_REVEAL, DESERT_FURNITURE, type FilmJourney } from '@auto_matrix/shared';
+import { createLoungeChair } from './LoungeChair.js';
+import { createConstructTelevision } from './ConstructTelevision.js';
 
 /** The loading-program reconstruction of the ruined real world: a walkable
  * overlook, collapsed city layers, dead sky and distant harvesting towers. */
@@ -25,15 +27,9 @@ export class DesertRenderer {
     if (typeof document !== 'undefined') {
       this.surface([this.ground], 'surfaces', 'asphalt_02');
       this.surface([this.plaster], 'film-materials', 'damaged_plaster');
-      for (const material of [this.concrete, this.brokenConcrete]) {
-        material.normalMap = this.plaster.normalMap;
-        material.roughnessMap = this.plaster.roughnessMap;
-        material.normalScale.set(.42, .42);
-        material.needsUpdate = true;
-      }
     }
     this.towerGlow = this.material(new THREE.MeshStandardMaterial({ color: 0x8d563c, emissive: 0xe06d37, emissiveIntensity: .5, metalness: .76, roughness: .31 }));
-    this.terrain(); this.city(); this.overpass(); this.harvesters();
+    this.terrain(); this.city(); this.overpass(); this.harvesters(); this.furniture();
     this.ash = this.createAsh();
     const ambient = new THREE.HemisphereLight(0x87999a, 0x202322, 1.65); ambient.name = 'desert-dead-sky-fill'; this.root.add(ambient); this.lights.add(ambient);
     this.flash = new THREE.PointLight(0xaac7c5, 0, 150, 1.5); this.flash.name = 'desert-cloud-flash'; this.flash.position.set(-28, 37, -58); this.root.add(this.flash); this.lights.add(this.flash);
@@ -43,17 +39,47 @@ export class DesertRenderer {
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.add(value); return value; }
   private surface(materials: THREE.MeshStandardMaterial[], folder: string, id: string): void {
     const loader = new THREE.TextureLoader();
+    let ready = 0;
     const load = (kind: string) => {
-      const texture = loader.load(`/assets/${folder}/${id}-${kind}.jpg`, loaded => { if (this.disposed) loaded.dispose(); });
+      const texture = loader.load(`/assets/${folder}/${id}-${kind}.jpg`, loaded => {
+        if (this.disposed) { loaded.dispose(); return; }
+        if (++ready !== 3) return;
+        for (const material of materials) {
+          material.map = map; material.normalMap = normalMap; material.roughnessMap = roughnessMap;
+          material.normalScale.set(.42, .42); material.needsUpdate = true;
+        }
+        if (id === 'damaged_plaster') for (const material of [this.concrete, this.brokenConcrete]) {
+          material.normalMap = normalMap; material.roughnessMap = roughnessMap;
+          material.normalScale.set(.42, .42); material.needsUpdate = true;
+        }
+      });
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.anisotropy = 8;
       if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
       this.textures.add(texture); return texture;
     };
     const map = load('color'); const normalMap = load('normal'); const roughnessMap = load('roughness');
-    for (const material of materials) {
-      material.map = map; material.normalMap = normalMap; material.roughnessMap = roughnessMap;
-      material.normalScale.set(.42, .42); material.needsUpdate = true;
+  }
+  private furniture(): void {
+    const leather = this.material(new THREE.MeshStandardMaterial({ color: 0xdec6b8, roughness: .94, metalness: .03 }));
+    const wood = this.material(new THREE.MeshStandardMaterial({ color: 0x593a29, roughness: .56 }));
+    const black = this.material(new THREE.MeshStandardMaterial({ color: 0x111313, roughness: .36, metalness: .4 }));
+    const screen = this.material(new THREE.MeshStandardMaterial({ color: 0x0c1214, roughness: .18, metalness: .15 }));
+    if (typeof document !== 'undefined' && typeof document.createElementNS === 'function') {
+      this.surface([leather], 'film-materials', 'leather_red_03'); this.surface([wood], 'film-materials', 'old_wood_floor');
     }
+    for (const [role, point] of Object.entries(DESERT_FURNITURE.chairs)) {
+      const chair = createLoungeChair(leather); chair.name = `desert-chair-${role}`;
+      chair.position.set(point.x, 0, point.z); chair.rotation.y = point.yaw; this.root.add(chair);
+    }
+    const tv = createConstructTelevision(wood, black, screen); tv.name = 'desert-television';
+    tv.position.set(DESERT_FURNITURE.television.x, 0, DESERT_FURNITURE.television.z); this.root.add(tv);
+    for (const object of [...this.root.children].filter(object => object.name.startsWith('desert-chair-') || object === tv)) object.traverse(part => {
+      if (part instanceof THREE.Mesh) {
+        this.geometries.add(part.geometry); this.materials.add(part.material);
+        const map = (part.material as THREE.MeshStandardMaterial).map;
+        if (map instanceof THREE.CanvasTexture) this.textures.add(map);
+      }
+    });
   }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name?: string): THREE.Mesh {
     const mesh = new THREE.Mesh(this.geometry(geometry), material); mesh.castShadow = mesh.receiveShadow = true;
@@ -87,7 +113,7 @@ export class DesertRenderer {
       position.setZ(i, height);
     }
     this.tileUvs(geometry);
-    geometry.computeVertexNormals(); const floor = this.mesh(this.root, geometry, this.ground, 'desert-cracked-ground'); floor.rotation.x = -Math.PI / 2; floor.position.y = -.18;
+    geometry.computeVertexNormals(); const floor = this.mesh(this.root, geometry, this.ground, 'desert-cracked-ground'); floor.rotation.x = -Math.PI / 2;
     for (let i = 0; i < 46; i++) {
       const side = i % 2 ? 1 : -1; const z = 42 - i * 2.45; const x = side * (9 + (i * 17) % 19);
       const rubble = this.mesh(this.root, new THREE.DodecahedronGeometry(.65 + i % 5 * .32, 0), i % 4 ? this.brokenConcrete : this.rust, `desert-rubble-${i}`);
@@ -251,13 +277,15 @@ export class DesertRenderer {
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const beat = journey?.scene === 'm1_desert' && !journey.visiting && journey.awakening?.kind === 'desert' ? journey.awakening : undefined;
     const active = beat?.started === true; const t = beat?.elapsed ?? 0;
+    const clock = beat?.elapsed ?? elapsed;
     const positions = this.ash.geometry.attributes.position;
     for (let i = 0; i < positions.count; i++) {
-      let y = positions.getY(i) - .012; if (y < .3) y = 43;
-      positions.setY(i, y); positions.setX(i, positions.getX(i) + Math.sin(elapsed * .35 + i) * .0015);
+      const fall = 1 + (i * 37 % 430) / 10 - .3 - clock * .72;
+      positions.setY(i, .3 + (fall % 43.7 + 43.7) % 43.7);
+      positions.setX(i, Math.sin(i * 91.17) * 82 + (Math.sin(clock * .35 + i) - Math.sin(i)) * .18);
     }
     positions.needsUpdate = true;
-    this.towerGlow.emissiveIntensity = active ? .62 + THREE.MathUtils.smoothstep(t, 5, 9) * 1.15 + Math.sin(elapsed * 5) * .08 : .5;
+    this.towerGlow.emissiveIntensity = active ? .62 + THREE.MathUtils.smoothstep(t, 5, 9) * 1.15 + Math.sin(clock * 5) * .08 : .5;
     const pulse = active && t > 2 ? Math.max(0, Math.sin((t - 2) * 2.7)) ** 18 : 0;
     this.flash.intensity = pulse * 520;
   }

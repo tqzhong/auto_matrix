@@ -2708,6 +2708,18 @@ test('the Construct uses the registered body eye during inspection and leather c
   }
 });
 
+test('the ruined lesson frames its seated guide above the subtitle area before surveying the skyline', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_real_desert.center;
+  for (const aspect of [16 / 9, 4 / 3]) for (const elapsed of [0, 1.8, 3.8]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    Object.assign(game.state, { position: filmPosition('film_real_desert', 1.8, -28), rotation: Math.PI, isInMatrix: false, currentLocation: 'film_real_desert',
+      currentAction: { type: 'idle', parameters: { filmPose: 'desert', reveal: { kind: 'desert', elapsed, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+    game.controls.possess(game.state); game.controls.performing = true; game.step(.5); game.camera.updateMatrixWorld(true);
+    const face = new THREE.Vector3(center.x - 3.2, center.y - 1 + 2.7, center.z - 26.8).project(game.camera);
+    assert.ok(face.y > -.35 && face.y < .65 && Math.abs(face.x) < .8, `the seated guide falls behind HUD or off-screen at ${elapsed}s / ${aspect}: ${face.toArray()}`);
+  }
+});
+
 test('the Construct and desert reveals use authored wide shots while first person remains at Neo eyes', t => {
   const game = setup(t, Math.PI); const construct = filmPosition('film_white_construct', 6.35, -4.75);
   Object.assign(game.state, { position: construct, rotation: Math.PI, isInMatrix: true, currentLocation: 'film_white_construct',
