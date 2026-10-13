@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 
+export const PHONE_HAND = {
+  position: new THREE.Vector3(.132, -.165, .015),
+  rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI / 2)),
+};
+
 /** Curved 1996 handset with the film prop's sliding microphone cover. */
 export class PhoneModel {
   readonly root = new THREE.Group();
