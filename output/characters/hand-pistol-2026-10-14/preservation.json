@@ -1,0 +1,33 @@
+{
+  "protectedFiles": 212,
+  "changed": [],
+  "neoPistolCenter": {
+    "aim": {
+      "before": [
+        0.020000000000000073,
+        4.183138708191904,
+        1.081053181278393
+      ],
+      "after": [
+        0.019999999999999685,
+        4.183138708191904,
+        1.3764196224381722
+      ],
+      "difference": 0.29536644115977917
+    },
+    "fire": {
+      "before": [
+        0.02000000000000024,
+        4.2233802255879915,
+        1.0210531812783927
+      ],
+      "after": [
+        0.019999999999999768,
+        4.2233802255879915,
+        1.316419622438172
+      ],
+      "difference": 0.29536644115977917
+    }
+  },
+  "scope": "Two actual exported Neo poses. Gun reach now uses the actual hand offset and arm length, so its position changes. This is not a browser or full-trajectory verification."
+}

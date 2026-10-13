@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 1 - neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 306.661791
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'neutral aim must not fold the wrist sharply across the forearm: 0.4360343083457171,0.8632081992859454,0.25445173733143883'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 2 - trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 119.384416
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'neutral aim must not fold the wrist sharply across the forearm: 0.43717283041477695,0.8752173512580808,0.2070615956760744'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 3 - smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 73.593
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'neutral aim must not fold the wrist sharply across the forearm: 0.43612862486562654,0.8621263256099417,0.25793414132897996'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 4 - morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 330.445209
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'neutral aim must not fold the wrist sharply across the forearm: 0.43336109966426783,0.8435795178496378,0.3171305005236003'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1212.028

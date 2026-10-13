@@ -1,0 +1,222 @@
+TAP version 13
+# Subtest: all three shipped hands release the same physical pistol at the start of its fall
+ok 1 - all three shipped hands release the same physical pistol at the start of its fall
+  ---
+  duration_ms: 445.642875
+  type: 'test'
+  ...
+# {"role":"trinity","gap":3.3419353622877938e-12,"held":[4416.55,3.8000000000028034,5987.329999999998],"target":[4416.55,3.8,5987.33],"shoulder":[4416.410569923094,4.5801452217318435,5988.024839057384],"wrist":[4416.698,3.8935372546536056,5987.543814604005],"length":1.1810377401798822}
+# {"role":"morpheus","gap":3.0893493834404908e-12,"held":[4412.549999999999,3.8000000000028087,5988.249999999999],"target":[4412.55,3.8,5988.25],"shoulder":[4412.481993124587,4.8147184869129696,5988.947828665878],"wrist":[4412.697999999999,3.932298815411327,5988.486605990678],"length":1.3692447603724993}
+# {"role":"seraph","gap":3.3499137115095634e-12,"held":[4420.55,3.800000000003224,5988.249999999999],"target":[4420.55,3.8,5988.25],"shoulder":[4420.5046,4.569999999999999,5989],"wrist":[4420.55,3.9525707031617925,5988.245290378178],"length":1.46}
+# Subtest: starting to lower the pistol preserves the elbow relative to the shoulder and the muzzle orientation
+not ok 2 - starting to lower the pistol preserves the elbow relative to the shoulder and the muzzle orientation
+  ---
+  duration_ms: 327.608667
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hel-standoff-model.test.mts:1:5396'
+  failureType: 'testCodeFailure'
+  error: 'starting to lower the gun must not snap the arm posture'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hel-standoff-model.test.mts:80:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the falling pistols land on the actual higher tread and transfer continuously to the collectors
+ok 3 - the falling pistols land on the actual higher tread and transfer continuously to the collectors
+  ---
+  duration_ms: 342.535709
+  type: 'test'
+  ...
+# {"role":"trinity","elapsed":1.35,"clearance":1.799418103001635}
+# {"role":"morpheus","elapsed":1.35,"clearance":1.799418103001635}
+# {"role":"seraph","elapsed":1.35,"clearance":1.799418103001635}
+# {"role":"trinity","elapsed":1.45,"clearance":1.7679797170103702}
+# {"role":"morpheus","elapsed":1.45,"clearance":1.7679797170103702}
+# {"role":"seraph","elapsed":1.45,"clearance":1.7679797170103702}
+# {"role":"trinity","elapsed":1.6,"clearance":1.5953234577992372}
+# {"role":"morpheus","elapsed":1.6,"clearance":1.5953234577992372}
+# {"role":"seraph","elapsed":1.6,"clearance":1.5953234577992372}
+# {"role":"trinity","elapsed":1.85,"clearance":0.8387950328670004}
+# {"role":"morpheus","elapsed":1.85,"clearance":0.8387950328670004}
+# {"role":"seraph","elapsed":1.85,"clearance":0.8387950328670004}
+# {"role":"trinity","elapsed":2.1,"clearance":0.010000000000000009}
+# {"role":"morpheus","elapsed":2.1,"clearance":0.010000000000000009}
+# {"role":"seraph","elapsed":2.1,"clearance":0.010000000000000009}
+# {"role":"trinity","elapsed":2.25,"clearance":0.010000000000000009}
+# {"role":"morpheus","elapsed":2.25,"clearance":0.010000000000000009}
+# {"role":"seraph","elapsed":2.25,"clearance":0.010000000000000009}
+# {"role":"trinity","elapsed":2.5,"clearance":0.22833324829893797}
+# {"role":"morpheus","elapsed":2.5,"clearance":0.23898536835843553}
+# {"role":"seraph","elapsed":2.5,"clearance":0.23898536835843553}
+# {"role":"trinity","elapsed":2.75,"clearance":0.6884986542540119}
+# {"role":"morpheus","elapsed":2.75,"clearance":0.85266621252467}
+# {"role":"seraph","elapsed":2.75,"clearance":0.792949540715592}
+# {"role":"trinity","elapsed":3.1,"clearance":1.5021394863632676}
+# {"role":"morpheus","elapsed":3.1,"clearance":1.9021394863632675}
+# {"role":"seraph","elapsed":3.1,"clearance":1.9021394863632675}
+# {"role":"trinity","elapsed":3.499999,"clearance":2.0324999999956406}
+# {"role":"morpheus","elapsed":3.499999,"clearance":2.4324999999956405}
+# {"role":"seraph","elapsed":3.499999,"clearance":2.4324999999956405}
+# {"role":"trinity","elapsed":3.5,"clearance":2.0324999999999993}
+# {"role":"morpheus","elapsed":3.5,"clearance":2.432499999999999}
+# {"role":"seraph","elapsed":3.5,"clearance":2.432499999999999}
+# Subtest: the visible collectors reach the grips, stay above the floor and keep the same paused pose
+ok 4 - the visible collectors reach the grips, stay above the floor and keep the same paused pose
+  ---
+  duration_ms: 423.986125
+  type: 'test'
+  ...
+# {"role":"trinity","elapsed":0,"gap":0.5926985926402235,"clearance":0.024472981533027127,"lowest":{"object":"shoes01","position":[4417.4116992703,1.6244729815330272,5986.959587489207],"floor":1.6,"bones":[["ankle_R",0.7821964025497437],["knee_R",0.21780359745025635],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.471300712904,4.661235590360633,5986.83481397212],"wrist":[4417.046465469627,3.6977184692268334,5987.1256306725645],"target":[4416.55,3.9525707031585604,5987.325290378179],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":0,"gap":0.7577691935849888,"clearance":0.06682801552416873,"lowest":{"object":"shoes01","position":[4411.726478238816,1.6668280155241688,5987.991053930807],"floor":1.6,"bones":[["ankle_L",0.6788889765739441],["knee_L",0.3211109936237335],["pelvis",0],["shoulder_L",0]]},"shoulder":[4411.723512616038,4.137889772694959,5987.941946114674],"wrist":[4412.055260017046,3.4489435763914087,5988.520619666844],"target":[4412.55,3.9525707031585604,5988.245290378179],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":0,"gap":0.8456792588574131,"clearance":0.012369061317461183,"lowest":{"object":"shoes01","position":[4421.429495635508,1.6123690613174613,5987.941456654015],"floor":1.6,"bones":[["ankle_R",0.800574779510498],["knee_R",0.19942523539066315],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.471300712904,4.261235590360633,5987.75481397212],"wrist":[4421.046465469627,3.2977184692276706,5988.0456306725655],"target":[4420.55,3.9525707031585604,5988.245290378179],"length":1.131863192138633}
+# {"role":"trinity","elapsed":0.7,"gap":0.5926985926402235,"clearance":0.024472981533027127,"lowest":{"object":"shoes01","position":[4417.4116992703,1.6244729815330272,5986.959587489207],"floor":1.6,"bones":[["ankle_R",0.7821964025497437],["knee_R",0.21780359745025635],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.471300712904,4.661235590360633,5986.83481397212],"wrist":[4417.046465469627,3.6977184692268334,5987.1256306725645],"target":[4416.55,3.9525707031585604,5987.325290378179],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":0.7,"gap":0.7577691935849888,"clearance":0.06682801552416873,"lowest":{"object":"shoes01","position":[4411.726478238816,1.6668280155241688,5987.991053930807],"floor":1.6,"bones":[["ankle_L",0.6788889765739441],["knee_L",0.3211109936237335],["pelvis",0],["shoulder_L",0]]},"shoulder":[4411.723512616038,4.137889772694959,5987.941946114674],"wrist":[4412.055260017046,3.4489435763914087,5988.520619666844],"target":[4412.55,3.9525707031585604,5988.245290378179],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":0.7,"gap":0.8456792588574131,"clearance":0.012369061317461183,"lowest":{"object":"shoes01","position":[4421.429495635508,1.6123690613174613,5987.941456654015],"floor":1.6,"bones":[["ankle_R",0.800574779510498],["knee_R",0.19942523539066315],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.471300712904,4.261235590360633,5987.75481397212],"wrist":[4421.046465469627,3.2977184692276706,5988.0456306725655],"target":[4420.55,3.9525707031585604,5988.245290378179],"length":1.131863192138633}
+# {"role":"trinity","elapsed":1.35,"gap":0.5926985926402235,"clearance":0.024472981533027127,"lowest":{"object":"shoes01","position":[4417.4116992703,1.6244729815330272,5986.959587489207],"floor":1.6,"bones":[["ankle_R",0.7821964025497437],["knee_R",0.21780359745025635],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.471300712904,4.661235590360633,5986.83481397212],"wrist":[4417.046465469627,3.6977184692268334,5987.1256306725645],"target":[4416.55,3.9525707031585604,5987.325290378179],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":1.35,"gap":0.7577691935849888,"clearance":0.06682801552416873,"lowest":{"object":"shoes01","position":[4411.726478238816,1.6668280155241688,5987.991053930807],"floor":1.6,"bones":[["ankle_L",0.6788889765739441],["knee_L",0.3211109936237335],["pelvis",0],["shoulder_L",0]]},"shoulder":[4411.723512616038,4.137889772694959,5987.941946114674],"wrist":[4412.055260017046,3.4489435763914087,5988.520619666844],"target":[4412.55,3.9525707031585604,5988.245290378179],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":1.35,"gap":0.8456792588574131,"clearance":0.012369061317461183,"lowest":{"object":"shoes01","position":[4421.429495635508,1.6123690613174613,5987.941456654015],"floor":1.6,"bones":[["ankle_R",0.800574779510498],["knee_R",0.19942523539066315],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.471300712904,4.261235590360633,5987.75481397212],"wrist":[4421.046465469627,3.2977184692276706,5988.0456306725655],"target":[4420.55,3.9525707031585604,5988.245290378179],"length":1.131863192138633}
+# {"role":"trinity","elapsed":1.65,"gap":0.5857404718989092,"clearance":0.013875486002612458,"lowest":{"object":"shoes01","position":[4417.362877400029,1.6138754860026125,5987.131053755802],"floor":1.6,"bones":[["ankle_R",0.8082708120346069],["knee_R",0.19172915816307068],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.352909765366,4.260896958231203,5986.89749153258],"wrist":[4417.077950394254,3.6668767800729603,5987.118180772322],"target":[4416.600552492088,3.4826016433368974,5987.40318220637],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":1.65,"gap":0.5095924034517194,"clearance":0.024194054519648622,"lowest":{"object":"shoes01","position":[4411.4793387912505,1.2241940545196488,5988.464594347053],"floor":1.2000000000000002,"bones":[["ankle_R",0.8307676911354065],["knee_R",0.1692322939634323],["pelvis",0],["elbow_L",0]]},"shoulder":[4411.8231940903615,3.8519992293112293,5988.09146832616],"wrist":[4412.114136913324,3.342839509825933,5988.382771202228],"target":[4412.600552492088,3.4826016433368974,5988.32318220637],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":1.65,"gap":0.5854050102688237,"clearance":0.0108853828129023,"lowest":{"object":"shoes01","position":[4421.361780513707,1.6108853828129024,5987.992639469432],"floor":1.6,"bones":[["ankle_R",0.8343091607093811],["knee_R",0.16569086909294128],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.303187745826,3.9390829568056804,5987.84381495469],"wrist":[4421.074834893109,3.289263709880874,5988.03967616831],"target":[4420.600552492088,3.4826016433368974,5988.32318220637],"length":1.131863192138633}
+# {"role":"trinity","elapsed":1.9,"gap":0.46591139271711435,"clearance":0.00966908932137267,"lowest":{"object":"shoes01","position":[4417.464502554468,1.6096690893213728,5987.585491465137],"floor":1.6,"bones":[["ankle_L",0.8082708120346069],["knee_L",0.19172915816307068],["pelvis",0],["shoulder_L",0]]},"shoulder":[4417.193088452921,3.371264384814139,5986.98210281564],"wrist":[4416.656250375091,2.796577121577211,5987.404069593842],"target":[4416.6295089804835,2.3346872197683908,5987.458988099695],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":1.9,"gap":0.32173400475223635,"clearance":0.018893137030019158,"lowest":{"object":"shoes01","position":[4411.499493770625,1.2188931370300193,5988.555399699191],"floor":1.2000000000000002,"bones":[["ankle_R",0.8307676911354065],["knee_R",0.1692322939634323],["pelvis",0],["elbow_L",0]]},"shoulder":[4411.986113050606,3.1379435484773697,5988.3358467665275],"wrist":[4412.454921762131,2.590186819519862,5988.467033698838],"target":[4412.6295089804835,2.3346872197683908,5988.378988099695],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":1.9,"gap":0.28260722167636615,"clearance":0.010454265124633544,"lowest":{"object":"shoes01","position":[4421.287771771544,1.6104542651246336,5987.958025240151],"floor":1.6,"bones":[["ankle_R",0.800574779510498],["knee_R",0.19942523539066315],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.084972869152,3.1434683370589696,5987.959340477635],"wrist":[4420.728060481187,2.582632781562543,5988.2858353120855],"target":[4420.6295089804835,2.3346872197683908,5988.378988099695],"length":1.131863192138633}
+# {"role":"trinity","elapsed":2.25,"gap":1.517550381637626e-12,"clearance":0.016820294192903207,"lowest":{"object":"shoes01","position":[4417.340058670563,1.6168202941929033,5987.654421005101],"floor":1.6,"bones":[["ankle_L",0.783396303653717],["knee_L",0.21660372614860535],["pelvis",0],["shoulder_L",0]]},"shoulder":[4417.158763781685,2.569409263021509,5987.000274700413],"wrist":[4416.630000000001,1.6849999999991947,5987.459999999999],"target":[4416.63,1.685,5987.46],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":2.25,"gap":9.130986322321138e-13,"clearance":0.0182048665965846,"lowest":{"object":"shoes01","position":[4411.519380955339,1.2182048665965848,5988.6474001244205],"floor":1.2000000000000002,"bones":[["ankle_R",0.8307676911354065],["knee_R",0.1692322939634323],["pelvis",0],["elbow_L",0]]},"shoulder":[4412.055889463506,2.419318160127019,5988.440511385876],"wrist":[4412.63,1.684999999999919,5988.379999999999],"target":[4412.63,1.685,5988.38],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":2.25,"gap":1.5067946890212625e-12,"clearance":0.009371141596564048,"lowest":{"object":"shoes01","position":[4421.429362971188,1.2093711415965642,5988.504532231178],"floor":1.2000000000000002,"bones":[["ankle_L",0.7957590222358704],["knee_L",0.20424096286296844],["pelvis",0],["shoulder_L",0]]},"shoulder":[4421.067204487743,2.400154825172164,5987.968747267794],"wrist":[4420.63,1.6850000000015068,5988.38],"target":[4420.63,1.685,5988.38],"length":1.131863192138633}
+# {"role":"trinity","elapsed":2.45,"gap":9.095471756443199e-13,"clearance":0.011721825638573158,"lowest":{"object":"shoes01","position":[4417.141706407988,1.6117218256385732,5987.210117008378],"floor":1.6,"bones":[["ankle_R",0.783396303653717],["knee_R",0.21660372614860535],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.15793281002,2.7169299712183967,5987.000714626587],"wrist":[4416.688201181416,1.8445424565344257,5987.447515518658],"target":[4416.688201181417,1.844542456534416,5987.447515518658],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":2.45,"gap":2.0659201037819297e-12,"clearance":0.018012263940108353,"lowest":{"object":"shoes01","position":[4411.5154679707675,1.2180122639401085,5988.628713089769],"floor":1.2000000000000002,"bones":[["ankle_R",0.8307676911354065],["knee_R",0.1692322939634323],["pelvis",0],["elbow_L",0]]},"shoulder":[4412.0489464382545,2.5561323635371838,5988.430096848],"wrist":[4412.564494329146,1.8445424565347794,5988.391873245495],"target":[4412.564494329145,1.844542456534416,5988.391873245493],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":2.45,"gap":1.8094829021418719e-12,"clearance":0.00949994503153384,"lowest":{"object":"shoes01","position":[4421.441090762561,1.209499945031534,5988.49080139167],"floor":1.2000000000000002,"bones":[["ankle_L",0.7957590222358704],["knee_L",0.20424096286296844],["pelvis",0],["shoulder_L",0]]},"shoulder":[4421.0584983498275,2.535903054305265,5987.973356399631],"wrist":[4420.688201181418,1.8445424565328516,5988.367515518658],"target":[4420.688201181417,1.844542456534416,5988.367515518658],"length":1.131863192138633}
+# {"role":"trinity","elapsed":2.75,"gap":1.2884197466744946e-12,"clearance":0.009605568643038076,"lowest":{"object":"shoes01","position":[4417.447800388267,1.6096055686430382,5987.562979548234],"floor":1.6,"bones":[["ankle_L",0.7957590222358704],["knee_L",0.20424096286296844],["pelvis",0],["shoulder_L",0]]},"shoulder":[4417.189322259789,3.3341921762789672,5986.984096682591],"wrist":[4416.898329034644,2.5014139703978167,5987.382253747704],"target":[4416.898329034644,2.501413970396904,5987.3822537477035],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":2.75,"gap":1.922019947181611e-12,"clearance":0.018798893705104902,"lowest":{"object":"shoes01","position":[4411.500358764159,1.218798893705105,5988.5593042946675],"floor":1.2000000000000002,"bones":[["ankle_R",0.8307676911354065],["knee_R",0.1692322939634323],["pelvis",0],["elbow_L",0]]},"shoulder":[4411.991018234222,3.1061532026924583,5988.343204541949],"wrist":[4412.27943889352,2.501413970396283,5988.384205384872],"target":[4412.279438893518,2.501413970396904,5988.384205384872],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":2.75,"gap":1.0590934588368683e-12,"clearance":0.01042014627090082,"lowest":{"object":"shoes01","position":[4421.498840155942,1.210420146270901,5988.465794797647],"floor":1.2000000000000002,"bones":[["ankle_L",0.8082708120346069],["knee_L",0.19172915816307068],["pelvis",0],["shoulder_L",0]]},"shoulder":[4421.0805223561765,3.109120719225211,5987.961696631563],"wrist":[4420.898329034643,2.5014139703963614,5988.302253747704],"target":[4420.898329034644,2.501413970396904,5988.302253747704],"length":1.131863192138633}
+# {"role":"trinity","elapsed":3.1,"gap":1.9265108429883584e-12,"clearance":0.013156991877627311,"lowest":{"object":"shoes01","position":[4417.353418422911,1.6131569918776274,5987.1321582055225],"floor":1.6,"bones":[["ankle_R",0.8082708120346069],["knee_R",0.19172915816307068],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.33618152159,4.194544627392854,5986.906347661638],"wrist":[4417.135302064192,3.4276440884047266,5987.301705608507],"target":[4417.135302064194,3.427644088404092,5987.301705608507],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":3.1,"gap":1.0581843572564762e-12,"clearance":0.023431612606712005,"lowest":{"object":"shoes01","position":[4411.480808571532,1.2234316126067122,5988.471277405793],"floor":1.2000000000000002,"bones":[["ankle_R",0.8307676911354065],["knee_R",0.1692322939634323],["pelvis",0],["elbow_L",0]]},"shoulder":[4411.838220866427,3.8022772282855506,5988.114008490259],"wrist":[4411.962993614773,3.427644088403551,5988.231197866174],"target":[4411.962993614773,3.427644088404092,5988.231197866173],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":3.1,"gap":1.747262604848044e-12,"clearance":0.010725091842005208,"lowest":{"object":"shoes01","position":[4421.35447555054,1.6107250918420053,5987.993518737503],"floor":1.6,"bones":[["ankle_R",0.8343091607093811],["knee_R",0.16569086909294128],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.279453707105,3.882773954398881,5987.8563800340135],"wrist":[4421.135302064195,3.4276440884029094,5988.221705608508],"target":[4421.135302064194,3.427644088404092,5988.221705608507],"length":1.131863192138633}
+# {"role":"trinity","elapsed":3.5,"gap":9.2719403664836e-13,"clearance":0.024472981533027127,"lowest":{"object":"shoes01","position":[4417.4116992703,1.6244729815330272,5986.959587489207],"floor":1.6,"bones":[["ankle_R",0.7821964025497437],["knee_R",0.21780359745025635],["pelvis",0],["elbow_L",0]]},"shoulder":[4417.471300712904,4.661235590360633,5986.83481397212],"wrist":[4417.264892429124,3.9650000000001806,5987.269174596345],"target":[4417.264892429124,3.9650000000000003,5987.269174596346],"length":1.131863192138633}
+# {"role":"morpheus","elapsed":3.5,"gap":9.421831674094643e-13,"clearance":0.06682801552416873,"lowest":{"object":"shoes01","position":[4411.726478238816,1.6668280155241688,5987.991053930807],"floor":1.6,"bones":[["ankle_L",0.6788889765739441],["knee_L",0.3211109936237335],["pelvis",0],["shoulder_L",0]]},"shoulder":[4411.723512616038,4.137889772694959,5987.941946114674],"wrist":[4411.877888974491,3.9649999999997543,5988.141833461737],"target":[4411.877888974491,3.9650000000000003,5988.1418334617365],"length":1.0265117237369714}
+# {"role":"seraph","elapsed":3.5,"gap":1.2179125326989509e-12,"clearance":0.012369061317461183,"lowest":{"object":"shoes01","position":[4421.429495635508,1.6123690613174613,5987.941456654015],"floor":1.6,"bones":[["ankle_R",0.800574779510498],["knee_R",0.19942523539066315],["pelvis",0],["elbow_L",0]]},"shoulder":[4421.471300712904,4.261235590360633,5987.75481397212],"wrist":[4421.264892429125,3.9649999999991903,5988.189174596346],"target":[4421.264892429124,3.9650000000000003,5988.189174596346],"length":1.131863192138633}
+# Subtest: the actual trio keeps shoes and clothes above the shared stairs during surrender
+ok 5 - the actual trio keeps shoes and clothes above the shared stairs during surrender
+  ---
+  duration_ms: 581.773208
+  type: 'test'
+  ...
+# {"role":"trinity","elapsed":0,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":0,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":0,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":0.3,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":0.3,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":0.3,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":0.7,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":0.7,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":0.7,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":1.1,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":1.1,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":1.1,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":1.349,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":1.349,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":1.349,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":1.35,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":1.35,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":1.35,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":1.6,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":1.6,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":1.6,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":1.9,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":1.9,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":1.9,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":2.25,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":2.25,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":2.25,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":2.75,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":2.75,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":2.75,"clearance":-0.014000004917426923}
+# {"role":"trinity","elapsed":3.5,"clearance":0.00615934811817942}
+# {"role":"morpheus","elapsed":3.5,"clearance":-0.004264215074983868}
+# {"role":"seraph","elapsed":3.5,"clearance":-0.014000004917426923}
+# Subtest: the real checkpoint lets Seraph’s shipped boot touch the same pistol before it leaves the collector
+ok 6 - the real checkpoint lets Seraph’s shipped boot touch the same pistol before it leaves the collector
+  ---
+  duration_ms: 293.425542
+  type: 'test'
+  ...
+# {"closest":0.0998167593997749,"target":[4419.65,3.015,5990.598957567409],"ankle":[4419.65,3.0449999999995225,5990.848957567409]}
+# Subtest: the actual Trinity arm catches the flying prop without a jump and keeps the grip while returning to aim
+not ok 7 - the actual Trinity arm catches the flying prop without a jump and keeps the grip while returning to aim
+  ---
+  duration_ms: 314.255708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hel-standoff-model.test.mts:1:13481'
+  failureType: 'testCodeFailure'
+  error: 'finishing the catch cannot snap the arm posture'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hel-standoff-model.test.mts:222:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"gap":8.348877145181177e-14,"gun":[4416.725,5.686578571428486,5986.282068397672],"expected":[4416.725,5.686578571428569,5986.282068397672]}
+# Subtest: the shipped kick, catch and recoiling guard stay above the actual VIP stairs
+ok 8 - the shipped kick, catch and recoiling guard stay above the actual VIP stairs
+  ---
+  duration_ms: 553.879083
+  type: 'test'
+  ...
+# {"role":"trinity","phase":"airborne","elapsed":0,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":0,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":0,"clearance":-0.004299374549621371}
+# {"role":"trinity","phase":"airborne","elapsed":0.1,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":0.1,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":0.1,"clearance":-0.004299374549621371}
+# {"role":"trinity","phase":"airborne","elapsed":0.27,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":0.27,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":0.27,"clearance":-0.004299374549621371}
+# {"role":"trinity","phase":"airborne","elapsed":0.55,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":0.55,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":0.55,"clearance":-0.014865406655151903}
+# {"role":"trinity","phase":"airborne","elapsed":0.7,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":0.7,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":0.7,"clearance":-0.017707884146391795}
+# {"role":"trinity","phase":"airborne","elapsed":0.95,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":0.95,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":0.95,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"airborne","elapsed":2.9,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":2.9,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":2.9,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"airborne","elapsed":3.1,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"airborne","elapsed":3.1,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"airborne","elapsed":3.1,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"catching","elapsed":0,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"catching","elapsed":0,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"catching","elapsed":0,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"catching","elapsed":0.15,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"catching","elapsed":0.15,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"catching","elapsed":0.15,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"catching","elapsed":0.27,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"catching","elapsed":0.27,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"catching","elapsed":0.27,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"catching","elapsed":0.5,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"catching","elapsed":0.5,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"catching","elapsed":0.5,"clearance":-0.01825847844878048}
+# {"role":"trinity","phase":"catching","elapsed":0.65,"clearance":0.006159348118285557}
+# {"role":"seraph","phase":"catching","elapsed":0.65,"clearance":-0.015000004917335108}
+# {"role":"guard","phase":"catching","elapsed":0.65,"clearance":-0.01825847844878048}
+1..8
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3587.0785

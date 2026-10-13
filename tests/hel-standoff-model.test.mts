@@ -68,6 +68,20 @@ test('all three shipped hands release the same physical pistol at the start of i
   h.pose(HEL_DISARM.release); for (const role of HEL_TRIO) assert.equal(h.rigs[role].weapons![0].visible, false);
 });
 
+test('starting to lower the pistol preserves the elbow relative to the shoulder and the muzzle orientation', async t => {
+  const h = await setup(t); h.pose(0);
+  for (const role of ['trinity', 'morpheus'] as const) {
+    const rig = h.rigs[role], elbow = rig.hero!.bones.get('elbow_R')!, shoulder = rig.hero!.bones.get('shoulder_R')!, gun = rig.weapons![0];
+    // The idle body resumes its own breathing height; compare the arm posture
+    // relative to its shoulder, rather than treating that translation as a bend.
+    const position = () => elbow.getWorldPosition(new THREE.Vector3()).sub(shoulder.getWorldPosition(new THREE.Vector3()));
+    const start = position(), orientation = gun.getWorldQuaternion(new THREE.Quaternion());
+    h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true, weaponStyle: 'hel_pistol' }, 0);
+    assert.ok(start.distanceTo(position()) < .005, 'starting to lower the gun must not snap the arm posture');
+    assert.ok(orientation.angleTo(gun.getWorldQuaternion(new THREE.Quaternion())) < 1e-7, 'starting to lower the gun must preserve its orientation');
+  }
+});
+
 test('the falling pistols land on the actual higher tread and transfer continuously to the collectors', async t => {
   const h = await setup(t), scene = new THREE.Scene(); scene.background = new THREE.Color(); scene.fog = new THREE.FogExp2();
   const renderer = new FilmSetRenderer(scene); t.after(() => renderer.dispose());
@@ -200,9 +214,13 @@ test('the actual Trinity arm catches the flying prop without a jump and keeps th
     const before = gun.getWorldPosition(new THREE.Vector3()); p.pose('catching', elapsed);
     assert.ok(before.distanceTo(gun.getWorldPosition(new THREE.Vector3())) < .001, 'a paused catch cannot drift');
   }
-  const end = gun.getWorldPosition(new THREE.Vector3());
+  const end = gun.getWorldPosition(new THREE.Vector3()), elbow = h.rigs.trinity.hero!.bones.get('elbow_R')!, shoulder = h.rigs.trinity.hero!.bones.get('shoulder_R')!;
+  const arm = () => elbow.getWorldPosition(new THREE.Vector3()).sub(shoulder.getWorldPosition(new THREE.Vector3()));
+  const endElbow = arm(), endOrientation = gun.getWorldQuaternion(new THREE.Quaternion());
   h.models.animate(h.rigs.trinity, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true, weaponStyle: 'hel_pistol' }, 0);
   assert.ok(end.distanceTo(gun.getWorldPosition(new THREE.Vector3())) < .015, 'finishing the catch cannot pop into another aim pose');
+  assert.ok(endElbow.distanceTo(arm()) < .005, 'finishing the catch cannot snap the arm posture');
+  assert.ok(endOrientation.angleTo(gun.getWorldQuaternion(new THREE.Quaternion())) < 1e-7, 'finishing the catch cannot rotate the pistol');
 });
 
 test('the shipped kick, catch and recoiling guard stay above the actual VIP stairs', async t => {

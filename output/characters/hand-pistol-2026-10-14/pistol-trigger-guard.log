@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 1 - neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 323.244875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'neo -0.55/10: skin penetrates trigger guard at 0.14941015090767631,-0.3109489896502935,0.012674425007649148 by 0.010589077278329997'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:68:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 2 - trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 108.8875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'trinity -0.55/10: skin penetrates trigger guard at 0.1476899251971431,-0.24652864089477822,0.02157085324239061 by 0.006625366390692491'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:68:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 3 - smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 71.531292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'smith -0.55/10: skin penetrates trigger guard at 0.14893257988110392,-0.300679207739027,0.0118923315004964 by 0.011063761732958624'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:68:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 4 - morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 367.360916
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'morpheus -0.55/10: skin penetrates trigger guard at 0.14928622467556069,-0.31475447961752145,0.009090563770216775 by 0.010528486013456694'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:68:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1107.17175

@@ -45,10 +45,13 @@ export function poseHelBreakout(rig: CharacterRig, gesture?: HelBreakoutGesture)
   const caught = gesture.breakout.caught, p = THREE.MathUtils.smoothstep(gesture.elapsed, 0, HEL_BREAKOUT.catch);
   const orientation = new THREE.Quaternion().setFromEuler(new THREE.Euler(caught.pitch, caught.yaw, caught.roll, 'YXZ'))
     .slerp(gun.getWorldQuaternion(new THREE.Quaternion()), p);
+  orientation.multiply(gun.quaternion.clone().invert());
   const target = new THREE.Vector3(center.x + caught.x, center.y - 1 + caught.y, center.z + caught.z)
     .lerp(gun.getWorldPosition(new THREE.Vector3()), p)
     .sub(gun.position.clone().multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation));
-  reach(shoulder, elbow, wrist.position.clone(), target, new THREE.Vector3(-.4, -.8, -.2).applyQuaternion(rotation));
+  const pole = new THREE.Vector3(-.4, -.8, -.2).applyQuaternion(rotation);
+  if (rig.hero) pole.lerp(new THREE.Vector3(-1, -.5, -.8).applyQuaternion(rotation), p);
+  reach(shoulder, elbow, wrist.position.clone(), target, pole);
   wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
   // Keep the palm on the grip while the thumb and lower fingers close around it.
   if (rig.hero) for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {

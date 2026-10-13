@@ -12,7 +12,7 @@ export function createHelPistol(material: THREE.Material): THREE.Group {
   box('hel-pistol-grip', 0, -.1, -.025, .08, .27, .13).rotation.x = .12;
   box('hel-pistol-magazine', 0, -.24, -.04, .09, .025, .135);
   const guard = new THREE.Mesh(new THREE.TorusGeometry(.075, .012, 8, 20), material);
-  guard.position.set(0, -.055, .09); guard.rotation.y = Math.PI / 2; gun.add(guard);
+  guard.position.set(0, -.035, .09); guard.rotation.y = Math.PI / 2; guard.scale.y = .56; gun.add(guard);
   box('hel-pistol-trigger', 0, -.045, .055, .025, .07, .026).rotation.x = -.2;
   for (const z of [-.045, .35]) box('hel-pistol-sight', 0, .145, z, .035, .025, .04);
   return gun;

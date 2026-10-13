@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 1 - neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 1336.04875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'neo 0/0.12: skin penetrates hel-pistol-slide at 0.11979859441742474,-0.36400033726974723,0.14175913876305923, finger2-3_R:0.7222499847412109 finger2-2_R:0.2777499854564667 pelvis:0 elbow_L:0 by 0.004452159006112808'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:69:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 2 - trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 1156.3935
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'trinity 0/0.13: skin penetrates trigger guard at 0.1470402637946277,-0.3498619110529614,0.11241876427746655 by 0.005906751044413771'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:69:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 3 - smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 1039.759375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'smith 0/0.12: skin penetrates hel-pistol-slide at 0.1195711765505739,-0.35853162188856125,0.1392271683423747, finger2-3_R:0.7222499847412109 finger2-2_R:0.2777499854564667 pelvis:0 elbow_L:0 by 0.003388549819859803'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:69:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+not ok 4 - morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 1291.883958
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:1:1551'
+  failureType: 'testCodeFailure'
+  error: 'morpheus 0/0.12: skin penetrates hel-pistol-slide at 0.1198735155039091,-0.36836256795603006,0.1393304243048501, finger2-3_R:0.7222499847412109 finger2-2_R:0.2777499854564667 pelvis:0 elbow_L:0 by 0.004920952893016164'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pistol-grip.test.mts:69:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5182.081
