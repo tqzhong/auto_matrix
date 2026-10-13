@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 1 - neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 321.343125
+  type: 'test'
+  ...
+# Subtest: trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 2 - trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 81.9555
+  type: 'test'
+  ...
+# Subtest: smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 3 - smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 29.621333
+  type: 'test'
+  ...
+# Subtest: morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 4 - morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 447.53675
+  type: 'test'
+  ...
+# Subtest: neo: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 5 - neo: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 39507.944416
+  type: 'test'
+  ...
+# Subtest: trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 6 - trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 55786.52225
+  type: 'test'
+  ...
+# Subtest: smith: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 7 - smith: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 56046.878625
+  type: 'test'
+  ...
+# Subtest: morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 8 - morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 44570.742167
+  type: 'test'
+  ...
+# Subtest: restored hands match animated hands and release to their original pose without carrying over a grip
+ok 9 - restored hands match animated hands and release to their original pose without carrying over a grip
+  ---
+  duration_ms: 1504.0765
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 198661.156541

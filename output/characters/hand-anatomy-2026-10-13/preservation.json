@@ -1,0 +1,62 @@
+{
+  "protectedFileCount": 196,
+  "changed": [],
+  "relaxedHandGeometry": [
+    {
+      "character": "neo",
+      "side": "R",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "neo",
+      "side": "L",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "trinity",
+      "side": "R",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "trinity",
+      "side": "L",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "smith",
+      "side": "R",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "smith",
+      "side": "L",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "morpheus",
+      "side": "R",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    },
+    {
+      "character": "morpheus",
+      "side": "L",
+      "vertices": 6673,
+      "maxDifference": 0.0,
+      "topologyEqual": true
+    }
+  ]
+}

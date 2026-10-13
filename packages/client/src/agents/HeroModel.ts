@@ -128,6 +128,7 @@ export class HeroModels {
   private local = new THREE.Vector3();
   private segment = new THREE.Vector3();
   private closest = new THREE.Vector3();
+  private handRotation = new THREE.Quaternion();
   private patientSkin: THREE.DataTexture;
 
   constructor(private portrait: THREE.Texture, private fabric: THREE.Texture) {
@@ -797,6 +798,56 @@ export class HeroModels {
     this.recoveries.get(rig)!.update(undefined, true);
   }
 
+  private gripHand(rig: HeroRig, side: string, grip: number): void {
+    if (grip <= 0) return;
+    const wrist = rig.bones.get(`wrist_${side}`)!;
+    let closed = wrist.userData.closedHand as THREE.Quaternion[][] | undefined;
+    if (!closed) {
+      closed = [];
+      const inward = side === 'R' ? 1 : -1;
+      const tips = Array.from({ length: 5 }, () => new THREE.Vector3());
+      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      const distal = skin.skeleton.bones.map(bone => new RegExp(`^finger([1-5])-3_${side}$`).exec(bone.name));
+      // Distal bones have no child joint. Infer their actual axis from the
+      // bound fingertip skin, rather than copying the preceding phalanx.
+      for (let vertex = 0; vertex < position.count; vertex++) for (let part = 0; part < 4; part++) {
+        const joint = skinIndex.getComponent(vertex, part), match = distal[joint];
+        if (!match || skinWeight.getComponent(vertex, part) < .9) continue;
+        this.point.fromBufferAttribute(position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[joint]);
+        tips[Number(match[1]) - 1].add(this.point);
+      }
+      // Bind axes are world-aligned, but the source fingers are already
+      // curved and splayed. Aim their segments in wrist space instead of
+      // adding the same Euler curl to every digit. The thumb opposes them.
+      for (let digit = 1; digit <= 5; digit++) {
+        const parent = new THREE.Quaternion(), joints: THREE.Quaternion[] = [];
+        const directions = digit === 1 ? [[.83, -.5, .23], [.65, -.73, -.21], [-.1, -.45, -.88]]
+          : [[.985, -.173, 0], [.5, .866, 0], [-.9, .436, 0]];
+        for (const [i, direction] of directions.entries()) {
+          const axis = (i === 2 ? tips[digit - 1] : rig.rest.get(`finger${digit}-${i + 2}_${side}`)!).clone().normalize();
+          const target = new THREE.Vector3(inward * direction[0], direction[1], direction[2]).normalize();
+          const world = new THREE.Quaternion().setFromUnitVectors(axis, target);
+          joints.push(parent.clone().invert().multiply(world)); parent.copy(world);
+        }
+        closed.push(joints);
+      }
+      wrist.userData.closedHand = closed;
+    }
+    const amount = THREE.MathUtils.clamp(grip, 0, 1);
+    // Close the fingers first, then lay the thumb over them; simultaneous
+    // linear closure sweeps the index fingertip through the thumb.
+    for (let digit = 1; digit <= 5; digit++) for (let i = 0; i < 3; i++)
+      rig.bones.get(`finger${digit}-${i + 1}_${side}`)!.quaternion.slerp(closed[digit - 1][i], digit === 1 ? amount * amount : amount);
+    // The thumb travels around the index finger before settling outside
+    // the fist. Keep this arc in wrist space, independent of the arm pose.
+    const thumb = rig.bones.get(`finger1-1_${side}`)!, inward = side === 'R' ? 1 : -1;
+    const abduction = -inward * .55 * Math.sin(Math.PI * amount) / 2;
+    thumb.quaternion.premultiply(this.handRotation.set(0, Math.sin(abduction), 0, Math.cos(abduction)));
+    const outside = inward * .14 * amount / 2;
+    thumb.quaternion.premultiply(this.handRotation.set(0, 0, Math.sin(outside), Math.cos(outside)));
+  }
+
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     if (input.training?.kind === 'red_dress' && input.training.attention?.phase === 'frozen') delta = 0;
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
@@ -906,13 +957,14 @@ export class HeroModels {
       bone('shoulder_' + side).rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward * .6);
       bone('elbow_' + side).rotation.set(pose.arms[i].elbow, 0, 0);
       bone('wrist_' + side).quaternion.identity();
-      const grip = .15 + pose.arms[i].grip * .9;
+      const grip = .15;
       for (let f = 1; f <= 5; f++) for (let s = 1; s <= 3; s++) {
         const finger = bone(`finger${f}-${s}_${side}`);
         const inward = side === 'R' ? 1 : -1;
         finger.rotation.set(f === 1 ? grip * (s === 1 ? .8 : .65) : 0, 0,
           inward * grip * (f === 1 ? .2 : s === 1 ? .85 : 1.1));
       }
+      this.gripHand(rig, side, pose.arms[i].grip);
     }
     if (input.recovery !== undefined) {
       const t = input.recovery;

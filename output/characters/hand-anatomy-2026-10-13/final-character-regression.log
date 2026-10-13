@@ -1,0 +1,1032 @@
+TAP version 13
+# Subtest: Neo uses his existing plain home shirt consistently while approaching, reading and leaving the computer chair
+ok 1 - Neo uses his existing plain home shirt consistently while approaching, reading and leaving the computer chair
+  ---
+  duration_ms: 661.4085
+  type: 'test'
+  ...
+# Subtest: the chair approach lifts one real shoe while the supporting ankle stays planted through the saved step
+ok 2 - the chair approach lifts one real shoe while the supporting ankle stays planted through the saved step
+  ---
+  duration_ms: 460.969875
+  type: 'test'
+  ...
+# Subtest: the delivered home body stays clear of the chair and workbench while sitting down and getting up
+ok 3 - the delivered home body stays clear of the chair and workbench while sitting down and getting up
+  ---
+  duration_ms: 37968.126709
+  type: 'test'
+  ...
+# Subtest: the delivered daily Neo reaches the cable with intact arms and keeps visible hands and clothes above the workbench
+ok 4 - the delivered daily Neo reaches the cable with intact arms and keeps visible hands and clothes above the workbench
+  ---
+  duration_ms: 4094.456417
+  type: 'test'
+  ...
+# Subtest: the standing screen investigation point keeps the delivered daily Neo outside the office chair
+ok 5 - the standing screen investigation point keeps the delivered daily Neo outside the office chair
+  ---
+  duration_ms: 628.763417
+  type: 'test'
+  ...
+# Subtest: the real first-person cable camera sees the hand without looking through Neo’s own head or chest
+ok 6 - the real first-person cable camera sees the hand without looking through Neo’s own head or chest
+  ---
+  duration_ms: 500.990167
+  type: 'test'
+  ...
+# Subtest: the actual Neo carries the collected cartridge into the handover and the disc remains continuous across ownership transfer
+ok 7 - the actual Neo carries the collected cartridge into the handover and the disc remains continuous across ownership transfer
+  ---
+  duration_ms: 731.646833
+  type: 'test'
+  ...
+# Subtest: first-person retrieval follows the delivered head, sees the book and keeps the player’s mouse offset while crouching
+ok 8 - first-person retrieval follows the delivered head, sees the book and keeps the player’s mouse offset while crouching
+  ---
+  duration_ms: 897.578208
+  type: 'test'
+  ...
+# Subtest: the actual home body picks up the floor cartridge without teleporting the prop, sinking its shoes or clipping the bed
+ok 9 - the actual home body picks up the floor cartridge without teleporting the prop, sinking its shoes or clipping the bed
+  ---
+  duration_ms: 6514.576208
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading
+ok 10 - red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading
+  ---
+  duration_ms: 204.936875
+  type: 'test'
+  ...
+# Subtest: red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+ok 11 - red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+  ---
+  duration_ms: 1449.034208
+  type: 'test'
+  ...
+# Subtest: the shipped Neo lies face down on the impact surface and wipes his mouth in the real connection chair
+ok 12 - the shipped Neo lies face down on the impact surface and wipes his mouth in the real connection chair
+  ---
+  duration_ms: 729.924792
+  type: 'test'
+  ...
+# Subtest: Morpheus rooftop boots contact the roof during the run-up and compressing landing
+ok 13 - Morpheus rooftop boots contact the roof during the run-up and compressing landing
+  ---
+  duration_ms: 638.558292
+  type: 'test'
+  ...
+# Subtest: dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+ok 14 - dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+  ---
+  duration_ms: 1329.398625
+  type: 'test'
+  ...
+# Subtest: dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+ok 15 - dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+  ---
+  duration_ms: 1646.094208
+  type: 'test'
+  ...
+# Subtest: hidden coat panels skip deformation work and retain correct normals when worn again
+ok 16 - hidden coat panels skip deformation work and retain correct normals when worn again
+  ---
+  duration_ms: 751.36125
+  type: 'test'
+  ...
+# Subtest: a settled coat does not upload identical positions and normals every frame
+ok 17 - a settled coat does not upload identical positions and normals every frame
+  ---
+  duration_ms: 1546.168458
+  type: 'test'
+  ...
+# Subtest: Neo’s shipped body grips the physical street ladder without leaving the shaft
+ok 18 - Neo’s shipped body grips the physical street ladder without leaving the shaft
+  ---
+  duration_ms: 513.473042
+  type: 'test'
+  ...
+# Subtest: Neo plants both shipped palms on the physical manhole rim while climbing onto the street
+ok 19 - Neo plants both shipped palms on the physical manhole rim while climbing onto the street
+  ---
+  duration_ms: 472.512333
+  type: 'test'
+  ...
+# Subtest: animated heroes leave the draw list behind the camera while every posed vertex remains inside their bounds
+ok 20 - animated heroes leave the draw list behind the camera while every posed vertex remains inside their bounds
+  ---
+  duration_ms: 1568.036916
+  type: 'test'
+  ...
+# Subtest: the tucked and raised shirt stays inside culling bounds after the car-scan shader deforms it
+ok 21 - the tucked and raised shirt stays inside culling bounds after the car-scan shader deforms it
+  ---
+  duration_ms: 284.051917
+  type: 'test'
+  ...
+# Subtest: Neo removes his long sleeves for the tracking electrodes and restores them outside the mirror scene
+ok 22 - Neo removes his long sleeves for the tracking electrodes and restores them outside the mirror scene
+  ---
+  duration_ms: 318.059
+  type: 'test'
+  ...
+# Subtest: Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+ok 23 - Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+  ---
+  duration_ms: 1890.469333
+  type: 'test'
+  ...
+# Subtest: Neo’s cuff follows the raised biceps without being pulled through them
+ok 24 - Neo’s cuff follows the raised biceps without being pulled through them
+  ---
+  duration_ms: 2405.370583
+  type: 'test'
+  ...
+# Subtest: both complete cotton cuffs retain their shape throughout the mirror reach
+ok 25 - both complete cotton cuffs retain their shape throughout the mirror reach
+  ---
+  duration_ms: 386.681417
+  type: 'test'
+  ...
+# Subtest: Trinity’s leather covers her shoulder caps while she connects and releases the tracking electrode
+ok 26 - Trinity’s leather covers her shoulder caps while she connects and releases the tracking electrode
+  ---
+  duration_ms: 17937.431125
+  type: 'test'
+  ...
+# Subtest: the principal characters place their feet on different hotel treads instead of sharing a flat floor
+ok 27 - the principal characters place their feet on different hotel treads instead of sharing a flat floor
+  ---
+  duration_ms: 970.87
+  type: 'test'
+  ...
+# Subtest: hotel foot placement preserves the walking lift on both flights and on upper floors
+ok 28 - hotel foot placement preserves the walking lift on both flights and on upper floors
+  ---
+  duration_ms: 6951.652875
+  type: 'test'
+  ...
+# Subtest: hotel foot placement releases for jumping, combat and leaving the stairwell
+ok 29 - hotel foot placement releases for jumping, combat and leaving the stairwell
+  ---
+  duration_ms: 697.965708
+  type: 'test'
+  ...
+# Subtest: the four principal characters keep their shoe soles rigid when the knees bend
+ok 30 - the four principal characters keep their shoe soles rigid when the knees bend
+  ---
+  duration_ms: 99.72875
+  type: 'test'
+  ...
+# Subtest: the actual shoe meshes clear the hotel riser when a heel or toe straddles its edge
+ok 31 - the actual shoe meshes clear the hotel riser when a heel or toe straddles its edge
+  ---
+  duration_ms: 1282.949167
+  type: 'test'
+  ...
+# Subtest: the mirror reaches Neo’s hand before his face and coat hem
+ok 32 - the mirror reaches Neo’s hand before his face and coat hem
+  ---
+  duration_ms: 407.951875
+  type: 'test'
+  ...
+# Subtest: the silver front changes Neo’s skinned silhouette rather than only its color
+ok 33 - the silver front changes Neo’s skinned silhouette rather than only its color
+  ---
+  duration_ms: 388.913916
+  type: 'test'
+  ...
+# Subtest: the shipped Neo body rests in the pod fluid instead of hovering over the tank
+ok 34 - the shipped Neo body rests in the pod fluid instead of hovering over the tank
+  ---
+  duration_ms: 712.234042
+  type: 'test'
+  ...
+# Subtest: Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+not ok 35 - Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+  ---
+  duration_ms: 1193.106584
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:54574'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'localToWorld')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:914:30)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed
+ok 36 - Neo has a connected anatomical body after leaving the mirror for the pod and recovery bed
+  ---
+  duration_ms: 1012.324291
+  type: 'test'
+  ...
+# Subtest: legacy rigs without the full patient asset restore their clothing after recovery
+ok 37 - legacy rigs without the full patient asset restore their clothing after recovery
+  ---
+  duration_ms: 282.119375
+  type: 'test'
+  ...
+# Subtest: Morpheus and Trinity support Neo without placing their bodies through the medical bed
+ok 38 - Morpheus and Trinity support Neo without placing their bodies through the medical bed
+  ---
+  duration_ms: 1160.418917
+  type: 'test'
+  ...
+# Subtest: Neo and Trinity make physical hand and face contact during the Logos farewell
+ok 39 - Neo and Trinity make physical hand and face contact during the Logos farewell
+  ---
+  duration_ms: 334.936792
+  type: 'test'
+  ...
+# Subtest: Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+not ok 40 - Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+  ---
+  duration_ms: 809.206291
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:69668'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'updateWorldMatrix')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Box3.expandByObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4851:10)
+    Box3.setFromObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4771:15)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1072:42)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the resting patient has supported hands and heels and stays outside the medical mattress
+ok 41 - the resting patient has supported hands and heels and stays outside the medical mattress
+  ---
+  duration_ms: 785.166292
+  type: 'test'
+  ...
+# Subtest: the recovery needles stop at the shipped patient skin instead of penetrating to the bones
+ok 42 - the recovery needles stop at the shipped patient skin instead of penetrating to the bones
+  ---
+  duration_ms: 1604.141041
+  type: 'test'
+  ...
+# Subtest: Neo keeps his dressed body above the mattress until his legs clear the side of the cabin bed
+ok 43 - Neo keeps his dressed body above the mattress until his legs clear the side of the cabin bed
+  ---
+  duration_ms: 931.9525
+  type: 'test'
+  ...
+# Subtest: Neo rests both shipped hands on the cabin mattress before sitting up
+ok 44 - Neo rests both shipped hands on the cabin mattress before sitting up
+  ---
+  duration_ms: 385.810542
+  type: 'test'
+  ...
+# Subtest: the first core connection and download restore a seated body without penetrating the chair or floor
+ok 45 - the first core connection and download restore a seated body without penetrating the chair or floor
+  ---
+  duration_ms: 4764.122625
+  type: 'test'
+  ...
+# Subtest: the delivered first-film crew bodies and knit sleeves clear the new pressure hatch during walking
+ok 46 - the delivered first-film crew bodies and knit sleeves clear the new pressure hatch during walking
+  ---
+  duration_ms: 8418.897417
+  type: 'test'
+  ...
+# Subtest: Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug
+ok 47 - Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug
+  ---
+  duration_ms: 1365.006916
+  type: 'test'
+  ...
+# Subtest: the truth aftermath keeps the shipped body clear of the chair and floor while rising and kneeling
+ok 48 - the truth aftermath keeps the shipped body clear of the chair and floor while rising and kneeling
+  ---
+  duration_ms: 7371.727125
+  type: 'test'
+  ...
+# Subtest: Trinity holds the withdrawing plug and Dozer steadies Neo at the actual shoulder
+ok 49 - Trinity holds the withdrawing plug and Dozer steadies Neo at the actual shoulder
+  ---
+  duration_ms: 593.822916
+  type: 'test'
+  ...
+# Subtest: the bedside aftermath rests Neo on the mattress and supports Morpheus on his stool
+ok 50 - the bedside aftermath rests Neo on the mattress and supports Morpheus on his stool
+  ---
+  duration_ms: 1380.011834
+  type: 'test'
+  ...
+# Subtest: Tank reaches the actual neck connector and both hands follow the training disk and keyboard
+ok 51 - Tank reaches the actual neck connector and both hands follow the training disk and keyboard
+  ---
+  duration_ms: 716.896958
+  type: 'test'
+  ...
+# Subtest: Morpheus supports his chin against the delivered face during the download invitation
+ok 52 - Morpheus supports his chin against the delivered face during the download invitation
+  ---
+  duration_ms: 32804.18525
+  type: 'test'
+  ...
+# Subtest: Neo keeps his real-world scalp after waking and restores his hair inside the Matrix
+ok 53 - Neo keeps his real-world scalp after waking and restores his hair inside the Matrix
+  ---
+  duration_ms: 287.807917
+  type: 'test'
+  ...
+# Subtest: the cervical interface follows the skin at the nape and faces backwards
+ok 54 - the cervical interface follows the skin at the nape and faces backwards
+  ---
+  duration_ms: 316.887959
+  type: 'test'
+  ...
+# Subtest: Trinity resumes in her club costume and restores her jacket after leaving
+ok 55 - Trinity resumes in her club costume and restores her jacket after leaving
+  ---
+  duration_ms: 52.2605
+  type: 'test'
+  ...
+# Subtest: first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+ok 56 - first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+  ---
+  duration_ms: 508.761792
+  type: 'test'
+  ...
+# Subtest: Neo checks the back of his neck in the Construct instead of reaching into his throat
+ok 57 - Neo checks the back of his neck in the Construct instead of reaching into his throat
+  ---
+  duration_ms: 412.591792
+  type: 'test'
+  ...
+# Subtest: Morpheus remains seated with his held remote throughout the ruined-world reconstruction
+ok 58 - Morpheus remains seated with his held remote throughout the ruined-world reconstruction
+  ---
+  duration_ms: 523.353334
+  type: 'test'
+  ...
+# Subtest: Neo touches the Construct leather with both palms while Morpheus sits with grounded feet
+ok 59 - Neo touches the Construct leather with both palms while Morpheus sits with grounded feet
+  ---
+  duration_ms: 795.079875
+  type: 'test'
+  ...
+# Subtest: Trinity’s fitted outfit has no open waist during the club conversation
+ok 60 - Trinity’s fitted outfit has no open waist during the club conversation
+  ---
+  duration_ms: 354.819208
+  type: 'test'
+  ...
+# Subtest: the club shoulders and wrists stay welded to Trinity’s finished skin during her performance
+ok 61 - the club shoulders and wrists stay welded to Trinity’s finished skin during her performance
+  ---
+  duration_ms: 554.432959
+  type: 'test'
+  ...
+# Subtest: the office rigs reach the keyboard, clipboard and the signature on the delivered form
+ok 62 - the office rigs reach the keyboard, clipboard and the signature on the delivered form
+  ---
+  duration_ms: 462.35975
+  type: 'test'
+  ...
+# Subtest: Neo’s office shirt covers his waist when he leans over the signature form
+ok 63 - Neo’s office shirt covers his waist when he leans over the signature form
+  ---
+  duration_ms: 2791.561834
+  type: 'test'
+  ...
+# Subtest: the physical glass doorway stays clear at walking height and the delivered board follows the saved clock
+ok 64 - the physical glass doorway stays clear at walking height and the delivered board follows the saved clock
+  ---
+  duration_ms: 49.692667
+  type: 'test'
+  ...
+# Subtest: the actual car occupants fit below the roof and Trinity holds both scanner grips
+ok 65 - the actual car occupants fit below the roof and Trinity holds both scanner grips
+  ---
+  duration_ms: 782.716625
+  type: 'test'
+  ...
+# Subtest: Neo’s tracker scan keeps his waist covered before lifting and skin inside the shirt
+ok 66 - Neo’s tracker scan keeps his waist covered before lifting and skin inside the shirt
+  ---
+  duration_ms: 340.716416
+  type: 'test'
+  ...
+# Subtest: Neo’s black shirt covers his upper chest while seated in Trinity’s car
+ok 67 - Neo’s black shirt covers his upper chest while seated in Trinity’s car
+  ---
+  duration_ms: 238.219167
+  type: 'test'
+  ...
+# Subtest: Trinity ducks out of the opposite rear door and stands before becoming the hotel guide
+ok 68 - Trinity ducks out of the opposite rear door and stands before becoming the hotel guide
+  ---
+  duration_ms: 116.125167
+  type: 'test'
+  ...
+# Subtest: Neo office clothing replaces his coat and binds its complete sleeves to the existing skeleton
+ok 69 - Neo office clothing replaces his coat and binds its complete sleeves to the existing skeleton
+  ---
+  duration_ms: 293.898625
+  type: 'test'
+  ...
+# Subtest: Smith presents the tracker without putting his forearm through his face
+ok 70 - Smith presents the tracker without putting his forearm through his face
+  ---
+  duration_ms: 32.086875
+  type: 'test'
+  ...
+# Subtest: the interrogation holds Neo above the table with the agents outside its solid footprint
+ok 71 - the interrogation holds Neo above the table with the agents outside its solid footprint
+  ---
+  duration_ms: 428.391125
+  type: 'test'
+  ...
+# Subtest: the handset casing never hides its screen and opening the slider reveals the keypad
+ok 72 - the handset casing never hides its screen and opening the slider reveals the keypad
+  ---
+  duration_ms: 19.4215
+  type: 'test'
+  ...
+# Subtest: Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+ok 73 - Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+  ---
+  duration_ms: 259.035792
+  type: 'test'
+  ...
+# Subtest: the morning alarm is turned off by Neo’s actual palm without stretching the arm
+ok 74 - the morning alarm is turned off by Neo’s actual palm without stretching the arm
+  ---
+  duration_ms: 30.143625
+  type: 'test'
+  ...
+# Subtest: Neo takes the apartment handset from its physical cradle and returns it after the call
+ok 75 - Neo takes the apartment handset from its physical cradle and returns it after the call
+  ---
+  duration_ms: 40.250666
+  type: 'test'
+  ...
+# Subtest: the left hand reaches and turns the window handle while the right hand holds the phone
+ok 76 - the left hand reaches and turns the window handle while the right hand holds the phone
+  ---
+  duration_ms: 43.086958
+  type: 'test'
+  ...
+# 窗外清洁工模型加载失败 TypeError: Failed to parse URL from /assets/characters/club-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2319:52)
+#     at Test.runInAsyncScope (node:async_hooks:214:14) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at OfficeSetRenderer.loadCleaners (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/OfficeSetRenderer.ts:39:42)
+#       at new OfficeSetRenderer (/Users/tianqizhong/ai_project/auto_matrix/packages/client/src/engine/OfficeSetRenderer.ts:36:15)
+#       at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2319:52) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/club-male.glb'
+#   }
+# }
+# Subtest: office window cleaners keep the squeegee above their faces during the briefing
+ok 77 - office window cleaners keep the squeegee above their faces during the briefing
+  ---
+  duration_ms: 576.898625
+  type: 'test'
+  ...
+# Subtest: opening the actual office sash clears the aperture instead of revealing an opaque backdrop
+ok 78 - opening the actual office sash clears the aperture instead of revealing an opaque backdrop
+  ---
+  duration_ms: 623.16
+  type: 'test'
+  ...
+# Subtest: the open sash yields to the ledge follow camera and returns when it no longer obscures Neo
+ok 79 - the open sash yields to the ledge follow camera and returns when it no longer obscures Neo
+  ---
+  duration_ms: 509.3215
+  type: 'test'
+  ...
+# Subtest: office and ledge entrances render the same building in world space
+ok 80 - office and ledge entrances render the same building in world space
+  ---
+  duration_ms: 1001.296042
+  type: 'test'
+  ...
+# Subtest: the crossing body plants its palm and clears the solid sill with both legs
+ok 81 - the crossing body plants its palm and clears the solid sill with both legs
+  ---
+  duration_ms: 76.079958
+  type: 'test'
+  ...
+# Subtest: shipped neo mesh has valid skinning and usable anatomical bones
+not ok 82 - shipped neo mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 34.895917
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:157405'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2433:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: neo eyes preserve transparent cornea texels instead of masking the iris
+ok 83 - neo eyes preserve transparent cornea texels instead of masking the iris
+  ---
+  duration_ms: 38.682292
+  type: 'test'
+  ...
+# Subtest: neo stays grounded and skin deformation stays finite through running, landing and punches
+ok 84 - neo stays grounded and skin deformation stays finite through running, landing and punches
+  ---
+  duration_ms: 108.816416
+  type: 'test'
+  ...
+# Subtest: shipped trinity mesh has valid skinning and usable anatomical bones
+ok 85 - shipped trinity mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 14.877417
+  type: 'test'
+  ...
+# Subtest: trinity eyes preserve transparent cornea texels instead of masking the iris
+ok 86 - trinity eyes preserve transparent cornea texels instead of masking the iris
+  ---
+  duration_ms: 10.886584
+  type: 'test'
+  ...
+# Subtest: trinity stays grounded and skin deformation stays finite through running, landing and punches
+ok 87 - trinity stays grounded and skin deformation stays finite through running, landing and punches
+  ---
+  duration_ms: 46.611166
+  type: 'test'
+  ...
+# Subtest: shipped smith mesh has valid skinning and usable anatomical bones
+ok 88 - shipped smith mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 12.720875
+  type: 'test'
+  ...
+# Subtest: smith eyes preserve transparent cornea texels instead of masking the iris
+ok 89 - smith eyes preserve transparent cornea texels instead of masking the iris
+  ---
+  duration_ms: 9.064333
+  type: 'test'
+  ...
+# Subtest: smith stays grounded and skin deformation stays finite through running, landing and punches
+ok 90 - smith stays grounded and skin deformation stays finite through running, landing and punches
+  ---
+  duration_ms: 38.694291
+  type: 'test'
+  ...
+# Subtest: shipped morpheus mesh has valid skinning and usable anatomical bones
+not ok 91 - shipped morpheus mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 19.444208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:157405'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2433:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus eyes preserve transparent cornea texels instead of masking the iris
+ok 92 - morpheus eyes preserve transparent cornea texels instead of masking the iris
+  ---
+  duration_ms: 33.239209
+  type: 'test'
+  ...
+# Subtest: morpheus stays grounded and skin deformation stays finite through running, landing and punches
+ok 93 - morpheus stays grounded and skin deformation stays finite through running, landing and punches
+  ---
+  duration_ms: 75.608917
+  type: 'test'
+  ...
+# Subtest: the shipped Neo and Morpheus rigs pass a capsule hand to hand and lift a glass from its actual table position
+ok 94 - the shipped Neo and Morpheus rigs pass a capsule hand to hand and lift a glass from its actual table position
+  ---
+  duration_ms: 293.80125
+  type: 'test'
+  ...
+# Subtest: Neo bends his elbow into view while his knocking fist reaches room 1313
+ok 95 - Neo bends his elbow into view while his knocking fist reaches room 1313
+  ---
+  duration_ms: 33.820125
+  type: 'test'
+  ...
+# Subtest: the shipped Neo rig lies on the medical bed with visible interfaces, then rises to standing
+ok 96 - the shipped Neo rig lies on the medical bed with visible interfaces, then rises to standing
+  ---
+  duration_ms: 256.192333
+  type: 'test'
+  ...
+# Subtest: the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels
+ok 97 - the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels
+  ---
+  duration_ms: 1555.034458
+  type: 'test'
+  ...
+# Subtest: neo wears real-world crew-neck geometry and restores the original Matrix silhouette
+ok 98 - neo wears real-world crew-neck geometry and restores the original Matrix silhouette
+  ---
+  duration_ms: 458.337666
+  type: 'test'
+  ...
+# Subtest: trinity wears real-world crew-neck geometry and restores the original Matrix silhouette
+ok 99 - trinity wears real-world crew-neck geometry and restores the original Matrix silhouette
+  ---
+  duration_ms: 186.612375
+  type: 'test'
+  ...
+# Subtest: real-world crew clothing cannot cover a saved patient recovery pose
+ok 100 - real-world crew clothing cannot cover a saved patient recovery pose
+  ---
+  duration_ms: 571.666875
+  type: 'test'
+  ...
+# Subtest: both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses
+ok 101 - both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses
+  ---
+  duration_ms: 1690.4005
+  type: 'test'
+  ...
+# Subtest: healthy Hammer Neo retains his hair without changing the first-film recovery scalp
+ok 102 - healthy Hammer Neo retains his hair without changing the first-film recovery scalp
+  ---
+  duration_ms: 408.132959
+  type: 'test'
+  ...
+# Subtest: Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture
+ok 103 - Neo enters the wreck in the farewell outfit while retaining normal walking without a performance gesture
+  ---
+  duration_ms: 363.4765
+  type: 'test'
+  ...
+# Subtest: Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit
+ok 104 - Neo keeps his shipped hair and wears matte knit with a fitted eye band, not a bald patient outfit
+  ---
+  duration_ms: 1186.534792
+  type: 'test'
+  ...
+# Subtest: Trinity wears a light knit upper with darker trousers and restores her Matrix materials
+ok 105 - Trinity wears a light knit upper with darker trousers and restores her Matrix materials
+  ---
+  duration_ms: 234.22875
+  type: 'test'
+  ...
+# Subtest: the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once
+ok 106 - the eye band is scoped to the real farewell and disposes its owned geometry, material and texture once
+  ---
+  duration_ms: 355.563667
+  type: 'test'
+  ...
+# Subtest: paused farewell clothes keep stable material versions and restore original textures when leaving
+ok 107 - paused farewell clothes keep stable material versions and restore original textures when leaving
+  ---
+  duration_ms: 821.343209
+  type: 'test'
+  ...
+# Subtest: farewell kiss brings the actual skinned lips into contact from above without moving story roots
+ok 108 - farewell kiss brings the actual skinned lips into contact from above without moving story roots
+  ---
+  duration_ms: 887.185917
+  type: 'test'
+  ...
+# Subtest: kiss noses and cheeks do not pass through the other actor’s actual facial skin
+ok 109 - kiss noses and cheeks do not pass through the other actor’s actual facial skin
+  ---
+  duration_ms: 16550.239375
+  type: 'test'
+  ...
+# Subtest: the kiss settles over planted shoes rather than leaning outside their support
+ok 110 - the kiss settles over planted shoes rather than leaning outside their support
+  ---
+  duration_ms: 556.711959
+  type: 'test'
+  ...
+# Subtest: the final release joins stillness continuously in actual world-space roots and joints
+ok 111 - the final release joins stillness continuously in actual world-space roots and joints
+  ---
+  duration_ms: 588.306542
+  type: 'test'
+  ...
+# Subtest: stepping into and out of the kiss always leaves at least one actual shoe on the deck
+ok 112 - stepping into and out of the kiss always leaves at least one actual shoe on the deck
+  ---
+  duration_ms: 740.435459
+  type: 'test'
+  ...
+# Subtest: Trinity has a seat beneath her pelvis and a backrest behind her actual upper back
+ok 113 - Trinity has a seat beneath her pelvis and a backrest behind her actual upper back
+  ---
+  duration_ms: 2823.176584
+  type: 'test'
+  ...
+# Subtest: both farewell actors keep their shipped footwear and trouser knees above the physical deck
+ok 114 - both farewell actors keep their shipped footwear and trouser knees above the physical deck
+  ---
+  duration_ms: 2157.739959
+  type: 'test'
+  ...
+# Subtest: the support furniture leaves both visible bodies and the approach to the kiss clear
+ok 115 - the support furniture leaves both visible bodies and the approach to the kiss clear
+  ---
+  duration_ms: 9298.356209
+  type: 'test'
+  ...
+# Subtest: the shipped seat and back surfaces meet Trinity’s trousers and sweater without a visible support gap
+ok 116 - the shipped seat and back surfaces meet Trinity’s trousers and sweater without a visible support gap
+  ---
+  duration_ms: 769.729167
+  type: 'test'
+  ...
+# Subtest: the third-person farewell camera keeps both faces and torsos in frame at aspect 1.7777777777777777
+ok 117 - the third-person farewell camera keeps both faces and torsos in frame at aspect 1.7777777777777777
+  ---
+  duration_ms: 2020.212667
+  type: 'test'
+  ...
+# Subtest: the third-person farewell camera keeps both faces and torsos in frame at aspect 0.5625
+ok 118 - the third-person farewell camera keeps both faces and torsos in frame at aspect 0.5625
+  ---
+  duration_ms: 2623.24025
+  type: 'test'
+  ...
+# Subtest: Neo is lifted onto the steel table without dragging his visible hands, trousers or shoes through it
+ok 119 - Neo is lifted onto the steel table without dragging his visible hands, trousers or shoes through it
+  ---
+  duration_ms: 3051.528
+  type: 'test'
+  ...
+# Subtest: Smith keeps his visible fingers and clothes outside the steel while reviewing the file and walking to Neo
+ok 120 - Smith keeps his visible fingers and clothes outside the steel while reviewing the file and walking to Neo
+  ---
+  duration_ms: 1748.948917
+  type: 'test'
+  ...
+# Subtest: the seated and rising actors keep their actual shoe soles on the floor
+ok 121 - the seated and rising actors keep their actual shoe soles on the floor
+  ---
+  duration_ms: 1333.954583
+  type: 'test'
+  ...
+# Subtest: Smith presents an upright tracker and supports the open case on his other palm
+ok 122 - Smith presents an upright tracker and supports the open case on his other palm
+  ---
+  duration_ms: 500.221042
+  type: 'test'
+  ...
+# Subtest: the cockpit key light keeps its local downward direction at the actual distant film set
+ok 123 - the cockpit key light keeps its local downward direction at the actual distant film set
+  ---
+  duration_ms: 102.898042
+  type: 'test'
+  ...
+# Subtest: the damaged cabin leaves the first-person entry sightline clear
+ok 124 - the damaged cabin leaves the first-person entry sightline clear
+  ---
+  duration_ms: 66.618
+  type: 'test'
+  ...
+# Subtest: the wreck keeps solid side sills and peeled roof panels around its physically open centre
+ok 125 - the wreck keeps solid side sills and peeled roof panels around its physically open centre
+  ---
+  duration_ms: 69.020458
+  type: 'test'
+  ...
+# Subtest: wreck fire and machine sight retain the saved farewell beat across pauses and reloads
+ok 126 - wreck fire and machine sight retain the saved farewell beat across pauses and reloads
+  ---
+  duration_ms: 170.742375
+  type: 'test'
+  ...
+# Subtest: golden machine perception belongs to Neo first person, not the external farewell camera
+ok 127 - golden machine perception belongs to Neo first person, not the external farewell camera
+  ---
+  duration_ms: 40.76675
+  type: 'test'
+  ...
+# Subtest: wreck shafts pin Trinity’s jacket while leaving both faces and the contact hands clear
+ok 128 - wreck shafts pin Trinity’s jacket while leaving both faces and the contact hands clear
+  ---
+  duration_ms: 43305.593167
+  type: 'test'
+  ...
+# Subtest: a new tracking-chair approach walks around the chair before lowering into it
+ok 129 - a new tracking-chair approach walks around the chair before lowering into it
+  ---
+  duration_ms: 3.011834
+  type: 'test'
+  ...
+# Subtest: turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+ok 130 - turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+  ---
+  duration_ms: 55.361958
+  type: 'test'
+  ...
+# Subtest: the new mirror clock reaches the seated boundary exactly
+ok 131 - the new mirror clock reaches the seated boundary exactly
+  ---
+  duration_ms: 0.206
+  type: 'test'
+  ...
+# Subtest: the tracking-room mirror has straight carved sides and glass across all four corners
+ok 132 - the tracking-room mirror has straight carved sides and glass across all four corners
+  ---
+  duration_ms: 2779.900125
+  type: 'test'
+  ...
+# Subtest: healing and the silver filament resume from story time with their contact fixed to the glass
+ok 133 - healing and the silver filament resume from story time with their contact fixed to the glass
+  ---
+  duration_ms: 6861.781584
+  type: 'test'
+  ...
+# Subtest: reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+ok 134 - reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+  ---
+  duration_ms: 1182.486958
+  type: 'test'
+  ...
+# Subtest: Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+ok 135 - Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+  ---
+  duration_ms: 457.076959
+  type: 'test'
+  ...
+# Subtest: tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+ok 136 - tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+  ---
+  duration_ms: 815.735417
+  type: 'test'
+  ...
+# Subtest: the entry keeps the shipped body outside the actual chair solids while turning and sitting
+ok 137 - the entry keeps the shipped body outside the actual chair solids while turning and sitting
+  ---
+  duration_ms: 48436.250292
+  type: 'test'
+  ...
+# Subtest: the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+ok 138 - the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+  ---
+  duration_ms: 33359.44425
+  type: 'test'
+  ...
+# Subtest: Neo reaches the actual mirror smoothly without passing through it
+ok 139 - Neo reaches the actual mirror smoothly without passing through it
+  ---
+  duration_ms: 589.123833
+  type: 'test'
+  ...
+# Subtest: Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+ok 140 - Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+  ---
+  duration_ms: 546.504167
+  type: 'test'
+  ...
+# Subtest: Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+ok 141 - Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+  ---
+  duration_ms: 712.437666
+  type: 'test'
+  ...
+# Subtest: the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+ok 142 - the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+  ---
+  duration_ms: 5305.9155
+  type: 'test'
+  ...
+# Subtest: silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+ok 143 - silver starts on Neo’s contacting index and middle fingers, then crosses the palm before coating the other fingertips
+  ---
+  duration_ms: 572.996208
+  type: 'test'
+  ...
+# {"fingers":[{"finger":1,"base":{"count":46,"min":0.36022472381591797,"max":0.39465126395225525,"mean":0.37541255614031915},"tip":{"count":439,"min":0.45682626962661743,"max":0.48399999737739563,"mean":0.47717971356420147}},{"finger":2,"base":{"count":376,"min":0.11750830709934235,"max":0.2384050041437149,"mean":0.15259794359828563},"tip":{"count":474,"min":0.03500000014901161,"max":0.06238999962806702,"mean":0.040926765501184806}},{"finger":3,"base":{"count":346,"min":0.14252406358718872,"max":0.2855282425880432,"mean":0.1766166284335831},"tip":{"count":511,"min":0.05999999865889549,"max":0.08743812888860703,"mean":0.0662659867694}},{"finger":4,"base":{"count":399,"min":0.3146815896034241,"max":0.4434759318828583,"mean":0.4140126090450096},"tip":{"count":484,"min":0.49866774678230286,"max":0.5260000228881836,"mean":0.520169012186941}},{"finger":5,"base":{"count":367,"min":0.3858984708786011,"max":0.4588158130645752,"mean":0.43049659504877447},"tip":{"count":472,"min":0.5113070607185364,"max":0.5400000214576721,"mean":0.5343889917357493}}],"palm":{"count":794,"min":0.24420660734176636,"max":0.38430917263031006,"mean":0.3398936164356599}}
+# Subtest: the delivered sleeping Neo rests above the mattress and remains supported while sitting and standing
+ok 144 - the delivered sleeping Neo rests above the mattress and remains supported while sitting and standing
+  ---
+  duration_ms: 7232.478708
+  type: 'test'
+  ...
+# Subtest: the real right hand touches the rendered alarm button when it is depressed
+ok 145 - the real right hand touches the rendered alarm button when it is depressed
+  ---
+  duration_ms: 608.846208
+  type: 'test'
+  ...
+# Subtest: V follows the actual morning eyes throughout rising and preserves voluntary looking
+ok 146 - V follows the actual morning eyes throughout rising and preserves voluntary looking
+  ---
+  duration_ms: 652.027584
+  type: 'test'
+  ...
+# Subtest: the first-person morning actually draws Neo’s pressing hand and releases the body view afterwards
+ok 147 - the first-person morning actually draws Neo’s pressing hand and releases the body view afterwards
+  ---
+  duration_ms: 56.156084
+  type: 'test'
+  ...
+# Subtest: Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+not ok 148 - Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+  ---
+  duration_ms: 762.420166
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/neb-crew-appearance.test.mts:1:1685'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/neb-crew-appearance.test.mts:73:46)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+ok 149 - the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+  ---
+  duration_ms: 1301.771208
+  type: 'test'
+  ...
+# Subtest: Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits
+ok 150 - Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits
+  ---
+  duration_ms: 739.081292
+  type: 'test'
+  ...
+# Subtest: the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons
+ok 151 - the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons
+  ---
+  duration_ms: 1847.020333
+  type: 'test'
+  ...
+# Subtest: twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+ok 152 - twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+  ---
+  duration_ms: 12955.743458
+  type: 'test'
+  ...
+# actual skin and lead clearance at 3.8s
+# actual skin and lead clearance at 4.073s
+# actual skin and lead clearance at 5.8s
+# Subtest: the first-person patient keeps a visible torso and hands while the head cannot mask the treatment
+ok 153 - the first-person patient keeps a visible torso and hands while the head cannot mask the treatment
+  ---
+  duration_ms: 507.779334
+  type: 'test'
+  ...
+# retained 25728 actual exposed skin triangles
+# Subtest: V keeps the actual signing eyes, hand and stylus in view and restores ordinary rendering afterwards
+ok 154 - V keeps the actual signing eyes, hand and stylus in view and restores ordinary rendering afterwards
+  ---
+  duration_ms: 808.597667
+  type: 'test'
+  ...
+# Subtest: first-person signing draws the player body only for the actual signing performance
+ok 155 - first-person signing draws the player body only for the actual signing performance
+  ---
+  duration_ms: 85.621125
+  type: 'test'
+  ...
+# Subtest: the saved stylus stroke lies on an electronic screen and is retained while the pad is withdrawn
+ok 156 - the saved stylus stroke lies on an electronic screen and is retained while the pad is withdrawn
+  ---
+  duration_ms: 98.02975
+  type: 'test'
+  ...
+1..156
+# tests 156
+# suites 0
+# pass 151
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 125844.807708

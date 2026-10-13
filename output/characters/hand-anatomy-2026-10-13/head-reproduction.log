@@ -1,0 +1,104 @@
+TAP version 13
+# Subtest: neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+not ok 1 - neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 290.727958
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:1:1530'
+  failureType: 'testCodeFailure'
+  error: 'R: the distal thumb pad stays 0.14560772350769646 away from the curled fingers'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:53:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+not ok 2 - trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 63.510542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:1:1530'
+  failureType: 'testCodeFailure'
+  error: 'R: the distal thumb pad stays 0.12688932791627786 away from the curled fingers'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:53:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+not ok 3 - smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 21.860791
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:1:1530'
+  failureType: 'testCodeFailure'
+  error: 'R: the distal thumb pad stays 0.14261610000634764 away from the curled fingers'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:53:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+not ok 4 - morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 361.581541
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:1:1530'
+  failureType: 'testCodeFailure'
+  error: 'R: the distal thumb pad stays 0.14865712853848764 away from the curled fingers'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:53:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+not ok 5 - Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+  ---
+  duration_ms: 362.370209
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/neb-crew-appearance.test.mts:1:1685'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/neb-crew-appearance.test.mts:73:46)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1030.334541

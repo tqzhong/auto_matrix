@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 1 - neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 276.647125
+  type: 'test'
+  ...
+# Subtest: trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 2 - trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 49.800125
+  type: 'test'
+  ...
+# Subtest: smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 3 - smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 12.572625
+  type: 'test'
+  ...
+# Subtest: morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 4 - morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 333.1915
+  type: 'test'
+  ...
+# Subtest: Neo fingertips do not bury inside another finger while closing the actual skinned hand
+not ok 5 - Neo fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 3010.078583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:1:2789'
+  failureType: 'testCodeFailure'
+  error: 'R, grip 0.75: fingertip skin penetrates another finger by 0.02268757928981585'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/hand-pose.test.mts:104:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4057.715583
