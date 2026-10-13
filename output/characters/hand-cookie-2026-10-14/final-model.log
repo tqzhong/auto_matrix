@@ -1,0 +1,298 @@
+TAP version 13
+# Subtest: Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+ok 1 - Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+  ---
+  duration_ms: 971.468583
+  type: 'test'
+  ...
+# Subtest: thumb and index oppose the cookie faces during the handoff and the bite
+ok 2 - thumb and index oppose the cookie faces during the handoff and the bite
+  ---
+  duration_ms: 596.043166
+  type: 'test'
+  ...
+# Subtest: taking a bite does not change the thickness or detach the chocolate pieces
+ok 3 - taking a bite does not change the thickness or detach the chocolate pieces
+  ---
+  duration_ms: 480.37975
+  type: 'test'
+  ...
+# Subtest: the actual thumb and index surfaces touch the biscuit without penetrating it
+ok 4 - the actual thumb and index surfaces touch the biscuit without penetrating it
+  ---
+  duration_ms: 423.213875
+  type: 'test'
+  ...
+# Subtest: cookie gestures restore from saved input after another action or a fresh character
+ok 5 - cookie gestures restore from saved input after another action or a fresh character
+  ---
+  duration_ms: 537.02775
+  type: 'test'
+  ...
+# Subtest: receiving and biting the cookie do not fold the wrist back against the forearm
+ok 6 - receiving and biting the cookie do not fold the wrist back against the forearm
+  ---
+  duration_ms: 438.23675
+  type: 'test'
+  ...
+# Subtest: the raised hand stays outside Neo actual head and neck skin during the bite
+ok 7 - the raised hand stays outside Neo actual head and neck skin during the bite
+  ---
+  duration_ms: 2277.459417
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 8 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 43.871667
+  type: 'test'
+  ...
+# Subtest: the first fall and real-body return reconstruct their saved poses after combat and while paused
+ok 9 - the first fall and real-body return reconstruct their saved poses after combat and while paused
+  ---
+  duration_ms: 1.338708
+  type: 'test'
+  ...
+# Subtest: Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+ok 10 - Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+  ---
+  duration_ms: 0.273
+  type: 'test'
+  ...
+# Subtest: the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+ok 11 - the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+  ---
+  duration_ms: 1.6505
+  type: 'test'
+  ...
+# Subtest: dojo sparring keeps a readable guard between strikes and releases it after the lesson
+ok 12 - dojo sparring keeps a readable guard between strikes and releases it after the lesson
+  ---
+  duration_ms: 0.352209
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 13 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 4.096458
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 14 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 13.185291
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 15 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 3.355208
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 16 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 0.595875
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 17 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 3.084125
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 18 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 0.58425
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 19 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 0.327333
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 20 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 5.182334
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 21 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 1.045041
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 22 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 0.667333
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 23 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 0.331083
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 24 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 0.453375
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 25 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 4.362584
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 26 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.191917
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 27 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.147416
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 28 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 0.288375
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 29 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 0.233625
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 30 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 0.208542
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 31 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.810333
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 32 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 2.057959
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 33 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.231625
+  type: 'test'
+  ...
+# Subtest: the farewell keeps the real cookie grip, meets the mouth and grounds Morpheus while he rises
+ok 34 - the farewell keeps the real cookie grip, meets the mouth and grounds Morpheus while he rises
+  ---
+  duration_ms: 1818.178334
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 35 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 262.328334
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 36 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 91.309459
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 37 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 1183.920125
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 38 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 40.070167
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 39 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 143.459666
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 40 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 32.992834
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 41 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 1728.454667
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 42 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 990.647
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 43 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 42.42125
+  type: 'test'
+  ...
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 44 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 1069.100208
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 45 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 597.531542
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 46 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 863.804084
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 47 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 621.726208
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 48 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 556.477541
+  type: 'test'
+  ...
+1..48
+# tests 48
+# suites 0
+# pass 48
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6275.840875

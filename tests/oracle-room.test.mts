@@ -133,7 +133,7 @@ test('the Oracle cookie has one owner and passes continuously to Neo actual skin
     assert.equal(neo.cookie!.visible, true); assert.equal(oracle.cookie!.visible, false);
     assert.equal(neo.cookie!.parent, neo.hero.bones.get('wrist_R'));
     neo.root.updateMatrixWorld(true);
-    const contact = neo.cookie!.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(.1, 0, 0));
+    const contact = neo.cookie!.localToWorld(new THREE.Vector3(.1, 0, 0));
     for (const finger of [1, 2]) {
       let nearest = Infinity;
       for (const part of neo.hero.wardrobe) {

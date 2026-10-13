@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+ok 1 - Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+  ---
+  duration_ms: 397.812292
+  type: 'test'
+  ...
+# Subtest: thumb and index oppose the cookie faces during the handoff and the bite
+ok 2 - thumb and index oppose the cookie faces during the handoff and the bite
+  ---
+  duration_ms: 347.570583
+  type: 'test'
+  ...
+# Subtest: taking a bite does not change the thickness or detach the chocolate pieces
+ok 3 - taking a bite does not change the thickness or detach the chocolate pieces
+  ---
+  duration_ms: 252.543083
+  type: 'test'
+  ...
+# Subtest: the actual thumb and index surfaces touch the biscuit without penetrating it
+ok 4 - the actual thumb and index surfaces touch the biscuit without penetrating it
+  ---
+  duration_ms: 283.831292
+  type: 'test'
+  ...
+# Subtest: cookie gestures restore from saved input after another action or a fresh character
+ok 5 - cookie gestures restore from saved input after another action or a fresh character
+  ---
+  duration_ms: 414.336375
+  type: 'test'
+  ...
+# Subtest: receiving and biting the cookie do not fold the wrist back against the forearm
+not ok 6 - receiving and biting the cookie do not fold the wrist back against the forearm
+  ---
+  duration_ms: 228.545875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:1:9713'
+  failureType: 'testCodeFailure'
+  error: 'biting folds the wrist at 1.05: 0.5829841391256548'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:176:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the raised hand stays outside Neo actual head and neck skin during the bite
+ok 7 - the raised hand stays outside Neo actual head and neck skin during the bite
+  ---
+  duration_ms: 2101.949167
+  type: 'test'
+  ...
+# Subtest: the farewell keeps the real cookie grip, meets the mouth and grounds Morpheus while he rises
+ok 8 - the farewell keeps the real cookie grip, meets the mouth and grounds Morpheus while he rises
+  ---
+  duration_ms: 980.251542
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 9 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 152.841209
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 10 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 43.19325
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 11 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 582.587333
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 12 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 25.27875
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 13 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 107.576125
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 14 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 10.769583
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 15 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 1113.248458
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 16 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 615.17525
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 17 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 33.24725
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 16
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4291.366125

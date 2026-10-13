@@ -1,0 +1,44 @@
+[
+  {
+    "elapsed": 0.65,
+    "inside": 0,
+    "worst": 0,
+    "nearest": null
+  },
+  {
+    "elapsed": 0.85,
+    "inside": 0,
+    "worst": 0,
+    "nearest": null
+  },
+  {
+    "elapsed": 1,
+    "inside": 0,
+    "worst": 0,
+    "nearest": 0.0014374044677719
+  },
+  {
+    "elapsed": 1.2,
+    "inside": 1264,
+    "worst": -0.08546862735098044,
+    "nearest": 0.00001547784134889146
+  },
+  {
+    "elapsed": 1.5,
+    "inside": 2478,
+    "worst": -0.1236328667558314,
+    "nearest": 3.2529922534703156e-8
+  },
+  {
+    "elapsed": 1.9,
+    "inside": 2478,
+    "worst": -0.1236328667558314,
+    "nearest": 3.2529922534703156e-8
+  },
+  {
+    "elapsed": 2.3,
+    "inside": 0,
+    "worst": 0,
+    "nearest": null
+  }
+]

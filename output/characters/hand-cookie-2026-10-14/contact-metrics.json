@@ -1,0 +1,130 @@
+[
+  {
+    "version": "before",
+    "pose": "bite-1.5--1.5707963267948966",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.0002431689681543503,
+        "insideHeldRim": 72
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.000016408643256606302,
+        "insideHeldRim": 0
+      }
+    ]
+  },
+  {
+    "version": "before",
+    "pose": "carry-0-0",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.00004881747101245387,
+        "insideHeldRim": 39
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.00039982465949468874,
+        "insideHeldRim": 0
+      }
+    ]
+  },
+  {
+    "version": "before",
+    "pose": "carry-0-1.5707963267948966",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.00006353618095559016,
+        "insideHeldRim": 43
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.00014739682320067543,
+        "insideHeldRim": 3
+      }
+    ]
+  },
+  {
+    "version": "before",
+    "pose": "visit-9.2--1.5707963267948966",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.000051848115617758594,
+        "insideHeldRim": 74
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.0022470210139974452,
+        "insideHeldRim": 0
+      }
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "bite-1.5--1.5707963267948966",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.0021423612656011615,
+        "insideHeldRim": 0
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.0029184573013991133,
+        "insideHeldRim": 0
+      }
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "carry-0-0",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.0021423612649554835,
+        "insideHeldRim": 0
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.002918457674272512,
+        "insideHeldRim": 0
+      }
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "carry-0-1.5707963267948966",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.0021423612652095303,
+        "insideHeldRim": 0
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.002918457674272512,
+        "insideHeldRim": 0
+      }
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "visit-9.2--1.5707963267948966",
+    "fingers": [
+      {
+        "finger": 1,
+        "surfaceGap": 0.0021423612652142765,
+        "insideHeldRim": 0
+      },
+      {
+        "finger": 2,
+        "surfaceGap": 0.002918457672421937,
+        "insideHeldRim": 0
+      }
+    ]
+  }
+]

@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the raised hand stays outside Neo actual head and neck skin during the bite
+not ok 1 - the raised hand stays outside Neo actual head and neck skin during the bite
+  ---
+  duration_ms: 1745.253083
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:1:10434'
+  failureType: 'testCodeFailure'
+  error: 'the hand penetrates the head or neck at 1.2: -0.022034952202712395'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:212:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1972.579417

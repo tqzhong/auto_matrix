@@ -1,0 +1,119 @@
+TAP version 13
+# Subtest: the cold Oracle return camera cannot put the apartment lintel between Neo and the lens
+ok 1 - the cold Oracle return camera cannot put the apartment lintel between Neo and the lens
+  ---
+  duration_ms: 244.158459
+  type: 'test'
+  ...
+# Subtest: the final Oracle reply locks predicted movement, uses Neo actual eyes and releases walking afterwards
+ok 2 - the final Oracle reply locks predicted movement, uses Neo actual eyes and releases walking afterwards
+  ---
+  duration_ms: 26.318625
+  type: 'test'
+  ...
+# Subtest: the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye
+ok 3 - the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye
+  ---
+  duration_ms: 25.994333
+  type: 'test'
+  ...
+# Subtest: the Oracle consultation frames both speakers and V keeps a freely steerable player view
+ok 4 - the Oracle consultation frames both speakers and V keeps a freely steerable player view
+  ---
+  duration_ms: 19.295292
+  type: 'test'
+  ...
+# Subtest: the Oracle farewell frames both speakers, supports V and returns to freely steered walking
+ok 5 - the Oracle farewell frames both speakers, supports V and returns to freely steered walking
+  ---
+  duration_ms: 33.02625
+  type: 'test'
+  ...
+# Subtest: V during the Oracle vase incident uses Neo eyes and preserves mouse looking
+ok 6 - V during the Oracle vase incident uses Neo eyes and preserves mouse looking
+  ---
+  duration_ms: 13.529834
+  type: 'test'
+  ...
+# Subtest: the park conversation frames its speakers and V follows the seated Oracle’s actual eye line
+not ok 7 - the park conversation frames its speakers and V follows the seated Oracle’s actual eye line
+  ---
+  duration_ms: 32.926875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:255603'
+  failureType: 'testCodeFailure'
+  error: '1.3333333333333333: architect missing from conversation 1.1450871671220988,0.23241285534099176,0.713539678208451'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:3459:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: Oracle reception review saves preserve the seated invitation and the start of free following
+ok 8 - Oracle reception review saves preserve the seated invitation and the start of free following
+  ---
+  duration_ms: 755.328417
+  type: 'test'
+  ...
+# Subtest: walking from the waiting room into the Oracle kitchen preserves Neo position and heading
+ok 9 - walking from the waiting room into the Oracle kitchen preserves Neo position and heading
+  ---
+  duration_ms: 22.032041
+  type: 'test'
+  ...
+# Subtest: Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess
+ok 10 - Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess
+  ---
+  duration_ms: 262.952083
+  type: 'test'
+  ...
+# Subtest: following the Oracle hostess uses ordinary player movement and enters the kitchen without a teleport
+ok 11 - following the Oracle hostess uses ordinary player movement and enters the kitchen without a teleport
+  ---
+  duration_ms: 193.819542
+  type: 'test'
+  ...
+# Subtest: old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress
+ok 12 - old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress
+  ---
+  duration_ms: 10.938792
+  type: 'test'
+  ...
+# Subtest: the Oracle vase falls once, pauses and restores mid-fall, then leaves a persistent result for the conversation
+ok 13 - the Oracle vase falls once, pauses and restores mid-fall, then leaves a persistent result for the conversation
+  ---
+  duration_ms: 69.325292
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and offers a cookie before waiting for his explicit answer
+ok 14 - the Oracle examines Neo and offers a cookie before waiting for his explicit answer
+  ---
+  duration_ms: 222.254166
+  type: 'test'
+  ...
+# Subtest: the Oracle answer changes later rescue preparation exactly once
+ok 15 - the Oracle answer changes later rescue preparation exactly once
+  ---
+  duration_ms: 8.494958
+  type: 'test'
+  ...
+# Subtest: the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence
+ok 16 - the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence
+  ---
+  duration_ms: 5.382625
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 15
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1156.104833

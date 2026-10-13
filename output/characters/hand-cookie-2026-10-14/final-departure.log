@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: answering the Oracle keeps the accepted cookie and requires a physical departure
+ok 1 - answering the Oracle keeps the accepted cookie and requires a physical departure
+  ---
+  duration_ms: 39.300791
+  type: 'test'
+  ...
+# Subtest: the returning hostess waits for Neo and saves her route through pause, disconnect and occupation
+ok 2 - the returning hostess waits for Neo and saves her route through pause, disconnect and occupation
+  ---
+  duration_ms: 132.363625
+  type: 'test'
+  ...
+# Subtest: Morpheus privacy, the cookie bite and the actual apartment exit all precede the ambush
+ok 3 - Morpheus privacy, the cookie bite and the actual apartment exit all precede the ambush
+  ---
+  duration_ms: 135.943542
+  type: 'test'
+  ...
+# Subtest: ordinary controller input walks the complete kitchen farewell route without teleporting through furniture
+ok 4 - ordinary controller input walks the complete kitchen farewell route without teleporting through furniture
+  ---
+  duration_ms: 146.648833
+  type: 'test'
+  ...
+# Subtest: a current old Oracle ending resumes its missing farewell without reopening earlier completed scenes
+ok 5 - a current old Oracle ending resumes its missing farewell without reopening earlier completed scenes
+  ---
+  duration_ms: 4.544375
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 711.033

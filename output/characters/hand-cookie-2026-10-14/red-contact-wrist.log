@@ -1,0 +1,86 @@
+TAP version 13
+# Subtest: Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+ok 1 - Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+  ---
+  duration_ms: 331.059542
+  type: 'test'
+  ...
+# Subtest: thumb and index oppose the cookie faces during the handoff and the bite
+ok 2 - thumb and index oppose the cookie faces during the handoff and the bite
+  ---
+  duration_ms: 271.346042
+  type: 'test'
+  ...
+# Subtest: taking a bite does not change the thickness or detach the chocolate pieces
+ok 3 - taking a bite does not change the thickness or detach the chocolate pieces
+  ---
+  duration_ms: 242.8795
+  type: 'test'
+  ...
+# Subtest: the actual thumb and index surfaces touch the biscuit without penetrating it
+not ok 4 - the actual thumb and index surfaces touch the biscuit without penetrating it
+  ---
+  duration_ms: 235.66275
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:1:5848'
+  failureType: 'testCodeFailure'
+  error: 'finger 1 floats away from the biscuit: 0.024142361265148793'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:132:37)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:132:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: cookie gestures restore from saved input after another action or a fresh character
+not ok 5 - cookie gestures restore from saved input after another action or a fresh character
+  ---
+  duration_ms: 368.228042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:1:7621'
+  failureType: 'testCodeFailure'
+  error: 'shoulder_R depends on the preceding action'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:158:41)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:158:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: receiving and biting the cookie do not fold the wrist back against the forearm
+not ok 6 - receiving and biting the cookie do not fold the wrist back against the forearm
+  ---
+  duration_ms: 231.816875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:1:9559'
+  failureType: 'testCodeFailure'
+  error: 'biting folds the wrist at 0.65: 0.5885973203093938'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/cookie-grip.test.mts:176:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 3
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1908.867375

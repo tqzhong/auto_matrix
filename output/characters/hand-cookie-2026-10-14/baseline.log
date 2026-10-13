@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: the farewell keeps the real cookie grip, meets the mouth and grounds Morpheus while he rises
+ok 1 - the farewell keeps the real cookie grip, meets the mouth and grounds Morpheus while he rises
+  ---
+  duration_ms: 852.6855
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 2 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 150.273458
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 3 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 38.299916
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 4 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 524.178542
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 5 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 13.565334
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 6 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 92.388042
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 7 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 10.784333
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 8 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 1088.744083
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 9 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 587.439042
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 10 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 32.447709
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2833.369916
