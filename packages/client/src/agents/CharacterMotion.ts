@@ -1,4 +1,4 @@
-import { TRUCK_ROAD, truthRoot, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
@@ -201,6 +201,10 @@ export const newMotion = (): MotionState => ({ time: 0, phase: 0, speed: 0, turn
 const clamp = (x: number, low = 0, high = 1) => Math.min(high, Math.max(low, x));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (x: number) => x * x * (3 - 2 * x);
+const operatorStart = downloadRoot({ phase: 'connecting', elapsed: 6, progress: 0 }, 'tank');
+const operatorEnd = downloadRoot({ phase: 'connecting', elapsed: 9, progress: 0 }, 'tank');
+const operatorTravel = Math.hypot(operatorEnd.x - operatorStart.x, operatorEnd.z - operatorStart.z);
+const invitationTravel = Math.hypot(DOWNLOAD_INVITATION.to.x - DOWNLOAD_INVITATION.from.x, DOWNLOAD_INVITATION.to.z - DOWNLOAD_INVITATION.from.z);
 
 // The planted foot moves backwards at the travelled speed. The return stroke
 // lifts it off the ground, instead of rotating both legs like pendulums.
@@ -547,8 +551,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     return { legs, arms, hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0,
       roll: 0, headTurn: 0, moving: 0, run: 0, airborne: air, coat: .22 * air, impact: 0, landing: 0 };
   }
-  if (input.truth) {
-    Object.assign(state, newMotion(), { time: input.truth.elapsed, skill: undefined });
+  const download = input.training?.kind === 'download' ? input.training : input.download?.phase !== 'walk' ? input.download : undefined;
+  if (input.truth || download) {
+    Object.assign(state, newMotion(), { time: input.truth?.elapsed ?? download!.elapsed, skill: undefined });
+    if (download?.role === 'neo' && (input.training?.kind === 'download' || input.download?.phase === 'ready')) state.seated = 1;
     input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false };
     dt = 0;
   }
@@ -591,6 +597,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (construct) state.speed = construct.speed;
   const truthWalk = input.truth?.phase === 'unplug' && input.truth.role === 'neo' ? clamp((input.truth.elapsed - 5.5) / 2.5) : undefined;
   if (truthWalk !== undefined) state.speed = 2.35 / 2.5 * 6 * truthWalk * (1 - truthWalk);
+  const operatorWalk = input.download?.phase === 'connecting' && input.download.role === 'tank' ? clamp((input.download.elapsed - 6) / 3) : undefined;
+  if (operatorWalk !== undefined) state.speed = operatorTravel / 3 * 6 * operatorWalk * (1 - operatorWalk);
+  const invitationWalk = input.training?.kind === 'download' && input.training.role === 'morpheus' ? clamp((input.training.elapsed - DOWNLOAD_INVITATION.start) / DOWNLOAD_INVITATION.duration) : undefined;
+  if (invitationWalk !== undefined) state.speed = invitationTravel / DOWNLOAD_INVITATION.duration * 6 * invitationWalk * (1 - invitationWalk);
   if (input.mirrorEntry) {
     state.speed = 1.4 * mirrorEntryPose(input.mirrorEntry).walking;
     state.time = input.mirrorEntry.elapsed;
@@ -636,6 +646,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.phase = -Math.min(.95, input.cabin.elapsed) * .85;
   if (truthWalk !== undefined) state.phase = 2.35 * smooth(truthWalk) / (2 * stride / stance);
+  if (operatorWalk !== undefined) state.phase = operatorTravel * smooth(operatorWalk) / (2 * stride / stance);
+  if (invitationWalk !== undefined) state.phase = invitationTravel * smooth(invitationWalk) / (2 * stride / stance);
   if (input.mirrorEntry) state.phase = input.mirrorEntry.elapsed / .88;
   const moving = smooth(clamp(state.speed / 2.2));
   const cycle = state.phase * Math.PI * 2;

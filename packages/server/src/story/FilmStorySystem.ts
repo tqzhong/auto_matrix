@@ -4278,15 +4278,16 @@ export class FilmStorySystem {
       return this.downloadSetupFrame(agent, dt, tick);
     const holdingDownload = state?.scene === 'm1_download' && !state.visiting && training?.kind === 'download';
     if (!state || !training || !this.controls(agent) || !trainingLocked(state) && !holdingDownload) return false;
-    const roles: TrainingRole[] = training.kind === 'download' ? ['neo', 'tank']
+    const roles: TrainingRole[] = training.kind === 'download' ? ['neo', 'tank', 'morpheus']
       : training.kind === 'jump' ? ['neo', 'morpheus']
       : ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'];
     const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
-    const playing = training.started && !occupied && training.elapsed < TRAINING_SECONDS[training.kind];
+    const unavailable = training.kind === 'download' ? roles.find(id => id !== agent.id && this.world.agents.get(id)?.status !== 'alive') : undefined;
+    const playing = training.started && !occupied && !unavailable && training.elapsed < TRAINING_SECONDS[training.kind];
     if (playing) training.elapsed = Math.min(TRAINING_SECONDS[training.kind], training.elapsed + Math.min(.1, dt));
     for (const role of roles) {
       const actor = this.world.agents.get(role);
-      if (!actor || actor.controller && actor !== agent) continue;
+      if (!actor || actor.controller && actor !== agent || training.kind === 'download' && actor.status !== 'alive') continue;
       const before = { ...actor.position }; const root = trainingRoot(training, role);
       actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
       actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
@@ -4300,7 +4301,8 @@ export class FilmStorySystem {
       }, startedAt: tick, duration: 1, progress: 0 };
     }
     state.checkpoint = { ...agent.position };
-    state.lastText = occupied ? `训练暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。` : trainingText(training);
+    state.lastText = occupied ? `训练暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
+      : unavailable ? `${this.world.agents.get(unavailable)?.name ?? unavailable} 无法参与训练，上传进度已保留。` : trainingText(training);
     if (playing && training.elapsed >= TRAINING_SECONDS[training.kind]) {
       if (training.kind === 'jump') {
         agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
@@ -4319,17 +4321,18 @@ export class FilmStorySystem {
       if (distance(agent.position, filmPosition(this.scene!.set, guide.x, guide.z)) < 10)
         setup.progress = Math.min(CABIN_ROUTE_LENGTH, setup.progress + delta * 3.1);
     }
-    for (const role of ['neo', 'tank'] as const) {
-      const actor = role === 'neo' ? agent : tank;
-      if (role === 'tank' && occupied || role === 'neo' && setup.phase === 'walk') continue;
-      const root = downloadRoot(setup, role), previous = actor.position;
+    for (const role of ['neo', 'tank', 'morpheus'] as const) {
+      const actor = role === 'neo' ? agent : this.world.agents.get(role)!;
+      if (role === 'tank' && occupied || role === 'neo' && setup.phase === 'walk' || role === 'morpheus' && (actor.controller || actor.status !== 'alive')) continue;
+      const root = role === 'morpheus' ? trainingRoot({ kind: 'download', elapsed: 0, started: false }, role) : downloadRoot(setup, role), previous = actor.position;
       actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
       actor.currentLocation = this.scene!.set; actor.isInMatrix = false;
       actor.velocity = dt > 0 ? { x: (actor.position.x - previous.x) / dt, y: 0, z: (actor.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
       const waking = role === 'neo' && (setup.phase === 'greeting' || setup.phase === 'waking');
       const connecting = role === 'neo' && setup.phase === 'connecting';
       actor.currentAction = { type: Math.hypot(actor.velocity.x, actor.velocity.z) > .05 ? 'move_to' : 'idle', parameters: {
-        player: role === 'neo', resolved: true, download: { ...setup, role },
+        player: role === 'neo', resolved: true,
+        ...(role === 'morpheus' ? { training: { kind: 'download', elapsed: 0, role } } : { download: { ...setup, role } }),
         recovery: waking ? cabinBodyPose(setup.phase === 'greeting' ? 0 : setup.elapsed).clock : undefined,
         filmPose: waking ? 'cabin' : connecting ? 'core' : undefined,
         cabin: waking ? { kind: 'wake', elapsed: setup.phase === 'greeting' ? 0 : setup.elapsed, role: 'neo' }
@@ -6458,7 +6461,7 @@ export class FilmStorySystem {
     if (state.training && trainingLocked(state)) {
       if (!state.training.started) {
         if (target !== 'act') return trainingText(state.training);
-        const required = state.training.kind === 'download' ? ['tank'] : state.training.kind === 'jump' ? ['morpheus'] : ['morpheus', 'citizen_1', 'citizen_2', 'smith'];
+        const required = state.training.kind === 'download' ? ['tank', 'morpheus'] : state.training.kind === 'jump' ? ['morpheus'] : ['morpheus', 'citizen_1', 'citizen_2', 'smith'];
         const occupied = required.find(id => this.world.agents.get(id)?.controller);
         if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，训练停在当前画面。`;
         state.training.started = true; this.trainingFrame(agent, 0, tick); return state.lastText;
@@ -7150,7 +7153,10 @@ export class FilmStorySystem {
       state.training = { kind: 'download', elapsed: 0, started: false };
       state.downloadSetup = { phase: 'greeting', elapsed: 0, progress: 0 };
       const morpheus = this.world.agents.get('morpheus');
-      if (morpheus && !morpheus.controller && morpheus.status === 'alive') this.place(morpheus, scene, filmPosition(scene.set, -6, 22));
+      if (morpheus && !morpheus.controller && morpheus.status === 'alive') {
+        const root = trainingRoot({ kind: 'download', elapsed: 0, started: false }, 'morpheus');
+        this.place(morpheus, scene, filmPosition(scene.set, root.x, root.z)); morpheus.rotation = root.yaw;
+      }
       this.trainingFrame(actor, 0, tick);
     }
     if (scene.id === 'm1_dojo') state.dojo = { dodged: false, combo: 0, hits: 0 };

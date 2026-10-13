@@ -197,6 +197,8 @@ test('first-person Construct and truth aftermath retain the body and restore the
   const base = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
   for (const gesture of [{ construct: { phase: 'image' as const, elapsed: 2, role: 'neo' as const } },
     { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } },
+    { cabin: { kind: 'core' as const, elapsed: 4, role: 'neo' as const } },
+    { training: { kind: 'download' as const, elapsed: 4, role: 'neo' as const } },
     ...(['ready', 'exit', 'unplug', 'rest', 'question'] as const).map(phase => ({ truth: { phase, elapsed: 0, role: 'neo' as const } }))]) {
     actor.currentAction = { type: 'idle', parameters: gesture, startedAt: 0, duration: 1e9, progress: 0 };
     renderer.updateAgent(actor.id, actor); renderer.setPlayer(actor.id, true); renderer.setPlayerMotion({ ...base, ...gesture }); renderer.update(0, undefined, 0, 0);
@@ -2655,6 +2657,27 @@ test('the truth aftermath frames the unplugging and bedside conversation without
   } finally { deck.dispose(); }
 });
 
+for (const firstPerson of [false, true]) test(`leaving the training bed carries the authored turn into ${firstPerson ? 'first' : 'third'}-person walking`, t => {
+    const game = setup(t, Math.PI), wake = { phase: 'greeting' as const, elapsed: 0, progress: 0, role: 'neo' as const };
+    const start = downloadRoot(wake, 'neo');
+    Object.assign(game.state, { currentLocation: 'film_neb_deck', isInMatrix: false, rotation: start.yaw,
+      position: { ...filmPosition('film_neb_deck', start.x, start.z), y: FILM_SETS.film_neb_deck.center.y + start.y },
+      currentAction: { type: 'idle', parameters: { download: wake, recovery: 0, cabin: { kind: 'wake', elapsed: 0, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
+    game.controls.possess(game.state); if (firstPerson) { game.key('KeyV'); game.key('KeyV', false); }
+    game.step(.1); game.document.pointerLockElement = game.canvas;
+    const beforeLook = game.sent.at(-1)?.yaw;
+    game.event(game.document, 'mousemove', { movementX: 100, movementY: 0 }); game.step(.1);
+    const afterLook = game.sent.at(-1)?.yaw;
+    const finish = downloadRoot({ phase: 'waking', elapsed: 12, progress: 0 }, 'neo');
+    game.state.position = filmPosition('film_neb_deck', finish.x, finish.z); game.state.rotation = 0; game.state.currentAction = null;
+    game.step(.1); game.key('KeyW'); game.step(.2);
+    const input = game.sent.at(-1)!; game.key('KeyW', false);
+    const expected = finish.yaw - (firstPerson ? .28 : 0);
+    assert.ok(input.x * Math.sin(expected) + input.z * Math.cos(expected) > .99,
+      `W must follow the released body turn: ${JSON.stringify({ firstPerson, input, expected, beforeLook, afterLook, documentMatches: globalThis.document === game.document })}`);
+    assert.ok(Math.cos(input.yaw - expected) > .999, 'the handoff keeps the existing mouse look offset');
+});
+
 test('first-person rest follows the cabin head end, retains free look and releases movement for training', t => {
   const game = setup(t, Math.PI), truth: TruthGesture = { phase: 'rest', elapsed: 8, role: 'neo' }, body = truthRoot(truth, 'neo');
   game.state.currentLocation = 'film_neb_deck'; game.state.isInMatrix = false;
@@ -2697,6 +2720,8 @@ test('the Construct and truth aftermath use the registered body eye while keepin
   const marker = head.userData.patientEye.clone();
   for (const gesture of [{ construct: { phase: 'image', elapsed: 2, role: 'neo' } },
     { reveal: { kind: 'construct', elapsed: 3, role: 'neo', started: true } },
+    { cabin: { kind: 'core', elapsed: 4, role: 'neo' }, download: { phase: 'connecting', elapsed: 4, progress: 0, role: 'neo' } },
+    { training: { kind: 'download', elapsed: 4, role: 'neo' } },
     ...(['ready', 'exit', 'unplug', 'rest', 'question'] as const).map(phase => ({ truth: { phase, elapsed: 8, role: 'neo' } }))]) {
     game.state.currentAction = { type: 'idle', parameters: gesture, startedAt: 0, duration: 1e9, progress: 0 };
     game.controls.possess(game.state); game.key('KeyV'); game.key('KeyV', false); game.step(.1, .1, false);

@@ -22,6 +22,35 @@ function setup() {
   return { world, sandbox, players, act, frames, neo: world.agents.get('neo')!, state: () => sandbox.life.film.state! };
 }
 
+test('training preparation restores its saved body action immediately on release and paused possession', () => {
+  for (const [phase, elapsed] of [['greeting', 0], ['waking', 4.5], ['connecting', 4.6], ['ready', 0]] as const) {
+    const h = setup();
+    h.state().downloadSetup = { phase, elapsed, progress: phase === 'greeting' || phase === 'waking' ? 0 : CABIN_ROUTE_LENGTH };
+    h.sandbox.life.film.trainingFrame(h.neo, 0, 1);
+    const action = structuredClone(h.neo.currentAction), position = { ...h.neo.position }, checkpoint = structuredClone(h.state());
+    h.players.release('test', 1);
+    assert.deepEqual(h.neo.currentAction, action, `${phase}: disconnecting cannot drop the saved body pose`);
+    assert.deepEqual(h.state(), checkpoint, `${phase}: releasing cannot advance the story`);
+    h.players.possess('test', 'neo', 1);
+    assert.deepEqual(h.neo.currentAction, action, `${phase}: a paused reconnection cannot leave Neo standing inside furniture`);
+    h.neo.currentAction = null; h.players.step(.5, false, 1);
+    assert.deepEqual(h.neo.currentAction, action, `${phase}: the paused frame must rehydrate the body without ticking`);
+    assert.deepEqual(h.neo.position, position);
+    assert.deepEqual(h.state(), checkpoint);
+  }
+});
+
+test('rehydrating training preserves free walking and does not revive a released dead player', () => {
+  const h = setup(); h.state().downloadSetup = { phase: 'walk', elapsed: 0, progress: 8 };
+  h.neo.position = filmPosition('film_neb_deck', 8, -24); h.neo.currentAction = null;
+  const position = { ...h.neo.position };
+  h.players.release('test', 1); h.players.possess('test', 'neo', 1); h.players.step(.5, false, 1);
+  assert.deepEqual(h.neo.position, position, 'walking remains at the player location instead of snapping into the chair');
+  assert.equal(h.neo.currentAction, null); assert.equal(h.state().downloadSetup.progress, 8);
+  h.state().downloadSetup.phase = 'ready'; h.neo.status = 'dead'; h.neo.health = 0; h.players.release('test', 1);
+  assert.equal(h.neo.status, 'dead', 'releasing cannot revive a body to reconstruct a training pose');
+});
+
 test('training starts at the cabin, waits for Neo, and requires reaching the chair before uploading', () => {
   const h = setup(), bed = filmPosition('film_neb_deck', CABIN.bed.x, CABIN.bed.z);
   assert.ok(Math.hypot(h.neo.position.x - bed.x, h.neo.position.z - bed.z) < .1, 'the bedside answer cannot teleport Neo into the download chair');
@@ -32,6 +61,11 @@ test('training starts at the cabin, waits for Neo, and requires reaching the cha
   assert.ok(Math.abs(h.neo.rotation - Math.atan2(doorway.x - h.neo.position.x, doorway.z - h.neo.position.z)) < .01,
     'Neo turns toward Tank and the doorway before walking is released');
   h.frames(2); assert.equal(h.state().downloadSetup?.phase, 'walk');
+  assert.ok(Math.abs(h.neo.rotation - Math.atan2(doorway.x - h.neo.position.x, doorway.z - h.neo.position.z)) < .01,
+    'free controls must retain the final authored doorway heading');
+  const turns = Array.from({ length: 25 }, (_, i) => downloadRoot({ phase: 'waking', elapsed: 10.5 + i * .05, progress: 0 }, 'neo').yaw);
+  const travel = turns.slice(1).reduce((sum, yaw, i) => sum + Math.abs(Math.atan2(Math.sin(yaw - turns[i]), Math.cos(yaw - turns[i]))), 0);
+  assert.ok(travel < Math.PI, 'Neo should turn toward the doorway along the short arc instead of spinning past it');
   h.act(); assert.equal(h.state().training!.started, false, 'remote G cannot start a neural connection');
   const before = h.state().downloadSetup!.progress;
   h.neo.position = filmPosition('film_neb_deck', -16, 38); h.frames(50);
@@ -76,6 +110,28 @@ test('a completed upload holds Neo in the chair until he chooses the dojo, inclu
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.frames(1);
   assert.equal(h.neo.currentAction?.parameters.training?.kind, 'download', 'legacy completed uploads retain their seated pose');
   h.act('next'); assert.equal(h.state().scene, 'm1_dojo', 'holding the pose cannot block continuing to the dojo');
+});
+
+test('Morpheus joins the completed upload beside Neo and an occupied mentor is not moved', () => {
+  const h = setup(); h.state().downloadSetup = { phase: 'ready', elapsed: 0, progress: CABIN_ROUTE_LENGTH };
+  h.state().training = { kind: 'download', elapsed: 7.5, started: true };
+  const mentor = h.world.agents.get('morpheus')!;
+  h.players.possess('other', 'morpheus', 1); const position = { ...mentor.position };
+  h.frames(30); assert.equal(h.state().training.elapsed, 7.5); assert.deepEqual(mentor.position, position);
+  h.players.release('other', 1); h.frames(30);
+  assert.equal(h.state().step, 1); assert.equal(h.state().scene, 'm1_download');
+  assert.equal(mentor.currentAction?.parameters.training?.role, 'morpheus', 'the invitation needs the actual mentor rather than a subtitle alone');
+  const gap = Math.hypot(mentor.position.x - h.neo.position.x, mentor.position.z - h.neo.position.z);
+  assert.ok(gap > 2 && gap < 6, 'Morpheus stands beside the patient without sharing his chair');
+});
+
+test('a lost mentor stops the upload without silently reviving the character', () => {
+  const h = setup(); h.state().downloadSetup = { phase: 'ready', elapsed: 0, progress: CABIN_ROUTE_LENGTH };
+  h.state().training = { kind: 'download', elapsed: 7.5, started: true };
+  const mentor = h.world.agents.get('morpheus')!; mentor.status = 'dead'; mentor.health = 0;
+  h.frames(30);
+  assert.equal(mentor.status, 'dead'); assert.equal(mentor.health, 0);
+  assert.equal(h.state().training.elapsed, 7.5); assert.match(h.state().lastText, /无法参与/);
 });
 
 test('Neo can follow Tank through the physical cabin doorway and sit using ordinary movement', () => {

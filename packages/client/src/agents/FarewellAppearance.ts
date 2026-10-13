@@ -110,6 +110,7 @@ export class FarewellAppearance {
       material.bumpScale = upper ? collar ? .002 : .009 : .003;
       material.roughness = .97; material.metalness = 0;
       material.color.setHex(upper ? this.role === 'neo' ? collar ? 0x53565a : input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? input.nebCrewEarly ? collar ? 0x887d67 : 0x645846 : collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
+      if (upper && this.role === 'morpheus' && input.training?.kind === 'download') material.color.setHex(collar ? 0x858477 : 0x747568);
     }
   }
 

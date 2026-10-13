@@ -168,6 +168,7 @@ export class PlayerController {
     this.sandbox?.life.film.crossingFrame(agent, 0, tick);
     this.sandbox?.life.film.pillFrame(agent, 0, tick);
     this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
+    this.sandbox?.life.film.trainingFrame(agent, 0, tick);
     this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
     this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
@@ -251,6 +252,7 @@ export class PlayerController {
       this.sandbox?.life.film.crossingFrame(agent, 0, tick);
       this.sandbox?.life.film.pillFrame(agent, 0, tick);
       this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
+      if (agent.status === 'alive') this.sandbox?.life.film.trainingFrame(agent, 0, tick);
       this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
       this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
       this.sandbox?.life.film.hotelFrame(agent, 0, tick);
@@ -416,6 +418,7 @@ export class PlayerController {
       if (!running || agent.status !== 'alive') this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
       if (!running || agent.status !== 'alive') this.sandbox?.life.film.nebEscape.frame(agent, 0, tick);
+      if (!running && agent.status === 'alive') this.sandbox?.life.film.trainingFrame(agent, 0, tick);
       if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
@@ -547,8 +550,9 @@ export class PlayerController {
       if (this.sandbox?.life.film.awakeningFrame(agent, dt, tick, Boolean(input.focus))) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
-      if (this.sandbox?.life.film.trainingFrame(agent, dt, tick)) {
-        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      const wakingForTraining = this.sandbox?.life.film.state?.downloadSetup?.phase === 'waking';
+      if (this.sandbox?.life.film.trainingFrame(agent, dt, tick) || wakingForTraining && this.sandbox?.life.film.state?.downloadSetup?.phase === 'walk') {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.yaw = agent.rotation; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       this.sandbox?.life.film.oracleReceptionFrame(agent, dt, tick);
       if (this.sandbox?.life.film.spoonFrame(agent, Boolean(input.focus) && Math.hypot(input.x, input.z) < .05 && !input.jump, dt, tick)) {
