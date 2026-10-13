@@ -1,4 +1,4 @@
-import { PILL_TALK_SECONDS } from '@auto_matrix/shared';
+import { PILL_TALK_SECONDS, TRAINING_SECONDS } from '@auto_matrix/shared';
 import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING } from '@auto_matrix/shared';
@@ -2280,13 +2280,40 @@ test('Morpheus demonstrates the rooftop jump before Neo can attempt the recovera
   h.command('next'); const scene = FILM_SCENE_BY_ID.m1_jump; assert.equal(state.scene, scene.id);
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); assert.equal(state.step, 1);
   const morpheus = h.world.agents.get('morpheus')!; const before = { ...morpheus.position };
-  h.command('act'); assert.deepEqual(state.training, { kind: 'jump', elapsed: 0, started: true });
-  for (let i = 0; i < 18; i++) h.players.step(.1, true, h.tick());
+  h.command('act'); assert.deepEqual(state.training, { kind: 'jump', elapsed: 0, started: true, jumpVersion: 2 });
+  for (let i = 0; i < 30; i++) h.players.step(.1, true, h.tick());
   assert.ok(morpheus.position.y > FILM_SETS[scene.set].center.y + 3, 'Morpheus follows a visible arc over the alley');
   const elapsed = state.training!.elapsed; h.players.step(.5, false, h.tick()); assert.equal(state.training!.elapsed, elapsed);
   for (let i = 0; i < 50; i++) h.players.step(.1, true, h.tick());
-  assert.equal(state.training!.elapsed, 4); assert.ok(morpheus.position.z < before.z - 18);
+  assert.equal(state.training!.elapsed, TRAINING_SECONDS.jump); assert.ok(morpheus.position.z < before.z - 18);
   assert.equal(state.step, 1, 'the demonstration does not perform Neo jump for the player');
+});
+
+test('Morpheus waits on the near roof before demonstrating and an unavailable mentor is never revived', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_dojo', actor: 'neo', step: FILM_SCENE_BY_ID.m1_dojo.steps.length, fighting: undefined, dojo: undefined });
+  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_jump;
+  const mentor = h.world.agents.get('morpheus')!;
+  assert.ok(mentor.position.z >= FILM_SETS[scene.set].center.z - 13, 'the mentor cannot start on the roof he has not yet jumped to');
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
+  mentor.status = 'dead'; mentor.health = 0; const position = { ...mentor.position };
+  h.command('act'); h.players.step(.1, true, h.tick());
+  assert.equal(mentor.status, 'dead'); assert.equal(mentor.health, 0); assert.deepEqual(mentor.position, position);
+  assert.equal(state.training!.elapsed, 0); assert.match(state.lastText, /无法参与|无法演示/);
+});
+
+test('restoring an older jump save preserves its progress and does not lock a finished demonstration again', () => {
+  for (const elapsed of [2, 4]) {
+    const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+    Object.assign(state, { scene: 'm1_jump', actor: 'neo', step: 1, training: { kind: 'jump', elapsed, started: true } });
+    h.world.agents.get('morpheus')!.currentAction = { type: 'idle', parameters: { training: { kind: 'jump', elapsed, role: 'morpheus' } }, startedAt: h.tick(), duration: 1, progress: 0 };
+    h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+    assert.equal(h.sandbox.life.film.state!.training!.elapsed, elapsed * 1.5);
+    assert.equal(h.world.agents.get('morpheus')!.currentAction?.parameters.training.elapsed, elapsed * 1.5, 'the saved actor pose follows the migrated demonstration clock');
+    const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+    h.sandbox.restore(saved);
+    assert.equal(h.sandbox.life.film.state!.training!.elapsed, elapsed * 1.5, 'migration runs only once');
+  }
 });
 
 test('the red-dress attention test is player-started, freezes the crowd and replaces a civilian with Smith', () => {
@@ -2317,7 +2344,7 @@ test('the first rooftop jump uses gravity and a recoverable fall rather than a t
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
   assert.equal(state.step, 1);
   h.command('act');
-  for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
+  for (let frame = 0; frame <= TRAINING_SECONDS.jump * 10; frame++) h.players.step(.1, true, h.tick());
   h.advance(30); assert.equal(state.step, 1, 'watching Morpheus must not complete Neo jump');
   let vy = 0; let falling = false;
   for (let frame = 0; frame < 180 && state.step === 1; frame++) {
@@ -4551,7 +4578,7 @@ test('the entire film route completes through interactions, driving and real com
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
       if (scene.id === 'm1_jump' && index === 0) {
         h.command('act');
-        for (let frame = 0; frame < 41; frame++) h.players.step(.1, true, h.tick());
+        for (let frame = 0; frame <= TRAINING_SECONDS.jump * 10; frame++) h.players.step(.1, true, h.tick());
       }
     }
     assert.ok(state.completed.includes(scene.id));

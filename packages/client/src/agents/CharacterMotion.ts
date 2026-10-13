@@ -1,4 +1,4 @@
-import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, jumpDemonstration, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
@@ -226,6 +226,23 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  if (input.training?.kind === 'jump') {
+    const gesture = input.training, jump = jumpDemonstration(gesture.elapsed), mentor = gesture.role === 'morpheus';
+    const running = mentor && jump.running, air = mentor && jump.airborne ? 1 : 0, landing = mentor ? jump.landing : 0;
+    const phase = running ? jump.distance / 2.4 : 0, hipHeight = 1.98 - (running ? .1 : 0) - landing * .48;
+    Object.assign(state, newMotion(), { time: gesture.elapsed, speed: running ? jump.speed : 0, phase, airborne: air, wasGrounded: !air });
+    const tuck = air * Math.sin(jump.air * Math.PI);
+    const legs = [0, .5].map((offset, i) => {
+      const foot = footTrajectory(phase + offset, .84, .6);
+      if (air) return { hip: -.1 - tuck * (i ? .85 : 1.15), knee: .18 + tuck * (i ? 1.55 : 1.2), ankle: -.15 };
+      return solveLeg(running ? foot.z : 0, hipHeight - .15 - (running ? foot.lift * .45 : 0));
+    });
+    const arms = [0, 1].map(i => ({ shoulder: air ? -2.45 + tuck * .55 : running ? Math.cos(phase * Math.PI * 2 + i * Math.PI) * .6 : -.15 - landing * .35,
+      elbow: air ? -.55 : running ? -.85 : -.22 - landing * .35, outward: (i ? 1 : -1) * (.075 + air * .12), grip: running ? .5 : .2 }));
+    return { legs, arms, hipHeight, twist: running ? Math.sin(phase * Math.PI * 2) * .08 : 0, lean: running ? .2 : air ? -.12 : landing * .24,
+      sway: 0, lunge: 0, roll: 0, headTurn: mentor ? jump.turn * .12 : 0, moving: running ? 1 : 0, run: running ? 1 : 0,
+      airborne: air, coat: air * .65 + (running ? .4 : 0), impact: 0, landing };
+  }
   if (input.logosPilot) {
     Object.assign(state, newMotion(), { time: input.logosPilot.flight.elapsed, seated: 1 });
     return { legs: [0, 1].map(() => solveLeg(1.05, 1.27)),

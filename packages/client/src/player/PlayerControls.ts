@@ -1831,7 +1831,7 @@ export class PlayerControls {
           focus = new THREE.Vector3(9, 2.4, -6.9);
         } else if (gesture.kind === 'jump') {
           const root = trainingRoot({ kind: 'jump', elapsed: gesture.elapsed, started: true }, 'morpheus');
-          ideal = new THREE.Vector3(12, 7.8, -17).lerp(new THREE.Vector3(9, 5.8, -28), THREE.MathUtils.smoothstep(gesture.elapsed, 1.1, 3.4));
+          ideal = new THREE.Vector3(12, 7.8, -7).lerp(new THREE.Vector3(9, 5.8, -28), THREE.MathUtils.smoothstep(gesture.elapsed, 1.7, 4.2));
           focus = new THREE.Vector3(root.x, Math.max(2.4, root.y + 1.8), root.z);
         } else {
           const turn = THREE.MathUtils.smoothstep(gesture.elapsed, 5.2, 6.6); const reveal = THREE.MathUtils.smoothstep(gesture.elapsed, 6.15, 7.1);

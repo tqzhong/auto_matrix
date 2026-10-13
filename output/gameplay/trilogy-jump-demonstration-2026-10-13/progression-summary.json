@@ -1,0 +1,15 @@
+{
+  "scene": "m1_red_dress",
+  "step": 0,
+  "tick": 8046,
+  "paused": true,
+  "speed": 1,
+  "newCompleted": [
+    "m1_jump"
+  ],
+  "oldCompletedKept": true,
+  "oldReflectionsKept": true,
+  "choicesKept": true,
+  "controllers": [],
+  "nextTrainingStarted": false
+}

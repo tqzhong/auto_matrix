@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: remote interactions, premature next and unvisited scene jumps cannot advance the plot
+ok 1 - remote interactions, premature next and unvisited scene jumps cannot advance the plot
+  ---
+  duration_ms: 23.576042
+  type: 'test'
+  ...
+# Subtest: training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+ok 2 - training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+  ---
+  duration_ms: 98.623417
+  type: 'test'
+  ...
+# Subtest: Morpheus demonstrates the rooftop jump before Neo can attempt the recoverable gap
+ok 3 - Morpheus demonstrates the rooftop jump before Neo can attempt the recoverable gap
+  ---
+  duration_ms: 57.571541
+  type: 'test'
+  ...
+# Subtest: the first rooftop jump uses gravity and a recoverable fall rather than a timer
+ok 4 - the first rooftop jump uses gravity and a recoverable fall rather than a timer
+  ---
+  duration_ms: 34.745041
+  type: 'test'
+  ...
+# Subtest: older truck saves retain the carrying or landing phase without standing up or replaying the jump
+ok 5 - older truck saves retain the carrying or landing phase without standing up or replaying the jump
+  ---
+  duration_ms: 10.192916
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 6 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 5.027375
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 7 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 95.981
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 8 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 21.492417
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 522.806333

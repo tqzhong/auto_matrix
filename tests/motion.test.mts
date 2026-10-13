@@ -1,7 +1,32 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
-import { MELEE_COMBO } from '@auto_matrix/shared';
+import { MELEE_COMBO, trainingRoot } from '@auto_matrix/shared';
+
+test('Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo', () => {
+  const root = (elapsed: number) => trainingRoot({ kind: 'jump', elapsed, started: true }, 'morpheus');
+  const start = root(0), running = root(1.65);
+  assert.ok(Math.abs(running.y) < .001 && running.z < start.z - 4, 'the run-up must move on the roof rather than fly in place');
+  const air = [2.35, 2.75, 3.15].map(root);
+  assert.ok(air.every(point => point.y > 0));
+  assert.ok(Math.abs((air[1].z - air[0].z) - (air[2].z - air[1].z)) < .001, 'horizontal flight cannot ease to a stop while airborne');
+  const finish = root(6);
+  assert.equal(finish.y, 0); assert.ok(Math.cos(finish.yaw) > .9, 'after landing the mentor faces the student on the near roof');
+});
+
+test('the jump demonstration reconstructs its saved stance after unrelated combat and while paused', () => {
+  for (const elapsed of [0, 1.65, 3, 4.2, 6]) {
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      training: { kind: 'jump' as const, role: 'morpheus' as const, elapsed } };
+    const warm = newMotion();
+    for (let frame = 0; frame < 30; frame++) advanceMotion(warm, { speed: 12, grounded: false, verticalVelocity: 8, turn: 2, attack: frame, hit: frame }, .03);
+    const cold = advanceMotion(newMotion(), input, 0);
+    assert.deepEqual(advanceMotion(warm, input, .016), cold, 'the saved demonstration cannot inherit an old gait or recoil');
+    assert.deepEqual(advanceMotion(warm, input, 1), cold, 'render time must not advance the saved flight');
+    if (elapsed === 3) assert.equal(cold.airborne, 1);
+    if (elapsed === 4.2) assert.ok(cold.legs.every(leg => leg.knee > .8), 'landing has a visible compressing stance');
+  }
+});
 
 test('dojo sparring keeps a readable guard between strikes and releases it after the lesson', () => {
   const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };

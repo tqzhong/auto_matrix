@@ -49,6 +49,26 @@ async function loadGeometry(id = 'neo') {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('Morpheus rooftop boots contact the roof during the run-up and compressing landing', async () => {
+  const asset = await loadGeometry('morpheus'), models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('morpheus'))!, motion = newMotion();
+    const boots = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
+    for (const elapsed of [0, 1, 1.65, 4.15, 4.4, 6]) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+        training: { kind: 'jump' as const, role: 'morpheus' as const, elapsed } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true); boots.skeleton.update();
+      let lowest = Infinity;
+      for (let i = 0; i < boots.geometry.attributes.position.count; i++) {
+        const point = rig.root.worldToLocal(boots.localToWorld(boots.getVertexPosition(i, new THREE.Vector3())));
+        lowest = Math.min(lowest, point.y);
+      }
+      assert.ok(Math.abs(lowest) < .035, `the supporting boot must meet the roof at ${elapsed}s: ${lowest}`);
+    }
+  } finally { models.dispose(); }
+});
+
 test('dojo costumes replace the city wardrobe, skin with punches and restore the original outfit', async () => {
   for (const id of ['neo', 'morpheus'] as const) {
     const asset = await loadGeometry(id); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
