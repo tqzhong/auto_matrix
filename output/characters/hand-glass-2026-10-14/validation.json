@@ -1,0 +1,73 @@
+{
+  "baseline": "2e7b500",
+  "protectedFiles": 204,
+  "changed": [],
+  "geometry": {
+    "before": [
+      {
+        "elapsed": 5.3,
+        "minimumGlassSkinGap": -0.0018037329776743882,
+        "maximumGlassPenetration": 0.0018037329776743882,
+        "indexToLittleFingerHeightSpan": -0.007435978996514381,
+        "knuckleStackGlassAxisDot": -0.13196968227434666
+      },
+      {
+        "elapsed": 6.6,
+        "minimumGlassSkinGap": -0.0018037329785143136,
+        "maximumGlassPenetration": 0.0018037329785143136,
+        "indexToLittleFingerHeightSpan": -0.007435978475419103,
+        "knuckleStackGlassAxisDot": -0.13196968227434666
+      },
+      {
+        "elapsed": 7.3,
+        "minimumGlassSkinGap": -0.0018037329776807859,
+        "maximumGlassPenetration": 0.0018037329776807859,
+        "indexToLittleFingerHeightSpan": -0.007433905721985046,
+        "knuckleStackGlassAxisDot": -0.1319696822745746
+      },
+      {
+        "elapsed": 8.59,
+        "minimumGlassSkinGap": -0.0018037329785143136,
+        "maximumGlassPenetration": 0.0018037329785143136,
+        "indexToLittleFingerHeightSpan": -0.00743597899637774,
+        "knuckleStackGlassAxisDot": -0.13196968227434666
+      }
+    ],
+    "after": [
+      {
+        "elapsed": 5.3,
+        "minimumGlassSkinGap": 0.0021212399934186776,
+        "maximumGlassPenetration": 0.0,
+        "indexToLittleFingerHeightSpan": 0.1748102110167981,
+        "knuckleStackGlassAxisDot": 0.9511200458530301,
+        "wristAngleDegrees": 51.38491917214448
+      },
+      {
+        "elapsed": 6.6,
+        "minimumGlassSkinGap": 0.002117541457817798,
+        "maximumGlassPenetration": 0.0,
+        "indexToLittleFingerHeightSpan": 0.17481228428440926,
+        "knuckleStackGlassAxisDot": 0.9511200458530007,
+        "wristAngleDegrees": 47.944464758616455
+      },
+      {
+        "elapsed": 7.3,
+        "minimumGlassSkinGap": 0.002117541457817798,
+        "maximumGlassPenetration": 0.0,
+        "indexToLittleFingerHeightSpan": 0.17481228428440926,
+        "knuckleStackGlassAxisDot": 0.9511200458530007,
+        "wristAngleDegrees": 47.944464758616455
+      },
+      {
+        "elapsed": 8.59,
+        "minimumGlassSkinGap": 0.0021212399936277743,
+        "maximumGlassPenetration": 0.0,
+        "indexToLittleFingerHeightSpan": 0.17481021101680494,
+        "knuckleStackGlassAxisDot": 0.9511200458530301,
+        "wristAngleDegrees": 51.374863160685734
+      }
+    ]
+  },
+  "verification": "28 pill/room/view/appearance tests and 1 shipped-model transfer test passed; typecheck and all three builds passed. No full-suite claim.",
+  "browser": "127.0.0.1:5197 returned HTTP 200; native Page.navigate and the same tab focus both timed out. Owned temporary 3180/5197 services stopped. No new gameplay, restart/cold possession or browser performance acceptance."
+}

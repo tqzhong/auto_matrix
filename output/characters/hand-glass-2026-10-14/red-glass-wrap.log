@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: Neo wraps all five fingers around the upright glass with opposing thumb support
+not ok 1 - Neo wraps all five fingers around the upright glass with opposing thumb support
+  ---
+  duration_ms: 325.69225
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:1:17035'
+  failureType: 'testCodeFailure'
+  error: 'the four fingers must stack along the glass, not bunch horizontally below it'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:263:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 564.493458

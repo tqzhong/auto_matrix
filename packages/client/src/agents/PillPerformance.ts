@@ -33,6 +33,7 @@ export class PillPerformance {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private pinches = new Map<'R' | 'L', THREE.Quaternion[][]>();
+  private cupGrip?: THREE.Quaternion[][];
   constructor(private rig: HeroRig) {
     const capsule = (name: string, color: number) => {
       const mesh = new THREE.Mesh(new THREE.CapsuleGeometry(.016, .04, 8, 16), new THREE.MeshPhysicalMaterial({ color, roughness: .2, clearcoat: 1 }));
@@ -124,6 +125,41 @@ export class PillPerformance {
     const hand = this.bone('wrist_' + side); if (object.parent !== hand) hand.add(object);
     object.position.copy(offset); object.quaternion.identity();
   }
+  private graspCup(amount: number): void {
+    if (!this.cupGrip) {
+      const skin = this.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      const pads = Array.from({ length: 5 }, () => new THREE.Vector3()), counts = [0, 0, 0, 0, 0], vertex = new THREE.Vector3();
+      const distal = skin.skeleton.bones.map(bone => /^finger([1-5])-3_R$/.exec(bone.name));
+      for (let i = 0; i < position.count; i++) for (let part = 0; part < 4; part++) {
+        const index = skinIndex.getComponent(i, part), digit = distal[index];
+        if (!digit || skinWeight.getComponent(i, part) < .95) continue;
+        vertex.fromBufferAttribute(position, i).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]);
+        pads[Number(digit[1]) - 1].add(vertex); counts[Number(digit[1]) - 1]++;
+      }
+      this.cupGrip = pads.map((pad, i) => {
+        pad.divideScalar(counts[i]);
+        const base = this.rig.rest.get(`finger${i + 1}-1_R`)!;
+        const first = this.rig.rest.get(`finger${i + 1}-2_R`)!, second = this.rig.rest.get(`finger${i + 1}-3_R`)!;
+        // Knuckles stack along the rig's Z axis. The pads follow the cup wall;
+        // the shorter little finger uses a nearer arc instead of stretching.
+        const target = new THREE.Vector3([.25, .185, .197, .165, .105][i], [-.095, -.372, -.379, -.367, -.34][i], i === 0 ? .1 : base.z);
+        const direction = (i === 0 ? new THREE.Vector3(.93, -.35, -.08) : i === 4 ? new THREE.Vector3(.866, -.5, 0) : new THREE.Vector3(1, 0, 0)).normalize();
+        const end = target.addScaledVector(direction, -pad.length()), axis = end.clone().sub(base);
+        const a = first.length(), b = second.length(), distance = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001);
+        axis.normalize(); end.copy(base).addScaledVector(axis, distance);
+        const along = (a * a - b * b + distance * distance) / (2 * distance);
+        const bend = new THREE.Vector3(0, i === 0 ? 1 : -1, 0); bend.addScaledVector(axis, -bend.dot(axis)).normalize();
+        const hinge = base.clone().addScaledVector(axis, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along))), parent = new THREE.Quaternion();
+        return [hinge.clone().sub(base), end.clone().sub(hinge), direction].map((desired, joint) => {
+          const rotation = new THREE.Quaternion().setFromUnitVectors([first, second, pad][joint].clone().normalize(), desired.normalize());
+          const local = parent.clone().invert().multiply(rotation); parent.copy(rotation); return local;
+        });
+      });
+    }
+    for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
+      this.bone(`finger${finger}-${segment}_R`).quaternion.slerp(this.cupGrip[finger - 1][segment - 1], amount);
+  }
   update(gesture?: PillGesture): void {
     this.red.visible = this.blue.visible = this.cup.visible = false;
     if (!gesture) return;
@@ -168,14 +204,14 @@ export class PillPerformance {
     }
     if (pose.cupReach) {
       // Fit the shipped hand around the cup wall; keep the same pickup/lip targets.
-      const offset = new THREE.Vector3(.29, -.18, .06);
+      const offset = new THREE.Vector3(.2, -.235, .015);
       const cupRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-.55 * pose.tilt, 0, 0));
-      const rotation = cupRotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2));
+      const rotation = cupRotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
       const rim = new THREE.Vector3(0, .22, -.1).applyQuaternion(cupRotation);
       const center = this.local(PILL_ROOM.cup).lerp(mouth.clone().sub(rim), pose.drink);
-      this.fingers('R', .9, 0);
+      this.graspCup(pose.cupReach);
       this.hand('R', center, rotation, offset, pose.cupReach);
-      this.attach(this.cup, 'R', offset); this.cup.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2); this.cup.visible = pose.holdingCup;
+      this.attach(this.cup, 'R', offset); this.cup.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2); this.cup.visible = pose.holdingCup;
       const sip = pillEase(time, 6.8, 7.7);
       for (const level of this.cup.getObjectsByProperty('name', 'pill-water-level')) { level.scale.y = 1 - sip * .55; level.position.y = -.04 - sip * .08; }
     }

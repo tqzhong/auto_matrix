@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the shipped Neo and Morpheus rigs pass a capsule hand to hand and lift a glass from its actual table position
+ok 1 - the shipped Neo and Morpheus rigs pass a capsule hand to hand and lift a glass from its actual table position
+  ---
+  duration_ms: 197.339292
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 456.895166

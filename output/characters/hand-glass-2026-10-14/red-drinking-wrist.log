@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: bringing the glass to the mouth keeps the wrist aligned with the forearm
+not ok 1 - bringing the glass to the mouth keeps the wrist aligned with the forearm
+  ---
+  duration_ms: 339.202042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:1:19096'
+  failureType: 'testCodeFailure'
+  error: 'drinking bends the wrist sharply across the forearm at 6.6: 0.08250680612650278'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:291:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 586.306583
