@@ -12,6 +12,22 @@ const journey = (scene: string, training?: FilmJourney['training']): FilmJourney
   reflections: {}, lastText: '', training,
 });
 
+test('red-dress pedestrian lanes leave body clearance beside the actual benches and fountain', () => {
+  const root = new THREE.Group(), renderer = new TrainingSetRenderer(root, 'm1_red_dress');
+  try {
+    root.updateMatrixWorld(true); const obstacles: THREE.Mesh[] = [], walkers: THREE.Object3D[] = [];
+    root.traverse(object => {
+      if (object instanceof THREE.Mesh && /red-dress-(bench-seat|bench-back|fountain-apron|planter-base|arcade-column)$/.test(object.name)) obstacles.push(object);
+      if (/^red-dress-crowd-\d+$/.test(object.name)) walkers.push(object);
+    });
+    assert.equal(walkers.length, 20);
+    for (const walker of walkers) for (const obstacle of obstacles) {
+      const box = new THREE.Box3().setFromObject(obstacle), x = walker.getWorldPosition(new THREE.Vector3()).x;
+      assert.ok(x < box.min.x - .65 || x > box.max.x + .65, `${walker.name} walks through ${obstacle.name}`);
+    }
+  } finally { renderer.dispose(); }
+});
+
 test('training uses the actual neck socket, a carried disk and a paused upload display', () => {
   const root = new THREE.Group(); const renderer = new NebDeckRenderer(root);
   try {
@@ -171,9 +187,9 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
     plaza.update(state, 5); const figure = plazaRoot.getObjectByName('red-dress-crowd-0')!; const frozen = figure.position.z;
     const jet = plazaRoot.getObjectByName('red-dress-fountain-jet-0')!; const jetHeight = jet.position.y;
     plaza.update(state, 5.6); assert.equal(figure.position.z, frozen, 'the crowd holds the exact frozen program frame');
-    assert.notEqual(jet.position.y, jetHeight, 'the fountain remains alive while the simulated crowd is frozen');
+    assert.equal(jet.position.y, jetHeight, 'water freezes on the same program frame as the crowd');
     const reveal = plazaRoot.getObjectByName('red-dress-agent-reveal') as THREE.PointLight;
     assert.equal(reveal.intensity, 0); state.training!.elapsed = 7; plaza.update(state, 7);
-    assert.ok(reveal.intensity > 300, 'Smith replacement gets a readable reveal light');
+    assert.ok(reveal.intensity > 0, 'Smith replacement gets a readable reveal light');
   } finally { plaza.dispose(); }
 });

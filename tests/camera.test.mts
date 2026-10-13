@@ -16,6 +16,7 @@ import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRe
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
 import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type WetwallEncounter, type WetwallGesture } from '@auto_matrix/shared';
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
+import { trainingRoot, redDressAttention } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose, mirrorEntryPose, mirrorTime } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
@@ -1561,6 +1562,24 @@ function setup(t: TestContext, rotation = 0) {
   step(.5);
   return { controls, camera, group, state, document, window, canvas, sent, actions, event, key, step, yaw };
 }
+
+test('both red-dress views follow actual mouse attention instead of a timed camera turn', t => {
+  const game = setup(t, Math.PI), attention = redDressAttention(5.3, Math.PI);
+  const gesture = { kind: 'red_dress' as const, elapsed: 5.3, attention, role: 'neo' as const };
+  const root = trainingRoot({ ...gesture, started: true }, 'neo');
+  Object.assign(game.state, { currentLocation: 'film_red_dress_plaza', position: filmPosition('film_red_dress_plaza', root.x, root.z),
+    rotation: Math.PI, currentAction: { type: 'idle', parameters: { training: gesture }, startedAt: 0, duration: 1e9, progress: 0 } });
+  game.controls.possess(game.state); game.document.pointerLockElement = game.canvas;
+  for (const firstPerson of [false, true]) {
+    game.controls.firstPerson = firstPerson; game.step(.3, .05, false);
+    const before = game.camera.getWorldDirection(new THREE.Vector3());
+    game.event(game.document, 'mousemove', { movementX: 180, movementY: 0 }); game.step(.6, .05, false);
+    const direction = game.camera.getWorldDirection(new THREE.Vector3());
+    assert.ok(direction.distanceTo(before) > .3, 'the player can look around while the scene clock is paused');
+    assert.ok(Math.abs(angle(game.yaw(), game.sent.at(-1)!.yaw)) < .03, 'the direction checked by the server matches the rendered camera');
+    assert.equal(game.controls.motion.training!.elapsed, 5.3);
+  }
+});
 
 test('the final Oracle reply locks predicted movement, uses Neo actual eyes and releases walking afterwards', t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_oracle_home.center;

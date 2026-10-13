@@ -1,4 +1,4 @@
-import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, RED_DRESS_PROGRAM, redDressFrame, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
@@ -226,6 +226,22 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  if (input.training?.kind === 'red_dress' && input.training.attention) {
+    const gesture = input.training, progress = clamp(redDressFrame(gesture) / RED_DRESS_PROGRAM.walk);
+    const distance = gesture.role === 'citizen_2' ? RED_DRESS_PROGRAM.womanFinish.z - RED_DRESS_PROGRAM.womanStart.z
+      : gesture.role === 'neo' || gesture.role === 'morpheus' ? RED_DRESS_PROGRAM.distance : 0;
+    const travel = distance * smooth(progress), speed = distance / RED_DRESS_PROGRAM.walk * 6 * progress * (1 - progress);
+    const phase = travel / 2.8, moving = Math.min(1, speed / 2.2), armed = gesture.role === 'smith' && gesture.attention!.phase !== 'walking';
+    Object.assign(state, newMotion(), { time: gesture.attention!.clock, phase, speed });
+    const legs = [0, .5].map(offset => {
+      const foot = footTrajectory(phase + offset, .7 * moving, .6);
+      return solveLeg(foot.z, 1.82 - foot.lift * .22 * moving);
+    });
+    const arms = [0, 1].map(i => ({ shoulder: armed && i === 0 ? -1.4 : Math.cos(phase * Math.PI * 2 + i * Math.PI) * .28 * moving,
+      elbow: armed && i === 0 ? -.25 : -.16 - .16 * moving, outward: (i ? 1 : -1) * .08, grip: armed && i === 0 ? 1 : .15 }));
+    return { legs, arms, hipHeight: 1.98, twist: Math.sin(phase * Math.PI * 2) * .035 * moving, lean: .04 * moving,
+      sway: 0, lunge: 0, roll: 0, headTurn: 0, moving, run: 0, airborne: 0, coat: .08 * moving, impact: 0, landing: 0 };
+  }
   if (input.training?.kind === 'jump_return') {
     const gesture = input.training;
     return advanceMotion(state, { ...input, training: { kind: 'download', elapsed: gesture.role === 'tank' ? 4 : 0, role: gesture.role } }, 0);
