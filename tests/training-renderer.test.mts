@@ -38,6 +38,35 @@ test('training uses the actual neck socket, a carried disk and a paused upload d
   } finally { renderer.dispose(); }
 });
 
+test('training sunlight keeps its downward direction when the film set is placed far from the world origin', () => {
+  for (const id of ['m1_dojo', 'm1_jump', 'm1_red_dress']) {
+    const root = new THREE.Group(); root.position.set(6800, 1, 4400);
+    const renderer = new TrainingSetRenderer(root, id); root.updateMatrixWorld(true);
+    try {
+      root.traverse(object => {
+        if (!(object instanceof THREE.DirectionalLight)) return;
+        object.target.updateWorldMatrix(true, false);
+        const direction = object.target.getWorldPosition(new THREE.Vector3()).sub(object.getWorldPosition(new THREE.Vector3())).normalize();
+        assert.ok(direction.y < -.3, `${id} sunlight incorrectly points sideways at the remote world origin: ${direction.y}`);
+      });
+    } finally { renderer.dispose(); }
+  }
+});
+
+test('the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry', () => {
+  const root = new THREE.Group(), renderer = new TrainingSetRenderer(root, 'm1_jump');
+  try {
+    for (const name of ['jump-city-matte', 'jump-city-reverse-matte', 'jump-city-west-matte', 'jump-city-east-matte']) {
+      const backdrop = root.getObjectByName(name) as THREE.Mesh;
+      const material = backdrop.material as THREE.MeshBasicMaterial;
+      assert.equal(backdrop.castShadow, false);
+      assert.equal(backdrop.receiveShadow, false);
+      assert.equal(material.transparent, true);
+      assert.equal(material.depthWrite, false);
+    }
+  } finally { renderer.dispose(); }
+});
+
 test('the dojo, roof gap and red-dress plaza are dedicated physical training sets', () => {
   const dojoRoot = new THREE.Group(); const dojo = new TrainingSetRenderer(dojoRoot, 'm1_dojo');
   try {

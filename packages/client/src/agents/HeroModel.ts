@@ -996,14 +996,6 @@ export class HeroModels {
         bone('wrist_R').rotation.z += Math.sin(t * 11) * .025 * connected;
       } else if (kind === 'download' && role === 'tank') {
         bone('spine').rotation.x += .12; bone('chest').rotation.x += .08; bone('head').rotation.x += .2;
-      } else if (kind === 'jump' && role === 'morpheus') {
-        const launch = THREE.MathUtils.smoothstep(t, .65, 1.22); const land = THREE.MathUtils.smoothstep(t, 2.85, 3.35);
-        bone('spine').rotation.x -= .34 * launch * (1 - land); bone('chest').rotation.x -= .28 * launch * (1 - land);
-        for (const side of ['R', 'L']) {
-          bone('shoulder_' + side).rotation.x = THREE.MathUtils.lerp(bone('shoulder_' + side).rotation.x, .9, launch * (1 - land));
-          bone('elbow_' + side).rotation.x = THREE.MathUtils.lerp(bone('elbow_' + side).rotation.x, -.65, launch * (1 - land));
-          bone('hip_' + side).rotation.x -= .32 * launch * (1 - land); bone('knee_' + side).rotation.x += .58 * launch * (1 - land);
-        }
       } else if (kind === 'red_dress') {
         const freeze = THREE.MathUtils.smoothstep(t, 4.7, 5.35); const reveal = THREE.MathUtils.smoothstep(t, 6.1, 6.9);
         if (role === 'neo') {

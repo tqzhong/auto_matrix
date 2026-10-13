@@ -53,14 +53,17 @@ export class TrainingSetRenderer {
     const matte = this.mesh(parent, new THREE.PlaneGeometry(160, 90), material, name); matte.position.set(x, y, z); matte.rotation.y = reverse ? Math.PI : 0;
   }
   private cityMatte(parent: THREE.Object3D): void {
-    const material = this.material(new THREE.MeshBasicMaterial({ color: 0xb6c5cc, fog: false, side: THREE.DoubleSide }));
+    const material = this.material(new THREE.MeshBasicMaterial({ color: 0xb6c5cc, fog: false, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
+    material.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_MAP\n diffuseColor.a *= (1.0 - smoothstep(0.64, 0.87, vMapUv.y)) * smoothstep(0.0, 0.1, vMapUv.x) * (1.0 - smoothstep(0.9, 1.0, vMapUv.x));\n#endif');
+    };
     if (typeof document !== 'undefined') {
       const texture = new THREE.TextureLoader().load('/assets/rooftops/training-city-matte-v1.png', loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
       texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
     }
     for (const [x, z, rotation, name] of [[0, -160, 0, 'jump-city-matte'], [0, 160, Math.PI, 'jump-city-reverse-matte'],
       [-160, 0, Math.PI / 2, 'jump-city-west-matte'], [160, 0, -Math.PI / 2, 'jump-city-east-matte']] as const) {
-      const matte = this.mesh(parent, new THREE.PlaneGeometry(330, 186), material, name); matte.position.set(x, 26, z); matte.rotation.y = rotation;
+      const matte = this.mesh(parent, new THREE.PlaneGeometry(330, 186), material, name); matte.position.set(x, 26, z); matte.rotation.y = rotation; matte.castShadow = false; matte.receiveShadow = false;
     }
   }
   private plazaMatte(parent: THREE.Object3D): void {
@@ -84,7 +87,14 @@ export class TrainingSetRenderer {
   private cylinder(parent: THREE.Object3D, material: THREE.Material, x: number, y: number, z: number, radius: number, height: number, radial = 20, name?: string): THREE.Mesh {
     const mesh = this.mesh(parent, new THREE.CylinderGeometry(radius, radius, height, radial), material, name); mesh.position.set(x, y, z); return mesh;
   }
-  private light(light: THREE.Light, name: string): void { light.name = name; this.root.add(light); this.lights.add(light); }
+  private light(light: THREE.Light, name: string): void {
+    light.name = name; this.root.add(light); this.lights.add(light);
+    if (light instanceof THREE.DirectionalLight) {
+      light.target.name = `${name}-target`; this.root.add(light.target);
+      Object.assign(light.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, near: .5, far: 180 });
+      light.shadow.camera.updateProjectionMatrix();
+    }
+  }
 
   private dojo(): void {
     const set = new THREE.Group(); set.name = 'training-dojo-set'; this.root.add(set);

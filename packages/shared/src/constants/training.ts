@@ -3,7 +3,7 @@ import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, cabinGuidePose } from './cabi
 import { awakeningPose } from './awakening.js';
 
 export type TrainingKind = 'download' | 'jump' | 'red_dress';
-export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean }
+export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean; jumpVersion?: 2 }
 export interface DojoLesson { dodged: boolean; combo: number; hits: number; counterUntil?: number; resets?: number; complete?: boolean }
 export type TrainingRole = 'neo' | 'tank' | 'morpheus' | 'citizen_1' | 'citizen_2' | 'smith';
 export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole }
@@ -15,7 +15,7 @@ export const DOWNLOAD_OPERATOR = { x: 11.8, z: -8, yaw: Math.PI,
   desk: { x: 11.8, z: -9.75, width: 3.4, depth: 1.7, height: 2.4 } } as const;
 export const DOWNLOAD_INVITATION = { from: { x: -1.8, z: -8.8 }, to: { x: 2.3, z: -5.1 }, start: 5.8, duration: 3.6 } as const;
 
-export const TRAINING_SECONDS = { download: 10, jump: 4, red_dress: 12 } as const;
+export const TRAINING_SECONDS = { download: 10, jump: 6, red_dress: 12 } as const;
 export const DOJO_COMBO_WINDOW = 3;
 export const DOWNLOAD_CHAIR = {
   neo: { x: 6.5, z: -5, yaw: -Math.PI / 2 },
@@ -23,8 +23,10 @@ export const DOWNLOAD_CHAIR = {
 } as const;
 export const JUMP_PROGRAM = {
   neo: { x: 0, z: -10, yaw: Math.PI },
-  start: { x: -3, z: -10, yaw: Math.PI },
+  start: { x: -3, z: -2.8, yaw: Math.PI },
+  launch: { x: -3, z: -12.35, yaw: Math.PI },
   finish: { x: -3, z: -36, yaw: Math.PI },
+  prepare: .8, run: 1.15, flight: 2.05, apex: 9.5,
 } as const;
 export const RED_DRESS_PROGRAM = {
   neo: { x: 7, z: -12, yaw: Math.PI },
@@ -36,6 +38,23 @@ export const RED_DRESS_PROGRAM = {
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
+
+export function jumpDemonstration(elapsed: number) {
+  const path = JUMP_PROGRAM, takeoff = path.prepare + path.run, touchdown = takeoff + path.flight;
+  const running = elapsed >= path.prepare && elapsed < takeoff, airborne = elapsed >= takeoff && elapsed < touchdown;
+  const run = clamp((elapsed - path.prepare) / path.run), air = clamp((elapsed - takeoff) / path.flight);
+  const length = path.start.z - path.launch.z, flightSpeed = (path.launch.z - path.finish.z) / path.flight;
+  const initial = 2 - flightSpeed * path.run / length;
+  const progress = initial * run + (1 - initial) * run * run;
+  const z = elapsed < takeoff ? path.start.z - length * progress : path.launch.z + (path.finish.z - path.launch.z) * air;
+  const landing = elapsed >= touchdown ? Math.sin(clamp((elapsed - touchdown) / .8) * Math.PI) : 0;
+  const turn = smooth((elapsed - touchdown - .85) / .85);
+  const facing = Math.atan2(path.neo.x - path.finish.x, path.neo.z - path.finish.z);
+  return { x: path.start.x, y: airborne ? 4 * path.apex * air * (1 - air) : 0, z,
+    yaw: Math.PI + (facing - Math.PI) * turn, running, airborne, run, air, landing, turn,
+    speed: running ? length / path.run * (initial + 2 * (1 - initial) * run) : airborne ? flightSpeed : 0,
+    distance: elapsed < takeoff ? length * progress : length + (path.launch.z - path.finish.z) * air };
+}
 
 export function downloadDiskPose(elapsed: number) {
   const lift = smooth((elapsed - .35) / .65), insert = smooth((elapsed - 1.15) / .9);
@@ -106,9 +125,11 @@ export function trainingText(training: TrainingPerformance): string {
   }
   if (training.kind === 'jump') {
     if (!training.started) return 'Morpheus 站在起跳线旁。按 G 观察他如何放下对距离的恐惧。';
-    return training.elapsed < 1.15 ? 'Morpheus 向后压低重心，开始助跑。'
-      : training.elapsed < 3.25 ? '他越过街谷，落点远超普通身体的极限。'
-      : 'Morpheus 在对面屋顶站稳。现在轮到你亲自助跑、起跳并承担失败。';
+    const jump = jumpDemonstration(training.elapsed);
+    return training.elapsed < JUMP_PROGRAM.prepare ? 'Morpheus 让 Neo 放下恐惧、怀疑和对规则的依赖，随后转向屋顶边缘。'
+      : jump.running ? 'Morpheus 加速助跑，踏向屋顶边缘。'
+        : jump.airborne ? '他越过街谷，落点远超普通身体的极限。'
+          : 'Morpheus 屈膝落地、站稳并转身看向 Neo。现在轮到你亲自助跑、起跳并承担失败。';
   }
   if (!training.started) return '人群仍在流动。按 G 开始注意力测试，亲自判断刚才忽略了什么。';
   return training.elapsed < 3.8 ? '迎面的人群不断换位。红裙女子逆着行人向你走来。'
@@ -130,12 +151,8 @@ export function trainingRoot(training: TrainingPerformance, role: TrainingRole):
   }
   if (training.kind === 'jump') {
     if (role === 'neo') return { ...JUMP_PROGRAM.neo, y: 0 };
-    const run = smooth(training.elapsed / 1.15);
-    const flight = smooth((training.elapsed - 1.15) / 2.05);
-    const landed = training.elapsed >= 3.2;
-    const z = landed ? JUMP_PROGRAM.finish.z : JUMP_PROGRAM.start.z + (JUMP_PROGRAM.finish.z - JUMP_PROGRAM.start.z) * flight;
-    const y = landed ? 0 : Math.sin(flight * Math.PI) * 9.5;
-    return { x: JUMP_PROGRAM.start.x * (1 - run * .12), y, z, yaw: Math.PI };
+    const jump = jumpDemonstration(training.elapsed);
+    return { x: jump.x, y: jump.y, z: jump.z, yaw: jump.yaw };
   }
   if (role === 'neo') {
     const turn = smooth((training.elapsed - 5.4) / 1.25);
