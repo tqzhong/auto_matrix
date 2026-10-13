@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+not ok 1 - the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+  ---
+  duration_ms: 530.843125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/office-phone-grip.test.mts:1:1556'
+  failureType: 'testCodeFailure'
+  error: 'the handset must lie across the four knuckles, with its earpiece toward the index finger'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/office-phone-grip.test.mts:60:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1006.512375

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: V leaves the office pickup phone shot for a steerable eye view, including while paused
+ok 1 - V leaves the office pickup phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 218.636833
+  type: 'test'
+  ...
+# Subtest: V leaves the office ready phone shot for a steerable eye view, including while paused
+ok 2 - V leaves the office ready phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 177.334125
+  type: 'test'
+  ...
+# Subtest: V leaves the office answering phone shot for a steerable eye view, including while paused
+ok 3 - V leaves the office answering phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 176.722709
+  type: 'test'
+  ...
+# Subtest: V leaves the office connected phone shot for a steerable eye view, including while paused
+ok 4 - V leaves the office connected phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 151.788333
+  type: 'test'
+  ...
+# Subtest: the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+ok 5 - the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+  ---
+  duration_ms: 1427.4785
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2192.409875

@@ -1,0 +1,33 @@
+{
+  "protectedFiles": 196,
+  "changed": [],
+  "phoneWorldCenter": {
+    "ready": {
+      "before": [
+        -0.3799999999999999,
+        3.1699999999999995,
+        0.6600000000000003
+      ],
+      "after": [
+        -0.3799999999999998,
+        3.17,
+        0.6600000000000003
+      ],
+      "distance": 4.577566798522237e-16
+    },
+    "connected": {
+      "before": [
+        -0.29000000000000026,
+        3.9232717382369025,
+        0.19116972665907833
+      ],
+      "after": [
+        -0.2899999999999995,
+        3.9232717382369025,
+        0.19116972665907817
+      ],
+      "distance": 7.947987303456224e-16
+    }
+  },
+  "scope": "Two static actual geometry exports; not browser or whole-trajectory validation."
+}

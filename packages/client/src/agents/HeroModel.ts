@@ -29,6 +29,7 @@ import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
+import { PHONE_HAND } from './PhoneModel.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -523,7 +524,7 @@ export class HeroModels {
     return { mesh, rest: Float32Array.from(positions), velocity: new Float32Array(positions.length) };
   }
 
-  private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>, physicalPickup?: THREE.Vector3): void {
+  private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>, physicalPickup?: THREE.Vector3, mobile = false): void {
     const smooth = (value: number) => { const t = THREE.MathUtils.clamp(value, 0, 1); return t * t * (3 - 2 * t); };
     rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get('shoulder_R')!; const elbow = rig.bones.get('elbow_R')!; const wrist = rig.bones.get('wrist_R')!;
@@ -533,6 +534,17 @@ export class HeroModels {
     const ear = rig.root.worldToLocal(head.localToWorld(new THREE.Vector3(-.43, -.25, .17)));
     const target = phone.phase === 'pickup' ? phone.elapsed < .65 ? rest.lerp(pickup, smooth(phone.elapsed / .65)) : pickup.lerp(ready, smooth((phone.elapsed - .65) / 1.15))
       : phone.phase === 'ready' ? ready : ready.lerp(ear, phone.phase === 'connected' ? 1 : smooth((phone.elapsed - .35) / 1.1));
+    const flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, Math.PI));
+    const facing = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0));
+    const calling = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, -.55));
+    const rotation = phone.phase === 'pickup' ? flat.slerp(facing, smooth((phone.elapsed - .65) / 1.15)) : phone.phase === 'ready' ? facing
+      : facing.slerp(calling, phone.phase === 'connected' ? 1 : smooth((phone.elapsed - .35) / 1.1));
+    const previousGrip = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI)).invert();
+    const grip = mobile ? PHONE_HAND.rotation.clone().invert() : previousGrip;
+    // Preserve the handset's world trajectory while turning the palm so
+    // the four fingers can wrap one edge, rather than splitting sideways.
+    if (mobile) target.add(new THREE.Vector3(.14, -.19, 0).applyQuaternion(rotation.clone().multiply(previousGrip)))
+      .sub(PHONE_HAND.position.clone().applyQuaternion(rotation.clone().multiply(grip)));
     rig.root.localToWorld(target);
     const start = shoulder.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
     const upper = elbow.position.length(); const lower = wrist.position.length();
@@ -547,16 +559,50 @@ export class HeroModels {
       joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), axis); joint.updateWorldMatrix(false, true);
     };
     aim(shoulder, elbow, hinge); aim(elbow, wrist, target);
-    const flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, Math.PI));
-    const facing = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0));
-    const calling = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, -.55));
-    const rotation = phone.phase === 'pickup' ? flat.slerp(facing, smooth((phone.elapsed - .65) / 1.15)) : phone.phase === 'ready' ? facing
-      : facing.slerp(calling, phone.phase === 'connected' ? 1 : smooth((phone.elapsed - .35) / 1.1));
-    const grip = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI)).invert();
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rootRotation).multiply(rotation).multiply(grip));
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
       const joint = rig.bones.get(`finger${finger}-${segment}_R`); if (joint) joint.rotation.z = finger === 1 ? .25 : .32;
     }
+    if (mobile) this.holdMobileFingers(rig, phone.phase === 'pickup' ? THREE.MathUtils.smoothstep(phone.elapsed, .25, .65) : 1);
+  }
+
+  private holdMobileFingers(rig: HeroRig, amount: number): void {
+    const wrist = rig.bones.get('wrist_R')!;
+    let pose = wrist.userData.phoneGrip as THREE.Quaternion[][] | undefined;
+    if (!pose) {
+      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      const pads = Array.from({ length: 5 }, () => new THREE.Vector3()), count = [0, 0, 0, 0, 0];
+      const distal = skin.skeleton.bones.map(bone => /^finger([1-5])-3_R$/.exec(bone.name));
+      for (let vertex = 0; vertex < position.count; vertex++) for (let part = 0; part < 4; part++) {
+        const index = skinIndex.getComponent(vertex, part), match = distal[index];
+        if (!match || skinWeight.getComponent(vertex, part) < .95) continue;
+        this.point.fromBufferAttribute(position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]);
+        pads[Number(match[1]) - 1].add(this.point); count[Number(match[1]) - 1]++;
+      }
+      pose = pads.map((pad, i) => {
+        pad.divideScalar(count[i]); const digit = i + 1;
+        const base = rig.rest.get(`finger${digit}-1_R`)!;
+        const first = rig.rest.get(`finger${digit}-2_R`)!, second = rig.rest.get(`finger${digit}-3_R`)!;
+        const direction = (i === 0 ? new THREE.Vector3(0, -.15, -.989) : new THREE.Vector3(.55, .835, 0)).normalize();
+        const target = i === 0 ? new THREE.Vector3(.158, -.078, .04)
+          : new THREE.Vector3(i === 4 ? .13 : i === 3 ? .175 : .18, i === 4 ? -.26 : -.245, base.z);
+        const end = target.clone().addScaledVector(direction, -pad.length());
+        const axis = end.clone().sub(base), a = first.length(), b = second.length();
+        const distance = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001); axis.normalize(); end.copy(base).addScaledVector(axis, distance);
+        const along = (a * a - b * b + distance * distance) / (2 * distance);
+        const bend = new THREE.Vector3(0, i === 0 ? 1 : -1, 0); bend.addScaledVector(axis, -bend.dot(axis)).normalize();
+        const hinge = base.clone().addScaledVector(axis, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along)));
+        const parent = new THREE.Quaternion();
+        return [hinge.clone().sub(base), end.clone().sub(hinge), direction].map((desired, joint) => {
+          const rotation = new THREE.Quaternion().setFromUnitVectors([first, second, pad][joint].clone().normalize(), desired.normalize());
+          const local = parent.clone().invert().multiply(rotation); parent.copy(rotation); return local;
+        });
+      });
+      wrist.userData.phoneGrip = pose;
+    }
+    for (let finger = 1; finger <= 5; finger++) for (let joint = 1; joint <= 3; joint++)
+      rig.bones.get(`finger${finger}-${joint}_R`)!.quaternion.slerp(pose[finger - 1][joint - 1], amount);
   }
 
   private openWindow(rig: HeroRig, elapsed: number): void {
@@ -1220,15 +1266,7 @@ export class HeroModels {
     }
     poseSpoonBody(rig, input.spoonLesson);
     if (input.phone) {
-      this.holdPhone(rig, input.phone);
-      const grip = input.phone.phase === 'pickup' ? THREE.MathUtils.smoothstep(input.phone.elapsed, .25, .65) : 1;
-      // The middle fingers wrap around opposite casing edges, rather than through the screen.
-      for (const finger of [3, 4]) for (let segment = 1; segment <= 3; segment++) {
-        const joint = bone(`finger${finger}-${segment}_R`);
-        joint.rotation.x = (finger === 3 ? -1 : 1) * (segment === 1 ? .82 : segment === 2 ? .08 : 0) * grip;
-        joint.rotation.z = THREE.MathUtils.lerp(joint.rotation.z, segment === 1 ? .2 : segment === 2 ? .36 : .32, grip);
-      }
-      bone('finger1-2_R').rotation.y = .5 * grip;
+      this.holdPhone(rig, input.phone, undefined, true);
     }
     poseMorningBody(rig, input.morning);
     if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);

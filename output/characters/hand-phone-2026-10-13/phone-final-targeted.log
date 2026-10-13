@@ -1,0 +1,86 @@
+TAP version 13
+# Subtest: Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+not ok 1 - Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+  ---
+  duration_ms: 83.7
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:141842'
+  failureType: 'testCodeFailure'
+  error: 'the held handset must meet the phone on the desk'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2200:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Neo takes the apartment handset from its physical cradle and returns it after the call
+ok 2 - Neo takes the apartment handset from its physical cradle and returns it after the call
+  ---
+  duration_ms: 51.189208
+  type: 'test'
+  ...
+# Subtest: the left hand reaches and turns the window handle while the right hand holds the phone
+not ok 3 - the left hand reaches and turns the window handle while the right hand holds the phone
+  ---
+  duration_ms: 43.395416
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:148192'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(bones.get('wrist_R')!.localToWorld(PHONE_HAND.position.clone()).distanceTo(handset) < .025)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2290:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: V leaves the office pickup phone shot for a steerable eye view, including while paused
+ok 4 - V leaves the office pickup phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 136.6285
+  type: 'test'
+  ...
+# Subtest: V leaves the office ready phone shot for a steerable eye view, including while paused
+ok 5 - V leaves the office ready phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 104.405167
+  type: 'test'
+  ...
+# Subtest: V leaves the office answering phone shot for a steerable eye view, including while paused
+ok 6 - V leaves the office answering phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 105.556375
+  type: 'test'
+  ...
+# Subtest: V leaves the office connected phone shot for a steerable eye view, including while paused
+ok 7 - V leaves the office connected phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 94.042792
+  type: 'test'
+  ...
+# Subtest: the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+ok 8 - the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+  ---
+  duration_ms: 1132.158
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1564.501

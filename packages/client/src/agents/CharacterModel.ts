@@ -65,7 +65,7 @@ import { HardlineHandset } from './HardlineHandset.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
 import { SpoonModel } from './SpoonModel.js';
-import { PhoneModel } from './PhoneModel.js';
+import { PhoneModel, PHONE_HAND } from './PhoneModel.js';
 import { VisibleGroup } from '../engine/VisibleGroup.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { batchStaticGeometry } from '../engine/StaticGeometry.js';
@@ -1000,7 +1000,7 @@ export class CharacterModels {
     if (rig.spoon) { rig.spoon.root.visible = input.spoon !== undefined; rig.spoon.setBend(input.spoon ?? 0); }
     if (input.phone && rig.hero && !rig.phone) {
       rig.phone = new PhoneModel(); this.phones.add(rig.phone);
-      rig.phone.root.position.set(.14, -.19, 0); rig.phone.root.rotation.set(0, Math.PI / 2, Math.PI); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
+      rig.phone.root.position.copy(PHONE_HAND.position); rig.phone.root.quaternion.copy(PHONE_HAND.rotation); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
     }
     if (rig.phone) {
       rig.phone.root.visible = Boolean(input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));

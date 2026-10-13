@@ -1,0 +1,52 @@
+TAP version 13
+# pickup-world [ -0.4999999999999996, 2.7749999999999995, 1.39 ] wrist [ -0.6649999999999996, 2.6429999999999993, 1.375 ] root [ 0, 0, 0, 'XYZ' ] [ 1, 1, 1 ]
+# Subtest: Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+not ok 1 - Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+  ---
+  duration_ms: 133.59825
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:141842'
+  failureType: 'testCodeFailure'
+  error: 'the held handset must meet the phone on the desk'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2201:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# ear-world [ -0.28999999999999976, 3.6904787724629635, 0.6178961624674205 ] target [ -0.29, 3.6904991132716574, 0.8162067359642453 ] root [ 0, 0, 0, 'XYZ' ] [ 1, 1, 1 ]
+# Subtest: the left hand reaches and turns the window handle while the right hand holds the phone
+not ok 2 - the left hand reaches and turns the window handle while the right hand holds the phone
+  ---
+  duration_ms: 74.486292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:148392'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(bones.get('wrist_R')!.localToWorld(PHONE_HAND.position.clone()).distanceTo(handset) < .025)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:2292:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1042.066125

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+ok 1 - Neo reaches the parcel and keeps the phone at his ear while walking and crouching
+  ---
+  duration_ms: 180.553584
+  type: 'test'
+  ...
+# Subtest: Neo takes the apartment handset from its physical cradle and returns it after the call
+ok 2 - Neo takes the apartment handset from its physical cradle and returns it after the call
+  ---
+  duration_ms: 17.648459
+  type: 'test'
+  ...
+# Subtest: the left hand reaches and turns the window handle while the right hand holds the phone
+ok 3 - the left hand reaches and turns the window handle while the right hand holds the phone
+  ---
+  duration_ms: 23.593083
+  type: 'test'
+  ...
+# Subtest: V leaves the office pickup phone shot for a steerable eye view, including while paused
+ok 4 - V leaves the office pickup phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 104.932125
+  type: 'test'
+  ...
+# Subtest: V leaves the office ready phone shot for a steerable eye view, including while paused
+ok 5 - V leaves the office ready phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 95.6195
+  type: 'test'
+  ...
+# Subtest: V leaves the office answering phone shot for a steerable eye view, including while paused
+ok 6 - V leaves the office answering phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 71.172917
+  type: 'test'
+  ...
+# Subtest: V leaves the office connected phone shot for a steerable eye view, including while paused
+ok 7 - V leaves the office connected phone shot for a steerable eye view, including while paused
+  ---
+  duration_ms: 76.747125
+  type: 'test'
+  ...
+# Subtest: the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+ok 8 - the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+  ---
+  duration_ms: 814.221666
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1152.711

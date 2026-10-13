@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
-import { PhoneModel } from '../packages/client/src/agents/PhoneModel.js';
+import { PhoneModel, PHONE_HAND } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { RedDressCrowd } from '../packages/client/src/engine/RedDressCrowd.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
@@ -2196,7 +2196,8 @@ test('Neo reaches the parcel and keeps the phone at his ear while walking and cr
   const state = newMotion(); const wrist = bones.get('wrist_R')!;
   const pickup = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, phone: { phase: 'pickup' as const, elapsed: .65 } };
   models.animate(rig, advanceMotion(state, pickup, .05), state, pickup, .05); scene.updateMatrixWorld(true);
-  assert.ok(wrist.getWorldPosition(new THREE.Vector3()).distanceTo(new THREE.Vector3(-.5, 2.635, 1.2)) < .025, 'the hand must actually reach the phone on the desk');
+  // The wrist moves when the palm turns; the physical handset must retain its pickup position.
+  assert.ok(wrist.localToWorld(PHONE_HAND.position.clone()).distanceTo(new THREE.Vector3(-.5, 2.775, 1.39)) < .025, 'the held handset must meet the phone on the desk');
   const ready = { ...pickup, phone: { phase: 'ready' as const, elapsed: 0 } };
   models.animate(rig, advanceMotion(state, ready, .05), state, ready, .05); scene.updateMatrixWorld(true);
   scene.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); });
@@ -2207,7 +2208,8 @@ test('Neo reaches the parcel and keeps the phone at his ear while walking and cr
     const input = { speed: 5, grounded: true, verticalVelocity: 0, turn: 1, crouching, phone: { phase: 'connected' as const, elapsed: 11 } };
     models.animate(rig, advanceMotion(state, input, .05), state, input, .05); scene.updateMatrixWorld(true);
     const ear = bones.get('head')!.localToWorld(new THREE.Vector3(-.43, -.25, .17));
-    assert.ok(wrist.getWorldPosition(new THREE.Vector3()).distanceTo(ear) < .025, 'the phone follows the head through movement');
+    const handset = ear.add(new THREE.Vector3(.14, .162, -.099));
+    assert.ok(wrist.localToWorld(PHONE_HAND.position.clone()).distanceTo(handset) < .025, 'the physical phone follows the head through movement');
   }
   const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
   models.animate(rig, advanceMotion(state, idle, .05), state, idle, .05);
@@ -2284,7 +2286,8 @@ test('the left hand reaches and turns the window handle while the right hand hol
     const gap = bones.get('wrist_L')!.localToWorld(new THREE.Vector3(0, -.16, .03)).distanceTo(point);
     assert.ok(gap < .025, `the hand should contact the physical handle at ${elapsed}s; gap ${gap}`);
     const ear = bones.get('head')!.localToWorld(new THREE.Vector3(-.43, -.25, .17));
-    assert.ok(bones.get('wrist_R')!.getWorldPosition(new THREE.Vector3()).distanceTo(ear) < .025);
+    const handset = ear.add(new THREE.Vector3(.14, .162, -.099));
+    assert.ok(bones.get('wrist_R')!.localToWorld(PHONE_HAND.position.clone()).distanceTo(handset) < .025);
   }
   models.dispose();
 });
