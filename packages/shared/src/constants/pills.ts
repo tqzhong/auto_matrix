@@ -62,10 +62,10 @@ export function pillPose(gesture: PillGesture) {
   const mouth = taking ? pillEase(t, 2.15, 3.45) * (1 - pillEase(t, 3.85, 4.35)) : 0;
   const cupReach = taking ? pillEase(t, 4.1, PILL_TIMING.liftCup) * (1 - pillEase(t, PILL_TIMING.replaceCup, 9.2)) : 0;
   const drink = taking ? pillEase(t, 5.55, 6.6) * (1 - pillEase(t, 7.7, 8.6)) : 0;
-  const tilt = taking ? pillEase(t, 6.6, 7.15) * (1 - pillEase(t, 7.7, 8.35)) : 0;
+  const tilt = taking ? pillEase(t, 6.1, 6.6) * (1 - pillEase(t, 7.7, 8.35)) : 0;
   return { seat, offer, reach, mouth, cupReach, drink, tilt, rise, talk,
     nod: talk * Math.sin(t * 2.1) * .025,
-    lean: gesture.role === 'morpheus' ? -seat * .16 + offer * .1 + talk * .075 : seat * .16 + reach * .68 + cupReach * (1 - drink) * .24 + Math.sin(rise * Math.PI) * .42 + talk * .035,
+    lean: gesture.role === 'morpheus' ? -seat * .16 + offer * .1 + talk * .075 : seat * .16 + reach * .68 + cupReach * (1 - drink) * .36 + Math.sin(rise * Math.PI) * .42 + talk * .035,
     holdingPill: taking && t >= PILL_TIMING.transfer && t < PILL_TIMING.swallow,
     holdingCup: taking && t >= PILL_TIMING.liftCup && t < PILL_TIMING.replaceCup,
     cupUsed: done || taking && t >= PILL_TIMING.replaceCup,
