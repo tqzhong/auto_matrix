@@ -662,6 +662,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   // Neo's floor pose is solved separately; a paused lesson must not inherit
   // a chair pose from the previous action.
   if (input.spoonLesson) state.seated = input.spoonLesson.role === 'boy' ? 1 : 0;
+  if (oracleGesture?.role === 'neo') state.seated = 0;
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   if (input.mirrorEntry) state.turn = 0;
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));

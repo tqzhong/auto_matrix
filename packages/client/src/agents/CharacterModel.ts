@@ -1019,8 +1019,8 @@ export class CharacterModels {
       }
       outline.quadraticCurveTo(.048, .054, .015, .074); outline.quadraticCurveTo(-.025, .048, -.0755, .1058); outline.closePath();
       const bitten = new THREE.Group(); bitten.name = 'cookie-bitten'; rig.cookie.add(bitten);
-      this.mesh(bitten, this.geometry(new THREE.ExtrudeGeometry(outline, { depth: .045, bevelEnabled: false, curveSegments: 8 })), biscuit, [0, 0, -.0225], [1, 1, 1]);
-      for (const group of [whole, bitten]) for (const [x, y] of [[-.05, .03], [.035, .055], [.058, -.035], [-.02, -.06]]) this.mesh(group, this.sphere, chocolate, [x, y, .029], [.018, .018, .009]);
+      this.mesh(bitten, this.geometry(new THREE.ExtrudeGeometry(outline, { depth: .025, bevelEnabled: false, curveSegments: 8 })), biscuit, [0, 0, -.0125], [1, 1, 1]);
+      for (const group of [whole, bitten]) for (const [x, y] of [[-.05, .03], [.035, .055], [.058, -.035], [-.02, -.06]]) this.mesh(group, this.sphere, chocolate, [x, y, .016], [.018, .018, .009]);
       const parent = rig.hero?.bones.get('wrist_R') ?? rig.elbows[0];
       rig.cookie.position.set(.02, rig.hero ? -.13 : -.84, .08); rig.cookie.rotation.x = -.18; parent.add(rig.cookie);
     }

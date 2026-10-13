@@ -43,10 +43,12 @@ export function poseOracleDeparture(rig: CharacterRig, gesture?: OracleDeparture
   const mouth = head.localToWorld(new THREE.Vector3(0, -.12, .24));
   const pinch = cookiePinch(rig), upper = rig.hero?.bones.get('shoulder_R') ?? rig.shoulders[0], lower = rig.hero?.bones.get('elbow_R') ?? rig.elbows[0];
   const hand = rig.hero?.bones.get('wrist_R') ?? lower;
-  const cookieRotation = new THREE.Quaternion().slerp(rotation, lift), edge = new THREE.Vector3(.1, 0, 0).applyQuaternion(cookieRotation);
+  // Bring the held rim below the lips while keeping the palm in front of the neck.
+  const biteRotation = rotation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 3, 0, -Math.PI / 2)));
+  const cookieRotation = rig.cookie!.getWorldQuaternion(new THREE.Quaternion()).slerp(biteRotation, lift), edge = new THREE.Vector3(.1, 0, 0).applyQuaternion(cookieRotation);
   const bite = THREE.MathUtils.smoothstep(gesture.elapsed, 1.32, 1.5);
-  const contact = mouth.sub(new THREE.Vector3(0, THREE.MathUtils.lerp(.115, .075, bite), 0)).add(edge);
-  const orientation = hand.getWorldQuaternion(new THREE.Quaternion()).slerp(rotation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, -Math.PI / 2, 0))), lift);
+  const contact = mouth.sub(new THREE.Vector3(0, THREE.MathUtils.lerp(.115, .075, bite), 0).applyQuaternion(biteRotation)).add(edge);
+  const orientation = hand.getWorldQuaternion(new THREE.Quaternion()).slerp(biteRotation.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, -Math.PI / 2, 0))), lift);
   const point = hand.localToWorld(pinch.clone()).lerp(contact, lift);
   if (rig.hero) {
     reach(upper, lower, hand.position, point.sub(pinch.clone().multiply(hand.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation)), new THREE.Vector3(-.6, -.8, .15).applyQuaternion(rotation));
