@@ -1,7 +1,7 @@
 import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, RED_DRESS_PROGRAM, redDressFrame, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
-import { mirrorEntryPose } from '@auto_matrix/shared';
+import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
@@ -659,7 +659,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.mirrorRise !== undefined) state.seated = 1 - smooth(clamp(input.mirrorRise));
   if (input.construct || input.reveal) state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);
   if (input.truth) state.seated = truthRoot(input.truth, input.truth.role).seated;
-  if (input.spoonLesson?.role === 'boy') state.seated = 1;
+  // Neo's floor pose is solved separately; a paused lesson must not inherit
+  // a chair pose from the previous action.
+  if (input.spoonLesson) state.seated = input.spoonLesson.role === 'boy' ? 1 : 0;
   state.turn = mix(state.turn, clamp(input.turn, -3, 3), blend);
   if (input.mirrorEntry) state.turn = 0;
   state.airborne = mix(state.airborne, input.grounded ? 0 : 1, 1 - Math.exp(-18 * dt));
@@ -793,7 +795,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[0].elbow = mix(arms[0].elbow, -.34, wire);
     arms[0].outward = mix(arms[0].outward, -.25, wire);
   }
-  if (input.spoon !== undefined) { arms[0].shoulder = -.72; arms[0].elbow = -1.45; arms[0].outward = -.2; arms[0].grip = .65; }
+  if (input.spoon !== undefined || input.spoonLesson?.role === 'neo' && input.spoonLesson.phase === 'receiving') {
+    const hold = input.spoon !== undefined ? 1 : smooth(clamp(input.spoonLesson!.elapsed / SPOON_LESSON.transfer));
+    arms[0].shoulder = mix(arms[0].shoulder, -.72, hold); arms[0].elbow = mix(arms[0].elbow, -1.45, hold);
+    arms[0].outward = mix(arms[0].outward, -.2, hold); arms[0].grip = mix(arms[0].grip, .65, hold);
+  }
   if (input.vase !== undefined) {
     const reach = Math.sin(clamp((input.vase - .6) / 1.8) * Math.PI);
     arms[1].shoulder = mix(arms[1].shoulder, -1.1, reach); arms[1].elbow = mix(arms[1].elbow, -.25, reach);
