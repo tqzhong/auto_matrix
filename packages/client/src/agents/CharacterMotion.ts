@@ -1,4 +1,4 @@
-import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, jumpDemonstration, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
@@ -226,6 +226,19 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  if (input.training?.kind === 'jump_return') {
+    const gesture = input.training;
+    return advanceMotion(state, { ...input, training: { kind: 'download', elapsed: gesture.role === 'tank' ? 4 : 0, role: gesture.role } }, 0);
+  }
+  if (input.training?.kind === 'jump_fall') {
+    const gesture = input.training, fall = jumpImpactPose(gesture.fall!, gesture.elapsed);
+    Object.assign(state, newMotion(), { time: gesture.elapsed, airborne: fall.landed ? 0 : 1, wasGrounded: fall.landed });
+    const spread = fall.prone;
+    return { legs: [0, 1].map(() => ({ hip: -.08, knee: .12, ankle: -.06 })),
+      arms: [0, 1].map(i => ({ shoulder: -.7 * (1 - spread) - .15 * spread, elbow: -.15, outward: (i ? 1 : -1) * (.45 + spread * .35), grip: 0 })),
+      hipHeight: 1.98 - spread * 1.48, twist: 0, lean: spread * Math.PI / 2, sway: 0, lunge: 0, roll: 0, headTurn: 0,
+      moving: 0, run: 0, airborne: fall.landed ? 0 : 1, coat: 0, impact: 0, landing: 0 };
+  }
   if (input.training?.kind === 'jump') {
     const gesture = input.training, jump = jumpDemonstration(gesture.elapsed), mentor = gesture.role === 'morpheus';
     const running = mentor && jump.running, air = mentor && jump.airborne ? 1 : 0, landing = mentor ? jump.landing : 0;

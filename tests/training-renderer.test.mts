@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, filmGroundHeight, filmBlocked, jumpStreetHeight, jumpImpactPose, jumpImpactTime } from '@auto_matrix/shared';
 import { TrainingSetRenderer } from '../packages/client/src/engine/TrainingSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 
@@ -35,6 +36,32 @@ test('training uses the actual neck socket, a carried disk and a paused upload d
     assert.ok(bars.filter(bar => bar.visible).length >= 5, 'the console mirrors saved upload progress');
     const paused = { disk: disk.position.toArray(), bars: bars.map(bar => bar.visible) }; renderer.update(state, 500, subject);
     assert.deepEqual({ disk: disk.position.toArray(), bars: bars.map(bar => bar.visible) }, paused);
+  } finally { renderer.dispose(); }
+});
+
+test('the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation', () => {
+  const set = FILM_SETS.film_jump_roofs, root = new THREE.Group(); root.position.set(set.center.x, set.center.y - 1, set.center.z);
+  const renderer = new TrainingSetRenderer(root, 'm1_jump');
+  try {
+    root.updateMatrixWorld(true); const avenue = root.getObjectByName('jump-canyon-avenue') as THREE.Mesh;
+    const street = avenue.getWorldPosition(new THREE.Vector3());
+    assert.equal(street.y + 1, set.center.y + jumpStreetHeight);
+    const belowRoof = { x: set.center.x, y: set.center.y - 12, z: set.center.z - 35 };
+    assert.equal(filmGroundHeight(belowRoof, set), street.y + 1, 'being below the far roof cannot teleport a falling body onto its top');
+    assert.equal(filmBlocked(belowRoof, set, 1.1), true, 'the visible tower is a physical wall below the roof');
+    const material = avenue.material as THREE.MeshStandardMaterial;
+    const shader = { uniforms: {}, vertexShader: '#include <common>\n#include <beginnormal_vertex>\n#include <begin_vertex>', fragmentShader: '' };
+    material.onBeforeCompile(shader as Parameters<typeof material.onBeforeCompile>[0], {} as THREE.WebGLRenderer);
+    const uniforms = shader.uniforms as { jumpDepth: { value: number }; jumpCenter: { value: THREE.Vector2 } };
+    const fall = { origin: { x: 0, y: -1, z: -15 }, velocity: { x: 0, y: -8, z: -4 }, yaw: Math.PI };
+    const training = { kind: 'jump_fall' as const, elapsed: jumpImpactTime(fall) + .15, started: true, fall };
+    renderer.update(journey('m1_jump', training), 0); const pose = jumpImpactPose(fall, training.elapsed);
+    assert.ok(uniforms.jumpDepth.value < -.6, 'the displayed street deforms at the actual impact');
+    assert.ok(Math.abs(uniforms.jumpDepth.value - (pose.y - jumpStreetHeight)) < 1e-10);
+    assert.deepEqual(uniforms.jumpCenter.value.toArray(), [pose.x, -(pose.z + 21)]);
+    training.elapsed += 1; renderer.update(journey('m1_jump', training), 0);
+    assert.equal(uniforms.jumpDepth.value, 0, 'the road restores while the body rebounds above it');
+    assert.ok(jumpImpactPose(fall, training.elapsed).y > jumpStreetHeight);
   } finally { renderer.dispose(); }
 });
 

@@ -1,4 +1,5 @@
 import { TruthPerformance } from './TruthPerformance.js';
+import { JumpPerformance } from './JumpPerformance.js';
 import { poseSpoonBody } from './SpoonPerformance.js';
 import { poseMorningBody } from './MorningPerformance.js';
 import { posePodWake } from './PodWakePerformance.js';
@@ -112,6 +113,7 @@ export class HeroModels {
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
   private truths = new Map<HeroRig, TruthPerformance>();
+  private jumps = new Map<HeroRig, JumpPerformance>();
   private constructs = new Map<HeroRig, ConstructPerformance>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
@@ -785,7 +787,7 @@ export class HeroModels {
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
     const truthView = input.truth?.role === 'neo';
-    const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training?.kind === 'download' && input.training.role === 'neo';
+    const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training && ['download', 'jump_fall', 'jump_return'].includes(input.training.kind) && input.training.role === 'neo';
     const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
@@ -1119,9 +1121,11 @@ export class HeroModels {
     }
     if (input.truth && !this.truths.has(rig)) this.truths.set(rig, new TruthPerformance(rig));
     this.truths.get(rig)?.pose(input.truth);
+    if (input.training?.role === 'neo' && ['jump_fall', 'jump_return'].includes(input.training.kind) && !this.jumps.has(rig)) this.jumps.set(rig, new JumpPerformance(rig));
+    this.jumps.get(rig)?.pose(input.training);
     rig.root.updateWorldMatrix(true, true);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);
-    if (!input.truckHood && input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && !(input.training?.kind === 'download' && input.training.role === 'neo') && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (input.training?.kind !== 'jump_fall' && !input.truckHood && input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && !(input.training && ['download', 'jump_fall', 'jump_return'].includes(input.training.kind) && input.training.role === 'neo') && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);
@@ -1255,6 +1259,7 @@ export class HeroModels {
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
     this.truths.forEach(p => p.dispose()); this.truths.clear();
+    this.jumps.forEach(p => p.dispose()); this.jumps.clear();
     this.constructs.forEach(p => p.dispose()); this.constructs.clear();
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();

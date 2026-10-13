@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the shipped Neo lies face down on the impact surface and wipes his mouth in the real connection chair
+not ok 1 - the shipped Neo lies face down on the impact surface and wipes his mouth in the real connection chair
+  ---
+  duration_ms: 3215.420791
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:3233'
+  failureType: 'testCodeFailure'
+  error: 'the body must lie on the street instead of hanging above dangling arms: 0.24584350255729068,0.3227218113141792,1.511009376311653'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:71:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7166.941834

@@ -1,4 +1,5 @@
 import { METACORTEX, METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
+import { JUMP_TOWERS, jumpStreetHeight } from './jump-impact.js';
 import { ZION_DEPLOYMENT } from './zion-deployment.js';
 import { PRIMARY_DEMOLITION, primaryFloor } from './primary-demolition.js';
 import { SOURCE_PORTAL } from './source-portal.js';
@@ -317,6 +318,8 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_jump_roofs' && position.y < set.center.y - .5
+    && JUMP_TOWERS.some(tower => Math.abs(x) < 25 + radius && Math.abs(z - tower.z) < tower.depth / 2 + radius)) return true;
   if (set.id === 'film_hammer_route') {
     const walk = HAMMER_COCKPIT.walk; radius = Math.min(radius, walk.radius);
     return x < walk.left + radius || x > walk.right - radius || z < walk.front + radius || z > walk.back - radius
@@ -383,7 +386,7 @@ export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 
   }
   if (set.id === 'film_jump_roofs') {
     const z = position.z - set.center.z;
-    return set.center.y - (z < -13 && z > -30 ? 45 : 0);
+    return set.center.y + (position.y < set.center.y - .5 || z < -13 && z > -30 ? jumpStreetHeight : 0);
   }
   if (set.architecture !== 'chateau') return set.center.y;
   const x = position.x - set.center.x; const z = position.z - set.center.z;

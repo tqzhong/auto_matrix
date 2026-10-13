@@ -1,0 +1,57 @@
+[
+  {
+    "metadata": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-13T04-34-11-723Z.json",
+    "file": "neo-2026-10-13T04-34-11-723Z.webm",
+    "duration": 406.05420000028613,
+    "rendering": {
+      "frames": 17561,
+      "fps": 43.253277002292656,
+      "p95FrameMs": 48,
+      "includesRecordingOverhead": true
+    }
+  },
+  {
+    "metadata": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-13T04-46-32-407Z.json",
+    "file": "neo-2026-10-13T04-46-32-407Z.webm",
+    "duration": 246.99869999980928,
+    "rendering": {
+      "frames": 7635,
+      "fps": 30.910436665604255,
+      "p95FrameMs": 70.7000002861023,
+      "includesRecordingOverhead": true
+    }
+  },
+  {
+    "metadata": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-13T05-08-26-538Z.json",
+    "file": "neo-2026-10-13T05-08-26-538Z.webm",
+    "duration": 487.653,
+    "rendering": {
+      "frames": 12313,
+      "fps": 25.248366864184415,
+      "p95FrameMs": 147,
+      "includesRecordingOverhead": true
+    }
+  },
+  {
+    "metadata": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-13T05-21-25-496Z.json",
+    "file": "neo-2026-10-13T05-21-25-496Z.webm",
+    "duration": 376.4202999997139,
+    "rendering": {
+      "frames": 8810,
+      "fps": 23.40419596397842,
+      "p95FrameMs": 166.89999961853027,
+      "includesRecordingOverhead": true
+    }
+  },
+  {
+    "metadata": "output/gameplay/neo-longplay-2026-09-20/neo-2026-10-13T05-30-21-174Z.json",
+    "file": "neo-2026-10-13T05-30-21-174Z.webm",
+    "duration": 128.88969999980927,
+    "rendering": {
+      "frames": 2625,
+      "fps": 20.36116232437036,
+      "p95FrameMs": 191.80000019073486,
+      "includesRecordingOverhead": true
+    }
+  }
+]

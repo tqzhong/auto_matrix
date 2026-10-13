@@ -1,0 +1,29 @@
+{
+  "scene": "m1_red_dress",
+  "step": 0,
+  "tick": 8382,
+  "running": false,
+  "speed": 1,
+  "controllers": [],
+  "newCompleted": [
+    "m1_jump",
+    "m1_jump_return"
+  ],
+  "oldCompletedKept": true,
+  "oldReflectionsKept": true,
+  "oldChoicesKept": true,
+  "newReflections": {
+    "m1_jump_return:1": "agency"
+  },
+  "philosophyBefore": {
+    "agency": 6,
+    "care": 1,
+    "trust": 1
+  },
+  "philosophyAfter": {
+    "agency": 7,
+    "care": 1,
+    "trust": 1
+  },
+  "nextTrainingStarted": false
+}

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { FilmJourney } from '@auto_matrix/shared';
+import { JUMP_STREET, JUMP_TOWERS, jumpImpactPose } from '@auto_matrix/shared';
 
 /** Film-one training programs share a clean simulation language, but each
  * space has its own physical set and lighting rather than the generic atlas. */
@@ -7,6 +8,8 @@ export class TrainingSetRenderer {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private impactDepth = { value: 0 };
+  private impactCenter = { value: new THREE.Vector2() };
   private lights = new Set<THREE.Light>();
   private disposed = false;
   private crowd: THREE.Group[] = [];
@@ -280,10 +283,27 @@ export class TrainingSetRenderer {
       this.cylinder(wing, roofMetal, -side * 3.4, 21, 0, 1.3, 5.5, 16, 'jump-distant-tank');
       this.box(wing, concrete, side * 5.2, 20.1, 0, 7.2, .35, 9.4, 'jump-distant-roof');
     }
-    const canyon = new THREE.Group(); canyon.name = 'jump-canyon-floor'; canyon.position.set(0, -42, -21); set.add(canyon);
-    this.box(canyon, tar, 0, 0, 0, 156, .18, 176, 'jump-canyon-street-grid');
-    this.box(canyon, this.dark, 0, .12, 0, 18, .08, 176, 'jump-canyon-avenue');
-    for (let z = -78; z <= 78; z += 12) this.box(canyon, warning, 0, .18, z, .32, .03, 5.5, 'jump-canyon-lane-mark');
+    for (const tower of JUMP_TOWERS) {
+      this.box(set, facade, 0, JUMP_STREET.base / 2, tower.z, 50, -JUMP_STREET.base, tower.depth, 'jump-tower-body');
+      const geometry = new THREE.BoxGeometry(2.1, 1.75, .1); this.geometries.add(geometry);
+      const panes = new THREE.InstancedMesh(geometry, windows, 80), matrix = new THREE.Matrix4();
+      const face = tower.z > 0 ? tower.z - tower.depth / 2 : tower.z + tower.depth / 2;
+      for (let row = 0; row < 10; row++) for (let col = 0; col < 8; col++) {
+        matrix.makeTranslation(-20.5 + col * 5.85, -3.4 - row * 3.8, face + (tower.z > 0 ? -.06 : .06)); panes.setMatrixAt(row * 8 + col, matrix);
+      }
+      panes.name = 'jump-tower-windows'; panes.castShadow = false; panes.receiveShadow = true; set.add(panes);
+    }
+    const canyon = new THREE.Group(); canyon.name = 'jump-canyon-floor'; canyon.position.set(0, JUMP_STREET.base, -21); set.add(canyon);
+    for (const side of [-1, 1]) this.box(canyon, tar, side * 43.5, 0, 0, 69, .18, 176, 'jump-canyon-street-grid');
+    const street = tar.clone(); this.materials.add(street);
+    street.onBeforeCompile = shader => {
+      shader.uniforms.jumpDepth = this.impactDepth; shader.uniforms.jumpCenter = this.impactCenter;
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float jumpDepth; uniform vec2 jumpCenter;')
+        .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvec2 jumpNormalOffset = position.xy - jumpCenter; float jumpGradient = 0.4 * jumpDepth * exp(-0.2 * dot(jumpNormalOffset, jumpNormalOffset)); objectNormal = normalize(vec3(jumpGradient * jumpNormalOffset, 1.0));')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvec2 jumpOffset = transformed.xy - jumpCenter; transformed.z += jumpDepth * exp(-0.2 * dot(jumpOffset, jumpOffset));');
+    };
+    const avenue = this.mesh(canyon, new THREE.PlaneGeometry(18, 176, 24, 128), street, 'jump-canyon-avenue');
+    avenue.rotation.x = -Math.PI / 2; avenue.position.y = JUMP_STREET.surface;
     for (const [x, z, width, height, depth] of [[-47, -32, 26, 14, 29], [-43, 29, 33, 20, 25], [45, -22, 31, 17, 35], [49, 35, 22, 12, 26]] as const) {
       this.box(canyon, facade, x, height / 2, z, width, height, depth, 'jump-canyon-block');
       this.box(canyon, windows, x, height * .6, z - depth / 2 - .05, width - 2, 2.2, .1, 'jump-canyon-window-band');
@@ -391,10 +411,16 @@ export class TrainingSetRenderer {
     }
     if (this.sceneId === 'm1_jump') {
       const training = journey?.scene === 'm1_jump' && !journey.visiting ? journey.training : undefined;
+      const impact = training?.kind === 'jump_fall' && jumpImpactPose(training.fall!, training.elapsed);
+      this.impactDepth.value = impact ? impact.depression : 0;
+      if (impact) this.impactCenter.value.set(impact.x, -(impact.z + 21));
       if (this.wind) for (const object of this.wind.children) {
         const phase = Number(object.userData.phase ?? 0); object.position.x = -20 + ((elapsed * 8 + phase * 4) % 40); object.visible = Boolean(training?.started);
       }
-      if (this.programLight) this.programLight.intensity = training?.started ? 260 : 120;
+      if (this.programLight) {
+        this.programLight.position.set(impact ? 6 : 0, impact ? -30 : 12, -21);
+        this.programLight.intensity = impact ? 420 : training?.started ? 260 : 120;
+      }
       return;
     }
     const training = journey?.scene === 'm1_red_dress' && !journey.visiting ? journey.training : undefined;

@@ -1,3 +1,4 @@
+import { jumpImpactPose } from '@auto_matrix/shared';
 import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
 import { downloadRoot, DOWNLOAD_SETUP_SECONDS } from '@auto_matrix/shared';
 import { logosShipPose, logosShipPoint, logosFlightSet } from '@auto_matrix/shared';
@@ -1817,15 +1818,24 @@ export class PlayerControls {
     } else if (this.motion.training || this.motion.download?.phase === 'connecting') {
       const gesture = this.motion.training ?? { kind: 'download', elapsed: this.motion.download!.elapsed }; const center = FILM_SETS[state.currentLocation].center;
       if (this.firstPerson) {
-        const seated = gesture.kind === 'download';
-        const head = seated ? group.getObjectByName('head') : undefined;
+        const seated = gesture.kind === 'download' || gesture.kind === 'jump_return';
+        const head = seated || gesture.kind === 'jump_fall' ? group.getObjectByName('head') : undefined;
         const localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
         const eye = head ? head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .18, .17)) : new THREE.Vector3(this.position.x, this.position.y + (seated ? 3.13 - .684 * (this.motion.download ? cabinSeat(gesture.elapsed) : 1) : 3), this.position.z);
-        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+        const pitch = this.pitch + (gesture.kind === 'jump_fall' ? jumpImpactPose(this.motion.training!.fall!, gesture.elapsed).prone * .7 : 0);
+        const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const origin = new THREE.Vector3(center.x, center.y - 1, center.z); let ideal: THREE.Vector3; let focus: THREE.Vector3;
-        if (gesture.kind === 'download') {
+        if (gesture.kind === 'jump_fall') {
+          const root = trainingRoot({ ...this.motion.training!, started: true }, 'neo'), landed = jumpImpactPose(this.motion.training!.fall!, gesture.elapsed).landed;
+          ideal = new THREE.Vector3(root.x + 7, root.y + (landed ? 3 : 7), THREE.MathUtils.clamp(root.z + 4, -26, -17));
+          focus = new THREE.Vector3(root.x, root.y + (landed ? .45 : 2), root.z);
+        } else if (gesture.kind === 'jump_return') {
+          const portrait = this.camera.aspect < .85;
+          ideal = new THREE.Vector3(portrait ? -4 : -2, portrait ? 5.3 : 4.3, -2);
+          focus = new THREE.Vector3(4.15, 2.6, -6.5);
+        } else if (gesture.kind === 'download') {
           const portrait = this.camera.aspect < .85;
           ideal = new THREE.Vector3(portrait ? -4 : -1.3, portrait ? 7 : 5.1, 1.3);
           focus = new THREE.Vector3(9, 2.4, -6.9);

@@ -889,7 +889,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const awakeningAction = journey.awakening?.kind === 'emerge' ? '拔出口部呼吸管 · G' : journey.awakening?.kind === 'breather' ? '检查后颈接口 · G' : journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'
     : journey.awakening?.kind === 'construct' ? '触摸椅背，听 Morpheus 解释 · G' : '请 Morpheus 继续揭示 · G';
   const trainingAction = journey.downloadSetup?.phase === 'greeting' ? '起身，认识 Tank · G' : journey.training?.kind === 'download' ? '请 Tank 开始上传 · G'
-    : journey.training?.kind === 'jump' ? '请 Morpheus 示范跨楼 · G' : '开始注意力测试 · G';
+    : journey.training?.kind === 'jump' ? '请 Morpheus 示范跨楼 · G' : journey.training?.kind === 'jump_return' ? '检查嘴角，询问 Morpheus · G' : '开始注意力测试 · G';
   const escaped = journey.office?.outcome === 'escaped';
   const context = scene.id === 'm1_bug' && escaped ? '你成功避开了特工。接头者仍要确认车辆与乘员没有被追踪。'
     : scene.id === 'm1_wake_again' && escaped ? '安全返回之后，Morpheus 再次来电，约定桥下接头。' : scene.context;

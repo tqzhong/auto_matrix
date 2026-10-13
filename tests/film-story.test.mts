@@ -1,4 +1,4 @@
-import { PILL_TALK_SECONDS, TRAINING_SECONDS } from '@auto_matrix/shared';
+import { PILL_TALK_SECONDS, TRAINING_SECONDS, jumpStreetHeight } from '@auto_matrix/shared';
 import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING } from '@auto_matrix/shared';
@@ -317,7 +317,7 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
       // These targets are occupied through boarding, recovery or lying down.
       // Their encounter tests verify entry; character-asset.test checks physical contact.
       const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || ['m1_recovery', 'm1_cabin'].includes(scene.id) && scene.steps.indexOf(step) === 0
-        || scene.id === 'm1_truth_return' || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1
+        || ['m1_truth_return', 'm1_jump_return'].includes(scene.id) || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1
         || scene.id === 'm3_dawn' && scene.steps.indexOf(step) >= 2;
       // Pit objectives use the persistent collapsed road, not the avenue's
       // original surface. Keep testing reachability against the real terrain.
@@ -2318,7 +2318,7 @@ test('restoring an older jump save preserves its progress and does not lock a fi
 
 test('the red-dress attention test is player-started, freezes the crowd and replaces a civilian with Smith', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
-  const jump = FILM_SCENE_BY_ID.m1_jump;
+  const jump = FILM_SCENE_BY_ID.m1_jump_return;
   Object.assign(state, { scene: jump.id, actor: 'neo', step: jump.steps.length, training: undefined });
   h.command('next'); const scene = FILM_SCENE_BY_ID.m1_red_dress; assert.equal(state.scene, scene.id);
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); assert.equal(state.step, 1);
@@ -2347,16 +2347,37 @@ test('the first rooftop jump uses gravity and a recoverable fall rather than a t
   for (let frame = 0; frame <= TRAINING_SECONDS.jump * 10; frame++) h.players.step(.1, true, h.tick());
   h.advance(30); assert.equal(state.step, 1, 'watching Morpheus must not complete Neo jump');
   let vy = 0; let falling = false;
-  for (let frame = 0; frame < 180 && state.step === 1; frame++) {
+  for (let frame = 0; frame < 600 && state.step === 1; frame++) {
+    if (state.training?.kind === 'jump_fall') { h.players.step(1 / 60, true, h.tick()); falling ||= h.actor().position.y < FILM_SETS[scene.set].center.y - 3; continue; }
     const move = stepPlayer(h.actor().position, vy, { x: 0, z: -1, yaw: Math.PI, sprint: true, jump: frame === 9, sequence: frame }, 1 / 60, true);
-    h.actor().position = move.position; vy = move.verticalVelocity;
+    h.actor().position = move.position; vy = move.verticalVelocity; h.actor().velocity = { x: 0, y: vy, z: -8.4 };
     falling ||= h.actor().position.y < FILM_SETS[scene.set].center.y - 3;
     if (frame % 30 === 0) h.advance();
   }
   assert.ok(falling, 'the space between roofs must have no invisible floor');
   assert.ok(state.completed.includes(scene.id)); assert.equal(h.actor().status, 'alive');
   assert.match(state.lastText, /第一次|失败/);
-  assert.equal(h.actor().position.y, FILM_SETS[scene.set].center.y);
+  assert.equal(h.actor().position.y, FILM_SETS[scene.set].center.y + jumpStreetHeight);
+});
+
+test('Neo reaches the street before the training records failure and never loses health twice after reloading impact', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: 'm1_dojo', actor: 'neo', step: FILM_SCENE_BY_ID.m1_dojo.steps.length, dojo: undefined, fighting: undefined });
+  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_jump, center = FILM_SETS[scene.set].center;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); h.command('act');
+  for (let i = 0; i < 61; i++) h.players.step(.1, true, h.tick());
+  h.actor().position = { x: center.x, y: center.y - 9, z: center.z - 20 }; h.actor().velocity = { x: 0, y: -16, z: -4 };
+  h.advance();
+  assert.equal(state.step, 1, 'falling eight metres cannot teleport Neo back to the roof and end the scene');
+  for (let i = 0; i < 35; i++) h.players.step(.1, true, h.tick());
+  assert.ok(h.actor().position.y < center.y - 40, 'the failure must reach the actual street');
+  const health = h.actor().health; assert.equal(health, 88);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.step(.1, false, h.tick());
+  assert.equal(h.actor().health, health);
+  for (let i = 0; i < 40; i++) h.players.step(.1, true, h.tick());
+  assert.equal(h.actor().health, health); assert.equal(h.sandbox.life.film.state!.step, 2);
+  h.command('next'); assert.equal(h.sandbox.life.film.state!.scene, 'm1_jump_return');
+  assert.equal(h.actor().isInMatrix, false); assert.equal(h.actor().health, health, 'returning to the real body retains the injury');
 });
 
 test('Morpheus and Seraph take part in their own nonlethal duels without cloning an occupied role', () => {
@@ -4239,6 +4260,9 @@ test('the entire film route completes through interactions, driving and real com
             h.command('act');
             for (let frame = 0; frame < 51; frame++) h.players.step(.1, true, h.tick());
           } else for (let frame = 0; frame < 50 && state.scene === scene.id; frame++) h.players.step(.1, true, h.tick());
+        }
+        else if (scene.id === 'm1_jump_return' && index === 0) {
+          for (let frame = 0; frame <= TRAINING_SECONDS.jump_return * 10; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_sentinels') {
           const frames = index === 0 ? 210 : 36;
