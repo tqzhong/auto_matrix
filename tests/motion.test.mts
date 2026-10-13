@@ -3,6 +3,20 @@ import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
 import { MELEE_COMBO } from '@auto_matrix/shared';
 
+test('dojo sparring keeps a readable guard between strikes and releases it after the lesson', () => {
+  const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+  const state = newMotion(), relaxed = advanceMotion(state, input, 0);
+  const ready = advanceMotion(state, { ...input, dojoSparring: true }, 0);
+  assert.ok(ready.arms.every(arm => arm.elbow < -1 && arm.grip > .7), 'both hands stay up while reading the opponent');
+  assert.ok(ready.hipHeight < relaxed.hipHeight, 'the stance has a grounded bend');
+  advanceMotion(state, { ...input, dojoSparring: true, attack: 1, combo: 0 }, .016);
+  for (let frame = 0; frame < 7; frame++) advanceMotion(state, { ...input, dojoSparring: true, attack: 1, combo: 0 }, MELEE_COMBO[0].contact / 7);
+  const punch = advanceMotion(state, { ...input, dojoSparring: true, attack: 1, combo: 0 }, 0);
+  assert.ok(punch.arms[0].elbow > ready.arms[0].elbow + .5, 'the guard must not erase the actual punch');
+  state.attackAge = 10;
+  assert.deepEqual(advanceMotion(state, input, 0).arms, relaxed.arms, 'ending the duel restores normal arm movement');
+});
+
 test('download preparation and upload reconstruct the saved pose independently of old movement or combat', () => {
   for (const role of ['neo', 'tank'] as const) {
     const gestures = [

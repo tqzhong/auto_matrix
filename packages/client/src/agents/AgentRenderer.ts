@@ -592,6 +592,8 @@ export class AgentRenderer {
         input.armed = id === 'trinity' && breakoutClock.phase === 'catching';
       }
       input.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
+      input.dojoOutfit = state.currentLocation === 'film_kungfu_dojo' && (id === 'neo' || id === 'morpheus') ? id : undefined;
+      input.dojoSparring = input.dojoOutfit !== undefined && journey?.scene === 'm1_dojo' && journey.step === 0 && journey.fighting === true;
       input.constructSuit = id === 'morpheus' && ['film_white_construct', 'film_real_desert'].includes(state.currentLocation)
         && !state.currentAction?.parameters.rescue;
       const shipScene = journey?.visiting ?? journey?.scene;

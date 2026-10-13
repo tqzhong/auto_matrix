@@ -234,7 +234,8 @@ export class SandboxRenderer {
       }
       const dist = enemy.group.position.distanceTo(camera.position);
       if (enemy.rig) this.models.animate(enemy.rig, gas?.entry ? 0 : running ? delta : 0, { speed: gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon }, dist);
+        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon,
+        dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' }, dist);
       enemy.label.visible = enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
       enemy.health.visible = enemy.scene !== 'm1_room303' && !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);
