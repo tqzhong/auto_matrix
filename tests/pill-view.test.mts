@@ -198,3 +198,57 @@ test('Neo grips the outside of the drinking glass without putting his fingers th
   }
   assert.deepEqual(failures, [], 'check the delivered skinned hand against the actual glass outer wall');
 });
+
+test('Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill', async t => {
+  const h = await setup(t);
+  const rest = new Map<string, THREE.Vector3>();
+  h.group.traverse(object => { if (object instanceof THREE.Bone && /^finger/.test(object.name)) rest.set(object.name, object.position.clone()); });
+  for (const choice of ['red', 'blue'] as const) for (const elapsed of [PILL_TIMING.transfer, 2.5, PILL_TIMING.swallow - .01]) {
+    h.draw({ phase: 'taking', elapsed, choice, role: 'neo' }, false);
+    const side = choice === 'red' ? 'L' : 'R', inward = side === 'R' ? 1 : -1;
+    const pill = h.group.getObjectByName(`held-${choice}-pill`)!;
+    const skin = h.group.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    skin.skeleton.update();
+    const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+    const pads = [new THREE.Vector3(), new THREE.Vector3()], counts = [0, 0];
+    let penetration = 0;
+    for (let vertex = 0; vertex < position.count; vertex++) {
+      let hand = 0;
+      for (let part = 0; part < 4; part++) if (new RegExp(`^(wrist|finger).*_${side}$`).test(skin.skeleton.bones[skinIndex.getComponent(vertex, part)].name)) hand += skinWeight.getComponent(vertex, part);
+      if (hand < .5) continue;
+      const point = pill.worldToLocal(skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3())));
+      penetration = Math.max(penetration, .016 - Math.hypot(point.x, point.z, Math.max(0, Math.abs(point.y) - .02)));
+      for (let part = 0; part < 4; part++) {
+        const digit = new RegExp(`^finger([12])-3_${side}$`).exec(skin.skeleton.bones[skinIndex.getComponent(vertex, part)].name);
+        if (digit && skinWeight.getComponent(vertex, part) > .95) { pads[Number(digit[1]) - 1].add(point); counts[Number(digit[1]) - 1]++; }
+      }
+    }
+    pads.forEach((pad, i) => { assert.ok(counts[i] > 50); pad.divideScalar(counts[i]); });
+    assert.ok(penetration < .003, `${choice}/${elapsed}: fingers enter the capsule by ${penetration}`);
+    assert.ok(pads[0].x * inward > .025 && pads[1].x * inward < -.025,
+      `thumb and index pads must oppose each other across the capsule: ${pads.map(p => p.toArray())}`);
+    for (const pad of pads) assert.ok(Math.hypot(pad.x, pad.z, Math.max(0, Math.abs(pad.y) - .02)) - .016 < .035, 'both real pads must touch the capsule');
+    const joints = [2, 3].map(segment => h.group.getObjectByName(`finger2-${segment}_${side}`)!);
+    const middle = joints[1].getWorldPosition(new THREE.Vector3()).sub(joints[0].getWorldPosition(new THREE.Vector3())).normalize();
+    const tip = pill.localToWorld(pads[1].clone()).sub(joints[1].getWorldPosition(new THREE.Vector3())).normalize();
+    assert.ok(middle.dot(tip) > -.05, 'the distal index must not fold backwards over its middle joint');
+    for (const [name, position] of rest) assert.ok(h.group.getObjectByName(name)!.position.distanceTo(position) < 1e-7, 'grasping cannot move or stretch finger joints');
+    const frozen = [1, 2].flatMap(finger => [1, 2, 3].map(segment => h.group.getObjectByName(`finger${finger}-${segment}_${side}`)!))
+      .map(bone => ({ bone, rotation: bone.quaternion.clone() }));
+    h.draw({ phase: 'taking', elapsed: 7.3, choice: choice === 'red' ? 'blue' : 'red', role: 'neo' }, false);
+    h.draw({ phase: 'taking', elapsed, choice, role: 'neo' }, false);
+    for (const { bone, rotation } of frozen) assert.ok(bone.quaternion.angleTo(rotation) < 1e-7, 'restoring a saved pinch must not depend on the previous prop or choice');
+  }
+});
+
+test('reaching for a pill closes the hand continuously instead of snapping into the pinch', async t => {
+  const h = await setup(t);
+  for (const choice of ['red', 'blue'] as const) {
+    const side = choice === 'red' ? 'L' : 'R';
+    h.draw({ phase: 'taking', elapsed: .35, choice, role: 'neo' }, false);
+    const hand = Array.from({ length: 5 }, (_, digit) => [1, 2, 3].map(segment => h.group.getObjectByName(`finger${digit + 1}-${segment}_${side}`)!)).flat();
+    const before = hand.map(bone => bone.quaternion.clone());
+    h.draw({ phase: 'taking', elapsed: .3501, choice, role: 'neo' }, false);
+    hand.forEach((bone, i) => assert.ok(bone.quaternion.angleTo(before[i]) < .001, `reaching snaps ${bone.name}`));
+  }
+});

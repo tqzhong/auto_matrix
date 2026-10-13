@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: Lafayette windows, fireplace and tracking passage have matching visible geometry and access
+ok 1 - Lafayette windows, fireplace and tracking passage have matching visible geometry and access
+  ---
+  duration_ms: 3476.001833
+  type: 'test'
+  ...
+# Subtest: a distant pill glass avoids a room-wide transmission pass while close and zoomed views keep refraction
+ok 2 - a distant pill glass avoids a room-wide transmission pass while close and zoomed views keep refraction
+  ---
+  duration_ms: 3.390083
+  type: 'test'
+  ...
+# Subtest: first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+ok 3 - first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+  ---
+  duration_ms: 570.453208
+  type: 'test'
+  ...
+# Subtest: possessing Morpheus does not borrow Neo's drinking glance
+ok 4 - possessing Morpheus does not borrow Neo's drinking glance
+  ---
+  duration_ms: 425.415875
+  type: 'test'
+  ...
+# Subtest: the conversation frames neo and keeps capsules hidden until the offer
+ok 5 - the conversation frames neo and keeps capsules hidden until the offer
+  ---
+  duration_ms: 401.475833
+  type: 'test'
+  ...
+# Subtest: the conversation frames morpheus and keeps capsules hidden until the offer
+ok 6 - the conversation frames morpheus and keeps capsules hidden until the offer
+  ---
+  duration_ms: 392.941292
+  type: 'test'
+  ...
+# Subtest: first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+ok 7 - first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+  ---
+  duration_ms: 279.968791
+  type: 'test'
+  ...
+# Subtest: the first-person conversation retains the chosen look direction even after a long answer
+ok 8 - the first-person conversation retains the chosen look direction even after a long answer
+  ---
+  duration_ms: 310.547334
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear neo's real eyes and the pill conversation
+ok 9 - the padded chairs clear neo's real eyes and the pill conversation
+  ---
+  duration_ms: 393.094125
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear morpheus's real eyes and the pill conversation
+ok 10 - the padded chairs clear morpheus's real eyes and the pill conversation
+  ---
+  duration_ms: 511.5945
+  type: 'test'
+  ...
+# Subtest: Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+ok 11 - Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+  ---
+  duration_ms: 468.576417
+  type: 'test'
+  ...
+# Subtest: Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+ok 12 - Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+  ---
+  duration_ms: 452.840042
+  type: 'test'
+  ...
+# Subtest: reaching for a pill closes the hand continuously instead of snapping into the pinch
+ok 13 - reaching for a pill closes the hand continuously instead of snapping into the pinch
+  ---
+  duration_ms: 205.597292
+  type: 'test'
+  ...
+# Subtest: Neo leaves the chairs facing the open tracking-room doorway
+ok 14 - Neo leaves the chairs facing the open tracking-room doorway
+  ---
+  duration_ms: 1.486916
+  type: 'test'
+  ...
+# Subtest: the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+ok 15 - the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+  ---
+  duration_ms: 426.349333
+  type: 'test'
+  ...
+# Subtest: the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+ok 16 - the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+  ---
+  duration_ms: 422.765208
+  type: 'test'
+  ...
+# Subtest: existing offering and choice saves continue without inserting a new unanswered conversation
+ok 17 - existing offering and choice saves continue without inserting a new unanswered conversation
+  ---
+  duration_ms: 391.9845
+  type: 'test'
+  ...
+# Subtest: cold loading restores both pill performers before a player reconnects
+ok 18 - cold loading restores both pill performers before a player reconnects
+  ---
+  duration_ms: 547.806708
+  type: 'test'
+  ...
+# Subtest: pill pose restoration leaves occupied and dead performers alone
+ok 19 - pill pose restoration leaves occupied and dead performers alone
+  ---
+  duration_ms: 79.270291
+  type: 'test'
+  ...
+# Subtest: Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+ok 20 - Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+  ---
+  duration_ms: 632.549833
+  type: 'test'
+  ...
+# Subtest: after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+ok 21 - after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+  ---
+  duration_ms: 604.353
+  type: 'test'
+  ...
+# Subtest: blue takes the same physical sequence before preserving the daily-life save
+ok 22 - blue takes the same physical sequence before preserving the daily-life save
+  ---
+  duration_ms: 486.063375
+  type: 'test'
+  ...
+# Subtest: pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+ok 23 - pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+  ---
+  duration_ms: 388.262084
+  type: 'test'
+  ...
+# Subtest: a pill performance reserves Morpheus and rejects movement, combat and remote choices
+ok 24 - a pill performance reserves Morpheus and rejects movement, combat and remote choices
+  ---
+  duration_ms: 252.222417
+  type: 'test'
+  ...
+# Subtest: an occupied Morpheus is never moved into the pill performance
+ok 25 - an occupied Morpheus is never moved into the pill performance
+  ---
+  duration_ms: 46.848417
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5092.782625

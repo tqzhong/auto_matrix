@@ -32,6 +32,7 @@ export class PillPerformance {
   private cup = createPillGlass();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private pinches = new Map<'R' | 'L', THREE.Quaternion[][]>();
   constructor(private rig: HeroRig) {
     const capsule = (name: string, color: number) => {
       const mesh = new THREE.Mesh(new THREE.CapsuleGeometry(.016, .04, 8, 16), new THREE.MeshPhysicalMaterial({ color, roughness: .2, clearcoat: 1 }));
@@ -79,22 +80,45 @@ export class PillPerformance {
     const x = normal.clone().multiplyScalar(side === 'R' ? 1 : -1); const y = fingers.clone().negate();
     return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, x.clone().cross(y)));
   }
-  private pinch(side: 'R' | 'L', point: THREE.Vector3): void {
-    // The imported hands rest edge-on: their palm normals are +X / -X.
-    // Place thumb/index pads around the capsule, leaving the other fingers curled.
-    for (const finger of [1, 2]) {
-      const chain = [1, 2, 3].map(segment => this.bone(`finger${finger}-${segment}_${side}`));
-      chain.forEach(joint => joint.quaternion.identity());
-      const tip = chain[2].position.clone().normalize().multiplyScalar(.04);
-      const target = point.clone(); target.x += (side === 'R' ? 1 : -1) * (finger === 1 ? .019 : -.019);
-      this.bone('wrist_' + side).localToWorld(target);
-      for (let iteration = 0; iteration < 8; iteration++) for (const joint of [...chain].reverse()) {
-        this.rig.root.updateWorldMatrix(true, true);
-        const current = joint.worldToLocal(chain[2].localToWorld(tip.clone())).normalize();
-        const desired = joint.worldToLocal(target.clone()).normalize();
-        joint.quaternion.multiply(new THREE.Quaternion().setFromUnitVectors(current, desired));
+  private pinch(side: 'R' | 'L', point: THREE.Vector3, amount: number): void {
+    let pose = this.pinches.get(side);
+    if (!pose) {
+      // Solve from the actual distal skin, not an imaginary bone extension.
+      // The capsule sits between opposing pads; neither fingertip folds back
+      // just to make an estimated endpoint reach the prop.
+      const skin = this.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      const pads = [new THREE.Vector3(), new THREE.Vector3()], counts = [0, 0], vertex = new THREE.Vector3();
+      const distal = skin.skeleton.bones.map(bone => new RegExp(`^finger([12])-3_${side}$`).exec(bone.name));
+      for (let i = 0; i < position.count; i++) for (let part = 0; part < 4; part++) {
+        const index = skinIndex.getComponent(i, part), digit = distal[index];
+        if (!digit || skinWeight.getComponent(i, part) < .95) continue;
+        vertex.fromBufferAttribute(position, i).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]);
+        pads[Number(digit[1]) - 1].add(vertex); counts[Number(digit[1]) - 1]++;
       }
+      const inward = side === 'R' ? 1 : -1;
+      pose = pads.map((pad, i) => {
+        pad.divideScalar(counts[i]);
+        const base = this.rig.rest.get(`finger${i + 1}-1_${side}`)!;
+        const first = this.rig.rest.get(`finger${i + 1}-2_${side}`)!, second = this.rig.rest.get(`finger${i + 1}-3_${side}`)!;
+        const direction = (i === 0 ? new THREE.Vector3(inward * .4, -.86, .316) : new THREE.Vector3(-inward * .2, .98, 0)).normalize();
+        const target = point.clone(); target.x += inward * (i === 0 ? .05 : -.038);
+        const end = target.addScaledVector(direction, -pad.length()), axis = end.clone().sub(base);
+        const a = first.length(), b = second.length(), distance = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001);
+        axis.normalize(); end.copy(base).addScaledVector(axis, distance);
+        const along = (a * a - b * b + distance * distance) / (2 * distance);
+        const bend = new THREE.Vector3(0, i === 0 ? 1 : -1, 0); bend.addScaledVector(axis, -bend.dot(axis)).normalize();
+        const hinge = base.clone().addScaledVector(axis, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along)));
+        const parent = new THREE.Quaternion();
+        return [hinge.clone().sub(base), end.clone().sub(hinge), direction].map((desired, joint) => {
+          const rotation = new THREE.Quaternion().setFromUnitVectors([first, second, pad][joint].clone().normalize(), desired.normalize());
+          const local = parent.clone().invert().multiply(rotation); parent.copy(rotation); return local;
+        });
+      });
+      this.pinches.set(side, pose);
     }
+    for (let finger = 1; finger <= 2; finger++) for (let segment = 1; segment <= 3; segment++)
+      this.bone(`finger${finger}-${segment}_${side}`).quaternion.slerp(pose[finger - 1][segment - 1], amount);
   }
   private attach(object: THREE.Object3D, side: 'R' | 'L', offset: THREE.Vector3): void {
     const hand = this.bone('wrist_' + side); if (object.parent !== hand) hand.add(object);
@@ -121,7 +145,7 @@ export class PillPerformance {
       return;
     }
     const side = gesture.choice === 'blue' ? 'R' : 'L';
-    const pinch = new THREE.Vector3(side === 'R' ? .14 : -.14, -.32, .12);
+    const pinch = new THREE.Vector3(side === 'R' ? .14 : -.14, -.275, .12);
     const contact = this.local(pillContact(gesture.choice ?? 'red')); contact.y += .022;
     const mouth = root.worldToLocal(this.bone('head').localToWorld(new THREE.Vector3(0, -.2, .36)));
     const reach = gesture.phase === 'taking' ? pillEase(time, .35, PILL_TIMING.transfer) * (1 - pillEase(time, 3.85, 4.35)) : 0;
@@ -136,9 +160,9 @@ export class PillPerformance {
     if (reach) {
       const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
         .slerp(this.orientation(side, new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)), pillEase(time, 2.15, 3.45));
-      this.fingers(side, .7);
+      this.fingers(side, .18 + .52 * reach);
       this.hand(side, contact.lerp(mouth, pillEase(time, 2.15, 3.45)), rotation, pinch, reach);
-      this.pinch(side, pinch);
+      this.pinch(side, pinch, reach);
       const pill = gesture.choice === 'blue' ? this.blue : this.red;
       this.attach(pill, side, pinch); pill.visible = pose.holdingPill;
     }

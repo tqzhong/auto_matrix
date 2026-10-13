@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: reaching for a pill closes the hand continuously instead of snapping into the pinch
+not ok 1 - reaching for a pill closes the hand continuously instead of snapping into the pinch
+  ---
+  duration_ms: 326.222708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:1:16420'
+  failureType: 'testCodeFailure'
+  error: 'reaching snaps finger1-1_L'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:252:38)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/pill-view.test.mts:252:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 554.011083

@@ -1,0 +1,52 @@
+{
+  "protectedFiles": 204,
+  "changed": [],
+  "geometry": {
+    "before": [
+      {
+        "pose": "neo-red-1.8.json",
+        "maximumCapsulePenetration": 0.015115945384939225,
+        "indexDistalBendDegrees": 131.9892907366406
+      },
+      {
+        "pose": "neo-blue-1.8.json",
+        "maximumCapsulePenetration": 0.015185958125303512,
+        "indexDistalBendDegrees": 131.98766594564418
+      },
+      {
+        "pose": "neo-red-3.4.json",
+        "maximumCapsulePenetration": 0.015248620134079119,
+        "indexDistalBendDegrees": 131.98558252151113
+      },
+      {
+        "pose": "neo-blue-3.4.json",
+        "maximumCapsulePenetration": 0.015172198219526952,
+        "indexDistalBendDegrees": 131.98724369900262
+      }
+    ],
+    "after": [
+      {
+        "pose": "neo-red-1.8.json",
+        "maximumCapsulePenetration": 0,
+        "indexDistalBendDegrees": 79.8804883603311
+      },
+      {
+        "pose": "neo-blue-1.8.json",
+        "maximumCapsulePenetration": 0,
+        "indexDistalBendDegrees": 79.87779641405527
+      },
+      {
+        "pose": "neo-red-3.4.json",
+        "maximumCapsulePenetration": 0,
+        "indexDistalBendDegrees": 79.87396041849932
+      },
+      {
+        "pose": "neo-blue-3.4.json",
+        "maximumCapsulePenetration": 0,
+        "indexDistalBendDegrees": 79.87671946591527
+      }
+    ]
+  },
+  "browser": "Native IAB navigation and focus timed out for http://127.0.0.1:5197/ despite HTTP 200. No fresh gameplay, restart/continuation or performance acceptance.",
+  "runtime": "Independent paused source copy, tick 5232. Owned 3180/5197 services stopped."
+}
