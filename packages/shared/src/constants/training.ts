@@ -13,6 +13,7 @@ export const DOWNLOAD_SETUP_SECONDS = { waking: 12, connecting: 10 } as const;
 export const DOWNLOAD_OPERATOR = { x: 11.8, z: -8, yaw: Math.PI,
   keyboard: { x: 11.8, y: 2.4, z: -9.05 }, drive: { x: 12.5, y: 2.65, z: -9.4 },
   desk: { x: 11.8, z: -9.75, width: 3.4, depth: 1.7, height: 2.4 } } as const;
+export const DOWNLOAD_INVITATION = { from: { x: -1.8, z: -8.8 }, to: { x: 2.3, z: -5.1 }, start: 5.8, duration: 3.6 } as const;
 
 export const TRAINING_SECONDS = { download: 10, jump: 4, red_dress: 12 } as const;
 export const DOJO_COMBO_WINDOW = 3;
@@ -101,7 +102,7 @@ export function trainingText(training: TrainingPerformance): string {
     return training.elapsed < 2.2 ? '颈后接口接通，Tank 正在校验神经信号。'
       : training.elapsed < 6.8 ? '动作、呼吸与重心变化以不属于记忆的速度进入意识。'
       : training.elapsed < 9 ? '手指与眼球出现细小反应；身体正在把程序知识变成可调用的动作。'
-      : '上传完成。知识已经存在，接下来必须在道场里证明身体能跟上。';
+      : 'Neo 睁开眼睛，说自己已经学会功夫。Morpheus 走到椅旁，托腮观察：现在到道场里证明身体能跟上。';
   }
   if (training.kind === 'jump') {
     if (!training.started) return 'Morpheus 站在起跳线旁。按 G 观察他如何放下对距离的恐惧。';
@@ -118,6 +119,12 @@ export function trainingText(training: TrainingPerformance): string {
 
 export function trainingRoot(training: TrainingPerformance, role: TrainingRole): { x: number; y: number; z: number; yaw: number } {
   if (training.kind === 'download') {
+    if (role === 'morpheus') {
+      const path = DOWNLOAD_INVITATION, walk = smooth((training.elapsed - path.start) / path.duration);
+      const x = path.from.x + (path.to.x - path.from.x) * walk, z = path.from.z + (path.to.z - path.from.z) * walk;
+      const turn = smooth((training.elapsed - 8.8) / .6), heading = Math.atan2(path.to.x - path.from.x, path.to.z - path.from.z);
+      return { x, y: 0, z, yaw: heading + (Math.atan2(CABIN.chair.x - x, CABIN.chair.z - z) - heading) * turn };
+    }
     const root = role === 'tank' ? DOWNLOAD_CHAIR.tank : DOWNLOAD_CHAIR.neo;
     return { ...root, y: 0 };
   }

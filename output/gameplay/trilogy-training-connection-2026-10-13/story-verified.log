@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: training preparation restores its saved body action immediately on release and paused possession
+ok 1 - training preparation restores its saved body action immediately on release and paused possession
+  ---
+  duration_ms: 394.813542
+  type: 'test'
+  ...
+# Subtest: rehydrating training preserves free walking and does not revive a released dead player
+ok 2 - rehydrating training preserves free walking and does not revive a released dead player
+  ---
+  duration_ms: 75.2325
+  type: 'test'
+  ...
+# Subtest: training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+ok 3 - training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+  ---
+  duration_ms: 3241.979542
+  type: 'test'
+  ...
+# Subtest: Tank cannot be stolen and training preparation survives pause, disconnection and reload
+ok 4 - Tank cannot be stolen and training preparation survives pause, disconnection and reload
+  ---
+  duration_ms: 2652.271708
+  type: 'test'
+  ...
+# Subtest: a saved upload already in progress does not replay the new cabin introduction
+ok 5 - a saved upload already in progress does not replay the new cabin introduction
+  ---
+  duration_ms: 48.24225
+  type: 'test'
+  ...
+# Subtest: a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+ok 6 - a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+  ---
+  duration_ms: 172.384417
+  type: 'test'
+  ...
+# Subtest: Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+ok 7 - Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+  ---
+  duration_ms: 197.991292
+  type: 'test'
+  ...
+# Subtest: a lost mentor stops the upload without silently reviving the character
+ok 8 - a lost mentor stops the upload without silently reviving the character
+  ---
+  duration_ms: 63.780875
+  type: 'test'
+  ...
+# Subtest: Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+ok 9 - Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+  ---
+  duration_ms: 1919.467542
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 10 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 81.042542
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 11 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 44.315459
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 12 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 150.789042
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 13 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 0.579459
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 14 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 3.111625
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 15 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 17.268041
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 16 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 2.443458
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 17 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 55.155625
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 18 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 29.2175
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 19 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 3.279625
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 20 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 0.796917
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 21 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 1.024833
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 22 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 0.959875
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 23 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.912708
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 24 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.583625
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 25 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 62.857416
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 26 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 12.201166
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 27 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 1.932458
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 28 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.627291
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 29 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 2.216458
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 30 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.903792
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 31 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 1459.113709
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 32 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 968.277958
+  type: 'test'
+  ...
+# Subtest: truth is followed by a requested exit, physical unplugging and a bedside answer before training
+ok 33 - truth is followed by a requested exit, physical unplugging and a bedside answer before training
+  ---
+  duration_ms: 3247.622459
+  type: 'test'
+  ...
+# Subtest: unplugging pauses for the player, world and occupied crew and resumes its physical checkpoint
+ok 34 - unplugging pauses for the player, world and occupied crew and resumes its physical checkpoint
+  ---
+  duration_ms: 1531.454667
+  type: 'test'
+  ...
+# Subtest: existing training saves stay in training while completed desert saves include the new aftermath
+ok 35 - existing training saves stay in training while completed desert saves include the new aftermath
+  ---
+  duration_ms: 1005.829042
+  type: 'test'
+  ...
+1..35
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12132.908042

@@ -1,0 +1,212 @@
+TAP version 13
+# Subtest: first-person Construct and truth aftermath retain the body and restore the ordinary view
+not ok 1 - first-person Construct and truth aftermath retain the body and restore the ordinary view
+  ---
+  duration_ms: 211.257916
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:13465'
+  failureType: 'testCodeFailure'
+  error: |-
+    V cannot hide the hands carrying out the Construct interaction
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:205:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the Construct and truth aftermath use the registered body eye while keeping free look
+not ok 2 - the Construct and truth aftermath use the registered body eye while keeping free look
+  ---
+  duration_ms: 33.905833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:203708'
+  failureType: 'testCodeFailure'
+  error: 'the fallback body-origin camera can sit inside the collar instead of at the delivered eyes'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:2709:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+  ...
+# Subtest: first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+not ok 3 - first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+  ---
+  duration_ms: 554.289875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:87036'
+  failureType: 'testCodeFailure'
+  error: 'the actual head skin cannot remain in the player view'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1375:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+not ok 4 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 17
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/motion.test.mts:1:223'
+  failureType: 'testCodeFailure'
+  error: |-
+    neo cannot inherit running or recoil during the saved download
+    + actual - expected
+    
+      {
+        airborne: 0,
+        arms: [
+          {
+            elbow: -0.22,
+            grip: 0,
+            outward: -0.075,
+    +       shoulder: 0.0019573280428442064
+    -       shoulder: 0
+          },
+          {
+            elbow: -0.22,
+            grip: 0,
+            outward: 0.075,
+    +       shoulder: 0.0019573280428442064
+    -       shoulder: 0
+          }
+        ],
+        coat: 0,
+        headTurn: 0,
+    +   hipHeight: 1.9800152999926304,
+    -   hipHeight: 1.98,
+        impact: 0,
+        landing: 0,
+    +   lean: -0.003425324074977361,
+    -   lean: 0,
+        legs: [
+          {
+    +       ankle: -0.10652384438852293,
+    +       hip: -0.10197478180731277,
+    +       knee: 0.2084986261958357
+    -       ankle: -0.1066055155852064,
+    -       hip: -0.10205294039572996,
+    -       knee: 0.20865845598093635
+          },
+          {
+    +       ankle: -0.10652384438852293,
+    +       hip: -0.10197478180731277,
+    +       knee: 0.2084986261958357
+    -       ankle: -0.1066055155852064,
+    -       hip: -0.10205294039572996,
+    -       knee: 0.20865845598093635
+          }
+        ],
+    +   lunge: -0.0021530608471286273,
+    -   lunge: 0,
+        moving: 0,
+        roll: 0,
+        run: 0,
+        sway: 0,
+        twist: 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    legs:
+      0:
+        hip: -0.10205294039572996
+        knee: 0.20865845598093635
+        ankle: -0.1066055155852064
+      1:
+        hip: -0.10205294039572996
+        knee: 0.20865845598093635
+        ankle: -0.1066055155852064
+    arms:
+      0:
+        shoulder: 0
+        elbow: -0.22
+        outward: -0.075
+        grip: 0
+      1:
+        shoulder: 0
+        elbow: -0.22
+        outward: 0.075
+        grip: 0
+    hipHeight: 1.98
+    twist: 0
+    lean: 0
+    sway: 0
+    lunge: 0
+    roll: 0
+    headTurn: 0
+    moving: 0
+    run: 0
+    airborne: 0
+    coat: 0
+    impact: 0
+    landing: 0
+  actual:
+    legs:
+      0:
+        hip: -0.10197478180731277
+        knee: 0.2084986261958357
+        ankle: -0.10652384438852293
+      1:
+        hip: -0.10197478180731277
+        knee: 0.2084986261958357
+        ankle: -0.10652384438852293
+    arms:
+      0:
+        shoulder: 0.0019573280428442064
+        elbow: -0.22
+        outward: -0.075
+        grip: 0
+      1:
+        shoulder: 0.0019573280428442064
+        elbow: -0.22
+        outward: 0.075
+        grip: 0
+    hipHeight: 1.9800152999926304
+    twist: 0
+    lean: -0.003425324074977361
+    sway: 0
+    lunge: -0.0021530608471286273
+    roll: 0
+    headTurn: 0
+    moving: 0
+    run: 0
+    airborne: 0
+    coat: 0
+    impact: 0
+    landing: 0
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/motion.test.mts:16:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1206.872

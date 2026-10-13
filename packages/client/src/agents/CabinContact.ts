@@ -9,7 +9,8 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
   const unplug = truth?.phase === 'unplug' && (truth.role === 'trinity' || truth.role === 'dozer');
   const connecting = download?.phase === 'connecting' && download.role === 'tank';
   const upload = input.training?.kind === 'download' && input.training.role === 'tank' ? input.training : undefined;
-  const blend = upload ? 1 : connecting ? THREE.MathUtils.smoothstep(download.elapsed, 2.2, 3) * (1 - THREE.MathUtils.smoothstep(download.elapsed, 5.8, 6.8))
+  const invitation = input.training?.kind === 'download' && input.training.role === 'morpheus' ? input.training : undefined;
+  const blend = invitation ? THREE.MathUtils.smoothstep(invitation.elapsed, 9.1, 9.7) : upload ? 1 : connecting ? THREE.MathUtils.smoothstep(download.elapsed, 2.2, 3) * (1 - THREE.MathUtils.smoothstep(download.elapsed, 5.8, 6.8))
     : unplug ? THREE.MathUtils.smoothstep(truth.elapsed, 0, .7) * (1 - THREE.MathUtils.smoothstep(truth.elapsed, 3.2, 4)) : input.medical !== undefined ? medicalControlBlend(input.medical)
     : cabin?.kind === 'wake' && cabin.role === 'neo' ? cabinBodyPose(cabin.elapsed).inspect
       : cabin?.kind === 'core' && cabin.role === 'morpheus' ? THREE.MathUtils.smoothstep(cabin.elapsed, 2.2, 3)
@@ -18,7 +19,7 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
   rig.root.updateWorldMatrix(true, true);
   const socket = rig.root.getObjectByName('cervical-interface');
   const center = FILM_SETS.film_neb_deck.center;
-  const contact = connecting && download.target ? new THREE.Vector3(download.target.x, download.target.y, download.target.z)
+  const contact = invitation ? rig.bones.get('head')!.localToWorld(new THREE.Vector3(.06, -.28, .335)) : connecting && download.target ? new THREE.Vector3(download.target.x, download.target.y, download.target.z)
     : unplug && truth.target ? new THREE.Vector3(truth.target.x, truth.target.y, truth.target.z) : input.medical !== undefined
     ? new THREE.Vector3(center.x + MEDICAL_OPERATOR.control.x, center.y - 1 + MEDICAL_OPERATOR.control.y + .12, center.z + MEDICAL_OPERATOR.control.z)
     : cabin?.role === 'neo' ? socket?.getWorldPosition(new THREE.Vector3())
@@ -29,7 +30,7 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
     const targetPoint = point ? new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z) : contact!;
     const shoulder = rig.bones.get(`shoulder_${side}`)!, elbow = rig.bones.get(`elbow_${side}`)!, wrist = rig.bones.get(`wrist_${side}`)!;
     const rootRotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
-    const neck = cabin?.role === 'neo';
+    const neck = cabin?.role === 'neo' || Boolean(invitation);
     const rotation = rootRotation.clone().multiply(new THREE.Quaternion().setFromEuler(upload ? new THREE.Euler(-Math.PI / 2, 0, 0) : new THREE.Euler(neck ? Math.PI / 2 : 0, 0, -Math.PI / 2)));
     const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(rotation, blend);
     const palm = new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02);
@@ -50,7 +51,7 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
       const joint = rig.bones.get(`finger${finger}-${segment}_${side}`)!;
-      joint.rotation.z = THREE.MathUtils.lerp(joint.rotation.z, neck || upload ? .1 : .35, blend);
+      joint.rotation.z = THREE.MathUtils.lerp(joint.rotation.z, invitation ? .6 : neck || upload ? .1 : .35, blend);
     }
   }
 }

@@ -1,0 +1,50 @@
+[
+  {
+    "level": "debug",
+    "message": "[training-control-transition] Object",
+    "timestamp": "2026-10-13T00:29:55.052Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851263141"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] Object",
+    "timestamp": "2026-10-13T00:29:56.241Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851263141"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] Object",
+    "timestamp": "2026-10-13T00:30:08.213Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851263141"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] {\"after\":\"greeting\",\"performing\":false,\"wasPerforming\":false,\"actorYaw\":3.141592653589793,\"yaw\":3.141592653589793,\"facing\":3.141592653589793,\"recoveryYaw\":3.141592653589793}",
+    "timestamp": "2026-10-13T00:31:16.476Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851441902"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] {\"before\":\"greeting\",\"after\":\"waking\",\"cached\":\"greeting\",\"performing\":false,\"wasPerforming\":true,\"actorYaw\":3.141592653589793,\"yaw\":3.141592653589793,\"facing\":3.141592653589793,\"recoveryYaw\":3.141592653589793}",
+    "timestamp": "2026-10-13T00:31:17.820Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851441902"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] {\"before\":\"waking\",\"after\":\"free\",\"cached\":\"waking\",\"performing\":false,\"wasPerforming\":true,\"actorYaw\":-1.1243144135486012,\"yaw\":-1.1243144135486012,\"facing\":-1.1231140866442526,\"recoveryYaw\":-1.1243144135486012}",
+    "timestamp": "2026-10-13T00:31:29.785Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851441902"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] {\"before\":\"free\",\"after\":\"connecting\",\"performing\":false,\"wasPerforming\":false,\"actorYaw\":-1.5707963267948966,\"yaw\":0.3328837064054359,\"facing\":0.33288398914137113}",
+    "timestamp": "2026-10-13T00:36:41.211Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851441902"
+  },
+  {
+    "level": "debug",
+    "message": "[training-control-transition] {\"before\":\"connecting\",\"after\":\"free\",\"cached\":\"connecting\",\"performing\":false,\"wasPerforming\":true,\"actorYaw\":-1.5707963267948966,\"yaw\":0.3328837064054359,\"facing\":-1.5707963267948966}",
+    "timestamp": "2026-10-13T00:36:51.205Z",
+    "url": "http://127.0.0.1:5374/src/player/PlayerControls.ts?t=1791851441902"
+  }
+]

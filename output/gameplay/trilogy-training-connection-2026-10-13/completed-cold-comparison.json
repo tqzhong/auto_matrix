@@ -1,0 +1,21 @@
+{
+  "groups": {
+    "agents": true,
+    "sandbox": true,
+    "events": true,
+    "phase": true,
+    "locations": true,
+    "chunks": true
+  },
+  "tickUnchanged": true,
+  "timeUnchanged": true,
+  "memoryFiles": {
+    "sparks.json": true,
+    "cas.json": true,
+    "citizen_8.json": true,
+    "mauser.json": true,
+    "binary.json": true,
+    "vector.json": true,
+    "ak.json": true
+  }
+}

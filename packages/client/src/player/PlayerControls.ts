@@ -1,4 +1,5 @@
 import { logosBaneBeat, logosBaneLocked, logosBaneRoot } from '@auto_matrix/shared';
+import { downloadRoot, DOWNLOAD_SETUP_SECONDS } from '@auto_matrix/shared';
 import { logosShipPose, logosShipPoint, logosFlightSet } from '@auto_matrix/shared';
 import { LOGOS_WRECK, LOGOS_COCKPIT } from '@auto_matrix/shared';
 import { MAGGIE_DISCOVERY, HAMMER_MEDICAL, maggieDiscoveryLocked, maggieDiscoveryRoot } from '@auto_matrix/shared';
@@ -938,7 +939,7 @@ export class PlayerControls {
     const logosPilot = typeof state.currentAction?.parameters.logosPilot === 'object'
       ? state.currentAction.parameters.logosPilot as MotionInput['logosPilot'] : undefined;
     if (logosPilot) this.performing = true;
-    if (this.wasPerforming && !this.performing) this.yaw = this.movementYaw = this.facing;
+    if (this.wasPerforming && !this.performing && !(this.firstPerson && this.motion.download?.role === 'neo' && ['greeting', 'waking'].includes(this.motion.download.phase))) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
     this.wasPerforming = this.performing;
@@ -980,6 +981,12 @@ export class PlayerControls {
     }
     this.mirrorYaw = mirrorYaw;
     this.motion.helDanceDoor = state.currentAction?.parameters.helDanceDoor as number | undefined;
+    if (this.motion.download?.role === 'neo' && ['greeting', 'waking'].includes(this.motion.download.phase)
+      && !state.currentAction?.parameters.download && this.recoveryYaw !== undefined) {
+      const yaw = downloadRoot({ phase: 'waking', elapsed: DOWNLOAD_SETUP_SECONDS.waking, progress: 0 }, 'neo').yaw;
+      const turn = Math.atan2(Math.sin(yaw - this.recoveryYaw), Math.cos(yaw - this.recoveryYaw));
+      this.yaw += turn; this.movementYaw += turn; this.facing = yaw; this.cameraReady = false;
+    }
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.cabin = state.currentAction?.parameters.cabin as MotionInput['cabin'];
     this.motion.download = state.currentAction?.parameters.download as MotionInput['download'];
@@ -1812,7 +1819,8 @@ export class PlayerControls {
       if (this.firstPerson) {
         const seated = gesture.kind === 'download';
         const head = seated ? group.getObjectByName('head') : undefined;
-        const eye = head ? head.localToWorld(new THREE.Vector3(0, .18, .17)) : new THREE.Vector3(this.position.x, this.position.y + (seated ? 3.13 - .684 * (this.motion.download ? cabinSeat(gesture.elapsed) : 1) : 3), this.position.z);
+        const localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
+        const eye = head ? head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .18, .17)) : new THREE.Vector3(this.position.x, this.position.y + (seated ? 3.13 - .684 * (this.motion.download ? cabinSeat(gesture.elapsed) : 1) : 3), this.position.z);
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {

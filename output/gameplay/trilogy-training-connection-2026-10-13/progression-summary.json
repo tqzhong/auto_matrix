@@ -1,0 +1,17 @@
+{
+  "entry": {
+    "tick": 6384,
+    "scene": "m1_download",
+    "step": 0
+  },
+  "completed": {
+    "tick": 7177,
+    "scene": "m1_dojo",
+    "step": 0
+  },
+  "addedScenes": [
+    "m1_download"
+  ],
+  "philosophyUnchanged": true,
+  "dojoStarted": false
+}

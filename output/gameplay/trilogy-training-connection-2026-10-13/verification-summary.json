@@ -1,0 +1,23 @@
+{
+  "baseline": {
+    "trainingStoryAndRenderer": 7,
+    "relatedContactCamera": 5
+  },
+  "final": {
+    "storyAndMotion": 35,
+    "cameraAndPhysicalContact": 9,
+    "distinctTests": 44,
+    "typecheck": true,
+    "productionBuildAllPackages": true
+  },
+  "coldRestartGroups": 6,
+  "protectedFiles": 3467,
+  "limitations": [
+    "not the full test suite",
+    "no unrecorded performance benchmark",
+    "fidelity of crew models, clothing, chair and ship remains incomplete",
+    "Morpheus hand contact checks cover two fully held frames and a sampled face region",
+    "recordings include pauses and one interrupted recorder without metadata",
+    "dojo sparring not begun"
+  ]
+}

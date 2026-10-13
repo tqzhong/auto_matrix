@@ -3,6 +3,24 @@ import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
 import { MELEE_COMBO } from '@auto_matrix/shared';
 
+test('download preparation and upload reconstruct the saved pose independently of old movement or combat', () => {
+  for (const role of ['neo', 'tank'] as const) {
+    const gestures = [
+      ...(['greeting', 'waking', 'connecting', 'ready'] as const).map(phase => ({ download: { phase, elapsed: 7.5, progress: 0, role } })),
+      { training: { kind: 'download' as const, elapsed: 4.5, role }, seated: role === 'neo' },
+    ];
+    for (const gesture of gestures) {
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, ...gesture }, warm = newMotion();
+      for (let i = 0; i < 40; i++) advanceMotion(warm, { speed: 12, grounded: false, verticalVelocity: 8, turn: 2, attack: i, hit: i }, .03);
+      const cold = advanceMotion(newMotion(), input, 0);
+      assert.deepEqual(advanceMotion(warm, input, .016), cold, `${role} cannot inherit running or recoil during the saved download`);
+      assert.deepEqual(advanceMotion(warm, input, 1), cold, `${role} cannot animate while the saved clock is paused`);
+      if ('training' in gesture && role === 'neo') assert.ok(cold.legs.every(leg => leg.knee > 1), 'a cold upload must put Neo in a seated pose immediately');
+      if ('download' in gesture && gesture.download.phase === 'connecting' && role === 'tank') assert.ok(cold.moving > .2, 'Tank walks back to his desk instead of gliding');
+    }
+  }
+});
+
 test('the truth aftermath reconstructs the same pose from saved time after running and combat', () => {
   for (const role of ['neo', 'morpheus', 'trinity', 'dozer'] as const) {
     for (const [phase, elapsed] of [['ready', 0], ['exit', 2], ['unplug', 1], ['unplug', 6.5], ['unplug', 11], ['rest', 8], ['question', 0]] as const) {

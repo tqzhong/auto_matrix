@@ -1,0 +1,114 @@
+TAP version 13
+# Subtest: training preparation restores its saved body action immediately on release and paused possession
+not ok 1 - training preparation restores its saved body action immediately on release and paused possession
+  ---
+  duration_ms: 22.480917
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/download-setup.test.mts:1:1559'
+  failureType: 'testCodeFailure'
+  error: |-
+    greeting: disconnecting cannot drop the saved body pose
+    + actual - expected
+    
+    + null
+    - {
+    -   duration: 1,
+    -   parameters: {
+    -     cabin: {
+    -       elapsed: 0,
+    -       kind: 'wake',
+    -       role: 'neo'
+    -     },
+    -     download: {
+    -       elapsed: 0,
+    -       phase: 'greeting',
+    -       progress: 0,
+    -       role: 'neo'
+    -     },
+    -     filmPose: 'cabin',
+    -     player: true,
+    -     recovery: 0,
+    -     resolved: true,
+    -     seated: false
+    -   },
+    -   progress: 0,
+    -   startedAt: 1,
+    -   type: 'idle'
+    - }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    type: 'idle'
+    parameters:
+      player: true
+      resolved: true
+      download:
+        phase: 'greeting'
+        elapsed: 0
+        progress: 0
+        role: 'neo'
+      recovery: 0
+      filmPose: 'cabin'
+      cabin:
+        kind: 'wake'
+        elapsed: 0
+        role: 'neo'
+      seated: false
+    startedAt: 1
+    duration: 1
+    progress: 0
+  actual: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/download-setup.test.mts:32:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: rehydrating training preserves free walking and does not revive a released dead player
+ok 2 - rehydrating training preserves free walking and does not revive a released dead player
+  ---
+  duration_ms: 6.268584
+  type: 'test'
+  ...
+# Subtest: training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+ok 3 - training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+  ---
+  duration_ms: 243.9115
+  type: 'test'
+  ...
+# Subtest: Tank cannot be stolen and training preparation survives pause, disconnection and reload
+ok 4 - Tank cannot be stolen and training preparation survives pause, disconnection and reload
+  ---
+  duration_ms: 56.981458
+  type: 'test'
+  ...
+# Subtest: a saved upload already in progress does not replay the new cabin introduction
+ok 5 - a saved upload already in progress does not replay the new cabin introduction
+  ---
+  duration_ms: 4.969667
+  type: 'test'
+  ...
+# Subtest: a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+ok 6 - a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+  ---
+  duration_ms: 26.548834
+  type: 'test'
+  ...
+# Subtest: Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+ok 7 - Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+  ---
+  duration_ms: 222.01525
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 937.973709

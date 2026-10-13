@@ -12,7 +12,7 @@ import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js'
 import { CONSTRUCT, DESERT_REVEAL, constructGuidePose } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
 import { truthRoot, truthUnplug, type TruthGesture } from '@auto_matrix/shared';
-import { downloadRoot, downloadHandPoint, DOWNLOAD_OPERATOR, type DownloadGesture } from '@auto_matrix/shared';
+import { downloadRoot, downloadHandPoint, trainingRoot, DOWNLOAD_OPERATOR, type DownloadGesture } from '@auto_matrix/shared';
 import { APARTMENT, FILM_SETS, PILL_ROOM, PILL_TIMING, RECOVERY_BED, awakeningPose, farewellPose, filmPosition, pillRoot, recoveryBodyPose, recoveryCrewPose, type PillGesture, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeCrossingPose, type FilmJourney } from '@auto_matrix/shared';
 import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
@@ -1034,20 +1034,24 @@ test('Neo rests both shipped hands on the cabin mattress before sitting up', asy
   } finally { models.dispose(); }
 });
 
-test('the first core connection restores a seated body without penetrating the chair or floor', async () => {
+test('the first core connection and download restore a seated body without penetrating the chair or floor', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); const stage = new THREE.Group(); const deck = new NebDeckRenderer(stage);
   (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
   try {
     const rig = (await models.create('neo'))!, chair = stage.getObjectByName('neb-core-chair-neo')!;
     const point = new THREE.Vector3(), local = new THREE.Vector3(); stage.updateMatrixWorld(true);
-    for (const elapsed of [0, .4, .8, 1.1, 1.4, 1.7, 2.1, 3.2, 4.6, 6.5]) {
-      const root = awakeningPose({ kind: 'core', elapsed, started: true });
+    const cases = [...[0, .4, .8, 1.1, 1.4, 1.7, 2.1, 3.2, 4.6, 6.5].map(elapsed => ({ elapsed, upload: false })),
+      ...[0, .5, 1.8, 4.5, 8.8, 10].map(elapsed => ({ elapsed, upload: true }))];
+    for (const { elapsed, upload } of cases) {
+      const root = upload ? { ...CABIN.chair, y: 0 } : awakeningPose({ kind: 'core', elapsed, started: true });
       rig.root.position.set(root.x, root.y, root.z); rig.root.rotation.y = CABIN.chair.yaw;
       const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
-        nebCrew: 'neo' as const, nebCrewEarly: true, performance: 'core' as const, seated: true, cabin: { kind: 'core' as const, elapsed, role: 'neo' as const } };
+        nebCrew: 'neo' as const, nebCrewEarly: true, performance: upload ? undefined : 'core' as const, seated: true,
+        training: upload ? { kind: 'download' as const, elapsed, role: 'neo' as const } : undefined,
+        cabin: upload ? undefined : { kind: 'core' as const, elapsed, role: 'neo' as const } };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
       assert.equal(rig.root.getObjectByName('neo-logos-sweater')!.visible, true, 'sample the actual first-film sweater against the chair');
-      if (elapsed >= 2.1) assert.equal(motion.seated, 1, 'reloading a saved connection must immediately restore its authored sitting pose');
+      if (upload || elapsed >= 2.1) assert.equal(motion.seated, 1, 'reloading a saved connection must immediately restore its authored sitting pose');
       let penetration = 0, floor = Infinity, deepest = '';
       for (const { mesh } of rig.wardrobe) if (mesh instanceof THREE.SkinnedMesh && mesh.visible) {
         mesh.skeleton.update();
@@ -1272,6 +1276,59 @@ test('Tank reaches the actual neck connector and both hands follow the training 
   } finally { models.dispose(); }
 });
 
+test('Morpheus supports his chin against the delivered face during the download invitation', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('morpheus'))!, head = rig.bones.get('head')!;
+    for (const elapsed of [9.7, 10]) {
+      const root = trainingRoot({ kind: 'download', elapsed, started: true }, 'morpheus');
+      rig.root.position.set(root.x, 0, root.z); rig.root.rotation.y = root.yaw;
+      const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        nebCrew: 'morpheus' as const, nebCrewEarly: true, training: { kind: 'download' as const, elapsed, role: 'morpheus' as const } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const skin = rig.wardrobe.map(part => part.mesh).filter(mesh => mesh instanceof THREE.SkinnedMesh && mesh.visible
+        && (mesh.material as THREE.Material).name === 'Skin') as THREE.SkinnedMesh[];
+      skin.forEach(mesh => mesh.skeleton.update());
+      const inverse = head.matrixWorld.clone().invert(), point = new THREE.Vector3(), ray = new THREE.Raycaster();
+      ray.ray.direction.set(0, 0, -1); ray.far = 1.1;
+      // Bake the real skinned head once; tracing the SkinnedMesh anew for every
+      // finger vertex repeats millions of skinning operations without adding coverage.
+      const faces = skin.map(mesh => {
+        const joints = mesh.geometry.attributes.skinIndex, weights = mesh.geometry.attributes.skinWeight, points: number[] = [], triangles: number[] = [];
+        for (let v = 0; v < joints.count; v++) points.push(...mesh.getVertexPosition(v, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse).toArray());
+        const index = mesh.geometry.index!;
+        for (let i = 0; i < index.count; i += 3) {
+          const ids = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+          const influence = ids.reduce((sum, v) => sum + [0, 1, 2, 3].reduce((total, part) => total
+            + (mesh.skeleton.bones[joints.getComponent(v, part)].name === 'head' ? weights.getComponent(v, part) : 0), 0), 0);
+          if (influence > 1.5) triangles.push(...ids);
+        }
+        const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3)); geometry.setIndex(triangles);
+        return new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+      });
+      let closest = Infinity, penetration = 0, sampled = 0;
+      for (const mesh of skin) {
+        const joints = mesh.geometry.attributes.skinIndex, weights = mesh.geometry.attributes.skinWeight;
+        for (let vertex = 0; vertex < joints.count; vertex += 3) {
+          if (![0, 1, 2, 3].some(part => weights.getComponent(vertex, part) > .5
+            && /^(wrist|finger.*)_R$/.test(mesh.skeleton.bones[joints.getComponent(vertex, part)].name))) continue;
+          mesh.getVertexPosition(vertex, point).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
+          if (Math.abs(point.x) > .35 || point.y < -.55 || point.y > .1) continue;
+          ray.ray.origin.set(point.x, point.y, .8);
+          const hit = ray.intersectObjects(faces)[0];
+          if (!hit) continue;
+          const gap = point.z - hit.point.z;
+          closest = Math.min(closest, Math.abs(gap)); penetration = Math.max(penetration, -gap); sampled++;
+        }
+      }
+      faces.forEach(mesh => { mesh.geometry.dispose(); mesh.material.dispose(); });
+      assert.ok(sampled > 20, 'sample the real fingers and hand against the actual face');
+      assert.ok(closest < .045 && penetration < .025, `chin contact at ${elapsed}s: nearest hand gap ${closest}, face penetration ${penetration}, samples ${sampled}`);
+    }
+  } finally { models.dispose(); }
+});
+
 test('Neo keeps his real-world scalp after waking and restores his hair inside the Matrix', async () => {
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
@@ -1360,6 +1417,8 @@ test('first-person Construct and truth aftermath retain both actual hands and re
     const base = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true };
     for (const gesture of [{ construct: { phase: 'image' as const, elapsed: 2, role: 'neo' as const } },
       { reveal: { kind: 'construct' as const, elapsed: 3, role: 'neo' as const, started: true } },
+      { cabin: { kind: 'core' as const, elapsed: 4, role: 'neo' as const } },
+      { training: { kind: 'download' as const, elapsed: 4, role: 'neo' as const } },
       ...(['ready', 'exit', 'unplug', 'rest', 'question'] as const).map(phase => ({ truth: { phase, elapsed: 8, role: 'neo' as const } }))]) {
       const motion = newMotion(), input = { ...base, ...gesture, firstPerson: true };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);

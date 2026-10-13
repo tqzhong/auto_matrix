@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: leaving the training bed carries the authored turn into third-person walking
+not ok 1 - leaving the training bed carries the authored turn into third-person walking
+  ---
+  duration_ms: 355.731792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:200978'
+  failureType: 'testCodeFailure'
+  error: 'W must follow the released body turn: {"firstPerson":false,"input":{"x":0,"z":1,"yaw":0,"location":"film_neb_deck","pitch":0.24,"sprint":false,"crouch":false,"jump":false,"firstPerson":false,"climb":0,"focus":false,"sequence":25},"expected":-1.1243144135486012,"beforeLook":3.141592653589793,"afterLook":2.8615926535897933,"documentMatches":true}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:2676:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: leaving the training bed carries the authored turn into first-person walking
+not ok 2 - leaving the training bed carries the authored turn into first-person walking
+  ---
+  duration_ms: 87.883167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:1:200978'
+  failureType: 'testCodeFailure'
+  error: 'W must follow the released body turn: {"firstPerson":true,"input":{"x":-0.27635564856411354,"z":0.961055438310771,"yaw":-0.2799999999999998,"location":"film_neb_deck","pitch":0.24,"sprint":false,"crouch":false,"jump":false,"firstPerson":true,"climb":0,"focus":false,"sequence":25},"expected":-1.4043144135486012,"beforeLook":3.141592653589793,"afterLook":2.8615926535897933,"documentMatches":true}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/camera.test.mts:2676:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7664.468584
