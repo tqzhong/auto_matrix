@@ -1,0 +1,19 @@
+{
+  "tick": 9134,
+  "paused": true,
+  "scene": "m1_sentinels",
+  "step": 0,
+  "sentinel": {
+    "phase": "ready",
+    "elapsed": 0,
+    "noise": 0,
+    "attempt": 0
+  },
+  "newCompleted": [
+    "m1_red_dress"
+  ],
+  "oldCompletedPreserved": true,
+  "reflectionsPreserved": true,
+  "choicesPreserved": true,
+  "philosophyPreserved": true
+}

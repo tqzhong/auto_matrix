@@ -1,0 +1,258 @@
+{
+  "measuredAt": "2026-10-13T07:48:50.373Z",
+  "scenes": [
+    "film_red_dress_plaza"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 276,
+  "fps": 18.30624009822074,
+  "frameTime": {
+    "mean": 54.62618181748824,
+    "p95": 76.19999980926514
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.5876811639122341,
+      "p95": 1.5
+    },
+    "agents": {
+      "mean": 4.175362317458443,
+      "p95": 8.900000095367432
+    },
+    "city": {
+      "mean": 0.15181159800377445,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 0.07282608315564584,
+      "p95": 0.19999980926513672
+    },
+    "effects": {
+      "mean": 0.1434782622517019,
+      "p95": 0.2999997138977051
+    },
+    "render": {
+      "mean": 26.13876812008844,
+      "p95": 52.5
+    },
+    "capture": {
+      "mean": 0.0014492739801821501,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 3.5307971031769463,
+      "p95": 6.900000095367432
+    },
+    "scene": {
+      "mean": 21.65905797481537,
+      "p95": 38.60000038146973
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.8945652177368385,
+      "p95": 1.8000001907348633
+    },
+    "occlusion.normals": {
+      "mean": 3.055434771206068,
+      "p95": 7.400000095367432
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.006159419598786727,
+      "p95": 0.09999990463256836
+    },
+    "occlusion": {
+      "mean": 4.118115934772768,
+      "p95": 9.400000095367432
+    },
+    "bloom": {
+      "mean": 0.28949277297310205,
+      "p95": 0.40000009536743164
+    },
+    "output": {
+      "mean": 0.019565221192180248,
+      "p95": 0.09999990463256836
+    },
+    "antialias": {
+      "mean": 0.029710133870442707,
+      "p95": 0.09999990463256836
+    }
+  },
+  "calls": {
+    "mean": 1234.644927536232,
+    "p95": 1235
+  },
+  "triangles": {
+    "mean": 7542517.550724638,
+    "p95": 7542563
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 754,
+      "triangles": 4457650
+    },
+    "scene": {
+      "calls": 233.64492753623188,
+      "triangles": 1542533.5507246377
+    },
+    "occlusion": {
+      "calls": 228,
+      "triangles": 1542315
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-1",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 292672
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-7",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 292672
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-13",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 292672
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-16",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 292672
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-0",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-2",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-3",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-5",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-9",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-11",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-12",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-15",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-18",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246336
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246208
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 227528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-4",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 146336
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-10",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 146336
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "red-dress-pedestrian-19",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 146336
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 17.489312090299087,
+  "objects": 10283,
+  "visibleObjects": 1772
+}

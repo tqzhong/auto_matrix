@@ -2316,25 +2316,69 @@ test('restoring an older jump save preserves its progress and does not lock a fi
   }
 });
 
-test('the red-dress attention test is player-started, freezes the crowd and replaces a civilian with Smith', () => {
+test('the red-dress lesson cannot turn Neo, reveal Smith or pass without player attention', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const previous = FILM_SCENE_BY_ID.m1_jump_return;
+  Object.assign(state, { scene: previous.id, actor: 'neo', step: previous.steps.length, training: undefined });
+  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_red_dress;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); h.command('act');
+  for (let i = 0; i < 200; i++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI / 2, pitch: 1.2, sprint: false, jump: false, sequence: i + 1 });
+    h.players.step(.1, true, h.tick());
+  }
+  assert.equal(state.step, 1, 'watching the wrong direction cannot complete the lesson');
+  assert.equal(h.world.agents.get('smith')!.status, 'disconnected', 'Smith is not revealed before Neo notices the woman');
+  assert.ok(Math.abs(h.actor().rotation - Math.PI / 2) < .001, 'the program preserves the player look direction');
+});
+
+test('the red-dress lesson requires noticing, looking back and acknowledging the frozen program', () => {
+  const h = setup(); h.command('continue'); let state = h.sandbox.life.film.state!;
   const jump = FILM_SCENE_BY_ID.m1_jump_return;
   Object.assign(state, { scene: jump.id, actor: 'neo', step: jump.steps.length, training: undefined });
-  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_red_dress; assert.equal(state.scene, scene.id);
-  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); assert.equal(state.step, 1);
-  assert.deepEqual(state.training, { kind: 'red_dress', elapsed: 0, started: false });
-  const woman = h.world.agents.get('citizen_2')!; const civilian = h.world.agents.get('citizen_1')!; const smith = h.world.agents.get('smith')!;
+  h.command('next'); const scene = FILM_SCENE_BY_ID.m1_red_dress;
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
+  assert.equal(state.training!.attention!.phase, 'walking'); assert.equal(state.training!.started, false);
+  const woman = h.world.agents.get('citizen_2')!, civilian = h.world.agents.get('citizen_1')!, smith = h.world.agents.get('smith')!;
   assert.equal(woman.status, 'alive'); assert.equal(civilian.status, 'alive'); assert.equal(smith.status, 'disconnected');
-  h.advance(20); assert.equal(state.training!.elapsed, 0);
-  h.command('act'); for (let i = 0; i < 70; i++) h.players.step(.1, true, h.tick());
-  assert.equal(civilian.status, 'disconnected'); assert.equal(smith.status, 'alive');
-  assert.ok(h.actor().rotation > -1 && h.actor().rotation < 1, 'Neo is turned back toward the agent reveal');
-  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const elapsed = state.training!.elapsed;
-  h.sandbox.restore(saved); h.players.release('film-player', h.tick()); h.advance(20);
-  assert.equal(h.sandbox.life.film.state!.training!.elapsed, elapsed);
-  h.players.possess('film-player', 'neo', h.tick());
-  for (let i = 0; i < 80 && h.sandbox.life.film.state!.step === 1; i++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.life.film.state!.step, 2); assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id));
+  h.advance(20); assert.equal(state.training!.elapsed, 0); h.command('act');
+  let sequence = 0;
+  const frames = (count: number, target?: AgentState, pitch = 0, focus = false, running = true) => {
+    for (let i = 0; i < count; i++) {
+      const yaw = target ? Math.atan2(target.position.x - h.actor().position.x, target.position.z - h.actor().position.z) : Math.PI;
+      h.players.receiveInput('film-player', { x: 0, z: 0, yaw, pitch, focus, location: scene.set, sprint: false, jump: false, sequence: ++sequence });
+      h.players.step(.1, running, h.tick());
+    }
+  };
+  frames(35, woman); assert.equal(state.training!.attention!.noticed, true);
+  frames(20); assert.equal(state.training!.attention!.phase, 'turning');
+  assert.equal(woman.status, 'disconnected', 'the woman herself is replaced');
+  assert.equal(civilian.status, 'alive', 'a different bystander is not replaced'); assert.equal(smith.status, 'alive');
+  assert.ok(Math.abs(h.actor().rotation - Math.PI) < .001, 'the program cannot force Neo to look back');
+  frames(10, smith, 1.2, true); assert.equal(state.training!.attention!.phase, 'turning', 'looking at the ground cannot notice the gunman');
+  frames(4, smith); assert.equal(state.training!.attention!.phase, 'frozen');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)), training = structuredClone(state.training);
+  frames(20, smith, 0, true, false); assert.deepEqual(state.training, training, 'pause preserves gaze progress and the exact frozen frame');
+  h.sandbox.restore(saved); state = h.sandbox.life.film.state!; h.players.release('film-player', h.tick()); h.advance(20);
+  assert.deepEqual(state.training, training, 'releasing the role and reloading cannot restart the program');
+  h.players.possess('film-player', 'neo', h.tick()); frames(70, smith);
+  assert.equal(state.training!.elapsed, TRAINING_SECONDS.red_dress); assert.equal(state.step, 1, 'elapsed time alone cannot pass the lesson');
+  assert.equal(state.training!.attention!.clock, training!.attention!.clock, 'the crowd stays on the observed frame during the explanation');
+  frames(1, smith, 0, true); assert.equal(state.step, 2); assert.ok(state.completed.includes(scene.id));
+});
+
+test('a missed red-dress pass can be replayed and unavailable Morpheus cannot be resurrected', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const previous = FILM_SCENE_BY_ID.m1_jump_return;
+  Object.assign(state, { scene: previous.id, actor: 'neo', step: previous.steps.length, training: undefined }); h.command('next');
+  const scene = FILM_SCENE_BY_ID.m1_red_dress; h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); h.command('act');
+  for (let i = 0; i < 60; i++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI / 2, sprint: false, jump: false, sequence: i + 1 }); h.players.step(.1, true, h.tick());
+  }
+  assert.equal(state.training!.elapsed, 5.3);
+  h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI / 2, focus: true, sprint: false, jump: false, sequence: 61 }); h.players.step(.1, true, h.tick());
+  assert.equal(state.training!.elapsed, 0); assert.equal(state.training!.attention!.misses, 1); assert.equal(state.training!.attention!.noticed, false);
+  const mentor = h.world.agents.get('morpheus')!; mentor.status = 'dead'; mentor.health = 0;
+  h.players.step(.1, true, h.tick()); assert.equal(state.training!.elapsed, 0); assert.equal(mentor.status, 'dead'); assert.equal(mentor.health, 0);
 });
 
 test('the first rooftop jump uses gravity and a recoverable fall rather than a timer', () => {
@@ -4234,7 +4278,11 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act');
           for (let frame = 0; frame < 101; frame++) h.players.step(.1, true, h.tick());
         }
-        else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 121; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_red_dress') for (let frame = 0; frame < 220 && state.step === 1; frame++) {
+          const target = h.world.agents.get(state.training!.attention!.phase === 'walking' ? 'citizen_2' : 'smith')!;
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.atan2(target.position.x - actor.position.x, target.position.z - actor.position.z), pitch: 0, focus: state.training!.attention!.phase === 'frozen', sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
         else if (scene.id === 'm1_bridge') {
           for (let frame = 0; frame < 151; frame++) h.players.step(.1, true, h.tick());
           h.command('meeting:stay'); assert.equal(state.scene, 'm1_bug'); break;

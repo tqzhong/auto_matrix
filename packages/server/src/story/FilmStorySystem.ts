@@ -74,7 +74,7 @@ import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL, SIGNAL_OBSTACLES, signalLocked, type WorldStructure } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
-  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
+  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, redDressAttention, stepRedDress, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
@@ -4290,7 +4290,7 @@ export class FilmStorySystem {
     state.scene = pod.id; state.actor = pod.actor; state.step = 0; state.lastText = pod.context;
     this.enter(pod, tick);
   }
-  trainingFrame(agent: AgentState, dt: number, tick: number): boolean {
+  trainingFrame(agent: AgentState, dt: number, tick: number, input?: { yaw: number; pitch?: number; focus?: boolean }): boolean {
     const state = this.state; let training = state?.training;
     if (state?.scene === 'm1_jump' && state.step === 1 && !state.visiting && this.controls(agent)
       && training?.kind === 'jump' && training.elapsed >= TRAINING_SECONDS.jump && agent.position.y < FILM_SETS[this.scene!.set].center.y - .7) {
@@ -4309,36 +4309,42 @@ export class FilmStorySystem {
       return this.downloadSetupFrame(agent, dt, tick);
     const holdingDownload = !state?.visiting && (state?.scene === 'm1_download' && training?.kind === 'download'
       || state?.scene === 'm1_jump_return' && training?.kind === 'jump_return' || state?.scene === 'm1_jump' && training?.kind === 'jump_fall');
+    if (training?.kind === 'red_dress') training.attention ??= redDressAttention(training.elapsed, agent.rotation);
     if (!state || !training || !this.controls(agent) || !trainingLocked(state) && !holdingDownload) return false;
     const roles: TrainingRole[] = training.kind === 'jump_fall' ? ['neo'] : ['download', 'jump_return'].includes(training.kind) ? ['neo', 'tank', 'morpheus']
       : training.kind === 'jump' ? ['neo', 'morpheus']
       : ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'];
     const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
-    const unavailable = training.kind !== 'red_dress' ? roles.find(id => id !== agent.id && (this.world.agents.get(id)?.status !== 'alive' || this.world.agents.get(id)!.health <= 0)) : undefined;
-    const playing = training.started && !occupied && !unavailable && training.elapsed < TRAINING_SECONDS[training.kind];
-    if (playing) training.elapsed = Math.min(TRAINING_SECONDS[training.kind], training.elapsed + Math.min(.1, dt));
+    const unavailable = (training.kind === 'red_dress' ? ['morpheus'] : roles).find(id => id !== agent.id && (this.world.agents.get(id)?.status !== 'alive' || this.world.agents.get(id)!.health <= 0));
+    const playing = training.started && !occupied && !unavailable && dt > 0 && trainingLocked(state);
+    if (playing) {
+      if (training.kind === 'red_dress') stepRedDress(training, input, Math.min(.1, dt));
+      else training.elapsed = Math.min(TRAINING_SECONDS[training.kind], training.elapsed + Math.min(.1, dt));
+    }
     if (training.kind === 'jump_fall' && !training.fall!.hurt && jumpImpactPose(training.fall!, training.elapsed).landed) {
       agent.health = Math.max(1, agent.health - 12); training.fall!.hurt = true;
     }
     for (const role of roles) {
       const actor = this.world.agents.get(role);
-      if (!actor || actor.controller && actor !== agent || training.kind !== 'red_dress' && (actor.status !== 'alive' || actor.health <= 0)) continue;
+      if (!actor || actor.controller && actor !== agent || (training.kind !== 'red_dress' || role === 'morpheus') && (actor.status !== 'alive' || actor.health <= 0)) continue;
       const before = { ...actor.position }; const root = trainingRoot(training, role);
       actor.position = filmPosition(this.scene!.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
       actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       actor.currentLocation = this.scene!.set; actor.isInMatrix = FILM_SETS[this.scene!.set].world === 'matrix';
-      if (training.kind === 'red_dress' && role === 'citizen_1') actor.status = training.elapsed >= 6.2 ? 'disconnected' : 'alive';
-      else if (training.kind === 'red_dress' && role === 'smith') actor.status = training.elapsed >= 6.2 ? 'alive' : 'disconnected';
+      const revealed = training.kind === 'red_dress' && training.attention!.phase !== 'walking';
+      if (training.kind === 'red_dress' && role === 'citizen_2') actor.status = revealed ? 'disconnected' : 'alive';
+      else if (training.kind === 'red_dress' && role === 'smith') actor.status = revealed ? 'alive' : 'disconnected';
       else actor.status = 'alive';
       actor.currentAction = { type: actor.velocity.x || actor.velocity.y || actor.velocity.z ? 'move_to' : 'idle', parameters: {
-        player: role === agent.id, resolved: true, seated: ['download', 'jump_return'].includes(training.kind) && role === 'neo', armed: training.kind === 'red_dress' && role === 'smith' && training.elapsed >= 6.2,
+        player: role === agent.id, resolved: true, seated: ['download', 'jump_return'].includes(training.kind) && role === 'neo', armed: revealed && role === 'smith',
+        ...(revealed && role === 'smith' ? { weaponStyle: 'hel_pistol' } : {}),
         training: { ...training, role },
       }, startedAt: tick, duration: 1, progress: 0 };
     }
     state.checkpoint = { ...agent.position };
     state.lastText = occupied ? `训练暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
       : unavailable ? `${this.world.agents.get(unavailable)?.name ?? unavailable} 无法参与训练，${training.kind === 'jump' ? '演示' : '上传'}进度已保留。` : trainingText(training);
-    if (playing && training.elapsed >= TRAINING_SECONDS[training.kind]) {
+    if (playing && !trainingLocked(state)) {
       if (training.kind === 'jump') {
         agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
         state.lastText = trainingText(training);

@@ -13,6 +13,11 @@ test('an explicit landing choice still overrides the saved story actor', () => {
   assert.equal(savedEntryCharacter('smith', 'tank', true), 'smith');
 });
 
+test('red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit', () => {
+  assert.equal(cinematicTalkSuppressed('m1_red_dress', undefined, 1), true);
+  assert.equal(cinematicTalkSuppressed('m1_red_dress', 'film_red_dress_plaza', 1), false);
+});
+
 test('Construct and desert story beats keep ambient conversation prompts out of the reveal', () => {
   for (const scene of ['m1_construct', 'm1_desert']) {
     assert.equal(cinematicTalkSuppressed(scene, undefined), true, `${scene} uses its own G action during the reveal`);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { FilmJourney } from '@auto_matrix/shared';
 import { JUMP_STREET, JUMP_TOWERS, jumpImpactPose } from '@auto_matrix/shared';
+import { RedDressCrowd } from './RedDressCrowd.js';
 
 /** Film-one training programs share a clean simulation language, but each
  * space has its own physical set and lighting rather than the generic atlas. */
@@ -13,6 +14,7 @@ export class TrainingSetRenderer {
   private lights = new Set<THREE.Light>();
   private disposed = false;
   private crowd: THREE.Group[] = [];
+  private pedestrians?: RedDressCrowd;
   private fountainJets: THREE.Mesh[] = [];
   private skylineLights: THREE.Mesh[] = [];
   private programLight?: THREE.PointLight;
@@ -393,12 +395,13 @@ export class TrainingSetRenderer {
       this.box(wing, limestone, 0, 15.25, 0, 20.5, .48, 4.5, 'red-dress-city-cornice');
     }
     for (let i = 0; i < 20; i++) {
-      const side = i % 2 ? 1 : -1; const lane = i % 4 < 2 ? 22 : 25.5; const x = side * lane + (i % 3 - 1) * .75; const z = -35 + Math.floor(i / 2) * 7.2;
+      const x = [0, 16, -6, 22][i % 4]; const z = -35 + Math.floor(i / 2) * 7.2;
       this.mannequin(set, x, z, [0x364947, 0x585a52, 0x31363b, 0x706757][i % 4], i);
     }
+    this.pedestrians = new RedDressCrowd(this.crowd);
     this.plazaMatte(set);
     this.programLight = new THREE.PointLight(0xf2e3c8, 160, 40, 2); this.programLight.position.set(7, 9, -10); this.light(this.programLight, 'red-dress-program-light');
-    this.revealLight = new THREE.PointLight(0xff5c43, 0, 20, 2); this.revealLight.position.set(7, 4, 7); this.light(this.revealLight, 'red-dress-agent-reveal');
+    this.revealLight = new THREE.PointLight(0xf2e3c8, 0, 16, 2); this.revealLight.position.set(14, 8, -12); this.light(this.revealLight, 'red-dress-agent-reveal');
     const sun = new THREE.DirectionalLight(0xffe6bc, 2.3); sun.position.set(-20, 38, 26); sun.castShadow = true; this.light(sun, 'red-dress-sun');
     this.light(new THREE.HemisphereLight(0xd4e0e2, 0x4a5147, .84), 'red-dress-daylight');
   }
@@ -424,23 +427,26 @@ export class TrainingSetRenderer {
       return;
     }
     const training = journey?.scene === 'm1_red_dress' && !journey.visiting ? journey.training : undefined;
-    const t = training?.elapsed ?? 0; const frozen = Boolean(training?.started && t >= 4.8 && t < 9.2);
+    const t = training?.elapsed ?? 0; const frozen = training?.attention ? training.attention.phase === 'frozen' : Boolean(training?.started && t >= 4.8 && t < 9.2);
+    const clock = training?.attention?.clock ?? (frozen ? 4.8 : training?.elapsed ?? elapsed);
     this.fountainJets.forEach(jet => {
-      const phase = Number(jet.userData.phase ?? 0); jet.scale.y = .82 + Math.sin(elapsed * 3.4 + phase) * .16;
-      jet.position.y = 4.15 + Math.sin(elapsed * 3.4 + phase) * .12;
+      const phase = Number(jet.userData.phase ?? 0); jet.scale.y = .82 + Math.sin(clock * 3.4 + phase) * .16;
+      jet.position.y = 4.15 + Math.sin(clock * 3.4 + phase) * .12;
     });
     this.crowd.forEach((figure, index) => {
+      if (figure.userData.detailed) return;
       const phase = Number(figure.userData.phase); const base = Number(figure.userData.baseZ);
-      figure.position.z = base + (training?.started && !frozen ? Math.sin(elapsed * .55 + phase) * 1.4 : 0);
-      figure.rotation.z = frozen ? 0 : Math.sin(elapsed * 1.6 + phase) * .018;
-      figure.children.forEach((child, childIndex) => { if (child.userData.crowdLimb) child.rotation.x = frozen ? 0 : Math.sin(elapsed * 3.2 + phase + childIndex) * .08; });
+      figure.position.z = base + (training?.started ? Math.sin(clock * .55 + phase) * 1.4 : 0);
+      figure.rotation.z = Math.sin(clock * 1.6 + phase) * .018;
+      figure.children.forEach((child, childIndex) => { if (child.userData.crowdLimb) child.rotation.x = Math.sin(clock * 3.2 + phase + childIndex) * .08; });
     });
-    if (this.revealLight) this.revealLight.intensity = t >= 6.2 && t < 9.2 ? 420 + Math.sin(elapsed * 12) * 35 : 0;
-    if (this.programLight) this.programLight.intensity = frozen ? 70 : 145;
+    this.pedestrians?.update(clock, Boolean(training?.started));
+    if (this.revealLight) this.revealLight.intensity = training?.attention ? training.attention.phase !== 'walking' ? 45 : 0 : t >= 6.2 && t < 9.2 ? 45 : 0;
+    if (this.programLight) this.programLight.intensity = 145;
   }
 
   dispose(): void {
-    this.disposed = true; this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose()); this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
+    this.disposed = true; this.pedestrians?.dispose(); this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose()); this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.crowd = []; this.fountainJets = []; this.skylineLights = [];
   }
 }

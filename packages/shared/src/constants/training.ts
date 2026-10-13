@@ -4,10 +4,11 @@ import { awakeningPose } from './awakening.js';
 import { jumpImpactPose, type JumpImpact } from './jump-impact.js';
 
 export type TrainingKind = 'download' | 'jump' | 'jump_fall' | 'jump_return' | 'red_dress';
-export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean; jumpVersion?: 2; fall?: JumpImpact }
+export interface RedDressAttention { phase: 'walking' | 'turning' | 'frozen' | 'done'; noticed: boolean; look: number; misses: number; yaw: number; clock: number }
+export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean; jumpVersion?: 2; fall?: JumpImpact; attention?: RedDressAttention }
 export interface DojoLesson { dodged: boolean; combo: number; hits: number; counterUntil?: number; resets?: number; complete?: boolean }
 export type TrainingRole = 'neo' | 'tank' | 'morpheus' | 'citizen_1' | 'citizen_2' | 'smith';
-export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole; fall?: JumpImpact }
+export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole; fall?: JumpImpact; attention?: RedDressAttention }
 export interface DownloadSetup { phase: 'greeting' | 'waking' | 'walk' | 'connecting' | 'ready'; elapsed: number; progress: number; approach?: { x: number; z: number } }
 export interface DownloadGesture extends DownloadSetup { role: 'neo' | 'tank'; target?: { x: number; y: number; z: number } }
 export const DOWNLOAD_SETUP_SECONDS = { waking: 12, connecting: 10 } as const;
@@ -31,14 +32,51 @@ export const JUMP_PROGRAM = {
 } as const;
 export const RED_DRESS_PROGRAM = {
   neo: { x: 7, z: -12, yaw: Math.PI },
-  morpheus: { x: 2.5, z: -9, yaw: 0 },
-  womanStart: { x: 7, z: -29, yaw: 0 },
-  womanFinish: { x: 7, z: 8, yaw: 0 },
-  civilian: { x: 7, z: 7, yaw: Math.PI },
+  morpheus: { x: 3.8, z: -12, yaw: Math.PI },
+  womanStart: { x: 9.6, z: -29, yaw: 0 },
+  womanFinish: { x: 9.6, z: -16, yaw: Math.PI },
+  civilian: { x: -5, z: -22, yaw: 0 },
+  walk: 5.3, distance: 8, reveal: 6.2,
 } as const;
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp(value); return t * t * (3 - 2 * t); };
+
+export function redDressAttention(elapsed = 0, yaw = Math.PI): RedDressAttention {
+  const phase = elapsed >= TRAINING_SECONDS.red_dress ? 'done' : elapsed >= RED_DRESS_PROGRAM.reveal ? 'frozen' : elapsed >= RED_DRESS_PROGRAM.walk ? 'turning' : 'walking';
+  return { phase, noticed: phase !== 'walking', look: 0, misses: 0, yaw, clock: Math.min(elapsed, RED_DRESS_PROGRAM.reveal) };
+}
+
+export function redDressFrame(training: Pick<TrainingPerformance, 'elapsed' | 'attention'>): number {
+  return training.attention && training.attention.phase !== 'walking' ? RED_DRESS_PROGRAM.walk : Math.min(RED_DRESS_PROGRAM.walk, training.elapsed);
+}
+
+export function stepRedDress(training: TrainingPerformance, input: { yaw: number; pitch?: number; focus?: boolean } | undefined, dt: number): void {
+  const attention = training.attention!;
+  if (dt <= 0 || !training.started || attention.phase === 'done') return;
+  if (input) attention.yaw = input.yaw;
+  if (attention.phase === 'frozen') {
+    training.elapsed = Math.min(TRAINING_SECONDS.red_dress, training.elapsed + dt);
+    if (training.elapsed >= TRAINING_SECONDS.red_dress && input?.focus) attention.phase = 'done';
+    return;
+  }
+  attention.clock += dt;
+  if (attention.phase === 'walking') training.elapsed = Math.min(RED_DRESS_PROGRAM.walk, training.elapsed + dt);
+  const target = trainingRoot(training, attention.phase === 'walking' ? 'citizen_2' : 'smith'), neo = trainingRoot(training, 'neo');
+  const yaw = Math.atan2(target.x - neo.x, target.z - neo.z);
+  const angle = Math.atan2(Math.sin((input?.yaw ?? attention.yaw) - yaw), Math.cos((input?.yaw ?? attention.yaw) - yaw));
+  const looking = Boolean(input && Math.abs(angle) < .38 && Math.abs(input.pitch ?? 0) < .38);
+  attention.look = looking ? Math.min(.5, attention.look + dt) : 0;
+  if (attention.phase === 'walking') {
+    if (attention.look >= .5) attention.noticed = true;
+    if (training.elapsed >= RED_DRESS_PROGRAM.walk && attention.noticed) { attention.phase = 'turning'; attention.look = 0; }
+    else if (training.elapsed >= RED_DRESS_PROGRAM.walk && input?.focus) {
+      training.elapsed = 0; attention.clock = 0; attention.look = 0; attention.misses++;
+    }
+  } else if (attention.look >= .35) {
+    attention.phase = 'frozen'; attention.look = 0; training.elapsed = RED_DRESS_PROGRAM.reveal;
+  }
+}
 
 export function jumpDemonstration(elapsed: number) {
   const path = JUMP_PROGRAM, takeoff = path.prepare + path.run, touchdown = takeoff + path.flight;
@@ -74,7 +112,8 @@ export function downloadHandPoint(elapsed: number, side: 'R' | 'L') {
 export function trainingLocked(journey: FilmJourney): boolean {
   const training = journey.training;
   if (!journey.visiting && journey.downloadSetup && journey.downloadSetup.phase !== 'ready') return journey.downloadSetup.phase !== 'walk';
-  return Boolean(!journey.visiting && training && training.elapsed < TRAINING_SECONDS[training.kind]);
+  return Boolean(!journey.visiting && training && (training.kind === 'red_dress' && training.attention
+    ? training.attention.phase !== 'done' : training.elapsed < TRAINING_SECONDS[training.kind]));
 }
 
 export function trainingWaiting(journey: FilmJourney): boolean {
@@ -147,7 +186,19 @@ export function trainingText(training: TrainingPerformance): string {
         : jump.airborne ? '他越过街谷，落点远超普通身体的极限。'
           : 'Morpheus 屈膝落地、站稳并转身看向 Neo。现在轮到你亲自助跑、起跳并承担失败。';
   }
-  if (!training.started) return '人群仍在流动。按 G 开始注意力测试，亲自判断刚才忽略了什么。';
+  if (!training.started) return '按 G 与 Morpheus 走入人群。拖动鼠标自由观察，V 可切换视角。';
+  if (training.attention) {
+    const attention = training.attention;
+    if (attention.phase === 'walking') return training.elapsed >= RED_DRESS_PROGRAM.walk
+      ? '你错过了红衣女子。转头找出刚才经过的身影，或按 G 重新观察这次经过。'
+      : 'Morpheus 在人群中讲述：这些普通人也是我们希望救出的人。观察迎面走来的红衣女子，注意她经过后去了哪里。';
+    if (attention.phase === 'turning') return 'Morpheus 察觉你分了神，提醒你再看一次。亲自转身，观察红衣女子刚才经过的位置。';
+    if (attention.phase === 'frozen') return training.elapsed < 9.2
+      ? '举枪的特工取代了红衣女子。Morpheus 叫停程序，所有行人与水流停在这一帧。'
+      : training.elapsed < TRAINING_SECONDS.red_dress ? '这仍是训练。特工能进入尚未脱离矩阵的人；这不意味着每个普通人都主动选择伤害你。'
+        : '观察冻结的人群与枪口。理解系统的控制与人的选择有何区别后，按 G 结束训练。';
+    return '注意力训练结束。冻结的人群提醒 Neo：依赖系统与主动选择，并不是同一回事。';
+  }
   return training.elapsed < 3.8 ? '迎面的人群不断换位。红裙女子逆着行人向你走来。'
     : training.elapsed < 5.8 ? '你的视线跟随红色。Morpheus 让训练程序在这一刻停住。'
     : training.elapsed < 8.8 ? '你转回身。刚才的普通行人已经成为举枪的 Smith。'
@@ -176,13 +227,15 @@ export function trainingRoot(training: TrainingPerformance, role: TrainingRole):
     return { x: jump.x, y: jump.y, z: jump.z, yaw: jump.yaw };
   }
   if (role === 'neo') {
+    if (training.attention) return { ...RED_DRESS_PROGRAM.neo, y: 0, z: RED_DRESS_PROGRAM.neo.z - RED_DRESS_PROGRAM.distance * smooth(redDressFrame(training) / RED_DRESS_PROGRAM.walk), yaw: training.attention.yaw };
     const turn = smooth((training.elapsed - 5.4) / 1.25);
     return { ...RED_DRESS_PROGRAM.neo, y: 0, yaw: Math.PI * (1 - turn) };
   }
-  if (role === 'morpheus') return { ...RED_DRESS_PROGRAM.morpheus, y: 0 };
+  if (role === 'morpheus') return { ...RED_DRESS_PROGRAM.morpheus, y: 0, z: RED_DRESS_PROGRAM.morpheus.z - (training.attention ? RED_DRESS_PROGRAM.distance * smooth(redDressFrame(training) / RED_DRESS_PROGRAM.walk) : 0) };
   if (role === 'citizen_2') {
-    const walk = smooth(training.elapsed / 5.3);
+    const walk = smooth(redDressFrame(training) / RED_DRESS_PROGRAM.walk);
     return { x: RED_DRESS_PROGRAM.womanStart.x, y: 0, z: RED_DRESS_PROGRAM.womanStart.z + (RED_DRESS_PROGRAM.womanFinish.z - RED_DRESS_PROGRAM.womanStart.z) * walk, yaw: 0 };
   }
+  if (role === 'smith') return { ...RED_DRESS_PROGRAM.womanFinish, y: 0, yaw: Math.atan2(RED_DRESS_PROGRAM.neo.x - RED_DRESS_PROGRAM.womanFinish.x, RED_DRESS_PROGRAM.neo.z - RED_DRESS_PROGRAM.distance - RED_DRESS_PROGRAM.womanFinish.z) };
   return { ...RED_DRESS_PROGRAM.civilian, y: 0 };
 }

@@ -551,7 +551,7 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       const wakingForTraining = this.sandbox?.life.film.state?.downloadSetup?.phase === 'waking';
-      if (this.sandbox?.life.film.trainingFrame(agent, dt, tick) || wakingForTraining && this.sandbox?.life.film.state?.downloadSetup?.phase === 'walk') {
+      if (this.sandbox?.life.film.trainingFrame(agent, dt, tick, stale || changedLocation ? undefined : input) || wakingForTraining && this.sandbox?.life.film.state?.downloadSetup?.phase === 'walk') {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.yaw = agent.rotation; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       this.sandbox?.life.film.oracleReceptionFrame(agent, dt, tick);

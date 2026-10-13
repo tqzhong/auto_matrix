@@ -30,7 +30,7 @@ import { clubCloseness } from '@auto_matrix/shared';
 import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 
-export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14';
+export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -104,7 +104,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
@@ -144,7 +144,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -193,8 +193,9 @@ export class HeroModels {
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
-    const [asset, office, tracking, club] = await Promise.all([this.load(oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
-      id === 'neo' && !apartmentRole && support !== 'tank' && support !== 'cypher' ? this.load('neo-office') : undefined,
+    const pedestrian = support === 'pedestrian';
+    const [asset, office, tracking, club] = await Promise.all([this.load(pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
+      id === 'neo' && !pedestrian && !apartmentRole && support !== 'tank' && support !== 'cypher' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined]);
     if (this.disposed) return;
@@ -208,6 +209,18 @@ export class HeroModels {
       }
     });
     root.updateMatrixWorld(true);
+    if (pedestrian && id === 'trinity') root.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh) || !/Black.crew.neck/i.test(object.name)) return;
+      // Dujour's cropped top has no underlying waist mesh. Extend only this
+      // pedestrian garment, preserving the apartment costume and shared asset.
+      object.geometry = object.geometry.clone(); this.geometries.add(object.geometry);
+      const position = object.geometry.attributes.position;
+      for (let i = 0; i < position.count; i++) {
+        const hem = 1 - THREE.MathUtils.smoothstep(position.getY(i), 2.68, 3.04);
+        position.setY(i, position.getY(i) - .48 * hem);
+      }
+      position.needsUpdate = true; object.geometry.computeVertexNormals(); object.geometry.computeBoundingSphere();
+    });
     if (office) {
       const meshes: THREE.SkinnedMesh[] = [];
       office.scene.traverse(object => { if (object instanceof THREE.SkinnedMesh) meshes.push(object); });
@@ -282,7 +295,7 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && !pedestrian && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
@@ -785,9 +798,10 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
+    if (input.training?.kind === 'red_dress' && input.training.attention?.phase === 'frozen') delta = 0;
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
     const truthView = input.truth?.role === 'neo';
-    const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training && ['download', 'jump_fall', 'jump_return'].includes(input.training.kind) && input.training.role === 'neo';
+    const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training && ['download', 'jump_fall', 'jump_return', 'red_dress'].includes(input.training.kind) && input.training.role === 'neo';
     const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
@@ -998,6 +1012,11 @@ export class HeroModels {
         bone('wrist_R').rotation.z += Math.sin(t * 11) * .025 * connected;
       } else if (kind === 'download' && role === 'tank') {
         bone('spine').rotation.x += .12; bone('chest').rotation.x += .08; bone('head').rotation.x += .2;
+      } else if (kind === 'red_dress' && input.training.attention) {
+        if (role === 'morpheus' && input.training.attention.phase !== 'walking') {
+          bone('shoulder_R').rotation.x -= .72; bone('shoulder_R').rotation.z -= .35;
+          bone('elbow_R').rotation.x -= .76; bone('head').rotation.y += .16;
+        }
       } else if (kind === 'red_dress') {
         const freeze = THREE.MathUtils.smoothstep(t, 4.7, 5.35); const reveal = THREE.MathUtils.smoothstep(t, 6.1, 6.9);
         if (role === 'neo') {

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: both red-dress views follow actual mouse attention instead of a timed camera turn
+ok 1 - both red-dress views follow actual mouse attention instead of a timed camera turn
+  ---
+  duration_ms: 388.379834
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading
+ok 2 - red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading
+  ---
+  duration_ms: 388.348125
+  type: 'test'
+  ...
+# Subtest: red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+ok 3 - red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+  ---
+  duration_ms: 3119.867833
+  type: 'test'
+  ...
+# Subtest: the red-dress lesson cannot turn Neo, reveal Smith or pass without player attention
+ok 4 - the red-dress lesson cannot turn Neo, reveal Smith or pass without player attention
+  ---
+  duration_ms: 837.573334
+  type: 'test'
+  ...
+# Subtest: the red-dress lesson requires noticing, looking back and acknowledging the frozen program
+ok 5 - the red-dress lesson requires noticing, looking back and acknowledging the frozen program
+  ---
+  duration_ms: 385.588375
+  type: 'test'
+  ...
+# Subtest: a missed red-dress pass can be replayed and unavailable Morpheus cannot be resurrected
+ok 6 - a missed red-dress pass can be replayed and unavailable Morpheus cannot be resurrected
+  ---
+  duration_ms: 218.68525
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 7 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 88.226791
+  type: 'test'
+  ...
+# Subtest: red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+ok 8 - red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+  ---
+  duration_ms: 2.284333
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 9 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 123.285625
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 10 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 144.038917
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5558.673083

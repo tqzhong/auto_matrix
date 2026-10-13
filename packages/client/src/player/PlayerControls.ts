@@ -1102,7 +1102,7 @@ export class PlayerControls {
     if (this.motion.welcome && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.knock !== undefined && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.reveal && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
-    if (this.motion.training && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
+    if (this.motion.training && this.motion.training.kind !== 'red_dress' && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.workday && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.contact && this.performing && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
     if (this.motion.wakeCall && !this.firstPerson) this.yaw = this.movementYaw = state.rotation;
@@ -1819,7 +1819,7 @@ export class PlayerControls {
       const gesture = this.motion.training ?? { kind: 'download', elapsed: this.motion.download!.elapsed }; const center = FILM_SETS[state.currentLocation].center;
       if (this.firstPerson) {
         const seated = gesture.kind === 'download' || gesture.kind === 'jump_return';
-        const head = seated || gesture.kind === 'jump_fall' ? group.getObjectByName('head') : undefined;
+        const head = seated || gesture.kind === 'jump_fall' || gesture.kind === 'red_dress' ? group.getObjectByName('head') : undefined;
         const localEye = (head?.userData.patientEye ?? head?.userData.cameraEye) as THREE.Vector3 | undefined;
         const eye = head ? head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .18, .17)) : new THREE.Vector3(this.position.x, this.position.y + (seated ? 3.13 - .684 * (this.motion.download ? cabinSeat(gesture.elapsed) : 1) : 3), this.position.z);
         const pitch = this.pitch + (gesture.kind === 'jump_fall' ? jumpImpactPose(this.motion.training!.fall!, gesture.elapsed).prone * .7 : 0);
@@ -1844,9 +1844,12 @@ export class PlayerControls {
           ideal = new THREE.Vector3(12, 7.8, -7).lerp(new THREE.Vector3(9, 5.8, -28), THREE.MathUtils.smoothstep(gesture.elapsed, 1.7, 4.2));
           focus = new THREE.Vector3(root.x, Math.max(2.4, root.y + 1.8), root.z);
         } else {
-          const turn = THREE.MathUtils.smoothstep(gesture.elapsed, 5.2, 6.6); const reveal = THREE.MathUtils.smoothstep(gesture.elapsed, 6.15, 7.1);
-          ideal = new THREE.Vector3(12.5, 5.2, -6).lerp(new THREE.Vector3(1.2, 4.1, -5.5), turn).lerp(new THREE.Vector3(12.8, 4.3, 11), reveal);
-          focus = new THREE.Vector3(7, 2.7, -18).lerp(new THREE.Vector3(7, 2.8, 7), turn);
+          const root = trainingRoot({ ...this.motion.training!, started: true }, 'neo');
+          const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+          focus = new THREE.Vector3(root.x, root.y + 3, root.z).addScaledVector(forward, 7);
+          ideal = new THREE.Vector3(root.x, root.y + 3.6, root.z).addScaledVector(forward, -5.2);
+          const mentor = trainingRoot({ ...this.motion.training!, started: true }, 'morpheus');
+          if (Math.hypot(ideal.x - mentor.x, ideal.z - mentor.z) < 2.8) ideal.y = root.y + 6.5;
         }
         ideal.add(origin); focus.add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));

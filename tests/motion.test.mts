@@ -1,7 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
-import { MELEE_COMBO, trainingRoot } from '@auto_matrix/shared';
+import { MELEE_COMBO, trainingRoot, redDressAttention } from '@auto_matrix/shared';
+
+test('red-dress walking and the exact frozen gun pose rebuild from the saved program frame', () => {
+  for (const role of ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'] as const) for (const elapsed of [0, 2, 5.3, 6.2, 12]) {
+    const attention = redDressAttention(elapsed); attention.clock = elapsed >= 6.2 ? 7.13 : elapsed;
+    const input = { speed: 8, grounded: false, verticalVelocity: 12, turn: 2, attack: 3, armed: true,
+      training: { kind: 'red_dress' as const, elapsed, role, attention } };
+    const cold = advanceMotion(newMotion(), input, 0), warm = newMotion();
+    for (let i = 0; i < 20; i++) advanceMotion(warm, { speed: 8, grounded: false, verticalVelocity: 12, turn: 2, attack: i }, .1);
+    assert.deepEqual(advanceMotion(warm, input, .05), cold); assert.deepEqual(advanceMotion(warm, input, 1), cold);
+    if (role === 'smith' && elapsed >= 6.2) {
+      assert.ok(cold.arms[0].shoulder < -1, 'Smith keeps the weapon raised during the frozen explanation');
+      assert.ok(cold.arms[1].shoulder > -.2, 'his empty hand remains lowered');
+    }
+  }
+});
 
 test('the first fall and real-body return reconstruct their saved poses after combat and while paused', () => {
   for (const elapsed of [.4, 2, 4.5, 6]) for (const kind of ['jump_fall', 'jump_return'] as const) {

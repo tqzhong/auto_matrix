@@ -1,0 +1,78 @@
+TAP version 13
+# Subtest: Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+not ok 1 - Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+  ---
+  duration_ms: 6013.479208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:1:50670'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'localToWorld')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:866:30)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+not ok 2 - Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+  ---
+  duration_ms: 1941.107667
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:1:65764'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'updateWorldMatrix')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Box3.expandByObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4851:10)
+    Box3.setFromObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4771:15)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:1024:42)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: shipped neo mesh has valid skinning and usable anatomical bones
+not ok 3 - shipped neo mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 172.08775
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:1:153501'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:2385:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: shipped morpheus mesh has valid skinning and usable anatomical bones
+not ok 4 - shipped morpheus mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 51.939917
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:1:153501'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/red-dress-baseline.test.mts:2385:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10660.02625
