@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: ordinary jump stays below half a character height with consistent airtime across frame rates
+ok 1 - ordinary jump stays below half a character height with consistent airtime across frame rates
+  ---
+  duration_ms: 18.710541
+  type: 'test'
+  ...
+# Subtest: melee cannot hit behind the player, outside reach, or through a barricade
+ok 2 - melee cannot hit behind the player, outside reach, or through a barricade
+  ---
+  duration_ms: 23.642167
+  type: 'test'
+  ...
+# Subtest: damage occurs on contact, once per swing; a target can escape during the windup
+ok 3 - damage occurs on contact, once per swing; a target can escape during the windup
+  ---
+  duration_ms: 92.169125
+  type: 'test'
+  ...
+# Subtest: the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+ok 4 - the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+  ---
+  duration_ms: 133.733416
+  type: 'test'
+  ...
+# Subtest: the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+ok 5 - the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+  ---
+  duration_ms: 9.09275
+  type: 'test'
+  ...
+# Subtest: older dojo saves migrate a frozen counter into a finite counter window
+ok 6 - older dojo saves migrate a frozen counter into a finite counter window
+  ---
+  duration_ms: 5.460917
+  type: 'test'
+  ...
+1..0
+# Subtest: tests/motion.test.mts
+ok 3 - tests/motion.test.mts
+  ---
+  duration_ms: 497.783083
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 8 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 84.652166
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 797.558917

@@ -1,0 +1,10 @@
+{
+  "neo": {
+    "reproduced": true,
+    "shippedSha256": "c0784b62bccd64c81c9985d6be67c3a13401b3a814b5386c52265da0ee027e7a"
+  },
+  "morpheus": {
+    "reproduced": true,
+    "shippedSha256": "58a8c0da40a30e2319642e6c1be4ec21bbf4fb8ab8758136a023c06d52184e60"
+  }
+}

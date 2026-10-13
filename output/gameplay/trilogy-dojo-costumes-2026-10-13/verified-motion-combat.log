@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: ordinary jump stays below half a character height with consistent airtime across frame rates
+ok 1 - ordinary jump stays below half a character height with consistent airtime across frame rates
+  ---
+  duration_ms: 18.8355
+  type: 'test'
+  ...
+# Subtest: melee cannot hit behind the player, outside reach, or through a barricade
+ok 2 - melee cannot hit behind the player, outside reach, or through a barricade
+  ---
+  duration_ms: 12.707792
+  type: 'test'
+  ...
+# Subtest: damage occurs on contact, once per swing; a target can escape during the windup
+ok 3 - damage occurs on contact, once per swing; a target can escape during the windup
+  ---
+  duration_ms: 60.793209
+  type: 'test'
+  ...
+# Subtest: enemy windup warns before damage and stepping out of reach avoids the strike
+ok 4 - enemy windup warns before damage and stepping out of reach avoids the strike
+  ---
+  duration_ms: 3.084667
+  type: 'test'
+  ...
+# Subtest: a paused or released character cannot complete a queued attack
+ok 5 - a paused or released character cannot complete a queued attack
+  ---
+  duration_ms: 58.645542
+  type: 'test'
+  ...
+# Subtest: three connected attacks use distinct damage and the finisher pushes the target farther
+ok 6 - three connected attacks use distinct damage and the finisher pushes the target farther
+  ---
+  duration_ms: 23.872292
+  type: 'test'
+  ...
+# Subtest: Neo force push affects nearby enemies, respects walls, and has a cooldown that survives switching
+ok 7 - Neo force push affects nearby enemies, respects walls, and has a cooldown that survives switching
+  ---
+  duration_ms: 140.432333
+  type: 'test'
+  ...
+# Subtest: Trinity dash strikes at the end of the lunge and cannot cross barricades
+ok 8 - Trinity dash strikes at the end of the lunge and cannot cross barricades
+  ---
+  duration_ms: 113.865666
+  type: 'test'
+  ...
+# Subtest: Morpheus counters a telegraphed blow and Smith drains health through infection
+ok 9 - Morpheus counters a telegraphed blow and Smith drains health through infection
+  ---
+  duration_ms: 4.077
+  type: 'test'
+  ...
+# Subtest: bullet time expires in game seconds, freezes on pause, and can overlap a second skill
+ok 10 - bullet time expires in game seconds, freezes on pause, and can overlap a second skill
+  ---
+  duration_ms: 32.816917
+  type: 'test'
+  ...
+# Subtest: dodge cancels a windup, briefly avoids damage and cannot be spammed or started in midair
+ok 11 - dodge cancels a windup, briefly avoids damage and cannot be spammed or started in midair
+  ---
+  duration_ms: 12.587292
+  type: 'test'
+  ...
+# Subtest: dojo sparring keeps a readable guard between strikes and releases it after the lesson
+ok 12 - dojo sparring keeps a readable guard between strikes and releases it after the lesson
+  ---
+  duration_ms: 25.005209
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 13 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 33.230917
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 14 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 15.973166
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 15 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 6.072083
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 16 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 0.117292
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 17 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 1.358
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 18 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 0.555125
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 19 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 0.146541
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 20 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 4.267166
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 21 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 1.89475
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 22 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 1.829416
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 23 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 0.316292
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 24 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 0.333958
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 25 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 0.518292
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 26 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.169791
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 27 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.1435
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 28 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 0.262083
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 29 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 0.217959
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 30 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 0.197625
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 31 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.077959
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 32 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 0.782583
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 33 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.078458
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 34 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 215.866959
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 35 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 35.625375
+  type: 'test'
+  ...
+1..35
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 977.001584

@@ -163,6 +163,8 @@ export interface MotionInput {
   inspecting?: boolean;
   vase?: number;
   realWorld?: boolean;
+  dojoOutfit?: 'neo' | 'morpheus';
+  dojoSparring?: boolean;
   glasses?: boolean;
   mobilStation?: boolean;
   mobilSeat?: number;
@@ -659,7 +661,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const guarding = state.skill === 'iron_guard' ? skillBlend : 0;
   const dodging = state.skill === 'dodge' ? skillBlend : 0;
   const casting = state.skill && ['force_push', 'system_hack', 'bullet_time', 'code_snare'].includes(state.skill) && state.skillAge < .65 ? Math.sin(state.skillAge / .65 * Math.PI) : 0;
-  const guard = Math.max(guarding, smooth(clamp(age / .07)) * (1 - smooth(clamp((age - strike.duration) / .35))));
+  const guard = Math.max(guarding, input.dojoSparring ? .82 * (1 - dodging) : 0,
+    smooth(clamp(age / .07)) * (1 - smooth(clamp((age - strike.duration) / .35))));
   const extension = smooth(clamp((age - strike.contact * .5) / (strike.contact * .5)))
     * (1 - smooth(clamp((age - strike.contact - .025) / (strike.duration - strike.contact - .025))));
   const windup = Math.sin(clamp(age / strike.contact) * Math.PI) * guard;

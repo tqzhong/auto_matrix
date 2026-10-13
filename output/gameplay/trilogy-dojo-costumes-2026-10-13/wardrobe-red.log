@@ -1,0 +1,27 @@
+TAP version 13
+# Subtest: dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+not ok 1 - dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+  ---
+  duration_ms: 1852.014292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:1:3233'
+  failureType: 'testCodeFailure'
+  error: 'the actual dojo jacket must be worn'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/character-asset.test.mts:64:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3861.687916

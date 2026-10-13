@@ -1,0 +1,28 @@
+{
+  "neo": {
+    "nodes": true,
+    "meshes": true,
+    "materials": true,
+    "accessors": true,
+    "bufferViews": true,
+    "images": true,
+    "textures": true,
+    "skins": true,
+    "originalBinaryPrefix": true,
+    "originalMetadata": true,
+    "sourceMatches": true
+  },
+  "morpheus": {
+    "nodes": true,
+    "meshes": true,
+    "materials": true,
+    "accessors": true,
+    "bufferViews": true,
+    "images": true,
+    "textures": true,
+    "skins": true,
+    "originalBinaryPrefix": true,
+    "originalMetadata": true,
+    "sourceMatches": true
+  }
+}

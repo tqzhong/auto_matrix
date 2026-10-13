@@ -38,6 +38,7 @@ export interface HeroRig {
   rest: Map<string, THREE.Vector3>;
   panels: CoatPanel[];
   footHeight: number;
+  dojoSoles?: { mesh: THREE.SkinnedMesh; indices: number[] };
   glasses: THREE.Group;
   silver: { value: number };
   trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry; firstPerson: THREE.BufferGeometry; patientFirstPerson: THREE.BufferGeometry };
@@ -285,9 +286,9 @@ export class HeroModels {
     let trackingSkin: HeroRig['trackingSkin'];
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
-      if (object.userData.hammerBriefingCostume || object.userData.logosCostume) { object.visible = false; object.userData.reloadedHidden = true; }
+      if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
-      if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
+      if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && !object.userData.dojoSkin && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
         // The existing head/hands mesh also contains shoulder caps. They sit
         // beneath the new sleeves; preserve the finished face and wrist rings.
         const original = object.geometry; const index = original.index!; const positions = original.attributes.position;
@@ -355,7 +356,7 @@ export class HeroModels {
       wardrobe.push({ mesh: object, color: material.color.clone(), map: material.map, bumpMap: material.bumpMap, bumpScale: material.bumpScale,
         roughness: material.roughness, metalness: material.metalness, side: material.side, emissive: material.emissive.clone(), emissiveIntensity: material.emissiveIntensity,
         outer: panels.some(p => p.mesh === object),
-        hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) });
+        hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) || Boolean(object.userData.dojoCostume && !object.userData.dojoSkin) });
       if (id !== 'neo') return;
       addMirrorArrival(object);
       material.onBeforeCompile = (shader, renderer) => {
@@ -430,6 +431,11 @@ export class HeroModels {
       }
     }
     const rig: HeroRig = { root, bones, rest, panels, footHeight, glasses, silver, trackingSkin, wardrobe, support, officeRole: police ? 'police' : support === 'rhineheart' || support === 'courier' ? support : undefined, apartmentRole };
+    const dojoSkin = root.getObjectByName(`${id}-dojo-skin`);
+    if (dojoSkin instanceof THREE.SkinnedMesh && !support) {
+      const position = dojoSkin.geometry.attributes.position, index = dojoSkin.geometry.index!;
+      rig.dojoSoles = { mesh: dojoSkin, indices: [...new Set(Array.from({ length: index.count }, (_, i) => index.getX(i)))].filter(i => position.getY(i) < .2) };
+    }
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     if ((id === 'neo' || id === 'trinity' || id === 'morpheus') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
@@ -786,7 +792,7 @@ export class HeroModels {
     rig.silver.value = input.mirror ?? 0;
     const finaleGlasses = !input.smithFinale || (input.smithFinale.role === 'smith' ? smithCraterAmount(input.smithFinale) === 0
       : ['approach', 'entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging', 'ready', 'ground_warning', 'ground_dodge', 'ground_counter', 'shockwave', 'air_warning', 'air_dodge', 'air_counter'].includes(input.smithFinale.phase));
-    rig.glasses.visible = !interactionView && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    rig.glasses.visible = !input.dojoOutfit && !interactionView && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
@@ -813,9 +819,10 @@ export class HeroModels {
       else if (part.mesh.userData.club) part.mesh.visible = clubClothes;
       else if (part.mesh.userData.clubJacket && clubClothes) part.mesh.visible = false;
       else if ((officeShirt || trackingShirt) && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
-      const map = patientLegs ? this.patientSkin : part.map; const bumpMap = patientLegs ? this.patientSkin : part.bumpMap;
+      const dojoCloth = input.dojoOutfit && part.mesh.userData.dojoCostume && !part.mesh.userData.dojoSkin;
+      const map = patientLegs ? this.patientSkin : part.map; const bumpMap = dojoCloth ? this.fabric : patientLegs ? this.patientSkin : part.bumpMap;
       if (!farewellAppearance?.garment(part.mesh, input) && (material.map !== map || material.bumpMap !== bumpMap)) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
-      material.bumpScale = patientLegs ? .0013 : part.bumpScale;
+      material.bumpScale = dojoCloth ? .0015 : patientLegs ? .0013 : part.bumpScale;
       const side = input.firstPerson && (constructView || truthView || downloadView) && part.cloth ? THREE.DoubleSide : part.side;
       if (material.side !== side) { material.side = side; material.needsUpdate = true; }
       material.roughness = patientSurface ? .43 : part.roughness; material.metalness = patientSurface ? .01 : part.metalness;
@@ -828,6 +835,11 @@ export class HeroModels {
     }
     farewellAppearance?.update(input);
     this.constructSuits.get(rig)?.update(input);
+    for (const part of rig.wardrobe) {
+      if (part.mesh.userData.dojoCostume) {
+        part.mesh.visible = Boolean(input.dojoOutfit);
+      } else if (input.dojoOutfit && (part.outer || part.cloth || /Black.crew.neck|shoes01/i.test(part.mesh.name))) part.mesh.visible = false;
+    }
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');
     pelvis.position.copy(rig.rest.get('pelvis')!);
@@ -1127,7 +1139,16 @@ export class HeroModels {
       // Machine-core deck is .025 above the nominal floor; allow the boot sole's .005 extension.
       if (input.deusPact) pelvis.position.y += .03;
       rig.root.updateWorldMatrix(true, true);
-      if (!input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
+      if (input.dojoOutfit && rig.dojoSoles) {
+        const { mesh, indices } = rig.dojoSoles; mesh.skeleton.update();
+        let lowest = Infinity;
+        for (const index of indices) {
+          mesh.getVertexPosition(index, this.point); mesh.localToWorld(this.point); rig.root.worldToLocal(this.point);
+          lowest = Math.min(lowest, this.point.y);
+        }
+        pelvis.position.y -= lowest; rig.root.updateWorldMatrix(true, true);
+      }
+      if (!input.dojoOutfit && !input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
     poseSpoonBody(rig, input.spoonLesson);

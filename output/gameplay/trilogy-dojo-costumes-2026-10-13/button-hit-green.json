@@ -1,0 +1,11 @@
+{
+  "hit": "BUTTON",
+  "pass": true,
+  "pointerEvents": "auto",
+  "rect": {
+    "height": 46,
+    "width": 150,
+    "x": 565,
+    "y": 604
+  }
+}

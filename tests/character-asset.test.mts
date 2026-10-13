@@ -49,6 +49,93 @@ async function loadGeometry(id = 'neo') {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('dojo costumes replace the city wardrobe, skin with punches and restore the original outfit', async () => {
+  for (const id of ['neo', 'morpheus'] as const) {
+    const asset = await loadGeometry(id); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+    (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+    try {
+      const rig = (await models.create(id))!, motion = newMotion();
+      const original = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+      models.animate(rig, advanceMotion(motion, original, 0), motion, original, 0);
+      const wardrobe = rig.wardrobe.map(part => ({ mesh: part.mesh, visible: part.mesh.visible, material: (part.mesh.material as THREE.MeshStandardMaterial).clone() }));
+      const input = { ...original, dojoOutfit: id, dojoSparring: true };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      const jacket = rig.root.getObjectByName(`${id}-dojo-jacket`) as THREE.SkinnedMesh;
+      assert.ok(jacket?.visible, 'the actual dojo jacket must be worn');
+      for (const part of ['lapel', 'belt', 'trousers', 'skin']) assert.ok(rig.root.getObjectByName(`${id}-dojo-${part}`)?.visible);
+      assert.equal(rig.glasses.visible, false, 'the first-film duel is fought without sunglasses');
+      assert.ok(rig.panels.every(panel => !panel.mesh.visible));
+      assert.equal(rig.root.getObjectByName('shoes01')!.visible, false, 'city boots must not remain under the training feet');
+      assert.equal(rig.root.getObjectByName('Tailored_coat_upper')!.visible, false);
+      const materials = rig.wardrobe.filter(part => part.mesh.userData.dojoCostume && !part.mesh.userData.dojoSkin).map(part => part.mesh.material as THREE.Material);
+      const versions = materials.map(material => material.version);
+      for (let frame = 0; frame < 6; frame++) models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0);
+      assert.deepEqual(materials.map(material => material.version), versions, 'paused training clothes must reuse their shader rather than rebuilding material state every frame');
+      rig.root.updateMatrixWorld(true); jacket.skeleton.update();
+      const positions = jacket.geometry.attributes.position, joints = jacket.geometry.attributes.skinIndex, weights = jacket.geometry.attributes.skinWeight;
+      const shoulder = jacket.skeleton.bones.findIndex(bone => bone.name === 'shoulder_R');
+      const sleeve = Array.from({ length: positions.count }, (_, i) => i).find(i => positions.getY(i) > 2.6 && [0, 1, 2, 3].some(n => joints.getComponent(i, n) === shoulder && weights.getComponent(i, n) > .5))!;
+      assert.ok(sleeve !== undefined, 'the sleeve follows the delivered arm skeleton');
+      const rest = jacket.getVertexPosition(sleeve, new THREE.Vector3()).clone();
+      motion.combo = 0; motion.attackAge = .19;
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true); jacket.skeleton.update();
+      assert.ok(rest.distanceTo(jacket.getVertexPosition(sleeve, new THREE.Vector3())) > .08, 'a real punch deforms the cloth');
+      models.animate(rig, advanceMotion(motion, original, 0), motion, original, 0);
+      assert.equal(jacket.visible, false); assert.equal(rig.glasses.visible, true);
+      for (const part of wardrobe) {
+        assert.equal(part.mesh.visible, part.visible, `leaving restores ${part.mesh.name}`);
+        const material = part.mesh.material as THREE.MeshStandardMaterial;
+        assert.ok(material.color.equals(part.material.color)); assert.equal(material.map, part.material.map); assert.equal(material.side, part.material.side);
+        part.material.dispose();
+      }
+    } finally { models.dispose(); }
+  }
+});
+
+test('dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge', async () => {
+  for (const id of ['neo', 'morpheus'] as const) {
+    const asset = await loadGeometry(id); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+    (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+    try {
+      const rig = (await models.create(id))!, motion = newMotion();
+      const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, dojoOutfit: id, dojoSparring: true };
+      const jacket = rig.root.getObjectByName(`${id}-dojo-jacket`) as THREE.SkinnedMesh;
+      const belt = rig.root.getObjectByName(`${id}-dojo-belt`) as THREE.SkinnedMesh;
+      for (const pose of ['guard', 'punch', 'kick', 'dodge'] as const) {
+        motion.attackAge = pose === 'punch' ? .14 : pose === 'kick' ? .26 : 10; motion.combo = pose === 'kick' ? 2 : 0;
+        motion.skill = pose === 'dodge' ? 'dodge' : undefined; motion.skillAge = pose === 'dodge' ? .15 : 10;
+        models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+        const sole = rig.dojoSoles!; sole.mesh.skeleton.update();
+        assert.ok(sole.indices.length > 30, 'the check samples the actual exposed foot surfaces');
+        const lowest = Math.min(...sole.indices.map(i => rig.root.worldToLocal(sole.mesh.localToWorld(sole.mesh.getVertexPosition(i, new THREE.Vector3()))).y));
+        assert.ok(Math.abs(lowest) < .015, `${id} ${pose}: the supporting bare sole floats or cuts into the mat: ${lowest}`);
+        jacket.skeleton.update(); belt.skeleton.update();
+        // Bake posed jacket vertices once, then ray-test the fitted waistband.
+        const geometry = jacket.geometry.clone(), positions = geometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) positions.setXYZ(i, ...jacket.getVertexPosition(i, new THREE.Vector3()).toArray() as [number, number, number]);
+        const torso: number[] = [], index = geometry.index!, joints = geometry.attributes.skinIndex, weights = geometry.attributes.skinWeight;
+        for (let i = 0; i < index.count; i += 3) {
+          const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+          const sleeve = triangle.some(vertex => [0, 1, 2, 3].some(n => /^(shoulder|elbow|wrist|finger)/.test(jacket.skeleton.bones[joints.getComponent(vertex, n)].name) && weights.getComponent(vertex, n) > .2));
+          if (!sleeve) torso.push(...triangle);
+        }
+        geometry.setIndex(torso);
+        geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+        const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), surface = new THREE.Mesh(geometry, material);
+        const waistband = belt.geometry.attributes.position;
+        for (let i = 0; i < waistband.count; i += 13) {
+          if (Math.abs(waistband.getY(i) - (id === 'neo' ? 2.42 : 2.475)) > .07) continue;
+          const point = belt.getVertexPosition(i, new THREE.Vector3()), center = rig.bones.get('pelvis')!.getWorldPosition(new THREE.Vector3()); rig.root.worldToLocal(center);
+          const outward = point.clone().sub(center); outward.y = 0; outward.normalize();
+          const hit = new THREE.Raycaster(point.clone().addScaledVector(outward, .08), outward.clone().negate(), 0, .22).intersectObject(surface)[0];
+          assert.ok(hit && hit.distance > .055 && hit.distance < .145, `${id} ${pose}: sash cuts through or floats off the jacket at ${i}: ${hit?.distance}`);
+        }
+        geometry.dispose(); material.dispose();
+      }
+    } finally { models.dispose(); }
+  }
+});
+
 test('hidden coat panels skip deformation work and retain correct normals when worn again', async t => {
   const asset = await loadGeometry(); const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

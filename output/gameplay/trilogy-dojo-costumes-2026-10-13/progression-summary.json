@@ -1,0 +1,78 @@
+{
+  "before": {
+    "scene": "m1_dojo",
+    "step": 0,
+    "tick": 7177
+  },
+  "after": {
+    "scene": "m1_jump",
+    "step": 0,
+    "tick": 7873
+  },
+  "newCompleted": [
+    "m1_dojo"
+  ],
+  "oldCompletedPreserved": true,
+  "newReflections": {
+    "m1_dojo:1": "agency"
+  },
+  "unchangedOldReflections": true,
+  "changedLifeFields": {
+    "lastMinute": {
+      "before": 3573.500000000046,
+      "after": 3747.500000000021
+    },
+    "energy": {
+      "before": 76.05799999999877,
+      "after": 73.96999999999869
+    },
+    "social": {
+      "before": 30.011999999987154,
+      "after": 28.61999999998812
+    },
+    "philosophy": {
+      "before": {
+        "agency": 5,
+        "care": 1,
+        "trust": 1
+      },
+      "after": {
+        "agency": 6,
+        "care": 1,
+        "trust": 1
+      }
+    },
+    "choices": {
+      "before": {
+        "white_rabbit": "follow",
+        "m1_club:2": "care",
+        "office_escape": "escaped",
+        "m1_bug:1": "trust",
+        "m1_pills:fate": "agency",
+        "pill": "red",
+        "m1_construct:1": "agency",
+        "m1_truth_return:2": "agency"
+      },
+      "after": {
+        "white_rabbit": "follow",
+        "m1_club:2": "care",
+        "office_escape": "escaped",
+        "m1_bug:1": "trust",
+        "m1_pills:fate": "agency",
+        "pill": "red",
+        "m1_construct:1": "agency",
+        "m1_truth_return:2": "agency",
+        "m1_dojo:1": "agency"
+      }
+    }
+  },
+  "duel": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 3,
+    "resets": 1,
+    "complete": true
+  },
+  "running": false,
+  "speed": 1
+}

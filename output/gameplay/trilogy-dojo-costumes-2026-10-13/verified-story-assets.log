@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+ok 1 - dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+  ---
+  duration_ms: 824.404667
+  type: 'test'
+  ...
+# Subtest: dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+ok 2 - dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+  ---
+  duration_ms: 718.073042
+  type: 'test'
+  ...
+# Subtest: legacy rigs without the full patient asset restore their clothing after recovery
+ok 3 - legacy rigs without the full patient asset restore their clothing after recovery
+  ---
+  duration_ms: 194.542416
+  type: 'test'
+  ...
+# Subtest: the resting patient has supported hands and heels and stays outside the medical mattress
+ok 4 - the resting patient has supported hands and heels and stays outside the medical mattress
+  ---
+  duration_ms: 497.608667
+  type: 'test'
+  ...
+# Subtest: the recovery needles stop at the shipped patient skin instead of penetrating to the bones
+ok 5 - the recovery needles stop at the shipped patient skin instead of penetrating to the bones
+  ---
+  duration_ms: 848.920584
+  type: 'test'
+  ...
+# Subtest: the first core connection and download restore a seated body without penetrating the chair or floor
+ok 6 - the first core connection and download restore a seated body without penetrating the chair or floor
+  ---
+  duration_ms: 2036.242416
+  type: 'test'
+  ...
+# Subtest: Morpheus supports his chin against the delivered face during the download invitation
+ok 7 - Morpheus supports his chin against the delivered face during the download invitation
+  ---
+  duration_ms: 8815.607666
+  type: 'test'
+  ...
+# Subtest: first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+ok 8 - first-person Construct and truth aftermath retain both actual hands and restore Neo full skin
+  ---
+  duration_ms: 327.127708
+  type: 'test'
+  ...
+# Subtest: Hammer patient beds block ordinary walking but leave all three clinical objectives accessible after restore
+ok 9 - Hammer patient beds block ordinary walking but leave all three clinical objectives accessible after restore
+  ---
+  duration_ms: 54.615083
+  type: 'test'
+  ...
+# Subtest: training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+ok 10 - training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+  ---
+  duration_ms: 191.567334
+  type: 'test'
+  ...
+# Subtest: the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+ok 11 - the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+  ---
+  duration_ms: 44.123875
+  type: 'test'
+  ...
+# Subtest: the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+ok 12 - the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+  ---
+  duration_ms: 6.062125
+  type: 'test'
+  ...
+# Subtest: older dojo saves migrate a frozen counter into a finite counter window
+ok 13 - older dojo saves migrate a frozen counter into a finite counter window
+  ---
+  duration_ms: 5.920417
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14865.095
