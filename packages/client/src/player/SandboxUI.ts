@@ -1453,8 +1453,10 @@ export class SandboxUI {
     }
     if (trainingLocked(journey)) {
       const training = journey.training!; const waiting = trainingWaiting(journey);
-      const name = training.kind === 'download' ? '格斗程序下载' : training.kind === 'jump' ? 'Morpheus 跨楼示范' : '红衣女子注意力测试';
-      const action = training.kind === 'download' ? '请 Tank 开始上传' : training.kind === 'jump' ? '请 Morpheus 开始示范' : '开始注意力测试';
+      const name = training.kind === 'download' ? '格斗程序下载' : training.kind === 'jump' ? 'Morpheus 跨楼示范'
+        : training.kind === 'jump_fall' ? '第一次坠落' : training.kind === 'jump_return' ? '连接椅上的身体' : '红衣女子注意力测试';
+      const action = training.kind === 'download' ? '请 Tank 开始上传' : training.kind === 'jump' ? '请 Morpheus 开始示范'
+        : training.kind === 'jump_return' ? '检查嘴角，询问 Morpheus' : '开始注意力测试';
       document.getElementById('game-objective-copy')!.textContent = waiting ? `${name} · 按 G 开始，等待不会替你决定`
         : `${name} · ${Math.round(training.elapsed / TRAINING_SECONDS[training.kind] * 100)}% · 进度自动保存`;
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;

@@ -79,6 +79,7 @@ import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECOND
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
 import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
+import { jumpImpactPose } from '@auto_matrix/shared';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { OfficeCustodySystem } from './OfficeCustodySystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
@@ -2158,6 +2159,7 @@ export class FilmStorySystem {
     if (!state.training) {
       const kind = state.scene === 'm1_download' && state.step === 0 ? 'download'
         : state.scene === 'm1_jump' && state.step === 1 ? 'jump'
+        : state.scene === 'm1_jump_return' ? 'jump_return'
         : state.scene === 'm1_red_dress' && state.step === 1 ? 'red_dress' : undefined;
       if (kind) state.training = { kind, elapsed: 0, started: false, ...(kind === 'jump' ? { jumpVersion: 2 } : {}) };
     }
@@ -2188,7 +2190,7 @@ export class FilmStorySystem {
         state.dojo.counterUntil = this.world.simulationTick + DOJO_COUNTER_TICKS;
     }
     const actor = this.world.agents.get(state.actor);
-    if (actor && state.training && (trainingLocked(state) || state.downloadSetup || state.scene === 'm1_download')) this.trainingFrame(actor, 0, this.world.simulationTick);
+    if (actor && state.training && (trainingLocked(state) || state.downloadSetup || ['m1_download', 'm1_jump_return'].includes(state.scene) || state.training.kind === 'jump_fall')) this.trainingFrame(actor, 0, this.world.simulationTick);
   }
   meetingFrame(agent: AgentState, focus: boolean, dt: number, tick: number): void {
     const state = this.state;
@@ -4289,7 +4291,15 @@ export class FilmStorySystem {
     this.enter(pod, tick);
   }
   trainingFrame(agent: AgentState, dt: number, tick: number): boolean {
-    const state = this.state; const training = state?.training;
+    const state = this.state; let training = state?.training;
+    if (state?.scene === 'm1_jump' && state.step === 1 && !state.visiting && this.controls(agent)
+      && training?.kind === 'jump' && training.elapsed >= TRAINING_SECONDS.jump && agent.position.y < FILM_SETS[this.scene!.set].center.y - .7) {
+      const center = FILM_SETS[this.scene!.set].center;
+      training = state.training = { kind: 'jump_fall', elapsed: 0, started: true, fall: {
+        origin: { x: agent.position.x - center.x, y: agent.position.y - center.y, z: agent.position.z - center.z },
+        velocity: { ...agent.velocity }, yaw: agent.rotation,
+      } };
+    }
     if (state?.scene === 'm1_download' && this.controls(agent) && !state.visiting && !this.sandbox().structures.some(item => item.id === 'film:download:desk')) {
       const desk = DOWNLOAD_OPERATOR.desk;
       this.sandbox().structures.push({ id: 'film:download:desk', kind: 'barricade', owner: 'matrix', matrix: false, health: 1,
@@ -4297,15 +4307,19 @@ export class FilmStorySystem {
     }
     if (state?.downloadSetup && state.downloadSetup.phase !== 'ready' && this.controls(agent) && !state.visiting)
       return this.downloadSetupFrame(agent, dt, tick);
-    const holdingDownload = state?.scene === 'm1_download' && !state.visiting && training?.kind === 'download';
+    const holdingDownload = !state?.visiting && (state?.scene === 'm1_download' && training?.kind === 'download'
+      || state?.scene === 'm1_jump_return' && training?.kind === 'jump_return' || state?.scene === 'm1_jump' && training?.kind === 'jump_fall');
     if (!state || !training || !this.controls(agent) || !trainingLocked(state) && !holdingDownload) return false;
-    const roles: TrainingRole[] = training.kind === 'download' ? ['neo', 'tank', 'morpheus']
+    const roles: TrainingRole[] = training.kind === 'jump_fall' ? ['neo'] : ['download', 'jump_return'].includes(training.kind) ? ['neo', 'tank', 'morpheus']
       : training.kind === 'jump' ? ['neo', 'morpheus']
       : ['neo', 'morpheus', 'citizen_1', 'citizen_2', 'smith'];
     const occupied = roles.find(id => id !== agent.id && this.world.agents.get(id)?.controller);
     const unavailable = training.kind !== 'red_dress' ? roles.find(id => id !== agent.id && (this.world.agents.get(id)?.status !== 'alive' || this.world.agents.get(id)!.health <= 0)) : undefined;
     const playing = training.started && !occupied && !unavailable && training.elapsed < TRAINING_SECONDS[training.kind];
     if (playing) training.elapsed = Math.min(TRAINING_SECONDS[training.kind], training.elapsed + Math.min(.1, dt));
+    if (training.kind === 'jump_fall' && !training.fall!.hurt && jumpImpactPose(training.fall!, training.elapsed).landed) {
+      agent.health = Math.max(1, agent.health - 12); training.fall!.hurt = true;
+    }
     for (const role of roles) {
       const actor = this.world.agents.get(role);
       if (!actor || actor.controller && actor !== agent || training.kind !== 'red_dress' && (actor.status !== 'alive' || actor.health <= 0)) continue;
@@ -4317,8 +4331,8 @@ export class FilmStorySystem {
       else if (training.kind === 'red_dress' && role === 'smith') actor.status = training.elapsed >= 6.2 ? 'alive' : 'disconnected';
       else actor.status = 'alive';
       actor.currentAction = { type: actor.velocity.x || actor.velocity.y || actor.velocity.z ? 'move_to' : 'idle', parameters: {
-        player: role === agent.id, resolved: true, seated: training.kind === 'download' && role === 'neo', armed: training.kind === 'red_dress' && role === 'smith' && training.elapsed >= 6.2,
-        training: { kind: training.kind, elapsed: training.elapsed, role },
+        player: role === agent.id, resolved: true, seated: ['download', 'jump_return'].includes(training.kind) && role === 'neo', armed: training.kind === 'red_dress' && role === 'smith' && training.elapsed >= 6.2,
+        training: { ...training, role },
       }, startedAt: tick, duration: 1, progress: 0 };
     }
     state.checkpoint = { ...agent.position };
@@ -4328,7 +4342,7 @@ export class FilmStorySystem {
       if (training.kind === 'jump') {
         agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
         state.lastText = trainingText(training);
-      } else this.advance(this.step!.text!, agent, tick);
+      } else this.advance(training.kind === 'jump_fall' ? '第一次跳跃失败。Neo 落到街面、回弹后趴下；按 G 回到连接椅上的身体。' : this.step!.text!, agent, tick);
     }
     return true;
   }
@@ -6482,7 +6496,7 @@ export class FilmStorySystem {
     if (state.training && trainingLocked(state)) {
       if (!state.training.started) {
         if (target !== 'act') return trainingText(state.training);
-        const required = state.training.kind === 'download' ? ['tank', 'morpheus'] : state.training.kind === 'jump' ? ['morpheus'] : ['morpheus', 'citizen_1', 'citizen_2', 'smith'];
+        const required = ['download', 'jump_return'].includes(state.training.kind) ? ['tank', 'morpheus'] : state.training.kind === 'jump' ? ['morpheus'] : ['morpheus', 'citizen_1', 'citizen_2', 'smith'];
         const occupied = required.find(id => this.world.agents.get(id)?.controller);
         if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，训练停在当前画面。`;
         const unavailable = state.training.kind !== 'red_dress' ? required.find(id => this.world.agents.get(id)?.status !== 'alive' || this.world.agents.get(id)!.health <= 0) : undefined;
@@ -7053,7 +7067,7 @@ export class FilmStorySystem {
     const actor = this.world.agents.get(state.actor)!;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.basement || other.currentAction?.parameters.tvExit)) other.currentAction = null;
     const incomingHealth = actor.health;
-    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = ['m2_architect', 'm2_catch', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id) || state.logosEntry || road || custodyArrival || scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' || scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' || scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach' || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!state.logosEntry && !custodyArrival && !['m2_architect', 'm2_catch', 'm3_dock_briefing', 'm3_dock_evacuation', 'm3_shaft_seal', 'm3_temple_defense', 'm3_temple_breach', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id)) actor.activeEffects = [];
+    this.place(actor, scene, state.checkpoint); actor.status = 'alive'; actor.health = ['m1_jump_return', 'm2_architect', 'm2_catch', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id) || state.logosEntry || road || custodyArrival || scene.id === 'm3_dock_reunion' || scene.id === 'm3_dock_briefing' || scene.id === 'm3_dock_evacuation' || scene.id === 'm3_shaft_seal' || scene.id === 'm3_temple_defense' || scene.id === 'm3_temple_breach' || scene.id === 'm3_surrender' || crosscut && ['m1_unplugged', 'm1_rescue_decision'].includes(scene.id) || scene.id === 'm1_basement' || scene.id === 'm1_tv_exit' || scene.id === 'm1_wetwall' || scene.id === 'm1_wall_exposed' || scene.id === 'm1_bathroom' && state.wallExposure?.phase === 'done' ? incomingHealth : actor.maxHealth; if (!state.logosEntry && !custodyArrival && !['m2_architect', 'm2_catch', 'm3_dock_briefing', 'm3_dock_evacuation', 'm3_shaft_seal', 'm3_temple_defense', 'm3_temple_breach', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_oracle_absorbed', 'm3_bane_questions', 'm3_logos_plan', 'm3_zion_prepare', 'm3_maggie_discovery', 'm3_bane'].includes(scene.id)) actor.activeEffects = [];
     if (scene.id === 'm3_rain') { actor.position = filmPosition(scene.set, 0, -78); actor.rotation = 0; state.checkpoint = { ...actor.position }; }
     if (scene.id === 'm1_basement') this.basement.start();
     if (scene.id === 'm1_tv_exit') this.basement.startTv();
@@ -7160,6 +7174,10 @@ export class FilmStorySystem {
     if (scene.id === 'm1_cabin') {
       state.awakening = { kind: 'cabin', elapsed: 0, started: false }; state.cabinEscort = { progress: 0 };
       this.awakeningFrame(actor, 0, tick);
+    }
+    if (scene.id === 'm1_jump_return') {
+      state.training = { kind: 'jump_return', elapsed: 0, started: false };
+      this.trainingFrame(actor, 0, tick);
     }
     if (truthScene(scene.id)) {
       state.truthRecovery = { phase: scene.id === 'm1_truth_exit' ? 'ready' : 'unplug', elapsed: 0 };
@@ -7301,7 +7319,7 @@ export class FilmStorySystem {
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)
-        || ['m1_jump', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)) return;
+        || ['m1_jump', 'm1_jump_return', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)) return;
       if (scene.id === 'm2_architect' && actor.status !== 'alive') return;
       if (scene.id === 'm2_ship_lost' && actor.status !== 'alive') return;
       if (scene.id === 'm3_dock_reunion' && (id === 'zee' || DOCK_REUNION.crew.includes(id as typeof DOCK_REUNION.crew[number]))) return;
@@ -7952,9 +7970,8 @@ export class FilmStorySystem {
       }
       return;
     }
-    if (state.scene === 'm1_jump' && state.step === 1 && actor.position.y < FILM_SETS[this.scene.set].center.y - 8) {
-      actor.position = { ...state.checkpoint }; actor.velocity = { x: 0, y: 0, z: 0 }; actor.health = Math.max(1, actor.health - 12);
-      this.advance('第一次跳跃失败。程序把你送回起跳线，但身体仍记得坠落的痛感。现在可以回到连接椅。', actor, tick);
+    if (state.scene === 'm1_jump' && state.step === 1 && actor.position.y < FILM_SETS[this.scene.set].center.y - .7) {
+      this.trainingFrame(actor, 0, tick);
       return;
     }
     if (state.scene === 'm3_trainman' && state.step === 1 && state.mobil?.phase !== 'stopped') return;

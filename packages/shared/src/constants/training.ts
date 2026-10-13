@@ -1,12 +1,13 @@
 import type { FilmJourney } from './film-story.js';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, cabinGuidePose } from './cabin.js';
 import { awakeningPose } from './awakening.js';
+import { jumpImpactPose, type JumpImpact } from './jump-impact.js';
 
-export type TrainingKind = 'download' | 'jump' | 'red_dress';
-export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean; jumpVersion?: 2 }
+export type TrainingKind = 'download' | 'jump' | 'jump_fall' | 'jump_return' | 'red_dress';
+export interface TrainingPerformance { kind: TrainingKind; elapsed: number; started: boolean; jumpVersion?: 2; fall?: JumpImpact }
 export interface DojoLesson { dodged: boolean; combo: number; hits: number; counterUntil?: number; resets?: number; complete?: boolean }
 export type TrainingRole = 'neo' | 'tank' | 'morpheus' | 'citizen_1' | 'citizen_2' | 'smith';
-export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole }
+export interface TrainingGesture { kind: TrainingKind; elapsed: number; role: TrainingRole; fall?: JumpImpact }
 export interface DownloadSetup { phase: 'greeting' | 'waking' | 'walk' | 'connecting' | 'ready'; elapsed: number; progress: number; approach?: { x: number; z: number } }
 export interface DownloadGesture extends DownloadSetup { role: 'neo' | 'tank'; target?: { x: number; y: number; z: number } }
 export const DOWNLOAD_SETUP_SECONDS = { waking: 12, connecting: 10 } as const;
@@ -15,7 +16,7 @@ export const DOWNLOAD_OPERATOR = { x: 11.8, z: -8, yaw: Math.PI,
   desk: { x: 11.8, z: -9.75, width: 3.4, depth: 1.7, height: 2.4 } } as const;
 export const DOWNLOAD_INVITATION = { from: { x: -1.8, z: -8.8 }, to: { x: 2.3, z: -5.1 }, start: 5.8, duration: 3.6 } as const;
 
-export const TRAINING_SECONDS = { download: 10, jump: 6, red_dress: 12 } as const;
+export const TRAINING_SECONDS = { download: 10, jump: 6, jump_fall: 6, jump_return: 12, red_dress: 12 } as const;
 export const DOJO_COMBO_WINDOW = 3;
 export const DOWNLOAD_CHAIR = {
   neo: { x: 6.5, z: -5, yaw: -Math.PI / 2 },
@@ -116,6 +117,21 @@ export function downloadSetupText(setup: DownloadSetup): string {
 }
 
 export function trainingText(training: TrainingPerformance): string {
+  if (training.kind === 'jump_fall') {
+    const pose = jumpImpactPose(training.fall!, training.elapsed);
+    return !pose.landed ? 'Neo 没有跨过楼间，身体沿着街谷下坠。'
+      : pose.impact < .3 ? '街面像柔软的程序表面一样陷下去。'
+        : pose.impact < 1.5 ? '路面回弹，将 Neo 抛起后再次落下。'
+          : training.elapsed < TRAINING_SECONDS.jump_fall ? 'Neo 趴在街面上，慢慢缓过来。'
+            : 'Neo 趴在街面上。第一次失败已经发生；按 G 回到飞船上的身体。';
+  }
+  if (training.kind === 'jump_return') {
+    if (!training.started) return '连接椅上的身体醒来。按 G 检查嘴角的痛感，听 Morpheus 解释训练的后果。';
+    return training.elapsed < 3 ? 'Neo 睁开眼睛，呼吸仍然急促。Morpheus 在连接椅前等他。'
+      : training.elapsed < 6.5 ? '手指擦过嘴角，留下少量鲜血。程序中的坠落影响了现实身体。'
+        : training.elapsed < 9 ? 'Neo 原以为模拟中的伤害不会是真的。Morpheus 提醒他，意识让体验成为身体的现实。'
+          : 'Neo 追问矩阵中的死亡。Morpheus 解释：身体无法离开意识继续生存。训练保护不适用于真实矩阵。';
+  }
   if (training.kind === 'download') {
     if (!training.started) return '连接椅已经就位。按 G 请 Tank 开始上传训练程序。';
     return training.elapsed < 2.2 ? '颈后接口接通，Tank 正在校验神经信号。'
@@ -139,6 +155,11 @@ export function trainingText(training: TrainingPerformance): string {
 }
 
 export function trainingRoot(training: TrainingPerformance, role: TrainingRole): { x: number; y: number; z: number; yaw: number } {
+  if (training.kind === 'jump_fall') return role === 'neo' ? jumpImpactPose(training.fall!, training.elapsed)
+    : { ...JUMP_PROGRAM.finish, y: 0, yaw: .115 };
+  if (training.kind === 'jump_return') return role === 'neo' ? { ...CABIN.chair, y: 0 }
+    : role === 'tank' ? { ...DOWNLOAD_OPERATOR, y: 0 }
+      : { x: 1.8, y: 0, z: -8, yaw: Math.atan2(CABIN.chair.x - 1.8, CABIN.chair.z + 8) };
   if (training.kind === 'download') {
     if (role === 'morpheus') {
       const path = DOWNLOAD_INVITATION, walk = smooth((training.elapsed - path.start) / path.duration);

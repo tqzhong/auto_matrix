@@ -60,6 +60,7 @@ export * from './constants/truck-hood.js';
 export * from './constants/awakening.js';
 export * from './constants/cabin.js';
 export * from './constants/training.js';
+export * from './constants/jump-impact.js';
 export * from './constants/pills.js';
 export * from './constants/ambush.js';
 export * from './constants/ambush-escape.js';

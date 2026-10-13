@@ -3,6 +3,18 @@ import { test } from 'node:test';
 import { advanceMotion, footTrajectory, newMotion, solveLeg } from '../packages/client/src/agents/CharacterMotion.js';
 import { MELEE_COMBO, trainingRoot } from '@auto_matrix/shared';
 
+test('the first fall and real-body return reconstruct their saved poses after combat and while paused', () => {
+  for (const elapsed of [.4, 2, 4.5, 6]) for (const kind of ['jump_fall', 'jump_return'] as const) {
+    const input = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0,
+      training: { kind, elapsed, role: 'neo' as const, fall: { origin: { x: 0, y: -1, z: -15 }, velocity: { x: 0, y: -8, z: -4 }, yaw: Math.PI } } };
+    const warm = newMotion();
+    for (let i = 0; i < 20; i++) advanceMotion(warm, { speed: 8, grounded: false, verticalVelocity: 10, turn: 2, attack: i, hit: i }, .03);
+    const cold = advanceMotion(newMotion(), input, 0);
+    assert.deepEqual(advanceMotion(warm, input, .03), cold);
+    assert.deepEqual(advanceMotion(warm, input, 1), cold);
+  }
+});
+
 test('Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo', () => {
   const root = (elapsed: number) => trainingRoot({ kind: 'jump', elapsed, started: true }, 'morpheus');
   const start = root(0), running = root(1.65);

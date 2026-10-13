@@ -49,6 +49,49 @@ async function loadGeometry(id = 'neo') {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('the shipped Neo lies face down on the impact surface and wipes his mouth in the real connection chair', async () => {
+  const asset = await loadGeometry('neo'), models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;
+  try {
+    const rig = (await models.create('neo'))!, motion = newMotion();
+    const fall = { origin: { x: 0, y: -1, z: -15 }, velocity: { x: 0, y: -8, z: -4 }, yaw: Math.PI };
+    const input: MotionInput = { speed: 0, grounded: false, verticalVelocity: 0, turn: 0,
+      training: { kind: 'jump_fall', role: 'neo', elapsed: 4, fall } };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    let lowest = Infinity;
+    for (const part of rig.wardrobe) if (part.mesh.visible && part.mesh instanceof THREE.SkinnedMesh) {
+      part.mesh.skeleton.update();
+      for (let i = 0; i < part.mesh.geometry.attributes.position.count; i++)
+        lowest = Math.min(lowest, rig.root.worldToLocal(part.mesh.localToWorld(part.mesh.getVertexPosition(i, new THREE.Vector3()))).y);
+    }
+    assert.ok(lowest > -.035 && lowest < .035, `the actual prone meshes must meet the asphalt: ${lowest}`);
+    const face = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.bones.get('head')!.getWorldQuaternion(new THREE.Quaternion()));
+    assert.ok(face.y < -.7, 'Neo lands face down, rather than sitting or lying on his back');
+    const cheek = rig.root.worldToLocal(rig.bones.get('head')!.localToWorld(new THREE.Vector3(.075, -.205, .38)));
+    assert.ok(cheek.y < .3, `the body must lie on the street instead of hanging above dangling arms: ${cheek.toArray()}`);
+    for (const side of ['R', 'L']) {
+      const palm = rig.root.worldToLocal(rig.bones.get('wrist_' + side)!.localToWorld(new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015)));
+      assert.ok(palm.y > -.02 && palm.y < .2, `the resting ${side} palm must meet the street: ${palm.toArray()}`);
+    }
+    const returned: MotionInput = { ...input, grounded: true, seated: true, realWorld: true, nebCrew: 'neo', nebCrewEarly: true,
+      training: { kind: 'jump_return', role: 'neo', elapsed: 4.5 } };
+    models.animate(rig, advanceMotion(motion, returned, 0), motion, returned, 0); rig.root.updateMatrixWorld(true);
+    const mouth = rig.bones.get('head')!.localToWorld(new THREE.Vector3(.075, -.205, .38));
+    assert.ok(rig.bones.get('finger1-3_R')!.getWorldPosition(new THREE.Vector3()).distanceTo(mouth) < .025, 'the wiping thumb must actually reach the mouth');
+    assert.equal(rig.root.getObjectByName('jump-mouth-blood')!.visible, true);
+    assert.equal(rig.root.getObjectByName('jump-thumb-blood')!.visible, true);
+    returned.training!.elapsed = 7;
+    models.animate(rig, advanceMotion(motion, returned, 0), motion, returned, 0); rig.root.updateMatrixWorld(true);
+    rig.root.traverse(object => { if (object instanceof THREE.SkinnedMesh) { object.skeleton.update(); object.computeBoundingSphere(); } });
+    const smear = rig.root.getObjectByName('jump-mouth-blood')!, front = rig.bones.get('head')!.getWorldDirection(new THREE.Vector3());
+    const ray = new THREE.Raycaster(smear.getWorldPosition(new THREE.Vector3()).addScaledVector(front, .15), front.clone().negate(), 0, .3);
+    assert.equal(ray.intersectObject(rig.root, true)[0]?.object.name, 'jump-mouth-blood', 'the blood must be visible on the skin, rather than buried behind it');
+    const normal = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+    models.animate(rig, advanceMotion(motion, normal, 0), motion, normal, 0);
+    assert.equal(rig.root.getObjectByName('jump-mouth-blood')!.visible, false, 'leaving this performance restores the normal character');
+  } finally { models.dispose(); }
+});
+
 test('Morpheus rooftop boots contact the roof during the run-up and compressing landing', async () => {
   const asset = await loadGeometry('morpheus'), models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: () => Promise<typeof asset> }).load = async () => asset;

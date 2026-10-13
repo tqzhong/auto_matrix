@@ -1,3 +1,4 @@
+import { PLAYER_GRAVITY } from './gravity.js';
 import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS } from './hammer-medical.js';
 import { METACORTEX_LOBBY } from './metacortex.js';
 import { LOCATIONS } from './locations.js';
@@ -13,7 +14,7 @@ import { SENTINEL_SIGNAL } from './sentinel-signal.js';
 
 export const STREET_SPACING = 80;
 export const CITY_CENTER = { x: 1120, y: 1, z: 920 };
-export const PLAYER_GRAVITY = 30;
+export { PLAYER_GRAVITY } from './gravity.js';
 export const PLAYER_JUMP_SPEED = 10;
 export const PLAYER_WALK_SPEED = 3.4;
 export const PLAYER_RUN_SPEED = 8.4;
