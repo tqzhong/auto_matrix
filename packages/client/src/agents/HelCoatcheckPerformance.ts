@@ -61,27 +61,81 @@ export function poseHelPistol(rig: CharacterRig, pitch = 0): void {
   const aim = Math.max(-1.35, Math.min(1.35, pitch)), orientation = rotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), aim));
   // The shipped right palm faces +X and rests on the side of the grip.
   const handRotation = orientation.clone();
+  const gun = rig.weapons?.[0];
+  if (rig.hero && gun?.userData.helPistol) {
+    const middle = rig.hero.rest.get('finger3-1_R')!, index = rig.hero.rest.get('finger2-1_R')!;
+    gun.position.set(.148, middle.y + .055, index.z + .045);
+    gun.rotation.set(Math.PI / 2, 0, 0);
+    handRotation.multiply(gun.quaternion.clone().invert());
+  }
   const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(orientation), recoil = Math.max(0, 1 - rig.motion.shotAge / .18) ** 2;
   const anchor = eye.add(new THREE.Vector3(-.12, -.08, 0).applyQuaternion(rotation))
-    .sub(new THREE.Vector3(0, -.13, .03).applyQuaternion(handRotation));
+    .sub(new THREE.Vector3(0, -.13, .03).applyQuaternion(orientation));
+  if (rig.hero && gun?.userData.helPistol) anchor.add(new THREE.Vector3(.14, .018, .015).applyQuaternion(orientation))
+    .sub(gun.position.clone().applyQuaternion(handRotation));
   const fromShoulder = anchor.clone().sub(shoulder.getWorldPosition(new THREE.Vector3())), scale = shoulder.getWorldScale(new THREE.Vector3()).x;
   const armLength = (elbow.position.length() + wrist.position.length()) * scale - .01, along = fromShoulder.dot(forward);
-  const extension = Math.min(.95, Math.max(.15, -along + Math.sqrt(Math.max(0, along * along - fromShoulder.lengthSq() + armLength * armLength))) * .96);
+  const extension = Math.min(rig.hero ? armLength : .95, Math.max(.15, -along + Math.sqrt(Math.max(0, along * along - fromShoulder.lengthSq() + armLength * armLength))) * (rig.hero ? .98 : .96));
   const target = anchor.addScaledVector(forward, extension - recoil * .06).add(new THREE.Vector3(0, recoil * .04, 0));
-  reach(shoulder, elbow, wrist.position.clone(), target, new THREE.Vector3(-.4, -.8, -.2).applyQuaternion(rotation));
+  // Use the actual grip offset when finding arm reach, and keep the elbow
+  // outside the body instead of folding the forearm up in front of the face.
+  reach(shoulder, elbow, wrist.position.clone(), target, (rig.hero ? new THREE.Vector3(-1, -.5, -.8) : new THREE.Vector3(-.4, -.8, -.2)).applyQuaternion(rotation));
   wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(handRotation));
-  const gun = rig.weapons?.[0];
-  if (gun?.userData.helPistol) {
-    gun.position.set(rig.hero ? .14 : 0, rig.hero ? .018 : -.08, rig.hero ? .015 : .13);
+  if (gun?.userData.helPistol && !rig.hero) {
+    gun.position.set(0, -.08, .13);
     gun.rotation.set(0, 0, 0);
   }
-  if (rig.hero) {
-    rig.hero.bones.get('finger1-1_R')!.rotation.set(0, -.7, .2);
-    rig.hero.bones.get('finger1-2_R')!.rotation.set(0, 0, .4);
-    rig.hero.bones.get('finger1-3_R')!.rotation.set(0, 0, .5);
-    for (let finger = 3; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
-      rig.hero.bones.get(`finger${finger}-${segment}_R`)!.rotation.set(0, 0, segment === 1 ? .65 : segment === 2 ? .8 : .6);
-  }
+  if (rig.hero && gun?.userData.helPistol) posePistolFingers(rig, gun);
   rig.detail.userData.helPistol = true;
   rig.root.updateMatrixWorld(true);
+}
+
+function posePistolFingers(rig: CharacterRig, gun: THREE.Group): void {
+  const hero = rig.hero!, wrist = hero.bones.get('wrist_R')!;
+  let grip = wrist.userData.pistolGrip as { pads: THREE.Vector3[]; fingers: THREE.Quaternion[][] } | undefined;
+  if (!grip) {
+    const skin = hero.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+    const pads = Array.from({ length: 5 }, () => new THREE.Vector3()), counts = [0, 0, 0, 0, 0], point = new THREE.Vector3();
+    const distal = skin.skeleton.bones.map(bone => /^finger([1-5])-3_R$/.exec(bone.name));
+    for (let vertex = 0; vertex < position.count; vertex++) for (let part = 0; part < 4; part++) {
+      const index = skinIndex.getComponent(vertex, part), match = distal[index];
+      if (!match || skinWeight.getComponent(vertex, part) < .95) continue;
+      point.fromBufferAttribute(position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]);
+      pads[Number(match[1]) - 1].add(point); counts[Number(match[1]) - 1]++;
+    }
+    pads.forEach((pad, i) => pad.divideScalar(counts[i]));
+    grip = { pads, fingers: pads.map((pad, i) => pistolFinger(rig, gun, pad, i, 0)) };
+    wrist.userData.pistolGrip = grip;
+  }
+  const trigger = 1 - THREE.MathUtils.smoothstep(rig.motion.shotAge, .09, .18);
+  const index = pistolFinger(rig, gun, grip.pads[1], 1, trigger);
+  for (let finger = 1; finger <= 5; finger++) for (let joint = 1; joint <= 3; joint++)
+    hero.bones.get(`finger${finger}-${joint}_R`)!.quaternion.copy((finger === 2 ? index : grip.fingers[finger - 1])[joint - 1]);
+}
+
+function pistolFinger(rig: CharacterRig, gun: THREE.Group, pad: THREE.Vector3, i: number, trigger: number): THREE.Quaternion[] {
+  const hero = rig.hero!, handle = gun.getObjectByName('hel-pistol-grip') as THREE.Mesh;
+  const center = handle.position.clone().applyQuaternion(gun.quaternion).add(gun.position);
+  const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(handle.quaternion).applyQuaternion(gun.quaternion);
+  const base = hero.rest.get(`finger${i + 1}-1_R`)!, first = hero.rest.get(`finger${i + 1}-2_R`)!, second = hero.rest.get(`finger${i + 1}-3_R`)!;
+  const direction = (i === 0 ? new THREE.Vector3(0, -.2, -.98) : i === 1 ? new THREE.Vector3(0, -1, 0).lerp(new THREE.Vector3(.55, .835, 0), trigger) : new THREE.Vector3(.55, .835, 0)).normalize();
+  const thumbZ = gun.position.z - .08;
+  const target = i === 0 ? new THREE.Vector3(.175, center.y + (-handle.scale.z / 2 - .035 - normal.z * (thumbZ - center.z)) / normal.y, thumbZ)
+    : i === 1 ? new THREE.Vector3(gun.position.x - .112 + .124 * trigger, gun.position.y - .2 + .112 * trigger,
+      gun.position.z - .012 - .014 * trigger - .02 * Math.sin(Math.PI * trigger))
+    : new THREE.Vector3(i === 4 ? .12 : i === 3 ? .145 : .16,
+      center.y + (handle.scale.z / 2 + .023 - normal.z * (base.z - center.z)) / normal.y, base.z);
+  // Move the index pad out through the guard before straightening it beside
+  // the slide. Interpolating joint rotations alone cuts across the metal.
+  const end = target.clone().addScaledVector(direction, -pad.length()), axis = end.clone().sub(base);
+  const a = first.length(), b = second.length(), distance = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001);
+  axis.normalize(); end.copy(base).addScaledVector(axis, distance);
+  const along = (a * a - b * b + distance * distance) / (2 * distance);
+  const bend = new THREE.Vector3(0, i === 0 ? 1 : -1, 0); bend.addScaledVector(axis, -bend.dot(axis)).normalize();
+  const hinge = base.clone().addScaledVector(axis, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along))), parent = new THREE.Quaternion();
+  return [hinge.clone().sub(base), end.clone().sub(hinge), direction].map((desired, joint) => {
+    const rotation = new THREE.Quaternion().setFromUnitVectors([first, second, pad][joint].clone().normalize(), desired.normalize());
+    const local = parent.clone().invert().multiply(rotation); parent.copy(rotation); return local;
+  });
 }

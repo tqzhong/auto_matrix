@@ -24,11 +24,14 @@ export function poseHelDisarm(rig: CharacterRig, gesture?: HelDisarmGesture): vo
   poseHelPistol(rig, 0); rig.root.updateMatrixWorld(true);
   const release = helDisarmGun({ ...gesture, elapsed: HEL_DISARM.release }, gesture.role);
   const orientation = gun.getWorldQuaternion(new THREE.Quaternion()).slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(release.pitch, release.yaw, 0, 'YXZ')), lower);
+  orientation.multiply(gun.quaternion.clone().invert());
   const scale = wrist.getWorldScale(new THREE.Vector3()), target = gun.getWorldPosition(new THREE.Vector3())
     .lerp(new THREE.Vector3(center.x + release.x, center.y - 1 + release.y, center.z + release.z), lower)
     .sub(gun.position.clone().multiply(scale).applyQuaternion(orientation)).lerp(resting, retract);
   orientation.slerp(restRotation, retract);
-  reach(shoulder, elbow, wrist.position.clone(), target, new THREE.Vector3(-.4, -.8, -.2).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
+  const pole = new THREE.Vector3(-.4, -.8, -.2).applyQuaternion(rotation);
+  if (rig.hero) pole.lerp(new THREE.Vector3(-1, -.5, -.8).applyQuaternion(rotation), 1 - lower);
+  reach(shoulder, elbow, wrist.position.clone(), target, pole);
   wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
   const grip = 1 - THREE.MathUtils.smoothstep(t, HEL_DISARM.release, HEL_DISARM.release + .25);
   if (rig.hero) for (let f = 1; f <= 5; f++) for (let s = 1; s <= 3; s++) {
