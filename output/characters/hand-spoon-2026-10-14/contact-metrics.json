@@ -1,0 +1,134 @@
+[
+  {
+    "version": "before",
+    "pose": "receiving-1.101-0",
+    "fingertipSurfaceGap": [
+      0.000019413387261840907,
+      0.000014054280752272409
+    ],
+    "fingertipVerticesInsideStem": [
+      1,
+      1
+    ],
+    "fingerSegmentAngles": [
+      [
+        13.061914409862213,
+        34.68527803485005
+      ],
+      [
+        53.2983527472566,
+        46.9708120050313
+      ]
+    ]
+  },
+  {
+    "version": "before",
+    "pose": "focus-0-0",
+    "fingertipSurfaceGap": [
+      0.00005259165926533836,
+      0.000023953761261253134
+    ],
+    "fingertipVerticesInsideStem": [
+      38,
+      39
+    ],
+    "fingerSegmentAngles": [
+      [
+        24.491525885299506,
+        40.56966481424648
+      ],
+      [
+        52.190558822197055,
+        65.09256233456028
+      ]
+    ]
+  },
+  {
+    "version": "before",
+    "pose": "focus-0-1",
+    "fingertipSurfaceGap": [
+      0.00005259165926533836,
+      0.000023953761261253134
+    ],
+    "fingertipVerticesInsideStem": [
+      38,
+      39
+    ],
+    "fingerSegmentAngles": [
+      [
+        24.491525885299506,
+        40.56966481424648
+      ],
+      [
+        52.190558822197055,
+        65.09256233456028
+      ]
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "receiving-1.101-0",
+    "fingertipSurfaceGap": [
+      0.0054919412556686175,
+      0.0033319026675009355
+    ],
+    "fingertipVerticesInsideStem": [
+      0,
+      0
+    ],
+    "fingerSegmentAngles": [
+      [
+        11.861329191473049,
+        42.07929270468584
+      ],
+      [
+        108.46392093325838,
+        61.553414622363626
+      ]
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "focus-0-0",
+    "fingertipSurfaceGap": [
+      0.006633634836225,
+      0.0033319026675223914
+    ],
+    "fingertipVerticesInsideStem": [
+      0,
+      0
+    ],
+    "fingerSegmentAngles": [
+      [
+        11.861329191428267,
+        31.50574495139655
+      ],
+      [
+        116.76434246658137,
+        47.96776102051831
+      ]
+    ]
+  },
+  {
+    "version": "after",
+    "pose": "focus-0-1",
+    "fingertipSurfaceGap": [
+      0.006633634836225,
+      0.0033319026675223914
+    ],
+    "fingertipVerticesInsideStem": [
+      0,
+      0
+    ],
+    "fingerSegmentAngles": [
+      [
+        11.861329191428267,
+        31.50574495139655
+      ],
+      [
+        116.76434246658137,
+        47.96776102051831
+      ]
+    ]
+  }
+]

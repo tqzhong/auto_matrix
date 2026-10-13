@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+not ok 1 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 351.788625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:1:5219'
+  failureType: 'testCodeFailure'
+  error: 'finger 1 penetrates the handle at bend 0: 0.0325936815984278,0.049617274743468456,-0.006447154213674368'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:112:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 572.389833

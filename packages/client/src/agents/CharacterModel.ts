@@ -1151,17 +1151,6 @@ export class CharacterModels {
       poseHelGarage(rig, input.helGarage);
       poseHelElevator(rig, input.helElevator);
       poseHelDanceDoor(rig, input.helDoorPush);
-      if (input.spoon !== undefined && rig.spoon) {
-        const wrist = rig.hero.bones.get('wrist_R')!;
-        rig.hero.bones.get('finger1-1_R')!.rotation.z = -.28;
-        wrist.updateWorldMatrix(true, true);
-        const thumb = rig.hero.bones.get('finger1-3_R')!.localToWorld(new THREE.Vector3(.02, -.02, .012));
-        const index = rig.hero.bones.get('finger2-3_R')!.localToWorld(new THREE.Vector3(.015, -.015, 0));
-        const contact = wrist.worldToLocal(thumb.lerp(index, .5));
-        if (rig.spoon.root.parent !== wrist) wrist.add(rig.spoon.root);
-        const grip = new THREE.Vector3(0, .08, 0).multiply(rig.spoon.root.scale).applyQuaternion(rig.spoon.root.quaternion);
-        rig.spoon.root.position.copy(contact.sub(grip));
-      }
       poseSpoonHands(rig, input.spoonLesson);
       poseOracleReception(rig, input.oracleReception);
       poseOracleWaiting(rig, input.oracleWaiting);
