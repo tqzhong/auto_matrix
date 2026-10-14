@@ -366,7 +366,7 @@ export class HeroModels {
       }
       // Supporting cast shares the existing skinned meshes until bespoke likenesses are produced.
       if (support === 'niobe') {
-        if (material.name === 'Skin') material.color.setHex(0x986d4e);
+        if (material.name === 'Skin' || material.name === 'Wrist skin') material.color.setHex(0x986d4e);
         if (/jacket/i.test(object.name)) material.color.setHex(0x653327);
         if (/Hair|hair|Groom|groom/.test(material.name)) { object.visible = false; object.userData.reloadedHidden = true; }
       }
@@ -935,6 +935,7 @@ export class HeroModels {
       else if (part.mesh.userData.patientBody) part.mesh.visible = patient;
       else if (part.mesh.userData.tracking) part.mesh.visible = trackingShirt;
       else if (part.mesh.userData.club) part.mesh.visible = clubClothes;
+      else if (part.mesh.userData.wristSkin && (trackingShirt && completePatientBody || clubClothes && rig.wardrobe.some(part => part.mesh.userData.club))) part.mesh.visible = false;
       else if (part.mesh.userData.clubJacket && clubClothes) part.mesh.visible = false;
       else if ((officeShirt || trackingShirt) && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const dojoCloth = input.dojoOutfit && part.mesh.userData.dojoCostume && !part.mesh.userData.dojoSkin;
