@@ -4,9 +4,10 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { streetResetPose, upperDiggerFall, dockLastStandPose } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
+import { enableSkinnedCulling } from './SkinnedBounds.js';
 
 interface HeadEntry {
-  role: 'oracle' | 'sati' | 'spoon_boy' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
+  role: 'oracle' | 'sati' | 'spoon_boy' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid' | 'cypher';
   fallback: THREE.Group;
   model?: THREE.Group;
   face?: THREE.Mesh;
@@ -17,6 +18,7 @@ interface HeadEntry {
   neck?: THREE.Object3D;
   headset?: THREE.Group;
   evacuation?: boolean;
+  hero?: { skin: THREE.SkinnedMesh; original: THREE.BufferGeometry; masked?: THREE.BufferGeometry; details: THREE.Mesh[] };
 }
 
 /** Detailed heads retain the existing performance joints and saved body poses. */
@@ -33,12 +35,21 @@ export class EpilogueHeads {
     this.entries.set(rig, { role, fallback, closed: { value: 0 }, loading: false, active: false, neck: rig.root.getObjectByName(`${role}-neck`) });
   }
 
+  trackCypher(rig: CharacterRig): void {
+    const hero = rig.hero!, head = hero.bones.get('head')!;
+    const fallback = new THREE.Group(); fallback.name = 'cypher-fallback-head';
+    fallback.add(...head.children); head.add(fallback);
+    const skin = hero.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    this.entries.set(rig, { role: 'cypher', fallback, closed: { value: 0 }, loading: false, active: false,
+      hero: { skin, original: skin.geometry, details: hero.wardrobe.filter(part => part.hair || (part.mesh.material as THREE.Material).name === 'Eyes').map(part => part.mesh) } });
+  }
+
   update(rig: CharacterRig, input: MotionInput): void {
     const entry = this.entries.get(rig); if (!entry) return;
     entry.evacuation = input.dockEvacuation?.role === 'colt';
     // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
     // retain their existing head until their own likeness asset is authored.
-    entry.active = entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
+    entry.active = entry.role === 'cypher' ? Boolean(input.realWorld) : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
       : entry.role === 'mifune' && input.dockLastStand ? dockLastStandPose(input.dockLastStand).dead : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
@@ -49,16 +60,21 @@ export class EpilogueHeads {
     if (entry.fallback.visible === visible) rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
     entry.fallback.visible = !visible;
     if (entry.neck) entry.neck.visible = !visible;
-    if (entry.model) entry.model.visible = visible;
+    const firstPerson = entry.role === 'cypher' && input.firstPerson;
+    if (entry.model) entry.model.visible = visible && !firstPerson;
+    if (entry.hero) {
+      entry.hero.skin.geometry = visible ? entry.hero.masked! : entry.hero.original;
+      entry.hero.details.forEach(mesh => { mesh.visible = !visible && !firstPerson; });
+    }
     if (entry.face?.morphTargetInfluences) entry.face.morphTargetInfluences[0] = entry.closed.value;
-    if (entry.eyes) entry.eyes.visible = entry.closed.value < .98;
+    if (entry.eyes) entry.eyes.visible = entry.closed.value < .98 && (!entry.hero || visible && !firstPerson);
     if (entry.headset) entry.headset.visible = Boolean(entry.evacuation);
   }
 
   private async load(rig: CharacterRig, entry: HeadEntry): Promise<void> {
     const role = entry.role === 'oracle' ? 'oracle-revolutions' : entry.role;
     const asset = await new GLTFLoader().loadAsync(`/assets/characters/${role}-head.glb`);
-    const model = asset.scene, face = model.getObjectByName(`${role}-anatomical-head`) as THREE.Mesh;
+    const model = asset.scene; let face = model.getObjectByName(`${role}-anatomical-head`) as THREE.Mesh;
     const metadata = asset.parser.json.extras;
     const row = metadata.atlasRow ?? (entry.role === 'sati' ? 1 : 0);
     model.name = `${role}-detailed-head`;
@@ -72,7 +88,7 @@ export class EpilogueHeads {
     const digger = entry.role === 'zee' || entry.role === 'charra';
     const captain = ['niobe', 'lock', 'roland'].includes(entry.role);
     const apu = entry.role === 'mifune' || entry.role === 'kid';
-    const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(entry.role);
+    const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'cypher'].includes(entry.role);
     const program = entry.role === 'architect' || entry.role === 'seraph' || entry.role === 'keymaker' || entry.role === 'rama_kandra' || entry.role === 'kamala' || entry.role === 'trainman';
     const child = entry.role === 'spoon_boy';
     const atlas = metadata.atlasSize ?? [1254, 1254], origin = metadata.profileOrigin ?? [627, row * 627];
@@ -83,6 +99,7 @@ export class EpilogueHeads {
       shader.uniforms.eyesClosed = entry.closed;
       shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>
         attribute float _face_weight;
+        ${entry.hero ? 'attribute vec3 _head_rest; attribute vec3 _head_normal;' : ''}
         #ifndef USE_UV1
           attribute vec2 uv1;
         #endif
@@ -90,7 +107,7 @@ export class EpilogueHeads {
         varying vec3 vHeadNormal;
         varying float vFaceWeight;
         varying vec3 vHeadRest;`).replace('#include <begin_vertex>', `#include <begin_vertex>
-        vFaceWeight = _face_weight; vHeadRest = position; vProfileUv = uv1; vHeadNormal = normal;`);
+        vFaceWeight = _face_weight; vHeadRest = ${entry.hero ? '_head_rest' : 'position'}; vProfileUv = uv1; vHeadNormal = ${entry.hero ? '_head_normal' : 'normal'};`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
         uniform vec3 headSkin; uniform float eyesClosed;
         varying float vFaceWeight; varying vec3 vHeadRest; varying vec2 vProfileUv; varying vec3 vHeadNormal;`)
@@ -141,6 +158,41 @@ export class EpilogueHeads {
       this.mesh(entry.eyes, sphere, iris, [side * x, y, z + r * .87], [r * .48, r * .48, r * .20]);
       this.mesh(entry.eyes, sphere, pupil, [side * x, y, z + r * 1.035], [r * .23, r * .23, r * .075]);
     }
+    if (entry.hero) {
+      const { skin, original } = entry.hero, head = rig.hero!.bones.get('head')!, chest = rig.hero!.bones.get('chest')!;
+      const headIndex = skin.skeleton.bones.indexOf(head), chestIndex = skin.skeleton.bones.indexOf(chest);
+      const eye = head.userData.cameraEye as THREE.Vector3, scale = head.userData.cypherEyeHalfWidth / metadata.eye[0];
+      const offset = eye.clone().sub(new THREE.Vector3(0, metadata.eye[1], metadata.eye[2]).multiplyScalar(scale));
+      const transform = skin.skeleton.boneInverses[headIndex].clone().invert().multiply(new THREE.Matrix4().makeTranslation(offset.x, offset.y, offset.z))
+        .multiply(new THREE.Matrix4().makeScale(scale, scale, scale));
+      const geometry = this.geometry(face.geometry.clone()), rest = geometry.attributes.position.clone();
+      geometry.setAttribute('_head_rest', rest); geometry.setAttribute('_head_normal', geometry.attributes.normal.clone());
+      const indices: number[] = [], weights: number[] = [];
+      for (let i = 0; i < rest.count; i++) {
+        const blend = THREE.MathUtils.smoothstep(rest.getY(i), -.52, -.32);
+        indices.push(headIndex, chestIndex, 0, 0); weights.push(blend, 1 - blend, 0, 0);
+      }
+      geometry.applyMatrix4(transform);
+      const linear = new THREE.Matrix3().setFromMatrix4(transform);
+      geometry.morphAttributes.position?.forEach(attribute => { (attribute as THREE.BufferAttribute).applyMatrix3(linear); });
+      geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(indices, 4));
+      geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
+      const replacement = new THREE.SkinnedMesh(geometry, material); replacement.name = face.name;
+      replacement.bind(skin.skeleton, skin.bindMatrix); replacement.castShadow = replacement.receiveShadow = true;
+      face.removeFromParent(); model.add(replacement); face = replacement; entry.face = face;
+      entry.eyes.scale.setScalar(scale); entry.eyes.position.copy(offset); head.add(entry.eyes);
+      const masked = this.geometry(new THREE.BufferGeometry()); masked.attributes = original.attributes;
+      const sourceIndex = original.index!, joints = original.attributes.skinIndex, influence = original.attributes.skinWeight;
+      const toHead = skin.skeleton.boneInverses[headIndex].clone().multiply(skin.bindMatrix), point = new THREE.Vector3();
+      const covered = (i: number) => [0, 1, 2, 3].some(j => joints.getComponent(i, j) === headIndex && influence.getComponent(i, j) > .05)
+        && point.fromBufferAttribute(original.attributes.position, i).applyMatrix4(toHead).y > offset.y - .50 * scale;
+      const retained: number[] = [];
+      for (let i = 0; i < sourceIndex.count; i += 3) {
+        const triangle = [sourceIndex.getX(i), sourceIndex.getX(i + 1), sourceIndex.getX(i + 2)];
+        if (!triangle.some(covered)) retained.push(...triangle);
+      }
+      masked.setIndex(retained); entry.hero.masked = masked;
+    }
     this.groom(model, face.geometry, entry.role);
     if (entry.role === 'keymaker') this.readingGlasses(model, metadata.eye[0]);
     if (entry.role === 'colt') {
@@ -158,7 +210,8 @@ export class EpilogueHeads {
       this.mesh(headset, sphere, pads, [.085, -.23, .36], [.042, .025, .024]).name = 'colt-radio-microphone';
     }
     if (this.disposed) { this.release(); return; }
-    entry.model = model; model.visible = entry.active; entry.fallback.visible = !entry.active; rig.head.add(model);
+    entry.model = model; model.visible = entry.active; entry.fallback.visible = !entry.active;
+    if (entry.hero) { rig.hero!.root.add(model); enableSkinnedCulling(model); } else rig.head.add(model);
     rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
   }
 
@@ -171,7 +224,7 @@ export class EpilogueHeads {
   }
 
   private groom(parent: THREE.Group, skin: THREE.BufferGeometry, role: HeadEntry['role']): void {
-    if (role === 'spoon_boy') return;
+    if (role === 'spoon_boy' || role === 'cypher') return;
     const oracle = role === 'oracle', position = skin.attributes.position, normal = skin.attributes.normal, indices = skin.index!;
     const apu = role === 'mifune' || role === 'kid';
     const digger = role === 'zee' || role === 'charra', captain = ['niobe', 'lock', 'roland'].includes(role);

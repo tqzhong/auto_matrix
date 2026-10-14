@@ -108,7 +108,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
@@ -150,7 +150,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -200,10 +200,11 @@ export class HeroModels {
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
     const pedestrian = support === 'pedestrian';
-    const [asset, office, tracking, club] = await Promise.all([this.load(pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
+    const [asset, office, tracking, club, cypherCostume] = await Promise.all([this.load(pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
       id === 'neo' && !pedestrian && !apartmentRole && support !== 'tank' && support !== 'cypher' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
-      id === 'trinity' && !support ? this.load('trinity-club') : undefined]);
+      id === 'trinity' && !support ? this.load('trinity-club') : undefined,
+      support === 'cypher' ? this.load('cypher-reality') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
     const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
@@ -266,6 +267,13 @@ export class HeroModels {
       });
       root.getObjectByName('Fitted_leather_jacket')!.userData.clubJacket = true;
     }
+    if (cypherCostume) cypherCostume.scene.traverse(source => {
+      if (!(source instanceof THREE.SkinnedMesh)) return;
+      const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name; mesh.userData.cypherCostume = true;
+      const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
+      mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
+      this.skeletons.add(skeleton); root.add(mesh);
+    });
     this.forearms.attach(root, bones, rest);
     if (guard) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
@@ -281,6 +289,7 @@ export class HeroModels {
     const metadata = asset.parser.json.extras as { eye: number[]; head: number[]; waist: number[] };
     const eye = new THREE.Vector3().fromArray(metadata.eye).sub(new THREE.Vector3().fromArray(metadata.head));
     head.userData.cameraEye = eye.clone().setX(0);
+    if (support === 'cypher') head.userData.cypherEyeHalfWidth = Math.abs(eye.x);
     if (id === 'neo' && !support) {
       // The old eye markers sit behind the registered face. The exposed patient
       // view needs its centre just outside that surface, before head culling.
@@ -308,7 +317,7 @@ export class HeroModels {
     let trackingSkin: HeroRig['trackingSkin'];
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
-      if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume) { object.visible = false; object.userData.reloadedHidden = true; }
+      if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume || object.userData.cypherCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
       if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && !object.userData.dojoSkin && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
         // The existing head/hands mesh also contains shoulder caps. They sit
@@ -378,7 +387,7 @@ export class HeroModels {
       wardrobe.push({ mesh: object, color: material.color.clone(), map: material.map, bumpMap: material.bumpMap, bumpScale: material.bumpScale,
         roughness: material.roughness, metalness: material.metalness, side: material.side, emissive: material.emissive.clone(), emissiveIntensity: material.emissiveIntensity,
         outer: panels.some(p => p.mesh === object),
-        hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) || Boolean(object.userData.dojoCostume && !object.userData.dojoSkin) });
+        hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) || Boolean(object.userData.cypherCostume || object.userData.dojoCostume && !object.userData.dojoSkin) });
       if (id !== 'neo') return;
       addMirrorArrival(object);
       material.onBeforeCompile = (shader, renderer) => {
@@ -948,13 +957,15 @@ export class HeroModels {
       if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);
       material.emissiveIntensity = patientSurface ? .06 : part.emissiveIntensity;
       if (patientLegs) material.color.setHex(0xa97c70);
-      else if (part.cloth && input.realWorld && rig.support !== 'link') material.color.setHex(rig.support === 'ghost' ? 0x232725 : 0x706c62);
+      else if (part.cloth && input.realWorld && rig.support !== 'link' && !part.mesh.userData.cypherCostume) material.color.setHex(rig.support === 'ghost' ? 0x232725 : 0x706c62);
       else material.color.copy(part.color);
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
     }
     farewellAppearance?.update(input);
     this.constructSuits.get(rig)?.update(input);
     for (const part of rig.wardrobe) {
+      if (part.mesh.userData.cypherCostume) part.mesh.visible = Boolean(input.realWorld);
+      else if (rig.support === 'cypher' && input.realWorld && /Tailored.coat.upper|Black.crew.neck/.test(part.mesh.name)) part.mesh.visible = false;
       if (part.mesh.userData.dojoCostume) {
         part.mesh.visible = Boolean(input.dojoOutfit);
       } else if (input.dojoOutfit && (part.outer || part.cloth || /Black.crew.neck|shoes01/i.test(part.mesh.name))) part.mesh.visible = false;

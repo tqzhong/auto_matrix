@@ -13,7 +13,7 @@ import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.j
 
 async function models(t: test.TestContext) {
   const assets = new Map();
-  for (const name of ['neo', 'trinity', 'smith', 'morpheus', 'neo-office', 'neo-tracking', 'trinity-club', 'choi', 'dujour']) {
+  for (const name of ['neo', 'trinity', 'smith', 'morpheus', 'neo-office', 'neo-tracking', 'trinity-club', 'choi', 'dujour', 'cypher-reality', 'cypher-head']) {
     const glb = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
     const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
     for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }

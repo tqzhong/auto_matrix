@@ -17,6 +17,16 @@ spec = importlib.util.spec_from_file_location('character_builder', Path(__file__
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 REVISION = builder.REVISION
 REFERENCES = {
+    'cypher': {
+        'targets': {'macrodetails/caucasian-male-young': .72, 'macrodetails/caucasian-male-old': .28,
+                    'head/head-rectangular': .16, 'head/head-fat-decr': .14,
+                    'nose/nose-scale-depth-incr': .24, 'nose/nose-curve-convex': .18},
+        'row': 0, 'eye': [216, 419, 435], 'ys': [1235, 818, 696, 666, 650, 565, 435, 97],
+        'chin': -.335, 'skin': [.63, .42, .31], 'atlas': 'cypher-face-reference.png',
+        'atlas_size': [1254, 1254], 'panel_top': 0, 'profile_anchor': 114, 'profile_y': 0,
+        'neck_sample': [309, 976], 'cheek_sample': [1000, 610], 'profile_ear': [459, 518],
+        'anatomical_neck': True,
+    },
     'spoon_boy': {
         'targets': {'macrodetails/caucasian-male-child': 1},
         'row': 0, 'eye': [215, 416, 486], 'ys': [1235, 817, 719, 706, 684, 640, 486, 139],
