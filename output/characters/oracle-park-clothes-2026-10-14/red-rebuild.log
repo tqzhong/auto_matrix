@@ -1,0 +1,56 @@
+TAP version 13
+# Subtest: an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+not ok 1 - an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+  ---
+  duration_ms: 261.368708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-clothes.test.mts:1:6131'
+  failureType: 'testCodeFailure'
+  error: |-
+    paused cloth resends unchanged vertex buffers
+    + actual - expected
+
+      [
+    +   9,
+    +   9,
+    +   7,
+    +   7
+    -   5,
+    -   5,
+    -   3,
+    -   3
+      ]
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 5
+    1: 5
+    2: 3
+    3: 3
+  actual:
+    0: 9
+    1: 9
+    2: 7
+    3: 7
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-clothes.test.mts:108:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+ok 2 - standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+  ---
+  duration_ms: 246.657416
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 738.976625

@@ -1,0 +1,47 @@
+TAP version 13
+# Subtest: the park collar and lapels lie outside the chest instead of disappearing into the coat
+not ok 1 - the park collar and lapels lie outside the chest instead of disappearing into the coat
+  ---
+  duration_ms: 221.02825
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-clothes.test.mts:1:4764'
+  failureType: 'testCodeFailure'
+  error: |-
+    the chest hides parts of the visible collar/lapels
+    + actual - expected
+
+    + [
+    +   'flat panel triangle 0: 0.03538785658109944',
+    +   'flat panel triangle 1: 0.014804259111489415',
+    +   'flat panel triangle 2: 0.03538785675100087',
+    +   'flat panel triangle 3: 0.014804258801099479',
+    +   'flat panel triangle 1: 0.012868997898127787',
+    +   'flat panel triangle 3: 0.012868999525920799'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'flat panel triangle 0: 0.03538785658109944'
+    1: 'flat panel triangle 1: 0.014804259111489415'
+    2: 'flat panel triangle 2: 0.03538785675100087'
+    3: 'flat panel triangle 3: 0.014804258801099479'
+    4: 'flat panel triangle 1: 0.012868997898127787'
+    5: 'flat panel triangle 3: 0.012868999525920799'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-clothes.test.mts:99:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 447.478416

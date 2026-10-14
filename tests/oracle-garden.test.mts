@@ -138,7 +138,7 @@ test('the park handbag stays in the hand before lowering, both anatomical hands 
       if (elapsed === 2.4) {
         const bottom = bag.localToWorld(new THREE.Vector3(0, -.245, 0));
         const hit = new THREE.Raycaster(bottom.clone().add(new THREE.Vector3(0, .08, 0)), new THREE.Vector3(0, -1, 0))
-          .intersectObject(rig.root.getObjectByName('oracle-park-skirt')!, false)[0];
+          .intersectObjects(['oracle-park-skirt', 'oracle-park-dress-upper'].map(name => rig.root.getObjectByName(name)!), false)[0];
         assert.ok(hit, 'the handbag needs an actual dress surface under its base');
         const gap = bottom.y - hit.point.y;
         assert.ok(gap > -.012 && gap < .035, `the bag floats over or penetrates the lap by ${gap}`);

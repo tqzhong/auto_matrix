@@ -540,27 +540,54 @@ export class CharacterModels {
     if (state.id === 'oracle' || state.id === 'sati') {
       const outfit = new THREE.Group(); outfit.name = `${state.id}-park-outfit`; outfit.visible = state.id === 'sati'; detail.add(outfit);
       const dress = state.id === 'sati' ? cloth : this.material(new THREE.MeshStandardMaterial({ map: this.oracleFloral(), roughness: .94, side: THREE.DoubleSide, bumpMap: this.fabric, bumpScale: .0015 }));
-      const geometry = new THREE.CylinderGeometry(.51, .7, 1.58, state.id === 'sati' ? 64 : 32, state.id === 'sati' ? 16 : 10, true);
+      const geometry = new THREE.CylinderGeometry(state.id === 'oracle' ? .527 : .51, .7, 1.58, 64, state.id === 'sati' ? 16 : 32, true);
       const skirt = this.mesh(outfit, this.geometry(geometry), dress, [0, 0, 0]); skirt.name = state.id === 'oracle' ? 'oracle-park-skirt' : 'sati-skirt';
       // Keep the neutral dress valid outside an epilogue pose as well.
       if (state.id === 'sati') {
         geometry.scale(.95, 1.07 / 1.58, .66); geometry.translate(0, 1.565, 0);
-      } else geometry.translate(0, 1.19, 0);
+      } else { geometry.scale(1, 1, .59); geometry.translate(0, 1.19, 0); }
       skirt.userData.standing = Float32Array.from(geometry.attributes.position.array);
       if (state.id === 'oracle') {
         const coat = this.material(new THREE.MeshStandardMaterial({ color: '#304b59', roughness: .91, side: THREE.DoubleSide, bumpMap: this.fabric, bumpScale: .002 }));
         const upper = new THREE.Group(); upper.name = 'oracle-park-upper'; upper.visible = false; torso.add(upper);
-        this.mesh(upper, this.geometry(jacket.clone()), dress, [0, 0, 0], [1, 1, .59]);
-        const outer = new THREE.LatheGeometry(bodyPoints.map(p => new THREE.Vector2(p.x + .055, p.y)), 40, .49, Math.PI * 2 - .98);
-        this.mesh(upper, this.geometry(outer), coat, [0, 0, 0], [1, 1, .65]);
+        const profile = [.12, .18, .24, .30, .35, .42, .50, .57, ...bodyPoints.filter(p => p.y >= .63).map(p => p.y)].map(y => {
+          const end = bodyPoints.findIndex(point => point.y >= y), a = bodyPoints[end - 1], b = bodyPoints[end];
+          return new THREE.Vector2(THREE.MathUtils.lerp(a.x, b.x, (y - a.y) / (b.y - a.y)), y);
+        });
+        const inner = this.mesh(upper, this.geometry(new THREE.LatheGeometry(profile, 64)), dress, [0, 0, 0], [1, 1, .59]);
+        inner.name = 'oracle-park-dress-upper'; inner.userData.standing = Float32Array.from(inner.geometry.attributes.position.array);
+        const outer = new THREE.LatheGeometry(profile.map(p => new THREE.Vector2(p.x + .055, p.y)), 54, Math.PI * 5 / 32, Math.PI * 54 / 32);
+        const shell = this.mesh(upper, this.geometry(outer), coat, [0, 0, 0], [1, 1, .65]);
+        shell.name = 'oracle-park-coat-upper'; shell.userData.standing = Float32Array.from(shell.geometry.attributes.position.array);
         const collar = this.material(new THREE.MeshStandardMaterial({ color: '#d3cbb6', roughness: .95, side: THREE.DoubleSide, bumpMap: this.fabric, bumpScale: .001 }));
+        const curvedPanel = (corners: number[][]) => {
+          const positions: number[] = [], uv: number[] = [], indices: number[] = [];
+          const corners3 = corners.map(point => new THREE.Vector3(...point as [number, number, number]));
+          for (let row = 0; row <= 12; row++) for (let column = 0; column <= 6; column++) {
+            const u = column / 6, v = row / 12;
+            const point = corners3[0].clone().lerp(corners3[3], v).lerp(corners3[1].clone().lerp(corners3[2], v), u);
+            const y = THREE.MathUtils.clamp(point.y, bodyPoints[0].y, bodyPoints.at(-1)!.y);
+            const end = Math.max(1, bodyPoints.findIndex(part => part.y >= y)), a = bodyPoints[end - 1], b = bodyPoints[end];
+            const radius = THREE.MathUtils.lerp(a.x, b.x, (y - a.y) / (b.y - a.y)) + .055;
+            point.z = Math.max(point.z, Math.sqrt(Math.max(0, radius * radius - point.x * point.x)) * .65 + .016)
+              + Math.sin(u * Math.PI) * Math.sin(v * Math.PI) * .012;
+            positions.push(point.x, point.y, point.z); uv.push(u, v);
+            if (row < 12 && column < 6) { const i = row * 7 + column; indices.push(i, i + 7, i + 1, i + 1, i + 7, i + 8); }
+          }
+          const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+          geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals(); return geometry;
+        };
+        const collars: THREE.BufferGeometry[] = [], lapels: THREE.BufferGeometry[] = [];
         for (const side of [-1, 1]) {
-          this.surface(upper, [[side * .13, 1.76, .15], [side * .29, 1.60, .28], [side * .33, 1.24, .31], [side * .12, 1.44, .30]], collar);
-          this.surface(upper, [[side * .31, 1.49, .31], [side * .44, 1.30, .30], [side * .29, .91, .30], [side * .23, 1.24, .34]], coat);
+          collars.push(curvedPanel([[side * .13, 1.76, .15], [side * .29, 1.60, .28], [side * .33, 1.24, .31], [side * .12, 1.44, .30]]));
+          lapels.push(curvedPanel([[side * .31, 1.49, .31], [side * .44, 1.30, .30], [side * .29, .91, .30], [side * .23, 1.24, .34]]));
           this.mesh(upper, this.cylinder, coat, [side * .41, .48, .27], [.008, .26, .008]).rotation.z = side * 1.35;
         }
-        const tails = new THREE.CylinderGeometry(.57, .81, 1.92, 48, 16, true, .49, Math.PI * 2 - .98);
-        tails.scale(1, 1, .69); tails.translate(0, 1.08, 0);
+        this.mesh(upper, this.geometry(mergeGeometries(collars)!), collar, [0, 0, 0]).name = 'oracle-park-collar-pair';
+        this.mesh(upper, this.geometry(mergeGeometries(lapels)!), coat, [0, 0, 0]).name = 'oracle-park-lapel-pair';
+        [...collars, ...lapels].forEach(geometry => geometry.dispose());
+        const tails = new THREE.CylinderGeometry(.582, .81, 1.92, 54, 36, true, Math.PI * 5 / 32, Math.PI * 54 / 32);
+        tails.scale(1, 1, .65); tails.translate(0, 1.02, 0);
         const lower = this.mesh(outfit, this.geometry(tails), coat, [0, 0, 0]); lower.name = 'oracle-park-coat';
         lower.userData.standing = Float32Array.from(tails.attributes.position.array);
         const bag = new THREE.Group(); bag.name = 'oracle-park-handbag'; outfit.add(bag);
