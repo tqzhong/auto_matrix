@@ -227,7 +227,7 @@ test('dojo bare soles stay on the mat and the sash follows the jacket through gu
         const torso: number[] = [], index = geometry.index!, joints = geometry.attributes.skinIndex, weights = geometry.attributes.skinWeight;
         for (let i = 0; i < index.count; i += 3) {
           const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
-          const sleeve = triangle.some(vertex => [0, 1, 2, 3].some(n => /^(shoulder|elbow|wrist|finger)/.test(jacket.skeleton.bones[joints.getComponent(vertex, n)].name) && weights.getComponent(vertex, n) > .2));
+          const sleeve = triangle.some(vertex => [0, 1, 2, 3].some(n => /^(shoulder|elbow|forearm_twist|wrist|finger)/.test(jacket.skeleton.bones[joints.getComponent(vertex, n)].name) && weights.getComponent(vertex, n) > .2));
           if (!sleeve) torso.push(...triangle);
         }
         geometry.setIndex(torso);
