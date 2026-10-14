@@ -1,0 +1,129 @@
+TAP version 13
+# Subtest: neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 1 - neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 238.1455
+  type: 'test'
+  ...
+# Subtest: trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 2 - trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 60.179459
+  type: 'test'
+  ...
+# Subtest: smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 3 - smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 26.632583
+  type: 'test'
+  ...
+# Subtest: morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 4 - morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 302.212708
+  type: 'test'
+  ...
+# Subtest: neo: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 5 - neo: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 29061.342166
+  type: 'test'
+  ...
+# Subtest: trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 6 - trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 27351.896709
+  type: 'test'
+  ...
+# Subtest: smith: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 7 - smith: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 26795.4775
+  type: 'test'
+  ...
+# Subtest: morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 8 - morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 27859.39075
+  type: 'test'
+  ...
+# Subtest: restored hands match animated hands and release to their original pose without carrying over a grip
+ok 9 - restored hands match animated hands and release to their original pose without carrying over a grip
+  ---
+  duration_ms: 784.282667
+  type: 'test'
+  ...
+# Subtest: Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+ok 10 - Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+  ---
+  duration_ms: 246.262709
+  type: 'test'
+  ...
+# Subtest: the delivered Smith palm reaches the cookie plate before it leaves the table
+ok 11 - the delivered Smith palm reaches the cookie plate before it leaves the table
+  ---
+  duration_ms: 205.180583
+  type: 'test'
+  ...
+# {"plateGap":2.682298827494378e-13,"palm":[-4.800000000000182,2.179999999999732,-20.149999999999636],"shoulder":[-4.770857062331743,2.622247345168856,-21.540319658412955],"forearm":[-0.025925425677162495,-0.6481356419290627,0.03240678209645305]}
+# {"samples":6673,"skinGap":0.005267588141806279,"penetration":0}
+# Subtest: contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+ok 12 - contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+  ---
+  duration_ms: 387.39625
+  type: 'test'
+  ...
+# {"samples":6673,"skinGap":0.0031312674973378307,"penetration":0}
+# Subtest: the actual seated Oracle and bending Smith stay outside the solid kitchen table
+ok 13 - the actual seated Oracle and bending Smith stay outside the solid kitchen table
+  ---
+  duration_ms: 246.449
+  type: 'test'
+  ...
+# Subtest: the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+ok 14 - the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+  ---
+  duration_ms: 120.136541
+  type: 'test'
+  ...
+# {"elapsed":0,"shoeClearance":0.019722314581661262}
+# {"elapsed":0.3,"shoeClearance":0.01972231458188592}
+# {"elapsed":1,"shoeClearance":0.01972231458179972}
+# {"elapsed":2,"shoeClearance":0.019722314581180428}
+# {"elapsed":3,"shoeClearance":0.019722314581609002}
+# Subtest: the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+ok 15 - the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+  ---
+  duration_ms: 4102.858958
+  type: 'test'
+  ...
+# {"phase":"contact","elapsed":0,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.2,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.4,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.6,"samples":113,"skinGap":0.28314826476162125,"penetration":0}
+# {"phase":"contact","elapsed":0.8,"samples":3382,"skinGap":0.17571767018489481,"penetration":0}
+# {"phase":"contact","elapsed":1.2,"samples":6673,"skinGap":0.0027968212234554812,"penetration":0}
+# {"phase":"contact","elapsed":1.6,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"contact","elapsed":2.2,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":0,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":1,"samples":6673,"skinGap":0.003128688666038215,"penetration":0}
+# {"phase":"coating","elapsed":2.5,"samples":6673,"skinGap":0.0030993430627859198,"penetration":0}
+# {"phase":"coating","elapsed":3.5,"samples":6673,"skinGap":0.0031048221335368,"penetration":0}
+# {"phase":"coating","elapsed":4.25,"samples":2761,"skinGap":0.2299019679576304,"penetration":0}
+# {"phase":"coating","elapsed":5,"samples":0,"skinGap":null,"penetration":0}
+# Subtest: Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+ok 16 - Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+  ---
+  duration_ms: 288.11075
+  type: 'test'
+  ...
+# {"maximumWristBend":0.6742895720974654,"maximumTravelPer40ms":0.06332494661043142}
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 112717.072458

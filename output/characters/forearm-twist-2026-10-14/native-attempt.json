@@ -1,0 +1,8 @@
+{
+  "url": "http://127.0.0.1:5391/",
+  "httpStatus": 200,
+  "tab": "25",
+  "navigation": "Page.navigate timed out after 20 seconds",
+  "sameTabRecovery": "Emulation.setFocusEmulationEnabled timed out after 20 seconds",
+  "nativeAcceptance": false
+}

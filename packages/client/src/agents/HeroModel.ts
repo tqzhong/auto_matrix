@@ -30,6 +30,7 @@ import { clubCloseness } from '@auto_matrix/shared';
 import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 import { PHONE_HAND } from './PhoneModel.js';
+import { ForearmTwist } from './ForearmTwist.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -55,6 +56,8 @@ export const HERO_IDS = ['neo', 'trinity', 'smith', 'morpheus'] as const;
 export type HeroId = typeof HERO_IDS[number];
 
 function mirrorBoneArrival(name: string): number {
+  const twist = /^forearm_twist_([RL])_([1-3])$/.exec(name);
+  if (twist) return twist[1] === 'R' ? .48 - Number(twist[2]) / 3 * .14 : .83 + Number(twist[2]) / 3 * .05;
   const finger = /^finger([1-5])-([1-3])_R$/.exec(name);
   if (finger) {
     const digit = Number(finger[1]), joint = Number(finger[2]);
@@ -116,6 +119,7 @@ export class HeroModels {
   private truths = new Map<HeroRig, TruthPerformance>();
   private jumps = new Map<HeroRig, JumpPerformance>();
   private constructs = new Map<HeroRig, ConstructPerformance>();
+  private forearms = new ForearmTwist();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
@@ -262,6 +266,7 @@ export class HeroModels {
       });
       root.getObjectByName('Fitted_leather_jacket')!.userData.clubJacket = true;
     }
+    this.forearms.attach(root, bones, rest);
     if (guard) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
       object.geometry = object.geometry.clone(); this.geometries.add(object.geometry);
@@ -1375,6 +1380,7 @@ export class HeroModels {
     this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();
     this.farewellAppearances.forEach(p => p.dispose()); this.farewellAppearances.clear();
     this.constructSuits.forEach(p => p.dispose()); this.constructSuits.clear();
+    this.forearms.dispose();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();

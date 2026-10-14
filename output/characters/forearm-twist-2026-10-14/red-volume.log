@@ -1,0 +1,174 @@
+TAP version 13
+# Subtest: neo: turning the palm preserves the actual forearm and cuff cross-section
+not ok 1 - neo: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 343.240333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:1:1425'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   'R, -2.8: neo-dojo-jacket vertex 3154 collapses to 0.1703390023348709 of its original radius',
+    +   'R, -1.4: neo-dojo-jacket vertex 3154 collapses to 0.7648775543559134 of its original radius',
+    +   'R, 1.4: Tracking_arms vertex 1371 collapses to 0.7648774976451277 of its original radius',
+    +   'R, 2.8: Tracking_arms vertex 1371 collapses to 0.1703389144695088 of its original radius',
+    +   'L, -2.8: Tracking_arms vertex 3339 collapses to 0.1703389144695088 of its original radius',
+    +   'L, -1.4: Tracking_arms vertex 3339 collapses to 0.7648774976451277 of its original radius',
+    +   'L, 1.4: neo-dojo-jacket vertex 8773 collapses to 0.7648775543559134 of its original radius',
+    +   'L, 2.8: neo-dojo-jacket vertex 8773 collapses to 0.1703390023348709 of its original radius'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'R, -2.8: neo-dojo-jacket vertex 3154 collapses to 0.1703390023348709 of its original radius'
+    1: 'R, -1.4: neo-dojo-jacket vertex 3154 collapses to 0.7648775543559134 of its original radius'
+    2: 'R, 1.4: Tracking_arms vertex 1371 collapses to 0.7648774976451277 of its original radius'
+    3: 'R, 2.8: Tracking_arms vertex 1371 collapses to 0.1703389144695088 of its original radius'
+    4: 'L, -2.8: Tracking_arms vertex 3339 collapses to 0.1703389144695088 of its original radius'
+    5: 'L, -1.4: Tracking_arms vertex 3339 collapses to 0.7648774976451277 of its original radius'
+    6: 'L, 1.4: neo-dojo-jacket vertex 8773 collapses to 0.7648775543559134 of its original radius'
+    7: 'L, 2.8: neo-dojo-jacket vertex 8773 collapses to 0.1703390023348709 of its original radius'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:63:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: trinity: turning the palm preserves the actual forearm and cuff cross-section
+not ok 2 - trinity: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 99.347708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:1:1425'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   'R, -2.8: Fitted_leather_jacket vertex 3138 collapses to 0.16999298932255302 of its original radius',
+    +   'R, -1.4: Fitted_leather_jacket vertex 3138 collapses to 0.764844733931898 of its original radius',
+    +   'R, 1.4: Fitted_leather_jacket vertex 3138 collapses to 0.7648445190959555 of its original radius',
+    +   'R, 2.8: Fitted_leather_jacket vertex 3138 collapses to 0.16999266073996627 of its original radius',
+    +   'L, -2.8: Fitted_leather_jacket vertex 7480 collapses to 0.16999266073996627 of its original radius',
+    +   'L, -1.4: Fitted_leather_jacket vertex 7480 collapses to 0.7648445190959555 of its original radius',
+    +   'L, 1.4: Fitted_leather_jacket vertex 7480 collapses to 0.764844733931898 of its original radius',
+    +   'L, 2.8: Fitted_leather_jacket vertex 7480 collapses to 0.16999298932255302 of its original radius'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'R, -2.8: Fitted_leather_jacket vertex 3138 collapses to 0.16999298932255302 of its original radius'
+    1: 'R, -1.4: Fitted_leather_jacket vertex 3138 collapses to 0.764844733931898 of its original radius'
+    2: 'R, 1.4: Fitted_leather_jacket vertex 3138 collapses to 0.7648445190959555 of its original radius'
+    3: 'R, 2.8: Fitted_leather_jacket vertex 3138 collapses to 0.16999266073996627 of its original radius'
+    4: 'L, -2.8: Fitted_leather_jacket vertex 7480 collapses to 0.16999266073996627 of its original radius'
+    5: 'L, -1.4: Fitted_leather_jacket vertex 7480 collapses to 0.7648445190959555 of its original radius'
+    6: 'L, 1.4: Fitted_leather_jacket vertex 7480 collapses to 0.764844733931898 of its original radius'
+    7: 'L, 2.8: Fitted_leather_jacket vertex 7480 collapses to 0.16999298932255302 of its original radius'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:63:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: smith: turning the palm preserves the actual forearm and cuff cross-section
+not ok 3 - smith: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 36.917125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:1:1425'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   'R, -2.8: Tailored_coat_upper vertex 6205 collapses to 0.2276300658985514 of its original radius',
+    +   'R, -1.4: Tailored_coat_upper vertex 6205 collapses to 0.7712207003845226 of its original radius',
+    +   'R, 1.4: Tailored_coat_upper vertex 6205 collapses to 0.7712209697764038 of its original radius',
+    +   'R, 2.8: Tailored_coat_upper vertex 6205 collapses to 0.22763037616034965 of its original radius',
+    +   'L, -2.8: Tailored_coat_upper vertex 5191 collapses to 0.23623180657740847 of its original radius',
+    +   'L, -1.4: Tailored_coat_upper vertex 5191 collapses to 0.7723255451444786 of its original radius',
+    +   'L, 1.4: Tailored_coat_upper vertex 5191 collapses to 0.7723255194499382 of its original radius',
+    +   'L, 2.8: Tailored_coat_upper vertex 5191 collapses to 0.23623177802137535 of its original radius'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'R, -2.8: Tailored_coat_upper vertex 6205 collapses to 0.2276300658985514 of its original radius'
+    1: 'R, -1.4: Tailored_coat_upper vertex 6205 collapses to 0.7712207003845226 of its original radius'
+    2: 'R, 1.4: Tailored_coat_upper vertex 6205 collapses to 0.7712209697764038 of its original radius'
+    3: 'R, 2.8: Tailored_coat_upper vertex 6205 collapses to 0.22763037616034965 of its original radius'
+    4: 'L, -2.8: Tailored_coat_upper vertex 5191 collapses to 0.23623180657740847 of its original radius'
+    5: 'L, -1.4: Tailored_coat_upper vertex 5191 collapses to 0.7723255451444786 of its original radius'
+    6: 'L, 1.4: Tailored_coat_upper vertex 5191 collapses to 0.7723255194499382 of its original radius'
+    7: 'L, 2.8: Tailored_coat_upper vertex 5191 collapses to 0.23623177802137535 of its original radius'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:63:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: turning the palm preserves the actual forearm and cuff cross-section
+not ok 4 - morpheus: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 336.834333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:1:1425'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   'R, -2.8: morpheus-hammer-sweater vertex 3251 collapses to 0.17033896161850207 of its original radius',
+    +   'R, -1.4: morpheus-hammer-sweater vertex 3251 collapses to 0.7648775259994374 of its original radius',
+    +   'R, 1.4: morpheus-dojo-jacket vertex 3016 collapses to 0.7648775482028939 of its original radius',
+    +   'R, 2.8: morpheus-dojo-jacket vertex 3016 collapses to 0.17033899533787789 of its original radius',
+    +   'L, -2.8: morpheus-dojo-jacket vertex 8559 collapses to 0.17033899533787789 of its original radius',
+    +   'L, -1.4: morpheus-dojo-jacket vertex 8559 collapses to 0.7648775482028939 of its original radius',
+    +   'L, 1.4: morpheus-hammer-sweater vertex 8811 collapses to 0.7648775259994374 of its original radius',
+    +   'L, 2.8: morpheus-hammer-sweater vertex 8811 collapses to 0.17033896161850207 of its original radius'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'R, -2.8: morpheus-hammer-sweater vertex 3251 collapses to 0.17033896161850207 of its original radius'
+    1: 'R, -1.4: morpheus-hammer-sweater vertex 3251 collapses to 0.7648775259994374 of its original radius'
+    2: 'R, 1.4: morpheus-dojo-jacket vertex 3016 collapses to 0.7648775482028939 of its original radius'
+    3: 'R, 2.8: morpheus-dojo-jacket vertex 3016 collapses to 0.17033899533787789 of its original radius'
+    4: 'L, -2.8: morpheus-dojo-jacket vertex 8559 collapses to 0.17033899533787789 of its original radius'
+    5: 'L, -1.4: morpheus-dojo-jacket vertex 8559 collapses to 0.7648775482028939 of its original radius'
+    6: 'L, 1.4: morpheus-hammer-sweater vertex 8811 collapses to 0.7648775259994374 of its original radius'
+    7: 'L, 2.8: morpheus-hammer-sweater vertex 8811 collapses to 0.17033896161850207 of its original radius'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:63:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1275.344333

@@ -1,0 +1,108 @@
+TAP version 13
+# Subtest: dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+ok 1 - dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+  ---
+  duration_ms: 701.051542
+  type: 'test'
+  ...
+# Subtest: Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+ok 2 - Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+  ---
+  duration_ms: 964.005167
+  type: 'test'
+  ...
+# Subtest: Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+not ok 3 - Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+  ---
+  duration_ms: 664.089959
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:1:54645'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'localToWorld')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:914:30)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+not ok 4 - Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+  ---
+  duration_ms: 275.063125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:1:69739'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'updateWorldMatrix')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Box3.expandByObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4851:10)
+    Box3.setFromObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4771:15)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:1072:42)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Trinity resumes in her club costume and restores her jacket after leaving
+ok 5 - Trinity resumes in her club costume and restores her jacket after leaving
+  ---
+  duration_ms: 43.983375
+  type: 'test'
+  ...
+# Subtest: shipped neo mesh has valid skinning and usable anatomical bones
+not ok 6 - shipped neo mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 21.691125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:1:157624'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:2436:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: shipped trinity mesh has valid skinning and usable anatomical bones
+ok 7 - shipped trinity mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 9.851083
+  type: 'test'
+  ...
+# Subtest: shipped smith mesh has valid skinning and usable anatomical bones
+ok 8 - shipped smith mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 4.999708
+  type: 'test'
+  ...
+# Subtest: shipped morpheus mesh has valid skinning and usable anatomical bones
+not ok 9 - shipped morpheus mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 9.105292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:1:157624'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/forearm-twist-2026-10-14/baseline-character.test.mts:2436:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 5
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3031.010333

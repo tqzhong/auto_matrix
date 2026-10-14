@@ -23,7 +23,7 @@ export class JumpPerformance {
       }
       const joints = object.geometry.attributes.skinIndex, weights = object.geometry.attributes.skinWeight;
       this.contacts.push({ mesh: object, indices: [...new Set(indices)].filter(i => ![0, 1, 2, 3].some(n => weights.getComponent(i, n) > .2
-        && /^(shoulder|elbow|wrist|finger)/.test(object.skeleton.bones[joints.getComponent(i, n)].name))) });
+        && /^(shoulder|elbow|forearm_twist|wrist|finger)/.test(object.skeleton.bones[joints.getComponent(i, n)].name))) });
     });
   }
   pose(gesture: TrainingGesture | undefined): void {

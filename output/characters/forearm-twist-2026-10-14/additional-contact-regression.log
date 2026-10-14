@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: Trinity restores her supported recline on the first paused farewell frame
+ok 1 - Trinity restores her supported recline on the first paused farewell frame
+  ---
+  duration_ms: 473.987042
+  type: 'test'
+  ...
+# Subtest: both farewell bodies and clothes reconstruct the saved beat independent of warm-up, pause and actor order
+ok 2 - both farewell bodies and clothes reconstruct the saved beat independent of warm-up, pause and actor order
+  ---
+  duration_ms: 3223.074125
+  type: 'test'
+  ...
+# Subtest: player Neo wears the wreck outfit before any farewell action without losing ordinary walking
+ok 3 - player Neo wears the wreck outfit before any farewell action without losing ordinary walking
+  ---
+  duration_ms: 317.481125
+  type: 'test'
+  ...
+# Subtest: entering the farewell clears prior combat poses before the first paused frame
+ok 4 - entering the farewell clears prior combat poses before the first paused frame
+  ---
+  duration_ms: 469.561458
+  type: 'test'
+  ...
+# Subtest: Trinity touches Neo with her actual palm while the complete hand stays outside his facial skin
+ok 5 - Trinity touches Neo with her actual palm while the complete hand stays outside his facial skin
+  ---
+  duration_ms: 2826.103166
+  type: 'test'
+  ...
+# goodbye/1.5: 6673 hand vertices; max penetration 0.000000, palm gap Infinity
+# goodbye/2.6: 6673 hand vertices; max penetration 0.000000, palm gap 0.018706
+# kiss/1.5: 6673 hand vertices; max penetration 0.000000, palm gap 0.018660
+# kiss/2.15: 6673 hand vertices; max penetration 0.000000, palm gap 0.018697
+# kiss/2.4: 6673 hand vertices; max penetration 0.000000, palm gap Infinity
+# kiss/2.6: 6673 hand vertices; max penetration 0.000000, palm gap Infinity
+# Subtest: Bane uses continuous delivered anatomy only in Logos and retains a deterministic saved hostage pose
+ok 6 - Bane uses continuous delivered anatomy only in Logos and retains a deterministic saved hostage pose
+  ---
+  duration_ms: 658.01025
+  type: 'test'
+  ...
+# Subtest: the hostage grip reaches Trinity’s neck and feet remain on the cargo deck
+ok 7 - the hostage grip reaches Trinity’s neck and feet remain on the cargo deck
+  ---
+  duration_ms: 749.60625
+  type: 'test'
+  ...
+# Subtest: first-person Logos hides the player’s own face while keeping the gun and contact arms visible
+ok 8 - first-person Logos hides the player’s own face while keeping the gun and contact arms visible
+  ---
+  duration_ms: 505.595625
+  type: 'test'
+  ...
+# Subtest: first-person free look cannot reveal Neo’s combined face or neck while lowering the gun
+ok 9 - first-person free look cannot reveal Neo’s combined face or neck while lowering the gun
+  ---
+  duration_ms: 1085.065291
+  type: 'test'
+  ...
+# Subtest: gold perception uses the delivered Smith anatomy at Bane’s actual saved position
+ok 10 - gold perception uses the delivered Smith anatomy at Bane’s actual saved position
+  ---
+  duration_ms: 322.9065
+  type: 'test'
+  ...
+# Subtest: the dying gold form follows Bane onto the deck instead of standing inside Neo’s first-person view
+ok 11 - the dying gold form follows Bane onto the deck instead of standing inside Neo’s first-person view
+  ---
+  duration_ms: 361.663083
+  type: 'test'
+  ...
+# Subtest: Logos first-person follows the current head and retains mouse look and V switching inside the bay
+ok 12 - Logos first-person follows the current head and retains mouse look and V switching inside the bay
+  ---
+  duration_ms: 302.027833
+  type: 'test'
+  ...
+# Subtest: Bane’s final collapse remains above the rendered deck instead of sinking through it
+ok 13 - Bane’s final collapse remains above the rendered deck instead of sinking through it
+  ---
+  duration_ms: 329.672708
+  type: 'test'
+  ...
+# Subtest: the delivered hands place and pick up the same electric gun without jumping off the grip
+ok 14 - the delivered hands place and pick up the same electric gun without jumping off the grip
+  ---
+  duration_ms: 300.3875
+  type: 'test'
+  ...
+# Subtest: the gun rolls onto the deck and rises from it without flipping at either handoff
+ok 15 - the gun rolls onto the deck and rises from it without flipping at either handoff
+  ---
+  duration_ms: 325.521542
+  type: 'test'
+  ...
+# Subtest: lowering and picking up the gun keep the delivered feet above the deck
+ok 16 - lowering and picking up the gun keep the delivered feet above the deck
+  ---
+  duration_ms: 361.265542
+  type: 'test'
+  ...
+# Subtest: the burning cable hand reaches Neo’s actual eyes while both delivered bodies retain deck contact
+ok 17 - the burning cable hand reaches Neo’s actual eyes while both delivered bodies retain deck contact
+  ---
+  duration_ms: 325.288417
+  type: 'test'
+  ...
+# Subtest: the pipe leaves Neo’s delivered palm continuously and rests outside the opening instead of following the handle
+ok 18 - the pipe leaves Neo’s delivered palm continuously and rests outside the opening instead of following the handle
+  ---
+  duration_ms: 330.671833
+  type: 'test'
+  ...
+# Subtest: Trinity grips the delivered ladder and upper rim rather than climbing with her hands in empty space
+ok 19 - Trinity grips the delivered ladder and upper rim rather than climbing with her hands in empty space
+  ---
+  duration_ms: 355.593709
+  type: 'test'
+  ...
+# Subtest: Trinity reaches Neo’s actual cheeks after climbing out and releases them at the saved end of the exchange
+ok 20 - Trinity reaches Neo’s actual cheeks after climbing out and releases them at the saved end of the exchange
+  ---
+  duration_ms: 295.337
+  type: 'test'
+  ...
+# Subtest: Trinity’s lower body clears the actual hatch sidewall throughout the vertical climb
+ok 21 - Trinity’s lower body clears the actual hatch sidewall throughout the vertical climb
+  ---
+  duration_ms: 369.723334
+  type: 'test'
+  ...
+# Subtest: bracing during the fall cannot skip the remaining descent or choose to stand
+ok 22 - bracing during the fall cannot skip the remaining descent or choose to stand
+  ---
+  duration_ms: 0.587667
+  type: 'test'
+  ...
+# Subtest: building exit, falling and impact meet at the same saved body positions
+ok 23 - building exit, falling and impact meet at the same saved body positions
+  ---
+  duration_ms: 1.43625
+  type: 'test'
+  ...
+# Subtest: missing the brace holds the fallen bodies until an explicit retry
+ok 24 - missing the brace holds the fallen bodies until an explicit retry
+  ---
+  duration_ms: 0.245667
+  type: 'test'
+  ...
+# Subtest: impact cuts through asphalt, paint and reflected water, leaving a deep supported floor
+ok 25 - impact cuts through asphalt, paint and reflected water, leaving a deep supported floor
+  ---
+  duration_ms: 265.499333
+  type: 'test'
+  ...
+# Subtest: normal movement and collision follow the saved crater instead of snapping to street level
+ok 26 - normal movement and collision follow the saved crater instead of snapping to street level
+  ---
+  duration_ms: 5.43325
+  type: 'test'
+  ...
+# Subtest: the flat crater bed keeps a uniform texture scale instead of pinching every tile into its center
+ok 27 - the flat crater bed keeps a uniform texture scale instead of pinching every tile into its center
+  ---
+  duration_ms: 155.362416
+  type: 'test'
+  ...
+# Subtest: the visible fighting floor stays supported and clear after collapse, pause and a cold load
+ok 28 - the visible fighting floor stays supported and clear after collapse, pause and a cold load
+  ---
+  duration_ms: 991.356667
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7711.766334

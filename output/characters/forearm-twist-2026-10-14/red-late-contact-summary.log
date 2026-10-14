@@ -1,0 +1,22 @@
+Excerpt; the complete array diff remains in the local red-late-contact.log.
+TAP version 13
+# Subtest: late wrist contact corrections update the forearm in the same frame
+not ok 1 - late wrist contact corrections update the forearm in the same frame
+  ---
+  duration_ms: 765.745375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/forearm-twist.test.mts:1:1458'
+  failureType: 'testCodeFailure'
+  error: |-
+    a wrist-only IK update must not leave its sleeve on the previous frame
+    + actual - expected
+[large vertex-array diff omitted]
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1201.29375
