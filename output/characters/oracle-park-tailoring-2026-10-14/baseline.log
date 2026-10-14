@@ -1,0 +1,189 @@
+TAP version 13
+# Subtest: the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+ok 1 - the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+  ---
+  duration_ms: 1082.709084
+  type: 'test'
+  ...
+# 1.7777777777777777: projected head height 0.2790519365679847, bounds -0.22621998981252225,0.1853872683822172,0.8700708661627437 / -0.1257781338541629,0.4644392049502019,0.8804141128996017
+# oracle-head: -0.22621998981252225,0.1853872683822172,0.8700708661627437 / -0.1257781338541629,0.4644392049502019,0.8804141128996017
+# oracle-park-handbag: -0.23790502059063764,-0.31818493677985077,0.8618765383130553 / -0.04933664137815605,0.027774740653656232,0.8727748138660711
+# 1.3333333333333333: projected head height 0.2790519365679847, bounds -0.301626653083363,0.1853872683822172,0.8700708661627437 / -0.1677041784722172,0.4644392049502019,0.8804141128996017
+# oracle-head: -0.301626653083363,0.1853872683822172,0.8700708661627437 / -0.1677041784722172,0.4644392049502019,0.8804141128996017
+# oracle-park-handbag: -0.31720669412085023,-0.31818493677985077,0.8618765383130553 / -0.06578218850420807,0.027774740653656232,0.8727748138660711
+# 0.65: projected head height 0.2700057485661382, bounds -0.23626141436918102,0.1878454675075651,0.8744343911892258 / 0.02951316151889536,0.45785121607370327,0.884121421847561
+# oracle-head: -0.23626141436918102,0.1878454675075651,0.8744343911892258 / 0.02951316151889536,0.45785121607370327,0.884121421847561
+# oracle-park-handbag: -0.2378207356814039,-0.2978288405024991,0.8667965259912593 / 0.25480298856499994,0.0357211564453515,0.8769618012856829
+# 0.5625: projected head height 0.2700057485661382, bounds -0.2730131899377203,0.1878454675075651,0.8744343911892258 / 0.03410409775516798,0.45785121607370327,0.884121421847561
+# oracle-head: -0.2730131899377203,0.1878454675075651,0.8744343911892258 / 0.03410409775516798,0.45785121607370327,0.884121421847561
+# oracle-park-handbag: -0.2748150723429556,-0.2978288405024991,0.8667965259912593 / 0.2944390090084444,0.0357211564453515,0.8769618012856829
+# Subtest: the park conversation push-in and mouse orbit preserve the frozen performers and V eye view
+ok 2 - the park conversation push-in and mouse orbit preserve the frozen performers and V eye view
+  ---
+  duration_ms: 529.134
+  type: 'test'
+  ...
+# Subtest: the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes
+ok 3 - the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes
+  ---
+  duration_ms: 589.808875
+  type: 'test'
+  ...
+# Subtest: the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples
+ok 4 - the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples
+  ---
+  duration_ms: 1053.610958
+  type: 'test'
+  ...
+# Subtest: the shipped Architect turns, walks to the promenade and continues off camera with supported shoes and an exact cold pose
+ok 5 - the shipped Architect turns, walks to the promenade and continues off camera with supported shoes and an exact cold pose
+  ---
+  duration_ms: 7045.99175
+  type: 'test'
+  ...
+# Subtest: the controllable Oracle can walk the hill with her actual shoes supported even before the seated performance starts
+ok 6 - the controllable Oracle can walk the hill with her actual shoes supported even before the seated performance starts
+  ---
+  duration_ms: 5396.236583
+  type: 'test'
+  ...
+# Subtest: paused park third person responds to mouse orbit and retains it without changing the saved event or body
+ok 7 - paused park third person responds to mouse orbit and retains it without changing the saved event or body
+  ---
+  duration_ms: 382.263875
+  type: 'test'
+  ...
+# Subtest: park shots frame the arriving and departing speakers, then the reunited group and sunrise, without hiding heads behind the set
+ok 8 - park shots frame the arriving and departing speakers, then the reunited group and sunrise, without hiding heads behind the set
+  ---
+  duration_ms: 5447.256
+  type: 'test'
+  ...
+# Subtest: Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+ok 9 - Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+  ---
+  duration_ms: 6353.891958
+  type: 'test'
+  ...
+# Subtest: the park handbag stays in the hand before lowering, both anatomical hands meet its handles and its base rests on the dressed lap
+ok 10 - the park handbag stays in the hand before lowering, both anatomical hands meet its handles and its base rests on the dressed lap
+  ---
+  duration_ms: 727.664834
+  type: 'test'
+  ...
+# Subtest: the Oracle’s outer coat does not cross through her dress while she turns, lowers and holds the bag
+ok 11 - the Oracle’s outer coat does not cross through her dress while she turns, lowers and holds the bag
+  ---
+  duration_ms: 7067.994666
+  type: 'test'
+  ...
+# Subtest: the seated dress keeps its front and back panels from folding through each other
+ok 12 - the seated dress keeps its front and back panels from folding through each other
+  ---
+  duration_ms: 1171.451
+  type: 'test'
+  ...
+# Subtest: the park collar and lapels lie outside the chest instead of disappearing into the coat
+ok 13 - the park collar and lapels lie outside the chest instead of disappearing into the coat
+  ---
+  duration_ms: 176.444542
+  type: 'test'
+  ...
+# Subtest: an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+ok 14 - an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+  ---
+  duration_ms: 110.791584
+  type: 'test'
+  ...
+# Subtest: standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+ok 15 - standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+  ---
+  duration_ms: 184.292375
+  type: 'test'
+  ...
+# Subtest: the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+ok 16 - the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+  ---
+  duration_ms: 695.7215
+  type: 'test'
+  ...
+# 0 hand 0 digit 1: handle gap 0.007504443232605063
+# 0 hand 0 digit 2: handle gap 0.0011667534721590891
+# 0 hand 0 digit 3: handle gap 0.0015565269585492425
+# 0 hand 0 digit 4: handle gap 0.0020546081333026635
+# 0 hand 0 digit 5: handle gap 0.0027742104170479648
+# 0.45 hand 0 digit 1: handle gap 0.007510507105627784
+# 0.45 hand 0 digit 2: handle gap 0.0012184040856964666
+# 0.45 hand 0 digit 3: handle gap 0.0015631960239296597
+# 0.45 hand 0 digit 4: handle gap 0.0020553913371559283
+# 0.45 hand 0 digit 5: handle gap 0.0026916604631424777
+# 1.05 hand 0 digit 1: handle gap 0.007088866153392926
+# 1.05 hand 0 digit 2: handle gap 0.001524939867721429
+# 1.05 hand 0 digit 3: handle gap 0.0015564944434816631
+# 1.05 hand 0 digit 4: handle gap 0.0020575435176984
+# 1.05 hand 0 digit 5: handle gap 0.0024111696810621246
+# 1.05 hand 1 digit 1: handle gap 0.007088866153395001
+# 1.05 hand 1 digit 2: handle gap 0.0015249249656617211
+# 1.05 hand 1 digit 3: handle gap 0.0015565026919023978
+# 1.05 hand 1 digit 4: handle gap 0.0020575246473236233
+# 1.05 hand 1 digit 5: handle gap 0.002411201745904236
+# 1.7 hand 0 digit 1: handle gap 0.007083536292727909
+# 1.7 hand 0 digit 2: handle gap 0.00152396545347714
+# 1.7 hand 0 digit 3: handle gap 0.0015560258322722675
+# 1.7 hand 0 digit 4: handle gap 0.00205753251289683
+# 1.7 hand 0 digit 5: handle gap 0.002411860818073014
+# 1.7 hand 1 digit 1: handle gap 0.007083536292719513
+# 1.7 hand 1 digit 2: handle gap 0.0015239507528043462
+# 1.7 hand 1 digit 3: handle gap 0.001556034423336388
+# 1.7 hand 1 digit 4: handle gap 0.002057513190291616
+# 1.7 hand 1 digit 5: handle gap 0.0024118928567542254
+# 2.4 hand 0 digit 1: handle gap 0.006811462575799152
+# 2.4 hand 0 digit 2: handle gap 0.0012735890613538026
+# 2.4 hand 0 digit 3: handle gap 0.0015268786566839145
+# 2.4 hand 0 digit 4: handle gap 0.0020566036073524988
+# 2.4 hand 0 digit 5: handle gap 0.002488186417209586
+# 2.4 hand 1 digit 1: handle gap 0.00681146257580836
+# 2.4 hand 1 digit 2: handle gap 0.001273586290555715
+# 2.4 hand 1 digit 3: handle gap 0.0015269039300201091
+# 2.4 hand 1 digit 4: handle gap 0.0020565623888422757
+# 2.4 hand 1 digit 5: handle gap 0.002488215755036858
+# Subtest: park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+ok 17 - park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+  ---
+  duration_ms: 586.414292
+  type: 'test'
+  ...
+# Subtest: the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+ok 18 - the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+  ---
+  duration_ms: 1688.981792
+  type: 'test'
+  ...
+# minimum wrist alignment: 0.5232828304685438
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+ok 19 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 122.924375
+  type: 'test'
+  ...
+# Subtest: hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+ok 20 - hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+  ---
+  duration_ms: 118.507
+  type: 'test'
+  ...
+# Subtest: a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+ok 21 - a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+  ---
+  duration_ms: 101.66425
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22015.891125

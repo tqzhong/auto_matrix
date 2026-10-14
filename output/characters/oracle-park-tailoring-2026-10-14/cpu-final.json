@@ -1,0 +1,20 @@
+{
+  "source": "current",
+  "measurement": "Node model CPU milliseconds, not browser FPS",
+  "results": [
+    {
+      "mode": "frozen",
+      "samples": 300,
+      "mean": 0.562204326666664,
+      "median": 0.5346660000000156,
+      "p95": 0.6802910000000111
+    },
+    {
+      "mode": "moving",
+      "samples": 300,
+      "mean": 3.0525459600000064,
+      "median": 3.039833000000044,
+      "p95": 3.3579999999999472
+    }
+  ]
+}

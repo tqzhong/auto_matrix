@@ -1,0 +1,93 @@
+TAP version 13
+# Subtest: the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+ok 1 - the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+  ---
+  duration_ms: 622.113792
+  type: 'test'
+  ...
+# 0 hand 0 digit 1: handle gap 0.007504443232605063
+# 0 hand 0 digit 2: handle gap 0.0011667534721590891
+# 0 hand 0 digit 3: handle gap 0.0015565269585492425
+# 0 hand 0 digit 4: handle gap 0.0020546081333026635
+# 0 hand 0 digit 5: handle gap 0.0027742104170479648
+# 0.45 hand 0 digit 1: handle gap 0.007510507105627784
+# 0.45 hand 0 digit 2: handle gap 0.0012184040856964666
+# 0.45 hand 0 digit 3: handle gap 0.0015631960239296597
+# 0.45 hand 0 digit 4: handle gap 0.0020553913371559283
+# 0.45 hand 0 digit 5: handle gap 0.0026916604631424777
+# 1.05 hand 0 digit 1: handle gap 0.007088866153392926
+# 1.05 hand 0 digit 2: handle gap 0.001524939867721429
+# 1.05 hand 0 digit 3: handle gap 0.0015564944434816631
+# 1.05 hand 0 digit 4: handle gap 0.0020575435176984
+# 1.05 hand 0 digit 5: handle gap 0.0024111696810621246
+# 1.05 hand 1 digit 1: handle gap 0.007088866153395001
+# 1.05 hand 1 digit 2: handle gap 0.0015249249656617211
+# 1.05 hand 1 digit 3: handle gap 0.0015565026919023978
+# 1.05 hand 1 digit 4: handle gap 0.0020575246473236233
+# 1.05 hand 1 digit 5: handle gap 0.002411201745904236
+# 1.7 hand 0 digit 1: handle gap 0.007083536292727909
+# 1.7 hand 0 digit 2: handle gap 0.00152396545347714
+# 1.7 hand 0 digit 3: handle gap 0.0015560258322722675
+# 1.7 hand 0 digit 4: handle gap 0.00205753251289683
+# 1.7 hand 0 digit 5: handle gap 0.002411860818073014
+# 1.7 hand 1 digit 1: handle gap 0.007083536292719513
+# 1.7 hand 1 digit 2: handle gap 0.0015239507528043462
+# 1.7 hand 1 digit 3: handle gap 0.001556034423336388
+# 1.7 hand 1 digit 4: handle gap 0.002057513190291616
+# 1.7 hand 1 digit 5: handle gap 0.0024118928567542254
+# 2.4 hand 0 digit 1: handle gap 0.006811462575799152
+# 2.4 hand 0 digit 2: handle gap 0.0012735890613538026
+# 2.4 hand 0 digit 3: handle gap 0.0015268786566839145
+# 2.4 hand 0 digit 4: handle gap 0.0020566036073524988
+# 2.4 hand 0 digit 5: handle gap 0.002488186417209586
+# 2.4 hand 1 digit 1: handle gap 0.00681146257580836
+# 2.4 hand 1 digit 2: handle gap 0.001273586290555715
+# 2.4 hand 1 digit 3: handle gap 0.0015269039300201091
+# 2.4 hand 1 digit 4: handle gap 0.0020565623888422757
+# 2.4 hand 1 digit 5: handle gap 0.002488215755036858
+# Subtest: park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+ok 2 - park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+  ---
+  duration_ms: 551.108709
+  type: 'test'
+  ...
+# Subtest: the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+ok 3 - the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+  ---
+  duration_ms: 1497.792667
+  type: 'test'
+  ...
+# minimum wrist alignment: 0.5232828304685438
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+ok 4 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 125.033958
+  type: 'test'
+  ...
+# Subtest: hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+ok 5 - hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+  ---
+  duration_ms: 118.83275
+  type: 'test'
+  ...
+# Subtest: a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+ok 6 - a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+  ---
+  duration_ms: 107.738583
+  type: 'test'
+  ...
+# Subtest: both park wrists remain visibly connected to their sleeves while the bag is lifted
+ok 7 - both park wrists remain visibly connected to their sleeves while the bag is lifted
+  ---
+  duration_ms: 964.456042
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3348.881333

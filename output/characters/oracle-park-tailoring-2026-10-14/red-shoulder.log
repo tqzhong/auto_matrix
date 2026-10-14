@@ -1,0 +1,57 @@
+TAP version 13
+# Subtest: both park wrists remain visibly connected to their sleeves while the bag is lifted
+ok 1 - both park wrists remain visibly connected to their sleeves while the bag is lifted
+  ---
+  duration_ms: 860.82725
+  type: 'test'
+  ...
+# Subtest: the sleeve caps meet the coat instead of ending above a detached shoulder seam
+not ok 2 - the sleeve caps meet the coat instead of ending above a detached shoulder seam
+  ---
+  duration_ms: 177.978583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-tailoring.test.mts:1:4063'
+  failureType: 'testCodeFailure'
+  error: |-
+    the top of the sleeve leaves an open gap at the coat shoulder
+    + actual - expected
+
+    + [
+    +   '0 shoulder 1: open seam 0.03657135812068302',
+    +   '0.45 shoulder 1: open seam 0.03654479649575997',
+    +   '1.05 shoulder 0: open seam 0.041693453535926704',
+    +   '1.05 shoulder 1: open seam 0.041693453524585526',
+    +   '1.7 shoulder 0: open seam 0.041407275069383326',
+    +   '1.7 shoulder 1: open seam 0.0414072750577705',
+    +   '2.4 shoulder 0: open seam 0.048384480814614106',
+    +   '2.4 shoulder 1: open seam 0.04838448080998617'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '0 shoulder 1: open seam 0.03657135812068302'
+    1: '0.45 shoulder 1: open seam 0.03654479649575997'
+    2: '1.05 shoulder 0: open seam 0.041693453535926704'
+    3: '1.05 shoulder 1: open seam 0.041693453524585526'
+    4: '1.7 shoulder 0: open seam 0.041407275069383326'
+    5: '1.7 shoulder 1: open seam 0.0414072750577705'
+    6: '2.4 shoulder 0: open seam 0.048384480814614106'
+    7: '2.4 shoulder 1: open seam 0.04838448080998617'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-tailoring.test.mts:96:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1444.758625

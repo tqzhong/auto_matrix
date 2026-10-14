@@ -1,0 +1,47 @@
+{
+  "snapshotKeys": {
+    "agents": true,
+    "chunks": true,
+    "events": true,
+    "locations": true,
+    "phase": true,
+    "sandbox": true,
+    "simulation": true,
+    "timeOfDay": true
+  },
+  "memoryCount": 15,
+  "memoriesUnchanged": true,
+  "simulationBefore": {
+    "running": false,
+    "speed": 1,
+    "timeScale": 1,
+    "tick": 14031,
+    "mode": "rules",
+    "llmStatus": "offline",
+    "population": 74,
+    "awakened": 53,
+    "tension": 0,
+    "anomaly": 61,
+    "conversations": 1,
+    "day": 3,
+    "chapter": "Sati 留下的日出",
+    "chapterDescription": "矩阵已经恢复。先知坐在水岸公园的长椅上，等待建筑师说明停战协议的边界。"
+  },
+  "simulationAfter": {
+    "running": false,
+    "speed": 1,
+    "timeScale": 1,
+    "tick": 14031,
+    "mode": "rules",
+    "llmStatus": "offline",
+    "population": 74,
+    "awakened": 53,
+    "tension": 0,
+    "anomaly": 61,
+    "conversations": 1,
+    "day": 3,
+    "chapter": "Sati 留下的日出",
+    "chapterDescription": "矩阵已经恢复。先知坐在水岸公园的长椅上，等待建筑师说明停战协议的边界。"
+  },
+  "nativeBrowserAcceptance": false
+}

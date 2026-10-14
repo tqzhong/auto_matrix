@@ -10,6 +10,7 @@ export interface OracleParkHand {
   skin: THREE.SkinnedMesh;
   bones: THREE.Bone[][];
   pads: THREE.Vector3[];
+  connection: { mesh: THREE.Mesh; edge: number[]; signature?: string };
 }
 
 interface Entry { fallback: THREE.Object3D[]; skin: THREE.Material; active: boolean; loading: boolean; }
@@ -42,6 +43,7 @@ export class OracleParkHands {
     entry.fallback.forEach(object => { object.visible = !visible; });
     rig.parkHands?.forEach(hand => {
       hand.root.visible = visible;
+      hand.connection.mesh.visible = visible;
       hand.bones.flat().forEach(bone => bone.quaternion.identity());
     });
   }
@@ -65,12 +67,42 @@ export class OracleParkHands {
         }
         return pad.divideScalar(count);
       });
-      return { root, skin, wrist, bones, pads };
+      // Weld UV splits before finding the anatomical wrist's single open rim.
+      const position = skin.geometry.attributes.position, index = skin.geometry.index!;
+      const welded = new Map<string, number>(), unique: number[] = [], edges = new Map<string, { a: number; b: number; count: number }>();
+      for (let i = 0; i < position.count; i++) {
+        const key = [position.getX(i), position.getY(i), position.getZ(i)].map(value => Math.round(value * 1e5)).join(':');
+        if (!welded.has(key)) welded.set(key, i); unique.push(welded.get(key)!);
+      }
+      for (let i = 0; i < index.count; i += 3) for (let part = 0; part < 3; part++) {
+        const a = unique[index.getX(i + part)], b = unique[index.getX(i + (part + 1) % 3)], key = [Math.min(a, b), Math.max(a, b)].join(':');
+        const existing = edges.get(key); if (existing) existing.count++; else edges.set(key, { a, b, count: 1 });
+      }
+      const rim = new Map<number, number[]>();
+      for (const { a, b, count } of edges.values()) if (count === 1) {
+        rim.set(a, [...rim.get(a) ?? [], b]); rim.set(b, [...rim.get(b) ?? [], a]);
+      }
+      const edge = [rim.keys().next().value!];
+      while (edge.length < rim.size) edge.push(rim.get(edge.at(-1)!)!.find(next => !edge.includes(next))!);
+      const area = edge.reduce((sum, vertex, i) => sum + position.getX(vertex) * position.getZ(edge[(i + 1) % edge.length])
+        - position.getZ(vertex) * position.getX(edge[(i + 1) % edge.length]), 0);
+      if (area > 0) edge.reverse();
+      const geometry = new THREE.BufferGeometry(), indices: number[] = [], uv: number[] = [], columns = edge.length + 1;
+      for (let row = 0; row <= 6; row++) for (let column = 0; column < columns; column++) {
+        uv.push(column / edge.length, row / 6);
+        if (row < 6 && column < edge.length) { const i = row * columns + column; indices.push(i, i + 1, i + columns, i + 1, i + columns + 1, i + columns); }
+      }
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(columns * 7 * 3), 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); this.geometries.add(geometry);
+      const mesh = new THREE.Mesh(geometry, entry.skin); mesh.name = `oracle-wrist-connection-${side}`;
+      mesh.castShadow = mesh.receiveShadow = true;
+      return { root, skin, wrist, bones, pads, connection: { mesh, edge } };
     });
     if (this.disposed) { this.release(); return; }
     rig.parkHands = hands;
-    hands.forEach(hand => { hand.wrist.add(hand.root); enableSkinnedCulling(hand.root); });
+    hands.forEach((hand, i) => { hand.wrist.add(hand.root); rig.elbows[i].add(hand.connection.mesh); enableSkinnedCulling(hand.root); });
     this.update(rig, entry.active);
+    connectGardenWrists(rig);
   }
 
   private release(): void {
@@ -79,6 +111,41 @@ export class OracleParkHands {
     this.skeletons.forEach(value => value.dispose()); this.skeletons.clear();
   }
   dispose(): void { this.disposed = true; this.entries.clear(); this.release(); }
+}
+
+/** A continuous skin surface joins the cut wrist to the forearm inside the cuff. */
+export function connectGardenWrists(rig: CharacterRig): void {
+  if (!rig.parkHands) return;
+  rig.root.updateWorldMatrix(true, true);
+  for (const hand of rig.parkHands) {
+    const { mesh, edge } = hand.connection; if (!mesh.visible) continue;
+    hand.skin.updateMatrixWorld(true);
+    const matrix = mesh.parent!.matrixWorld.clone().invert().multiply(hand.skin.matrixWorld), signature = matrix.elements.join(':');
+    if (hand.connection.signature === signature) continue;
+    hand.skin.skeleton.update();
+    const points = edge.map(index => hand.skin.getVertexPosition(index, new THREE.Vector3()).applyMatrix4(matrix));
+    const center = points.reduce((sum, point) => sum.add(point), new THREE.Vector3()).divideScalar(points.length);
+    const end = new THREE.Vector3(0, -.50, 0), up = new THREE.Vector3(0, 1, 0).transformDirection(matrix);
+    const curve = new THREE.CubicBezierCurve3(center, center.clone().addScaledVector(up, .065), end.clone().add(new THREE.Vector3(0, -.06, 0)), end);
+    const vertices = mesh.geometry.attributes.position, columns = edge.length + 1;
+    for (let row = 0; row <= 6; row++) for (let column = 0; column < columns; column++) {
+      const t = row / 6, offset = points[column % edge.length].clone().sub(center), angle = Math.atan2(offset.x, offset.z);
+      offset.lerp(new THREE.Vector3(Math.sin(angle) * .083, 0, Math.cos(angle) * .079), t);
+      const point = curve.getPoint(t).add(offset); vertices.setXYZ(row * columns + column, point.x, point.y, point.z);
+    }
+    vertices.needsUpdate = true; mesh.geometry.computeVertexNormals();
+    const normals = mesh.geometry.attributes.normal, normalMatrix = new THREE.Matrix3().getNormalMatrix(matrix);
+    for (let column = 0; column < columns; column++) {
+      const normal = new THREE.Vector3().fromBufferAttribute(hand.skin.geometry.attributes.normal, edge[column % edge.length]).applyNormalMatrix(normalMatrix);
+      normals.setXYZ(column, normal.x, normal.y, normal.z);
+    }
+    for (let row = 1; row <= 6; row++) {
+      const first = row * columns, last = first + edge.length;
+      const normal = new THREE.Vector3().fromBufferAttribute(normals, first).add(new THREE.Vector3().fromBufferAttribute(normals, last)).normalize();
+      normals.setXYZ(first, normal.x, normal.y, normal.z); normals.setXYZ(last, normal.x, normal.y, normal.z);
+    }
+    normals.needsUpdate = true; mesh.geometry.computeBoundingSphere(); hand.connection.signature = signature;
+  }
 }
 
 /** Close around the handle using the original finger lengths and actual distal skin. */

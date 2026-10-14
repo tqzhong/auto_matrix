@@ -1,0 +1,288 @@
+TAP version 13
+# Subtest: the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+ok 1 - the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+  ---
+  duration_ms: 613.998
+  type: 'test'
+  ...
+# 0 hand 0 digit 1: handle gap 0.007504443232605063
+# 0 hand 0 digit 2: handle gap 0.0011667534721590891
+# 0 hand 0 digit 3: handle gap 0.0015565269585492425
+# 0 hand 0 digit 4: handle gap 0.0020546081333026635
+# 0 hand 0 digit 5: handle gap 0.0027742104170479648
+# 0.45 hand 0 digit 1: handle gap 0.007510507105627784
+# 0.45 hand 0 digit 2: handle gap 0.0012184040856964666
+# 0.45 hand 0 digit 3: handle gap 0.0015631960239296597
+# 0.45 hand 0 digit 4: handle gap 0.0020553913371559283
+# 0.45 hand 0 digit 5: handle gap 0.0026916604631424777
+# 1.05 hand 0 digit 1: handle gap 0.007088866153392926
+# 1.05 hand 0 digit 2: handle gap 0.001524939867721429
+# 1.05 hand 0 digit 3: handle gap 0.0015564944434816631
+# 1.05 hand 0 digit 4: handle gap 0.0020575435176984
+# 1.05 hand 0 digit 5: handle gap 0.0024111696810621246
+# 1.05 hand 1 digit 1: handle gap 0.007088866153395001
+# 1.05 hand 1 digit 2: handle gap 0.0015249249656617211
+# 1.05 hand 1 digit 3: handle gap 0.0015565026919023978
+# 1.05 hand 1 digit 4: handle gap 0.0020575246473236233
+# 1.05 hand 1 digit 5: handle gap 0.002411201745904236
+# 1.7 hand 0 digit 1: handle gap 0.007083536292727909
+# 1.7 hand 0 digit 2: handle gap 0.00152396545347714
+# 1.7 hand 0 digit 3: handle gap 0.0015560258322722675
+# 1.7 hand 0 digit 4: handle gap 0.00205753251289683
+# 1.7 hand 0 digit 5: handle gap 0.002411860818073014
+# 1.7 hand 1 digit 1: handle gap 0.007083536292719513
+# 1.7 hand 1 digit 2: handle gap 0.0015239507528043462
+# 1.7 hand 1 digit 3: handle gap 0.001556034423336388
+# 1.7 hand 1 digit 4: handle gap 0.002057513190291616
+# 1.7 hand 1 digit 5: handle gap 0.0024118928567542254
+# 2.4 hand 0 digit 1: handle gap 0.006811462575799152
+# 2.4 hand 0 digit 2: handle gap 0.0012735890613538026
+# 2.4 hand 0 digit 3: handle gap 0.0015268786566839145
+# 2.4 hand 0 digit 4: handle gap 0.0020566036073524988
+# 2.4 hand 0 digit 5: handle gap 0.002488186417209586
+# 2.4 hand 1 digit 1: handle gap 0.00681146257580836
+# 2.4 hand 1 digit 2: handle gap 0.001273586290555715
+# 2.4 hand 1 digit 3: handle gap 0.0015269039300201091
+# 2.4 hand 1 digit 4: handle gap 0.0020565623888422757
+# 2.4 hand 1 digit 5: handle gap 0.002488215755036858
+# Subtest: park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+ok 2 - park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+  ---
+  duration_ms: 547.267458
+  type: 'test'
+  ...
+# Subtest: the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+ok 3 - the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+  ---
+  duration_ms: 1501.663125
+  type: 'test'
+  ...
+# minimum wrist alignment: 0.5232828304685438
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+ok 4 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 130.147875
+  type: 'test'
+  ...
+# Subtest: hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+ok 5 - hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+  ---
+  duration_ms: 128.834958
+  type: 'test'
+  ...
+# Subtest: a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+ok 6 - a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+  ---
+  duration_ms: 96.306208
+  type: 'test'
+  ...
+# Subtest: both park wrists remain visibly connected to their sleeves while the bag is lifted
+not ok 7 - both park wrists remain visibly connected to their sleeves while the bag is lifted
+  ---
+  duration_ms: 981.115458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-tailoring.test.mts:1:3050'
+  failureType: 'testCodeFailure'
+  error: |-
+    the open wrist is visible between the anatomical hand and sleeve
+    + actual - expected
+
+    + [
+    +   '0 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '0 hand 0, wrist 0, direction 3.141592653589793',
+    +   '0 hand 0, wrist 0, direction 4.71238898038469',
+    +   '0 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '0 hand 0, wrist 0.015, direction 3.141592653589793',
+    +   '0 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '0.25 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '0.25 hand 0, wrist 0, direction 3.141592653589793',
+    +   '0.25 hand 0, wrist 0, direction 4.71238898038469',
+    +   '0.25 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '0.25 hand 0, wrist 0.015, direction 3.141592653589793',
+    +   '0.25 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '0.25 hand 1, wrist 0, direction 0',
+    +   '0.25 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '0.25 hand 1, wrist 0, direction 3.141592653589793',
+    +   '0.25 hand 1, wrist 0, direction 4.71238898038469',
+    +   '0.25 hand 1, wrist 0.015, direction 0',
+    +   '0.25 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '0.25 hand 1, wrist 0.015, direction 3.141592653589793',
+    +   '0.25 hand 1, wrist 0.015, direction 4.71238898038469',
+    +   '0.45 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '0.45 hand 0, wrist 0, direction 3.141592653589793',
+    +   '0.45 hand 0, wrist 0, direction 4.71238898038469',
+    +   '0.45 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '0.45 hand 0, wrist 0.015, direction 3.141592653589793',
+    +   '0.45 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '0.45 hand 1, wrist 0, direction 0',
+    +   '0.45 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '0.45 hand 1, wrist 0, direction 3.141592653589793',
+    +   '0.45 hand 1, wrist 0, direction 4.71238898038469',
+    +   '0.45 hand 1, wrist 0.015, direction 0',
+    +   '0.45 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '0.45 hand 1, wrist 0.015, direction 3.141592653589793',
+    +   '0.45 hand 1, wrist 0.015, direction 4.71238898038469',
+    +   '0.75 hand 1, wrist 0, direction 0',
+    +   '0.75 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '0.75 hand 1, wrist 0, direction 4.71238898038469',
+    +   '0.75 hand 1, wrist 0.015, direction 0',
+    +   '0.75 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '0.75 hand 1, wrist 0.015, direction 4.71238898038469',
+    +   '1.05 hand 0, wrist 0, direction 0',
+    +   '1.05 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '1.05 hand 0, wrist 0, direction 4.71238898038469',
+    +   '1.05 hand 0, wrist 0.015, direction 0',
+    +   '1.05 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '1.05 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '1.05 hand 1, wrist 0, direction 0',
+    +   '1.05 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '1.05 hand 1, wrist 0, direction 4.71238898038469',
+    +   '1.05 hand 1, wrist 0.015, direction 0',
+    +   '1.05 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '1.05 hand 1, wrist 0.015, direction 4.71238898038469',
+    +   '1.45 hand 0, wrist 0, direction 0',
+    +   '1.45 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '1.45 hand 0, wrist 0, direction 4.71238898038469',
+    +   '1.45 hand 0, wrist 0.015, direction 0',
+    +   '1.45 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '1.45 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '1.45 hand 1, wrist 0, direction 0',
+    +   '1.45 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '1.45 hand 1, wrist 0, direction 4.71238898038469',
+    +   '1.45 hand 1, wrist 0.015, direction 0',
+    +   '1.45 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '1.45 hand 1, wrist 0.015, direction 4.71238898038469',
+    +   '1.9 hand 0, wrist 0, direction 0',
+    +   '1.9 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '1.9 hand 0, wrist 0, direction 4.71238898038469',
+    +   '1.9 hand 0, wrist 0.015, direction 0',
+    +   '1.9 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '1.9 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '1.9 hand 1, wrist 0, direction 0',
+    +   '1.9 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '1.9 hand 1, wrist 0, direction 4.71238898038469',
+    +   '1.9 hand 1, wrist 0.015, direction 0',
+    +   '1.9 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '1.9 hand 1, wrist 0.015, direction 4.71238898038469',
+    +   '2.4 hand 0, wrist 0, direction 0',
+    +   '2.4 hand 0, wrist 0, direction 1.5707963267948966',
+    +   '2.4 hand 0, wrist 0, direction 4.71238898038469',
+    +   '2.4 hand 0, wrist 0.015, direction 0',
+    +   '2.4 hand 0, wrist 0.015, direction 1.5707963267948966',
+    +   '2.4 hand 0, wrist 0.015, direction 4.71238898038469',
+    +   '2.4 hand 1, wrist 0, direction 0',
+    +   '2.4 hand 1, wrist 0, direction 1.5707963267948966',
+    +   '2.4 hand 1, wrist 0, direction 4.71238898038469',
+    +   '2.4 hand 1, wrist 0.015, direction 0',
+    +   '2.4 hand 1, wrist 0.015, direction 1.5707963267948966',
+    +   '2.4 hand 1, wrist 0.015, direction 4.71238898038469'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: '0 hand 0, wrist 0, direction 1.5707963267948966'
+    1: '0 hand 0, wrist 0, direction 3.141592653589793'
+    2: '0 hand 0, wrist 0, direction 4.71238898038469'
+    3: '0 hand 0, wrist 0.015, direction 1.5707963267948966'
+    4: '0 hand 0, wrist 0.015, direction 3.141592653589793'
+    5: '0 hand 0, wrist 0.015, direction 4.71238898038469'
+    6: '0.25 hand 0, wrist 0, direction 1.5707963267948966'
+    7: '0.25 hand 0, wrist 0, direction 3.141592653589793'
+    8: '0.25 hand 0, wrist 0, direction 4.71238898038469'
+    9: '0.25 hand 0, wrist 0.015, direction 1.5707963267948966'
+    10: '0.25 hand 0, wrist 0.015, direction 3.141592653589793'
+    11: '0.25 hand 0, wrist 0.015, direction 4.71238898038469'
+    12: '0.25 hand 1, wrist 0, direction 0'
+    13: '0.25 hand 1, wrist 0, direction 1.5707963267948966'
+    14: '0.25 hand 1, wrist 0, direction 3.141592653589793'
+    15: '0.25 hand 1, wrist 0, direction 4.71238898038469'
+    16: '0.25 hand 1, wrist 0.015, direction 0'
+    17: '0.25 hand 1, wrist 0.015, direction 1.5707963267948966'
+    18: '0.25 hand 1, wrist 0.015, direction 3.141592653589793'
+    19: '0.25 hand 1, wrist 0.015, direction 4.71238898038469'
+    20: '0.45 hand 0, wrist 0, direction 1.5707963267948966'
+    21: '0.45 hand 0, wrist 0, direction 3.141592653589793'
+    22: '0.45 hand 0, wrist 0, direction 4.71238898038469'
+    23: '0.45 hand 0, wrist 0.015, direction 1.5707963267948966'
+    24: '0.45 hand 0, wrist 0.015, direction 3.141592653589793'
+    25: '0.45 hand 0, wrist 0.015, direction 4.71238898038469'
+    26: '0.45 hand 1, wrist 0, direction 0'
+    27: '0.45 hand 1, wrist 0, direction 1.5707963267948966'
+    28: '0.45 hand 1, wrist 0, direction 3.141592653589793'
+    29: '0.45 hand 1, wrist 0, direction 4.71238898038469'
+    30: '0.45 hand 1, wrist 0.015, direction 0'
+    31: '0.45 hand 1, wrist 0.015, direction 1.5707963267948966'
+    32: '0.45 hand 1, wrist 0.015, direction 3.141592653589793'
+    33: '0.45 hand 1, wrist 0.015, direction 4.71238898038469'
+    34: '0.75 hand 1, wrist 0, direction 0'
+    35: '0.75 hand 1, wrist 0, direction 1.5707963267948966'
+    36: '0.75 hand 1, wrist 0, direction 4.71238898038469'
+    37: '0.75 hand 1, wrist 0.015, direction 0'
+    38: '0.75 hand 1, wrist 0.015, direction 1.5707963267948966'
+    39: '0.75 hand 1, wrist 0.015, direction 4.71238898038469'
+    40: '1.05 hand 0, wrist 0, direction 0'
+    41: '1.05 hand 0, wrist 0, direction 1.5707963267948966'
+    42: '1.05 hand 0, wrist 0, direction 4.71238898038469'
+    43: '1.05 hand 0, wrist 0.015, direction 0'
+    44: '1.05 hand 0, wrist 0.015, direction 1.5707963267948966'
+    45: '1.05 hand 0, wrist 0.015, direction 4.71238898038469'
+    46: '1.05 hand 1, wrist 0, direction 0'
+    47: '1.05 hand 1, wrist 0, direction 1.5707963267948966'
+    48: '1.05 hand 1, wrist 0, direction 4.71238898038469'
+    49: '1.05 hand 1, wrist 0.015, direction 0'
+    50: '1.05 hand 1, wrist 0.015, direction 1.5707963267948966'
+    51: '1.05 hand 1, wrist 0.015, direction 4.71238898038469'
+    52: '1.45 hand 0, wrist 0, direction 0'
+    53: '1.45 hand 0, wrist 0, direction 1.5707963267948966'
+    54: '1.45 hand 0, wrist 0, direction 4.71238898038469'
+    55: '1.45 hand 0, wrist 0.015, direction 0'
+    56: '1.45 hand 0, wrist 0.015, direction 1.5707963267948966'
+    57: '1.45 hand 0, wrist 0.015, direction 4.71238898038469'
+    58: '1.45 hand 1, wrist 0, direction 0'
+    59: '1.45 hand 1, wrist 0, direction 1.5707963267948966'
+    60: '1.45 hand 1, wrist 0, direction 4.71238898038469'
+    61: '1.45 hand 1, wrist 0.015, direction 0'
+    62: '1.45 hand 1, wrist 0.015, direction 1.5707963267948966'
+    63: '1.45 hand 1, wrist 0.015, direction 4.71238898038469'
+    64: '1.9 hand 0, wrist 0, direction 0'
+    65: '1.9 hand 0, wrist 0, direction 1.5707963267948966'
+    66: '1.9 hand 0, wrist 0, direction 4.71238898038469'
+    67: '1.9 hand 0, wrist 0.015, direction 0'
+    68: '1.9 hand 0, wrist 0.015, direction 1.5707963267948966'
+    69: '1.9 hand 0, wrist 0.015, direction 4.71238898038469'
+    70: '1.9 hand 1, wrist 0, direction 0'
+    71: '1.9 hand 1, wrist 0, direction 1.5707963267948966'
+    72: '1.9 hand 1, wrist 0, direction 4.71238898038469'
+    73: '1.9 hand 1, wrist 0.015, direction 0'
+    74: '1.9 hand 1, wrist 0.015, direction 1.5707963267948966'
+    75: '1.9 hand 1, wrist 0.015, direction 4.71238898038469'
+    76: '2.4 hand 0, wrist 0, direction 0'
+    77: '2.4 hand 0, wrist 0, direction 1.5707963267948966'
+    78: '2.4 hand 0, wrist 0, direction 4.71238898038469'
+    79: '2.4 hand 0, wrist 0.015, direction 0'
+    80: '2.4 hand 0, wrist 0.015, direction 1.5707963267948966'
+    81: '2.4 hand 0, wrist 0.015, direction 4.71238898038469'
+    82: '2.4 hand 1, wrist 0, direction 0'
+    83: '2.4 hand 1, wrist 0, direction 1.5707963267948966'
+    84: '2.4 hand 1, wrist 0, direction 4.71238898038469'
+    85: '2.4 hand 1, wrist 0.015, direction 0'
+    86: '2.4 hand 1, wrist 0.015, direction 1.5707963267948966'
+    87: '2.4 hand 1, wrist 0.015, direction 4.71238898038469'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-tailoring.test.mts:68:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3572.082125

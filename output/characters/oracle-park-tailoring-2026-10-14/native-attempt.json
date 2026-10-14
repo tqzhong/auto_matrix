@@ -1,0 +1,16 @@
+{
+  "serverHTTP": 200,
+  "clientHTTP": 200,
+  "serverPort": 3189,
+  "clientPort": 5389,
+  "source": "output/gameplay/trilogy-park-dialogue-2026-10-11/choice-cold-state",
+  "tick": 14031,
+  "running": false,
+  "navigation": "Page.navigate timed out after 20 seconds",
+  "sameTabRead": "Emulation.setFocusEmulationEnabled timed out after 20 seconds",
+  "tab": 23,
+  "observedURL": "about:blank",
+  "nativeCapture": false,
+  "finalTabTitle": "无法访问此站点",
+  "finalTabURLScheme": "data"
+}
