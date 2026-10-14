@@ -53,50 +53,10 @@ export class OracleParkHands {
     const hands = ['R', 'L'].map(side => {
       const root = asset.scene.getObjectByName(`oracle-anatomical-hand-${side}`)!;
       const skin = root.getObjectByName(`oracle-hand-skin-${side}`) as THREE.SkinnedMesh;
-      this.geometries.add(skin.geometry); this.materials.add(skin.material as THREE.Material); this.skeletons.add(skin.skeleton);
-      skin.material = entry.skin; skin.castShadow = skin.receiveShadow = true;
-      const wrist = rig.root.getObjectByName(`oracle-hand-${side}`)!;
-      const bones = Array.from({ length: 5 }, (_, digit) => Array.from({ length: 3 }, (_, segment) =>
-        root.getObjectByName(`finger${digit + 1}-${segment + 1}_${side}`) as THREE.Bone));
-      const pads = bones.map(chain => {
-        const index = skin.skeleton.bones.indexOf(chain[2]), pad = new THREE.Vector3(); let count = 0;
-        const { position, skinIndex, skinWeight } = skin.geometry.attributes;
-        for (let i = 0; i < position.count; i++) for (let j = 0; j < 4; j++) {
-          if (skinIndex.getComponent(i, j) !== index || skinWeight.getComponent(i, j) < .95) continue;
-          pad.add(new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index])); count++;
-        }
-        return pad.divideScalar(count);
-      });
-      // Weld UV splits before finding the anatomical wrist's single open rim.
-      const position = skin.geometry.attributes.position, index = skin.geometry.index!;
-      const welded = new Map<string, number>(), unique: number[] = [], edges = new Map<string, { a: number; b: number; count: number }>();
-      for (let i = 0; i < position.count; i++) {
-        const key = [position.getX(i), position.getY(i), position.getZ(i)].map(value => Math.round(value * 1e5)).join(':');
-        if (!welded.has(key)) welded.set(key, i); unique.push(welded.get(key)!);
-      }
-      for (let i = 0; i < index.count; i += 3) for (let part = 0; part < 3; part++) {
-        const a = unique[index.getX(i + part)], b = unique[index.getX(i + (part + 1) % 3)], key = [Math.min(a, b), Math.max(a, b)].join(':');
-        const existing = edges.get(key); if (existing) existing.count++; else edges.set(key, { a, b, count: 1 });
-      }
-      const rim = new Map<number, number[]>();
-      for (const { a, b, count } of edges.values()) if (count === 1) {
-        rim.set(a, [...rim.get(a) ?? [], b]); rim.set(b, [...rim.get(b) ?? [], a]);
-      }
-      const edge = [rim.keys().next().value!];
-      while (edge.length < rim.size) edge.push(rim.get(edge.at(-1)!)!.find(next => !edge.includes(next))!);
-      const area = edge.reduce((sum, vertex, i) => sum + position.getX(vertex) * position.getZ(edge[(i + 1) % edge.length])
-        - position.getZ(vertex) * position.getX(edge[(i + 1) % edge.length]), 0);
-      if (area > 0) edge.reverse();
-      const geometry = new THREE.BufferGeometry(), indices: number[] = [], uv: number[] = [], columns = edge.length + 1;
-      for (let row = 0; row <= 6; row++) for (let column = 0; column < columns; column++) {
-        uv.push(column / edge.length, row / 6);
-        if (row < 6 && column < edge.length) { const i = row * columns + column; indices.push(i, i + 1, i + columns, i + 1, i + columns + 1, i + columns); }
-      }
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(columns * 7 * 3), 3));
-      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); this.geometries.add(geometry);
-      const mesh = new THREE.Mesh(geometry, entry.skin); mesh.name = `oracle-wrist-connection-${side}`;
-      mesh.castShadow = mesh.receiveShadow = true;
-      return { root, skin, wrist, bones, pads, connection: { mesh, edge } };
+      this.materials.add(skin.material as THREE.Material);
+      const hand = createAnatomicalHand(root, rig.root.getObjectByName(`oracle-hand-${side}`)!, entry.skin, side);
+      this.geometries.add(skin.geometry); this.geometries.add(hand.connection.mesh.geometry); this.skeletons.add(skin.skeleton);
+      return hand;
     });
     if (this.disposed) { this.release(); return; }
     rig.parkHands = hands;
@@ -113,11 +73,58 @@ export class OracleParkHands {
   dispose(): void { this.disposed = true; this.entries.clear(); this.release(); }
 }
 
+/** Reuse the shipped hand topology, digit pads and open wrist rim for a second actor. */
+export function createAnatomicalHand(root: THREE.Object3D, wrist: THREE.Object3D, material: THREE.Material, side: string): OracleParkHand {
+  const skin = root.getObjectByName(`oracle-hand-skin-${side}`) as THREE.SkinnedMesh;
+  skin.material = material; skin.castShadow = skin.receiveShadow = true;
+  const bones = Array.from({ length: 5 }, (_, digit) => Array.from({ length: 3 }, (_, segment) =>
+    root.getObjectByName(`finger${digit + 1}-${segment + 1}_${side}`) as THREE.Bone));
+  const pads = bones.map(chain => {
+    const index = skin.skeleton.bones.indexOf(chain[2]), pad = new THREE.Vector3(); let count = 0;
+    const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+    for (let i = 0; i < position.count; i++) for (let j = 0; j < 4; j++) {
+      if (skinIndex.getComponent(i, j) !== index || skinWeight.getComponent(i, j) < .95) continue;
+      pad.add(new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index])); count++;
+    }
+    return pad.divideScalar(count);
+  });
+  // Weld UV splits before finding the anatomical wrist's single open rim.
+  const position = skin.geometry.attributes.position, index = skin.geometry.index!;
+  const welded = new Map<string, number>(), unique: number[] = [], edges = new Map<string, { a: number; b: number; count: number }>();
+  for (let i = 0; i < position.count; i++) {
+    const key = [position.getX(i), position.getY(i), position.getZ(i)].map(value => Math.round(value * 1e5)).join(':');
+    if (!welded.has(key)) welded.set(key, i); unique.push(welded.get(key)!);
+  }
+  for (let i = 0; i < index.count; i += 3) for (let part = 0; part < 3; part++) {
+    const a = unique[index.getX(i + part)], b = unique[index.getX(i + (part + 1) % 3)], key = [Math.min(a, b), Math.max(a, b)].join(':');
+    const existing = edges.get(key); if (existing) existing.count++; else edges.set(key, { a, b, count: 1 });
+  }
+  const rim = new Map<number, number[]>();
+  for (const { a, b, count } of edges.values()) if (count === 1) {
+    rim.set(a, [...rim.get(a) ?? [], b]); rim.set(b, [...rim.get(b) ?? [], a]);
+  }
+  const edge = [rim.keys().next().value!];
+  while (edge.length < rim.size) edge.push(rim.get(edge.at(-1)!)!.find(next => !edge.includes(next))!);
+  const area = edge.reduce((sum, vertex, i) => sum + position.getX(vertex) * position.getZ(edge[(i + 1) % edge.length])
+    - position.getZ(vertex) * position.getX(edge[(i + 1) % edge.length]), 0);
+  if (area > 0) edge.reverse();
+  const geometry = new THREE.BufferGeometry(), indices: number[] = [], uv: number[] = [], columns = edge.length + 1;
+  for (let row = 0; row <= 6; row++) for (let column = 0; column < columns; column++) {
+    uv.push(column / edge.length, row / 6);
+    if (row < 6 && column < edge.length) { const i = row * columns + column; indices.push(i, i + 1, i + columns, i + 1, i + columns + 1, i + columns); }
+  }
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(columns * 7 * 3), 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices);
+  const mesh = new THREE.Mesh(geometry, material); mesh.name = `oracle-wrist-connection-${side}`;
+  mesh.castShadow = mesh.receiveShadow = true;
+  return { root, skin, wrist, bones, pads, connection: { mesh, edge } };
+}
+
 /** A continuous skin surface joins the cut wrist to the forearm inside the cuff. */
-export function connectGardenWrists(rig: CharacterRig): void {
-  if (!rig.parkHands) return;
+export function connectGardenWrists(rig: CharacterRig, hands = rig.parkHands): void {
+  if (!hands) return;
   rig.root.updateWorldMatrix(true, true);
-  for (const hand of rig.parkHands) {
+  for (const hand of hands) {
     const { mesh, edge } = hand.connection; if (!mesh.visible) continue;
     hand.skin.updateMatrixWorld(true);
     const matrix = mesh.parent!.matrixWorld.clone().invert().multiply(hand.skin.matrixWorld), signature = matrix.elements.join(':');

@@ -56,7 +56,8 @@ import { poseDockGate } from './DockGatePerformance.js';
 import { poseEmpOperator } from './EmpOperatorPerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { DiggerBodies } from './DiggerBodies.js';
-import { OracleParkHands, type OracleParkHand } from './OracleParkHands.js';
+import { OracleParkHands, connectGardenWrists, type OracleParkHand } from './OracleParkHands.js';
+import { SpoonBoyHands } from './SpoonBoyHands.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
@@ -126,6 +127,7 @@ export interface CharacterRig {
   elbows: THREE.Object3D[];
   mobilWrists?: THREE.Object3D[];
   parkHands?: OracleParkHand[];
+  spoonHands?: OracleParkHand[];
   fingers: THREE.Group[][];
   hips: THREE.Group[];
   knees: THREE.Object3D[];
@@ -195,6 +197,7 @@ export class CharacterModels {
   private epilogueHeads = new EpilogueHeads();
   private diggerBodies = new DiggerBodies();
   private oracleParkHands = new OracleParkHands();
+  private spoonBoyHands = new SpoonBoyHands();
 
   constructor() {
     this.atlas = new THREE.TextureLoader().load('/assets/characters/matrix-faces.png');
@@ -744,10 +747,11 @@ export class CharacterModels {
       if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, state.id === 'oracle' ? cloth : seams,
         [0, state.id === 'oracle' ? -.588 : -.56, 0], state.id === 'oracle' ? [.109, .035, .106] : [.13, .045, .14]);
       const handMaterial = look.leather ? black : skin;
-      const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
+      const parentHand = state.id === 'spoon_boy' || state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
       const hand = wristOffset ? this.joint(elbow, 0, -wristOffset) : elbow;
-      if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle') mobilWrists.push(hand); }
+      if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle' && state.id !== 'spoon_boy') mobilWrists.push(hand); }
+      if (state.id === 'spoon_boy') hand.name = `spoon-boy-wrist-${side < 0 ? 'R' : 'L'}`;
       if (state.id === 'oracle' && side < 0) {
         const candy = this.mesh(hand, this.sphere, this.material(new THREE.MeshStandardMaterial({ color: 0xa1201d, roughness: .3 })), [-.025, -.18, .055], [.052, .037, .04]); candy.name = 'oracle-last-candy'; candy.visible = false;
         const cigarette = new THREE.Group(); cigarette.name = 'oracle-last-cigarette'; cigarette.visible = false; hand.add(cigarette); cigarette.position.set(-.028, -.21, .045);
@@ -819,6 +823,7 @@ export class CharacterModels {
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
     }
     batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
+    if (state.id === 'spoon_boy') this.spoonBoyHands.track(rig, skin);
     if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.epilogueHeads.track(rig, state.id);
     if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
     enableSkinnedCulling(detail);
@@ -963,6 +968,7 @@ export class CharacterModels {
     }
     this.epilogueHeads.update(rig, input);
     this.oracleParkHands.update(rig, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'));
+    this.spoonBoyHands.reset(rig);
     if (poseOracleRestored(rig, input.oracleRestored)) return;
     if ((input.diggers || input.upperDigger) && !rig.diggerProps) { rig.diggerProps = new DiggerProps(rig.detail); this.diggerProps.add(rig.diggerProps); }
     if (input.freewayPickup && !rig.freewayProps) { rig.freewayProps = new FreewayPickupProps(rig.root); this.freewayProps.add(rig.freewayProps); }
@@ -1147,10 +1153,12 @@ export class CharacterModels {
         this.material(new THREE.MeshStandardMaterial({ color: 0x70624a, roughness: .8 })), [0, 0, 0]); cord.name = 'zee-pendant-cord';
     }
     if (input.oracleWaiting) rig.motion.seated = 1;
+    const spoonBoy = input.spoonLesson?.role === 'boy';
+    if (spoonBoy) Object.assign(rig.motion, newMotion(), { time: input.spoonLesson!.elapsed, seated: 1 });
     const carryingCargo = input.dockEvacuation?.role === 'kid' && ['lifting', 'carrying', 'depositing'].includes(input.dockEvacuation.phase);
     if (carryingCargo && !rig.dockCargo) { rig.dockCargo = new DockCargoModel(); this.dockCargo.add(rig.dockCargo); rig.root.add(rig.dockCargo.root); }
     if (rig.dockCargo) rig.dockCargo.root.visible = carryingCargo;
-    const pose = advanceMotion(rig.motion, input, delta);
+    const pose = advanceMotion(rig.motion, input, spoonBoy ? 0 : delta);
     const kamalaSkirt = rig.detail.getObjectByName('kamala-skirt') as THREE.Mesh | undefined;
     if (kamalaSkirt) {
       const rest = kamalaSkirt.userData.standing as Float32Array, position = kamalaSkirt.geometry.attributes.position;
@@ -1361,6 +1369,7 @@ export class CharacterModels {
     poseHammerPilot(rig, input.hammerPilot);
     poseLogosPilot(rig, input.logosPilot);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
+    if (rig.spoonHands) connectGardenWrists(rig, rig.spoonHands);
   }
 
   refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {
@@ -1380,6 +1389,7 @@ export class CharacterModels {
     this.epilogueHeads.dispose();
     this.diggerBodies.dispose();
     this.oracleParkHands.dispose();
+    this.spoonBoyHands.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose());
   }
 }
