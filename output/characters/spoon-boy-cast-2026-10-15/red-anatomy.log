@@ -1,0 +1,90 @@
+TAP version 13
+# Subtest: the spoon boy loads one continuous bald child head and a draped body instead of modern belts and boots
+ok 1 - the spoon boy loads one continuous bald child head and a draped body instead of modern belts and boots
+  ---
+  duration_ms: 84.310542
+  type: 'test'
+  ...
+# Subtest: the child profile follows the registered reference instead of an oversized nose and rear skull
+not ok 2 - the child profile follows the registered reference instead of an oversized nose and rear skull
+  ---
+  duration_ms: 10.533167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:1:4160'
+  failureType: 'testCodeFailure'
+  error: 'nose projects beyond the registered child profile: 0.32239824533462524'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:71:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the ivory wrap has matching bindings rather than a dark military neckline
+not ok 3 - the ivory wrap has matching bindings rather than a dark military neckline
+  ---
+  duration_ms: 43.698625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:1:4839'
+  failureType: 'testCodeFailure'
+  error: 'the film wrap must not have the inherited dark uniform binding'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:80:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: both bare forearms meet the anatomical wrist connection without a visible gap
+not ok 4 - both bare forearms meet the anatomical wrist connection without a visible gap
+  ---
+  duration_ms: 65.933542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:1:5364'
+  failureType: 'testCodeFailure'
+  error: 'bare wrists retain an exposed seam: 0.09000509653956425'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:110:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumBareWristGap":0.09000509653956425}
+# Subtest: the clothed child keeps his feet above the rug and reconstructs the same saved skin after walking and cold loading
+ok 5 - the clothed child keeps his feet above the rug and reconstructs the same saved skin after walking and cold loading
+  ---
+  duration_ms: 125.88475
+  type: 'test'
+  ...
+# Subtest: the movie child closes all five digits around the upper shaft rather than pinching the bottom
+ok 6 - the movie child closes all five digits around the upper shaft rather than pinching the bottom
+  ---
+  duration_ms: 45.74925
+  type: 'test'
+  ...
+# Subtest: all five gripping digits touch the actual curved metal and the hand surface stays outside its shaft
+ok 7 - all five gripping digits touch the actual curved metal and the hand surface stays outside its shaft
+  ---
+  duration_ms: 292.216458
+  type: 'test'
+  ...
+# {"probes":36510,"worst":{"margin":0.0018695584678367627,"phase":"demonstrating/1.8","point":[-0.046944683279434685,0.3971727880252729,0.00016541719560336787],"bone":"finger5-3_R"}}
+1..7
+# tests 7
+# suites 0
+# pass 4
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 877.633042

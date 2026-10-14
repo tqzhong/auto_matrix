@@ -8,6 +8,7 @@ export class SpoonModel {
   private bowl: THREE.Mesh;
   private rest: Float32Array;
   private bend = -1;
+  private direction = 1;
   constructor() {
     const handle = new THREE.CylinderGeometry(.032, .045, .65, 8, 40); handle.scale(1, 1, .24); handle.translate(0, .325, 0);
     this.handle = new THREE.Mesh(handle, this.material); this.root.add(this.handle); this.rest = Float32Array.from(handle.attributes.position.array);
@@ -16,10 +17,11 @@ export class SpoonModel {
     this.bowl = new THREE.Mesh(bowl, this.material); this.root.add(this.bowl);
     this.handle.castShadow = this.bowl.castShadow = true; this.setBend(0);
   }
-  setBend(amount: number): void {
-    if (Math.abs(amount - this.bend) < .0001) return;
-    this.bend = amount;
-    const curvature = Math.max(.00001, amount * 3.2); const vertices = this.handle.geometry.attributes.position;
+  setBend(amount: number, reverse = false): void {
+    const direction = reverse ? -1 : 1;
+    if (Math.abs(amount - this.bend) < .0001 && direction === this.direction) return;
+    this.bend = amount; this.direction = direction;
+    const curvature = direction * Math.max(.00001, amount * 3.2); const vertices = this.handle.geometry.attributes.position;
     for (let i = 0; i < vertices.count; i++) {
       const x = this.rest[i * 3]; const y = this.rest[i * 3 + 1]; const z = this.rest[i * 3 + 2];
       const length = Math.max(0, y - .17); const angle = length * curvature;
@@ -28,6 +30,11 @@ export class SpoonModel {
     vertices.needsUpdate = true; this.handle.geometry.computeVertexNormals();
     const angle = .48 * curvature;
     this.bowl.position.set((1 - Math.cos(angle)) / curvature, .17 + Math.sin(angle) / curvature, 0); this.bowl.rotation.z = -angle;
+  }
+  frameAt(height: number): { point: THREE.Vector3; rotation: THREE.Quaternion } {
+    const curvature = this.direction * Math.max(.00001, this.bend * 3.2), length = Math.max(0, height - .17), angle = length * curvature;
+    return { point: new THREE.Vector3((1 - Math.cos(angle)) / curvature, Math.min(.17, height) + Math.sin(angle) / curvature, 0),
+      rotation: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -angle) };
   }
   dispose(): void { this.handle.geometry.dispose(); this.bowl.geometry.dispose(); this.material.dispose(); this.root.removeFromParent(); }
 }

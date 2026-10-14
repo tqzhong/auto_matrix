@@ -1,0 +1,44 @@
+TAP version 13
+# Subtest: the spoon boy loads one continuous bald child head and a draped body instead of modern belts and boots
+not ok 1 - the spoon boy loads one continuous bald child head and a draped body instead of modern belts and boots
+  ---
+  duration_ms: 11.035875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:1:3150'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/Users/tianqizhong/ai_project/auto_matrix/packages/client/public/assets/characters/spoon_boy-head.glb'"
+  code: 'ENOENT'
+  stack: |-
+    async open (node:internal/fs/promises:639:25)
+    async readFile (node:internal/fs/promises:1252:14)
+    async fixture (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:15:17)
+    async TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:53:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the clothed child keeps his feet above the rug and reconstructs the same saved skin after walking and cold loading
+not ok 2 - the clothed child keeps his feet above the rug and reconstructs the same saved skin after walking and cold loading
+  ---
+  duration_ms: 3.727917
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:1:4160'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/Users/tianqizhong/ai_project/auto_matrix/packages/client/public/assets/characters/spoon_boy-head.glb'"
+  code: 'ENOENT'
+  stack: |-
+    async open (node:internal/fs/promises:639:25)
+    async readFile (node:internal/fs/promises:1252:14)
+    async fixture (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:15:17)
+    async TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-boy-cast.test.mts:66:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 279.95375

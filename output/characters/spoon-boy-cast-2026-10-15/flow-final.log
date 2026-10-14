@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: the cold Oracle return camera cannot put the apartment lintel between Neo and the lens
+ok 1 - the cold Oracle return camera cannot put the apartment lintel between Neo and the lens
+  ---
+  duration_ms: 658.13025
+  type: 'test'
+  ...
+# Subtest: spoon focus is a held input and is released when a panel opens or the window loses focus
+ok 2 - spoon focus is a held input and is released when a panel opens or the window loses focus
+  ---
+  duration_ms: 46.705334
+  type: 'test'
+  ...
+# Subtest: spoon inspection keeps a front-side view of the hand, while V returns to steerable eyes
+ok 3 - spoon inspection keeps a front-side view of the hand, while V returns to steerable eyes
+  ---
+  duration_ms: 203.672208
+  type: 'test'
+  ...
+# Subtest: first-person entry finds the mirror once Neo sits and leaves later free look alone
+ok 4 - first-person entry finds the mirror once Neo sits and leaves later free look alone
+  ---
+  duration_ms: 147.531875
+  type: 'test'
+  ...
+# Subtest: the spoon journal waits for the hostess before offering Neo a standing action
+ok 5 - the spoon journal waits for the hostess before offering Neo a standing action
+  ---
+  duration_ms: 124.047584
+  type: 'test'
+  ...
+# Subtest: the spoon review save reaches each handoff checkpoint through the playable sequence
+ok 6 - the spoon review save reaches each handoff checkpoint through the playable sequence
+  ---
+  duration_ms: 1653.842917
+  type: 'test'
+  ...
+# Subtest: the spoon withdrawal review save freezes after ownership changes while the child still releases his hand
+ok 7 - the spoon withdrawal review save freezes after ownership changes while the child still releases his hand
+  ---
+  duration_ms: 436.809709
+  type: 'test'
+  ...
+# Subtest: Oracle reception review saves preserve the seated invitation and the start of free following
+ok 8 - Oracle reception review saves preserve the seated invitation and the start of free following
+  ---
+  duration_ms: 903.720709
+  type: 'test'
+  ...
+# Subtest: Neo sits for the demonstration, explicitly takes the spoon, focuses and stands before leaving
+ok 9 - Neo sits for the demonstration, explicitly takes the spoon, focuses and stands before leaving
+  ---
+  duration_ms: 796.354167
+  type: 'test'
+  ...
+# Subtest: Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess
+ok 10 - Oracle reception waits for Neo, preserves the invitation on pause and reconnect, and respects a controlled hostess
+  ---
+  duration_ms: 428.382125
+  type: 'test'
+  ...
+# Subtest: the spoon handoff pauses for disconnects and an occupied child, and survives retry without duplicating the prop
+ok 11 - the spoon handoff pauses for disconnects and an occupied child, and survives retry without duplicating the prop
+  ---
+  duration_ms: 77.532083
+  type: 'test'
+  ...
+# Subtest: old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress
+ok 12 - old Oracle waiting-room saves move clear of new walls and furniture without losing spoon progress
+  ---
+  duration_ms: 130.716875
+  type: 'test'
+  ...
+# Subtest: the tracking room has a walkable doorway and Neo sits before touching the mirror
+ok 13 - the tracking room has a walkable doorway and Neo sits before touching the mirror
+  ---
+  duration_ms: 3.188917
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3717.552042

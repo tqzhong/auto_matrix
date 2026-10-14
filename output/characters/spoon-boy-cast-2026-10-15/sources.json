@@ -1,0 +1,41 @@
+{
+  "movieclip": "https://www.youtube.com/watch?v=XO0pcWxcROI",
+  "filmStill": "https://www.imdb.com/title/tt0133093/mediaviewer/rm3951329281/",
+  "filmClose": "https://www.imdb.com/title/tt0133093/characters/nm0936894/",
+  "observed": [
+    "bald child, blue eyes, narrow face",
+    "light draped wrap across both shoulders, bare arms",
+    "hand closes around stem near the bowl"
+  ],
+  "referencePhotosShipped": false,
+  "generatedAtlas": "built-in image_gen; identity/proportion reference, not actor scan",
+  "runtimeAssets": [
+    {
+      "path": "packages/client/public/assets/characters/spoon_boy-head.glb",
+      "bytes": 1386300,
+      "sha256": "d06b7192311acf0110852a96ffc891405fa6168b37fce580bfe0efd6d8097906",
+      "triangles": 34512
+    },
+    {
+      "path": "packages/client/public/assets/characters/spoon_boy-body.glb",
+      "bytes": 2665568,
+      "sha256": "95c1830b054c10d564cd309adad4d704bd9375fac6ecf9aa53f26307a66e44d9",
+      "triangles": 60132
+    },
+    {
+      "path": "packages/client/public/assets/characters/spoon_boy-face-reference.png",
+      "bytes": 2220236,
+      "sha256": "b9b3242a49bf260d993faaa50baa8e9a9836dc5329986daa637bd339a2b294ac"
+    }
+  ],
+  "makeHumanRevision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "sourceTarget": "macrodetails/caucasian-male-child.target",
+  "anatomyLicense": "CC0, consistent with the existing MakeHuman authoring pipeline",
+  "faceAtlas": {
+    "tool": "built-in image_gen.imagegen",
+    "prompt": "face-generation-prompt.txt",
+    "approximateLikeness": true,
+    "actorScan": false
+  },
+  "lowerCostumeAndFootwear": "game interpretation; not established by the cropped film stills"
+}

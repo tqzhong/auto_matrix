@@ -1,0 +1,10 @@
+{
+  "browserId": "2",
+  "tabId": "1",
+  "title": "无法访问此站点",
+  "url": "http://127.0.0.1:5197/",
+  "inventoryError": "Native apps: The Mac is locked and automatic unlock could not unlock it. Ask the user to unlock the Mac manually before continuing.",
+  "manualUnlockRequested": true,
+  "newNativeGameplay": false,
+  "newFrameRateMeasurement": false
+}

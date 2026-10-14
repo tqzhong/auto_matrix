@@ -1,0 +1,295 @@
+TAP version 13
+# Subtest: late dock body loading keeps the saved pose, detailed head and held props while replacing the old limbs
+ok 1 - late dock body loading keeps the saved pose, detailed head and held props while replacing the old limbs
+  ---
+  duration_ms: 223.022833
+  type: 'test'
+  ...
+# Subtest: the shipped dock hands remain on the support belt after full body skinning
+ok 2 - the shipped dock hands remain on the support belt after full body skinning
+  ---
+  duration_ms: 160.231083
+  type: 'test'
+  ...
+# Subtest: the shipped pair keeps grounded boots, clear bodies and belt contact throughout reaching and lowering the launcher
+ok 3 - the shipped pair keeps grounded boots, clear bodies and belt contact throughout reaching and lowering the launcher
+  ---
+  duration_ms: 3867.593167
+  type: 'test'
+  ...
+# Subtest: Zee’s shipped hands stay on the artillery wheel without crossing her arms or lifting her boots
+ok 4 - Zee’s shipped hands stay on the artillery wheel without crossing her arms or lifting her boots
+  ---
+  duration_ms: 121.564334
+  type: 'test'
+  ...
+# Subtest: Zee waits standing in Link’s arms with planted boots, as in the temple scene
+ok 5 - Zee waits standing in Link’s arms with planted boots, as in the temple scene
+  ---
+  duration_ms: 89.180125
+  type: 'test'
+  ...
+# Subtest: a contact correction after animation moves the rendered skin and its culling bounds in the same frame
+ok 6 - a contact correction after animation moves the rendered skin and its culling bounds in the same frame
+  ---
+  duration_ms: 85.254166
+  type: 'test'
+  ...
+# Subtest: the anatomical palms meet the launcher and rockets, and boot soles support both fighters during loading
+ok 7 - the anatomical palms meet the launcher and rockets, and boot soles support both fighters during loading
+  ---
+  duration_ms: 202.462042
+  type: 'test'
+  ...
+# Subtest: Zee releases the seated rounds before aiming without snapping either arm down
+ok 8 - Zee releases the seated rounds before aiming without snapping either arm down
+  ---
+  duration_ms: 86.4935
+  type: 'test'
+  ...
+# Subtest: the shipped loading pair carries the rounds, clears the other body and feeds them entirely inside the open breeches
+ok 9 - the shipped loading pair carries the rounds, clears the other body and feeds them entirely inside the open breeches
+  ---
+  duration_ms: 4163.798917
+  type: 'test'
+  ...
+# Subtest: boot cuffs follow the shin when the ankle flexes, without pulling the flat sole off the foot
+ok 10 - boot cuffs follow the shin when the ankle flexes, without pulling the flat sole off the foot
+  ---
+  duration_ms: 81.28975
+  type: 'test'
+  ...
+# Subtest: the separate head and anatomical body keep a closed neck silhouette while looking down to load
+ok 11 - the separate head and anatomical body keep a closed neck silhouette while looking down to load
+  ---
+  duration_ms: 1394.146708
+  type: 'test'
+  ...
+# Subtest: shipped dock bodies and clothes clear the deck and pipes through crawl, support, fall and hatch transfer
+ok 12 - shipped dock bodies and clothes clear the deck and pipes through crawl, support, fall and hatch transfer
+  ---
+  duration_ms: 920.762083
+  type: 'test'
+  ...
+# Subtest: the continuous dock meshes remain outside the actual hatch deck during both transfers
+ok 13 - the continuous dock meshes remain outside the actual hatch deck during both transfers
+  ---
+  duration_ms: 1268.019875
+  type: 'test'
+  ...
+# Subtest: Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+ok 14 - Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+  ---
+  duration_ms: 374.1745
+  type: 'test'
+  ...
+# Subtest: Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+ok 15 - Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+  ---
+  duration_ms: 479.999584
+  type: 'test'
+  ...
+# Subtest: Oracle and Sati have a front hairline while their detailed assets load
+ok 16 - Oracle and Sati have a front hairline while their detailed assets load
+  ---
+  duration_ms: 159.872167
+  type: 'test'
+  ...
+# Subtest: Zee and Charra load their own continuous heads without changing a saved actor pose
+ok 17 - Zee and Charra load their own continuous heads without changing a saved actor pose
+  ---
+  duration_ms: 221.42225
+  type: 'test'
+  ...
+# Subtest: the two dock fighters have exposed articulated arms rather than their old full sleeves
+ok 18 - the two dock fighters have exposed articulated arms rather than their old full sleeves
+  ---
+  duration_ms: 21.376292
+  type: 'test'
+  ...
+# Subtest: the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+ok 19 - the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+  ---
+  duration_ms: 516.153792
+  type: 'test'
+  ...
+# Subtest: the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+ok 20 - the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+  ---
+  duration_ms: 197.596917
+  type: 'test'
+  ...
+# Subtest: paused Sati waking reuses the support calculation for its unchanged saved pose
+ok 21 - paused Sati waking reuses the support calculation for its unchanged saved pose
+  ---
+  duration_ms: 10092.108375
+  type: 'test'
+  ...
+# Subtest: Sati’s visible legs stay inside the dress above its hem during walking
+ok 22 - Sati’s visible legs stay inside the dress above its hem during walking
+  ---
+  duration_ms: 1023.942542
+  type: 'test'
+  ...
+# Subtest: Sati’s skirt stays attached to the bodice while the torso sways
+ok 23 - Sati’s skirt stays attached to the bodice while the torso sways
+  ---
+  duration_ms: 15.881292
+  type: 'test'
+  ...
+# Subtest: the folded waking dress covers the actual upper thighs through the waist bend
+ok 24 - the folded waking dress covers the actual upper thighs through the waist bend
+  ---
+  duration_ms: 133.069125
+  type: 'test'
+  ...
+# Subtest: the epilogue scalp does not grow hair across the visible ear surfaces
+ok 25 - the epilogue scalp does not grow hair across the visible ear surfaces
+  ---
+  duration_ms: 111.729084
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 26 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 211.159833
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 27 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 58.981917
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 28 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 703.278167
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 29 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 24.390542
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 30 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 154.553375
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 31 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 18.164333
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 32 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 1416.558083
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 33 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 761.37525
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 34 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 33.417917
+  type: 'test'
+  ...
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+ok 35 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 1319.061375
+  type: 'test'
+  ...
+# {"probes":851,"maximumSkinStep":0.025980370177646376,"maximumTurn":0.02512701932504489}
+# Subtest: the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+ok 36 - the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+  ---
+  duration_ms: 2933.964375
+  type: 'test'
+  ...
+# {"probes":2366,"maximumSkinStep":0.01898205282351796,"maximumTurn":0.01856361757571208,"worst":"receiving 1.31: oracle-hand-skin-R/BufferGeometry vertex 2334, parent oracle-anatomical-hand-R"}
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 37 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 388.15225
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 38 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 285.349584
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 39 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 486.418125
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 40 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 478.78325
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 41 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 336.596166
+  type: 'test'
+  ...
+# Subtest: the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+ok 42 - the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+  ---
+  duration_ms: 304.903292
+  type: 'test'
+  ...
+# Subtest: both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+ok 43 - both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+  ---
+  duration_ms: 292.788375
+  type: 'test'
+  ...
+# Subtest: the boy keeps the anatomical wrists straight and joins the actual cut skin inside both cuffs
+ok 44 - the boy keeps the anatomical wrists straight and joins the actual cut skin inside both cuffs
+  ---
+  duration_ms: 291.155792
+  type: 'test'
+  ...
+# Subtest: the entire gripping hand clears the straight stem, including triangle interiors
+ok 45 - the entire gripping hand clears the straight stem, including triangle interiors
+  ---
+  duration_ms: 330.542708
+  type: 'test'
+  ...
+# {"probes":9443,"minimum":-0.0012559519133747976}
+# Subtest: a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal
+ok 46 - a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal
+  ---
+  duration_ms: 305.039042
+  type: 'test'
+  ...
+# Subtest: leaving the spoon lesson keeps the exposed wrist rim attached during ordinary movement
+ok 47 - leaving the spoon lesson keeps the exposed wrist rim attached during ordinary movement
+  ---
+  duration_ms: 284.787792
+  type: 'test'
+  ...
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13752.227042

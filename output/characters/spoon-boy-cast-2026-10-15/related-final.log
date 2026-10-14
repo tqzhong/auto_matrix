@@ -1,0 +1,715 @@
+TAP version 13
+# Subtest: late dock body loading keeps the saved pose, detailed head and held props while replacing the old limbs
+ok 1 - late dock body loading keeps the saved pose, detailed head and held props while replacing the old limbs
+  ---
+  duration_ms: 712.639459
+  type: 'test'
+  ...
+# Subtest: the shipped dock hands remain on the support belt after full body skinning
+ok 2 - the shipped dock hands remain on the support belt after full body skinning
+  ---
+  duration_ms: 561.009875
+  type: 'test'
+  ...
+# Subtest: the shipped pair keeps grounded boots, clear bodies and belt contact throughout reaching and lowering the launcher
+ok 3 - the shipped pair keeps grounded boots, clear bodies and belt contact throughout reaching and lowering the launcher
+  ---
+  duration_ms: 7077.495583
+  type: 'test'
+  ...
+# Subtest: Zee’s shipped hands stay on the artillery wheel without crossing her arms or lifting her boots
+ok 4 - Zee’s shipped hands stay on the artillery wheel without crossing her arms or lifting her boots
+  ---
+  duration_ms: 312.812083
+  type: 'test'
+  ...
+# Subtest: Zee waits standing in Link’s arms with planted boots, as in the temple scene
+ok 5 - Zee waits standing in Link’s arms with planted boots, as in the temple scene
+  ---
+  duration_ms: 169.747458
+  type: 'test'
+  ...
+# Subtest: a contact correction after animation moves the rendered skin and its culling bounds in the same frame
+ok 6 - a contact correction after animation moves the rendered skin and its culling bounds in the same frame
+  ---
+  duration_ms: 282.690958
+  type: 'test'
+  ...
+# Subtest: the anatomical palms meet the launcher and rockets, and boot soles support both fighters during loading
+ok 7 - the anatomical palms meet the launcher and rockets, and boot soles support both fighters during loading
+  ---
+  duration_ms: 452.087458
+  type: 'test'
+  ...
+# Subtest: Zee releases the seated rounds before aiming without snapping either arm down
+ok 8 - Zee releases the seated rounds before aiming without snapping either arm down
+  ---
+  duration_ms: 180.120375
+  type: 'test'
+  ...
+# Subtest: the shipped loading pair carries the rounds, clears the other body and feeds them entirely inside the open breeches
+ok 9 - the shipped loading pair carries the rounds, clears the other body and feeds them entirely inside the open breeches
+  ---
+  duration_ms: 8943.833208
+  type: 'test'
+  ...
+# Subtest: boot cuffs follow the shin when the ankle flexes, without pulling the flat sole off the foot
+ok 10 - boot cuffs follow the shin when the ankle flexes, without pulling the flat sole off the foot
+  ---
+  duration_ms: 186.453209
+  type: 'test'
+  ...
+# Subtest: the separate head and anatomical body keep a closed neck silhouette while looking down to load
+ok 11 - the separate head and anatomical body keep a closed neck silhouette while looking down to load
+  ---
+  duration_ms: 2245.098583
+  type: 'test'
+  ...
+# Subtest: shipped dock bodies and clothes clear the deck and pipes through crawl, support, fall and hatch transfer
+ok 12 - shipped dock bodies and clothes clear the deck and pipes through crawl, support, fall and hatch transfer
+  ---
+  duration_ms: 1331.594917
+  type: 'test'
+  ...
+# Subtest: the continuous dock meshes remain outside the actual hatch deck during both transfers
+ok 13 - the continuous dock meshes remain outside the actual hatch deck during both transfers
+  ---
+  duration_ms: 1887.59175
+  type: 'test'
+  ...
+# Subtest: Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+ok 14 - Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+  ---
+  duration_ms: 1182.291625
+  type: 'test'
+  ...
+# Subtest: Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+ok 15 - Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+  ---
+  duration_ms: 1028.447875
+  type: 'test'
+  ...
+# Subtest: Oracle and Sati have a front hairline while their detailed assets load
+ok 16 - Oracle and Sati have a front hairline while their detailed assets load
+  ---
+  duration_ms: 287.242584
+  type: 'test'
+  ...
+# Subtest: Zee and Charra load their own continuous heads without changing a saved actor pose
+ok 17 - Zee and Charra load their own continuous heads without changing a saved actor pose
+  ---
+  duration_ms: 409.554208
+  type: 'test'
+  ...
+# Subtest: the two dock fighters have exposed articulated arms rather than their old full sleeves
+ok 18 - the two dock fighters have exposed articulated arms rather than their old full sleeves
+  ---
+  duration_ms: 33.831916
+  type: 'test'
+  ...
+# Subtest: the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+ok 19 - the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+  ---
+  duration_ms: 860.869541
+  type: 'test'
+  ...
+# Subtest: the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+ok 20 - the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+  ---
+  duration_ms: 376.01075
+  type: 'test'
+  ...
+# Subtest: paused Sati waking reuses the support calculation for its unchanged saved pose
+ok 21 - paused Sati waking reuses the support calculation for its unchanged saved pose
+  ---
+  duration_ms: 17648.79425
+  type: 'test'
+  ...
+# Subtest: Sati’s visible legs stay inside the dress above its hem during walking
+ok 22 - Sati’s visible legs stay inside the dress above its hem during walking
+  ---
+  duration_ms: 1580.722708
+  type: 'test'
+  ...
+# Subtest: Sati’s skirt stays attached to the bodice while the torso sways
+ok 23 - Sati’s skirt stays attached to the bodice while the torso sways
+  ---
+  duration_ms: 45.474875
+  type: 'test'
+  ...
+# Subtest: the folded waking dress covers the actual upper thighs through the waist bend
+ok 24 - the folded waking dress covers the actual upper thighs through the waist bend
+  ---
+  duration_ms: 178.92425
+  type: 'test'
+  ...
+# Subtest: the epilogue scalp does not grow hair across the visible ear surfaces
+ok 25 - the epilogue scalp does not grow hair across the visible ear surfaces
+  ---
+  duration_ms: 206.639041
+  type: 'test'
+  ...
+# Subtest: neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 26 - neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 2165.599541
+  type: 'test'
+  ...
+# {"id":"neo","choice":"red","probes":851,"maximumSkinStep":0.04982076975960463,"maximumTurn":0.09603106935275849}
+# Subtest: neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 27 - neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 1361.84025
+  type: 'test'
+  ...
+# {"id":"neo","choice":"blue","probes":851,"maximumSkinStep":0.04982076975853766,"maximumTurn":0.09417437209435008}
+# Subtest: morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 28 - morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 2217.7145
+  type: 'test'
+  ...
+# {"id":"morpheus","choice":"red","probes":1696,"maximumSkinStep":0.01572263684249004,"maximumTurn":0.03696412962610055}
+# Subtest: late wrist contact corrections update the forearm in the same frame
+ok 29 - late wrist contact corrections update the forearm in the same frame
+  ---
+  duration_ms: 38.335208
+  type: 'test'
+  ...
+# Subtest: shared hero assets retain neutral geometry, hand targets and independent restored forearms
+ok 30 - shared hero assets retain neutral geometry, hand targets and independent restored forearms
+  ---
+  duration_ms: 4635.094417
+  type: 'test'
+  ...
+# Subtest: neo: turning the palm preserves the actual forearm and cuff cross-section
+ok 31 - neo: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 764.459083
+  type: 'test'
+  ...
+# {"id":"neo","sampleCount":8013,"minimumRadius":0.8930728764065317}
+# Subtest: trinity: turning the palm preserves the actual forearm and cuff cross-section
+ok 32 - trinity: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 199.251791
+  type: 'test'
+  ...
+# {"id":"trinity","sampleCount":5386,"minimumRadius":0.8930729694064649}
+# Subtest: smith: turning the palm preserves the actual forearm and cuff cross-section
+ok 33 - smith: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 105.052667
+  type: 'test'
+  ...
+# {"id":"smith","sampleCount":2455,"minimumRadius":0.893072990680801}
+# Subtest: morpheus: turning the palm preserves the actual forearm and cuff cross-section
+ok 34 - morpheus: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 719.045625
+  type: 'test'
+  ...
+# {"id":"morpheus","sampleCount":4948,"minimumRadius":0.8930728137982399}
+# Subtest: neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 35 - neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 1067.228042
+  type: 'test'
+  ...
+# Subtest: trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 36 - trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 223.169416
+  type: 'test'
+  ...
+# Subtest: smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 37 - smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 69.205625
+  type: 'test'
+  ...
+# Subtest: morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 38 - morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 881.015833
+  type: 'test'
+  ...
+# Subtest: neo: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 39 - neo: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 41824.099834
+  type: 'test'
+  ...
+# Subtest: trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 40 - trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 27514.764708
+  type: 'test'
+  ...
+# Subtest: smith: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 41 - smith: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 26789.782375
+  type: 'test'
+  ...
+# Subtest: morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 42 - morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 27437.836042
+  type: 'test'
+  ...
+# Subtest: restored hands match animated hands and release to their original pose without carrying over a grip
+ok 43 - restored hands match animated hands and release to their original pose without carrying over a grip
+  ---
+  duration_ms: 919.314
+  type: 'test'
+  ...
+# Subtest: Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+ok 44 - Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+  ---
+  duration_ms: 915.843458
+  type: 'test'
+  ...
+# Subtest: the delivered Smith palm reaches the cookie plate before it leaves the table
+ok 45 - the delivered Smith palm reaches the cookie plate before it leaves the table
+  ---
+  duration_ms: 654.56425
+  type: 'test'
+  ...
+# {"plateGap":2.682298827494378e-13,"palm":[-4.800000000000182,2.179999999999732,-20.149999999999636],"shoulder":[-4.770857062331743,2.622247345168856,-21.540319658412955],"forearm":[-0.025925425677162495,-0.6481356419290627,0.03240678209645305]}
+# {"samples":6673,"skinGap":0.005267588141806279,"penetration":0}
+# Subtest: contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+ok 46 - contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+  ---
+  duration_ms: 1017.110375
+  type: 'test'
+  ...
+# {"samples":6673,"skinGap":0.0031312674973378307,"penetration":0}
+# Subtest: the actual seated Oracle and bending Smith stay outside the solid kitchen table
+ok 47 - the actual seated Oracle and bending Smith stay outside the solid kitchen table
+  ---
+  duration_ms: 504.919208
+  type: 'test'
+  ...
+# Subtest: the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+ok 48 - the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+  ---
+  duration_ms: 202.399416
+  type: 'test'
+  ...
+# {"elapsed":0,"shoeClearance":0.019722314581661262}
+# {"elapsed":0.3,"shoeClearance":0.01972231458188592}
+# {"elapsed":1,"shoeClearance":0.01972231458179972}
+# {"elapsed":2,"shoeClearance":0.019722314581180428}
+# {"elapsed":3,"shoeClearance":0.019722314581609002}
+# Subtest: the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+ok 49 - the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+  ---
+  duration_ms: 8069.899875
+  type: 'test'
+  ...
+# {"phase":"contact","elapsed":0,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.2,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.4,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.6,"samples":113,"skinGap":0.28314826476162125,"penetration":0}
+# {"phase":"contact","elapsed":0.8,"samples":3382,"skinGap":0.17571767018489481,"penetration":0}
+# {"phase":"contact","elapsed":1.2,"samples":6673,"skinGap":0.0027968212234554812,"penetration":0}
+# {"phase":"contact","elapsed":1.6,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"contact","elapsed":2.2,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":0,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":1,"samples":6673,"skinGap":0.003128688666038215,"penetration":0}
+# {"phase":"coating","elapsed":2.5,"samples":6673,"skinGap":0.0030993430627859198,"penetration":0}
+# {"phase":"coating","elapsed":3.5,"samples":6673,"skinGap":0.0031048221335368,"penetration":0}
+# {"phase":"coating","elapsed":4.25,"samples":2761,"skinGap":0.2299019679576304,"penetration":0}
+# {"phase":"coating","elapsed":5,"samples":0,"skinGap":null,"penetration":0}
+# Subtest: Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+ok 50 - Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+  ---
+  duration_ms: 796.71775
+  type: 'test'
+  ...
+# {"maximumWristBend":0.6742895720974654,"maximumTravelPer40ms":0.06332494661043142}
+# Subtest: the Oracle’s outer coat does not cross through her dress while she turns, lowers and holds the bag
+ok 51 - the Oracle’s outer coat does not cross through her dress while she turns, lowers and holds the bag
+  ---
+  duration_ms: 16348.229167
+  type: 'test'
+  ...
+# Subtest: the seated dress keeps its front and back panels from folding through each other
+ok 52 - the seated dress keeps its front and back panels from folding through each other
+  ---
+  duration_ms: 2367.123
+  type: 'test'
+  ...
+# Subtest: the park collar and lapels lie outside the chest instead of disappearing into the coat
+ok 53 - the park collar and lapels lie outside the chest instead of disappearing into the coat
+  ---
+  duration_ms: 393.1865
+  type: 'test'
+  ...
+# Subtest: an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+ok 54 - an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+  ---
+  duration_ms: 287.497209
+  type: 'test'
+  ...
+# Subtest: standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+ok 55 - standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+  ---
+  duration_ms: 443.1605
+  type: 'test'
+  ...
+# Subtest: the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+ok 56 - the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+  ---
+  duration_ms: 1780.671583
+  type: 'test'
+  ...
+# 0 hand 0 digit 1: handle gap 0.007504443232605063
+# 0 hand 0 digit 2: handle gap 0.0011667534721590891
+# 0 hand 0 digit 3: handle gap 0.0015565269585492425
+# 0 hand 0 digit 4: handle gap 0.0020546081333026635
+# 0 hand 0 digit 5: handle gap 0.0027742104170479648
+# 0.45 hand 0 digit 1: handle gap 0.007510507105627784
+# 0.45 hand 0 digit 2: handle gap 0.0012184040856964666
+# 0.45 hand 0 digit 3: handle gap 0.0015631960239296597
+# 0.45 hand 0 digit 4: handle gap 0.0020553913371559283
+# 0.45 hand 0 digit 5: handle gap 0.0026916604631424777
+# 1.05 hand 0 digit 1: handle gap 0.007088866153392926
+# 1.05 hand 0 digit 2: handle gap 0.001524939867721429
+# 1.05 hand 0 digit 3: handle gap 0.0015564944434816631
+# 1.05 hand 0 digit 4: handle gap 0.0020575435176984
+# 1.05 hand 0 digit 5: handle gap 0.0024111696810621246
+# 1.05 hand 1 digit 1: handle gap 0.007088866153395001
+# 1.05 hand 1 digit 2: handle gap 0.0015249249656617211
+# 1.05 hand 1 digit 3: handle gap 0.0015565026919023978
+# 1.05 hand 1 digit 4: handle gap 0.0020575246473236233
+# 1.05 hand 1 digit 5: handle gap 0.002411201745904236
+# 1.7 hand 0 digit 1: handle gap 0.007083536292727909
+# 1.7 hand 0 digit 2: handle gap 0.00152396545347714
+# 1.7 hand 0 digit 3: handle gap 0.0015560258322722675
+# 1.7 hand 0 digit 4: handle gap 0.00205753251289683
+# 1.7 hand 0 digit 5: handle gap 0.002411860818073014
+# 1.7 hand 1 digit 1: handle gap 0.007083536292719513
+# 1.7 hand 1 digit 2: handle gap 0.0015239507528043462
+# 1.7 hand 1 digit 3: handle gap 0.001556034423336388
+# 1.7 hand 1 digit 4: handle gap 0.002057513190291616
+# 1.7 hand 1 digit 5: handle gap 0.0024118928567542254
+# 2.4 hand 0 digit 1: handle gap 0.006811462575799152
+# 2.4 hand 0 digit 2: handle gap 0.0012735890613538026
+# 2.4 hand 0 digit 3: handle gap 0.0015268786566839145
+# 2.4 hand 0 digit 4: handle gap 0.0020566036073524988
+# 2.4 hand 0 digit 5: handle gap 0.002488186417209586
+# 2.4 hand 1 digit 1: handle gap 0.00681146257580836
+# 2.4 hand 1 digit 2: handle gap 0.001273586290555715
+# 2.4 hand 1 digit 3: handle gap 0.0015269039300201091
+# 2.4 hand 1 digit 4: handle gap 0.0020565623888422757
+# 2.4 hand 1 digit 5: handle gap 0.002488215755036858
+# Subtest: park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+ok 57 - park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+  ---
+  duration_ms: 1386.891334
+  type: 'test'
+  ...
+# Subtest: the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+ok 58 - the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+  ---
+  duration_ms: 3701.655417
+  type: 'test'
+  ...
+# minimum wrist alignment: 0.5232828304685438
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+ok 59 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 319.947792
+  type: 'test'
+  ...
+# Subtest: hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+ok 60 - hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+  ---
+  duration_ms: 266.565542
+  type: 'test'
+  ...
+# Subtest: a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+ok 61 - a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+  ---
+  duration_ms: 234.751083
+  type: 'test'
+  ...
+# Subtest: both park wrists remain visibly connected to their sleeves while the bag is lifted
+ok 62 - both park wrists remain visibly connected to their sleeves while the bag is lifted
+  ---
+  duration_ms: 2105.767833
+  type: 'test'
+  ...
+# Subtest: the sleeve caps meet the coat instead of ending above a detached shoulder seam
+ok 63 - the sleeve caps meet the coat instead of ending above a detached shoulder seam
+  ---
+  duration_ms: 423.26725
+  type: 'test'
+  ...
+# Subtest: the wrist skin meets every anatomical rim vertex and returns to the saved pose after an outfit change or cold load
+ok 64 - the wrist skin meets every anatomical rim vertex and returns to the saved pose after an outfit change or cold load
+  ---
+  duration_ms: 714.392958
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 65 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 262.514709
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 66 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 104.785375
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 67 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 1290.255208
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 68 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 27.11225
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 69 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 212.080708
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 70 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 12.803458
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 71 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 2733.391834
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 72 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 1479.176625
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 73 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 81.153125
+  type: 'test'
+  ...
+# Subtest: Neo leaves the chairs facing the open tracking-room doorway
+ok 74 - Neo leaves the chairs facing the open tracking-room doorway
+  ---
+  duration_ms: 3.904834
+  type: 'test'
+  ...
+# Subtest: the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+ok 75 - the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+  ---
+  duration_ms: 573.203834
+  type: 'test'
+  ...
+# Subtest: the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+ok 76 - the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+  ---
+  duration_ms: 569.60775
+  type: 'test'
+  ...
+# Subtest: existing offering and choice saves continue without inserting a new unanswered conversation
+ok 77 - existing offering and choice saves continue without inserting a new unanswered conversation
+  ---
+  duration_ms: 653.669167
+  type: 'test'
+  ...
+# Subtest: cold loading restores both pill performers before a player reconnects
+ok 78 - cold loading restores both pill performers before a player reconnects
+  ---
+  duration_ms: 925.138583
+  type: 'test'
+  ...
+# Subtest: pill pose restoration leaves occupied and dead performers alone
+ok 79 - pill pose restoration leaves occupied and dead performers alone
+  ---
+  duration_ms: 159.933042
+  type: 'test'
+  ...
+# Subtest: Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+ok 80 - Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+  ---
+  duration_ms: 1103.402459
+  type: 'test'
+  ...
+# Subtest: after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+ok 81 - after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+  ---
+  duration_ms: 924.557375
+  type: 'test'
+  ...
+# Subtest: blue takes the same physical sequence before preserving the daily-life save
+ok 82 - blue takes the same physical sequence before preserving the daily-life save
+  ---
+  duration_ms: 832.711708
+  type: 'test'
+  ...
+# Subtest: pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+ok 83 - pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+  ---
+  duration_ms: 824.034458
+  type: 'test'
+  ...
+# Subtest: a pill performance reserves Morpheus and rejects movement, combat and remote choices
+ok 84 - a pill performance reserves Morpheus and rejects movement, combat and remote choices
+  ---
+  duration_ms: 604.758541
+  type: 'test'
+  ...
+# Subtest: an occupied Morpheus is never moved into the pill performance
+ok 85 - an occupied Morpheus is never moved into the pill performance
+  ---
+  duration_ms: 98.34775
+  type: 'test'
+  ...
+# Subtest: the spoon boy loads one continuous bald child head and a draped body instead of modern belts and boots
+ok 86 - the spoon boy loads one continuous bald child head and a draped body instead of modern belts and boots
+  ---
+  duration_ms: 255.404542
+  type: 'test'
+  ...
+# Subtest: the child profile follows the registered reference instead of an oversized nose and rear skull
+ok 87 - the child profile follows the registered reference instead of an oversized nose and rear skull
+  ---
+  duration_ms: 95.567542
+  type: 'test'
+  ...
+# Subtest: the face projection does not stamp a clipped portrait column across the temples
+ok 88 - the face projection does not stamp a clipped portrait column across the temples
+  ---
+  duration_ms: 53.683541
+  type: 'test'
+  ...
+# Subtest: the ivory wrap has matching bindings rather than a dark military neckline
+ok 89 - the ivory wrap has matching bindings rather than a dark military neckline
+  ---
+  duration_ms: 155.47325
+  type: 'test'
+  ...
+# Subtest: both bare forearms meet the anatomical wrist connection without a visible gap
+ok 90 - both bare forearms meet the anatomical wrist connection without a visible gap
+  ---
+  duration_ms: 215.359666
+  type: 'test'
+  ...
+# {"maximumBareWristGap":2.1613584046826983e-8}
+# Subtest: the clothed child keeps his feet above the rug and reconstructs the same saved skin after walking and cold loading
+ok 91 - the clothed child keeps his feet above the rug and reconstructs the same saved skin after walking and cold loading
+  ---
+  duration_ms: 398.777583
+  type: 'test'
+  ...
+# Subtest: the movie child closes all five digits around the upper shaft rather than pinching the bottom
+ok 92 - the movie child closes all five digits around the upper shaft rather than pinching the bottom
+  ---
+  duration_ms: 182.052917
+  type: 'test'
+  ...
+# Subtest: all five gripping digits touch the actual curved metal and the hand surface stays outside its shaft
+ok 93 - all five gripping digits touch the actual curved metal and the hand surface stays outside its shaft
+  ---
+  duration_ms: 666.565833
+  type: 'test'
+  ...
+# {"probes":36510,"worst":{"margin":0.0018695584678367627,"phase":"demonstrating/1.8","point":[-0.046944683279434685,0.3971727880252729,0.00016541719560336787],"bone":"finger5-3_R"}}
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+ok 94 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 2412.425417
+  type: 'test'
+  ...
+# {"probes":851,"maximumSkinStep":0.025980370177646376,"maximumTurn":0.02512701932504489}
+# Subtest: the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+ok 95 - the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+  ---
+  duration_ms: 5438.348083
+  type: 'test'
+  ...
+# {"probes":3040,"maximumSkinStep":0.02535098731475834,"maximumTurn":0.02767479761400026,"worst":"receiving 1.32: oracle-hand-skin-R/BufferGeometry vertex 2511, parent oracle-anatomical-hand-R"}
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 96 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 555.628334
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 97 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 403.51125
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 98 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 554.144417
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 99 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 546.418916
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 100 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 434.006291
+  type: 'test'
+  ...
+# Subtest: the boy holds the upper shaft with five digits while Neo receives the lower section
+ok 101 - the boy holds the upper shaft with five digits while Neo receives the lower section
+  ---
+  duration_ms: 332.343792
+  type: 'test'
+  ...
+# Subtest: both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+ok 102 - both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+  ---
+  duration_ms: 403.012125
+  type: 'test'
+  ...
+# Subtest: the boy keeps the anatomical wrists straight and joins the cut hand skin to his bare forearms
+ok 103 - the boy keeps the anatomical wrists straight and joins the cut hand skin to his bare forearms
+  ---
+  duration_ms: 331.336708
+  type: 'test'
+  ...
+# Subtest: a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal
+ok 104 - a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal
+  ---
+  duration_ms: 377.598916
+  type: 'test'
+  ...
+# Subtest: leaving the spoon lesson keeps the exposed wrist rim attached during ordinary movement
+ok 105 - leaving the spoon lesson keeps the exposed wrist rim attached during ordinary movement
+  ---
+  duration_ms: 287.124541
+  type: 'test'
+  ...
+1..105
+# tests 105
+# suites 0
+# pass 105
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 127472.023708

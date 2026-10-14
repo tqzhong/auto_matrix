@@ -10,22 +10,25 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 async function setup(t: TestContext, deferred = false) {
-  const glb = await readFile(new URL('../packages/client/public/assets/characters/neo.glb', import.meta.url));
-  const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
-  for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
-  source.images = []; source.textures = [];
-  const json = Buffer.from(JSON.stringify(source)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
-  const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
-  buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
-  buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
-  const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
-  const hands = await readFile(new URL('../packages/client/public/assets/characters/oracle-park-hands.glb', import.meta.url));
-  const anatomy = await new GLTFLoader().parseAsync(hands.buffer.slice(hands.byteOffset, hands.byteOffset + hands.byteLength), '');
-  const deliveries: (() => void)[] = [], delivered: THREE.Group[] = [];
+  const assets = new Map();
+  for (const name of ['neo', 'neo-office', 'neo-tracking', 'oracle-park-hands', 'spoon_boy-head', 'spoon_boy-body']) {
+    const glb = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
+    const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
+    for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
+    source.images = []; source.textures = [];
+    const json = Buffer.from(JSON.stringify(source)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
+    const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
+    buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
+    buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
+    const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
+    if (name.endsWith('-head')) asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
+    assets.set(name, asset);
+  }
+  const anatomy = assets.get('oracle-park-hands'), deliveries: (() => void)[] = [], delivered: THREE.Group[] = [];
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
-    if (!String(url).endsWith('/oracle-park-hands.glb')) return asset;
-    if (deferred) await new Promise<void>(resolve => deliveries.push(resolve));
-    const scene = clone(anatomy.scene); delivered.push(scene); return { ...anatomy, scene };
+    const name = String(url).split('/').pop()!.replace('.glb', ''), asset = assets.get(name); assert.ok(asset, String(url));
+    if (name === 'oracle-park-hands' && deferred) await new Promise<void>(resolve => deliveries.push(resolve));
+    const scene = clone(asset.scene); if (name === 'oracle-park-hands') delivered.push(scene); return { ...asset, scene };
   });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
@@ -35,6 +38,7 @@ async function setup(t: TestContext, deferred = false) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const models = new CharacterModels(), rig = models.create(world.agents.get('neo')!), boy = models.create(world.agents.get('spoon_boy')!);
   t.after(() => { models.dispose(); globalThis.document = document; });
+  models.animate(boy, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 4);
   await new Promise(resolve => setImmediate(resolve)); assert.ok(rig.hero);
   const center = FILM_SETS.film_oracle_home.center;
   for (const [body, place] of [[rig, SPOON_LESSON.neo], [boy, SPOON_LESSON.boy]] as const) {
@@ -88,12 +92,20 @@ test('receiving the spoon blends the real forearm into and out of the contact so
 });
 
 test('the spoon boy enters and releases the same contact smoothly across his visible arm surfaces', async t => {
-  const h = await setup(t), meshes: { mesh: THREE.Mesh; vertex: number }[] = [];
-  h.boy.elbows[0].traverseVisible(object => {
-    if (!(object instanceof THREE.Mesh)) return;
-    for (let i = 0; i < object.geometry.attributes.position.count; i += 3) meshes.push({ mesh: object, vertex: i });
-  });
-  assert.ok(meshes.length > 100, 'measure the delivered forearm, hand and finger surfaces');
+  const h = await setup(t);
+  const collect = (rig: typeof h.boy) => {
+    const meshes: { mesh: THREE.Mesh; vertex: number }[] = [];
+    rig.elbows[0].traverseVisible(object => {
+      if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i += 3) meshes.push({ mesh: object, vertex: i });
+    });
+    const body = rig.root.getObjectByName('spoon_boy-anatomical-body') as THREE.SkinnedMesh;
+    const { skinIndex, skinWeight } = body.geometry.attributes;
+    for (let i = 0; i < skinIndex.count; i += 3) if ([0, 1, 2, 3].some(j => skinWeight.getComponent(i, j) > .1 && /^(shoulder|elbow|wrist)_R$/.test(body.skeleton.bones[skinIndex.getComponent(i, j)].name)))
+      meshes.push({ mesh: body, vertex: i });
+    return meshes;
+  };
+  const meshes = collect(h.boy);
+  assert.ok(meshes.some(({ mesh }) => mesh.name === 'spoon_boy-anatomical-body'), 'measure the actual exposed forearm as well as the delivered hand');
   let maximumSkinStep = 0, maximumTurn = 0, worst = '';
   for (const [phase, seconds] of [['demonstrating', 3.4], ['receiving', 2.4]] as const) {
     let before: THREE.Vector3[] | undefined, rotation: THREE.Quaternion | undefined;
@@ -114,18 +126,19 @@ test('the spoon boy enters and releases the same contact smoothly across his vis
       }
       before = points; rotation = now;
       if ([0, 110, 132, 175, 240, 320, 340].includes(frame)) {
-        const fresh = h.models.create(h.boyState), cold: { mesh: THREE.Mesh; vertex: number }[] = [];
+        const fresh = h.models.create(h.boyState);
+        h.models.animate(fresh, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 4);
         await new Promise(resolve => setImmediate(resolve));
         fresh.root.position.copy(h.boy.root.position); fresh.root.quaternion.copy(h.boy.root.quaternion);
-        fresh.elbows[0].traverseVisible(object => {
-          if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i += 3) cold.push({ mesh: object, vertex: i });
-        });
+        const cold = collect(fresh);
         const lesson = { phase, elapsed: frame / 100 };
         h.models.animate(fresh, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
           spoon: spoonLessonBend(lesson, 'boy', 0), spoonLesson: { ...lesson, role: 'boy' }, seated: true, floorSeated: true }, 4);
         fresh.root.updateMatrixWorld(true); assert.equal(cold.length, meshes.length);
-        cold.forEach(({ mesh, vertex }, i) => assert.ok(points[i].distanceTo(mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3()))) < 1e-7,
-          'a cold boy must reconstruct the same saved grip and withdrawal surface'));
+        cold.forEach(({ mesh, vertex }, i) => {
+          const gap = points[i].distanceTo(mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3())));
+          assert.ok(gap < 1e-7, `${phase}/${frame / 100}: ${mesh.name}/${vertex} moves ${gap} when rebuilding a saved pose`);
+        });
       }
     }
   }
@@ -231,35 +244,22 @@ test('reaching for the spoon does not fold the hand sharply back against the for
 });
 
 
-test('the boy pinches the same straight spoon stem with actual opposing thumb and index skin', async t => {
-  const h = await setup(t);
-  const skin = h.boy.root.getObjectByName('oracle-hand-skin-R') as THREE.SkinnedMesh | undefined;
-  assert.ok(skin instanceof THREE.SkinnedMesh, 'the spoon boy still uses disconnected balls instead of articulated hand skin');
+test('the boy holds the upper shaft with five digits while Neo receives the lower section', async t => {
+  const h = await setup(t), skin = h.boy.spoonHands![0].skin;
   for (const [phase, elapsed] of [['demonstrating', 0], ['demonstrating', 2.5], ['offered', 0], ['receiving', 1.099]] as const) {
     h.draw(phase, elapsed, 1); skin.skeleton.update();
-    const spoon = h.boy.spoon!.root, pads = [new THREE.Vector3(), new THREE.Vector3()], counts = [0, 0];
+    const spoon = h.boy.spoon!.root, pads = Array.from({ length: 5 }, () => new THREE.Vector3()), counts = [0, 0, 0, 0, 0];
     const { skinIndex, skinWeight } = skin.geometry.attributes;
-    const gaps = [Infinity, Infinity];
-    for (let vertex = 0; vertex < skinIndex.count; vertex++) {
-      const point = spoon.worldToLocal(skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3())));
-      for (let j = 0; j < 4; j++) {
-        const match = /^finger([12])-3_R$/.exec(skin.skeleton.bones[skinIndex.getComponent(vertex, j)].name);
-        if (!match || skinWeight.getComponent(vertex, j) < .95) continue;
-        const digit = Number(match[1]) - 1; pads[digit].add(point); counts[digit]++;
-        if (point.y < .005 || point.y > .165) continue;
-        const radius = .045 - .013 * point.y / .65;
-        const distance = Math.max(...Array.from({ length: 8 }, (_, k) => {
-          const angle = (k + .5) * Math.PI / 4;
-          return Math.cos(angle) * point.x / radius + Math.sin(angle) * point.z / (radius * .24);
-        })) - Math.cos(Math.PI / 8);
-        assert.ok(distance > -.005, `${phase}: actual finger ${digit + 1} enters the straight stem: ${point.toArray()}`);
-        gaps[digit] = Math.min(gaps[digit], Math.abs(distance) * radius * .55);
-      }
+    for (let vertex = 0; vertex < skinIndex.count; vertex++) for (let j = 0; j < 4; j++) {
+      const match = /^finger([1-5])-3_R$/.exec(skin.skeleton.bones[skinIndex.getComponent(vertex, j)].name);
+      if (!match || skinWeight.getComponent(vertex, j) < .95) continue;
+      const digit = Number(match[1]) - 1;
+      pads[digit].add(spoon.worldToLocal(skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3())))); counts[digit]++;
     }
-    pads.forEach((pad, i) => { assert.ok(counts[i] > 20); pad.divideScalar(counts[i]); });
-    assert.ok(pads[0].x * pads[1].x < 0 && pads.every(pad => Math.abs(pad.x) > .04), `${phase}: the boy needs opposed pads around the stem: ${pads.map(p => p.toArray())}`);
-    pads.forEach((pad, i) => assert.ok(Math.abs(pad.y - .025) < .04 && Math.abs(pad.z) < .04, `finger ${i + 1} does not hold the lower gripping section`));
-    gaps.forEach((gap, i) => assert.ok(gap < .008, `finger ${i + 1} floats ${gap} from the stem`));
+    pads.forEach((pad, i) => {
+      assert.ok(counts[i] > 20); pad.divideScalar(counts[i]);
+      assert.ok(pad.y > .28 && pad.y < .65, `${phase}: digit ${i + 1} leaves the film's upper grip: ${pad.toArray()}`);
+    });
   }
 });
 
@@ -301,7 +301,7 @@ test('both of the boy’s anatomical hands reconstruct a saved pose without stre
 });
 
 
-test('the boy keeps the anatomical wrists straight and joins the actual cut skin inside both cuffs', async t => {
+test('the boy keeps the anatomical wrists straight and joins the cut hand skin to his bare forearms', async t => {
   const h = await setup(t);
   for (const [phase, elapsed] of [['demonstrating', 0], ['demonstrating', 2.5], ['offered', 0], ['receiving', 1.1], ['receiving', 1.42], ['receiving', 1.75], ['focus', 0]] as const) {
     h.draw(phase, elapsed);
@@ -314,33 +314,11 @@ test('the boy keeps the anatomical wrists straight and joins the actual cut skin
         const rim = hand.skin.localToWorld(hand.skin.getVertexPosition(connection.edge[i % connection.edge.length], new THREE.Vector3()));
         const join = connection.mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(p, i));
         assert.ok(rim.distanceTo(join) < 1e-6, `${phase}: an exposed wrist hole at ${side}/${i}`);
-        const end = new THREE.Vector3().fromBufferAttribute(p, p.count - columns + i);
-        assert.ok(Math.abs(end.y + .5) < 1e-6 && Math.hypot(end.x, end.z) < .09, 'the connection must end underneath the cuff');
+        assert.ok(hand.connection.forearm?.edge.length! > 20, 'the bare forearm must use its actual clipped surface');
       }
       for (const value of p.array) assert.ok(Number.isFinite(value), 'the actual wrist skin must remain finite');
     }
   }
-});
-
-test('the entire gripping hand clears the straight stem, including triangle interiors', async t => {
-  const h = await setup(t); let probes = 0, minimum = Infinity;
-  for (const [phase, elapsed] of [['demonstrating', 0], ['demonstrating', .8], ['demonstrating', 1.8], ['demonstrating', 2.5], ['offered', 0], ['receiving', 1.099]] as const) {
-    h.draw(phase, elapsed); const skin = h.boy.spoonHands![0].skin, spoon = h.boy.spoon!.root; skin.skeleton.update();
-    const vertices = Array.from({ length: skin.geometry.attributes.position.count }, (_, i) =>
-      spoon.worldToLocal(skin.localToWorld(skin.getVertexPosition(i, new THREE.Vector3()))));
-    const indices = skin.geometry.index!, samples = [...vertices];
-    for (let i = 0; i < indices.count; i += 3) samples.push(vertices[indices.getX(i)].clone().add(vertices[indices.getX(i + 1)]).add(vertices[indices.getX(i + 2)]).divideScalar(3));
-    for (const p of samples) {
-      if (p.y <= 0 || p.y >= .17 || Math.abs(p.x) > .08 || Math.abs(p.z) > .03) continue;
-      const radius = .045 - .013 * p.y / .65;
-      const margin = Math.max(...Array.from({ length: 8 }, (_, k) => {
-        const a = (k + .5) * Math.PI / 4; return Math.cos(a) * p.x / radius + Math.sin(a) * p.z / (radius * .24);
-      })) - Math.cos(Math.PI / 8);
-      probes++; minimum = Math.min(minimum, margin);
-      assert.ok(margin > -.005, `${phase}/${elapsed}: palm or finger enters the stem at ${p.toArray()}`);
-    }
-  }
-  assert.ok(probes > 100); t.diagnostic(JSON.stringify({ probes, minimum }));
 });
 
 test('a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal', async t => {

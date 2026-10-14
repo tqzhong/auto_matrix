@@ -17,6 +17,18 @@ test('the spoon review save reaches each handoff checkpoint through the playable
   }
 });
 
+test('the spoon withdrawal review save freezes after ownership changes while the child still releases his hand', () => {
+  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_spoon', 'spoon-withdrawal'], { encoding: 'utf8' }).trim();
+  try {
+    const world = JSON.parse(readFileSync(path.join(directory, 'world.json'), 'utf8')), lesson = world.sandbox.neoLife.journey.oracle?.spoonLesson;
+    assert.equal(lesson?.phase, 'receiving'); assert.ok(Math.abs(lesson.elapsed - 1.3) < 1e-6);
+    assert.equal(world.agents.neo.currentAction.parameters.spoon, 0);
+    assert.equal(world.agents.spoon_boy.currentAction.parameters.spoon, undefined);
+    assert.equal(world.agents.spoon_boy.currentAction.parameters.spoonLesson.phase, 'receiving');
+    assert.equal(world.sandbox.neoLife.journey.step, 0, 'a visual review must not complete the encounter');
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 test('Oracle reception review saves preserve the seated invitation and the start of free following', () => {
   for (const [mode, reception, lesson] of [['oracle-invitation', 'inviting', 'understood'], ['oracle-guide', 'guiding', 'done']]) {
     const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', 'm1_spoon', mode], { encoding: 'utf8' }).trim();

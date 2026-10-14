@@ -10,7 +10,7 @@ export interface OracleParkHand {
   skin: THREE.SkinnedMesh;
   bones: THREE.Bone[][];
   pads: THREE.Vector3[];
-  connection: { mesh: THREE.Mesh; edge: number[]; signature?: string };
+  connection: { mesh: THREE.Mesh; edge: number[]; signature?: string; forearm?: { skin: THREE.SkinnedMesh; edge: number[] } };
 }
 
 interface Entry { fallback: THREE.Object3D[]; skin: THREE.Material; active: boolean; loading: boolean; }
@@ -120,24 +120,58 @@ export function createAnatomicalHand(root: THREE.Object3D, wrist: THREE.Object3D
   return { root, skin, wrist, bones, pads, connection: { mesh, edge } };
 }
 
-/** A continuous skin surface joins the cut wrist to the forearm inside the cuff. */
+/** Join the cut hand to its bare forearm or the skin inside a cuff. */
 export function connectGardenWrists(rig: CharacterRig, hands = rig.parkHands): void {
   if (!hands) return;
   rig.root.updateWorldMatrix(true, true);
-  for (const hand of hands) {
+  for (const [side, hand] of hands.entries()) {
     const { mesh, edge } = hand.connection; if (!mesh.visible) continue;
     hand.skin.updateMatrixWorld(true);
-    const matrix = mesh.parent!.matrixWorld.clone().invert().multiply(hand.skin.matrixWorld), signature = matrix.elements.join(':');
+    const inverse = mesh.parent!.matrixWorld.clone().invert(), matrix = inverse.clone().multiply(hand.skin.matrixWorld);
+    if (hands === rig.spoonHands && !hand.connection.forearm) {
+      const skin = rig.root.getObjectByName('spoon_boy-anatomical-body') as THREE.SkinnedMesh | undefined;
+      if (skin) {
+        const p = skin.geometry.attributes.position, index = skin.geometry.index!, welded = new Map<string, number>(), unique: number[] = [];
+        const edges = new Map<string, { a: number; b: number; count: number }>();
+        for (let i = 0; i < p.count; i++) {
+          const key = [p.getX(i), p.getY(i), p.getZ(i)].map(v => Math.round(v * 1e5)).join(':');
+          if (!welded.has(key)) welded.set(key, i); unique.push(welded.get(key)!);
+        }
+        for (let i = 0; i < index.count; i += 3) for (let j = 0; j < 3; j++) {
+          const a = unique[index.getX(i + j)], b = unique[index.getX(i + (j + 1) % 3)], key = [Math.min(a, b), Math.max(a, b)].join(':');
+          const current = edges.get(key); if (current) current.count++; else edges.set(key, { a, b, count: 1 });
+        }
+        const rim = new Set<number>();
+        for (const e of edges.values()) if (e.count === 1 && [e.a, e.b].every(i => p.getY(i) < 2.1 && (side ? p.getX(i) > .3 : p.getX(i) < -.3))) {
+          rim.add(e.a); rim.add(e.b);
+        }
+        hand.connection.forearm = { skin, edge: [...rim] };
+      }
+    }
+    const forearm = hand.connection.forearm;
+    forearm?.skin.skeleton.update();
+    const anchors = forearm?.edge.map(i => forearm.skin.localToWorld(forearm.skin.getVertexPosition(i, new THREE.Vector3())).applyMatrix4(inverse));
+    const signature = matrix.elements.join(':') + (anchors?.map(p => p.toArray().join(':')).join(':') ?? '');
     if (hand.connection.signature === signature) continue;
     hand.skin.skeleton.update();
     const points = edge.map(index => hand.skin.getVertexPosition(index, new THREE.Vector3()).applyMatrix4(matrix));
     const center = points.reduce((sum, point) => sum.add(point), new THREE.Vector3()).divideScalar(points.length);
-    const end = new THREE.Vector3(0, -.50, 0), up = new THREE.Vector3(0, 1, 0).transformDirection(matrix);
+    const end = anchors ? anchors.reduce((sum, p) => sum.add(p), new THREE.Vector3()).divideScalar(anchors.length) : new THREE.Vector3(0, -.50, 0);
+    const outline = anchors?.map(p => ({ point: p, angle: Math.atan2(p.x - end.x, p.z - end.z) })).sort((a, b) => a.angle - b.angle);
+    const up = new THREE.Vector3(0, 1, 0).transformDirection(matrix);
     const curve = new THREE.CubicBezierCurve3(center, center.clone().addScaledVector(up, .065), end.clone().add(new THREE.Vector3(0, -.06, 0)), end);
     const vertices = mesh.geometry.attributes.position, columns = edge.length + 1;
     for (let row = 0; row <= 6; row++) for (let column = 0; column < columns; column++) {
       const t = row / 6, offset = points[column % edge.length].clone().sub(center), angle = Math.atan2(offset.x, offset.z);
-      offset.lerp(new THREE.Vector3(Math.sin(angle) * .083, 0, Math.cos(angle) * .079), t);
+      let target = new THREE.Vector3(Math.sin(angle) * .083, 0, Math.cos(angle) * .079);
+      if (outline) {
+        const at = angle < outline[0].angle ? angle + Math.PI * 2 : angle;
+        let i = 0; while (i + 1 < outline.length && outline[i + 1].angle <= at) i++;
+        const a = outline[i], b = outline[(i + 1) % outline.length];
+        const next = i === outline.length - 1 ? b.angle + Math.PI * 2 : b.angle;
+        target = a.point.clone().lerp(b.point, (at - a.angle) / (next - a.angle)).sub(end);
+      }
+      offset.lerp(target, t);
       const point = curve.getPoint(t).add(offset); vertices.setXYZ(row * columns + column, point.x, point.y, point.z);
     }
     vertices.needsUpdate = true; mesh.geometry.computeVertexNormals();

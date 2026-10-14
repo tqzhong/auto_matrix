@@ -46,6 +46,8 @@ APU_CREW = {
     'kid': {'shoulders': .55, 'race': 'caucasian', 'sex': 'male'},
 }
 
+SPOON_CAST = {'spoon_boy': {'shoulders': .60, 'race': 'caucasian', 'sex': 'male'}}
+
 
 def normals(points, faces):
     result = np.zeros_like(points)
@@ -56,11 +58,11 @@ def normals(points, faces):
     return result / np.maximum(np.linalg.norm(result, axis=1, keepdims=True), 1e-10)
 
 
-def cloth_sections(points, faces, arms, bottom=1.9):
+def cloth_sections(points, faces, arms, bottom=1.9, top=3.23):
     """Convex horizontal sections bridge the chest instead of tracing skin."""
     triangles = np.array([[f[0][0], f[i][0], f[i + 1][0]] for f in faces for i in range(1, len(f) - 1)])
     triangles = triangles[arms[triangles].max(axis=1) < .25]
-    heights = np.linspace(bottom, 3.23, 48)
+    heights = np.linspace(bottom, top, 48)
     angles = np.arange(96) * np.pi * 2 / 96
     directions = np.column_stack((np.sin(angles), np.cos(angles)))
 
@@ -100,9 +102,10 @@ def cloth_sections(points, faces, arms, bottom=1.9):
     return heights, sections
 
 
-def head_neck_section(role):
+def head_neck_section(role, directory=None):
     """Read the actual fitted head, whose neck sits behind the rig origin."""
-    data = (builder.ROOT / 'packages/client/public/assets/characters' / (role + '-head.glb')).read_bytes()
+    directory = directory or builder.ROOT / 'packages/client/public/assets/characters'
+    data = (directory / (role + '-head.glb')).read_bytes()
     length = struct.unpack_from('<I', data, 12)[0]
     doc = json.loads(data[20:20 + length]); binary = data[28 + length:]
 
@@ -131,11 +134,13 @@ def main(source, output, role):
     council = COUNCILLORS.get(role)
     crew = HAMMER_CREW.get(role)
     apu = APU_CREW.get(role)
-    captain = CAPTAINS.get(role); profile = captain or program or council or crew or apu; sleeved = bool(profile and (profile['sex'] == 'male' or role == 'kamala' or council or crew))
+    child = SPOON_CAST.get(role)
+    captain = CAPTAINS.get(role); profile = captain or program or council or crew or apu or child; sleeved = bool(profile and not child and (profile['sex'] == 'male' or role == 'kamala' or council or crew))
     sex = profile['sex'] if profile else 'female'; race = profile['race'] if profile else 'african' if role == 'zee' else 'caucasian'
     targets = {'macrodetails/' + race + '-' + sex + '-young': 1,
                'macrodetails/universal-' + sex + '-young-averagemuscle-averageweight': .7,
                'macrodetails/universal-' + sex + '-young-maxmuscle-' + ('averageweight' if sleeved else 'minweight'): .3}
+    if child: targets = {'macrodetails/caucasian-male-child': 1}
     if role in ['architect', 'keymaker', 'rama_kandra', 'trainman']:
         targets['macrodetails/universal-male-young-averagemuscle-averageweight'] = .92
         targets['macrodetails/universal-male-young-maxmuscle-averageweight'] = .08
@@ -239,7 +244,7 @@ def main(source, output, role):
     # separately fitted continuous head/neck remain owned by EpilogueHeads.
     points, uv, faces, weights = builder.trim_neckline(points, uv, faces, weights, 3.54)
     points, uv, faces, weights = builder.subdivide(points, uv, faces, weights)
-    center, neck_angles, neck_radius = head_neck_section(role)
+    center, neck_angles, neck_radius = head_neck_section(role, output if child else None)
     blend = np.clip((points[:, 1] - 3.28) / .22, 0, 1); blend = blend * blend * (3 - 2 * blend)
     theta = np.arctan2(points[:, 0], points[:, 2] - .03)
     fitted_radius = np.interp(theta, neck_angles, neck_radius, period=2 * np.pi) * .98
@@ -251,7 +256,7 @@ def main(source, output, role):
     doc = {'asset': {'version': '2.0', 'generator': 'auto_matrix dock anatomy and garments'},
            'scene': 0, 'scenes': [{'nodes': []}], 'nodes': [], 'meshes': [], 'materials': [], 'accessors': [], 'bufferViews': [],
            'extras': {'role': role, 'sourceRevision': builder.REVISION, 'targets': targets, 'joints': names,
-                      'fitting': 'CC0 anatomy fitted to existing performance joints; approximate dock costume, not actor scan data.'}}
+                      'fitting': 'CC0 child anatomy with a draped wrap; approximate film costume, not actor scan data.' if child else 'CC0 anatomy fitted to existing performance joints; approximate dock costume, not actor scan data.'}}
 
     def accessor(array, kind, component=5126):
         a = np.asarray(array, dtype={5126: '<f4', 5123: '<u2', 5125: '<u4'}[component])
@@ -306,7 +311,7 @@ def main(source, output, role):
             blend = np.clip((p[vi, 1] - 3.22) / .24, 0, 1)[:, None]
             neck_uv = np.column_stack(((.25 + p[vi, 0] * .10 - .232) / .035,
                                        (.445 + np.clip(3.69 - p[vi, 1], 0, .2) * .12 - .452) / .02))
-            if captain or program or council or crew or apu:
+            if captain or program or council or crew or apu or child:
                 neck_uv[:, 1] = (.002 + np.clip(3.69 - p[vi, 1], 0, .2) * .03) / .012
             fitted_uv = fitted_uv * (1 - blend) + neck_uv * blend
         attrs = {'POSITION': accessor(p[vi], 'VEC3'), 'NORMAL': accessor(n[vi], 'VEC3'), 'TEXCOORD_0': accessor(fitted_uv, 'VEC2'),
@@ -325,6 +330,11 @@ def main(source, output, role):
     armhole = .35 + .20 * np.clip((y - 2.93) / .4, 0, 1)
     covered = np.minimum(neck_height - y, (armhole - arms))
     covered = np.minimum(covered, y - 1.97)
+    if child:
+        # The film's loose wrap covers the shoulders but leaves the arms
+        # bare; it has no modern belt, dark cuffs or military pockets.
+        neck_height = 3.43 - .22 * np.clip(1 - np.abs(x) / .27, 0, 1) * np.clip((z + .1) / .22, 0, 1)
+        covered = np.minimum.reduce([neck_height - y, .42 - arms, y - 1.85])
     if sleeved:
         neck_height = 3.42 - .33 * np.clip(1 - np.abs(x) / .27, 0, 1) * np.clip((z + .1) / .22, 0, 1)
         covered = np.minimum(neck_height - y, y - np.where(arms > .3, 2.29 if role == 'mifune' else 1.82, 1.97))
@@ -346,6 +356,11 @@ def main(source, output, role):
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(points, uv, faces, weights, y + skin_covered - .008, above=True)
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(skin_p, skin_uv, skin_faces, skin_w, 1.96, above=True,
                                                               preserve=skin_w[:, arm_ids].sum(axis=1) > .3)
+    if child:
+        hand_ids = [i for i, name in enumerate(names) if name.startswith(('wrist', 'finger'))]
+        hand_weight = skin_w[:, hand_ids].sum(axis=1)
+        skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(skin_p, skin_uv, skin_faces, skin_w,
+            skin_p[:, 1] + .10 - hand_weight)
     export(role + '-anatomical-body', skin_p, skin_uv, skin_faces, skin_w, 0)
 
     if role == 'kid':
@@ -405,7 +420,7 @@ def main(source, output, role):
         clearance = ((vest - points) * normal).sum(axis=1)
         vest += normal * np.maximum(.026 - clearance, 0)[:, None]
     vp, vu, vf, vw = builder.trim_neckline(vest, uv, faces, weights, vest[:, 1] + covered + .012)
-    export(role + ('-tailored-jacket' if role == 'architect' else '-work-jacket' if role == 'keymaker' else '-traditional-top' if role == 'seraph' else '-work-top'), vp, vu, vf, vw, 1, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
+    export(role + ('-robe-foundation' if child else '-tailored-jacket' if role == 'architect' else '-work-jacket' if role == 'keymaker' else '-traditional-top' if role == 'seraph' else '-work-top'), vp, vu, vf, vw, 1, 'matrix' if role == 'seraph' else 'dock' if role == 'niobe' else None)
     if role == 'roland':
         inner = vest - normal * .012
         border = np.minimum(neck_height + .05 - y, y - neck_height + .10)
@@ -482,7 +497,7 @@ def main(source, output, role):
                         cf.append([(j, j) for j in ids])
         export(role + '-wrap-collar', np.array(cp), np.array(cu), cf, np.array(cw), 4)
 
-    if program:
+    if program or child:
         # Fit subdivided tailoring to the actual garment surface, retaining
         # its local shoulder/torso weights instead of attaching flat cards.
         front_faces = np.array([[f[0][0], f[i][0], f[i + 1][0]] for f in faces for i in range(1, len(f) - 1)])
@@ -595,6 +610,44 @@ def main(source, output, role):
                             a = (row - 1) * 25 + column - 1
                             af.append([(j, j) for j in [a, a + 1, a + 26, a + 25]])
                 export('keymaker-apron-skirt', np.array(ap), np.array(au), af, np.array(aw), 6)
+        elif child:
+            # A continuous cowl follows the neck and shoulders all the way
+            # around, rather than projecting a flat strip across the chest.
+            collar_heights, collar_sections = cloth_sections(points, faces, arms, bottom=2.99, top=3.50)
+
+            def drape(angle, t):
+                front = ((1 + np.cos(angle)) / 2) ** 2
+                height = (3.46 - .20 * front) * (1 - t) + (3.21 - .18 * front) * t
+                a = angle % (np.pi * 2) / (np.pi * 2) * collar_sections.shape[1]
+                index = int(a); along = a - index
+                radius = np.interp(height, collar_heights, collar_sections[:, index] * (1 - along) + collar_sections[:, (index + 1) % collar_sections.shape[1]] * along)
+                radius += .024 + .047 * np.sin(t * np.pi) + .007 * np.sin(angle * 9 + t * 4) * np.sin(t * np.pi) ** 2
+                point = np.array([np.sin(angle) * radius, height, np.cos(angle) * radius])
+                distances = ((points - point) ** 2).sum(axis=1)
+                nearby = np.argsort(distances)[:3]; mix = 1 / np.maximum(distances[nearby], 1e-8); mix /= mix.sum()
+                weight = (weights[nearby] * mix[:, None]).sum(axis=0)
+                return point, weight
+
+            cp, cu, cf, cw = [], [], [], []
+            for row in range(17):
+                for column in range(97):
+                    point, weight = drape(column / 96 * np.pi * 2, row / 16)
+                    cp.append(point); cu.append([column / 96, row / 16]); cw.append(weight)
+                    if row and column:
+                        a = (row - 1) * 97 + column - 1
+                        cf.append([(j, j) for j in [a, a + 97, a + 98, a + 1]])
+            export('spoon_boy-draped-wrap', np.array(cp), np.array(cu), cf, np.array(cw), 1)
+            cp, cu, cf, cw = [], [], [], []
+            for column in range(97):
+                angle = column / 96 * np.pi * 2; center, weight = drape(angle, .02)
+                for row in range(9):
+                    turn = row / 8 * np.pi * 2
+                    point = center + np.array([np.sin(angle) * np.cos(turn), np.sin(turn), np.cos(angle) * np.cos(turn)]) * .007
+                    cp.append(point); cu.append([column / 96, row / 8]); cw.append(weight)
+                    if row and column:
+                        a = (column - 1) * 9 + row - 1
+                        cf.append([(j, j) for j in [a, a + 9, a + 10, a + 1]])
+            export('spoon_boy-folded-wrap-edge', np.array(cp), np.array(cu), cf, np.array(cw), 1)
         elif role == 'kamala':
             for sign in [-1, 1]:
                 front_patch('blouse-collar-' + str(sign), [[sign * x, y] for x, y in [[.10, 3.48], [.27, 3.32], [.16, 3.14], [.045, 3.35]]], 1, lift=.024)
@@ -652,7 +705,7 @@ def main(source, output, role):
                         ids = [a, a + 1, a + 8, a + 7]
                         if sign < 0: ids.reverse()
                         pocket_faces.append([(j, j) for j in ids])
-    if not program and not council: export(role + '-cargo-pockets', np.array(pocket_points), np.array(pocket_uv), pocket_faces, np.array(pocket_weights), 2)
+    if not program and not council and not child: export(role + '-cargo-pockets', np.array(pocket_points), np.array(pocket_uv), pocket_faces, np.array(pocket_weights), 2)
 
     # Built over a flat sole, with a rounded toe box instead of enlarged toes.
     bp, bu, bf, bw = [], [], [], []
@@ -673,7 +726,10 @@ def main(source, output, role):
                            start + row * 64 + (column + 1) % 64, start + row * 64 + column]
                     bf.append([(j, j) for j in ids])
         bf.append([(start + j, start + j) for j in range(63, -1, -1)])
-    export(role + '-work-boots', np.array(bp), np.array(bu), bf, np.array(bw), 3)
+    if child:
+        fp, fu, ff, fw = builder.trim_neckline(points, uv, faces, weights, .20)
+        export(role + '-bare-feet', fp, fu, ff, fw, 0)
+    else: export(role + '-work-boots', np.array(bp), np.array(bu), bf, np.array(bw), 3)
     output.mkdir(parents=True, exist_ok=True); builder.OUT = output
     builder.write_glb(doc, binaries, role + '-body.glb')
 
@@ -682,6 +738,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--roles', nargs='+', choices=['zee', 'charra', *CAPTAINS, *PROGRAMS, *COUNCILLORS, *HAMMER_CREW, *APU_CREW], default=['zee', 'charra'])
+    parser.add_argument('--roles', nargs='+', choices=['zee', 'charra', *CAPTAINS, *PROGRAMS, *COUNCILLORS, *HAMMER_CREW, *APU_CREW, *SPOON_CAST], default=['zee', 'charra'])
     args = parser.parse_args()
     for role in args.roles: main(args.source, args.output, role)

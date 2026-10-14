@@ -1,0 +1,12 @@
+{
+  "protected": 304,
+  "unchanged": 303,
+  "changed": [
+    "packages/client/public/assets/characters/README.md"
+  ],
+  "newRuntimeAssets": [
+    "packages/client/public/assets/characters/spoon_boy-head.glb",
+    "packages/client/public/assets/characters/spoon_boy-body.glb",
+    "packages/client/public/assets/characters/spoon_boy-face-reference.png"
+  ]
+}

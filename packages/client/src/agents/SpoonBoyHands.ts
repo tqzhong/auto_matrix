@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { createAnatomicalHand, connectGardenWrists } from './OracleParkHands.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 
-/** The child reuses hand anatomy only, scaled inside his existing sleeve. */
+/** The child reuses articulated hand anatomy at his own body scale. */
 export class SpoonBoyHands {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();

@@ -74,7 +74,7 @@ if (scene.id === 'm3_surrender' && ['smith-assimilation', 'smith-purge'].include
   journey.lastText = purge ? '金色能量沿连接贯穿所有 Smith 复制体。' : 'Smith 的黑色代码正在覆盖 Neo。';
   actor.position = filmStepPosition(scene, scene.steps[2]); journey.checkpoint = { ...actor.position };
 }
-if (scene.id === 'm1_spoon' && ['near', 'spoon', 'spoon-offered', 'spoon-focus', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3])) {
+if (scene.id === 'm1_spoon' && ['near', 'spoon', 'spoon-offered', 'spoon-withdrawal', 'spoon-focus', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3])) {
   actor.controller = 'player';
   const frame = () => sandbox.life.film.oracleReceptionFrame(actor, .1, 0);
   const walk = (x: number, z: number) => {
@@ -291,13 +291,13 @@ if (process.argv[3] === 'ladder' && scene.id === 'm1_ledge') {
   sandbox.life.film.tick(0); sandbox.life.film.command(actor, 'escape:climb', 0);
   for (let frame = 0; frame < 80; frame++) sandbox.life.film.climbFrame(actor, 1, .05, 0);
 }
-if (['spoon', 'spoon-offered', 'spoon-focus', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3]) && scene.id === 'm1_spoon') {
+if (['spoon', 'spoon-offered', 'spoon-withdrawal', 'spoon-focus', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3]) && scene.id === 'm1_spoon') {
   actor.controller = 'player'; actor.position = filmStepPosition(scene, scene.steps[0]);
   sandbox.life.film.command(actor, 'act', 0);
   for (let frame = 0; frame < 80; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
   if (process.argv[3] !== 'spoon-offered') {
     sandbox.life.film.command(actor, 'act', 0);
-    for (let frame = 0; frame < 25; frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
+    for (let frame = 0; frame < (process.argv[3] === 'spoon-withdrawal' ? 13 : 25); frame++) sandbox.life.film.oracleFrame(actor, false, .1, 0);
     if (['spoon', 'oracle-invitation', 'oracle-guide'].includes(process.argv[3])) for (let frame = 0; frame < 60; frame++) sandbox.life.film.oracleFrame(actor, true, .1, 0);
   }
   if (['oracle-invitation', 'oracle-guide'].includes(process.argv[3])) {
