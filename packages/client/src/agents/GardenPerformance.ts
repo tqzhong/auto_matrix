@@ -3,7 +3,7 @@ import { gardenPose, gardenGroundHeight, FILM_SETS, SUNRISE_GARDEN, type Trilogy
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { poseStreetWake } from './StreetWakePerformance.js';
-import { holdGardenHandle } from './OracleParkHands.js';
+import { holdGardenHandle, connectGardenWrists } from './OracleParkHands.js';
 
 const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
 const oracleDrapes = new WeakMap<CharacterRig, string>();
@@ -225,6 +225,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
       }
     }
     const bag = rig.root.getObjectByName('oracle-park-handbag'); if (bag) { bag.visible = false; if (park) carryOracleBag(rig); }
+    connectGardenWrists(rig);
     drapeSatiSkirt(rig);
     return;
   }
@@ -327,4 +328,5 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     }
     rig.detail.position.y = support.height;
   }
+  connectGardenWrists(rig);
 }

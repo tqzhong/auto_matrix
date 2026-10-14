@@ -720,6 +720,14 @@ export class CharacterModels {
       if (digger) for (const point of arm) point[0] *= .9;
       const elbow = this.limb(shoulder, arm, .81, state.id === 'sati' || state.id === 'bane' || digger || sealOperator ? skin : cloth, .94);
       elbows.push(elbow);
+      if (state.id === 'oracle') {
+        const sleeve = shoulder.children.find(child => child instanceof THREE.SkinnedMesh) as THREE.SkinnedMesh;
+        const vertices = sleeve.geometry.attributes.position;
+        // The sleeve cap joins the chest instead of tapering to an isolated
+        // point directly above the arm joint as the elbows move forward.
+        for (let i = 0; i < vertices.count; i++) vertices.setX(i, vertices.getX(i) - side * .12 * THREE.MathUtils.smoothstep(vertices.getY(i), -.08, .18));
+        sleeve.geometry.computeVertexNormals();
+      }
       if (mobilCotton) {
         const armMesh = shoulder.children.find(child => child instanceof THREE.SkinnedMesh) as THREE.SkinnedMesh;
         armMesh.name = `sati-covered-arm-${side}`;
@@ -733,7 +741,8 @@ export class CharacterModels {
         this.mesh(shoulder, sleeve, state.id === 'bane' ? cloth : shirt, [0, 0, 0], [1, 1, .94]);
         this.mesh(shoulder, this.cylinder, shirt, [0, -.65, 0], [.203, .075, .193]);
       }
-      if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, seams, [0, -0.56, 0], [0.13, 0.045, 0.14]);
+      if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, state.id === 'oracle' ? cloth : seams,
+        [0, state.id === 'oracle' ? -.588 : -.56, 0], state.id === 'oracle' ? [.109, .035, .106] : [.13, .045, .14]);
       const handMaterial = look.leather ? black : skin;
       const parentHand = state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
