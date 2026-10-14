@@ -1,0 +1,17 @@
+{
+  "snapshotKeys": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "phase": true,
+    "timeOfDay": true,
+    "events": true,
+    "simulation": true,
+    "sandbox": true
+  },
+  "tickBefore": 7883,
+  "tickAfter": 7883,
+  "memoryCount": 15,
+  "memoriesUnchanged": true,
+  "nativeBrowserAcceptance": false
+}

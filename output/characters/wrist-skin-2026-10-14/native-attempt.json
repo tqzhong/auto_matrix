@@ -1,0 +1,12 @@
+{
+  "url": "http://127.0.0.1:5391/",
+  "backend": "http://127.0.0.1:3191/api/world",
+  "httpStatus": 200,
+  "browser": "Codex In-app Browser (2)",
+  "tab": "26",
+  "navigation": "Page.navigate timed out after 20 seconds",
+  "sameTabCheck": "The page became a generated data-URL network error; Browser Use URL policy rejected access to that error page. No bypass attempted.",
+  "screenshots": 0,
+  "gameplayProgress": false,
+  "nativeAcceptance": false
+}

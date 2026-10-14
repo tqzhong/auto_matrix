@@ -1,0 +1,52 @@
+[
+  {
+    "role": "neo",
+    "originalSha256": "c0784b62bccd64c81c9985d6be67c3a13401b3a814b5386c52265da0ee027e7a",
+    "newSha256": "49860d39ad23e519e5c3e17164c5dedb5581e92d11cac930d3c17e175b638bc6",
+    "binaryPrefixBytes": 13363192,
+    "originalDefinitionsPreservedExcept": [],
+    "joinedVertices": 98,
+    "maxNormalError": 6.230039844012936e-07,
+    "maxLinearRGBSeamError": 1.5299759286713233e-06,
+    "addedGlbBytes": 135372,
+    "textureBytes": 111118
+  },
+  {
+    "role": "trinity",
+    "originalSha256": "4d38eaa520cef0ed1c0881ef037caf246bc92e5c99567ac9e786c54df9da8fab",
+    "newSha256": "828d5388e0580b925c671bce51f1a202cac9ecd3b6388b0aee484a6aba31e60b",
+    "binaryPrefixBytes": 5123432,
+    "originalDefinitionsPreservedExcept": [
+      "Fitted leather jacket POSITION and NORMAL accessor references"
+    ],
+    "joinedVertices": 98,
+    "maxNormalError": 6.583547929039923e-07,
+    "maxLinearRGBSeamError": 9.46131866907951e-07,
+    "addedGlbBytes": 352588,
+    "textureBytes": 148546
+  },
+  {
+    "role": "smith",
+    "originalSha256": "c3585e4c6752295729ee16e93cde752a440e638a9317e9a091010f790dc79bdf",
+    "newSha256": "a5a1ec96e77c9be0c66a7cdc0b94f55c6bf38a9dc36e70070ebf0322d10dd096",
+    "binaryPrefixBytes": 4010792,
+    "originalDefinitionsPreservedExcept": [],
+    "joinedVertices": 98,
+    "maxNormalError": 1.0477540399733698e-06,
+    "maxLinearRGBSeamError": 1.205276308924308e-06,
+    "addedGlbBytes": 136512,
+    "textureBytes": 111431
+  },
+  {
+    "role": "morpheus",
+    "originalSha256": "58a8c0da40a30e2319642e6c1be4ec21bbf4fb8ab8758136a023c06d52184e60",
+    "newSha256": "9debca532efb68ee764267e2721d089a5b8a32dacaeb4c673c873016560d8051",
+    "binaryPrefixBytes": 7791556,
+    "originalDefinitionsPreservedExcept": [],
+    "joinedVertices": 98,
+    "maxNormalError": 6.976544568715326e-07,
+    "maxLinearRGBSeamError": 2.273505628536121e-06,
+    "addedGlbBytes": 134376,
+    "textureBytes": 106771
+  }
+]

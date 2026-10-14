@@ -1,0 +1,97 @@
+TAP version 13
+# Subtest: neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+not ok 1 - neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 407.367334
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:2147'
+  failureType: 'testCodeFailure'
+  error: 'neo: hand boundary 12174 at -0.577516496181488,2.1819591522216797,0.14784345030784607 has no forearm skin attached'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:52:14)
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:46:22)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+not ok 2 - trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 147.056
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:2147'
+  failureType: 'testCodeFailure'
+  error: 'trinity: hand boundary 12318 at -0.5044174194335938,2.1696479320526123,0.14508652687072754 has no forearm skin attached'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:52:14)
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:46:22)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+not ok 3 - smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 131.782125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:2147'
+  failureType: 'testCodeFailure'
+  error: 'smith: hand boundary 12164 at -0.5734543800354004,2.2088992595672607,0.14981654286384583 has no forearm skin attached'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:52:14)
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:46:22)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+not ok 4 - morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 356.603208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:2147'
+  failureType: 'testCodeFailure'
+  error: 'morpheus: hand boundary 12156 at -0.5902109742164612,2.2071115970611572,0.15837682783603668 has no forearm skin attached'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:52:14)
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:46:22)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+not ok 5 - wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+  ---
+  duration_ms: 386.437083
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:4173'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'mesh')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:83:75)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1652.04225

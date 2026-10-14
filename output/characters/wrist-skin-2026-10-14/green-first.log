@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 1 - neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 756.200792
+  type: 'test'
+  ...
+# Subtest: trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 2 - trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 605.296625
+  type: 'test'
+  ...
+# Subtest: smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 3 - smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 515.642792
+  type: 'test'
+  ...
+# Subtest: morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 4 - morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 752.66675
+  type: 'test'
+  ...
+# Subtest: wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+ok 5 - wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+  ---
+  duration_ms: 528.834042
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3448.648625
