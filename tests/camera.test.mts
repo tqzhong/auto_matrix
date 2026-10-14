@@ -3446,9 +3446,9 @@ test('the machine funeral camera keeps carried Neo readable inside the central a
     'first person must stay at Neo eye height while the barge carries him');
 });
 
-test('the park conversation frames its speakers and V follows the seated Oracle’s actual eye line', t => {
+test('the park establishing shot frames both speakers and V follows the seated Oracle’s actual eye line', t => {
   const game = setup(t, Math.PI), center = FILM_SETS.film_sunrise_garden.center;
-  const encounter = { ...newTrilogyEpilogue('dawn'), phase: 'choice' as const }, oracle = gardenPose(encounter, 'oracle');
+  const encounter = { ...newTrilogyEpilogue('dawn'), phase: 'architect' as const, elapsed: 3.8 }, oracle = gardenPose(encounter, 'oracle');
   game.state.id = 'oracle'; game.state.currentLocation = 'film_sunrise_garden';
   game.state.position = filmPosition(game.state.currentLocation, oracle.x, oracle.z); game.state.rotation = oracle.yaw;
   game.state.currentAction = { type: 'idle', parameters: { epilogue: { ...encounter, role: 'oracle' } }, startedAt: 0, duration: 1, progress: 0 };

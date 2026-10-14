@@ -1,0 +1,9 @@
+{
+  "checked": 402,
+  "unchanged": 401,
+  "intentionalDocumentationChanges": [
+    "packages/client/public/assets/characters/README.md"
+  ],
+  "unexpectedChanges": [],
+  "newAssetBytes": 1055676
+}

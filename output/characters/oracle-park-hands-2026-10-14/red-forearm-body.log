@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+not ok 1 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 205.27
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-grip.test.mts:1:8332'
+  failureType: 'testCodeFailure'
+  error: '0.45 hand 1 fraction 0.5: the forearm passes inside the torso'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-park-grip.test.mts:155:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 449.964125

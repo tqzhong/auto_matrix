@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+ok 1 - the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+  ---
+  duration_ms: 724.443667
+  type: 'test'
+  ...
+# 1.7777777777777777: projected head height 0.2790519365679847, bounds -0.22621998981252225,0.1853872683822172,0.8700708661627437 / -0.1257781338541629,0.4644392049502019,0.8804141128996017
+# oracle-head: -0.22621998981252225,0.1853872683822172,0.8700708661627437 / -0.1257781338541629,0.4644392049502019,0.8804141128996017
+# oracle-park-handbag: -0.2453494987627017,-0.32690336892581756,0.8658435430068581 / -0.061797683190210784,0.009847050972361444,0.8761489609942549
+# 0.65: projected head height 0.2700057485661382, bounds -0.23626141436918102,0.1878454675075651,0.8744343911892258 / 0.02951316151889536,0.45785121607370327,0.884121421847561
+# oracle-head: -0.23626141436918102,0.1878454675075651,0.8744343911892258 / 0.02951316151889536,0.45785121607370327,0.884121421847561
+# oracle-park-handbag: -0.2685837500466412,-0.30680616723823906,0.8704901147640507 / 0.21128833192919827,0.018176466219060695,0.8801206016746305
+# Subtest: the park conversation push-in and mouse orbit preserve the frozen performers and V eye view
+ok 2 - the park conversation push-in and mouse orbit preserve the frozen performers and V eye view
+  ---
+  duration_ms: 426.959208
+  type: 'test'
+  ...
+# Subtest: the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes
+ok 3 - the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes
+  ---
+  duration_ms: 522.657208
+  type: 'test'
+  ...
+# Subtest: the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples
+ok 4 - the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples
+  ---
+  duration_ms: 964.616875
+  type: 'test'
+  ...
+# Subtest: the shipped Architect turns, walks to the promenade and continues off camera with supported shoes and an exact cold pose
+ok 5 - the shipped Architect turns, walks to the promenade and continues off camera with supported shoes and an exact cold pose
+  ---
+  duration_ms: 6513.77675
+  type: 'test'
+  ...
+# Subtest: the controllable Oracle can walk the hill with her actual shoes supported even before the seated performance starts
+ok 6 - the controllable Oracle can walk the hill with her actual shoes supported even before the seated performance starts
+  ---
+  duration_ms: 4003.476125
+  type: 'test'
+  ...
+# Subtest: paused park third person responds to mouse orbit and retains it without changing the saved event or body
+ok 7 - paused park third person responds to mouse orbit and retains it without changing the saved event or body
+  ---
+  duration_ms: 356.14425
+  type: 'test'
+  ...
+# Subtest: park shots frame the arriving and departing speakers, then the reunited group and sunrise, without hiding heads behind the set
+ok 8 - park shots frame the arriving and departing speakers, then the reunited group and sunrise, without hiding heads behind the set
+  ---
+  duration_ms: 5126.011333
+  type: 'test'
+  ...
+# Subtest: Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+ok 9 - Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+  ---
+  duration_ms: 3864.363208
+  type: 'test'
+  ...
+# Subtest: the park handbag stays in the hand before lowering, both palms meet its handles and its base rests on the dressed lap
+ok 10 - the park handbag stays in the hand before lowering, both palms meet its handles and its base rests on the dressed lap
+  ---
+  duration_ms: 137.701625
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19053.721584

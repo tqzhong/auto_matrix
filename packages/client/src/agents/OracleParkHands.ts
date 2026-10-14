@@ -1,0 +1,146 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import type { CharacterRig } from './CharacterModel.js';
+import { reach } from './SpoonPerformance.js';
+import { enableSkinnedCulling } from './SkinnedBounds.js';
+
+export interface OracleParkHand {
+  root: THREE.Object3D;
+  wrist: THREE.Object3D;
+  skin: THREE.SkinnedMesh;
+  bones: THREE.Bone[][];
+  pads: THREE.Vector3[];
+}
+
+interface Entry { fallback: THREE.Object3D[]; skin: THREE.Material; active: boolean; loading: boolean; }
+
+/** The park uses articulated anatomy; earlier performances retain their authored contacts. */
+export class OracleParkHands {
+  private entries = new Map<CharacterRig, Entry>();
+  private geometries = new Set<THREE.BufferGeometry>();
+  private materials = new Set<THREE.Material>();
+  private skeletons = new Set<THREE.Skeleton>();
+  private disposed = false;
+
+  track(rig: CharacterRig, skin: THREE.Material): void {
+    const fallback: THREE.Object3D[] = [];
+    for (const side of ['R', 'L']) {
+      const wrist = rig.root.getObjectByName(`oracle-hand-${side}`)!;
+      for (const object of wrist.children) if (!object.name.startsWith('oracle-last-')) fallback.push(object);
+    }
+    this.entries.set(rig, { fallback, skin, active: false, loading: false });
+  }
+
+  update(rig: CharacterRig, active: boolean): void {
+    const entry = this.entries.get(rig); if (!entry) return;
+    entry.active = active;
+    if (active && !entry.loading) {
+      entry.loading = true;
+      this.load(rig, entry).catch(error => console.warn('Oracle park hand anatomy could not load; retaining the existing hands.', error));
+    }
+    const visible = active && Boolean(rig.parkHands);
+    entry.fallback.forEach(object => { object.visible = !visible; });
+    rig.parkHands?.forEach(hand => {
+      hand.root.visible = visible;
+      hand.bones.flat().forEach(bone => bone.quaternion.identity());
+    });
+  }
+
+  private async load(rig: CharacterRig, entry: Entry): Promise<void> {
+    const asset = await new GLTFLoader().loadAsync('/assets/characters/oracle-park-hands.glb');
+    const hands = ['R', 'L'].map(side => {
+      const root = asset.scene.getObjectByName(`oracle-anatomical-hand-${side}`)!;
+      const skin = root.getObjectByName(`oracle-hand-skin-${side}`) as THREE.SkinnedMesh;
+      this.geometries.add(skin.geometry); this.materials.add(skin.material as THREE.Material); this.skeletons.add(skin.skeleton);
+      skin.material = entry.skin; skin.castShadow = skin.receiveShadow = true;
+      const wrist = rig.root.getObjectByName(`oracle-hand-${side}`)!;
+      const bones = Array.from({ length: 5 }, (_, digit) => Array.from({ length: 3 }, (_, segment) =>
+        root.getObjectByName(`finger${digit + 1}-${segment + 1}_${side}`) as THREE.Bone));
+      const pads = bones.map(chain => {
+        const index = skin.skeleton.bones.indexOf(chain[2]), pad = new THREE.Vector3(); let count = 0;
+        const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+        for (let i = 0; i < position.count; i++) for (let j = 0; j < 4; j++) {
+          if (skinIndex.getComponent(i, j) !== index || skinWeight.getComponent(i, j) < .95) continue;
+          pad.add(new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index])); count++;
+        }
+        return pad.divideScalar(count);
+      });
+      return { root, skin, wrist, bones, pads };
+    });
+    if (this.disposed) { this.release(); return; }
+    rig.parkHands = hands;
+    hands.forEach(hand => { hand.wrist.add(hand.root); enableSkinnedCulling(hand.root); });
+    this.update(rig, entry.active);
+  }
+
+  private release(): void {
+    this.geometries.forEach(value => value.dispose()); this.geometries.clear();
+    this.materials.forEach(value => value.dispose()); this.materials.clear();
+    this.skeletons.forEach(value => value.dispose()); this.skeletons.clear();
+  }
+  dispose(): void { this.disposed = true; this.entries.clear(); this.release(); }
+}
+
+/** Close around the handle using the original finger lengths and actual distal skin. */
+export function holdGardenHandle(rig: CharacterRig, bag: THREE.Object3D, side: number, amount = 1, raised = 1): void {
+  const hand = rig.parkHands?.[side]; if (!hand) return;
+  const sign = side ? -1 : 1, center = new THREE.Vector3(sign * .115, -.205, 0);
+  const handle = bag.getObjectByName('oracle-handbag-handle--0.11') as THREE.Mesh<THREE.TubeGeometry>;
+  const path = handle.geometry.parameters.path, t = side ? .64 : .36;
+  const tangent = path.getTangent(t).normalize().multiplyScalar(sign);
+  const x = new THREE.Vector3(0, -sign, 0).addScaledVector(tangent, sign * tangent.y).normalize();
+  const y = new THREE.Vector3().crossVectors(tangent, x).normalize();
+  const frame = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, tangent));
+  const base = bag.getWorldQuaternion(new THREE.Quaternion()).multiply(frame);
+  const original = hand.wrist.getWorldPosition(new THREE.Vector3()), scale = hand.wrist.getWorldScale(new THREE.Vector3());
+  const body = rig.root.getWorldQuaternion(new THREE.Quaternion());
+  const local = new THREE.Quaternion(), orientation = new THREE.Quaternion();
+  let roll = sign * Math.PI / 2 * (1 - raised);
+  // The grip may rotate around the handle. Align it to the solved forearm
+  // instead of locking the palm flat while the elbow lifts underneath it.
+  for (let solve = 0; solve < 6; solve++) {
+    const twist = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), roll);
+    local.copy(frame).multiply(twist); orientation.copy(base).multiply(twist);
+    const target = bag.localToWorld(path.getPoint(t)).sub(center.clone().multiply(scale).applyQuaternion(orientation));
+    const approach = original.clone().lerp(target, amount).add(new THREE.Vector3(0, 0, Math.sin(Math.PI * amount) * .5).applyQuaternion(body));
+    reach(rig.shoulders[side], rig.elbows[side], hand.wrist.position, approach,
+      new THREE.Vector3(-sign * .4, -.7, -.2).applyQuaternion(body));
+    const arm = hand.wrist.getWorldPosition(new THREE.Vector3()).sub(rig.elbows[side].getWorldPosition(new THREE.Vector3())).applyQuaternion(base.clone().invert());
+    const desired = THREE.MathUtils.clamp(sign * Math.atan2(arm.x, -arm.y), -1.45, 1.6) * sign;
+    roll = THREE.MathUtils.lerp(roll, desired, .75);
+  }
+  const rotation = rig.elbows[side].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation);
+  hand.wrist.quaternion.identity().slerp(rotation, amount);
+  hand.bones.forEach((chain, digit) => {
+    const base = chain[0].position, first = chain[1].position, second = chain[2].position, pad = hand.pads[digit];
+    // Each finger wraps a different part of the curved leather, not an
+    // imaginary straight cylinder through the middle of the palm.
+    const inverse = local.clone().invert(), anchor = path.getPoint(t);
+    const section = (u: number) => path.getPoint(u).sub(anchor).applyQuaternion(inverse).add(center);
+    let u = t;
+    for (let sample = 0; sample < 5; sample++) {
+      const point = section(u), derivative = (section(u + .001).z - section(u - .001).z) / .002;
+      u = THREE.MathUtils.clamp(u + (base.z - point.z) / derivative, .15, .85);
+    }
+    const grip = section(u);
+    // The shorter ring/little fingers contact the lower arc. Forcing all
+    // fingertips to the far side exceeds their reach and cuts through it.
+    const [dx, dy, tx, ty] = [[-.014, .045, .4, -.92], [.03897, -.0225, .5, .866], [.05196, -.03, .866, .5],
+      [.0225, -.039, .866, .5], [-.03464, -.02, .866, -.5]][digit];
+    const direction = new THREE.Vector3(sign * tx, ty, 0).normalize();
+    const end = new THREE.Vector3(grip.x + sign * dx, grip.y + dy, base.z)
+      .addScaledVector(direction, -pad.length());
+    const axis = end.clone().sub(base), a = first.length(), b = second.length();
+    const length = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001); axis.normalize();
+    end.copy(base).addScaledVector(axis, length);
+    const along = (a * a - b * b + length * length) / (2 * length);
+    const bend = new THREE.Vector3(sign, digit ? -1 : 1, 0); bend.addScaledVector(axis, -bend.dot(axis)).normalize();
+    const hinge = base.clone().addScaledVector(axis, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along)));
+    const parent = new THREE.Quaternion();
+    [hinge.clone().sub(base), end.clone().sub(hinge), direction].forEach((desired, index) => {
+      const rotation = new THREE.Quaternion().setFromUnitVectors([first, second, pad][index].clone().normalize(), desired.normalize());
+      chain[index].quaternion.identity().slerp(parent.clone().invert().multiply(rotation), amount); parent.copy(rotation);
+    });
+  });
+  hand.wrist.updateWorldMatrix(true, true);
+}

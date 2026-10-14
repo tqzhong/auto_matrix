@@ -34,7 +34,7 @@ async function shipped(name: string) {
 
 async function fixture(t: TestContext) {
   const roles = ['oracle', 'architect', 'sati', 'seraph'] as const;
-  const assets = Object.fromEntries(await Promise.all(['oracle-revolutions-head', 'sati-head', 'architect-head', 'architect-body', 'seraph-head', 'seraph-body', 'waterfront-tree']
+  const assets = Object.fromEntries(await Promise.all(['oracle-revolutions-head', 'oracle-park-hands', 'sati-head', 'architect-head', 'architect-body', 'seraph-head', 'seraph-body', 'waterfront-tree']
     .map(async name => [name, await shipped(name)])));
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
     const name = String(url).split('/').pop()!.replace('.glb', ''); assert.ok(assets[name], name); return assets[name];
@@ -94,7 +94,7 @@ function vertices(root: THREE.Object3D) {
 
 test('the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame', async t => {
   const h = await fixture(t);
-  for (const aspect of [16 / 9, .65]) {
+  for (const aspect of [16 / 9, 4 / 3, .65, 9 / 16]) {
     h.camera.aspect = aspect; h.step('choice', 0, true);
     const face = new THREE.Box3().setFromPoints(vertices(h.rigs.oracle.head).map(point => point.project(h.camera)));
     t.diagnostic(`${aspect}: projected head height ${face.max.y - face.min.y}, bounds ${face.min.toArray()} / ${face.max.toArray()}`);

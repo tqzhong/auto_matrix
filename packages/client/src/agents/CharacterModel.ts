@@ -56,6 +56,7 @@ import { poseDockGate } from './DockGatePerformance.js';
 import { poseEmpOperator } from './EmpOperatorPerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { DiggerBodies } from './DiggerBodies.js';
+import { OracleParkHands, type OracleParkHand } from './OracleParkHands.js';
 import { poseWetwall } from './WetwallPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
@@ -124,6 +125,7 @@ export interface CharacterRig {
   shoulders: THREE.Group[];
   elbows: THREE.Object3D[];
   mobilWrists?: THREE.Object3D[];
+  parkHands?: OracleParkHand[];
   fingers: THREE.Group[][];
   hips: THREE.Group[];
   knees: THREE.Object3D[];
@@ -192,6 +194,7 @@ export class CharacterModels {
   private heroes: HeroModels;
   private epilogueHeads = new EpilogueHeads();
   private diggerBodies = new DiggerBodies();
+  private oracleParkHands = new OracleParkHands();
 
   constructor() {
     this.atlas = new THREE.TextureLoader().load('/assets/characters/matrix-faces.png');
@@ -758,6 +761,7 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     if (mobilWrists.length) rig.mobilWrists = mobilWrists;
+    if (state.id === 'oracle') this.oracleParkHands.track(rig, skin);
     if (state.id === 'colt' || state.id === 'link') rig.medicalCrew = true;
     if (state.id === 'bane') rig.logosBaneBody = true;
     if (state.id === 'niobe' || state.id === 'link') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix && (!rig.medicalCrew || Boolean(state.currentAction?.parameters.maggieDiscovery)) };
@@ -922,6 +926,7 @@ export class CharacterModels {
       if (!realWorld) this.diggerBodies.update(rig, false);
     }
     this.epilogueHeads.update(rig, input);
+    this.oracleParkHands.update(rig, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'));
     if (poseOracleRestored(rig, input.oracleRestored)) return;
     if ((input.diggers || input.upperDigger) && !rig.diggerProps) { rig.diggerProps = new DiggerProps(rig.detail); this.diggerProps.add(rig.diggerProps); }
     if (input.freewayPickup && !rig.freewayProps) { rig.freewayProps = new FreewayPickupProps(rig.root); this.freewayProps.add(rig.freewayProps); }
@@ -1338,6 +1343,7 @@ export class CharacterModels {
     this.heroes.dispose();
     this.epilogueHeads.dispose();
     this.diggerBodies.dispose();
+    this.oracleParkHands.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose());
   }
 }

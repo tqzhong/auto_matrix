@@ -400,7 +400,8 @@ test('the folded waking dress covers the actual upper thighs through the waist b
 
 test('the epilogue scalp does not grow hair across the visible ear surfaces', async t => {
   const assets = { oracle: await shippedHead('oracle-revolutions'), sati: await shippedHead('sati') };
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => url.includes('sati') ? assets.sati : assets.oracle);
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => url.includes('park-hands')
+    ? new Promise(() => {}) : url.includes('sati') ? assets.sati : assets.oracle);
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
