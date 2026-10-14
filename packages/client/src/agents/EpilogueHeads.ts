@@ -6,7 +6,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 
 interface HeadEntry {
-  role: 'oracle' | 'sati' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
+  role: 'oracle' | 'sati' | 'spoon_boy' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
   fallback: THREE.Group;
   model?: THREE.Group;
   face?: THREE.Mesh;
@@ -74,6 +74,7 @@ export class EpilogueHeads {
     const apu = entry.role === 'mifune' || entry.role === 'kid';
     const council = ['hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane'].includes(entry.role);
     const program = entry.role === 'architect' || entry.role === 'seraph' || entry.role === 'keymaker' || entry.role === 'rama_kandra' || entry.role === 'kamala' || entry.role === 'trainman';
+    const child = entry.role === 'spoon_boy';
     const atlas = metadata.atlasSize ?? [1254, 1254], origin = metadata.profileOrigin ?? [627, row * 627];
     const neck = metadata.neckSample ?? [.25, .445 + row * .5], cheek = metadata.cheekSample ?? [.697, .305 + row * .5];
     const ear = metadata.profileEar ?? (digger ? [395, 300] : [365, 323]), eye = metadata.profileEye ?? [151, 267];
@@ -94,19 +95,20 @@ export class EpilogueHeads {
         uniform vec3 headSkin; uniform float eyesClosed;
         varying float vFaceWeight; varying vec3 vHeadRest; varying vec2 vProfileUv; varying vec3 vHeadNormal;`)
         .replace('#include <map_fragment>', `#include <map_fragment>
-          vec2 neckUv = vec2(${Number(neck[0]).toFixed(6)} + vHeadRest.x * .10, ${Number(neck[1]).toFixed(6)} + clamp(-vHeadRest.y - .30, 0.0, .2) * ${captain || program || council || apu ? '.03' : '.12'});
+          vec2 neckUv = vec2(${Number(neck[0]).toFixed(6)} + vHeadRest.x * .10, ${Number(neck[1]).toFixed(6)} + clamp(-vHeadRest.y - .30, 0.0, .2) * ${captain || program || council || apu || child ? '.03' : '.12'});
           vec3 neckColor = texture2D(map, neckUv).rgb;
-          float profileWeight = smoothstep(.20, .70, abs(vHeadNormal.x)) * smoothstep(-.28, -.16, vHeadRest.y);
+          float profileWeight = smoothstep(.20, .70, abs(vHeadNormal.x)) * smoothstep(${child ? '-.48, -.35' : '-.28, -.16'}, vHeadRest.y);
           vec3 profileColor = texture2D(map, vProfileUv).rgb;
           vec2 profilePx = vProfileUv * vec2(${Number(atlas[0]).toFixed(1)}, ${Number(atlas[1]).toFixed(1)}) - vec2(${Number(origin[0]).toFixed(1)}, ${Number(origin[1]).toFixed(1)});
           // A projected reference ear/eye cannot also appear on the flat temple
           // beside the real anatomy. Use adjacent cheek detail in those regions.
           float photoEar = 1.0 - smoothstep(.75, 1.2, length((profilePx - vec2(${Number(ear[0]).toFixed(1)}, ${Number(ear[1]).toFixed(1)})) / vec2(65.0, 92.0)));
-          float earSurface = smoothstep(${entry.role === 'sati' ? '.235, .263' : digger ? '.238, .258' : '.209, .234'}, abs(vHeadRest.x));
+          float earSurface = smoothstep(${child ? '.258, .275' : entry.role === 'sati' ? '.235, .263' : digger ? '.238, .258' : '.209, .234'}, abs(vHeadRest.x));
           float photoEye = (1.0 - smoothstep(.7, 1.3, length((profilePx - vec2(${Number(eye[0]).toFixed(1)}, ${Number(eye[1]).toFixed(1)})) / vec2(52.0, 37.0))))
             * smoothstep(.14, .18, abs(vHeadRest.x));
           vec3 cheek = texture2D(map, vec2(${Number(cheek[0]).toFixed(6)}, ${Number(cheek[1]).toFixed(6)})).rgb;
           profileColor = mix(profileColor, cheek, max(photoEar * (1.0 - earSurface), photoEye));
+          ${child ? 'profileColor = mix(profileColor, neckColor, 1.0 - smoothstep(-.43, -.27, vHeadRest.y));' : ''}
           ${digger ? `float repeatedFeatures = (1.0 - smoothstep(205.0, 255.0, profilePx.x))
             * smoothstep(.11, .16, abs(vHeadRest.x)) * smoothstep(-.32, -.27, vHeadRest.y)
             * (1.0 - smoothstep(.13, .20, vHeadRest.y));
@@ -119,6 +121,7 @@ export class EpilogueHeads {
             * smoothstep(-.16, -.06, vHeadRest.y) * (1.0 - smoothstep(.08, .16, vHeadRest.z));
           profileWeight *= max(profileSkin, shortHair);
           vec3 sideColor = mix(neckColor, profileColor, profileWeight);
+          ${child ? 'sideColor = mix(mix(neckColor, cheek, smoothstep(-.32, -.18, vHeadRest.y)), profileColor, profileWeight);' : ''}
           ${digger ? 'sideColor = mix(sideColor, neckColor, smoothstep(.227, .247, abs(vHeadRest.x)) * (1.0 - smoothstep(-.01, .09, vHeadRest.y)));' : ''}
           diffuseColor.rgb = mix(sideColor, diffuseColor.rgb, vFaceWeight);
           float lid = (1.0 - smoothstep(.035, .060, abs(abs(vHeadRest.x) - ${Number(metadata.eye[0]).toFixed(6)})))
@@ -129,7 +132,7 @@ export class EpilogueHeads {
     entry.face = face;
     entry.eyes = new THREE.Group(); entry.eyes.name = `${role}-eyes`; model.add(entry.eyes);
     const sclera = this.material(new THREE.MeshPhysicalMaterial({ color: '#c6b9a7', roughness: .3, clearcoat: .3 }));
-    const iris = this.material(new THREE.MeshStandardMaterial({ color: entry.role === 'roland' || entry.role === 'architect' || entry.role === 'trainman' || entry.role === 'hamann' || entry.role === 'dillard' || entry.role === 'bane' ? '#536064' : '#352318', roughness: .48 }));
+    const iris = this.material(new THREE.MeshStandardMaterial({ color: child ? '#456773' : entry.role === 'roland' || entry.role === 'architect' || entry.role === 'trainman' || entry.role === 'hamann' || entry.role === 'dillard' || entry.role === 'bane' ? '#536064' : '#352318', roughness: .48 }));
     const pupil = this.material(new THREE.MeshPhysicalMaterial({ color: '#080906', roughness: .19, clearcoat: .5 }));
     const sphere = this.geometry(new THREE.SphereGeometry(1, 24, 16));
     for (const side of [-1, 1]) {
@@ -168,6 +171,7 @@ export class EpilogueHeads {
   }
 
   private groom(parent: THREE.Group, skin: THREE.BufferGeometry, role: HeadEntry['role']): void {
+    if (role === 'spoon_boy') return;
     const oracle = role === 'oracle', position = skin.attributes.position, normal = skin.attributes.normal, indices = skin.index!;
     const apu = role === 'mifune' || role === 'kid';
     const digger = role === 'zee' || role === 'charra', captain = ['niobe', 'lock', 'roland'].includes(role);

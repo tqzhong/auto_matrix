@@ -17,6 +17,14 @@ spec = importlib.util.spec_from_file_location('character_builder', Path(__file__
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 REVISION = builder.REVISION
 REFERENCES = {
+    'spoon_boy': {
+        'targets': {'macrodetails/caucasian-male-child': 1},
+        'row': 0, 'eye': [215, 416, 486], 'ys': [1235, 817, 719, 706, 684, 640, 486, 139],
+        'chin': -.31, 'skin': [.65, .47, .38], 'atlas': 'spoon_boy-face-reference.png',
+        'atlas_size': [1254, 1254], 'panel_top': 0, 'profile_anchor': 90, 'profile_y': 0,
+        'neck_sample': [313, 1015], 'cheek_sample': [984, 642], 'profile_ear': [418, 551],
+        'anatomical_neck': True, 'profile_depth': [.76, .83],
+    },
     'mifune': {
         'targets': {'macrodetails/asian-male-old': .55, 'macrodetails/african-male-old': .20,
                     'macrodetails/caucasian-male-old': .25, 'head/head-rectangular': .32,
@@ -216,7 +224,7 @@ def main(source, output, role):
         return base[skeleton['joints'][skeleton['bones'][name]['head']]].mean(axis=0)
 
     eye, neck = pivot('eye.L'), pivot('neck01')
-    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune', 'kid']:
+    if settings.get('anatomical_neck') or role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune', 'kid']:
         # Keep and clip crossing faces rather than leaving jagged open edges
         # above the body's neck overlap.
         faces = [face for face, group in zip(faces, groups) if group == 'body' and max(base[[i for i, _ in face], 1]) > neck[1] - .1]
@@ -235,12 +243,17 @@ def main(source, output, role):
     fitted[:, 0] *= x_scale
     fitted[:, 1] = (settings['eye'][2] - portrait_y) * pixel_scale
     fitted[:, 2] = (points[:, 2] - eye[2]) * x_scale + .185
+    if 'profile_depth' in settings:
+        # Register profile depth separately; eye spacing alone makes the
+        # stock child's nose and rear skull exceed the reference silhouette.
+        depth = fitted[:, 2] - .185
+        fitted[:, 2] = .185 + depth * np.where(depth > 0, *settings['profile_depth'])
     # A continuous neck sinks into the garment instead of ending at the jaw.
     neck_blend = np.clip((-.33 - fitted[:, 1]) / .14, 0, 1)
     radius = np.maximum(np.hypot(fitted[:, 0], fitted[:, 2] * 1.3), .001)
     fitted[:, 0] *= 1 - neck_blend * (1 - .135 / radius)
     fitted[:, 2] *= 1 - neck_blend * .35
-    if role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune', 'kid']:
+    if settings.get('anatomical_neck') or role in ['architect', 'seraph', 'keymaker', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune', 'kid']:
         # Fit the anatomical neck independently of the portrait's long bare
         # shoulder region. Clamping that projection flattens several rings
         # into a visible flange at the collar.
@@ -258,9 +271,15 @@ def main(source, output, role):
     center_u = (settings['eye'][0] + settings['eye'][1]) / 2
     u = center_u + fitted[:, 0] / pixel_scale
     v = portrait_y
+    if role == 'spoon_boy':
+        # The stock neck is shorter than the portrait's bare chest. Sampling
+        # the original projected y would paint the white robe onto neck skin.
+        v = portrait_y.copy()
+        below = fitted[:, 1] < settings['chin']
+        v[below] = np.interp(fitted[below, 1], [-.52, settings['chin']], [980, settings['ys'][1]])
     # Fade to a matched neck/ear color before reaching the reference backdrop.
     mask = np.clip((n[:, 2] - .10) / .55, 0, 1)
-    mask *= np.clip((fitted[:, 1] - settings['chin'] + .13) / .25, 0, 1)
+    mask *= np.clip((fitted[:, 1] - settings['chin'] + (.20 if role == 'spoon_boy' else .13)) / (.22 if role == 'spoon_boy' else .25), 0, 1)
     mask *= np.clip(((.225 if role in ['zee', 'charra'] else .265) - np.abs(fitted[:, 0])) / .065, 0, 1)
     if role in ['zee', 'charra']:
         # The cheek/jaw outline is narrower than the reference's ears. Fade
@@ -269,10 +288,15 @@ def main(source, output, role):
                           [4, 150, 257, 350, 424, 449, 500, 524, 625],
                           [105, 154, 153, 143, 124, 112, 75, 40, 150])
         mask *= np.clip((width - np.abs(u - center_u) - 8) / 24, 0, 1)
+    if role == 'spoon_boy':
+        width = np.interp(v, [139, 200, 300, 400, 486, 640, 684, 750, 817, 980],
+                         [15, 176, 231, 240, 236, 188, 171, 131, 53, 197])
+        mask *= np.clip((width - np.abs(u - center_u) - 5) / 15, 0, 1)
     mask = mask * mask * (3 - 2 * mask)
     atlas_w, atlas_h = settings.get('atlas_size', [1254, 1254])
     panel = atlas_w / 2; panel_top = settings.get('panel_top', settings['row'] * 627)
     low_u, high_u = [panel * .223, panel * .766] if 'atlas_size' in settings else [140, 480]
+    if role == 'spoon_boy': low_u, high_u = 35, 595
     front_uv = np.column_stack((np.clip(u, low_u, high_u) / atlas_w, (v + panel_top) / atlas_h))
     profile_direction = settings.get('profile_direction', -1)
     profile_uv = np.column_stack(((panel + settings.get('profile_anchor', 132) + profile_direction * (fitted[:, 2] - .22) / pixel_scale) / atlas_w,
@@ -301,6 +325,7 @@ def main(source, output, role):
                              profileEar=settings['profile_ear'], profileEye=[settings['profile_anchor'] - profile_direction * .035 / pixel_scale, settings['eye'][2]],
                              neckSample=[settings['neck_sample'][0] / atlas_w, settings['neck_sample'][1] / atlas_h],
                              cheekSample=[settings['cheek_sample'][0] / atlas_w, settings['cheek_sample'][1] / atlas_h])
+    if 'profile_depth' in settings: doc['extras']['profileDepth'] = settings['profile_depth']
 
     def accessor(array, kind, component=5126):
         a = np.asarray(array, dtype='<u4' if component == 5125 else '<f4')

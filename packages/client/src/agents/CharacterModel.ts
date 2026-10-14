@@ -342,7 +342,7 @@ export class CharacterModels {
     const root = new THREE.Group(); const detail = new VisibleGroup(); root.add(detail);
     if (state.id === 'sati') root.scale.setScalar(.64);
     if (state.id === 'keymaker') root.scale.setScalar(.88);
-    if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#d5c7ac'; look.skin = '#d8b99b'; }
+    if (state.id === 'spoon_boy') { root.scale.setScalar(.73); look.cloth = '#cdc9b8'; look.skin = '#d8b99b'; look.leather = false; }
     if (state.id.startsWith('potential_')) {
       root.scale.setScalar(state.id === 'potential_blocks' ? .65 : .62 + Number(state.id.slice(-1)) * .025);
       detail.position.y = .04;
@@ -352,6 +352,12 @@ export class CharacterModels {
     if (state.id.startsWith('oracle_')) { look.cloth = '#dcd9cd'; look.leather = false; look.glasses = 'none'; }
     const torso = this.joint(detail, 0, 1.86); const smallDetails = this.joint(detail, 0, 0);
     const skin = this.material(new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.64, metalness: 0, bumpMap: this.fabric, bumpScale: 0.0012 }));
+    if (state.id === 'spoon_boy') {
+      const texture = new THREE.TextureLoader().load('/assets/characters/spoon_boy-face-reference.png');
+      texture.colorSpace = THREE.SRGBColorSpace; texture.flipY = false; texture.anisotropy = 8;
+      texture.repeat.set(.035, .012); texture.offset.set(.232, 1015 / 1254 - .002); this.textures.add(texture);
+      skin.map = texture; skin.color.set('#ffffff'); skin.roughness = .73; skin.bumpScale = .0006;
+    }
     if (digger) {
       const texture = new THREE.TextureLoader().load('/assets/characters/digger-faces.png');
       texture.colorSpace = THREE.SRGBColorSpace; texture.flipY = false; texture.anisotropy = 8;
@@ -609,6 +615,7 @@ export class CharacterModels {
       }
     }
     const neck = this.mesh(torso, this.cylinder, skin, [0, 1.79, 0], [0.145, 0.25, 0.135]);
+    if (state.id === 'spoon_boy') neck.name = 'spoon_boy-neck';
     if (state.id === 'oracle' || state.id === 'sati' || digger || captain || council || program || mobilCast || apuCrew) neck.name = `${state.id}-neck`;
     // Raised collars, seams, belt and tailored panels are visible from all sides.
     if (state.faction !== 'machines' && state.id !== 'sati') {
@@ -633,6 +640,7 @@ export class CharacterModels {
       for (const y of [0.45, 0.67]) this.mesh(torso, this.sphere, black, [0.095, y, 0.26], [0.027, 0.027, 0.014]);
     }
     const head = this.joint(torso, 0, 2.13);
+    if (state.id === 'spoon_boy') head.name = 'spoon_boy-head';
     if (['oracle', 'mifune', 'kid', 'charra', 'zee', 'niobe', 'lock', 'roland', 'architect', 'seraph', 'keymaker', 'hamann', 'west', 'dillard'].includes(state.id)) head.name = `${state.id}-head`;
     if (state.id === 'citizen_15' || state.id === 'citizen_16') head.name = `${state.id}-head`;
     if (state.id === 'sati') { head.name = 'sati-head'; head.position.y = 1.99; }
@@ -824,6 +832,9 @@ export class CharacterModels {
     }
     batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
     if (state.id === 'spoon_boy') this.spoonBoyHands.track(rig, skin);
+    if (state.id === 'spoon_boy') {
+      this.epilogueHeads.track(rig, 'spoon_boy'); this.diggerBodies.track(rig, 'spoon_boy', skin, cloth, trousers);
+    }
     if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.epilogueHeads.track(rig, state.id);
     if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
     enableSkinnedCulling(detail);
@@ -1036,7 +1047,7 @@ export class CharacterModels {
         this.material(new THREE.MeshBasicMaterial({ color: 0xb8e7ff, toneMapped: false })), [0, 0, 0]);
       rig.gateBolt.name = 'zee-rescue-discharge'; rig.gateBolt.castShadow = false;
     }
-    if (input.spoon !== undefined && !rig.spoon) {
+    if ((input.spoon !== undefined || input.spoonLesson?.role === 'boy' && input.spoonLesson.phase === 'receiving') && !rig.spoon) {
       rig.spoon = new SpoonModel(); this.spoons.add(rig.spoon);
       rig.spoon.root.name = 'held-spoon';
       rig.spoon.root.scale.setScalar(.55);
@@ -1044,7 +1055,7 @@ export class CharacterModels {
       rig.spoon.root.position.set(0, rig.hero ? -.15 : -.84, .05); rig.spoon.root.rotation.x = 2.17;
       parent.add(rig.spoon.root);
     }
-    if (rig.spoon) { rig.spoon.root.visible = input.spoon !== undefined; rig.spoon.setBend(input.spoon ?? 0); }
+    if (rig.spoon) { rig.spoon.root.visible = input.spoon !== undefined; rig.spoon.setBend(input.spoon ?? 0, input.spoonLesson?.role === 'boy'); }
     if (input.phone && rig.hero && !rig.phone) {
       rig.phone = new PhoneModel(); this.phones.add(rig.phone);
       rig.phone.root.position.copy(PHONE_HAND.position); rig.phone.root.quaternion.copy(PHONE_HAND.rotation); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);

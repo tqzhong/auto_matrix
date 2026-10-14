@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 
 interface BodyEntry {
-  role: 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
+  role: 'spoon_boy' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
   fallback: THREE.Mesh[];
   materials: THREE.Material[];
   model?: THREE.Group;
@@ -90,7 +90,11 @@ export class DiggerBodies {
         const side = name.endsWith('_R') ? 0 : 1, part = name.split('_')[0];
         if (part === 'shoulder') joint = rig.shoulders[side];
         else if (part === 'elbow') joint = rig.elbows[side];
-        else if (part === 'wrist') { joint = rig.mobilWrists?.[side] ?? rig.elbows[side]; offset = new THREE.Matrix4().makeTranslation(0, rig.mobilWrists ? 0 : -.65, .005); }
+        else if (part === 'wrist') {
+          const child = entry.role === 'spoon_boy' ? rig.root.getObjectByName(`spoon-boy-wrist-${side ? 'L' : 'R'}`) : undefined;
+          joint = child ?? rig.mobilWrists?.[side] ?? rig.elbows[side];
+          if (!child) offset = new THREE.Matrix4().makeTranslation(0, rig.mobilWrists ? 0 : -.65, .005);
+        }
         else if (part === 'hip') joint = rig.hips[side];
         else if (part === 'knee') joint = rig.knees[side];
         else if (part === 'ankle') joint = rig.ankles[side];
@@ -108,8 +112,8 @@ export class DiggerBodies {
         const vest = material as THREE.MeshStandardMaterial;
         vest.bumpMap = (entry.materials[1] as THREE.MeshStandardMaterial).bumpMap; vest.bumpScale = .004;
       }
-      if (material.name === 'Dock bindings' && ['niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune'].includes(entry.role)) {
-        const bindings = entry.materials[1].clone() as THREE.MeshStandardMaterial; bindings.color.multiplyScalar(['rama_kandra', 'kamala', 'trainman'].includes(entry.role) ? .95 : .72);
+      if (material.name === 'Dock bindings' && ['spoon_boy', 'niobe', 'lock', 'roland', 'rama_kandra', 'kamala', 'trainman', 'hamann', 'west', 'dillard', 'maggie', 'colt', 'link', 'bane', 'mifune'].includes(entry.role)) {
+        const bindings = entry.materials[1].clone() as THREE.MeshStandardMaterial; bindings.color.multiplyScalar(entry.role === 'spoon_boy' ? .99 : ['rama_kandra', 'kamala', 'trainman'].includes(entry.role) ? .95 : .72);
         this.materials.add(bindings); object.material = bindings;
       }
       if (object instanceof THREE.SkinnedMesh) this.skeletons.add(object.skeleton);

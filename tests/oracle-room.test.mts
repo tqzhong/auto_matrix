@@ -233,7 +233,21 @@ test('Neo keeps the spoon between his actual thumb and index finger, including a
   const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
   const handBytes = await readFile(new URL('../packages/client/public/assets/characters/oracle-park-hands.glb', import.meta.url));
   const hands = await new GLTFLoader().parseAsync(handBytes.buffer.slice(handBytes.byteOffset, handBytes.byteOffset + handBytes.byteLength), '');
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => String(url).endsWith('/oracle-park-hands.glb') ? hands : asset);
+  const child = new Map();
+  for (const name of ['spoon_boy-head', 'spoon_boy-body']) {
+    const raw = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
+    const size = raw.readUInt32LE(12), doc = JSON.parse(raw.subarray(20, 20 + size).toString());
+    for (const material of doc.materials) delete material.pbrMetallicRoughness.baseColorTexture;
+    doc.images = []; doc.textures = [];
+    const text = Buffer.from(JSON.stringify(doc)), padded = Buffer.alloc(Math.ceil(text.length / 4) * 4, 32); text.copy(padded);
+    const bin = raw.subarray(20 + size), data = Buffer.alloc(20 + padded.length + bin.length);
+    data.writeUInt32LE(0x46546c67); data.writeUInt32LE(2, 4); data.writeUInt32LE(data.length, 8);
+    data.writeUInt32LE(padded.length, 12); data.writeUInt32LE(0x4e4f534a, 16); padded.copy(data, 20); bin.copy(data, 20 + padded.length);
+    const loaded = await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
+    if (name.endsWith('-head')) loaded.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
+    child.set(name, loaded);
+  }
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => child.get(String(url).split('/').pop()!.replace('.glb', '')) ?? (String(url).endsWith('/oracle-park-hands.glb') ? hands : asset));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
@@ -265,6 +279,7 @@ test('Neo keeps the spoon between his actual thumb and index finger, including a
       }
     }
     const boy = models.create(world.agents.get('spoon_boy')!);
+    models.animate(boy, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 4);
     await new Promise(resolve => setImmediate(resolve)); assert.ok(boy.spoonHands);
     const center = FILM_SETS.film_oracle_home.center;
     for (const [body, place] of [[rig, SPOON_LESSON.neo], [boy, SPOON_LESSON.boy]] as const) {
