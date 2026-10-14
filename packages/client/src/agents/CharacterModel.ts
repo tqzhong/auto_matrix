@@ -827,6 +827,7 @@ export class CharacterModels {
           if (!rig.zionVariant.realWorld) { rig.zionVariant.fallback.forEach(child => { child.visible = false; }); rig.hero = model; }
         } else { for (const child of detail.children) child.visible = false; rig.hero = model; }
         detail.add(model.root);
+        if (state.id === 'cypher') this.epilogueHeads.trackCypher(rig);
         if (rig.staff) { rig.staff.removeFromParent(); rig.staff.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.staff); }
         if (rig.chateauBlade) { rig.chateauBlade.model.removeFromParent(); rig.chateauBlade.model.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.chateauBlade.model); }
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
@@ -978,7 +979,7 @@ export class CharacterModels {
       if (variant.hero) variant.hero.root.visible = !realWorld;
       if (!realWorld) this.diggerBodies.update(rig, false);
     }
-    this.epilogueHeads.update(rig, input);
+    if (rig.hero?.support !== 'cypher') this.epilogueHeads.update(rig, input);
     this.oracleParkHands.update(rig, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'));
     this.spoonBoyHands.reset(rig);
     if (poseOracleRestored(rig, input.oracleRestored)) return;
@@ -1264,6 +1265,7 @@ export class CharacterModels {
       poseMaggieDiscovery(rig, input.maggieDiscovery);
       poseLogosBane(rig, input.logosBane);
       poseSentinelPower(rig, input.sentinel);
+      if (rig.hero.support === 'cypher') this.epilogueHeads.update(rig, input);
       return;
     }
     rig.torso.position.y = pose.hipHeight;

@@ -1,4 +1,4 @@
-"""Add Hammer/Logos crew-neck costumes to finished character GLBs.
+"""Add Hammer/Logos costumes, or export Cypher's separate ship costume.
 
 Uses the same pinned CC0 body, morphs and 46-joint bind pose as the delivered
 character. The face, original wardrobe and existing binary buffers stay intact.
@@ -36,9 +36,9 @@ def build(source, character, output):
     doc = json.loads(data[20:20 + length]); binary = bytearray(data[28 + length:])
     metadata = doc['extras']
     role = metadata['character']
-    assert role in ['morpheus', 'neo', 'trinity'] and metadata.get('skinBaked')
+    assert role in ['morpheus', 'neo', 'trinity', 'choi'] and metadata.get('skinBaked')
     assert metadata['sourceRevision'] == builder.REVISION
-    version = 'hammerKnit' if role == 'morpheus' else 'logosKnit'
+    version = 'cypherKnit' if role == 'choi' else 'hammerKnit' if role == 'morpheus' else 'logosKnit'
     assert version + 'Version' not in metadata, 'Use the finished original, not an already dressed character.'
     assert not output.exists(), 'Review in a fresh staging file; never overwrite an earlier candidate.'
 
@@ -194,18 +194,57 @@ def build(source, character, output):
         index = len(doc['meshes'])
         doc['meshes'].append({'name': name, 'primitives': [{'attributes': attrs, 'indices': accessor(indices, 'SCALAR', 5125), 'material': material}]})
         doc['scenes'][doc.get('scene', 0)]['nodes'].append(len(doc['nodes']))
-        costume = 'hammerBriefingCostume' if role == 'morpheus' else 'logosCostume'
+        costume = 'cypherCostume' if role == 'choi' else 'hammerBriefingCostume' if role == 'morpheus' else 'logosCostume'
         doc['nodes'].append({'name': name, 'mesh': index, 'skin': 0, 'extras': {costume: True}})
         return {'vertices': len(vertices), 'triangles': len(indices) // 3}
 
-    name = role + ('-hammer' if role == 'morpheus' else '-logos')
+    name = 'cypher-reality' if role == 'choi' else role + ('-hammer' if role == 'morpheus' else '-logos')
     colors = {'morpheus': ([.091, .034, .047], [.386, .361, .301]),
               'neo': ([.0395, .0545, .0802], [.0865, .0931, .1022]),
-              'trinity': ([.3813, .3763, .3231], [.3813, .3763, .3231])}
+              'trinity': ([.3813, .3763, .3231], [.3813, .3763, .3231]),
+              'choi': ([.105, .083, .063], [.09, .095, .085])}
     upper_color, collar_color = colors[role]
     meshes = {'sweater': export(name + '-sweater', garment, texcoords, polygons, influence, upper_color),
               'collar': export(name + '-collar', collar, collar_uv, collar_faces, collar_weights, collar_color)}
     metadata.update({version + 'Version': 2, version + 'OriginalSha256': hashlib.sha256(data).hexdigest(), version + 'Source': source_hashes})
+    if role == 'choi':
+        # Ship only the new garment, sharing the already loaded Choi body.
+        # Retain the original joint order and bind matrices for runtime rebinding.
+        selected = [i for i, mesh in enumerate(doc['meshes']) if mesh['name'].startswith('cypher-reality-')]
+        used_materials = sorted({primitive['material'] for i in selected for primitive in doc['meshes'][i]['primitives']})
+        used_accessors = {skin['inverseBindMatrices']}
+        for i in selected:
+            for primitive in doc['meshes'][i]['primitives']:
+                used_accessors.update(primitive['attributes'].values()); used_accessors.add(primitive['indices'])
+        used_accessors = sorted(used_accessors)
+        views = sorted({doc['accessors'][i]['bufferView'] for i in used_accessors})
+        maps = {kind: {old: new for new, old in enumerate(values)} for kind, values in
+                [('mesh', selected), ('material', used_materials), ('accessor', used_accessors), ('view', views)]}
+        packed = bytearray(); new_views = []
+        for i in views:
+            view = dict(doc['bufferViews'][i]); start = view.get('byteOffset', 0)
+            packed.extend(b'\x00' * (-len(packed) % 4)); view['byteOffset'] = len(packed)
+            packed.extend(binary[start:start + view['byteLength']]); new_views.append(view)
+        nodes = [i for i, node in enumerate(doc['nodes']) if 'mesh' not in node or node['mesh'] in selected]
+        node_map = {old: new for new, old in enumerate(nodes)}
+        for i in nodes:
+            node = doc['nodes'][i]
+            if 'children' in node: node['children'] = [node_map[j] for j in node['children'] if j in node_map]
+            if 'mesh' in node: node['mesh'] = maps['mesh'][node['mesh']]
+        doc['nodes'] = [doc['nodes'][i] for i in nodes]
+        for scene in doc['scenes']: scene['nodes'] = [node_map[i] for i in scene['nodes'] if i in node_map]
+        skin['joints'] = [node_map[i] for i in skin['joints']]; skin['skeleton'] = node_map[skin['skeleton']]
+        skin['inverseBindMatrices'] = maps['accessor'][skin['inverseBindMatrices']]
+        doc['meshes'] = [doc['meshes'][i] for i in selected]
+        for mesh in doc['meshes']:
+            for primitive in mesh['primitives']:
+                primitive['attributes'] = {key: maps['accessor'][value] for key, value in primitive['attributes'].items()}
+                primitive['indices'] = maps['accessor'][primitive['indices']]; primitive['material'] = maps['material'][primitive['material']]
+        doc['materials'] = [doc['materials'][i] for i in used_materials]
+        doc['accessors'] = [doc['accessors'][i] for i in used_accessors]
+        for item in doc['accessors']: item['bufferView'] = maps['view'][item['bufferView']]
+        doc['bufferViews'] = new_views; doc['images'] = []; doc['textures'] = []
+        metadata['costumeOnly'] = True; binary = packed
     doc['buffers'][0]['byteLength'] = len(binary)
     encoded = json.dumps(doc, separators=(',', ':')).encode(); encoded += b' ' * (-len(encoded) % 4)
     binary.extend(b'\x00' * (-len(binary) % 4))
