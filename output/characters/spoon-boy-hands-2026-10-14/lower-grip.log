@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 1 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 423.807041
+  type: 'test'
+  ...
+# Subtest: the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+ok 2 - the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+  ---
+  duration_ms: 327.996708
+  type: 'test'
+  ...
+# Subtest: the entire gripping hand clears the straight stem, including triangle interiors
+not ok 3 - the entire gripping hand clears the straight stem, including triangle interiors
+  ---
+  duration_ms: 285.904458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:1:19033'
+  failureType: 'testCodeFailure'
+  error: 'demonstrating/0: palm or finger enters the stem at 0.01622814775115937,0.006207005879000842,-0.008720819473940841'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:340:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1245.04125

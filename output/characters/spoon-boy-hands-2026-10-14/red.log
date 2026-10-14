@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+not ok 1 - the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+  ---
+  duration_ms: 349.182792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:1:13361'
+  failureType: 'testCodeFailure'
+  error: 'the spoon boy still uses disconnected balls instead of articulated hand skin'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:232:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+not ok 2 - both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+  ---
+  duration_ms: 275.151208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:1:15249'
+  failureType: 'testCodeFailure'
+  error: 'R: no five-digit skinned hand'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:270:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 865.802542

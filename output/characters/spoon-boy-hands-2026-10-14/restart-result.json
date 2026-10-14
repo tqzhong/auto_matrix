@@ -1,0 +1,25 @@
+{
+  "sourceCheckpoint": "drink-before-restart-state / taking / tick 5232",
+  "actualProcessStopped": true,
+  "publicGroups": {
+    "agents": true,
+    "chunks": true,
+    "locations": true,
+    "phase": true,
+    "timeOfDay": true,
+    "events": true,
+    "simulation": true,
+    "sandbox": true
+  },
+  "memories": {
+    "memories/sparks.json": true,
+    "memories/cas.json": true,
+    "memories/citizen_8.json": true,
+    "memories/mauser.json": true,
+    "memories/binary.json": true,
+    "memories/vector.json": true,
+    "memories/ak.json": true
+  },
+  "newNativeGameplay": false,
+  "spoonRestoreEvidence": "actual skinned model tests, not this pill checkpoint"
+}

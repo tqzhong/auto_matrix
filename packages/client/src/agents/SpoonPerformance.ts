@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { FILM_SETS, SPOON_LESSON, spoonLessonSeat, type SpoonGesture } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import type { CharacterRig } from './CharacterModel.js';
+import type { OracleParkHand } from './OracleParkHands.js';
 
 const smooth = THREE.MathUtils.smoothstep;
 
@@ -45,12 +46,13 @@ export function poseSpoonBody(rig: HeroRig, gesture?: SpoonGesture): void {
   }
 }
 
-function pinchSpoon(rig: HeroRig, point: THREE.Vector3, amount: number, turn: number): void {
+function pinchSpoon(rig: HeroRig | OracleParkHand, point: THREE.Vector3, amount: number, turn: number): void {
   if (amount === 0) return;
-  const wrist = rig.bones.get('wrist_R')!;
-  let pads = wrist.userData.spoonPads as THREE.Vector3[] | undefined;
+  const hero = 'rest' in rig ? rig : undefined, hand = 'pads' in rig ? rig : undefined;
+  const wrist = hero ? hero.bones.get('wrist_R')! : hand!.wrist;
+  let pads = hand ? hand.pads.slice(0, 2) : wrist.userData.spoonPads as THREE.Vector3[] | undefined;
   if (!pads) {
-    const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    const skin = hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
     const { position, skinIndex, skinWeight } = skin.geometry.attributes;
     pads = [new THREE.Vector3(), new THREE.Vector3()];
     const counts = [0, 0], vertex = new THREE.Vector3();
@@ -66,12 +68,15 @@ function pinchSpoon(rig: HeroRig, point: THREE.Vector3, amount: number, turn: nu
   // Follow the metal as the wrist straightens during the reach. Preserve the
   // pad's full orientation, including roll, so the stem cannot slide through it.
   pads.forEach((pad, i) => {
-    const base = rig.rest.get(`finger${i + 1}-1_R`)!;
-    const first = rig.rest.get(`finger${i + 1}-2_R`)!, second = rig.rest.get(`finger${i + 1}-3_R`)!;
-    const direction = (i === 0 ? new THREE.Vector3(.4, -.86, .316) : new THREE.Vector3(-.2, .98, 0)).normalize();
+    const base = hero ? hero.rest.get(`finger${i + 1}-1_R`)! : hand!.bones[i][0].position;
+    const first = hero ? hero.rest.get(`finger${i + 1}-2_R`)! : hand!.bones[i][1].position;
+    const second = hero ? hero.rest.get(`finger${i + 1}-3_R`)! : hand!.bones[i][2].position;
+    const direction = (i === 0 ? new THREE.Vector3(hand ? -.4 : .4, -.86, .316) : new THREE.Vector3(-.2, .98, 0)).normalize();
     const tipRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), turn)
       .multiply(new THREE.Quaternion().setFromUnitVectors(pad.clone().normalize(), direction));
-    const target = point.clone(); target.x += i === 0 ? .08 : -.041;
+    // The child's smaller hand holds the same metal, so its pad centers need
+    // more clearance in anatomical coordinates than Neo's adult hand.
+    const target = point.clone(); target.x += hand ? i === 0 ? .073 : -.057 : i === 0 ? .08 : -.041;
     const end = target.sub(pad.clone().applyQuaternion(tipRotation)), axis = end.clone().sub(base);
     const a = first.length(), b = second.length(), distance = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001);
     axis.normalize(); end.copy(base).addScaledVector(axis, distance);
@@ -82,7 +87,8 @@ function pinchSpoon(rig: HeroRig, point: THREE.Vector3, amount: number, turn: nu
     [hinge.clone().sub(base), end.clone().sub(hinge), direction].forEach((desired, joint) => {
       const rotation = joint === 2 ? tipRotation : new THREE.Quaternion().setFromUnitVectors([first, second][joint].clone().normalize(), desired.normalize());
       const local = parent.clone().invert().multiply(rotation); parent.copy(rotation);
-      rig.bones.get(`finger${i + 1}-${joint + 1}_R`)!.quaternion.slerp(local, amount);
+      const bone = hero ? hero.bones.get(`finger${i + 1}-${joint + 1}_R`)! : hand!.bones[i][joint];
+      bone.quaternion.slerp(local, amount);
     });
   });
 }
@@ -119,6 +125,37 @@ export function poseSpoonHands(rig: CharacterRig, gesture?: SpoonGesture): void 
       rig.spoon.root.rotation.set(pitch, 0, 0);
       rig.spoon.root.scale.setScalar(.55 / wrist.getWorldScale(new THREE.Vector3()).x);
       rig.spoon.root.position.copy(pinch.sub(new THREE.Vector3(0, .08, 0).multiply(rig.spoon.root.scale).applyQuaternion(rig.spoon.root.quaternion)));
+    }
+  } else if (rig.spoonHands && role === 'boy') {
+    const hand = rig.spoonHands[0], wrist = hand.wrist, elbow = rig.elbows[0], shoulder = rig.shoulders[0];
+    const pitch = 2.17 - .42 * offered, pinch = new THREE.Vector3(.07, -.195, .135).multiplyScalar(hand.root.scale.x);
+    // Leave the upper grip available to Neo; the stem's lower end must not
+    // extend back through the child's thumb web while both hands approach.
+    const stem = .025, childContact = contact.clone().add(new THREE.Vector3(0, (stem - .08) * .55, 0));
+    const holding = phase === 'receiving' ? offered : rig.spoon?.root.visible ? 1 : 0;
+    pinchSpoon(hand, pinch.clone().divideScalar(hand.root.scale.x), holding, pitch - 2.17);
+    for (let digit = 2; digit < 5; digit++) hand.bones[digit].forEach((bone, joint) => {
+      bone.rotation.z = THREE.MathUtils.lerp(bone.rotation.z, [.25, .35, .38][joint] + (digit - 2) * .035, holding);
+    });
+    wrist.updateWorldMatrix(true, true);
+    if (offered > 0) {
+      const shoulderPose = shoulder.quaternion.clone(), elbowPose = elbow.quaternion.clone();
+      // The child faces Neo from the opposite side of the stem. Turn the
+      // palm around that stem, then counterturn the prop at the handoff.
+      const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(upright.clone()
+        .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI))
+        .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -pitch)), offered);
+      const offset = pinch.clone().multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation);
+      const target = wrist.localToWorld(pinch.clone()).lerp(childContact, offered).sub(offset);
+      reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(-.6, -.8, .1).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
+      shoulder.quaternion.copy(shoulderPose.slerp(shoulder.quaternion, offered));
+      elbow.quaternion.copy(elbowPose.slerp(elbow.quaternion, offered)); shoulder.updateWorldMatrix(false, true);
+      wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation)); wrist.updateWorldMatrix(false, true);
+    }
+    if (rig.spoon?.root.visible) {
+      const spoon = rig.spoon.root; if (spoon.parent !== wrist) wrist.add(spoon);
+      spoon.rotation.set(pitch, Math.PI, 0); spoon.scale.setScalar(.55 / wrist.getWorldScale(new THREE.Vector3()).x);
+      spoon.position.copy(pinch).sub(new THREE.Vector3(0, stem, 0).multiply(spoon.scale).applyQuaternion(spoon.quaternion));
     }
   } else {
     const elbow = rig.elbows[0], palm = new THREE.Vector3(0, -.79, .055);

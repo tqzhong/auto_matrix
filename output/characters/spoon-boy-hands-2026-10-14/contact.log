@@ -1,0 +1,96 @@
+TAP version 13
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+ok 1 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 1007.2835
+  type: 'test'
+  ...
+# {"probes":851,"maximumSkinStep":0.025980370177646376,"maximumTurn":0.02512701932504489}
+# Subtest: the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+ok 2 - the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+  ---
+  duration_ms: 2674.5075
+  type: 'test'
+  ...
+# {"probes":2366,"maximumSkinStep":0.01938708686905724,"maximumTurn":0.020068797604587758,"worst":"receiving 1.32: oracle-hand-skin-R/BufferGeometry vertex 2754, parent oracle-anatomical-hand-R"}
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 3 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 325.025209
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 4 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 277.319917
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 5 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 435.688459
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 6 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 443.619042
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 7 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 319.946292
+  type: 'test'
+  ...
+# Subtest: the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+ok 8 - the boy pinches the same straight spoon stem with actual opposing thumb and index skin
+  ---
+  duration_ms: 289.682959
+  type: 'test'
+  ...
+# Subtest: both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+ok 9 - both of the boy’s anatomical hands reconstruct a saved pose without stretched or missing digits
+  ---
+  duration_ms: 272.131
+  type: 'test'
+  ...
+# Subtest: the boy keeps the anatomical wrists straight and joins the actual cut skin inside both cuffs
+ok 10 - the boy keeps the anatomical wrists straight and joins the actual cut skin inside both cuffs
+  ---
+  duration_ms: 266.731583
+  type: 'test'
+  ...
+# Subtest: the entire gripping hand clears the straight stem, including triangle interiors
+not ok 11 - the entire gripping hand clears the straight stem, including triangle interiors
+  ---
+  duration_ms: 234.994417
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:1:19032'
+  failureType: 'testCodeFailure'
+  error: 'demonstrating/0: palm or finger enters the stem at -0.032510329783917775,0.041305363039811034,0.0013560799725382824'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:340:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal
+ok 12 - a spoon held before anatomy finishes loading survives the hand swap, and late arrivals release after disposal
+  ---
+  duration_ms: 262.583791
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 11
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7134.639333

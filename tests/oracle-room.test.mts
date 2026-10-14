@@ -56,6 +56,7 @@ test('the Oracle waiting room has open window apertures, grounded furniture and 
 
 test('Spoon Boy folds both legs above the rug instead of driving his shins through the floor', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
@@ -230,7 +231,9 @@ test('Neo keeps the spoon between his actual thumb and index finger, including a
   buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
   buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
   const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  const handBytes = await readFile(new URL('../packages/client/public/assets/characters/oracle-park-hands.glb', import.meta.url));
+  const hands = await new GLTFLoader().parseAsync(handBytes.buffer.slice(handBytes.byteOffset, handBytes.byteOffset + handBytes.byteLength), '');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => String(url).endsWith('/oracle-park-hands.glb') ? hands : asset);
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
@@ -262,6 +265,7 @@ test('Neo keeps the spoon between his actual thumb and index finger, including a
       }
     }
     const boy = models.create(world.agents.get('spoon_boy')!);
+    await new Promise(resolve => setImmediate(resolve)); assert.ok(boy.spoonHands);
     const center = FILM_SETS.film_oracle_home.center;
     for (const [body, place] of [[rig, SPOON_LESSON.neo], [boy, SPOON_LESSON.boy]] as const) {
       body.root.position.set(center.x + place.x, center.y - 1, center.z + place.z); body.root.rotation.y = place.yaw;

@@ -1,0 +1,203 @@
+TAP version 13
+# Subtest: the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+ok 1 - the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+  ---
+  duration_ms: 741.606667
+  type: 'test'
+  ...
+# 0 hand 0 digit 1: handle gap 0.007504443232605063
+# 0 hand 0 digit 2: handle gap 0.0011667534721590891
+# 0 hand 0 digit 3: handle gap 0.0015565269585492425
+# 0 hand 0 digit 4: handle gap 0.0020546081333026635
+# 0 hand 0 digit 5: handle gap 0.0027742104170479648
+# 0.45 hand 0 digit 1: handle gap 0.007510507105627784
+# 0.45 hand 0 digit 2: handle gap 0.0012184040856964666
+# 0.45 hand 0 digit 3: handle gap 0.0015631960239296597
+# 0.45 hand 0 digit 4: handle gap 0.0020553913371559283
+# 0.45 hand 0 digit 5: handle gap 0.0026916604631424777
+# 1.05 hand 0 digit 1: handle gap 0.007088866153392926
+# 1.05 hand 0 digit 2: handle gap 0.001524939867721429
+# 1.05 hand 0 digit 3: handle gap 0.0015564944434816631
+# 1.05 hand 0 digit 4: handle gap 0.0020575435176984
+# 1.05 hand 0 digit 5: handle gap 0.0024111696810621246
+# 1.05 hand 1 digit 1: handle gap 0.007088866153395001
+# 1.05 hand 1 digit 2: handle gap 0.0015249249656617211
+# 1.05 hand 1 digit 3: handle gap 0.0015565026919023978
+# 1.05 hand 1 digit 4: handle gap 0.0020575246473236233
+# 1.05 hand 1 digit 5: handle gap 0.002411201745904236
+# 1.7 hand 0 digit 1: handle gap 0.007083536292727909
+# 1.7 hand 0 digit 2: handle gap 0.00152396545347714
+# 1.7 hand 0 digit 3: handle gap 0.0015560258322722675
+# 1.7 hand 0 digit 4: handle gap 0.00205753251289683
+# 1.7 hand 0 digit 5: handle gap 0.002411860818073014
+# 1.7 hand 1 digit 1: handle gap 0.007083536292719513
+# 1.7 hand 1 digit 2: handle gap 0.0015239507528043462
+# 1.7 hand 1 digit 3: handle gap 0.001556034423336388
+# 1.7 hand 1 digit 4: handle gap 0.002057513190291616
+# 1.7 hand 1 digit 5: handle gap 0.0024118928567542254
+# 2.4 hand 0 digit 1: handle gap 0.006811462575799152
+# 2.4 hand 0 digit 2: handle gap 0.0012735890613538026
+# 2.4 hand 0 digit 3: handle gap 0.0015268786566839145
+# 2.4 hand 0 digit 4: handle gap 0.0020566036073524988
+# 2.4 hand 0 digit 5: handle gap 0.002488186417209586
+# 2.4 hand 1 digit 1: handle gap 0.00681146257580836
+# 2.4 hand 1 digit 2: handle gap 0.001273586290555715
+# 2.4 hand 1 digit 3: handle gap 0.0015269039300201091
+# 2.4 hand 1 digit 4: handle gap 0.0020565623888422757
+# 2.4 hand 1 digit 5: handle gap 0.002488215755036858
+# Subtest: park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+ok 2 - park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+  ---
+  duration_ms: 708.226
+  type: 'test'
+  ...
+# Subtest: the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+ok 3 - the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+  ---
+  duration_ms: 1799.233667
+  type: 'test'
+  ...
+# minimum wrist alignment: 0.5232828304685438
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+ok 4 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 142.300708
+  type: 'test'
+  ...
+# Subtest: hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+ok 5 - hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+  ---
+  duration_ms: 140.955
+  type: 'test'
+  ...
+# Subtest: a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+ok 6 - a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+  ---
+  duration_ms: 118.426042
+  type: 'test'
+  ...
+# Subtest: both park wrists remain visibly connected to their sleeves while the bag is lifted
+ok 7 - both park wrists remain visibly connected to their sleeves while the bag is lifted
+  ---
+  duration_ms: 1010.78675
+  type: 'test'
+  ...
+# Subtest: the sleeve caps meet the coat instead of ending above a detached shoulder seam
+ok 8 - the sleeve caps meet the coat instead of ending above a detached shoulder seam
+  ---
+  duration_ms: 225.883416
+  type: 'test'
+  ...
+# Subtest: the wrist skin meets every anatomical rim vertex and returns to the saved pose after an outfit change or cold load
+ok 9 - the wrist skin meets every anatomical rim vertex and returns to the saved pose after an outfit change or cold load
+  ---
+  duration_ms: 416.658334
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 10 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 184.854291
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 11 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 61.733041
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 12 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 656.62075
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 13 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 14.763625
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 14 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 126.948167
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 15 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 15.915875
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 16 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 1356.843584
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 17 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 793.314584
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 18 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 27.881291
+  type: 'test'
+  ...
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+ok 19 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 1135.762875
+  type: 'test'
+  ...
+# {"probes":851,"maximumSkinStep":0.025980370177646376,"maximumTurn":0.02512701932504489}
+# Subtest: the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+ok 20 - the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+  ---
+  duration_ms: 1552.9025
+  type: 'test'
+  ...
+# {"probes":470,"maximumSkinStep":0.026639864038645152,"maximumTurn":0.02349750601948704,"worst":"receiving 1.32: /BufferGeometry vertex 201, parent "}
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 21 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 420.871875
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 22 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 305.44825
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 23 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 505.232458
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 24 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 449.2375
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 25 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 297.42575
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5085.32075
