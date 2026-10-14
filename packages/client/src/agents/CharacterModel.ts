@@ -54,6 +54,7 @@ import { poseDockReload } from './DockReloadPerformance.js';
 import { poseDockLastStand } from './DockLastStandPerformance.js';
 import { poseDockGate } from './DockGatePerformance.js';
 import { poseEmpOperator } from './EmpOperatorPerformance.js';
+import { poseSentinelPower } from './SentinelPowerPerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { DiggerBodies } from './DiggerBodies.js';
 import { OracleParkHands, connectGardenWrists, type OracleParkHand } from './OracleParkHands.js';
@@ -1262,6 +1263,7 @@ export class CharacterModels {
       poseZionDeployment(rig, input.zionDeployment);
       poseMaggieDiscovery(rig, input.maggieDiscovery);
       poseLogosBane(rig, input.logosBane);
+      poseSentinelPower(rig, input.sentinel);
       return;
     }
     rig.torso.position.y = pose.hipHeight;

@@ -35,6 +35,7 @@ import { HEL_ELEVATOR } from '@auto_matrix/shared';
 import { ORACLE_LAST, oracleLastLines, distance } from '@auto_matrix/shared';
 import { BANE_INQUIRY, baneInquiryLines } from '@auto_matrix/shared';
 import { ORACLE_ABSORPTION } from '@auto_matrix/shared';
+import { SENTINEL_POWER, SENTINEL_TIMING } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -4313,7 +4314,13 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame <= TRAINING_SECONDS.jump_return * 10; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_sentinels') {
-          const frames = index === 0 ? 210 : 36;
+          if (index === 0) {
+            for (let frame = 0; frame < SENTINEL_TIMING.shutdown * 10 + 1; frame++) h.players.step(.1, true, h.tick());
+            assert.equal(state.sentinel?.phase, 'briefing');
+            actor.position = filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z);
+            h.command('act'); assert.equal(state.sentinel?.phase, 'sweep');
+          }
+          const frames = index === 0 ? 165 : 36;
           for (let frame = 0; frame < frames; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 86; frame++) h.players.step(.1, true, h.tick());

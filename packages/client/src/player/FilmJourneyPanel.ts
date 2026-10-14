@@ -36,7 +36,7 @@ import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
-import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
+import { SENTINEL_POWER, sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { ORACLE_RECEPTION, oracleReceptionText, spoonLessonText, oracleVisitDuration, oracleVisitLocked, oracleDepartureTarget, oracleDepartureText } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalText } from '@auto_matrix/shared';
@@ -736,12 +736,15 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   }
   if (!journey.visiting && journey.scene === 'm1_sentinels' && journey.sentinel) {
     const encounter = journey.sentinel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
-    const close = current && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const close = current && (encounter.phase === 'briefing'
+      ? distance(player.position, filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z)) <= SENTINEL_POWER.inspect.radius
+      : !step || distance(player.position, filmStepPosition(scene, step)) <= 4);
     const phase = encounter.phase; const scanning = phase === 'sweep';
-    const title = phase === 'ready' ? '警报后的前舱' : phase === 'shutdown' ? '切断非必要供电' : scanning ? '哨兵正在扫描船体'
+    const title = phase === 'ready' ? '警报后的前舱' : phase === 'shutdown' ? '切断非必要供电' : phase === 'briefing' ? 'EMP 的代价' : scanning ? '哨兵正在扫描船体'
       : phase === 'detected' ? '扫描锁定' : phase === 'failed' ? '静默失败' : phase === 'clear' ? '仍然不要动'
       : phase === 'verify' ? '确认航道' : phase === 'confirming' ? 'EMP 保持待命' : '重新接通必要系统';
     const action = phase === 'ready' ? button('act', '请 Tank 执行静默停机 · G', !close)
+      : phase === 'briefing' ? button('act', '听取 EMP 说明，保持静默 · G', !close)
       : phase === 'verify' ? button('act', '确认哨兵已经离开 · G', !close)
       : phase === 'failed' ? button('act', '从停机检查点重试 · G', !current)
       : phase === 'done' ? button('next', '继续船上的夜班 →', !current)

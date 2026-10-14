@@ -55,7 +55,7 @@ import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked, computerInvestigationStep } from '@auto_matrix/shared';
 import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
-import { sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
+import { SENTINEL_POWER, sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
 import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
 import { ORACLE_RECEPTION, oracleReceptionRoot, oracleReceptionText, oracleVisitDuration, oracleVisitLocked, spoonLessonText, oracleDepartureTarget, oracleDepartureLocked } from '@auto_matrix/shared';
 import { oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
@@ -301,6 +301,7 @@ export class SandboxUI {
     const bridgeDoor = scene.id === 'm1_bridge' && journey.step === 1 && journey.bridgeArrival?.parkedRoadTime !== undefined
       ? meetingBoardPoint(journey.bridgeArrival) : undefined;
     const stepTarget = ambushGoal ? { x: ambushCenter.x + ambushGoal.x, y: ambushCenter.y + ambushGoal.y, z: ambushCenter.z + ambushGoal.z }
+      : scene.id === 'm1_sentinels' && journey.sentinel?.phase === 'briefing' ? filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z)
       : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
       : scene.id === 'm1_bug' && journey.step === 1 && journey.meeting?.phase === 'done' ? player.position
         : step ? filmStepPosition(scene, step, journey) : undefined;
@@ -1388,17 +1389,19 @@ export class SandboxUI {
     }
     if (!journey.visiting && journey.scene === 'm1_sentinels' && journey.sentinel) {
       const encounter = journey.sentinel; const phase = encounter.phase;
-      const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
-      const canAct = phase === 'failed' || (phase === 'ready' || phase === 'verify') && close;
+      const close = phase === 'briefing' ? distance(player.position, filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z)) <= SENTINEL_POWER.inspect.radius
+        : !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
+      const canAct = phase === 'failed' || (phase === 'ready' || phase === 'briefing' || phase === 'verify') && close;
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', phase === 'detected' || encounter.noise > .7);
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = phase === 'sweep' ? `保持静止 · 扫描 ${Math.round(sentinelDanger(encounter.elapsed) * 100)}% · 噪声 ${Math.round(encounter.noise * 100)}%`
         : phase === 'failed' ? 'G 从停机检查点重试 · 此前剧情不会丢失'
         : phase === 'ready' ? '走进前舱 · G 开始停机 · V 切换视角'
+        : phase === 'briefing' ? '走近 EMP 控制台 · G 听取说明 · EMP 也会关闭本船的电气系统'
         : phase === 'verify' ? '走到舷窗和 EMP 控制台旁 · G 确认航道'
         : phase === 'done' ? 'G 继续船上的夜班' : '鼠标观察 · V 切换视角 · 暂停或重连会保留当前一拍';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct && phase !== 'done');
-      this.el('sandbox-nearby').textContent = phase === 'failed' ? '从停机检查点重试' : phase === 'verify' ? '确认哨兵已经离开' : phase === 'done' ? '继续下一段' : '执行静默停机';
+      this.el('sandbox-nearby').textContent = phase === 'failed' ? '从停机检查点重试' : phase === 'briefing' ? '听取 EMP 说明，继续保持静默' : phase === 'verify' ? '确认哨兵已经离开' : phase === 'done' ? '继续下一段' : '执行静默停机';
       this.el('sandbox-job').style.width = `${encounter.noise * 100}%`;
       if (sentinelLocked(journey) || phase === 'sweep') this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective-copy')!.textContent = phase === 'sweep' ? '不要移动、奔跑或跳跃；让船内噪声保持在暴露阈值以下。'

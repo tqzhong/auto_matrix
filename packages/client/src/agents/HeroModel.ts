@@ -7,7 +7,7 @@ import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterA
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
+import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -1138,25 +1138,27 @@ export class HeroModels {
     }
     if (input.sentinel) {
       const { role, phase, elapsed: t } = input.sentinel;
-      const alarm = phase === 'shutdown' ? THREE.MathUtils.smoothstep(t, .3, 1.5) : 1;
+      const alarm = phase === 'ready' || phase === 'done' ? 0 : phase === 'shutdown' ? THREE.MathUtils.smoothstep(t, .3, 1.5)
+        : phase === 'confirming' ? 1 - THREE.MathUtils.smoothstep(t, .9, 3.5) : 1;
       const danger = phase === 'detected' || phase === 'failed';
       if (role === 'tank') {
         bone('spine').rotation.x += .16 * alarm; bone('head').rotation.x -= .12 * alarm;
-        bone('shoulder_R').rotation.x -= 1.05 * alarm; bone('elbow_R').rotation.x -= .72 * alarm;
-        bone('shoulder_L').rotation.x -= .72 * alarm; bone('elbow_L').rotation.x -= 1.08 * alarm;
       } else if (role === 'dozer') {
         bone('spine').rotation.x += .12 * alarm; bone('head').rotation.y -= .18 * alarm;
         bone('shoulder_L').rotation.x -= .82 * alarm; bone('elbow_L').rotation.x -= .66 * alarm;
       } else if (role === 'morpheus') {
-        const halt = ['sweep', 'detected', 'failed', 'clear'].includes(phase) ? 1 : THREE.MathUtils.smoothstep(t, 1.4, 2.8);
+        const halt = phase === 'ready' || phase === 'done' ? 0 : phase === 'shutdown' ? THREE.MathUtils.smoothstep(t, 1.4, 2.8)
+          : phase === 'confirming' ? 1 - THREE.MathUtils.smoothstep(t, .5, 2.3) : 1;
         bone('shoulder_L').rotation.x -= .78 * halt; bone('shoulder_L').rotation.z += .42 * halt; bone('elbow_L').rotation.x -= 1.12 * halt;
         bone('head').rotation.y -= .14 * halt;
       } else if (role === 'trinity') {
         bone('head').rotation.y += .25 * alarm; bone('spine').rotation.x += .06 * alarm;
         bone('shoulder_R').rotation.x -= .18 * alarm; bone('elbow_R').rotation.x -= .36 * alarm;
       } else {
-        bone('head').rotation.y -= .16 * alarm; bone('spine').rotation.x += (danger ? .22 : .07) * alarm;
-        bone('chest').rotation.x += (danger ? .16 : .04) * alarm;
+        const observing = danger ? 1 : phase === 'shutdown' || phase === 'confirming'
+          ? Math.sin(Math.PI * THREE.MathUtils.smoothstep(t, 0, SENTINEL_TIMING[phase])) : 0;
+        bone('head').rotation.y -= .16 * observing; bone('spine').rotation.x += (danger ? .22 : .07) * observing;
+        bone('chest').rotation.x += (danger ? .16 : .04) * observing;
         if (danger) for (const side of ['R', 'L']) { bone('shoulder_' + side).rotation.x -= .42; bone('elbow_' + side).rotation.x -= .7; }
       }
       if (phase === 'sweep' || phase === 'clear') bone('head').rotation.x += Math.sin(t * 1.4 + role.length) * .012;
