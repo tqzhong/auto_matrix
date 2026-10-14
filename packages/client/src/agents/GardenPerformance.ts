@@ -6,6 +6,8 @@ import { poseStreetWake } from './StreetWakePerformance.js';
 import { holdGardenHandle } from './OracleParkHands.js';
 
 const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
+const oracleDrapes = new WeakMap<CharacterRig, string>();
+const clothNormals = Array.from({ length: 32 }, (_, i) => ({ x: Math.sin(i * Math.PI / 16), z: Math.cos(i * Math.PI / 16) }));
 
 function supportGardenFeet(rig: CharacterRig, bend: boolean): void {
   rig.root.updateWorldMatrix(true, true);
@@ -30,61 +32,90 @@ function supportGardenFeet(rig: CharacterRig, bend: boolean): void {
   }
 }
 
-function drapeOracleClothes(rig: CharacterRig, gesture: TrilogyEpilogueGesture, seated: number): void {
-  const pose = gardenPose(gesture, 'oracle'), hip = rig.torso.position.y, b = SUNRISE_GARDEN.bench;
-  const cosine = Math.cos(pose.yaw), sine = Math.sin(pose.yaw), point = new THREE.Vector3();
+function drapeOracleClothes(rig: CharacterRig, gesture: TrilogyEpilogueGesture): void {
+  const pose = gardenPose(gesture, 'oracle'), hip = rig.torso.position.y, bench = SUNRISE_GARDEN.bench;
   rig.root.updateWorldMatrix(true, true); rig.torso.updateMatrix();
   const inverse = rig.detail.matrixWorld.clone().invert(), capsules: { point: THREE.Vector3; radius: number }[] = [];
+  const legs = [0, 1].map(leg => [rig.hips[leg], rig.knees[leg], rig.ankles[leg]].map(joint => joint.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse)));
+  const signature = [pose.x, pose.z, pose.yaw, ...rig.detail.position.toArray(), ...rig.torso.matrix.elements, ...legs.flatMap(leg => leg.flatMap(point => point.toArray()))].join(':');
+  if (oracleDrapes.get(rig) === signature) return;
   for (let leg = 0; leg < 2; leg++) {
-    const joints = [rig.hips[leg], rig.knees[leg], rig.ankles[leg]].map(joint => joint.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse));
+    const joints = legs[leg];
     for (let part = 0; part < 2; part++) for (let sample = 0; sample <= 12; sample++) {
       const t = sample / 12;
-      capsules.push({ point: joints[part].clone().lerp(joints[part + 1], t), radius: part ? .235 - .04 * t : .29 - .065 * t });
+      capsules.push({ point: joints[part].clone().lerp(joints[part + 1], t), radius: part ? .205 - .035 * t : .265 - .055 * t });
     }
   }
-  for (const name of ['oracle-park-skirt', 'oracle-park-coat']) {
-    const skirt = rig.root.getObjectByName(name) as THREE.Mesh, coat = name === 'oracle-park-coat';
-    const { radialSegments: columns, heightSegments: rows, thetaStart, thetaLength } = (skirt.geometry as THREE.CylinderGeometry).parameters;
-    const vertices = skirt.geometry.attributes.position, length = coat ? 1.92 : 1.58;
-    for (let row = 0; row <= rows; row++) {
-      const t = row / rows, drapedY = t <= .5 ? hip + .12 - t * .3 : hip - .03 - (t - .5) * (coat ? 1.86 : 1.54);
-      const y = THREE.MathUtils.lerp(hip + .12 - t * length, drapedY, seated);
-      const sections = capsules.flatMap(capsule => {
-        const squared = capsule.radius ** 2 - (capsule.point.y - y) ** 2;
-        return squared > 0 ? [{ x: capsule.point.x, z: capsule.point.z, squared }] : [];
+  const cosine = Math.cos(pose.yaw), sine = Math.sin(pose.yaw);
+  const outlines = new Map<string, { x: number; z: number; planes: { x: number; z: number; h: number }[] }>();
+  const shape = (point: THREE.Vector3, angle: number, radius: number, depth: number, clearance: number, height = point.y) => {
+    const key = [height, radius, depth, clearance].join(':'); let outline = outlines.get(key);
+    if (!outline) {
+      const cuts = capsules.flatMap(capsule => {
+        const squared = capsule.radius ** 2 - (capsule.point.y - height) ** 2;
+        return squared > 0 ? [{ x: capsule.point.x, z: capsule.point.z, r: Math.sqrt(squared) + clearance }] : [];
       });
-      const width = Math.max((coat ? .57 : .51) + t * (coat ? .24 : .19), ...sections.map(section => Math.abs(section.x) + Math.sqrt(section.squared) + (coat ? .065 : .035)));
-      for (let column = 0; column <= columns; column++) {
-        const angle = thetaStart + column / columns * thetaLength, wave = Math.cos(angle * 9) * .018 * t, radius = width + wave;
-        const lap = Math.min(1, t * 2), depth = THREE.MathUtils.lerp(coat ? .37 : .33, coat ? .18 : .13, lap);
-        point.set(Math.sin(angle) * radius, y,
-          THREE.MathUtils.lerp(Math.cos(angle) * (coat ? .37 + t * .18 : .33 + t * .16), lap * 1.02 + Math.cos(angle) * depth, seated));
-        const side = Math.cos(angle) >= 0 ? 1 : -1;
-        // Bent knees rise above the waist; horizontal skirt rings alone leave them exposed.
-        if (row && t <= .5 && seated > 0) for (const capsule of capsules) {
-          const squared = capsule.radius ** 2 - (point.x - capsule.point.x) ** 2 - (point.z - capsule.point.z) ** 2;
-          if (squared > 0) point.y = Math.max(point.y, capsule.point.y + Math.sqrt(squared) + (coat ? .07 : .05) * seated);
-        }
-        for (const section of sections) {
-          const squared = section.squared - (point.x - section.x) ** 2;
-          if (squared > 0) point.z = side * Math.max(side * point.z, side * section.z + Math.sqrt(squared) + (coat ? .065 : .04));
-        }
-        if (!row) point.set(Math.sin(angle) * (coat ? .582 : .527), .12,
-          Math.cos(angle) * (coat ? .582 * .65 : .527 * .59)).applyMatrix4(rig.torso.matrix);
-        // Fabric below the seat wraps over its front edge throughout lowering,
-        // not only once the pelvis has reached the final sitting height.
-        const x = (point.x + rig.detail.position.x) * cosine + (point.z + rig.detail.position.z) * sine + pose.x;
-        const z = (point.z + rig.detail.position.z) * cosine - (point.x + rig.detail.position.x) * sine + pose.z;
-        if (Math.abs(x - b.x) < b.width / 2 + .08 && z > b.z - .91 && z < b.z + .93 && point.y < b.surface + length / rows + .045) {
-          const front = b.z - .91 - Math.max(0, b.surface - point.y) * .10;
-          point.x = (x - pose.x) * cosine - (front - pose.z) * sine - rig.detail.position.x;
-          point.z = (front - pose.z) * cosine + (x - pose.x) * sine - rig.detail.position.z;
-        }
-        vertices.setXYZ(row * (columns + 1) + column, point.x, Math.max(.01, point.y), point.z);
+      const center = cuts.length ? (Math.min(...cuts.map(cut => cut.z)) + Math.max(...cuts.map(cut => cut.z))) / 2 : 0;
+      // Supporting planes bridge the space between both knees. A separate
+      // circular bulge around each leg made the fabric fold inward between them.
+      const planes = clothNormals.map(normal => {
+        let h = Math.hypot(radius * normal.x, depth * normal.z) + center * normal.z;
+        for (const cut of cuts) h = Math.max(h, cut.x * normal.x + cut.z * normal.z + cut.r);
+        return { x: normal.x, z: normal.z, h };
+      });
+      outline = { x: 0, z: center, planes };
+      if (Math.abs(pose.x - bench.x) < bench.width / 2 + .8 && height < bench.surface + .10) {
+        const h = bench.z - .91 - (.13 - clearance) - Math.max(0, bench.surface - height) * .10 - pose.z
+          - rig.detail.position.z * cosine + rig.detail.position.x * sine;
+        planes.push({ x: -sine, z: cosine, h });
+        const shift = Math.max(0, center * cosine - h + .05);
+        outline.x += sine * shift; outline.z -= cosine * shift;
       }
+      outlines.set(key, outline);
     }
-    vertices.needsUpdate = true; skirt.geometry.computeVertexNormals(); skirt.geometry.computeBoundingSphere();
+    const x = Math.sin(angle), z = Math.cos(angle); let distance = Infinity;
+    for (const plane of outline.planes) {
+      const direction = plane.x * x + plane.z * z;
+      if (direction > 1e-6) distance = Math.min(distance, (plane.h - plane.x * outline.x - plane.z * outline.z) / direction);
+    }
+    point.x = outline.x + distance * x; point.z = outline.z + distance * z;
+    return point;
+  };
+  const point = new THREE.Vector3(), local = rig.torso.matrix.clone().invert();
+  for (const coat of [false, true]) {
+    const upper = rig.root.getObjectByName(coat ? 'oracle-park-coat-upper' : 'oracle-park-dress-upper') as THREE.Mesh<THREE.LatheGeometry>;
+    const vertices = upper.geometry.attributes.position, neutral = upper.userData.standing as Float32Array;
+    for (let i = 0; i < vertices.count; i++) {
+      point.fromArray(neutral, i * 3);
+      if (point.y < .63) {
+        const profile = upper.geometry.parameters.points, part = profile[i % profile.length];
+        const angle = upper.geometry.parameters.phiStart + Math.floor(i / profile.length) / upper.geometry.parameters.segments * upper.geometry.parameters.phiLength;
+        const radius = part.x, depth = radius * upper.scale.z;
+        point.multiply(upper.scale).applyMatrix4(rig.torso.matrix);
+        shape(point, angle, radius, depth, coat ? .09 : .035, hip + part.y);
+        point.applyMatrix4(local).divide(upper.scale);
+      }
+      vertices.setXYZ(i, point.x, point.y, point.z);
+    }
+    vertices.needsUpdate = true; upper.geometry.computeVertexNormals(); upper.geometry.computeBoundingSphere();
+    const skirt = rig.root.getObjectByName(coat ? 'oracle-park-coat' : 'oracle-park-skirt') as THREE.Mesh<THREE.CylinderGeometry>;
+    const { radialSegments: columns, heightSegments: rows, thetaStart, thetaLength } = skirt.geometry.parameters;
+    const surface = skirt.geometry.attributes.position, hem = Math.max(.22, hip + .12 - 1.58);
+    for (let row = 0; row <= rows; row++) for (let column = 0; column <= columns; column++) {
+      const t = Math.min(1, row / 32), angle = thetaStart + column / columns * thetaLength;
+      if (!row) {
+        point.fromBufferAttribute(vertices, column * upper.geometry.parameters.points.length).multiply(upper.scale).applyMatrix4(rig.torso.matrix);
+      } else {
+        // Descending horizontal sections keep the front and rear panels in
+        // order. Lifting both sides over the knees folded the old tube through itself.
+        point.set(0, row > 32 ? THREE.MathUtils.lerp(hem, Math.max(.02, hem - .34), (row - 32) / 4) : THREE.MathUtils.lerp(hip + .12, hem, t), 0);
+        shape(point, angle, (coat ? .582 : .527) + t * .19, (coat ? .37 : .33) + t * .16, coat ? .09 : .035);
+      }
+      surface.setXYZ(row * (columns + 1) + column, point.x, point.y, point.z);
+    }
+    surface.needsUpdate = true; skirt.geometry.computeVertexNormals(); skirt.geometry.computeBoundingSphere();
   }
+  oracleDrapes.set(rig, signature);
 }
 
 function carryOracleBag(rig: CharacterRig): void {
@@ -168,11 +199,12 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
   }
   if (!gesture || !['dawn', 'reset'].includes(gesture.kind) || rig.hero) {
     if (rig.detail.userData.epiloguePose) {
+      oracleDrapes.delete(rig);
       rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0); delete rig.detail.userData.epiloguePose;
       rig.hips.forEach((joint, i) => { joint.position.x = (i ? 1 : -1) * .225; joint.position.z = 0; });
       if (rig.head.name === 'sati-head') rig.head.position.set(0, 1.99, 0);
       for (const side of [-1, 1]) rig.root.getObjectByName(`sati-hand-${side}`)?.rotation.set(0, 0, 0);
-      for (const name of ['oracle-park-skirt', 'oracle-park-coat', 'sati-skirt']) {
+      for (const name of ['oracle-park-skirt', 'oracle-park-coat', 'oracle-park-dress-upper', 'oracle-park-coat-upper', 'sati-skirt']) {
         const skirt = rig.root.getObjectByName(name) as THREE.Mesh | undefined;
         if (skirt) { skirt.geometry.attributes.position.array.set(skirt.userData.standing); skirt.geometry.attributes.position.needsUpdate = true; skirt.geometry.computeVertexNormals(); }
       }
@@ -253,7 +285,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
   if (!reset && seated === 0) {
     supportGardenFeet(rig, gesture.parkArrivalVersion === 2);
   }
-  if (gesture.role === 'oracle') drapeOracleClothes(rig, gesture, seated);
+  if (gesture.role === 'oracle') drapeOracleClothes(rig, gesture);
   drapeSatiSkirt(rig);
   const bag = rig.root.getObjectByName('oracle-park-handbag');
   if (bag) {
@@ -262,7 +294,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     bag.position.set(THREE.MathUtils.lerp(-.94, 0, lift), hip + THREE.MathUtils.lerp(-.44, .34, lift), THREE.MathUtils.lerp(.21, .50, lift) + (rig.parkHands ? .22 : 0));
     if (seated > 0) {
       const lap = new THREE.Raycaster(rig.detail.localToWorld(new THREE.Vector3(0, hip + 1, bag.position.z)), new THREE.Vector3(0, -1, 0))
-        .intersectObject(rig.root.getObjectByName('oracle-park-skirt')!, false)[0];
+        .intersectObjects(['oracle-park-skirt', 'oracle-park-dress-upper'].map(name => rig.root.getObjectByName(name)!), false)[0];
       if (lap) bag.position.y = Math.max(bag.position.y, rig.detail.worldToLocal(lap.point).y + .255);
     }
     rig.root.updateWorldMatrix(true, true); const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
