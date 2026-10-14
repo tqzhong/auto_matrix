@@ -103,9 +103,15 @@ export function poseSpoonHands(rig: CharacterRig, gesture?: SpoonGesture): void 
     pinchSpoon(rig.hero, pinch, phase === 'receiving' ? smooth(t, 0, SPOON_LESSON.transfer) : rig.spoon?.root.visible ? 1 : 0, pitch - 2.17);
     wrist.updateWorldMatrix(true, true);
     if (offered > 0) {
+      const shoulderPose = shoulder.quaternion.clone(), elbowPose = elbow.quaternion.clone();
       const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(upright.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -pitch)), offered);
       const target = wrist.localToWorld(pinch.clone()).lerp(contact, offered).sub(pinch.clone().applyQuaternion(orientation));
       reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(-.7, -.8, .1).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
+      // Near either endpoint the IK pole may select another elbow pose even
+      // though its hand target barely moves. Enter that pose with the reach.
+      shoulder.quaternion.copy(shoulderPose.slerp(shoulder.quaternion, offered));
+      elbow.quaternion.copy(elbowPose.slerp(elbow.quaternion, offered));
+      shoulder.updateWorldMatrix(false, true);
       wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation)); wrist.updateWorldMatrix(false, true);
     }
     if (rig.spoon?.root.visible) {
@@ -116,9 +122,19 @@ export function poseSpoonHands(rig: CharacterRig, gesture?: SpoonGesture): void 
     }
   } else {
     const elbow = rig.elbows[0], palm = new THREE.Vector3(0, -.79, .055);
+    // Prop ownership switches at transfer. Keep the boy's gripping fingers
+    // while his saved withdrawal eases out, rather than opening in one frame.
+    if (role === 'boy' && phase === 'receiving') for (const finger of rig.fingers[0])
+      finger.rotation.x = THREE.MathUtils.lerp(finger.rotation.x, -.12 - .65 * 2.1, offered);
     const grip = contact.clone().add(new THREE.Vector3(0, (.44 - .08) * .55, 0));
-    if (offered > 0) reach(rig.shoulders[0], elbow, palm, elbow.localToWorld(palm.clone()).lerp(grip, offered),
-      new THREE.Vector3(-.6, -.8, .1).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
+    if (offered > 0) {
+      const shoulder = rig.shoulders[0], shoulderPose = shoulder.quaternion.clone(), elbowPose = elbow.quaternion.clone();
+      reach(shoulder, elbow, palm, elbow.localToWorld(palm.clone()).lerp(grip, offered),
+        new THREE.Vector3(-.6, -.8, .1).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
+      shoulder.quaternion.copy(shoulderPose.slerp(shoulder.quaternion, offered));
+      elbow.quaternion.copy(elbowPose.slerp(elbow.quaternion, offered));
+      shoulder.updateWorldMatrix(false, true);
+    }
     if (rig.spoon?.root.visible) {
       const spoon = rig.spoon.root, parentRotation = elbow.getWorldQuaternion(new THREE.Quaternion());
       const rotation = parentRotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 2.17)).slerp(upright, offered);

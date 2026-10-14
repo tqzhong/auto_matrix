@@ -1,0 +1,11 @@
+{
+  "browserId": "2",
+  "tabId": "28",
+  "url": "http://127.0.0.1:5197/",
+  "worldHttpStatus": 200,
+  "navigation": "Page.navigate timed out after 20.2302 seconds",
+  "laterInventoryTitle": "无法访问此站点",
+  "laterUrlKind": "browser-generated network-error data document",
+  "nativeScreenshot": false,
+  "nativeAcceptance": false
+}

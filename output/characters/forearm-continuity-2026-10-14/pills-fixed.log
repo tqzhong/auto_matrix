@@ -1,0 +1,31 @@
+TAP version 13
+# Subtest: neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 1 - neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 636.953875
+  type: 'test'
+  ...
+# {"id":"neo","choice":"red","probes":851,"maximumSkinStep":0.049820769759615476,"maximumTurn":0.09603106935275849}
+# Subtest: neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 2 - neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 549.08275
+  type: 'test'
+  ...
+# {"id":"neo","choice":"blue","probes":851,"maximumSkinStep":0.04982076975862647,"maximumTurn":0.09417437209435008}
+# Subtest: morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 3 - morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 906.419291
+  type: 'test'
+  ...
+# {"id":"morpheus","choice":"red","probes":1696,"maximumSkinStep":0.015722636842492227,"maximumTurn":0.03696412962610055}
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2342.775916

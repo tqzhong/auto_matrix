@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+ok 1 - first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+  ---
+  duration_ms: 494.082709
+  type: 'test'
+  ...
+# Subtest: possessing Morpheus does not borrow Neo's drinking glance
+ok 2 - possessing Morpheus does not borrow Neo's drinking glance
+  ---
+  duration_ms: 360.972875
+  type: 'test'
+  ...
+# Subtest: the conversation frames neo and keeps capsules hidden until the offer
+ok 3 - the conversation frames neo and keeps capsules hidden until the offer
+  ---
+  duration_ms: 361.3405
+  type: 'test'
+  ...
+# Subtest: the conversation frames morpheus and keeps capsules hidden until the offer
+ok 4 - the conversation frames morpheus and keeps capsules hidden until the offer
+  ---
+  duration_ms: 303.376416
+  type: 'test'
+  ...
+# Subtest: first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+ok 5 - first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+  ---
+  duration_ms: 321.438292
+  type: 'test'
+  ...
+# Subtest: the first-person conversation retains the chosen look direction even after a long answer
+ok 6 - the first-person conversation retains the chosen look direction even after a long answer
+  ---
+  duration_ms: 292.132458
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear neo's real eyes and the pill conversation
+ok 7 - the padded chairs clear neo's real eyes and the pill conversation
+  ---
+  duration_ms: 412.147125
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear morpheus's real eyes and the pill conversation
+ok 8 - the padded chairs clear morpheus's real eyes and the pill conversation
+  ---
+  duration_ms: 320.83575
+  type: 'test'
+  ...
+# Subtest: Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+ok 9 - Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+  ---
+  duration_ms: 384.25375
+  type: 'test'
+  ...
+# Subtest: Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+ok 10 - Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+  ---
+  duration_ms: 449.174125
+  type: 'test'
+  ...
+# Subtest: reaching for a pill closes the hand continuously instead of snapping into the pinch
+ok 11 - reaching for a pill closes the hand continuously instead of snapping into the pinch
+  ---
+  duration_ms: 225.397334
+  type: 'test'
+  ...
+# Subtest: Neo wraps all five fingers around the upright glass with opposing thumb support
+ok 12 - Neo wraps all five fingers around the upright glass with opposing thumb support
+  ---
+  duration_ms: 302.308917
+  type: 'test'
+  ...
+# Subtest: bringing the glass to the mouth keeps the wrist aligned with the forearm
+ok 13 - bringing the glass to the mouth keeps the wrist aligned with the forearm
+  ---
+  duration_ms: 260.562542
+  type: 'test'
+  ...
+# Subtest: the cup grasp blends continuously and restores the saved hand after other gestures and view changes
+ok 14 - the cup grasp blends continuously and restores the saved hand after other gestures and view changes
+  ---
+  duration_ms: 234.783958
+  type: 'test'
+  ...
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 15 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 559.93825
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 16 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 353.1985
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 17 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 623.5945
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 18 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 534.744916
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 19 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 351.512709
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5055.265791

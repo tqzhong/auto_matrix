@@ -52,8 +52,77 @@ async function setup(t: TestContext) {
     }
     return result.map((pad, i) => pad.divideScalar(counts[i]));
   };
-  return { rig, boy, models, draw, pads, skin, neo: world.agents.get('neo')! };
+  return { rig, boy, models, draw, pads, skin, neo: world.agents.get('neo')!, boyState: world.agents.get('spoon_boy')! };
 }
+
+test('receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow', async t => {
+  const h = await setup(t), bones = h.rig.hero!.bones;
+  const patch = h.rig.hero!.wardrobe.find(part => part.mesh.userData.wristSkin)!.mesh as THREE.SkinnedMesh;
+  const { skinIndex, skinWeight } = patch.geometry.attributes;
+  const probes = Array.from({ length: skinIndex.count }, (_, i) => i).filter(i => [0, 1, 2, 3].some(j =>
+    skinWeight.getComponent(i, j) > .05 && patch.skeleton.bones[skinIndex.getComponent(i, j)].name.startsWith('forearm_twist_R_')));
+  assert.ok(probes.length > 200);
+  let before: THREE.Vector3[] | undefined, rotations: THREE.Quaternion[] | undefined, maximumSkinStep = 0, maximumTurn = 0;
+  for (let frame = 0; frame <= 240; frame++) {
+    h.draw('receiving', frame / 100); patch.skeleton.update();
+    const points = probes.map(vertex => patch.localToWorld(patch.getVertexPosition(vertex, new THREE.Vector3())));
+    const now = ['elbow_R', 'forearm_twist_R_1', 'forearm_twist_R_2', 'forearm_twist_R_3'].map(name => bones.get(name)!.getWorldQuaternion(new THREE.Quaternion()));
+    if (before) {
+      maximumSkinStep = Math.max(maximumSkinStep, ...points.map((point, i) => point.distanceTo(before![i])));
+      maximumTurn = Math.max(maximumTurn, ...now.map((q, i) => q.angleTo(rotations![i])));
+    }
+    before = points; rotations = now;
+  }
+  t.diagnostic(JSON.stringify({ probes: probes.length, maximumSkinStep, maximumTurn }));
+  assert.ok(maximumTurn < .1, `starting or releasing the reach flips the forearm by ${maximumTurn} radians`);
+  assert.ok(maximumSkinStep < .03, `the actual forearm surface jumps by ${maximumSkinStep} world units`);
+});
+
+test('the spoon boy enters and releases the same contact smoothly across his visible arm surfaces', async t => {
+  const h = await setup(t), meshes: { mesh: THREE.Mesh; vertex: number }[] = [];
+  h.boy.elbows[0].traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    for (let i = 0; i < object.geometry.attributes.position.count; i += 3) meshes.push({ mesh: object, vertex: i });
+  });
+  assert.ok(meshes.length > 100, 'measure the delivered forearm, hand and finger surfaces');
+  let maximumSkinStep = 0, maximumTurn = 0, worst = '';
+  for (const [phase, seconds] of [['demonstrating', 3.4], ['receiving', 2.4]] as const) {
+    let before: THREE.Vector3[] | undefined, rotation: THREE.Quaternion | undefined;
+    for (let frame = 0; frame <= seconds * 100; frame++) {
+      h.draw(phase, frame / 100);
+      const now = h.boy.elbows[0].getWorldQuaternion(new THREE.Quaternion());
+      const points = meshes.map(({ mesh, vertex }) => mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3())));
+      if (before) {
+        maximumTurn = Math.max(maximumTurn, now.angleTo(rotation!));
+        points.forEach((point, i) => {
+          const step = point.distanceTo(before![i]);
+          if (step > maximumSkinStep) {
+            maximumSkinStep = step;
+            const { mesh, vertex } = meshes[i];
+            worst = `${phase} ${frame / 100}: ${mesh.name}/${mesh.geometry.type} vertex ${vertex}, parent ${mesh.parent?.name}`;
+          }
+        });
+      }
+      before = points; rotation = now;
+      if ([0, 110, 132, 175, 240, 320, 340].includes(frame)) {
+        const fresh = h.models.create(h.boyState), cold: { mesh: THREE.Mesh; vertex: number }[] = [];
+        fresh.root.position.copy(h.boy.root.position); fresh.root.quaternion.copy(h.boy.root.quaternion);
+        fresh.elbows[0].traverse(object => {
+          if (object instanceof THREE.Mesh) for (let i = 0; i < object.geometry.attributes.position.count; i += 3) cold.push({ mesh: object, vertex: i });
+        });
+        const lesson = { phase, elapsed: frame / 100 };
+        h.models.animate(fresh, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+          spoon: spoonLessonBend(lesson, 'boy', 0), spoonLesson: { ...lesson, role: 'boy' }, seated: true, floorSeated: true }, 4);
+        fresh.root.updateMatrixWorld(true); assert.equal(cold.length, meshes.length);
+        cold.forEach(({ mesh, vertex }, i) => assert.ok(points[i].distanceTo(mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3()))) < 1e-7,
+          'a cold boy must reconstruct the same saved grip and withdrawal surface'));
+      }
+    }
+  }
+  t.diagnostic(JSON.stringify({ probes: meshes.length, maximumSkinStep, maximumTurn, worst }));
+  assert.ok(maximumTurn < .1, `the child's forearm flips by ${maximumTurn} radians when contact starts or ends`);
+  assert.ok(maximumSkinStep < .04, `the child's visible skin jumps by ${maximumSkinStep} world units`);
+});
 
 test('Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising', async t => {
   const h = await setup(t);

@@ -1,0 +1,54 @@
+TAP version 13
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+ok 1 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 910.09275
+  type: 'test'
+  ...
+# {"probes":851,"maximumSkinStep":0.025980370177646376,"maximumTurn":0.02512701932504489}
+# Subtest: the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+ok 2 - the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+  ---
+  duration_ms: 1336.714042
+  type: 'test'
+  ...
+# {"probes":470,"maximumSkinStep":0.026639864038645152,"maximumTurn":0.02349750601948704,"worst":"receiving 1.32: /BufferGeometry vertex 201, parent "}
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 3 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 330.040875
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 4 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 277.336208
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 5 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 487.91225
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 6 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 446.655667
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 7 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 314.530833
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4430.665167

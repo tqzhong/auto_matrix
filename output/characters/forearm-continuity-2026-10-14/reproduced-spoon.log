@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+not ok 1 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 892.359458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:1:3536'
+  failureType: 'testCodeFailure'
+  error: 'starting or releasing the reach flips the forearm by 0.5102912152158201 radians'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/spoon-grip.test.mts:77:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"probes":851,"maximumSkinStep":0.18356200894179553,"maximumTurn":0.5102912152158201}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1126.5365

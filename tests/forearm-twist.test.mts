@@ -3,8 +3,10 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FILM_SETS, PILL_ROOM, pillRoot } from '@auto_matrix/shared';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import type { MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 
 async function loadGeometry(id: string) {
   const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -16,6 +18,56 @@ async function loadGeometry(id: string) {
   result.writeUInt32LE(0x46546c67, 0); result.writeUInt32LE(2, 4); result.writeUInt32LE(result.length, 8);
   result.writeUInt32LE(padded.length, 12); result.writeUInt32LE(0x4e4f534a, 16); padded.copy(result, 20); binary.copy(result, 20 + padded.length);
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
+}
+
+for (const [id, choice] of [['neo', 'red'], ['neo', 'blue'], ['morpheus', 'red']] as const) {
+  test(`${id}/${choice}: the saved pill gesture keeps forearm skin continuous through the palm turn`, async t => {
+    const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); t.after(() => models.dispose());
+    (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+    const rig = (await models.create(id))!, cold = (await models.create(id))!, motion = newMotion();
+    const sides = id === 'neo' ? [choice === 'red' ? 'L' : 'R'] : ['R', 'L'];
+    const skin = rig.wardrobe.find(part => part.mesh.userData.wristSkin)!.mesh as THREE.SkinnedMesh;
+    const probes: number[] = [], { skinIndex, skinWeight } = skin.geometry.attributes;
+    for (let i = 0; i < skinIndex.count; i++) if ([0, 1, 2, 3].some(j => skinWeight.getComponent(i, j) > .05 &&
+      sides.some(side => skin.skeleton.bones[skinIndex.getComponent(i, j)].name.startsWith(`forearm_twist_${side}_`)))) probes.push(i);
+    assert.ok(probes.length > 200, 'measure actual anatomy influenced by the deforming forearm');
+    const pose = (body: typeof rig, phase: 'taking' | 'offering', elapsed: number) => {
+      const pills = { phase, elapsed, choice, role: id }, input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, pills };
+      const root = id === 'neo' ? pillRoot({ ...pills, approach: { x: 1.75, z: -6, yaw: -Math.PI / 2 } })
+        : { x: -PILL_ROOM.seat, z: PILL_ROOM.z, yaw: Math.PI / 2 }, center = FILM_SETS.film_lafayette.center;
+      body.root.position.set(center.x + root.x, center.y - 1, center.z + root.z); body.root.rotation.y = root.yaw;
+      models.animate(body, advanceMotion(motion, input, 0), motion, input, 0); body.root.updateMatrixWorld(true);
+      const patch = body.wardrobe.find(part => part.mesh.userData.wristSkin)!.mesh as THREE.SkinnedMesh; patch.skeleton.update();
+      return probes.map(i => patch.localToWorld(patch.getVertexPosition(i, new THREE.Vector3())));
+    };
+    let maximumSkinStep = 0, maximumTurn = 0;
+    for (const phase of id === 'neo' ? ['taking'] as const : ['offering', 'taking'] as const) {
+      let before: THREE.Vector3[] | undefined, rotations: THREE.Quaternion[] | undefined;
+      for (let frame = 0; frame <= (phase === 'offering' ? 400 : 435); frame++) {
+        const elapsed = frame / 100, points = pose(rig, phase, elapsed);
+        const now = sides.flatMap(side => [1, 2, 3].map(part => rig.bones.get(`forearm_twist_${side}_${part}`)!.getWorldQuaternion(new THREE.Quaternion())));
+        if (before) {
+          maximumSkinStep = Math.max(maximumSkinStep, ...points.map((point, i) => point.distanceTo(before![i])));
+          maximumTurn = Math.max(maximumTurn, ...now.map((q, i) => q.angleTo(rotations![i])));
+        }
+        before = points; rotations = now;
+        if ([0, 250, 271, 272, 289, 290, 350, 400, 435].includes(frame)) {
+          const restored = pose(cold, phase, elapsed); points.forEach((point, i) =>
+            assert.ok(point.distanceTo(restored[i]) < 1e-7, 'cold reconstruction cannot choose a different turn from the earlier motion'));
+          for (const side of sides) {
+            const wrist = cold.bones.get(`wrist_${side}`)!, q = wrist.quaternion;
+            q.set(-q.x, -q.y, -q.z, -q.w); wrist.updateWorldMatrix(false, true);
+          }
+          const patch = cold.wardrobe.find(part => part.mesh.userData.wristSkin)!.mesh as THREE.SkinnedMesh; patch.skeleton.update();
+          probes.forEach((vertex, i) => assert.ok(points[i].distanceTo(patch.localToWorld(patch.getVertexPosition(vertex, new THREE.Vector3()))) < 1e-7,
+            'equivalent quaternion signs must deform the saved arm identically'));
+        }
+      }
+    }
+    t.diagnostic(JSON.stringify({ id, choice, probes: probes.length, maximumSkinStep, maximumTurn }));
+    assert.ok(maximumTurn < .15, `a 10ms pill step flips a forearm joint by ${maximumTurn} radians`);
+    assert.ok(maximumSkinStep < .05, `forearm skin teleports by ${maximumSkinStep} world units between neighboring pill frames`);
+  });
 }
 
 test('late wrist contact corrections update the forearm in the same frame', async t => {

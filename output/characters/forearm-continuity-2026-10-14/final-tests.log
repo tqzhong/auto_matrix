@@ -1,0 +1,539 @@
+TAP version 13
+# Subtest: Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+ok 1 - Neo keeps the cookie fixed in his grasp as he turns, carries it and lifts it to bite
+  ---
+  duration_ms: 1425.591958
+  type: 'test'
+  ...
+# Subtest: thumb and index oppose the cookie faces during the handoff and the bite
+ok 2 - thumb and index oppose the cookie faces during the handoff and the bite
+  ---
+  duration_ms: 1114.460917
+  type: 'test'
+  ...
+# Subtest: taking a bite does not change the thickness or detach the chocolate pieces
+ok 3 - taking a bite does not change the thickness or detach the chocolate pieces
+  ---
+  duration_ms: 958.831875
+  type: 'test'
+  ...
+# Subtest: the actual thumb and index surfaces touch the biscuit without penetrating it
+ok 4 - the actual thumb and index surfaces touch the biscuit without penetrating it
+  ---
+  duration_ms: 908.66425
+  type: 'test'
+  ...
+# Subtest: cookie gestures restore from saved input after another action or a fresh character
+ok 5 - cookie gestures restore from saved input after another action or a fresh character
+  ---
+  duration_ms: 1199.01675
+  type: 'test'
+  ...
+# Subtest: receiving and biting the cookie do not fold the wrist back against the forearm
+ok 6 - receiving and biting the cookie do not fold the wrist back against the forearm
+  ---
+  duration_ms: 636.371625
+  type: 'test'
+  ...
+# Subtest: the raised hand stays outside Neo actual head and neck skin during the bite
+ok 7 - the raised hand stays outside Neo actual head and neck skin during the bite
+  ---
+  duration_ms: 4562.327834
+  type: 'test'
+  ...
+# Subtest: neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 8 - neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 2348.2385
+  type: 'test'
+  ...
+# {"id":"neo","choice":"red","probes":851,"maximumSkinStep":0.049820769759615476,"maximumTurn":0.09603106935275849}
+# Subtest: neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 9 - neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 2029.763542
+  type: 'test'
+  ...
+# {"id":"neo","choice":"blue","probes":851,"maximumSkinStep":0.04982076975862647,"maximumTurn":0.09417437209435008}
+# Subtest: morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 10 - morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 2633.617708
+  type: 'test'
+  ...
+# {"id":"morpheus","choice":"red","probes":1696,"maximumSkinStep":0.015722636842492227,"maximumTurn":0.03696412962610055}
+# Subtest: late wrist contact corrections update the forearm in the same frame
+ok 11 - late wrist contact corrections update the forearm in the same frame
+  ---
+  duration_ms: 45.751583
+  type: 'test'
+  ...
+# Subtest: shared hero assets retain neutral geometry, hand targets and independent restored forearms
+ok 12 - shared hero assets retain neutral geometry, hand targets and independent restored forearms
+  ---
+  duration_ms: 6188.99875
+  type: 'test'
+  ...
+# Subtest: neo: turning the palm preserves the actual forearm and cuff cross-section
+ok 13 - neo: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 861.132291
+  type: 'test'
+  ...
+# {"id":"neo","sampleCount":8013,"minimumRadius":0.8930728764065317}
+# Subtest: trinity: turning the palm preserves the actual forearm and cuff cross-section
+ok 14 - trinity: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 246.540583
+  type: 'test'
+  ...
+# {"id":"trinity","sampleCount":5386,"minimumRadius":0.8930729694064649}
+# Subtest: smith: turning the palm preserves the actual forearm and cuff cross-section
+ok 15 - smith: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 67.447625
+  type: 'test'
+  ...
+# {"id":"smith","sampleCount":2455,"minimumRadius":0.893072990680801}
+# Subtest: morpheus: turning the palm preserves the actual forearm and cuff cross-section
+ok 16 - morpheus: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 781.5015
+  type: 'test'
+  ...
+# {"id":"morpheus","sampleCount":4948,"minimumRadius":0.8930728137982399}
+# Subtest: neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 17 - neo: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 1012.216917
+  type: 'test'
+  ...
+# Subtest: trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 18 - trinity: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 220.245209
+  type: 'test'
+  ...
+# Subtest: smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 19 - smith: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 64.558708
+  type: 'test'
+  ...
+# Subtest: morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+ok 20 - morpheus: a closed fighting hand opposes the thumb against the fingers instead of extending it
+  ---
+  duration_ms: 1328.959209
+  type: 'test'
+  ...
+# Subtest: neo: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 21 - neo: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 44110.214875
+  type: 'test'
+  ...
+# Subtest: trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 22 - trinity: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 28912.635042
+  type: 'test'
+  ...
+# Subtest: smith: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 23 - smith: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 26612.086542
+  type: 'test'
+  ...
+# Subtest: morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+ok 24 - morpheus: fingertips do not bury inside another finger while closing the actual skinned hand
+  ---
+  duration_ms: 27219.514083
+  type: 'test'
+  ...
+# Subtest: restored hands match animated hands and release to their original pose without carrying over a grip
+ok 25 - restored hands match animated hands and release to their original pose without carrying over a grip
+  ---
+  duration_ms: 924.336667
+  type: 'test'
+  ...
+# Subtest: a new tracking-chair approach walks around the chair before lowering into it
+ok 26 - a new tracking-chair approach walks around the chair before lowering into it
+  ---
+  duration_ms: 3.250375
+  type: 'test'
+  ...
+# Subtest: turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+ok 27 - turning toward the chair cannot cross Neo’s feet when G starts from a different heading
+  ---
+  duration_ms: 161.162125
+  type: 'test'
+  ...
+# Subtest: the new mirror clock reaches the seated boundary exactly
+ok 28 - the new mirror clock reaches the seated boundary exactly
+  ---
+  duration_ms: 0.147375
+  type: 'test'
+  ...
+# Subtest: the tracking-room mirror has straight carved sides and glass across all four corners
+ok 29 - the tracking-room mirror has straight carved sides and glass across all four corners
+  ---
+  duration_ms: 4330.431958
+  type: 'test'
+  ...
+# Subtest: healing and the silver filament resume from story time with their contact fixed to the glass
+ok 30 - healing and the silver filament resume from story time with their contact fixed to the glass
+  ---
+  duration_ms: 7615.075083
+  type: 'test'
+  ...
+# Subtest: reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+ok 31 - reloading a paused mirror beat restores Neo’s seated body and reaching hand immediately
+  ---
+  duration_ms: 959.721584
+  type: 'test'
+  ...
+# Subtest: Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+ok 32 - Neo’s shipped shoes rest on the tracking-room floor throughout the seated mirror performance
+  ---
+  duration_ms: 649.1725
+  type: 'test'
+  ...
+# Subtest: tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+ok 33 - tracking-chair footsteps keep the shipped support shoe planted and restore the whole body at a paused turn
+  ---
+  duration_ms: 929.89325
+  type: 'test'
+  ...
+# Subtest: the entry keeps the shipped body outside the actual chair solids while turning and sitting
+ok 34 - the entry keeps the shipped body outside the actual chair solids while turning and sitting
+  ---
+  duration_ms: 28156.048208
+  type: 'test'
+  ...
+# Subtest: the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+ok 35 - the actual tracking-chair cushion supports Neo’s trousers without swallowing his thighs
+  ---
+  duration_ms: 12533.200667
+  type: 'test'
+  ...
+# Subtest: Neo reaches the actual mirror smoothly without passing through it
+ok 36 - Neo reaches the actual mirror smoothly without passing through it
+  ---
+  duration_ms: 237.726375
+  type: 'test'
+  ...
+# Subtest: Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+ok 37 - Trinity connects the electrode on Neo’s left forearm instead of reaching for a headset
+  ---
+  duration_ms: 264.172875
+  type: 'test'
+  ...
+# Subtest: Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+ok 38 - Trinity keeps her face clear of Neo’s seated eye while connecting and releasing the electrode
+  ---
+  duration_ms: 318.071833
+  type: 'test'
+  ...
+# Subtest: the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+ok 39 - the visible electrode and lead stay attached to Neo when paused, restored or hidden from first person
+  ---
+  duration_ms: 2102.205834
+  type: 'test'
+  ...
+# Subtest: the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+ok 40 - the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+  ---
+  duration_ms: 3096.72
+  type: 'test'
+  ...
+# Subtest: Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+ok 41 - Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+  ---
+  duration_ms: 865.558167
+  type: 'test'
+  ...
+# Subtest: the delivered Smith palm reaches the cookie plate before it leaves the table
+ok 42 - the delivered Smith palm reaches the cookie plate before it leaves the table
+  ---
+  duration_ms: 724.741167
+  type: 'test'
+  ...
+# {"plateGap":2.682298827494378e-13,"palm":[-4.800000000000182,2.179999999999732,-20.149999999999636],"shoulder":[-4.770857062331743,2.622247345168856,-21.540319658412955],"forearm":[-0.025925425677162495,-0.6481356419290627,0.03240678209645305]}
+# {"samples":6673,"skinGap":0.005267588141806279,"penetration":0}
+# Subtest: contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+ok 43 - contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+  ---
+  duration_ms: 1324.284208
+  type: 'test'
+  ...
+# {"samples":6673,"skinGap":0.0031312674973378307,"penetration":0}
+# Subtest: the actual seated Oracle and bending Smith stay outside the solid kitchen table
+ok 44 - the actual seated Oracle and bending Smith stay outside the solid kitchen table
+  ---
+  duration_ms: 820.045375
+  type: 'test'
+  ...
+# Subtest: the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+ok 45 - the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+  ---
+  duration_ms: 369.278375
+  type: 'test'
+  ...
+# {"elapsed":0,"shoeClearance":0.019722314581661262}
+# {"elapsed":0.3,"shoeClearance":0.01972231458188592}
+# {"elapsed":1,"shoeClearance":0.01972231458179972}
+# {"elapsed":2,"shoeClearance":0.019722314581180428}
+# {"elapsed":3,"shoeClearance":0.019722314581609002}
+# Subtest: the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+ok 46 - the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+  ---
+  duration_ms: 9809.345708
+  type: 'test'
+  ...
+# {"phase":"contact","elapsed":0,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.2,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.4,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.6,"samples":113,"skinGap":0.28314826476162125,"penetration":0}
+# {"phase":"contact","elapsed":0.8,"samples":3382,"skinGap":0.17571767018489481,"penetration":0}
+# {"phase":"contact","elapsed":1.2,"samples":6673,"skinGap":0.0027968212234554812,"penetration":0}
+# {"phase":"contact","elapsed":1.6,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"contact","elapsed":2.2,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":0,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":1,"samples":6673,"skinGap":0.003128688666038215,"penetration":0}
+# {"phase":"coating","elapsed":2.5,"samples":6673,"skinGap":0.0030993430627859198,"penetration":0}
+# {"phase":"coating","elapsed":3.5,"samples":6673,"skinGap":0.0031048221335368,"penetration":0}
+# {"phase":"coating","elapsed":4.25,"samples":2761,"skinGap":0.2299019679576304,"penetration":0}
+# {"phase":"coating","elapsed":5,"samples":0,"skinGap":null,"penetration":0}
+# Subtest: Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+ok 47 - Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+  ---
+  duration_ms: 817.505416
+  type: 'test'
+  ...
+# {"maximumWristBend":0.6742895720974654,"maximumTravelPer40ms":0.06332494661043142}
+# Subtest: first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+ok 48 - first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+  ---
+  duration_ms: 1576.235666
+  type: 'test'
+  ...
+# Subtest: possessing Morpheus does not borrow Neo's drinking glance
+ok 49 - possessing Morpheus does not borrow Neo's drinking glance
+  ---
+  duration_ms: 1121.365875
+  type: 'test'
+  ...
+# Subtest: the conversation frames neo and keeps capsules hidden until the offer
+ok 50 - the conversation frames neo and keeps capsules hidden until the offer
+  ---
+  duration_ms: 977.41125
+  type: 'test'
+  ...
+# Subtest: the conversation frames morpheus and keeps capsules hidden until the offer
+ok 51 - the conversation frames morpheus and keeps capsules hidden until the offer
+  ---
+  duration_ms: 955.102083
+  type: 'test'
+  ...
+# Subtest: first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+ok 52 - first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+  ---
+  duration_ms: 722.817416
+  type: 'test'
+  ...
+# Subtest: the first-person conversation retains the chosen look direction even after a long answer
+ok 53 - the first-person conversation retains the chosen look direction even after a long answer
+  ---
+  duration_ms: 522.02125
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear neo's real eyes and the pill conversation
+ok 54 - the padded chairs clear neo's real eyes and the pill conversation
+  ---
+  duration_ms: 824.452167
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear morpheus's real eyes and the pill conversation
+ok 55 - the padded chairs clear morpheus's real eyes and the pill conversation
+  ---
+  duration_ms: 1085.336917
+  type: 'test'
+  ...
+# Subtest: Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+ok 56 - Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+  ---
+  duration_ms: 1047.402292
+  type: 'test'
+  ...
+# Subtest: Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+ok 57 - Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+  ---
+  duration_ms: 1042.068708
+  type: 'test'
+  ...
+# Subtest: reaching for a pill closes the hand continuously instead of snapping into the pinch
+ok 58 - reaching for a pill closes the hand continuously instead of snapping into the pinch
+  ---
+  duration_ms: 545.988208
+  type: 'test'
+  ...
+# Subtest: Neo wraps all five fingers around the upright glass with opposing thumb support
+ok 59 - Neo wraps all five fingers around the upright glass with opposing thumb support
+  ---
+  duration_ms: 841.426291
+  type: 'test'
+  ...
+# Subtest: bringing the glass to the mouth keeps the wrist aligned with the forearm
+ok 60 - bringing the glass to the mouth keeps the wrist aligned with the forearm
+  ---
+  duration_ms: 636.348458
+  type: 'test'
+  ...
+# Subtest: the cup grasp blends continuously and restores the saved hand after other gestures and view changes
+ok 61 - the cup grasp blends continuously and restores the saved hand after other gestures and view changes
+  ---
+  duration_ms: 707.375459
+  type: 'test'
+  ...
+# Subtest: neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 62 - neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 5637.336583
+  type: 'test'
+  ...
+# Subtest: trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 63 - trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 4242.467666
+  type: 'test'
+  ...
+# Subtest: smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 64 - smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 3358.496416
+  type: 'test'
+  ...
+# Subtest: morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 65 - morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 3891.002375
+  type: 'test'
+  ...
+# Subtest: receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+ok 66 - receiving the spoon blends the real forearm into and out of the contact solve without snapping its elbow
+  ---
+  duration_ms: 1978.057208
+  type: 'test'
+  ...
+# {"probes":851,"maximumSkinStep":0.025980370177646376,"maximumTurn":0.02512701932504489}
+# Subtest: the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+ok 67 - the spoon boy enters and releases the same contact smoothly across his visible arm surfaces
+  ---
+  duration_ms: 3034.488792
+  type: 'test'
+  ...
+# {"probes":470,"maximumSkinStep":0.026639864038645152,"maximumTurn":0.02349750601948704,"worst":"receiving 1.32: /BufferGeometry vertex 201, parent "}
+# Subtest: Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+ok 68 - Neo pinches the spoon with opposing pads in the same grip during transfer, focus and rising
+  ---
+  duration_ms: 637.5705
+  type: 'test'
+  ...
+# Subtest: accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+ok 69 - accepting the spoon keeps the same contact, hand and prop orientation across ownership and focus boundaries
+  ---
+  duration_ms: 586.498542
+  type: 'test'
+  ...
+# Subtest: a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+ok 70 - a saved spoon pose restores after another hand action or a fresh model without stretching finger bones
+  ---
+  duration_ms: 857.492042
+  type: 'test'
+  ...
+# Subtest: the actual fingertip skin touches the metal without entering the straight gripping section
+ok 71 - the actual fingertip skin touches the metal without entering the straight gripping section
+  ---
+  duration_ms: 777.77825
+  type: 'test'
+  ...
+# Subtest: reaching for the spoon does not fold the hand sharply back against the forearm
+ok 72 - reaching for the spoon does not fold the hand sharply back against the forearm
+  ---
+  duration_ms: 514.216583
+  type: 'test'
+  ...
+# Subtest: neo: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 73 - neo: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 908.210083
+  type: 'test'
+  ...
+# {"id":"neo","samples":109836,"minimumRelativeReflectance":0.7535183321910712}
+# Subtest: neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 74 - neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 2018.640917
+  type: 'test'
+  ...
+# Subtest: trinity: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 75 - trinity: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 626.548
+  type: 'test'
+  ...
+# {"id":"trinity","samples":121500,"minimumRelativeReflectance":0.662224531658831}
+# Subtest: trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 76 - trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 1515.601625
+  type: 'test'
+  ...
+# Subtest: smith: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 77 - smith: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 508.843875
+  type: 'test'
+  ...
+# {"id":"smith","samples":113238,"minimumRelativeReflectance":0.8592969374163782}
+# Subtest: smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 78 - smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 1182.100208
+  type: 'test'
+  ...
+# Subtest: morpheus: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 79 - morpheus: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 444.445583
+  type: 'test'
+  ...
+# {"id":"morpheus","samples":104166,"minimumRelativeReflectance":0.6514127462303837}
+# Subtest: morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 80 - morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 1308.948917
+  type: 'test'
+  ...
+# Subtest: wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+ok 81 - wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+  ---
+  duration_ms: 894.879875
+  type: 'test'
+  ...
+# Subtest: Trinity’s restored forearm stays inside the fitted leather sleeve
+ok 82 - Trinity’s restored forearm stays inside the fitted leather sleeve
+  ---
+  duration_ms: 6362.123458
+  type: 'test'
+  ...
+# {"checked":820,"palmRotations":4,"arms":2}
+1..82
+# tests 82
+# suites 0
+# pass 82
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 131477.566875

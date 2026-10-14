@@ -1,0 +1,73 @@
+{
+  "groups": [
+    {
+      "key": "agents",
+      "unchanged": true
+    },
+    {
+      "key": "chunks",
+      "unchanged": true
+    },
+    {
+      "key": "locations",
+      "unchanged": true
+    },
+    {
+      "key": "phase",
+      "unchanged": true
+    },
+    {
+      "key": "timeOfDay",
+      "unchanged": true
+    },
+    {
+      "key": "events",
+      "unchanged": true
+    },
+    {
+      "key": "simulation",
+      "unchanged": true
+    },
+    {
+      "key": "sandbox",
+      "unchanged": true
+    }
+  ],
+  "memories": [
+    {
+      "name": "ak.json",
+      "unchanged": true,
+      "sha256": "f13e104a693867150988b4f4b1c6846b052b5d5d43df0511b2cabc73b9fc09db"
+    },
+    {
+      "name": "binary.json",
+      "unchanged": true,
+      "sha256": "f654d1d21489e3fc9eebd6f53103e897b6b9301374f721de3557f0666de88865"
+    },
+    {
+      "name": "cas.json",
+      "unchanged": true,
+      "sha256": "ae74332b02848d42e98ebf135c67f990efde38d6d04d4ee79c810d2fd0d46e65"
+    },
+    {
+      "name": "citizen_8.json",
+      "unchanged": true,
+      "sha256": "90c4a0b6e7650b96edd3b1db10997f26bd50b941581cc70818fc1e434aaf2161"
+    },
+    {
+      "name": "mauser.json",
+      "unchanged": true,
+      "sha256": "50e1e0ad9bdfcad2af038b86ba5e2a3153d4be3d1d20bc8bf32ad49d1ac0e379"
+    },
+    {
+      "name": "sparks.json",
+      "unchanged": true,
+      "sha256": "2638cedf6cb387ca035e717ebfdc931c87a2bec4eefb6a5e3ecad92ed3aa1c13"
+    },
+    {
+      "name": "vector.json",
+      "unchanged": true,
+      "sha256": "024e01907b6e075e7f8c74a8adeea53246fd43fe66ff48a808198cf9856880bd"
+    }
+  ]
+}

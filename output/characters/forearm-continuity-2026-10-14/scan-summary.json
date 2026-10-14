@@ -1,0 +1,455 @@
+{
+  "samplesPerVersion": 4072,
+  "cases": [
+    {
+      "name": "office-phone-pickup",
+      "id": "neo",
+      "frames": 221,
+      "wristMaximum": 0.02048813132876802,
+      "helperMaximum": 0.06850906235499944,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 1.7166092819703895,
+      "version": "before"
+    },
+    {
+      "name": "office-phone-answer",
+      "id": "neo",
+      "frames": 181,
+      "wristMaximum": 0.02242390675014762,
+      "helperMaximum": 0.05299690885252865,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 1.2135728825100012,
+      "version": "before"
+    },
+    {
+      "name": "taking-red",
+      "id": "neo",
+      "frames": 931,
+      "wristMaximum": 0.10167250274738927,
+      "helperMaximum": 2.1126734689577327,
+      "jumps": [
+        {
+          "side": "L",
+          "wristDelta": 0.035628549183819774,
+          "helperDelta": 2.1126734689577327,
+          "angleBefore": 3.1295807123543353,
+          "angleAfter": -3.0913626835370054,
+          "rawBefore": -3.153604594825251,
+          "rawAfter": -3.0913626835370054,
+          "before": {
+            "pills": {
+              "phase": "taking",
+              "elapsed": 2.71,
+              "choice": "red",
+              "role": "neo"
+            }
+          },
+          "after": {
+            "pills": {
+              "phase": "taking",
+              "elapsed": 2.72,
+              "choice": "red",
+              "role": "neo"
+            }
+          },
+          "q": [
+            -0.545666990322851,
+            0.8075735666504006,
+            -0.22277447285541205,
+            0.021071411047815347
+          ]
+        }
+      ],
+      "minimumAngle": -3.0913626835370054,
+      "maximumAngle": 3.1295807123543353,
+      "version": "before"
+    },
+    {
+      "name": "taking-blue",
+      "id": "neo",
+      "frames": 931,
+      "wristMaximum": 0.10051568713761111,
+      "helperMaximum": 2.112673468956528,
+      "jumps": [
+        {
+          "side": "R",
+          "wristDelta": 0.035628549183807305,
+          "helperDelta": 2.112673468956528,
+          "angleBefore": -3.129580712351169,
+          "angleAfter": 3.0913626835363304,
+          "rawBefore": -3.129580712351169,
+          "rawAfter": -3.191822623643256,
+          "before": {
+            "pills": {
+              "phase": "taking",
+              "elapsed": 2.71,
+              "choice": "blue",
+              "role": "neo"
+            }
+          },
+          "after": {
+            "pills": {
+              "phase": "taking",
+              "elapsed": 2.72,
+              "choice": "blue",
+              "role": "neo"
+            }
+          },
+          "q": [
+            0.5456669903232234,
+            0.8075735666501112,
+            -0.2227744728555225,
+            -0.021071411048091737
+          ]
+        }
+      ],
+      "minimumAngle": -3.129580712351169,
+      "maximumAngle": 3.0913626835363304,
+      "version": "before"
+    },
+    {
+      "name": "morpheus-offer",
+      "id": "morpheus",
+      "frames": 401,
+      "wristMaximum": 0.02945089714664501,
+      "helperMaximum": 2.1123531366605715,
+      "jumps": [
+        {
+          "side": "R",
+          "wristDelta": 0.029036722333872302,
+          "helperDelta": 2.1123531366605715,
+          "angleBefore": -3.13985018857452,
+          "angleAfter": 3.109475744406854,
+          "rawBefore": 3.143335118605066,
+          "rawAfter": 3.109475744406854,
+          "before": {
+            "pills": {
+              "phase": "offering",
+              "elapsed": 2.89,
+              "role": "morpheus"
+            }
+          },
+          "after": {
+            "pills": {
+              "phase": "offering",
+              "elapsed": 2.9,
+              "role": "morpheus"
+            }
+          },
+          "q": [
+            -0.11651831144671437,
+            -0.9930045578330264,
+            0.010464026396756722,
+            0.01599798024783615
+          ]
+        },
+        {
+          "side": "L",
+          "wristDelta": 0.029036722333902892,
+          "helperDelta": 2.112353136660342,
+          "angleBefore": 3.1398501885739685,
+          "angleAfter": -3.109475744406579,
+          "rawBefore": 3.1398501885739685,
+          "rawAfter": 3.1737095627730074,
+          "before": {
+            "pills": {
+              "phase": "offering",
+              "elapsed": 2.89,
+              "role": "morpheus"
+            }
+          },
+          "after": {
+            "pills": {
+              "phase": "offering",
+              "elapsed": 2.9,
+              "role": "morpheus"
+            }
+          },
+          "q": [
+            0.1165183114469069,
+            -0.9930045578330032,
+            0.010464026396597298,
+            -0.015997980247972752
+          ]
+        }
+      ],
+      "minimumAngle": -3.13985018857452,
+      "maximumAngle": 3.1398501885739685,
+      "version": "before"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "neo",
+      "frames": 111,
+      "wristMaximum": 0.010000000000089828,
+      "helperMaximum": 0.015321589515867486,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.1409116963125275,
+      "version": "before"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "trinity",
+      "frames": 111,
+      "wristMaximum": 0.010000000000045419,
+      "helperMaximum": 0.017059324007676454,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.20834509481154848,
+      "version": "before"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "smith",
+      "frames": 111,
+      "wristMaximum": 0.010000000000045419,
+      "helperMaximum": 0.014782367944049683,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.12377928128965905,
+      "version": "before"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "morpheus",
+      "frames": 111,
+      "wristMaximum": 0.010000000000045419,
+      "helperMaximum": 0.01376520160186255,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.1595071066112562,
+      "version": "before"
+    },
+    {
+      "name": "spoon-receiving",
+      "id": "neo",
+      "frames": 241,
+      "wristMaximum": 0.005934501165940659,
+      "helperMaximum": 0.44460387755643926,
+      "jumps": [
+        {
+          "side": "R",
+          "wristDelta": 3.3087437043536035e-05,
+          "helperDelta": 0.44460387755643926,
+          "angleBefore": 0,
+          "angleAfter": 0.3380945573321814,
+          "rawBefore": 0,
+          "rawAfter": 0.3380945573321814,
+          "before": {
+            "spoon": 0,
+            "spoonLesson": {
+              "phase": "receiving",
+              "elapsed": 0,
+              "role": "neo"
+            }
+          },
+          "after": {
+            "spoon": 0,
+            "spoonLesson": {
+              "phase": "receiving",
+              "elapsed": 0.01,
+              "role": "neo"
+            }
+          },
+          "q": [
+            -0.03119939506981345,
+            -0.1732824544849694,
+            -0.18082893478639034,
+            0.9676263147821899
+          ]
+        },
+        {
+          "side": "R",
+          "wristDelta": 2.3710496194489764e-05,
+          "helperDelta": 0.44458303961994367,
+          "angleBefore": 0.33817024819146096,
+          "angleAfter": 0,
+          "rawBefore": 0.33817024819146096,
+          "rawAfter": 0,
+          "before": {
+            "spoon": 0,
+            "spoonLesson": {
+              "phase": "receiving",
+              "elapsed": 2.39,
+              "role": "neo"
+            }
+          },
+          "after": {
+            "spoon": 0,
+            "spoonLesson": {
+              "phase": "receiving",
+              "elapsed": 2.4,
+              "role": "neo"
+            }
+          },
+          "q": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "minimumAngle": -0.3730903296395205,
+      "maximumAngle": 0.33817024819146096,
+      "version": "before"
+    },
+    {
+      "name": "oracle-contact",
+      "id": "smith",
+      "frames": 221,
+      "wristMaximum": 0.048517964613023774,
+      "helperMaximum": 0.06394427220097265,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 2.8893142987455205,
+      "version": "before"
+    },
+    {
+      "name": "oracle-coating",
+      "id": "smith",
+      "frames": 501,
+      "wristMaximum": 0.05178578756861085,
+      "helperMaximum": 0.05846924360945664,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 2.9818753463292964,
+      "version": "before"
+    },
+    {
+      "name": "office-phone-pickup",
+      "id": "neo",
+      "frames": 221,
+      "wristMaximum": 0.02048813132876802,
+      "helperMaximum": 0.06850906235499944,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 1.7166092819703895,
+      "version": "final"
+    },
+    {
+      "name": "office-phone-answer",
+      "id": "neo",
+      "frames": 181,
+      "wristMaximum": 0.02242390675014762,
+      "helperMaximum": 0.05299690885252865,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 1.2135728825100012,
+      "version": "final"
+    },
+    {
+      "name": "taking-red",
+      "id": "neo",
+      "frames": 931,
+      "wristMaximum": 0.10167250274739364,
+      "helperMaximum": 0.09603106935275849,
+      "jumps": [],
+      "minimumAngle": -1.86588126296075,
+      "maximumAngle": 1.8498300033291482,
+      "version": "final"
+    },
+    {
+      "name": "taking-blue",
+      "id": "neo",
+      "frames": 931,
+      "wristMaximum": 0.10051568713761552,
+      "helperMaximum": 0.09417437209435008,
+      "jumps": [],
+      "minimumAngle": -1.7483501580267884,
+      "maximumAngle": 1.8658812629611168,
+      "version": "final"
+    },
+    {
+      "name": "morpheus-offer",
+      "id": "morpheus",
+      "frames": 401,
+      "wristMaximum": 0.029450897146629927,
+      "helperMaximum": 0.029900975588283852,
+      "jumps": [],
+      "minimumAngle": -1.6715818012192927,
+      "maximumAngle": 1.6715818012196983,
+      "version": "final"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "neo",
+      "frames": 111,
+      "wristMaximum": 0.010000000000089828,
+      "helperMaximum": 0.015321589515867486,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.1409116963125275,
+      "version": "final"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "trinity",
+      "frames": 111,
+      "wristMaximum": 0.010000000000045419,
+      "helperMaximum": 0.017059324007676454,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.20834509481154848,
+      "version": "final"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "smith",
+      "frames": 111,
+      "wristMaximum": 0.010000000000045419,
+      "helperMaximum": 0.014782367944049683,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.12377928128965905,
+      "version": "final"
+    },
+    {
+      "name": "pistol-aim",
+      "id": "morpheus",
+      "frames": 111,
+      "wristMaximum": 0.010000000000045419,
+      "helperMaximum": 0.01376520160186255,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 0.1595071066112562,
+      "version": "final"
+    },
+    {
+      "name": "spoon-receiving",
+      "id": "neo",
+      "frames": 241,
+      "wristMaximum": 0.0059345011657909955,
+      "helperMaximum": 0.020330515986180825,
+      "jumps": [],
+      "minimumAngle": -0.3730903296395205,
+      "maximumAngle": 0.04378480798374836,
+      "version": "final"
+    },
+    {
+      "name": "oracle-contact",
+      "id": "smith",
+      "frames": 221,
+      "wristMaximum": 0.048517964613023774,
+      "helperMaximum": 0.06394427220097265,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 2.8893142987455205,
+      "version": "final"
+    },
+    {
+      "name": "oracle-coating",
+      "id": "smith",
+      "frames": 501,
+      "wristMaximum": 0.05178578756861085,
+      "helperMaximum": 0.05846924360945664,
+      "jumps": [],
+      "minimumAngle": 0,
+      "maximumAngle": 2.9818753463292964,
+      "version": "final"
+    }
+  ]
+}

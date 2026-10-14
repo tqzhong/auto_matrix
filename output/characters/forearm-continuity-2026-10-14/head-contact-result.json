@@ -1,0 +1,346 @@
+[
+  {
+    "label": "before",
+    "choice": "red",
+    "handVertices": 2222,
+    "headTriangles": 31982,
+    "frames": [
+      {
+        "elapsed": 2,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.15,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.3,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.5,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.7,
+        "matched": 3,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.6958817504280445
+      },
+      {
+        "elapsed": 2.85,
+        "matched": 260,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.4929189527429179
+      },
+      {
+        "elapsed": 3,
+        "matched": 921,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.3390639945702434
+      },
+      {
+        "elapsed": 3.2,
+        "matched": 549,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.1751843359710858
+      },
+      {
+        "elapsed": 3.4,
+        "matched": 502,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.10667865740518809
+      },
+      {
+        "elapsed": 3.5,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907049305
+      },
+      {
+        "elapsed": 3.65,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907049305
+      },
+      {
+        "elapsed": 3.9,
+        "matched": 250,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.15064216505685418
+      },
+      {
+        "elapsed": 4.1,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      }
+    ]
+  },
+  {
+    "label": "before",
+    "choice": "blue",
+    "handVertices": 2220,
+    "headTriangles": 31982,
+    "frames": [
+      {
+        "elapsed": 2,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.15,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.3,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.5,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.7,
+        "matched": 3,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.6673892726414286
+      },
+      {
+        "elapsed": 2.85,
+        "matched": 259,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.49534932990120695
+      },
+      {
+        "elapsed": 3,
+        "matched": 923,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.3390639945717832
+      },
+      {
+        "elapsed": 3.2,
+        "matched": 540,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.1752472213946446
+      },
+      {
+        "elapsed": 3.4,
+        "matched": 505,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.10667865740409119
+      },
+      {
+        "elapsed": 3.5,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907136574
+      },
+      {
+        "elapsed": 3.65,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907136574
+      },
+      {
+        "elapsed": 3.9,
+        "matched": 250,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.15061870628253632
+      },
+      {
+        "elapsed": 4.1,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      }
+    ]
+  },
+  {
+    "label": "final",
+    "choice": "red",
+    "handVertices": 2222,
+    "headTriangles": 31982,
+    "frames": [
+      {
+        "elapsed": 2,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.15,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.3,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.5,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.7,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.85,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 3,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 3.2,
+        "matched": 166,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.29159980489062326
+      },
+      {
+        "elapsed": 3.4,
+        "matched": 492,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.10622639366118089
+      },
+      {
+        "elapsed": 3.5,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907049305
+      },
+      {
+        "elapsed": 3.65,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907049305
+      },
+      {
+        "elapsed": 3.9,
+        "matched": 250,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.15064216505685418
+      },
+      {
+        "elapsed": 4.1,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      }
+    ]
+  },
+  {
+    "label": "final",
+    "choice": "blue",
+    "handVertices": 2220,
+    "headTriangles": 31982,
+    "frames": [
+      {
+        "elapsed": 2,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.15,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.3,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.5,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.7,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 2.85,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 3,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      },
+      {
+        "elapsed": 3.2,
+        "matched": 171,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.2926141029495592
+      },
+      {
+        "elapsed": 3.4,
+        "matched": 490,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.10622639366045755
+      },
+      {
+        "elapsed": 3.5,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907136574
+      },
+      {
+        "elapsed": 3.65,
+        "matched": 504,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.09233432907136574
+      },
+      {
+        "elapsed": 3.9,
+        "matched": 250,
+        "maximumPenetration": 0,
+        "minimumFrontGap": 0.15061870628251386
+      },
+      {
+        "elapsed": 4.1,
+        "matched": 0,
+        "maximumPenetration": 0,
+        "minimumFrontGap": null
+      }
+    ]
+  }
+]

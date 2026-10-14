@@ -171,8 +171,10 @@ export class PillPerformance {
         const palm = new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015);
         const rest = new THREE.Vector3(side === 'R' ? -1.04 : 1.04, 1.95, .35);
         if (side === 'R') { rest.y += pose.talk * .2; rest.z += pose.talk * .15; }
+        // An exact half-turn has two interpolation paths. Supinate each palm
+        // in its anatomical direction instead of winding the forearm past pi.
         const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
-          .slerp(this.orientation(side, new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)), pose.offer);
+          .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, side === 'R' ? -1 : 1, 0), Math.PI * pose.offer));
         this.fingers(side, .18 - pose.offer * .155);
         this.hand(side, rest.lerp(this.local(pillContact(color)), pose.offer), rotation, palm, 1, 1 - pose.offer);
         this.attach(object, side, palm);
@@ -194,8 +196,10 @@ export class PillPerformance {
         new THREE.Vector3(restingSide === 'R' ? .082 : -.082, -.18, .015), rest);
     }
     if (reach) {
+      // Use the same explicit half-turn while lifting the pinched capsule;
+      // the opposite path rolls the wrist through a full extra revolution.
       const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
-        .slerp(this.orientation(side, new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0)), pillEase(time, 2.15, 3.45));
+        .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(-Math.SQRT1_2, side === 'R' ? -Math.SQRT1_2 : Math.SQRT1_2, 0), Math.PI * pillEase(time, 2.15, 3.45)));
       this.fingers(side, .18 + .52 * reach);
       this.hand(side, contact.lerp(mouth, pillEase(time, 2.15, 3.45)), rotation, pinch, reach);
       this.pinch(side, pinch, reach);
