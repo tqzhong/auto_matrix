@@ -3,6 +3,7 @@ import { gardenPose, gardenGroundHeight, FILM_SETS, SUNRISE_GARDEN, type Trilogy
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { poseStreetWake } from './StreetWakePerformance.js';
+import { holdGardenHandle } from './OracleParkHands.js';
 
 const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
 
@@ -92,7 +93,8 @@ function carryOracleBag(rig: CharacterRig): void {
   rig.root.updateWorldMatrix(true, true);
   const palm = rig.elbows[0].localToWorld(new THREE.Vector3(0, -.79, .055));
   bag.visible = true; bag.scale.setScalar(1); bag.rotation.set(0, 0, 0);
-  bag.position.copy(rig.root.worldToLocal(palm)).sub(new THREE.Vector3(0, .69, .11));
+  bag.position.copy(rig.root.worldToLocal(palm)).sub(new THREE.Vector3(0, .69, rig.parkHands ? -.11 : .11));
+  rig.root.updateWorldMatrix(true, true); holdGardenHandle(rig, bag, 0, 1, 0);
 }
 
 function drapeSatiSkirt(rig: CharacterRig, street = false): void {
@@ -257,14 +259,15 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
   if (bag) {
     const lift = gesture.phase === 'ready' ? 0 : gesture.phase === 'sitting' ? THREE.MathUtils.smoothstep(gesture.elapsed, .15, 1.05) : 1;
     bag.visible = true; bag.scale.setScalar(1); bag.rotation.set(0, 0, 0);
-    bag.position.set(THREE.MathUtils.lerp(-.94, 0, lift), hip + THREE.MathUtils.lerp(-.44, .34, lift), THREE.MathUtils.lerp(.21, .50, lift));
+    bag.position.set(THREE.MathUtils.lerp(-.94, 0, lift), hip + THREE.MathUtils.lerp(-.44, .34, lift), THREE.MathUtils.lerp(.21, .50, lift) + (rig.parkHands ? .22 : 0));
     if (seated > 0) {
-      const lap = new THREE.Raycaster(rig.detail.localToWorld(new THREE.Vector3(0, hip + 1, .5)), new THREE.Vector3(0, -1, 0))
+      const lap = new THREE.Raycaster(rig.detail.localToWorld(new THREE.Vector3(0, hip + 1, bag.position.z)), new THREE.Vector3(0, -1, 0))
         .intersectObject(rig.root.getObjectByName('oracle-park-skirt')!, false)[0];
       if (lap) bag.position.y = Math.max(bag.position.y, rig.detail.worldToLocal(lap.point).y + .255);
     }
     rig.root.updateWorldMatrix(true, true); const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     for (let i = 0; i < 2; i++) {
+      if (rig.parkHands) { holdGardenHandle(rig, bag, i, i ? THREE.MathUtils.smoothstep(lift, .35, 1) : 1, lift); continue; }
       const palm = new THREE.Vector3(0, -.79, .055), side = i ? 1 : -1;
       const hand = bag.localToWorld(new THREE.Vector3(side * .19 * lift, .69 - .036 * lift, .14));
       reach(rig.shoulders[i], rig.elbows[i], palm, rig.elbows[i].localToWorld(palm.clone()).lerp(hand, i ? lift : 1),

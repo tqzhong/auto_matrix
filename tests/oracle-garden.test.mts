@@ -3,13 +3,14 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { gardenPose, newTrilogyEpilogue, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
-async function oracleHead() {
-  const bytes = await readFile(new URL('../packages/client/public/assets/characters/oracle-revolutions-head.glb', import.meta.url));
+async function oracleHead(name = 'oracle-revolutions-head') {
+  const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
   const length = bytes.readUInt32LE(12), document = JSON.parse(bytes.subarray(20, 20 + length).toString());
   for (const material of document.materials) delete material.pbrMetallicRoughness.baseColorTexture;
   document.images = []; document.textures = [];
@@ -18,7 +19,7 @@ async function oracleHead() {
   output.writeUInt32LE(0x46546c67, 0); output.writeUInt32LE(2, 4); output.writeUInt32LE(output.length, 8);
   output.writeUInt32LE(padded.length, 12); output.writeUInt32LE(0x4e4f534a, 16); padded.copy(output, 20); binary.copy(output, 20 + padded.length);
   const asset = await new GLTFLoader().parseAsync(output.buffer.slice(output.byteOffset, output.byteOffset + output.byteLength), '');
-  asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
+  if (name.endsWith('-head')) asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
   return asset;
 }
 
@@ -46,8 +47,10 @@ function points(root: THREE.Object3D, sample?: (point: THREE.Vector3, mesh: THRE
 }
 
 test('Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose', async t => {
-  const asset = await oracleHead();
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => ({ ...asset, scene: asset.scene.clone(true) }));
+  const asset = await oracleHead(), hands = await oracleHead('oracle-park-hands');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
+    const source = String(url).includes('park-hands') ? hands : asset; return { ...source, scene: clone(source.scene) };
+  });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
@@ -103,9 +106,11 @@ test('Oracle’s actual body and park clothes clear the wooden seat throughout t
   } finally { models.dispose(); globalThis.document = previous; }
 });
 
-test('the park handbag stays in the hand before lowering, both palms meet its handles and its base rests on the dressed lap', async t => {
-  const asset = await oracleHead();
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => ({ ...asset, scene: asset.scene.clone(true) }));
+test('the park handbag stays in the hand before lowering, both anatomical hands meet its handles and its base rests on the dressed lap', async t => {
+  const asset = await oracleHead(), hands = await oracleHead('oracle-park-hands');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
+    const source = String(url).includes('park-hands') ? hands : asset; return { ...source, scene: clone(source.scene) };
+  });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
@@ -126,9 +131,9 @@ test('the park handbag stays in the hand before lowering, both palms meet its ha
       assert.ok(bag.visible && Math.abs(extent() - size) < 1e-5, `${elapsed}: the handbag disappears or grows out of thin air`);
       const handlePoints = handles.flatMap(handle => points(handle));
       for (const side of elapsed < 1.05 ? [-1] : [-1, 1]) {
-        const palm = rig.root.getObjectByName(`oracle-palm-${side}`)!;
-        const gap = Math.min(...points(palm).map(point => Math.min(...handlePoints.map(handle => point.distanceTo(handle)))));
-        assert.ok(gap < .045, `${elapsed} hand ${side}: actual palm misses the handle by ${gap}`);
+        const hand = rig.parkHands![side < 0 ? 0 : 1].root;
+        const gap = Math.min(...points(hand).map(point => Math.min(...handlePoints.map(handle => point.distanceTo(handle)))));
+        assert.ok(gap < .045, `${elapsed} hand ${side}: actual hand misses the handle by ${gap}`);
       }
       if (elapsed === 2.4) {
         const bottom = bag.localToWorld(new THREE.Vector3(0, -.245, 0));
