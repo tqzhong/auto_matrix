@@ -1,7 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, SENTINEL_POWER, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
+
+test('the EMP briefing journal and live waypoint require the actual inspection position', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const module = async (name: string) => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles.find(f => f.path.endsWith(name + '.js'))!.contents).toString('base64')}`);
+  const { SandboxUI } = await module('SandboxUI'), { renderFilmJourney } = await module('FilmJourneyPanel');
+  const elements = new Map();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: {}, hidden: false, classList: { add() {}, remove() {}, toggle(_name: string, value: boolean) { this.hidden = value; }, hidden: false } });
+    return elements.get(id);
+  };
+  const previous = globalThis.document; t.after(() => { globalThis.document = previous; });
+  globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 });
+  const scene = FILM_SCENE_BY_ID.m1_sentinels;
+  const player = { id: 'neo', status: 'alive', isInMatrix: false, rotation: Math.PI, position: filmStepPosition(scene, scene.steps[0]) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: scene.id, actor: 'neo', step: 0, completed: [], reflections: {}, lastText: '主电源已关闭，EMP 已待命。',
+    sentinel: { phase: 'briefing', elapsed: 0, noise: 0, attempt: 0, empBriefed: false } } } } as SandboxState;
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" disabled>听取 EMP/);
+  ui.updateFilm(player, sandbox); assert.match(element('#film-sequence-hint').textContent, /EMP/);
+  player.position = filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z);
+  assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >听取 EMP/);
+  ui.updateFilm(player, sandbox);
+  assert.equal(element('#sandbox-interact').classList.hidden, false, 'the live action must appear after physically approaching');
+  assert.match(element('#sandbox-nearby').textContent, /EMP/);
+});
 
 test('the Oracle departure journal requires the hostess, privacy, bite and physical exit in order', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,

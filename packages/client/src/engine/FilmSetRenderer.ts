@@ -9,6 +9,7 @@ import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
+import { SENTINEL_POWER } from '@auto_matrix/shared';
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
 import { ReloadedCatchRenderer } from './ReloadedCatchRenderer.js';
 import { ReloadedFinaleRenderer } from './ReloadedFinaleRenderer.js';
@@ -709,7 +710,7 @@ export class FilmSetRenderer {
     if (journey && workdayLocked(journey)) this.marker.visible = false;
     if (journey && apartmentLocked(journey)) this.marker.visible = false;
     if (journey && clubLocked(journey)) this.marker.visible = false;
-    if (journey?.scene === 'm1_sentinels' && journey.sentinel && !['ready', 'verify', 'done'].includes(journey.sentinel.phase)) this.marker.visible = false;
+    if (journey?.scene === 'm1_sentinels' && journey.sentinel && !['ready', 'briefing', 'verify', 'done'].includes(journey.sentinel.phase)) this.marker.visible = false;
     if (journey && interludeLocked(journey)) this.marker.visible = false;
     if (journey && betrayalLocked(journey)) this.marker.visible = false;
     if (journey && (rescueLocked(journey) || journey.scene === 'm1_guns' && journey.rescue?.phase === 'selecting')) this.marker.visible = false;
@@ -737,6 +738,7 @@ export class FilmSetRenderer {
         : scene.id === 'm1_dejavu' && journey?.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready && player
           ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z, journey.ambushApproach.stairCat) : undefined;
       const position = ambushGoal ? { x: center.x + ambushGoal.x, y: center.y + ambushGoal.y, z: center.z + ambushGoal.z }
+        : scene.id === 'm1_sentinels' && journey?.sentinel?.phase === 'briefing' ? filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z)
         : arrivalGoal ? filmPosition(scene.set, arrivalGoal.x, arrivalGoal.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
         : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)
         : scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)

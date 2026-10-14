@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, SENTINEL_TIMING, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, SENTINEL_TIMING, SENTINEL_POWER, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -31,11 +31,17 @@ function setup() {
       players.step(.05, running, tick); if (running && i % 10 === 0) sandbox.tick(++tick);
     }
   };
+  const startScan = () => {
+    command('act'); frames(SENTINEL_TIMING.shutdown + .1);
+    if (sandbox.life.film.state!.sentinel?.phase === 'briefing') {
+      neo.position = filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z); command('act');
+    }
+  };
   const poses = () => ['neo', 'morpheus', 'trinity', 'tank', 'dozer'].map(id => {
     const actor = world.agents.get(id)!;
     return { position: { ...actor.position }, rotation: actor.rotation, gesture: structuredClone(actor.currentAction?.parameters.sentinel) };
   });
-  return { world, sandbox, players, neo, scene, command, frames, poses, state: () => sandbox.life.film.state!, tick: () => tick };
+  return { world, sandbox, players, neo, scene, command, frames, startScan, poses, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
 test('the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus', () => {
@@ -44,12 +50,74 @@ test('the first Sentinel encounter stays in Neo viewpoint instead of forcing con
   assert.deepEqual(scene.cast, ['morpheus', 'trinity', 'tank', 'dozer']);
 });
 
+test('a new shutdown waits for Neo to inspect the armed EMP before beginning the scan', () => {
+  const h = setup(); h.command('act'); h.frames(SENTINEL_TIMING.shutdown + .2);
+  assert.equal(h.state().sentinel?.phase, 'briefing'); h.frames(30);
+  assert.equal(h.state().sentinel?.phase, 'briefing', 'waiting must not stand in for learning the EMP risk');
+  assert.match(h.command('act'), /EMP 控制台/);
+  h.neo.position = filmPosition(h.scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z);
+  h.command('act'); assert.equal(h.state().sentinel?.phase, 'sweep'); assert.equal(h.state().sentinel?.empBriefed, true);
+  assert.equal(h.state().step, 0); assert.ok(!h.state().completed.includes('m1_sentinels'));
+});
+
+test('an already-started legacy shutdown continues its scan without a new briefing or progress reset', () => {
+  const h = setup();
+  h.state().sentinel = { phase: 'shutdown', elapsed: 2.7, noise: .2, attempt: 2 };
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.frames(SENTINEL_TIMING.shutdown - 2.7 + .1);
+  assert.equal(h.state().sentinel?.phase, 'sweep'); assert.equal(h.state().sentinel?.attempt, 2);
+  assert.ok((h.state().sentinel?.noise ?? 0) > 0); assert.equal(h.state().sentinel?.empBriefed, undefined);
+  assert.equal(h.state().step, 0); assert.deepEqual(h.state().completed, []);
+});
+
+test('EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action', () => {
+  const h = setup(); h.command('act'); h.frames(SENTINEL_TIMING.shutdown + .1);
+  const saved = structuredClone(h.state().sentinel), poses = h.poses();
+  h.frames(3, 0, false, false); assert.deepEqual(h.state().sentinel, saved); assert.deepEqual(h.poses(), poses);
+  h.players.release('player', h.tick()); h.frames(3); assert.deepEqual(h.state().sentinel, saved); assert.deepEqual(h.poses(), poses);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.possess('player', 'neo', h.tick());
+  assert.match(h.command('act'), /EMP 控制台/); assert.deepEqual(h.state().sentinel, saved);
+  h.neo.position = filmPosition(h.scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z);
+  h.world.agents.get('trinity')!.controller = 'player';
+  assert.match(h.command('act'), /另一位玩家/); assert.deepEqual(h.state().sentinel, saved);
+  delete h.world.agents.get('trinity')!.controller;
+  h.command('act'); assert.equal(h.state().sentinel?.phase, 'sweep'); assert.equal(h.state().sentinel?.empBriefed, true);
+});
+
+test('cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects', () => {
+  const h = setup(); h.command('act'); h.frames(1.4); h.players.release('player', h.tick());
+  const encounter = structuredClone(h.state().sentinel), poses = h.poses(), saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.neo.currentAction = null; // Startup clears actions belonging to the former player session.
+  h.world.simulationTick = h.tick(); h.sandbox.restore(saved);
+  assert.deepEqual(h.state().sentinel, encounter); assert.deepEqual(h.poses(), poses);
+  assert.ok(!h.neo.controller, 'reconstructing a pose must not claim ownership or restart time');
+});
+
+test('physical control collisions share the visible footprint, leave the inspection path open and release on departure', () => {
+  const h = setup();
+  for (const name of ['panel', 'emp'] as const) {
+    const prop = SENTINEL_POWER[name], object = h.sandbox.state.structures.find(s => s.id === `film:sentinel-controls:${name}`)!;
+    assert.ok(object); assert.equal(object.film?.width, prop.width); assert.equal(object.film?.depth, prop.depth);
+    assert.equal(object.position.x, filmPosition(h.scene.set, prop.x, prop.z).x);
+    assert.equal(object.position.z, filmPosition(h.scene.set, prop.x, prop.z).z);
+    assert.ok(playerBlocked(filmPosition(h.scene.set, prop.x, prop.z), false, 1.1, h.sandbox.state.structures));
+  }
+  const from = filmStepPosition(h.scene, h.scene.steps[0]), to = filmPosition(h.scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z);
+  for (let i = 0; i <= 100; i++) assert.equal(playerBlocked({ ...from, x: from.x + (to.x - from.x) * i / 100, z: from.z + (to.z - from.z) * i / 100 },
+    false, 1.1, h.sandbox.state.structures), false, `inspection path sample ${i}`);
+  h.startScan(); h.frames(SENTINEL_TIMING.sweep + SENTINEL_TIMING.clear + .1);
+  h.neo.position = filmStepPosition(h.scene, h.scene.steps[1]); h.command('act'); h.frames(SENTINEL_TIMING.confirming + .1);
+  assert.equal(h.state().sentinel?.phase, 'done'); h.command('next');
+  assert.equal(h.state().scene, 'm1_cypher_console');
+  assert.equal(h.sandbox.state.structures.filter(s => s.id.startsWith('film:sentinel-controls:')).length, 0);
+});
+
 test('shutdown waits for Neo, then staying still survives the complete Sentinel sweep', () => {
   const h = setup(); h.frames(20); assert.equal(h.state().sentinel?.phase, 'ready'); assert.equal(h.state().step, 0);
-  h.command('act'); assert.equal(h.state().sentinel?.phase, 'shutdown');
-  h.frames(SENTINEL_TIMING.shutdown + SENTINEL_TIMING.sweep + SENTINEL_TIMING.clear + .6);
+  h.startScan(); h.frames(SENTINEL_TIMING.sweep + SENTINEL_TIMING.clear + .6);
   assert.equal(h.state().sentinel?.phase, 'verify'); assert.equal(h.state().step, 1); assert.equal(h.state().sentinel?.noise, 0);
   const window = filmStepPosition(h.scene, h.scene.steps[1]);
+  h.neo.position = filmStepPosition(h.scene, h.scene.steps[0]);
   assert.ok(Math.hypot(h.neo.position.x - window.x, h.neo.position.z - window.z) > 4, JSON.stringify(h.neo.position));
   assert.match(h.command('act'), /先走到/); assert.equal(h.state().sentinel?.phase, 'verify');
   h.neo.position = window; h.command('act'); h.frames(SENTINEL_TIMING.confirming + .2);
@@ -57,8 +125,15 @@ test('shutdown waits for Neo, then staying still survives the complete Sentinel 
   assert.equal(h.state().completed.filter(id => id === 'm1_sentinels').length, 1);
 });
 
+test('the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance', () => {
+  const h = setup(); h.startScan(); const observed = { ...h.neo.position };
+  h.frames(SENTINEL_TIMING.sweep + .1); assert.equal(h.state().sentinel?.phase, 'clear');
+  assert.deepEqual(h.neo.position, observed); h.frames(SENTINEL_TIMING.clear + .1);
+  assert.equal(h.state().sentinel?.phase, 'verify'); assert.deepEqual(h.neo.position, observed);
+});
+
 test('running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint', () => {
-  const h = setup(); const checkpoint = { ...h.state().checkpoint }; h.command('act'); h.frames(SENTINEL_TIMING.shutdown + .1);
+  const h = setup(); const checkpoint = { ...h.state().checkpoint }; h.startScan();
   assert.equal(h.state().sentinel?.phase, 'sweep');
   h.frames(2.6, 1, true, true, true); assert.ok((h.state().sentinel?.noise ?? 0) >= 1);
   h.frames(SENTINEL_TIMING.detected + .3);
@@ -68,8 +143,15 @@ test('running or jumping during the scan makes noise, fails explicitly and retri
   assert.equal(h.state().sentinel?.noise, 0); assert.deepEqual(h.neo.position, checkpoint);
 });
 
+test('a stealth retry keeps Neo’s previous injury instead of healing him to full health', () => {
+  const h = setup(); h.neo.health = 63; h.startScan();
+  h.frames(2.6, 1, true, true, true); h.frames(SENTINEL_TIMING.detected + .3);
+  assert.equal(h.state().sentinel?.phase, 'failed'); h.command('act');
+  assert.equal(h.neo.health, 63, 'retrying this encounter must not erase an earlier injury');
+});
+
 test('the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry', () => {
-  const h = setup(); h.command('act'); h.frames(SENTINEL_TIMING.shutdown + 2.25, .4);
+  const h = setup(); h.startScan(); h.frames(2.25, .4);
   const encounter = structuredClone(h.state().sentinel); const before = h.poses();
   assert.equal(encounter?.phase, 'sweep'); assert.ok((encounter?.noise ?? 0) > 0);
   h.frames(3, 0, false, false); assert.deepEqual(h.state().sentinel, encounter); assert.deepEqual(h.poses(), before);

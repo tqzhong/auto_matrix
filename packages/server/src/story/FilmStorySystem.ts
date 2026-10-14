@@ -89,7 +89,7 @@ import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecip
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentComputerPose, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
-import { SENTINEL_CAST, SENTINEL_TIMING, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
+import { SENTINEL_CAST, SENTINEL_TIMING, SENTINEL_POWER, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
@@ -1375,6 +1375,18 @@ export class FilmStorySystem {
       phase: state.step >= this.scene!.steps.length ? 'collapsed' : state.step >= 1 ? 'sensing' : 'running',
       remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: 0,
     };
+  }
+  private sealSentinelControls(): void {
+    const prefix = 'film:sentinel-controls:', wanted: WorldStructure[] = [];
+    if (this.state?.scene === 'm1_sentinels' && !this.state.visiting) {
+      for (const [name, prop] of [['panel', SENTINEL_POWER.panel], ['emp', SENTINEL_POWER.emp]] as const) {
+        const position = filmPosition('film_service_tunnels', prop.x, prop.z); position.y--;
+        wanted.push({ id: prefix + name, kind: 'barricade', owner: 'matrix', position, matrix: false, health: 999,
+          film: { scene: 'm1_sentinels', width: prop.width, depth: prop.depth, height: prop.y + prop.height / 2 + .16 } });
+      }
+    }
+    this.sandbox().structures = this.sandbox().structures.filter(s => !s.id.startsWith(prefix) || wanted.some(w => w.id === s.id));
+    for (const structure of wanted) if (!this.sandbox().structures.some(s => s.id === structure.id)) this.sandbox().structures.push(structure);
   }
   private sealSignal(): void {
     const prefix = 'film:sentinel-signal:', wanted: WorldStructure[] = [];
@@ -4394,6 +4406,7 @@ export class FilmStorySystem {
   sentinelFrame(agent: AgentState, input: { movement: number; sprint: boolean; jump: boolean }, dt: number, tick: number): boolean {
     const state = this.state;
     if (!state || state.scene !== 'm1_sentinels' || state.visiting || !this.controls(agent)) return false;
+    this.sealSentinelControls();
     const encounter = state.sentinel ??= { phase: state.step >= 2 ? 'done' : state.step === 1 ? 'verify' : 'ready', elapsed: 0, noise: 0, attempt: 0 };
     const occupied = SENTINEL_CAST.find(id => this.world.agents.get(id)?.controller);
     const active = sentinelActive(state) && encounter.phase !== 'ready';
@@ -4401,7 +4414,7 @@ export class FilmStorySystem {
     if (!occupied || !active) {
       if (encounter.phase === 'shutdown') {
         encounter.elapsed = Math.min(SENTINEL_TIMING.shutdown, encounter.elapsed + delta);
-        if (encounter.elapsed >= SENTINEL_TIMING.shutdown) { encounter.phase = 'sweep'; encounter.elapsed = 0; agent.currentAction = null; }
+        if (encounter.elapsed >= SENTINEL_TIMING.shutdown) { encounter.phase = encounter.empBriefed === false ? 'briefing' : 'sweep'; encounter.elapsed = 0; agent.currentAction = null; }
       } else if (encounter.phase === 'sweep') {
         encounter.elapsed = Math.min(SENTINEL_TIMING.sweep, encounter.elapsed + delta);
         const danger = sentinelDanger(encounter.elapsed);
@@ -4434,7 +4447,9 @@ export class FilmStorySystem {
       const actor = this.world.agents.get(role);
       if (!actor || actor.controller && actor !== agent || role === 'neo' && !sentinelLocked(state)) continue;
       const before = { ...actor.position }; const pose = sentinelRoot(encounter, role);
-      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      if (role !== 'neo' || encounter.phase !== 'clear') {
+        this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      }
       actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: 0, z: (actor.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, sentinel: { ...encounter, role } }, startedAt: tick, duration: 1, progress: 0 };
     }
@@ -4449,15 +4464,21 @@ export class FilmStorySystem {
     if (target !== 'act' && target !== 'retry') return state.lastText;
     if (encounter.phase === 'failed') {
       encounter.phase = 'shutdown'; encounter.elapsed = 0; encounter.noise = 0; encounter.attempt++;
-      delete encounter.caughtAt; agent.status = 'alive'; agent.health = agent.maxHealth;
+      delete encounter.caughtAt; agent.status = 'alive'; agent.health = encounter.startHealth ?? (agent.health > 0 ? agent.health : agent.maxHealth);
       agent.position = { ...state.checkpoint }; agent.velocity = { x: 0, y: 0, z: 0 };
       this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); return state.lastText;
     }
-    if (!this.near(agent, this.step!)) return '先走到前舱当前目标旁，再按 G。';
+    if (encounter.phase === 'briefing') {
+      const at = SENTINEL_POWER.inspect;
+      if (distance(agent.position, filmPosition(this.scene!.set, at.x, at.z)) > at.radius) return '先走近 Morpheus 身旁的 EMP 控制台，再按 G 听取说明。';
+    } else if (!this.near(agent, this.step!)) return '先走到前舱当前目标旁，再按 G。';
     if (SENTINEL_CAST.some(id => this.world.agents.get(id)?.controller)) return '一名船员正由另一位玩家控制，静默停机暂时无法开始。';
     if (encounter.phase === 'ready') {
       encounter.phase = 'shutdown'; encounter.elapsed = 0; encounter.noise = 0;
+      encounter.empBriefed = false; encounter.startHealth = agent.health;
       state.checkpoint = { ...agent.position };
+    } else if (encounter.phase === 'briefing') {
+      encounter.empBriefed = true; encounter.phase = 'sweep'; encounter.elapsed = 0;
     } else if (encounter.phase === 'verify') { encounter.phase = 'confirming'; encounter.elapsed = 0; }
     this.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); return state.lastText;
   }
@@ -5395,7 +5416,7 @@ export class FilmStorySystem {
     this.diggers.stage(this.world.simulationTick);
     this.dockReload.stage(this.world.simulationTick);
     this.sealResetFacade();
-    this.nebEscape.seal(); this.sealSignal(); this.sealMedical(); this.sealMobil();
+    this.nebEscape.seal(); this.sealSentinelControls(); this.sealSignal(); this.sealMedical(); this.sealMobil();
     this.ensureHelDanceDoor(this.world.simulationTick);
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
     if (this.state.scene === 'm3_hel_entry' && !this.state.visiting && this.state.step >= 4) {
@@ -5427,6 +5448,7 @@ export class FilmStorySystem {
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
     }
     const pickupActor = this.world.agents.get(this.state.actor);
+    if (pickupActor) this.sentinelFrame(pickupActor, { movement: 0, sprint: false, jump: false }, 0, this.world.simulationTick);
     this.oracleRequest.restoreSeat(this.world.simulationTick);
     if (pickupActor) this.oracleRequest.frame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.oracleLast.frame(pickupActor, 0, this.world.simulationTick);
@@ -7285,7 +7307,7 @@ export class FilmStorySystem {
   private stageCast(): void {
     this.sealResetFacade();
     const scene = this.scene!;
-    this.nebEscape.seal(); this.sealSignal(); this.sealMedical(); this.sealMobil();
+    this.nebEscape.seal(); this.sealSentinelControls(); this.sealSignal(); this.sealMedical(); this.sealMobil();
     if (scene.id === 'm2_vigilant') {
       const link = this.world.agents.get('link');
       if (link && link.status === 'alive' && !link.controller) {

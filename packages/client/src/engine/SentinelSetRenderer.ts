@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { sentinelMachinePose, SENTINEL_TIMING, type FilmJourney } from '@auto_matrix/shared';
+import { sentinelMachinePose, sentinelPowerPose, SENTINEL_POWER, type FilmJourney } from '@auto_matrix/shared';
 
 /** The Nebuchadnezzar cockpit and the service pipe outside it share one space.
  * The player approaches through the central deck while the Sentinel remains
@@ -19,6 +19,8 @@ export class SentinelSetRenderer {
   private powerPanels: THREE.MeshBasicMaterial[] = [];
   private frost!: THREE.MeshPhysicalMaterial;
   private noiseBars: THREE.Mesh[] = [];
+  private switches: THREE.Group[] = [];
+  private armedLight!: THREE.MeshBasicMaterial;
 
   constructor(parent: THREE.Group) {
     parent.add(this.root);
@@ -30,7 +32,7 @@ export class SentinelSetRenderer {
     const red = this.material(new THREE.MeshStandardMaterial({ color: 0x702323, emissive: 0x3b0707, emissiveIntensity: 1.2, metalness: .45, roughness: .28 }));
     this.surface(hull, 'metal_plate', 5); this.surface(steel, 'metal_plate', 4);
 
-    this.box(this.root, wet, 0, -.28, 0, 55, .56, 145, 'sentinel-tunnel-floor');
+    this.box(this.root, wet, 0, -.32, 0, 55, .56, 145, 'sentinel-tunnel-floor');
     for (let z = -66; z <= 66; z += 4.8) this.box(this.root, steel, 0, .035, z, 18.5, .04, .09, 'sentinel-floor-grate');
     for (let z = -68; z <= 68; z += 8) {
       const rib = this.tube(this.root, [new THREE.Vector3(-27, .2, z), new THREE.Vector3(-23, 14, z), new THREE.Vector3(-13, 28, z), new THREE.Vector3(0, 32, z), new THREE.Vector3(13, 28, z), new THREE.Vector3(23, 14, z), new THREE.Vector3(27, .2, z)], .34, worn);
@@ -44,7 +46,7 @@ export class SentinelSetRenderer {
       pool.rotation.x = -Math.PI / 2; pool.position.set(z % 4 ? -16 : 15, .03, z);
     }
 
-    this.box(this.root, hull, 0, .45, -18, 29, .9, 56, 'sentinel-cockpit-deck');
+    this.box(this.root, hull, 0, -.45, -18, 29, .9, 56, 'sentinel-cockpit-deck');
     for (const z of [-12, -20, -28, -36, -44]) {
       this.tube(this.root, [new THREE.Vector3(-14.5, .2, z), new THREE.Vector3(-13, 9, z), new THREE.Vector3(-8, 13.5, z), new THREE.Vector3(8, 13.5, z), new THREE.Vector3(13, 9, z), new THREE.Vector3(14.5, .2, z)], .28, steel);
       this.box(this.root, worn, -13.8, 5.3, z - 3.8, .5, 10.2, 7.2);
@@ -79,13 +81,28 @@ export class SentinelSetRenderer {
     }
     this.exteriorMatte(this.root);
 
-    const emp = new THREE.Group(); emp.name = 'sentinel-emp-key'; emp.position.set(-8.3, 2.9, -40.5); emp.rotation.y = .2; this.root.add(emp);
-    this.box(emp, rubber, 0, 0, 0, 2.7, 1.25, 1.7); this.cylinder(emp, red, 0, .72, 0, .32, .65);
+    const station = SENTINEL_POWER.emp;
+    const emp = new THREE.Group(); emp.name = 'sentinel-emp-key'; emp.position.set(station.x, station.y, station.z); this.root.add(emp);
+    this.box(emp, rubber, 0, 0, 0, station.width, station.height, station.depth);
+    this.box(emp, hull, 0, -1.43, 0, .9, 2.52, .58, 'sentinel-emp-pedestal');
+    this.box(emp, steel, 0, .22, 0, 1.38, .06, .78);
+    this.cylinder(emp, red, 0, .25, 0, .16, .12);
     const cover = this.material(new THREE.MeshPhysicalMaterial({ color: 0x8a352f, transparent: true, opacity: .48, roughness: .15, metalness: .25, depthWrite: false }));
-    const lid = this.box(emp, cover, 0, .78, .05, 1.35, .12, 1.18); lid.rotation.x = -.42;
-    this.box(emp, this.material(new THREE.MeshBasicMaterial({ color: 0xff614c, toneMapped: false })), 0, .46, .05, .72, .12, .72);
+    this.box(emp, cover, 0, .28, 0, .72, .04, .6, 'sentinel-emp-guard');
+    this.armedLight = this.material(new THREE.MeshBasicMaterial({ color: 0x2b1916, toneMapped: false }));
+    this.box(emp, this.armedLight, .52, .25, .29, .19, .035, .12, 'sentinel-emp-ready-light');
+    const panel = SENTINEL_POWER.panel;
+    this.box(this.root, hull, panel.x, panel.y, panel.z, panel.width, panel.height, panel.depth, 'sentinel-power-panel');
+    this.box(this.root, hull, panel.x, 1.1, panel.z, panel.width, 2.2, panel.depth, 'sentinel-power-panel-base');
+    for (const [i, key] of ['main', 'arm'].entries()) {
+      const at = SENTINEL_POWER[key as 'main' | 'arm'];
+      this.box(this.root, rubber, at.x - .05, at.y, at.z, .22, .28, .34);
+      const lever = new THREE.Group(); lever.name = `sentinel-${key}-power-lever`; lever.position.set(at.x, at.y, at.z); this.root.add(lever); this.switches.push(lever);
+      this.cylinder(lever, steel, 0, .12, 0, .025, .24);
+      const tip = this.mesh(lever, new THREE.SphereGeometry(.055, 12, 8), i ? red : rubber, `sentinel-${key}-power-contact`); tip.position.y = .24;
+    }
     for (let i = 0; i < 10; i++) {
-      const bar = this.box(emp, this.material(new THREE.MeshBasicMaterial({ color: i > 6 ? 0xff4e3d : 0xb7dba8, toneMapped: false })), -1.06 + i * .235, -.3, -.87, .15, .22, .04, `sentinel-noise-bar-${i}`);
+      const bar = this.box(emp, this.material(new THREE.MeshBasicMaterial({ color: i > 6 ? 0xff4e3d : 0xb7dba8, toneMapped: false })), -.62 + i * .138, .05, -.46, .08, .13, .025, `sentinel-noise-bar-${i}`);
       this.noiseBars.push(bar);
     }
 
@@ -167,9 +184,10 @@ export class SentinelSetRenderer {
       tentacle.rotation.x = Math.sin(elapsed * 1.7 + index * 1.8) * .16;
       tentacle.rotation.z = Math.cos(elapsed * 1.23 + index) * .13;
     });
-    const shutdown = encounter?.phase === 'shutdown' ? encounter.elapsed / SENTINEL_TIMING.shutdown : encounter && encounter.phase !== 'ready' ? 1 : 0;
-    const restored = encounter?.phase === 'done' ? 1 : 0;
-    const power = Math.max(restored * .72, 1 - shutdown);
+    const posePower = sentinelPowerPose(encounter), power = posePower.power;
+    this.switches[0].rotation.z = -posePower.main * Math.PI / 2;
+    this.switches[1].rotation.z = -posePower.arm * Math.PI / 2;
+    this.armedLight.color.setHex(posePower.arm > .99 ? 0xff714d : 0x2b1916);
     this.powerLights.forEach((light, index) => { light.intensity = 12 + power * (150 + index * 24); light.color.setHex(power > .4 ? 0xa5d5bd : 0x7b1815); });
     this.powerPanels.forEach((panel, index) => panel.color.setHex(power > .5 ? index % 2 ? 0x86b7a1 : 0x719d8c : index % 3 ? 0x101817 : 0x5d1715));
     const close = encounter && ['sweep', 'detected', 'failed', 'clear'].includes(encounter.phase);
