@@ -1,0 +1,86 @@
+TAP version 13
+# Subtest: neo: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+not ok 1 - neo: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 304.977625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:3947'
+  failureType: 'testCodeFailure'
+  error: 'wrist albedo drops to 0.0018797698604809299 of the neighboring hand; an unused bake pixel creates an artificial black fold'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:100:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"id":"neo","samples":109836,"minimumRelativeReflectance":0.0018797698604809299}
+# Subtest: trinity: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+not ok 2 - trinity: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 292.573583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:3947'
+  failureType: 'testCodeFailure'
+  error: 'wrist albedo drops to 0.0015918852474128347 of the neighboring hand; an unused bake pixel creates an artificial black fold'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:100:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"id":"trinity","samples":121500,"minimumRelativeReflectance":0.0015918852474128347}
+# Subtest: smith: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+not ok 3 - smith: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 287.670958
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:3947'
+  failureType: 'testCodeFailure'
+  error: 'wrist albedo drops to 0.0018943353359958334 of the neighboring hand; an unused bake pixel creates an artificial black fold'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:100:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"id":"smith","samples":113238,"minimumRelativeReflectance":0.0018943353359958334}
+# Subtest: morpheus: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+not ok 4 - morpheus: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 270.287167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:1:3947'
+  failureType: 'testCodeFailure'
+  error: 'wrist albedo drops to 0.0020841427808846263 of the neighboring hand; an unused bake pixel creates an artificial black fold'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/wrist-skin.test.mts:100:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"id":"morpheus","samples":104166,"minimumRelativeReflectance":0.0020841427808846263}
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1402.099209

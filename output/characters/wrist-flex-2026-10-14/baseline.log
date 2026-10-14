@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: late wrist contact corrections update the forearm in the same frame
+ok 1 - late wrist contact corrections update the forearm in the same frame
+  ---
+  duration_ms: 71.91775
+  type: 'test'
+  ...
+# Subtest: shared hero assets retain neutral geometry, hand targets and independent restored forearms
+ok 2 - shared hero assets retain neutral geometry, hand targets and independent restored forearms
+  ---
+  duration_ms: 2452.295334
+  type: 'test'
+  ...
+# Subtest: neo: turning the palm preserves the actual forearm and cuff cross-section
+ok 3 - neo: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 350.395083
+  type: 'test'
+  ...
+# {"id":"neo","sampleCount":8013,"minimumRadius":0.8930728764065317}
+# Subtest: trinity: turning the palm preserves the actual forearm and cuff cross-section
+ok 4 - trinity: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 97.342167
+  type: 'test'
+  ...
+# {"id":"trinity","sampleCount":5386,"minimumRadius":0.8930729694064649}
+# Subtest: smith: turning the palm preserves the actual forearm and cuff cross-section
+ok 5 - smith: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 30.138292
+  type: 'test'
+  ...
+# {"id":"smith","sampleCount":2455,"minimumRadius":0.893072990680801}
+# Subtest: morpheus: turning the palm preserves the actual forearm and cuff cross-section
+ok 6 - morpheus: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 283.943959
+  type: 'test'
+  ...
+# {"id":"morpheus","sampleCount":4948,"minimumRadius":0.8930728137982399}
+# Subtest: neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 7 - neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 817.309625
+  type: 'test'
+  ...
+# Subtest: trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 8 - trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 640.721291
+  type: 'test'
+  ...
+# Subtest: smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 9 - smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 588.863209
+  type: 'test'
+  ...
+# Subtest: morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 10 - morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 794.902
+  type: 'test'
+  ...
+# Subtest: wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+ok 11 - wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+  ---
+  duration_ms: 574.222292
+  type: 'test'
+  ...
+# Subtest: Trinity’s restored forearm stays inside the fitted leather sleeve
+ok 12 - Trinity’s restored forearm stays inside the fitted leather sleeve
+  ---
+  duration_ms: 4655.876833
+  type: 'test'
+  ...
+# {"checked":820,"palmRotations":4,"arms":2}
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8348.37275

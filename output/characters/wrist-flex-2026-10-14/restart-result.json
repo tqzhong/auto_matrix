@@ -1,0 +1,113 @@
+{
+  "groups": [
+    {
+      "key": "agents",
+      "unchanged": true
+    },
+    {
+      "key": "chunks",
+      "unchanged": true
+    },
+    {
+      "key": "locations",
+      "unchanged": true
+    },
+    {
+      "key": "phase",
+      "unchanged": true
+    },
+    {
+      "key": "timeOfDay",
+      "unchanged": true
+    },
+    {
+      "key": "events",
+      "unchanged": true
+    },
+    {
+      "key": "simulation",
+      "unchanged": true
+    },
+    {
+      "key": "sandbox",
+      "unchanged": true
+    }
+  ],
+  "memories": [
+    {
+      "name": "ak.json",
+      "unchanged": true,
+      "sha256": "d053eb4a77c6e1567b3b4f59eea08f5931b7db6f9e7129ce3e5426681efe34ca"
+    },
+    {
+      "name": "binary.json",
+      "unchanged": true,
+      "sha256": "0f14d59306ad94cf15f9693d7abeb533d2cbbe03d782a70c1b91e3540aff54ae"
+    },
+    {
+      "name": "cas.json",
+      "unchanged": true,
+      "sha256": "50d5e728b182c23309de1c984476579076dcaaa8b95058f3a947dfc0b9970bf6"
+    },
+    {
+      "name": "citizen_10.json",
+      "unchanged": true,
+      "sha256": "760b4a35d4021675058dcd8eba17929c3b1ac96beebc50d4f1d1ff82ca396a4d"
+    },
+    {
+      "name": "citizen_3.json",
+      "unchanged": true,
+      "sha256": "ede486e14a58e90f9de80c3befc3b2bdf5892e2f4596c160ea0c8fedeca7c714"
+    },
+    {
+      "name": "citizen_5.json",
+      "unchanged": true,
+      "sha256": "cf0c85084a1373d2ede05fb3f047d75bd6caf1239d9fa8de3e2602ec33fcc08e"
+    },
+    {
+      "name": "citizen_6.json",
+      "unchanged": true,
+      "sha256": "380693aaa507b438787856ccc6aa0db2d9b5a637e2c3688a27ff397bb0adc51c"
+    },
+    {
+      "name": "citizen_7.json",
+      "unchanged": true,
+      "sha256": "e7bb8a9004eda54cc517289dcbf52745127195399e8fbf08931ebf2f60037088"
+    },
+    {
+      "name": "citizen_8.json",
+      "unchanged": true,
+      "sha256": "4d1fdd389a3d4b6741f56c2d05bf3a32942eacb3ed636dc4f1c8fb22c2de7406"
+    },
+    {
+      "name": "citizen_9.json",
+      "unchanged": true,
+      "sha256": "fc505ffefa34b29db21f9ef90dfbf5193c47c713950e618cf020685f994d96d5"
+    },
+    {
+      "name": "dillard.json",
+      "unchanged": true,
+      "sha256": "b0ac4cf1537502a2e6938f0109ea754d1c13b1c9edd32e728bd38ceb19f4827e"
+    },
+    {
+      "name": "mauser.json",
+      "unchanged": true,
+      "sha256": "e990340f8662fab249b20790b0706521273cb525d46f0fa54a86fbf0440c71f5"
+    },
+    {
+      "name": "sparks.json",
+      "unchanged": true,
+      "sha256": "0c6be6066e599181c60a12b293bc07c0b0a58068c95da7ff47d0310f4de574ef"
+    },
+    {
+      "name": "vector.json",
+      "unchanged": true,
+      "sha256": "fdb89b418394cc97ece2c2c9fb79744b1f63dbbaf03b034a22a00f7c6c3d6ddd"
+    },
+    {
+      "name": "west.json",
+      "unchanged": true,
+      "sha256": "eed6b5b16423c761736b88ca10045227bcc3cc7efbede0ad9634a94009d24012"
+    }
+  ]
+}

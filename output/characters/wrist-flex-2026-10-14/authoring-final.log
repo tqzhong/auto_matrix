@@ -1,0 +1,4 @@
+{"role": "neo", "vertices": 1706, "triangles": 2992, "shared": 98, "atlas": [723, 210], "addedBytes": 135372, "textureBytes": 105662}
+{"role": "trinity", "vertices": 1804, "triangles": 3184, "shared": 98, "atlas": [752, 227], "addedBytes": 352588, "textureBytes": 142972}
+{"role": "smith", "vertices": 1722, "triangles": 3024, "shared": 98, "atlas": [723, 219], "addedBytes": 136512, "textureBytes": 105849}
+{"role": "morpheus", "vertices": 1700, "triangles": 2980, "shared": 98, "atlas": [723, 210], "addedBytes": 134376, "textureBytes": 102573}

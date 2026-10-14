@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { inflateSync } from 'node:zlib';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -32,7 +33,73 @@ function boundary(mesh: THREE.SkinnedMesh) {
   return [...new Set([...edges.values()].filter(edge => edge.count === 1).flatMap(edge => [edge.a, edge.b]))];
 }
 
+async function skinLuminance(name: string) {
+  const png = await readFile(new URL(`../packages/client/public/assets/characters/${name}`, import.meta.url));
+  assert.equal(png.subarray(1, 4).toString(), 'PNG');
+  const width = png.readUInt32BE(16), height = png.readUInt32BE(20), channels = png[25] === 2 ? 3 : 4;
+  assert.equal(png[24], 8); assert.ok(png[25] === 2 || png[25] === 6); assert.equal(png[28], 0);
+  const chunks: Buffer[] = [];
+  for (let offset = 8; offset < png.length;) {
+    const length = png.readUInt32BE(offset);
+    if (png.subarray(offset + 4, offset + 8).toString() === 'IDAT') chunks.push(png.subarray(offset + 8, offset + 8 + length));
+    offset += length + 12;
+  }
+  const encoded = inflateSync(Buffer.concat(chunks)), stride = width * channels, pixels = Buffer.alloc(stride * height);
+  assert.equal(encoded.length, (stride + 1) * height);
+  for (let y = 0; y < height; y++) for (let x = 0; x < stride; x++) {
+    const filter = encoded[y * (stride + 1)]; assert.ok(filter <= 4);
+    const index = y * stride + x, left = x >= channels ? pixels[index - channels] : 0;
+    const up = y ? pixels[index - stride] : 0, corner = y && x >= channels ? pixels[index - stride - channels] : 0;
+    const p = left + up - corner, a = Math.abs(p - left), b = Math.abs(p - up), c = Math.abs(p - corner);
+    const predictor = filter === 1 ? left : filter === 2 ? up : filter === 3 ? Math.floor((left + up) / 2)
+      : filter === 4 ? a <= b && a <= c ? left : b <= c ? up : corner : 0;
+    pixels[index] = encoded[y * (stride + 1) + 1 + x] + predictor;
+  }
+  const pixel = (x: number, y: number) => {
+    const offset = (Math.max(0, Math.min(height - 1, y)) * width + Math.max(0, Math.min(width - 1, x))) * channels;
+    return [.2126, .7152, .0722].reduce((sum, weight, i) => {
+      const value = pixels[offset + i] / 255;
+      return sum + weight * (value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+    }, 0);
+  };
+  // glTF has a top-left origin; decode sRGB before linear texture filtering.
+  return (u: number, v: number) => {
+    const x = u * width - .5, y = v * height - .5, X = Math.floor(x), Y = Math.floor(y), tx = x - X, ty = y - Y;
+    return pixel(X, Y) * (1 - tx) * (1 - ty) + pixel(X + 1, Y) * tx * (1 - ty)
+      + pixel(X, Y + 1) * (1 - tx) * ty + pixel(X + 1, Y + 1) * tx * ty;
+  };
+}
+
 for (const id of ['neo', 'trinity', 'smith', 'morpheus'] as const) {
+  test(`${id}: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border`, async t => {
+    const asset = await loadGeometry(id), hands = asset.scene.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    const wrist = asset.scene.getObjectByName('Anatomical_wrist_skin') as THREE.SkinnedMesh;
+    t.after(() => asset.scene.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); }));
+    const ring = boundary(hands).filter(i => hands.geometry.attributes.position.getY(i) < 2.8);
+    const positions = wrist.geometry.attributes.position, uv = wrist.geometry.attributes.uv, handUv = hands.geometry.attributes.uv;
+    const points = ring.map(i => new THREE.Vector3().fromBufferAttribute(hands.geometry.attributes.position, i));
+    const handColor = await skinLuminance(`${id}-albedo.png`), color = await skinLuminance(`${id}-wrist-skin.png`);
+    const tones = ring.map(i => handColor(handUv.getX(i), handUv.getY(i))).sort((a, b) => a - b), reference = tones[Math.floor(tones.length / 2)];
+    const near = Array.from({ length: positions.count }, (_, i) => {
+      const point = new THREE.Vector3().fromBufferAttribute(positions, i);
+      return points.some(other => point.distanceToSquared(other) < .085 ** 2);
+    });
+    const indices = wrist.geometry.index!; let minimum = Infinity, samples = 0;
+    for (let i = 0; i < indices.count; i += 3) {
+      const tri = [indices.getX(i), indices.getX(i + 1), indices.getX(i + 2)];
+      if (!tri.some(vertex => near[vertex])) continue;
+      for (let a = 0; a <= 8; a++) for (let b = 0; b <= 8; b++) {
+        const weights = [a / 8, (1 - a / 8) * b / 8, (1 - a / 8) * (1 - b / 8)];
+        const u = tri.reduce((sum, vertex, j) => sum + uv.getX(vertex) * weights[j], 0);
+        const v = tri.reduce((sum, vertex, j) => sum + uv.getY(vertex) * weights[j], 0);
+        minimum = Math.min(minimum, color(u, v) / reference); samples++;
+      }
+    }
+    assert.ok(samples > 90000, 'cover triangle interiors, both wrists and UV seams, not only matching boundary vertices');
+    t.diagnostic(JSON.stringify({ id, samples, minimumRelativeReflectance: minimum }));
+    assert.ok(minimum > .5, `wrist albedo drops to ${minimum} of the neighboring hand; an unused bake pixel creates an artificial black fold`);
+  });
+
   test(`${id}: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion`, async t => {
     const models = new HeroModels(new THREE.Texture(), new THREE.Texture()); t.after(() => models.dispose());
     (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;

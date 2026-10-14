@@ -1,0 +1,74 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "neo.glb",
+      "status": 200,
+      "bytes": 13535892,
+      "sha256": "7e4b16dc779cb01cfee59692efbbffe07f3404b2c6233e4232d511d78a7c8fd7"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "neo-wrist-skin.png",
+      "status": 200,
+      "bytes": 105662,
+      "sha256": "96874b78590ee572886c1230f18a7cd715f37c63a0c449438df5f368673b9a54"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "trinity.glb",
+      "status": 200,
+      "bytes": 5498044,
+      "sha256": "3ac4027f17960e9905e1add092b717e14a5dfef5a252de1aeb8f842196a04573"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "trinity-wrist-skin.png",
+      "status": 200,
+      "bytes": 142972,
+      "sha256": "9cadaeedaac898556a716cb313f021cc43c0f10ede18c4a1cdae87b8c7360fd0"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "smith.glb",
+      "status": 200,
+      "bytes": 4164432,
+      "sha256": "be4aaf7da52dadd2525be819dbfb8a3a835119dd50ab38b22389c32f458a2bb9"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "smith-wrist-skin.png",
+      "status": 200,
+      "bytes": 105849,
+      "sha256": "dc9f5d4f60bf704da89d33128c7280222b6e11b52f9ba123b36f399c6d16a920"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "morpheus.glb",
+      "status": 200,
+      "bytes": 7957224,
+      "sha256": "5386ddedca4769fdf60b7afe99a2478993c98dacee1a0c3fd9e66910368736d3"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "morpheus-wrist-skin.png",
+      "status": 200,
+      "bytes": 102573,
+      "sha256": "684416356f3e55dbcfa110ba9718d52772a6c06e86b7fb5f8aca236b093ec58b"
+    }
+  }
+]

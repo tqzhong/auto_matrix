@@ -1,0 +1,15 @@
+{
+  "checked": 217,
+  "unchanged": 208,
+  "intentionalChanges": [
+    "packages/client/public/assets/characters/morpheus.glb",
+    "packages/client/public/assets/characters/README.md",
+    "packages/client/public/assets/characters/smith.glb",
+    "packages/client/public/assets/characters/trinity.glb",
+    "packages/client/public/assets/characters/neo.glb",
+    "packages/client/public/assets/characters/neo-wrist-skin.png",
+    "packages/client/public/assets/characters/trinity-wrist-skin.png",
+    "packages/client/public/assets/characters/smith-wrist-skin.png",
+    "packages/client/public/assets/characters/morpheus-wrist-skin.png"
+  ]
+}

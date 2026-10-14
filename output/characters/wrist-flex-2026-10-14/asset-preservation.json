@@ -1,0 +1,38 @@
+[
+  {
+    "role": "neo",
+    "entireBinaryUnchanged": true,
+    "entireDocumentExceptVersionUnchanged": true,
+    "binarySha256": "bcf21558900f0790bc64face20245c53ec16177118d1f06134d30cf999139cfa",
+    "textureBeforeBytes": 111118,
+    "textureAfterBytes": 105662,
+    "textureSha256": "96874b78590ee572886c1230f18a7cd715f37c63a0c449438df5f368673b9a54"
+  },
+  {
+    "role": "trinity",
+    "entireBinaryUnchanged": true,
+    "entireDocumentExceptVersionUnchanged": true,
+    "binarySha256": "783ac97ffbd0df7c361ec70700777ca8099867f5ab36253f4c3dcb767eb39d2f",
+    "textureBeforeBytes": 148546,
+    "textureAfterBytes": 142972,
+    "textureSha256": "9cadaeedaac898556a716cb313f021cc43c0f10ede18c4a1cdae87b8c7360fd0"
+  },
+  {
+    "role": "smith",
+    "entireBinaryUnchanged": true,
+    "entireDocumentExceptVersionUnchanged": true,
+    "binarySha256": "59a7f55ed2dc5580b6afd86097755b4aaea201b7bb7accdfd91890667d9e7c7d",
+    "textureBeforeBytes": 111431,
+    "textureAfterBytes": 105849,
+    "textureSha256": "dc9f5d4f60bf704da89d33128c7280222b6e11b52f9ba123b36f399c6d16a920"
+  },
+  {
+    "role": "morpheus",
+    "entireBinaryUnchanged": true,
+    "entireDocumentExceptVersionUnchanged": true,
+    "binarySha256": "b3ef102b7b3f69b8a42214afca354a6033be82ce3c2a03c8c1577ac01a1b6174",
+    "textureBeforeBytes": 106771,
+    "textureAfterBytes": 102573,
+    "textureSha256": "684416356f3e55dbcfa110ba9718d52772a6c06e86b7fb5f8aca236b093ec58b"
+  }
+]

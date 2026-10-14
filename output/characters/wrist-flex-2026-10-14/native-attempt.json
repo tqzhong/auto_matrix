@@ -1,0 +1,14 @@
+{
+  "browser": "Codex In-app Browser",
+  "browserId": "2",
+  "tabId": "27",
+  "url": "http://127.0.0.1:5391/",
+  "result": "Page.navigate timed out after 20.216 seconds",
+  "nativeScreenshot": false,
+  "nativeAcceptance": false,
+  "laterTabInventory": {
+    "tabId": "27",
+    "title": "无法访问此站点",
+    "urlKind": "browser-generated network-error data document"
+  }
+}

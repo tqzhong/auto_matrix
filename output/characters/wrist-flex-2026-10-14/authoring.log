@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+  File "/Users/tianqizhong/ai_project/auto_matrix/scripts/build-wrist-skin.py", line 196, in build
+    assert np.isfinite(distance).all(), 'Every wrist UV island must meet its actual hand edge.'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Every wrist UV island must meet its actual hand edge.
