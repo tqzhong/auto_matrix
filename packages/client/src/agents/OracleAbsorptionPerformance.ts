@@ -66,18 +66,66 @@ export function poseOracleAbsorption(rig: CharacterRig, gesture?: OracleAbsorpti
 /** Contact is solved after both delivered bodies have been posed. */
 export function contactOracleAbsorption(oracle: CharacterRig, smith: CharacterRig, gesture: OracleAbsorptionGesture): void {
   if (!smith.hero || !['contact', 'coating', 'laughing'].includes(gesture.phase)) return;
+  const weight = gesture.phase === 'contact' ? absorptionSmooth(gesture.elapsed, 0, 1.6)
+    : gesture.phase === 'coating' ? 1 - absorptionSmooth(gesture.coating, .7, 1) : 0;
+  if (!weight) return;
   oracle.root.updateWorldMatrix(true, true); smith.root.updateWorldMatrix(true, true);
-  const blouse = oracle.root.getObjectByName('oracle-daily-blouse') as THREE.Mesh;
+  const blouse = oracle.root.getObjectByName('oracle-daily-blouse') as THREE.Mesh<THREE.LatheGeometry>;
   const center = new THREE.Box3().setFromObject(blouse).getCenter(new THREE.Vector3());
   const chestFront = new THREE.Raycaster(center.clone().add(new THREE.Vector3(0, 0, 2)), new THREE.Vector3(0, 0, -1)).intersectObject(blouse, true)[0]?.point;
   if (!chestFront) return;
   chestFront.z += .055;
   const hero = smith.hero, upper = hero.bones.get('shoulder_R')!, lower = hero.bones.get('elbow_R')!, wrist = hero.bones.get('wrist_R')!;
-  const weight = gesture.phase === 'contact' ? absorptionSmooth(gesture.elapsed, 0, 1.6)
-    : gesture.phase === 'coating' ? 1 - absorptionSmooth(gesture.coating, .7, 1) : 0;
-  const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI), palm = new THREE.Vector3(0, -.25, .085);
+  const shoulder = upper.quaternion.clone(), elbow = lower.quaternion.clone();
+  // Lift along the forearm before pronating the palm. One quaternion blend
+  // straight to the final palm direction folds the wrist during the approach.
+  const facing = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2)
+    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
+  const rotation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(facing, weight)
+    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2 * absorptionSmooth(weight, .4, 1)));
+  const palm = new THREE.Vector3(0, -.25, .085);
   const point = wrist.localToWorld(palm.clone()).lerp(chestFront, weight);
+  // Reach around the outside of the torso before making contact, and follow
+  // the same saved arc back out instead of sweeping through the blouse.
+  point.z += .38 * Math.sin(Math.PI * weight);
   reach(upper, lower, wrist.position, point.sub(palm.applyQuaternion(rotation)), new THREE.Vector3(0, -.5, -.3));
+  upper.quaternion.copy(shoulder.slerp(upper.quaternion, weight)); lower.quaternion.copy(elbow.slerp(lower.quaternion, weight));
+  upper.updateWorldMatrix(false, true);
   wrist.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
   wrist.updateWorldMatrix(false, true);
+  let surface = wrist.userData.oracleContactSkin as THREE.Vector3[] | undefined;
+  if (!surface) {
+    const skin = hero.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    skin.updateMatrixWorld(true); skin.skeleton.update();
+    const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+    surface = [];
+    for (let i = 0; i < position.count; i++) {
+      let amount = 0;
+      for (let part = 0; part < 4; part++) if (/^(wrist_R|finger[1-5]-[1-3]_R)$/.test(skin.skeleton.bones[skinIndex.getComponent(i, part)].name)) amount += skinWeight.getComponent(i, part);
+      if (amount >= .65) surface.push(wrist.worldToLocal(skin.localToWorld(skin.getVertexPosition(i, new THREE.Vector3()))));
+    }
+    // The authored finger pose is constant during this reach. Cache its real
+    // skin in wrist space, not a guessed palm offset or enlarged collider.
+    wrist.userData.oracleContactSkin = surface;
+  }
+  const profile = blouse.geometry.parameters.points, local = new THREE.Vector3();
+  const outward = new THREE.Vector3(0, 0, 1).transformDirection(blouse.matrixWorld).multiplyScalar(blouse.getWorldScale(new THREE.Vector3()).z);
+  for (let solve = 0; solve < 3; solve++) {
+    const matrix = blouse.matrixWorld.clone().invert().multiply(wrist.matrixWorld);
+    let depth = 0;
+    for (const vertex of surface) {
+      local.copy(vertex).applyMatrix4(matrix);
+      const row = profile.findIndex(point => point.y >= local.y);
+      if (row < 1) continue;
+      const a = profile[row - 1], b = profile[row], radius = THREE.MathUtils.lerp(a.x, b.x, (local.y - a.y) / (b.y - a.y));
+      if (Math.abs(local.x) >= radius) continue;
+      // The circular lathe profile encloses its polygonal cloth surface.
+      depth = Math.max(depth, Math.sqrt(radius * radius - local.x * local.x) + .004 - local.z);
+    }
+    if (depth <= 0) break;
+    const target = wrist.getWorldPosition(new THREE.Vector3()).addScaledVector(outward, depth);
+    reach(upper, lower, wrist.position, target, new THREE.Vector3(0, -.5, -.3));
+    wrist.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+    wrist.updateWorldMatrix(false, true);
+  }
 }

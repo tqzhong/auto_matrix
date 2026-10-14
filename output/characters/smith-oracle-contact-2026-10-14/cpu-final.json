@@ -1,0 +1,20 @@
+{
+  "source": "current",
+  "measurement": "Node CPU milliseconds for both posed models and contact; not browser FPS",
+  "results": [
+    {
+      "mode": "frozen",
+      "samples": 300,
+      "median": 0.8788749999999936,
+      "p95": 1.054916999999989,
+      "mean": 0.9114742899999994
+    },
+    {
+      "mode": "moving",
+      "samples": 300,
+      "median": 0.7440409999999247,
+      "p95": 0.8687919999999849,
+      "mean": 0.7466354999999946
+    }
+  ]
+}

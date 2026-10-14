@@ -1,0 +1,47 @@
+{
+  "snapshotKeys": {
+    "agents": true,
+    "chunks": true,
+    "events": true,
+    "locations": true,
+    "phase": true,
+    "sandbox": true,
+    "simulation": true,
+    "timeOfDay": true
+  },
+  "memoryCount": 15,
+  "memoriesUnchanged": true,
+  "simulationBefore": {
+    "running": false,
+    "speed": 1,
+    "timeScale": 1,
+    "tick": 7883,
+    "mode": "rules",
+    "llmStatus": "offline",
+    "population": 81,
+    "awakened": 59,
+    "tension": 0,
+    "anomaly": 65,
+    "conversations": 1,
+    "day": 2,
+    "chapter": "等待 Smith",
+    "chapterDescription": "另一视角：Neo 已离开。先知闻到烤箱里的饼干，Seraph 警告走廊里的 Smith 正在逼近。"
+  },
+  "simulationAfter": {
+    "running": false,
+    "speed": 1,
+    "timeScale": 1,
+    "tick": 7883,
+    "mode": "rules",
+    "llmStatus": "offline",
+    "population": 81,
+    "awakened": 59,
+    "tension": 0,
+    "anomaly": 65,
+    "conversations": 1,
+    "day": 2,
+    "chapter": "等待 Smith",
+    "chapterDescription": "另一视角：Neo 已离开。先知闻到烤箱里的饼干，Seraph 警告走廊里的 Smith 正在逼近。"
+  },
+  "nativeBrowserAcceptance": false
+}

@@ -1,0 +1,61 @@
+TAP version 13
+# Subtest: Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+ok 1 - Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+  ---
+  duration_ms: 174.230708
+  type: 'test'
+  ...
+# Subtest: the delivered Smith palm reaches the cookie plate before it leaves the table
+ok 2 - the delivered Smith palm reaches the cookie plate before it leaves the table
+  ---
+  duration_ms: 164.183291
+  type: 'test'
+  ...
+# {"plateGap":2.682298827494378e-13,"palm":[-4.800000000000182,2.179999999999732,-20.149999999999636],"shoulder":[-4.770857062331743,2.622247345168856,-21.540319658412955],"forearm":[-0.025925425677162495,-0.6481356419290627,0.03240678209645305]}
+# {"samples":6673,"skinGap":0.005267588141806279,"penetration":0}
+# Subtest: contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+not ok 3 - contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+  ---
+  duration_ms: 298.285958
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-absorption-contact.test.mts:1:7008'
+  failureType: 'testCodeFailure'
+  error: 'the actual palm/finger skin must touch without extending into the blouse'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-absorption-contact.test.mts:121:75)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"chestGap":0.05500000000029104}
+# {"samples":6673,"skinGap":0.00011105165049229981,"penetration":0.020154264249867992}
+# Subtest: the actual seated Oracle and bending Smith stay outside the solid kitchen table
+ok 4 - the actual seated Oracle and bending Smith stay outside the solid kitchen table
+  ---
+  duration_ms: 215.393959
+  type: 'test'
+  ...
+# Subtest: the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+ok 5 - the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+  ---
+  duration_ms: 100.661292
+  type: 'test'
+  ...
+# {"elapsed":0,"shoeClearance":0.019722314581661262}
+# {"elapsed":0.3,"shoeClearance":0.01972231458188592}
+# {"elapsed":1,"shoeClearance":0.01972231458179972}
+# {"elapsed":2,"shoeClearance":0.019722314581180428}
+# {"elapsed":3,"shoeClearance":0.019722314581609002}
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1161.591417

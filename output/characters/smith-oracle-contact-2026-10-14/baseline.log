@@ -1,0 +1,101 @@
+TAP version 13
+# Subtest: the delivered Smith palm reaches the cookie plate before it leaves the table
+ok 1 - the delivered Smith palm reaches the cookie plate before it leaves the table
+  ---
+  duration_ms: 258.766042
+  type: 'test'
+  ...
+# {"plateGap":2.682298827494378e-13,"palm":[-4.800000000000182,2.179999999999732,-20.149999999999636],"shoulder":[-4.770857062331743,2.622247345168856,-21.540319658412955],"forearm":[-0.025925425677162495,-0.6481356419290627,0.03240678209645305]}
+# {"samples":6673,"skinGap":0.005267588141806279,"penetration":0}
+# Subtest: contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+not ok 2 - contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+  ---
+  duration_ms: 373.871708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-absorption-contact.test.mts:1:5662'
+  failureType: 'testCodeFailure'
+  error: 'the actual palm/finger skin must touch without extending into the blouse'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/oracle-absorption-contact.test.mts:98:75)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"chestGap":0.05500000000029104}
+# {"samples":6673,"skinGap":0.00011105165049229981,"penetration":0.020154264249867992}
+# Subtest: the actual seated Oracle and bending Smith stay outside the solid kitchen table
+ok 3 - the actual seated Oracle and bending Smith stay outside the solid kitchen table
+  ---
+  duration_ms: 225.847833
+  type: 'test'
+  ...
+# Subtest: the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+ok 4 - the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+  ---
+  duration_ms: 103.493875
+  type: 'test'
+  ...
+# {"elapsed":0,"shoeClearance":0.019722314581661262}
+# {"elapsed":0.3,"shoeClearance":0.01972231458188592}
+# {"elapsed":1,"shoeClearance":0.01972231458179972}
+# {"elapsed":2,"shoeClearance":0.019722314581180428}
+# {"elapsed":3,"shoeClearance":0.019722314581609002}
+# Subtest: the blackout reaches actual building corridor lights one by one and stays fixed while the saved clock is paused
+ok 5 - the blackout reaches actual building corridor lights one by one and stays fixed while the saved clock is paused
+  ---
+  duration_ms: 2.058208
+  type: 'test'
+  ...
+# Subtest: the child and guard exit along the clear aisle rather than crossing the table or side chair
+ok 6 - the child and guard exit along the clear aisle rather than crossing the table or side chair
+  ---
+  duration_ms: 4.727042
+  type: 'test'
+  ...
+# Subtest: Sati’s actual palm holds the departing cookie and the saved pose does not drift with render time
+ok 7 - Sati’s actual palm holds the departing cookie and the saved pose does not drift with render time
+  ---
+  duration_ms: 77.968459
+  type: 'test'
+  ...
+# {"escape":0,"gap":9.981422423404145e-13}
+# {"escape":5,"gap":4.809486142676178e-13}
+# {"escape":17,"gap":8.593126210598712e-14}
+# {"escape":22,"gap":9.392486788328824e-14}
+# Subtest: the Oracle journal follows the physical farewell and invasion, with no timed shortcut or premature reflection
+ok 8 - the Oracle journal follows the physical farewell and invasion, with no timed shortcut or premature reflection
+  ---
+  duration_ms: 3.457375
+  type: 'test'
+  ...
+# Subtest: the Oracle perspective preserves incoming injuries and medicine, with a saved physical farewell
+ok 9 - the Oracle perspective preserves incoming injuries and medicine, with a saved physical farewell
+  ---
+  duration_ms: 165.174833
+  type: 'test'
+  ...
+# Subtest: the farewell clock stops on pause, release, occupied cast and restore without moving or healing the occupied character
+ok 10 - the farewell clock stops on pause, release, occupied cast and restore without moving or healing the occupied character
+  ---
+  duration_ms: 141.255709
+  type: 'test'
+  ...
+# Subtest: reflection cannot skip the retreat, and the kitchen invasion requires an explicit sustained choice before assimilation
+ok 11 - reflection cannot skip the retreat, and the kitchen invasion requires an explicit sustained choice before assimilation
+  ---
+  duration_ms: 1110.536084
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 10
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1819.127042

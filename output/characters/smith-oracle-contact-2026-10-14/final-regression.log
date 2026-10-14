@@ -1,0 +1,791 @@
+TAP version 13
+# Subtest: Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+ok 1 - Sati wears a pale sleeved jacket in Mobil, and restores her checked dress when she leaves it
+  ---
+  duration_ms: 909.57025
+  type: 'test'
+  ...
+# Subtest: Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+ok 2 - Sati waits on her side with closed eyes, then gathers her legs and plants her hands before standing
+  ---
+  duration_ms: 874.005375
+  type: 'test'
+  ...
+# Subtest: Oracle and Sati have a front hairline while their detailed assets load
+ok 3 - Oracle and Sati have a front hairline while their detailed assets load
+  ---
+  duration_ms: 215.360167
+  type: 'test'
+  ...
+# Subtest: Zee and Charra load their own continuous heads without changing a saved actor pose
+ok 4 - Zee and Charra load their own continuous heads without changing a saved actor pose
+  ---
+  duration_ms: 370.117292
+  type: 'test'
+  ...
+# Subtest: the two dock fighters have exposed articulated arms rather than their old full sleeves
+ok 5 - the two dock fighters have exposed articulated arms rather than their old full sleeves
+  ---
+  duration_ms: 38.545833
+  type: 'test'
+  ...
+# Subtest: the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+ok 6 - the shipped dock heads and clothing retain belt contact, deck clearance and Charra’s closed eyes after the attack
+  ---
+  duration_ms: 880.1655
+  type: 'test'
+  ...
+# Subtest: the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+ok 7 - the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root
+  ---
+  duration_ms: 318.892917
+  type: 'test'
+  ...
+# Subtest: paused Sati waking reuses the support calculation for its unchanged saved pose
+ok 8 - paused Sati waking reuses the support calculation for its unchanged saved pose
+  ---
+  duration_ms: 15796.368541
+  type: 'test'
+  ...
+# Subtest: Sati’s visible legs stay inside the dress above its hem during walking
+ok 9 - Sati’s visible legs stay inside the dress above its hem during walking
+  ---
+  duration_ms: 1254.61775
+  type: 'test'
+  ...
+# Subtest: Sati’s skirt stays attached to the bodice while the torso sways
+ok 10 - Sati’s skirt stays attached to the bodice while the torso sways
+  ---
+  duration_ms: 24.792833
+  type: 'test'
+  ...
+# Subtest: the folded waking dress covers the actual upper thighs through the waist bend
+ok 11 - the folded waking dress covers the actual upper thighs through the waist bend
+  ---
+  duration_ms: 149.732625
+  type: 'test'
+  ...
+# Subtest: the epilogue scalp does not grow hair across the visible ear surfaces
+ok 12 - the epilogue scalp does not grow hair across the visible ear surfaces
+  ---
+  duration_ms: 156.578
+  type: 'test'
+  ...
+# Subtest: the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+ok 13 - the park conversation brings the Oracle close enough to read her face and keeps her handbag in frame
+  ---
+  duration_ms: 2331.373166
+  type: 'test'
+  ...
+# 1.7777777777777777: projected head height 0.2790519365679847, bounds -0.22621998981252225,0.1853872683822172,0.8700708661627437 / -0.1257781338541629,0.4644392049502019,0.8804141128996017
+# oracle-head: -0.22621998981252225,0.1853872683822172,0.8700708661627437 / -0.1257781338541629,0.4644392049502019,0.8804141128996017
+# oracle-park-handbag: -0.23790502059063764,-0.31818493677985077,0.8618765383130553 / -0.04933664137815605,0.027774740653656232,0.8727748138660711
+# 1.3333333333333333: projected head height 0.2790519365679847, bounds -0.301626653083363,0.1853872683822172,0.8700708661627437 / -0.1677041784722172,0.4644392049502019,0.8804141128996017
+# oracle-head: -0.301626653083363,0.1853872683822172,0.8700708661627437 / -0.1677041784722172,0.4644392049502019,0.8804141128996017
+# oracle-park-handbag: -0.31720669412085023,-0.31818493677985077,0.8618765383130553 / -0.06578218850420807,0.027774740653656232,0.8727748138660711
+# 0.65: projected head height 0.2700057485661382, bounds -0.23626141436918102,0.1878454675075651,0.8744343911892258 / 0.02951316151889536,0.45785121607370327,0.884121421847561
+# oracle-head: -0.23626141436918102,0.1878454675075651,0.8744343911892258 / 0.02951316151889536,0.45785121607370327,0.884121421847561
+# oracle-park-handbag: -0.2378207356814039,-0.2978288405024991,0.8667965259912593 / 0.25480298856499994,0.0357211564453515,0.8769618012856829
+# 0.5625: projected head height 0.2700057485661382, bounds -0.2730131899377203,0.1878454675075651,0.8744343911892258 / 0.03410409775516798,0.45785121607370327,0.884121421847561
+# oracle-head: -0.2730131899377203,0.1878454675075651,0.8744343911892258 / 0.03410409775516798,0.45785121607370327,0.884121421847561
+# oracle-park-handbag: -0.2748150723429556,-0.2978288405024991,0.8667965259912593 / 0.2944390090084444,0.0357211564453515,0.8769618012856829
+# Subtest: the park conversation push-in and mouse orbit preserve the frozen performers and V eye view
+ok 14 - the park conversation push-in and mouse orbit preserve the frozen performers and V eye view
+  ---
+  duration_ms: 1175.108
+  type: 'test'
+  ...
+# Subtest: the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes
+ok 15 - the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above the lower HUD in both window shapes
+  ---
+  duration_ms: 1340.46775
+  type: 'test'
+  ...
+# Subtest: the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples
+ok 16 - the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples
+  ---
+  duration_ms: 1919.942375
+  type: 'test'
+  ...
+# Subtest: the shipped Architect turns, walks to the promenade and continues off camera with supported shoes and an exact cold pose
+ok 17 - the shipped Architect turns, walks to the promenade and continues off camera with supported shoes and an exact cold pose
+  ---
+  duration_ms: 11943.663875
+  type: 'test'
+  ...
+# Subtest: the controllable Oracle can walk the hill with her actual shoes supported even before the seated performance starts
+ok 18 - the controllable Oracle can walk the hill with her actual shoes supported even before the seated performance starts
+  ---
+  duration_ms: 6200.702458
+  type: 'test'
+  ...
+# Subtest: paused park third person responds to mouse orbit and retains it without changing the saved event or body
+ok 19 - paused park third person responds to mouse orbit and retains it without changing the saved event or body
+  ---
+  duration_ms: 392.591709
+  type: 'test'
+  ...
+# Subtest: park shots frame the arriving and departing speakers, then the reunited group and sunrise, without hiding heads behind the set
+ok 20 - park shots frame the arriving and departing speakers, then the reunited group and sunrise, without hiding heads behind the set
+  ---
+  duration_ms: 5502.56775
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 21 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 28.074167
+  type: 'test'
+  ...
+# Subtest: the first fall and real-body return reconstruct their saved poses after combat and while paused
+ok 22 - the first fall and real-body return reconstruct their saved poses after combat and while paused
+  ---
+  duration_ms: 1.281875
+  type: 'test'
+  ...
+# Subtest: Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+ok 23 - Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+  ---
+  duration_ms: 0.26625
+  type: 'test'
+  ...
+# Subtest: the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+ok 24 - the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+  ---
+  duration_ms: 1.090917
+  type: 'test'
+  ...
+# Subtest: dojo sparring keeps a readable guard between strikes and releases it after the lesson
+ok 25 - dojo sparring keeps a readable guard between strikes and releases it after the lesson
+  ---
+  duration_ms: 0.314292
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 26 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 7.667375
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 27 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 8.571083
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 28 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 1.187958
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 29 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 0.233333
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 30 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 1.45025
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 31 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 0.254625
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 32 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 0.080166
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 33 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 10.682167
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 34 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 3.9
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 35 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 1.218625
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 36 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 0.181458
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 37 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 3.140875
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 38 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 0.247875
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 39 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.150708
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 40 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.136708
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 41 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 0.472792
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 42 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 0.623667
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 43 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 0.443416
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 44 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.110583
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 45 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 0.273208
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 46 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.0845
+  type: 'test'
+  ...
+# Subtest: Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+ok 47 - Smith reaches and withdraws without snapping his wrist at saved phase boundaries
+  ---
+  duration_ms: 640.334333
+  type: 'test'
+  ...
+# Subtest: the delivered Smith palm reaches the cookie plate before it leaves the table
+ok 48 - the delivered Smith palm reaches the cookie plate before it leaves the table
+  ---
+  duration_ms: 427.825917
+  type: 'test'
+  ...
+# {"plateGap":2.682298827494378e-13,"palm":[-4.800000000000182,2.179999999999732,-20.149999999999636],"shoulder":[-4.770857062331743,2.622247345168856,-21.540319658412955],"forearm":[-0.025925425677162495,-0.6481356419290627,0.03240678209645305]}
+# {"samples":6673,"skinGap":0.005267588141806279,"penetration":0}
+# Subtest: contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+ok 49 - contact reaches the seated Oracle blouse and the saved hand pose stays fixed
+  ---
+  duration_ms: 870.504875
+  type: 'test'
+  ...
+# {"samples":6673,"skinGap":0.0031312674973378307,"penetration":0}
+# Subtest: the actual seated Oracle and bending Smith stay outside the solid kitchen table
+ok 50 - the actual seated Oracle and bending Smith stay outside the solid kitchen table
+  ---
+  duration_ms: 509.806042
+  type: 'test'
+  ...
+# Subtest: the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+ok 51 - the assimilated Smith keeps his actual shoes planted during the saved seated-to-standing laugh
+  ---
+  duration_ms: 221.566875
+  type: 'test'
+  ...
+# {"elapsed":0,"shoeClearance":0.019722314581661262}
+# {"elapsed":0.3,"shoeClearance":0.01972231458188592}
+# {"elapsed":1,"shoeClearance":0.01972231458179972}
+# {"elapsed":2,"shoeClearance":0.019722314581180428}
+# {"elapsed":3,"shoeClearance":0.019722314581609002}
+# Subtest: the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+ok 52 - the actual Smith hand clears the blouse throughout approach and withdrawal and recovers a saved contact
+  ---
+  duration_ms: 7806.222583
+  type: 'test'
+  ...
+# {"phase":"contact","elapsed":0,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.2,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.4,"samples":0,"skinGap":null,"penetration":0}
+# {"phase":"contact","elapsed":0.6,"samples":113,"skinGap":0.28314826476162125,"penetration":0}
+# {"phase":"contact","elapsed":0.8,"samples":3382,"skinGap":0.17571767018489481,"penetration":0}
+# {"phase":"contact","elapsed":1.2,"samples":6673,"skinGap":0.0027968212234554812,"penetration":0}
+# {"phase":"contact","elapsed":1.6,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"contact","elapsed":2.2,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":0,"samples":6673,"skinGap":0.0031312674982473254,"penetration":0}
+# {"phase":"coating","elapsed":1,"samples":6673,"skinGap":0.003128688666038215,"penetration":0}
+# {"phase":"coating","elapsed":2.5,"samples":6673,"skinGap":0.0030993430627859198,"penetration":0}
+# {"phase":"coating","elapsed":3.5,"samples":6673,"skinGap":0.0031048221335368,"penetration":0}
+# {"phase":"coating","elapsed":4.25,"samples":2761,"skinGap":0.2299019679576304,"penetration":0}
+# {"phase":"coating","elapsed":5,"samples":0,"skinGap":null,"penetration":0}
+# Subtest: Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+ok 53 - Smith keeps his wrist aligned with the forearm through the saved reach and withdrawal
+  ---
+  duration_ms: 798.455375
+  type: 'test'
+  ...
+# {"maximumWristBend":0.6742895720974654,"maximumTravelPer40ms":0.06332494661043142}
+# Subtest: the blackout reaches actual building corridor lights one by one and stays fixed while the saved clock is paused
+ok 54 - the blackout reaches actual building corridor lights one by one and stays fixed while the saved clock is paused
+  ---
+  duration_ms: 11.175792
+  type: 'test'
+  ...
+# Subtest: the child and guard exit along the clear aisle rather than crossing the table or side chair
+ok 55 - the child and guard exit along the clear aisle rather than crossing the table or side chair
+  ---
+  duration_ms: 12.195042
+  type: 'test'
+  ...
+# Subtest: Sati’s actual palm holds the departing cookie and the saved pose does not drift with render time
+ok 56 - Sati’s actual palm holds the departing cookie and the saved pose does not drift with render time
+  ---
+  duration_ms: 196.571417
+  type: 'test'
+  ...
+# {"escape":0,"gap":9.981422423404145e-13}
+# {"escape":5,"gap":4.809486142676178e-13}
+# {"escape":17,"gap":8.593126210598712e-14}
+# {"escape":22,"gap":9.392486788328824e-14}
+# Subtest: the Oracle journal follows the physical farewell and invasion, with no timed shortcut or premature reflection
+ok 57 - the Oracle journal follows the physical farewell and invasion, with no timed shortcut or premature reflection
+  ---
+  duration_ms: 3.283167
+  type: 'test'
+  ...
+# Subtest: the Oracle perspective preserves incoming injuries and medicine, with a saved physical farewell
+ok 58 - the Oracle perspective preserves incoming injuries and medicine, with a saved physical farewell
+  ---
+  duration_ms: 533.953333
+  type: 'test'
+  ...
+# Subtest: the farewell clock stops on pause, release, occupied cast and restore without moving or healing the occupied character
+ok 59 - the farewell clock stops on pause, release, occupied cast and restore without moving or healing the occupied character
+  ---
+  duration_ms: 345.966583
+  type: 'test'
+  ...
+# Subtest: reflection cannot skip the retreat, and the kitchen invasion requires an explicit sustained choice before assimilation
+ok 60 - reflection cannot skip the retreat, and the kitchen invasion requires an explicit sustained choice before assimilation
+  ---
+  duration_ms: 2843.293334
+  type: 'test'
+  ...
+# Subtest: Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+ok 61 - Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose
+  ---
+  duration_ms: 13850.7195
+  type: 'test'
+  ...
+# Subtest: the park handbag stays in the hand before lowering, both anatomical hands meet its handles and its base rests on the dressed lap
+ok 62 - the park handbag stays in the hand before lowering, both anatomical hands meet its handles and its base rests on the dressed lap
+  ---
+  duration_ms: 1393.587417
+  type: 'test'
+  ...
+# Subtest: the rendered child palms actually reach both bowl handles throughout lifting and carrying
+ok 63 - the rendered child palms actually reach both bowl handles throughout lifting and carrying
+  ---
+  duration_ms: 407.696584
+  type: 'test'
+  ...
+# {"arrival":3,"side":-1,"gap":9.997955259800562e-13}
+# {"arrival":3,"side":1,"gap":1.8017049520091639e-12}
+# {"arrival":3.5,"side":-1,"gap":2.042810365310288e-13}
+# {"arrival":3.5,"side":1,"gap":1.6918710783455608e-12}
+# {"arrival":4,"side":-1,"gap":9.133593693896601e-13}
+# {"arrival":4,"side":1,"gap":1.1182166304024577e-12}
+# {"arrival":5,"side":-1,"gap":9.205986458206134e-13}
+# {"arrival":5,"side":1,"gap":1.412766646716352e-12}
+# {"arrival":7,"side":-1,"gap":6.905587213168474e-13}
+# {"arrival":7,"side":1,"gap":1.1497846143541756e-12}
+# {"arrival":15,"side":-1,"gap":7.216449660063518e-14}
+# {"arrival":15,"side":1,"gap":1.1021922020407956e-12}
+# {"arrival":24,"side":-1,"gap":1.866104301138799e-12}
+# {"arrival":24,"side":1,"gap":7.496225862269057e-13}
+# {"arrival":28,"side":-1,"gap":1.4472491251393113e-12}
+# {"arrival":28,"side":1,"gap":9.567896615523356e-13}
+# Subtest: the bowl stays above the tabletop until clear and does not jump when Sati turns away
+ok 64 - the bowl stays above the tabletop until clear and does not jump when Sati turns away
+  ---
+  duration_ms: 266.010291
+  type: 'test'
+  ...
+# Subtest: the seated kitchen dress covers the actual knees and hangs in front of the chair with planted shoes
+ok 65 - the seated kitchen dress covers the actual knees and hangs in front of the chair with planted shoes
+  ---
+  duration_ms: 280.122916
+  type: 'test'
+  ...
+# Subtest: a saved kitchen pose does not drift with browser animation time and clears wrist/garment overrides on leaving
+ok 66 - a saved kitchen pose does not drift with browser animation time and clears wrist/garment overrides on leaving
+  ---
+  duration_ms: 181.778542
+  type: 'test'
+  ...
+# Subtest: the kitchen sink is visibly open rather than containing an uncut countertop plane
+ok 67 - the kitchen sink is visibly open rather than containing an uncut countertop plane
+  ---
+  duration_ms: 376.086959
+  type: 'test'
+  ...
+# [{"name":"oracle-handwash-basin","point":[5054.75,2.530000003576279,4709.3]},{"name":"","point":[5054.75,2.490000009536743,4709.3]},{"name":"","point":[5054.75,2.299999952316284,4709.3]}]
+# Subtest: the Oracle’s outer coat does not cross through her dress while she turns, lowers and holds the bag
+ok 68 - the Oracle’s outer coat does not cross through her dress while she turns, lowers and holds the bag
+  ---
+  duration_ms: 13690.664041
+  type: 'test'
+  ...
+# Subtest: the seated dress keeps its front and back panels from folding through each other
+ok 69 - the seated dress keeps its front and back panels from folding through each other
+  ---
+  duration_ms: 1869.685
+  type: 'test'
+  ...
+# Subtest: the park collar and lapels lie outside the chest instead of disappearing into the coat
+ok 70 - the park collar and lapels lie outside the chest instead of disappearing into the coat
+  ---
+  duration_ms: 287.945041
+  type: 'test'
+  ...
+# Subtest: an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+ok 71 - an unchanged saved pose does not rebuild or upload the same park clothing every rendered frame
+  ---
+  duration_ms: 164.716167
+  type: 'test'
+  ...
+# Subtest: standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+ok 72 - standing park clothing and a saved seated pose restore after a daily outfit without retaining the old folds
+  ---
+  duration_ms: 285.058709
+  type: 'test'
+  ...
+# Subtest: the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+ok 73 - the Oracle grips the real park handle with fingers and an opposed thumb, without putting skin through the leather
+  ---
+  duration_ms: 1293.802125
+  type: 'test'
+  ...
+# 0 hand 0 digit 1: handle gap 0.007504443232605063
+# 0 hand 0 digit 2: handle gap 0.0011667534721590891
+# 0 hand 0 digit 3: handle gap 0.0015565269585492425
+# 0 hand 0 digit 4: handle gap 0.0020546081333026635
+# 0 hand 0 digit 5: handle gap 0.0027742104170479648
+# 0.45 hand 0 digit 1: handle gap 0.007510507105627784
+# 0.45 hand 0 digit 2: handle gap 0.0012184040856964666
+# 0.45 hand 0 digit 3: handle gap 0.0015631960239296597
+# 0.45 hand 0 digit 4: handle gap 0.0020553913371559283
+# 0.45 hand 0 digit 5: handle gap 0.0026916604631424777
+# 1.05 hand 0 digit 1: handle gap 0.007088866153392926
+# 1.05 hand 0 digit 2: handle gap 0.001524939867721429
+# 1.05 hand 0 digit 3: handle gap 0.0015564944434816631
+# 1.05 hand 0 digit 4: handle gap 0.0020575435176984
+# 1.05 hand 0 digit 5: handle gap 0.0024111696810621246
+# 1.05 hand 1 digit 1: handle gap 0.007088866153395001
+# 1.05 hand 1 digit 2: handle gap 0.0015249249656617211
+# 1.05 hand 1 digit 3: handle gap 0.0015565026919023978
+# 1.05 hand 1 digit 4: handle gap 0.0020575246473236233
+# 1.05 hand 1 digit 5: handle gap 0.002411201745904236
+# 1.7 hand 0 digit 1: handle gap 0.007083536292727909
+# 1.7 hand 0 digit 2: handle gap 0.00152396545347714
+# 1.7 hand 0 digit 3: handle gap 0.0015560258322722675
+# 1.7 hand 0 digit 4: handle gap 0.00205753251289683
+# 1.7 hand 0 digit 5: handle gap 0.002411860818073014
+# 1.7 hand 1 digit 1: handle gap 0.007083536292719513
+# 1.7 hand 1 digit 2: handle gap 0.0015239507528043462
+# 1.7 hand 1 digit 3: handle gap 0.001556034423336388
+# 1.7 hand 1 digit 4: handle gap 0.002057513190291616
+# 1.7 hand 1 digit 5: handle gap 0.0024118928567542254
+# 2.4 hand 0 digit 1: handle gap 0.006811462575799152
+# 2.4 hand 0 digit 2: handle gap 0.0012735890613538026
+# 2.4 hand 0 digit 3: handle gap 0.0015268786566839145
+# 2.4 hand 0 digit 4: handle gap 0.0020566036073524988
+# 2.4 hand 0 digit 5: handle gap 0.002488186417209586
+# 2.4 hand 1 digit 1: handle gap 0.00681146257580836
+# 2.4 hand 1 digit 2: handle gap 0.001273586290555715
+# 2.4 hand 1 digit 3: handle gap 0.0015269039300201091
+# 2.4 hand 1 digit 4: handle gap 0.0020565623888422757
+# 2.4 hand 1 digit 5: handle gap 0.002488215755036858
+# Subtest: park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+ok 74 - park hands reconstruct the same actual skin after pause, unrelated motion and a fresh rig, and restore daily hands on leaving
+  ---
+  duration_ms: 1208.48775
+  type: 'test'
+  ...
+# Subtest: the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+ok 75 - the saved bag lift does not fold the wrists back or drive the actual palm and finger surfaces through either handle
+  ---
+  duration_ms: 3913.584958
+  type: 'test'
+  ...
+# minimum wrist alignment: 0.5232828304685438
+# Subtest: lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+ok 76 - lifting the handbag keeps the forearms outside the Oracle’s actual bodice
+  ---
+  duration_ms: 289.111208
+  type: 'test'
+  ...
+# Subtest: hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+ok 77 - hands arriving after the Oracle leaves the park stay hidden until her next saved park pose
+  ---
+  duration_ms: 264.721959
+  type: 'test'
+  ...
+# Subtest: a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+ok 78 - a hand asset arriving after renderer disposal releases its geometry and material without attaching to the old actor
+  ---
+  duration_ms: 247.707167
+  type: 'test'
+  ...
+# Subtest: both park wrists remain visibly connected to their sleeves while the bag is lifted
+ok 79 - both park wrists remain visibly connected to their sleeves while the bag is lifted
+  ---
+  duration_ms: 1580.758208
+  type: 'test'
+  ...
+# Subtest: the sleeve caps meet the coat instead of ending above a detached shoulder seam
+ok 80 - the sleeve caps meet the coat instead of ending above a detached shoulder seam
+  ---
+  duration_ms: 366.956292
+  type: 'test'
+  ...
+# Subtest: the wrist skin meets every anatomical rim vertex and returns to the saved pose after an outfit change or cold load
+ok 81 - the wrist skin meets every anatomical rim vertex and returns to the saved pose after an outfit change or cold load
+  ---
+  duration_ms: 677.819542
+  type: 'test'
+  ...
+# Subtest: the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+ok 82 - the restored Oracle lies on the actual crater floor and cold-loads without standing or foot IK
+  ---
+  duration_ms: 544.9795
+  type: 'test'
+  ...
+# Subtest: the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+ok 83 - the Oracle waiting room has open window apertures, grounded furniture and a clear spoon encounter
+  ---
+  duration_ms: 351.5305
+  type: 'test'
+  ...
+# Subtest: Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+ok 84 - Spoon Boy folds both legs above the rug instead of driving his shins through the floor
+  ---
+  duration_ms: 107.059667
+  type: 'test'
+  ...
+# Subtest: the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+ok 85 - the Oracle cookie has one owner and passes continuously to Neo actual skinned hand
+  ---
+  duration_ms: 1039.614708
+  type: 'test'
+  ...
+# Subtest: first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+ok 86 - first-person Neo can see the cookie he accepted, then ordinary body hiding returns
+  ---
+  duration_ms: 30.93525
+  type: 'test'
+  ...
+# Subtest: the Oracle blouse cannot poke through the front of her apron
+ok 87 - the Oracle blouse cannot poke through the front of her apron
+  ---
+  duration_ms: 240.132
+  type: 'test'
+  ...
+# Subtest: switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+ok 88 - switching to first person keeps the held spoon visible and restores normal visibility when it is put away
+  ---
+  duration_ms: 30.2695
+  type: 'test'
+  ...
+# Subtest: Neo keeps the spoon between his actual thumb and index finger, including a late character load
+ok 89 - Neo keeps the spoon between his actual thumb and index finger, including a late character load
+  ---
+  duration_ms: 2252.832458
+  type: 'test'
+  ...
+# Subtest: the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+ok 90 - the white-clothed hostess touches seated Neo actual shoulder without moving her feet through the floor
+  ---
+  duration_ms: 1537.571375
+  type: 'test'
+  ...
+# Subtest: the other potentials keep seated legs above the rug when a paused room loads
+ok 91 - the other potentials keep seated legs above the rug when a paused room loads
+  ---
+  duration_ms: 76.537208
+  type: 'test'
+  ...
+# Subtest: saved park poses support the seated Oracle and standing Sati without putting visible meshes through the slats or lawn
+ok 92 - saved park poses support the seated Oracle and standing Sati without putting visible meshes through the slats or lawn
+  ---
+  duration_ms: 1180.710625
+  type: 'test'
+  ...
+# Subtest: the street waking shot keeps Sati’s real head and torso above the lower subtitle panel
+ok 93 - the street waking shot keeps Sati’s real head and torso above the lower subtitle panel
+  ---
+  duration_ms: 90.943917
+  type: 'test'
+  ...
+# Subtest: the epilogue reducer preserves authored phase boundaries
+ok 94 - the epilogue reducer preserves authored phase boundaries
+  ---
+  duration_ms: 1.012959
+  type: 'test'
+  ...
+# Subtest: new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+ok 95 - new street resets restore the pavement and bring the cat before Sati rises, while active legacy saves keep their beat
+  ---
+  duration_ms: 471.245917
+  type: 'test'
+  ...
+# Subtest: the reset facade blocks a scene revisit and is removed when returning to the saved park
+ok 96 - the reset facade blocks a scene revisit and is removed when returning to the saved park
+  ---
+  duration_ms: 4.386542
+  type: 'test'
+  ...
+# Subtest: Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+ok 97 - Neo remains unresponsive while the transport is waiting or finished without advancing its clock
+  ---
+  duration_ms: 0.228333
+  type: 'test'
+  ...
+# Subtest: the Oracle stays seated while the player considers the Architect’s promise
+ok 98 - the Oracle stays seated while the player considers the Architect’s promise
+  ---
+  duration_ms: 11.959708
+  type: 'test'
+  ...
+# Subtest: the Architect continues along the waterfront while the player waits to welcome Sati
+ok 99 - the Architect continues along the waterfront while the player waits to welcome Sati
+  ---
+  duration_ms: 3.977167
+  type: 'test'
+  ...
+# Subtest: legacy park departures resume from their saved pose without replaying or jumping
+ok 100 - legacy park departures resume from their saved pose without replaying or jumping
+  ---
+  duration_ms: 0.546
+  type: 'test'
+  ...
+# Subtest: park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+ok 101 - park departure pauses with the world, another player’s cast ownership and a disconnected Oracle
+  ---
+  duration_ms: 274.432958
+  type: 'test'
+  ...
+# Subtest: Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+ok 102 - Neo’s resting transport action survives later world ticks and serialized park restoration exactly
+  ---
+  duration_ms: 10.019167
+  type: 'test'
+  ...
+# Subtest: Neo transport keeps a phase’s action start while its saved physical motion advances
+ok 103 - Neo transport keeps a phase’s action start while its saved physical motion advances
+  ---
+  duration_ms: 48.493666
+  type: 'test'
+  ...
+# Subtest: the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+ok 104 - the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire
+  ---
+  duration_ms: 756.327542
+  type: 'test'
+  ...
+# Subtest: reconnecting after the transport can hand off to the Oracle without reviving Neo
+ok 105 - reconnecting after the transport can hand off to the Oracle without reviving Neo
+  ---
+  duration_ms: 326.310458
+  type: 'test'
+  ...
+# Subtest: ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+ok 106 - ceasefire, Neo transport and dawn form a saved playable epilogue without auto-starting a new cycle
+  ---
+  duration_ms: 1643.73025
+  type: 'test'
+  ...
+# Subtest: Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+ok 107 - Kid watches the city during withdrawal and faces the crowd only when delivering the news, including a restored save
+  ---
+  duration_ms: 160.352833
+  type: 'test'
+  ...
+# Subtest: Kid keeps the run performed by the player instead of teleporting back to replay it
+ok 108 - Kid keeps the run performed by the player instead of teleporting back to replay it
+  ---
+  duration_ms: 1.226
+  type: 'test'
+  ...
+# Subtest: the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+ok 109 - the witness walks around the rostrum to the doorway and keeps the actual standing position through withdrawal and reload
+  ---
+  duration_ms: 50.699458
+  type: 'test'
+  ...
+# Subtest: each dedicated epilogue layer renders and disposes its physical story objects
+ok 110 - each dedicated epilogue layer renders and disposes its physical story objects
+  ---
+  duration_ms: 195.003083
+  type: 'test'
+  ...
+# Subtest: the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+ok 111 - the resetting sidewalk supports the cat and Sati, restores ahead of the paws, and resumes from the saved clock
+  ---
+  duration_ms: 69.308958
+  type: 'test'
+  ...
+# Subtest: saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+ok 112 - saved epilogue actions reach NPC animation and carry Neo flat on the machine tray
+  ---
+  duration_ms: 61.417542
+  type: 'test'
+  ...
+# Subtest: park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+ok 113 - park performers follow the current Oracle frame without advancing a paused clock or overriding an occupied actor
+  ---
+  duration_ms: 27.54175
+  type: 'test'
+  ...
+# Subtest: the journal exposes the witness, promise and explicit final confirmation
+ok 114 - the journal exposes the witness, promise and explicit final confirmation
+  ---
+  duration_ms: 135.623209
+  type: 'test'
+  ...
+1..114
+# tests 114
+# suites 0
+# pass 114
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31559.942209
