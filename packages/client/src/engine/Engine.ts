@@ -528,6 +528,7 @@ export class Engine {
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
       this.playerControls.ambushObservation = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu'
         && journey.step === 0 && journey.ambushApproach?.stairCat ? journey.ambush?.elapsed : undefined;
+      this.playerControls.ambushDoorway = this.playerControls.ambushObservation !== undefined && Boolean(journey?.ambushApproach?.doorwayCat);
       this.playerControls.ambushAlarm = this.playerControls.id === 'neo' && journey?.actor === 'neo' && !journey.visiting && journey.scene === 'm1_dejavu'
         && journey.ambushEscape?.phase === 'alarm' ? journey.ambushEscape.elapsed : undefined;
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
