@@ -1,4 +1,4 @@
-import { FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallRoot, wetwallEntry, wetwallText, wetwallPath,
+import { FILM_SETS, FILM_SCENE_BY_ID, WETWALL, WETWALL_SHAFT, WETWALL_ROLES, AMBUSH_CALL, wetwallRoot, wetwallEntry, wetwallText, wetwallPath,
   type AgentState, type PlayerInput, type SandboxState, type WetwallEncounter, type WetwallRole, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -30,6 +30,12 @@ export class WetwallEscapeSystem {
       film: { scene: 'm1_wetwall', width: WETWALL_SHAFT.holeWidth, depth: .24, height: WETWALL_SHAFT.holeHeight } });
   }
   private occupied(): boolean { return WETWALL_ROLES.some(role => role !== 'neo' && this.world.agents.get(role)?.controller); }
+  private phone(encounter: WetwallEncounter, role: WetwallRole) {
+    if (role !== 'morpheus' || !this.journey?.ambushEscape?.callPerformance) return {};
+    const elapsed = AMBUSH_CALL.lower + (encounter.phase === 'sealed' ? 0 : encounter.elapsed);
+    return encounter.phase === 'sealed' || encounter.phase === 'breaking' && elapsed < AMBUSH_CALL.duration
+      ? { ambushCall: { role, elapsed } } : {};
+  }
   private position(encounter: WetwallEncounter, role: WetwallRole, progress?: number): Vector3 {
     const root = wetwallRoot(encounter, role, progress), center = FILM_SETS.film_ambush_house.center;
     return { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
@@ -67,7 +73,7 @@ export class WetwallEscapeSystem {
       actor.position = this.position(encounter, role); actor.rotation = root.yaw; actor.isInMatrix = true; actor.currentLocation = 'film_ambush_house';
       actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: (actor.position.y - before.y) / dt, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       actor.targetPosition = null; actor.currentPath = [];
-      actor.currentAction = { type: 'idle', parameters: { resolved: true, wetwall: { role, phase: encounter.phase, elapsed: encounter.elapsed,
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, ...this.phone(encounter, role), wetwall: { role, phase: encounter.phase, elapsed: encounter.elapsed,
         progress: encounter.progress[role], entry: wetwallEntry(encounter, role), hanging: root.hanging, freed: encounter.freed, start: encounter.starts[role], fallY: encounter.fallY } }, startedAt: tick, duration: 1e9, progress: 0 };
     }
   }
@@ -78,7 +84,7 @@ export class WetwallEscapeSystem {
       if (journey?.scene !== 'm1_wetwall' || journey.visiting || !encounter || encounter.phase === 'sealed' || !WETWALL_ROLES.includes(role)) return false;
       const root = wetwallRoot(encounter, role);
       actor.velocity = { x: 0, y: 0, z: 0 };
-      actor.currentAction = { type: 'idle', parameters: { resolved: true, wetwall: { role, phase: encounter.phase, elapsed: encounter.elapsed,
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, ...this.phone(encounter, role), wetwall: { role, phase: encounter.phase, elapsed: encounter.elapsed,
         progress: encounter.progress[role], entry: wetwallEntry(encounter, role), hanging: root.hanging, freed: encounter.freed, start: encounter.starts[role], fallY: encounter.fallY } }, startedAt: tick, duration: 1e9, progress: 0 };
       return true;
     }

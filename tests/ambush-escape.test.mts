@@ -135,8 +135,9 @@ test('the five-storey descent brings the entire company to a sealed window, expo
   h.command('act'); assert.equal(h.state().ambushEscape!.phase, 'phone', 'inspecting the window cannot automatically dial from another room');
   for (const [x, z] of [[-18, -13.2], [-5.4, -13.2]]) h.walk(x, -37, z);
   h.command('act'); assert.equal(h.state().ambushEscape!.phase, 'call');
-  assert.equal(h.state().ambushEscape!.traced, true, 'using a mobile phone must expose the floor rather than act as a safe exit');
-  h.frame(56); assert.equal(h.state().step, 2); assert.equal(h.state().ambushEscape!.phase, 'forming');
+  assert.equal(h.state().ambushEscape!.traced, false, 'the phone must be handed over and raised before connecting');
+  h.frame(39); assert.equal(h.state().ambushEscape!.traced, true, 'the connected mobile phone exposes the floor rather than acting as a safe exit');
+  h.frame(63); assert.equal(h.state().step, 2); assert.equal(h.state().ambushEscape!.phase, 'forming');
   for (let i = 0; i < 180 && h.state().ambushEscape!.phase === 'forming'; i++) h.frame();
   assert.equal(h.state().ambushEscape!.phase, 'wetwall', 'all five companions must actually move to the sides before Neo enters the narrow room');
   for (const [x, z] of [[-18, -13.2], [-18, -27]]) h.walk(x, -37, z);
@@ -155,13 +156,14 @@ test('the player cannot walk through a waiting companion at the retreat merge', 
   }
 });
 
-test('the running phone gesture uses the saved call clock across pause and a zero-delta restore', () => {
+test('the running legacy phone gesture uses the saved call clock across pause and a zero-delta restore', () => {
   const h = setup(); cat(h); h.frame(65);
   for (const [x, y, z] of descent) h.walk(x, y, z);
   for (const [x, z] of [[-11, 31.8], [-11, 8], [0, 8], [0, -16], [-18, -16]]) h.walk(x, -37, z);
   for (let i = 0; i < 200 && h.state().ambushEscape!.phase === 'descending'; i++) h.frame();
   assert.equal(h.state().ambushEscape!.phase, 'window'); h.command('act');
   for (const [x, z] of [[-18, -13.2], [-5.4, -13.2]]) h.walk(x, -37, z);
+  delete h.state().ambushEscape!.callPerformance;
   h.command('act'); h.frame(20);
   for (const role of roles) assert.deepEqual(h.world.agents.get(role)!.velocity, { x: 0, y: 0, z: 0 }, 'an active frame must stop companions waiting for the phone call');
   const phoneTime = () => (h.world.agents.get('morpheus')!.currentAction!.parameters.phone as { elapsed: number }).elapsed;

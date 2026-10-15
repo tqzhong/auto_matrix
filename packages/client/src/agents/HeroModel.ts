@@ -1424,7 +1424,7 @@ export class HeroModels {
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
       && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
-    const savedCloth = input.ambushEscort || input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
+    const savedCloth = input.ambushCall || input.ambushEscort || input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
     if (delta <= 0 && !savedCloth && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and

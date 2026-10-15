@@ -95,7 +95,7 @@ import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, inte
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole, type OracleWaitingGesture } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
 import { AMBUSH_CAT_STAIRS, AMBUSH_CAT_DOORWAY, AMBUSH_CAT_WALLS, AMBUSH_WALLS, ambushStairsBlocked, AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, ambushRouteLength, ambushRouteProgress, type AmbushCompanion } from '@auto_matrix/shared';
-import { AMBUSH_ESCAPE, AMBUSH_WINDOW_PROGRESS, AMBUSH_RETREAT_LANDINGS, newAmbushEscape, ambushRetreatRoot, ambushRetreatLength, ambushRetreatShift, ambushRetreatProgress, ambushRetreatGoal, ambushEscapeText, ambushCompanyBlocked, ambushCompanyStep } from '@auto_matrix/shared';
+import { AMBUSH_ESCAPE, AMBUSH_CALL, AMBUSH_WINDOW_PROGRESS, AMBUSH_RETREAT_LANDINGS, newAmbushEscape, ambushRetreatRoot, ambushRetreatLength, ambushRetreatShift, ambushRetreatProgress, ambushRetreatGoal, ambushEscapeText, ambushCompanyBlocked, ambushCompanyStep } from '@auto_matrix/shared';
 import { combatDisplace } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked, betrayalRoot, betrayalText, type BetrayalEncounter, type BetrayalRole } from '@auto_matrix/shared';
 import { newBathroomFight, stepBathroomFight, bathroomFightAction } from '@auto_matrix/shared';
@@ -2649,8 +2649,20 @@ export class FilmStorySystem {
       }
     }
     if (escape.phase === 'call') {
-      escape.elapsed = Math.min(AMBUSH_ESCAPE.call, escape.elapsed + delta);
-      if (escape.elapsed >= AMBUSH_ESCAPE.call) {
+      const duration = escape.callPerformance ? AMBUSH_CALL.approach + AMBUSH_CALL.duration : AMBUSH_ESCAPE.call;
+      const next = Math.min(duration, escape.elapsed + delta);
+      let clear = true;
+      if (escape.callPerformance && escape.callStart) {
+        const t = Math.min(1, next / AMBUSH_CALL.approach), progress = escape.callStart.trinityProgress + AMBUSH_CALL.advance * t * t * (3 - 2 * t);
+        const root = ambushRetreatRoot(progress, 'trinity'), candidate = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+        const trinity = this.world.agents.get('trinity')!;
+        clear = !playerBlocked(candidate, true, 1.1, this.sandbox().structures)
+          && !ambushCompanyBlocked(trinity.position, candidate, [agent.position, ...roles.filter(role => role !== 'trinity').map(role => this.world.agents.get(role)!.position)]);
+        if (clear) escape.progress.trinity = progress;
+      }
+      if (clear) escape.elapsed = next;
+      if (escape.callPerformance && escape.elapsed >= AMBUSH_CALL.approach + AMBUSH_CALL.connected) escape.traced = true;
+      if (escape.elapsed >= duration) {
         escape.phase = 'forming'; escape.elapsed = 0;
         this.advance('Tank 找到八楼的主排水管线墙。手机追踪已经暴露这一层；队伍必须去 808 室。', agent, tick);
         this.ambushEscapeCheckpoint(agent, 8, 'forming');
@@ -2677,10 +2689,21 @@ export class FilmStorySystem {
       this.place(actor, this.scene!, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z });
       const watching = ['window', 'phone', 'call'].includes(escape.phase) || escape.progress[role] >= ambushRetreatLength(role) - .001;
       actor.rotation = watching ? Math.atan2(agent.position.x - actor.position.x, agent.position.z - actor.position.z) : root.yaw;
+      const calling = escape.callPerformance && escape.phase === 'call' && (role === 'morpheus' || role === 'trinity');
+      const carrying = escape.callPerformance && role === 'morpheus' && ['forming', 'wetwall', 'done'].includes(escape.phase);
+      if (calling && escape.callStart) {
+        const start = role === 'morpheus' ? escape.callStart.morpheusYaw : escape.callStart.trinityYaw;
+        const target = role === 'morpheus' ? Math.PI / 2 : -Math.PI / 2, t = Math.min(1, escape.elapsed / AMBUSH_CALL.approach);
+        actor.rotation = start + Math.atan2(Math.sin(target - start), Math.cos(target - start)) * t * t * (3 - 2 * t);
+        const leaving = Math.max(0, Math.min(1, (escape.elapsed - AMBUSH_CALL.approach - AMBUSH_CALL.lower) / (AMBUSH_CALL.duration - AMBUSH_CALL.lower)));
+        actor.rotation += Math.atan2(Math.sin(root.yaw - actor.rotation), Math.cos(root.yaw - actor.rotation)) * leaving * leaving * (3 - 2 * leaving);
+      }
       actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : velocity;
-      actor.currentAction = { type: 'idle', parameters: { resolved: true, armed: role !== 'morpheus' || escape.phase !== 'call',
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, armed: !calling && !carrying && (role !== 'morpheus' || escape.phase !== 'call'),
         ambushEscort: { role, progress: escape.progress[role], watching, retreat: true },
-        ...(role === 'morpheus' && escape.phase === 'call' ? { phone: { phase: 'connected', elapsed: escape.elapsed } } : {}) }, startedAt: tick, duration: 1, progress: 0 };
+        ...(calling ? { ambushCall: { role, elapsed: escape.elapsed < AMBUSH_CALL.approach ? escape.elapsed : Math.min(AMBUSH_CALL.lower, escape.elapsed - AMBUSH_CALL.approach),
+          ...(escape.elapsed < AMBUSH_CALL.approach ? { ready: true } : {}) } } : carrying ? { ambushCall: { role, elapsed: AMBUSH_CALL.lower } }
+          : role === 'morpheus' && escape.phase === 'call' ? { phone: { phase: 'connected', elapsed: escape.elapsed } } : {}) }, startedAt: tick, duration: 1, progress: 0 };
     }
     const companyAt = (phase: 'window' | 'wetwall') => roles.every(role => escape.progress[role] >= (phase === 'wetwall'
       ? ambushRetreatLength(role) : ambushRetreatGoal(role, AMBUSH_WINDOW_PROGRESS, phase)) - .001);
@@ -2757,7 +2780,10 @@ export class FilmStorySystem {
     } else {
       const morpheus = this.world.agents.get('morpheus')!;
       if (distance(agent.position, morpheus.position) > 4) return '靠近 Morpheus，再按 G 决定冒险使用手机。';
-      escape.phase = 'call'; escape.elapsed = 0; escape.traced = true;
+      escape.phase = 'call'; escape.elapsed = 0;
+      if (escape.callPerformance) escape.callStart = { trinityProgress: escape.progress.trinity,
+        trinityYaw: this.world.agents.get('trinity')!.rotation, morpheusYaw: morpheus.rotation };
+      else escape.traced = true;
     }
     this.ambushEscapeFrame(agent, 0, tick); return this.state!.lastText;
   }
@@ -5927,7 +5953,7 @@ export class FilmStorySystem {
       if (state.scene === 'm1_dejavu' && state.ambushEscape) {
         const escape = state.ambushEscape, checkpoint = escape.checkpoint;
         if (Object.keys(AMBUSH_COMPANY).some(id => this.world.agents.get(id)?.controller)) return '同行者正由另一位玩家控制，请等他释放角色后再重试。';
-        if (escape.phase !== 'alarm') { escape.phase = checkpoint.phase; escape.elapsed = 0; }
+        if (escape.phase !== 'alarm') { escape.phase = checkpoint.phase; escape.elapsed = 0; delete escape.callStart; }
         escape.caught = 0; escape.attempts++;
         escape.progress = { ...checkpoint.progress }; escape.pursuers = checkpoint.pursuers.map(p => ({ progress: p.progress, health: p.health })); escape.traced = checkpoint.traced;
         this.sandbox().threats = this.sandbox().threats.filter(t => !t.id.startsWith('film:ambush:pursuer:'));

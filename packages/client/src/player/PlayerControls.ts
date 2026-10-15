@@ -156,6 +156,9 @@ export class PlayerControls {
   ambushAlarm?: number;
   private ambushAlarmView = false;
   private ambushAlarmCancelled = false;
+  ambushCallTarget?: Vector3;
+  private watchingAmbushCall = false;
+  private ambushCallCancelled = false;
   private wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   private hangingWetwall = false;
   private basementDropClock?: BasementDropPlayback;
@@ -189,6 +192,7 @@ export class PlayerControls {
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
     this.ambushDoorwayCancelled = false;
+    this.watchingAmbushCall = this.ambushCallCancelled = false;
     this.ambushAlarm = undefined; this.ambushAlarmView = this.ambushAlarmCancelled = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.bathroomGuide = undefined; this.motion.bathroom = undefined;
@@ -243,6 +247,7 @@ export class PlayerControls {
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
     this.ambushDoorway = this.ambushDoorwayCancelled = false;
+    this.ambushCallTarget = undefined; this.watchingAmbushCall = this.ambushCallCancelled = false;
     this.ambushAlarm = undefined; this.ambushAlarmView = this.ambushAlarmCancelled = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.bathroomGuide = undefined; this.motion.bathroom = undefined;
@@ -295,6 +300,7 @@ export class PlayerControls {
       if (event.code === 'Digit4') this.action('barricade');
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
+        if (this.ambushCallTarget && !this.ambushCallCancelled) { this.watchingAmbushCall = false; this.cameraReady = false; }
         if (this.motion.freewayPickup) {
           const phase = this.motion.freewayPickup.phase;
           this.pitch = this.firstPerson ? ['key', 'keyhandoff'].includes(phase) ? .65 : phase === 'shooting' ? .55 : .03 : .55;
@@ -366,6 +372,7 @@ export class PlayerControls {
     const movementX = this.dragPoint ? event.clientX - this.dragPoint.x : event.movementX;
     const movementY = this.dragPoint ? event.clientY - this.dragPoint.y : event.movementY;
     if ((movementX || movementY) && this.watchingAmbush && this.ambushDoorway) this.ambushDoorwayCancelled = true;
+    if (movementX || movementY) this.leaveAmbushCallView();
     if (!this.firstPerson && this.motion.epilogue?.kind === 'dawn' && trilogyEpilogueLocked(this.motion.epilogue)) {
       this.gardenLook.yaw = THREE.MathUtils.clamp(this.gardenLook.yaw - movementX * .0028, -.72, .72);
       this.gardenLook.pitch = THREE.MathUtils.clamp(this.gardenLook.pitch + movementY * .002, -.12, .4);
@@ -389,6 +396,16 @@ export class PlayerControls {
     this.lastLook = performance.now();
   };
   private click = (): void => { if (this.id && this.enabled && document.pointerLockElement !== this.canvas) this.lockPointer(); };
+
+  private leaveAmbushCallView(): void {
+    if (!this.ambushCallTarget || this.ambushCallCancelled) return;
+    if (this.watchingAmbushCall) {
+      const forward = this.camera.getWorldDirection(new THREE.Vector3());
+      this.yaw = this.movementYaw = Math.atan2(forward.x, forward.z);
+      this.pitch = Math.asin(THREE.MathUtils.clamp(-forward.y, -1, 1));
+    }
+    this.ambushCallCancelled = true;
+  }
 
   private aimAtMirror(): void {
     const center = FILM_SETS.film_lafayette.center;
@@ -1179,6 +1196,17 @@ export class PlayerControls {
     }
     this.watchingAmbush = watchingAmbush;
     if (!watchingAmbush) this.ambushDoorwayCancelled = false;
+    if (!this.ambushCallTarget) this.ambushCallCancelled = false;
+    // Cover the four-unit interaction radius plus the initial pair's half-span; a remote cold save keeps free view.
+    if (this.ambushCallTarget && !this.watchingAmbushCall && Math.hypot(this.ambushCallTarget.x - this.position.x, this.ambushCallTarget.y - 2.8 - this.position.y, this.ambushCallTarget.z - this.position.z) > 6.25) this.leaveAmbushCallView();
+    if (this.ambushCallTarget && (this.motion.speed > .1 || Math.abs(this.vy) > .1 || ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].some(key => this.keys.has(key)))) this.leaveAmbushCallView();
+    if (this.ambushCallTarget && !this.watchingAmbushCall && !this.ambushCallCancelled) {
+      const target = this.ambushCallTarget, x = target.x - this.position.x, z = target.z - this.position.z;
+      this.yaw = this.movementYaw = this.facing = Math.atan2(x, z);
+      this.pitch = THREE.MathUtils.clamp(-Math.atan2(target.y - this.position.y - (this.firstPerson ? 2.99 : 2.05), Math.hypot(x, z)), -.4, 1.1);
+      this.cameraReady = false; this.lastLook = now;
+    }
+    this.watchingAmbushCall = Boolean(this.ambushCallTarget);
     if (this.motion.bathroom) {
       const root = bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role), center = FILM_SETS.film_ambush_house.center;
       this.position = { x: center.x + root.x, y: state.position.y, z: center.z + root.z };
@@ -1347,6 +1375,12 @@ export class PlayerControls {
     this.ambushAlarmView = alarmView;
     if (watchingAmbush && this.ambushDoorway && (this.motion.speed > .1 || Math.abs(this.vy) > .1 || ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].some(key => this.keys.has(key)))) this.ambushDoorwayCancelled = true;
     const doorwayView = watchingAmbush && this.ambushDoorway && !this.ambushDoorwayCancelled;
+    const callView = this.ambushCallTarget && !this.ambushCallCancelled;
+    if (callView) {
+      // Keep the horizontal view of both actors on a narrow display; never move Neo's eyes.
+      this.camera.fov = this.firstPerson ? Math.max(68, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(36)) / this.camera.aspect))) : this.camera.aspect < .85 ? 72 : 57;
+      this.camera.updateProjectionMatrix();
+    }
     const resetCamera = !this.cameraReady;
     if (!this.motion.welcome) this.welcomeShot = undefined;
     if (!this.cameraReady) { this.cameraTarget.copy(target); this.cameraReady = true; }
@@ -2967,6 +3001,19 @@ export class PlayerControls {
       ideal.y = this.position.y + THREE.MathUtils.lerp(3.9, 4.5, inside);
       const focus = new THREE.Vector3(this.position.x, this.position.y + 1.45, this.position.z - .35);
       this.camera.position.copy(ideal);
+      this.camera.lookAt(focus);
+    } else if (callView && !this.firstPerson) {
+      // Keep this short observation in the eighth-floor aisle, above Neo's silhouette.
+      const focus = new THREE.Vector3().copy(this.ambushCallTarget!);
+      const offset = new THREE.Vector3(0, 2.5, 7.4), length = offset.length(), direction = offset.clone().normalize();
+      let distance = length;
+      for (let step = .5; step <= length; step += .5) {
+        const point = focus.clone().addScaledVector(direction, step);
+        // The shared collision routine takes a standing body's foot height.
+        point.y = this.position.y;
+        if (playerBlocked(point, state.isInMatrix, .5, this.structures)) { distance = Math.max(.5, step - .5); break; }
+      }
+      this.camera.position.copy(focus).addScaledVector(direction, distance);
       this.camera.lookAt(focus);
     } else if (state.currentAction?.parameters.metacortexLift && !this.firstPerson) {
       const focus = target.clone(); focus.y = this.position.y + 1.75;
