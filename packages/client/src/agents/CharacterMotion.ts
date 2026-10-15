@@ -1,4 +1,4 @@
-import { TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, RED_DRESS_PROGRAM, redDressFrame, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, RED_DRESS_PROGRAM, redDressFrame, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
@@ -21,6 +21,7 @@ export interface MotionInput {
   skill?: CombatSkillId;
   armed?: boolean;
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
+  ambushCall?: { role: 'morpheus' | 'trinity'; elapsed: number; ready?: true };
   mouseRoomTime?: number;
   wetwall?: import('@auto_matrix/shared').WetwallGesture;
   sixth?: import('@auto_matrix/shared').SixthGesture;
@@ -630,6 +631,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, seated: false };
     dt = 0;
   }
+  if (input.ambushCall) {
+    if (!input.ambushEscort) Object.assign(state, newMotion(), { speed: input.speed, phase: (input.wetwall?.progress ?? 0) / 2.8 });
+    state.time = input.ambushCall.elapsed;
+    input = { ...input, armed: false, turn: 0 };
+    dt = 0;
+  }
   if (input.truth || download) {
     Object.assign(state, newMotion(), { time: input.truth?.elapsed ?? download!.elapsed, skill: undefined });
     if (download?.role === 'neo' && (input.training?.kind === 'download' || input.download?.phase === 'ready')) state.seated = 1;
@@ -800,6 +807,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const kickback = Math.max(0, 1 - state.shotAge / .18) ** 2;
     arm.shoulder = input.ambushEscort?.retreat ? -.14 : -1.16 + clamp(input.aimPitch ?? 0, -.9, .9) * .82 - recoil * .1 - kickback * .16;
     arm.elbow = input.ambushEscort?.retreat ? -.5 : -.4 - kickback * .12; arm.outward *= .4; arm.grip = .9;
+  }
+  if (input.ambushCall) {
+    const returning = input.ambushCall.ready ? 1 - smooth(clamp(input.ambushCall.elapsed / AMBUSH_CALL.approach)) : 0;
+    for (const arm of arms) {
+      arm.shoulder = mix(arm.shoulder, -.14, returning); arm.elbow = mix(arm.elbow, -.5, returning);
+      arm.outward = mix(arm.outward, arm.outward * .4, returning); arm.grip = mix(arm.grip, .9, returning);
+    }
   }
   for (let i = 0; i < 2; i++) {
     legs[i].hip = mix(legs[i].hip, -1.36, state.seated); legs[i].knee = mix(legs[i].knee, 1.46, state.seated); legs[i].ankle = mix(legs[i].ankle, -.1, state.seated);

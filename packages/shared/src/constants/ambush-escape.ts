@@ -7,12 +7,15 @@ export const AMBUSH_ESCAPE = {
   wetwall: { x: -18, y: -AMBUSH_STAIRS.rise * AMBUSH_STOREYS, z: -27 },
   staging: { x: -5.4, y: -AMBUSH_STAIRS.rise * AMBUSH_STOREYS, z: -13.2 },
 } as const;
+export const AMBUSH_CALL = { approach: 1.6, handoff: 1.1, exchange: 1.55, connected: 2.2, lower: 7, duration: 8.5, advance: 1.65 } as const;
 export type AmbushEscapePhase = 'alarm' | 'descending' | 'window' | 'phone' | 'call' | 'forming' | 'wetwall' | 'failed' | 'done';
 export interface AmbushPursuer { progress: number; health: number; spawned?: true }
 export interface AmbushEscape {
   phase: AmbushEscapePhase; elapsed: number; mouseDead: boolean; traced: boolean; caught: number; attempts: number; paused?: boolean;
   progress: Record<AmbushCompanion, number>; pursuers: AmbushPursuer[];
   roomGuards?: { health: number; spawned?: true }[];
+  callPerformance?: true;
+  callStart?: { trinityProgress: number; trinityYaw: number; morpheusYaw: number };
   checkpoint: { floor: number; phase: 'descending' | 'phone' | 'forming' | 'wetwall'; progress: Record<AmbushCompanion, number>; pursuers: AmbushPursuer[]; traced: boolean };
 }
 export const MOUSE_ROOM_SHOTS = [2.8, 3.2, 3.6, 4] as const;
@@ -107,7 +110,7 @@ export function ambushEscapeTarget(escape: AmbushEscape, x?: number, y?: number,
 }
 export function newAmbushEscape(): AmbushEscape {
   const progress = { morpheus: 0, switch: 0, apoc: 0, trinity: 0, cypher: 0 }, pursuers = [{ progress: -29, health: 64 }, { progress: -35, health: 64 }];
-  return { phase: 'alarm', elapsed: 0, mouseDead: false, traced: false, caught: 0, attempts: 0, progress, pursuers,
+  return { phase: 'alarm', elapsed: 0, mouseDead: false, traced: false, caught: 0, attempts: 0, progress, pursuers, callPerformance: true,
     checkpoint: { floor: 13, phase: 'descending', progress: { ...progress }, pursuers: pursuers.map(p => ({ ...p })), traced: false } };
 }
 export function ambushCompanyBlocked(before: Vector3, after: Vector3, company: Vector3[]): boolean {
@@ -136,7 +139,9 @@ export function ambushEscapeText(escape: AmbushEscape): string {
   if (escape.phase === 'descending') return '硬线无法接出。沿右侧楼梯下行，在半层平台转向左侧楼梯；与五名同伴撤到八楼。追兵正在逼近。';
   if (escape.phase === 'window') return '八楼的窗户也被砖墙封死。走到窗前按 G 检查，再与 Morpheus 商量退路。';
   if (escape.phase === 'phone') return 'TRINITY · 手机会暴露我们的位置。没有硬线可用，靠近 Morpheus 按 G，决定冒险联系 Tank。';
-  if (escape.phase === 'call') return escape.elapsed < 2 ? 'Morpheus 接通 Tank，请他寻找这栋楼的结构图。手机信号已经暴露楼层。'
+  if (escape.phase === 'call' && escape.callPerformance && escape.elapsed < AMBUSH_CALL.approach) return 'Trinity 靠近 Morpheus，准备递出手机。留出两人之间的空间；追兵仍在逼近。';
+  if (escape.phase === 'call' && escape.callPerformance && escape.elapsed < AMBUSH_CALL.approach + AMBUSH_CALL.connected) return 'Trinity 递出手机，Morpheus 接过后换到左手，举向耳边。';
+  if (escape.phase === 'call') return escape.elapsed < (escape.callPerformance ? AMBUSH_CALL.approach + AMBUSH_CALL.connected + 2 : 2) ? 'Morpheus 接通 Tank，请他寻找这栋楼的结构图。手机信号已经暴露楼层。'
     : 'TANK · 主排水管线墙在八楼左侧，去 808 室。Morpheus 保持通话，确认退路。';
   if (escape.phase === 'wetwall') return '特工已经获知八楼位置。带齐同伴穿过左侧开口，到 808 室的管线墙前；无需清空追兵。';
   if (escape.phase === 'forming') return 'Tank 找到了 808 室的管线墙。留出窗前转角，先让同伴通过门口并移到两侧，再进入房间。追兵仍在逼近。';

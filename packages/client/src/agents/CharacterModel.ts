@@ -1073,12 +1073,16 @@ export class CharacterModels {
       parent.add(rig.spoon.root);
     }
     if (rig.spoon) { rig.spoon.root.visible = input.spoon !== undefined; rig.spoon.setBend(input.spoon ?? 0, input.spoonLesson?.role === 'boy'); }
-    if (input.phone && rig.hero && !rig.phone) {
+    if ((input.phone || input.ambushCall) && rig.hero && !rig.phone) {
       rig.phone = new PhoneModel(); this.phones.add(rig.phone);
       rig.phone.root.position.copy(PHONE_HAND.position); rig.phone.root.quaternion.copy(PHONE_HAND.rotation); rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
     }
     if (rig.phone) {
-      rig.phone.root.visible = Boolean(input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));
+      if (!input.ambushCall && input.phone && rig.hero) {
+        rig.hero.bones.get('wrist_R')!.add(rig.phone.root);
+        rig.phone.root.position.copy(PHONE_HAND.position); rig.phone.root.quaternion.copy(PHONE_HAND.rotation);
+      }
+      rig.phone.root.visible = Boolean(!input.ambushCall && input.phone && (input.phone.phase !== 'pickup' || input.phone.elapsed >= .65));
       rig.phone.update(input.phone?.phase === 'answering' ? Math.min(1, input.phone.elapsed / .4) : input.phone?.phase === 'connected' ? 1 : 0);
     }
     if ((input.oracleVisit || input.oracleDeparture?.role === 'neo') && !rig.cookie) {

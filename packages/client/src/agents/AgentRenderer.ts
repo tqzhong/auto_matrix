@@ -30,6 +30,7 @@ import { poseMobilReunionPair } from './MobilReunionPerformance.js';
 import { contactOracleAbsorption } from './OracleAbsorptionPerformance.js';
 import { OracleSmithAppearance } from './OracleSmithAppearance.js';
 import { poseOracleExamination } from './OracleExaminationPerformance.js';
+import { poseAmbushCallPair } from './AmbushCallPerformance.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -699,6 +700,8 @@ export class AgentRenderer {
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
       input.mobilStation = state.currentLocation === 'film_mobil_station';
       input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
+      input.ambushCall = state.currentAction?.parameters.ambushCall as MotionInput['ambushCall'];
+      if (input.ambushCall) { input.phone = undefined; input.armed = false; }
       if (input.sixth?.role === 'smith' && input.sixth.phase === 'grapple') {
         const neo = this.agents.get('neo'), head = neo?.rig.hero?.bones.get('head');
         if (head) {
@@ -947,6 +950,9 @@ export class AgentRenderer {
       this.models.refreshFarewellContact(entry.rig, { ...gesture, target: { x: target.x, y: target.y, z: target.z } }, normal, up);
     }
     const morpheus = this.agents.get('morpheus'), smith = this.agents.get('smith');
+    const ambushCall = morpheus?.state.currentAction?.parameters.ambushCall as MotionInput['ambushCall'];
+    const callPartner = this.agents.get('trinity');
+    if (morpheus && ambushCall) poseAmbushCallPair(morpheus.rig, callPartner?.state.currentAction?.parameters.ambushCall ? callPartner.rig : undefined, ambushCall);
     const neo = this.agents.get('neo'), keymaker = this.agents.get('keymaker');
     const oracle = this.agents.get('oracle'), absorption = oracle?.state.currentAction?.parameters.oracleAbsorption as MotionInput['oracleAbsorption'];
     const examination = oracle?.state.currentAction?.parameters.oracleVisit as MotionInput['oracleVisit'];

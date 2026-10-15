@@ -531,6 +531,10 @@ export class Engine {
       this.playerControls.ambushDoorway = this.playerControls.ambushObservation !== undefined && Boolean(journey?.ambushApproach?.doorwayCat);
       this.playerControls.ambushAlarm = this.playerControls.id === 'neo' && journey?.actor === 'neo' && !journey.visiting && journey.scene === 'm1_dejavu'
         && journey.ambushEscape?.phase === 'alarm' ? journey.ambushEscape.elapsed : undefined;
+      const caller = agents.morpheus, giver = agents.trinity;
+      this.playerControls.ambushCallTarget = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu'
+        && journey.ambushEscape?.phase === 'call' && journey.ambushEscape.callPerformance && caller && giver
+        ? { x: (caller.position.x + giver.position.x) / 2, y: caller.position.y + 2.8, z: (caller.position.z + giver.position.z) / 2 } : undefined;
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
         ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_basement' ? BASEMENT_ROLES.filter(role => role !== this.playerControls!.id).map(role => agents[role].position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));

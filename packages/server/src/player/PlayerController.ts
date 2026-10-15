@@ -266,6 +266,7 @@ export class PlayerController {
       this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
       this.sandbox?.life.film.keymakerFrame(agent, 0, tick);
       this.sandbox?.life.film.interludeFrame(agent, 0, tick);
+      this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick);
       this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick);
       this.sandbox?.life.film.betrayalFrame(agent, 0, tick);
       this.sandbox?.life.film.helDisarmFrame(agent, 0, tick);
