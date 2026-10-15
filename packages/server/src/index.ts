@@ -48,8 +48,10 @@ const sandbox = new SandboxSystem(world, dynamics);
 const players = new PlayerController(world, conversations, actions, dynamics, sandbox);
 sandbox.onImpact = actions.onImpact = (impact, tick) => {
   if (impact.damage > 0) players.takeHit(impact.target);
+  const roomShot = impact.shot && (impact.source.startsWith('film:ambush:room:') || impact.target.startsWith('film:ambush:room:'));
+  if (roomShot) sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, tick);
   sockets.broadcastMessage({ type: 'effect', data: { effectType: 'melee_hit', agents: [impact.source, impact.target], duration: .35, impact }, tick, timestamp: Date.now() });
-  sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, tick);
+  if (!roomShot) sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, tick);
 };
 players.onSkill = (skill, tick) => {
   sockets.broadcastMessage({ type: 'effect', data: { effectType: 'combat_skill', agents: [skill.source], duration: 1, skill }, tick, timestamp: Date.now() });
@@ -252,6 +254,10 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => id === current!.actor || id === 'ghost');
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick());
     return;
+  }
+  if (current?.scene === 'm1_dejavu' && !current.visiting && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
+    const crew = [...world.agents.entries()].filter(([id]) => id === current.actor || ['neo', 'morpheus', 'switch', 'apoc', 'trinity', 'cypher', 'mouse'].includes(id));
+    sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
   if (current && ['m3_family', 'm3_trainman'].includes(current.scene) && !current.visiting && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
     const crew = [...world.agents.entries()].filter(([id]) => ['neo', 'rama_kandra', 'kamala', 'sati', 'trainman'].includes(id));

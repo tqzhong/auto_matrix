@@ -10,7 +10,7 @@ import { truckRoadRoot, freewayHandoffRoot, truckWeaponPairRoot, truckHoodRoot }
 import { freewayPickupRoot, freewayDriverRoot, freewayRideRoot } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose, logosFlightSet } from '@auto_matrix/shared';
-import { CONNECTED_ROLES, BETRAYAL, AMBUSH_ESCAPE, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
+import { CONNECTED_ROLES, BETRAYAL, AMBUSH_ESCAPE, MOUSE_ROOM_SHOTS, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import { newMotion, type MotionInput } from './CharacterMotion.js';
@@ -184,7 +184,7 @@ export class AgentRenderer {
   getAgentState(id: string): AgentState | null { return this.agents.get(id)?.state ?? null; }
   getAgentIds(): string[] { return [...this.agents.keys()].filter(id => !id.startsWith('body:')); }
   getPhysicalBody(id: string): THREE.Group | undefined { return this.agents.get(`body:${id}`)?.body ?? this.getAgentBody(id); }
-  muzzle(id: string): THREE.Vector3 | undefined { const entry = this.agents.get(id); return entry ? weaponMuzzle(entry.rig) : undefined; }
+  muzzle(id: string, hand?: number): THREE.Vector3 | undefined { const entry = this.agents.get(id); return entry ? weaponMuzzle(entry.rig, hand) : undefined; }
   updateActionIndicator(_id: string, _type: string): void {}
   impact(hit: CombatImpact): void {
     const target = this.agents.get(hit.target); const source = this.agents.get(hit.source);
@@ -440,12 +440,16 @@ export class AgentRenderer {
           entry.group.position.set(center.x + pose.x, state.position.y, center.z + pose.z); guideHeading = pose.yaw;
           if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
         } else if (entry.ambushGuide) {
-          const guide = entry.ambushGuide, before = guide.progress;
+          const guide = entry.ambushGuide;
           guide.elapsed = Math.min(.5, guide.elapsed + delta * speed); guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
-          const pose = guide.retreat ? ambushRetreatRoot(guide.progress, guide.role) : ambushRouteRoot(guide.progress, guide.role, guide.stairCat), center = FILM_SETS.film_ambush_house.center;
+          const route = (progress: number) => guide.retreat ? ambushRetreatRoot(progress, guide.role) : ambushRouteRoot(progress, guide.role, guide.stairCat);
+          const pose = route(guide.progress), behind = route(Math.max(0, guide.progress - .6)), ahead = route(guide.progress + .6), center = FILM_SETS.film_ambush_house.center;
           entry.group.position.set(center.x + pose.x, center.y + pose.y, center.z + pose.z);
-          guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation : pose.yaw;
-          if (speed > 0 && delta > 0) guideSpeed = Math.abs(guide.progress - before) / (delta * speed);
+          // Turn through a landing from route distance, not an accumulated RAF lerp.
+          guideHeading = (state.currentAction?.parameters.ambushEscort as AmbushEscort).watching ? state.rotation
+            : Math.hypot(ahead.x - behind.x, ahead.z - behind.z) > .001 ? Math.atan2(ahead.x - behind.x, ahead.z - behind.z) : pose.yaw;
+          // Finish the visible interval before adopting a server-reported stop.
+          guideSpeed = state.status !== 'alive' ? 0 : guide.elapsed < .5 ? Math.abs(guide.to - guide.from) / .5 : Math.hypot(state.velocity.x, state.velocity.z);
         } else if (state.currentAction?.parameters.metacortexLift || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street?.phase !== undefined && (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street?.phase !== 'approaching')) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.architect || state.currentAction?.parameters.sourcePortal || state.currentAction?.parameters.trinityTerminal || state.currentAction?.parameters.trinityRelay || state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting || state.currentAction?.parameters.oracleRequest || state.currentAction?.parameters.oracleLast || state.currentAction?.parameters.baneInquiry || state.currentAction?.parameters.hammerBriefing || state.currentAction?.parameters.zionDeployment || state.currentAction?.parameters.maggieDiscovery || state.currentAction?.parameters.logosBane || state.currentAction?.parameters.oracleAbsorption || state.currentAction?.parameters.trainmanChase || state.currentAction?.parameters.helGarage || state.currentAction?.parameters.helElevator || state.currentAction?.parameters.helProtection !== undefined
           || (state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.phase === 'opening'
@@ -485,7 +489,7 @@ export class AgentRenderer {
       if (id !== this.playerId && (state.currentAction?.parameters.helProtection !== undefined || state.currentAction?.parameters.helElevator || state.currentAction?.parameters.helGarage || state.currentAction?.parameters.trainmanChase || state.currentAction?.parameters.mobilReunion || state.currentAction?.parameters.mobilBoarding !== undefined || state.currentAction?.parameters.oracleRequest || state.currentAction?.parameters.oracleLast || state.currentAction?.parameters.baneInquiry || state.currentAction?.parameters.hammerBriefing || state.currentAction?.parameters.zionDeployment || state.currentAction?.parameters.maggieDiscovery || state.currentAction?.parameters.logosBane || state.currentAction?.parameters.oracleAbsorption || state.currentAction?.parameters.architect || state.currentAction?.parameters.sourcePortal || state.currentAction?.parameters.truckRoad || state.currentAction?.parameters.freewayHandoff || state.currentAction?.parameters.freewayPickup || state.currentAction?.parameters.freewayDriver || smithLocked || state.currentAction?.parameters.oracleRestored || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.upperDigger || state.currentAction?.parameters.diggers || state.currentAction?.parameters.dockReload || state.currentAction?.parameters.dockLastStand || state.currentAction?.parameters.dockGate || state.currentAction?.parameters.dockGateCover || state.currentAction?.parameters.dockReunion || state.currentAction?.parameters.dockDeparture || state.currentAction?.parameters.dockEvacuation || state.currentAction?.parameters.shaftSeal || state.currentAction?.parameters.templeDefense || state.currentAction?.parameters.dockBriefing || state.currentAction?.parameters.empOperator || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street))) { entry.body.rotation.y = heading; difference = 0; }
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
       if (id !== this.playerId && clubGesture) entry.body.rotation.y += delta * speed > 0 ? Math.sign(difference) * Math.min(Math.abs(difference), 2.4 * delta * speed) : difference;
-      else if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide && delta === 0 || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry ? 1 : 1 - Math.exp(-10 * delta));
+      else if (id !== this.playerId) entry.body.rotation.y += difference * (dropRoot || entry.wetwallGuide || entry.ambushGuide || arrival?.phase === 'opening' || (arrival?.seating ?? 0) > 0 || state.currentAction?.parameters.farewell || state.currentAction?.parameters.sentinel || state.currentAction?.parameters.interlude || state.currentAction?.parameters.oracleVisit || state.currentAction?.parameters.oracleDeparture || state.currentAction?.parameters.crosscut || state.currentAction?.parameters.betrayal || state.currentAction?.parameters.rescue || state.currentAction?.parameters.government || state.currentAction?.parameters.airRescue || state.currentAction?.parameters.matrixEscape || state.currentAction?.parameters.theOne || state.currentAction?.parameters.reloaded || state.currentAction?.parameters.catch || state.currentAction?.parameters.lobbyEntry || state.currentAction?.parameters.meeting || state.currentAction?.parameters.pills || state.currentAction?.parameters.interrogation || state.currentAction?.parameters.welcome || state.currentAction?.parameters.reveal || state.currentAction?.parameters.training || state.currentAction?.parameters.workday || state.currentAction?.parameters.recoveryCrew || state.currentAction?.parameters.mirrorEntry ? 1 : 1 - Math.exp(-10 * delta));
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' && !state.currentAction?.parameters.sourcePortal && !state.currentAction?.parameters.crosscut && !state.currentAction?.parameters.farewell && !state.currentAction?.parameters.dockLastStand && !state.currentAction?.parameters.upperDigger && !state.currentAction?.parameters.logosBane ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
@@ -495,7 +499,7 @@ export class AgentRenderer {
         turn: difference * 8, attack: state.currentAction?.type === 'attack' ? Number(state.currentAction.parameters.contactTick ?? state.currentAction.startedAt) : undefined,
         hit: entry.hit, impact: entry.impact, shot: entry.shot, windingUp: warning,
         armed: state.currentAction?.parameters.armed === true || !state.currentAction?.parameters.lobbyEntry && state.currentLocation === 'film_government_lobby' && ['neo', 'trinity'].includes(id),
-        ambushEscort: state.currentAction?.parameters.ambushEscort as MotionInput['ambushEscort'],
+        ambushEscort: entry.ambushGuide ? { ...(state.currentAction!.parameters.ambushEscort as AmbushEscort), progress: entry.ambushGuide.progress } : undefined,
         wetwall: state.currentAction?.parameters.wetwall as MotionInput['wetwall'],
         basement,
         tvExit: state.currentAction?.parameters.tvExit as MotionInput['tvExit'],
@@ -804,10 +808,11 @@ export class AgentRenderer {
       if (!mouseDead && entry.mouseFloor) { entry.mouseFloor = undefined; entry.body.rotation.z = 0; }
       if (mouseAlarm || mouseDead) {
         // Replay from the saved clock, including pause and late model arrival.
-        // These are the same four gunshot beats used by Engine's film audio.
+        // Match the authoritative room impacts rather than replaying local events.
         const elapsed = mouseEscape?.elapsed ?? AMBUSH_ESCAPE.mouse;
+        input.mouseRoomTime = mouseAlarm ? elapsed : undefined;
         entry.rig.motion = newMotion(); entry.rig.motion.time = mouseDead ? AMBUSH_ESCAPE.mouse : elapsed;
-        if (mouseAlarm) for (const beat of [AMBUSH_ESCAPE.shots, 3.2, 3.6, 4])
+        if (mouseAlarm) for (const beat of MOUSE_ROOM_SHOTS)
           if (elapsed >= beat) entry.rig.motion.shotAge = elapsed - beat;
         input.speed = 0; input.turn = 0; input.grounded = true; input.verticalVelocity = 0; input.armed = !mouseDead;
         const fall = mouseDead ? mouseEscape?.phase === 'alarm' && mouseEscape.mouseDead

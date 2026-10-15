@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FILM_SETS, AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, AMBUSH_STOREYS, AMBUSH_ESCAPE, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
+import { FILM_SETS, AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, AMBUSH_STOREYS, AMBUSH_ESCAPE, MOUSE_ROOM_SHOTS, MOUSE_ROOM_RETURN, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
 import { reach } from '../agents/SpoonPerformance.js';
+import { mouseRoomDoor } from '@auto_matrix/shared';
 import { WetwallRenderer } from './WetwallRenderer.js';
 
 /** The changed masonry uses the same footprints as the saved, authoritative barriers. */
@@ -11,6 +12,8 @@ export class AmbushSetRenderer {
   private eighthSeals = new THREE.Group();
   private lowerWindows: THREE.Mesh[] = [];
   private gunfire = new THREE.PointLight(0xffcb80, 0, 22, 2);
+  private roomDoor = new THREE.Group();
+  private roomSplinters = new THREE.Group();
   private cat = new THREE.Group();
   private body = new THREE.Group();
   private legs: THREE.Group[] = [];
@@ -97,9 +100,10 @@ export class AmbushSetRenderer {
     }
     this.makeLowerFloors(plaster, wood, trim, iron, windowMaterial);
     this.batch();
+    this.makeMouseRoom(wood, trim, iron);
     this.wetwall = new WetwallRenderer(this.root, { plaster, wood, iron, trim });
     this.root.add(this.seals, this.eighthSeals, this.cat, this.gunfire);
-    this.gunfire.position.set(-17, 3, -15);
+    this.gunfire.position.set(-14.7, 3.8, -15);
     this.eighthSeals.position.y = AMBUSH_ESCAPE.window.y;
     this.brickwork(this.seals, 9); this.brickwork(this.eighthSeals, 7.4); this.makeCat(); this.makeBathroom();
     this.daylight = new THREE.SpotLight(0xdce5c8, 1250, 58, .72, .35, 2);
@@ -178,13 +182,28 @@ export class AmbushSetRenderer {
         this.box(iron, side * 12.4, y + 3.3, z + 1.5, .18, .24, .15);
       }
       for (const z of [8, 31.5]) this.box(lamp, -11, y + 6, z, .45, .3, .45);
-      this.box(trim, 0, y + .08, 31.5, 1.3, .15, .3);
+      this.box(trim, 20, y + .08, 32.8, 1.3, .15, .3);
       this.sign(`${13 - floor}`, 17, y + 4.3, 33.58, Math.PI, 2.4, 2);
     }
     this.sign('13 / 1313', -12.6, 5.7, -17.5, Math.PI / 2, 2.8, 1.2);
     this.sign('8 / 808', -12.6, AMBUSH_ESCAPE.window.y + 5.1, -17.5, Math.PI / 2, 2.8, 1.2);
     const y = AMBUSH_ESCAPE.wetwall.y;
     const light = new THREE.PointLight(0xcfbd94, 145, 35, 2); light.position.set(-5, y + 6, -14); this.root.add(light);
+  }
+  private makeMouseRoom(wood: THREE.Material, trim: THREE.Material, iron: THREE.Material): void {
+    this.roomDoor.name = 'mouse-room-door'; this.roomDoor.position.set(-13, 0, -19.7);
+    this.root.add(this.roomDoor, this.roomSplinters);
+    this.box(wood, 0, 3.85, 3.7, .23, 7.7, 7.4, this.roomDoor);
+    for (const y of [2.1, 5.5]) for (const z of [1.9, 5.5]) {
+      this.box(trim, -.13, y, z, .05, 2.6, 2.8, this.roomDoor);
+      this.box(wood, -.17, y, z, .055, 2.35, 2.55, this.roomDoor);
+    }
+    this.box(iron, -.27, 3.65, 6.8, .25, .18, .55, this.roomDoor);
+    this.roomSplinters.name = 'mouse-door-splinters';
+    for (let i = 0; i < 18; i++) {
+      const chip = this.box(wood, -13.1, 1 + i % 6, -18.5 + i % 5 * 1.2, .07, .18 + i % 4 * .12, .06, this.roomSplinters);
+      chip.userData.origin = chip.position.clone();
+    }
   }
   private sign(text: string, x: number, y: number, z: number, yaw: number, width: number, height: number): void {
     if (typeof document === 'undefined') return;
@@ -297,13 +316,22 @@ export class AmbushSetRenderer {
   }
   update(journey: FilmJourney | undefined, structures: WorldStructure[], elapsed: number): void {
     this.wetwall.update(journey);
-    const sealed = structures.some(s => s.film?.scene === 'm1_dejavu');
+    const sealed = structures.some(s => s.id.startsWith('film:ambush:seal:'));
     this.seals.visible = sealed; this.window.visible = !sealed; this.daylight.intensity = sealed ? 0 : 1250;
-    this.eighthSeals.visible = structures.some(s => s.film?.scene === 'm1_dejavu' && Math.abs(s.position.y - AMBUSH_ESCAPE.window.y - FILM_SETS.film_ambush_house.center.y) < .1);
+    this.eighthSeals.visible = structures.some(s => s.id.startsWith('film:ambush:seal:') && Math.abs(s.position.y - AMBUSH_ESCAPE.window.y - FILM_SETS.film_ambush_house.center.y) < .1);
     this.lowerWindows.forEach((window, floor) => { window.visible = floor !== AMBUSH_STOREYS - 1 || !this.eighthSeals.visible; });
     const escape = journey?.scene === 'm1_dejavu' && !journey.visiting ? journey.ambushEscape : undefined;
-    this.gunfire.intensity = escape?.phase === 'alarm' && escape.elapsed >= AMBUSH_ESCAPE.shots && escape.elapsed < AMBUSH_ESCAPE.mouse
-      ? Math.sin(escape.elapsed * 51) > .2 ? 900 : 0 : 0;
+    const roomTime = escape?.phase === 'alarm' ? escape.elapsed : escape ? AMBUSH_ESCAPE.alarm : 0;
+    this.roomDoor.rotation.y = mouseRoomDoor(roomTime).angle;
+    this.roomSplinters.visible = roomTime > .8 && roomTime < 1.9;
+    if (this.roomSplinters.visible) for (const [i, chip] of this.roomSplinters.children.entries()) {
+      const age = roomTime - .8;
+      chip.position.copy(chip.userData.origin as THREE.Vector3);
+      chip.position.x += age * (1 + i % 4 * .4); chip.position.y = Math.max(.08, chip.position.y + age - 5 * age * age);
+      chip.rotation.set(age * (i % 3 + 1), age * 4, age * (i % 4 - 2));
+    }
+    const flash = [...MOUSE_ROOM_SHOTS, ...MOUSE_ROOM_RETURN].some(beat => roomTime >= beat && roomTime - beat < .08);
+    this.gunfire.intensity = escape?.phase === 'alarm' && flash ? 900 : 0;
     const observing = journey?.scene === 'm1_dejavu' && journey.step === 0 && !journey.visiting && journey.ambush;
     const target = observing ? journey.ambush!.elapsed : 0;
     const dt = Math.min(.1, Math.max(0, elapsed - this.previousTime)); this.previousTime = elapsed;

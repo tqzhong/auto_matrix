@@ -12,7 +12,28 @@ export interface AmbushPursuer { progress: number; health: number; spawned?: tru
 export interface AmbushEscape {
   phase: AmbushEscapePhase; elapsed: number; mouseDead: boolean; traced: boolean; caught: number; attempts: number; paused?: boolean;
   progress: Record<AmbushCompanion, number>; pursuers: AmbushPursuer[];
+  roomGuards?: { health: number; spawned?: true }[];
   checkpoint: { floor: number; phase: 'descending' | 'phone' | 'forming' | 'wetwall'; progress: Record<AmbushCompanion, number>; pursuers: AmbushPursuer[]; traced: boolean };
+}
+export const MOUSE_ROOM_SHOTS = [2.8, 3.2, 3.6, 4] as const;
+export const MOUSE_ROOM_RETURN = [3, 3.4, 3.8, 4.2, 4.4] as const;
+export function ambushShotRecoil(age: number): number {
+  const rise = Math.max(0, Math.min(1, age / .04));
+  return rise * rise * (3 - 2 * rise) * Math.max(0, 1 - age / .18) ** 2;
+}
+export function mouseRoomDoor(time: number) {
+  const t = Math.max(0, Math.min(1, (time - .8) / .7)), angle = 1.47 * t * t * (3 - 2 * t);
+  const sine = Math.sin(angle), cosine = Math.cos(angle);
+  return { angle, x: -13 + 3.7 * sine, z: -19.7 + 3.7 * cosine,
+    width: Math.abs(cosine) * .35 + Math.abs(sine) * 7.4, depth: Math.abs(sine) * .35 + Math.abs(cosine) * 7.4, height: 7.7 };
+}
+/** Saved-time staging at the existing 1313 doorway; separate from stair pursuers. */
+export function mouseRoomGuard(index: number, time: number) {
+  const start = 1.5 + index * .2, duration = 1.1;
+  const t = Math.max(0, Math.min(1, (time - start) / duration));
+  const x = -3 - t * 8.4, z = -15 + (index ? -1.3 : 1.3);
+  return { x, y: 0, z, yaw: Math.atan2(-18 - x, -15 - z), progress: t * 8.4,
+    speed: t > 0 && t < 1 ? 8.4 / duration : 0 };
 }
 const lead: Record<AmbushCompanion, number> = { apoc: 8.4, switch: 4.2, morpheus: 0, trinity: -4.2, cypher: -8.4 };
 const windowStops: Record<AmbushCompanion, number> = { apoc: 4.2, switch: 8.4, morpheus: 12.6, trinity: 16.8, cypher: 21 };

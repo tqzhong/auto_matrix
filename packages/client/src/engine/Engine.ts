@@ -7,7 +7,6 @@ import { metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyLocked } from '@auto_matrix/shared';
 import { arrestCarPose } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
-import { AMBUSH_ESCAPE } from '@auto_matrix/shared';
 import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
@@ -273,9 +272,6 @@ export class Engine {
     if (after?.scene === 'm1_dejavu' && !after.visiting && after.actor === this.playerControls?.id && this.running && !after.ambushEscape?.paused) {
       const previous = before?.scene === after.scene ? before.ambushEscape : undefined, current = after.ambushEscape;
       if (current?.phase === 'alarm' && !previous) this.audio.governmentSound('rotor');
-      if (current?.phase === 'alarm' && previous?.phase === 'alarm') {
-        for (const beat of [AMBUSH_ESCAPE.shots, 3.2, 3.6, 4]) if (previous.elapsed < beat && current.elapsed >= beat) this.audio.governmentSound('gunfire');
-      }
       if (current?.mouseDead && previous && !previous.mouseDead) this.audio.theOneSound('flatline');
       if (current?.phase === 'call' && previous?.phase === 'phone') { this.audio.governmentSound('phone'); this.audio.dialogue(); }
     }
@@ -532,6 +528,8 @@ export class Engine {
       this.playerControls.phone = journey?.actor === this.playerControls.id ? heldPhone(journey) : undefined;
       this.playerControls.ambushObservation = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu'
         && journey.step === 0 && journey.ambushApproach?.stairCat ? journey.ambush?.elapsed : undefined;
+      this.playerControls.ambushAlarm = this.playerControls.id === 'neo' && journey?.actor === 'neo' && !journey.visiting && journey.scene === 'm1_dejavu'
+        && journey.ambushEscape?.phase === 'alarm' ? journey.ambushEscape.elapsed : undefined;
       this.playerControls.ambushCompany = journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_dejavu' && journey.ambushEscape
         ? Object.values(agents).filter(actor => actor.status === 'alive' && Boolean((actor.currentAction?.parameters.ambushEscort as { retreat?: boolean } | undefined)?.retreat)).map(actor => actor.position) : journey?.actor === this.playerControls.id && !journey.visiting && journey.scene === 'm1_basement' ? BASEMENT_ROLES.filter(role => role !== this.playerControls!.id).map(role => agents[role].position) : [];
       this.playerControls.truckRescue = Boolean(journey?.actor === this.playerControls.id && journey.scene === 'm2_trucks' && !journey.visiting && ['rescue', 'rescued'].includes(journey.trucks?.phase ?? ''));
@@ -564,7 +562,15 @@ export class Engine {
   showImpact(impact: CombatImpact): void {
     const source = impact.shot?.from ?? impact.position;
     if (impact.matrix !== this.matrix || Math.min(this.camera.position.distanceTo(new THREE.Vector3(impact.position.x, impact.position.y, impact.position.z)), this.camera.position.distanceTo(new THREE.Vector3(source.x, source.y, source.z))) > 80) return;
-    const muzzle = impact.shot ? this.agentRenderer.muzzle(impact.source) ?? this.sandboxRenderer.muzzle(impact.source) : undefined;
+    const journey = this.sandbox?.neoLife?.journey;
+    if (impact.shot && journey?.scene === 'm1_dejavu' && !journey.visiting
+      && (impact.source === 'mouse' || impact.source.startsWith('film:ambush:room:'))) {
+      // The matching socket snapshot precedes this event, but RAF may not have
+      // applied its pose yet. Sample that saved pose before taking the muzzle.
+      this.agentRenderer.update(0, this.camera, 0, this.tick, journey);
+      this.sandboxRenderer.update(0, this.camera, this.matrix, this.tick, false);
+    }
+    const muzzle = impact.shot ? this.agentRenderer.muzzle(impact.source, impact.shot.hand) ?? this.sandboxRenderer.muzzle(impact.source) : undefined;
     this.combatEffects.impact(impact, impact.target === this.playerControls?.id, muzzle);
     if (this.playerControls?.id && [impact.source, impact.target].includes(this.playerControls.id)) this.audio.impact();
     this.playerControls?.impact(impact);

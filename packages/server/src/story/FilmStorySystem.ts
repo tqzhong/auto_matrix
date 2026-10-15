@@ -1,4 +1,5 @@
 import { SourcePortalSystem } from './SourcePortalSystem.js';
+import { mouseRoomGuard, mouseRoomDoor, MOUSE_ROOM_SHOTS, MOUSE_ROOM_RETURN } from '@auto_matrix/shared';
 import { PILL_BELIEFS, PILL_TALK_SECONDS, pillTalkReady, pillTalkCue } from '@auto_matrix/shared';
 import { newHammerGunnery, hammerGunneryAngles, fireHammerGunnery, stepHammerGunnery, hammerNiobeInput } from '@auto_matrix/shared';
 import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS, HAMMER_MEDICAL_SUPPLIES } from '@auto_matrix/shared';
@@ -2519,7 +2520,7 @@ export class FilmStorySystem {
       const arrived = this.near(agent, this.scene!.steps[0]);
       for (const role of roles) {
         const actor = this.world.agents.get(role); if (!actor || actor.controller || this.unavailable(role)) continue;
-        const before = { ...actor.position }, length = ambushRouteLength(role, approach.stairCat);
+        const before = { ...actor.position }, velocity = { ...actor.velocity }, length = ambushRouteLength(role, approach.stairCat);
         if (!occupied && !approach.ready && state.step === 0 && delta > 0) {
           const goal = arrived ? length : Math.min(length, progress + AMBUSH_COMPANY[role].offset);
           const next = Math.min(Math.max(approach.progress[role], goal), approach.progress[role] + Math.max(4.2, Math.hypot(agent.velocity.x, agent.velocity.z) * 1.08) * delta);
@@ -2531,7 +2532,7 @@ export class FilmStorySystem {
         const root = ambushRouteRoot(approach.progress[role], role, approach.stairCat), watching = (state.ambush?.elapsed ?? 0) >= (approach.stairCat ? AMBUSH_CAT_STAIRS.repeat : 4.5);
         this.place(actor, this.scene!, { ...filmPosition(this.scene!.set, root.x, root.z), y: center.y + root.y });
         actor.rotation = watching ? Math.atan2(agent.position.x - actor.position.x, agent.position.z - actor.position.z) : root.yaw;
-        actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+        actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : velocity;
         actor.currentAction = { type: 'idle', parameters: { resolved: true, ambushEscort: { role, progress: approach.progress[role], watching, stairCat: approach.stairCat } }, startedAt: tick, duration: 1, progress: 0 };
       }
       if (!approach.ready) {
@@ -2563,6 +2564,7 @@ export class FilmStorySystem {
     escape.paused = occupied;
     const delta = occupied || !agent.controller || agent.status !== 'alive' || ['failed', 'done'].includes(escape.phase) ? 0 : Math.max(0, Math.min(.1, dt));
     const center = FILM_SETS.film_ambush_house.center;
+    const alarmBefore = escape.phase === 'alarm' ? escape.elapsed : AMBUSH_ESCAPE.alarm;
     if (escape.phase === 'alarm') {
       escape.elapsed = Math.min(AMBUSH_ESCAPE.alarm, escape.elapsed + delta);
       const mouse = this.world.agents.get('mouse');
@@ -2575,11 +2577,60 @@ export class FilmStorySystem {
       }
       if (escape.elapsed >= AMBUSH_ESCAPE.alarm) { escape.phase = 'descending'; escape.elapsed = 0; }
     }
+    const roomTime = escape.phase === 'alarm' ? escape.elapsed : AMBUSH_ESCAPE.alarm;
+    escape.roomGuards ??= [{ health: 64 }, { health: 64 }];
+    for (const [index, saved] of escape.roomGuards.entries()) {
+      const id = `film:ambush:room:${index}`, root = mouseRoomGuard(index, roomTime);
+      let guard = this.sandbox().threats.find(threat => threat.id === id);
+      if (!guard && saved.spawned) { saved.health = 0; continue; }
+      if (!guard && saved.health > 0) {
+        guard = { id, scene: 'm1_dejavu', kind: 'soldier', patrol: true, position: { x: center.x + root.x, y: center.y, z: center.z + root.z },
+          yaw: root.yaw, matrix: true, health: saved.health, maxHealth: 64, target: 'mouse', stunUntil: 0, lastStrike: 0 };
+        this.sandbox().threats.push(guard); saved.spawned = true;
+      }
+      if (!guard) continue;
+      saved.health = guard.health;
+      guard.position = { x: center.x + root.x, y: center.y, z: center.z + root.z };
+      guard.yaw = root.yaw; guard.mouseRoom = { index, time: roomTime };
+    }
+    // The same saved clock drives room bodies, muzzle recoil and crossed shot
+    // beats. A restored/paused frame must not replay effects or damage.
+    if (delta > 0 && alarmBefore < AMBUSH_ESCAPE.alarm) {
+      const mouse = this.world.agents.get('mouse');
+      const shot = (source: string, target: string, from: AgentState['position'], destination: AgentState['position'], damage: number, downed = false, hand?: number) => {
+        const length = distance(from, destination);
+        this.onImpact?.({ source, target, position: destination, direction: { x: (destination.x - from.x) / length, y: (destination.y - from.y) / length, z: (destination.z - from.z) / length },
+          damage, combo: 0, matrix: true, downed, shot: { from, hand, surface: 'body' } }, tick);
+      };
+      if (mouse) {
+        for (const [index, beat] of MOUSE_ROOM_SHOTS.entries()) if (alarmBefore < beat && roomTime >= beat) {
+          const guard = this.sandbox().threats.find(threat => threat.id === `film:ambush:room:${index % 2}`);
+          if (!guard) continue;
+          guard.health = Math.max(1, guard.health - 6); escape.roomGuards[index % 2].health = guard.health;
+          shot(mouse.id, guard.id, { x: mouse.position.x + 2.6, y: mouse.position.y + 2.6, z: mouse.position.z + (index % 2 ? -.43 : .43) },
+            { ...guard.position, y: guard.position.y + 1.55 }, 6, false, index % 2);
+        }
+        for (const [index, beat] of MOUSE_ROOM_RETURN.entries()) if (alarmBefore < beat && roomTime >= beat) {
+          const guard = this.sandbox().threats.find(threat => threat.id === `film:ambush:room:${index % 2}`);
+          if (!guard) continue;
+          shot(guard.id, mouse.id, { x: guard.position.x - 1.8, y: guard.position.y + 2.5, z: guard.position.z },
+            { ...mouse.position, y: mouse.position.y + 2.3 }, 0, beat === AMBUSH_ESCAPE.mouse);
+        }
+      }
+    }
+    if (escape.phase === 'call') {
+      escape.elapsed = Math.min(AMBUSH_ESCAPE.call, escape.elapsed + delta);
+      if (escape.elapsed >= AMBUSH_ESCAPE.call) {
+        escape.phase = 'forming'; escape.elapsed = 0;
+        this.advance('Tank 找到八楼的主排水管线墙。手机追踪已经暴露这一层；队伍必须去 808 室。', agent, tick);
+        this.ambushEscapeCheckpoint(agent, 8, 'forming');
+      }
+    }
     const neo = ambushRetreatProgress(agent.position.x - center.x, agent.position.y - center.y, agent.position.z - center.z);
     const wall = { x: center.x + AMBUSH_ESCAPE.wetwall.x, y: center.y + AMBUSH_ESCAPE.wetwall.y, z: center.z + AMBUSH_ESCAPE.wetwall.z };
     for (const role of roles) {
       const actor = this.world.agents.get(role); if (!actor || actor.controller || this.unavailable(role)) continue;
-      const before = { ...actor.position }, waiting = ['alarm', 'call', 'failed', 'done'].includes(escape.phase);
+      const before = { ...actor.position }, velocity = { ...actor.velocity }, waiting = ['alarm', 'call', 'failed', 'done'].includes(escape.phase);
       // The two companions on the left wait for the returning right-hand line
       // to enter its stair flight. Otherwise both lines block the narrow mouth.
       const predecessor = role === 'trinity' ? 'morpheus' : role === 'cypher' ? 'trinity' : undefined;
@@ -2596,7 +2647,7 @@ export class FilmStorySystem {
       this.place(actor, this.scene!, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z });
       const watching = ['window', 'phone', 'call'].includes(escape.phase) || escape.progress[role] >= ambushRetreatLength(role) - .001;
       actor.rotation = watching ? Math.atan2(agent.position.x - actor.position.x, agent.position.z - actor.position.z) : root.yaw;
-      actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : { x: 0, y: 0, z: 0 };
+      actor.velocity = delta > 0 ? { x: (actor.position.x - before.x) / delta, y: (actor.position.y - before.y) / delta, z: (actor.position.z - before.z) / delta } : velocity;
       actor.currentAction = { type: 'idle', parameters: { resolved: true, armed: role !== 'morpheus' || escape.phase !== 'call',
         ambushEscort: { role, progress: escape.progress[role], watching, retreat: true },
         ...(role === 'morpheus' && escape.phase === 'call' ? { phone: { phase: 'connected', elapsed: escape.elapsed } } : {}) }, startedAt: tick, duration: 1, progress: 0 };
@@ -2604,14 +2655,6 @@ export class FilmStorySystem {
     const companyAt = (phase: 'window' | 'wetwall') => roles.every(role => escape.progress[role] >= (phase === 'wetwall'
       ? ambushRetreatLength(role) : ambushRetreatGoal(role, AMBUSH_WINDOW_PROGRESS, phase)) - .001);
     if (escape.phase === 'descending' && neo >= AMBUSH_WINDOW_PROGRESS - 4 && Math.abs(agent.position.y - center.y - AMBUSH_ESCAPE.window.y) < .3 && companyAt('window')) escape.phase = 'window';
-    if (escape.phase === 'call') {
-      escape.elapsed = Math.min(AMBUSH_ESCAPE.call, escape.elapsed + delta);
-      if (escape.elapsed >= AMBUSH_ESCAPE.call) {
-        escape.phase = 'forming'; escape.elapsed = 0;
-        this.advance('Tank 找到八楼的主排水管线墙。手机追踪已经暴露这一层；队伍必须去 808 室。', agent, tick);
-        this.ambushEscapeCheckpoint(agent, 8, 'forming');
-      }
-    }
     if (escape.phase === 'forming' && companyAt('wetwall')) escape.phase = 'wetwall';
     for (const [i, pursuer] of escape.pursuers.entries()) {
       const id = `film:ambush:pursuer:${i}`;
@@ -3813,6 +3856,17 @@ export class FilmStorySystem {
   }
   private sealAmbush(): void {
     const state = this.state;
+    if (state?.scene === 'm1_dejavu' && !state.visiting) {
+      const escape = state.ambushEscape, door = mouseRoomDoor(escape?.phase === 'alarm' ? escape.elapsed : escape ? AMBUSH_ESCAPE.alarm : 0);
+      const id = 'film:ambush:room-door', center = FILM_SETS.film_ambush_house.center;
+      let barrier = this.sandbox().structures.find(structure => structure.id === id);
+      if (!barrier) {
+        barrier = { id, kind: 'barricade', owner: 'matrix', position: { x: center.x, y: center.y, z: center.z }, matrix: true, health: 1 };
+        this.sandbox().structures.push(barrier);
+      }
+      barrier.position = { x: center.x + door.x, y: center.y, z: center.z + door.z };
+      barrier.film = { scene: 'm1_dejavu', width: door.width, depth: door.depth, height: door.height };
+    }
     const sealed = (state?.ambush?.elapsed ?? 0) >= (state?.ambushApproach?.stairCat ? AMBUSH_CAT_STAIRS.rewrite : AMBUSH_REWRITE) || state?.completed.includes('m1_dejavu') || state?.scene === 'm1_dejavu' && state.step > 0;
     if (!sealed) return;
     for (const floor of state?.ambushEscape ? [0, AMBUSH_ESCAPE.window.y] : [0]) for (const [i, wall] of AMBUSH_SEALS.entries()) {
@@ -5843,14 +5897,16 @@ export class FilmStorySystem {
       if (state.scene === 'm1_dejavu' && state.ambushEscape) {
         const escape = state.ambushEscape, checkpoint = escape.checkpoint;
         if (Object.keys(AMBUSH_COMPANY).some(id => this.world.agents.get(id)?.controller)) return '同行者正由另一位玩家控制，请等他释放角色后再重试。';
-        escape.phase = checkpoint.phase; escape.elapsed = 0; escape.caught = 0; escape.attempts++;
+        if (escape.phase !== 'alarm') { escape.phase = checkpoint.phase; escape.elapsed = 0; }
+        escape.caught = 0; escape.attempts++;
         escape.progress = { ...checkpoint.progress }; escape.pursuers = checkpoint.pursuers.map(p => ({ progress: p.progress, health: p.health })); escape.traced = checkpoint.traced;
         this.sandbox().threats = this.sandbox().threats.filter(t => !t.id.startsWith('film:ambush:pursuer:'));
         state.step = ['forming', 'wetwall'].includes(checkpoint.phase) ? 2 : 1; delete state.started; delete state.fighting;
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.place(agent, this.scene, state.checkpoint); agent.velocity = { x: 0, y: 0, z: 0 };
         this.ambushEscapeFrame(agent, 0, tick);
-        return `已回到${checkpoint.floor}楼检查点。队伍和追兵恢复该处状态，Mouse 的死亡保留。`;
+        return escape.phase === 'alarm' ? '已接回十三楼当前事件，硬线中断与 Mouse 的交火从保存时刻继续。'
+          : `已回到${checkpoint.floor}楼检查点。队伍和追兵恢复该处状态，Mouse 的死亡保留。`;
       }
       if (state.scene === 'm1_dejavu' && state.step === 0 && state.ambushApproach) {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
