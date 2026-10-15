@@ -20,6 +20,7 @@ import { CLUB_OBSTACLES } from './club.js';
 import { PILL_ROOM } from './pills.js';
 import { CONSTRUCT } from './construct.js';
 import { CONSOLE_DRINK, CONSOLE_OPERATOR } from './interlude.js';
+import { CREW_MEAL } from './crew-meal.js';
 import { DESERT_RUINS, DESERT_RUBBLE, desertGroundHeight } from './desert.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
 import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, DESERT_FURNITURE } from './awakening.js';
@@ -297,7 +298,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     ...[-1, 1].map(side => ({ x: RECOVERY_BED.x + side * RECOVERY_FRAME.halfWidth, z: RECOVERY_BED.z,
       width: RECOVERY_FRAME.post, depth: RECOVERY_FRAME.halfLength * 2 + RECOVERY_FRAME.post, height: RECOVERY_FRAME.height })),
     ...[-1, 1].flatMap(side => [-5, 6].map(z => ({ x: side * 6.5, z, width: 3.2, depth: 3.8, height: 3.2 }))),
-    { x: -8, z: 22, width: 10, depth: 4.5, height: 2.4 },
+    CREW_MEAL.table,
   ];
   if (set.id === 'film_real_desert') return [...DESERT_RUINS, ...DESERT_RUBBLE.map(chunk => ({ ...chunk, height: chunk.y + chunk.height })),
     ...Object.values(DESERT_FURNITURE.chairs).map(chair => ({ x: chair.x, z: chair.z + CONSTRUCT.chair.backOffset,

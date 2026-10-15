@@ -461,7 +461,7 @@ export class FilmSetRenderer {
       player?.id === 'morpheus' && player.id === journey?.actor ? player.currentAction?.parameters.truckHood as import('@auto_matrix/shared').TruckHood | undefined : undefined);
     this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject);
     this.neb?.update(journey, elapsed, journey?.scene === 'm2_relay' ? this.phoneBodies?.('trinity') : this.recoverySubject,
-      journey?.scene === 'm2_relay' ? this.phoneBodies : this.crosscutBodies);
+      ['m1_cypher_console', 'm1_meal', 'm2_relay'].includes(journey?.scene ?? '') ? this.phoneBodies : this.crosscutBodies);
     this.finale?.update(journey, elapsed);
     const empTime = player?.currentAction?.parameters.dockEmp;
     let empJourney = journey?.scene === 'm3_emp' && journey.emp?.elapsed !== undefined && typeof empTime === 'number' && empTime >= journey.emp.elapsed

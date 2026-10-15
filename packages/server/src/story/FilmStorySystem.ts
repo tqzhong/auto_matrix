@@ -91,7 +91,7 @@ import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matr
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, SENTINEL_POWER, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeWaiting, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
-import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
+import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole, type OracleWaitingGesture } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
 import { AMBUSH_CAT_STAIRS, AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, ambushRouteLength, ambushRouteProgress, type AmbushCompanion } from '@auto_matrix/shared';
 import { AMBUSH_ESCAPE, AMBUSH_WINDOW_PROGRESS, AMBUSH_RETREAT_LANDINGS, newAmbushEscape, ambushRetreatRoot, ambushRetreatLength, ambushRetreatShift, ambushRetreatProgress, ambushRetreatGoal, ambushEscapeText, ambushCompanyBlocked, ambushCompanyStep } from '@auto_matrix/shared';
@@ -2061,8 +2061,15 @@ export class FilmStorySystem {
       return true;
     };
     for (const actor of this.world.agents.values()) if (actor.currentLocation === 'film_oracle_home'
-      && !(actor.id === 'oracle' && (actor.currentAction?.parameters.oracleRequest || actor.currentAction?.parameters.oracleLast)) && migrate(actor.position)) {
-      actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+      && !(actor.id === 'oracle' && (actor.currentAction?.parameters.oracleRequest || actor.currentAction?.parameters.oracleLast))) {
+      const seat = ORACLE_WAITING_CAST[actor.id as keyof typeof ORACLE_WAITING_CAST];
+      const waiting = this.state && !this.state.visiting && ['m1_spoon', 'm1_oracle'].includes(this.state.scene)
+        && !actor.controller && actor.status === 'alive' && seat && actor.currentAction?.parameters.seated
+        && (actor.currentAction.parameters.oracleWaiting as OracleWaitingGesture | undefined)?.kind === seat.kind
+        && distance(actor.position, filmPosition('film_oracle_home', seat.x, seat.z)) < .001;
+      if (!waiting && migrate(actor.position)) {
+        actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+      }
     }
     if (this.scene?.set === 'film_oracle_home') migrate(this.state?.checkpoint);
     migrate(this.state?.returnPosition);
@@ -4516,6 +4523,9 @@ export class FilmStorySystem {
     else if (encounter.phase !== 'responding') state.lastText = interludeText(encounter);
 
     if (playing && encounter.elapsed >= interludeDuration(encounter)) {
+      if (kind === 'meal' && encounter.physicalMeal && encounter.phase === 'performing') {
+        encounter.phase = 'accept_ready'; encounter.elapsed = 0; this.interludeFrame(agent, 0, tick); return true;
+      }
       if (kind === 'console' && encounter.physicalConsole && ['performing', 'accepting', 'sipping'].includes(encounter.phase)) {
         encounter.phase = encounter.phase === 'performing' ? 'accept_ready' : encounter.phase === 'accepting' ? 'sip_ready' : 'returning';
         encounter.elapsed = 0; this.interludeFrame(agent, 0, tick); return true;
@@ -4548,8 +4558,12 @@ export class FilmStorySystem {
       if (!this.near(agent, this.step!)) return '先走近窗边餐桌的空座。';
       this.advance(this.step!.label, agent, tick); return 'Smith 在 Cypher 对面落座。按 G 见证这场既定交易。';
     }
-    if (!this.near(agent, this.step!)) return kind === 'meal' ? '先走到餐桌尽头，靠近 Tank 递来的食物。' : '先走到滚动代码或窗边餐桌旁。';
+    if (!this.near(agent, this.step!)) return kind === 'meal' ? '先走到餐桌侧边，靠近 Tank 递来的食物。' : '先走到滚动代码或窗边餐桌旁。';
     if (interludeWaiting(encounter)) {
+      if (kind === 'meal') {
+        if (target !== 'act') return '先按 G 拿起碗勺尝一口，再离开餐桌。';
+        encounter.phase = 'accepting'; encounter.elapsed = 0; this.interludeFrame(agent, 0, tick); return state.lastText;
+      }
       if (target !== 'act') return encounter.phase === 'accept_ready' ? '先按 G 接过金属杯，再回应 Cypher。' : '先按 G 品尝这一口，再回应 Cypher。';
       encounter.phase = encounter.phase === 'accept_ready' ? 'accepting' : 'sipping'; encounter.elapsed = 0;
       this.interludeFrame(agent, 0, tick); return state.lastText;
@@ -4570,6 +4584,7 @@ export class FilmStorySystem {
     if (encounter.phase !== 'ready') return state.lastText;
     if (kind === 'console') { encounter.physicalConsole = true; encounter.physicalPour = true; }
     if (kind === 'steak') encounter.physicalSteak = true;
+    if (kind === 'meal') encounter.physicalMeal = true;
     encounter.phase = 'performing'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
     this.interludeFrame(agent, 0, tick); return state.lastText;
   }

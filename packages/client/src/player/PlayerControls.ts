@@ -1876,9 +1876,10 @@ export class PlayerControls {
           ideal = new THREE.Vector3(portrait ? 8.2 : 6.4, 4, -12.7);
           focus = new THREE.Vector3(0, 2.65, -13);
         } else {
-          const reverse = THREE.MathUtils.smoothstep(gesture.elapsed, 7.8, 10.4);
-          ideal = new THREE.Vector3(3.4, 5.7, 28.5).lerp(new THREE.Vector3(3.8, 4.9, 15.3), reverse);
-          focus = new THREE.Vector3(-6.3, 2.45, 22);
+          const age = interludeAge(gesture), close = THREE.MathUtils.smoothstep(age, 3.8, 5) * (1 - THREE.MathUtils.smoothstep(age, 7.8, 10.4));
+          ideal = new THREE.Vector3(-3.1, 4.7, 15.4).lerp(new THREE.Vector3(-8.5, 3.75, 17.5), close);
+          focus = new THREE.Vector3(-8, 2.45, 22).lerp(new THREE.Vector3(-6, 2.75, 19.4), close);
+          if (this.camera.aspect < .85) ideal.sub(focus).multiplyScalar(1.55).add(focus);
         }
         ideal.add(origin); focus.add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));

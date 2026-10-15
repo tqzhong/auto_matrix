@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, INTERLUDE_CAST, INTERLUDE_TIMING, interludeDuration, steakJawOpen, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
+import { CREW_MEAL, FILM_SCENE_BY_ID, INTERLUDE_CAST, INTERLUDE_TIMING, interludeDuration, steakJawOpen, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -131,10 +131,103 @@ test('the crew meal is player-started and still requires walking back to the cor
   const h = setup('m1_meal'); h.frames(8); assert.equal(h.state().interlude?.phase, 'ready');
   h.command('act');
   for (const id of INTERLUDE_CAST.meal) assert.equal(h.world.agents.get(id)!.currentAction?.parameters.interlude?.role, id);
-  h.frames(INTERLUDE_TIMING.meal + .2);
+  h.frames(CREW_MEAL.receive + .2); assert.equal(h.state().interlude?.phase, 'accept_ready'); h.command('act');
+  h.frames(CREW_MEAL.duration - CREW_MEAL.receive + .2);
   assert.equal(h.state().interlude?.phase, 'done'); assert.equal(h.state().step, 1); assert.equal(h.state().completed.includes('m1_meal'), false);
   h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.sandbox.tick(h.tick() + 1);
   assert.ok(h.state().completed.includes('m1_meal'));
+  const completed = structuredClone(h.state().completed), philosophy = structuredClone(h.sandbox.state.neoLife!.philosophy);
+  h.command('act'); h.frames(2); h.sandbox.tick(h.tick() + 2);
+  assert.deepEqual(h.state().completed, completed, 'a repeated G or core tick cannot award the meal again');
+  assert.deepEqual(h.sandbox.state.neoLife!.philosophy, philosophy);
+});
+
+test('every meal crew member can block entry and remains reserved through the first-bite wait', () => {
+  for (const role of INTERLUDE_CAST.meal.filter(id => id !== 'neo')) {
+    const h = setup('m1_meal'); assert.equal(h.players.possess('other', role, h.tick()).agentId, role);
+    assert.match(h.command('act'), /另一位玩家/); assert.equal(h.state().interlude?.phase, 'ready');
+    h.players.release('other', h.tick()); h.command('act');
+    assert.match(h.players.possess('other', role, h.tick()).error!, /电影片段/);
+    h.frames(CREW_MEAL.receive + .2); assert.equal(h.state().interlude?.phase, 'accept_ready');
+    assert.match(h.players.possess('other', role, h.tick()).error!, /电影片段/);
+    assert.match(h.players.act('player', 'attack', h.tick()), /演出|片段/);
+    const before = structuredClone(h.state()); h.command('next'); h.command('retry');
+    assert.deepEqual(h.state(), before, 'next and retry cannot skip the player-owned first bite');
+    h.command('act'); h.frames(1);
+    assert.match(h.players.possess('other', role, h.tick()).error!, /电影片段/);
+  }
+});
+
+test('a disconnected or cold-restored meal preserves all six saved poses until Neo reconnects', () => {
+  const h = setup('m1_meal'); h.command('act'); h.frames(CREW_MEAL.receive + .2); h.command('act'); h.frames(3);
+  const pose = () => INTERLUDE_CAST.meal.map(id => {
+    const actor = h.world.agents.get(id)!;
+    return { id, position: structuredClone(actor.position), rotation: actor.rotation, gesture: structuredClone(actor.currentAction?.parameters.interlude) };
+  });
+  const before = pose(), elapsed = h.state().interlude!.elapsed;
+  h.players.release('player', h.tick()); h.frames(5);
+  assert.equal(h.state().interlude!.elapsed, elapsed, 'disconnect cannot finish the meal for Neo'); assert.deepEqual(pose(), before);
+  const saved = structuredClone(h.sandbox.state);
+  for (const id of INTERLUDE_CAST.meal) h.world.agents.get(id)!.currentAction = null;
+  h.sandbox.restore(saved);
+  assert.deepEqual(pose(), before, 'cold load must restore every seated actor before the first player reconnects');
+  assert.equal(h.actor.controller, undefined); assert.equal(h.state().step, 0);
+  h.players.possess('player', 'neo', h.tick()); assert.deepEqual(pose(), before);
+  h.frames(1); assert.ok(h.state().interlude!.elapsed > elapsed);
+});
+
+test('a new crew meal waits for Neo to choose his first bite and resumes that wait after loading', () => {
+  const h = setup('m1_meal'); h.command('act'); h.frames(2.4);
+  assert.equal(h.state().interlude?.phase, 'accept_ready', 'receiving breakfast must not automatically make Neo eat');
+  assert.equal(h.state().step, 0);
+  h.frames(20); assert.equal(h.state().interlude?.phase, 'accept_ready');
+  h.command('reflect:agency'); assert.equal(h.sandbox.state.neoLife!.philosophy.agency, 0);
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('player', h.tick()); h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick());
+  h.frames(10); assert.equal(h.state().interlude?.phase, 'accept_ready');
+  h.command('act'); assert.equal(h.state().interlude?.phase, 'accepting'); h.frames(4);
+  const elapsed = h.state().interlude!.elapsed; h.frames(3, false); assert.equal(h.state().interlude!.elapsed, elapsed);
+  const during = structuredClone(h.sandbox.state);
+  h.players.release('player', h.tick()); h.sandbox.restore(during); h.players.possess('player', 'neo', h.tick());
+  assert.equal(h.state().interlude!.elapsed, elapsed, 'a loaded bite cannot restart its hand or food clock');
+  h.frames(7.1); assert.equal(h.state().interlude?.phase, 'done'); assert.equal(h.state().step, 1);
+  assert.equal(h.state().completed.includes('m1_meal'), false);
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.sandbox.tick(h.tick() + 1);
+  assert.equal(h.state().completed.filter(id => id === 'm1_meal').length, 1);
+});
+
+test('an already running legacy crew meal keeps its thirteen-second clock without a new bite prompt', () => {
+  const h = setup('m1_meal'); h.state().interlude = { kind: 'meal', phase: 'performing', elapsed: 3 };
+  h.frames(10.4); assert.equal(h.state().interlude?.phase, 'done'); assert.equal(h.state().interlude?.elapsed, INTERLUDE_TIMING.meal);
+  assert.equal(h.state().step, 1);
+});
+
+test('the meal-to-Oracle handoff preserves the authored seated attendant on cold restore', () => {
+  const h = setup('m1_meal'); h.command('act'); h.frames(CREW_MEAL.receive + .2); h.command('act');
+  h.frames(CREW_MEAL.duration - CREW_MEAL.receive + .2);
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.sandbox.tick(h.tick() + 1); h.command('next');
+  assert.equal(h.state().scene, 'm1_spoon');
+  const attendant = h.world.agents.get('oracle_attendant')!;
+  assert.ok(attendant.currentAction?.parameters.oracleWaiting);
+  const before = { position: structuredClone(attendant.position), rotation: attendant.rotation, gesture: structuredClone(attendant.currentAction?.parameters) };
+  h.players.release('player', h.tick()); h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual({ position: attendant.position, rotation: attendant.rotation, gesture: attendant.currentAction?.parameters }, before,
+    'the legacy blocked-player migration cannot move an intentionally seated NPC off its bench');
+});
+
+test('the Oracle seated exception still migrates blocked players, stale scenes and misplaced actors', () => {
+  for (const mode of ['player', 'misplaced', 'standing', 'wrong-kind', 'other-scene', 'visiting', 'controlled'] as const) {
+    const h = setup('m1_meal'); h.state().scene = mode === 'other-scene' ? 'm1_meal' : 'm1_spoon';
+    if (mode === 'visiting') h.state().visiting = 'm1_oracle';
+    const actor = h.world.agents.get(mode === 'player' ? 'neo' : 'oracle_attendant')!;
+    actor.currentLocation = 'film_oracle_home'; actor.position = filmPosition('film_oracle_home', mode === 'misplaced' ? -11.5 : -10.4, 16);
+    actor.currentAction = { type: 'idle', parameters: { seated: mode !== 'standing',
+      oracleWaiting: { kind: mode === 'wrong-kind' ? 'playing' : 'watching', elapsed: 0 } }, startedAt: 0, duration: 1, progress: 0 };
+    if (mode === 'controlled') actor.controller = 'player';
+    assert.equal(playerBlocked(actor.position, true), true, `${mode} must begin inside blocked furniture`);
+    h.sandbox.life.film.restoreOracleSpace();
+    assert.equal(playerBlocked(actor.position, true), false, `${mode} must retain the old blocked-position repair`);
+  }
 });
 
 test('the console, crew meal and restaurant own visible, animated physical props', () => {
@@ -149,10 +242,18 @@ test('the console, crew meal and restaurant own visible, animated physical props
     assert.ok(consoleCables.every(cable => !cable.visible), 'unused operator-chair cables cannot cut across Cypher’s console shot');
     consoleJourney.interlude = { kind: 'console', phase: 'performing', elapsed: 5.5 }; neb.update(consoleJourney, 5.5); assert.equal(cup.visible, false, 'the held copy belongs to Neo, rather than a floating world cup');
     const mealJourney: FilmJourney = { ...consoleJourney, scene: 'm1_meal', interlude: { kind: 'meal', phase: 'performing', elapsed: 2.2 } };
-    neb.update(mealJourney, 7); const bowl = nebRoot.getObjectByName('neb-neo-protein-bowl')!; assert.ok(bowl.position.x > -4);
-    assert.equal(nebRoot.getObjectByName('neb-meal-steam-0')!.visible, true);
-    assert.ok((nebRoot.getObjectByName('neb-meal-pendant-light') as THREE.PointLight).intensity > 100,
-      'the shared meal must use its own warm task light instead of the cold deck wash');
+    mealJourney.interlude!.elapsed = .35; neb.update(mealJourney, 7);
+    const bowl = nebRoot.getObjectByName('neb-neo-protein-bowl')!; assert.equal(bowl.position.x, CREW_MEAL.bowl.start.x);
+    assert.equal(bowl.position.z, CREW_MEAL.bowl.start.z);
+    mealJourney.interlude!.elapsed = 2.2; neb.update(mealJourney, 7);
+    assert.equal(bowl.position.x, CREW_MEAL.bowl.end.x); assert.equal(bowl.position.z, CREW_MEAL.bowl.end.z);
+    assert.equal(nebRoot.getObjectByName('neb-meal-steam-0'), undefined, 'food cannot be obscured by cartoon steam rings');
+    const light = nebRoot.getObjectByName('neb-meal-pendant-light') as THREE.PointLight;
+    assert.ok(light.intensity > 100 && light.color.b >= light.color.r, 'the meal uses a cool neutral mess-hall fixture');
+    const table = new THREE.Box3().setFromObject(nebRoot.getObjectByName('neb-meal-table-runner')!);
+    const pot = new THREE.Box3().setFromObject(nebRoot.getObjectByName('neb-meal-communal-pot')!);
+    assert.ok(table.getSize(new THREE.Vector3()).z > table.getSize(new THREE.Vector3()).x);
+    assert.equal(table.intersectsBox(pot), false, 'the serving pot belongs on the side tray instead of hiding the conversation');
   } finally { neb.dispose(); }
 
   const restaurantRoot = new THREE.Group(); const restaurant = new CypherRestaurantRenderer(restaurantRoot);

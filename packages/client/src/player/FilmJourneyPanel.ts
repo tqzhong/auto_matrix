@@ -759,7 +759,7 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : ['尼布甲尼撒号 · 船员餐桌', '真实世界的一顿饭', 'Neo 视角 · 一顿普通早餐也在讨论何为真实'];
     let action = '';
     if (phase === 'choice') action = filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !current)).join('');
-    else if (interludeWaiting(encounter)) action = button('act', phase === 'accept_ready' ? '接过金属杯 · G' : '品尝一口 · G', !close);
+    else if (interludeWaiting(encounter)) action = button('act', encounter.kind === 'meal' ? '拿起碗勺，尝一口 · G' : phase === 'accept_ready' ? '接过金属杯 · G' : '品尝一口 · G', !close);
     else if (phase === 'ready' && encounter.kind === 'steak' && journey.step === 0) action = `<p>合上手记，走到窗边餐桌的空座。还没落座前，交易不会自行开始。</p>${!close && step ? `<small>距离座位 ${Math.round(distance(player.position, filmStepPosition(scene, step)))} m</small>` : ''}`;
     else if (phase === 'ready') action = button('act', encounter.kind === 'console' ? '打断 Cypher 的夜班 · G' : encounter.kind === 'steak' ? '落座见证交易 · G' : '接过 Tank 递来的食物 · G', !close);
     else if (phase === 'done' && encounter.kind === 'meal' && step) action = '<p>合上手记，用 WASD 回到核心连接区；抵达目标后自动记录。</p>';
