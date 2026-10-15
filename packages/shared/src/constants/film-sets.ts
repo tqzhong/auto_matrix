@@ -19,7 +19,7 @@ import { APARTMENT_FURNITURE, APARTMENT_ROOM } from './apartment.js';
 import { CLUB_OBSTACLES } from './club.js';
 import { PILL_ROOM } from './pills.js';
 import { CONSTRUCT } from './construct.js';
-import { CONSOLE_DRINK } from './interlude.js';
+import { CONSOLE_DRINK, CONSOLE_OPERATOR } from './interlude.js';
 import { DESERT_RUINS, DESERT_RUBBLE, desertGroundHeight } from './desert.js';
 import { INTERROGATION_ROOM } from './interrogation.js';
 import { MIRROR_SEAT, MIRROR_FRAME, POD_WATER_DROP, RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, DESERT_FURNITURE } from './awakening.js';
@@ -284,7 +284,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
     { x: 12, z: 10, width: 8, depth: 3, height: 4.8 },
   ];
   if (set.id === 'film_neb_deck') return [
-    CONSOLE_DRINK.shelf,
+    CONSOLE_DRINK.shelf, CONSOLE_OPERATOR.desk,
     ...CABIN_WALLS,
     CABIN.locker,
     { x: CABIN.bed.x, z: CABIN.bed.z, width: 3.15, depth: 6.95, height: CABIN.bed.surface },

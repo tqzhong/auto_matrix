@@ -32,6 +32,7 @@ import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 import { PHONE_HAND } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
 import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
+import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -1179,18 +1180,7 @@ export class HeroModels {
     if (input.interlude) {
       const { kind, role, phase, elapsed: t } = input.interlude;
       if (kind === 'console') {
-        if (role === 'cypher') {
-          const typing = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, .55, 1.35) : 0;
-          const startled = phase === 'performing' ? Math.sin(THREE.MathUtils.clamp(t / 1.35, 0, 1) * Math.PI) : 0;
-          const offering = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 4.35, 5.2) * (1 - THREE.MathUtils.smoothstep(t, 7.25, 8.15))
-            : phase === 'responding' ? THREE.MathUtils.smoothstep(t, .35, 1.1) * (1 - THREE.MathUtils.smoothstep(t, 3.25, 4.4)) : 0;
-          bone('spine').rotation.x += typing * .16 + startled * .08; bone('head').rotation.y += startled * .42 - offering * .16;
-          for (const side of ['R', 'L']) {
-            const alternate = side === 'R' ? 1 : -1;
-            bone('shoulder_' + side).rotation.x -= typing * (.72 + Math.sin(t * 13 + alternate) * .08) + offering * .44;
-            bone('elbow_' + side).rotation.x -= typing * (.88 - Math.sin(t * 11 + alternate) * .07) + offering * (side === 'R' ? 1.16 : .38);
-          }
-        } else {
+        if (role !== 'cypher') {
           bone('head').rotation.y -= phase !== 'ready' ? .2 : 0;
         }
       } else if (kind === 'steak') {
@@ -1310,6 +1300,7 @@ export class HeroModels {
     if (input.farewell) { this.farewellSupport(rig, input.farewell); this.farewellContact(rig, input.farewell); }
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);
+    poseConsoleOperator(rig, input.interlude);
     if (input.interlude?.kind === 'console' && input.interlude.role === 'neo' && !this.consoleDrinks.has(rig)) this.consoleDrinks.set(rig, new ConsoleDrinkPerformance(rig));
     this.consoleDrinks.get(rig)?.update(input.interlude);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));

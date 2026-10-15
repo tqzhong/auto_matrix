@@ -82,6 +82,17 @@ export const CONSOLE_DRINK = {
   radius: .16, height: .48, transfer: .9, release: 2.4,
 } as const;
 
+export const CONSOLE_OPERATOR = {
+  desk: { x: 8.7, z: 6, width: 2.8, depth: 4.8, height: 1.86 },
+  keyboard: { x: 7.75, y: 1.99, z: 6, width: .72, depth: 2.5 },
+} as const;
+
+export function consoleOperatorPose(encounter: InterludeEncounter) {
+  const t = encounter.phase === 'ready' ? 0 : encounter.phase === 'performing' ? encounter.elapsed : 4.4;
+  return { yaw: Math.PI / 2 - Math.PI * ease(t, .9, 2.2), typing: 1 - ease(t, .2, .8),
+    glance: Math.sin(Math.PI * ease(t, .1, 1.7)) };
+}
+
 export function interludeAge(encounter: InterludeEncounter): number {
   if (encounter.kind !== 'console') return encounter.elapsed;
   if (!encounter.physicalConsole) return encounter.phase === 'choice' ? INTERLUDE_TIMING.console
@@ -112,7 +123,8 @@ export function consoleDrinkPose(encounter: InterludeEncounter): { reach: number
     drunk: phase === 'sipping' ? ease(t, 1.8, 2.6) : ['returning', 'choice', 'responding', 'done'].includes(phase) ? 1 : 0 };
 }
 
-export function interludeRoot(kind: InterludeKind, role: InterludeRole) {
+export function interludeRoot(kind: InterludeKind, role: InterludeRole, encounter?: InterludeEncounter) {
+  if (kind === 'console' && role === 'cypher' && encounter) return { ...INTERLUDE_ROOTS.console.cypher, yaw: consoleOperatorPose(encounter).yaw };
   return INTERLUDE_ROOTS[kind][role];
 }
 
