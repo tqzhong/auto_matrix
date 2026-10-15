@@ -14,7 +14,7 @@ export function createConsoleMug(name: string): THREE.Group {
     new THREE.Vector3(r + .24, .21, 0), new THREE.Vector3(r + .24, -.21, 0), new THREE.Vector3(r - .006, -.145, 0)), 32, .022, 8), metal);
   handle.name = 'console-mug-handle'; handle.castShadow = handle.receiveShadow = true; root.add(handle);
   const liquid = new THREE.Mesh(new THREE.CircleGeometry(r - .019, 32).rotateX(-Math.PI / 2),
-    new THREE.MeshStandardMaterial({ color: 0x5b381b, roughness: .18, metalness: .04, side: THREE.DoubleSide }));
+    new THREE.MeshStandardMaterial({ color: 0x9ead9f, transparent: true, opacity: .55, roughness: .12, metalness: .02, side: THREE.DoubleSide }));
   liquid.name = 'console-mug-liquid'; liquid.position.y = -.035; root.add(liquid);
   return root;
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CONSOLE_OPERATOR, INTERLUDE_ROOTS, consoleOperatorPose, interludeAge, type InterludeEncounter } from '@auto_matrix/shared';
+import { CONSOLE_OPERATOR, CONSOLE_SERVICE, INTERLUDE_ROOTS, consoleOperatorPose, interludeAge, type InterludeEncounter } from '@auto_matrix/shared';
 
 /** Independent CRT bank; the later Link relay retains its existing terminal. */
 export class CypherConsoleRenderer {
@@ -43,6 +43,10 @@ export class CypherConsoleRenderer {
       arm.position.set(side * .94, 2.12, .02); this.chair.add(arm);
       for (const z of [-.3, .32]) this.box(this.chair, metal, side * .94, 1.65, z, .06, .86, .06);
     }
+    const cup = CONSOLE_SERVICE.cup;
+    this.box(this.chair, metal, cup.x, 2.09, (cup.z + .02) / 2, .16, .08, Math.abs(cup.z - .02) + .2);
+    const tray = new THREE.Mesh(this.geometry(new THREE.CylinderGeometry(.23, .23, .02, 32)), metal);
+    tray.name = 'neb-cypher-cup-tray'; tray.position.set(cup.x, cup.y - .25, cup.z); this.chair.add(tray);
     this.box(this.chair, metal, 0, .16, 1.45, 1.75, .1, 1, 'neb-cypher-operator-chair-footrest');
     for (const side of [-1, 1]) {
       const start = new THREE.Vector3(side * .45, .65, .05), end = new THREE.Vector3(side * .45, .16, 1.45), direction = end.clone().sub(start);

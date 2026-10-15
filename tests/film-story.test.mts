@@ -4079,7 +4079,7 @@ test('the entire film route completes through interactions, driving and real com
         }
         if (scene.id === 'm1_pills') for (let frame = 0; frame < Math.ceil(PILL_TIMING.take / .1) + 1; frame++) h.players.step(.1, true, h.tick());
         if (scene.id === 'm1_club') for (let frame = 0; frame < 61; frame++) h.players.step(.1, true, h.tick());
-        if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 48; frame++) h.players.step(.1, true, h.tick());
+        if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 110; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
         if (scene.id === 'm3_oracle_request') {
@@ -4324,7 +4324,7 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < frames; frame++) h.players.step(.1, true, h.tick());
         }
         else if (scene.id === 'm1_cypher_console') {
-          for (let frame = 0; frame < 46; frame++) h.players.step(.1, true, h.tick());
+          for (let frame = 0; frame < 98; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.interlude?.phase, 'accept_ready'); h.command('act');
           for (let frame = 0; frame < 23; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.interlude?.phase, 'sip_ready'); h.command('act');
