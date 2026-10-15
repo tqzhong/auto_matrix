@@ -17,6 +17,16 @@ spec = importlib.util.spec_from_file_location('character_builder', Path(__file__
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 REVISION = builder.REVISION
 REFERENCES = {
+    'mouse': {
+        'targets': {'macrodetails/caucasian-male-young': 1, 'head/head-fat-decr': .28,
+                    'chin/chin-width-decr': .20, 'chin/chin-prominent-decr': .08,
+                    'nose/nose-scale-depth-incr': .14, 'mouth/mouth-scale-horiz-decr': .08},
+        'row': 0, 'eye': [200, 416, 499], 'ys': [1235, 894, 766, 746, 727, 652, 499, 133],
+        'chin': -.333, 'skin': [.61, .40, .30], 'atlas': 'mouse-face-reference.png',
+        'atlas_size': [1254, 1254], 'panel_top': 0, 'profile_anchor': 110, 'profile_y': 0,
+        'neck_sample': [312, 1000], 'cheek_sample': [953, 676], 'profile_ear': [491, 555],
+        'anatomical_neck': True,
+    },
     'cypher': {
         'targets': {'macrodetails/caucasian-male-young': .72, 'macrodetails/caucasian-male-old': .28,
                     'head/head-rectangular': .16, 'head/head-fat-decr': .14,

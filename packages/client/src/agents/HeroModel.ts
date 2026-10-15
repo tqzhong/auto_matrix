@@ -37,9 +37,10 @@ import { ConsolePourPerformance } from './ConsolePourPerformance.js';
 import { SteakPerformance } from './SteakPerformance.js';
 import { setCypherMouth } from './CypherMouth.js';
 import { MealPerformance } from './MealPerformance.js';
+import { MouseAppearance } from './MouseAppearance.js';
 import { crewMealAge } from '@auto_matrix/shared';
 
-export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
+export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -115,7 +116,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
@@ -136,6 +137,7 @@ export class HeroModels {
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
   private farewellAppearances = new Map<HeroRig, FarewellAppearance>();
   private constructSuits = new Map<HeroRig, ConstructSuitAppearance>();
+  private mice = new Map<HeroRig, MouseAppearance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -161,7 +163,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -196,7 +198,7 @@ export class HeroModels {
           material.depthWrite = true; material.alphaToCoverage = true;
           material.bumpMap = material.map; material.bumpScale = .003;
         }
-        if (material.name === 'Coat wool' || material.name === 'Coat leather' || material.name === 'Trousers' || material.name === 'Tracking cotton') {
+        if (material.name === 'Coat wool' || material.name === 'Coat leather' || material.name === 'Trousers' || material.name === 'Tracking cotton' || object.userData.mouseCostume) {
           material.bumpMap = this.fabric; material.bumpScale = .001;
         }
       });
@@ -211,11 +213,13 @@ export class HeroModels {
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
     const pedestrian = support === 'pedestrian';
-    const [asset, office, tracking, club, cypherCostume] = await Promise.all([this.load(pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
-      id === 'neo' && !pedestrian && !apartmentRole && support !== 'tank' && support !== 'cypher' ? this.load('neo-office') : undefined,
+    const [asset, office, tracking, club, cypherCostume, mouseShip, mouseHead] = await Promise.all([this.load(support === 'mouse' ? 'mouse' : pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
+      id === 'neo' && !pedestrian && !apartmentRole && support !== 'tank' && support !== 'cypher' && support !== 'mouse' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined,
-      support === 'cypher' ? this.load('cypher-reality') : undefined]);
+      support === 'cypher' ? this.load('cypher-reality') : undefined,
+      support === 'mouse' ? this.load('mouse-ship') : undefined,
+      support === 'mouse' ? this.load('mouse-head') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
     const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
@@ -286,6 +290,13 @@ export class HeroModels {
       mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
       this.skeletons.add(skeleton); root.add(mesh);
     });
+    if (mouseShip) mouseShip.scene.traverse(source => {
+      if (!(source instanceof THREE.SkinnedMesh)) return;
+      const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name; mesh.userData = { ...source.userData };
+      const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
+      mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
+      this.skeletons.add(skeleton); root.add(mesh);
+    });
     this.forearms.attach(root, bones, rest);
     if (guard) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
@@ -315,7 +326,7 @@ export class HeroModels {
         if (hit) head.userData.patientEye = head.worldToLocal(hit.point.addScaledVector(outward, .035));
       });
     }
-    const glasses = new THREE.Group(); head.add(glasses); this.glasses(glasses, eye, id);
+    const glasses = new THREE.Group(); head.add(glasses); this.glasses(glasses, eye, support === 'mouse' ? 'mouse' : id);
     if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
       this.mesh(head, new THREE.SphereGeometry(.285, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), uniform).position.set(0, .11, -.01);
@@ -323,13 +334,13 @@ export class HeroModels {
     }
     const pelvis = bones.get('pelvis')!;
     const waist = new THREE.Vector3().fromArray(metadata.waist).sub(pelvis.position);
-    const panels = (id === 'neo' || id === 'morpheus') && !pedestrian && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
+    const panels = (id === 'neo' || id === 'morpheus') && !pedestrian && !police && support !== 'link' && support !== 'dozer' && support !== 'tank' && support !== 'cypher' && support !== 'mouse' ? [-1, 1].map(side => this.coat(pelvis, waist, side, id)) : [];
     const footHeight = this.point.setFromMatrixPosition(bones.get('ankle_L')!.matrixWorld).y;
     const silver = { value: 0 }; const wardrobe: HeroRig['wardrobe'] = [];
     let trackingSkin: HeroRig['trackingSkin'];
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
-      if (object.userData.cypherNeckReference) { object.visible = false; return; }
+      if (object.userData.cypherNeckReference || object.userData.mouseNeckReference) { object.visible = false; return; }
       if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume || object.userData.cypherCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
       if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && !object.userData.dojoSkin && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
@@ -404,7 +415,7 @@ export class HeroModels {
         roughness: material.roughness, metalness: material.metalness, side: material.side, emissive: material.emissive.clone(), emissiveIntensity: material.emissiveIntensity,
         outer: panels.some(p => p.mesh === object),
         hair: /Hair|hair|Groom|groom/.test(material.name), cloth: /Coat|Trousers/.test(material.name) || Boolean(object.userData.cypherCostume || object.userData.dojoCostume && !object.userData.dojoSkin) });
-      if (id !== 'neo') return;
+      if (id !== 'neo' || support === 'mouse') return;
       addMirrorArrival(object);
       material.onBeforeCompile = (shader, renderer) => {
         source.onBeforeCompile(shader, renderer);
@@ -487,6 +498,7 @@ export class HeroModels {
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     if ((id === 'neo' || id === 'trinity' || id === 'morpheus') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
     if (id === 'morpheus' && !support) this.constructSuits.set(rig, new ConstructSuitAppearance(rig, this.fabric));
+    if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
     enableSkinnedCulling(root);
     return rig;
   }
@@ -496,11 +508,11 @@ export class HeroModels {
     const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
   }
 
-  private glasses(head: THREE.Group, eye: THREE.Vector3, id: HeroId): void {
+  private glasses(head: THREE.Group, eye: THREE.Vector3, id: HeroId | 'mouse'): void {
     const black = new THREE.MeshPhysicalMaterial({ color: '#060909', metalness: .55, roughness: .19, clearcoat: 1 });
     const frame = new THREE.MeshStandardMaterial({ color: '#121516', metalness: .7, roughness: .3 });
-    const width = id === 'morpheus' ? .056 : id === 'smith' ? .062 : id === 'trinity' ? .065 : .064;
-    const height = id === 'morpheus' ? .053 : id === 'smith' ? .031 : id === 'trinity' ? .025 : .028;
+    const width = id === 'mouse' ? .052 : id === 'morpheus' ? .056 : id === 'smith' ? .062 : id === 'trinity' ? .065 : .064;
+    const height = id === 'mouse' ? .047 : id === 'morpheus' ? .053 : id === 'smith' ? .031 : id === 'trinity' ? .025 : .028;
     const spacing = Math.max(eye.x, width + .01);
     const bridge = new THREE.CatmullRomCurve3([new THREE.Vector3(-spacing + width, .006, .061), new THREE.Vector3(0, .02, .072), new THREE.Vector3(spacing - width, .006, .061)]);
     const origin = new THREE.Vector3(0, eye.y, eye.z);
@@ -528,7 +540,8 @@ export class HeroModels {
         new THREE.Vector3(side * (spacing + width), eye.y, eye.z + .03), new THREE.Vector3(side * (spacing + width + .025), eye.y + .012, eye.z - .08),
         new THREE.Vector3(side * (spacing + width + .025), eye.y - .015, eye.z - .26),
       ]);
-      this.mesh(head, new THREE.TubeGeometry(temple, 16, .004, 6), frame);
+      const arm = this.mesh(head, new THREE.TubeGeometry(temple, 16, .004, 6), frame);
+      if (id === 'mouse') arm.name = `mouse-glasses-temple-${side}`;
     }
   }
 
@@ -874,6 +887,62 @@ export class HeroModels {
     this.recoveries.get(rig)!.update(undefined, true);
   }
 
+  mousePistols(rig: HeroRig, guns: THREE.Group[]): void {
+    for (const [hand, side] of ['R', 'L'].entries()) {
+      const gun = guns[hand], sign = hand ? -1 : 1;
+      let fingers = gun.userData.mouseGrip as THREE.Quaternion[][] | undefined;
+      if (!fingers) {
+        const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+        const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+        const pads = Array.from({ length: 5 }, () => new THREE.Vector3()), counts = [0, 0, 0, 0, 0];
+        const index = rig.rest.get(`finger2-1_${side}`)!, middle = rig.rest.get(`finger3-1_${side}`)!, little = rig.rest.get(`finger5-1_${side}`)!;
+        const wristIndex = skin.skeleton.bones.indexOf(rig.bones.get(`wrist_${side}`)!); let palm = 0;
+        const distal = skin.skeleton.bones.map(bone => new RegExp(`^finger([1-5])-3_${side}$`).exec(bone.name));
+        for (let vertex = 0; vertex < position.count; vertex++) for (let part = 0; part < 4; part++) {
+          const index = skinIndex.getComponent(vertex, part), match = distal[index];
+          if (index === wristIndex && skinWeight.getComponent(vertex, part) > .9) {
+            this.point.fromBufferAttribute(position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]);
+            if (this.point.y > little.y && this.point.y < -.1 && this.point.z > little.z && this.point.z < rig.rest.get(`finger2-1_${side}`)!.z)
+              palm = Math.max(palm, sign * this.point.x);
+          }
+          if (!match || skinWeight.getComponent(vertex, part) < .95) continue;
+          this.point.fromBufferAttribute(position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index]);
+          pads[Number(match[1]) - 1].add(this.point); counts[Number(match[1]) - 1]++;
+        }
+        pads.forEach((pad, i) => pad.divideScalar(counts[i]));
+        const handle = gun.children[2] as THREE.Mesh, trigger = gun.children[3] as THREE.Mesh;
+        // Index sits above the little finger in this anatomical wrist frame.
+        // The generic fallback mount points the grip in the opposite direction.
+        gun.rotation.set(0, Math.PI, 0);
+        gun.position.set(sign * (palm + handle.scale.x / 2 - .012), middle.y + handle.scale.y / 2 - handle.position.y + .012,
+          (index.z + little.z) / 2 + handle.position.z);
+        const center = handle.position.clone().applyQuaternion(gun.quaternion).add(gun.position);
+        const triggerCenter = trigger.position.clone().applyQuaternion(gun.quaternion).add(gun.position);
+        fingers = pads.map((pad, i) => {
+          const base = rig.rest.get(`finger${i + 1}-1_${side}`)!, first = rig.rest.get(`finger${i + 1}-2_${side}`)!, second = rig.rest.get(`finger${i + 1}-3_${side}`)!;
+          const direction = (i === 0 ? new THREE.Vector3(-sign * .6, -.8, 0) : i === 1 ? new THREE.Vector3(0, -1, 0) : new THREE.Vector3(sign * .8, .6, 0)).normalize();
+          const target = i === 0 ? new THREE.Vector3(center.x - sign * (handle.scale.x / 2 + .018), center.y + .035, index.z)
+            : i === 1 ? triggerCenter.clone().add(new THREE.Vector3(-sign * (trigger.scale.x / 2 + .012), 0, 0))
+            : new THREE.Vector3(center.x + sign * (i === 2 ? .045 : i === 3 ? .025 : -.025),
+              center.y - handle.scale.y / 2 - .018, base.z);
+          const end = target.clone().addScaledVector(direction, -pad.length()), axis = end.clone().sub(base);
+          const a = first.length(), b = second.length(), distance = THREE.MathUtils.clamp(axis.length(), .001, a + b - .001);
+          axis.normalize(); end.copy(base).addScaledVector(axis, distance);
+          const along = (a * a - b * b + distance * distance) / (2 * distance);
+          const bend = new THREE.Vector3(sign * .3, i === 0 ? 1 : -1, 0); bend.addScaledVector(axis, -bend.dot(axis)).normalize();
+          const hinge = base.clone().addScaledVector(axis, along).addScaledVector(bend, Math.sqrt(Math.max(0, a * a - along * along))), parent = new THREE.Quaternion();
+          return [hinge.clone().sub(base), end.clone().sub(hinge), direction].map((desired, joint) => {
+            const rotation = new THREE.Quaternion().setFromUnitVectors([first, second, pad][joint].clone().normalize(), desired.normalize());
+            const local = parent.clone().invert().multiply(rotation); parent.copy(rotation); return local;
+          });
+        });
+        gun.userData.mouseGrip = fingers;
+      }
+      for (let digit = 1; digit <= 5; digit++) for (let joint = 1; joint <= 3; joint++)
+        rig.bones.get(`finger${digit}-${joint}_${side}`)!.quaternion.copy(fingers[digit - 1][joint - 1]);
+    }
+  }
+
   private gripHand(rig: HeroRig, side: string, grip: number): void {
     if (grip <= 0) return;
     const wrist = rig.bones.get(`wrist_${side}`)!;
@@ -991,6 +1060,7 @@ export class HeroModels {
         part.mesh.visible = Boolean(input.dojoOutfit);
       } else if (input.dojoOutfit && (part.outer || part.cloth || /Black.crew.neck|shoes01/i.test(part.mesh.name))) part.mesh.visible = false;
     }
+    this.mice.get(rig)?.update(input);
     const bone = (name: string) => rig.bones.get(name)!;
     const pelvis = bone('pelvis');
     pelvis.position.copy(rig.rest.get('pelvis')!);
@@ -1399,6 +1469,7 @@ export class HeroModels {
     this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();
     this.farewellAppearances.forEach(p => p.dispose()); this.farewellAppearances.clear();
     this.constructSuits.forEach(p => p.dispose()); this.constructSuits.clear();
+    this.mice.forEach(p => p.dispose()); this.mice.clear();
     this.forearms.dispose();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
