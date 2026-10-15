@@ -111,6 +111,68 @@ test('Cypher drinks from a transparent stemmed glass in his left hand', async t 
   assert.equal(h.deck.getObjectByName('cypher-wine-glass')!.visible, false);
 });
 
+test('the feeding fork keeps the hand below the mouth and turns the narrow edge of the bite into the opening', async t => {
+  const h = await fixture(t); h.draw('performing', 8.05);
+  const head = h.rig.hero!.bones.get('head')!, fork = h.rig.root.getObjectByName('cypher-held-fork')!;
+  const wrist = head.worldToLocal(h.rig.hero!.bones.get('wrist_R')!.getWorldPosition(new THREE.Vector3())), mouth = head.worldToLocal(lip(h.rig));
+  assert.ok(wrist.y < mouth.y - .16, `the feeding wrist obscures the face instead of staying below it: ${wrist.y} / ${mouth.y}`);
+  const food = fork.getObjectByName('cypher-held-bite') as THREE.Mesh, box = new THREE.Box3();
+  for (let v = 0; v < food.geometry.attributes.position.count; v++) box.expandByPoint(head.worldToLocal(food.localToWorld(food.getVertexPosition(v, new THREE.Vector3()))));
+  assert.ok(box.max.y - box.min.y < .09, `the bite is too tall for the actual open mouth: ${box.max.y - box.min.y}`);
+  const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, attrs = skin.geometry.attributes;
+  for (let v = 0; v < attrs.position.count; v++) {
+    if (![0, 1, 2, 3].some(j => attrs.skinWeight.getComponent(v, j) > .2 && /^(wrist|finger[1-5]-[1-3])_R$/.test(skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name))) continue;
+    const p = head.worldToLocal(skin.localToWorld(skin.getVertexPosition(v, new THREE.Vector3())));
+    assert.ok(p.y < mouth.y + .05, 'the actual hand cannot cover the nose and eyes during feeding');
+  }
+});
+
+test('the bite enters the mouth at full size instead of shrinking away on the fork', async t => {
+  const h = await fixture(t), samples: THREE.Vector3[] = [];
+  for (const elapsed of [8.05, 8.3, 8.5]) {
+    h.draw('performing', elapsed);
+    const food = h.rig.root.getObjectByName('cypher-held-bite') as THREE.Mesh;
+    assert.equal(food.visible, true); assert.ok(food.scale.distanceTo(new THREE.Vector3(1, 1, 1)) < .000001, 'eating cannot uniformly shrink the food');
+    const mouth = lip(h.rig), head = h.rig.hero!.bones.get('head')!, forward = new THREE.Vector3(0, 0, 1).transformDirection(head.matrixWorld);
+    samples.push(new THREE.Vector3(food.getWorldPosition(new THREE.Vector3()).sub(mouth).dot(forward), 0, 0));
+  }
+  assert.ok(samples[1].x < samples[0].x - .015 && samples[2].x < samples[1].x - .015, 'the same slice must move through the lip opening');
+  h.draw('performing', 8.59);
+  const food = h.rig.root.getObjectByName('cypher-held-bite') as THREE.Mesh, mouth = lip(h.rig);
+  const forward = new THREE.Vector3(0, 0, 1).transformDirection(h.rig.hero!.bones.get('head')!.matrixWorld);
+  assert.equal(food.visible, true, 'the full-sized piece remains present until it has entered the mouth');
+  for (let v = 0; v < food.geometry.attributes.position.count; v++)
+    assert.ok(food.localToWorld(food.getVertexPosition(v, new THREE.Vector3())).sub(mouth).dot(forward) < 0, 'the food cannot disappear while part of it is still outside the lips');
+  h.draw('performing', 8.7); assert.equal(h.rig.root.getObjectByName('cypher-held-bite')!.visible, false);
+});
+
+test('the feeding slice passes between the delivered lips without cutting through facial skin or teeth', async t => {
+  const h = await fixture(t), face = h.rig.root.getObjectByName('cypher-anatomical-head') as THREE.SkinnedMesh;
+  const surfaces = [face, ...['cypher-teeth-upper', 'cypher-teeth-lower'].map(name => h.rig.root.getObjectByName(name) as THREE.Mesh)];
+  const materials = surfaces.map(mesh => ({ material: mesh.material as THREE.Material, side: (mesh.material as THREE.Material).side }));
+  materials.forEach(({ material }) => { material.side = THREE.DoubleSide; });
+  t.after(() => { materials.forEach(({ material, side }) => { material.side = side; }); });
+  for (const elapsed of [...Array.from({ length: 21 }, (_, i) => 8.05 + i * .025), 8.59]) {
+    h.draw('performing', elapsed); face.computeBoundingSphere();
+    const food = h.rig.root.getObjectByName('cypher-held-bite') as THREE.Mesh, geometry = food.geometry;
+    const points = Array.from({ length: geometry.attributes.position.count }, (_, v) => food.localToWorld(food.getVertexPosition(v, new THREE.Vector3())));
+    const index = geometry.index, edges = new Set<string>();
+    for (let i = 0; i < (index?.count ?? points.length); i += 3) {
+      const tri = [0, 1, 2].map(j => points[index ? index.getX(i + j) : i + j]);
+      for (let e = 0; e < 3; e++) {
+        const a = tri[e], b = tri[(e + 1) % 3], key = [a, b].map(p => p.toArray().map(x => x.toFixed(6)).join(',')).sort().join('/');
+        if (edges.has(key)) continue; edges.add(key);
+        const direction = b.clone().sub(a), length = direction.length(); if (length < .006) continue;
+        const hits = new THREE.Raycaster(a, direction.divideScalar(length), .003, length - .003).intersectObjects(surfaces);
+        const hit = hits[0], rest = (hit?.object as THREE.Mesh | undefined)?.geometry.attributes._head_rest;
+        const witness = hit?.face && { target: hit.object.name, point: h.rig.hero!.bones.get('head')!.worldToLocal(hit.point.clone()).toArray(),
+          triangle: rest && [hit.face.a, hit.face.b, hit.face.c].map(v => [rest.getX(v), rest.getY(v), rest.getZ(v)]) };
+        assert.equal(hits.length, 0, `food edge crosses the actual face at ${elapsed}: ${key}; ${JSON.stringify(witness)}`);
+      }
+    }
+  }
+});
+
 test('saved dining poses rebuild identically after other gestures and retain one prop owner', async t => {
   const h = await fixture(t), snapshot = () => ['cypher-held-fork', 'cypher-held-knife', 'cypher-held-wine'].map(name => {
     const p = h.rig.root.getObjectByName(name); assert.ok(p); return { visible: p.visible, position: p.getWorldPosition(new THREE.Vector3()).toArray(), quaternion: p.getWorldQuaternion(new THREE.Quaternion()).toArray() };

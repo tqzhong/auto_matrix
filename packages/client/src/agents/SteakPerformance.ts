@@ -14,6 +14,8 @@ export class SteakPerformance {
   private grips: Record<'R' | 'L', ConsoleGrip>;
   private lipSource?: THREE.SkinnedMesh;
   private lips: number[] = [];
+  private upperLip: number[] = [];
+  private lowerLip: number[] = [];
 
   constructor(private rig: HeroRig) {
     rig.bones.get('wrist_R')!.add(this.fork); rig.bones.get('wrist_L')!.add(this.knife, this.wine);
@@ -21,19 +23,26 @@ export class SteakPerformance {
     this.fork.visible = this.knife.visible = this.wine.visible = false;
   }
 
-  private lip(): THREE.Vector3 {
+  private lip(opening = false): THREE.Vector3 {
     const face = (this.rig.root.getObjectByName('cypher-anatomical-head') ?? this.rig.root.getObjectByName('Anatomical_head_and_hands')) as THREE.SkinnedMesh;
     if (this.lipSource !== face) {
-      this.lipSource = face; this.lips = []; const attrs = face.geometry.attributes, index = face.skeleton.bones.indexOf(this.rig.bones.get('head')!);
+      this.lipSource = face; this.lips = []; this.upperLip = []; this.lowerLip = [];
+      const attrs = face.geometry.attributes, index = face.skeleton.bones.indexOf(this.rig.bones.get('head')!);
       for (let v = 0; v < attrs.position.count; v++) {
         if (![0, 1, 2, 3].some(j => attrs.skinIndex.getComponent(v, j) === index && attrs.skinWeight.getComponent(v, j) > .95)) continue;
         const p = attrs._head_rest ? new THREE.Vector3().fromBufferAttribute(attrs._head_rest, v)
           : new THREE.Vector3().fromBufferAttribute(attrs.position, v).applyMatrix4(face.bindMatrix).applyMatrix4(face.skeleton.boneInverses[index]);
         if (Math.abs(p.x) < .015 && p.y > (attrs._head_rest ? -.211 : -.175) && p.y < (attrs._head_rest ? -.193 : -.152) && p.z > .23) this.lips.push(v);
+        if (attrs._jaw_weight && Math.abs(p.x) < .015 && p.z > .25) {
+          if (p.y > -.207 && p.y < -.194 && attrs._jaw_weight.getX(v) < .01) this.upperLip.push(v);
+          if (p.y > -.219 && p.y < -.211 && attrs._jaw_weight.getX(v) > .7) this.lowerLip.push(v);
+        }
       }
     }
-    const p = new THREE.Vector3(); for (const v of this.lips) p.add(face.localToWorld(face.getVertexPosition(v, new THREE.Vector3())));
-    return p.divideScalar(this.lips.length);
+    const rims = opening && this.upperLip.length && this.lowerLip.length ? [this.upperLip, this.lowerLip] : [this.lips];
+    const p = new THREE.Vector3();
+    for (const rim of rims) for (const v of rim) p.addScaledVector(face.localToWorld(face.getVertexPosition(v, new THREE.Vector3())), 1 / rim.length / rims.length);
+    return p;
   }
 
   private hold(prop: THREE.Group, side: 'R' | 'L', origin: THREE.Vector3, rotation: THREE.Quaternion, amount: number, grip: number, wine = false): void {
@@ -82,13 +91,23 @@ export class SteakPerformance {
     const center = FILM_SETS.film_cypher_restaurant.center, at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(center.x + p.x, center.y - 1 + p.y, center.z + p.z);
     const flat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
     this.fork.visible = pose.forkHeld; this.knife.visible = pose.knifeHeld; this.wine.visible = pose.wineHeld;
-    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), STEAK_DINING.gripTilt * (1 - pose.lift))
-      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI + Math.PI / 2 * pose.lift)).slerp(flat, pose.forkReturn);
-    const mouth = this.lip().addScaledVector(new THREE.Vector3(0, 0, 1).transformDirection(b.get('head')!.matrixWorld), .075);
+    const cuttingFork = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), STEAK_DINING.gripTilt)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI));
+    const displayFork = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), .15);
+    const feedingFork = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -.3)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI * 5 / 3))
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2))
+      .premultiply(b.get('head')!.getWorldQuaternion(new THREE.Quaternion()));
+    const rotation = cuttingFork.slerp(displayFork, pose.lift).slerp(feedingFork, pose.mouth).slerp(flat, pose.forkReturn);
+    const forward = new THREE.Vector3(0, 0, 1).transformDirection(b.get('head')!.matrixWorld);
+    const mouth = this.lip(true).addScaledVector(forward, .055);
     const bite = at(STEAK_DINING.bite).lerp(root.localToWorld(new THREE.Vector3(-.33, 3.03, .72)), pose.lift).lerp(mouth, pose.mouth);
     const fork = bite.sub(STEAK_FORK_TIP.clone().applyQuaternion(rotation)).lerp(at(STEAK_DINING.fork), pose.forkReturn);
     this.hold(this.fork, 'R', fork, rotation, pose.forkReach, pose.forkHeld ? 1 : pose.forkReach);
-    const food = this.fork.getObjectByName('cypher-held-bite')!; food.visible = pose.t >= 3.5 && pose.eaten < 1; food.scale.setScalar(1 - pose.eaten);
+    const food = this.fork.getObjectByName('cypher-held-bite')!; food.visible = pose.t >= 3.5 && pose.eaten < 1;
+    food.scale.setScalar(1); food.position.copy(STEAK_FORK_TIP);
+    // The same full-sized piece slides off the tines through the open lips.
+    if (pose.eaten) food.position.add(forward.clone().applyQuaternion(this.fork.getWorldQuaternion(new THREE.Quaternion()).invert()).multiplyScalar(-.11 * pose.eaten));
     const cuttingRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -STEAK_DINING.gripTilt)
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI));
     const knifeRotation = cuttingRotation.clone().slerp(flat, pose.knifeReturn);

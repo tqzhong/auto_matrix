@@ -67,7 +67,7 @@ def main(source, head, output):
         result[:, 2] = (values[:, 2] - eye[2]) * x_scale + .185
         return result
 
-    hinge = fitted(pivot('jaw')[None])[0]; angle = .32
+    hinge = fitted(pivot('jaw')[None])[0]; angle = .44
     rotation = np.array([[1, 0, 0], [0, np.cos(angle), -np.sin(angle)], [0, np.sin(angle), np.cos(angle)]])
     turn = lambda values: (values - hinge) @ rotation.T + hinge
     fade = np.clip((neutral[:, 1] + .38) / .06, 0, 1); fade = fade * fade * (3 - 2 * fade)
