@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import { CONSOLE_DRINK, CONSOLE_SERVICE } from '@auto_matrix/shared';
 
-/** Anatomical finger pads wrap a mug body or the jug's handle bar. */
+/** Anatomical finger pads wrap the mug, jug bar and slender dining handles. */
 export class ConsoleGrip {
   private pads?: THREE.Vector3[];
   constructor(private rig: HeroRig, private side: 'R' | 'L' = 'R') {}
 
-  update(skin: THREE.SkinnedMesh, amount: number, prop: 'mug' | 'jug' = 'mug', blend = amount, frame?: THREE.Matrix4): void {
+  update(skin: THREE.SkinnedMesh, amount: number, prop: 'mug' | 'jug' | 'cutlery' | 'wine' = 'mug', blend = amount, frame?: THREE.Matrix4): void {
     if (!this.pads) {
       this.pads = Array.from({ length: 5 }, () => new THREE.Vector3()); const counts = [0, 0, 0, 0, 0];
       const { position, skinIndex, skinWeight } = skin.geometry.attributes;
@@ -31,11 +31,12 @@ export class ConsoleGrip {
       let contactBend: THREE.Vector3 | undefined;
       if (contact) {
         const axis = new THREE.Vector3(0, 1, 0).transformDirection(contact);
-        const center = (prop === 'jug' ? new THREE.Vector3(CONSOLE_SERVICE.handle.x, CONSOLE_SERVICE.handle.y, 0) : new THREE.Vector3()).applyMatrix4(contact);
-        const along = THREE.MathUtils.clamp(base.clone().sub(center).dot(axis), prop === 'jug' ? -.18 : -CONSOLE_DRINK.height / 2 + .04, prop === 'jug' ? .22 : CONSOLE_DRINK.height / 2 - .04);
+        const narrow = prop === 'cutlery' || prop === 'wine';
+        const center = (prop === 'jug' ? new THREE.Vector3(CONSOLE_SERVICE.handle.x, CONSOLE_SERVICE.handle.y, 0) : prop === 'wine' ? new THREE.Vector3(0, .19, 0) : new THREE.Vector3()).applyMatrix4(contact);
+        const along = THREE.MathUtils.clamp(base.clone().sub(center).dot(axis), narrow ? -.14 : prop === 'jug' ? -.18 : -CONSOLE_DRINK.height / 2 + .04, prop === 'wine' ? .08 : narrow ? .14 : prop === 'jug' ? .22 : CONSOLE_DRINK.height / 2 - .04);
         center.addScaledVector(axis, along); const outward = base.clone().sub(center).normalize();
-        const clearance = (prop === 'jug' ? .1 : .08) * (1 - amount);
-        target.copy(center).addScaledVector(outward, (prop === 'jug' ? .035 : CONSOLE_DRINK.radius) + .034 + clearance);
+        const clearance = (prop === 'wine' ? .14 : prop === 'jug' ? .1 : .08) * (1 - amount);
+        target.copy(center).addScaledVector(outward, (prop === 'cutlery' ? .027 : prop === 'wine' ? .014 : prop === 'jug' ? .035 : CONSOLE_DRINK.radius) + .034 + clearance);
         direction.copy(outward).negate();
         // A tangent pole bows the finger around the cylinder; a radial pole
         // degenerates when its base and contact share the same radius.

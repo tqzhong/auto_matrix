@@ -4494,7 +4494,9 @@ export class FilmStorySystem {
     // The console answer is still a composed exchange: keep Neo at the station
     // while the journal prompt is open so its shot does not fall back through
     // the operator-chair geometry.
-    const framed = locked || kind === 'console' && encounter.phase === 'choice';
+    // Smith also stays seated until the explicit handoff; standing at the
+    // dining seat would leave his ordinary movement capsule inside the table.
+    const framed = locked || kind === 'console' && encounter.phase === 'choice' || kind === 'steak' && encounter.phase === 'done';
     const playing = locked && !occupied && !interludeWaiting(encounter);
     if (playing) encounter.elapsed = Math.min(interludeDuration(encounter), encounter.elapsed + Math.max(0, Math.min(.1, dt)));
 
@@ -4532,6 +4534,7 @@ export class FilmStorySystem {
         this.advance(this.scene!.steps[0].text!, agent, tick);
       }
       agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+      if (kind === 'steak') this.interludeFrame(agent, 0, tick);
     }
     return framed;
   }
@@ -4566,6 +4569,7 @@ export class FilmStorySystem {
     if (target !== 'act') return state.lastText;
     if (encounter.phase !== 'ready') return state.lastText;
     if (kind === 'console') { encounter.physicalConsole = true; encounter.physicalPour = true; }
+    if (kind === 'steak') encounter.physicalSteak = true;
     encounter.phase = 'performing'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
     this.interludeFrame(agent, 0, tick); return state.lastText;
   }

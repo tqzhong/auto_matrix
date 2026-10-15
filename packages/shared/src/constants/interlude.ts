@@ -1,5 +1,6 @@
 import type { FilmJourney } from './film-story.js';
 import type { Philosophy } from '../types/neo-life.js';
+import { STEAK_DINING, steakAge } from './steak.js';
 
 export type InterludeKind = 'console' | 'steak' | 'meal';
 export type InterludePhase = 'ready' | 'performing' | 'accept_ready' | 'accepting' | 'sip_ready' | 'sipping' | 'returning' | 'choice' | 'responding' | 'done';
@@ -10,6 +11,7 @@ export interface InterludeEncounter {
   answer?: Philosophy;
   physicalConsole?: boolean;
   physicalPour?: boolean;
+  physicalSteak?: boolean;
 }
 export type InterludeRole = 'neo' | 'cypher' | 'smith' | 'tank' | 'mouse' | 'dozer' | 'apoc' | 'switch';
 export type InterludeGesture = InterludeEncounter & { role: InterludeRole };
@@ -39,8 +41,8 @@ export const INTERLUDE_ROOTS: Record<InterludeKind, Record<string, { x: number; 
     cypher: { x: 6.5, z: 6, yaw: -Math.PI / 2 },
   },
   steak: {
-    smith: { x: 0, z: -8.7, yaw: Math.PI },
-    cypher: { x: 0, z: -17.3, yaw: 0 },
+    smith: STEAK_DINING.smith,
+    cypher: STEAK_DINING.cypher,
   },
   meal: {
     neo: { x: -1.5, z: 22, yaw: -Math.PI / 2 },
@@ -69,6 +71,7 @@ export function interludeWaiting(encounter: InterludeEncounter): boolean {
 }
 
 export function interludeDuration(encounter: InterludeEncounter): number {
+  if (encounter.kind === 'steak' && encounter.physicalSteak) return STEAK_DINING.duration;
   if (encounter.kind === 'console' && encounter.physicalConsole) {
     if (encounter.phase === 'performing') return encounter.physicalPour ? INTERLUDE_TIMING.consoleServe : INTERLUDE_TIMING.consoleIntro;
     if (encounter.phase === 'accepting') return INTERLUDE_TIMING.consoleTake;
@@ -191,12 +194,13 @@ export function interludeText(encounter: InterludeEncounter): string {
   }
   if (kind === 'steak') {
     if (phase === 'ready') return 'Smith 已经抵达窗边餐桌。走近座位，以旁观视角进入这场既定交易。';
-    if (phase === 'done') return '交易已经成立。此段属于 Smith 的旁观视角，Neo 此时并不知道 Cypher 的选择。';
-    if (elapsed < 2.5) return '锯齿餐刀切开牛排。Cypher 先品尝这份只存在于感官信号中的奢侈。';
-    if (elapsed < 5.2) return 'Cypher 承认味道是矩阵写给大脑的结果，却仍把舒适当成值得交换的东西。';
-    if (elapsed < 7.6) return '他要求重新接入、抹去现实记忆，并得到一段富有而重要的人生。';
-    if (elapsed < 10.8) return 'Smith 接受这些条件，随后索要锡安主机的接入密码。';
-    if (elapsed < 12.8) return 'Cypher 说自己拿不到密码，却能把知道密码的人交出来。';
+    if (phase === 'done') return '交易已经成立。Smith 留在座位上；按 G 继续 Neo 的故事。Neo 此时并不知道 Cypher 的选择。';
+    const age = steakAge(encounter);
+    if (age < 3.5) return '餐刀切开牛排。Cypher 用右手的叉子固定切下的一小块。';
+    if (age < 8.6) return 'Cypher 承认味道是矩阵写给大脑的结果，却仍把这块牛排送到嘴边。';
+    if (age < 13) return '他要求重新接入、抹去现实记忆，并得到一段富有而重要的人生。';
+    if (age < 18) return 'Smith 接受这些条件，随后索要锡安主机的接入密码。';
+    if (age < 23) return 'Cypher 举起酒杯，说自己拿不到密码，却能把知道密码的人交出来。';
     return '最后一个条件落在 Morpheus 身上。Smith 没有再追问。';
   }
   if (phase === 'ready') return 'Tank 端来一碗单细胞蛋白。走到餐桌边，亲手接下船上的这一餐。';

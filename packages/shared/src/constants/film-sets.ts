@@ -42,6 +42,7 @@ import { SOURCE_BRIEFING } from './source-briefing.js';
 import { MOBIL_STATION } from './mobil-station.js';
 import { trainmanBlocked, trainmanFloor } from './trainman-chase.js';
 import { LOGOS_WRECK_WALLS } from './farewell.js';
+import { STEAK_DINING } from './steak.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -250,7 +251,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
   }
   if (set.id === 'film_agent_interrogation') return [INTERROGATION_ROOM.table, ...[-1, 1].map(side => ({ x: side * INTERROGATION_ROOM.seat, z: 0, width: 1.3, depth: 1.5, height: 2.8 }))];
   if (set.id === 'film_ambush_house') return AMBUSH_WALLS;
-  if (set.id === 'film_cypher_restaurant') return [{ x: 0, z: -13, width: 12, depth: 5.6, height: 3.1 }];
+  if (set.id === 'film_cypher_restaurant') return [STEAK_DINING.table];
   if (set.id === 'film_le_vrai') return [
     { x: 0, z: -23, width: 12, depth: 5, height: 3 },
     ...[-16, 16].flatMap(x => [-7, 9].map(z => ({ x, z, width: 7, depth: 5, height: 3 }))),

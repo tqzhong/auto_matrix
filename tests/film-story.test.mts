@@ -1,4 +1,4 @@
-import { PILL_TALK_SECONDS, TRAINING_SECONDS, jumpStreetHeight } from '@auto_matrix/shared';
+import { PILL_TALK_SECONDS, TRAINING_SECONDS, jumpStreetHeight, interludeDuration } from '@auto_matrix/shared';
 import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING } from '@auto_matrix/shared';
@@ -317,8 +317,10 @@ test('all trilogy scenes have distinct stable IDs, existing cast, accessible obj
     for (const step of scene.steps) {
       // These targets are occupied through boarding, recovery or lying down.
       // Their encounter tests verify entry; character-asset.test checks physical contact.
+      // The restaurant seat is entered from the standing approach by G and
+      // stays a seated observer shot until the explicit next-scene handoff.
       const stagedInsideProp = scene.id === 'm1_bug' && scene.steps.indexOf(step) < 2 || ['m1_recovery', 'm1_cabin'].includes(scene.id) && scene.steps.indexOf(step) === 0
-        || ['m1_truth_return', 'm1_jump_return'].includes(scene.id) || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1
+        || ['m1_truth_return', 'm1_jump_return'].includes(scene.id) || scene.id === 'm1_steak' && scene.steps.indexOf(step) === 1 || scene.id === 'm1_morning' && scene.steps.indexOf(step) === 1
         || scene.id === 'm3_dawn' && scene.steps.indexOf(step) >= 2;
       // Pit objectives use the persistent collapsed road, not the avenue's
       // original surface. Keep testing reachability against the real terrain.
@@ -4331,7 +4333,7 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 114; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.interlude?.phase, 'choice');
         }
-        else if (scene.id === 'm1_steak') for (let frame = 0; frame < 147; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_steak') for (let frame = 0; frame < interludeDuration(state.interlude!) * 10 + 2; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_meal') for (let frame = 0; frame < 134; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bathroom') for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_unplugged') {
