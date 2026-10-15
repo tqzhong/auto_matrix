@@ -27,6 +27,7 @@ function setup(stairCat = false) {
   Object.assign(sandbox.life.film.state!, { scene: 'm1_oracle', actor: 'neo', step: FILM_SCENE_BY_ID.m1_oracle.steps.length });
   command('next');
   assert.equal(sandbox.life.film.state!.scene, 'm1_dejavu', 'the fixture must enter the actual ambush scene');
+  delete sandbox.life.film.state!.ambushApproach!.doorwayCat; // This suite retains both saved pre-doorway performances.
   if (!stairCat) delete (sandbox.life.film.state!.ambushApproach as { stairCat?: boolean } | undefined)?.stairCat;
   const state = () => sandbox.life.film.state! as FilmJourney & { ambushApproach?: { ready: boolean; progress: Record<string, number> } };
   const frame = (count = 1, running = true) => { for (let i = 0; i < count; i++) players.step(.1, running, ++tick); };

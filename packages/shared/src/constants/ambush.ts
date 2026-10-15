@@ -4,6 +4,9 @@ export interface AmbushEncounter { elapsed: number; paused?: boolean }
 export const AMBUSH_REWRITE = 8.3;
 export const AMBUSH_SECONDS = 9.5;
 export const AMBUSH_CAT_STAIRS = { repeat: 6.8, rewrite: 13.4, seconds: 14.8, observation: { x: 11, y: 0, z: 31.8 } } as const;
+export const AMBUSH_CAT_DOORWAY = { repeat: 6.8, rewrite: 13.4, seconds: 14.8, observation: { x: 11, y: 0, z: 31.8 },
+  door: { x: 13, z: 31, width: 4.8, height: 7.4 }, innerDoor: { x: 15, z: 29.7, width: 2.6, height: 7.4 },
+  path: { x: 16, fromZ: 32.4, toZ: 26, y: 0 } } as const;
 // The top corridor keeps its saved height. Five pairs of flights connect room
 // 1313 to the eighth-floor hall; the original entry is one floor below the cat.
 export const AMBUSH_STAIRS = { rise: 7.4, steps: 12, left: -5.5, right: 5.5, entry: { x: -5.5, z: 32 } } as const;
@@ -27,7 +30,7 @@ export const AMBUSH_COMPANY = {
   trinity: { offset: -4.2, x: -6, z: -3 }, cypher: { offset: -8.4, x: -10, z: 1.5 },
 } as const;
 export type AmbushCompanion = keyof typeof AMBUSH_COMPANY;
-export interface AmbushApproach { ready: boolean; progress: Record<AmbushCompanion, number>; stairCat?: true }
+export interface AmbushApproach { ready: boolean; progress: Record<AmbushCompanion, number>; stairCat?: true; doorwayCat?: true }
 export interface AmbushEscort { role: AmbushCompanion; progress: number; watching: boolean; stairCat?: true; retreat?: true }
 export const AMBUSH_ROUTE = [
   { x: 5.5, y: -7.4, z: 32 }, { x: -5.5, y: -7.4, z: 32 },
@@ -79,7 +82,7 @@ export function ambushApproachTarget(x: number, y: number, z: number, stairCat =
   return { ...route.at(-1)!, label: '走廊观察处' };
 }
 export function newAmbushApproach(): AmbushApproach {
-  return { ready: false, stairCat: true, progress: Object.fromEntries(Object.entries(AMBUSH_COMPANY).map(([id, role]) => [id, 11 + role.offset])) as AmbushApproach['progress'] };
+  return { ready: false, stairCat: true, doorwayCat: true, progress: Object.fromEntries(Object.entries(AMBUSH_COMPANY).map(([id, role]) => [id, 11 + role.offset])) as AmbushApproach['progress'] };
 }
 export interface AmbushSurface { x: number; z: number; width: number; depth: number; y: number }
 export const AMBUSH_FLOORS: AmbushSurface[] = Array.from({ length: AMBUSH_STOREYS + 1 }, (_, storey) => {
@@ -144,10 +147,17 @@ export function ambushStairsBlocked(x: number, z: number, y: number, radius: num
   }
   return AMBUSH_RAILS.some(rail => y + 3.6 > rail.y && y < rail.y + rail.height && Math.abs(x - rail.x) < rail.width / 2 + radius && Math.abs(z - rail.z) < rail.depth / 2 + radius);
 }
+export const AMBUSH_CAT_WALLS: FilmObstacle[] = [
+  { x: 13, z: 28.3, width: .6, depth: .6, height: 9 },
+  { x: 13, z: 33.7, width: .6, depth: .6, height: 9 },
+  { x: 15, z: 32.5, width: .4, depth: 3, height: 9 },
+  { x: 15, z: 24.9, width: .4, depth: 7, height: 9 },
+];
 export const AMBUSH_WALLS: FilmObstacle[] = [
   { x: -13, z: 9, width: .6, depth: 42, height: 9 },
   { x: -13, z: -27, width: .6, depth: 14, height: 9 },
   { x: 13, z: -2, width: .6, depth: 60, height: 9 },
+  ...AMBUSH_CAT_WALLS,
   { x: -8, z: -21, width: 10, depth: .6, height: 9 },
   { x: 8, z: -21, width: 10, depth: .6, height: 9 },
 ];
@@ -157,7 +167,13 @@ export const AMBUSH_SEALS: FilmObstacle[] = [
 ];
 
 // Both appearances use the exact same path and gait, separated by a brief gap.
-export function ambushCat(elapsed: number, stairs = false): { visible: boolean; x: number; y: number; z: number; phase: number; yaw: number } {
+export function ambushCat(elapsed: number, stairs = false, doorway = false): { visible: boolean; x: number; y: number; z: number; phase: number; yaw: number } {
+  if (doorway) {
+    const phase = Math.round((elapsed >= AMBUSH_CAT_DOORWAY.repeat ? elapsed - AMBUSH_CAT_DOORWAY.repeat : elapsed) * 1e8) / 1e8;
+    const age = Math.max(0, phase - .3), path = AMBUSH_CAT_DOORWAY.path;
+    return { visible: phase >= .3 && phase < 6.3 && elapsed < 13.1, x: path.x, y: path.y,
+      z: path.fromZ + (path.toZ - path.fromZ) * Math.min(1, age / 6), phase: age, yaw: Math.PI / 2 };
+  }
   if (stairs) {
     // Subtracting the repeat offset must not select a different gait at a boundary.
     const phase = Math.round((elapsed >= AMBUSH_CAT_STAIRS.repeat ? elapsed - AMBUSH_CAT_STAIRS.repeat : elapsed) * 1e8) / 1e8;

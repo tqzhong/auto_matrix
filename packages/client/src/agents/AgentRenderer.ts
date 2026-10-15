@@ -698,7 +698,7 @@ export class AgentRenderer {
       input.officeShirt = officeClothing(state.id, state.currentLocation);
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
       input.mobilStation = state.currentLocation === 'film_mobil_station';
-      input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station'].includes(state.currentLocation));
+      input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
       if (input.sixth?.role === 'smith' && input.sixth.phase === 'grapple') {
         const neo = this.agents.get('neo'), head = neo?.rig.hero?.bones.get('head');
         if (head) {

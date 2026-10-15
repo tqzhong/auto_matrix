@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FILM_SETS, AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, AMBUSH_STOREYS, AMBUSH_ESCAPE, MOUSE_ROOM_SHOTS, MOUSE_ROOM_RETURN, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
+import { FILM_SETS, AMBUSH_WALLS, AMBUSH_SEALS, AMBUSH_FLOORS, AMBUSH_RAILS, AMBUSH_STAIRS, AMBUSH_STOREYS, AMBUSH_ESCAPE, AMBUSH_CAT_DOORWAY, MOUSE_ROOM_SHOTS, MOUSE_ROOM_RETURN, ambushCat, ambushFloor, type FilmJourney, type WorldStructure } from '@auto_matrix/shared';
 import { reach } from '../agents/SpoonPerformance.js';
 import { mouseRoomDoor } from '@auto_matrix/shared';
 import { WetwallRenderer } from './WetwallRenderer.js';
@@ -15,6 +15,9 @@ export class AmbushSetRenderer {
   private roomDoor = new THREE.Group();
   private roomSplinters = new THREE.Group();
   private cat = new THREE.Group();
+  private doorwayCat = new THREE.Group();
+  private doorwayLegs: { hip: THREE.Group; knee: THREE.Group; ankle: THREE.Group; rear: boolean; side: number }[] = [];
+  private doorwayTail = new THREE.Group();
   private body = new THREE.Group();
   private legs: THREE.Group[] = [];
   private knees: THREE.Group[] = [];
@@ -99,13 +102,14 @@ export class AmbushSetRenderer {
       const chip = this.box(trim, x, .065, z, .2 + i % 3 * .14, .1, .12 + i % 4 * .11); chip.rotation.y = i * 2.4;
     }
     this.makeLowerFloors(plaster, wood, trim, iron, windowMaterial);
+    this.makeCatDoorway(wood, trim, plaster);
     this.batch();
     this.makeMouseRoom(wood, trim, iron);
     this.wetwall = new WetwallRenderer(this.root, { plaster, wood, iron, trim });
-    this.root.add(this.seals, this.eighthSeals, this.cat, this.gunfire);
+    this.root.add(this.seals, this.eighthSeals, this.cat, this.doorwayCat, this.gunfire);
     this.gunfire.position.set(-14.7, 3.8, -15);
     this.eighthSeals.position.y = AMBUSH_ESCAPE.window.y;
-    this.brickwork(this.seals, 9); this.brickwork(this.eighthSeals, 7.4); this.makeCat(); this.makeBathroom();
+    this.brickwork(this.seals, 9); this.brickwork(this.eighthSeals, 7.4); this.makeCat(); this.makeDoorwayCat(); this.makeBathroom();
     this.daylight = new THREE.SpotLight(0xdce5c8, 1250, 58, .72, .35, 2);
     this.daylight.position.set(-24, 8, -17); this.daylight.target.position.set(3, .5, -10);
     this.daylight.castShadow = true; this.daylight.shadow.mapSize.set(1024, 1024); this.daylight.shadow.normalBias = .05;
@@ -265,6 +269,113 @@ export class AmbushSetRenderer {
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-.4, .12, .08), new THREE.Vector3(-.8, .65, .12), new THREE.Vector3(-.84, 1.1, .1), new THREE.Vector3(-.63, 1.3, .06)]);
     const tail = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, .065, 8, false), fur); tail.castShadow = true; this.tail.add(tail); this.tail.position.set(-.72, .85, 0); this.cat.add(this.tail);
   }
+  private makeCatDoorway(wood: THREE.Material, trim: THREE.Material, plaster: THREE.Material): void {
+    const door = AMBUSH_CAT_DOORWAY.door, group = new THREE.Group(); group.name = 'ambush-cat-doorway';
+    group.position.set(door.x, 0, door.z); this.root.add(group);
+    for (const side of [-1, 1]) {
+      this.box(wood, 0, door.height / 2, side * (door.width / 2 + .04), .72, door.height, .20, group);
+      this.box(trim, -.40, door.height / 2, side * (door.width / 2 + .12), .11, door.height + .2, .25, group);
+      this.box(wood, -.47, door.height / 2, side * (door.width / 2 + .12), .045, door.height + .2, .065, group);
+    }
+    this.box(wood, 0, door.height + .1, 0, .72, .28, door.width + .35, group);
+    this.box(trim, -.40, door.height + .22, 0, .11, .22, door.width + .7, group);
+    this.box(plaster, 0, (door.height + 9) / 2, 0, .6, 9 - door.height, door.width, group);
+    const inner = AMBUSH_CAT_DOORWAY.innerDoor, dx = inner.x - door.x, dz = inner.z - door.z;
+    for (const side of [-1, 1]) this.box(wood, dx, inner.height / 2, dz + side * (inner.width / 2 + .04), .45, inner.height, .12, group);
+    this.box(wood, dx, inner.height + .1, dz, .45, .22, inner.width + .2, group);
+    this.box(plaster, dx, (inner.height + 9) / 2, dz, .4, 9 - inner.height, inner.width, group);
+    const checker = new THREE.Group(); checker.name = 'ambush-cat-checker-floor'; group.add(checker);
+    const pale = this.mat(0x9b9d8a, .92), dark = this.mat(0x303b35, .94);
+    for (const [color, material] of [pale, dark].entries()) {
+      const tiles = new THREE.InstancedMesh(new THREE.BoxGeometry(.476, .018, .596), material, 25), object = new THREE.Object3D(); let index = 0;
+      for (let x = 0; x < 5; x++) for (let z = 0; z < 10; z++) if ((x + z) % 2 === color) {
+        object.position.set(-2.4 + x * .48, -.006, -3 + z * .6); object.updateMatrix(); tiles.setMatrixAt(index++, object.matrix);
+      }
+      tiles.receiveShadow = true; checker.add(tiles);
+    }
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(8.1, 9.2), this.mat(0x4a2924, .98));
+    carpet.name = 'ambush-cat-red-carpet'; carpet.rotation.x = -Math.PI / 2;
+    carpet.position.set(4.35, .006, -1.95); carpet.receiveShadow = true; group.add(carpet);
+    // The far wall's damaged panels and the exposed cables are visible in the
+    // film doorway shot. They stay outside the cat's actual floor route.
+    for (const z of [-3.7, -.3, 2.5]) {
+      for (const y of [.24, 2.8, 3.05]) this.box(wood, 8.6, y, z, .12, .10, 2.75, group);
+      for (const side of [-1, 1]) this.box(trim, 8.50, 1.5, z + side * 1.24, .07, 2.4, .08, group);
+      for (const y of [.35, 2.65]) this.box(trim, 8.50, y, z, .07, .08, 2.55, group);
+    }
+    const cable = this.mat(0x272a23, .88);
+    for (let i = 0; i < 5; i++) {
+      const z = door.width / 2 + .35 + i * .09;
+      const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-.5, 6.8, z), new THREE.Vector3(-.62 - i * .025, 3.5, z - .11),
+        new THREE.Vector3(-.64, .6, z - .3), new THREE.Vector3(-1.25 - i * .16, .045, z - .4), new THREE.Vector3(-1.5, .04, z + .2)]);
+      const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 28, .018, 5, false), cable); mesh.castShadow = true; group.add(mesh);
+    }
+  }
+  private makeDoorwayCat(): void {
+    const cat = this.doorwayCat; cat.name = 'ambush-doorway-cat';
+    const fur = this.mat(0x101514, .90), nose = this.mat(0x191918, .62), eye = this.mat(0x636440, .4);
+    const mesh = (geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D) => {
+      const part = new THREE.Mesh(geometry, material); part.castShadow = part.receiveShadow = true; parent.add(part); return part;
+    };
+    const oval = (parent: THREE.Object3D, position: number[], scale: number[], material = fur) => {
+      const part = mesh(new THREE.SphereGeometry(1, 20, 14), material, parent); part.position.fromArray(position); part.scale.fromArray(scale); return part;
+    };
+    // One continuous surface follows rump, abdomen, rib cage, nape and muzzle.
+    // This uses the same authored cross-section approach as the reset cat.
+    const sections = [[-.57,.48,.025,.025],[-.43,.49,.18,.18],[-.27,.49,.19,.18],[-.05,.51,.15,.15],
+      [.16,.51,.17,.16],[.31,.54,.22,.18],[.40,.57,.17,.14],[.46,.61,.115,.11],
+      [.53,.62,.14,.14],[.59,.60,.11,.125],[.65,.57,.045,.078],[.68,.565,.023,.04]];
+    const profile = new THREE.CatmullRomCurve3(sections.map(([x,y,r]) => new THREE.Vector3(x,y,r)));
+    const widths = new THREE.CatmullRomCurve3(sections.map(([, , , w], i) => new THREE.Vector3(i,w,0)));
+    const points: number[] = [], uv: number[] = [], indices: number[] = [], rings = 60, sides = 24;
+    for (let row = 0; row <= rings; row++) {
+      const p = profile.getPoint(row / rings), width = widths.getPoint(row / rings).y;
+      for (let column = 0; column <= sides; column++) {
+        const angle = column / sides * Math.PI * 2;
+        points.push(p.x, p.y + Math.sin(angle) * Math.max(.001, p.z), Math.cos(angle) * Math.max(.001, width));
+        uv.push(row / rings, column / sides);
+        if (row < rings && column < sides) { const a = row * (sides + 1) + column, b = a + sides + 1; indices.push(a,b,a+1,b,b+1,a+1); }
+      }
+    }
+    for (const row of [0, rings]) {
+      const p = profile.getPoint(row / rings), center = points.length / 3; points.push(p.x,p.y,0); uv.push(row / rings,.5);
+      for (let column = 0; column < sides; column++) { const a = row * (sides + 1) + column; indices.push(center,row ? a : a+1,row ? a+1 : a); }
+    }
+    const anatomy = new THREE.BufferGeometry(); anatomy.setIndex(indices);
+    anatomy.setAttribute('position', new THREE.Float32BufferAttribute(points, 3)); anatomy.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); anatomy.computeVertexNormals();
+    mesh(anatomy, fur, cat).name = 'ambush-doorway-cat-anatomy';
+    oval(cat, [.688,.566,0], [.012,.016,.024], nose);
+    for (const side of [-1, 1]) {
+      const ear = new THREE.BufferGeometry();
+      ear.setAttribute('position', new THREE.Float32BufferAttribute([
+        .45,.72,side*.045, .535,.72,side*.12, .465,.87,side*.13, .40,.725,side*.09, .49,.725,side*.155,
+      ], 3));
+      ear.setIndex(side > 0 ? [0,1,2,1,4,2,4,3,2,3,0,2,0,3,4,0,4,1] : [0,2,1,1,2,4,4,2,3,3,2,0,0,4,3,0,1,4]);
+      ear.computeVertexNormals(); mesh(ear, fur, cat);
+      const iris = oval(cat, [.59,.66,side*.108], [.025,.015,.010], eye); iris.rotation.y = side * -.65; iris.rotation.z = -.17;
+      oval(cat, [.597,.66,side*.115], [.005,.013,.006], nose);
+      for (const rear of [false, true]) {
+        const hip = new THREE.Group(); hip.position.set(rear ? -.36 : .34, .46, side * .13); cat.add(hip);
+        oval(hip, [0,-.12,0], [rear ? .10 : .063,.16,.066]);
+        const knee = new THREE.Group(); knee.position.y = -.24; hip.add(knee); oval(knee, [0,-.11,0], [.040,.135,.045]);
+        const ankle = new THREE.Group(); ankle.position.y = -.24; knee.add(ankle);
+        oval(ankle, [.018,0,0], [.067,.048,.044]).name = 'ambush-doorway-cat-paw';
+        this.doorwayLegs.push({ hip, knee, ankle, rear, side });
+      }
+    }
+    const tail = this.doorwayTail; tail.position.set(-.46,.52,0); cat.add(tail);
+    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(-.23,-.05,0),
+      new THREE.Vector3(-.45,-.10,.015),new THREE.Vector3(-.64,-.08,.035),new THREE.Vector3(-.73,.08,.045)]);
+    const geometry = new THREE.TubeGeometry(curve, 32, .045, 10, false), vertices = geometry.attributes.position;
+    for (let row = 0; row <= 32; row++) {
+      const center = curve.getPointAt(row / 32), taper = .12 + .88 * (1 - row / 32) ** .65;
+      for (let side = 0; side <= 10; side++) {
+        const index = row * 11 + side, point = new THREE.Vector3().fromBufferAttribute(vertices, index).sub(center).multiplyScalar(taper).add(center);
+        vertices.setXYZ(index,point.x,point.y,point.z);
+      }
+    }
+    geometry.computeVertexNormals(); mesh(geometry, fur, tail);
+  }
   private makeBathroom(): void {
     this.bathroom.name = 'ambush-bathroom-holdout'; this.root.add(this.bathroom);
     const tile = this.mat(0xb6b7aa, .74); const grout = this.mat(0x666b61, .96); const porcelain = this.mat(0xd5d4c5, .42);
@@ -335,15 +446,22 @@ export class AmbushSetRenderer {
     const observing = journey?.scene === 'm1_dejavu' && journey.step === 0 && !journey.visiting && journey.ambush;
     const target = observing ? journey.ambush!.elapsed : 0;
     const dt = Math.min(.1, Math.max(0, elapsed - this.previousTime)); this.previousTime = elapsed;
-    const stairs = journey?.ambushApproach?.stairCat;
-    if (stairs) {
+    const stairs = journey?.ambushApproach?.stairCat, doorway = journey?.ambushApproach?.doorwayCat;
+    if (!observing) {
+      this.clock = 0; this.catReportedTime = -1; this.catReportedAt = elapsed;
+    } else if (stairs || doorway) {
       if (dt === 0 || this.catReportedTime !== target || journey?.ambush?.paused) { this.catReportedTime = target; this.catReportedAt = elapsed; }
       this.clock = target + Math.min(.5, Math.max(0, elapsed - this.catReportedAt));
     } else if (dt === 0 || Math.abs(this.clock - target) > 1) this.clock = target;
     else this.clock += (target - this.clock) * (1 - Math.exp(-dt * 18));
-    const cat = ambushCat(this.clock, stairs); this.cat.visible = Boolean(observing && cat.visible);
+    const cat = ambushCat(this.clock, stairs, doorway); this.cat.visible = Boolean(observing && cat.visible && !doorway);
+    this.doorwayCat.visible = Boolean(observing && cat.visible && doorway);
     this.cat.position.set(cat.x, cat.y, cat.z); this.cat.rotation.y = cat.yaw;
     if (this.cat.visible) this.poseCat(cat, stairs);
+    if (this.doorwayCat.visible) {
+      this.doorwayCat.position.set(cat.x, cat.y, cat.z); this.doorwayCat.rotation.y = cat.yaw;
+      this.poseDoorwayCat(cat);
+    }
     const betrayal = journey?.betrayal?.kind === 'bathroom' ? journey.betrayal : undefined;
     const breached = Boolean(journey?.completed.includes('m1_bathroom') || betrayal?.phase === 'done'
       || betrayal?.phase === 'sacrifice' && betrayal.elapsed >= 2.1);
@@ -386,6 +504,24 @@ export class AmbushSetRenderer {
       ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
     }
     this.tail.rotation.x = Math.sin(cat.phase * 3) * .18; this.tail.rotation.z = -stretch * .2;
+  }
+  private poseDoorwayCat(pose: ReturnType<typeof ambushCat>): void {
+    const cat = this.doorwayCat, distance = AMBUSH_CAT_DOORWAY.path.fromZ - pose.z;
+    for (const { hip, knee, ankle } of this.doorwayLegs) { hip.quaternion.identity(); knee.quaternion.identity(); ankle.quaternion.identity(); }
+    cat.updateWorldMatrix(true, true); const rotation = cat.getWorldQuaternion(new THREE.Quaternion());
+    this.doorwayTail.rotation.y = Math.sin(distance * 2.1) * .07;
+    this.doorwayTail.rotation.z = -.38 * THREE.MathUtils.smoothstep(pose.phase, 1.2, 3.6);
+    for (const { hip, knee, ankle, rear, side } of this.doorwayLegs) {
+      // During stance the foot's world position is fixed. Four distinct phases
+      // preserve support while the saved root advances uniformly across carpet.
+      const offset = (side > 0 ? .5 : 0) + (rear ? .75 : 0), cycle = distance / .64 + offset;
+      const fraction = cycle - Math.floor(cycle), swing = THREE.MathUtils.smoothstep(fraction, .72, 1);
+      const stride = (.36 - fraction + swing) * .64;
+      const lift = fraction > .72 ? Math.sin((fraction - .72) / .28 * Math.PI) ** 2 * .09 : 0;
+      const foot = cat.localToWorld(new THREE.Vector3(hip.position.x + stride, .054 + lift, hip.position.z));
+      reach(hip, knee, ankle.position, foot, new THREE.Vector3(rear ? 1 : -1, 0, 0).applyQuaternion(rotation));
+      ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
+    }
   }
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();

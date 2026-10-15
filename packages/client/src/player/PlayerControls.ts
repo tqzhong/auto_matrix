@@ -150,7 +150,9 @@ export class PlayerControls {
   mirror = 0;
   spoon?: number;
   ambushObservation?: number;
+  ambushDoorway = false;
   private watchingAmbush = false;
+  private ambushDoorwayCancelled = false;
   ambushAlarm?: number;
   private ambushAlarmView = false;
   private ambushAlarmCancelled = false;
@@ -186,6 +188,7 @@ export class PlayerControls {
     this.mirrorYaw = undefined; this.motion.mirrorEntry = undefined;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
+    this.ambushDoorwayCancelled = false;
     this.ambushAlarm = undefined; this.ambushAlarmView = this.ambushAlarmCancelled = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.bathroomGuide = undefined; this.motion.bathroom = undefined;
@@ -239,6 +242,7 @@ export class PlayerControls {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
+    this.ambushDoorway = this.ambushDoorwayCancelled = false;
     this.ambushAlarm = undefined; this.ambushAlarmView = this.ambushAlarmCancelled = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.bathroomGuide = undefined; this.motion.bathroom = undefined;
@@ -361,6 +365,7 @@ export class PlayerControls {
     if (!this.id || !this.enabled || (document.pointerLockElement !== this.canvas && !this.dragging)) return;
     const movementX = this.dragPoint ? event.clientX - this.dragPoint.x : event.movementX;
     const movementY = this.dragPoint ? event.clientY - this.dragPoint.y : event.movementY;
+    if ((movementX || movementY) && this.watchingAmbush && this.ambushDoorway) this.ambushDoorwayCancelled = true;
     if (!this.firstPerson && this.motion.epilogue?.kind === 'dawn' && trilogyEpilogueLocked(this.motion.epilogue)) {
       this.gardenLook.yaw = THREE.MathUtils.clamp(this.gardenLook.yaw - movementX * .0028, -.72, .72);
       this.gardenLook.pitch = THREE.MathUtils.clamp(this.gardenLook.pitch + movementY * .002, -.12, .4);
@@ -1137,7 +1142,7 @@ export class PlayerControls {
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
     this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
     this.motion.mobilStation = state.currentLocation === 'film_mobil_station';
-    this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station'].includes(state.currentLocation));
+    this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
     const shaftRole = this.motion.tvExit?.phase === 'emerging' ? tvExitEmergingRole(this.motion.tvExit) : undefined;
     this.motion.climbing = dropRoot ? undefined : this.motion.wetwall?.hanging ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : shaftRole !== undefined && shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
     if (this.firing) this.requestShot();
@@ -1164,7 +1169,8 @@ export class PlayerControls {
     const previous = { ...this.position };
     const watchingAmbush = this.ambushObservation !== undefined && state.currentLocation === 'film_ambush_house';
     if (watchingAmbush && !this.watchingAmbush) {
-      const cat = ambushCat(Math.max(.8, this.ambushObservation!), true), center = FILM_SETS.film_ambush_house.center;
+      // Frame the whole doorway once; subsequent cat motion never overrides free look.
+      const cat = ambushCat(this.ambushDoorway ? 3.3 : Math.max(.8, this.ambushObservation!), true, this.ambushDoorway), center = FILM_SETS.film_ambush_house.center;
       const x = center.x + cat.x - this.position.x, z = center.z + cat.z - this.position.z;
       const eye = this.position.y + (this.firstPerson ? 2.99 : 2.05);
       this.yaw = this.movementYaw = this.facing = Math.atan2(x, z);
@@ -1172,6 +1178,7 @@ export class PlayerControls {
       this.cameraReady = false; this.lastLook = now;
     }
     this.watchingAmbush = watchingAmbush;
+    if (!watchingAmbush) this.ambushDoorwayCancelled = false;
     if (this.motion.bathroom) {
       const root = bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role), center = FILM_SETS.film_ambush_house.center;
       this.position = { x: center.x + root.x, y: state.position.y, z: center.z + root.z };
@@ -1338,6 +1345,8 @@ export class PlayerControls {
       if (this.ambushAlarmView) { this.camera.fov = this.firstPerson ? 68 : sprint ? 64 : 57; this.camera.updateProjectionMatrix(); }
     }
     this.ambushAlarmView = alarmView;
+    if (watchingAmbush && this.ambushDoorway && (this.motion.speed > .1 || Math.abs(this.vy) > .1 || ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].some(key => this.keys.has(key)))) this.ambushDoorwayCancelled = true;
+    const doorwayView = watchingAmbush && this.ambushDoorway && !this.ambushDoorwayCancelled;
     const resetCamera = !this.cameraReady;
     if (!this.motion.welcome) this.welcomeShot = undefined;
     if (!this.cameraReady) { this.cameraTarget.copy(target); this.cameraReady = true; }
@@ -3003,9 +3012,10 @@ export class PlayerControls {
       // In the ambush aisle the bathroom partition sits to Neo's right.
       const ambushAisle = state.currentLocation === 'film_ambush_house' && this.position.z < FILM_SETS.film_ambush_house.center.z - 4;
       const sixthBathroom = ambushAisle && state.id === 'morpheus' && Math.abs(this.position.y - FILM_SETS.film_ambush_house.center.y - WETWALL_SHAFT.sixth) < 3;
-      const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
+      // The cat passes beside Neo's silhouette, so its low body needs a wider shoulder gap.
+      const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : doorwayView ? -2.5 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
-      const followDistance = wreckCabin ? 4.2 : state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = wreckCabin || doorwayView ? 4.2 : state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
       const cabinCeiling = (point: THREE.Vector3) => cabinCenter
         && Math.abs(point.x - cabinCenter.x - CABIN.deck.x) < CABIN.deck.width / 2 + .5
@@ -3032,7 +3042,7 @@ export class PlayerControls {
       if (resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
       this.camera.position.y = Math.min(this.camera.position.y, cabinCeiling(this.camera.position));
-      this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
+      this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }
     this.impactAge += delta;
     if (this.impactAge < .18) {
