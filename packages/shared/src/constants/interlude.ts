@@ -130,7 +130,7 @@ export function consolePourPose(encounter: InterludeEncounter) {
   return { reach: active ? ease(t, 2.3, CONSOLE_SERVICE.grasp) * (1 - ease(t, CONSOLE_SERVICE.release, 9.6)) : 0,
     carry: active ? ease(t, CONSOLE_SERVICE.grasp, 4.4) * (1 - ease(t, 7.6, 8.5)) : 0,
     pour: active ? ease(t, 4.4, CONSOLE_SERVICE.flowStart) * (1 - ease(t, CONSOLE_SERVICE.flowEnd, 7.6)) : 0,
-    grip: active ? ease(t, 3.1, CONSOLE_SERVICE.grasp) * (1 - ease(t, 9, 9.5)) : 0,
+    grip: active ? ease(t, 2.85, CONSOLE_SERVICE.grasp) * (1 - ease(t, 9, 9.5)) : 0,
     holding: Boolean(active && t >= CONSOLE_SERVICE.grasp && t < CONSOLE_SERVICE.release),
     flowing: Boolean(active && t >= CONSOLE_SERVICE.flowStart && t < CONSOLE_SERVICE.flowEnd),
     filled: !encounter.physicalPour ? 1 : active ? ease(t, CONSOLE_SERVICE.flowStart, CONSOLE_SERVICE.flowEnd) : encounter.phase === 'ready' ? 0 : 1 };

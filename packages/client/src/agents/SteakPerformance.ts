@@ -3,8 +3,7 @@ import { FILM_SETS, STEAK_DINING, steakPose, type InterludeGesture } from '@auto
 import type { HeroRig } from './HeroModel.js';
 import { createSteakCutlery, createSteakWine, STEAK_FORK_TIP, STEAK_WINE_GRIP } from './SteakProps.js';
 import { disposeConsoleProp } from './ConsoleJug.js';
-import { ConsoleGrip } from './ConsoleGrip.js';
-import { reach } from './SpoonPerformance.js';
+import { ConsoleGrip, placeCylinderHand } from './ConsoleGrip.js';
 
 /** The same saved clock drives bones, prop ownership and the consumed bite. */
 export class SteakPerformance {
@@ -47,37 +46,16 @@ export class SteakPerformance {
 
   private hold(prop: THREE.Group, side: 'R' | 'L', origin: THREE.Vector3, rotation: THREE.Quaternion, amount: number, grip: number, wine = false): void {
     if (!amount) return;
-    const b = this.rig.bones, wrist = b.get(`wrist_${side}`)!, elbow = b.get(`elbow_${side}`)!, shoulder = b.get(`shoulder_${side}`)!;
+    const wrist = this.rig.bones.get(`wrist_${side}`)!;
     const localGrip = wine ? STEAK_WINE_GRIP : new THREE.Vector3(), contact = origin.clone().add(localGrip.clone().applyQuaternion(rotation));
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation), start = wrist.getWorldPosition(new THREE.Vector3());
-    const base = wrist.getWorldQuaternion(new THREE.Quaternion()), orientation = base.clone(), offset = new THREE.Vector3(side === 'R' ? .14 : -.14, -.24, 0);
-    let aim = contact.clone().sub(shoulder.getWorldPosition(new THREE.Vector3()));
-    const pole = new THREE.Vector3(side === 'R' ? -.65 : .65, -.6, -.6).applyQuaternion(this.rig.root.getWorldQuaternion(new THREE.Quaternion()));
-    const arc = Math.sin(Math.PI * amount);
-    const clearance = prop.visible ? new THREE.Vector3() : new THREE.Vector3(side === 'R' ? -.45 : .45, .35, wine ? -.8 : -.12)
-      .applyQuaternion(this.rig.root.getWorldQuaternion(new THREE.Quaternion())).multiplyScalar(wine ? Math.sqrt(arc) : arc * amount);
-    for (let iteration = 0; iteration < 12; iteration++) {
-      aim.addScaledVector(up, -aim.dot(up)).normalize();
-      const right = new THREE.Vector3().crossVectors(up, aim).normalize();
-      const desired = base.clone().slerp(new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, aim.clone().negate(), up)), amount);
-      if (!iteration) orientation.copy(desired); else orientation.slerp(desired, .5);
-      const target = contact.clone().sub(offset.clone().applyQuaternion(orientation));
-      reach(shoulder, elbow, wrist.position, start.clone().lerp(target, amount).add(clearance), pole.clone());
-      aim = wrist.getWorldPosition(new THREE.Vector3()).sub(elbow.getWorldPosition(new THREE.Vector3()));
-    }
-    // The utensil may swivel in the palm as it rises; forcing its axis to the
-    // wrist axis folds the hand when the fork passes through a diagonal pose.
-    for (let iteration = 0; iteration < 8; iteration++) {
-      const forearm = wrist.getWorldPosition(new THREE.Vector3()).sub(elbow.getWorldPosition(new THREE.Vector3())).normalize();
-      const palm = new THREE.Vector3(0, -1, 0).applyQuaternion(orientation), bend = palm.angleTo(forearm);
-      if (bend <= .8) break;
-      orientation.slerp(new THREE.Quaternion().setFromUnitVectors(palm, forearm).multiply(orientation), (bend - .8) / bend);
-      reach(shoulder, elbow, wrist.position, start.clone().lerp(contact.clone().sub(offset.clone().applyQuaternion(orientation)), amount).add(clearance), pole.clone());
-    }
-    wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+    const approach = new THREE.Vector3(side === 'R' ? -.45 : .45, .35, wine ? -.8 : -.3)
+      .applyQuaternion(this.rig.root.getWorldQuaternion(new THREE.Quaternion()));
+    const offset = new THREE.Vector3((side === 'R' ? 1 : -1) * (wine ? .14 : .17), -.24, 0);
+    const pole = new THREE.Vector3(side === 'R' ? -1.2 : 1.2, wine ? .3 : .4, -.6).applyQuaternion(this.rig.root.getWorldQuaternion(new THREE.Quaternion()));
+    const orientation = placeCylinderHand(this.rig, side, contact, offset, amount, pole, rotation, approach, !wine);
     const local = orientation.clone().invert().multiply(rotation); prop.quaternion.copy(local); prop.position.copy(offset).sub(localGrip.clone().applyQuaternion(local));
     wrist.updateWorldMatrix(false, true);
-    const frame = prop.visible ? prop.matrixWorld : new THREE.Matrix4().compose(origin, rotation, new THREE.Vector3(1, 1, 1));
+    const frame = prop.matrixWorld;
     this.grips[side].update(this.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, grip, wine ? 'wine' : 'cutlery', wine ? Math.min(1, amount * 2) : amount, frame);
     wrist.updateWorldMatrix(false, true);
   }
@@ -98,12 +76,19 @@ export class SteakPerformance {
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI * 5 / 3))
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2))
       .premultiply(b.get('head')!.getWorldQuaternion(new THREE.Quaternion()));
-    const rotation = cuttingFork.slerp(displayFork, pose.lift).slerp(feedingFork, pose.mouth).slerp(flat, pose.forkReturn);
+    // After the bite, set the fork down from its display grip. Reversing the
+    // cutting rotation as well can switch the feeding slerp to its other arc.
+    const rotation = cuttingFork.slerp(displayFork, THREE.MathUtils.smoothstep(pose.t, 3.5, 5.2))
+      .slerp(feedingFork, pose.mouth).slerp(flat, pose.forkReturn);
     const forward = new THREE.Vector3(0, 0, 1).transformDirection(b.get('head')!.matrixWorld);
     const mouth = this.lip(true).addScaledVector(forward, .055);
     const bite = at(STEAK_DINING.bite).lerp(root.localToWorld(new THREE.Vector3(-.33, 3.03, .72)), pose.lift).lerp(mouth, pose.mouth);
+    // Turn the fork in front of the shoulder, rather than collapsing the
+    // forearm and palm inside their reachable inner radius mid-lift.
+    bite.add(new THREE.Vector3(0, 0, .5 * Math.sin(Math.PI * pose.lift) * (1 - pose.mouth))
+      .applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion())));
     const fork = bite.sub(STEAK_FORK_TIP.clone().applyQuaternion(rotation)).lerp(at(STEAK_DINING.fork), pose.forkReturn);
-    this.hold(this.fork, 'R', fork, rotation, pose.forkReach, pose.forkHeld ? 1 : pose.forkReach);
+    this.hold(this.fork, 'R', fork, rotation, pose.forkReach, 1 - THREE.MathUtils.smoothstep(pose.t, 11.2, 11.45));
     const food = this.fork.getObjectByName('cypher-held-bite')!; food.visible = pose.t >= 3.5 && pose.eaten < 1;
     food.scale.setScalar(1); food.position.copy(STEAK_FORK_TIP);
     // The same full-sized piece slides off the tines through the open lips.
@@ -113,7 +98,7 @@ export class SteakPerformance {
     const knifeRotation = cuttingRotation.clone().slerp(flat, pose.knifeReturn);
     const knife = at({ x: STEAK_DINING.steak.cutX, y: STEAK_DINING.bite.y, z: STEAK_DINING.plate.z + pose.cut })
       .sub(new THREE.Vector3(-.024, .63, 0).applyQuaternion(cuttingRotation)).lerp(at(STEAK_DINING.knife), pose.knifeReturn);
-    this.hold(this.knife, 'L', knife, knifeRotation, pose.knifeReach, pose.knifeHeld ? 1 : pose.knifeReach);
+    this.hold(this.knife, 'L', knife, knifeRotation, pose.knifeReach, 1 - THREE.MathUtils.smoothstep(pose.t, 4.8, 5.05));
     const wineRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -.55 * pose.wineSip);
     const wine = at(STEAK_DINING.wine).lerp(root.localToWorld(new THREE.Vector3(.55, 2.52, .65)), pose.wineCarry);
     const rim = new THREE.Vector3(0, .65, -.18).applyQuaternion(wineRotation);

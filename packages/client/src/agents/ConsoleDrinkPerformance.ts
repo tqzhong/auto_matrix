@@ -3,7 +3,7 @@ import { CONSOLE_DRINK, FILM_SETS, consoleDrinkPose, cypherDrinkPose, cypherCupR
 import type { HeroRig } from './HeroModel.js';
 import { createConsoleMug } from './ConsoleMug.js';
 import { reach } from './SpoonPerformance.js';
-import { ConsoleGrip } from './ConsoleGrip.js';
+import { ConsoleGrip, placeCylinderHand } from './ConsoleGrip.js';
 
 /** Actual fingertip skin, a single cup owner and a rim on the anatomical lip. */
 export class ConsoleDrinkPerformance {
@@ -55,36 +55,26 @@ export class ConsoleDrinkPerformance {
     lip.divideScalar(this.lips.length);
     const rim = new THREE.Vector3(0, CONSOLE_DRINK.height / 2, -CONSOLE_DRINK.radius).applyQuaternion(cupRotation);
     target.lerp(lip.sub(rim), pose.lift);
-    let pole = new THREE.Vector3(-.6, -1, -1).applyQuaternion(rotation);
+    const pole = new THREE.Vector3(-.6, -1, -1).applyQuaternion(rotation);
     if (this.role === 'cypher') {
-      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(cupRotation);
-      const aim = target.clone().sub(shoulder.getWorldPosition(new THREE.Vector3()));
-      aim.addScaledVector(up, -aim.dot(up)).normalize().applyAxisAngle(up, -Math.atan2(.31, .24));
-      const right = new THREE.Vector3().crossVectors(up, aim).normalize();
-      const desired = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, aim.clone().negate(), up));
-      orientation.copy(wrist.getWorldQuaternion(new THREE.Quaternion())).slerp(desired, pose.reach); pole = aim.clone().negate();
+      const approach = new THREE.Vector3(0, .12, 0);
+      orientation.copy(placeCylinderHand(this.rig, 'R', target, this.cup.position, pose.reach, pole, cupRotation, approach));
+    } else {
+      const offset = this.cup.position.clone().multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation);
+      const start = wrist.getWorldPosition(new THREE.Vector3()), goal = start.clone().lerp(target.clone().sub(offset), pose.reach);
+      if (!pose.holding) {
+        const clearance = Math.sin(Math.PI * pose.reach);
+        goal.y += clearance * .25;
+        goal.addScaledVector(new THREE.Vector3(-1, 0, 0).applyQuaternion(rotation), clearance * .25);
+      }
+      reach(shoulder, elbow, wrist.position, goal, pole);
+      wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     }
-    const offset = this.cup.position.clone().multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(orientation);
-    const start = wrist.getWorldPosition(new THREE.Vector3()), goal = start.clone().lerp(target.clone().sub(offset), pose.reach);
-    if (!pose.holding) {
-      const clearance = Math.sin(Math.PI * pose.reach);
-      goal.y += clearance * .25;
-      const away = this.role === 'neo' ? new THREE.Vector3(-1, 0, 0).applyQuaternion(rotation)
-        : new THREE.Vector3(start.x - target.x, 0, start.z - target.z).normalize();
-      goal.addScaledVector(away, clearance * .25);
-    }
-    reach(shoulder, elbow, wrist.position, goal, pole);
-    if (this.role === 'cypher' && !pose.holding) {
-      const forearm = wrist.getWorldPosition(new THREE.Vector3()).sub(elbow.getWorldPosition(new THREE.Vector3())).normalize();
-      const palmAxis = new THREE.Vector3(0, -1, 0).applyQuaternion(orientation), bend = palmAxis.angleTo(forearm);
-      if (bend > 1.25) orientation.slerp(new THREE.Quaternion().setFromUnitVectors(palmAxis, forearm).multiply(orientation), (bend - 1.25) / bend);
-    }
-    wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     if (this.role === 'cypher') this.cup.quaternion.copy(orientation.clone().invert().multiply(cupRotation));
     wrist.updateWorldMatrix(false, true);
-    const frame = this.role === 'cypher' ? pose.holding ? this.cup.matrixWorld.clone() : new THREE.Matrix4().compose(
-      new THREE.Vector3(center.x + at.x, center.y - 1 + at.y, center.z + at.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), at.yaw), new THREE.Vector3(1, 1, 1)) : undefined;
-    this.grip.update(skin, pose.grip, 'mug', this.role === 'cypher' ? Math.min(1, pose.reach * 2) : pose.grip, frame); wrist.updateWorldMatrix(false, true);
+    const frame = this.role === 'cypher' ? this.cup.matrixWorld : undefined;
+    const grip = pose.grip * (this.role === 'cypher' && gesture.phase === 'responding' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, 7 + CONSOLE_DRINK.release, 7 + CONSOLE_DRINK.release + .25) : 1);
+    this.grip.update(skin, grip, 'mug', this.role === 'cypher' ? Math.min(1, pose.reach * 2) : pose.grip, frame); wrist.updateWorldMatrix(false, true);
     const liquid = this.cup.getObjectByName('console-mug-liquid')!; liquid.position.y = -.035 - pose.drunk * .10;
     liquid.rotation.x = -tilt;
   }
