@@ -53,6 +53,22 @@ async function setup(t: test.TestContext, actorId: 'neo' | 'morpheus' = 'neo') {
   return { neo, controls, renderer, group, body, head, camera, draw };
 }
 
+test('the console first-person eye follows Neo while he reaches for and drinks from the mug', async t => {
+  const h = await setup(t), center = FILM_SETS.film_neb_deck.center;
+  h.neo.currentLocation = 'film_neb_deck'; h.neo.isInMatrix = false; h.neo.isAwakened = true;
+  h.neo.position = { x: center.x + 3.4, y: center.y, z: center.z + 7.2 }; h.neo.rotation = Math.PI / 2;
+  for (const [phase, elapsed] of [['accepting', .9], ['sip_ready', 0], ['sipping', 1.8]] as const) {
+    h.neo.currentAction = { type: 'idle', parameters: { interlude: { kind: 'console', phase, elapsed, physicalConsole: true, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    h.renderer.updateAgent('neo', h.neo); h.controls.possess(h.neo); h.controls.firstPerson = true;
+    for (let frame = 0; frame < 3; frame++) {
+      h.controls.update(.05, h.neo, h.group, false); h.renderer.setPlayer('neo', true); h.renderer.setPlayerMotion(h.controls.motion);
+      h.renderer.update(0, h.camera, 0); h.group.updateMatrixWorld(true);
+    }
+    const eye = h.head.localToWorld((h.head.userData.cameraEye as THREE.Vector3).clone());
+    assert.ok(h.camera.position.distanceTo(eye) < .005, `console eye drifts ${h.camera.position.distanceTo(eye)} at ${phase}/${elapsed}`);
+  }
+});
+
 test('first-person pill taking retains the actual hands and owned props, including a paused or restored pose', async t => {
   const h = await setup(t);
   for (const choice of ['red', 'blue'] as const) for (const elapsed of [PILL_TIMING.transfer + .1, 5.7, 7.3, 8.4]) {

@@ -4,6 +4,7 @@ import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFin
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
+import { interludeAge, interludeSeated } from '@auto_matrix/shared';
 import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
@@ -600,6 +601,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       roll: 0, headTurn: 0, moving: 0, run: 0, airborne: air, coat: .22 * air, impact: 0, landing: 0 };
   }
   const download = input.training?.kind === 'download' ? input.training : input.download?.phase !== 'walk' ? input.download : undefined;
+  if (input.interlude) {
+    const seated = interludeSeated(input.interlude);
+    Object.assign(state, newMotion(), { time: interludeAge(input.interlude), seated: seated ? 1 : 0, skill: undefined });
+    input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated };
+    dt = 0;
+  }
   if (input.truth || download) {
     Object.assign(state, newMotion(), { time: input.truth?.elapsed ?? download!.elapsed, skill: undefined });
     if (download?.role === 'neo' && (input.training?.kind === 'download' || input.download?.phase === 'ready')) state.seated = 1;

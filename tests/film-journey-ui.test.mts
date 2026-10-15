@@ -3,6 +3,28 @@ import test from 'node:test';
 import { build } from 'esbuild';
 import { FILM_SCENE_BY_ID, SENTINEL_POWER, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
+test('the console journal and live G button expose taking and tasting as separate player actions', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const module = async (name: string) => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles.find(f => f.path.endsWith(name + '.js'))!.contents).toString('base64')}`);
+  const { SandboxUI } = await module('SandboxUI'), { renderFilmJourney } = await module('FilmJourneyPanel');
+  const elements = new Map(), element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle(_name: string, value: boolean) { this.hidden = value; }, hidden: false } });
+    return elements.get(id);
+  };
+  const previous = globalThis.document; t.after(() => { globalThis.document = previous; }); globalThis.document = { getElementById: element } as unknown as Document;
+  const ui = Object.assign(Object.create(SandboxUI.prototype), { root: { querySelector: element }, tick: 0 }), scene = FILM_SCENE_BY_ID.m1_cypher_console;
+  const player = { id: 'neo', status: 'alive', isInMatrix: false, rotation: Math.PI / 2, position: filmStepPosition(scene, scene.steps[0]) } as AgentState;
+  const sandbox = { threats: [], neoLife: { journey: { scene: scene.id, actor: 'neo', step: 0, completed: [], reflections: {}, lastText: '',
+    interlude: { kind: 'console', phase: 'accept_ready', elapsed: 0, physicalConsole: true } } } } as SandboxState;
+  for (const [phase, label] of [['accept_ready', '接过金属杯'], ['sip_ready', '品尝一口']] as const) {
+    sandbox.neoLife!.journey!.interlude!.phase = phase;
+    assert.match(renderFilmJourney(player, sandbox), new RegExp(`data-target="film:act" >${label}`));
+    ui.updateFilm(player, sandbox); assert.equal(element('#sandbox-interact').classList.hidden, false);
+    assert.equal(element('#sandbox-nearby').textContent, label); assert.match(element('#film-sequence-hint').textContent, /^G/);
+  }
+});
+
 test('the EMP briefing journal and live waypoint require the actual inspection position', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });

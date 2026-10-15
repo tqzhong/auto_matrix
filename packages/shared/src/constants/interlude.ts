@@ -2,12 +2,13 @@ import type { FilmJourney } from './film-story.js';
 import type { Philosophy } from '../types/neo-life.js';
 
 export type InterludeKind = 'console' | 'steak' | 'meal';
-export type InterludePhase = 'ready' | 'performing' | 'choice' | 'responding' | 'done';
+export type InterludePhase = 'ready' | 'performing' | 'accept_ready' | 'accepting' | 'sip_ready' | 'sipping' | 'returning' | 'choice' | 'responding' | 'done';
 export interface InterludeEncounter {
   kind: InterludeKind;
   phase: InterludePhase;
   elapsed: number;
   answer?: Philosophy;
+  physicalConsole?: boolean;
 }
 export type InterludeRole = 'neo' | 'cypher' | 'smith' | 'tank' | 'mouse' | 'dozer' | 'apoc' | 'switch';
 export type InterludeGesture = InterludeEncounter & { role: InterludeRole };
@@ -15,6 +16,10 @@ export type InterludeGesture = InterludeEncounter & { role: InterludeRole };
 export const INTERLUDE_TIMING = {
   console: 8.4,
   consoleResponse: 4.6,
+  consoleIntro: 4.4,
+  consoleTake: 2.2,
+  consoleSip: 4.8,
+  consoleReturn: 6.4,
   steak: 14.5,
   meal: 13.2,
 } as const;
@@ -53,12 +58,58 @@ export function interludeKind(scene: string): InterludeKind | undefined {
 
 export function interludeLocked(journey: FilmJourney): boolean {
   return Boolean(!journey.visiting && interludeKind(journey.scene) && journey.interlude
-    && (journey.interlude.phase === 'performing' || journey.interlude.phase === 'responding'));
+    && ['performing', 'responding', 'accept_ready', 'accepting', 'sip_ready', 'sipping', 'returning'].includes(journey.interlude.phase));
+}
+
+export function interludeWaiting(encounter: InterludeEncounter): boolean {
+  return encounter.kind === 'console' && (encounter.phase === 'accept_ready' || encounter.phase === 'sip_ready');
 }
 
 export function interludeDuration(encounter: InterludeEncounter): number {
+  if (encounter.kind === 'console' && encounter.physicalConsole) {
+    if (encounter.phase === 'performing') return INTERLUDE_TIMING.consoleIntro;
+    if (encounter.phase === 'accepting') return INTERLUDE_TIMING.consoleTake;
+    if (encounter.phase === 'sipping') return INTERLUDE_TIMING.consoleSip;
+    if (encounter.phase === 'returning') return INTERLUDE_TIMING.consoleReturn;
+  }
   if (encounter.phase === 'responding') return INTERLUDE_TIMING.consoleResponse;
   return INTERLUDE_TIMING[encounter.kind];
+}
+
+export const CONSOLE_DRINK = {
+  shelf: { x: 5.8, z: 7.75, width: 2.5, depth: 1.3, height: 2.45 },
+  cup: { x: 4.74, y: 2.69, z: 7.75, yaw: Math.PI / 2 },
+  radius: .16, height: .48, transfer: .9, release: 2.4,
+} as const;
+
+export function interludeAge(encounter: InterludeEncounter): number {
+  if (encounter.kind !== 'console') return encounter.elapsed;
+  if (!encounter.physicalConsole) return encounter.phase === 'choice' ? INTERLUDE_TIMING.console
+    : encounter.phase === 'responding' || encounter.phase === 'done' ? INTERLUDE_TIMING.console + encounter.elapsed : encounter.elapsed;
+  const intro = INTERLUDE_TIMING.consoleIntro, take = intro + INTERLUDE_TIMING.consoleTake, sip = take + INTERLUDE_TIMING.consoleSip;
+  const end = sip + INTERLUDE_TIMING.consoleReturn;
+  const offset = { ready: 0, performing: 0, accept_ready: intro, accepting: intro, sip_ready: take, sipping: take,
+    returning: sip, choice: end, responding: end, done: end }[encounter.phase];
+  return offset + encounter.elapsed;
+}
+
+const ease = (t: number, a: number, b: number) => { const x = Math.max(0, Math.min(1, (t - a) / (b - a))); return x * x * (3 - 2 * x); };
+export function consoleDrinkPose(encounter: InterludeEncounter): { reach: number; carry: number; lift: number; tilt: number; grip: number; holding: boolean; drunk: number } {
+  const t = encounter.elapsed, phase = encounter.phase;
+  if (!encounter.physicalConsole && phase === 'performing') {
+    if (t >= 4.6 && t < 5.1) return consoleDrinkPose({ ...encounter, physicalConsole: true, phase: 'accepting', elapsed: (t - 4.6) * 4.4 });
+    if (t >= 5.1 && t < 7.4) return consoleDrinkPose({ ...encounter, physicalConsole: true, phase: 'sipping', elapsed: (t - 5.1) / 2.3 * INTERLUDE_TIMING.consoleSip });
+    if (t >= 7.4 && t < 8.15) return consoleDrinkPose({ ...encounter, physicalConsole: true, phase: 'returning', elapsed: (t - 7.4) / .75 * 3.8 });
+  }
+  const taking = phase === 'accepting', returning = phase === 'returning';
+  const held = phase === 'sip_ready' || phase === 'sipping';
+  const reach = taking ? ease(t, 0, CONSOLE_DRINK.transfer) : held ? 1 : returning ? 1 - ease(t, CONSOLE_DRINK.release, 3.8) : 0;
+  return { reach, carry: taking ? ease(t, CONSOLE_DRINK.transfer, INTERLUDE_TIMING.consoleTake) : held ? 1 : returning ? 1 - ease(t, 0, 2.1) : 0,
+    lift: phase === 'sipping' ? ease(t, 0, 1.4) * (1 - ease(t, 2.6, INTERLUDE_TIMING.consoleSip)) : 0,
+    tilt: phase === 'sipping' ? ease(t, 0, 1.4) * (1 - ease(t, 2.6, INTERLUDE_TIMING.consoleSip)) : 0,
+    grip: taking ? ease(t, .55, CONSOLE_DRINK.transfer) : held ? 1 : returning ? 1 - ease(t, CONSOLE_DRINK.release, 3.1) : 0,
+    holding: taking ? t >= CONSOLE_DRINK.transfer : held || returning && t < CONSOLE_DRINK.release,
+    drunk: phase === 'sipping' ? ease(t, 1.8, 2.6) : ['returning', 'choice', 'responding', 'done'].includes(phase) ? 1 : 0 };
 }
 
 export function interludeRoot(kind: InterludeKind, role: InterludeRole) {
@@ -74,13 +125,18 @@ export function interludeSeated(gesture: InterludeGesture): boolean {
 export function interludeText(encounter: InterludeEncounter): string {
   const { kind, phase, elapsed } = encounter;
   if (kind === 'console') {
+    if (phase === 'accept_ready') return 'Cypher 把船上的烈酒放在台边。按 G 伸手接过金属杯；等待不会替 Neo 接杯。';
+    if (phase === 'accepting') return 'Neo 靠近台面，握住金属杯身，把杯子收回身前。';
+    if (phase === 'sip_ready') return '杯子已经握稳。按 G 品尝一口，再继续这次夜班谈话。';
+    if (phase === 'sipping') return elapsed < 2.6 ? 'Neo 抬起杯子，尝了一口船上自制的烈酒。' : '烈酒让 Neo 停顿了一下。Cypher 说，这是 Dozer 在船上酿的。';
+    if (phase === 'returning') return elapsed < 2.4 ? 'Neo 把杯子稳稳放回台面。' : 'Cypher 谈起曾相信预言却没有回来的同伴，提醒 Neo：遇见特工就逃。';
     if (phase === 'ready') return 'Cypher 独自在值班台前读代码。走近滚动屏幕，再决定是否打断他。';
     if (phase === 'choice') return '酒杯留在控制台边。打开手记，回应他对真相、后悔与同伴的试探。';
-    if (phase === 'responding') return 'Cypher 听完你的回答，把杯子慢慢放回控制台。';
+    if (phase === 'responding') return encounter.physicalConsole ? 'Cypher 听完你的回答，没有解释那段程序的用途。' : 'Cypher 听完你的回答，把杯子慢慢放回控制台。';
     if (phase === 'done') return '这次夜班谈话已经记下。Neo 察觉到 Cypher 的动摇，却不知道他随后会做什么。';
     if (elapsed < 1.3) return 'Cypher 被身后的脚步惊到，立刻遮住刚才正在编写的程序。';
     if (elapsed < 3.5) return '他重新调出城市代码，解释自己早已不再看见字符，只看见街道与人。';
-    if (elapsed < 5.7) return 'Cypher 倒出一小杯船上自制的烈酒，问 Morpheus 是否说明了被选中的代价。';
+    if (elapsed < 5.7) return encounter.physicalConsole ? 'Cypher 示意 Neo 看台边的烈酒，问 Morpheus 是否说明了被选中的代价。' : 'Cypher 倒出一小杯船上自制的烈酒，问 Morpheus 是否说明了被选中的代价。';
     if (elapsed < 7.2) return '他提到此前相信预言的人都没有回来，并提醒 Neo 看见特工就逃。';
     return 'Neo 放下酒杯。Cypher 的玩笑听起来更像一次没有说完的警告。';
   }

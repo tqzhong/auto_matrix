@@ -31,6 +31,7 @@ import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 import { PHONE_HAND } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
+import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -111,6 +112,7 @@ export class HeroModels {
   private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
+  private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
   private meetings = new Map<HeroRig, MeetingPerformance>();
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
@@ -913,7 +915,7 @@ export class HeroModels {
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
     const truthView = input.truth?.role === 'neo';
     const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training && ['download', 'jump_fall', 'jump_return', 'red_dress'].includes(input.training.kind) && input.training.role === 'neo';
-    const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || input.interlude?.kind === 'console' && input.interlude.role === 'neo' || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
@@ -1176,7 +1178,6 @@ export class HeroModels {
     }
     if (input.interlude) {
       const { kind, role, phase, elapsed: t } = input.interlude;
-      const playing = phase === 'performing' || phase === 'responding' || phase === 'done';
       if (kind === 'console') {
         if (role === 'cypher') {
           const typing = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, .55, 1.35) : 0;
@@ -1190,9 +1191,7 @@ export class HeroModels {
             bone('elbow_' + side).rotation.x -= typing * (.88 - Math.sin(t * 11 + alternate) * .07) + offering * (side === 'R' ? 1.16 : .38);
           }
         } else {
-          const sip = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 5.1, 5.9) * (1 - THREE.MathUtils.smoothstep(t, 6.75, 7.45)) : 0;
-          bone('head').rotation.y -= playing ? .2 : 0; bone('head').rotation.x -= sip * .08;
-          bone('shoulder_R').rotation.x -= sip * .82; bone('elbow_R').rotation.x -= sip * 1.35; bone('wrist_R').rotation.z -= sip * .24;
+          bone('head').rotation.y -= phase !== 'ready' ? .2 : 0;
         }
       } else if (kind === 'steak') {
         if (role === 'cypher') {
@@ -1311,6 +1310,8 @@ export class HeroModels {
     if (input.farewell) { this.farewellSupport(rig, input.farewell); this.farewellContact(rig, input.farewell); }
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);
+    if (input.interlude?.kind === 'console' && input.interlude.role === 'neo' && !this.consoleDrinks.has(rig)) this.consoleDrinks.set(rig, new ConsoleDrinkPerformance(rig));
+    this.consoleDrinks.get(rig)?.update(input.interlude);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));
     this.interrogations.get(rig)?.update(input.interrogation, input.officeShirt);
     if (input.meeting && !this.meetings.has(rig)) this.meetings.set(rig, new MeetingPerformance(rig));
@@ -1382,6 +1383,7 @@ export class HeroModels {
 
   private release(): void {
     this.pills.forEach(p => p.dispose()); this.pills.clear();
+    this.consoleDrinks.forEach(p => p.dispose()); this.consoleDrinks.clear();
     this.interrogations.forEach(p => p.dispose()); this.interrogations.clear();
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();

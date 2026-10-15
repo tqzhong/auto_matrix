@@ -4323,7 +4323,14 @@ test('the entire film route completes through interactions, driving and real com
           const frames = index === 0 ? 165 : 36;
           for (let frame = 0; frame < frames; frame++) h.players.step(.1, true, h.tick());
         }
-        else if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 86; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_cypher_console') {
+          for (let frame = 0; frame < 46; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.interlude?.phase, 'accept_ready'); h.command('act');
+          for (let frame = 0; frame < 23; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.interlude?.phase, 'sip_ready'); h.command('act');
+          for (let frame = 0; frame < 114; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.interlude?.phase, 'choice');
+        }
         else if (scene.id === 'm1_steak') for (let frame = 0; frame < 147; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_meal') for (let frame = 0; frame < 134; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_bathroom') for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());

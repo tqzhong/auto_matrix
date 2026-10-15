@@ -69,6 +69,19 @@ test('dojo sparring keeps a readable guard between strikes and releases it after
   assert.deepEqual(advanceMotion(state, input, 0).arms, relaxed.arms, 'ending the duel restores normal arm movement');
 });
 
+test('a paused console encounter rebuilds seated crew and standing Neo from saved time', () => {
+  for (const role of ['neo', 'cypher'] as const) {
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      interlude: { kind: 'console' as const, phase: 'performing' as const, elapsed: 2.8, role }, seated: role === 'cypher' };
+    const warm = newMotion();
+    for (let frame = 0; frame < 30; frame++) advanceMotion(warm, { speed: 10, grounded: false, verticalVelocity: 7, turn: 2, attack: frame }, .04);
+    const cold = advanceMotion(newMotion(), input, 0);
+    assert.deepEqual(advanceMotion(warm, input, .016), cold, 'saved interlude pose must not inherit running, air or combat');
+    assert.deepEqual(advanceMotion(warm, input, 1), cold, 'a paused saved gesture cannot advance local breathing or seating');
+    if (role === 'cypher') assert.ok(cold.legs.every(leg => leg.knee > 1), 'cold loading must actually sit the operator');
+  }
+});
+
 test('download preparation and upload reconstruct the saved pose independently of old movement or combat', () => {
   for (const role of ['neo', 'tank'] as const) {
     const gestures = [
