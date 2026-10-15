@@ -39,8 +39,8 @@ export function createSteakCutlery(kind: 'fork' | 'knife', name: string): THREE.
   if (kind === 'fork') {
     const neck = new THREE.CatmullRomCurve3([new THREE.Vector3(0, .15, 0), new THREE.Vector3(0, .3, .01), new THREE.Vector3(0, .43, .055)]);
     mesh(new THREE.TubeGeometry(neck, 8, .014, 6, false), 0, 0, 0);
-    mesh(new THREE.BoxGeometry(.075, .09, .018), 0, .43, .055);
-    for (const x of [-.03, -.01, .01, .03]) mesh(new THREE.CylinderGeometry(.003, .005, .14, 6), x, .535, .055);
+    mesh(new THREE.BoxGeometry(.05, .09, .018), 0, .43, .055);
+    for (const x of [-.012, -.004, .004, .012]) mesh(new THREE.CylinderGeometry(.002, .003, .14, 6), x, .535, .055);
     const bite = createSteakPortion('slice', 'cypher-held-bite'); bite.position.copy(STEAK_FORK_TIP);
     bite.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), STEAK_DINING.gripTilt)
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)).invert(); root.add(bite);
