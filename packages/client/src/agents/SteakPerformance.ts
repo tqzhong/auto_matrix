@@ -82,14 +82,18 @@ export class SteakPerformance {
     const center = FILM_SETS.film_cypher_restaurant.center, at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(center.x + p.x, center.y - 1 + p.y, center.z + p.z);
     const flat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
     this.fork.visible = pose.forkHeld; this.knife.visible = pose.knifeHeld; this.wine.visible = pose.wineHeld;
-    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI + Math.PI / 2 * pose.lift).slerp(flat, pose.forkReturn);
+    const rotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), STEAK_DINING.gripTilt * (1 - pose.lift))
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI + Math.PI / 2 * pose.lift)).slerp(flat, pose.forkReturn);
     const mouth = this.lip().addScaledVector(new THREE.Vector3(0, 0, 1).transformDirection(b.get('head')!.matrixWorld), .075);
     const bite = at(STEAK_DINING.bite).lerp(root.localToWorld(new THREE.Vector3(-.33, 3.03, .72)), pose.lift).lerp(mouth, pose.mouth);
     const fork = bite.sub(STEAK_FORK_TIP.clone().applyQuaternion(rotation)).lerp(at(STEAK_DINING.fork), pose.forkReturn);
     this.hold(this.fork, 'R', fork, rotation, pose.forkReach, pose.forkHeld ? 1 : pose.forkReach);
-    const food = this.fork.getObjectByName('cypher-held-bite')!; food.visible = pose.t >= 3.5 && pose.eaten < 1; food.scale.set(1, .72, .8).multiplyScalar(1 - pose.eaten);
-    const knifeRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI).slerp(flat, pose.knifeReturn);
-    const knife = at(STEAK_DINING.bite).add(new THREE.Vector3(.16, .63, pose.cut)).lerp(at(STEAK_DINING.knife), pose.knifeReturn);
+    const food = this.fork.getObjectByName('cypher-held-bite')!; food.visible = pose.t >= 3.5 && pose.eaten < 1; food.scale.setScalar(1 - pose.eaten);
+    const cuttingRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -STEAK_DINING.gripTilt)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI));
+    const knifeRotation = cuttingRotation.clone().slerp(flat, pose.knifeReturn);
+    const knife = at({ x: STEAK_DINING.steak.cutX, y: STEAK_DINING.bite.y, z: STEAK_DINING.plate.z + pose.cut })
+      .sub(new THREE.Vector3(-.024, .63, 0).applyQuaternion(cuttingRotation)).lerp(at(STEAK_DINING.knife), pose.knifeReturn);
     this.hold(this.knife, 'L', knife, knifeRotation, pose.knifeReach, pose.knifeHeld ? 1 : pose.knifeReach);
     const wineRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -.55 * pose.wineSip);
     const wine = at(STEAK_DINING.wine).lerp(root.localToWorld(new THREE.Vector3(.55, 2.52, .65)), pose.wineCarry);
