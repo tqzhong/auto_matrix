@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import type { AgentState, SandboxState, SandboxThreat, WorldNode, WorldStructure, WorldIncident, Vector3, CombatImpact, ChateauWeapon } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/CharacterModel.js';
 import { newMotion } from '../agents/CharacterMotion.js';
+import { reach } from '../agents/SpoonPerformance.js';
 import { FILM_SETS, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
+import { mouseRoomGuard, MOUSE_ROOM_RETURN, ambushShotRecoil } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
@@ -215,7 +217,15 @@ export class SandboxRenderer {
       if (threat?.patrol) enemy.facing = threat.yaw ?? 0;
       const previous = enemy.group.position.clone();
       let gas = threat?.basementGas, gasSpeed: number | undefined;
-      if (enemy.ambushGuide) {
+      const room = threat?.mouseRoom;
+      if (room) {
+        const root = mouseRoomGuard(room.index, room.time), center = FILM_SETS.film_ambush_house.center;
+        enemy.group.position.set(center.x + root.x, center.y + root.y, center.z + root.z); enemy.facing = root.yaw;
+        if (enemy.rig) {
+          enemy.rig.motion = newMotion(); enemy.rig.motion.time = room.time; enemy.rig.motion.speed = root.speed;
+          enemy.rig.motion.phase = root.progress * 2.3 / (2 * .84 / .6);
+        }
+      } else if (enemy.ambushGuide) {
         const guide = enemy.ambushGuide; guide.elapsed = Math.min(.5, guide.elapsed + (running ? delta : 0));
         guide.progress = THREE.MathUtils.lerp(guide.from, guide.to, guide.elapsed / .5);
         const root = ambushRetreatRoot(guide.progress), center = FILM_SETS.film_ambush_house.center;
@@ -230,12 +240,37 @@ export class SandboxRenderer {
       else enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       if (enemy.rig) {
         const turn = Math.atan2(Math.sin(enemy.facing - enemy.rig.root.rotation.y), Math.cos(enemy.facing - enemy.rig.root.rotation.y));
-        enemy.rig.root.rotation.y += turn * (threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
+        enemy.rig.root.rotation.y += turn * (room || threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
       }
       const dist = enemy.group.position.distanceTo(camera.position);
-      if (enemy.rig) this.models.animate(enemy.rig, gas?.entry ? 0 : running ? delta : 0, { speed: gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: enemy.hit, impact: enemy.impact, chateauWeapon: threat?.weapon,
+      if (enemy.rig) this.models.animate(enemy.rig, room || gas?.entry ? 0 : running ? delta : 0, { speed: room ? mouseRoomGuard(room.index, room.time).speed : gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
+        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: room ? undefined : enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: room ? undefined : enemy.hit, impact: room ? undefined : enemy.impact, chateauWeapon: threat?.weapon,
         dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' }, dist);
+      if (room && enemy.rig?.weapons?.[0] && actor) {
+        const rig = enemy.rig, gun = rig.weapons![0], shoulder = rig.shoulders[0];
+        // Bring the receiver back toward the chest so the support arm can
+        // reach the fore-end without stretching either limb.
+        rig.elbows[0].rotation.x -= 1.8;
+        // Aim the held barrel, not the body root: the right-hand offset otherwise
+        // sends the second officer's shots past Mouse. Preserve the hand/grip.
+        const target = new THREE.Vector3(actor.position.x, actor.position.y + 2.3, actor.position.z);
+        for (let iteration = 0; iteration < 12; iteration++) {
+          rig.root.updateWorldMatrix(true, true);
+          const muzzle = gun.localToWorld(new THREE.Vector3(0, -1.315, 0));
+          const direction = new THREE.Vector3(0, -1, 0).applyQuaternion(gun.getWorldQuaternion(new THREE.Quaternion()));
+          const rotation = new THREE.Quaternion().setFromUnitVectors(direction, target.clone().sub(muzzle).normalize());
+          shoulder.quaternion.premultiply(shoulder.parent!.getWorldQuaternion(new THREE.Quaternion()).invert()
+            .multiply(rotation).multiply(shoulder.parent!.getWorldQuaternion(new THREE.Quaternion())));
+        }
+        let age = 10;
+        for (const [index, beat] of MOUSE_ROOM_RETURN.entries()) if (index % 2 === room.index && room.time >= beat) age = room.time - beat;
+        const recoil = ambushShotRecoil(age);
+        shoulder.rotation.x -= recoil * .16; rig.elbows[0].rotation.x -= recoil * .12;
+        rig.root.updateWorldMatrix(true, true);
+        reach(rig.shoulders[1], rig.elbows[1], new THREE.Vector3(0, -.75, .06), gun.localToWorld(new THREE.Vector3(0, -.55, .07)),
+          new THREE.Vector3(.5, -1, .2).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
+        rig.root.updateWorldMatrix(true, true);
+      }
       enemy.label.visible = enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
       enemy.health.visible = enemy.scene !== 'm1_room303' && !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);

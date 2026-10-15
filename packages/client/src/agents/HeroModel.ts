@@ -22,7 +22,7 @@ import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { placeTrackingFeet, wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
-import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor } from '@auto_matrix/shared';
+import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor, ambushShotRecoil, mouseRoomGuard } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
@@ -887,8 +887,16 @@ export class HeroModels {
     this.recoveries.get(rig)!.update(undefined, true);
   }
 
-  mousePistols(rig: HeroRig, guns: THREE.Group[]): void {
+  mousePistols(rig: HeroRig, guns: THREE.Group[], shotAge: number, roomTime?: number): void {
+    const originalKick = Math.max(0, 1 - shotAge / .18) ** 2;
+    const delayedKick = ambushShotRecoil(shotAge);
     for (const [hand, side] of ['R', 'L'].entries()) {
+      // The film's cylinder props are held low with the elbows bent. Opposite
+      // offsets keep the aim without bending wrists. Fire before recoil peaks,
+      // using the saved shot age so pause and cold loading give the same pose.
+      const shoulder = rig.bones.get('shoulder_' + side)!, elbow = rig.bones.get('elbow_' + side)!;
+      shoulder.rotation.x += 1.15 + .16 * originalKick;
+      elbow.rotation.x += -1.15 + .12 * originalKick;
       const gun = guns[hand], sign = hand ? -1 : 1;
       let fingers = gun.userData.mouseGrip as THREE.Quaternion[][] | undefined;
       if (!fingers) {
@@ -910,7 +918,7 @@ export class HeroModels {
           pads[Number(match[1]) - 1].add(this.point); counts[Number(match[1]) - 1]++;
         }
         pads.forEach((pad, i) => pad.divideScalar(counts[i]));
-        const handle = gun.children[2] as THREE.Mesh, trigger = gun.children[3] as THREE.Mesh;
+        const handle = gun.getObjectByName('mouse-weapon-grip') as THREE.Mesh, trigger = gun.getObjectByName('mouse-weapon-trigger') as THREE.Mesh;
         // Index sits above the little finger in this anatomical wrist frame.
         // The generic fallback mount points the grip in the opposite direction.
         gun.rotation.set(0, Math.PI, 0);
@@ -940,6 +948,22 @@ export class HeroModels {
       }
       for (let digit = 1; digit <= 5; digit++) for (let joint = 1; joint <= 3; joint++)
         rig.bones.get(`finger${digit}-${joint}_${side}`)!.quaternion.copy(fingers[digit - 1][joint - 1]);
+      if (roomTime !== undefined) {
+        const guard = mouseRoomGuard(hand, roomTime), center = FILM_SETS.film_ambush_house.center;
+        const target = new THREE.Vector3(center.x + guard.x, center.y - 1 + guard.y + 2.55, center.z + guard.z);
+        // Aim the held prop at its own officer before recoil. Rotate the whole
+        // shoulder chain so the anatomical wrist and all grip contacts survive.
+        for (let iteration = 0; iteration < 8; iteration++) {
+          rig.root.updateWorldMatrix(true, true);
+          const muzzle = gun.getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3());
+          const direction = new THREE.Vector3(0, -1, 0).applyQuaternion(gun.getWorldQuaternion(new THREE.Quaternion()));
+          const rotation = new THREE.Quaternion().setFromUnitVectors(direction, target.clone().sub(muzzle).normalize());
+          const parent = shoulder.parent!.getWorldQuaternion(new THREE.Quaternion());
+          shoulder.quaternion.premultiply(parent.clone().invert().multiply(rotation).multiply(parent));
+        }
+      }
+      shoulder.rotation.x -= .16 * delayedKick;
+      elbow.rotation.x -= .12 * delayedKick;
     }
   }
 
@@ -1400,7 +1424,7 @@ export class HeroModels {
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
       && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
-    const savedCloth = input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
+    const savedCloth = input.ambushEscort || input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
     if (delta <= 0 && !savedCloth && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and

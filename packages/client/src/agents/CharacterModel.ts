@@ -14,6 +14,7 @@ import { poseHelElevator } from './HelElevatorPerformance.js';
 import { poseHelDanceDoor } from './HelDanceDoorPerformance.js';
 import { poseHelPistol } from './HelCoatcheckPerformance.js';
 import { createHelPistol } from './HelPistolModel.js';
+import { createMouseWeapon } from './MouseWeapon.js';
 import { poseHelDisarm } from './HelDisarmPerformance.js';
 import { poseHelBreakout } from './HelBreakoutPerformance.js';
 import { poseMobilReunion } from './MobilReunionPerformance.js';
@@ -166,11 +167,13 @@ export interface CharacterRig {
   truckProps?: TruckWeaponProps;
 }
 
-export function weaponMuzzle(rig: CharacterRig): THREE.Vector3 | undefined {
+export function weaponMuzzle(rig: CharacterRig, hand?: number): THREE.Vector3 | undefined {
   if (rig.truckProps?.gun.visible) return rig.truckProps.muzzle();
   if (!rig.weapons?.length) return;
-  const gun = rig.weapons[(rig.muzzleIndex ?? 0) % rig.weapons.length]; rig.muzzleIndex = (rig.muzzleIndex ?? 0) + 1;
+  const gun = rig.weapons[(hand ?? rig.muzzleIndex ?? 0) % rig.weapons.length];
+  if (hand === undefined) rig.muzzleIndex = (rig.muzzleIndex ?? 0) + 1;
   gun.updateWorldMatrix(true, false);
+  if (gun.userData.mouseFilmWeapon) return gun.getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3());
   if (gun.userData.helPistol) return gun.localToWorld(new THREE.Vector3(0, .065, .475));
   const length = rig.weaponStyle === 'compact' ? .72 : rig.weaponStyle === 'breacher' || rig.weaponStyle === 'gas_launcher' ? 1.34 : ['rifle', 'pulse'].includes(rig.weaponStyle ?? '') ? 1.2 : .5;
   return gun.localToWorld(new THREE.Vector3(0, -length - .115, 0));
@@ -1004,18 +1007,19 @@ export class CharacterModels {
     const pulseRifle = Boolean(input.dockGateCover || input.crosscut && ['cypher', 'tank'].includes(input.crosscut.role) || input.betrayal && ['cypher', 'tank'].includes(input.betrayal.role));
     const weaponStyle: CharacterRig['weaponStyle'] = pickupArmed ? 'hel_pistol' : pulseRifle ? 'pulse' : input.weaponStyle ?? (rig.rifle ? 'rifle' : 'pistol');
     const helPistol = weaponStyle === 'hel_pistol' && !input.freewayPickup;
+    const mouseWeapon = Boolean(rig.mouseFrame) && weaponStyle === 'pistol';
     if (armed && rig.weapons && (rig.weaponStyle !== weaponStyle || Boolean(rig.weapons[0].userData.helPistol) !== helPistol)) {
       rig.weapons.forEach(gun => gun.removeFromParent()); rig.weapons = undefined;
     }
     if (armed && !rig.weapons) {
-      const material = this.material(new THREE.MeshStandardMaterial({ color: 0x242b2c, metalness: .75, roughness: .28 }));
+      const material = this.material(new THREE.MeshStandardMaterial({ color: mouseWeapon ? 0x53595b : 0x242b2c, metalness: .75, roughness: .28 }));
       const charge = pulseRifle ? this.material(new THREE.MeshBasicMaterial({ color: 0x8fd8ba, toneMapped: false })) : material;
       const dual = weaponStyle === 'pistol' || weaponStyle === 'compact';
       rig.weaponStyle = weaponStyle;
       rig.weapons = (dual ? [0, 1] : [0]).map(i => {
-        const gun = helPistol ? createHelPistol(material) : new THREE.Group(); const length = weaponStyle === 'compact' ? .72 : weaponStyle === 'breacher' || weaponStyle === 'gas_launcher' ? 1.34 : ['rifle', 'pulse'].includes(weaponStyle) ? 1.2 : .5;
+        const gun = mouseWeapon ? createMouseWeapon(material) : helPistol ? createHelPistol(material) : new THREE.Group(); const length = weaponStyle === 'compact' ? .72 : weaponStyle === 'breacher' || weaponStyle === 'gas_launcher' ? 1.34 : ['rifle', 'pulse'].includes(weaponStyle) ? 1.2 : .5;
         gun.name = pulseRifle ? 'neb-pulse-rifle' : `character-${weaponStyle}`;
-        if (helPistol) {
+        if (helPistol || mouseWeapon) {
           gun.traverse(object => { if (object instanceof THREE.Mesh) this.geometries.add(object.geometry); });
         } else {
           this.mesh(gun, this.box, material, [0, -length / 2, 0], [.12, length, .14]);
@@ -1198,7 +1202,7 @@ export class CharacterModels {
     if (rig.staff) rig.staff.rotation.z = Math.PI / 2 + staffSweep * .65;
     if (rig.hero) {
       this.heroes.animate(rig.hero, pose, rig.motion, input, delta);
-      if (rig.hero.support === 'mouse' && armed && weaponStyle === 'pistol') this.heroes.mousePistols(rig.hero, rig.weapons!);
+      if (rig.hero.support === 'mouse' && armed && weaponStyle === 'pistol') this.heroes.mousePistols(rig.hero, rig.weapons!, rig.motion.shotAge, input.mouseRoomTime);
       if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch);
       poseHelDisarm(rig, input.helDisarm);
       poseHelBreakout(rig, input.helBreakout);

@@ -21,6 +21,7 @@ export interface MotionInput {
   skill?: CombatSkillId;
   armed?: boolean;
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
+  mouseRoomTime?: number;
   wetwall?: import('@auto_matrix/shared').WetwallGesture;
   sixth?: import('@auto_matrix/shared').SixthGesture;
   bathroom?: import('@auto_matrix/shared').BathroomGesture;
@@ -620,6 +621,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     // Neo's initial approach needs a gait, derived from saved travel rather than frame history.
     Object.assign(state, newMotion(), { time: clock, speed, phase: distance * smooth(progress) / 2.8, skill: undefined });
     input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
+    dt = 0;
+  }
+  if (input.ambushEscort) {
+    const progress = input.ambushEscort.progress, speed = input.speed;
+    // The route and velocity survive saves; local gait history does not.
+    Object.assign(state, newMotion(), { time: progress / 4.2, speed, phase: progress / 2.8, skill: undefined });
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, seated: false };
     dt = 0;
   }
   if (input.truth || download) {

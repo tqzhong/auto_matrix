@@ -4,10 +4,12 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { AMBUSH_ESCAPE, filmPosition, newAmbushEscape, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { AMBUSH_ESCAPE, MOUSE_ROOM_SHOTS, filmPosition, newAmbushEscape, type AgentState, type CombatImpact, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
+import { Engine } from '../packages/client/src/engine/Engine.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { FilmStorySystem } from '../packages/server/src/story/FilmStorySystem.js';
@@ -51,7 +53,7 @@ async function fixture(t: TestContext, delayed = false) {
   };
   const settle = async () => { release(); await Promise.all(pending); await new Promise(resolve => setImmediate(resolve)); scene.updateMatrixWorld(true); };
   t.after(() => { renderer.dispose(); globalThis.document = document; });
-  return { renderer, scene, mouse, journey, sandbox, snapshot, render, settle, rig: () => rigs.agents.get('mouse')!.rig };
+  return { renderer, scene, mouse, journey, sandbox, world, story, snapshot, render, settle, rig: () => rigs.agents.get('mouse')!.rig };
 }
 
 function visible(object: THREE.Object3D): boolean {
@@ -91,6 +93,91 @@ test('the actual ambush snapshot rebuilds both held weapons when Mouse finishes 
   assert.equal(h.rig().root.getObjectByName('Tailored_coat_upper')!.visible, true);
 });
 
+test('Mouse holds the film silhouette with large cylindrical drums, long barrels and actual muzzle anchors', async t => {
+  const h = await fixture(t); h.snapshot(3.25); await h.settle(); h.render();
+  for (const gun of h.rig().weapons!) {
+    const drum = gun.getObjectByName('mouse-weapon-drum') as THREE.Mesh;
+    const barrel = gun.getObjectByName('mouse-weapon-barrel') as THREE.Mesh;
+    const muzzle = gun.getObjectByName('mouse-weapon-muzzle');
+    assert.ok(drum && barrel && muzzle, 'the film’s broad cylinders and extended barrels cannot remain generic small pistols');
+    drum.geometry.computeBoundingBox(); barrel.geometry.computeBoundingBox();
+    const drumSize = drum.geometry.boundingBox!.getSize(new THREE.Vector3()).multiply(drum.scale);
+    const barrelSize = barrel.geometry.boundingBox!.getSize(new THREE.Vector3()).multiply(barrel.scale);
+    assert.ok(drumSize.x > .5 && drumSize.z > .5 && drumSize.x > barrelSize.x * 4, 'the prominent cylindrical silhouette is wider than the barrel');
+    assert.ok(barrelSize.y > .8, 'the visible forward barrel must retain the long film silhouette');
+    const tip = barrel.localToWorld(new THREE.Vector3(0, barrel.geometry.boundingBox!.min.y, 0));
+    assert.ok(tip.distanceTo(muzzle.getWorldPosition(new THREE.Vector3())) < .001, 'the muzzle anchor is at the real open barrel tip');
+  }
+  const rig = h.rig(); rig.muzzleIndex = 0;
+  for (const gun of rig.weapons!) assert.ok(h.renderer.muzzle('mouse')!.distanceTo(gun.getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3())) < .001,
+    'production shooting must alternate the two actual extended muzzle positions');
+});
+
+test('the film cylinders remain hollow around both actual palms and all finger segments while aiming and firing', async t => {
+  const h = await fixture(t); h.snapshot(1); await h.settle();
+  for (const elapsed of [1, 3.25]) {
+    h.snapshot(elapsed); const rig = h.rig();
+    const skin = rig.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, a = skin.geometry.attributes;
+    for (const [hand, side] of ['R', 'L'].entries()) {
+      const drum = rig.weapons![hand].getObjectByName('mouse-weapon-drum') as THREE.Mesh;
+      let penetration = 0, checked = 0; const point = new THREE.Vector3();
+      for (let vertex = 0; vertex < a.position.count; vertex++) {
+        if (![0, 1, 2, 3].some(j => a.skinWeight.getComponent(vertex, j) > .9 && new RegExp(`^(wrist|finger[1-5]-[123])_${side}$`).test(skin.skeleton.bones[a.skinIndex.getComponent(vertex, j)].name))) continue;
+        drum.worldToLocal(skin.localToWorld(skin.getVertexPosition(vertex, point))); checked++;
+        const radial = Math.hypot(point.x, point.z);
+        if (radial > .205 && radial < .336 && Math.abs(point.y) < .179)
+          penetration = Math.max(penetration, Math.min(radial - .205, .336 - radial, .179 - Math.abs(point.y)));
+      }
+      assert.ok(checked > 100, 'inspect the shipped palm and all articulated phalanges, not just bone centers');
+      assert.ok(penetration < .015, `${side} hand intersects the cylindrical shell by ${penetration} at saved time ${elapsed}`);
+    }
+  }
+});
+
+test('Mouse supports the heavy cylinders with bent elbows below the chest rather than straight pistol arms', async t => {
+  const h = await fixture(t); h.snapshot(1); await h.settle();
+  for (const elapsed of [1, 3.25]) {
+    h.snapshot(elapsed); const hero = h.rig().hero!;
+    for (const side of ['R', 'L']) {
+      const shoulder = hero.bones.get('shoulder_' + side)!.getWorldPosition(new THREE.Vector3());
+      const elbow = hero.bones.get('elbow_' + side)!.getWorldPosition(new THREE.Vector3());
+      const wrist = hero.bones.get('wrist_' + side)!, hand = wrist.getWorldPosition(new THREE.Vector3());
+      const upper = elbow.clone().sub(shoulder).normalize(), forearm = hand.clone().sub(elbow).normalize();
+      assert.ok(upper.dot(forearm) < .5 && upper.dot(forearm) > -.5, 'both elbows retain a substantial, natural bend');
+      assert.ok(shoulder.y - hand.y > shoulder.distanceTo(elbow) * .65,
+        `the hands stay well below the shoulder, including recoil: ${side}/${elapsed} shoulder=${shoulder.y} hand=${hand.y}`);
+      const palm = new THREE.Vector3(0, -1, 0).applyQuaternion(wrist.getWorldQuaternion(new THREE.Quaternion()));
+      assert.ok(palm.dot(forearm) > .9, 'lowering the props must not fold the wrists backwards');
+    }
+    gunState(h.rig());
+  }
+});
+
+test('Mouse fires along the aimed barrel into actual room police before the saved recoil lifts the props', async t => {
+  const h = await fixture(t), enemies = new SandboxRenderer(h.scene); t.after(() => enemies.dispose());
+  const camera = new THREE.PerspectiveCamera();
+  for (const [index, beat] of MOUSE_ROOM_SHOTS.entries()) {
+    h.snapshot(beat);
+    camera.position.set(h.mouse.position.x, h.mouse.position.y + 3, h.mouse.position.z + 12);
+    enemies.sync({ nodes: [], incidents: [], missions: {}, ...h.sandbox } as SandboxState, Object.fromEntries(h.world.agents));
+    enemies.update(0, camera, true, 1, false); await h.settle();
+    enemies.update(0, camera, true, 1, false); h.render();
+    const gun = h.rig().weapons![index % 2], muzzle = gun.getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3());
+    const direction = new THREE.Vector3(0, -1, 0).applyQuaternion(gun.getWorldQuaternion(new THREE.Quaternion()));
+    const rooms = [...(enemies as unknown as { enemies: Map<string, { rig: CharacterRig }> }).enemies.entries()].filter(([id]) => id.startsWith('film:ambush:room:'));
+    assert.equal(rooms.length, 2, 'use the two actually spawned and posed room police');
+    assert.ok(rooms.every(([, entry]) => entry.rig.detail.visible && !entry.rig.distant.visible), 'ray tests must use the shipped detailed officers rather than distance proxies');
+    const hits = new THREE.Raycaster(muzzle, direction, 0, 30).intersectObject(rooms[index % 2][1].rig.root, true).filter(hit => visible(hit.object));
+    assert.ok(hits.length, `shot ${index + 1} at ${beat}s must leave the aimed barrel toward the actual officer, direction=${direction.toArray()}`);
+    const chest = rooms[index % 2][1].rig.root.localToWorld(new THREE.Vector3(0, 2.55, 0));
+    const aimError = new THREE.Ray(muzzle, direction).distanceToPoint(chest);
+    assert.ok(aimError < .03, `the held barrel must converge on the actual officer's chest, not just graze an extremity: ${aimError}`);
+    const firing = h.rig().hero!.bones.get('shoulder_R')!.quaternion.clone();
+    h.snapshot(beat + .04);
+    assert.ok(firing.angleTo(h.rig().hero!.bones.get('shoulder_R')!.quaternion) > .08, 'recoil develops after firing, rather than peaking before the projectile leaves');
+  }
+});
+
 test('the same ambush guns survive V toggles and ordinary shooting drives recoil in the anatomical arms', async t => {
   const h = await fixture(t); h.snapshot(1); await h.settle(); h.render(); const rig = h.rig(), guns = [...rig.weapons!];
   for (const firstPerson of [true, false, true, false]) {
@@ -104,8 +191,9 @@ test('the same ambush guns survive V toggles and ordinary shooting drives recoil
   const muzzle = h.renderer.muzzle('mouse')!; assert.ok(muzzle.toArray().every(Number.isFinite));
   h.renderer.impact({ source: 'mouse', target: 'film_soldier', position: h.mouse.position, direction: { x: 1, y: 0, z: 0 }, damage: 1, combo: 0, matrix: true, downed: false, shot: { from: { x: muzzle.x, y: muzzle.y, z: muzzle.z }, surface: 'stone' } });
   // Combat impact deliberately inserts a short hit pause before recoil starts.
-  for (let frame = 0; frame < 4; frame++) h.render(1 / 60);
-  assert.ok(before.angleTo(rig.hero!.bones.get('shoulder_R')!.quaternion) > .05, 'a shot must kick the arm rather than only play audio');
+  let recoil = 0;
+  for (let frame = 0; frame < 12; frame++) { h.render(1 / 60); recoil = Math.max(recoil, before.angleTo(rig.hero!.bones.get('shoulder_R')!.quaternion)); }
+  assert.ok(recoil > .05, 'ordinary shooting must still visibly kick the arm after hit pause and the delayed recoil rise');
   gunState(rig);
 });
 
@@ -208,4 +296,44 @@ test('returning from the distant corpse proxy remeasures the actual Mouse body f
     const bounds = surfaceBounds(h.rig().root);
     assert.ok(Math.abs(bounds.min.y - floor - .005) < .001, `LOD ${distance} loses floor contact: ${bounds.min.y - floor}`);
   }
+});
+
+
+test('a cold load before the second Mouse shot uses its saved left hand without consuming ordinary dual-gun rotation', async t => {
+  const h = await fixture(t); h.snapshot(3.15); await h.settle(); h.render();
+  const impacts: CombatImpact[] = []; h.story.onImpact = hit => impacts.push(hit);
+  h.story.ambushEscapeFrame(h.world.agents.get('neo')!, .06, 2);
+  h.renderer.updateAgent('mouse', h.mouse); h.render();
+  const hit = impacts.find(hit => hit.source === 'mouse')!; assert.ok(hit, 'continue the actual saved clock through its second firing beat');
+  const left = h.rig().weapons![1].getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3());
+  const right = h.rig().weapons![0].getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3());
+  const selected: THREE.Vector3[] = [];
+  const engine = { matrix: true, camera: new THREE.PerspectiveCamera(), agentRenderer: h.renderer,
+    sandboxRenderer: { muzzle: () => undefined, impact() {} },
+    combatEffects: { impact: (_hit: CombatImpact, _hurt: boolean, muzzle: THREE.Vector3) => selected.push(muzzle.clone()) },
+    playerControls: { id: 'neo', impact() {} }, audio: { impact() {} }, filmSets: { impact() {} } };
+  engine.camera.position.copy(left);
+  for (let i = 0; i < 2; i++) Engine.prototype.showImpact.call(engine as unknown as Engine, hit);
+  assert.ok(selected.every(point => point.distanceTo(left) < .001), `saved left-hand event uses the wrong barrel: ${selected.map(point => point.distanceTo(left))}`);
+  assert.equal(hit.shot!.hand, 1);
+  assert.ok(h.renderer.muzzle('mouse')!.distanceTo(right) < .001, 'explicit scene hands cannot consume the normal weapon cycle');
+  assert.ok(h.renderer.muzzle('mouse')!.distanceTo(left) < .001, 'ordinary dual-wield shooting must still alternate');
+});
+
+test('a room impact arriving between animation frames uses the newly received pose for its muzzle', async t => {
+  const h = await fixture(t); h.snapshot(3.15); await h.settle(); h.render();
+  const impacts: CombatImpact[] = []; h.story.onImpact = hit => impacts.push(hit);
+  h.story.ambushEscapeFrame(h.world.agents.get('neo')!, .07, 2);
+  h.renderer.updateAgent('mouse', h.mouse);
+  // A socket delta updates data, but no browser animation frame has run yet.
+  const selected: THREE.Vector3[] = [], hit = impacts.find(hit => hit.source === 'mouse')!;
+  const engine = { matrix: true, tick: 2, sandbox: h.sandbox, camera: new THREE.PerspectiveCamera(), agentRenderer: h.renderer,
+    sandboxRenderer: { update() {}, muzzle: () => undefined, impact() {} },
+    combatEffects: { impact: (_hit: CombatImpact, _hurt: boolean, muzzle: THREE.Vector3) => selected.push(muzzle.clone()) },
+    playerControls: { id: 'neo', impact() {} }, audio: { impact() {} }, filmSets: { impact() {} } };
+  engine.camera.position.copy(h.rig().weapons![1].getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3()));
+  Engine.prototype.showImpact.call(engine as unknown as Engine, hit);
+  h.render();
+  const expected = h.rig().weapons![1].getObjectByName('mouse-weapon-muzzle')!.getWorldPosition(new THREE.Vector3());
+  assert.ok(selected[0].distanceTo(expected) < .001, `impact used the previous rendered pose, offset=${selected[0].distanceTo(expected)}`);
 });

@@ -61,6 +61,35 @@ test('the fresh cat leads to the cut hardline and a physical retreat, instead of
   assert.equal(h.sandbox.state.threats.filter(threat => threat.scene === 'm1_dejavu' && !threat.patrol).length, 0);
 });
 
+test('retry during the alarm preserves its saved clock and cannot skip Mouse being killed', () => {
+  const h = setup(); cat(h); h.frame(10);
+  const elapsed = h.state().ambushEscape!.elapsed;
+  assert.ok(elapsed > 1 && elapsed < AMBUSH_ESCAPE.shots);
+  h.command('retry');
+  assert.equal(h.state().ambushEscape!.phase, 'alarm', 'the thirteen-floor checkpoint must not skip the unfinished alarm');
+  assert.equal(h.state().ambushEscape!.elapsed, elapsed);
+  assert.equal(h.world.agents.get('mouse')!.status, 'alive');
+  h.frame(34);
+  assert.equal(h.state().ambushEscape!.mouseDead, true);
+  assert.equal(h.world.agents.get('mouse')!.status, 'dead');
+  h.frame(20); assert.equal(h.state().ambushEscape!.phase, 'descending');
+});
+
+test('reconnecting a fallen Neo in the late alarm keeps Mouse dead and resumes the saved event', () => {
+  const h = setup(); cat(h); h.frame(48);
+  const elapsed = h.state().ambushEscape!.elapsed;
+  assert.ok(elapsed > AMBUSH_ESCAPE.mouse && elapsed < AMBUSH_ESCAPE.alarm);
+  h.actor.status = 'dead'; h.actor.health = 0;
+  h.players.release('escape-player', h.tick());
+  h.players.possess('escape-player', 'neo', h.tick());
+  assert.equal(h.actor.status, 'alive');
+  assert.equal(h.state().ambushEscape!.phase, 'alarm');
+  assert.equal(h.state().ambushEscape!.elapsed, elapsed);
+  assert.equal(h.state().ambushEscape!.mouseDead, true);
+  assert.equal(h.world.agents.get('mouse')!.status, 'dead');
+  h.frame(15); assert.equal(h.state().ambushEscape!.phase, 'descending');
+});
+
 test('ordinary movement can descend five connected storeys with physical support and no floor teleport', () => {
   let position = filmPosition(set.id, 11, 31.8), vy = 0, velocity = { x: 0, z: 0 };
   for (const [x, y, z] of descent) {
@@ -124,6 +153,54 @@ test('the player cannot walk through a waiting companion at the retreat merge', 
     h.move(dx / Math.max(.01, gap), dz / Math.max(.01, gap), true);
     assert.ok(Math.hypot(trinity.position.x - h.actor.position.x, trinity.position.z - h.actor.position.z) >= 2.24, 'Neo phases through Trinity at the merge');
   }
+});
+
+test('the running phone gesture uses the saved call clock across pause and a zero-delta restore', () => {
+  const h = setup(); cat(h); h.frame(65);
+  for (const [x, y, z] of descent) h.walk(x, y, z);
+  for (const [x, z] of [[-11, 31.8], [-11, 8], [0, 8], [0, -16], [-18, -16]]) h.walk(x, -37, z);
+  for (let i = 0; i < 200 && h.state().ambushEscape!.phase === 'descending'; i++) h.frame();
+  assert.equal(h.state().ambushEscape!.phase, 'window'); h.command('act');
+  for (const [x, z] of [[-18, -13.2], [-5.4, -13.2]]) h.walk(x, -37, z);
+  h.command('act'); h.frame(20);
+  for (const role of roles) assert.deepEqual(h.world.agents.get(role)!.velocity, { x: 0, y: 0, z: 0 }, 'an active frame must stop companions waiting for the phone call');
+  const phoneTime = () => (h.world.agents.get('morpheus')!.currentAction!.parameters.phone as { elapsed: number }).elapsed;
+  const elapsed = h.state().ambushEscape!.elapsed, running = phoneTime();
+  assert.ok(elapsed > 1.9 && elapsed < AMBUSH_ESCAPE.call);
+  h.frame(5, false); const paused = phoneTime();
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); const restored = phoneTime();
+  assert.equal(running, elapsed, 'the running phone pose must use the current authoritative call time');
+  assert.equal(paused, running, 'pausing cannot advance the gesture');
+  assert.equal(restored, running, 'a zero-delta restore cannot jump the phone pose ahead one simulation frame');
+});
+
+for (const retreat of [false, true]) test(`${retreat ? 'eleventh-floor retreat' : 'stair approach'} preserves moving crew poses through pause and cold reconstruction`, () => {
+  const h = setup();
+  if (retreat) {
+    cat(h); h.frame(65);
+    for (const [x, y, z] of descent.slice(0, 8)) h.walk(x, y, z);
+    assert.equal(h.state().ambushEscape!.checkpoint.floor, 11);
+  } else h.walk(-5.5, -7.4, 30.8);
+  const company = (world: WorldState) => roles.map(id => {
+    const actor = world.agents.get(id)!;
+    return { id, position: { ...actor.position }, rotation: actor.rotation, velocity: { ...actor.velocity },
+      guide: structuredClone(actor.currentAction?.parameters.ambushEscort) };
+  });
+  const moving = company(h.world);
+  assert.ok(moving.some(actor => Math.hypot(actor.velocity.x, actor.velocity.y, actor.velocity.z) > 1), 'the regression must capture an actual moving crew');
+  h.frame(5, false);
+  assert.deepEqual(company(h.world), moving, 'pausing must freeze both the route and the walking pose');
+  const saved = JSON.parse(JSON.stringify({ agents: Object.fromEntries(h.world.agents), sandbox: h.sandbox.state }));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  for (const [id, state] of Object.entries(saved.agents)) {
+    Object.assign(world.agents.get(id)!, state); delete world.agents.get(id)!.controller;
+  }
+  world.simulationTick = h.tick();
+  const sandbox = new SandboxSystem(world, { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics, 42);
+  sandbox.restore(saved.sandbox);
+  assert.deepEqual(company(world), moving, 'zero-delta reconstruction must retain saved speed for the same frozen gait');
+  sandbox.life.film.restoreAmbushSpace();
+  assert.deepEqual(company(world), moving, 'another paused frame must neither move the crew nor erase its gait');
 });
 
 test('retreat progress, the actual crew and pursuit preserve pause, disconnect, occupied companions and loading', () => {

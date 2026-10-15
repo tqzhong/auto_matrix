@@ -151,6 +151,9 @@ export class PlayerControls {
   spoon?: number;
   ambushObservation?: number;
   private watchingAmbush = false;
+  ambushAlarm?: number;
+  private ambushAlarmView = false;
+  private ambushAlarmCancelled = false;
   private wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   private hangingWetwall = false;
   private basementDropClock?: BasementDropPlayback;
@@ -183,6 +186,7 @@ export class PlayerControls {
     this.mirrorYaw = undefined; this.motion.mirrorEntry = undefined;
     this.bridgeCaught = undefined;
     this.watchingAmbush = false;
+    this.ambushAlarm = undefined; this.ambushAlarmView = this.ambushAlarmCancelled = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.bathroomGuide = undefined; this.motion.bathroom = undefined;
     this.basementDropClock = undefined;
@@ -235,6 +239,7 @@ export class PlayerControls {
     this.id = null; this.keys.clear(); this.enabled = true; this.firing = false; this.firearm = false; this.weaponStyle = undefined; this.fireInterval = LOBBY_FIRE_INTERVAL; this.ride = undefined; this.gunner = false; this.climbing = false; this.performing = false; this.phoneExit = false; this.mirror = 0; this.spoon = undefined; this.phone = undefined; this.welcomeShot = undefined;
     this.bridgeCaught = undefined;
     this.ambushObservation = undefined; this.watchingAmbush = false;
+    this.ambushAlarm = undefined; this.ambushAlarmView = this.ambushAlarmCancelled = false;
     this.wetwallGuide = undefined; this.hangingWetwall = false; this.sixthGuide = undefined; this.motion.sixth = undefined;
     this.bathroomGuide = undefined; this.motion.bathroom = undefined;
     this.basementDropClock = undefined;
@@ -1324,13 +1329,28 @@ export class PlayerControls {
         target.lerp(new THREE.Vector3(center.x + .6, center.y + 1.78, center.z), interview.pinned);
       }
     }
+    const alarm = this.ambushAlarm !== undefined && state.id === 'neo' && state.currentLocation === 'film_ambush_house' && state.status === 'alive';
+    if (!alarm) this.ambushAlarmCancelled = false;
+    if (alarm && (this.motion.speed > .1 || Math.abs(this.vy) > .1 || ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].some(key => this.keys.has(key)))) this.ambushAlarmCancelled = true;
+    const alarmView = alarm && this.ambushAlarm! >= .8 && this.ambushAlarm! < 5.5 && !this.firstPerson && !this.ambushAlarmCancelled;
+    if (alarmView !== this.ambushAlarmView) {
+      this.cameraReady = false;
+      if (this.ambushAlarmView) { this.camera.fov = this.firstPerson ? 68 : sprint ? 64 : 57; this.camera.updateProjectionMatrix(); }
+    }
+    this.ambushAlarmView = alarmView;
     const resetCamera = !this.cameraReady;
     if (!this.motion.welcome) this.welcomeShot = undefined;
     if (!this.cameraReady) { this.cameraTarget.copy(target); this.cameraReady = true; }
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (state.id === 'niobe' && state.currentLocation === 'film_hammer_route' && !this.motion.hammerPilot
+    if (alarmView) {
+      // A separate room view; Neo retains his position, movement and first-person look.
+      const center = FILM_SETS.film_ambush_house.center, portrait = this.camera.aspect < .85;
+      this.camera.fov = portrait ? 78 : 64; this.camera.updateProjectionMatrix();
+      this.camera.position.set(center.x - 20.5, center.y + 4.7, center.z - 10);
+      this.camera.lookAt(center.x - 15.6, center.y + 1.1, center.z - 15);
+    } else if (state.id === 'niobe' && state.currentLocation === 'film_hammer_route' && !this.motion.hammerPilot
       && this.hammerPreparation?.station && this.hammerPreparation.elapsed >= 11.4 && !this.firstPerson
       && this.motion.speed < .1 && !['KeyW', 'KeyA', 'KeyS', 'KeyD'].some(key => this.keys.has(key))) {
       const flight = newHammerFlight(), center = FILM_SETS.film_hammer_route.center;

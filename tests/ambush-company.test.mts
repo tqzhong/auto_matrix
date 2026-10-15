@@ -84,7 +84,7 @@ test('ordinary walking brings all five companions up both flights, with supporte
   for (const actor of h.cast()) assert.ok(Math.abs(actor.position.y - set.center.y) < .001);
   h.command('act'); h.frame(100);
   assert.equal(h.state().step, 1, 'the same walking save must continue through the repeat into the sealed building');
-  assert.equal(h.sandbox.state.structures.filter(item => item.film?.scene === 'm1_dejavu').length, 2);
+  assert.equal(h.sandbox.state.structures.filter(item => item.id.startsWith('film:ambush:seal:')).length, 2);
 });
 
 test('sprinting Neo reaches the same corridor while his companions keep clear and use both stair flights', () => {
@@ -171,7 +171,7 @@ test('a fresh company observes the cat on the upper stairs and preserves the lon
   assert.deepEqual(h.cast().map(actor => actor.position), positions, 'retry keeps the company at its saved stair observation');
   assert.equal(h.state().ambush!.elapsed, JSON.parse(before).elapsed, 'retry preserves the descent instead of restarting the old cat');
   h.frame(81); assert.equal(h.state().step, 0, 'the stair pass must not use the old 9.5 second doorway clock');
-  assert.equal(h.sandbox.state.structures.filter(item => item.film?.scene === 'm1_dejavu').length, 0);
-  h.frame(6); assert.equal(h.sandbox.state.structures.filter(item => item.film?.scene === 'm1_dejavu').length, 2);
+  assert.equal(h.sandbox.state.structures.filter(item => item.id.startsWith('film:ambush:seal:')).length, 0);
+  h.frame(6); assert.equal(h.sandbox.state.structures.filter(item => item.id.startsWith('film:ambush:seal:')).length, 2);
   h.frame(20); assert.equal(h.state().step, 1);
 });
