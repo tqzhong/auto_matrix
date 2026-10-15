@@ -7,6 +7,8 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { FILM_SETS, interludeRoot, type InterludeGesture } from '@auto_matrix/shared';
+import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 
 async function fixture(t: TestContext) {
   const assets = new Map<string, Promise<any>>(), pending: Promise<unknown>[] = [];
@@ -29,7 +31,7 @@ async function fixture(t: TestContext) {
   });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
-  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {}, fillRect() {}, fillText() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
   const cypher = models.create(world.agents.get('cypher')!), choi = models.create(world.agents.get('choi')!);
   const settle = async () => { await Promise.all(pending); await new Promise(resolve => setImmediate(resolve)); };
@@ -157,4 +159,76 @@ test('the detailed head stays inside its rendering bounds during console gesture
     crosscut: { phase: 'call', elapsed: 12, view: 'matrix', attempts: 0, tankHealth: 40, tankHit: true, dozerDead: true,
       apocDead: true, switchDead: false, cypherDead: true, trinityOut: false, neoOut: false, role: 'cypher', fall: 1.4 } }, 4);
   h.cypher.root.updateMatrixWorld(true); check('deck fall');
+});
+
+test('Cypher’s actual fingers rest above the rendered keyboard and withdraw without folding before the chair turns', async t => {
+  const h = await fixture(t); await h.draw();
+  const center = FILM_SETS.film_neb_deck.center, room = new THREE.Group(); room.position.set(center.x, center.y - 1, center.z);
+  const renderer = new NebDeckRenderer(room); t.after(() => renderer.dispose());
+  const rig = h.cypher, skin = rig.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, attrs = skin.geometry.attributes;
+  const draw = (phase: InterludeGesture['phase'], elapsed: number) => {
+    const gesture: InterludeGesture = { kind: 'console', phase, elapsed, role: 'cypher', physicalConsole: true };
+    const point = interludeRoot('console', 'cypher', gesture);
+    rig.root.position.set(center.x + point.x, center.y - 1, center.z + point.z); rig.root.rotation.y = point.yaw;
+    h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false, interlude: gesture }, 4);
+    rig.root.updateMatrixWorld(true); renderer.update({ scene: 'm1_cypher_console', interlude: gesture } as any, 900); room.updateMatrixWorld(true);
+  };
+  for (const elapsed of [0, .1, .2]) {
+    draw(elapsed ? 'performing' : 'ready', elapsed);
+    const keycaps = room.getObjectByName('neb-cypher-keycaps')!; assert.ok(keycaps);
+    const bounds = new THREE.Box3().setFromObject(keycaps), nearest = Array(8).fill(Infinity); let inside = 0, worst = '';
+    for (let v = 0; v < attrs.position.count; v++) {
+      const digits = [0, 1, 2, 3].filter(j => attrs.skinWeight.getComponent(v, j) > .5)
+        .map(j => /^finger([2-5])-3_([RL])$/.exec(skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name)).filter(Boolean);
+      const hand = [0, 1, 2, 3].some(j => attrs.skinWeight.getComponent(v, j) > .2 && /^(wrist|finger[1-5]-[1-3])_[RL]$/.test(skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name));
+      if (!hand) continue;
+      const p = skin.localToWorld(skin.getVertexPosition(v, new THREE.Vector3()));
+      if (p.x < bounds.min.x || p.x > bounds.max.x || p.z < bounds.min.z || p.z > bounds.max.z) continue;
+      if (p.y - bounds.max.y < inside) {
+        inside = p.y - bounds.max.y;
+        worst = [0, 1, 2, 3].filter(j => attrs.skinWeight.getComponent(v, j) > .2).map(j => skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name).join(',');
+      }
+      for (const digit of digits) nearest[Number(digit![1]) - 2 + (digit![2] === 'L' ? 4 : 0)] = Math.min(nearest[Number(digit![1]) - 2 + (digit![2] === 'L' ? 4 : 0)], Math.abs(p.y - bounds.max.y));
+    }
+    assert.ok(inside >= -.012, `hand penetrates keycaps ${inside} at ${elapsed}: ${worst}`);
+    assert.ok(nearest.every(gap => gap < .07), `eight typing fingertips miss the keys at ${elapsed}: ${nearest}`);
+  }
+  for (let sample = 0; sample <= 44; sample++) {
+    draw('performing', sample * .05);
+    const chair = room.getObjectByName('neb-cypher-operator-chair')!, boxes = chair.children.filter(object => object instanceof THREE.Mesh).map(object => {
+      const mesh = object as THREE.Mesh; mesh.geometry.computeBoundingBox();
+      return { inverse: mesh.matrixWorld.clone().invert(), box: mesh.geometry.boundingBox!.clone().expandByScalar(-.005) };
+    });
+    for (let v = 0; v < attrs.position.count; v++) {
+      if (![0, 1, 2, 3].some(j => attrs.skinWeight.getComponent(v, j) > .2 && /^(wrist|finger[1-5]-[1-3])_[RL]$/.test(skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name))) continue;
+      const point = skin.localToWorld(skin.getVertexPosition(v, new THREE.Vector3()));
+      for (const { inverse, box } of boxes) assert.equal(box.containsPoint(point.clone().applyMatrix4(inverse)), false, `hand enters chair at ${sample * .05}, vertex ${v}`);
+    }
+    for (const side of ['R', 'L']) {
+      const wrist = rig.hero!.bones.get(`wrist_${side}`)!, elbow = rig.hero!.bones.get(`elbow_${side}`)!;
+      const forearm = wrist.getWorldPosition(new THREE.Vector3()).sub(elbow.getWorldPosition(new THREE.Vector3())).normalize();
+      const angle = forearm.angleTo(new THREE.Vector3(0, -1, 0).transformDirection(wrist.matrixWorld));
+      assert.ok(angle < 1.3, `wrist ${side} folds ${angle * 180 / Math.PI} degrees at ${sample * .05}`);
+      const from = elbow.getWorldPosition(new THREE.Vector3()), to = wrist.getWorldPosition(new THREE.Vector3()), direction = to.sub(from);
+      assert.equal(new THREE.Raycaster(from, direction.clone().normalize(), .05, direction.length() - .05).intersectObject(chair, true).length, 0, `forearm crosses chair ${side}/${sample}`);
+    }
+  }
+  for (const [phase, elapsed] of [['ready', 0], ['performing', .45], ['performing', 1.45], ['choice', 0]] as const) {
+    draw(phase, elapsed);
+    const pelvis = rig.hero!.bones.get('pelvis')!.getWorldPosition(new THREE.Vector3()), chair = room.getObjectByName('neb-cypher-operator-chair')!;
+    const seat = new THREE.Raycaster(pelvis.clone().add(new THREE.Vector3(0, .4, 0)), new THREE.Vector3(0, -1, 0)).intersectObject(chair, true)[0];
+    assert.ok(seat && pelvis.y - seat.point.y > .03 && pelvis.y - seat.point.y < .25, 'the actual pelvis must stay on the cushion');
+    let sole = Infinity;
+    for (const part of rig.hero!.wardrobe) if (part.mesh.visible && /boot|shoe/i.test(part.mesh.name))
+      for (let v = 0; v < part.mesh.geometry.attributes.position.count; v++) sole = Math.min(sole, part.mesh.localToWorld(part.mesh.getVertexPosition(v, new THREE.Vector3())).y);
+    const footrest = new THREE.Box3().setFromObject(room.getObjectByName('neb-cypher-operator-chair-footrest')!).max.y;
+    assert.ok(sole - footrest >= -.025 && sole - footrest < .05, `shoe/footrest gap ${sole - footrest}`);
+    const fresh = h.models.create(h.world.agents.get('cypher')!); await h.settle();
+    fresh.root.position.copy(rig.root.position); fresh.root.rotation.copy(rig.root.rotation);
+    h.models.animate(fresh, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false,
+      interlude: { kind: 'console', phase, elapsed, role: 'cypher', physicalConsole: true } }, 4);
+    fresh.root.updateMatrixWorld(true);
+    for (const side of ['R', 'L']) for (const name of [`ankle_${side}`, `elbow_${side}`, `wrist_${side}`, ...Array.from({ length: 5 }, (_, i) => `finger${i + 1}-3_${side}`)])
+      assert.ok(rig.hero!.bones.get(name)!.getWorldPosition(new THREE.Vector3()).distanceTo(fresh.hero!.bones.get(name)!.getWorldPosition(new THREE.Vector3())) < 1e-5, `${phase}/${elapsed} ${name} jumps on cold reconstruction`);
+  }
 });

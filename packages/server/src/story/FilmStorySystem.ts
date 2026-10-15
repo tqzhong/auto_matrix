@@ -4501,7 +4501,7 @@ export class FilmStorySystem {
     for (const role of roles) {
       const actor = this.world.agents.get(role);
       if (!actor || actor.controller && actor !== agent || role === agent.id && !framed) continue;
-      const pose = interludeRoot(kind, role as InterludeRole); if (!pose) continue;
+      const pose = interludeRoot(kind, role as InterludeRole, encounter); if (!pose) continue;
       const before = { ...actor.position };
       this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
       actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };

@@ -61,6 +61,38 @@ test('an occupied cast member blocks the scene and every active role stays reser
   assert.match(h.players.act('player', 'attack', h.tick()), /演出|片段/);
 });
 
+test('Cypher reads the screen, withdraws his hands, and turns with his chair before the drink', () => {
+  const h = setup('m1_cypher_console'), root = new THREE.Group(), neb = new NebDeckRenderer(root);
+  const cypher = h.world.agents.get('cypher')!;
+  try {
+    assert.ok(Math.abs(cypher.rotation - Math.PI / 2) < .001, 'the waiting operator must face the screen to his right');
+    h.command('act'); h.frames(.3);
+    const initial = cypher.rotation; neb.update(h.state(), 900);
+    assert.ok(Math.abs(root.getObjectByName('neb-cypher-operator-chair')!.rotation.y - initial) < .001);
+    assert.equal(root.getObjectByName('neb-core-chair-four')!.visible, false, 'the tall connection recliner cannot cover the seated operator');
+    h.frames(1.2); const turning = cypher.rotation;
+    assert.ok(turning < initial - .3 && turning > -Math.PI / 2, 'the operator must turn continuously after withdrawing his hands');
+    neb.update(h.state(), 901); assert.ok(Math.abs(root.getObjectByName('neb-cypher-operator-chair')!.rotation.y - turning) < .001);
+    const saved = structuredClone(h.sandbox.state); h.frames(3, false);
+    assert.equal(cypher.rotation, turning, 'pause cannot finish the chair turn');
+    h.players.release('player', h.tick()); h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick());
+    assert.equal(cypher.rotation, turning, 'restoring the world must rebuild the same turn');
+    h.frames(3); assert.equal(h.state().interlude?.phase, 'accept_ready');
+    assert.ok(Math.abs(cypher.rotation + Math.PI / 2) < .001, 'the drink conversation faces Neo');
+    neb.update(h.state(), 15000); assert.ok(Math.abs(root.getObjectByName('neb-cypher-operator-chair')!.rotation.y - cypher.rotation) < .001);
+    assert.equal(root.getObjectByName('neb-cypher-console-terminal')!.visible, false, 'the old relay terminal is hidden during the dedicated console scene');
+    for (const side of ['left', 'right']) {
+      const crt = root.getObjectByName(`neb-cypher-crt-${side}`)!; assert.ok(crt);
+      assert.ok(new THREE.Box3().setFromObject(crt).getSize(new THREE.Vector3()).x > 1, 'each CRT has a deep physical enclosure');
+    }
+    neb.update({ ...h.state(), scene: 'm2_relay', trinityRelay: { phase: 'ready', elapsed: 0 } } as FilmJourney, 0);
+    assert.equal(root.getObjectByName('neb-cypher-console-terminal')!.visible, true, 'the relay keeps its own existing terminal');
+    assert.equal(root.getObjectByName('neb-cypher-crt-left')!.parent!.visible, false);
+    assert.equal(root.getObjectByName('neb-core-chair-four')!.rotation.y, Math.PI / 2);
+    assert.equal(root.getObjectByName('neb-core-chair-four')!.visible, true);
+  } finally { neb.dispose(); }
+});
+
 test('Smith observes the complete steak bargain without leaking it into Neo knowledge', () => {
   const h = setup('m1_steak'); const choices = structuredClone(h.sandbox.state.neoLife!.choices);
   assert.equal(h.actor.id, 'smith'); h.command('act'); assert.equal(h.state().step, 1); assert.equal(h.state().interlude?.phase, 'ready');

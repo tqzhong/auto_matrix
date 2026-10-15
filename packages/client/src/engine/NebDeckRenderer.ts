@@ -10,6 +10,7 @@ import { NebEscapeRenderer } from './NebEscapeRenderer.js';
 import { NebCabinRenderer } from './NebCabinRenderer.js';
 import { CONSOLE_DRINK, consoleDrinkPose, interludeAge } from '@auto_matrix/shared';
 import { createConsoleMug } from '../agents/ConsoleMug.js';
+import { CypherConsoleRenderer } from './CypherConsoleRenderer.js';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -44,7 +45,7 @@ export class NebDeckRenderer {
   private downloadScreen?: THREE.CanvasTexture;
   private downloadScreenFrame = -1;
   private consoleScreen?: THREE.CanvasTexture;
-  private consoleScreenFrame = -1;
+  private consoleStation!: CypherConsoleRenderer;
   private downloadBars: THREE.Mesh[] = [];
   private downloadPulse = this.material(new THREE.MeshBasicMaterial({ color: 0x8cf4b8, toneMapped: false }));
   private consoleRig = new THREE.Group();
@@ -300,10 +301,10 @@ export class NebDeckRenderer {
   }
 
   private cypherConsole(): void {
+    this.consoleStation = new CypherConsoleRenderer(this.root);
     this.consoleRig.name = 'neb-cypher-console-scene'; this.consoleRig.visible = false; this.root.add(this.consoleRig);
     const terminal = new THREE.Group(); terminal.name = 'neb-cypher-console-terminal'; terminal.position.set(10, 0, 6); terminal.rotation.y = -Math.PI / 2; this.consoleRig.add(terminal);
     this.box(terminal, this.dark, 0, 3.95, 0, 4.35, 4.15, .52, 'neb-cypher-console-casing');
-    this.box(terminal, this.worn, 0, 1.74, .82, 4.15, .24, 1.85, 'neb-cypher-console-desk').rotation.x = -.11;
     this.box(terminal, this.rubber, 0, 1.92, 1.35, 2.5, .11, .72, 'neb-cypher-console-keyboard').rotation.x = -.11;
     for (let column = -8; column <= 8; column++) for (let row = 0; row < 3; row++) {
       const key = this.box(terminal, this.linen, column * .135, 1.99, 1.38 + row * .14, .09, .028, .075); key.rotation.x = -.11;
@@ -651,7 +652,10 @@ export class NebDeckRenderer {
     this.consoleRig.visible = Boolean(consoleBeat || relayActive);
     this.consoleRig.getObjectByName('neb-cypher-liquor-bottle')!.visible = !relayActive;
     this.consoleRig.getObjectByName('neb-neo-metal-mug')!.visible = !relayActive;
-    const linkChair = this.root.getObjectByName('neb-core-chair-four')!; linkChair.rotation.y = relayActive ? Math.PI / 2 : -Math.PI / 2;
+    this.consoleRig.getObjectByName('neb-cypher-console-terminal')!.visible = Boolean(relayActive);
+    this.consoleStation.update(consoleBeat, Boolean(relayActive));
+    const linkChair = this.root.getObjectByName('neb-core-chair-four')!;
+    linkChair.visible = !consoleBeat; linkChair.rotation.y = relayActive ? Math.PI / 2 : -Math.PI / 2;
     const trinityBack = this.root.getObjectByName('neb-core-chair-trinity-backrest')!;
     // A cervical opening lets the operator and wire reach the actual neck, above the lower back support.
     trinityBack.scale.y = relayActive ? .3 : 1; trinityBack.position.y = relayActive ? 1.4 : 2.15;
@@ -659,26 +663,8 @@ export class NebDeckRenderer {
     this.root.getObjectByName('neb-core-chair-trinity-relay-headrest')!.visible = Boolean(relayActive);
     if (relayActive) this.relayDisplay(journey!);
     if (consoleBeat) {
-      const t = consoleBeat.elapsed;
       const age = interludeAge(consoleBeat);
       const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight; light.intensity = 68 + Math.sin(age * 7) * 12;
-      const frame = Math.floor(age * 6);
-      if (this.consoleScreen && frame !== this.consoleScreenFrame) {
-        this.consoleScreenFrame = frame; const ctx = (this.consoleScreen.image as HTMLCanvasElement).getContext('2d')!;
-        const redacted = consoleBeat.phase === 'performing' && t < 1.2; const offset = (frame * 7) % 92;
-        ctx.fillStyle = '#07110d'; ctx.fillRect(0, 0, 960, 720); ctx.fillStyle = '#84d99b'; ctx.font = '22px monospace';
-        ctx.fillText('OPERATOR / PRIVATE BUFFER', 46, 54); ctx.fillStyle = '#315d43'; ctx.fillRect(46, 76, 868, 2);
-        ctx.fillStyle = redacted ? '#d9b56d' : '#9de9af'; ctx.font = '28px monospace';
-        ctx.fillText(redacted ? 'INPUT MASKED // LOCAL SESSION' : 'CITY FEED // ROUTE RESOLUTION', 46, 126);
-        ctx.font = '19px monospace';
-        for (let row = 0; row < 18; row++) {
-          const value = ((row * 7919 + offset * 37) >>> 0).toString(16).padStart(7, '0');
-          const prefix = redacted && row % 4 === 0 ? '████████████' : `NODE-${(row + 4).toString().padStart(2, '0')}  ${value}`;
-          ctx.fillStyle = row % 5 === 0 ? '#d8ffc7' : '#6fb782'; ctx.fillText(prefix, 56, 172 + row * 25);
-        }
-        ctx.fillStyle = '#385e44'; for (let y = 0; y < 720; y += 5) ctx.fillRect(0, y, 960, 1);
-        this.consoleScreen.needsUpdate = true;
-      }
       const pose = consoleDrinkPose(consoleBeat), cup = this.consoleRig.getObjectByName('neb-neo-metal-mug')!;
       cup.visible = !pose.holding;
       cup.getObjectByName('console-mug-liquid')!.position.y = -.035 - pose.drunk * .10;
@@ -760,6 +746,7 @@ export class NebDeckRenderer {
     this.medicalLeads.forEach(leads => leads.dispose()); this.medicalLeads = [];
     this.downloadScreen?.dispose();
     this.consoleScreen?.dispose();
+    this.consoleStation.dispose();
     this.root.clear();
     this.geometries.forEach(geometry => geometry.dispose());
     this.materials.forEach(material => material.dispose());
