@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, INTERLUDE_CAST, INTERLUDE_TIMING, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, INTERLUDE_CAST, INTERLUDE_TIMING, interludeDuration, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -97,9 +97,30 @@ test('Smith observes the complete steak bargain without leaking it into Neo know
   const h = setup('m1_steak'); const choices = structuredClone(h.sandbox.state.neoLife!.choices);
   assert.equal(h.actor.id, 'smith'); h.command('act'); assert.equal(h.state().step, 1); assert.equal(h.state().interlude?.phase, 'ready');
   h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.command('act'); assert.equal(h.state().interlude?.phase, 'performing');
-  h.frames(INTERLUDE_TIMING.steak + .2); assert.equal(h.state().interlude?.phase, 'done'); assert.ok(h.state().completed.includes('m1_steak'));
+  h.frames(interludeDuration(h.state().interlude!) + .2); assert.equal(h.state().interlude?.phase, 'done'); assert.ok(h.state().completed.includes('m1_steak'));
   assert.deepEqual(h.sandbox.state.neoLife!.choices, choices);
   assert.match(h.sandbox.state.neoLife!.journal[0].title, /旁观片段/); assert.match(h.sandbox.state.neoLife!.journal[0].text, /不是 Neo/);
+});
+
+test('new dining gives the physical bite and wine time to finish, pauses and rebuilds its saved cast', () => {
+  const h = setup('m1_steak'); h.command('act'); h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.command('act');
+  assert.equal(h.state().interlude!.physicalSteak, true);
+  h.frames(8); const saved = structuredClone(h.sandbox.state), elapsed = h.state().interlude!.elapsed;
+  const poses = INTERLUDE_CAST.steak.map(id => structuredClone(h.world.agents.get(id)!.currentAction?.parameters.interlude));
+  h.frames(4, false); assert.equal(h.state().interlude!.elapsed, elapsed);
+  h.players.release('player', h.tick()); h.sandbox.restore(saved);
+  assert.deepEqual(INTERLUDE_CAST.steak.map(id => h.world.agents.get(id)!.currentAction?.parameters.interlude), poses);
+  h.players.possess('player', 'smith', h.tick()); h.frames(7); assert.equal(h.state().interlude!.phase, 'performing', 'the wine cannot be cut off by the old 14.5-second clock');
+  h.frames(12); assert.equal(h.state().interlude!.phase, 'done');
+  assert.equal(h.state().completed.filter(id => id === 'm1_steak').length, 1);
+  assert.equal(h.actor.currentAction?.parameters.interlude?.phase, 'done', 'the observer remains seated until the explicit next-scene handoff');
+  h.command('next'); assert.equal(h.state().scene, 'm1_meal'); assert.equal(h.players.getAgent('player')!.id, 'neo');
+});
+
+test('already running steak archives retain their original clock and progress after seat migration', () => {
+  const h = setup('m1_steak'); h.state().step = 1; h.state().interlude = { kind: 'steak', phase: 'performing', elapsed: 7 };
+  h.frames(7.7); assert.equal(h.state().interlude!.phase, 'done'); assert.equal(h.state().interlude!.elapsed, 14.5);
+  assert.equal(h.state().completed.filter(id => id === 'm1_steak').length, 1);
 });
 
 test('the crew meal is player-started and still requires walking back to the core', () => {
@@ -143,7 +164,7 @@ test('the console, crew meal and restaurant own visible, animated physical props
     assert.equal(((matte as THREE.Mesh).material as THREE.MeshBasicMaterial).color.getHex(), 0xffffff,
       'the city matte cannot darken its own source image into a flat backing');
     restaurant.update(steakJourney, 0); const bite = restaurantRoot.getObjectByName('cypher-steak-cut-piece')!; const resting = bite.position.y;
-    steakJourney.interlude!.elapsed = 3.45; restaurant.update(steakJourney, 3.45); assert.ok(bite.position.y > resting + 1);
+    steakJourney.interlude!.elapsed = 6; restaurant.update(steakJourney, 6); assert.equal(bite.visible, false, 'the consumed world piece cannot levitate independently of the actor'); assert.equal(bite.position.y, resting);
   } finally { restaurant.dispose(); }
 });
 

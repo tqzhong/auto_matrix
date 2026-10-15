@@ -525,7 +525,7 @@ export class FilmSetRenderer {
     this.mountain?.update(journey?.scene === 'm2_mountain' && !journey.visiting ? journey.mountain : undefined, elapsed);
     this.training?.update(journey, elapsed);
     this.sentinel?.update(journey, elapsed);
-    this.restaurant?.update(journey, elapsed);
+    this.restaurant?.update(journey, elapsed, this.crosscutBodies);
     this.ambush?.update(journey, sandbox?.structures ?? [], elapsed);
     this.basement?.update(journey, cameraPosition, this.basementFrame === undefined ? 0 : Math.max(0, elapsed - this.basementFrame));
     this.basementFrame = elapsed;

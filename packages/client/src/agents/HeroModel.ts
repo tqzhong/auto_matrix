@@ -34,6 +34,7 @@ import { ForearmTwist } from './ForearmTwist.js';
 import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
 import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
 import { ConsolePourPerformance } from './ConsolePourPerformance.js';
+import { SteakPerformance } from './SteakPerformance.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -116,6 +117,7 @@ export class HeroModels {
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
   private consolePours = new Map<HeroRig, ConsolePourPerformance>();
+  private steaks = new Map<HeroRig, SteakPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
   private meetings = new Map<HeroRig, MeetingPerformance>();
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
@@ -1188,15 +1190,7 @@ export class HeroModels {
           bone('head').rotation.y -= phase !== 'ready' ? .2 : 0;
         }
       } else if (kind === 'steak') {
-        if (role === 'cypher') {
-          const cutting = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, 1.75, 2.7) : 0;
-          const bite = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 2.45, 3.25) * (1 - THREE.MathUtils.smoothstep(t, 4.45, 5.25)) : 0;
-          const bargain = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 5, 6.2) : 0;
-          bone('spine').rotation.x += .08; bone('head').rotation.x += bite * .1; bone('head').rotation.y -= bargain * .1;
-          bone('shoulder_R').rotation.x -= cutting * (.72 + Math.sin(t * 13) * .08) + bargain * .24;
-          bone('elbow_R').rotation.x -= cutting * 1.05 + bargain * .52;
-          bone('shoulder_L').rotation.x -= cutting * .48 + bite * .95; bone('elbow_L').rotation.x -= cutting * .82 + bite * 1.28;
-        } else {
+        if (role !== 'cypher') {
           const reply = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 7.4, 8.5) : 0;
           bone('spine').rotation.x += .05; bone('head').rotation.y += .11 - reply * .2;
           for (const side of ['R', 'L']) {
@@ -1309,6 +1303,8 @@ export class HeroModels {
     this.consolePours.get(rig)?.update(input.interlude);
     if (input.interlude?.kind === 'console' && (input.interlude.role === 'neo' || input.interlude.role === 'cypher' && input.interlude.physicalPour) && !this.consoleDrinks.has(rig)) this.consoleDrinks.set(rig, new ConsoleDrinkPerformance(rig, input.interlude.role as 'neo' | 'cypher'));
     this.consoleDrinks.get(rig)?.update(input.interlude);
+    if (input.interlude?.kind === 'steak' && input.interlude.role === 'cypher' && !this.steaks.has(rig)) this.steaks.set(rig, new SteakPerformance(rig));
+    this.steaks.get(rig)?.update(input.interlude);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));
     this.interrogations.get(rig)?.update(input.interrogation, input.officeShirt);
     if (input.meeting && !this.meetings.has(rig)) this.meetings.set(rig, new MeetingPerformance(rig));
@@ -1382,6 +1378,7 @@ export class HeroModels {
     this.pills.forEach(p => p.dispose()); this.pills.clear();
     this.consoleDrinks.forEach(p => p.dispose()); this.consoleDrinks.clear();
     this.consolePours.forEach(p => p.dispose()); this.consolePours.clear();
+    this.steaks.forEach(p => p.dispose()); this.steaks.clear();
     this.interrogations.forEach(p => p.dispose()); this.interrogations.clear();
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();

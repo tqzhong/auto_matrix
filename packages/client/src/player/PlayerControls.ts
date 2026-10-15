@@ -1872,11 +1872,9 @@ export class PlayerControls {
           ideal = new THREE.Vector3(-5.5, 4.8, 1.5).lerp(new THREE.Vector3(-8, 4.3, -2.5), reverse);
           focus = new THREE.Vector3(5.1, 3.05, 6.35).lerp(new THREE.Vector3(6.4, 3.05, 6), reverse);
         } else if (gesture.kind === 'steak') {
-          const reverse = THREE.MathUtils.smoothstep(gesture.elapsed, 8.6, 10.8);
           const portrait = this.camera.aspect < .85;
-          ideal = new THREE.Vector3(portrait ? 18.2 : 15.2, portrait ? 5.9 : 5.2, -13)
-            .lerp(new THREE.Vector3(portrait ? -18.2 : -15.2, portrait ? 5.7 : 5, -13), reverse);
-          focus = new THREE.Vector3(0, 3.25, -13);
+          ideal = new THREE.Vector3(portrait ? 8.2 : 6.4, 4, -12.7);
+          focus = new THREE.Vector3(0, 2.65, -13);
         } else {
           const reverse = THREE.MathUtils.smoothstep(gesture.elapsed, 7.8, 10.4);
           ideal = new THREE.Vector3(3.4, 5.7, 28.5).lerp(new THREE.Vector3(3.8, 4.9, 15.3), reverse);
