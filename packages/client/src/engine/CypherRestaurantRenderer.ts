@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { STEAK_DINING, steakPose, type FilmJourney } from '@auto_matrix/shared';
 
-import { createSteakCutlery, createSteakWine } from '../agents/SteakProps.js';
+import { createSteakCutlery, createSteakWine, createSteakPortion } from '../agents/SteakProps.js';
 
 /** Cypher's private top-floor table. The compact layout keeps the steak,
  * glassware and both seated characters readable from either player camera. */
@@ -23,8 +23,6 @@ export class CypherRestaurantRenderer {
     const cloth = this.material(new THREE.MeshStandardMaterial({ color: 0xa99f8f, roughness: .92 }));
     const leather = this.material(new THREE.MeshStandardMaterial({ color: 0x321d1b, roughness: .55 }));
     const steel = this.material(new THREE.MeshStandardMaterial({ color: 0xb8b7ae, roughness: .16, metalness: .9 }));
-    const steak = this.material(new THREE.MeshStandardMaterial({ color: 0x5d1e16, roughness: .62 }));
-    const sear = this.material(new THREE.MeshStandardMaterial({ color: 0x27120e, roughness: .8 }));
     const night = this.material(new THREE.MeshBasicMaterial({ color: 0x090d12, toneMapped: false }));
     const window = this.material(new THREE.MeshPhysicalMaterial({ color: 0x8da4a8, transparent: true, opacity: .15, roughness: .12, metalness: .15, depthWrite: false, side: THREE.DoubleSide }));
     this.surface(marble, 'marble_01', 4); this.surface(walnut, 'old_wood_floor', 2); this.surface(leather, 'leather_red_03', 2);
@@ -70,11 +68,11 @@ export class CypherRestaurantRenderer {
     this.chair(0, STEAK_DINING.cypher.z, 0, leather, walnut, 'cypher-chair-cypher');
 
     this.plate(STEAK_DINING.plate.z, steel, cloth);
-    const steakRoot = new THREE.Group(); steakRoot.name = 'cypher-steak'; steakRoot.position.set(.04, STEAK_DINING.plate.y + .0725, STEAK_DINING.plate.z); this.root.add(steakRoot);
-    const body = this.mesh(steakRoot, new THREE.CylinderGeometry(.28, .25, .10, 20), steak); body.scale.z = .66;
-    const crust = this.mesh(steakRoot, new THREE.TorusGeometry(.18, .035, 8, 24), sear); crust.rotation.x = Math.PI / 2; crust.position.y = .045; crust.scale.set(1.25, .68, .5);
+    const steakRoot = new THREE.Group(); steakRoot.name = 'cypher-steak'; steakRoot.position.set(0, STEAK_DINING.bite.y, STEAK_DINING.plate.z); this.root.add(steakRoot);
+    const body = createSteakPortion('main', 'cypher-steak-body'); steakRoot.add(body);
     this.cutPiece.name = 'cypher-steak-cut-piece'; this.cutPiece.position.copy(STEAK_DINING.bite); this.root.add(this.cutPiece);
-    this.mesh(this.cutPiece, new THREE.DodecahedronGeometry(.092, 1), steak).scale.set(1, .72, .8);
+    const portion = createSteakPortion('slice', 'cypher-plated-slice'); this.cutPiece.add(portion);
+    for (const mesh of [body, portion]) { this.geometries.add(mesh.geometry); this.materials.add(mesh.material as THREE.Material); }
     this.knife = createSteakCutlery('knife', 'cypher-steak-knife'); this.fork = createSteakCutlery('fork', 'cypher-steak-fork');
     this.fork.getObjectByName('cypher-held-bite')!.visible = false;
     for (const [prop, at] of [[this.knife, STEAK_DINING.knife], [this.fork, STEAK_DINING.fork]] as const) {

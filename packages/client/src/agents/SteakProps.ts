@@ -1,7 +1,33 @@
 import * as THREE from 'three';
+import { STEAK_DINING } from '@auto_matrix/shared';
 
 export const STEAK_FORK_TIP = new THREE.Vector3(0, .60, .055);
 export const STEAK_WINE_GRIP = new THREE.Vector3(0, .19, 0);
+
+/** Matching portions share the real cutting plane; no whole steak stays below the bite. */
+export function createSteakPortion(part: 'main' | 'slice', name: string): THREE.Mesh {
+  const spec = STEAK_DINING.steak, angle = Math.acos((spec.cutX - spec.x) / spec.radiusX);
+  const start = part === 'main' ? -angle : angle, end = part === 'main' ? angle : 2 * Math.PI - angle;
+  const shape = new THREE.Shape();
+  for (let i = 0; i <= 32; i++) {
+    const t = THREE.MathUtils.lerp(start, end, i / 32), x = spec.x + spec.radiusX * Math.cos(t), z = spec.radiusZ * Math.sin(t);
+    if (i) shape.lineTo(x, z); else shape.moveTo(x, z);
+  }
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: spec.height, bevelEnabled: false, steps: 1 });
+  geometry.rotateX(-Math.PI / 2); geometry.translate(0, -spec.height / 2, 0);
+  const { position, normal } = geometry.attributes, colors: number[] = [];
+  const crust = new THREE.Color(0x673b25), edge = new THREE.Color(0x4b281d), cut = new THREE.Color(0xb77363);
+  for (let i = 0; i < position.count; i++) {
+    const exposed = Math.abs(position.getX(i) - spec.cutX) < .00001 && Math.abs(normal.getX(i)) > .99;
+    const color = (exposed ? cut : Math.abs(normal.getY(i)) > .9 ? crust : edge).clone();
+    color.multiplyScalar(.93 + .07 * Math.cos(position.getX(i) * 65) * Math.cos(position.getZ(i) * 44)); colors.push(...color.toArray());
+  }
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  if (part === 'slice') geometry.translate(-STEAK_DINING.bite.x, 0, STEAK_DINING.plate.z - STEAK_DINING.bite.z);
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .83 }));
+  mesh.name = name; mesh.castShadow = mesh.receiveShadow = true; return mesh;
+}
 
 export function createSteakCutlery(kind: 'fork' | 'knife', name: string): THREE.Group {
   const root = new THREE.Group(); root.name = name;
@@ -13,10 +39,11 @@ export function createSteakCutlery(kind: 'fork' | 'knife', name: string): THREE.
   if (kind === 'fork') {
     const neck = new THREE.CatmullRomCurve3([new THREE.Vector3(0, .15, 0), new THREE.Vector3(0, .3, .01), new THREE.Vector3(0, .43, .055)]);
     mesh(new THREE.TubeGeometry(neck, 8, .014, 6, false), 0, 0, 0);
-    mesh(new THREE.BoxGeometry(.13, .09, .018), 0, .43, .055);
-    for (const x of [-.051, -.017, .017, .051]) mesh(new THREE.CylinderGeometry(.004, .009, .18, 6), x, .555, .055);
-    const bite = new THREE.Mesh(new THREE.DodecahedronGeometry(.092, 1), new THREE.MeshStandardMaterial({ color: 0x7e3426, roughness: .78 }));
-    bite.name = 'cypher-held-bite'; bite.position.copy(STEAK_FORK_TIP); bite.scale.set(1, .72, .8); bite.castShadow = true; root.add(bite);
+    mesh(new THREE.BoxGeometry(.075, .09, .018), 0, .43, .055);
+    for (const x of [-.03, -.01, .01, .03]) mesh(new THREE.CylinderGeometry(.003, .005, .14, 6), x, .535, .055);
+    const bite = createSteakPortion('slice', 'cypher-held-bite'); bite.position.copy(STEAK_FORK_TIP);
+    bite.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), STEAK_DINING.gripTilt)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)).invert(); root.add(bite);
   } else {
     const shape = new THREE.Shape(); shape.moveTo(-.024, .17); shape.lineTo(.035, .17); shape.lineTo(.065, .57); shape.quadraticCurveTo(.06, .68, -.024, .69); shape.closePath();
     mesh(new THREE.ExtrudeGeometry(shape, { depth: .012, bevelEnabled: true, bevelThickness: .002, bevelSize: .002, bevelSegments: 1, steps: 1 }), 0, 0, -.006, 'steak-knife-blade');
