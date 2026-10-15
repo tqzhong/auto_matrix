@@ -274,7 +274,8 @@ export class HeroModels {
     }
     if (cypherCostume) cypherCostume.scene.traverse(source => {
       if (!(source instanceof THREE.SkinnedMesh)) return;
-      const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name; mesh.userData.cypherCostume = true;
+      const mesh = new THREE.SkinnedMesh(source.geometry, source.material); mesh.name = source.name;
+      mesh.userData.cypherNeckReference = Boolean(source.userData.cypherNeckReference); mesh.userData.cypherCostume = !mesh.userData.cypherNeckReference;
       const skeleton = new THREE.Skeleton(source.skeleton.bones.map(bone => bones.get(bone.name)!), source.skeleton.boneInverses.map(matrix => matrix.clone()));
       mesh.bind(skeleton, source.bindMatrix.clone()); mesh.castShadow = mesh.receiveShadow = true; mesh.visible = false;
       this.skeletons.add(skeleton); root.add(mesh);
@@ -322,6 +323,7 @@ export class HeroModels {
     let trackingSkin: HeroRig['trackingSkin'];
     root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+      if (object.userData.cypherNeckReference) { object.visible = false; return; }
       if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume || object.userData.cypherCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
       if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && !object.userData.dojoSkin && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
