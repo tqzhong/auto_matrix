@@ -17,6 +17,17 @@ spec = importlib.util.spec_from_file_location('character_builder', Path(__file__
 builder = importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 REVISION = builder.REVISION
 REFERENCES = {
+    'oracle-first': {
+        'targets': {'macrodetails/african-female-old': .8, 'macrodetails/african-female-young': .2,
+                    'head/head-fat-decr': .10, 'cheek/l-cheek-bones-incr': .18,
+                    'cheek/r-cheek-bones-incr': .18, 'nose/nose-scale-depth-incr': .14,
+                    'chin/chin-width-incr': .12},
+        'row': 0, 'eye': [231, 419, 533], 'ys': [1235, 884, 778, 748, 712, 653, 533, 177],
+        'chin': -.31, 'skin': [.46, .25, .14], 'atlas': 'oracle-first-face-reference.png',
+        'atlas_size': [1254, 1254], 'panel_top': 0, 'profile_anchor': 70, 'profile_y': 20,
+        'neck_sample': [314, 1000], 'cheek_sample': [902, 680], 'profile_ear': [369, 641],
+        'anatomical_neck': True, 'actor': 'Gloria Foster',
+    },
     'mouse': {
         'targets': {'macrodetails/caucasian-male-young': 1, 'head/head-fat-decr': .28,
                     'chin/chin-width-decr': .20, 'chin/chin-prominent-decr': .08,
@@ -287,9 +298,23 @@ def main(source, output, role):
         dx = (fitted[:, 0] - side * eye[0] * x_scale) / .065
         opening = np.exp(-(dx ** 4) - (fitted[:, 1] / .055) ** 4) * np.clip((fitted[:, 2] - .12) / .06, 0, 1)
         fitted[:, 1] *= 1 - (.28 if role == 'oracle-revolutions' else .14) * opening
+    registered_x = fitted[:, 0].copy()
+    if role == 'oracle-first':
+        # The first-cast reference has a full cheek/jowl silhouette. Keep the
+        # eye pivots and fitted neck section, rather than scaling the driver.
+        cheek = np.exp(-((fitted[:, 1] + .17) / .14) ** 4) * np.clip((fitted[:, 2] + .02) / .16, 0, 1)
+        fitted[:, 0] *= 1 + .16 * cheek
+        face = np.clip((fitted[:, 1] + .40) / .07, 0, 1)
+        fitted[:, 2] -= np.maximum(fitted[:, 2] - .185, 0) * .20 * face
+        fitted[:, 2] += .012 * cheek * np.clip((np.abs(fitted[:, 0]) - .06) / .09, 0, 1)
+        lower_face = np.exp(-((fitted[:, 1] + .30) / .15) ** 4) * np.clip((fitted[:, 2] + .08) / .16, 0, 1)
+        fitted[:, 1] -= .04 * lower_face
+        neck_fullness = np.clip((-.31 - fitted[:, 1]) / .09, 0, 1)
+        fitted[:, 0] *= 1 + .20 * neck_fullness
+        fitted[:, 2] += (fitted[:, 2] + .065) * .15 * neck_fullness
     n = normals(fitted, faces)
     center_u = (settings['eye'][0] + settings['eye'][1]) / 2
-    u = center_u + fitted[:, 0] / pixel_scale
+    u = center_u + (registered_x if role == 'oracle-first' else fitted[:, 0]) / pixel_scale
     v = portrait_y
     if role == 'spoon_boy':
         # The stock neck is shorter than the portrait's bare chest. Sampling
@@ -312,11 +337,19 @@ def main(source, output, role):
         width = np.interp(v, [139, 200, 300, 400, 486, 640, 684, 750, 817, 980],
                          [15, 176, 231, 240, 236, 188, 171, 131, 53, 197])
         mask *= np.clip((width - np.abs(u - center_u) - 5) / 15, 0, 1)
+    if role == 'oracle-first':
+        # Measured skin silhouette: the side-parted wave overlaps the left
+        # temple asymmetrically. Do not project those hair pixels onto skin.
+        rows = [177, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 884, 1000]
+        left = np.interp(v, rows, [325, 350, 245, 208, 181, 170, 155, 150, 145, 148, 158, 185, 226, 280, 150])
+        right = np.interp(v, rows, [325, 420, 456, 493, 516, 526, 529, 526, 528, 520, 508, 487, 452, 377, 500])
+        mask *= np.clip((u - left - 13) / 24, 0, 1) * np.clip((right - u - 10) / 24, 0, 1)
     mask = mask * mask * (3 - 2 * mask)
     atlas_w, atlas_h = settings.get('atlas_size', [1254, 1254])
     panel = atlas_w / 2; panel_top = settings.get('panel_top', settings['row'] * 627)
     low_u, high_u = [panel * .223, panel * .766] if 'atlas_size' in settings else [140, 480]
     if role == 'spoon_boy': low_u, high_u = 35, 595
+    if role == 'oracle-first': low_u, high_u = 60, 570
     front_uv = np.column_stack((np.clip(u, low_u, high_u) / atlas_w, (v + panel_top) / atlas_h))
     profile_direction = settings.get('profile_direction', -1)
     profile_uv = np.column_stack(((panel + settings.get('profile_anchor', 132) + profile_direction * (fitted[:, 2] - .22) / pixel_scale) / atlas_w,
@@ -347,6 +380,7 @@ def main(source, output, role):
                              cheekSample=[settings['cheek_sample'][0] / atlas_w, settings['cheek_sample'][1] / atlas_h])
     if role == 'cypher': doc['extras']['atlasVersion'] = 2
     if 'profile_depth' in settings: doc['extras']['profileDepth'] = settings['profile_depth']
+    if 'actor' in settings: doc['extras']['actor'] = settings['actor']
 
     def accessor(array, kind, component=5126):
         a = np.asarray(array, dtype='<u4' if component == 5125 else '<f4')

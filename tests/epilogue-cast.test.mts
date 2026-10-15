@@ -225,9 +225,9 @@ test('the shipped dock heads and clothing retain belt contact, deck clearance an
 });
 
 test('the shipped Oracle head closes its eyelids and a late load recomputes support without moving the saved root', async t => {
-  const asset = await shippedHead('oracle-revolutions');
+  const asset = await shippedHead('oracle-revolutions'), first = await shippedHead('oracle-first');
   let deliver: (value: typeof asset) => void;
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(resolve => { deliver = resolve; }));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', url => String(url).includes('oracle-first-head') ? Promise.resolve(first) : new Promise(resolve => { deliver = resolve; }));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
@@ -263,7 +263,9 @@ test('the shipped Oracle head closes its eyelids and a late load recomputes supp
     models.animate(rig, 0, input, 1);
     assert.equal(rig.root.getObjectByName('oracle-park-outfit')!.visible, false, 'revisiting the crater cannot retain the park skirt');
     models.animate(rig, 0, { ...input, oracleRestored: false }, 1);
-    assert.equal(rig.head.getObjectByName('oracle-fallback-head')!.visible, true, 'earlier films must not silently borrow the Revolutions appearance');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(rig.head.getObjectByName('oracle-first-detailed-head')!.visible, true, 'earlier films restore Gloria Foster');
+    assert.equal(rig.head.getObjectByName('oracle-revolutions-detailed-head')!.visible, false, 'earlier films must not silently borrow Mary Alice');
   } finally { models.dispose(); globalThis.document = previous; }
 });
 

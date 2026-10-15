@@ -1,0 +1,15 @@
+Tool: built-in image_gen__imagegen; referenced_image_paths, transparent_background=false.
+References: inspected kitchen-face-10.5s.jpg and park-bench-wide.jpg in output/characters/oracle-first-cast-2026-10-15/reference. Source records: reference/reference-notes.json and reference/clip-sources.json.
+Output copied unchanged from /Users/tianqizhong/.codex/generated_images/01a13f00-c3be-7d53-9b1d-89982172fdad/exec-742c03ac-87c3-4989-8448-67ad91f796ed.png to packages/client/public/assets/characters/oracle-first-face-reference.png.
+Exact original prompt follows; recovered from this subtask's tool-call record, not reconstructed.
+
+Use case: identity-preserve. Asset type: photorealistic reference atlas for a real three-dimensional game head, exactly TWO equal vertical panels side by side on one square image. The reference images show Gloria Foster as the Oracle in The Matrix 1999 and The Matrix Reloaded, NOT Mary Alice. Generate the same Gloria Foster likeness circa those films, natural elderly face in her 60s. Left half: strict straight-on front neutral portrait. Right half: strict 90-degree left-facing profile of the SAME head, nose points LEFT. Same scale, crown, eye line, chin, and neck alignment across both halves. Include entire hair from crown and complete ears, head, long bare neck to shoulders; unclothed shoulders only, no clothing reaching neck. Face fills most width of each half, generous top/bottom margin. No text, guides, labels, borders, watermark, jewelry, glasses, cigarette or props. Plain neutral mid-gray background. Diffuse neutral soft studio lighting with no directional shadows or green film grading. Faithfully preserve Gloria's broad oval face, high forehead, rounded full cheekbones tapering to the chin, broad rounded nose and nostrils, arched fine eyebrows, deep natural nasolabial folds, lower eyelid bags, full lips with subtle asymmetry, age marks and real skin texture. Calm relaxed closed lips, eyes open looking level. Short dark black rounded wavy side-parted bob to jaw/nape, with loose waves and asymmetric side-swept forehead shape as in references; no gray hair, afro, bun or straight helmet cap. Do not glamorize or de-age; do not make a generic elderly woman. This is new atlas guided by the two reference photographs, not a scene recreation.
+
+Mesh build command (Python with numpy):
+python3 scripts/build-epilogue-heads.py --source output/characters/oracle-first-cast-2026-10-15/source --output packages/client/public/assets/characters --roles oracle-first
+
+Focused verification:
+node --import tsx --test tests/oracle-first-head.test.mts
+npx tsc --noEmit -p packages/client
+
+Head metadata records the pinned MakeHuman CC0 source revision, anatomy target weights, actor identity and atlas coordinates. Generated-reference likeness is approximate; this is not an actor scan. Existing oracle-revolutions-head.glb and epilogue-faces.png bytes are preserved.

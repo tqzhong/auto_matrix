@@ -11,7 +11,7 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 async function fixture(t: TestContext, deferHands = false) {
   const assets = new Map();
-  for (const name of ['oracle-revolutions-head', 'oracle-park-hands']) {
+  for (const name of ['oracle-revolutions-head', 'oracle-first-head', 'oracle-park-hands']) {
     const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
     const length = bytes.readUInt32LE(12), doc = JSON.parse(bytes.subarray(20, 20 + length).toString());
     for (const material of doc.materials) delete material.pbrMetallicRoughness.baseColorTexture;

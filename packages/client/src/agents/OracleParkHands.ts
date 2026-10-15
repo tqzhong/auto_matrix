@@ -15,7 +15,7 @@ export interface OracleParkHand {
 
 interface Entry { fallback: THREE.Object3D[]; skin: THREE.Material; active: boolean; loading: boolean; }
 
-/** The park uses articulated anatomy; earlier performances retain their authored contacts. */
+/** Kitchen and park performances share the same five-finger anatomy. */
 export class OracleParkHands {
   private entries = new Map<CharacterRig, Entry>();
   private geometries = new Set<THREE.BufferGeometry>();
@@ -128,8 +128,12 @@ export function connectGardenWrists(rig: CharacterRig, hands = rig.parkHands): v
     const { mesh, edge } = hand.connection; if (!mesh.visible) continue;
     hand.skin.updateMatrixWorld(true);
     const inverse = mesh.parent!.matrixWorld.clone().invert(), matrix = inverse.clone().multiply(hand.skin.matrixWorld);
-    if (hands === rig.spoonHands && !hand.connection.forearm) {
-      const skin = rig.root.getObjectByName('spoon_boy-anatomical-body') as THREE.SkinnedMesh | undefined;
+    const anatomicalBody = hands === rig.spoonHands ? 'spoon_boy-anatomical-body' : rig.oracleFirstBody?.visible ? 'oracle-first-anatomical-body' : undefined;
+    if (hand.connection.forearm && hand.connection.forearm.skin.name !== anatomicalBody) {
+      hand.connection.forearm = undefined; hand.connection.signature = undefined;
+    }
+    if (anatomicalBody && !hand.connection.forearm) {
+      const skin = rig.root.getObjectByName(anatomicalBody) as THREE.SkinnedMesh | undefined;
       if (skin) {
         const p = skin.geometry.attributes.position, index = skin.geometry.index!, welded = new Map<string, number>(), unique: number[] = [];
         const edges = new Map<string, { a: number; b: number; count: number }>();
@@ -149,6 +153,9 @@ export function connectGardenWrists(rig: CharacterRig, hands = rig.parkHands): v
       }
     }
     const forearm = hand.connection.forearm;
+    // SkinnedMesh refreshes its attached bind inverse in updateMatrixWorld;
+    // updateWorldMatrix alone leaves the previous root position in that inverse.
+    forearm?.skin.updateMatrixWorld(true);
     forearm?.skin.skeleton.update();
     const anchors = forearm?.edge.map(i => forearm.skin.localToWorld(forearm.skin.getVertexPosition(i, new THREE.Vector3())).applyMatrix4(inverse));
     const signature = matrix.elements.join(':') + (anchors?.map(p => p.toArray().join(':')).join(':') ?? '');
