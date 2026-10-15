@@ -20,6 +20,6 @@ export function createConsoleJug(name: string): THREE.Group {
 
 export function disposeConsoleProp(root: THREE.Object3D): void {
   const materials = new Set<THREE.Material>();
-  root.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); materials.add(object.material as THREE.Material); } });
+  root.traverse(object => { if (object instanceof THREE.Mesh) { if (object instanceof THREE.InstancedMesh) object.dispose(); object.geometry.dispose(); materials.add(object.material as THREE.Material); } });
   materials.forEach(material => material.dispose()); root.removeFromParent();
 }

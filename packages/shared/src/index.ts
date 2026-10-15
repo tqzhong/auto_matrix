@@ -82,6 +82,7 @@ export * from './constants/lafayette.js';
 export * from './constants/sentinel.js';
 export * from './constants/sentinel-signal.js';
 export * from './constants/interlude.js';
+export * from './constants/crew-meal.js';
 export * from './constants/steak.js';
 export * from './constants/oracle.js';
 export * from './constants/reloaded-opening.js';

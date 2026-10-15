@@ -11,6 +11,7 @@ import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { CREW_MEAL, crewMealPose, interludeRoot, type InterludeGesture } from '@auto_matrix/shared';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
 import { CABIN, CABIN_ROUTE_LENGTH, cabinBodyPose, downloadRoot, DOWNLOAD_OPERATOR, type DownloadSetup } from '@auto_matrix/shared';
@@ -2213,16 +2214,41 @@ test('Cypher interludes use directed scene cameras while V keeps a freely steera
   assert.ok(game.camera.position.y > tablePosition.y + 2.55, 'the seated Smith view clears the table and chair back');
 });
 
-test('the crew meal camera keeps Neo’s bowl and opposite diners readable', t => {
-  const game = setup(t, -Math.PI / 2); const center = FILM_SETS.film_neb_deck.center;
-  Object.assign(game.state, { position: filmPosition('film_neb_deck', -1.5, 22), rotation: -Math.PI / 2, isInMatrix: false, currentLocation: 'film_neb_deck',
-    currentAction: { type: 'idle', parameters: { seated: true, interlude: { kind: 'meal', phase: 'performing', elapsed: 5, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 } });
-  for (const aspect of [16 / 9, .72]) {
+test('the crew meal camera frames the long-table handoff and Neo’s tasting space in wide and portrait views', t => {
+  const game = setup(t, -Math.PI / 2), center = FILM_SETS.film_neb_deck.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
+    beginPath() {}, moveTo() {}, lineTo() {}, stroke() {} }) }));
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const neb = new NebDeckRenderer(stage); t.after(() => neb.dispose());
+  for (const aspect of [16 / 9, .72]) for (const [phase, elapsed] of [['performing', 1.2], ['accept_ready', 0], ['accepting', 3], ['accepting', 8.2], ['accepting', 10], ['accepting', 10.85]] as const) {
+    const gesture: InterludeGesture = { kind: 'meal', phase, elapsed, role: 'neo', physicalMeal: true }, at = interludeRoot('meal', 'neo', gesture);
+    Object.assign(game.state, { position: filmPosition('film_neb_deck', at.x, at.z), rotation: at.yaw, isInMatrix: false, currentLocation: 'film_neb_deck',
+      currentAction: { type: 'idle', parameters: { seated: true, interlude: gesture }, startedAt: 0, duration: 1, progress: 0 } });
+    const journey: FilmJourney = { version: 1, scene: 'm1_meal', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+      checkpoint: game.state.position, reflections: {}, lastText: '', interlude: gesture };
     game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.5);
-    for (const [x, z] of [[-3.25, 22], [-4.7, 18.7], [-8, 25.3]]) {
-      const point = new THREE.Vector3(center.x + x, center.y + 1.85, center.z + z).project(game.camera);
+    neb.update(journey, elapsed); stage.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+    const tasting = phase === 'accepting' && elapsed === 3;
+    const points: [string, THREE.Vector3][] = tasting ? [
+      ['Neo mouth', new THREE.Vector3(at.x + Math.sin(at.yaw) * .25, 3.15, at.z + Math.cos(at.yaw) * .25).add(stage.position)],
+      ['Neo held bowl', new THREE.Vector3(.3, 2.3, .65).applyAxisAngle(new THREE.Vector3(0, 1, 0), at.yaw).add(new THREE.Vector3(at.x, 0, at.z)).add(stage.position)],
+    ] : [
+      ['served bowl', new THREE.Box3().setFromObject(stage.getObjectByName('neb-neo-protein-bowl')!).getCenter(new THREE.Vector3())],
+      ...Object.keys(CREW_MEAL.seats).map((role): [string, THREE.Vector3] => {
+        const root = interludeRoot('meal', role as keyof typeof CREW_MEAL.seats, gesture);
+        return [role, new THREE.Vector3(root.x, 3.25 + (role === 'neo' ? crewMealPose(gesture).rise * 1.05 : 0), root.z).add(stage.position)];
+      }),
+    ];
+    for (const [label, target] of points) {
+      const point = target.clone().project(game.camera);
       assert.ok(Math.abs(point.x) < .84 && Math.abs(point.y) < .78 && point.z > -1 && point.z < 1,
-        `the handoff bowl and both table sides must stay in frame at ${aspect}: ${point.toArray().join(',')}`);
+        `${label} must remain readable at ${aspect}, ${phase}:${elapsed}: ${point.toArray().join(',')}`);
+      const direction = target.clone().sub(game.camera.position);
+      const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .4).intersectObject(stage, true)
+        .filter(hit => { for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false; return hit.object instanceof THREE.Mesh && hit.object.castShadow; });
+      assert.equal(hits.length, 0, `the actual ship fittings must not obscure ${label}: ${hits.map(hit => hit.object.name).join(',')}`);
     }
   }
 });

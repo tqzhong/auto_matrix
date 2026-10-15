@@ -1,6 +1,7 @@
 import type { FilmJourney } from './film-story.js';
 import type { Philosophy } from '../types/neo-life.js';
 import { STEAK_DINING, steakAge } from './steak.js';
+import { CREW_MEAL, crewMealAge, crewMealPose, crewMealSeat } from './crew-meal.js';
 
 export type InterludeKind = 'console' | 'steak' | 'meal';
 export type InterludePhase = 'ready' | 'performing' | 'accept_ready' | 'accepting' | 'sip_ready' | 'sipping' | 'returning' | 'choice' | 'responding' | 'done';
@@ -12,6 +13,7 @@ export interface InterludeEncounter {
   physicalConsole?: boolean;
   physicalPour?: boolean;
   physicalSteak?: boolean;
+  physicalMeal?: boolean;
 }
 export type InterludeRole = 'neo' | 'cypher' | 'smith' | 'tank' | 'mouse' | 'dozer' | 'apoc' | 'switch';
 export type InterludeGesture = InterludeEncounter & { role: InterludeRole };
@@ -44,14 +46,7 @@ export const INTERLUDE_ROOTS: Record<InterludeKind, Record<string, { x: number; 
     smith: STEAK_DINING.smith,
     cypher: STEAK_DINING.cypher,
   },
-  meal: {
-    neo: { x: -1.5, z: 22, yaw: -Math.PI / 2 },
-    tank: { x: -4.7, z: 18.7, yaw: 0 },
-    mouse: { x: -8, z: 18.7, yaw: 0 },
-    switch: { x: -11.2, z: 18.7, yaw: 0 },
-    dozer: { x: -4.7, z: 25.3, yaw: Math.PI },
-    apoc: { x: -8, z: 25.3, yaw: Math.PI },
-  },
+  meal: CREW_MEAL.seats,
 };
 
 export function interludeKind(scene: string): InterludeKind | undefined {
@@ -67,10 +62,12 @@ export function interludeLocked(journey: FilmJourney): boolean {
 }
 
 export function interludeWaiting(encounter: InterludeEncounter): boolean {
-  return encounter.kind === 'console' && (encounter.phase === 'accept_ready' || encounter.phase === 'sip_ready');
+  return encounter.kind === 'console' && (encounter.phase === 'accept_ready' || encounter.phase === 'sip_ready')
+    || encounter.kind === 'meal' && Boolean(encounter.physicalMeal) && encounter.phase === 'accept_ready';
 }
 
 export function interludeDuration(encounter: InterludeEncounter): number {
+  if (encounter.kind === 'meal' && encounter.physicalMeal) return encounter.phase === 'performing' ? CREW_MEAL.receive : CREW_MEAL.duration - CREW_MEAL.receive;
   if (encounter.kind === 'steak' && encounter.physicalSteak) return STEAK_DINING.duration;
   if (encounter.kind === 'console' && encounter.physicalConsole) {
     if (encounter.phase === 'performing') return encounter.physicalPour ? INTERLUDE_TIMING.consoleServe : INTERLUDE_TIMING.consoleIntro;
@@ -113,6 +110,7 @@ export function consoleOperatorPose(encounter: InterludeEncounter) {
 }
 
 export function interludeAge(encounter: InterludeEncounter): number {
+  if (encounter.kind === 'meal') return crewMealAge(encounter);
   if (encounter.kind !== 'console') return encounter.elapsed;
   if (!encounter.physicalConsole) return encounter.phase === 'choice' ? INTERLUDE_TIMING.console
     : encounter.phase === 'responding' || encounter.phase === 'done' ? INTERLUDE_TIMING.console + encounter.elapsed : encounter.elapsed;
@@ -164,13 +162,20 @@ export function consoleDrinkPose(encounter: InterludeEncounter): { reach: number
 
 export function interludeRoot(kind: InterludeKind, role: InterludeRole, encounter?: InterludeEncounter) {
   if (kind === 'console' && role === 'cypher' && encounter) return { ...INTERLUDE_ROOTS.console.cypher, yaw: consoleOperatorPose(encounter).yaw };
+  if (kind === 'meal' && encounter) {
+    const at = INTERLUDE_ROOTS.meal[role], pose = crewMealPose(encounter);
+    // Back onto the stool from its open side; keep the legs in front of the seat.
+    if (role === 'tank') return { ...at, z: at.z - 1.3 + .35 * pose.tankApproach + .95 * pose.tankSeat, yaw: at.yaw - Math.PI / 2 * pose.tankTurn };
+    // Swivel, rise toward the open end, then step into the walkable aisle.
+    if (role === 'neo') return { ...at, x: at.x + .55 * pose.exit, z: at.z - .95 * pose.rise, yaw: at.yaw - Math.PI / 2 * (pose.turn + pose.exitTurn) };
+  }
   return INTERLUDE_ROOTS[kind][role];
 }
 
 export function interludeSeated(gesture: InterludeGesture): boolean {
   if (gesture.kind === 'console') return gesture.role === 'cypher';
   if (gesture.kind === 'steak') return true;
-  return gesture.role !== 'tank' || gesture.elapsed >= 2.2;
+  return crewMealSeat(gesture) > 0;
 }
 
 export function interludeText(encounter: InterludeEncounter): string {
@@ -204,10 +209,12 @@ export function interludeText(encounter: InterludeEncounter): string {
     return '最后一个条件落在 Morpheus 身上。Smith 没有再追问。';
   }
   if (phase === 'ready') return 'Tank 端来一碗单细胞蛋白。走到餐桌边，亲手接下船上的这一餐。';
+  if (phase === 'accept_ready') return '食物已经放在 Neo 面前。按 G 拿起碗勺，亲自尝一口；等待不会替你进食。';
   if (phase === 'done') return '餐桌上的玩笑散去。走回核心连接区，准备接入矩阵去见先知。';
-  if (elapsed < 2.3) return 'Tank 把碗滑到 Neo 面前。它并不好看，却包含身体继续工作所需的营养。';
-  if (elapsed < 5.1) return 'Mouse 和 Apoc 用流质鸡蛋与鼻涕来形容口感，短暂的笑声填满了狭窄舱室。';
-  if (elapsed < 8.6) return 'Mouse 追问机器如何知道旧世界食物的味道：所谓熟悉，也许只是系统给出的比较。';
-  if (elapsed < 10.5) return 'Switch 打断了越说越远的推论。Neo 尝了一口，第一次参与船员的普通生活。';
+  const age = crewMealAge(encounter);
+  if (age < 2.3) return 'Tank 把碗滑到 Neo 面前。它并不好看，却包含身体继续工作所需的营养。';
+  if (age < 5.1) return 'Mouse 和 Apoc 用流质鸡蛋与鼻涕来形容口感，短暂的笑声填满了狭窄舱室。';
+  if (age < 8.6) return 'Neo 用勺子尝了一口。Mouse 追问机器如何知道旧世界食物的味道：所谓熟悉，也许只是系统给出的比较。';
+  if (age < 10.5) return 'Neo 放下碗勺。Switch 打断了越说越远的推论，船员仍围坐在同一张餐桌旁。';
   return '话题转向红衣女子训练和先知。Morpheus 要求飞船升到广播深度，下一次接入即将开始。';
 }

@@ -36,6 +36,8 @@ import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
 import { ConsolePourPerformance } from './ConsolePourPerformance.js';
 import { SteakPerformance } from './SteakPerformance.js';
 import { setCypherMouth } from './CypherMouth.js';
+import { MealPerformance } from './MealPerformance.js';
+import { crewMealAge } from '@auto_matrix/shared';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -120,6 +122,7 @@ export class HeroModels {
   private consolePours = new Map<HeroRig, ConsolePourPerformance>();
   private steaks = new Map<HeroRig, SteakPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
+  private meals = new Map<HeroRig, MealPerformance>();
   private meetings = new Map<HeroRig, MeetingPerformance>();
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
   private knocks = new Map<HeroRig, LafayetteKnockPerformance>();
@@ -344,6 +347,7 @@ export class HeroModels {
         // Both index buffers belong to disposable geometries, avoiding orphaned
         // GPU buffers when the outfit changes repeatedly.
         dressed.attributes = original.attributes;
+        dressed.morphAttributes = original.morphAttributes; dressed.morphTargetsRelative = original.morphTargetsRelative;
         const firstPerson = new THREE.BufferGeometry(), hands: number[] = [];
         const joints = original.attributes.skinIndex, weights = original.attributes.skinWeight;
         const head = (vertex: number) => [0, 1, 2, 3].some(i => weights.getComponent(vertex, i) > .05 && /^(head|neck)$/.test(object.skeleton.bones[joints.getComponent(vertex, i)].name));
@@ -351,6 +355,7 @@ export class HeroModels {
           const triangle = indices.slice(i, i + 3); if (!triangle.some(head)) hands.push(...triangle);
         }
         firstPerson.setIndex(hands); firstPerson.attributes = original.attributes;
+        firstPerson.morphAttributes = original.morphAttributes; firstPerson.morphTargetsRelative = original.morphTargetsRelative;
         const patientFirstPerson = new THREE.BufferGeometry(), exposed: number[] = [];
         // This asset also weights the lower neck to head. Keep that skin and
         // the wrist rings when the patient is exposed, culling above the jaw.
@@ -365,6 +370,7 @@ export class HeroModels {
           if (!triangle.some(vertex => skull[vertex])) exposed.push(...triangle);
         }
         patientFirstPerson.setIndex(exposed); patientFirstPerson.attributes = original.attributes;
+        patientFirstPerson.morphAttributes = original.morphAttributes; patientFirstPerson.morphTargetsRelative = original.morphTargetsRelative;
         object.userData.contactSkinGeometry = original;
         this.geometries.add(dressed); this.geometries.add(firstPerson); this.geometries.add(patientFirstPerson);
         trackingSkin = { mesh: object, original, covered: dressed, firstPerson, patientFirstPerson };
@@ -919,12 +925,15 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
+    if (input.interlude?.kind === 'meal' && (input.interlude.role === 'neo' || input.interlude.role === 'tank') && !this.meals.has(rig))
+      this.meals.set(rig, new MealPerformance(rig, input.interlude.role));
+    this.meals.get(rig)?.mouth(input.interlude);
     if (rig.support === 'cypher') setCypherMouth(rig.root, steakJawOpen(input.interlude));
     if (input.training?.kind === 'red_dress' && input.training.attention?.phase === 'frozen') delta = 0;
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
     const truthView = input.truth?.role === 'neo';
     const downloadView = input.cabin?.kind === 'core' && input.cabin.role === 'neo' || input.training && ['download', 'jump_fall', 'jump_return', 'red_dress'].includes(input.training.kind) && input.training.role === 'neo';
-    const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || input.interlude?.kind === 'console' && input.interlude.role === 'neo' || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
+    const interactionView = Boolean(input.firstPerson && (constructView || truthView || downloadView || input.interlude && ['console', 'meal'].includes(input.interlude.kind) && input.interlude.role === 'neo' || input.performance === 'recover' || input.cabin?.kind === 'wake' || input.armed && input.weaponStyle === 'hel_pistol' || input.mobilReunion?.reunion.phase === 'embracing' || input.hammerBriefing || input.helDisarm || input.helBreakout || input.helDoorPush || input.helElevator || input.helDanceDoor !== undefined || input.primaryDemolition?.phase === 'mounting' || input.primaryDemolition?.blast?.phase === 'countdown' || input.logosBane || input.logosPilot || input.signal || input.architect?.role === 'neo' || input.catch?.role === 'neo' || input.truckHood || input.truckWeapons || input.freewayPickup || input.freewayRide || input.smithFinale?.pitFight && smithFinaleLocked(input.smithFinale) || input.dockReunion || input.empOperator || input.morning || input.podWake !== undefined || input.podDisconnect !== undefined || input.podRescue !== undefined || input.workday?.role === 'neo' && input.workday.phase === 'signing'));
     if (rig.support === 'link') for (const part of rig.bones.get('head')!.children)
       if (part.name === 'link-hair-cap' || part.name === 'link-braid') part.visible = !interactionView;
     rig.silver.value = input.mirror ?? 0;
@@ -971,6 +980,7 @@ export class HeroModels {
       else if (part.cloth && input.realWorld && rig.support !== 'link' && !part.mesh.userData.cypherCostume) material.color.setHex(rig.support === 'ghost' ? 0x232725 : 0x706c62);
       else material.color.copy(part.color);
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
+      if (part.mesh.name.startsWith('neo-teeth') || part.mesh.name === 'neo-tongue') part.mesh.visible = !rig.support && !interactionView;
     }
     farewellAppearance?.update(input);
     this.constructSuits.get(rig)?.update(input);
@@ -1201,21 +1211,15 @@ export class HeroModels {
           }
         }
       } else if (kind === 'meal') {
-        if (role === 'tank') {
-          const serving = phase === 'performing' ? 1 - THREE.MathUtils.smoothstep(t, 1.7, 2.5) : 0;
-          bone('spine').rotation.x += serving * .18; bone('shoulder_R').rotation.x -= serving * .78; bone('elbow_R').rotation.x -= serving * .62;
-          bone('shoulder_L').rotation.x -= serving * .68; bone('elbow_L').rotation.x -= serving * .72;
-        } else if (role === 'mouse') {
-          const talking = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 3.1, 4) * (1 - THREE.MathUtils.smoothstep(t, 9.8, 10.7)) : 0;
-          bone('head').rotation.y += Math.sin(t * 1.25) * .12 * talking;
-          bone('shoulder_R').rotation.x -= (.38 + Math.sin(t * 2.2) * .18) * talking; bone('elbow_R').rotation.x -= .82 * talking;
-          bone('shoulder_L').rotation.x -= (.24 - Math.sin(t * 1.7) * .14) * talking; bone('elbow_L').rotation.x -= .52 * talking;
-        } else if (role === 'neo') {
-          const tasting = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 8.15, 8.9) * (1 - THREE.MathUtils.smoothstep(t, 10, 10.7)) : 0;
-          bone('head').rotation.x += tasting * .12; bone('shoulder_R').rotation.x -= tasting * .88; bone('elbow_R').rotation.x -= tasting * 1.38;
-        } else {
-          const listening = phase === 'performing' ? THREE.MathUtils.smoothstep(t, 2.2, 3.1) : 0;
-          bone('head').rotation.y += Math.sin(t * .8 + role.length) * .08 * listening;
+        const age = crewMealAge(input.interlude);
+        if (role === 'mouse') {
+          const talking = phase === 'performing' || phase === 'accepting' ? THREE.MathUtils.smoothstep(age, 3.1, 4) * (1 - THREE.MathUtils.smoothstep(age, 9.8, 10.7)) : 0;
+          bone('head').rotation.y += Math.sin(age * 1.25) * .12 * talking;
+          bone('shoulder_R').rotation.x -= (.38 + Math.sin(age * 2.2) * .18) * talking; bone('elbow_R').rotation.x -= .82 * talking;
+          bone('shoulder_L').rotation.x -= (.24 - Math.sin(age * 1.7) * .14) * talking; bone('elbow_L').rotation.x -= .52 * talking;
+        } else if (role !== 'neo' && role !== 'tank') {
+          const listening = phase === 'performing' || phase === 'accepting' ? THREE.MathUtils.smoothstep(age, 2.2, 3.1) : 0;
+          bone('head').rotation.y += Math.sin(age * .8 + role.length) * .08 * listening;
         }
       }
     }
@@ -1307,6 +1311,7 @@ export class HeroModels {
     this.consoleDrinks.get(rig)?.update(input.interlude);
     if (input.interlude?.kind === 'steak' && input.interlude.role === 'cypher' && !this.steaks.has(rig)) this.steaks.set(rig, new SteakPerformance(rig));
     this.steaks.get(rig)?.update(input.interlude);
+    this.meals.get(rig)?.update(input.interlude);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));
     this.interrogations.get(rig)?.update(input.interrogation, input.officeShirt);
     if (input.meeting && !this.meetings.has(rig)) this.meetings.set(rig, new MeetingPerformance(rig));
@@ -1382,6 +1387,7 @@ export class HeroModels {
     this.consolePours.forEach(p => p.dispose()); this.consolePours.clear();
     this.steaks.forEach(p => p.dispose()); this.steaks.clear();
     this.interrogations.forEach(p => p.dispose()); this.interrogations.clear();
+    this.meals.forEach(p => p.dispose()); this.meals.clear();
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();

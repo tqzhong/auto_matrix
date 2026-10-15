@@ -4334,7 +4334,15 @@ test('the entire film route completes through interactions, driving and real com
           assert.equal(state.interlude?.phase, 'choice');
         }
         else if (scene.id === 'm1_steak') for (let frame = 0; frame < interludeDuration(state.interlude!) * 10 + 2; frame++) h.players.step(.1, true, h.tick());
-        else if (scene.id === 'm1_meal') for (let frame = 0; frame < 134; frame++) h.players.step(.1, true, h.tick());
+        else if (scene.id === 'm1_meal') {
+          const serving = interludeDuration(state.interlude!);
+          for (let frame = 0; frame < serving * 10 + 2; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.interlude?.phase, 'accept_ready'); assert.equal(state.step, index);
+          h.command('act'); assert.equal(state.interlude?.phase, 'accepting');
+          const eating = interludeDuration(state.interlude!);
+          for (let frame = 0; frame < eating * 10 + 2; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.interlude?.phase, 'done');
+        }
         else if (scene.id === 'm1_bathroom') for (let frame = 0; frame < 70 && state.step === index; frame++) h.players.step(.1, true, h.tick());
         else if (scene.id === 'm1_unplugged') {
           for (let frame = 0; frame < 100 && state.betrayal?.phase !== 'window'; frame++) h.players.step(.1, true, h.tick());
