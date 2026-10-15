@@ -88,10 +88,82 @@ test('Cypher wears a continuous ship sweater in reality and restores the Matrix 
   const sweater = h.cypher.hero!.root.getObjectByName('cypher-reality-sweater') as THREE.SkinnedMesh;
   const collar = h.cypher.hero!.root.getObjectByName('cypher-reality-collar') as THREE.SkinnedMesh;
   assert.ok(sweater?.visible && collar?.visible, 'reality needs the ship costume rather than recolored suit lapels');
+  const reference = h.cypher.root.getObjectByName('cypher-reality-neck-reference')!; assert.ok(reference);
+  const drawn: THREE.Object3D[] = []; h.cypher.root.traverseVisible(object => drawn.push(object));
+  assert.ok(!drawn.includes(reference) && !h.cypher.hero!.wardrobe.some(part => part.mesh === reference), 'the fitting reference cannot be drawn as another body or garment');
   const borrowed = h.cypher.hero!.wardrobe.filter(part => /Tailored.coat.upper|Black.crew.neck/.test(part.mesh.name));
   assert.equal(borrowed.length, 2); assert.ok(borrowed.every(part => !part.mesh.visible));
   await h.draw(false); assert.equal(sweater.visible, false); assert.equal(collar.visible, false);
+  assert.equal(reference.visible, false);
   assert.ok(borrowed.every(part => part.mesh.visible), 'the existing Matrix costume remains available');
+});
+
+test('Cypher’s ship neckline does not expose the borrowed shoulder skin and retains the delivered hands', async t => {
+  const h = await fixture(t), skin = h.cypher.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+  const original = skin.geometry; await h.draw();
+  const joints = original.attributes.skinIndex, weights = original.attributes.skinWeight, source = original.index!;
+  const retained = new Set<string>(), index = skin.geometry.index!;
+  for (let i = 0; i < index.count; i += 3) retained.add([index.getX(i), index.getX(i + 1), index.getX(i + 2)].join(','));
+  for (let i = 0; i < source.count; i += 3) {
+    const triangle = [source.getX(i), source.getX(i + 1), source.getX(i + 2)];
+    if (triangle.some(v => [0, 1, 2, 3].some(j => weights.getComponent(v, j) > .2 && /^(wrist|finger[1-5]-[1-3])_[RL]$/.test(skin.skeleton.bones[joints.getComponent(v, j)].name))))
+      assert.ok(retained.has(triangle.join(',')), 'dressing the shoulder cannot cut away a delivered hand triangle');
+  }
+  const surfaces = ['cypher-anatomical-head', 'Anatomical_head_and_hands', 'cypher-reality-sweater', 'cypher-reality-collar'].map(name => h.cypher.root.getObjectByName(name)!);
+  for (const [phase, elapsed] of [['ready', 0], ['performing', 1.4], ['performing', 5.7], ['responding', 4]] as const) {
+    h.models.animate(h.cypher, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false,
+      interlude: { kind: 'console', phase, elapsed, role: 'cypher', physicalConsole: true, physicalPour: true } }, 4);
+    h.cypher.root.updateMatrixWorld(true);
+    const head = h.cypher.hero!.bones.get('head')!, direction = new THREE.Vector3(0, 0, -1).transformDirection(head.matrixWorld);
+    for (const x of [-.24, -.2, .2, .24]) for (const y of [-.34, -.3, -.26]) {
+      const hit = new THREE.Raycaster(head.localToWorld(new THREE.Vector3(x, y, .8)), direction, 0, 2).intersectObjects(surfaces)[0];
+      if (hit?.object === skin) {
+        const triangle = [0, 1, 2].map(i => index.getX(hit.faceIndex! * 3 + i));
+        assert.ok(triangle.some(v => [0, 1, 2, 3].some(j => weights.getComponent(v, j) > .2 && /^(wrist|finger[1-5]-[1-3])_[RL]$/.test(skin.skeleton.bones[joints.getComponent(v, j)].name))),
+          `borrowed shoulder protrudes through the ship neckline at ${phase}/${elapsed}, ${x}/${y}`);
+      }
+    }
+  }
+});
+
+test('the inner collar stays outside Cypher’s anatomical neck while he turns, pours and drinks', async t => {
+  const h = await fixture(t); await h.draw();
+  const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.SkinnedMesh;
+  const collar = h.cypher.root.getObjectByName('cypher-reality-collar') as THREE.SkinnedMesh;
+  const poses: [InterludeGesture['phase'], number][] = [['ready', 0],
+    ...Array.from({ length: 49 }, (_, i) => ['performing', i * .2] as [InterludeGesture['phase'], number]),
+    ...Array.from({ length: 55 }, (_, i) => ['responding', i * .2] as [InterludeGesture['phase'], number])];
+  for (const [phase, elapsed] of poses) {
+    h.models.animate(h.cypher, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false,
+      interlude: { kind: 'console', phase, elapsed, role: 'cypher', physicalConsole: true, physicalPour: true } }, 4);
+    h.cypher.root.updateMatrixWorld(true);
+    const inverse = h.cypher.hero!.bones.get('head')!.matrixWorld.clone().invert();
+    const points = Array.from({ length: face.geometry.attributes.position.count }, (_, v) => face.localToWorld(face.getVertexPosition(v, new THREE.Vector3())).applyMatrix4(inverse));
+    const indices: number[] = [], source = face.geometry.index!;
+    for (let i = 0; i < source.count; i += 3) {
+      const triangle = [source.getX(i), source.getX(i + 1), source.getX(i + 2)];
+      if (triangle.every(v => points[v].y < -.15)) indices.push(...triangle);
+    }
+    const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => p.toArray()), 3)).setIndex(indices);
+    const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), neck = new THREE.Mesh(geometry, material); neck.updateMatrixWorld(true);
+    let worst = 0, tested = 0, witness = '';
+    for (let v = 0; v < collar.geometry.attributes.position.count; v++) {
+      const p = collar.localToWorld(collar.getVertexPosition(v, new THREE.Vector3())).applyMatrix4(inverse);
+      const direction = new THREE.Vector3(p.x, 0, p.z), radius = direction.length();
+      const hit = new THREE.Raycaster(new THREE.Vector3(0, p.y, 0), direction.normalize(), 0, 1).intersectObject(neck)[0];
+      if (!hit) continue;
+      tested++;
+      if (hit.distance - radius > worst) {
+        worst = hit.distance - radius;
+        witness = JSON.stringify({ vertex: v, collar: p.toArray(), skin: hit.point.toArray(), triangle: [0, 1, 2].map(j => {
+          const vertex = indices[hit.faceIndex! * 3 + j]; return { vertex, restY: face.geometry.attributes._head_rest.getY(vertex), head: face.geometry.attributes.skinWeight.getX(vertex) };
+        }) });
+      }
+    }
+    geometry.dispose(); material.dispose();
+    assert.ok(tested > 100, 'check actual collar vertices against the delivered neck surface');
+    assert.ok(worst < .012, `the collar penetrates the neck by ${worst} at ${phase}/${elapsed}: ${witness}`);
+  }
 });
 
 test('fitting the new head keeps the authored eyelid deformation at the actual body scale', async t => {
@@ -110,12 +182,54 @@ test('fitting the new head keeps the authored eyelid deformation at the actual b
   assert.ok(Math.abs(open.distanceTo(closed) - expected) < 1e-6, `eyelid travels ${open.distanceTo(closed)} instead of its fitted ${expected}`);
 });
 
+test('neck fitting retains the authored smooth facial normals above the jaw', async t => {
+  const h = await fixture(t); await h.draw();
+  const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.SkinnedMesh, attrs = face.geometry.attributes;
+  const head = h.cypher.hero!.bones.get('head')!, index = face.skeleton.bones.indexOf(head);
+  const transform = new THREE.Matrix3().getNormalMatrix(face.skeleton.boneInverses[index].clone().invert());
+  let worst = 0;
+  for (let v = 0; v < attrs.normal.count; v++) {
+    if (attrs._head_rest.getY(v) < -.32) continue;
+    const original = new THREE.Vector3().fromBufferAttribute(attrs._head_normal, v).applyNormalMatrix(transform);
+    worst = Math.max(worst, original.distanceTo(new THREE.Vector3().fromBufferAttribute(attrs.normal, v)));
+  }
+  assert.ok(worst < 1e-5, `neck fitting introduced a facial normal seam of ${worst}`);
+});
+
+test('the fitted neck keeps its surface winding and cannot collapse triangles into collar creases', async t => {
+  const h = await fixture(t); await h.draw();
+  const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.SkinnedMesh, attrs = face.geometry.attributes, indices = face.geometry.index!;
+  const head = h.cypher.hero!.bones.get('head')!, joint = face.skeleton.bones.indexOf(head);
+  const toHead = face.skeleton.boneInverses[joint].clone().multiply(face.bindMatrix), transform = new THREE.Matrix3().getNormalMatrix(toHead);
+  const metadata = (await h.assets.get('cypher-head.glb')).parser.json.extras, scale = head.userData.cypherEyeHalfWidth / metadata.eye[0];
+  const offset = head.userData.cameraEye.clone().sub(new THREE.Vector3(0, metadata.eye[1], metadata.eye[2]).multiplyScalar(scale));
+  let minimum = 1, winding = 1, tested = 0;
+  for (let i = 0; i < indices.count; i += 3) {
+    const triangle = [indices.getX(i), indices.getX(i + 1), indices.getX(i + 2)];
+    if (!triangle.every(v => attrs._head_rest.getY(v) < -.32)) continue;
+    const rest = triangle.map(v => new THREE.Vector3().fromBufferAttribute(attrs._head_rest, v));
+    const actual = triangle.map(v => new THREE.Vector3().fromBufferAttribute(attrs.position, v));
+    const before = rest[0].clone().add(rest[1]).add(rest[2]).multiplyScalar(scale / 3).add(offset).setY(0).normalize();
+    const after = actual[0].clone().add(actual[1]).add(actual[2]).divideScalar(3).applyMatrix4(toHead).setY(0).normalize();
+    const original = rest[1].sub(rest[0]).cross(rest[2].sub(rest[0]));
+    const fitted = actual[1].sub(actual[0]).cross(actual[2].sub(actual[0]));
+    if (original.lengthSq() < 1e-15) continue;
+    tested++; minimum = Math.min(minimum, fitted.length() / original.length());
+    // A changed slope can rotate a normal by more than 90 degrees without
+    // reversing a surface. Test outward winding around the neck's axis.
+    if (original.dot(before) > 1e-9) winding = Math.min(winding, fitted.applyNormalMatrix(transform).dot(after));
+  }
+  assert.ok(tested > 100);
+  assert.ok(minimum > .02, `neck triangles collapse to ${minimum} of their authored area`);
+  assert.ok(winding > 0, `neck triangles turn inside out: ${winding}`);
+});
+
 test('saved console gestures rebuild the same face, eyes and garment after a different pose', async t => {
   const h = await fixture(t); await h.draw();
-  for (const [phase, elapsed] of [['ready', 0], ['performing', 2.8], ['performing', 5.8], ['responding', 2.1]] as const) {
+  for (const [phase, elapsed, physicalPour] of [['ready', 0, false], ['performing', 2.8, false], ['performing', 5.8, false], ['responding', 2.1, false], ['performing', 5.7, true], ['responding', 4, true]] as const) {
     const fresh = h.models.create(h.world.agents.get('cypher')!); await h.settle();
     const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false,
-      seated: true, interlude: { kind: 'console' as const, phase, elapsed, role: 'cypher' as const } };
+      seated: true, interlude: { kind: 'console' as const, phase, elapsed, role: 'cypher' as const, physicalConsole: physicalPour, physicalPour } };
     for (const rig of [h.cypher, fresh]) {
       rig.motion.seated = 1;
       h.models.animate(rig, 0, input, 4); await h.settle();
@@ -148,10 +262,10 @@ test('the detailed head stays inside its rendering bounds during console gesture
       assert.ok(sphere.containsPoint(point), `the rendering bounds lose head vertex ${vertex} at ${pose}`);
     }
   };
-  for (const [phase, elapsed] of [['ready', 0], ['performing', 2.8], ['performing', 5.8], ['responding', 2.1]] as const) {
+  for (const [phase, elapsed, physicalPour] of [['ready', 0, false], ['performing', 2.8, false], ['performing', 5.8, false], ['responding', 2.1, false], ['performing', 5.7, true], ['responding', 4, true]] as const) {
     h.cypher.motion.seated = 1;
     h.models.animate(h.cypher, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false,
-      seated: true, interlude: { kind: 'console', phase, elapsed, role: 'cypher' } }, 4);
+      seated: true, interlude: { kind: 'console', phase, elapsed, role: 'cypher', physicalConsole: physicalPour, physicalPour } }, 4);
     h.cypher.root.updateMatrixWorld(true);
     check(`${phase}/${elapsed}`);
   }

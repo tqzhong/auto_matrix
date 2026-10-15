@@ -159,20 +159,69 @@ export class EpilogueHeads {
       this.mesh(entry.eyes, sphere, pupil, [side * x, y, z + r * 1.035], [r * .23, r * .23, r * .075]);
     }
     if (entry.hero) {
-      const { skin, original } = entry.hero, head = rig.hero!.bones.get('head')!, chest = rig.hero!.bones.get('chest')!;
-      const headIndex = skin.skeleton.bones.indexOf(head), chestIndex = skin.skeleton.bones.indexOf(chest);
+      const { skin, original } = entry.hero, head = rig.hero!.bones.get('head')!;
+      const headIndex = skin.skeleton.bones.indexOf(head);
       const eye = head.userData.cameraEye as THREE.Vector3, scale = head.userData.cypherEyeHalfWidth / metadata.eye[0];
       const offset = eye.clone().sub(new THREE.Vector3(0, metadata.eye[1], metadata.eye[2]).multiplyScalar(scale));
       const transform = skin.skeleton.boneInverses[headIndex].clone().invert().multiply(new THREE.Matrix4().makeTranslation(offset.x, offset.y, offset.z))
         .multiply(new THREE.Matrix4().makeScale(scale, scale, scale));
       const geometry = this.geometry(face.geometry.clone()), rest = geometry.attributes.position.clone();
       geometry.setAttribute('_head_rest', rest); geometry.setAttribute('_head_normal', geometry.attributes.normal.clone());
-      const indices: number[] = [], weights: number[] = [];
-      for (let i = 0; i < rest.count; i++) {
-        const blend = THREE.MathUtils.smoothstep(rest.getY(i), -.52, -.32);
-        indices.push(headIndex, chestIndex, 0, 0); weights.push(blend, 1 - blend, 0, 0);
+      const toHead = skin.skeleton.boneInverses[headIndex].clone().multiply(skin.bindMatrix), point = new THREE.Vector3();
+      const reference = (rig.hero!.root.getObjectByName('cypher-reality-neck-reference') as THREE.SkinnedMesh).geometry;
+      const sourceJoints = reference.attributes.skinIndex, sourceWeights = reference.attributes.skinWeight;
+      const referenceIndex = reference.index!, neck: { triangle: THREE.Triangle; vertices: number[] }[] = [];
+      const candidates = new Map<number, THREE.Vector3>();
+      for (let i = 0; i < reference.attributes.position.count; i++) {
+        point.fromBufferAttribute(reference.attributes.position, i).applyMatrix4(toHead);
+        // Include triangles across the whole fitted band, including neighbours
+        // above its fade; a fixed body-space cut leaves gaps between rings.
+        if (point.y < offset.y - .65 * scale || point.y > offset.y - .24 * scale) continue;
+        candidates.set(i, new THREE.Vector3().fromBufferAttribute(reference.attributes.position, i));
+      }
+      for (let i = 0; i < referenceIndex.count; i += 3) {
+        const vertices = [0, 1, 2].map(j => referenceIndex.getX(i + j)), triangle = vertices.map(v => candidates.get(v));
+        if (triangle.every(Boolean)) neck.push({ triangle: new THREE.Triangle(...triangle as [THREE.Vector3, THREE.Vector3, THREE.Vector3]), vertices });
       }
       geometry.applyMatrix4(transform);
+      const indices: number[] = [], weights: number[] = [];
+      const closest = new THREE.Vector3(), sample = new THREE.Vector3(), barycentric = new THREE.Vector3();
+      const fromHead = toHead.clone().invert(), direction = new THREE.Matrix3().setFromMatrix4(fromHead), ray = new THREE.Ray();
+      for (let i = 0; i < rest.count; i++) {
+        let influences: [number, number][] = [[headIndex, 1]];
+        if (rest.getY(i) < -.32) {
+          point.fromBufferAttribute(geometry.attributes.position, i);
+          sample.copy(point).applyMatrix4(toHead);
+          ray.origin.set(0, sample.y, 0).applyMatrix4(fromHead);
+          ray.direction.set(sample.x, 0, sample.z).applyMatrix3(direction).normalize();
+          let nearest: typeof neck[number] | undefined, distance = Infinity;
+          for (const source of neck) {
+            if (!ray.intersectTriangle(source.triangle.a, source.triangle.b, source.triangle.c, false, sample)) continue;
+            const d = ray.origin.distanceToSquared(sample);
+            if (d < distance) { nearest = source; distance = d; closest.copy(sample); }
+          }
+          if (nearest) {
+            // Preserve neck height and angular order instead of folding rings
+            // onto the closest triangle; share the actual body's skin weights.
+            nearest.triangle.getBarycoord(closest, barycentric);
+            const fade = THREE.MathUtils.smoothstep(rest.getY(i), -.38, -.32), projected = new Map<number, number>([[headIndex, fade]]);
+            for (let corner = 0; corner < 3; corner++) for (let part = 0; part < 4; part++) {
+              const vertex = nearest.vertices[corner], joint = sourceJoints.getComponent(vertex, part);
+              const weight = sourceWeights.getComponent(vertex, part) * barycentric.getComponent(corner) * (1 - fade);
+              projected.set(joint, (projected.get(joint) ?? 0) + weight);
+            }
+            influences = [...projected].sort((a, b) => b[1] - a[1]).slice(0, 4);
+            point.lerp(closest, 1 - THREE.MathUtils.smoothstep(rest.getY(i), -.44, -.32));
+            geometry.attributes.position.setXYZ(i, point.x, point.y, point.z);
+          }
+        }
+        const total = influences.reduce((sum, entry) => sum + entry[1], 0);
+        for (let part = 0; part < 4; part++) { indices.push(influences[part]?.[0] ?? 0); weights.push((influences[part]?.[1] ?? 0) / total); }
+      }
+      const facialNormals = geometry.attributes.normal;
+      geometry.deleteAttribute('normal'); geometry.computeVertexNormals();
+      for (let i = 0; i < rest.count; i++) if (rest.getY(i) >= -.32)
+        geometry.attributes.normal.setXYZ(i, facialNormals.getX(i), facialNormals.getY(i), facialNormals.getZ(i));
       const linear = new THREE.Matrix3().setFromMatrix4(transform);
       geometry.morphAttributes.position?.forEach(attribute => { (attribute as THREE.BufferAttribute).applyMatrix3(linear); });
       geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(indices, 4));
@@ -183,7 +232,6 @@ export class EpilogueHeads {
       entry.eyes.scale.setScalar(scale); entry.eyes.position.copy(offset); head.add(entry.eyes);
       const masked = this.geometry(new THREE.BufferGeometry()); masked.attributes = original.attributes;
       const sourceIndex = original.index!, joints = original.attributes.skinIndex, influence = original.attributes.skinWeight;
-      const toHead = skin.skeleton.boneInverses[headIndex].clone().multiply(skin.bindMatrix), point = new THREE.Vector3();
       const covered = (i: number) => [0, 1, 2, 3].some(j => joints.getComponent(i, j) === headIndex && influence.getComponent(i, j) > .05)
         && point.fromBufferAttribute(original.attributes.position, i).applyMatrix4(toHead).y > offset.y - .50 * scale;
       const retained: number[] = [];

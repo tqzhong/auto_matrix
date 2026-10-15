@@ -206,9 +206,17 @@ def build(source, character, output):
     upper_color, collar_color = colors[role]
     meshes = {'sweater': export(name + '-sweater', garment, texcoords, polygons, influence, upper_color),
               'collar': export(name + '-collar', collar, collar_uv, collar_faces, collar_weights, collar_color)}
-    metadata.update({version + 'Version': 2, version + 'OriginalSha256': hashlib.sha256(data).hexdigest(), version + 'Source': source_hashes})
     if role == 'choi':
-        # Ship only the new garment, sharing the already loaded Choi body.
+        # The shipped head/hands skin is cut away below its old neckline. Keep
+        # the complete anatomical neck for fitting Cypher's separate likeness;
+        # this reference is never rendered as another body or garment.
+        reference, reference_uv, reference_faces, reference_weights = builder.trim_neckline(points, uv, faces, weights, rest[3, 1] - .65, above=True)
+        reference, reference_uv, reference_faces, reference_weights = builder.trim_neckline(reference, reference_uv, reference_faces, reference_weights, rest[3, 1] - .08)
+        meshes['neckReference'] = export(name + '-neck-reference', reference, reference_uv, reference_faces, reference_weights, upper_color)
+        doc['nodes'][-1]['extras'] = {'cypherNeckReference': True}
+    metadata.update({version + 'Version': 3 if role == 'choi' else 2, version + 'OriginalSha256': hashlib.sha256(data).hexdigest(), version + 'Source': source_hashes})
+    if role == 'choi':
+        # Ship the garment and fitting reference, sharing the loaded Choi body.
         # Retain the original joint order and bind matrices for runtime rebinding.
         selected = [i for i, mesh in enumerate(doc['meshes']) if mesh['name'].startswith('cypher-reality-')]
         used_materials = sorted({primitive['material'] for i in selected for primitive in doc['meshes'][i]['primitives']})
