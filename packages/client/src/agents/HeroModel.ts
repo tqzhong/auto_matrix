@@ -3,7 +3,7 @@ import { JumpPerformance } from './JumpPerformance.js';
 import { poseSpoonBody } from './SpoonPerformance.js';
 import { poseMorningBody } from './MorningPerformance.js';
 import { posePodWake } from './PodWakePerformance.js';
-import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterAmount } from '@auto_matrix/shared';
+import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterAmount, steakJawOpen } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -35,6 +35,7 @@ import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
 import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
 import { ConsolePourPerformance } from './ConsolePourPerformance.js';
 import { SteakPerformance } from './SteakPerformance.js';
+import { setCypherMouth } from './CypherMouth.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -918,6 +919,7 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
+    if (rig.support === 'cypher') setCypherMouth(rig.root, steakJawOpen(input.interlude));
     if (input.training?.kind === 'red_dress' && input.training.attention?.phase === 'frozen') delta = 0;
     const constructView = input.construct?.role === 'neo' && input.construct.phase === 'image' || input.reveal?.kind === 'construct' && input.reveal.role === 'neo';
     const truthView = input.truth?.role === 'neo';

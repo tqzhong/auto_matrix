@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, INTERLUDE_CAST, INTERLUDE_TIMING, interludeDuration, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, INTERLUDE_CAST, INTERLUDE_TIMING, interludeDuration, steakJawOpen, filmEntry, filmPosition, filmStepPosition, playerBlocked, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -106,10 +106,14 @@ test('new dining gives the physical bite and wine time to finish, pauses and reb
   const h = setup('m1_steak'); h.command('act'); h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.command('act');
   assert.equal(h.state().interlude!.physicalSteak, true);
   h.frames(8); const saved = structuredClone(h.sandbox.state), elapsed = h.state().interlude!.elapsed;
+  const jaw = () => steakJawOpen(h.world.agents.get('cypher')!.currentAction?.parameters.interlude);
+  const opening = jaw(); assert.ok(opening > .9, 'the bite needs a physical mouth opening in the saved cast');
   const poses = INTERLUDE_CAST.steak.map(id => structuredClone(h.world.agents.get(id)!.currentAction?.parameters.interlude));
   h.frames(4, false); assert.equal(h.state().interlude!.elapsed, elapsed);
+  assert.equal(jaw(), opening, 'pause cannot finish or reset the bite');
   h.players.release('player', h.tick()); h.sandbox.restore(saved);
   assert.deepEqual(INTERLUDE_CAST.steak.map(id => h.world.agents.get(id)!.currentAction?.parameters.interlude), poses);
+  assert.equal(jaw(), opening, 'restore must reconstruct the same mouth opening');
   h.players.possess('player', 'smith', h.tick()); h.frames(7); assert.equal(h.state().interlude!.phase, 'performing', 'the wine cannot be cut off by the old 14.5-second clock');
   h.frames(12); assert.equal(h.state().interlude!.phase, 'done');
   assert.equal(h.state().completed.filter(id => id === 'm1_steak').length, 1);

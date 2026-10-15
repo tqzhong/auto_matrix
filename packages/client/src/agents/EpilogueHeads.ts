@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { streetResetPose, upperDiggerFall, dockLastStandPose } from '@auto_matrix/shared';
+import { streetResetPose, upperDiggerFall, dockLastStandPose, steakJawOpen } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
+import { setCypherMouth } from './CypherMouth.js';
 
 interface HeadEntry {
   role: 'oracle' | 'sati' | 'spoon_boy' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid' | 'cypher';
@@ -13,6 +14,8 @@ interface HeadEntry {
   face?: THREE.Mesh;
   eyes?: THREE.Group;
   earring?: THREE.Mesh;
+  oral?: THREE.Group;
+  jawOpen?: number;
   closed: { value: number };
   loading: boolean;
   active: boolean;
@@ -51,6 +54,7 @@ export class EpilogueHeads {
     const entry = this.entries.get(rig); if (!entry) return;
     entry.evacuation = input.dockEvacuation?.role === 'colt';
     entry.firstPerson = entry.role === 'cypher' && Boolean(input.firstPerson); entry.matrix = !input.realWorld;
+    if (entry.role === 'cypher') entry.jawOpen = steakJawOpen(input.interlude);
     // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
     // retain their existing head until their own likeness asset is authored.
     entry.active = entry.role === 'cypher' ? true : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
@@ -87,6 +91,7 @@ export class EpilogueHeads {
     if (entry.eyes) entry.eyes.visible = entry.closed.value < .98 && (!entry.hero || visible && !firstPerson);
     if (entry.headset) entry.headset.visible = Boolean(entry.evacuation);
     if (entry.earring) entry.earring.visible = Boolean(visible && !firstPerson && entry.matrix);
+    if (entry.oral) { entry.oral.visible = visible && !firstPerson; setCypherMouth(rig.root, entry.jawOpen ?? 0); }
   }
 
   private async load(rig: CharacterRig, entry: HeadEntry): Promise<void> {
@@ -251,12 +256,20 @@ export class EpilogueHeads {
         geometry.attributes.normal.setXYZ(i, facialNormals.getX(i), facialNormals.getY(i), facialNormals.getZ(i));
       const linear = new THREE.Matrix3().setFromMatrix4(transform);
       geometry.morphAttributes.position?.forEach(attribute => { (attribute as THREE.BufferAttribute).applyMatrix3(linear); });
+      const rotation = new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().extractRotation(transform));
+      geometry.morphAttributes.normal?.forEach(attribute => { (attribute as THREE.BufferAttribute).applyMatrix3(rotation); });
       geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(indices, 4));
       geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(weights, 4));
       const replacement = new THREE.SkinnedMesh(geometry, material); replacement.name = face.name;
+      replacement.morphTargetDictionary = { ...face.morphTargetDictionary };
       replacement.bind(skin.skeleton, skin.bindMatrix); replacement.castShadow = replacement.receiveShadow = true;
       face.removeFromParent(); model.add(replacement); face = replacement; entry.face = face;
       entry.eyes.scale.setScalar(scale); entry.eyes.position.copy(offset); head.add(entry.eyes);
+      entry.oral = new THREE.Group(); entry.oral.name = 'cypher-oral-parts';
+      for (const name of ['cypher-teeth-upper', 'cypher-teeth-lower', 'cypher-tongue']) {
+        const part = model.getObjectByName(name); if (part) entry.oral.add(part);
+      }
+      entry.oral.scale.setScalar(scale); entry.oral.position.copy(offset); head.add(entry.oral);
       const masked = this.geometry(new THREE.BufferGeometry()); masked.attributes = original.attributes;
       const sourceIndex = original.index!, joints = original.attributes.skinIndex, influence = original.attributes.skinWeight;
       const covered = (i: number) => [0, 1, 2, 3].some(j => joints.getComponent(i, j) === headIndex && influence.getComponent(i, j) > .05)

@@ -46,6 +46,60 @@ async function fixture(t: TestContext) {
   return { cypher, choi, draw, assets, models, world, settle };
 }
 
+test('Cypher has an anatomical jaw deformation and separate upper teeth, lower teeth and tongue', async t => {
+  const h = await fixture(t); await h.draw(false);
+  const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.SkinnedMesh;
+  const jaw = face.morphTargetDictionary?.jawOpen; assert.ok(jaw !== undefined, 'the delivered head must support a real lower-jaw deformation');
+  const upper = h.cypher.root.getObjectByName('cypher-teeth-upper') as THREE.Mesh, lower = h.cypher.root.getObjectByName('cypher-teeth-lower') as THREE.Mesh;
+  const tongue = h.cypher.root.getObjectByName('cypher-tongue') as THREE.Mesh;
+  assert.ok(upper && lower && tongue, 'the mouth needs oral anatomy instead of an empty dark patch');
+  assert.equal(upper.parent?.name, 'cypher-oral-parts'); assert.equal(upper.parent?.parent, h.cypher.hero!.bones.get('head'));
+  const head = h.cypher.hero!.bones.get('head')!, local = (mesh: THREE.Mesh, v: number) => head.worldToLocal(mesh.localToWorld(mesh.getVertexPosition(v, new THREE.Vector3())));
+  const attrs = face.geometry.attributes; let lowerLip = -1, forehead = -1;
+  for (let v = 0; v < attrs.position.count; v++) {
+    if (Math.abs(attrs._head_rest.getX(v)) < .02 && attrs._head_rest.getY(v) > -.26 && attrs._head_rest.getY(v) < -.21 && attrs._head_rest.getZ(v) > .23) lowerLip = v;
+    if (Math.abs(attrs._head_rest.getX(v)) < .02 && attrs._head_rest.getY(v) > .2) forehead = v;
+  }
+  assert.ok(lowerLip >= 0 && forehead >= 0);
+  const rest = local(face, lowerLip), still = local(face, forehead), upperRest = local(upper, 0), lowerRest = local(lower, 0);
+  face.morphTargetInfluences![jaw] = 1; lower.morphTargetInfluences![lower.morphTargetDictionary!.jawOpen] = 1;
+  assert.ok(local(face, lowerLip).y < rest.y - .025, 'opening must lower the actual lip surface');
+  assert.ok(local(face, forehead).distanceTo(still) < .00001, 'opening cannot move the eyes/forehead with the chin');
+  assert.ok(local(upper, 0).distanceTo(upperRest) < .00001, 'upper teeth remain fixed to the skull');
+  assert.ok(local(lower, 0).y < lowerRest.y - .02, 'lower teeth follow the jaw');
+});
+
+test('the saved bite opens Cypher’s jaw, closes after the meal and hides oral parts in first person', async t => {
+  const h = await fixture(t); await h.draw(false);
+  const eat = (elapsed: number, firstPerson = false, rig = h.cypher) => {
+    const at = interludeRoot('steak', 'cypher'), center = FILM_SETS.film_cypher_restaurant.center;
+    rig.root.position.set(center.x + at.x, center.y - 1, center.z + at.z); rig.root.rotation.y = at.yaw;
+    h.models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: false, firstPerson,
+      interlude: { kind: 'steak', phase: 'performing', elapsed, role: 'cypher', physicalSteak: true } }, 4);
+    rig.root.updateMatrixWorld(true);
+  };
+  eat(8.05); const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.Mesh, index = face.morphTargetDictionary?.jawOpen;
+  assert.ok(index !== undefined, 'the saved bite cannot remain a closed-mouth pose'); assert.ok(face.morphTargetInfluences![index] > .9);
+  const oral = h.cypher.root.getObjectByName('cypher-oral-parts')!; assert.ok(oral?.visible);
+  eat(8.05, true); assert.equal(oral.visible, false); eat(26); assert.equal(face.morphTargetInfluences![index], 0);
+  eat(9.7); const chewing = face.morphTargetInfluences![index]; assert.ok(chewing > 0 && chewing < .2);
+  eat(8.05); eat(9.7); assert.equal(face.morphTargetInfluences![index], chewing, 'chewing cannot depend on the previous rendered frame');
+  const legacy = { kind: 'steak', phase: 'performing', elapsed: 8.05 * 14.5 / 26, role: 'cypher' } as const;
+  h.models.animate(h.cypher, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, interlude: legacy }, 4);
+  assert.ok(face.morphTargetInfluences![index] > .9, 'legacy saves keep their physical bite phase without changing the old clock');
+  h.models.animate(h.cypher, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+    interlude: { kind: 'console', phase: 'responding', elapsed: 4.6, role: 'cypher', physicalConsole: true, physicalPour: true } }, 4);
+  assert.equal(face.morphTargetInfluences![index], 0, 'switching to the earlier console cannot retain the dining jaw');
+  for (const name of ['cypher-teeth-lower', 'cypher-tongue']) {
+    const mesh = h.cypher.root.getObjectByName(name) as THREE.Mesh;
+    assert.equal(mesh.morphTargetInfluences![mesh.morphTargetDictionary!.jawOpen], 0);
+  }
+  const fresh = h.models.create(h.world.agents.get('cypher')!); await h.settle(); eat(8.05, true, fresh); await h.settle();
+  const loaded = fresh.root.getObjectByName('cypher-anatomical-head') as THREE.Mesh;
+  assert.ok(loaded.morphTargetInfluences![loaded.morphTargetDictionary!.jawOpen] > .9, 'async completion must apply the saved opening without waiting for another animation frame');
+  assert.equal(fresh.root.getObjectByName('cypher-oral-parts')!.visible, false);
+});
+
 test('Cypher’s reality appearance replaces the stand-in head and hair while retaining the anatomical five-finger body', async t => {
   const h = await fixture(t); await h.draw();
   const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.Mesh;
