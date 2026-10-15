@@ -423,7 +423,7 @@ export class NebDeckRenderer {
     }
     for (const [role, seat] of Object.entries(CREW_MEAL.seats)) {
       // Adjustable pedestals meet the seated bodies while their soles stay on deck.
-      const height = role === 'dozer' ? 1.24 : role === 'tank' ? 1.116 : role === 'switch' ? 1.125 : role === 'mouse' ? .915 : 1.13;
+      const height = role === 'dozer' ? 1.24 : role === 'tank' ? 1.116 : role === 'switch' ? 1.125 : role === 'mouse' ? 1.09 : 1.13;
       const stool = this.cylinder(this.root, this.dark, seat.x, height - .06, seat.z, .48, .12); stool.name = `neb-meal-seat-${role}`;
       this.cylinder(this.root, this.dark, seat.x, (height - .12) / 2, seat.z, .11, height - .12).name = `neb-meal-pedestal-${role}`;
       this.cylinder(this.root, this.steel, seat.x, .035, seat.z, .36, .07).name = `neb-meal-base-${role}`;

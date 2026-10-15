@@ -139,6 +139,7 @@ export interface CharacterRig {
   smallDetails: THREE.Group;
   oracleClothing?: { blouse: THREE.MeshStandardMaterial; trousers: THREE.MeshStandardMaterial; dry: THREE.Color[] };
   hero?: HeroRig;
+  mouseFrame?: { input: MotionInput; distance: number };
   medicalCrew?: boolean;
   logosBaneBody?: boolean;
   zionVariant?: { hero?: HeroRig; fallback: THREE.Object3D[]; realWorld: boolean };
@@ -816,7 +817,8 @@ export class CharacterModels {
     if (state.id === 'niobe' || state.id === 'link') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix && (!rig.medicalCrew || Boolean(state.currentAction?.parameters.maggieDiscovery)) };
     if (state.id === 'oracle') rig.oracleClothing = { blouse: cloth, trousers, dry: [cloth.color.clone(), trousers.color.clone()] };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
-    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
+    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', mouse: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
+    if (state.id === 'mouse') rig.mouseFrame = { input: { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: !state.isInMatrix }, distance: 4 };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
       this.heroes.create(reloadedBase[state.id] ?? (guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId), guard, support).then(model => {
@@ -827,6 +829,7 @@ export class CharacterModels {
           if (!rig.zionVariant.realWorld) { rig.zionVariant.fallback.forEach(child => { child.visible = false; }); rig.hero = model; }
         } else { for (const child of detail.children) child.visible = false; rig.hero = model; }
         detail.add(model.root);
+        if (rig.mouseFrame) this.animate(rig, 0, rig.mouseFrame.input, rig.mouseFrame.distance);
         if (state.id === 'cypher') this.epilogueHeads.trackCypher(rig);
         if (rig.staff) { rig.staff.removeFromParent(); rig.staff.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.staff); }
         if (rig.chateauBlade) { rig.chateauBlade.model.removeFromParent(); rig.chateauBlade.model.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.chateauBlade.model); }
@@ -938,6 +941,10 @@ export class CharacterModels {
   }
 
   animate(rig: CharacterRig, delta: number, input: MotionInput, distance: number): void {
+    if (rig.mouseFrame) {
+      rig.mouseFrame = { input, distance };
+      if (!rig.hero) rig.head.visible = !input.firstPerson;
+    }
     const near = distance < 100 || Boolean(input.oracleRestored);
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
@@ -1187,6 +1194,7 @@ export class CharacterModels {
     if (rig.staff) rig.staff.rotation.z = Math.PI / 2 + staffSweep * .65;
     if (rig.hero) {
       this.heroes.animate(rig.hero, pose, rig.motion, input, delta);
+      if (rig.hero.support === 'mouse' && armed && weaponStyle === 'pistol') this.heroes.mousePistols(rig.hero, rig.weapons!);
       if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch);
       poseHelDisarm(rig, input.helDisarm);
       poseHelBreakout(rig, input.helBreakout);

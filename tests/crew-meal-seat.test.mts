@@ -66,7 +66,7 @@ function lowerBody(actor: ReturnType<CharacterModels['create']>) {
   };
   if (actor.hero) actor.root.traverse(object => {
     if (object instanceof THREE.SkinnedMesh && /trouser/i.test(object.name)) add(object, points);
-    if (object instanceof THREE.SkinnedMesh && /shoe/i.test(object.name)) add(object, shoes);
+    if (object instanceof THREE.SkinnedMesh && /shoe|boot_sole/i.test(object.name)) add(object, shoes);
   });
   else {
     actor.hips.forEach(hip => hip.traverse(object => { if (object instanceof THREE.Mesh) add(object, points); }));
@@ -89,6 +89,7 @@ function penetration(points: THREE.Vector3[], seat: THREE.Mesh) {
 test('all six diners rest on their stools with shoes on the floor and no trouser-seat penetration', async t => {
   const h = await fixture(t); h.draw(2.3); const floor = h.center.y - 1;
   for (const [id, actor] of h.actors) {
+    if (id === 'mouse') assert.equal(actor.hero?.support, 'mouse', 'measure Mouse’s delivered anatomy, not the loading fallback');
     const seat = h.deck.getObjectByName(`neb-meal-seat-${id}`) as THREE.Mesh, { points, shoes } = lowerBody(actor);
     const bounds = new THREE.Box3().setFromObject(seat), center = seat.getWorldPosition(new THREE.Vector3());
     assert.equal(penetration(points, seat).length, 0, `${id}'s trousers intersect the stool`);

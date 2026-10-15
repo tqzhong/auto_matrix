@@ -82,6 +82,17 @@ CHARACTERS['choi'] = {**CHARACTERS['neo'], 'height': 4.35, 'support': True,
     'targets': {**CHARACTERS['neo']['targets'], 'head/head-rectangular': .08, 'chin/chin-width-incr': .1}}
 CHARACTERS['dujour'] = {**CHARACTERS['trinity'], 'height': 4.2, 'support': True,
     'targets': {**CHARACTERS['trinity']['targets'], 'head/head-rectangular': .08, 'chin/chin-width-incr': .08}}
+CHARACTERS['mouse'] = {
+    'height': 4.22, 'support': True, 'hair': 'short04', 'skin': 'young_caucasian_male',
+    'targets': {
+        'macrodetails/caucasian-male-young': 1,
+        'macrodetails/universal-male-young-averagemuscle-averageweight': .95,
+        'macrodetails/universal-male-young-maxmuscle-averageweight': .05,
+        'head/head-rectangular': .08, 'head/head-fat-decr': .24,
+        'chin/chin-prominent-incr': .03, 'nose/nose-scale-depth-incr': .22,
+        'mouth/mouth-scale-horiz-decr': .08, 'mouth/mouth-upperlip-volume-decr': .10,
+    },
+}
 
 
 def fetch_source(source):
