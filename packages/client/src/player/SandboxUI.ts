@@ -56,7 +56,7 @@ import { apartmentLocked, computerInvestigationStep } from '@auto_matrix/shared'
 import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER, sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
-import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
+import { interludeDuration, interludeLocked, interludeWaiting } from '@auto_matrix/shared';
 import { ORACLE_RECEPTION, oracleReceptionRoot, oracleReceptionText, oracleVisitDuration, oracleVisitLocked, spoonLessonText, oracleDepartureTarget, oracleDepartureLocked } from '@auto_matrix/shared';
 import { oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
@@ -1413,17 +1413,18 @@ export class SandboxUI {
       const encounter = journey.interlude; const phase = encounter.phase;
       const close = !step || distance(player.position, filmStepPosition(scene, step)) <= 4;
       const walking = encounter.kind === 'steak' && phase === 'ready' && journey.step === 0 || encounter.kind === 'meal' && phase === 'done' && Boolean(step);
-      const canAct = phase === 'ready' && close && !walking || phase === 'done' && !step;
+      const canAct = (phase === 'ready' || interludeWaiting(encounter)) && close && !walking || phase === 'done' && !step;
       const title = encounter.kind === 'console' ? '屏幕旁的一杯酒' : encounter.kind === 'steak' ? '舒适的代价' : '真实世界的一顿饭';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = phase === 'choice' ? 'J 回应 Cypher 对真相与后悔的试探 · 等待不会替你选择'
+        : interludeWaiting(encounter) ? phase === 'accept_ready' ? 'G 接过金属杯 · 可以先环顾或按 V 换视角' : 'G 品尝一口 · 等待不会自动饮酒'
         : interludeLocked(journey) ? '鼠标环顾 · V 切换主视角与场景镜头 · 暂停或重连会保留动作'
         : walking ? 'WASD 移动到金色目标 · 途中可以自由观察'
         : phase === 'ready' ? '靠近后按 G 开始 · 等待不会自动推进'
         : 'G 继续下一段 · 这段经历已经写入手记';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct);
-      this.el('sandbox-nearby').textContent = phase === 'done' ? '继续下一段' : encounter.kind === 'console' ? '打断 Cypher 的夜班' : encounter.kind === 'steak' ? '落座见证交易' : '接过 Tank 递来的食物';
-      this.el('sandbox-job').style.width = interludeLocked(journey) ? `${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%` : '0';
+      this.el('sandbox-nearby').textContent = phase === 'accept_ready' ? '接过金属杯' : phase === 'sip_ready' ? '品尝一口' : phase === 'done' ? '继续下一段' : encounter.kind === 'console' ? '打断 Cypher 的夜班' : encounter.kind === 'steak' ? '落座见证交易' : '接过 Tank 递来的食物';
+      this.el('sandbox-job').style.width = interludeLocked(journey) && !interludeWaiting(encounter) ? `${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%` : '0';
       if (interludeLocked(journey)) this.el('sandbox-waypoint').textContent = '';
       document.getElementById('game-objective')!.textContent = title;
       document.getElementById('game-objective-copy')!.textContent = phase === 'choice' ? '打开手记，决定 Neo 如何回应；选择将影响本轮哲学倾向。'

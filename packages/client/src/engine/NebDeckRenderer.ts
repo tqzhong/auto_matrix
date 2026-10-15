@@ -8,6 +8,8 @@ import { relayPlugContact } from '../agents/TrinityRelayPerformance.js';
 import { NEB_ESCAPE, nebHatchHeight } from '@auto_matrix/shared';
 import { NebEscapeRenderer } from './NebEscapeRenderer.js';
 import { NebCabinRenderer } from './NebCabinRenderer.js';
+import { CONSOLE_DRINK, consoleDrinkPose, interludeAge } from '@auto_matrix/shared';
+import { createConsoleMug } from '../agents/ConsoleMug.js';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -320,8 +322,13 @@ export class NebDeckRenderer {
     const bottle = new THREE.Group(); bottle.name = 'neb-cypher-liquor-bottle'; bottle.position.set(4.9, 1.75, 7.15); this.consoleRig.add(bottle);
     this.cylinder(bottle, glass, 0, .55, 0, .28, 1.1); this.cylinder(bottle, glass, 0, 1.3, 0, .12, .55); this.cylinder(bottle, this.rubber, 0, 1.62, 0, .13, .12);
     this.cylinder(bottle, liquor, 0, .38, 0, .23, .55);
-    const cup = new THREE.Group(); cup.name = 'neb-cypher-shot-glass'; cup.position.set(4.15, 1.63, 6.55); this.consoleRig.add(cup);
-    this.mesh(cup, new THREE.CylinderGeometry(.2, .15, .42, 16, 1, true), glass); this.cylinder(cup, liquor, 0, -.12, 0, .13, .14);
+    const shelf = CONSOLE_DRINK.shelf;
+    this.box(this.root, this.worn, shelf.x, shelf.height - .06, shelf.z, shelf.width, .12, shelf.depth, 'neb-cypher-drink-shelf');
+    for (const side of [-1, 1]) this.box(this.root, this.dark, shelf.x + side * .8, shelf.height / 2, shelf.z, .12, shelf.height, .75);
+    bottle.position.set(5.55, shelf.height, 8.05);
+    bottle.scale.setScalar(.6);
+    const cup = createConsoleMug('neb-neo-metal-mug'); cup.position.set(CONSOLE_DRINK.cup.x, CONSOLE_DRINK.cup.y, CONSOLE_DRINK.cup.z); cup.rotation.y = CONSOLE_DRINK.cup.yaw;
+    cup.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } }); this.consoleRig.add(cup);
     const lamp = new THREE.PointLight(0x88cda4, 0, 10, 2); lamp.name = 'neb-cypher-console-task-light'; lamp.position.set(8.8, 4.3, 6); this.consoleRig.add(lamp); this.lights.add(lamp);
   }
 
@@ -643,7 +650,7 @@ export class NebDeckRenderer {
     const consoleBeat = journey?.scene === 'm1_cypher_console' && !journey.visiting && journey.interlude?.kind === 'console' ? journey.interlude : undefined;
     this.consoleRig.visible = Boolean(consoleBeat || relayActive);
     this.consoleRig.getObjectByName('neb-cypher-liquor-bottle')!.visible = !relayActive;
-    this.consoleRig.getObjectByName('neb-cypher-shot-glass')!.visible = !relayActive;
+    this.consoleRig.getObjectByName('neb-neo-metal-mug')!.visible = !relayActive;
     const linkChair = this.root.getObjectByName('neb-core-chair-four')!; linkChair.rotation.y = relayActive ? Math.PI / 2 : -Math.PI / 2;
     const trinityBack = this.root.getObjectByName('neb-core-chair-trinity-backrest')!;
     // A cervical opening lets the operator and wire reach the actual neck, above the lower back support.
@@ -653,8 +660,9 @@ export class NebDeckRenderer {
     if (relayActive) this.relayDisplay(journey!);
     if (consoleBeat) {
       const t = consoleBeat.elapsed;
-      const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight; light.intensity = 68 + Math.sin(elapsed * 7) * 12;
-      const frame = Math.floor(elapsed * 6);
+      const age = interludeAge(consoleBeat);
+      const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight; light.intensity = 68 + Math.sin(age * 7) * 12;
+      const frame = Math.floor(age * 6);
       if (this.consoleScreen && frame !== this.consoleScreenFrame) {
         this.consoleScreenFrame = frame; const ctx = (this.consoleScreen.image as HTMLCanvasElement).getContext('2d')!;
         const redacted = consoleBeat.phase === 'performing' && t < 1.2; const offset = (frame * 7) % 92;
@@ -671,9 +679,9 @@ export class NebDeckRenderer {
         ctx.fillStyle = '#385e44'; for (let y = 0; y < 720; y += 5) ctx.fillRect(0, y, 960, 1);
         this.consoleScreen.needsUpdate = true;
       }
-      const cup = this.consoleRig.getObjectByName('neb-cypher-shot-glass')!;
-      const lift = consoleBeat.phase === 'responding' ? Math.sin(Math.min(1, t / 3.8) * Math.PI) : consoleBeat.phase === 'performing' ? Math.sin(THREE.MathUtils.clamp((t - 4.6) / 3, 0, 1) * Math.PI) : 0;
-      cup.position.y = 1.63 + lift * 1.15; cup.rotation.z = -lift * .22;
+      const pose = consoleDrinkPose(consoleBeat), cup = this.consoleRig.getObjectByName('neb-neo-metal-mug')!;
+      cup.visible = !pose.holding;
+      cup.getObjectByName('console-mug-liquid')!.position.y = -.035 - pose.drunk * .10;
     }
     const meal = journey?.scene === 'm1_meal' && !journey.visiting && journey.interlude?.kind === 'meal' ? journey.interlude : undefined;
     this.mealRig.visible = Boolean(meal);

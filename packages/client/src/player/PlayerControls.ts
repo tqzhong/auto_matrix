@@ -35,6 +35,7 @@ import { CATCH, catchLocked, DEUS_PACT, deusPactLocked, deusPactPose, reloadedPh
 import { reloadedCamera } from './ReloadedCamera.js';
 import { pillConversationCamera } from './PillConversationCamera.js';
 import * as THREE from 'three';
+import { interludeAge } from '@auto_matrix/shared';
 import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matrix/shared';
 import { dockBriefingLocked } from '@auto_matrix/shared';
 import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION, SHAFT_SEAL } from '@auto_matrix/shared';
@@ -1859,13 +1860,15 @@ export class PlayerControls {
       const gesture = this.motion.interlude; const center = FILM_SETS[state.currentLocation].center;
       if (this.firstPerson) {
         const seated = gesture.kind !== 'console';
-        const eye = new THREE.Vector3(this.position.x, this.position.y + (seated ? 2.65 : 3), this.position.z);
+        const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
+        const eye = head ? head.localToWorld((head.userData.cameraEye as THREE.Vector3 | undefined)?.clone() ?? new THREE.Vector3(0, .1, .23))
+          : new THREE.Vector3(this.position.x, this.position.y + (seated ? 2.65 : 3), this.position.z);
         const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const origin = new THREE.Vector3(center.x, center.y - 1, center.z); let ideal: THREE.Vector3; let focus: THREE.Vector3;
         if (gesture.kind === 'console') {
-          const reverse = gesture.phase === 'responding' ? 1 : THREE.MathUtils.smoothstep(gesture.elapsed, 4.5, 6.4);
+          const reverse = gesture.phase === 'responding' ? 1 : THREE.MathUtils.smoothstep(interludeAge(gesture), 4.5, 6.4);
           ideal = new THREE.Vector3(-5.5, 4.8, 1.5).lerp(new THREE.Vector3(-8, 4.3, -2.5), reverse);
           focus = new THREE.Vector3(5.1, 3.05, 6.35).lerp(new THREE.Vector3(6.4, 3.05, 6), reverse);
         } else if (gesture.kind === 'steak') {

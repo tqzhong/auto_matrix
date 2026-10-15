@@ -90,7 +90,7 @@ import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, a
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
 import { SENTINEL_CAST, SENTINEL_TIMING, SENTINEL_POWER, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
-import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
+import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeWaiting, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
 import { AMBUSH_CAT_STAIRS, AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, ambushRouteLength, ambushRouteProgress, type AmbushCompanion } from '@auto_matrix/shared';
@@ -4495,7 +4495,7 @@ export class FilmStorySystem {
     // while the journal prompt is open so its shot does not fall back through
     // the operator-chair geometry.
     const framed = locked || kind === 'console' && encounter.phase === 'choice';
-    const playing = locked && !occupied;
+    const playing = locked && !occupied && !interludeWaiting(encounter);
     if (playing) encounter.elapsed = Math.min(interludeDuration(encounter), encounter.elapsed + Math.max(0, Math.min(.1, dt)));
 
     for (const role of roles) {
@@ -4514,7 +4514,11 @@ export class FilmStorySystem {
     else if (encounter.phase !== 'responding') state.lastText = interludeText(encounter);
 
     if (playing && encounter.elapsed >= interludeDuration(encounter)) {
-      if (kind === 'console' && encounter.phase === 'performing') {
+      if (kind === 'console' && encounter.physicalConsole && ['performing', 'accepting', 'sipping'].includes(encounter.phase)) {
+        encounter.phase = encounter.phase === 'performing' ? 'accept_ready' : encounter.phase === 'accepting' ? 'sip_ready' : 'returning';
+        encounter.elapsed = 0; this.interludeFrame(agent, 0, tick); return true;
+      }
+      if (kind === 'console' && (encounter.phase === 'performing' || encounter.phase === 'returning')) {
         encounter.phase = 'choice'; encounter.elapsed = 0;
         this.advance(this.scene!.steps[0].text!, agent, tick);
       } else if (kind === 'console' && encounter.phase === 'responding') {
@@ -4534,7 +4538,7 @@ export class FilmStorySystem {
   private interludeAct(agent: AgentState, target: string, tick: number): string {
     const state = this.state!; const kind = interludeKind(state.scene)!;
     this.interludeFrame(agent, 0, tick); const encounter = state.interlude!;
-    if (interludeLocked(state)) return '演出进行中。可以转动视角观察；暂停、断线与重新载入会保留当前动作。';
+    if (interludeLocked(state) && !interludeWaiting(encounter)) return '演出进行中。可以转动视角观察；暂停、断线与重新载入会保留当前动作。';
     const occupied = INTERLUDE_CAST[kind].find(id => id !== agent.id && this.world.agents.get(id)?.controller);
     if (occupied) return `${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制，当前片段无法开始。`;
     if (kind === 'steak' && state.step === 0) {
@@ -4542,6 +4546,11 @@ export class FilmStorySystem {
       this.advance(this.step!.label, agent, tick); return 'Smith 在 Cypher 对面落座。按 G 见证这场既定交易。';
     }
     if (!this.near(agent, this.step!)) return kind === 'meal' ? '先走到餐桌尽头，靠近 Tank 递来的食物。' : '先走到滚动代码或窗边餐桌旁。';
+    if (interludeWaiting(encounter)) {
+      if (target !== 'act') return encounter.phase === 'accept_ready' ? '先按 G 接过金属杯，再回应 Cypher。' : '先按 G 品尝这一口，再回应 Cypher。';
+      encounter.phase = encounter.phase === 'accept_ready' ? 'accepting' : 'sipping'; encounter.elapsed = 0;
+      this.interludeFrame(agent, 0, tick); return state.lastText;
+    }
     if (kind === 'console' && encounter.phase === 'choice') {
       if (!target.startsWith('reflect:')) return '打开手记，选择你要如何回应 Cypher。';
       const choice = filmReflections(state.scene).find(item => item.id === target.slice(8));
@@ -4556,6 +4565,7 @@ export class FilmStorySystem {
     }
     if (target !== 'act') return state.lastText;
     if (encounter.phase !== 'ready') return state.lastText;
+    if (kind === 'console') encounter.physicalConsole = true;
     encounter.phase = 'performing'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
     this.interludeFrame(agent, 0, tick); return state.lastText;
   }
@@ -5449,6 +5459,7 @@ export class FilmStorySystem {
     }
     const pickupActor = this.world.agents.get(this.state.actor);
     if (pickupActor) this.sentinelFrame(pickupActor, { movement: 0, sprint: false, jump: false }, 0, this.world.simulationTick);
+    if (pickupActor) this.interludeFrame(pickupActor, 0, this.world.simulationTick);
     this.oracleRequest.restoreSeat(this.world.simulationTick);
     if (pickupActor) this.oracleRequest.frame(pickupActor, 0, this.world.simulationTick);
     if (pickupActor) this.oracleLast.frame(pickupActor, 0, this.world.simulationTick);

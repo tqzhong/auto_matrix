@@ -36,9 +36,10 @@ function setup(id: 'm1_cypher_console' | 'm1_steak' | 'm1_meal') {
   return { world, sandbox, players, actor, scene, command, frames, state: () => sandbox.life.film.state!, tick: () => tick };
 }
 
-test('Cypher waits at the console, saves the clock and lets Neo answer exactly once', () => {
+test('an already started legacy console archive keeps its clock and lets Neo answer exactly once', () => {
   const h = setup('m1_cypher_console'); h.frames(10); assert.equal(h.state().interlude?.phase, 'ready'); assert.equal(h.state().step, 0);
-  h.command('act'); assert.equal(h.state().interlude?.phase, 'performing'); h.frames(2.35);
+  h.state().interlude = { kind: 'console', phase: 'performing', elapsed: 0 };
+  h.frames(2.35);
   const elapsed = h.state().interlude!.elapsed; const poses = INTERLUDE_CAST.console.map(id => structuredClone(h.world.agents.get(id)!.currentAction?.parameters.interlude));
   h.frames(3, false); assert.equal(h.state().interlude!.elapsed, elapsed); assert.deepEqual(INTERLUDE_CAST.console.map(id => h.world.agents.get(id)!.currentAction?.parameters.interlude), poses);
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.players.release('player', h.tick()); h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick());
@@ -84,12 +85,12 @@ test('the console, crew meal and restaurant own visible, animated physical props
   const consoleJourney: FilmJourney = { version: 1, scene: 'm1_cypher_console', actor: 'neo', step: 0, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmPosition('film_neb_deck'), interlude: { kind: 'console', phase: 'ready', elapsed: 0 } };
   try {
-    for (const name of ['neb-cypher-console-scene', 'neb-cypher-console-display', 'neb-cypher-console-desk', 'neb-cypher-console-keyboard', 'neb-cypher-console-task-light', 'neb-cypher-liquor-bottle', 'neb-cypher-shot-glass', 'neb-crew-meal-scene', 'neb-meal-table-runner', 'neb-meal-communal-pot', 'neb-meal-pendant-light', 'neb-neo-protein-bowl', 'neb-neo-spoon']) assert.ok(nebRoot.getObjectByName(name), name);
-    neb.update(consoleJourney, 0); const cup = nebRoot.getObjectByName('neb-cypher-shot-glass')!; const resting = cup.position.y;
+    for (const name of ['neb-cypher-console-scene', 'neb-cypher-console-display', 'neb-cypher-console-desk', 'neb-cypher-console-keyboard', 'neb-cypher-console-task-light', 'neb-cypher-liquor-bottle', 'neb-neo-metal-mug', 'neb-crew-meal-scene', 'neb-meal-table-runner', 'neb-meal-communal-pot', 'neb-meal-pendant-light', 'neb-neo-protein-bowl', 'neb-neo-spoon']) assert.ok(nebRoot.getObjectByName(name), name);
+    neb.update(consoleJourney, 0); const cup = nebRoot.getObjectByName('neb-neo-metal-mug')!;
     const consoleCables: THREE.Object3D[] = []; nebRoot.traverse(object => { if (/^neb-core-chair-.*-cable-/.test(object.name)) consoleCables.push(object); });
     assert.ok(consoleCables.length >= 8, 'the shared deck still owns all operator-chair cables outside Cypher’s scene');
     assert.ok(consoleCables.every(cable => !cable.visible), 'unused operator-chair cables cannot cut across Cypher’s console shot');
-    consoleJourney.interlude = { kind: 'console', phase: 'performing', elapsed: 5.5 }; neb.update(consoleJourney, 5.5); assert.ok(cup.position.y > resting + .2);
+    consoleJourney.interlude = { kind: 'console', phase: 'performing', elapsed: 5.5 }; neb.update(consoleJourney, 5.5); assert.equal(cup.visible, false, 'the held copy belongs to Neo, rather than a floating world cup');
     const mealJourney: FilmJourney = { ...consoleJourney, scene: 'm1_meal', interlude: { kind: 'meal', phase: 'performing', elapsed: 2.2 } };
     neb.update(mealJourney, 7); const bowl = nebRoot.getObjectByName('neb-neo-protein-bowl')!; assert.ok(bowl.position.x > -4);
     assert.equal(nebRoot.getObjectByName('neb-meal-steam-0')!.visible, true);
@@ -122,4 +123,36 @@ test('all three interludes have an unobstructed playable approach', () => {
       assert.equal(playerBlocked(point, id !== 'm1_meal' && id !== 'm1_cypher_console'), false, `${id} route blocked at sample ${i}`);
     }
   }
+});
+
+test('a new console encounter waits for Neo to take and taste the mug before reflection', () => {
+  const h = setup('m1_cypher_console'); h.command('act'); h.frames(4.5);
+  assert.equal(h.state().interlude?.phase, 'accept_ready', 'the film cannot drink automatically for the player');
+  h.frames(20); assert.equal(h.state().interlude?.phase, 'accept_ready');
+  assert.equal(h.state().step, 0);
+  h.command('reflect:agency'); assert.equal(h.sandbox.state.neoLife!.philosophy.agency, 0);
+  h.command('act'); assert.equal(h.state().interlude?.phase, 'accepting');
+  h.frames(2.3); assert.equal(h.state().interlude?.phase, 'sip_ready');
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('player', h.tick()); h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick());
+  h.frames(10); assert.equal(h.state().interlude?.phase, 'sip_ready');
+  assert.match(h.players.possess('other', 'cypher', h.tick()).error!, /电影片段/);
+  h.command('act'); assert.equal(h.state().interlude?.phase, 'sipping'); h.frames(1.7);
+  const elapsed = h.state().interlude!.elapsed; h.frames(4, false); assert.equal(h.state().interlude!.elapsed, elapsed);
+  h.frames(3.2); assert.equal(h.state().interlude?.phase, 'returning');
+  h.frames(6.5); assert.equal(h.state().interlude?.phase, 'choice'); assert.equal(h.state().step, 1);
+  h.command('reflect:agency'); h.frames(INTERLUDE_TIMING.consoleResponse + .2);
+  assert.equal(h.state().interlude?.phase, 'done');
+  assert.equal(h.state().completed.filter(id => id === 'm1_cypher_console').length, 1);
+});
+
+test('cold world restore reconstructs Neo’s saved mug gesture before any player reconnects', () => {
+  const h = setup('m1_cypher_console'); h.command('act'); h.frames(4.5); h.command('act'); h.frames(1.2);
+  h.players.release('player', h.tick()); const saved = structuredClone(h.sandbox.state);
+  const pose = structuredClone(h.actor.currentAction!.parameters.interlude), position = { ...h.actor.position };
+  h.actor.currentAction = null; delete h.actor.controller;
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.actor.currentAction?.parameters.interlude, pose, 'the first paused snapshot must contain the saved hand/cup pose');
+  assert.deepEqual(h.actor.position, position); assert.equal(h.actor.controller, undefined);
+  assert.equal(h.state().interlude!.elapsed, saved.neoLife!.journey!.interlude!.elapsed);
 });

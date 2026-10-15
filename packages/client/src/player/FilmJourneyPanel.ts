@@ -37,7 +37,7 @@ import { apartmentLocked } from '@auto_matrix/shared';
 import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
 import { clubLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER, sentinelDanger, sentinelLocked } from '@auto_matrix/shared';
-import { interludeDuration, interludeLocked } from '@auto_matrix/shared';
+import { interludeDuration, interludeLocked, interludeWaiting } from '@auto_matrix/shared';
 import { ORACLE_RECEPTION, oracleReceptionText, spoonLessonText, oracleVisitDuration, oracleVisitLocked, oracleDepartureTarget, oracleDepartureText } from '@auto_matrix/shared';
 import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalText } from '@auto_matrix/shared';
 import { BETRAYAL, betrayalDuration, betrayalLocked } from '@auto_matrix/shared';
@@ -759,12 +759,13 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : ['尼布甲尼撒号 · 船员餐桌', '真实世界的一顿饭', 'Neo 视角 · 一顿普通早餐也在讨论何为真实'];
     let action = '';
     if (phase === 'choice') action = filmReflections(scene.id).map(choice => button(`reflect:${choice.id}`, choice.label, !current)).join('');
+    else if (interludeWaiting(encounter)) action = button('act', phase === 'accept_ready' ? '接过金属杯 · G' : '品尝一口 · G', !close);
     else if (phase === 'ready' && encounter.kind === 'steak' && journey.step === 0) action = `<p>合上手记，走到窗边餐桌的空座。还没落座前，交易不会自行开始。</p>${!close && step ? `<small>距离座位 ${Math.round(distance(player.position, filmStepPosition(scene, step)))} m</small>` : ''}`;
     else if (phase === 'ready') action = button('act', encounter.kind === 'console' ? '打断 Cypher 的夜班 · G' : encounter.kind === 'steak' ? '落座见证交易 · G' : '接过 Tank 递来的食物 · G', !close);
     else if (phase === 'done' && encounter.kind === 'meal' && step) action = '<p>合上手记，用 WASD 回到核心连接区；抵达目标后自动记录。</p>';
     else if (phase === 'done') action = button('next', '继续下一段 →', !current);
     else action = '<button disabled>演出进行中 · 合上手记观看</button>';
-    const progress = interludeLocked(journey) ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%"></i></div><small>鼠标可以环顾，V 可在主视角与场景镜头间切换；动作进度会自动保存。</small>` : '';
+    const progress = interludeLocked(journey) && !interludeWaiting(encounter) ? `<div class="film-progress"><i style="width:${Math.min(100, encounter.elapsed / interludeDuration(encounter) * 100)}%"></i></div><small>鼠标可以环顾，V 可在主视角与场景镜头间切换；动作进度会自动保存。</small>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${names[0]}</h3><p>${names[2]}</p></header><article class="film-now"><div><h3>${names[1]}</h3><p>${journey.lastText}</p>${progress}<div class="film-controls">${action}${!current ? button('resume', `继续 ${journey.actor === 'smith' ? 'Smith' : 'Neo'} 的剧情视角`) : ''}</div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && journey.scene === 'm1_oracle' && journey.oracle?.departure) {
