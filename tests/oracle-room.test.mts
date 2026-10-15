@@ -93,16 +93,22 @@ test('Spoon Boy folds both legs above the rug instead of driving his shins throu
 });
 
 test('the Oracle cookie has one owner and passes continuously to Neo actual skinned hand', async t => {
-  const glb = await readFile(new URL('../packages/client/public/assets/characters/neo.glb', import.meta.url));
-  const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
-  for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
-  source.images = []; source.textures = [];
-  const json = Buffer.from(JSON.stringify(source)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
-  const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
-  buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
-  buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
-  const asset = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  const pending: Promise<unknown>[] = [], assets = new Map<string, Promise<any>>();
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
+    const name = String(url).split('/').pop()!;
+    if (!assets.has(name)) assets.set(name, (async () => {
+      const glb = await readFile(new URL(`../packages/client/public/assets/characters/${name}`, import.meta.url));
+      const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
+      for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
+      source.images = []; source.textures = [];
+      const json = Buffer.from(JSON.stringify(source)), padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
+      const bin = glb.subarray(20 + length), buffer = Buffer.alloc(20 + padded.length + bin.length);
+      buffer.writeUInt32LE(0x46546c67, 0); buffer.writeUInt32LE(2, 4); buffer.writeUInt32LE(buffer.length, 8);
+      buffer.writeUInt32LE(padded.length, 12); buffer.writeUInt32LE(0x4e4f534a, 16); padded.copy(buffer, 20); bin.copy(buffer, 20 + padded.length);
+      return new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
+    })());
+    const asset = assets.get(name)!; pending.push(asset); return asset;
+  });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
@@ -110,7 +116,9 @@ test('the Oracle cookie has one owner and passes continuously to Neo actual skin
   const models = new CharacterModels(), neo = models.create(world.agents.get('neo')!), oracle = models.create(world.agents.get('oracle')!);
   try {
     models.animate(neo, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, oracleVisit: { phase: 'examining', elapsed: 8.4, role: 'neo' } }, 4);
-    await new Promise(resolve => setImmediate(resolve)); assert.ok(neo.hero);
+    models.animate(oracle, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, oracleVisit: { phase: 'examining', elapsed: 8.4, role: 'oracle' } }, 4);
+    await Promise.all(pending); await new Promise(resolve => setImmediate(resolve));
+    assert.ok(neo.hero); assert.ok(oracle.parkHands); assert.ok(oracle.oracleFirstBody);
     const center = FILM_SETS.film_oracle_home.center, input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false };
     for (const [rig, place] of [[neo, ORACLE_VISIT.neo], [oracle, ORACLE_VISIT.oracle]] as const) {
       rig.root.position.set(center.x + place.x, center.y - 1, center.z + place.z); rig.root.rotation.y = place.yaw;
@@ -173,28 +181,6 @@ test('first-person Neo can see the cookie he accepted, then ordinary body hiding
     renderer.setPlayerMotion(input); renderer.update(.1);
     assert.equal(cookie.visible, false); assert.equal(renderer.getAgentBody('neo')!.visible, false);
   } finally { renderer.dispose(); globalThis.document = document; }
-});
-
-test('the Oracle blouse cannot poke through the front of her apron', t => {
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
-  const document = globalThis.document;
-  globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
-  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-  const models = new CharacterModels(), oracle = models.create(world.agents.get('oracle')!);
-  try {
-    models.animate(oracle, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, glasses: false }, 4); oracle.root.updateMatrixWorld(true);
-    for (const y of [2.64, 2.98, 3.15, 3.35]) for (const x of [-.15, 0, .15]) {
-      const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 1), new THREE.Vector3(0, 0, -1), 0, 1);
-      const hit = ray.intersectObject(oracle.root, true).find(hit => {
-        for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
-        return true;
-      });
-      assert.ok(hit, 'the apron needs a continuous front surface');
-      const mesh = hit.object as THREE.Mesh, material = mesh.material as THREE.MeshStandardMaterial, color = material.color.clone();
-      if (material.vertexColors && hit.face) color.multiply(new THREE.Color().fromBufferAttribute(mesh.geometry.attributes.color, hit.face.a));
-      assert.equal(color.getHexString(), 'd7c19a', `the blouse punctures the apron at ${x}, ${y}`);
-    }
-  } finally { models.dispose(); globalThis.document = document; }
 });
 
 test('switching to first person keeps the held spoon visible and restores normal visibility when it is put away', t => {

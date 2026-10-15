@@ -5,7 +5,7 @@ import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
-import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
+import { MELEE_COMBO, COMBO_WINDOW, COMBAT_SKILLS, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, ORACLE_VISIT, PILL_TIMING, MIRROR_TIMING, lobbyPose, governmentPose, airRescuePose, matrixEscapePose, theOnePose, recoveryCrewPose, type CombatSkillId, type AwakeningPose, type AwakeningReveal, type RecoveryCrewGesture, type OfficePhone, pillPose, lafayetteWelcomePose, oracleVisitPose, betrayalPose, rescuePose, type PillGesture, type InterrogationGesture, type LafayetteWelcomeGesture, type TrainingGesture, type OracleVisitGesture, type BetrayalGesture, type RescueGesture, type RescueLoadout, type LobbyGesture, type GovernmentRescueGesture, type AirRescueGesture, type MatrixEscapeGesture, type TheOneGesture } from '@auto_matrix/shared';
 
 export interface MotionInput {
   speed: number;
@@ -82,6 +82,7 @@ export interface MotionInput {
   oracleWaiting?: import('@auto_matrix/shared').OracleWaitingGesture;
   oracleRestored?: boolean;
   oracleRevolutions?: boolean;
+  oracleKitchen?: boolean;
   oracleRequest?: import('@auto_matrix/shared').OracleRequestGesture;
   oracleLast?: import('@auto_matrix/shared').OracleLastGesture;
   baneInquiry?: import('@auto_matrix/shared').BaneInquiryGesture;
@@ -606,6 +607,19 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const seat = input.interlude.kind === 'meal' ? crewMealSeat(input.interlude) : Number(interludeSeated(input.interlude)), seated = seat > 0;
     Object.assign(state, newMotion(), { time: interludeAge(input.interlude), seated: seat, skill: undefined });
     input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated };
+    dt = 0;
+  }
+  if (input.oracleVisit) {
+    const visit = input.oracleVisit, progress = visit.phase === 'examining' ? clamp(visit.elapsed / 1.4) : 1;
+    const distance = visit.role === 'neo' && visit.approach
+      ? Math.hypot(ORACLE_VISIT.neo.x - visit.approach.x, ORACLE_VISIT.neo.z - visit.approach.z) : 0;
+    const speed = distance / 1.4 * 6 * progress * (1 - progress);
+    const clock = visit.phase === 'waiting' ? 0 : visit.phase === 'examining' ? visit.elapsed
+      : ORACLE_VISIT.examination + (visit.phase === 'responding' || visit.phase === 'done' ? visit.elapsed : 0);
+    // The Oracle's feet are placed by the shared approach performance. Only
+    // Neo's initial approach needs a gait, derived from saved travel rather than frame history.
+    Object.assign(state, newMotion(), { time: clock, speed, phase: distance * smooth(progress) / 2.8, skill: undefined });
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.truth || download) {

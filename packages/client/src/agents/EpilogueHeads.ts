@@ -24,6 +24,8 @@ interface HeadEntry {
   evacuation?: boolean;
   firstPerson?: boolean;
   matrix?: boolean;
+  variant?: 'oracle-first' | 'oracle-revolutions';
+  alternate?: HeadEntry;
   hero?: { skin: THREE.SkinnedMesh; original: THREE.BufferGeometry; masked?: THREE.BufferGeometry; firstPerson?: THREE.BufferGeometry; details: THREE.Mesh[] };
 }
 
@@ -38,7 +40,12 @@ export class EpilogueHeads {
   track(rig: CharacterRig, role: HeadEntry['role']): void {
     const fallback = new THREE.Group(); fallback.name = `${role}-fallback-head`;
     fallback.add(...rig.head.children); rig.head.add(fallback);
-    this.entries.set(rig, { role, fallback, closed: { value: 0 }, loading: false, active: false, neck: rig.root.getObjectByName(`${role}-neck`) });
+    const entry: HeadEntry = { role, fallback, closed: { value: 0 }, loading: false, active: false, neck: rig.root.getObjectByName(`${role}-neck`) };
+    if (role === 'oracle') {
+      entry.variant = 'oracle-first';
+      entry.alternate = { ...entry, variant: 'oracle-revolutions', closed: { value: 0 }, alternate: entry };
+    }
+    this.entries.set(rig, entry);
   }
 
   trackCypher(rig: CharacterRig): void {
@@ -51,13 +58,23 @@ export class EpilogueHeads {
   }
 
   update(rig: CharacterRig, input: MotionInput): void {
-    const entry = this.entries.get(rig); if (!entry) return;
+    let entry = this.entries.get(rig); if (!entry) return;
+    if (entry.role === 'oracle') {
+      // parkOutfit is emitted only for film_sunrise_garden, including its
+      // saved post-dawn state. Reloaded's courtyard uses input.reloaded.
+      const third = Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle'
+        || input.oracleAbsorption?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
+      const variant = third ? 'oracle-revolutions' : 'oracle-first';
+      if (entry.variant !== variant) {
+        entry.active = false; if (entry.model) entry.model.visible = false;
+        entry = entry.alternate!; this.entries.set(rig, entry);
+        rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
+      }
+    }
     entry.evacuation = input.dockEvacuation?.role === 'colt';
     entry.firstPerson = entry.role === 'cypher' && Boolean(input.firstPerson); entry.matrix = !input.realWorld;
     if (entry.role === 'cypher') entry.jawOpen = steakJawOpen(input.interlude);
-    // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
-    // retain their existing head until their own likeness asset is authored.
-    entry.active = entry.role === 'cypher' ? true : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
+    entry.active = entry.role === 'cypher' ? true : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : true;
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
       : entry.role === 'mifune' && input.dockLastStand ? dockLastStandPose(input.dockLastStand).dead : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
@@ -68,6 +85,9 @@ export class EpilogueHeads {
   }
 
   private present(rig: CharacterRig, entry: HeadEntry): void {
+    // An earlier request may finish after the player has changed films.
+    // Its resources remain cached, but it must not touch the active fallback.
+    if (this.entries.get(rig) !== entry) { if (entry.model) entry.model.visible = false; return; }
     const visible = entry.active && Boolean(entry.model);
     if (entry.fallback.visible === visible) rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
     entry.fallback.visible = !visible && !entry.firstPerson;
@@ -95,7 +115,7 @@ export class EpilogueHeads {
   }
 
   private async load(rig: CharacterRig, entry: HeadEntry): Promise<void> {
-    const role = entry.role === 'oracle' ? 'oracle-revolutions' : entry.role;
+    const role = entry.variant ?? entry.role;
     const asset = await new GLTFLoader().loadAsync(`/assets/characters/${role}-head.glb`);
     const model = asset.scene; let face = model.getObjectByName(`${role}-anatomical-head`) as THREE.Mesh;
     const metadata = asset.parser.json.extras;
@@ -135,7 +155,7 @@ export class EpilogueHeads {
         uniform vec3 headSkin; uniform float eyesClosed;
         varying float vFaceWeight; varying vec3 vHeadRest; varying vec2 vProfileUv; varying vec3 vHeadNormal;`)
         .replace('#include <map_fragment>', `#include <map_fragment>
-          vec2 neckUv = vec2(${Number(neck[0]).toFixed(6)} + vHeadRest.x * .10, ${Number(neck[1]).toFixed(6)} + clamp(-vHeadRest.y - .30, 0.0, .2) * ${captain || program || council || apu || child ? '.03' : '.12'});
+          vec2 neckUv = vec2(${Number(neck[0]).toFixed(6)} + vHeadRest.x * .10, ${Number(neck[1]).toFixed(6)} + clamp(-vHeadRest.y - .30, 0.0, .2) * ${captain || program || council || apu || child || entry.variant === 'oracle-first' ? '.03' : '.12'});
           vec3 neckColor = texture2D(map, neckUv).rgb;
           float profileWeight = smoothstep(.20, .70, abs(vHeadNormal.x)) * smoothstep(${child ? '-.48, -.35' : '-.28, -.16'}, vHeadRest.y);
           vec3 profileColor = texture2D(map, vProfileUv).rgb;
@@ -281,7 +301,8 @@ export class EpilogueHeads {
       }
       masked.setIndex(retained); entry.hero.masked = masked;
     }
-    this.groom(model, face.geometry, entry.role);
+    if (entry.variant === 'oracle-first') this.oracleBob(model, face);
+    else this.groom(model, face.geometry, entry.role);
     if (entry.role === 'keymaker') this.readingGlasses(model, metadata.eye[0]);
     if (entry.role === 'colt') {
       const headset = new THREE.Group(); headset.name = 'colt-dock-headset'; headset.visible = Boolean(entry.evacuation); model.add(headset); entry.headset = headset;
@@ -298,7 +319,7 @@ export class EpilogueHeads {
       this.mesh(headset, sphere, pads, [.085, -.23, .36], [.042, .025, .024]).name = 'colt-radio-microphone';
     }
     if (this.disposed) { this.release(); return; }
-    entry.model = model; model.visible = entry.active; entry.fallback.visible = !entry.active;
+    entry.model = model; model.visible = false;
     if (entry.hero) { rig.hero!.root.add(model); enableSkinnedCulling(model); } else rig.head.add(model);
     this.present(rig, entry);
     rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
@@ -310,6 +331,53 @@ export class EpilogueHeads {
     const mesh = new THREE.Mesh(geometry, material); mesh.position.fromArray(position);
     if (scale) mesh.scale.fromArray(scale);
     mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
+  }
+
+  private oracleBob(parent: THREE.Group, face: THREE.Mesh): void {
+    const skin = face.geometry;
+    skin.computeBoundingBox(); const crown = skin.boundingBox!.max.y + .043;
+    // The first Oracle has a side-parted waved bob, with volume around the
+    // cheeks and a low nape. A skull-offset scalp alone produces an afro cap.
+    const at = (angle: number, t: number) => {
+      const front = Math.cos(angle), forehead = THREE.MathUtils.smoothstep(front, .35, .90);
+      const end = -.235 + .435 * forehead - .028 * Math.sin(angle) * forehead
+        + (1 - forehead) * (.018 * Math.sin(angle * 11) + .009 * Math.sin(angle * 23 + .6));
+      const radius = Math.sin(t * Math.PI / 2), curl = .028 * THREE.MathUtils.smoothstep(t, .77, 1);
+      const wave = (.014 * Math.sin(angle * 9 + .8 * Math.sin(t * 9))
+        + .006 * Math.sin(angle * 23 - t * 17) + .004 * Math.sin(angle * 41 + t * 23)) * radius * radius;
+      return new THREE.Vector3(.045 * (1 - radius) + Math.sin(angle) * ((.292 + .026 * (1 - Math.max(0, front))) * radius + wave - curl),
+        crown - (crown - end) * (1 - Math.cos(t * Math.PI / 2)),
+        -.065 + Math.cos(angle) * ((.285 + .025 * (1 - Math.max(0, front))) * radius + wave - curl));
+    };
+    const positions: number[] = [], colors: number[] = [], uvs: number[] = [], indices: number[] = [];
+    for (let row = 0; row <= 40; row++) for (let column = 0; column <= 128; column++) {
+      const angle = column / 128 * Math.PI * 2, t = row / 40;
+      positions.push(...at(angle, t).toArray());
+      const tone = .82 + .12 * Math.sin(angle * 17 - t * 12) ** 2; colors.push(tone, tone, tone);
+      // Pure hair patch from the same first-cast reference; keep its fine
+      // irregular wave texture separate from the volumetric silhouette.
+      uvs.push(.015 + .075 * (column / 128 * 5 % 1), .29 + .26 * ((t * 2 + .13 * Math.sin(angle) + 1) % 1));
+      if (row && column < 128) { const a = (row - 1) * 129 + column, b = row * 129 + column; indices.push(a, b, a + 1, a + 1, b, b + 1); }
+    }
+    const geometry = this.geometry(new THREE.BufferGeometry()); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geometry.setIndex(indices); geometry.computeVertexNormals();
+    const hair = this.material((face.material as THREE.MeshStandardMaterial).clone());
+    hair.color.setHex(0xb1ada8); hair.vertexColors = true; hair.roughness = .86; hair.side = THREE.DoubleSide;
+    this.mesh(parent, geometry, hair, [0, 0, 0]).name = 'oracle-first-bob';
+    const locks: THREE.BufferGeometry[] = [];
+    for (let strand = 0; strand < 480; strand++) {
+      const angle = strand / 480 * Math.PI * 2, start = .10 + ((strand * 37) % 101) / 101 * .55;
+      const end = Math.min(1, start + .20 + ((strand * 17) % 29) / 29 * .45);
+      const points = Array.from({ length: 25 }, (_, step) => {
+        const t = start + (end - start) * step / 24;
+        const swept = angle + .065 * Math.sin(t * 15 + angle * 9) * t;
+        const point = at(swept, t); point.x += Math.sin(swept) * .0018; point.z += Math.cos(swept) * .0018; return point;
+      });
+      locks.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 16, .00065, 3, false));
+    }
+    const strands = this.geometry(mergeGeometries(locks)!); locks.forEach(lock => lock.dispose());
+    this.mesh(parent, strands, this.material(new THREE.MeshStandardMaterial({ color: '#1b1918', roughness: .84 })), [0, 0, 0]).name = 'oracle-first-waved-strands';
   }
 
   private groom(parent: THREE.Group, skin: THREE.BufferGeometry, role: HeadEntry['role']): void {

@@ -8,7 +8,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { ORACLE_REQUEST, type OracleRequestGesture } from '@auto_matrix/shared';
 
-test('the new Oracle appearance is enabled for the Revolutions living-room visit, without replacing her earlier head', t => {
+test('the Oracle loads separate first-film and Revolutions identities for their own visits', t => {
   const requested: string[] = [];
   t.mock.method(GLTFLoader.prototype, 'loadAsync', url => { requested.push(String(url)); return new Promise(() => {}); });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -19,7 +19,8 @@ test('the new Oracle appearance is enabled for the Revolutions living-room visit
     const rig = models.create(world.agents.get('oracle')!);
     const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
     models.animate(rig, 0, input, 1);
-    assert.equal(requested.length, 0, 'first-film Oracle keeps her own appearance');
+    assert.ok(requested.some(url => url.endsWith('oracle-first-head.glb')), 'first-film Oracle loads Gloria Foster');
+    assert.ok(!requested.some(url => url.endsWith('oracle-revolutions-head.glb')), 'first-film Oracle cannot request Mary Alice');
     models.animate(rig, 0, { ...input, oracleRevolutions: true }, 1);
     assert.ok(requested.some(url => url.endsWith('oracle-revolutions-head.glb')), 'the request visit must load the already shipped third-film head');
   } finally { models.dispose(); globalThis.document = previous; }
@@ -36,7 +37,7 @@ test('the actual Oracle head, bent legs and dress retain sofa clearance when a p
   output.writeUInt32LE(padded.length, 12); output.writeUInt32LE(0x4e4f534a, 16); padded.copy(output, 20); binary.copy(output, 20 + padded.length);
   const asset = await new GLTFLoader().parseAsync(output.buffer.slice(output.byteOffset, output.byteOffset + output.byteLength), '');
   asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', url => String(url).includes('oracle-first-head') ? new Promise(() => {}) : Promise.resolve(asset));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;

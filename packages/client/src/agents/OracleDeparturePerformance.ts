@@ -1,10 +1,20 @@
 import * as THREE from 'three';
-import type { OracleDepartureGesture } from '@auto_matrix/shared';
+import type { InterludeGesture, OracleDepartureGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { cookiePinch, holdOracleCookie, poseOracleCookie } from './OracleCookiePerformance.js';
 import { reach } from './SpoonPerformance.js';
 
-export function poseOracleDeparture(rig: CharacterRig, gesture?: OracleDepartureGesture): void {
+export function poseOracleDeparture(rig: CharacterRig, gesture?: OracleDepartureGesture, interlude?: InterludeGesture): void {
+  if (rig.hero && (gesture?.role === 'neo' || rig.root.userData.oracleCookieJaw)) {
+    const biting = gesture?.role === 'neo' && gesture.phase === 'biting';
+    const amount = biting ? .7 * THREE.MathUtils.smoothstep(gesture.elapsed, .7, 1.18)
+      * (1 - THREE.MathUtils.smoothstep(gesture.elapsed, 1.3, 1.65)) : 0;
+    for (const name of interlude?.kind === 'meal' && interlude.role === 'neo' ? [] : ['Anatomical_head_and_hands', 'neo-teeth-lower', 'neo-tongue']) {
+      const mesh = rig.hero.root.getObjectByName(name) as THREE.Mesh | undefined, index = mesh?.morphTargetDictionary?.jawOpen;
+      if (index !== undefined && mesh?.morphTargetInfluences) mesh.morphTargetInfluences[index] = amount;
+    }
+    rig.root.userData.oracleCookieJaw = biting;
+  }
   if (!gesture) return;
   const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
   if (gesture.role === 'morpheus') {

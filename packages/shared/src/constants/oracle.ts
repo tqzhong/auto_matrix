@@ -39,7 +39,14 @@ export function oracleVisitDuration(encounter: OracleVisitEncounter): number {
 
 export function oracleVisitRoot(encounter: OracleVisitEncounter, role: OracleVisitRole) {
   const target = ORACLE_VISIT[role];
-  if (role === 'oracle' || encounter.phase === 'waiting') return target;
+  if (role === 'oracle') {
+    // One short forward step brings both hands within anatomical reach. The
+    // return ends before the existing cookie offer, so its authored contact stays fixed.
+    const step = encounter.phase === 'examining' ? smooth((encounter.elapsed - .3) / 1.5)
+      * (1 - smooth((encounter.elapsed - 5.4) / 1.5)) : 0;
+    return { ...target, x: target.x + 1.3 * step };
+  }
+  if (encounter.phase === 'waiting') return target;
   const origin = encounter.approach ?? target;
   const blend = encounter.phase === 'examining' ? smooth(encounter.elapsed / 1.4) : 1;
   const turn = Math.atan2(Math.sin(target.yaw - origin.yaw), Math.cos(target.yaw - origin.yaw));

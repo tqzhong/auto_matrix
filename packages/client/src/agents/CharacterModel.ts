@@ -57,6 +57,7 @@ import { poseEmpOperator } from './EmpOperatorPerformance.js';
 import { poseSentinelPower } from './SentinelPowerPerformance.js';
 import { EpilogueHeads } from './EpilogueHeads.js';
 import { DiggerBodies } from './DiggerBodies.js';
+import { OracleFirstBodies } from './OracleFirstBody.js';
 import { OracleParkHands, connectGardenWrists, type OracleParkHand } from './OracleParkHands.js';
 import { SpoonBoyHands } from './SpoonBoyHands.js';
 import { poseWetwall } from './WetwallPerformance.js';
@@ -128,6 +129,7 @@ export interface CharacterRig {
   elbows: THREE.Object3D[];
   mobilWrists?: THREE.Object3D[];
   parkHands?: OracleParkHand[];
+  oracleFirstBody?: THREE.Group;
   spoonHands?: OracleParkHand[];
   fingers: THREE.Group[][];
   hips: THREE.Group[];
@@ -199,6 +201,7 @@ export class CharacterModels {
   private epilogueHeads = new EpilogueHeads();
   private diggerBodies = new DiggerBodies();
   private oracleParkHands = new OracleParkHands();
+  private oracleFirstBodies = new OracleFirstBodies();
   private spoonBoyHands = new SpoonBoyHands();
 
   constructor() {
@@ -811,7 +814,7 @@ export class CharacterModels {
     const distant = this.makeDistant(look, root);
     const rig: CharacterRig = { root, detail, distant, torso, head, shoulders, elbows, fingers, hips, knees, ankles, tails, cloth: clothPanels, motion: newMotion(), smallDetails, rifle: state.id === 'film_soldier' };
     if (mobilWrists.length) rig.mobilWrists = mobilWrists;
-    if (state.id === 'oracle') this.oracleParkHands.track(rig, skin);
+    if (state.id === 'oracle') { this.oracleParkHands.track(rig, skin); this.oracleFirstBodies.track(rig, skin, this.fabric); }
     if (state.id === 'colt' || state.id === 'link') rig.medicalCrew = true;
     if (state.id === 'bane') rig.logosBaneBody = true;
     if (state.id === 'niobe' || state.id === 'link') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix && (!rig.medicalCrew || Boolean(state.currentAction?.parameters.maggieDiscovery)) };
@@ -986,8 +989,9 @@ export class CharacterModels {
       if (variant.hero) variant.hero.root.visible = !realWorld;
       if (!realWorld) this.diggerBodies.update(rig, false);
     }
+    this.oracleFirstBodies.update(rig, input);
     if (rig.hero?.support !== 'cypher') this.epilogueHeads.update(rig, input);
-    this.oracleParkHands.update(rig, Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'));
+    this.oracleParkHands.update(rig, Boolean(input.oracleKitchen || input.oracleVisit?.role === 'oracle' || input.parkOutfit || input.epilogue?.kind === 'dawn'));
     this.spoonBoyHands.reset(rig);
     if (poseOracleRestored(rig, input.oracleRestored)) return;
     if ((input.diggers || input.upperDigger) && !rig.diggerProps) { rig.diggerProps = new DiggerProps(rig.detail); this.diggerProps.add(rig.diggerProps); }
@@ -1225,7 +1229,7 @@ export class CharacterModels {
       poseOracleReception(rig, input.oracleReception);
       poseOracleWaiting(rig, input.oracleWaiting);
       poseOracleCookie(rig, input.oracleVisit);
-      poseOracleDeparture(rig, input.oracleDeparture);
+      poseOracleDeparture(rig, input.oracleDeparture, input.interlude);
       poseOracleArrival(rig, input.oracleArrival);
       poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
       poseSixthFloor(rig, input.sixth);
@@ -1340,7 +1344,7 @@ export class CharacterModels {
     poseOracleReception(rig, input.oracleReception);
     poseOracleWaiting(rig, input.oracleWaiting);
     poseOracleCookie(rig, input.oracleVisit);
-    poseOracleDeparture(rig, input.oracleDeparture);
+    poseOracleDeparture(rig, input.oracleDeparture, input.interlude);
     poseOracleArrival(rig, input.oracleArrival);
     poseGarden(rig, input.epilogue, input.parkOutfit);
     poseOracleRequest(rig, input.oracleRequest);
@@ -1393,6 +1397,8 @@ export class CharacterModels {
     poseLogosPilot(rig, input.logosPilot);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
     if (rig.spoonHands) connectGardenWrists(rig, rig.spoonHands);
+    this.oracleFirstBodies.present(rig);
+    if (rig.parkHands && (input.oracleKitchen || input.oracleVisit?.role === 'oracle')) connectGardenWrists(rig);
   }
 
   refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {
@@ -1412,6 +1418,7 @@ export class CharacterModels {
     this.epilogueHeads.dispose();
     this.diggerBodies.dispose();
     this.oracleParkHands.dispose();
+    this.oracleFirstBodies.dispose();
     this.spoonBoyHands.dispose();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose()); this.skeletons.forEach(skeleton => skeleton.dispose());
   }

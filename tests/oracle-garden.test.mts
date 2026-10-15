@@ -47,9 +47,9 @@ function points(root: THREE.Object3D, sample?: (point: THREE.Vector3, mesh: THRE
 }
 
 test('Oracle’s actual body and park clothes clear the wooden seat throughout turning and lowering, including a cold pose', async t => {
-  const asset = await oracleHead(), hands = await oracleHead('oracle-park-hands');
+  const asset = await oracleHead(), first = await oracleHead('oracle-first-head'), hands = await oracleHead('oracle-park-hands');
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
-    const source = String(url).includes('park-hands') ? hands : asset; return { ...source, scene: clone(source.scene) };
+    const source = String(url).includes('park-hands') ? hands : String(url).includes('oracle-first') ? first : asset; return { ...source, scene: clone(source.scene) };
   });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
@@ -107,9 +107,9 @@ test('Oracle’s actual body and park clothes clear the wooden seat throughout t
 });
 
 test('the park handbag stays in the hand before lowering, both anatomical hands meet its handles and its base rests on the dressed lap', async t => {
-  const asset = await oracleHead(), hands = await oracleHead('oracle-park-hands');
+  const asset = await oracleHead(), first = await oracleHead('oracle-first-head'), hands = await oracleHead('oracle-park-hands');
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
-    const source = String(url).includes('park-hands') ? hands : asset; return { ...source, scene: clone(source.scene) };
+    const source = String(url).includes('park-hands') ? hands : String(url).includes('oracle-first') ? first : asset; return { ...source, scene: clone(source.scene) };
   });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
