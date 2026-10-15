@@ -22,7 +22,7 @@ REFERENCES = {
                     'head/head-rectangular': .16, 'head/head-fat-decr': .14,
                     'nose/nose-scale-depth-incr': .24, 'nose/nose-curve-convex': .18},
         'row': 0, 'eye': [216, 419, 435], 'ys': [1235, 818, 696, 666, 650, 565, 435, 97],
-        'chin': -.335, 'skin': [.63, .42, .31], 'atlas': 'cypher-face-reference.png',
+        'chin': -.335, 'skin': [.63, .42, .31], 'atlas': 'cypher-face-v2.png',
         'atlas_size': [1254, 1254], 'panel_top': 0, 'profile_anchor': 114, 'profile_y': 0,
         'neck_sample': [309, 976], 'cheek_sample': [1000, 610], 'profile_ear': [459, 518],
         'anatomical_neck': True,
@@ -335,6 +335,7 @@ def main(source, output, role):
                              profileEar=settings['profile_ear'], profileEye=[settings['profile_anchor'] - profile_direction * .035 / pixel_scale, settings['eye'][2]],
                              neckSample=[settings['neck_sample'][0] / atlas_w, settings['neck_sample'][1] / atlas_h],
                              cheekSample=[settings['cheek_sample'][0] / atlas_w, settings['cheek_sample'][1] / atlas_h])
+    if role == 'cypher': doc['extras']['atlasVersion'] = 2
     if 'profile_depth' in settings: doc['extras']['profileDepth'] = settings['profile_depth']
 
     def accessor(array, kind, component=5126):

@@ -12,13 +12,16 @@ interface HeadEntry {
   model?: THREE.Group;
   face?: THREE.Mesh;
   eyes?: THREE.Group;
+  earring?: THREE.Mesh;
   closed: { value: number };
   loading: boolean;
   active: boolean;
   neck?: THREE.Object3D;
   headset?: THREE.Group;
   evacuation?: boolean;
-  hero?: { skin: THREE.SkinnedMesh; original: THREE.BufferGeometry; masked?: THREE.BufferGeometry; details: THREE.Mesh[] };
+  firstPerson?: boolean;
+  matrix?: boolean;
+  hero?: { skin: THREE.SkinnedMesh; original: THREE.BufferGeometry; masked?: THREE.BufferGeometry; firstPerson?: THREE.BufferGeometry; details: THREE.Mesh[] };
 }
 
 /** Detailed heads retain the existing performance joints and saved body poses. */
@@ -38,7 +41,7 @@ export class EpilogueHeads {
   trackCypher(rig: CharacterRig): void {
     const hero = rig.hero!, head = hero.bones.get('head')!;
     const fallback = new THREE.Group(); fallback.name = 'cypher-fallback-head';
-    fallback.add(...head.children); head.add(fallback);
+    fallback.add(...head.children); head.add(fallback, hero.glasses);
     const skin = hero.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
     this.entries.set(rig, { role: 'cypher', fallback, closed: { value: 0 }, loading: false, active: false,
       hero: { skin, original: skin.geometry, details: hero.wardrobe.filter(part => part.hair || (part.mesh.material as THREE.Material).name === 'Eyes').map(part => part.mesh) } });
@@ -47,28 +50,43 @@ export class EpilogueHeads {
   update(rig: CharacterRig, input: MotionInput): void {
     const entry = this.entries.get(rig); if (!entry) return;
     entry.evacuation = input.dockEvacuation?.role === 'colt';
+    entry.firstPerson = entry.role === 'cypher' && Boolean(input.firstPerson); entry.matrix = !input.realWorld;
     // Mary Alice's appearance belongs to Revolutions. Earlier Oracle scenes
     // retain their existing head until their own likeness asset is authored.
-    entry.active = entry.role === 'cypher' ? Boolean(input.realWorld) : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
+    entry.active = entry.role === 'cypher' ? true : entry.role === 'bane' ? Boolean(input.logosBane) : entry.role === 'colt' || entry.role === 'link' ? Boolean(input.maggieDiscovery || entry.role === 'colt' && input.dockEvacuation?.role === 'colt') : entry.role === 'niobe' ? Boolean(input.realWorld) : entry.role !== 'oracle' || Boolean(input.oracleRevolutions || input.oracleRequest?.role === 'oracle' || input.oracleLast?.role === 'oracle' || input.oracleRestored || input.parkOutfit || input.epilogue?.kind === 'dawn');
     entry.closed.value = input.oracleRestored ? 1 : entry.role === 'sati' && input.epilogue?.kind === 'reset' ? streetResetPose(input.epilogue).closedEyes
       : entry.role === 'mifune' && input.dockLastStand ? dockLastStandPose(input.dockLastStand).dead : entry.role === 'charra' && input.upperDigger ? upperDiggerFall(input.upperDigger) : entry.role === 'maggie' && input.maggieDiscovery?.incident ? 1 : 0;
     if (entry.active && !entry.loading) {
       entry.loading = true;
       this.load(rig, entry).catch(error => console.warn(`${entry.role} detailed head could not load; retaining its fallback.`, error));
     }
+    this.present(rig, entry);
+  }
+
+  private present(rig: CharacterRig, entry: HeadEntry): void {
     const visible = entry.active && Boolean(entry.model);
     if (entry.fallback.visible === visible) rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
-    entry.fallback.visible = !visible;
+    entry.fallback.visible = !visible && !entry.firstPerson;
     if (entry.neck) entry.neck.visible = !visible;
-    const firstPerson = entry.role === 'cypher' && input.firstPerson;
+    const firstPerson = entry.firstPerson;
     if (entry.model) entry.model.visible = visible && !firstPerson;
     if (entry.hero) {
-      entry.hero.skin.geometry = visible ? entry.hero.masked! : entry.hero.original;
+      if (firstPerson && !visible && !entry.hero.firstPerson) {
+        const original = entry.hero.original, attrs = original.attributes, index = original.index!, retained: number[] = [];
+        for (let i = 0; i < index.count; i += 3) {
+          const triangle = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+          const head = triangle.some(v => [0, 1, 2, 3].some(j => attrs.skinWeight.getComponent(v, j) > .05 && entry.hero!.skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name === 'head'));
+          if (!head) retained.push(...triangle);
+        }
+        const geometry = this.geometry(new THREE.BufferGeometry()); geometry.attributes = original.attributes; geometry.setIndex(retained); entry.hero.firstPerson = geometry;
+      }
+      entry.hero.skin.geometry = visible ? entry.hero.masked! : firstPerson ? entry.hero.firstPerson! : entry.hero.original;
       entry.hero.details.forEach(mesh => { mesh.visible = !visible && !firstPerson; });
     }
     if (entry.face?.morphTargetInfluences) entry.face.morphTargetInfluences[0] = entry.closed.value;
     if (entry.eyes) entry.eyes.visible = entry.closed.value < .98 && (!entry.hero || visible && !firstPerson);
     if (entry.headset) entry.headset.visible = Boolean(entry.evacuation);
+    if (entry.earring) entry.earring.visible = Boolean(visible && !firstPerson && entry.matrix);
   }
 
   private async load(rig: CharacterRig, entry: HeadEntry): Promise<void> {
@@ -167,6 +185,15 @@ export class EpilogueHeads {
         .multiply(new THREE.Matrix4().makeScale(scale, scale, scale));
       const geometry = this.geometry(face.geometry.clone()), rest = geometry.attributes.position.clone();
       geometry.setAttribute('_head_rest', rest); geometry.setAttribute('_head_normal', geometry.attributes.normal.clone());
+      const ear = new THREE.Vector3(), target = new THREE.Vector3(.215, -.135, -.04); let nearestEar = Infinity;
+      for (let i = 0; i < rest.count; i++) {
+        const point = new THREE.Vector3().fromBufferAttribute(rest, i);
+        if (point.x < .20 || point.y < -.19 || point.y > -.06 || point.z < -.13 || point.z > .02) continue;
+        const distance = point.distanceToSquared(target); if (distance < nearestEar) { nearestEar = distance; ear.copy(point); }
+      }
+      const radius = .018 * scale, silver = this.material(new THREE.MeshStandardMaterial({ color: '#b9bfbb', metalness: .88, roughness: .22 }));
+      entry.earring = this.mesh(head, this.geometry(new THREE.TorusGeometry(radius, .003 * scale, 8, 28)), silver, ear.multiplyScalar(scale).add(offset).add(new THREE.Vector3(.003, -radius, 0)).toArray());
+      entry.earring.name = 'cypher-earring'; entry.earring.rotation.y = Math.PI / 2; entry.earring.visible = false;
       const toHead = skin.skeleton.boneInverses[headIndex].clone().multiply(skin.bindMatrix), point = new THREE.Vector3();
       const reference = (rig.hero!.root.getObjectByName('cypher-reality-neck-reference') as THREE.SkinnedMesh).geometry;
       const sourceJoints = reference.attributes.skinIndex, sourceWeights = reference.attributes.skinWeight;
@@ -260,6 +287,7 @@ export class EpilogueHeads {
     if (this.disposed) { this.release(); return; }
     entry.model = model; model.visible = entry.active; entry.fallback.visible = !entry.active;
     if (entry.hero) { rig.hero!.root.add(model); enableSkinnedCulling(model); } else rig.head.add(model);
+    this.present(rig, entry);
     rig.head.userData.surfaceVersion = (rig.head.userData.surfaceVersion ?? 0) + 1;
   }
 
