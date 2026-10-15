@@ -69,7 +69,7 @@ test('reality head eye positions match the existing eye anchor and do not jump t
   assert.ok(middle.distanceTo(anchor) < .005, `new eyes moved ${middle.distanceTo(anchor)} from the existing camera anchor`);
 });
 
-test('first person and return to Matrix restore the proper face visibility without changing Choi', async t => {
+test('Cypher keeps his own identity in both worlds and first person hides only his detailed head', async t => {
   const h = await fixture(t), cypherSkin = h.cypher.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const choiSkin = h.choi.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const original = cypherSkin.geometry, choiOriginal = choiSkin.geometry;
@@ -77,10 +77,48 @@ test('first person and return to Matrix restore the proper face visibility witho
   await h.draw(true, true);
   assert.equal(h.cypher.root.getObjectByName('cypher-detailed-head')!.visible, false);
   assert.notEqual(cypherSkin.geometry, original, 'first person keeps the borrowed face hidden');
-  await h.draw(false); assert.equal(cypherSkin.geometry, original, 'the unmade Matrix variant retains its existing appearance');
-  assert.equal(h.cypher.root.getObjectByName('cypher-detailed-head')!.visible, false);
+  await h.draw(false); assert.ok(cypherSkin.geometry !== original, 'entering the Matrix cannot replace Cypher with Choi');
+  assert.equal(h.cypher.root.getObjectByName('cypher-detailed-head')!.visible, true);
   await h.draw(); assert.equal(h.cypher.root.getObjectByName('cypher-detailed-head')!.visible, true);
   assert.equal(choiSkin.geometry, choiOriginal);
+});
+
+test('the restaurant shows Cypher without sunglasses and keeps his earring on the actual earlobe', async t => {
+  const h = await fixture(t); await h.draw(false);
+  const draw = (firstPerson: boolean) => {
+    h.models.animate(h.cypher, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: false, glasses: true, firstPerson,
+      interlude: { kind: 'steak', phase: 'performing', elapsed: 3.4, role: 'cypher' } }, 4);
+    h.cypher.root.updateMatrixWorld(true);
+  };
+  draw(false);
+  const earring = h.cypher.root.getObjectByName('cypher-earring') as THREE.Mesh<THREE.TorusGeometry>;
+  assert.ok(earring?.visible, 'Cypher’s Matrix appearance needs the silver earring visible in the restaurant reference');
+  assert.equal(h.cypher.hero!.glasses.visible, false, 'the film restaurant does not put borrowed Neo sunglasses on Cypher');
+  const contact = earring.localToWorld(new THREE.Vector3(0, earring.geometry.parameters.radius, 0));
+  const head = h.cypher.hero!.bones.get('head')!, outward = new THREE.Vector3(1, 0, 0).transformDirection(head.matrixWorld);
+  const face = h.cypher.root.getObjectByName('cypher-anatomical-head')!;
+  const hit = new THREE.Raycaster(contact.clone().addScaledVector(outward, .04), outward.clone().negate(), 0, .09).intersectObject(face)[0];
+  assert.ok(hit && hit.point.distanceTo(contact) < .012, 'the hoop must meet the delivered ear rather than float beside the old head');
+  draw(true); assert.equal(earring.visible, false); assert.equal(h.cypher.hero!.glasses.visible, false);
+  draw(false); assert.equal(earring.visible, true);
+});
+
+test('cold first-person entry never flashes either Cypher head before or after the likeness loads', async t => {
+  const h = await fixture(t), fresh = h.models.create(h.world.agents.get('cypher')!); await h.settle();
+  h.models.animate(fresh, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: false, firstPerson: true, glasses: true }, 4);
+  const skin = fresh.hero!.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, attrs = skin.geometry.attributes, index = skin.geometry.index!;
+  let skull = false;
+  for (let i = 0; i < index.count && !skull; i++) {
+    const v = index.getX(i);
+    skull = [0, 1, 2, 3].some(j => attrs.skinWeight.getComponent(v, j) > .05 && skin.skeleton.bones[attrs.skinIndex.getComponent(v, j)].name === 'head');
+  }
+  assert.equal(skull, false, 'the fallback face must disappear before its replacement is available');
+  await h.settle();
+  assert.ok(fresh.root.getObjectByName('cypher-detailed-head'));
+  assert.equal(fresh.root.getObjectByName('cypher-detailed-head')!.visible, false);
+  assert.equal(fresh.root.getObjectByName('cypher-fallback-head')!.visible, false);
+  assert.equal(fresh.root.getObjectByName('cypher-eyes')!.visible, false);
+  assert.equal(fresh.root.getObjectByName('cypher-earring')!.visible, false);
 });
 
 test('Cypher wears a continuous ship sweater in reality and restores the Matrix suit separately', async t => {

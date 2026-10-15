@@ -926,7 +926,7 @@ export class HeroModels {
     rig.silver.value = input.mirror ?? 0;
     const finaleGlasses = !input.smithFinale || (input.smithFinale.role === 'smith' ? smithCraterAmount(input.smithFinale) === 0
       : ['approach', 'entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging', 'ready', 'ground_warning', 'ground_dodge', 'ground_counter', 'shockwave', 'air_warning', 'air_dodge', 'air_counter'].includes(input.smithFinale.phase));
-    rig.glasses.visible = !input.dojoOutfit && !interactionView && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    rig.glasses.visible = !input.dojoOutfit && !interactionView && !(rig.support === 'cypher' && (input.firstPerson || input.interlude?.kind === 'steak')) && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
