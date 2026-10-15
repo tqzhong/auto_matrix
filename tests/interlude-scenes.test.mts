@@ -77,7 +77,7 @@ test('Cypher reads the screen, withdraws his hands, and turns with his chair bef
     assert.equal(cypher.rotation, turning, 'pause cannot finish the chair turn');
     h.players.release('player', h.tick()); h.sandbox.restore(saved); h.players.possess('player', 'neo', h.tick());
     assert.equal(cypher.rotation, turning, 'restoring the world must rebuild the same turn');
-    h.frames(3); assert.equal(h.state().interlude?.phase, 'accept_ready');
+    h.frames(9); assert.equal(h.state().interlude?.phase, 'accept_ready');
     assert.ok(Math.abs(cypher.rotation + Math.PI / 2) < .001, 'the drink conversation faces Neo');
     neb.update(h.state(), 15000); assert.ok(Math.abs(root.getObjectByName('neb-cypher-operator-chair')!.rotation.y - cypher.rotation) < .001);
     assert.equal(root.getObjectByName('neb-cypher-console-terminal')!.visible, false, 'the old relay terminal is hidden during the dedicated console scene');
@@ -159,6 +159,8 @@ test('all three interludes have an unobstructed playable approach', () => {
 
 test('a new console encounter waits for Neo to take and taste the mug before reflection', () => {
   const h = setup('m1_cypher_console'); h.command('act'); h.frames(4.5);
+  assert.equal(h.state().interlude?.phase, 'performing', 'the jug must finish pouring before Neo can take his drink');
+  h.frames(5.3);
   assert.equal(h.state().interlude?.phase, 'accept_ready', 'the film cannot drink automatically for the player');
   h.frames(20); assert.equal(h.state().interlude?.phase, 'accept_ready');
   assert.equal(h.state().step, 0);
@@ -173,13 +175,13 @@ test('a new console encounter waits for Neo to take and taste the mug before ref
   const elapsed = h.state().interlude!.elapsed; h.frames(4, false); assert.equal(h.state().interlude!.elapsed, elapsed);
   h.frames(3.2); assert.equal(h.state().interlude?.phase, 'returning');
   h.frames(6.5); assert.equal(h.state().interlude?.phase, 'choice'); assert.equal(h.state().step, 1);
-  h.command('reflect:agency'); h.frames(INTERLUDE_TIMING.consoleResponse + .2);
+  h.command('reflect:agency'); h.frames(11);
   assert.equal(h.state().interlude?.phase, 'done');
   assert.equal(h.state().completed.filter(id => id === 'm1_cypher_console').length, 1);
 });
 
 test('cold world restore reconstructs Neo’s saved mug gesture before any player reconnects', () => {
-  const h = setup('m1_cypher_console'); h.command('act'); h.frames(4.5); h.command('act'); h.frames(1.2);
+  const h = setup('m1_cypher_console'); h.command('act'); h.frames(9.8); h.command('act'); h.frames(1.2);
   h.players.release('player', h.tick()); const saved = structuredClone(h.sandbox.state);
   const pose = structuredClone(h.actor.currentAction!.parameters.interlude), position = { ...h.actor.position };
   h.actor.currentAction = null; delete h.actor.controller;
@@ -187,4 +189,13 @@ test('cold world restore reconstructs Neo’s saved mug gesture before any playe
   assert.deepEqual(h.actor.currentAction?.parameters.interlude, pose, 'the first paused snapshot must contain the saved hand/cup pose');
   assert.deepEqual(h.actor.position, position); assert.equal(h.actor.controller, undefined);
   assert.equal(h.state().interlude!.elapsed, saved.neoLife!.journey!.interlude!.elapsed);
+});
+
+test('an already running physical drink archive keeps its original intro and response duration', () => {
+  const h = setup('m1_cypher_console');
+  h.state().interlude = { kind: 'console', phase: 'performing', elapsed: 2.5, physicalConsole: true };
+  h.frames(2); assert.equal(h.state().interlude?.phase, 'accept_ready');
+  h.command('act'); h.frames(2.3); h.command('act'); h.frames(11.4);
+  assert.equal(h.state().interlude?.phase, 'choice');
+  h.command('reflect:agency'); h.frames(4.8); assert.equal(h.state().interlude?.phase, 'done');
 });

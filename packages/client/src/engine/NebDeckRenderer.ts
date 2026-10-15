@@ -8,8 +8,9 @@ import { relayPlugContact } from '../agents/TrinityRelayPerformance.js';
 import { NEB_ESCAPE, nebHatchHeight } from '@auto_matrix/shared';
 import { NebEscapeRenderer } from './NebEscapeRenderer.js';
 import { NebCabinRenderer } from './NebCabinRenderer.js';
-import { CONSOLE_DRINK, consoleDrinkPose, interludeAge } from '@auto_matrix/shared';
+import { CONSOLE_DRINK, CONSOLE_SERVICE, consoleDrinkPose, consolePourPose, cypherDrinkPose, cypherCupRest, interludeAge } from '@auto_matrix/shared';
 import { createConsoleMug } from '../agents/ConsoleMug.js';
+import { createConsoleJug } from '../agents/ConsoleJug.js';
 import { CypherConsoleRenderer } from './CypherConsoleRenderer.js';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
@@ -49,6 +50,7 @@ export class NebDeckRenderer {
   private downloadBars: THREE.Mesh[] = [];
   private downloadPulse = this.material(new THREE.MeshBasicMaterial({ color: 0x8cf4b8, toneMapped: false }));
   private consoleRig = new THREE.Group();
+  private consoleStream!: THREE.Mesh;
   private operatorCables: THREE.Mesh[] = [];
   private mealRig = new THREE.Group();
   private neoBowl = new THREE.Group();
@@ -318,18 +320,19 @@ export class NebDeckRenderer {
     this.box(terminal, display, 0, 4.05, .278, 3.8, 2.92, .025, 'neb-cypher-console-display');
     this.box(terminal, this.steel, 0, 2.48, .34, 4.02, .1, .16, 'neb-cypher-console-lower-rail');
     for (const x of [-1.72, 1.72]) this.box(terminal, this.steel, x, 4.04, .18, .1, 3.4, .14, 'neb-cypher-console-side-rail');
-    const glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0xa8b9af, transparent: true, opacity: .32, roughness: .12, depthWrite: false }));
-    const liquor = this.material(new THREE.MeshPhysicalMaterial({ color: 0x9a6b33, transparent: true, opacity: .72, roughness: .2 }));
-    const bottle = new THREE.Group(); bottle.name = 'neb-cypher-liquor-bottle'; bottle.position.set(4.9, 1.75, 7.15); this.consoleRig.add(bottle);
-    this.cylinder(bottle, glass, 0, .55, 0, .28, 1.1); this.cylinder(bottle, glass, 0, 1.3, 0, .12, .55); this.cylinder(bottle, this.rubber, 0, 1.62, 0, .13, .12);
-    this.cylinder(bottle, liquor, 0, .38, 0, .23, .55);
+    const bottle = createConsoleJug('neb-cypher-liquor-bottle'), at = CONSOLE_SERVICE.jug;
+    bottle.position.set(at.x, at.y, at.z); bottle.rotation.y = at.yaw; this.consoleRig.add(bottle);
+    bottle.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
     const shelf = CONSOLE_DRINK.shelf;
     this.box(this.root, this.worn, shelf.x, shelf.height - .06, shelf.z, shelf.width, .12, shelf.depth, 'neb-cypher-drink-shelf');
     for (const side of [-1, 1]) this.box(this.root, this.dark, shelf.x + side * .8, shelf.height / 2, shelf.z, .12, shelf.height, .75);
-    bottle.position.set(5.55, shelf.height, 8.05);
-    bottle.scale.setScalar(.6);
     const cup = createConsoleMug('neb-neo-metal-mug'); cup.position.set(CONSOLE_DRINK.cup.x, CONSOLE_DRINK.cup.y, CONSOLE_DRINK.cup.z); cup.rotation.y = CONSOLE_DRINK.cup.yaw;
     cup.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } }); this.consoleRig.add(cup);
+    const ownCup = createConsoleMug('neb-cypher-metal-mug'), own = cypherCupRest({ kind: 'console', phase: 'ready', elapsed: 0 });
+    ownCup.position.set(own.x, own.y, own.z); ownCup.rotation.y = own.yaw; this.consoleRig.add(ownCup);
+    ownCup.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
+    const liquid = this.material(new THREE.MeshStandardMaterial({ color: 0xa2b7ac, transparent: true, opacity: .5, roughness: .1, metalness: .02 }));
+    this.consoleStream = this.cylinder(this.consoleRig, liquid, 0, 0, 0, 1, 1, 'neb-cypher-pouring-stream'); this.consoleStream.visible = false;
     const lamp = new THREE.PointLight(0x88cda4, 0, 10, 2); lamp.name = 'neb-cypher-console-task-light'; lamp.position.set(8.8, 4.3, 6); this.consoleRig.add(lamp); this.lights.add(lamp);
   }
 
@@ -652,6 +655,8 @@ export class NebDeckRenderer {
     this.consoleRig.visible = Boolean(consoleBeat || relayActive);
     this.consoleRig.getObjectByName('neb-cypher-liquor-bottle')!.visible = !relayActive;
     this.consoleRig.getObjectByName('neb-neo-metal-mug')!.visible = !relayActive;
+    this.consoleRig.getObjectByName('neb-cypher-metal-mug')!.visible = !relayActive;
+    this.consoleStream.visible = false;
     this.consoleRig.getObjectByName('neb-cypher-console-terminal')!.visible = Boolean(relayActive);
     this.consoleStation.update(consoleBeat, Boolean(relayActive));
     const linkChair = this.root.getObjectByName('neb-core-chair-four')!;
@@ -666,8 +671,20 @@ export class NebDeckRenderer {
       const age = interludeAge(consoleBeat);
       const light = this.consoleRig.getObjectByName('neb-cypher-console-task-light') as THREE.PointLight; light.intensity = 68 + Math.sin(age * 7) * 12;
       const pose = consoleDrinkPose(consoleBeat), cup = this.consoleRig.getObjectByName('neb-neo-metal-mug')!;
+      const pour = consolePourPose(consoleBeat), toast = cypherDrinkPose(consoleBeat), ownCup = this.consoleRig.getObjectByName('neb-cypher-metal-mug')!;
+      const own = cypherCupRest(consoleBeat); ownCup.position.set(own.x, own.y, own.z); ownCup.rotation.y = own.yaw;
       cup.visible = !pose.holding;
-      cup.getObjectByName('console-mug-liquid')!.position.y = -.035 - pose.drunk * .10;
+      cup.getObjectByName('console-mug-liquid')!.position.y = -.20 + pour.filled * .165 - pose.drunk * .10;
+      ownCup.visible = !toast.holding; ownCup.getObjectByName('console-mug-liquid')!.position.y = -.035 - toast.drunk * .10;
+      this.consoleRig.getObjectByName('neb-cypher-liquor-bottle')!.visible = !pour.holding;
+      const source = bodies?.('cypher')?.getObjectByName('cypher-held-jug')?.getObjectByName('console-jug-spout');
+      if (pour.flowing && source) {
+        source.updateWorldMatrix(true, false);
+        const start = this.consoleRig.worldToLocal(source.getWorldPosition(new THREE.Vector3()));
+        const end = this.consoleRig.worldToLocal(cup.getObjectByName('console-mug-liquid')!.getWorldPosition(new THREE.Vector3()));
+        const direction = start.clone().sub(end); this.consoleStream.position.copy(start).add(end).multiplyScalar(.5);
+        this.consoleStream.scale.set(.012, direction.length(), .012); this.consoleStream.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize()); this.consoleStream.visible = true;
+      }
     }
     const meal = journey?.scene === 'm1_meal' && !journey.visiting && journey.interlude?.kind === 'meal' ? journey.interlude : undefined;
     this.mealRig.visible = Boolean(meal);

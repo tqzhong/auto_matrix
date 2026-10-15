@@ -4565,7 +4565,7 @@ export class FilmStorySystem {
     }
     if (target !== 'act') return state.lastText;
     if (encounter.phase !== 'ready') return state.lastText;
-    if (kind === 'console') encounter.physicalConsole = true;
+    if (kind === 'console') { encounter.physicalConsole = true; encounter.physicalPour = true; }
     encounter.phase = 'performing'; encounter.elapsed = 0; state.checkpoint = { ...agent.position };
     this.interludeFrame(agent, 0, tick); return state.lastText;
   }

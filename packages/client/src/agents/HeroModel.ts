@@ -33,6 +33,7 @@ import { PHONE_HAND } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
 import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
 import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
+import { ConsolePourPerformance } from './ConsolePourPerformance.js';
 
 export type HeroSupport = 'cypher' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -114,6 +115,7 @@ export class HeroModels {
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
+  private consolePours = new Map<HeroRig, ConsolePourPerformance>();
   private interrogations = new Map<HeroRig, InterrogationPerformance>();
   private meetings = new Map<HeroRig, MeetingPerformance>();
   private welcomes = new Map<HeroRig, LafayetteWelcomePerformance>();
@@ -1301,7 +1303,9 @@ export class HeroModels {
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);
     poseConsoleOperator(rig, input.interlude);
-    if (input.interlude?.kind === 'console' && input.interlude.role === 'neo' && !this.consoleDrinks.has(rig)) this.consoleDrinks.set(rig, new ConsoleDrinkPerformance(rig));
+    if (input.interlude?.kind === 'console' && input.interlude.role === 'cypher' && input.interlude.physicalPour && !this.consolePours.has(rig)) this.consolePours.set(rig, new ConsolePourPerformance(rig));
+    this.consolePours.get(rig)?.update(input.interlude);
+    if (input.interlude?.kind === 'console' && (input.interlude.role === 'neo' || input.interlude.role === 'cypher' && input.interlude.physicalPour) && !this.consoleDrinks.has(rig)) this.consoleDrinks.set(rig, new ConsoleDrinkPerformance(rig, input.interlude.role as 'neo' | 'cypher'));
     this.consoleDrinks.get(rig)?.update(input.interlude);
     if ((input.interrogation || input.officeShirt) && !this.interrogations.has(rig)) this.interrogations.set(rig, new InterrogationPerformance(rig));
     this.interrogations.get(rig)?.update(input.interrogation, input.officeShirt);
@@ -1375,6 +1379,7 @@ export class HeroModels {
   private release(): void {
     this.pills.forEach(p => p.dispose()); this.pills.clear();
     this.consoleDrinks.forEach(p => p.dispose()); this.consoleDrinks.clear();
+    this.consolePours.forEach(p => p.dispose()); this.consolePours.clear();
     this.interrogations.forEach(p => p.dispose()); this.interrogations.clear();
     this.meetings.forEach(p => p.dispose()); this.meetings.clear();
     this.welcomes.forEach(p => p.dispose()); this.welcomes.clear(); this.knocks.forEach(p => p.dispose()); this.knocks.clear();
