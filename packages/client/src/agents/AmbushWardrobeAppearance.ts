@@ -309,10 +309,18 @@ export class AmbushWardrobeAppearance {
   }
   private geometry(vertices: Vertex[], indices: number[], keepNormals = false): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
+    // A sleeve ends at the wrist. The knit donor also weights cuff vertices
+    // to the thumb, which otherwise pulls both cloth layers when fingers curl.
+    const bones = this.source.skeleton.bones, remap = bones.map((bone, index) => {
+      const finger = /^finger[1-5]-[1-3]_([RL])$/.exec(bone.name);
+      return finger ? bones.findIndex(target => target.name === `wrist_${finger[1]}`) : index;
+    });
+    const bindings = vertices.map(vertex => vertex.joints.some((joint, i) => vertex.weights[i] > 0 && remap[joint] !== joint)
+      ? weights(vertex.joints.map((joint, i) => [vertex.weights[i] > 0 ? remap[joint] : joint, vertex.weights[i]])) : vertex);
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices.flatMap(v => v.point.toArray()), 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(vertices.flatMap(v => v.uv.toArray()), 2));
-    geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(vertices.flatMap(v => v.joints), 4));
-    geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(vertices.flatMap(v => v.weights), 4)); geometry.setIndex(indices);
+    geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(bindings.flatMap(v => v.joints), 4));
+    geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(bindings.flatMap(v => v.weights), 4)); geometry.setIndex(indices);
     if (keepNormals) geometry.setAttribute('normal', new THREE.Float32BufferAttribute(vertices.flatMap(v => v.normal.toArray()), 3)); else geometry.computeVertexNormals();
     return geometry;
   }
