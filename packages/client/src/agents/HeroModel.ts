@@ -29,6 +29,7 @@ import { ConstructPerformance } from './ConstructPerformance.js';
 import { clubCloseness } from '@auto_matrix/shared';
 import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
+import { AmbushWardrobeAppearance } from './AmbushWardrobeAppearance.js';
 import { PHONE_HAND } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
 import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
@@ -137,6 +138,7 @@ export class HeroModels {
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
   private farewellAppearances = new Map<HeroRig, FarewellAppearance>();
   private constructSuits = new Map<HeroRig, ConstructSuitAppearance>();
+  private ambushWardrobes = new Map<HeroRig, AmbushWardrobeAppearance>();
   private mice = new Map<HeroRig, MouseAppearance>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
@@ -498,6 +500,7 @@ export class HeroModels {
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     if ((id === 'neo' || id === 'trinity' || id === 'morpheus') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
     if (id === 'morpheus' && !support) this.constructSuits.set(rig, new ConstructSuitAppearance(rig, this.fabric));
+    if (id === 'morpheus' && !support) this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
     if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
     enableSkinnedCulling(root);
     return rig;
@@ -1045,6 +1048,7 @@ export class HeroModels {
     }
     const completePatientBody = rig.wardrobe.some(part => part.mesh.userData.patientBody);
     const farewellAppearance = this.farewellAppearances.get(rig);
+    const ambushWardrobe = this.ambushWardrobes.get(rig);
     for (const part of rig.wardrobe) {
       const material = part.mesh.material as THREE.MeshStandardMaterial;
       const patientLegs = Boolean(patient && !completePatientBody && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
@@ -1062,7 +1066,7 @@ export class HeroModels {
       else if ((officeShirt || trackingShirt) && (part.outer || /Tailored.coat.upper|Black.crew.neck/i.test(part.mesh.name))) part.mesh.visible = false;
       const dojoCloth = input.dojoOutfit && part.mesh.userData.dojoCostume && !part.mesh.userData.dojoSkin;
       const map = patientLegs ? this.patientSkin : part.map; const bumpMap = dojoCloth ? this.fabric : patientLegs ? this.patientSkin : part.bumpMap;
-      if (!farewellAppearance?.garment(part.mesh, input) && (material.map !== map || material.bumpMap !== bumpMap)) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
+      if (!farewellAppearance?.garment(part.mesh, input) && !ambushWardrobe?.garment(part.mesh, input) && (material.map !== map || material.bumpMap !== bumpMap)) { material.map = map; material.bumpMap = bumpMap; material.needsUpdate = true; }
       material.bumpScale = dojoCloth ? .0015 : patientLegs ? .0013 : part.bumpScale;
       const side = input.firstPerson && (constructView || truthView || downloadView) && part.cloth ? THREE.DoubleSide : part.side;
       if (material.side !== side) { material.side = side; material.needsUpdate = true; }
@@ -1077,6 +1081,7 @@ export class HeroModels {
     }
     farewellAppearance?.update(input);
     this.constructSuits.get(rig)?.update(input);
+    ambushWardrobe?.update(input);
     for (const part of rig.wardrobe) {
       if (part.mesh.userData.cypherCostume) part.mesh.visible = Boolean(input.realWorld);
       else if (rig.support === 'cypher' && input.realWorld && /Tailored.coat.upper|Black.crew.neck/.test(part.mesh.name)) part.mesh.visible = false;
@@ -1493,6 +1498,7 @@ export class HeroModels {
     this.wakeCalls.forEach(p => p.dispose()); this.wakeCalls.clear();
     this.farewellAppearances.forEach(p => p.dispose()); this.farewellAppearances.clear();
     this.constructSuits.forEach(p => p.dispose()); this.constructSuits.clear();
+    this.ambushWardrobes.forEach(p => p.dispose()); this.ambushWardrobes.clear();
     this.mice.forEach(p => p.dispose()); this.mice.clear();
     this.forearms.dispose();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
