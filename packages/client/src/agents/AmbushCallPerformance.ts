@@ -95,6 +95,9 @@ export function poseAmbushCallPair(morpheus: CharacterRig, trinity: CharacterRig
   const resting = restingWrist.localToWorld(mirror(PHONE_HAND.position));
   const phone = t < AMBUSH_CALL.handoff ? initial.clone().lerp(handoff, smooth(t, 0, AMBUSH_CALL.handoff)) : t < AMBUSH_CALL.exchange ? handoff.clone().lerp(exchange, smooth(t, AMBUSH_CALL.handoff, AMBUSH_CALL.exchange))
     : exchange.clone().lerp(ear, raised).lerp(resting, lower);
+  // Carry the handset in front of the shirt while lowering it; the direct
+  // ear-to-rest line cuts through the chest as the palm turns inward.
+  phone.add(new THREE.Vector3(0, 0, .35 * Math.sin(Math.PI * lower)).applyQuaternion(rootRotation));
   const orientation = rotation.clone().slerp(heldRotation, raised).slerp(restRotation, lower);
   const right = gesture.ready ? 0 : smooth(t, 0, .85) * (1 - smooth(t, AMBUSH_CALL.exchange + .2, AMBUSH_CALL.connected - .05));
   const rightRelease = exchange.clone().add(new THREE.Vector3(-.35, 0, 0).applyQuaternion(rootRotation).multiplyScalar(smooth(t, AMBUSH_CALL.exchange, AMBUSH_CALL.exchange + .2)));

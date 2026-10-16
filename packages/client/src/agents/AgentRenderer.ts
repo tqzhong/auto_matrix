@@ -638,6 +638,16 @@ export class AgentRenderer {
       input.dojoSparring = input.dojoOutfit !== undefined && journey?.scene === 'm1_dojo' && journey.step === 0 && journey.fighting === true;
       input.constructSuit = id === 'morpheus' && ['film_white_construct', 'film_real_desert'].includes(state.currentLocation)
         && !state.currentAction?.parameters.rescue;
+      input.ambushWardrobe = undefined;
+      if (id === 'morpheus' && state.isInMatrix && state.currentLocation === 'film_ambush_house') {
+        const visiting = journey?.actor === id ? journey.visiting : undefined, scene = visiting ?? journey?.scene;
+        const escape = visiting ? undefined : journey?.ambushEscape;
+        const called = escape && (['call', 'forming', 'wetwall', 'done'].includes(escape.phase)
+          || escape.phase === 'failed' && (escape.callStart || escape.traced || ['forming', 'wetwall'].includes(escape.checkpoint.phase)));
+        const afterAmbush = ['m1_wetwall', 'm1_wall_exposed', 'm1_bathroom', 'm1_basement', 'm1_tv_exit', 'm1_unplugged', 'm1_rescue_decision', 'm1_guns', 'm1_lobby'].includes(scene ?? '')
+          || !visiting && journey?.completed.includes('m1_dejavu');
+        input.ambushWardrobe = called || afterAmbush ? 'shirt' : 'coat';
+      }
       const shipScene = journey?.visiting ?? journey?.scene;
       input.nebCrewEarly = input.realWorld && state.currentLocation === 'film_neb_deck' && shipScene?.startsWith('m1_') === true
         && shipScene !== 'm1_pod' && shipScene !== 'm1_recovery';
