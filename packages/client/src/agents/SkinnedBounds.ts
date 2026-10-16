@@ -5,17 +5,31 @@ import * as THREE from 'three';
  * Updating after world matrices includes later weapon gestures and works for
  * the player, reflection and shadow cameras without changing mesh visibility. */
 export function enableSkinnedCulling(root: THREE.Object3D): void {
-  const targets: { mesh: THREE.SkinnedMesh; parts: { bone: THREE.Bone; box: THREE.Box3 }[] }[] = [];
+  const targets: { mesh: THREE.SkinnedMesh; skeleton: THREE.Skeleton; parts: { bone: THREE.Bone; box: THREE.Box3 }[] }[] = [];
   const point = new THREE.Vector3();
   root.traverse(object => {
     if (!(object instanceof THREE.SkinnedMesh)) return;
     const mesh = object; const { position, skinIndex, skinWeight } = mesh.geometry.attributes;
     const boxes = mesh.skeleton.bones.map(() => new THREE.Box3());
     const transforms = mesh.skeleton.boneInverses.map(inverse => inverse.clone().multiply(mesh.bindMatrix));
-    for (let i = 0; i < position.count; i++) for (let joint = 0; joint < 4; joint++) {
-      if (skinWeight.getComponent(i, joint) === 0) continue;
-      const index = skinIndex.getComponent(i, joint);
-      boxes[index].expandByPoint(point.fromBufferAttribute(position, i).applyMatrix4(transforms[index]));
+    const morphs = mesh.geometry.morphAttributes.position ?? [], low = new THREE.Vector3(), high = new THREE.Vector3(), shift = new THREE.Vector3(), range = new THREE.Box3();
+    for (let i = 0; i < position.count; i++) {
+      // Garment opening targets use coefficients in [0,1]. Carry their full
+      // displacement through each bind transform once, including rotated bones.
+      if (morphs.length) {
+        point.fromBufferAttribute(position, i); low.copy(point); high.copy(point);
+        for (const morph of morphs) {
+          shift.fromBufferAttribute(morph, i); if (!mesh.geometry.morphTargetsRelative) shift.sub(point);
+          low.x += Math.min(0, shift.x); low.y += Math.min(0, shift.y); low.z += Math.min(0, shift.z);
+          high.x += Math.max(0, shift.x); high.y += Math.max(0, shift.y); high.z += Math.max(0, shift.z);
+        }
+      }
+      for (let joint = 0; joint < 4; joint++) {
+        if (skinWeight.getComponent(i, joint) === 0) continue;
+        const index = skinIndex.getComponent(i, joint);
+        if (morphs.length) boxes[index].union(range.set(low, high).applyMatrix4(transforms[index]));
+        else boxes[index].expandByPoint(point.fromBufferAttribute(position, i).applyMatrix4(transforms[index]));
+      }
     }
     // These existing shaders move vertices before skinning: the scanned shirt
     // hem, opened office shirt and sealed lips. Carry their full displacement
@@ -28,15 +42,16 @@ export function enableSkinnedCulling(root: THREE.Object3D): void {
     }
     const parts = boxes.flatMap((box, i) => box.isEmpty() ? [] : [{ bone: mesh.skeleton.bones[i], box }]);
     mesh.boundingBox = new THREE.Box3(); mesh.boundingSphere = new THREE.Sphere(); mesh.frustumCulled = true;
-    targets.push({ mesh, parts });
+    targets.push({ mesh, skeleton: mesh.skeleton, parts });
   });
   const transformed = new THREE.Box3(); const matrix = new THREE.Matrix4();
   const update = root.updateMatrixWorld.bind(root);
   root.updateMatrixWorld = force => {
     update(force);
     if (!root.visible) return;
-    for (const { mesh, parts } of targets) {
-      if (!mesh.visible) continue;
+    for (const { mesh, skeleton, parts } of targets) {
+      // A removed garment can be rebound to its own skeleton and bounds owner.
+      if (!mesh.visible || mesh.skeleton !== skeleton) continue;
       const box = mesh.boundingBox!; box.makeEmpty();
       for (const part of parts) {
         matrix.multiplyMatrices(mesh.bindMatrixInverse, part.bone.matrixWorld);
