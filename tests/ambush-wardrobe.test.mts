@@ -612,7 +612,7 @@ test('the actual saved renderer preserves rear-seam relief without adding visibl
   assert.deepEqual(failures, [], 'fitting must not introduce crossings elsewhere in the same rear seam');
 });
 
-test('the unfolded back keeps a closed, smoothly shaded centre seam and unchanged cloth outside the narrow strip', async () => {
+test('the unfolded back keeps a closed, smoothly shaded centre seam and unchanged cloth outside the hem and neck joins', async () => {
   const h = await model();
   try {
     h.pose('shirt');
@@ -620,12 +620,16 @@ test('the unfolded back keeps a closed, smoothly shaded centre seam and unchange
     const donor = h.rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
     assert.deepEqual(Array.from(shirt.geometry.index!.array).slice(0, donor.geometry.index!.count), Array.from(donor.geometry.index!.array), 'the original connected garment faces are retained');
     const a = shirt.geometry.attributes, b = donor.geometry.attributes, centre = new Map<string, number[]>();
+    const neckJoin = new Set<number>((donor.userData.ambushNeckStand?.updates ?? []).map(([id]: number[]) => id));
+    assert.ok(neckJoin.size <= 100, 'the separate sewn neck repair may relight only its original rim and two faired corners');
+    for (const id of neckJoin) assert.ok(b.position.getY(id) > 3.78 && Math.hypot(b.position.getX(id), b.position.getZ(id) - .08) < .3, `neck repair leaves its local join at ${id}`);
     let unchangedNormals = 0, unchangedSleeves = 0;
     for (let i = 0; i < b.position.count; i++) {
       const point = new THREE.Vector3().fromBufferAttribute(b.position, i);
       // The unfolded strip is at |x| < .1; its original boundary return is
-      // .012 thick. Normals outside that complete local band stay untouched.
-      if (Math.abs(point.x) >= .112 || point.z >= -.088 || point.y >= 2.712) {
+      // .012 thick. Apart from the separately bounded sewn neck join, normals
+      // outside that complete local hem band stay untouched.
+      if (!neckJoin.has(i) && (Math.abs(point.x) >= .112 || point.z >= -.088 || point.y >= 2.712)) {
         for (let n = 0; n < 3; n++) assert.equal(a.normal.getComponent(i, n), b.normal.getComponent(i, n), `unchanged normal ${i}/${n}`);
         unchangedNormals++;
       }
