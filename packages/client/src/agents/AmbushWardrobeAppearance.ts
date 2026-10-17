@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
-import type { MotionInput } from './CharacterMotion.js';
+import type { MotionInput, MotionState } from './CharacterMotion.js';
 
 interface Vertex { point: THREE.Vector3; normal: THREE.Vector3; uv: THREE.Vector2; joints: number[]; weights: number[] }
 function weights(entries: [number, number][]): Pick<Vertex, 'joints' | 'weights'> {
@@ -39,6 +39,7 @@ export class AmbushWardrobeAppearance {
   private originalTrousers: THREE.BufferGeometry;
   private fittedTrousers: THREE.BufferGeometry;
   private fittedArmhole = false;
+  private drapeIndices: number[] = [];
 
   constructor(private rig: HeroRig, fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
@@ -243,7 +244,7 @@ export class AmbushWardrobeAppearance {
         const target = new THREE.BufferAttribute(delta, 3); target.name = 'ambushShirtFit';
         this.source.geometry.morphAttributes[name] = [target];
       }
-      this.source.geometry.morphTargetsRelative = true; this.source.updateMorphTargets(); this.fittedArmhole = true;
+      this.source.geometry.morphTargetsRelative = true; this.addDrapeTargets(); this.source.updateMorphTargets(); this.fittedArmhole = true;
     }
     this.vertices.set(this.source, shirtVertices);
 
@@ -293,6 +294,51 @@ export class AmbushWardrobeAppearance {
     }
     this.lapels = this.make('morpheus-ambush-lapels', this.geometry(lapels, lapelIndices), leather);
     this.vertices.clear(); this.bands.clear();
+  }
+
+  private addDrapeTargets(): void {
+    const geometry = this.source.geometry, a = geometry.attributes, index = geometry.index!;
+    const fitted = Array.from({ length: a.position.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(a.position, i)
+      .add(new THREE.Vector3().fromBufferAttribute(geometry.morphAttributes.position[0], i)));
+    const fittedNormals = Array.from({ length: a.normal.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(a.normal, i)
+      .add(new THREE.Vector3().fromBufferAttribute(geometry.morphAttributes.normal[0], i)));
+    const torso = this.source.skeleton.bones.map(bone => /^(pelvis|spine|chest|hip_[LR])$/.test(bone.name));
+    for (const [sideIndex, side] of [-1, 1].entries()) {
+      const delta = new Float32Array(a.position.count * 3), changed = new Set<number>();
+      for (let i = 0; i < a.position.count; i++) {
+        const waist = [0, 1, 2, 3].reduce((sum, k) => sum + (torso[a.skinIndex.getComponent(i, k)] ? a.skinWeight.getComponent(i, k) : 0), 0);
+        const amount = THREE.MathUtils.smoothstep(waist, .8, .99) * (1 - THREE.MathUtils.smoothstep(a.position.getY(i), 2.42, 2.85))
+          * THREE.MathUtils.smoothstep(a.position.getZ(i), .02, .28) * THREE.MathUtils.smoothstep(side * a.position.getX(i), -.15, .28);
+        // Lift and roll the loose front over the flexing thigh. The upper
+        // waist and sleeves keep their fit; the two sides can move separately.
+        delta[i * 3 + 1] = amount * .08; delta[i * 3 + 2] = amount * .06;
+        if (amount > 0) changed.add(i);
+      }
+      const points = fitted.map((point, i) => point.clone().add(new THREE.Vector3().fromArray(delta, i * 3)));
+      const keys = points.map(point => point.toArray().map(value => value.toFixed(6)).join(',')), affected = new Set<string>();
+      for (let face = 0; face < index.count; face += 3) {
+        const ids = [0, 1, 2].map(k => index.getX(face + k));
+        if (ids.some(i => changed.has(i))) for (const i of ids) affected.add(keys[i]);
+      }
+      // Author the lighting correction once, including UV seam twins and
+      // unchanged vertices bordering a moved face. No per-frame mesh rewrite.
+      const normals = new Map([...affected].map(key => [key, new THREE.Vector3()]));
+      const normal = new THREE.Vector3(), edge = new THREE.Vector3();
+      for (let face = 0; face < index.count; face += 3) {
+        const ids = [0, 1, 2].map(k => index.getX(face + k));
+        normal.subVectors(points[ids[1]], points[ids[0]]).cross(edge.subVectors(points[ids[2]], points[ids[0]]));
+        for (const i of ids) normals.get(keys[i])?.add(normal);
+      }
+      const normalDelta = new Float32Array(a.normal.count * 3);
+      for (let i = 0; i < a.normal.count; i++) {
+        const sum = normals.get(keys[i]); if (!sum || sum.lengthSq() === 0) continue;
+        normal.copy(sum).normalize().sub(fittedNormals[i]).toArray(normalDelta, i * 3);
+      }
+      const positionTarget = new THREE.BufferAttribute(delta, 3), normalTarget = new THREE.BufferAttribute(normalDelta, 3);
+      positionTarget.name = normalTarget.name = `ambushHipDrape_${sideIndex ? 'L' : 'R'}`;
+      this.drapeIndices.push(geometry.morphAttributes.position.length);
+      geometry.morphAttributes.position.push(positionTarget); geometry.morphAttributes.normal.push(normalTarget);
+    }
   }
 
   private band(mesh: THREE.SkinnedMesh, y: number): number[] {
@@ -351,14 +397,26 @@ export class AmbushWardrobeAppearance {
   garment(mesh: THREE.Mesh, input: MotionInput): boolean {
     return input.realWorld !== true && input.ambushWardrobe === 'coat' && this.rig.panels.some(panel => panel.mesh === mesh);
   }
-  relaxedArmOffset(input: MotionInput): number {
-    if (!this.fittedArmhole || input.realWorld || input.ambushWardrobe !== 'shirt' || input.armed || input.performance || input.crouching
-      || input.ambushEscort || input.ambushCall || input.wetwall || input.sixth || input.bathroom || input.basement
+  private clothBlend(input: MotionInput, motion: MotionState): number {
+    if (!this.fittedArmhole || input.realWorld || input.ambushWardrobe !== 'shirt' || input.performance || input.crouching
+      || input.wetwall || input.sixth || input.bathroom || input.basement
       || input.tvExit || input.crosscut || input.betrayal) return 0;
+    return (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
+      * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
+  }
+  relaxedArmOffset(input: MotionInput, motion: MotionState): number {
     // The lowered stock bind pose squeezes this actor's forearms into the
     // waist. Retarget the relaxed stance with the fitted cut; scripted grips
-    // retain their own poses. This does not resolve the remaining hem contact.
-    return .075;
+    // retain their own poses. The hem has its separate hip-driven correction.
+    if (input.armed || input.ambushEscort || input.ambushCall) return 0;
+    return .075 * this.clothBlend(input, motion);
+  }
+  poseDrape(input: MotionInput, motion: MotionState): void {
+    const amount = this.clothBlend(input, motion);
+    for (const [i, index] of this.drapeIndices.entries()) {
+      const hip = this.rig.bones.get(`hip_${i ? 'L' : 'R'}`)!;
+      this.source.morphTargetInfluences![index] = amount * THREE.MathUtils.smoothstep(-hip.rotation.x, .3, 1.3);
+    }
   }
   update(input: MotionInput): void {
     const mode = input.realWorld !== true ? input.ambushWardrobe : undefined;
