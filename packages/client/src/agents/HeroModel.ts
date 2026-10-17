@@ -1133,11 +1133,14 @@ export class HeroModels {
       pelvis.rotation.set(0, 0, 0); pelvis.position.x = rig.rest.get('pelvis')!.x; pelvis.position.z = rig.rest.get('pelvis')!.z;
       bone('spine').rotation.set(crossing.lean * .45, 0, 0); bone('chest').rotation.set(crossing.lean * .55, 0, 0); bone('head').rotation.set(-crossing.lean * .7, 0, 0);
     }
+    const relaxedArms = (ambushWardrobe?.relaxedArmOffset(input) ?? 0) * (1 - pose.airborne) * (1 - motion.seated)
+      * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3)
+      * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
     for (const [i, side] of ['R', 'L'].entries()) {
       bone('hip_' + side).rotation.set(pose.legs[i].hip, 0, 0);
       bone('knee_' + side).rotation.set(pose.legs[i].knee, 0, 0);
       bone('ankle_' + side).rotation.set(pose.legs[i].ankle, 0, 0);
-      bone('shoulder_' + side).rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward * .6);
+      bone('shoulder_' + side).rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward * .6 + (i ? 1 : -1) * relaxedArms);
       bone('elbow_' + side).rotation.set(pose.arms[i].elbow, 0, 0);
       bone('wrist_' + side).quaternion.identity();
       const grip = .15;
