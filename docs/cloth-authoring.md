@@ -1,4 +1,4 @@
-# Blender 衣物碰撞制作
+# Blender 衣物制作
 
 验证版本：Blender 4.5.3 LTS。这里只描述离线制作工具，不代表游戏中的衣物、完整脱衣或三部曲场景已验收。
 
@@ -16,3 +16,16 @@ output/tools/blender-4.5.3-arm64/Blender.app/Contents/MacOS/Blender \
 ```
 
 这是单独的 Blender 集成检查，不会被 `npm test` 执行。它不写游戏资源或存档。实际人物制作仍需对完整服装、全部人体与内层、重力、完整动作及实机逐段检查；这个工具修复不增加高质量场景完成数。
+
+显示细节与模拟网格可以分开制作。`scripts/cloth_display.py` 的 `bind_display_to_cage(display, cage)` 在当前参考姿态建立 Surface Deform 绑定，让完整显示网格跟随已验证的模拟网格；调用时两者须在当前视图层、处于对象模式，函数会将显示对象设为活动并选中。模拟网格需先解决自交、开口及拓扑问题，绑定后保持目标拓扑和顶点顺序不变。绑定后再进行动画或添加模拟，完整显示网格仍须参加实际身体/衣物接触检查。
+
+显示绑定的独立检查使用有细节起伏的完整袖管，检查参考形状、逐顶点刚体变形跟随、返回及保存 `.blend` 后重新打开：
+
+```sh
+output/tools/blender-4.5.3-arm64/Blender.app/Contents/MacOS/Blender \
+  --background --factory-startup --threads 2 --python-exit-code 1 \
+  --python tests/blender/cloth_display_binding.py \
+  -- --output output/tests/cloth-display-binding.json
+```
+
+这项检查验证制作工具的绑定与恢复，不验证自然布料、完整人物动作、游戏读档或实机质量；同样不由 `npm test` 执行，不增加运行依赖。
