@@ -1133,9 +1133,7 @@ export class HeroModels {
       pelvis.rotation.set(0, 0, 0); pelvis.position.x = rig.rest.get('pelvis')!.x; pelvis.position.z = rig.rest.get('pelvis')!.z;
       bone('spine').rotation.set(crossing.lean * .45, 0, 0); bone('chest').rotation.set(crossing.lean * .55, 0, 0); bone('head').rotation.set(-crossing.lean * .7, 0, 0);
     }
-    const relaxedArms = (ambushWardrobe?.relaxedArmOffset(input) ?? 0) * (1 - pose.airborne) * (1 - motion.seated)
-      * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3)
-      * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
+    const relaxedArms = ambushWardrobe?.relaxedArmOffset(input, motion) ?? 0;
     for (const [i, side] of ['R', 'L'].entries()) {
       bone('hip_' + side).rotation.set(pose.legs[i].hip, 0, 0);
       bone('knee_' + side).rotation.set(pose.legs[i].knee, 0, 0);
@@ -1428,6 +1426,7 @@ export class HeroModels {
     this.apartments.get(rig)?.update(input.contact, input.computerCheck);
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
+    ambushWardrobe?.poseDrape(input, motion);
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
