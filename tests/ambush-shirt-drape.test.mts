@@ -120,7 +120,7 @@ test('the complete shirt clears every visible inner layer through free locomotio
   assert.equal(shirt.geometry.attributes.normal.version, normalVersion, 'gaits do not upload rewritten normal buffers');
 });
 
-test('raised-thigh cloth restores from saved motion, remains paused and leaves the covered garment unchanged', async t => {
+test('raised-thigh cloth restores from saved motion, remains paused and keeps its fitting when covered', async t => {
   const h = await model(), cold = await model(); t.after(() => { h.models.dispose(); cold.models.dispose(); });
   const input: MotionInput = { speed: PLAYER_RUN_SPEED, grounded: true, verticalVelocity: 0, turn: .4, ambushWardrobe: 'shirt' };
   h.rig.root.position.set(4, 2, -3); h.rig.root.rotation.y = .43;
@@ -139,10 +139,7 @@ test('raised-thigh cloth restores from saved motion, remains paused and leaves t
   assert.ok(points(restored).every((point, i) => point.distanceTo(before[i]) < 1e-6), 'a new asset and saved motion recreate the actual raised-thigh cloth');
   const covered = { ...input, ambushWardrobe: 'coat' as const };
   h.models.animate(h.rig, advanceMotion(state, covered, 0), state, covered, 0); h.rig.root.updateMatrixWorld(true);
-  for (let i = 0; i < shirt.geometry.attributes.position.count; i++) {
-    const original = shirt.applyBoneTransform(i, new THREE.Vector3().fromBufferAttribute(shirt.geometry.attributes.position, i));
-    assert.ok(shirt.getVertexPosition(i, new THREE.Vector3()).distanceTo(original) < 1e-8, `covered vertex ${i} retains its original surface`);
-  }
+  assert.ok(points(shirt).every((point, i) => point.distanceTo(before[i]) < 1e-6), 'the leather layer does not disable the actual raised-thigh inner cloth');
 });
 
 test('occupied hands and the actual ground-level escort gait also keep the full shirt clear', async t => {

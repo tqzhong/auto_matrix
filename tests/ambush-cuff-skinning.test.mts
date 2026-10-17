@@ -78,7 +78,12 @@ test('cloth rebinding preserves the actual bind surface, normalized arm weights 
           assert.ok(!/^finger/.test(name) || weight === 0, `${mesh.name}/${i}: a sleeve is still attached to ${name}`);
         }
         assert.ok(Math.abs(total - 1) < 1e-6); if (wrist > .1) wristVertices++;
-        maximum = Math.max(maximum, mesh.getVertexPosition(i, point).distanceTo(bind.fromBufferAttribute(position, i)));
+        bind.fromBufferAttribute(position, i);
+        for (const [target, attribute] of (mesh.geometry.morphAttributes.position ?? []).entries()) {
+          assert.ok(mesh.geometry.morphTargetsRelative, 'the delivered cloth uses relative fitting and hip targets');
+          bind.addScaledVector(new THREE.Vector3().fromBufferAttribute(attribute, i), mesh.morphTargetInfluences![target]);
+        }
+        maximum = Math.max(maximum, mesh.getVertexPosition(i, point).distanceTo(bind));
       }
       assert.ok(wristVertices > 100, 'the actual sleeves retain hand-off at their wrist');
       assert.ok(maximum < 1e-6, `${mesh.name}: rebinding changes the delivered bind-space surface by ${maximum}`);

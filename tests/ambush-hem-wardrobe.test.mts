@@ -26,7 +26,7 @@ async function model(hemFit = true) {
   return { models, rig };
 }
 
-test('covering the repaired hem restores the original actual inner shirt and returning recreates the same fitted surface', async t => {
+test('covering retains the repaired hem and leaving the garment restores its original binding', async t => {
   const current = await model(), reference = await model(false); t.after(() => { current.models.dispose(); reference.models.dispose(); });
   for (const h of [current, reference]) { h.rig.root.position.set(4, 2, -3); h.rig.root.rotation.y = .43; }
   const shirt = current.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
@@ -36,15 +36,14 @@ test('covering the repaired hem restores the original actual inner shirt and ret
   for (let frame = -59; frame <= 30; frame++) current.models.animate(current.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60);
   current.rig.root.updateMatrixWorld(true);
   const fitted = points(shirt), covered = { ...input, ambushWardrobe: 'coat' as const }, saved = JSON.parse(JSON.stringify(state));
-  current.models.animate(current.rig, advanceMotion(state, covered, 0), state, covered, 0);
-  reference.models.animate(reference.rig, advanceMotion(saved, covered, 0), saved, covered, 0);
-  current.rig.root.updateMatrixWorld(true); reference.rig.root.updateMatrixWorld(true);
-  const expected = points(original), actual = points(shirt);
-  const worst = Math.max(...actual.map((point, i) => point.distanceTo(expected[i])));
-  assert.ok(worst < 1e-6, `the covered inner shirt keeps a new bone-driven offset of ${worst} instead of restoring its original surface`);
   const a = shirt.geometry.attributes, b = original.geometry.attributes;
-  assert.deepEqual(Array.from(a.skinIndex.array), Array.from(b.skinIndex.array));
-  assert.deepEqual(Array.from(a.skinWeight.array), Array.from(b.skinWeight.array));
+  const fittedIndices = Array.from(a.skinIndex.array), fittedWeights = Array.from(a.skinWeight.array);
+  current.models.animate(current.rig, advanceMotion(state, covered, 0), state, covered, 0);
+  current.rig.root.updateMatrixWorld(true);
+  const actual = points(shirt), worst = Math.max(...actual.map((point, i) => point.distanceTo(fitted[i])));
+  assert.ok(worst < 1e-6, `the leather layer changes the actual repaired inner hem by ${worst}`);
+  assert.deepEqual(Array.from(a.skinIndex.array), fittedIndices);
+  assert.deepEqual(Array.from(a.skinWeight.array), fittedWeights);
   const versions = [a.skinIndex.version, a.skinWeight.version];
   for (let frame = 0; frame < 10; frame++) current.models.animate(current.rig, advanceMotion(state, covered, 0), state, covered, 0);
   current.rig.root.updateMatrixWorld(true);
@@ -55,4 +54,13 @@ test('covering the repaired hem restores the original actual inner shirt and ret
   }
   current.models.animate(current.rig, advanceMotion(state, input, 0), state, input, 0); current.rig.root.updateMatrixWorld(true);
   assert.ok(points(shirt).every((point, i) => point.distanceTo(fitted[i]) < 1e-6), 'returning to shirt-only recreates the complete repaired surface');
+  const outside = { ...input, ambushWardrobe: undefined, realWorld: true };
+  current.models.animate(current.rig, advanceMotion(state, outside, 0), state, outside, 0);
+  reference.models.animate(reference.rig, advanceMotion(saved, outside, 0), saved, outside, 0);
+  current.rig.root.updateMatrixWorld(true); reference.rig.root.updateMatrixWorld(true);
+  assert.equal(shirt.visible, false);
+  assert.deepEqual(Array.from(a.skinIndex.array), Array.from(b.skinIndex.array), 'leaving releases the original borrowed joint indices');
+  assert.deepEqual(Array.from(a.skinWeight.array), Array.from(b.skinWeight.array), 'leaving releases the original borrowed weights');
+  const expected = points(original);
+  assert.ok(points(shirt).every((point, i) => point.distanceTo(expected[i]) < 1e-6), 'inactive cloth agrees with the independently unrepaired donor');
 });

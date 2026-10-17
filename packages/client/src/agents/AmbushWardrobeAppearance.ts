@@ -447,7 +447,7 @@ export class AmbushWardrobeAppearance {
     return input.realWorld !== true && input.ambushWardrobe === 'coat' && this.rig.panels.some(panel => panel.mesh === mesh);
   }
   private clothBlend(input: MotionInput, motion: MotionState): number {
-    if (!this.fittedArmhole || input.realWorld || input.ambushWardrobe !== 'shirt' || input.performance || input.crouching
+    if (!this.fittedArmhole || input.realWorld || !input.ambushWardrobe || input.performance || input.crouching
       || input.wetwall || input.sixth || input.bathroom || input.basement
       || input.tvExit || input.crosscut || input.betrayal) return 0;
     return (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
@@ -469,8 +469,10 @@ export class AmbushWardrobeAppearance {
   }
   update(input: MotionInput): void {
     const mode = input.realWorld !== true ? input.ambushWardrobe : undefined;
-    this.setHemBinding(mode === 'shirt');
-    if (this.fittedArmhole) this.source.morphTargetInfluences![0] = mode === 'shirt' ? 1 : 0;
+    // Covering the same shirt must not restore its intersecting old cut or
+    // waistband binding. Leaving this wardrobe still restores both originals.
+    this.setHemBinding(Boolean(mode));
+    if (this.fittedArmhole) this.source.morphTargetInfluences![0] = mode ? 1 : 0;
     this.trousers.geometry = mode ? this.fittedTrousers : this.originalTrousers;
     for (const mesh of this.meshes) mesh.visible = Boolean(mode);
     this.coat.visible = this.lapels.visible = mode === 'coat';
