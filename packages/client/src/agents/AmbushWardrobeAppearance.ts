@@ -217,7 +217,14 @@ export class AmbushWardrobeAppearance {
     const cutNormals = sculpt === undefined ? undefined : this.source.geometry.morphAttributes.normal[sculpt];
     // The stock upper coat is narrower than the full shirt. Share the shirt's
     // skin weights and fit a separate outer shell, including both entire sleeves.
-    this.vertices.set(jacket, this.vertices.get(this.source)!.map(vertex => ({ ...vertex, point: vertex.point.clone().addScaledVector(vertex.normal, .04) })));
+    this.vertices.set(jacket, this.vertices.get(this.source)!.map(vertex => {
+      const point = vertex.point.clone().addScaledVector(vertex.normal, .04), radial = new THREE.Vector3(vertex.point.x, 0, vertex.point.z - .08);
+      const neck = THREE.MathUtils.smoothstep(vertex.point.y, 3.70, 3.80) * (1 - THREE.MathUtils.smoothstep(radial.length(), .28, .40));
+      // The knit's folded neck normals face inward. Keep its raised return,
+      // but fit the leather opening radially outside the connected shirt stand.
+      radial.normalize(); point.x += .04 * neck * (radial.x - vertex.normal.x); point.z += .04 * neck * (radial.z - vertex.normal.z);
+      return { ...vertex, point };
+    }));
     const size = 128, data = new Uint8Array(size * size * 4);
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
       const row = Math.floor(y / 16), u = (x + row % 2 * 8 + Math.sin(y * .2)) % 16, v = y % 16;
@@ -232,12 +239,8 @@ export class AmbushWardrobeAppearance {
     for (const material of [shirt, leather, silk]) this.materials.add(material);
     // Close the knit donor's low round neckline with a shirt stand sampled
     // from the actual neck, then fit the folded collar and tie to that cloth.
-    const shirtVertices = this.vertices.get(this.source)!.slice(), shirtIndices = Array.from(this.source.geometry.index!.array), neckline = shirtVertices.length;
-    for (let row = 0; row <= 8; row++) for (let column = 0; column <= 12; column++) {
-      const t = row / 8, x = (column / 6 - 1) * (.21 - .05 * t), y = 3.74 + .15 * t;
-      shirtVertices.push(this.sample(skin, x, y, .035));
-      if (row < 8 && column < 12) { const a = neckline + row * 13 + column, b = a + 13; shirtIndices.push(a, b, a + 1, b, b + 1, a + 1); }
-    }
+    const shirtVertices = this.vertices.get(this.source)!.slice(), shirtIndices = Array.from(this.source.geometry.index!.array);
+    this.neckStand(shirtVertices, shirtIndices, skin);
     this.source = this.make('morpheus-ambush-shirt', this.geometry(shirtVertices, shirtIndices, true), shirt);
     if (cutPositions && cutNormals) {
       for (const [name, attribute] of [['position', cutPositions], ['normal', cutNormals]] as const) {
@@ -296,6 +299,30 @@ export class AmbushWardrobeAppearance {
     }
     this.lapels = this.make('morpheus-ambush-lapels', this.geometry(lapels, lapelIndices), leather);
     this.vertices.clear(); this.bands.clear();
+  }
+
+  private neckStand(vertices: Vertex[], indices: number[], skin: THREE.SkinnedMesh): void {
+    const donor = this.rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+    const stand = donor.userData.ambushNeckStand as { bones: string[]; updates: number[][]; vertices: number[][]; indices: number[] } | undefined;
+    if (!stand) {
+      // Keep the previous costume when an older cached donor has no sewn stand.
+      const start = vertices.length;
+      for (let row = 0; row <= 8; row++) for (let column = 0; column <= 12; column++) {
+        const t = row / 8, x = (column / 6 - 1) * (.21 - .05 * t), y = 3.74 + .15 * t;
+        vertices.push(this.sample(skin, x, y, .035));
+        if (row < 8 && column < 12) { const a = start + row * 13 + column, b = a + 13; indices.push(a, b, a + 1, b, b + 1, a + 1); }
+      }
+      return;
+    }
+    const joints = stand.bones.map(name => this.source.skeleton.bones.findIndex(bone => bone.name === name));
+    for (const [id, x, y, z, nx, ny, nz] of stand.updates) {
+      vertices[id].point.set(x, y, z); vertices[id].normal.set(nx, ny, nz);
+    }
+    for (const values of stand.vertices) vertices.push({
+      point: new THREE.Vector3(values[0], values[1], values[2]), normal: new THREE.Vector3(values[3], values[4], values[5]),
+      uv: new THREE.Vector2(values[6], values[7]), joints: values.slice(8, 12).map(joint => joints[joint]), weights: values.slice(12, 16),
+    });
+    indices.push(...stand.indices);
   }
 
   private bindHem(): void {
