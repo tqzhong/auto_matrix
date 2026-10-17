@@ -144,9 +144,10 @@ export class AmbushWardrobeAppearance {
       vertex.point.x *= 1 - .04 * fitted; vertex.point.z *= 1 - .07 * fitted;
     }
     const clothPoints = cloth.map(vertex => vertex.point.clone());
+    const waistAmounts = cloth.map(vertex => vertex.joints.reduce((sum, joint, i) => sum + (/^(pelvis|spine|chest|hip_[LR])$/.test(this.source.skeleton.bones[joint].name) ? vertex.weights[i] : 0), 0));
     const waistRay = new THREE.Ray(), waistHit = new THREE.Vector3(), pants = this.vertices.get(trousers)!, pantsIndex = trousers.geometry.index!;
-    for (const vertex of cloth) {
-      const waist = vertex.joints.reduce((sum, joint, i) => sum + (/^(pelvis|spine|chest|hip_[LR])$/.test(this.source.skeleton.bones[joint].name) ? vertex.weights[i] : 0), 0);
+    for (const [vertexId, vertex] of cloth.entries()) {
+      const waist = waistAmounts[vertexId];
       // Keep the untucked hem outside the actual high trouser waist. Fitting
       // only the front left small side/back triangles poking through the shirt.
       if (waist > .8 && vertex.point.y < 2.85) {
@@ -159,8 +160,12 @@ export class AmbushWardrobeAppearance {
         }
         // Move the existing folded layers together. Clamping each point to
         // one trouser radius collapses the rear seam's overlapping relief.
+        // Only the waist layers define that offset: a resting sleeve can
+        // cross the same ray inside the torso and must not inflate the shirt.
         for (const i of this.band(this.source, vertex.point.y)) {
-          if (!waistRay.intersectTriangle(clothPoints[clothIndex.getX(i)], clothPoints[clothIndex.getX(i + 1)], clothPoints[clothIndex.getX(i + 2)], false, waistHit)) continue;
+          const a = clothIndex.getX(i), b = clothIndex.getX(i + 1), c = clothIndex.getX(i + 2);
+          if (waistAmounts[a] <= .8 || waistAmounts[b] <= .8 || waistAmounts[c] <= .8) continue;
+          if (!waistRay.intersectTriangle(clothPoints[a], clothPoints[b], clothPoints[c], false, waistHit)) continue;
           inner = Math.min(inner, waistHit.distanceTo(waistRay.origin));
         }
         radius += Math.max(0, required - inner);
