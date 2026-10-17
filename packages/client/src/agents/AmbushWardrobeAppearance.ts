@@ -38,6 +38,7 @@ export class AmbushWardrobeAppearance {
   private trousers: THREE.SkinnedMesh;
   private originalTrousers: THREE.BufferGeometry;
   private fittedTrousers: THREE.BufferGeometry;
+  private fittedArmhole = false;
 
   constructor(private rig: HeroRig, fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
@@ -206,6 +207,11 @@ export class AmbushWardrobeAppearance {
       const key = seamKey(i); let sum = seamNormals.get(key); if (!sum) seamNormals.set(key, sum = new THREE.Vector3()); sum.add(normal);
     }
     for (const i of unfoldedNormals) cloth[i].normal.copy(seamNormals.get(seamKey(i))!).normalize();
+    // The authored cut is relative to this fitted shirt, not the ship knit.
+    // Retain both layers' original bind surfaces while constructing the coat.
+    const sculpt = this.source.morphTargetDictionary?.ambushShirtFit;
+    const cutPositions = sculpt === undefined ? undefined : this.source.geometry.morphAttributes.position[sculpt];
+    const cutNormals = sculpt === undefined ? undefined : this.source.geometry.morphAttributes.normal[sculpt];
     // The stock upper coat is narrower than the full shirt. Share the shirt's
     // skin weights and fit a separate outer shell, including both entire sleeves.
     this.vertices.set(jacket, this.vertices.get(this.source)!.map(vertex => ({ ...vertex, point: vertex.point.clone().addScaledVector(vertex.normal, .04) })));
@@ -230,6 +236,15 @@ export class AmbushWardrobeAppearance {
       if (row < 8 && column < 12) { const a = neckline + row * 13 + column, b = a + 13; shirtIndices.push(a, b, a + 1, b, b + 1, a + 1); }
     }
     this.source = this.make('morpheus-ambush-shirt', this.geometry(shirtVertices, shirtIndices, true), shirt);
+    if (cutPositions && cutNormals) {
+      for (const [name, attribute] of [['position', cutPositions], ['normal', cutNormals]] as const) {
+        const delta = new Float32Array(shirtVertices.length * 3);
+        for (let i = 0; i < attribute.count; i++) for (let n = 0; n < 3; n++) delta[i * 3 + n] = attribute.getComponent(i, n);
+        const target = new THREE.BufferAttribute(delta, 3); target.name = 'ambushShirtFit';
+        this.source.geometry.morphAttributes[name] = [target];
+      }
+      this.source.geometry.morphTargetsRelative = true; this.source.updateMorphTargets(); this.fittedArmhole = true;
+    }
     this.vertices.set(this.source, shirtVertices);
 
     const collar: Vertex[] = [], collarIndices: number[] = [];
@@ -336,8 +351,18 @@ export class AmbushWardrobeAppearance {
   garment(mesh: THREE.Mesh, input: MotionInput): boolean {
     return input.realWorld !== true && input.ambushWardrobe === 'coat' && this.rig.panels.some(panel => panel.mesh === mesh);
   }
+  relaxedArmOffset(input: MotionInput): number {
+    if (!this.fittedArmhole || input.realWorld || input.ambushWardrobe !== 'shirt' || input.armed || input.performance || input.crouching
+      || input.ambushEscort || input.ambushCall || input.wetwall || input.sixth || input.bathroom || input.basement
+      || input.tvExit || input.crosscut || input.betrayal) return 0;
+    // The lowered stock bind pose squeezes this actor's forearms into the
+    // waist. Retarget the relaxed stance with the fitted cut; scripted grips
+    // retain their own poses. This does not resolve the remaining hem contact.
+    return .075;
+  }
   update(input: MotionInput): void {
     const mode = input.realWorld !== true ? input.ambushWardrobe : undefined;
+    if (this.fittedArmhole) this.source.morphTargetInfluences![0] = mode === 'shirt' ? 1 : 0;
     this.trousers.geometry = mode ? this.fittedTrousers : this.originalTrousers;
     for (const mesh of this.meshes) mesh.visible = Boolean(mode);
     this.coat.visible = this.lapels.visible = mode === 'coat';
