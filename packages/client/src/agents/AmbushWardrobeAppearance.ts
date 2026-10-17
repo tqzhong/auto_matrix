@@ -40,6 +40,8 @@ export class AmbushWardrobeAppearance {
   private fittedTrousers: THREE.BufferGeometry;
   private fittedArmhole = false;
   private drapeIndices: number[] = [];
+  private hemBindings?: { shirt: number[][]; covered: number[][] };
+  private hemShirt = false;
 
   constructor(private rig: HeroRig, fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
@@ -244,7 +246,7 @@ export class AmbushWardrobeAppearance {
         const target = new THREE.BufferAttribute(delta, 3); target.name = 'ambushShirtFit';
         this.source.geometry.morphAttributes[name] = [target];
       }
-      this.source.geometry.morphTargetsRelative = true; this.addDrapeTargets(); this.source.updateMorphTargets(); this.fittedArmhole = true;
+      this.source.geometry.morphTargetsRelative = true; this.bindHem(); this.addDrapeTargets(); this.source.updateMorphTargets(); this.fittedArmhole = true;
     }
     this.vertices.set(this.source, shirtVertices);
 
@@ -296,6 +298,26 @@ export class AmbushWardrobeAppearance {
     this.vertices.clear(); this.bands.clear();
   }
 
+  private bindHem(): void {
+    const donor = this.rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+    const fitting = donor.userData.ambushHemFit as { bones: string[]; vertices: number[][] } | undefined;
+    if (!fitting) return;
+    const a = this.source.geometry.attributes, joints = fitting.bones.map(name => this.source.skeleton.bones.findIndex(bone => bone.name === name));
+    this.hemBindings = {
+      covered: fitting.vertices.map(([vertex]) => [vertex, ...[0, 1, 2, 3].map(k => a.skinIndex.getComponent(vertex, k)), ...[0, 1, 2, 3].map(k => a.skinWeight.getComponent(vertex, k))]),
+      shirt: fitting.vertices.map(([vertex, ...values]) => [vertex, ...values.slice(0, 4).map(joint => joints[joint]), ...values.slice(4)]),
+    };
+    this.setHemBinding(true);
+  }
+  private setHemBinding(shirt: boolean): void {
+    if (!this.hemBindings || this.hemShirt === shirt) return;
+    const a = this.source.geometry.attributes;
+    for (const [vertex, ...values] of this.hemBindings[shirt ? 'shirt' : 'covered']) for (let k = 0; k < 4; k++) {
+      a.skinIndex.setComponent(vertex, k, values[k]); a.skinWeight.setComponent(vertex, k, values[k + 4]);
+    }
+    a.skinIndex.needsUpdate = a.skinWeight.needsUpdate = true; this.hemShirt = shirt;
+  }
+
   private addDrapeTargets(): void {
     const geometry = this.source.geometry, a = geometry.attributes, index = geometry.index!;
     const fitted = Array.from({ length: a.position.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(a.position, i)
@@ -311,7 +333,7 @@ export class AmbushWardrobeAppearance {
           * THREE.MathUtils.smoothstep(a.position.getZ(i), .02, .28) * THREE.MathUtils.smoothstep(side * a.position.getX(i), -.15, .28);
         // Lift and roll the loose front over the flexing thigh. The upper
         // waist and sleeves keep their fit; the two sides can move separately.
-        delta[i * 3 + 1] = amount * .08; delta[i * 3 + 2] = amount * .06;
+        delta[i * 3 + 1] = amount * .10; delta[i * 3 + 2] = amount * .06;
         if (amount > 0) changed.add(i);
       }
       const points = fitted.map((point, i) => point.clone().add(new THREE.Vector3().fromArray(delta, i * 3)));
@@ -409,7 +431,7 @@ export class AmbushWardrobeAppearance {
     // waist. Retarget the relaxed stance with the fitted cut; scripted grips
     // retain their own poses. The hem has its separate hip-driven correction.
     if (input.armed || input.ambushEscort || input.ambushCall) return 0;
-    return .075 * this.clothBlend(input, motion);
+    return .085 * this.clothBlend(input, motion);
   }
   poseDrape(input: MotionInput, motion: MotionState): void {
     const amount = this.clothBlend(input, motion);
@@ -420,6 +442,7 @@ export class AmbushWardrobeAppearance {
   }
   update(input: MotionInput): void {
     const mode = input.realWorld !== true ? input.ambushWardrobe : undefined;
+    this.setHemBinding(mode === 'shirt');
     if (this.fittedArmhole) this.source.morphTargetInfluences![0] = mode === 'shirt' ? 1 : 0;
     this.trousers.geometry = mode ? this.fittedTrousers : this.originalTrousers;
     for (const mesh of this.meshes) mesh.visible = Boolean(mode);
