@@ -132,10 +132,7 @@ test('a paused or cold ordinary pose restores the same complete cloth without de
   assert.equal(shirt.geometry.attributes.position.version, version, 'ordinary frames use static skinning without cloth-buffer uploads');
   const coatInput = { ...input, ambushWardrobe: 'coat' as const };
   h.models.animate(h.rig, advanceMotion(motion, coatInput, 0), motion, coatInput, 0); h.rig.root.updateMatrixWorld(true);
-  for (let i = 0; i < shirt.geometry.attributes.position.count; i++) {
-    const unsculpted = shirt.applyBoneTransform(i, new THREE.Vector3().fromBufferAttribute(shirt.geometry.attributes.position, i));
-    assert.ok(shirt.getVertexPosition(i, new THREE.Vector3()).distanceTo(unsculpted) < 1e-8, `covered vertex ${i} retains its original fitted surface beneath the existing coat`);
-  }
+  assert.ok(posed(shirt).every((point, i) => point.distanceTo(before[i]) < 1e-6), 'covering keeps the actual fitted inner surface instead of restoring its intersecting old cut');
   const shipInput = { ...input, ambushWardrobe: undefined, realWorld: true };
   h.models.animate(h.rig, advanceMotion(motion, shipInput, 0), motion, shipInput, 0); h.rig.root.updateMatrixWorld(true);
   assert.equal(shirt.visible, false);
