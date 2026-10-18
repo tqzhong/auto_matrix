@@ -8,10 +8,14 @@ export class SocketServer {
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
       cors: { origin: '*', methods: ['GET', 'POST'] },
+      // World/traffic snapshots repeat at 20 Hz; uncompressed JSON queues seconds
+      // of stale poses ahead of player commands on a limited connection.
+      perMessageDeflate: { threshold: 1024, zlibDeflateOptions: { level: 1 } },
     });
 
     this.io.on('connection', (socket) => {
       console.log(`[Socket] Client connected: ${socket.id}`);
+      socket.on('session_ping', (reply: unknown) => { if (typeof reply === 'function') reply(); });
       socket.on('disconnect', () => {
         console.log(`[Socket] Client disconnected: ${socket.id}`);
       });

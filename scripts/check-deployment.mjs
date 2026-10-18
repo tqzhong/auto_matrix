@@ -44,7 +44,9 @@ try {
     socket.connect();
   });
   assert.ok(world.agents?.neo && world.agents?.trinity, 'Socket.IO sends playable characters');
-  console.log(`HTTPS and WebSocket ready: ${status.agentCount} characters, tick ${status.tick}, mode ${status.mode}`);
+  const started = performance.now();
+  await new Promise((resolve, reject) => socket.timeout(4000).emit('session_ping', error => error ? reject(new Error('Game command round trip exceeded 4 seconds')) : resolve()));
+  console.log(`HTTPS and bidirectional WebSocket ready: ${status.agentCount} characters, tick ${status.tick}, mode ${status.mode}, round trip ${Math.round(performance.now() - started)} ms`);
 } finally { socket.disconnect(); }
 
 async function assets(directory) {

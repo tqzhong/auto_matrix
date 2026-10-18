@@ -136,6 +136,7 @@ function update(force = false): void {
 }
 
 const socket = new SocketClient({
+  onHealth: (status, latency) => playerUI.setConnection(status, latency),
   onConnection: connected => {
     ui.setConnection(connected);
     if (!connected && controls.id) {
@@ -242,6 +243,7 @@ const playerUI = new PlayerExperience({
   menu: open => { if (open) sandboxUI.close(); controls.setEnabled(!open); engine.audio.setReading('roster', open); },
   resume: () => controls.lockPointer(),
   pause: () => { if (simulation) simulation.running ? socket.pause() : socket.resume(); },
+  reconnect: () => socket.reconnect(),
   inspect: id => {
     controls.setEnabled(false); engine.suspended = true; engine.audio.setReading('inspect', true);
     characterViewer.open(id, () => { engine.suspended = false; controls.setEnabled(true); engine.audio.setReading('inspect', false); });

@@ -22,7 +22,7 @@ import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
 import { PlayerController } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
-import { SupabaseCheckpointStore } from './world/SupabaseCheckpointStore.js';
+import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -95,7 +95,15 @@ async function saveWorld(running = simLoop.isRunning()): Promise<void> {
     simulation: { running, speed }, phase: story.getCurrentPhaseId(),
     ...(cloudSave ? { memories: memory.getCheckpoint(world.agents.keys()) } : {}),
     agents: Object.fromEntries(world.agents), events: world.globalEvents,
-    relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state, conversations: conversations.getCheckpoint() })]);
+    relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state, conversations: conversations.getCheckpoint() })]).catch(error => {
+    if (error instanceof CloudCheckpointConflictError) {
+      // Serving an unsavable fork silently loses the player's next actions.
+      worldReady = false; simLoop.stop(); clearInterval(playerTimer);
+      console.error('[Save] Conflicting writer; closing this instance for checkpoint recovery');
+      sockets.getIO().close(() => process.exit(1));
+    }
+    throw error;
+  });
 }
 
 const simLoop = new SimulationLoop(config.simulation.tickRateMs, config.simulation.agentDecisionIntervalTicks,
