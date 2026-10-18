@@ -2,6 +2,17 @@
 
 使用 Render 的 **Hobby 工作区 + Free Web Service** 运行现有 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 留在阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，玩家的浏览器负责 3D 渲染。部署配置见根目录 `render.yaml`，不购买服务器或持久磁盘，不使用付费语言模型。
 
+## 已上线版本（2026-10-18）
+
+- 正式入口：<https://matrixai.online>；`www.matrixai.online` 自动跳转到根域名。两者均已验证并签发 HTTPS 证书。
+- Render 服务：`matrixai` / `srv-dba4redg1s2s73apj6c0`，Singapore，Free；备用入口 <https://matrixai-s0sd.onrender.com>。自动部署关闭，已发布提交 `affacb09efabecfc2d8d3b566860b6dc089417fb`。
+- Supabase 项目：`matrixai` / `kywbietilqfwuvvpyooe`，Singapore，Free。连接密钥仅保存在 Render 的私密环境变量中。
+- 阿里云 DNS：`@ A 216.24.57.1`，`www CNAME matrixai-s0sd.onrender.com`，TTL 10 分钟。原来的三个额外 GitHub Pages A 记录已暂停保留；旧主 A 值为 `185.199.108.153`，旧 www 值为 `tqzhong.github.io`。其他记录未改动。
+- 验收：HTTPS、Socket.IO 世界快照、224 个素材及模型/音乐分段请求通过；正式域名中 Neo 接管、日常活动面板和原声播放正常。重新发布后服务器从云存档恢复到 tick 4364，保留暂停状态。依赖补丁后生产构建及 49 项回归测试通过，生产依赖审计为 0 项已知漏洞。
+- 试玩前点击进入 Neo，再点击“继续时间”。当前是共享世界，其他访客会进入同一个世界。Render 工作区自定义域名额度已用满（2 / 2），本次未添加付费服务。
+
+线上使用的是上述已验证提交。本地未完成的剧情、衣物动作实验不包含在此次发布中。后续代码推送不会自动更新网站，需完成验证后手动发布。
+
 ## 免费额度与体验
 
 - Render 无请求 15 分钟后休眠，下一次访问约需一分钟唤醒；休眠期间世界停止推进。服务重启或更新会清空本地磁盘，因此线上必须启用云存档。
