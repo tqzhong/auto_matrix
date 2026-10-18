@@ -202,6 +202,7 @@ export interface MotionState {
   shotAge: number;
   seated: number;
   climbPhase: number;
+  ambushCrouch?: number;
 }
 
 export const newMotion = (): MotionState => ({ time: 0, phase: 0, speed: 0, turn: 0, airborne: 0, wasGrounded: true, landing: 0, attackAge: 10, combo: 0, hitAge: 10, hitPause: 0, verticalVelocity: 0, skillAge: 10, shotAge: 10, seated: 0, climbPhase: 0 });
@@ -231,6 +232,10 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+  const freeCrouch = Boolean(input.ambushWardrobe && !input.realWorld && !input.performance
+    && !input.ambushEscort && !input.ambushCall && !input.wetwall && !input.sixth
+    && !input.bathroom && !input.basement && !input.tvExit && !input.crosscut && !input.betrayal);
+  if (!freeCrouch && state.ambushCrouch !== undefined) delete state.ambushCrouch;
   if (input.training?.kind === 'red_dress' && input.training.attention) {
     const gesture = input.training, progress = clamp(redDressFrame(gesture) / RED_DRESS_PROGRAM.walk);
     const distance = gesture.role === 'citizen_2' ? RED_DRESS_PROGRAM.womanFinish.z - RED_DRESS_PROGRAM.womanStart.z
@@ -650,6 +655,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const hold = Math.min(dt, state.hitPause); state.hitPause -= hold; dt -= hold;
   }
   const blend = 1 - Math.exp(-12 * dt);
+  let crouch = input.crouching ? 1 : 0;
+  if (freeCrouch) {
+    // Preserve a partial local transition; older cold poses start settled.
+    state.ambushCrouch ??= crouch;
+    state.ambushCrouch = mix(state.ambushCrouch, crouch, 1 - Math.exp(-8 * dt));
+    crouch = state.ambushCrouch;
+  }
   const pills = input.pills && pillPose(input.pills);
   const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > PILL_TIMING.stand && input.pills.elapsed < PILL_TIMING.exit;
   const welcome = input.welcome && lafayetteWelcomePose(input.welcome);
@@ -763,7 +775,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const lobbyDown = lobby?.fall ?? 0;
   const governmentBend = government?.bend ?? 0;
   const escapePinned = matrixEscape?.grapple && input.matrixEscape?.role === 'neo' ? matrixEscape.grapple : 0;
-  const hipHeight = 1.98 - boardingCrouch * .75 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - (input.crouching ? .9 : 0) - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9 - (airRescue?.strain ?? 0) * .32 - (airRescue?.land ?? 0) * .18 - escapePinned * .72 - (matrixEscape?.brace ?? 0) * .55
+  const hipHeight = 1.98 - boardingCrouch * .75 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - crouch * .9 - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9 - (airRescue?.strain ?? 0) * .32 - (airRescue?.land ?? 0) * .18 - escapePinned * .72 - (matrixEscape?.brace ?? 0) * .55
     - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38 - (smithFinale?.fallen ?? 0) * 1.38 - mealSeatHeight;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
@@ -1295,7 +1307,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const epilogueLean = input.epilogue?.role === 'kid' && input.epilogue.phase === 'running' ? -.18 : 0;
   const mealLean = meal ? Math.sin(Math.PI * (input.interlude?.role === 'neo' ? meal.rise : input.interlude?.role === 'tank' ? meal.tankSeat : 0)) * .18 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: mealLean + boardingCrouch * .18 + run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + (input.crouching ? .26 : 0) + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + smithLean + epilogueLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
+  return { legs, arms, hipHeight, twist, lean: mealLean + boardingCrouch * .18 + run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + crouch * .26 + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + smithLean + epilogueLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + doorPush * .12 + (matrixEscape?.strike ?? 0) * .32,
     roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + farewellRoll + smithRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook + (recoveryCrew?.support ?? 0) * (input.recoveryCrew?.role === 'morpheus' ? -.12 : .12), moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
