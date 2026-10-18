@@ -55,13 +55,14 @@ export class AmbushCoatTails {
         if ((!coat && mesh.name !== 'morpheus-ambush-shirt' || ids.every(torso))
           && (!coat || ids.some(id => a.position.getY(id) <= seam))) selected.push(...ids);
       }
-      // The generated upper coat repeats vertices per face. Identical bind
-      // positions and weights need one CPU skin evaluation. Every selected
+      // The clipped upper coat repeats some seam vertices. Identical bind
+      // positions, morphs and weights need one CPU skin evaluation. Every selected
       // waist triangle stays in the cache; the rendered faces stay intact.
       const vertices: number[] = [], remap = new Map<number, number>(), welded = new Map<string, number>();
       const index = selected.map(id => {
         const existing = remap.get(id); if (existing !== undefined) return existing;
         const key = coat ? [a.position.getX(id), a.position.getY(id), a.position.getZ(id),
+          ...(mesh.geometry.morphAttributes.position ?? []).flatMap(target => [target.getX(id), target.getY(id), target.getZ(id)]),
           ...[0, 1, 2, 3].map(k => a.skinIndex.getComponent(id, k)), ...[0, 1, 2, 3].map(k => a.skinWeight.getComponent(id, k))].join(',') : '';
         let local = coat ? welded.get(key) : undefined;
         if (local === undefined) { local = vertices.length; vertices.push(id); if (coat) welded.set(key, local); }
