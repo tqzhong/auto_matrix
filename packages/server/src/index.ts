@@ -22,6 +22,7 @@ import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
 import { PlayerController } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
+import { SupabaseCheckpointStore } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +30,8 @@ const eventBus = new EventBus();
 const world = new WorldState();
 const dataDirectory = process.env.MATRIX_DATA_DIR ?? path.resolve(__dirname, '../../../data');
 const memory = new PersistentMemoryManager(path.join(dataDirectory, 'memories'));
-const checkpoints = new CheckpointStore(path.join(dataDirectory, 'world.json'));
+const cloudSave = SupabaseCheckpointStore.fromEnvironment();
+const checkpoints = new CheckpointStore(path.join(dataDirectory, 'world.json'), cloudSave);
 const relationships = new RelationshipGraph();
 const llm = new LLMClient(config.llm);
 const story = new StoryEngine(eventBus);
@@ -89,8 +91,9 @@ function snapshot(): WorldStateFull {
 async function saveWorld(running = simLoop.isRunning()): Promise<void> {
   if (!worldReady) return;
   // Serialize at the control boundary, before disk I/O can let another tick run.
-  await Promise.all([memory.saveAll(), checkpoints.save({ version: 1, tick: simLoop.getTick(), timeOfDay: world.timeOfDay, day: world.day,
+  await Promise.all([cloudSave ? Promise.resolve() : memory.saveAll(), checkpoints.save({ version: 1, tick: simLoop.getTick(), timeOfDay: world.timeOfDay, day: world.day,
     simulation: { running, speed }, phase: story.getCurrentPhaseId(),
+    ...(cloudSave ? { memories: memory.getCheckpoint(world.agents.keys()) } : {}),
     agents: Object.fromEntries(world.agents), events: world.globalEvents,
     relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state, conversations: conversations.getCheckpoint() })]);
 }
@@ -300,8 +303,9 @@ const playerTimer = setInterval(() => {
 async function main(): Promise<void> {
   relationships.initialize();
   manager.initializeAllAgents();
-  await memory.loadAll();
+  if (!cloudSave) await memory.loadAll();
   const checkpoint = await checkpoints.load();
+  if (cloudSave) memory.restoreCheckpoint(checkpoint?.memories ?? {});
   if (checkpoint) {
     conversations.restore(checkpoint.conversations);
     for (const [id, saved] of Object.entries(checkpoint.agents)) {
@@ -341,4 +345,4 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => 
   clearInterval(playerTimer);
   void saveWorld(running).catch(error => console.error('[Save] Failed:', error)).finally(() => { sockets.getIO().close(); httpServer.close(); process.exit(0); });
 });
-main().catch(error => { console.error(error); process.exitCode = 1; });
+main().catch(error => { clearInterval(playerTimer); console.error(error); process.exitCode = 1; });
