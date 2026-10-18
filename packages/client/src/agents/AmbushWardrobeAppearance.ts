@@ -4,7 +4,7 @@ import type { MotionInput, MotionState } from './CharacterMotion.js';
 import { AmbushCoatTails } from './AmbushCoatTails.js';
 import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED } from '@auto_matrix/shared';
 
-interface Vertex { point: THREE.Vector3; normal: THREE.Vector3; uv: THREE.Vector2; joints: number[]; weights: number[] }
+interface Vertex { point: THREE.Vector3; normal: THREE.Vector3; uv: THREE.Vector2; joints: number[]; weights: number[]; drape?: THREE.Vector3[] }
 function weights(entries: [number, number][]): Pick<Vertex, 'joints' | 'weights'> {
   const merged = new Map<number, number>();
   for (const [joint, value] of entries) merged.set(joint, (merged.get(joint) ?? 0) + value);
@@ -15,6 +15,7 @@ function weights(entries: [number, number][]): Pick<Vertex, 'joints' | 'weights'
 }
 function between(a: Vertex, b: Vertex, t: number): Vertex {
   return { point: a.point.clone().lerp(b.point, t), normal: a.normal.clone().lerp(b.normal, t).normalize(), uv: a.uv.clone().lerp(b.uv, t),
+    ...(a.drape && b.drape ? { drape: a.drape.map((point, i) => point.clone().lerp(b.drape![i], t)) } : {}),
     ...weights([...a.joints.map((joint, i) => [joint, a.weights[i] * (1 - t)] as [number, number]), ...b.joints.map((joint, i) => [joint, b.weights[i] * t] as [number, number])]) };
 }
 function clip(vertices: Vertex[], distance: (point: THREE.Vector3) => number): Vertex[] {
@@ -42,6 +43,7 @@ export class AmbushWardrobeAppearance {
   private fittedTrousers: THREE.BufferGeometry;
   private fittedArmhole = false;
   private drapeIndices: number[] = [];
+  private coatDrapeIndices: number[] = [];
   private hemBindings?: { shirt: number[][]; covered: number[][] };
   private hemShirt = false;
   private tails: AmbushCoatTails;
@@ -218,9 +220,21 @@ export class AmbushWardrobeAppearance {
     const sculpt = this.source.morphTargetDictionary?.ambushShirtFit;
     const cutPositions = sculpt === undefined ? undefined : this.source.geometry.morphAttributes.position[sculpt];
     const cutNormals = sculpt === undefined ? undefined : this.source.geometry.morphAttributes.normal[sculpt];
+    const outer = this.source.morphTargetDictionary?.ambushCoatFit;
+    const outerPositions = outer === undefined ? undefined : this.source.geometry.morphAttributes.position[outer];
+    const outerNormals = outer === undefined ? undefined : this.source.geometry.morphAttributes.normal[outer];
+    const hem = this.source.userData.ambushHemFit as { bones: string[]; vertices: number[][] } | undefined;
+    const hemJoints = hem?.bones.map(name => this.source.skeleton.bones.findIndex(bone => bone.name === name));
+    const coatBindings = new Map(hem?.vertices.map(([id, ...values]) => [id, {
+      joints: values.slice(0, 4).map(joint => hemJoints![joint]), weights: values.slice(4),
+    }]));
     // The stock upper coat is narrower than the full shirt. Share the shirt's
     // skin weights and fit a separate outer shell, including both entire sleeves.
-    this.vertices.set(jacket, this.vertices.get(this.source)!.map(vertex => {
+    this.vertices.set(jacket, this.vertices.get(this.source)!.map((vertex, i) => {
+      if (outerPositions && outerNormals) return { ...vertex, ...coatBindings.get(i),
+        point: new THREE.Vector3().fromBufferAttribute(this.source.geometry.attributes.position, i).add(new THREE.Vector3().fromBufferAttribute(outerPositions, i)),
+        normal: new THREE.Vector3().fromBufferAttribute(this.source.geometry.attributes.normal, i).add(new THREE.Vector3().fromBufferAttribute(outerNormals, i)).normalize(),
+      };
       const point = vertex.point.clone().addScaledVector(vertex.normal, .04), radial = new THREE.Vector3(vertex.point.x, 0, vertex.point.z - .08);
       const neck = THREE.MathUtils.smoothstep(vertex.point.y, 3.70, 3.80) * (1 - THREE.MathUtils.smoothstep(radial.length(), .28, .40));
       // The knit's folded neck normals face inward. Keep its raised return,
@@ -252,7 +266,7 @@ export class AmbushWardrobeAppearance {
         const target = new THREE.BufferAttribute(delta, 3); target.name = 'ambushShirtFit';
         this.source.geometry.morphAttributes[name] = [target];
       }
-      this.source.geometry.morphTargetsRelative = true; this.bindHem(); this.addDrapeTargets(); this.source.updateMorphTargets(); this.fittedArmhole = true;
+      this.source.geometry.morphTargetsRelative = true; this.bindHem(); this.drapeIndices = this.addDrapeTargets(this.source); this.source.updateMorphTargets(); this.fittedArmhole = true;
     }
     this.vertices.set(this.source, shirtVertices);
 
@@ -283,19 +297,34 @@ export class AmbushWardrobeAppearance {
     this.make('morpheus-ambush-tie', this.geometry(tie, tieIndices), silk);
 
     const opened: Vertex[] = [], openedIndices: number[] = [], jacketIndex = jacket.geometry.index!, cached = this.vertices.get(jacket)!;
+    if (outerPositions) for (let i = 0; i < cached.length; i++) cached[i].drape = this.drapeIndices.map(target => new THREE.Vector3().fromBufferAttribute(this.source.geometry.morphAttributes.position[target], i));
+    // Preserve source vertex/UV seams through clipping instead of copying
+    // every triangle corner into the new morph buffers.
+    const openedIds = new Map<Vertex, number>();
     for (let i = 0; i < jacketIndex.count; i += 3) {
       const triangle = [0, 1, 2].map(n => cached[jacketIndex.getX(i + n)]), middle = triangle.reduce((p, v) => p.add(v.point), new THREE.Vector3()).multiplyScalar(1 / 3);
       const polygons = middle.z > .08 ? [-1, 1].map(side => clip(triangle, p => side * p.x - (.15 + .09 * THREE.MathUtils.smoothstep(p.y, 2.5, 3.6)))) : [triangle];
-      for (const polygon of polygons) { const start = opened.length; opened.push(...polygon); for (let n = 1; n < polygon.length - 1; n++) openedIndices.push(start, start + n, start + n + 1); }
+      for (const polygon of polygons) {
+        const ids = polygon.map(vertex => {
+          let id = openedIds.get(vertex); if (id === undefined) { id = opened.length; opened.push(vertex); openedIds.set(vertex, id); } return id;
+        });
+        for (let n = 1; n < ids.length - 1; n++) openedIndices.push(ids[0], ids[n], ids[n + 1]);
+      }
     }
     this.coat = this.make('morpheus-ambush-coat', this.geometry(opened, openedIndices, true), leather);
+    if (outerPositions) {
+      this.coat.geometry.morphTargetsRelative = true;
+      this.coatDrapeIndices = this.addDrapeTargets(this.coat, [0, 1].map(side => opened.map(vertex => vertex.drape![side])));
+      this.coat.updateMorphTargets();
+    }
     const lapels: Vertex[] = [], lapelIndices: number[] = [], steps = 12;
     for (const side of [-1, 1]) {
       const start = lapels.length;
       for (let row = 0; row <= steps; row++) for (let column = 0; column <= 6; column++) {
         const t = row / steps, u = column / 6, y = 3.8 - t * .78;
-        const inner = THREE.MathUtils.lerp(.18, .23, t), outer = t < .48 ? THREE.MathUtils.lerp(.44, .57, t / .48) : THREE.MathUtils.lerp(.57, .25, (t - .48) / .52);
-        const vertex = this.sample(jacket, THREE.MathUtils.lerp(inner, outer, u) * side, y, .025 + Math.sin(u * Math.PI) * .035);
+        const top = outerPositions ? .38 : .44, peak = outerPositions ? .41 : .57;
+        const inner = THREE.MathUtils.lerp(.18, .23, t), outer = t < .48 ? THREE.MathUtils.lerp(top, peak, t / .48) : THREE.MathUtils.lerp(peak, .25, (t - .48) / .52);
+        const vertex = this.sample(jacket, THREE.MathUtils.lerp(inner, outer, u) * side, y, .025 + Math.sin(u * Math.PI) * .035, Boolean(outerPositions));
         vertex.uv.set(u * .5, t); lapels.push(vertex);
         if (row < steps && column < 6) { const a = start + row * 7 + column, b = a + 7; lapelIndices.push(a, b, a + 1, b, b + 1, a + 1); }
       }
@@ -349,16 +378,22 @@ export class AmbushWardrobeAppearance {
     a.skinIndex.needsUpdate = a.skinWeight.needsUpdate = true; this.hemShirt = shirt;
   }
 
-  private addDrapeTargets(): void {
-    const geometry = this.source.geometry, a = geometry.attributes, index = geometry.index!;
+  private addDrapeTargets(mesh: THREE.SkinnedMesh, drapes?: THREE.Vector3[][]): number[] {
+    const geometry = mesh.geometry, a = geometry.attributes, index = geometry.index!;
+    const sculptPosition = mesh === this.source ? geometry.morphAttributes.position[0] : undefined;
+    const sculptNormal = mesh === this.source ? geometry.morphAttributes.normal[0] : undefined;
+    geometry.morphAttributes.position ??= []; geometry.morphAttributes.normal ??= [];
     const fitted = Array.from({ length: a.position.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(a.position, i)
-      .add(new THREE.Vector3().fromBufferAttribute(geometry.morphAttributes.position[0], i)));
+      .add(sculptPosition ? new THREE.Vector3().fromBufferAttribute(sculptPosition, i) : new THREE.Vector3()));
     const fittedNormals = Array.from({ length: a.normal.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(a.normal, i)
-      .add(new THREE.Vector3().fromBufferAttribute(geometry.morphAttributes.normal[0], i)));
-    const torso = this.source.skeleton.bones.map(bone => /^(pelvis|spine|chest|hip_[LR])$/.test(bone.name));
+      .add(sculptNormal ? new THREE.Vector3().fromBufferAttribute(sculptNormal, i) : new THREE.Vector3()));
+    const torso = mesh.skeleton.bones.map(bone => /^(pelvis|spine|chest|hip_[LR])$/.test(bone.name)), targets: number[] = [];
     for (const [sideIndex, side] of [-1, 1].entries()) {
       const delta = new Float32Array(a.position.count * 3), changed = new Set<number>();
       for (let i = 0; i < a.position.count; i++) {
+        if (drapes) {
+          drapes[sideIndex][i].toArray(delta, i * 3); if (drapes[sideIndex][i].lengthSq() > 0) changed.add(i); continue;
+        }
         const waist = [0, 1, 2, 3].reduce((sum, k) => sum + (torso[a.skinIndex.getComponent(i, k)] ? a.skinWeight.getComponent(i, k) : 0), 0);
         const amount = THREE.MathUtils.smoothstep(waist, .8, .99) * (1 - THREE.MathUtils.smoothstep(a.position.getY(i), 2.42, 2.85))
           * THREE.MathUtils.smoothstep(a.position.getZ(i), .02, .28) * THREE.MathUtils.smoothstep(side * a.position.getX(i), -.15, .28);
@@ -389,9 +424,10 @@ export class AmbushWardrobeAppearance {
       }
       const positionTarget = new THREE.BufferAttribute(delta, 3), normalTarget = new THREE.BufferAttribute(normalDelta, 3);
       positionTarget.name = normalTarget.name = `ambushHipDrape_${sideIndex ? 'L' : 'R'}`;
-      this.drapeIndices.push(geometry.morphAttributes.position.length);
+      targets.push(geometry.morphAttributes.position.length);
       geometry.morphAttributes.position.push(positionTarget); geometry.morphAttributes.normal.push(normalTarget);
     }
+    return targets;
   }
 
   private band(mesh: THREE.SkinnedMesh, y: number): number[] {
@@ -409,12 +445,16 @@ export class AmbushWardrobeAppearance {
     return bands.get(Math.floor(y * 20)) ?? [];
   }
 
-  private sample(mesh: THREE.SkinnedMesh, x: number, y: number, offset: number): Vertex {
+  private sample(mesh: THREE.SkinnedMesh, x: number, y: number, offset: number, torsoOnly = false): Vertex {
     const cached = this.vertices.get(mesh)!, index = mesh.geometry.index!;
+    const torso = (joint: number) => /^(pelvis|spine|chest|neck|head)$/.test(mesh.skeleton.bones[joint].name);
     let front = -Infinity, selected: Vertex[] = [], amounts: number[] = [];
     for (const i of this.band(mesh, y)) {
       const va = cached[index.getX(i)], vb = cached[index.getX(i + 1)], vc = cached[index.getX(i + 2)], a = va.point, b = vb.point, c = vc.point;
       if (x < Math.min(a.x, b.x, c.x) || x > Math.max(a.x, b.x, c.x) || y < Math.min(a.y, b.y, c.y) || y > Math.max(a.y, b.y, c.y)) continue;
+      // A lapel is sewn to the front body. The foremost sleeve can cross
+      // this ray and must not become its surface or drive it during arm swing.
+      if (torsoOnly && [va, vb, vc].some(vertex => vertex.joints.reduce((sum, joint, k) => sum + (torso(joint) ? vertex.weights[k] : 0), 0) < .2)) continue;
       const denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y); if (Math.abs(denominator) < 1e-9) continue;
       const u = ((b.y - c.y) * (x - c.x) + (c.x - b.x) * (y - c.y)) / denominator;
       const v = ((c.y - a.y) * (x - c.x) + (a.x - c.x) * (y - c.y)) / denominator, w = 1 - u - v;
@@ -423,8 +463,9 @@ export class AmbushWardrobeAppearance {
     }
     if (!selected.length) throw new Error(`Morpheus old-building cloth cannot find ${mesh.name} at ${x},${y}`);
     const normal = new THREE.Vector3(); selected.forEach((v, i) => normal.addScaledVector(v.normal, amounts[i]));
+    const entries = selected.flatMap((v, n) => v.joints.map((joint, i) => [joint, v.weights[i] * amounts[n]] as [number, number]));
     return { point: new THREE.Vector3(x, y, front + offset), normal: normal.normalize(), uv: new THREE.Vector2(x * 4, y * 4),
-      ...weights(selected.flatMap((v, n) => v.joints.map((joint, i) => [joint, v.weights[i] * amounts[n]] as [number, number]))) };
+      ...weights(entries) };
   }
   private geometry(vertices: Vertex[], indices: number[], keepNormals = false): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
@@ -470,6 +511,7 @@ export class AmbushWardrobeAppearance {
     for (const [i, index] of this.drapeIndices.entries()) {
       const hip = this.rig.bones.get(`hip_${i ? 'L' : 'R'}`)!;
       this.source.morphTargetInfluences![index] = amount * THREE.MathUtils.smoothstep(-hip.rotation.x, .3, 1.3);
+      if (this.coatDrapeIndices.length) this.coat.morphTargetInfluences![this.coatDrapeIndices[i]] = this.source.morphTargetInfluences![index];
     }
   }
   poseTails(input: MotionInput, motion: MotionState, coat: number): boolean {
