@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput, MotionState } from './CharacterMotion.js';
+import { AmbushCoatTails } from './AmbushCoatTails.js';
+import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED } from '@auto_matrix/shared';
 
 interface Vertex { point: THREE.Vector3; normal: THREE.Vector3; uv: THREE.Vector2; joints: number[]; weights: number[] }
 function weights(entries: [number, number][]): Pick<Vertex, 'joints' | 'weights'> {
@@ -42,6 +44,7 @@ export class AmbushWardrobeAppearance {
   private drapeIndices: number[] = [];
   private hemBindings?: { shirt: number[][]; covered: number[][] };
   private hemShirt = false;
+  private tails: AmbushCoatTails;
 
   constructor(private rig: HeroRig, fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
@@ -298,6 +301,7 @@ export class AmbushWardrobeAppearance {
       }
     }
     this.lapels = this.make('morpheus-ambush-lapels', this.geometry(lapels, lapelIndices), leather);
+    this.tails = new AmbushCoatTails(rig, [trousers, rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh, this.source, this.coat]);
     this.vertices.clear(); this.bands.clear();
   }
 
@@ -458,7 +462,8 @@ export class AmbushWardrobeAppearance {
     // waist. Retarget the relaxed stance with the fitted cut; scripted grips
     // retain their own poses. The hem has its separate hip-driven correction.
     if (input.armed || input.ambushEscort || input.ambushCall) return 0;
-    return .085 * this.clothBlend(input, motion);
+    return (.09 + .06 * THREE.MathUtils.smoothstep(motion.speed, 0, PLAYER_WALK_SPEED)
+      + .055 * THREE.MathUtils.smoothstep(motion.speed, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED)) * this.clothBlend(input, motion);
   }
   poseDrape(input: MotionInput, motion: MotionState): void {
     const amount = this.clothBlend(input, motion);
@@ -466,6 +471,10 @@ export class AmbushWardrobeAppearance {
       const hip = this.rig.bones.get(`hip_${i ? 'L' : 'R'}`)!;
       this.source.morphTargetInfluences![index] = amount * THREE.MathUtils.smoothstep(-hip.rotation.x, .3, 1.3);
     }
+  }
+  poseTails(input: MotionInput, motion: MotionState, coat: number): boolean {
+    if (input.realWorld || input.ambushWardrobe !== 'coat' || !this.rig.panels.some(panel => panel.mesh.visible)) return false;
+    this.rig.root.updateMatrixWorld(true); this.tails.update(motion, coat); return true;
   }
   update(input: MotionInput): void {
     const mode = input.realWorld !== true ? input.ambushWardrobe : undefined;

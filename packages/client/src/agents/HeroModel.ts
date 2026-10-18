@@ -1432,11 +1432,12 @@ export class HeroModels {
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
       && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
     const savedCloth = input.ambushCall || input.ambushEscort || input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
-    if (delta <= 0 && !savedCloth && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
+    const fittedTails = ambushWardrobe?.poseTails(input, motion, pose.coat) ?? false;
+    if (delta <= 0 && !fittedTails && !savedCloth && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;
     const dt = Math.max(0, Math.min(delta, 1 / 30));
     // Analytic wind target plus damped springs; the waist is pinned. Thigh and
     // shin capsules stop the running knees from cutting through the coat.
-    const capsules = ['R', 'L'].flatMap(side => ['hip', 'knee'].map((part, i) => {
+    const capsules = fittedTails ? [] : ['R', 'L'].flatMap(side => ['hip', 'knee'].map((part, i) => {
       const start = new THREE.Vector3().setFromMatrixPosition(bone(part + '_' + side).matrixWorld);
       const end = new THREE.Vector3().setFromMatrixPosition(bone((i ? 'ankle' : 'knee') + '_' + side).matrixWorld);
       pelvis.worldToLocal(start); pelvis.worldToLocal(end); return { start, end, radius: i ? .16 : .195 };
@@ -1446,27 +1447,29 @@ export class HeroModels {
       const position = panel.mesh.geometry.attributes.position;
       let changed = false;
       for (let i = 0; i < position.count; i++) {
-        const x = panel.rest[i * 3]; const y = panel.rest[i * 3 + 1]; const z = panel.rest[i * 3 + 2];
-        const t = Math.max(0, -y / 1.97); const hem = t * t;
-        const flare = pose.coat * hem;
-        this.point.set(x * (1 + flare * .24), y + flare * .18,
-          z - flare * .65 + Math.sin(motion.phase * Math.PI * 2 + y * 3 + x * 3) * flare * .09);
-        this.point.x += Math.sin(motion.time * 5 + y * 3) * flare * .035;
-        this.point.add(panel.mesh.position);
-        if (t > .04) for (const capsule of capsules) {
-          this.segment.subVectors(capsule.end, capsule.start);
-          const length = this.segment.lengthSq();
-          this.local.subVectors(this.point, capsule.start);
-          this.closest.copy(capsule.start).addScaledVector(this.segment, THREE.MathUtils.clamp(this.local.dot(this.segment) / length, 0, 1));
-          this.local.subVectors(this.point, this.closest); const distance = this.local.length();
-          if (distance > .001 && distance < capsule.radius) this.point.addScaledVector(this.local, (capsule.radius - distance) / distance);
-        }
-        this.point.sub(panel.mesh.position);
-        for (let axis = 0; axis < 3; axis++) {
-          const offset = i * 3 + axis; const value = position.array[offset]; const target = this.point.getComponent(axis);
-          panel.velocity[offset] = savedCloth ? 0 : panel.velocity[offset] + ((target - value) * 150 - panel.velocity[offset] * 24) * dt;
-          position.array[offset] = t < .04 ? panel.rest[offset] : savedCloth ? target : value + panel.velocity[offset] * dt;
-          changed ||= position.array[offset] !== value;
+        if (!fittedTails) {
+          const x = panel.rest[i * 3]; const y = panel.rest[i * 3 + 1]; const z = panel.rest[i * 3 + 2];
+          const t = Math.max(0, -y / 1.97); const hem = t * t;
+          const flare = pose.coat * hem;
+          this.point.set(x * (1 + flare * .24), y + flare * .18,
+            z - flare * .65 + Math.sin(motion.phase * Math.PI * 2 + y * 3 + x * 3) * flare * .09);
+          this.point.x += Math.sin(motion.time * 5 + y * 3) * flare * .035;
+          this.point.add(panel.mesh.position);
+          if (t > .04) for (const capsule of capsules) {
+            this.segment.subVectors(capsule.end, capsule.start);
+            const length = this.segment.lengthSq();
+            this.local.subVectors(this.point, capsule.start);
+            this.closest.copy(capsule.start).addScaledVector(this.segment, THREE.MathUtils.clamp(this.local.dot(this.segment) / length, 0, 1));
+            this.local.subVectors(this.point, this.closest); const distance = this.local.length();
+            if (distance > .001 && distance < capsule.radius) this.point.addScaledVector(this.local, (capsule.radius - distance) / distance);
+          }
+          this.point.sub(panel.mesh.position);
+          for (let axis = 0; axis < 3; axis++) {
+            const offset = i * 3 + axis; const value = position.array[offset]; const target = this.point.getComponent(axis);
+            panel.velocity[offset] = savedCloth ? 0 : panel.velocity[offset] + ((target - value) * 150 - panel.velocity[offset] * 24) * dt;
+            position.array[offset] = t < .04 ? panel.rest[offset] : savedCloth ? target : value + panel.velocity[offset] * dt;
+            changed ||= position.array[offset] !== value;
+          }
         }
         if (spoonFloor !== undefined || onStairs) {
           this.point.fromBufferAttribute(position, i); panel.mesh.localToWorld(this.point);
@@ -1478,7 +1481,13 @@ export class HeroModels {
           }
         }
       }
-      if (changed) { position.needsUpdate = true; panel.mesh.geometry.computeVertexNormals(); }
+      if (changed) {
+        position.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
+        if (fittedTails) {
+          panel.mesh.geometry.computeBoundingBox(); panel.mesh.geometry.computeBoundingSphere();
+          panel.mesh.geometry.boundingSphere!.radius += 1e-6;
+        }
+      }
     }
   }
 
