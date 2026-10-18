@@ -19,6 +19,16 @@ export class PersistentMemoryManager extends MemoryManager {
     this.dataDir = dataDir;
   }
 
+  getCheckpoint(agentIds: Iterable<AgentId>): Record<AgentId, Memory[]> {
+    return Object.fromEntries([...agentIds].map(id => [id, this.getAllMemories(id)]));
+  }
+
+  restoreCheckpoint(memories: Record<AgentId, Memory[]>): void {
+    for (const [id, entries] of Object.entries(memories)) this.replaceMemories(id, entries);
+    this.dirtyAgents.clear();
+    this.loaded = true;
+  }
+
   /**
    * Load all agent memories from disk. Call once at server start.
    */
