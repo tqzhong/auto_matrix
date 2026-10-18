@@ -492,10 +492,11 @@ export class AmbushWardrobeAppearance {
     return input.realWorld !== true && input.ambushWardrobe === 'coat' && this.rig.panels.some(panel => panel.mesh === mesh);
   }
   private clothBlend(input: MotionInput, motion: MotionState): number {
-    if (!this.fittedArmhole || input.realWorld || !input.ambushWardrobe || input.performance || input.crouching
+    if (!this.fittedArmhole || input.realWorld || !input.ambushWardrobe || input.performance
       || input.wetwall || input.sixth || input.bathroom || input.basement
       || input.tvExit || input.crosscut || input.betrayal) return 0;
-    return (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
+    // Fade the existing standing fit with the body instead of snapping it off.
+    return (1 - (motion.ambushCrouch ?? (input.crouching ? 1 : 0))) * (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
       * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
   }
   relaxedArmOffset(input: MotionInput, motion: MotionState): number {
