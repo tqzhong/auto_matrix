@@ -9,7 +9,16 @@ assert.equal(origin.protocol, 'https:', 'Verify the published HTTPS site.');
 assert.equal(origin.pathname, '/');
 assert.ok(!origin.username && !origin.password && !origin.search && !origin.hash);
 const publicDirectory = fileURLToPath(new URL('../packages/client/public/', import.meta.url));
-const request = (url, options = {}) => fetch(new URL(url, origin), { ...options, signal: AbortSignal.timeout(15000) });
+async function request(url, options = {}) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(new URL(url, origin), { ...options, signal: AbortSignal.timeout(15000) });
+    } catch (error) {
+      if (attempt >= 2 || !(error.name === 'TimeoutError' || ['ECONNRESET', 'UND_ERR_CONNECT_TIMEOUT'].includes(error.cause?.code))) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+}
 
 const page = await request('/');
 assert.equal(page.status, 200, 'game page');
@@ -55,7 +64,15 @@ for (let offset = 0; offset < files.length; offset += 6) {
     const asset = `/${path.relative(publicDirectory, file).split(path.sep).map(encodeURIComponent).join('/')}`;
     const response = await request(asset, { method: 'HEAD', headers: { 'Accept-Encoding': 'identity' } });
     assert.equal(response.status, 200, asset);
-    assert.equal(Number(response.headers.get('content-length')), (await stat(file)).size, `asset size: ${asset}`);
+    const length = response.headers.get('content-length');
+    if (length === null) {
+      // The edge proxy can omit Content-Length for compressed text responses.
+      const content = await request(asset);
+      assert.equal(content.status, 200, asset);
+      assert.deepEqual(Buffer.from(await content.arrayBuffer()), await readFile(file), `asset content: ${asset}`);
+    } else {
+      assert.equal(Number(length), (await stat(file)).size, `asset size: ${asset}`);
+    }
   }));
 }
 for (const extension of ['.glb', '.mp3']) {
