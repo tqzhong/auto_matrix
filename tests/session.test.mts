@@ -10,7 +10,7 @@ async function waitFor(check: () => boolean) {
   assert.ok(check(), 'expected socket event before timeout');
 }
 
-async function setup(t: TestContext) {
+async function setup(t: TestContext, replyToPing = true) {
   const http = createServer(); const server = new Server(http);
   await new Promise<void>(resolve => http.listen(0, '127.0.0.1', resolve));
   const address = http.address() as { port: number };
@@ -18,8 +18,10 @@ async function setup(t: TestContext) {
   Object.assign(globalThis, { location: new URL(`http://127.0.0.1:${address.port}`) });
   const messages: { type: string; data: { agentId?: string; takeover?: boolean } }[] = [];
   const states: { agentId?: string | null; message?: string }[] = [];
+  const health: string[] = [];
   const wires: Socket[] = []; let snapshots = 0;
   const callbacks: SocketCallbacks = {
+    onHealth: status => health.push(status),
     onPlayerState: data => states.push(data), onWorldStateFull: () => { snapshots++; },
     onWorldStateDelta() {}, onAgentUpdate() {}, onConversationStart() {}, onConversationMessage() {},
     onConversationEnd() {}, onConversationSummary() {}, onStoryEvent() {}, onPhaseChange() {},
@@ -27,6 +29,7 @@ async function setup(t: TestContext) {
   };
   server.on('connection', socket => {
     wires.push(socket);
+    socket.on('session_ping', reply => { if (replyToPing) reply(); });
     socket.on('message', message => {
       messages.push(message);
       if (message.type === 'play_as') socket.emit('message', { type: 'player_state', data: { agentId: message.data.agentId }, tick: 1 });
@@ -42,8 +45,26 @@ async function setup(t: TestContext) {
     else Reflect.deleteProperty(globalThis, 'location');
   });
   client.connect(); await waitFor(() => snapshots === 1);
-  return { client, messages, states, wires, snapshots: () => snapshots };
+  return { client, messages, states, wires, health, snapshots: () => snapshots };
 }
+
+test('connected transport is not reported ready until a server round trip succeeds', async t => {
+  const game = await setup(t);
+  await waitFor(() => game.health.includes('ready'));
+  assert.equal(game.health[0], 'connecting');
+  game.client.reconnect();
+  await waitFor(() => game.snapshots() === 2);
+  await waitFor(() => game.health.at(-1) === 'ready');
+  assert.ok(game.health.includes('offline'));
+});
+
+test('a one-way connection is shown as slow instead of ready', async t => {
+  const game = await setup(t, false);
+  await new Promise(resolve => setTimeout(resolve, 4200));
+  assert.equal(game.client.isConnected, true);
+  assert.equal(game.health.at(-1), 'slow');
+  assert.equal(game.health.includes('ready'), false);
+});
 
 test('a temporary disconnect resumes the last confirmed character after the new world snapshot', async t => {
   const game = await setup(t);

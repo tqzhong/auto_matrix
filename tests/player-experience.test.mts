@@ -3,6 +3,33 @@ import test from 'node:test';
 import { cinematicTalkSuppressed, PlayerExperience, savedEntryCharacter } from '../packages/client/src/player/PlayerExperience.js';
 import type { AgentState, SimulationState, NeoLifeState } from '@auto_matrix/shared';
 
+test('paused and offline play show distinct actionable notices, including during a slow connection', () => {
+  const elements = new Map<string, any>();
+  const element = (id: string) => {
+    if (!elements.has(id)) elements.set(id, { textContent: '', innerHTML: '', hidden: false,
+      classList: { toggle(_name: string, hidden: boolean) { elements.get(id).hidden = hidden; } } });
+    return elements.get(id);
+  };
+  const ui = Object.assign(Object.create(PlayerExperience.prototype), {
+    root: { querySelector: element }, controlled: 'neo', chosen: 'neo', worldRunning: false,
+    agents: { neo: { id: 'neo', name: 'Neo', status: 'alive' } },
+  }) as PlayerExperience;
+  ui.setConnection('ready', 240);
+  assert.equal(element('#session-notice').hidden, false);
+  assert.match(element('#session-notice-copy').textContent, /已暂停.*不能移动/);
+  assert.equal(element('#session-continue').hidden, false);
+  ui.setConnection('slow');
+  assert.equal(element('#session-continue').hidden, false, 'slow but connected players can still resume time');
+  ui.setConnection('offline');
+  assert.match(element('#session-notice-copy').textContent, /连接中断/);
+  assert.equal(element('#session-continue').hidden, true);
+  assert.equal(element('#session-reconnect').hidden, false);
+  assert.equal(element('#enter-world').disabled, true);
+  Object.assign(ui, { worldRunning: true }); ui.setConnection('ready', 180);
+  assert.equal(element('#session-notice').hidden, true);
+  assert.equal(element('#enter-world').disabled, false);
+});
+
 test('landing resumes the saved story actor instead of an unrelated browser-local character', () => {
   assert.equal(savedEntryCharacter('morpheus', 'tank', false), 'tank');
   assert.equal(savedEntryCharacter('neo', 'morpheus', false), 'morpheus');

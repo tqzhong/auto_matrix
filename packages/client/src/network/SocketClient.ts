@@ -13,8 +13,11 @@ import type {
   EvolutionUpdate,
 } from '@auto_matrix/shared';
 
+export type ConnectionHealth = 'connecting' | 'ready' | 'slow' | 'offline';
+
 export type SocketCallbacks = {
   onConnection?: (connected: boolean) => void;
+  onHealth?: (status: ConnectionHealth, latency?: number) => void;
   onPlayerState?: (data: { agentId?: string | null; error?: string; message?: string }) => void;
   onWorldStateFull: (data: WorldStateFull, tick: number) => void;
   onWorldStateDelta: (data: WorldStateDelta, tick: number) => void;
@@ -38,12 +41,14 @@ export class SocketClient {
   private connected = false;
   private resumeAgent: string | null = null;
   private restoreOnSnapshot = false;
+  private healthTimer?: ReturnType<typeof setInterval>;
 
   constructor(callbacks: SocketCallbacks) {
     this.callbacks = callbacks;
   }
 
   connect(): void {
+    this.callbacks.onHealth?.('connecting');
     this.socket = io({
       path: '/socket.io',
       transports: ['websocket', 'polling'],
@@ -57,14 +62,19 @@ export class SocketClient {
       this.connected = true;
       this.restoreOnSnapshot = true;
       this.callbacks.onConnection?.(true);
+      this.callbacks.onHealth?.('connecting');
+      this.checkHealth();
+      this.healthTimer = setInterval(() => this.checkHealth(), 5000);
     });
 
     this.socket.on('disconnect', () => {
       this.connected = false;
+      clearInterval(this.healthTimer);
       this.callbacks.onConnection?.(false);
+      this.callbacks.onHealth?.('offline');
     });
 
-    this.socket.on('connect_error', () => this.callbacks.onConnection?.(false));
+    this.socket.on('connect_error', () => { this.callbacks.onConnection?.(false); this.callbacks.onHealth?.('offline'); });
 
     this.socket.on('message', (msg: ServerMessage) => {
       this.handleMessage(msg);
@@ -78,6 +88,19 @@ export class SocketClient {
       this.handleMessage(msg);
     });
   }
+
+  private checkHealth(): void {
+    const socket = this.socket;
+    if (!socket?.connected) return;
+    const connection = socket.id, started = performance.now();
+    socket.timeout(4000).emit('session_ping', (error: Error | null) => {
+      if (!socket.connected || socket.id !== connection) return;
+      const latency = Math.round(performance.now() - started);
+      this.callbacks.onHealth?.(error || latency > 1500 ? 'slow' : 'ready', error ? undefined : latency);
+    });
+  }
+
+  reconnect(): void { this.socket?.disconnect().connect(); }
 
   private handleMessage(msg: ServerMessage): void {
     const { type, data, tick } = msg;
@@ -174,6 +197,7 @@ export class SocketClient {
   }
 
   dispose(): void {
+    clearInterval(this.healthTimer);
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;

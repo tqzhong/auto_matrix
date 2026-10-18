@@ -8,6 +8,7 @@ import { diggersActive, diggersLocked, diggersText } from '@auto_matrix/shared';
 import { dockGateActive, dockLastStandActive, dockLastStandLocked, dockReloadActive, dockReloadLocked, dockReloadText, catchLocked, deusPactLocked, farewellLocked, helElevatorLocked, helDanceDoorLocked, reloadedLocked, smithFinaleLocked, smithOracleRestored, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { COMBAT_SKILLS, playerSkills, neoSkillUnlocked, CHARACTERS, LOCATIONS, FILM_SCENE_BY_ID, filmSetAt, filmObstacles, distance, matrixEscapeLocked, theOneLocked, type AgentState, type SimulationState, type WorldEvent, type NeoLifeState } from '@auto_matrix/shared';
 import { FACTION_COLORS } from '../agents/AgentRenderer.js';
+import type { ConnectionHealth } from '../network/SocketClient.js';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
 const FACTIONS: Record<string, string> = { zion: '锡安反抗军', civilians: '城市居民', machines: '矩阵程序', oracle: '先知', merovingian: '梅罗文加', exiles: '流亡程序' };
@@ -29,6 +30,7 @@ export interface PlayerExperienceActions {
   menu: (open: boolean) => void;
   resume: () => void;
   pause: () => void;
+  reconnect: () => void;
   inspect: (id: string) => void;
   skill: (kind: string) => void;
   sound: () => void;
@@ -49,6 +51,8 @@ export class PlayerExperience {
   private lastEvent = '';
   private filmPlaying = false;
   private tipUntil = 0;
+  private connection: ConnectionHealth = 'connecting';
+  private worldRunning = true;
 
   constructor(private actions: PlayerExperienceActions) {
     try { this.lastPlayed = localStorage.getItem('matrix:last-character'); } catch { /* Continue without browser storage when it is unavailable. */ }
@@ -82,7 +86,8 @@ export class PlayerExperience {
         <div id="player-death" class="player-death hidden"><span>SIGNAL LOST</span><h2>连接已中断。</h2><p>重建角色会恢复生命，并保留已有的记忆与关系。</p><button id="death-rebuild" class="enter-world">重建这个角色 ↗</button><button id="death-choose" class="observe-link">选择另一条故事线 ↗</button></div>
       </section>
       <section id="character-select" class="character-select hidden"><div class="character-dialog"><header><div><span class="eyebrow">CHOOSE YOUR RESIDUAL SELF-IMAGE</span><h2>你想成为谁？</h2><p>每个角色的进度都会保留。点击继续游玩，其他页面的控制权会转到这里。</p></div><button id="close-characters" aria-label="关闭角色选择">×</button></header><div class="character-search"><input id="character-search" type="search" aria-label="搜索可游玩角色" placeholder="搜索名字、阵营…"><span id="available-count">74 个角色</span></div><div id="character-grid" class="character-grid"></div><footer>WASD 移动 · Shift 奔跑 · 空格跳跃 · E 交谈 · F 连击 · X 闪避 · Q / C 角色技能 · V 切换视角</footer></div></section>
-      <div id="play-tip" class="play-tip hidden" role="status"></div>`;
+      <div id="play-tip" class="play-tip hidden" role="status"></div>
+      <div id="session-notice" class="session-notice hidden"><p id="session-notice-copy" role="status"></p><button id="session-reconnect">重新连接</button><button id="session-continue">继续游玩 ▶</button></div>`;
     this.root.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLElement>('button');
       if (!button) return;
@@ -101,6 +106,8 @@ export class PlayerExperience {
       if (button.dataset.skill !== undefined) this.actions.skill(button.dataset.skill === '0' ? 'ability' : 'ability2');
       if (button.id === 'game-sound' || button.id === 'landing-sound') this.actions.sound();
       if (button.id === 'game-pause') this.actions.pause();
+      if (button.id === 'session-reconnect') this.actions.reconnect();
+      if (button.id === 'session-continue' && !this.worldRunning) this.actions.pause();
       if (button.id === 'inspect-character' || button.id === 'game-inspect') this.actions.inspect(this.controlled ?? this.chosen);
     });
     this.el<HTMLInputElement>('character-search').addEventListener('input', event => { this.search = (event.target as HTMLInputElement).value.toLowerCase(); this.renderRoster(); });
@@ -109,6 +116,22 @@ export class PlayerExperience {
     });
   }
   private el<T extends HTMLElement = HTMLElement>(id: string): T { return this.root.querySelector(`#${id}`)!; }
+  setConnection(status: ConnectionHealth, latency?: number): void {
+    this.connection = status;
+    this.root.querySelector('.vital-world')!.textContent = status === 'ready' ? `${latency ?? 0} ms` : status === 'slow' ? '同步延迟' : '正在连接';
+    this.updateEntry(); this.updateSessionNotice();
+  }
+  private updateSessionNotice(): void {
+    const unavailable = this.connection === 'offline' || this.connection === 'connecting';
+    const paused = Boolean(this.controlled && !this.worldRunning);
+    this.el('session-notice').classList.toggle('hidden', !unavailable && !paused && this.connection !== 'slow');
+    this.el('session-notice-copy').textContent = this.connection === 'offline' ? '连接中断，正在自动重连。恢复后接续角色进度。'
+      : this.connection === 'connecting' ? '正在连接游戏并确认操作通道…首次唤醒服务器可能需要约一分钟。'
+      : paused ? '世界已暂停，角色暂时不能移动。点击继续游玩。'
+      : this.connection === 'slow' ? '操作同步延迟较高，正在检测连接。可以重连以重新同步当前进度。' : '';
+    this.el('session-reconnect').classList.toggle('hidden', !['offline', 'slow'].includes(this.connection));
+    this.el('session-continue').classList.toggle('hidden', unavailable || !paused);
+  }
   get isChoosingCharacter(): boolean { return this.menuOpen; }
   toggleHUD(): void { document.body.classList.toggle('hud-hidden'); }
   openRoster(): void {
@@ -124,6 +147,7 @@ export class PlayerExperience {
     this.controlled = null; this.menuOpen = false;
     document.body.classList.remove('landing', 'playing', 'code-vision', 'bullet-time', 'neo-daily', 'film-story', 'film-mobil-scene');
     this.el('landing-screen').classList.add('hidden'); this.el('game-hud').classList.add('hidden'); this.el('character-select').classList.add('hidden');
+    this.updateSessionNotice();
     if (release) this.actions.observe();
   }
   enter(id: string): void {
@@ -144,11 +168,13 @@ export class PlayerExperience {
   private updateEntry(): void {
     const agent = this.agents[this.chosen];
     const button = this.el<HTMLButtonElement>('enter-world');
-    button.disabled = !agent;
-    button.innerHTML = `${agent && agent.status !== 'alive' && !(agent.id === this.storyActor && this.storyContinuation) ? '重建并进入角色' : agent && this.storyActor === agent.id && !this.entryExplicit ? `继续 ${escape(agent.name)} 的剧情存档` : agent && this.lastPlayed === agent.id ? `继续 ${escape(agent.name)} 的进度` : agent?.controller ? '在此页面继续' : '进入角色'} <span>↗</span>`;
+    button.disabled = !agent || this.connection === 'offline' || this.connection === 'connecting';
+    const label = `${agent && agent.status !== 'alive' && !(agent.id === this.storyActor && this.storyContinuation) ? '重建并进入角色' : agent && this.storyActor === agent.id && !this.entryExplicit ? `继续 ${escape(agent.name)} 的剧情存档` : agent && this.lastPlayed === agent.id ? `继续 ${escape(agent.name)} 的进度` : agent?.controller ? '在此页面继续' : '进入角色'} <span>↗</span>`;
+    if (button.innerHTML !== label) button.innerHTML = label;
   }
   update(agents: Record<string, AgentState>, simulation: SimulationState, neoLife?: NeoLifeState): void {
     this.agents = agents;
+    this.worldRunning = simulation.running;
     this.storyActor = neoLife?.journey?.actor ?? null;
     this.storyContinuation = oracleAbsorptionActive(neoLife?.journey) && this.storyActor === 'oracle' && neoLife?.journey?.oracleAbsorption?.phase === 'done'
       || Boolean(neoLife?.journey && !neoLife.journey.visiting && neoLife.journey.scene === 'm3_neo_carried'
@@ -290,6 +316,7 @@ export class PlayerExperience {
     if (hammerGunner) this.el('mouse-hint').textContent = `${pointerLock ? '鼠标瞄准 · 左键 / T 开炮' : '左键拖动瞄准 · T 开炮'} · 对准战术屏准星 · V 视角 · J 交接驾驶`;
     document.body.classList.toggle('neo-daily', Boolean(player?.id === 'neo' && neoLife && !player.isAwakened));
     if (!player) return;
+    this.updateSessionNotice();
     this.el('player-name').textContent = player.name.toUpperCase();
     this.el('player-initial').textContent = player.name[0];
     const unresponsive = player.currentAction?.parameters.finaleComa === true;

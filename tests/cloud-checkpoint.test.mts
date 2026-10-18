@@ -13,6 +13,7 @@ import { gunzipSync } from 'node:zlib';
 function database(t: TestContext) {
   let row: { id: string; revision: number; payload: string } | null = null;
   let failure = 0;
+  let loseReply = false;
   const requests: string[] = [];
   t.mock.method(globalThis, 'fetch', async (input: string, options: RequestInit) => {
     const url = new URL(input);
@@ -26,11 +27,29 @@ function database(t: TestContext) {
     if (options.method === 'POST' && row) return new Response('', { status: 409 });
     if (options.method === 'PATCH' && url.searchParams.get('revision') !== `eq.${row?.revision}`) return Response.json([]);
     row = next;
+    if (loseReply) { loseReply = false; throw new Error('response lost after commit'); }
     return Response.json([{ revision: next.revision }]);
   });
   return { cloud: () => new SupabaseCheckpointStore('https://test.supabase.co', 'sb_secret_test'),
-    row: () => row, requests, fail: (status: number) => { failure = status; } };
+    row: () => row, requests, fail: (status: number) => { failure = status; }, loseReply: () => { loseReply = true; } };
 }
+
+test('a lost save response is reconciled before saving newer progress', async t => {
+  const db = database(t), cloud = db.cloud();
+  await cloud.load(); await cloud.save('before timeout');
+  db.loseReply(); await assert.rejects(cloud.save('committed but response lost'), /response lost/);
+  await cloud.save('later progress');
+  assert.equal(await db.cloud().load(), 'later progress');
+  assert.equal(db.row()!.revision, 3);
+});
+
+test('reconciling a lost response still refuses another instance’s newer save', async t => {
+  const db = database(t), old = db.cloud(); await old.load();
+  db.loseReply(); await assert.rejects(old.save('first progress'), /response lost/);
+  const fresh = db.cloud(); await fresh.load(); await fresh.save('other instance');
+  await assert.rejects(old.save('stale progress'), /changed in another instance/);
+  assert.equal(await db.cloud().load(), 'other instance');
+});
 
 test('cloud checkpoints survive removal of the instance filesystem', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'matrix-cloud-'));
