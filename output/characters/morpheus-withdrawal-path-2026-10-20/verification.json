@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-20",
+  "productionDoffReleased": false,
+  "productionCodeChanged": false,
+  "gameCommit": "1ce32d6e0d0668087665c97ca5f108acf8638d73",
+  "authoring": {
+    "preparationSamples": 49,
+    "preparationCrossings": 0,
+    "withdrawalSamples": 12,
+    "existingPlacketCrossings": 23,
+    "newWithdrawalCrossings": 0,
+    "bodyContinuitySamples": 481,
+    "maximumStep": 0.05021980640079352,
+    "maximumFootDrift": 7.468261590855957e-16,
+    "maximumReachError": 1.1957467920563633e-15,
+    "recoverySamples": 13,
+    "newRecoveryCrossings": 0,
+    "cold": {
+      "coldMaximumDifference": 2.2860149897625325e-14,
+      "maximumJointDifference": 1.2427743010384781e-14
+    },
+    "finalWholeFile": {
+      "passed": 4,
+      "failed": 1
+    },
+    "correctedColdTest": {
+      "passed": 1,
+      "failed": 0
+    },
+    "wholeFileRerunAfterNumericalControl": true,
+    "isolatedFinal": {
+      "passed": 5,
+      "failed": 0,
+      "runtimeCommit": "1ce32d6e0d0668087665c97ca5f108acf8638d73"
+    }
+  },
+  "runtime": {
+    "passed": 9,
+    "failed": 4,
+    "reason": "Existing world-coat lifecycle/renderer unimplemented; tests were not skipped."
+  },
+  "clothAudits": {
+    "physics-audit.json": [
+      {
+        "frame": 1,
+        "time": 0,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 16,
+        "time": 0.5,
+        "self": 454,
+        "body": 44
+      },
+      {
+        "frame": 25,
+        "time": 0.8,
+        "self": 835,
+        "body": 196
+      },
+      {
+        "frame": 40,
+        "time": 1.3,
+        "self": 1163,
+        "body": 940
+      },
+      {
+        "frame": 55,
+        "time": 1.8,
+        "self": 5406,
+        "body": 322
+      },
+      {
+        "frame": 67,
+        "time": 2.2,
+        "self": 5028,
+        "body": 0
+      },
+      {
+        "frame": 79,
+        "time": 2.6,
+        "self": 5725,
+        "body": 0
+      },
+      {
+        "frame": 97,
+        "time": 3.2,
+        "self": 6602,
+        "body": 0
+      }
+    ],
+    "release-physics-audit.json": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 17,
+        "body": 0
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 76,
+        "body": 741
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 580,
+        "body": 2124
+      },
+      {
+        "frame": 40,
+        "time": 2.1,
+        "self": 3745,
+        "body": 0
+      },
+      {
+        "frame": 55,
+        "time": 2.6,
+        "self": 4695,
+        "body": 0
+      },
+      {
+        "frame": 67,
+        "time": 3,
+        "self": 4927,
+        "body": 0
+      },
+      {
+        "frame": 73,
+        "time": 3.2,
+        "self": 5220,
+        "body": 0
+      }
+    ],
+    "release-self-05-audit.json": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 26,
+        "body": 12
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 24,
+        "body": 703
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 125,
+        "body": 2064
+      },
+      {
+        "frame": 40,
+        "time": 2.1,
+        "self": 407,
+        "body": 0
+      },
+      {
+        "frame": 55,
+        "time": 2.6,
+        "self": 409,
+        "body": 0
+      },
+      {
+        "frame": 67,
+        "time": 3,
+        "self": 505,
+        "body": 0
+      },
+      {
+        "frame": 73,
+        "time": 3.2,
+        "self": 446,
+        "body": 0
+      }
+    ],
+    "release-quality-100-audit.json": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 98,
+        "body": 6
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 556,
+        "body": 188
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 1376,
+        "body": 702
+      }
+    ]
+  },
+  "selfRegions": [
+    {
+      "folder": "release-self-05",
+      "frame": 16,
+      "time": 1.3,
+      "self": 24,
+      "groups": {
+        "neck/neck": 7,
+        "torso/torso": 10,
+        "sleeve/sleeve": 6,
+        "lapel/lapel": 1
+      }
+    },
+    {
+      "folder": "release-self-05",
+      "frame": 73,
+      "time": 3.2,
+      "self": 446,
+      "groups": {
+        "torso/torso": 160,
+        "neck/neck": 29,
+        "sleeve/sleeve": 172,
+        "sleeve/torso": 9,
+        "neck/torso": 3,
+        "lapel/torso": 46,
+        "lapel/lapel": 22,
+        "tail/tail": 5
+      }
+    },
+    {
+      "folder": "release-quality-100",
+      "frame": 16,
+      "time": 1.3,
+      "self": 556,
+      "groups": {
+        "neck/neck": 3,
+        "torso/torso": 20,
+        "sleeve/torso": 136,
+        "sleeve/sleeve": 394,
+        "lapel/lapel": 3
+      }
+    }
+  ],
+  "limitations": [
+    "No finger-to-coat grip or full eight-second cloth animation has been completed.",
+    "Body samples do not establish unrestricted all-pose contact or finished cloth.",
+    "The original 23 centre-placket self crossings remain.",
+    "Full cloth failed both 20- and 100-substep controls.",
+    "Offline diagnostic images omit the outer coat and use diagnostic materials, not native game pixels.",
+    "No new game deployment, save change, FPS test or accepted trilogy group."
+  ],
+  "sha256": {
+    "WithdrawalBody.mts": "b54939dfeb324069566bf3386f8fd59cd566d69f63af2626c999337bc575732e",
+    "WithdrawalBody-delayed.mts": "d20408d4aa316e7d8a4519199df94bca09335795cd8ab79d36b2b5160d4e7622",
+    "withdrawal-path.test.mts": "b007965a348f55e4a1c5f636f423b079184814c6ee3d1a1ddccf245164ba9ebb",
+    "export-input.mts": "68bc97f5233baa2fc96ae438bcd35ff9b887cbbc4d66474ef7cd575573ae54c4",
+    "export-release-input.mts": "6b851b5ab6e9ae92cb4ac663db7cc39f45967b28871677c836931393cad04a84",
+    "bake-withdrawal.py": "335cf21bf7df4e9b877b79e3066eee8f363b0fb7eea12638038c67920dcf65b3",
+    "bake-release.py": "727b04e2a7cb86a9cd4f12a3420fb641ae3b20f6d3e903b9a03026213bcf77f8",
+    "bake-release-self-margin.py": "1025787731dcf6525c6bc99174a449ce4d64b65ab4184b9518604c3ed8d79f39",
+    "bake-release-quality.py": "863a10fb9d844e2eff631e3276ff8b86b09904903e6b1c1aec301325203f95eb",
+    "audit-input.mts": "5015564c494036d7cea49d653ebabc2b194a4717d89ae03a7e2106f5abc52574",
+    "self-regions.mts": "999d7f3894ea04c3d292ded5ae375a7b2cf98be12a69f45d61ae3b0c2f439f49",
+    "review-body.mts": "91a55cd8d0d8c1f4e190e6b6b4a8143eb2e54f49b41f8159ac19e6532ab33c45",
+    "render-body.py": "85b8d22f96ae6cfbaaf4fffb87ab641d25c1355b9dee23666c51a2b419f266c0",
+    "before.log": "e39a634cdac963e9152dba7de8362d71cb19f87523fa6018027f098006c8a562",
+    "delayed-rise.log": "30ae9e293e5ea0e7b55eeb50d3b79de67051a30e08cd8c4290ebb00171997ba7",
+    "side-exit.log": "e27c70653daeb8101e974746fddb6103c50558b90ab8d681ca3af43c98eb3c06",
+    "recovery-before.log": "77bf70c361ec3f543a049989b32796cc5ef1758cb958d7286260941b9c61fe6e",
+    "recovery-after.log": "af7fb93805f8edc1b5143619f2a66b35d9d4dafa9d36ee52cff93a466a91b657",
+    "cleared-rise.log": "55417afa39d20184fd8742b8112723a23882ee64b00722296a0124319c58180a",
+    "full-body-tests.log": "f2d0f30d131cb8eb093298c0588c2142270d492dd709e18249db8e1e4059cefb",
+    "preparation-before.log": "027002dec822a85349f3492c0e876e0cb78ed519bb58c95ca96df6ec44a1fb26",
+    "hip-clearance.log": "f65fd0b74df3cf57f408b25a1fa2184a0df38cf8ca97a36c4b118db2d2705136",
+    "final-body-tests.log": "e260efeb4825b711d9bd73e8afa9fbbdd53149b7959815bd1cac2785aa59d9d3",
+    "cold-body-after.log": "b3fc4dac9751dde5bd25f9d897929d07531b2592c510a1482c774901518f2463",
+    "cold-transform-control.json": "a422d83e8dc96b1db7506ddff05628aeb56d145f8e5aab9c53d525ad78856062",
+    "runtime-baseline.log": "5082409308a73b25f8b882467bba29f406ee6581f9dfdc06b0715171c19db993",
+    "physics-audit.json": "9ef90a49ac3bd567f22cbd590a2effc999029aa30026de53f96ce193432098fa",
+    "release-physics-audit.json": "c1476015ccd55d5b6146a7270a9cd5f3d2a638a10eb76ed021523560e27b8e5b",
+    "release-self-05-audit.json": "229b53c9b33b5dc3a0d20d524903baae62c2341f1e26ea36288cbaec61cd88d6",
+    "release-quality-100-audit.json": "827e8b12486f2b79c68c4c03fd509390a732b25afb98ae699717a63597799a71",
+    "self-regions.json": "de421deeaf8bf3e452ee809b940c61583db87c427c3c361ebe895c3f8b318683",
+    "before-3p2-rear.png": "d14739883e02e69635533f8e7edd341d09bfa7c9b193d4004be32b8524843a15",
+    "after-3p2-rear.png": "7a64c35f2c9d39102c1dea5fa630b9823e4c38716e8cfdf85fc46cf07d05dfa2",
+    "after-6p4-front.png": "79924e7e7b737f239dd09e8497c3bdf63dcee57ebc952ffb136017180f9f3034",
+    "input/manifest.json": "0de508365445303a8b09be8bf44ef542e4dfe23a5091f5b3fc001d7cd492261d",
+    "release-input/manifest.json": "3bc33352bf92f8c843aff85e3869fdad221a63b78864d27c2685561e982737ba",
+    "isolated-body-tests.log": "4e46718c7eb1248d9db3e6be9f7590ebd822fa6b7d42cd3d9499714027440818"
+  },
+  "inputHashes": {
+    "packages/client/src/agents/HeroModel.ts": "1cf39c34df287060a9755ab48e80ac38f9325cadcdaecb095bc0b04303b9a63a",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "8d7bde7ba5e7869ca275b66a166e33e4c50444282b8c64945afe11900c122982",
+    "packages/client/src/agents/AmbushCoatTails.ts": "b7af70536744095b6f951b76ebcb636a126ac23240d440754128b10292da7261",
+    "packages/client/src/agents/CharacterMotion.ts": "b9056e4a18518c7772876e6f7ae0cad40c300b18db4e3666525b90d7bdf95998",
+    "packages/client/src/agents/SpoonPerformance.ts": "7c16b0d0a5672dce981e6491e45898298027fb8775917bfbcc5a4c4cce4ff843",
+    "packages/client/public/assets/characters/morpheus.glb": "fee6a45f0581d88f57b6151c268a930ee98d7c66eb4038efa9047c70a2607064",
+    "output/characters/morpheus-doff-2026-10-19/WithdrawalBody-v3.mts": "7f4e0e611652156c1005640179ace63a9051ccd50b983a5d4d88607476fdddc5",
+    "output/characters/morpheus-ambush-doff-2026-10-17/grip-fixture.mts": "da76a63329ad9d0a655bcd4d3a8a5c88edf9f9a3cee796799a6bed199bcb9ebd",
+    "output/characters/morpheus-ambush-doff-2026-10-17/cloth-rebuild/cage-contact.mts": "dc73bb1f8c5926a695bf42f61663a6226b838bfe236261bb7ba799f9a1f9b20f",
+    "scripts/cloth_collision.py": "ccd467d40b7ef3d9b6159aa21676665df1751493bccf88f5dc24d1137c4e9e0e"
+  },
+  "isolatedInputHashes": {
+    "packages/client/src/agents/HeroModel.ts": "1cf39c34df287060a9755ab48e80ac38f9325cadcdaecb095bc0b04303b9a63a",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "8d7bde7ba5e7869ca275b66a166e33e4c50444282b8c64945afe11900c122982",
+    "packages/client/src/agents/AmbushCoatTails.ts": "b7af70536744095b6f951b76ebcb636a126ac23240d440754128b10292da7261",
+    "packages/client/src/agents/CharacterMotion.ts": "c319c6c688714f5d2c6bbbb6b3793a6edccbb1f71a2fddd95acdd4813eb307be",
+    "packages/client/src/agents/SpoonPerformance.ts": "7c16b0d0a5672dce981e6491e45898298027fb8775917bfbcc5a4c4cce4ff843",
+    "packages/client/public/assets/characters/morpheus.glb": "fee6a45f0581d88f57b6151c268a930ee98d7c66eb4038efa9047c70a2607064"
+  }
+}

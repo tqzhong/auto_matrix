@@ -1,0 +1,43 @@
+[
+  {
+    "folder": "release-self-05",
+    "frame": 16,
+    "time": 1.3,
+    "self": 24,
+    "groups": {
+      "neck/neck": 7,
+      "torso/torso": 10,
+      "sleeve/sleeve": 6,
+      "lapel/lapel": 1
+    }
+  },
+  {
+    "folder": "release-self-05",
+    "frame": 73,
+    "time": 3.2,
+    "self": 446,
+    "groups": {
+      "torso/torso": 160,
+      "neck/neck": 29,
+      "sleeve/sleeve": 172,
+      "sleeve/torso": 9,
+      "neck/torso": 3,
+      "lapel/torso": 46,
+      "lapel/lapel": 22,
+      "tail/tail": 5
+    }
+  },
+  {
+    "folder": "release-quality-100",
+    "frame": 16,
+    "time": 1.3,
+    "self": 556,
+    "groups": {
+      "neck/neck": 3,
+      "torso/torso": 20,
+      "sleeve/torso": 136,
+      "sleeve/sleeve": 394,
+      "lapel/lapel": 3
+    }
+  }
+]
