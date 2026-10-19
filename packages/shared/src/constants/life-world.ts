@@ -11,6 +11,15 @@ export const LIFE_ROOMS: Record<string, { width: number; depth: number; theme: '
   nightclub: { width: 32, depth: 26, theme: 'bar' },
   oracles_apartment: { width: 28, depth: 24, theme: 'oracle' },
 };
+export const LIFE_TABLE = { topY: 2.45, thickness: .22 };
+export const LIFE_CHAIR = { width: 1.7, depth: 1.6, seatY: 1.5, thickness: .3, backY: 2.5, backZ: -.7, backHeight: 1.8, backDepth: .2 };
+export const CAFE_COUNTER = { x: 0, z: -8, width: 22.5, depth: 3.5, height: 3.81, baseHeight: 3.6, thickness: .22 };
+export const CAFE_TABLES = [-8, 8].flatMap(x => [0, 7].map(z => ({ x, z, width: 4, depth: 3, height: LIFE_TABLE.topY + LIFE_TABLE.thickness / 2 })));
+export const CAFE_CHAIRS = CAFE_TABLES.flatMap(table => [-1, 1].map(side => ({ x: table.x, z: table.z + side * 2.5, facing: side === -1 ? 0 : Math.PI })));
+export const CAFE_OBSTACLES = [CAFE_COUNTER, ...CAFE_TABLES, ...CAFE_CHAIRS.flatMap(chair => [
+  { x: chair.x, z: chair.z, width: LIFE_CHAIR.width, depth: LIFE_CHAIR.depth, height: LIFE_CHAIR.seatY + LIFE_CHAIR.thickness / 2 },
+  { x: chair.x, z: chair.z + LIFE_CHAIR.backZ * Math.cos(chair.facing), width: LIFE_CHAIR.width, depth: LIFE_CHAIR.backDepth, height: LIFE_CHAIR.backY + LIFE_CHAIR.backHeight / 2 },
+])];
 export function lifeRoomCenter(location: string): Vector3 | undefined {
   if (location === 'neo_apartment') return { ...APARTMENT_ROOM.center };
   const room = LIFE_ROOMS[location]; const site = LOCATIONS[location];

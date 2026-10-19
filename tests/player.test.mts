@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CITY_BUILDINGS, groundHeight, playerBlocked, stepPlayer, locationEntrance, type WorldEvent } from '@auto_matrix/shared';
+import { CITY_BUILDINGS, groundHeight, playerBlocked, stepPlayer, lifeRoomCenter, locationEntrance, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
@@ -145,6 +145,53 @@ test('possessing a resident inside an old building footprint places them at a wa
   agent.position = { x: building.x, y: 1, z: building.z };
   players.possess('player', agent.id, 20);
   assert.equal(playerBlocked(agent.position, true), false);
+});
+
+test('daily cafe and bar furniture stop walking and sprinting while the entrance aisle stays clear', () => {
+  for (const id of ['corner_cafe', 'nightclub']) {
+    const center = lifeRoomCenter(id)!;
+    for (const x of [-8, 8]) for (const z of [0, 7]) {
+      assert.equal(playerBlocked({ ...center, x: center.x + x, z: center.z + z }, true), true, `${id} table ${x}/${z}`);
+      for (const side of [-1, 1]) assert.equal(playerBlocked({ ...center, x: center.x + x, z: center.z + z + side * 2.5 }, true), true, 'chairs must be solid too');
+    }
+    assert.equal(playerBlocked({ ...center, z: center.z - 8 }, true), true, 'the service counter is solid');
+    for (let z = 0; z <= locationEntrance(id).z - center.z; z += .25)
+      assert.equal(playerBlocked({ ...center, z: center.z + z }, true), false, 'the central aisle must connect to the street');
+    for (const sprint of [false, true]) {
+      let position = { ...center };
+      for (let frame = 0; frame < 80; frame++) position = stepPlayer(position, 0, { ...input, x: -1, sprint }, .05, true).position;
+      assert.ok(position.x > center.x - 5, 'the character must stop before intersecting the tabletop edge');
+      assert.equal(playerBlocked(position, true), false);
+    }
+  }
+});
+
+test('falling onto a cafe table lands above its visible surface and walking off returns to the floor', () => {
+  const center = lifeRoomCenter('corner_cafe')!;
+  let position = { x: center.x - 8, y: 7, z: center.z }, vy = 0;
+  for (let frame = 0; frame < 100; frame++) {
+    const result = stepPlayer(position, vy, { ...input, x: 0 }, .016, true);
+    position = result.position; vy = result.verticalVelocity;
+  }
+  assert.ok(Math.abs(position.y - 3.56) < 1e-6, 'the agent origin sits one unit above the 2.56-high tabletop');
+  assert.equal(vy, 0); assert.equal(playerBlocked(position, true), false);
+  for (let frame = 0; frame < 160; frame++) {
+    const result = stepPlayer(position, vy, input, .016, true);
+    position = result.position; vy = result.verticalVelocity;
+  }
+  assert.equal(position.y, 1); assert.equal(vy, 0);
+});
+
+test('continuing a cafe save inside a newly solid table preserves progress and recovers a clear position', () => {
+  const { world, players, sandbox } = setup(), neo = world.agents.get('neo')!;
+  sandbox.life.begin(neo, 10);
+  neo.position = { x: 990.6732345822859, y: 1, z: 667.9690248944577 }; neo.currentLocation = 'corner_cafe'; neo.health = 83;
+  sandbox.state.neoLife!.money = 114;
+  const life = structuredClone(sandbox.state.neoLife);
+  assert.equal(players.possess('cafe-save', 'neo', 11).agentId, 'neo');
+  assert.equal(playerBlocked(neo.position, true), false);
+  assert.deepEqual(neo.position, locationEntrance('corner_cafe'));
+  assert.equal(neo.health, 83); assert.deepEqual(sandbox.state.neoLife, life);
 });
 
 test('checkpoints restore agent state and causal history atomically', async () => {

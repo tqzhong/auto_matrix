@@ -2,7 +2,7 @@ import { PLAYER_GRAVITY } from './gravity.js';
 import { HAMMER_MEDICAL, HAMMER_MEDICAL_BEDS } from './hammer-medical.js';
 import { METACORTEX_LOBBY } from './metacortex.js';
 import { LOCATIONS } from './locations.js';
-import { LIFE_ROOMS, lifeRoomCenter } from './life-world.js';
+import { CAFE_OBSTACLES, LIFE_ROOMS, lifeRoomCenter, insideLifeRoom } from './life-world.js';
 import { FILM_SETS, filmSetAt, filmBlocked, filmGroundHeight } from './film-sets.js';
 import type { Vector3 } from '../types/agent.js';
 import type { WorldStructure } from '../types/sandbox.js';
@@ -139,6 +139,15 @@ export function groundHeight(position: Vector3, matrix: boolean, structures: Wor
   if (matrix) {
     // Rooftops support characters who reach them by jumping or flight.
     let floor = 1;
+    const room = insideLifeRoom(position);
+    if (room && ['cafe', 'bar'].includes(LIFE_ROOMS[room].theme)) {
+      const center = lifeRoomCenter(room)!;
+      // Agent origins are one unit above their visible soles.
+      for (const item of CAFE_OBSTACLES) {
+        if (position.y >= item.height + 1 - .0001 && Math.abs(position.x - center.x - item.x) <= item.width / 2
+          && Math.abs(position.z - center.z - item.z) <= item.depth / 2) floor = Math.max(floor, item.height + 1);
+      }
+    }
     for (const building of CITY_BUILDINGS) {
       if (Math.abs(position.x - building.x) <= building.width / 2 && Math.abs(position.z - building.z) <= building.depth / 2 && position.y >= building.height - 1) floor = Math.max(floor, building.height + 1);
     }
@@ -178,6 +187,8 @@ export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, 
     const room = building.location ? LIFE_ROOMS[building.location] : undefined;
     if (!room || position.y >= 8) return true;
     const center = lifeRoomCenter(building.location!)!;
+    if ((room.theme === 'cafe' || room.theme === 'bar') && CAFE_OBSTACLES.some(item => position.y < item.height + 1 - .0001
+      && Math.abs(position.x - center.x - item.x) < item.width / 2 + radius && Math.abs(position.z - center.z - item.z) < item.depth / 2 + radius)) return true;
     if (building.location === 'metacortex_office' && METACORTEX_LOBBY.some(o => Math.abs(position.x - center.x - o.x) < o.width / 2 + radius && Math.abs(position.z - center.z - o.z) < o.depth / 2 + radius)) return true;
     const inside = Math.abs(position.x - center.x) < room.width / 2 - radius - .4 && position.z > center.z - room.depth / 2 + radius + .4;
     const atDoor = Math.abs(position.x - center.x) < 5 - radius;
