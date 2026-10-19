@@ -37,7 +37,7 @@ export const APARTMENT = {
   doorZ: 12, doorWidth: 3.8,
   signal: 8, knocking: 4, opening: 2.4, retrieving: 3.2, handover: 4.5,
 } as const;
-export const WAKE_CALL = { waking: 5.6, pickup: 2.2, listening: 8.6, reply: 4.2, leaving: 4.4 } as const;
+export const WAKE_CALL = { waking: 5.6, grasp: .85, pickup: 2.2, listening: 8.6, reply: 4.2, leaving: 4.4 } as const;
 export function computerInvestigationStep(check?: ComputerInvestigation) {
   const cable = check?.phase === 'reading' || check?.phase === 'saved' || computerCheckLocked(check);
   const point = cable ? APARTMENT_NETWORK.approach : APARTMENT_NETWORK.screenApproach;
@@ -180,7 +180,7 @@ export function wakeCallDoor(call?: WakeCall): number {
 }
 export function wakeCallHandsetHeld(call?: WakeCall): boolean {
   if (!call) return false;
-  return call.phase === 'pickup' ? call.elapsed >= .65 : ['listening', 'decision'].includes(call.phase) || call.phase === 'reply' && call.elapsed < 3.15;
+  return call.phase === 'pickup' ? call.elapsed >= WAKE_CALL.grasp : ['listening', 'decision'].includes(call.phase) || call.phase === 'reply' && call.elapsed < 3.15;
 }
 export function wakeCallText(call: WakeCall): string {
   switch (call.phase) {

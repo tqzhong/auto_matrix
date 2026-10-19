@@ -43,7 +43,7 @@ export class ConsoleGrip {
   private frames: THREE.Quaternion[][] = [];
   constructor(private rig: HeroRig, private side: 'R' | 'L' = 'R') {}
 
-  update(skin: THREE.SkinnedMesh, amount: number, prop: 'mug' | 'jug' | 'cutlery' | 'spoon' | 'wine' | 'bowl' = 'mug', blend = amount, frame?: THREE.Matrix4): void {
+  update(skin: THREE.SkinnedMesh, amount: number, prop: 'mug' | 'jug' | 'cutlery' | 'spoon' | 'wine' | 'bowl' | 'handset' = 'mug', blend = amount, frame?: THREE.Matrix4): void {
     if (!amount) return;
     if (!this.pads) {
       this.pads = Array.from({ length: 5 }, () => new THREE.Vector3()); const counts = [0, 0, 0, 0, 0];
@@ -69,7 +69,7 @@ export class ConsoleGrip {
       const center = (prop === 'jug' ? new THREE.Vector3(CONSOLE_SERVICE.handle.x, CONSOLE_SERVICE.handle.y, 0) : prop === 'wine' ? new THREE.Vector3(0, .19, 0) : prop === 'bowl' ? new THREE.Vector3(0, .15, 0) : new THREE.Vector3()).applyMatrix4(contact);
       const along = THREE.MathUtils.clamp(base.clone().sub(center).dot(axis), prop === 'bowl' ? -.10 : narrow ? -.14 : prop === 'jug' ? -.18 : -CONSOLE_DRINK.height / 2 + .04, prop === 'bowl' ? .13 : prop === 'wine' ? .08 : narrow ? .14 : prop === 'jug' ? .22 : CONSOLE_DRINK.height / 2 - .04);
       center.addScaledVector(axis, along);
-      const radius = prop === 'bowl' ? THREE.MathUtils.lerp(.235, .32, (along + .10) / .23) : prop === 'spoon' ? .013 : prop === 'cutlery' ? .027 : prop === 'wine' ? .014 : prop === 'jug' ? .035 : CONSOLE_DRINK.radius;
+      const radius = prop === 'handset' ? .07 : prop === 'bowl' ? THREE.MathUtils.lerp(.235, .32, (along + .10) / .23) : prop === 'spoon' ? .013 : prop === 'cutlery' ? .027 : prop === 'wine' ? .014 : prop === 'jug' ? .035 : CONSOLE_DRINK.radius;
       const clearance = (prop === 'wine' ? .14 : prop === 'jug' ? .1 : .08) * (1 - amount);
       const pad = this.pads[digit - 1], directions = this.curl(base, first.length(), second.length(), pad.length(), center, axis,
         radius, radius + .034 + clearance, sign * (digit === 1 ? -1 : 1), digit === 1);
