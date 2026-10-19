@@ -1,0 +1,420 @@
+{
+  "date": "2026-10-19",
+  "scope": "Offline authoring controls only; no gameplay or full eight-second removal accepted.",
+  "controls": [
+    {
+      "name": "rest-self",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.11960755460885733,
+      "maximumDriftMetres": 0.11960755460885733,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "name": "rest-no-self",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.03583511566973414,
+      "maximumDriftMetres": 0.03583511566973414,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "name": "rest-self-no-body",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.2753880355866023,
+      "maximumDriftMetres": 0.2753880355866023,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": false,
+        "selfCollision": true,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "name": "rest-no-self-no-body",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.04362619168968771,
+      "maximumDriftMetres": 0.04362619168968771,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": false,
+        "selfCollision": false,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "name": "rest-no-self-no-body-no-bend",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.038703205638153125,
+      "maximumDriftMetres": 0.038703205638153125,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": false,
+        "selfCollision": false,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "name": "rest-no-self-no-body-no-bend-all",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.038703205638153125,
+      "maximumDriftMetres": 0.038703205638153125,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": false,
+        "selfCollision": false,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.0,
+        "bendingStiffnessMax": 0.0
+      }
+    },
+    {
+      "name": "rest-no-self-no-body-no-bend-damping",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 4.5983729588013293e-07,
+      "maximumDriftMetres": 4.7443005535615695e-07,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": false,
+        "selfCollision": false,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.029999999329447746,
+        "bendingStiffnessMax": 0.5,
+        "bendingDamping": 0.0
+      }
+    },
+    {
+      "name": "rest-no-self-no-body-small-bend-damping",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 4.841530639347409e-07,
+      "maximumDriftMetres": 4.841530639347409e-07,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": false,
+        "selfCollision": false,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.029999999329447746,
+        "bendingStiffnessMax": 0.5,
+        "bendingDamping": 0.003000000026077032
+      }
+    },
+    {
+      "name": "rest-no-self-small-bend-damping",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.011532379904787886,
+      "maximumDriftMetres": 0.011532379904787886,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": true,
+        "selfCollision": false,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.029999999329447746,
+        "bendingStiffnessMax": 0.5,
+        "bendingDamping": 0.003000000026077032
+      }
+    },
+    {
+      "name": "rest-self-small-bend-damping",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.13847798983985138,
+      "maximumDriftMetres": 0.13847798983985138,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": true,
+        "selfCollision": true,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.029999999329447746,
+        "bendingStiffnessMax": 0.5,
+        "bendingDamping": 0.003000000026077032
+      }
+    },
+    {
+      "name": "rest-self-small-bend-damping-initial-clearance",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 0.13847798983985138,
+      "maximumDriftMetres": 0.13847798983985138,
+      "metadata": {
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": true,
+        "selfCollision": true,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.029999999329447746,
+        "bendingStiffnessMax": 0.5,
+        "bendingDamping": 0.003000000026077032
+      }
+    },
+    {
+      "name": "rest-scale-100",
+      "frames": 31,
+      "maximumDriftMetresAtOneSecond": 4.321336512487142e-07,
+      "maximumDriftMetres": 5.224481304728445e-07,
+      "metadata": {
+        "authoringScale": 100.0,
+        "vertices": 13386,
+        "faces": 25796,
+        "stitches": 648,
+        "objectCollision": true,
+        "selfCollision": true,
+        "frames": 31,
+        "massTotal": 2.9999999755527824,
+        "bodyThickness": 0.0010000000474974513,
+        "clothDistance": 0.0010000000474974513,
+        "selfDistance": 0.0010000000474974513,
+        "gravity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "bendingStiffness": 0.029999999329447746,
+        "bendingStiffnessMax": 0.5,
+        "bendingDamping": 0.003000000026077032
+      }
+    }
+  ],
+  "restContactSamples": [
+    {
+      "frame": 1,
+      "time": 0,
+      "self": 0,
+      "body": 0,
+      "lowest": 0.4846981540322304,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 31,
+      "time": 1,
+      "self": 0,
+      "body": 0,
+      "lowest": 0.4846981167793274,
+      "selfPairs": [],
+      "bodyPairs": []
+    }
+  ],
+  "inputRoundtrip": {
+    "frames": 97,
+    "maximumMetres": 2.384185791015625e-07,
+    "maximumScaledUlp": 1.5,
+    "allowanceScaledUlp": 2,
+    "originalFailedAllowanceScaledUlp": 1,
+    "rawFile": "scaled-input-audit-final.json"
+  },
+  "rendererBaseline": {
+    "tests": 13,
+    "passed": 9,
+    "failed": 4
+  },
+  "dynamicContactSamples": [
+    {
+      "frame": 1,
+      "time": 0,
+      "self": 0,
+      "body": 0,
+      "lowest": 0.4846981540322304
+    },
+    {
+      "frame": 16,
+      "time": 0.5,
+      "self": 318,
+      "body": 2573,
+      "lowest": 0.6707974523305893
+    },
+    {
+      "frame": 25,
+      "time": 0.8,
+      "self": 423,
+      "body": 2834,
+      "lowest": 0.8165338635444641
+    },
+    {
+      "frame": 40,
+      "time": 1.3,
+      "self": 517,
+      "body": 3189,
+      "lowest": 0.8323678374290466
+    },
+    {
+      "frame": 55,
+      "time": 1.8,
+      "self": 2852,
+      "body": 2123,
+      "lowest": 0.5586366355419159
+    },
+    {
+      "frame": 67,
+      "time": 2.2,
+      "self": 4096,
+      "body": 1428,
+      "lowest": 0.43955206871032715
+    },
+    {
+      "frame": 79,
+      "time": 2.6,
+      "self": 4666,
+      "body": 1129,
+      "lowest": 0.2822754345834255
+    },
+    {
+      "frame": 97,
+      "time": 3.2,
+      "self": 4476,
+      "body": 839,
+      "lowest": 0.18865447491407394
+    }
+  ],
+  "dynamicBake": {
+    "metadata": {
+      "authoringScale": 100.0,
+      "bodyComparisonMetres": true,
+      "bodyMaximumScaledUlp": 2,
+      "bendingDamping": 0.003000000026077032,
+      "vertices": 13386,
+      "faces": 25796,
+      "stitches": 648,
+      "frames": 97,
+      "massTotal": 2.9999999755527824,
+      "bodyThickness": 0.0010000000474974513,
+      "clothDistance": 0.0010000000474974513,
+      "selfDistance": 0.0010000000474974513,
+      "gravity": [
+        0.0,
+        0.0,
+        -981.0
+      ]
+    },
+    "lastFrame": {
+      "frame": 97,
+      "time": 3.2,
+      "seconds": 364.6450106250122,
+      "bodyDifference": 1.1920928955078125e-07,
+      "bodyScaledUlp": 0.5,
+      "lowest": 0.07546179294586182,
+      "maximumDrift": 0.9185513725828333
+    }
+  }
+}
