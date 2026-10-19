@@ -96,7 +96,7 @@ export class SocketClient {
     socket.timeout(4000).emit('session_ping', (error: Error | null) => {
       if (!socket.connected || socket.id !== connection) return;
       const latency = Math.round(performance.now() - started);
-      this.callbacks.onHealth?.(error || latency > 1500 ? 'slow' : 'ready', error ? undefined : latency);
+      this.callbacks.onHealth?.(error || latency > 1500 ? 'slow' : this.restoreOnSnapshot ? 'connecting' : 'ready', error ? undefined : latency);
     });
   }
 
@@ -117,6 +117,7 @@ export class SocketClient {
         if (this.restoreOnSnapshot) {
           this.restoreOnSnapshot = false;
           if (this.resumeAgent) this.send('play_as', { agentId: this.resumeAgent });
+          this.checkHealth();
         }
         break;
       case 'world_state_delta':
