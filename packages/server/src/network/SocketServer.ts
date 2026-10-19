@@ -4,6 +4,8 @@ import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryP
 
 export class SocketServer {
   private io: SocketIOServer;
+  private lastFields = new Map<string, string>();
+  private lastTick?: number;
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -32,12 +34,31 @@ export class SocketServer {
   }
 
   broadcastDelta(data: WorldStateDelta, tick: number): void {
+    let changed = tick !== this.lastTick || Boolean(Object.keys(data.dirtyChunks).length || data.events.length);
+    this.lastTick = tick;
+    for (const [id, state] of Object.entries(data.agents)) changed = this.changed(`agent:${id}`, state) || changed;
+    // Fast traffic and full sandbox snapshots replace the same client state.
+    if (data.sandbox) changed = (data.sandbox.traffic === undefined
+      ? this.lastFields.delete('world:traffic') : this.changed('world:traffic', data.sandbox.traffic)) || changed;
+    for (const [key, value] of Object.entries(data)) {
+      if (key !== 'agents' && key !== 'dirtyChunks' && key !== 'events') changed = this.changed(`world:${key}`, value) || changed;
+    }
+    if (!changed) return;
+    // Keep each meaningful packet intact: scene actors and their performance
+    // clocks must arrive together, including the stationary members of a cast.
     this.io.emit('message', {
       type: 'world_state_delta',
       data,
       tick,
       timestamp: Date.now(),
     } satisfies ServerMessage);
+  }
+
+  private changed(key: string, value: unknown): boolean {
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined || this.lastFields.get(key) === serialized) return false;
+    this.lastFields.set(key, serialized);
+    return true;
   }
 
   broadcastMessage(msg: ServerMessage): void {
