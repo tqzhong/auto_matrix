@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { CHARACTERS, PLAYER_GRAVITY, PLAYER_JUMP_SPEED, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, type AgentState } from '@auto_matrix/shared';
+import { CHARACTERS, PLAYER_GRAVITY, PLAYER_JUMP_SPEED, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, WAKE_CALL, type AgentState, type WakeCall } from '@auto_matrix/shared';
 import { CharacterModels, type CharacterRig } from '../agents/CharacterModel.js';
 
 const NOTES: Record<string, string> = {
@@ -45,7 +45,7 @@ export class CharacterViewer {
       <nav aria-label="选择检视人物">${Object.keys(NOTES).map(id => `<button data-preview="${id}">${CHARACTERS[id].nameCn}</button>`).join('')}</nav>
       <div class="character-stage" aria-label="可拖动旋转的三维人物模型"></div>
       <div class="character-viewer-info"><span class="eyebrow">THE MATRIX / 1999</span><h3 id="preview-name">NEO</h3><p id="preview-notes"></p><p class="model-note">拖动旋转 · 实际游戏内模型<br>电影造型近似还原，非演员扫描资产</p></div>
-      <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option><option value="ambush-crouch" disabled>旧楼 · 蹲下与起身</option><option value="ambush-crouch-walk" disabled>旧楼 · 蹲行</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
+      <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option><option value="apartment-call">公寓 · 接听与放回座机</option><option value="ambush-crouch" disabled>旧楼 · 蹲下与起身</option><option value="ambush-crouch-walk" disabled>旧楼 · 蹲行</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
     document.body.appendChild(this.root);
     this.root.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -54,13 +54,18 @@ export class CharacterViewer {
       if (button.id === 'close-viewer') this.close();
       if (button.id === 'preview-play') { const id = this.id; this.close(); this.play(id); }
       if (button.id === 'preview-zoom') {
-        if (!this.zoom) { this.zoom = true; this.glasses = true; }
+        if (this.motion === 'apartment-call') { this.zoom = !this.zoom; this.glasses = false; }
+        else if (!this.zoom) { this.zoom = true; this.glasses = true; }
         else if (this.glasses && this.current?.hero) this.glasses = false;
         else { this.zoom = false; this.glasses = true; }
         button.textContent = this.zoom ? this.glasses && this.current?.hero ? '取下墨镜' : '查看全身' : '面部特写';
       }
     });
-    this.root.querySelector('#preview-motion')!.addEventListener('change', event => { this.motion = (event.target as HTMLSelectElement).value; this.started = performance.now(); this.zoom = false; this.glasses = true; this.root.querySelector('#preview-zoom')!.textContent = '面部特写'; });
+    this.root.querySelector('#preview-motion')!.addEventListener('change', event => {
+      this.motion = (event.target as HTMLSelectElement).value; this.started = performance.now(); this.zoom = false; this.glasses = this.motion !== 'apartment-call';
+      this.root.querySelector('#preview-zoom')!.textContent = '面部特写';
+      this.root.querySelector('#preview-notes')!.textContent = this.motion === 'apartment-call' ? '公寓家居装 · 左手座机 · 拿起、接听与放回' : NOTES[this.id];
+    });
     const stage = this.root.querySelector<HTMLElement>('.character-stage')!;
     stage.addEventListener('pointerdown', event => { this.dragging = true; this.lastX = event.clientX; stage.setPointerCapture(event.pointerId); });
     stage.addEventListener('pointermove', event => { if (this.dragging) { this.angle += (event.clientX - this.lastX) * 0.009; this.lastX = event.clientX; } });
@@ -109,17 +114,18 @@ export class CharacterViewer {
     const state = this.agents()[id]; if (!state || !this.models) return;
     this.id = id; this.angle = 0.22;
     this.root.querySelectorAll<HTMLOptionElement>('option[value^="ambush-"]').forEach(option => { option.disabled = id !== 'morpheus'; });
-    if (id !== 'morpheus' && this.motion.startsWith('ambush-')) {
+    this.root.querySelector<HTMLOptionElement>('option[value="apartment-call"]')!.disabled = id !== 'neo';
+    if (id !== 'morpheus' && this.motion.startsWith('ambush-') || id !== 'neo' && this.motion === 'apartment-call') {
       this.motion = 'idle'; this.root.querySelector<HTMLSelectElement>('#preview-motion')!.value = this.motion;
     }
-    this.glasses = true;
+    this.glasses = this.motion !== 'apartment-call';
     if (this.current) this.current.root.visible = false;
     let rig = this.rigs.get(id);
     if (!rig) { rig = this.models.create(state); this.rigs.set(id, rig); this.scene.add(rig.root); }
     this.current = rig; rig.root.visible = true;
     this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? rig.hero ? '取下墨镜' : '查看全身' : '面部特写';
     this.root.querySelector('#preview-name')!.textContent = CHARACTERS[id].name.toUpperCase();
-    this.root.querySelector('#preview-notes')!.textContent = NOTES[id];
+    this.root.querySelector('#preview-notes')!.textContent = this.motion === 'apartment-call' ? '公寓家居装 · 左手座机 · 拿起、接听与放回' : NOTES[id];
     this.root.querySelector('.character-viewer-info .eyebrow')!.textContent = ['architect', 'seraph', 'mifune', 'kid'].includes(id) ? 'THE MATRIX / 2003' : 'THE MATRIX / 1999';
     this.root.querySelectorAll<HTMLElement>('[data-preview]').forEach(button => button.classList.toggle('active', button.dataset.preview === id));
   }
@@ -139,16 +145,22 @@ export class CharacterViewer {
     const jumpTime = time % 1.6; const height = this.motion === 'jump' ? Math.max(0, PLAYER_JUMP_SPEED * jumpTime - .5 * PLAYER_GRAVITY * jumpTime * jumpTime) : 0;
     const ambush = this.id === 'morpheus' && this.motion.startsWith('ambush-');
     const crouching = ambush && (this.motion === 'ambush-crouch-walk' || time % 7 >= 1 && time % 7 < 4.5);
+    const landline = this.id === 'neo' && this.motion === 'apartment-call';
+    const callTime = time % (WAKE_CALL.pickup + WAKE_CALL.listening + WAKE_CALL.reply + 1);
+    const phase: WakeCall['phase'] = callTime < WAKE_CALL.pickup ? 'pickup' : callTime < WAKE_CALL.pickup + WAKE_CALL.listening ? 'listening'
+      : callTime < WAKE_CALL.pickup + WAKE_CALL.listening + WAKE_CALL.reply ? 'reply' : 'done';
+    const callElapsed = phase === 'pickup' ? callTime : phase === 'listening' ? callTime - WAKE_CALL.pickup : callTime - WAKE_CALL.pickup - WAKE_CALL.listening;
     this.current.root.position.y = height;
     this.models.animate(this.current, delta, { speed: this.motion === 'walk' ? PLAYER_WALK_SPEED : this.motion === 'run' ? PLAYER_RUN_SPEED : this.motion === 'ambush-crouch-walk' ? PLAYER_WALK_SPEED * .48 : 0,
       grounded: height === 0, verticalVelocity: height > 0 ? PLAYER_JUMP_SPEED - PLAYER_GRAVITY * jumpTime : 0, turn: 0,
       ambushWardrobe: ambush ? 'coat' : undefined, crouching,
+      wakeCall: landline ? { phase, elapsed: callElapsed, nightmare: true } : undefined, homeClothes: landline, glasses: landline ? false : undefined,
       parkOutfit: this.agents()[this.id]?.currentLocation === 'film_sunrise_garden',
       attack: this.motion === 'combat' ? Math.floor(time / .72) : undefined }, 1);
     this.current.root.rotation.y = this.angle;
-    if (this.current.hero) this.current.hero.glasses.visible = this.glasses;
-    const distance = this.zoom ? 1.95 : this.camera.aspect < 0.75 ? 12.8 : 10.8;
-    const targetY = this.zoom ? (this.id === 'trinity' ? 3.91 : this.id === 'morpheus' ? 4.18 : 4.08) : 2.2 + height;
+    if (this.current.hero) this.current.hero.glasses.visible = this.glasses && !landline;
+    const distance = this.zoom ? 1.95 : landline ? this.camera.aspect < .75 ? 6.8 : 5.6 : this.camera.aspect < 0.75 ? 12.8 : 10.8;
+    const targetY = this.zoom ? (this.id === 'trinity' ? 3.91 : this.id === 'morpheus' ? 4.18 : 4.08) : landline ? 3.4 : 2.2 + height;
     this.camera.position.lerp(new THREE.Vector3(0, targetY + (this.zoom ? 0.03 : 0.4), distance), 0.18);
     this.camera.lookAt(0, targetY, 0); this.renderer.render(this.scene, this.camera);
   };

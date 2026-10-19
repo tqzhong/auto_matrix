@@ -1,36 +1,53 @@
 import * as THREE from 'three';
-import { APARTMENT, FILM_SETS, wakeCallHandsetHeld, type WakeCall } from '@auto_matrix/shared';
+import { wakeCallHandsetHeld, type WakeCall } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
+import { apartmentHandset, apartmentHandsetPose } from './ApartmentHandset.js';
+import { ConsoleGrip } from './ConsoleGrip.js';
+import { reach } from './SpoonPerformance.js';
 
 /** The apartment landline handset stays in Neo's actual hand while the set keeps the base and cord. */
 export class WakeCallPerformance {
-  private root = new THREE.Group();
-  private grip = new THREE.Vector3(.08, -.2, .02);
+  private root = apartmentHandset('neo-landline-handset');
+  private offset = new THREE.Vector3(-.17, -.21, .015);
+  private fingers: ConsoleGrip;
   private wrist: THREE.Bone;
-  private geometries = new Set<THREE.BufferGeometry>();
-  private materials = new Set<THREE.Material>();
-  constructor(rig: HeroRig) {
-    this.root.name = 'neo-landline-handset';
-    this.root.position.copy(this.grip); this.root.rotation.set(0, Math.PI / 2, Math.PI);
-    this.wrist = rig.bones.get('wrist_R')!; this.wrist.add(this.root);
-    const dark = this.material(new THREE.MeshStandardMaterial({ color: 0x101515, roughness: .58, metalness: .18 }));
-    this.mesh(new THREE.BoxGeometry(.17, .53, .13), dark, 0, 0, 0);
-    this.mesh(new THREE.BoxGeometry(.28, .22, .22), dark, 0, .3, 0);
-    this.mesh(new THREE.BoxGeometry(.28, .22, .22), dark, 0, -.3, 0);
-    for (const y of [-.3, .3]) for (let x = -.07; x <= .07; x += .07) this.mesh(new THREE.CylinderGeometry(.012, .012, .012, 8), dark, x, y, -.12).rotation.x = Math.PI / 2;
+  constructor(private rig: HeroRig) {
+    this.wrist = rig.bones.get('wrist_L')!; this.wrist.add(this.root);
+    this.root.rotation.set(0, -Math.PI / 2, -Math.PI / 2);
+    this.root.rotateZ(-.5);
+    this.fingers = new ConsoleGrip(rig, 'L');
     this.root.visible = false;
   }
-  private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
-  private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
-    this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); mesh.castShadow = true; this.root.add(mesh); return mesh;
-  }
   update(call?: WakeCall): void {
-    this.root.visible = wakeCallHandsetHeld(call); this.root.position.copy(this.grip);
-    if (call?.phase !== 'pickup') return;
-    const center = FILM_SETS.film_anderson_flat.center;
-    const cradle = this.wrist.worldToLocal(new THREE.Vector3(center.x + APARTMENT.phone.x, center.y - 1 + APARTMENT.phone.y + .48, center.z + APARTMENT.phone.z + .22));
-    const t = THREE.MathUtils.smoothstep(call.elapsed, .65, 1.2);
-    this.root.position.copy(cradle).lerp(this.grip, t);
+    this.root.visible = wakeCallHandsetHeld(call);
+    const pose = apartmentHandsetPose(call); if (!pose.reach) return;
+    const root = this.rig.root;
+    root.updateWorldMatrix(true, true);
+    const rotation = root.getWorldQuaternion(new THREE.Quaternion()), phoneRotation = rotation.clone().multiply(pose.rotation);
+    const shoulder = this.rig.bones.get('shoulder_L')!, elbow = this.rig.bones.get('elbow_L')!;
+    const resting = this.wrist.getWorldQuaternion(new THREE.Quaternion());
+    const orientation = phoneRotation.clone().multiply(this.root.quaternion.clone().invert());
+    const scale = this.wrist.getWorldScale(new THREE.Vector3());
+    const contact = root.localToWorld(pose.position), frame = new THREE.Matrix4().compose(contact, phoneRotation, scale);
+    const target = contact.clone().sub(this.offset.clone().multiply(scale).applyQuaternion(orientation));
+    target.add(new THREE.Vector3(.42 * (1 - pose.grip), 0, 0).applyQuaternion(orientation));
+    const start = this.wrist.getWorldPosition(new THREE.Vector3()).lerp(target, pose.reach);
+    // Turn the palm while it is still behind the receiver, then approach from above.
+    start.add(new THREE.Vector3(0, 0, -.4 * Math.sin(Math.PI * pose.reach)).applyQuaternion(rotation));
+    const hand = resting.slerp(orientation, THREE.MathUtils.smoothstep(pose.reach, 0, .7));
+    const pole = elbow.getWorldPosition(new THREE.Vector3()).sub(shoulder.getWorldPosition(new THREE.Vector3())).normalize()
+      .lerp(new THREE.Vector3(.1, -1, -1).applyQuaternion(rotation).normalize(), pose.reach);
+    reach(shoulder, elbow, this.wrist.position, start, pole);
+    this.wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(hand));
+    this.root.position.copy(this.offset);
+    this.wrist.updateWorldMatrix(false, true);
+    const skin = root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    this.fingers.update(skin, pose.grip, 'handset', pose.grip, frame);
+    this.wrist.updateWorldMatrix(false, true);
   }
-  dispose(): void { this.root.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); }
+  dispose(): void {
+    const materials = new Set<THREE.Material>();
+    this.root.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); materials.add(object.material as THREE.Material); } });
+    materials.forEach(material => material.dispose()); this.root.removeFromParent();
+  }
 }

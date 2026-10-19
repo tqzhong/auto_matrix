@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
 import { apartmentDisc } from '../agents/ApartmentDisc.js';
+import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHandset.js';
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -15,7 +16,7 @@ export class ApartmentSetRenderer {
   private book = new THREE.Group();
   private disk = apartmentDisc();
   private phoneBase = new THREE.Group();
-  private phoneHandset = new THREE.Group();
+  private phoneHandset = apartmentHandset('apartment-landline-handset');
   private phoneCord: THREE.Line;
   private canvas = document.createElement('canvas');
   private screen: THREE.CanvasTexture;
@@ -131,15 +132,14 @@ export class ApartmentSetRenderer {
     // The corded apartment telephone is the physical bridge between the two office outcomes and Adams Street.
     this.phoneBase.name = 'apartment-landline-base'; this.phoneBase.userData.dynamic = true;
     this.phoneBase.position.set(APARTMENT.phone.x, APARTMENT.phone.y, APARTMENT.phone.z); this.root.add(this.phoneBase);
-    this.mesh(new RoundedBoxGeometry(1.7, .3, .78, 3, .12), dark, 0, 0, 0, this.phoneBase);
-    this.mesh(new THREE.BoxGeometry(1.28, .08, .48), plastic, 0, .18, .05, this.phoneBase).rotation.x = -.16;
+    this.mesh(new RoundedBoxGeometry(1.02, .3, .78, 3, .12), dark, 0, 0, 0, this.phoneBase);
+    this.mesh(new THREE.BoxGeometry(.84, .08, .48), plastic, 0, .18, -.12, this.phoneBase).rotation.x = -.16;
     for (let row = 0; row < 3; row++) for (let col = 0; col < 4; col++) this.mesh(new RoundedBoxGeometry(.18, .045, .12, 2, .018), paper,
-      -.3 + col * .2, .25 + row * .002, .28 - row * .16, this.phoneBase).rotation.x = -.16;
-    for (const x of [-.66, .66]) this.mesh(new RoundedBoxGeometry(.22, .16, .34, 2, .04), plastic, x, .3, -.24, this.phoneBase);
-    this.phoneHandset.name = 'apartment-landline-handset'; this.phoneHandset.userData.dynamic = true;
+      -.3 + col * .2, .25 + row * .002, -.03 - row * .12, this.phoneBase).rotation.x = -.16;
+    for (const x of [-.23, .23]) this.mesh(new RoundedBoxGeometry(.18, .12, .23, 2, .035), plastic, x, .30, .22, this.phoneBase);
+    this.mesh(new THREE.CylinderGeometry(.025, .025, .07, 12), dark, -.5, .08, .05, this.phoneBase).rotation.z = Math.PI / 2;
     this.phoneHandset.position.set(APARTMENT.phone.x, APARTMENT.phone.y + .48, APARTMENT.phone.z + .22); this.root.add(this.phoneHandset);
-    this.mesh(new RoundedBoxGeometry(.94, .17, .22, 3, .07), dark, 0, 0, 0, this.phoneHandset);
-    for (const x of [-.56, .56]) this.mesh(new RoundedBoxGeometry(.34, .3, .38, 3, .1), dark, x, .01, 0, this.phoneHandset);
+    this.phoneHandset.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
     const cordGeometry = new THREE.BufferGeometry(); cordGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(25 * 3), 3)); this.geometries.add(cordGeometry);
     const cordMaterial = new THREE.LineBasicMaterial({ color: 0x111716 }); this.materials.add(cordMaterial);
     this.phoneCord = new THREE.Line(cordGeometry, cordMaterial); this.phoneCord.name = 'apartment-landline-cord'; this.phoneCord.frustumCulled = false; this.root.add(this.phoneCord);
@@ -278,16 +278,21 @@ export class ApartmentSetRenderer {
     this.disk.visible = !(contact && (apartmentAfter(contact, 'disk') || contact.phase === 'retrieving' && contact.elapsed >= (legacyBook ? 2.3 : APARTMENT_BOOK.pickup)));
     const held = wakeCallHandsetHeld(call); this.phoneHandset.visible = !held;
     this.phoneHandset.position.set(APARTMENT.phone.x, APARTMENT.phone.y + .48, APARTMENT.phone.z + .22);
-    this.phoneHandset.rotation.set(0, 0, call?.phase === 'ringing' ? Math.sin(call.elapsed * 52) * .045 : 0);
+    const actorRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), APARTMENT.phone.yaw);
+    this.phoneHandset.quaternion.copy(actorRotation).multiply(apartmentHandsetPose().rotation);
+    if (call?.phase === 'ringing') this.phoneHandset.rotateX(Math.sin(call.elapsed * 52) * .045);
     if (call?.phase === 'ringing') this.phoneHandset.position.y += Math.abs(Math.sin(call.elapsed * 26)) * .025;
     const cord = this.phoneCord.geometry.attributes.position as THREE.BufferAttribute;
-    const start = new THREE.Vector3(APARTMENT.phone.x + .72, APARTMENT.phone.y + .08, APARTMENT.phone.z + .05);
-    const end = held ? new THREE.Vector3(APARTMENT.phone.approachX - .28, 3.62, APARTMENT.phone.approachZ - .08)
-      : new THREE.Vector3(APARTMENT.phone.x + .55, APARTMENT.phone.y + .47, APARTMENT.phone.z + .18);
+    const start = new THREE.Vector3(APARTMENT.phone.x - .535, APARTMENT.phone.y + .08, APARTMENT.phone.z + .05);
+    const receiver = apartmentHandsetPose(call);
+    const end = new THREE.Vector3(0, -.405, .02).applyQuaternion(receiver.rotation).add(receiver.position)
+      .applyQuaternion(actorRotation).add(new THREE.Vector3(APARTMENT.phone.approachX, 0, APARTMENT.phone.approachZ));
+    if (!held) { this.phoneHandset.updateMatrix(); end.set(0, -.405, .02).applyMatrix4(this.phoneHandset.matrix); }
+    const curve = new THREE.CatmullRomCurve3([start, start.clone().add(new THREE.Vector3(-.35, -.25, .45)),
+      end.clone().add(new THREE.Vector3(-.22, -.18, .16)), end]);
     for (let i = 0; i < cord.count; i++) {
-      const t = i / (cord.count - 1); const sag = Math.sin(t * Math.PI) * (held ? -.55 : -.18);
-      cord.setXYZ(i, THREE.MathUtils.lerp(start.x, end.x, t) + Math.sin(t * Math.PI * 12) * (held ? .06 : .025),
-        THREE.MathUtils.lerp(start.y, end.y, t) + sag, THREE.MathUtils.lerp(start.z, end.z, t));
+      const t = i / (cord.count - 1), point = curve.getPoint(t);
+      cord.setXYZ(i, point.x + Math.sin(t * Math.PI * 12) * Math.sin(t * Math.PI) * .025, point.y, point.z);
     }
     cord.needsUpdate = true;
     const pull = computerNetworkPull(check);

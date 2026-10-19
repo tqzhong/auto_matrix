@@ -7,7 +7,7 @@ import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterA
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { APARTMENT, MORNING, FILM_SETS, OFFICE_WINDOW, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
+import { MORNING, FILM_SETS, OFFICE_WINDOW, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -570,12 +570,12 @@ export class HeroModels {
     return { mesh, rest: Float32Array.from(positions), velocity: new Float32Array(positions.length) };
   }
 
-  private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>, physicalPickup?: THREE.Vector3, mobile = false): void {
+  private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>): void {
     const smooth = (value: number) => { const t = THREE.MathUtils.clamp(value, 0, 1); return t * t * (3 - 2 * t); };
     rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get('shoulder_R')!; const elbow = rig.bones.get('elbow_R')!; const wrist = rig.bones.get('wrist_R')!;
     const head = rig.bones.get('head')!;
-    const ready = new THREE.Vector3(-.38, 2.98, .8); const pickup = physicalPickup?.clone() ?? new THREE.Vector3(-.5, 2.635, 1.2);
+    const ready = new THREE.Vector3(-.38, 2.98, .8); const pickup = new THREE.Vector3(-.5, 2.635, 1.2);
     const rest = rig.root.worldToLocal(wrist.getWorldPosition(new THREE.Vector3()));
     const ear = rig.root.worldToLocal(head.localToWorld(new THREE.Vector3(-.43, -.25, .17)));
     const target = phone.phase === 'pickup' ? phone.elapsed < .65 ? rest.lerp(pickup, smooth(phone.elapsed / .65)) : pickup.lerp(ready, smooth((phone.elapsed - .65) / 1.15))
@@ -586,10 +586,10 @@ export class HeroModels {
     const rotation = phone.phase === 'pickup' ? flat.slerp(facing, smooth((phone.elapsed - .65) / 1.15)) : phone.phase === 'ready' ? facing
       : facing.slerp(calling, phone.phase === 'connected' ? 1 : smooth((phone.elapsed - .35) / 1.1));
     const previousGrip = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI)).invert();
-    const grip = mobile ? PHONE_HAND.rotation.clone().invert() : previousGrip;
+    const grip = PHONE_HAND.rotation.clone().invert();
     // Preserve the handset's world trajectory while turning the palm so
     // the four fingers can wrap one edge, rather than splitting sideways.
-    if (mobile) target.add(new THREE.Vector3(.14, -.19, 0).applyQuaternion(rotation.clone().multiply(previousGrip)))
+    target.add(new THREE.Vector3(.14, -.19, 0).applyQuaternion(rotation.clone().multiply(previousGrip)))
       .sub(PHONE_HAND.position.clone().applyQuaternion(rotation.clone().multiply(grip)));
     rig.root.localToWorld(target);
     const start = shoulder.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
@@ -609,7 +609,7 @@ export class HeroModels {
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
       const joint = rig.bones.get(`finger${finger}-${segment}_R`); if (joint) joint.rotation.z = finger === 1 ? .25 : .32;
     }
-    if (mobile) this.holdMobileFingers(rig, phone.phase === 'pickup' ? THREE.MathUtils.smoothstep(phone.elapsed, .25, .65) : 1);
+    this.holdMobileFingers(rig, phone.phase === 'pickup' ? THREE.MathUtils.smoothstep(phone.elapsed, .25, .65) : 1);
   }
 
   private holdMobileFingers(rig: HeroRig, amount: number): void {
@@ -1117,12 +1117,10 @@ export class HeroModels {
       bone('spine').rotation.x += knock.raised * .035; bone('chest').rotation.x += knock.raised * .065;
       bone('head').rotation.y -= knock.raised * .1;
     }
-    const phonePickup = input.phone?.phase === 'pickup' ? input.phone : input.wakeCall?.phase === 'pickup' ? input.wakeCall : undefined;
+    const phonePickup = input.phone?.phase === 'pickup' ? input.phone : undefined;
     if (phonePickup) {
       const reach = phonePickup.elapsed < .65 ? Math.min(1, phonePickup.elapsed / .65) : Math.max(0, 1 - (phonePickup.elapsed - .65) / 1.15);
-      const landline = input.wakeCall?.phase === 'pickup';
-      pelvis.position.y -= (landline ? .18 : 0) * reach;
-      bone('spine').rotation.x += (landline ? .36 : .3) * reach; bone('chest').rotation.x += (landline ? .7 : .6) * reach; bone('head').rotation.x -= .45 * reach;
+      bone('spine').rotation.x += .3 * reach; bone('chest').rotation.x += .6 * reach; bone('head').rotation.x -= .45 * reach;
     }
     if (input.window !== undefined) {
       const reach = officeWindowPose(input.window).reach;
@@ -1378,19 +1376,10 @@ export class HeroModels {
     }
     poseSpoonBody(rig, input.spoonLesson);
     if (input.phone) {
-      this.holdPhone(rig, input.phone, undefined, true);
+      this.holdPhone(rig, input.phone);
     }
     poseMorningBody(rig, input.morning);
     if (input.morning?.phase === 'stopping') this.stopAlarm(rig, input.morning.elapsed);
-    if (input.wakeCall && input.wakeCall.phase !== 'waking') {
-      if (input.wakeCall.phase === 'pickup') {
-        const center = FILM_SETS.film_anderson_flat.center; rig.root.updateWorldMatrix(true, true);
-        const handset = rig.root.worldToLocal(new THREE.Vector3(center.x + APARTMENT.phone.x, center.y - 1 + APARTMENT.phone.y + .48, center.z + APARTMENT.phone.z + .22));
-        this.holdPhone(rig, { phase: 'pickup', elapsed: Math.min(1.8, input.wakeCall.elapsed) }, handset);
-      }
-      else if (['listening', 'decision'].includes(input.wakeCall.phase) || input.wakeCall.phase === 'reply' && input.wakeCall.elapsed < 3.15)
-        this.holdPhone(rig, { phase: 'connected', elapsed: 2 });
-    }
     if (input.window !== undefined) this.openWindow(rig, input.window);
     if (input.crossing !== undefined) this.crossWindow(rig, input.crossing);
     if (input.recoveryCrew) this.supportRecovery(rig, input.recoveryCrew);
