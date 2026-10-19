@@ -2,10 +2,23 @@
 
 使用 Render 的 **Hobby 工作区 + Free Web Service** 运行现有 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 留在阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，玩家的浏览器负责 3D 渲染。部署配置见根目录 `render.yaml`，不购买服务器或持久磁盘，不使用付费语言模型。
 
-## 已上线版本（2026-10-19）
+## 当前版本（2026-10-20）
+
+`f668e496d57f33500bc83dcf450372378abe6ab1` 已由 Codex 推送并发布到 <https://matrixai.online>。Render 部署 `dep-dbb4udqfngtc739udvcg` 显示 Live，隔离构建客户端为 `index-43a374uU.js`；仍使用原来的免费服务和云存档。
+
+- 复测发现运行时状态落后约 21 秒、连续 ping timeout；正式连接没有协商 WebSocket 压缩。新客户端处理完一个世界状态后回执，服务器才发送下一份；等待期间合并最新人物和世界字段，事件按顺序保留，快车流与 sandbox 的覆盖顺序保持一致。其他客户端独立发送，旧标签页沿用旧协议，需刷新才启用此修复。
+- 三项新增复现先失败、修复后通过；隔离发布目录中 898 个其他源码/测试/脚本等文件与 HEAD 一致，只有本单元四个文件改变。部署回归 66/66，三包类型及生产构建通过，未包含脱外套实验。
+- 关闭压缩、下行 32 KB/s 的同一世界样本控制中，队列峰值 1,022,768 → 39,105 字节，最后状态年龄 7,029 → 1,381ms，操作探测由超过 4 秒超时变为约 1,273ms。代价是高延迟连接收到更少姿态帧；这是限速实验，不是浏览器 FPS 或所有线路的流畅性保证。
+- 发布前后快照精确保留 tick 15082、暂停状态、Neo 位置、生命 100、金钱 $114。正式页面原生按键实测两种视角的走动与转向，最大位移约 7.41 米；三次 150ms 空格各有离地采样，最高 y=2.5625，最终回到 y=1。试玩结束暂停于 tick 15559 / 第 4 天 06:53。
+- 约 8 分 42 秒的独立采样连接未自动断开；104 次探测中 98 次成功、6 次超时，成功样本中位约 391ms。运行状态年龄中位 654ms、最大 3,184ms，仍有延迟提示。首次上线检查有超时和 TLS 连接重置；复查通过 HTTPS、双向 Socket.IO、224 素材及 GLB/MP3 分段请求，探测 950ms。没有隐藏失败记录，也没有将此轮宣布为持续流畅性验收。
+- 正式站画面还发现咖啡馆桌面与站立角色相交，列为后续家具碰撞修复项。三部曲画面质量与脱外套未完成项保持原状态。
+
+本轮[汇总数据](../output/deployment/matrixai-input-2026-10-20/verification.json)、[上线截图](../output/deployment/matrixai-input-2026-10-20/render-live.png)和[最终暂停画面](../output/deployment/matrixai-input-2026-10-20/neo-paused.png)入库；完整采样和日志保留在相同本地目录，不包含数据库密钥。
+
+## 2026-10-19 发布记录
 
 - 正式入口：<https://matrixai.online>；`www.matrixai.online` 自动跳转到根域名。两者均已验证并签发 HTTPS 证书。
-- Render 服务：`matrixai` / `srv-dba4redg1s2s73apj6c0`，Singapore，Free；备用入口 <https://matrixai-s0sd.onrender.com>。最新游戏提交 `113ffe7e8b00b02e78321a360c4939287674d161` 已由 Codex 推送、发布并确认 Live，部署记录 `dep-dbav09jrjlhs73aptg30`，客户端 `index-B6of8rcW.js`。本次修复新旧实例交接存档时的冲突，包含前版 26c3e17 的暂停重复同步修复。
+- Render 服务：`matrixai` / `srv-dba4redg1s2s73apj6c0`，Singapore，Free；备用入口 <https://matrixai-s0sd.onrender.com>。该轮游戏提交 `113ffe7e8b00b02e78321a360c4939287674d161` 已由 Codex 推送、发布并确认 Live，部署记录 `dep-dbav09jrjlhs73aptg30`，客户端 `index-B6of8rcW.js`。本次修复新旧实例交接存档时的冲突，包含前版 26c3e17 的暂停重复同步修复。
 - Supabase 项目：`matrixai` / `kywbietilqfwuvvpyooe`，Singapore，Free。连接密钥仅保存在 Render 的私密环境变量中。
 - 阿里云 DNS：`@ A 216.24.57.1`，`www CNAME matrixai-s0sd.onrender.com`，TTL 10 分钟。原来的三个额外 GitHub Pages A 记录已暂停保留；旧主 A 值为 `185.199.108.153`，旧 www 值为 `tqzhong.github.io`。其他记录未改动。
 - 本次验收：隔离及 Render 发布检查 63/63、生产构建通过。HTTPS、双向 Socket.IO、224 个素材和模型/音乐分段请求通过。新实例从 tick 12180 恢复；随后主动执行同版本重启，日志显示 18:48:30 等待交接、18:48:38 旧实例停止、18:48:41 新实例接管并恢复 tick 12861。独立前后快照核对暂停状态、Neo 的位置、生命 100、金钱 $114 均保持。
