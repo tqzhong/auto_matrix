@@ -1,6 +1,6 @@
 import { MetacortexRenderer } from './MetacortexRenderer.js';
 import * as THREE from 'three';
-import { LIFE_ROOMS, lifeRoomCenter, insideLifeRoom, type ComputerInvestigation, type NeoLifeState, type Vector3 } from '@auto_matrix/shared';
+import { LIFE_ROOMS, LIFE_TABLE, LIFE_CHAIR, CAFE_COUNTER, CAFE_TABLES, CAFE_CHAIRS, lifeRoomCenter, insideLifeRoom, type ComputerInvestigation, type NeoLifeState, type Vector3 } from '@auto_matrix/shared';
 import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
 import { officeCustodyActive } from '@auto_matrix/shared';
 
@@ -83,23 +83,26 @@ export class LifeInteriors {
     mesh.position.set(position[0], position[1], position[2]); parent.add(mesh);
   }
   private table(group: THREE.Group, x: number, z: number, width = 6, depth = 3, color = '#866749'): void {
-    this.part(group, [x, 2.45, z], [width, .22, depth], color);
+    this.part(group, [x, LIFE_TABLE.topY, z], [width, LIFE_TABLE.thickness, depth], color);
     for (const a of [-1, 1]) for (const b of [-1, 1]) this.part(group, [x + a * (width / 2 - .3), 1.2, z + b * (depth / 2 - .3)], [.16, 2.4, .16], '#3c4443');
   }
   private chair(group: THREE.Group, x: number, z: number, facing = 0): void {
     const chair = new THREE.Group(); chair.position.set(x, 0, z); chair.rotation.y = facing; group.add(chair);
-    this.part(chair, [0, 1.5, 0], [1.7, .3, 1.6], '#655c4e'); this.part(chair, [0, 2.5, -.7], [1.7, 1.8, .2], '#655c4e');
+    const seat = LIFE_CHAIR;
+    this.part(chair, [0, seat.seatY, 0], [seat.width, seat.thickness, seat.depth], '#655c4e'); this.part(chair, [0, seat.backY, seat.backZ], [seat.width, seat.backHeight, seat.backDepth], '#655c4e');
     for (const a of [-.65, .65]) for (const b of [-.6, .6]) this.part(chair, [a, .7, b], [.13, 1.4, .13], '#333d3b');
   }
   private cafe(group: THREE.Group, bar: boolean): void {
-    this.part(group, [0, 1.8, -8], [22, 3.6, 3], bar ? '#60482d' : '#b09c72');
-    this.part(group, [0, 3.7, -8], [22.5, .22, 3.5], '#514b42');
+    const counter = CAFE_COUNTER;
+    this.part(group, [counter.x, counter.baseHeight / 2, counter.z], [counter.width - .5, counter.baseHeight, counter.depth - .5], bar ? '#60482d' : '#b09c72');
+    this.part(group, [counter.x, counter.height - counter.thickness / 2, counter.z], [counter.width, counter.thickness, counter.depth], '#514b42');
     this.label(group, bar ? 'LIVE TONIGHT  /  19:00' : 'ESPRESSO   SOUP   SANDWICHES', [0, 6.5, -11.55], 12, '#ede5d0', '#354c45');
     for (let i = -4; i <= 4; i++) this.part(group, [i * 2, 4.15, -8], [.35, .8, .35], bar ? ['#75613b', '#354c36', '#8a5a3d'][(i + 4) % 3] : '#ddd3bc', 0, this.cylinder);
-    for (const x of [-8, 8]) for (const z of [0, 7]) {
-      this.table(group, x, z, 4, 3); this.chair(group, x, z - 2.5); this.chair(group, x, z + 2.5, Math.PI);
+    for (const { x, z, width, depth } of CAFE_TABLES) {
+      this.table(group, x, z, width, depth);
       this.part(group, [x, 2.75, z], [.32, .55, .32], '#eae3d0', 0, this.cylinder);
     }
+    for (const chair of CAFE_CHAIRS) this.chair(group, chair.x, chair.z, chair.facing);
   }
   private oracle(group: THREE.Group): void {
     this.part(group, [0, 1.7, -9.5], [23, 3.4, 4], '#aaa97f');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APARTMENT_CHAIR, filmPosition, lifeRoomCenter, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
+import { APARTMENT_CHAIR, filmPosition, lifeRoomCenter, groundHeight, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
 import { LifeInteriors } from '../packages/client/src/engine/LifeInteriors.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -63,6 +63,23 @@ test('the physical bedside clock shows world time, flashes while ringing and dep
     journey.morning = { phase: 'stopping', elapsed: .6 }; renderer.update(journey, 9250); assert.ok(button.position.y < height);
     journey.morning = { phase: 'rising', elapsed: .2 }; renderer.update(journey, 9267); assert.equal(button.position.y, height);
     assert.ok(text.includes('09:16'));
+  } finally { renderer.dispose(); globalThis.document = original; }
+});
+
+test('the visible cafe tabletop agrees with walking clearance and the landing surface', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), renderer = new LifeInteriors(root); root.updateMatrixWorld(true);
+  try {
+    const center = lifeRoomCenter('corner_cafe')!;
+    const room = root.children.find(object => object.position.x === center.x && object.position.z === center.z)!;
+    const top = room.children.find(object => object instanceof THREE.Mesh && object.position.x === -8 && object.position.z === 0 && Math.abs(object.position.y - 2.45) < 1e-6)!;
+    assert.ok(top, 'inspect the actual rendered tabletop');
+    const bounds = new THREE.Box3().setFromObject(top), middle = bounds.getCenter(new THREE.Vector3());
+    assert.equal(playerBlocked({ x: bounds.max.x + 1.09, y: 1, z: middle.z }, true), true);
+    assert.equal(playerBlocked({ x: bounds.max.x + 1.11, y: 1, z: middle.z }, true), false);
+    assert.ok(Math.abs(groundHeight({ x: middle.x, y: bounds.max.y + 1.01, z: middle.z }, true) - bounds.max.y - 1) < 1e-6);
   } finally { renderer.dispose(); globalThis.document = original; }
 });
 
