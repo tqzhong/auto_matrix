@@ -1,0 +1,622 @@
+{
+  "date": "2026-10-20",
+  "scope": "Offline garment authoring only; no runtime code or asset change and no deployment. Full withdrawal remains unaccepted.",
+  "inputCommit": "98c782f7aa1954182de05c81543223b33f8a3328",
+  "blender": "4.5.3 LTS 67807e1800cc",
+  "cage": {
+    "iteration": 4,
+    "vertices": 3005,
+    "faces": 5534,
+    "addedVertices": 11,
+    "protected": 189,
+    "scope": "Contact-directed refinement of the simulation cage; original display mesh unchanged."
+  },
+  "initialCageContact": {
+    "selfCount": 0,
+    "bodyCount": 0
+  },
+  "retainedDisplayedFaces": 25796,
+  "retainedBodyParts": 13,
+  "controlCount": 189,
+  "bindingResults": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0,
+    "maximumCuffMetres": 3.3647092730056643e-07,
+    "maximumCollarMetres": 3.3383387726027244e-06
+  },
+  "bodyAndCuffBaseline": {
+    "tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "log": "body-cuff-current.log"
+  },
+  "wholeGarment": {
+    "tests": 4,
+    "passed": 1,
+    "failed": 3,
+    "log": "cage-clearance-contact.log"
+  },
+  "simulation": {
+    "frames": 25,
+    "states": [
+      "SUCCESS"
+    ],
+    "final": {
+      "frame": 25,
+      "time": 1.6,
+      "seconds": 57.46768766734749,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "bodyDifference": 1.1920928955078125e-07,
+      "displayMaximumDrift": 0.441784927459513
+    }
+  },
+  "freeFall": {
+    "free-fall-no-springs": {
+      "massTotal": 2.9999999755527824,
+      "airDamping": 0.0014940983382984996,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.3296708900552407,
+        "maximumRelativeDriftMetres": 8.913660793014417e-07,
+        "solverStatus": [
+          "SUCCESS"
+        ],
+        "maximumSolverError": 0.0002335864119231701,
+        "maximumSolverIterations": 1
+      },
+      "states": [
+        "SUCCESS"
+      ]
+    },
+    "free-fall-normalized-cage-material-fitted": {
+      "massTotal": 3.0000000505242497,
+      "airDamping": 0.006655574310570955,
+      "quality": 20,
+      "physicalVertices": 3005,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.329672876402069,
+        "maximumRelativeDriftMetres": 4.223713227884732e-06,
+        "solverStatus": [
+          "SUCCESS"
+        ],
+        "maximumSolverError": 0.009990525431931019,
+        "maximumSolverIterations": 48
+      },
+      "states": [
+        "SUCCESS"
+      ]
+    },
+    "free-fall-normalized-cage-material": {
+      "massTotal": 3.000000036903657,
+      "airDamping": 0.00942063145339489,
+      "quality": 20,
+      "physicalVertices": 2123,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.329670655607633,
+        "maximumRelativeDriftMetres": 2.8789460761915e-06,
+        "solverStatus": [
+          "SUCCESS"
+        ],
+        "maximumSolverError": 0.009951638989150524,
+        "maximumSolverIterations": 33
+      },
+      "states": [
+        "SUCCESS"
+      ]
+    },
+    "free-fall-normalized-cage": {
+      "massTotal": 3.000000036903657,
+      "airDamping": 0.00942063145339489,
+      "quality": 20,
+      "physicalVertices": 2123,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.3198071283729242,
+        "maximumRelativeDriftMetres": 0.0001577553069271081,
+        "solverStatus": [
+          "NO_CONVERGENCE"
+        ],
+        "maximumSolverError": 0.0,
+        "maximumSolverIterations": 100
+      },
+      "states": [
+        "NO_CONVERGENCE",
+        "SUCCESS"
+      ]
+    },
+    "free-fall-normalized-fine": {
+      "massTotal": 2.9999999755527824,
+      "airDamping": 0.0014940983382984996,
+      "quality": 100,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.3163006694224916,
+        "maximumRelativeDriftMetres": 0.0006174396466040945,
+        "solverStatus": [
+          "NO_CONVERGENCE"
+        ],
+        "maximumSolverError": 0.0,
+        "maximumSolverIterations": 100
+      },
+      "states": [
+        "NO_CONVERGENCE",
+        "SUCCESS"
+      ]
+    },
+    "free-fall-normalized-material": {
+      "massTotal": 2.9999999755527824,
+      "airDamping": 0.0014940983382984996,
+      "quality": 20,
+      "physicalVertices": 13386,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.28125341256693664,
+        "maximumRelativeDriftMetres": 0.006390228491464081,
+        "solverStatus": [
+          "NO_CONVERGENCE"
+        ],
+        "maximumSolverError": 0.0,
+        "maximumSolverIterations": 100
+      },
+      "states": [
+        "NO_CONVERGENCE",
+        "SUCCESS"
+      ]
+    },
+    "free-fall-normalized": {
+      "massTotal": 2.9999999755527824,
+      "airDamping": 0.0014940983382984996,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.02878089782773199,
+        "maximumRelativeDriftMetres": 2.5719678636210784e-05,
+        "solverStatus": [
+          "NO_CONVERGENCE"
+        ],
+        "maximumSolverError": 0.0,
+        "maximumSolverIterations": 100
+      },
+      "states": [
+        "NO_CONVERGENCE",
+        "SUCCESS"
+      ]
+    },
+    "free-fall-original": {
+      "massTotal": 2.9999999755527824,
+      "airDamping": 2.0,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.0009520463185522576,
+        "maximumRelativeDriftMetres": 7.080722423628981e-06
+      },
+      "states": []
+    },
+    "free-fall-reference-mass": {
+      "massTotal": 4015.800159573555,
+      "airDamping": 2.0,
+      "vertices": 13386,
+      "faces": 25796,
+      "final": {
+        "frame": 10,
+        "time": 0.3,
+        "centreDropMetres": 0.3296721984585009,
+        "maximumRelativeDriftMetres": 6.719847938518267e-06,
+        "solverStatus": [
+          "SUCCESS"
+        ],
+        "maximumSolverError": 0.009756311774253845,
+        "maximumSolverIterations": 16
+      },
+      "states": [
+        "SUCCESS"
+      ]
+    }
+  },
+  "contactControls": {
+    "shoulder-physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 66,
+        "body": 1392,
+        "parts": {
+          "Anatomical_head_and_hands": 251,
+          "morpheus-ambush-shirt": 1141
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 193,
+        "body": 1373,
+        "parts": {
+          "Anatomical_head_and_hands": 620,
+          "Anatomical_wrist_skin": 16,
+          "morpheus-ambush-shirt": 737
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 243,
+        "body": 618,
+        "parts": {
+          "Anatomical_head_and_hands": 295,
+          "morpheus-ambush-shirt": 323
+        }
+      }
+    ],
+    "shoulder-air": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 125,
+        "body": 1332,
+        "parts": {
+          "Anatomical_head_and_hands": 248,
+          "morpheus-ambush-shirt": 1084
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 207,
+        "body": 1357,
+        "parts": {
+          "Anatomical_head_and_hands": 671,
+          "morpheus-ambush-shirt": 686
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 178,
+        "body": 754,
+        "parts": {
+          "Anatomical_head_and_hands": 388,
+          "morpheus-ambush-shirt": 366
+        }
+      }
+    ],
+    "shoulder-reference-mass": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 99,
+        "body": 195,
+        "parts": {
+          "morpheus-ambush-shirt": 195
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 113,
+        "body": 1226,
+        "parts": {
+          "Anatomical_head_and_hands": 134,
+          "Anatomical_wrist_skin": 22,
+          "morpheus-ambush-shirt": 1070
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 52,
+        "body": 682,
+        "parts": {
+          "Anatomical_head_and_hands": 348,
+          "morpheus-ambush-shirt": 334
+        }
+      }
+    ],
+    "static-reference-mass": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 52,
+        "body": 1,
+        "parts": {
+          "morpheus-ambush-collar": 1
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 48,
+        "body": 5,
+        "parts": {
+          "morpheus-ambush-collar": 5
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 45,
+        "body": 3,
+        "parts": {
+          "morpheus-ambush-collar": 3
+        }
+      }
+    ],
+    "shoulder-air-fine": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 685,
+        "body": 363,
+        "parts": {
+          "morpheus-ambush-shirt": 363
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 3047,
+        "body": 1304,
+        "parts": {
+          "Anatomical_head_and_hands": 894,
+          "morpheus-ambush-shirt": 410
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 993,
+        "body": 0,
+        "parts": {}
+      }
+    ],
+    "cage-physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 171,
+        "body": 80,
+        "parts": {
+          "morpheus-ambush-shirt": 80
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 778,
+        "body": 431,
+        "parts": {
+          "Anatomical_head_and_hands": 4,
+          "Tailored_trousers": 16,
+          "morpheus-ambush-shirt": 411
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 893,
+        "body": 972,
+        "parts": {
+          "Anatomical_head_and_hands": 124,
+          "Tailored_trousers": 14,
+          "morpheus-ambush-shirt": 834
+        }
+      }
+    ],
+    "cage-fitted-physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 137,
+        "body": 70,
+        "parts": {
+          "morpheus-ambush-shirt": 70
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 835,
+        "body": 499,
+        "parts": {
+          "Anatomical_head_and_hands": 12,
+          "morpheus-ambush-shirt": 487
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 897,
+        "body": 1058,
+        "parts": {
+          "Anatomical_head_and_hands": 58,
+          "morpheus-ambush-shirt": 1000
+        }
+      }
+    ],
+    "cage-clearance-physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 202,
+        "body": 30,
+        "parts": {
+          "morpheus-ambush-shirt": 30
+        }
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 703,
+        "body": 65,
+        "parts": {
+          "morpheus-ambush-shirt": 65
+        }
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 969,
+        "body": 161,
+        "parts": {
+          "Anatomical_head_and_hands": 42,
+          "morpheus-ambush-shirt": 119
+        }
+      }
+    ]
+  },
+  "bindingOffsets": [
+    {
+      "name": "morpheus-ambush-coat",
+      "maximumInwardMetres": 0.0019188458274584264,
+      "maximumOutwardMetres": 0.002497526057140931,
+      "signedQuantilesMetres": [
+        -0.0019188458274584264,
+        -0.0007664756790813955,
+        0.0002947414501250023,
+        0.0016174048776738347,
+        0.002497526057140931
+      ]
+    },
+    {
+      "name": "morpheus-ambush-lapels",
+      "maximumInwardMetres": 0.0020059763570316135,
+      "maximumOutwardMetres": 0.0022592015186091888,
+      "signedQuantilesMetres": [
+        -0.0020059763570316135,
+        -0.0018698277164512548,
+        0.0,
+        0.0020926092248118944,
+        0.0022592015186091888
+      ]
+    },
+    {
+      "name": "",
+      "maximumInwardMetres": 0.0011464666487881914,
+      "maximumOutwardMetres": 0.002022534698335221,
+      "signedQuantilesMetres": [
+        -0.0011464666487881914,
+        -0.0007101816086983632,
+        0.00017053076085176146,
+        0.001534031447081361,
+        0.002022534698335221
+      ]
+    },
+    {
+      "name": "",
+      "maximumInwardMetres": 0.0012681057705776766,
+      "maximumOutwardMetres": 0.0027359056810382755,
+      "signedQuantilesMetres": [
+        -0.0012681057705776766,
+        -0.000745323204464512,
+        0.0002321537172974786,
+        0.001574040180508746,
+        0.0027359056810382755
+      ]
+    }
+  ],
+  "sha256": {
+    "../morpheus-withdrawal-path-2026-10-20/clearance-input/manifest.json": "6f0d18e7fce2aaf666470d81780f9071c6a65be142ac1ae5f646f35684dbc0c3",
+    "../morpheus-withdrawal-path-2026-10-20/clearance-input/body-1.bin": "90278ce446ed0695d8d5a010ac1bcce5027267f6aa1e0caf369bb241f6395a78",
+    "../morpheus-withdrawal-path-2026-10-20/clearance-input/body-25.bin": "79223b54c30dc11affcf1811a0bd5c94b8938a4009c4e3f0a1c6b9565c6e7a99",
+    "cage-fit-4.json": "0f76160b2c0de77ccb806c7712d77a177baabf085c9ccb101cc129538ebfecd1",
+    "collar-guide.json": "6f1d407f1899605f0837fac442960fb64c37989ba0a6b94ec8d7880c455e719a",
+    "cage-clearance-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "cage-clearance-physics/cloth-10.bin": "ec1d2350ce16f230c939cb87bd34d7a3473a46df24c1fcd250dc568a2dcdcd1f",
+    "cage-clearance-physics/cloth-16.bin": "6e78739e63aeb601859c2aeb0fa22e9a976cef5e4fe519d1d9b032d8ac491a64",
+    "cage-clearance-physics/cloth-25.bin": "01dae7a8309ba5ac87278c27b7732787431effb521950da75ed200dc9caff876",
+    "free-fall-normalized-cage-material-fitted.json": "1ceedbcafae132276a9547eac1e610b8dacbd9e99c89be2c4454405f4bac9f5f",
+    "cage-binding.log": "73caf88da730d7a6d58d046c9f9fafb6a8edf8081a1e4e2b394d999015b24fd3",
+    "cage-clearance-binding.log": "9416f150ace6beb9a507eec3f6aa537907bf4d2089c01c830bea3d6cb40846c5",
+    "body-cuff-current.log": "57e3a86f4c34a5d56644ddae39b96a26188b0dc9225c194958712e23bddb3699"
+  },
+  "remaining": [
+    "Sleeve/body and garment self intersections during withdrawal",
+    "All 0\u20138 s garment motion, real grip/release and landing",
+    "Runtime renderer/lifecycle, save restoration and native gameplay review"
+  ],
+  "lastVerifiedPublishedRuntime": "1ce32d6e0d0668087665c97ca5f108acf8638d73",
+  "newLiveVerification": false
+}
