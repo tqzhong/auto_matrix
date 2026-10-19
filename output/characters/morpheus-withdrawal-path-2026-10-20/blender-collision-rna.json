@@ -1,0 +1,7 @@
+{
+  "use_culling": "Cloth collision acts with respect to the collider normals (improves penetration recovery)",
+  "use_normal": "Cloth collision impulses act in the direction of the collider normals (more reliable in some cases)",
+  "thickness_inner": "Inner face thickness (only used by softbodies)",
+  "thickness_outer": "Outer face thickness",
+  "source": "Local Blender 4.5.3 CollisionSettings RNA; no inference from the property names."
+}

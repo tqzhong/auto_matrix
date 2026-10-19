@@ -29,10 +29,20 @@ export class WithdrawalBody {
   private passage = new Map<string, THREE.Vector3[]>();
   private aligned = new Map<string, THREE.Quaternion>();
   private elbowPoles = new Map<string, THREE.Vector3>();
+  private thumbTips = new Map<string, THREE.Vector3>();
   readonly errors: { side: string; distance: number }[] = [];
   constructor(private rig: HeroRig) {
     for (const [name, bone] of rig.bones) this.initial.set(name, { p: bone.position.clone(), q: bone.quaternion.clone() });
     for (const side of ['R', 'L']) {
+      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const thumb = rig.bones.get(`finger1-3_${side}`)!, index = skin.skeleton.bones.indexOf(thumb);
+      const tip = new THREE.Vector3(); let count = 0;
+      const { position, skinIndex, skinWeight } = skin.geometry.attributes;
+      for (let i = 0; i < position.count; i++) for (let k = 0; k < 4; k++) {
+        if (skinIndex.getComponent(i,k) !== index || skinWeight.getComponent(i,k) < .95) continue;
+        tip.add(new THREE.Vector3().fromBufferAttribute(position,i).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[index])); count++;
+      }
+      this.thumbTips.set(side, tip.divideScalar(count));
       this.rest.set(side, rig.root.worldToLocal(rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3())));
       const shoulder = rig.root.worldToLocal(rig.bones.get(`shoulder_${side}`)!.getWorldPosition(new THREE.Vector3()));
       const direction = this.rest.get(side)!.clone().sub(shoulder).normalize();
@@ -98,6 +108,26 @@ export class WithdrawalBody {
         wrist.quaternion.slerp(aligned, smooth(time, .6, .8) * (1 - release));
       }
       this.rig.root.updateMatrixWorld(true);
+      // Gather the fingers and extended thumb before the rim passes the hand.
+      // Preserve bone lengths and reference roll, including the actual distal
+      // skin direction; a spread thumb cannot fit through this fitted cuff.
+      const gather = .7 * smooth(time, .3, .8) * (1 - smooth(time, 3.2, 3.8));
+      for (const [digit, angle] of [[2, .06], [5, -.1]]) {
+        const finger = this.rig.bones.get(`finger${digit}-1_${side}`)!;
+        finger.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), angle * gather / .7));
+        finger.updateWorldMatrix(false, true);
+      }
+      const directions = [[.86,-.44,.3], [.45,-.89,0], [.1,-.99,-.1]];
+      for (let i = 0; i < 3; i++) {
+        const bone = this.rig.bones.get(`finger1-${i+1}_${side}`)!;
+        const axis = i < 2 ? this.rig.bones.get(`finger1-${i+2}_${side}`)!.position : this.thumbTips.get(side)!;
+        const world = bone.getWorldQuaternion(new THREE.Quaternion());
+        const desired = new THREE.Vector3(-sign * directions[i][0], directions[i][1], directions[i][2])
+          .normalize().applyQuaternion(wrist.getWorldQuaternion(new THREE.Quaternion()));
+        const goal = bone.parent!.getWorldQuaternion(new THREE.Quaternion()).invert()
+          .multiply(new THREE.Quaternion().setFromUnitVectors(axis.clone().normalize().applyQuaternion(world), desired)).multiply(world);
+        bone.quaternion.slerp(goal, gather); bone.updateWorldMatrix(false, true);
+      }
       this.errors.push({ side, distance: goal.distanceTo(wrist.getWorldPosition(new THREE.Vector3())) });
     }
   }

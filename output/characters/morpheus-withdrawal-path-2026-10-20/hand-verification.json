@@ -1,0 +1,254 @@
+{
+  "date": "2026-10-20",
+  "scope": "Offline withdrawal hand pose and complete cuff path; full garment failed and is not released.",
+  "lastVerifiedRuntimeCommit": "1ce32d6e0d0668087665c97ca5f108acf8638d73",
+  "runtimeFilesChanged": false,
+  "gameDeploymentPerformed": false,
+  "reproduced": {
+    "originalCuffTest": {
+      "pass": 0,
+      "fail": 1
+    },
+    "originalMaximumHandOutsideMetres": 0.03664998842485819,
+    "firstFullThumbGatherSelfCrossings": 590,
+    "first120HzCombinedRun": {
+      "pass": 6,
+      "fail": 1
+    }
+  },
+  "acceptedAuthoring": {
+    "bodyAndCuffsIsolated": {
+      "pass": 8,
+      "fail": 0
+    },
+    "cuffTimeRange": [
+      0.8,
+      3.2
+    ],
+    "cuffRateHz": 120,
+    "cuffTimes": 289,
+    "cuffRingSamples": 578,
+    "intersectedHandSections": 140,
+    "minimumConservativeClearanceMetres": 0.0012064210771680585,
+    "cuffMotion": {
+      "maximumStep": 0.024429855028755124,
+      "sizeDifference": 5.828670879282072e-16,
+      "coldDifference": 2.400393583465188e-14
+    },
+    "handAnatomySamples": 18,
+    "handSelfCrossings": 0,
+    "maximumThumbPIPDegrees": 36.30558205385196,
+    "maximumThumbDIPDegrees": 22.95562442329697,
+    "bodyContinuity": {
+      "maximumStep": 0.05021980640079352,
+      "maximumFootDrift": 7.468261590855957e-16,
+      "maximumReachError": 1.1957467920563633e-15
+    },
+    "coldBody": {
+      "coldMaximumDifference": 2.2860149897625325e-14,
+      "maximumJointDifference": 1.2427743010384781e-14
+    },
+    "isolatedDirectRuntimeInputsCheckedAgainstHEAD": 6,
+    "openingResized": false,
+    "handSkinOrBindWeightsChanged": false
+  },
+  "fullGarment": {
+    "gathered-physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 19,
+        "body": 82
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 42,
+        "body": 1425
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 218,
+        "body": 918
+      }
+    ],
+    "clearance-physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 18,
+        "body": 118
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 66,
+        "body": 1331
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 121,
+        "body": 1036
+      }
+    ],
+    "clearance-double-sided": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 36,
+        "body": 514
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 374,
+        "body": 2421
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 200,
+        "body": 1327
+      }
+    ],
+    "clearance-normal-impulse": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 14,
+        "body": 295
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 98,
+        "body": 1275
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 402,
+        "body": 925
+      }
+    ]
+  },
+  "runtimeBaseline": {
+    "pass": 9,
+    "fail": 4
+  },
+  "collisionControls": {
+    "original": {
+      "use_culling": true,
+      "use_normal": false
+    },
+    "clearance-double-sided": {
+      "use_culling": false,
+      "use_normal": false,
+      "note": "Folder name is historical. RNA says use_culling is normal-based penetration recovery; it must not be inferred to be the display-material sidedness."
+    },
+    "clearance-normal-impulse": {
+      "use_culling": true,
+      "use_normal": true
+    }
+  },
+  "nextUnverifiedWork": [
+    "Shoulder/collar release route and free sleeve contact",
+    "Complete grip, coat release and persistent world placement",
+    "Runtime renderer lifecycle, saved playback and native game verification"
+  ],
+  "sha256": {
+    "WithdrawalBody.mts": "41ba64b16d2b35bb639cae4b5a5f01144afd190dfe096d729c1e70bb64779062",
+    "WithdrawalBody-before-thumb.mts": "b54939dfeb324069566bf3386f8fd59cd566d69f63af2626c999337bc575732e",
+    "WithdrawalCuffs.mts": "2217ab6a56625a33c7444a907a8eb3e7d1c3dbaf62adc93be2feb46a357c7e59",
+    "WithdrawalCuffs-before.mts": "433716aab3f256b356cea9474d6984cc6a5e2946b119fe274625d07ba67e975a",
+    "WithdrawalCuffs-gathered-control.mts": "2339e431b1a6d67add200a82f7e7b8fea9984315de7a706c1cfac8d10143321c",
+    "withdrawal-path.test.mts": "b007965a348f55e4a1c5f636f423b079184814c6ee3d1a1ddccf245164ba9ebb",
+    "cuff-passage.test.mts": "856a7b16559965927f8358d0baf6bd7c10664f53173f5f6f3b9a3031da748e69",
+    "export-clearance-input.mts": "aeb66329ebaa27dac341ef256494eed3425fe98482d7e816d9cfc0101fb50c66",
+    "bake-clearance.py": "a404745174f8cc264607bc714affc0352d10e5c2a8cbc545f13996efac38ae7d",
+    "bake-double-sided.py": "cfe53cff046494129fdd1bfaf66c00efc71c5a0b08e032f0698bfab8d3e3e77f",
+    "bake-normal-impulse.py": "767f7320b1ca5e13f56df5ab3ac3be53a62e451d8366dbfcfe484ac78c6d52b8",
+    "audit-input.mts": "5015564c494036d7cea49d653ebabc2b194a4717d89ae03a7e2106f5abc52574",
+    "review-hand.mts": "e4e7b0dfab3d09acf44112d479b09975a45aaaaa5f8a163a2fe39491209b8a6b",
+    "review-sleeves.mts": "2334e782722322d70c5fe1dbd9944d56a5bb5670bdd3ce049fb412cb07bacd8d",
+    "cuff-passage-before.log": "67af28f216d04f7b7c7b709d9c60c0a40620a6083514a2649c84119e4d2bcb9f",
+    "cuff-passage-before.json": "c4390f442e4708c3a88556b3843a8dd3b6a2615899e551ad12c8f415cc9f0056",
+    "cuff-passage-final-tests.log": "011c4592ad2ea129eceed0b3135aba440ef09f3ebde048f28490948acb44ed56",
+    "gathered-hand-tests.log": "ad06080e7c8fa8b2e12a426d2691dba97adb1d0a9bcb319ab0c8f60b5326470a",
+    "isolated-hand-tests.log": "a028029ebdec09ad9075df530233912f4616bd8a370539bdaa0d0895dce25a10",
+    "runtime-hand-baseline.log": "9ed6e482730a5f8859002ecb1d446fa428ce7e883857f4f5b2b4c1de849feb91",
+    "blender-collision-rna.json": "06299ab6d8bb40c5d4f546f4187add8e719bea4beb7aa31400ab1965840f906f",
+    "sleeve-normal-control.json": "1d860fca56f4f51e460d48742ba755205dbda42517988a03f302b4a8e9b912a2",
+    "cuff-section-final.png": "4f1c5027f9879ef85fae29449211dfa23f8cb2ab49ed9eb4773b0593792a4417",
+    "thumb-after-thumb.png": "7c7739f6597c2d6b7721d82a7f8cdc9b6541e93860197b89d294b6d3ff0811de",
+    "sleeve-clearance-physics-16-rear.png": "66fc2559bae6f79aecb00ddfcf37033921ef0c60a2492d7eff6319f6fc6b8c7f",
+    "gathered-physics/metadata.json": "4ab5d9e360e4582b127ac655e2372ac4b3b8a0b654002762cd2542a7e108ba6e",
+    "gathered-physics/summary.json": "56fb39cbb92eaae5abe9e0c658e4a157913219f6c497bcef840fc2c168ec7b0b",
+    "gathered-physics/cloth-1.bin": "321af5adc818d08f55c4ed08b0a90de8a4f116b706eac5ff830df10c25f08856",
+    "gathered-physics/cloth-10.bin": "ef09aca1ce0f56e1c8f602b2cf488bb19f8b7dcd91b17deffa0dfac5c6432b71",
+    "gathered-physics/cloth-16.bin": "8da3aacc3b29b8d8f71e00daaf580a3290888683cce6f64de946c973f34e4d2b",
+    "gathered-physics/cloth-25.bin": "62b57bf857e96a49b57587fad302d2fee0a48478f43a2b36d06038e0c5a1bca3",
+    "gathered-physics/body-1.bin": "cb4dd23eed2081865cffe8d5d8b895113fc8ffe98819733b75b817d3698045a2",
+    "gathered-physics/body-10.bin": "3559cd9b378ae9765c18156bf2dffbe230482eebecbf4f20265a72c0ccd695ed",
+    "gathered-physics/body-16.bin": "741b63dfeb479f6831a0c9fea9ba2b73adb78511006000ab9775c392a8eca831",
+    "gathered-physics/body-25.bin": "07da41edb9c9130dd7ad7d0fdd5fd2f31659c4eb73598098d64a29a3cbc712f0",
+    "clearance-physics/metadata.json": "4ab5d9e360e4582b127ac655e2372ac4b3b8a0b654002762cd2542a7e108ba6e",
+    "clearance-physics/summary.json": "a7d4e4ce24647af92ccebae29ee69951443067662809e591a3c66d8a44c3cf68",
+    "clearance-physics/cloth-1.bin": "321af5adc818d08f55c4ed08b0a90de8a4f116b706eac5ff830df10c25f08856",
+    "clearance-physics/cloth-10.bin": "b5f2448dddada4d0f13689001c553fc81d91226c886628f0ba31dc53b5e55e1d",
+    "clearance-physics/cloth-16.bin": "31d3c9e4100dbfa4950ff586c46dab031a0d072abc73ce456aacaefdde9ccf43",
+    "clearance-physics/cloth-25.bin": "40dc3be63bf26d9cef0ddc195adb0546f4951399713e438d8dd2cf37799ba734",
+    "clearance-physics/body-1.bin": "cb4dd23eed2081865cffe8d5d8b895113fc8ffe98819733b75b817d3698045a2",
+    "clearance-physics/body-10.bin": "3559cd9b378ae9765c18156bf2dffbe230482eebecbf4f20265a72c0ccd695ed",
+    "clearance-physics/body-16.bin": "741b63dfeb479f6831a0c9fea9ba2b73adb78511006000ab9775c392a8eca831",
+    "clearance-physics/body-25.bin": "07da41edb9c9130dd7ad7d0fdd5fd2f31659c4eb73598098d64a29a3cbc712f0",
+    "clearance-double-sided/metadata.json": "b6374e24cc483cf96ed0624bf9117280397fb81a387b22493692f4a55beb0e85",
+    "clearance-double-sided/summary.json": "cf590becf9f911949fad6dcfddb97f0fd3de7ff31c5e3e871171de24d5112bcb",
+    "clearance-double-sided/cloth-1.bin": "321af5adc818d08f55c4ed08b0a90de8a4f116b706eac5ff830df10c25f08856",
+    "clearance-double-sided/cloth-10.bin": "3551515f70fb7ac49bff7d42a901aed606d6084e5ac6aa9f8d58d0f750cbd7f4",
+    "clearance-double-sided/cloth-16.bin": "e10ab56466430c15ad264526595cfbd730b1fa1ace80b13ac5a62a01d9090f9a",
+    "clearance-double-sided/cloth-25.bin": "8011583068843fa7a91a6328d36bd07694aba994da20cc660d3d1fce2ef8ab22",
+    "clearance-double-sided/body-1.bin": "cb4dd23eed2081865cffe8d5d8b895113fc8ffe98819733b75b817d3698045a2",
+    "clearance-double-sided/body-10.bin": "3559cd9b378ae9765c18156bf2dffbe230482eebecbf4f20265a72c0ccd695ed",
+    "clearance-double-sided/body-16.bin": "741b63dfeb479f6831a0c9fea9ba2b73adb78511006000ab9775c392a8eca831",
+    "clearance-double-sided/body-25.bin": "07da41edb9c9130dd7ad7d0fdd5fd2f31659c4eb73598098d64a29a3cbc712f0",
+    "clearance-normal-impulse/metadata.json": "ac8ef3a76a30fc188cbedeb6b9962f01e94a780b9a60dd1aa2bf0dd1cc812bcd",
+    "clearance-normal-impulse/summary.json": "a03337c59ad7034927a8316c4ddadb1c6246006b1e98af3ed2caffc22dc20b39",
+    "clearance-normal-impulse/cloth-1.bin": "321af5adc818d08f55c4ed08b0a90de8a4f116b706eac5ff830df10c25f08856",
+    "clearance-normal-impulse/cloth-10.bin": "88eb8bb577e8cb82769b79dcebc614a90b571d24d945d1466e28877065ef531a",
+    "clearance-normal-impulse/cloth-16.bin": "16892a277f861f4c5fa2e44754667349918f0091e39aa9a3f73a70dbb73c2c65",
+    "clearance-normal-impulse/cloth-25.bin": "938427e3d043d36583016bf631d48844824d7585588ecb769a283f5b04ec71da",
+    "clearance-normal-impulse/body-1.bin": "cb4dd23eed2081865cffe8d5d8b895113fc8ffe98819733b75b817d3698045a2",
+    "clearance-normal-impulse/body-10.bin": "3559cd9b378ae9765c18156bf2dffbe230482eebecbf4f20265a72c0ccd695ed",
+    "clearance-normal-impulse/body-16.bin": "741b63dfeb479f6831a0c9fea9ba2b73adb78511006000ab9775c392a8eca831",
+    "clearance-normal-impulse/body-25.bin": "07da41edb9c9130dd7ad7d0fdd5fd2f31659c4eb73598098d64a29a3cbc712f0",
+    "gathered-input/manifest.json": "9cfdc752f0f52e0ef283916794ece0ec2d9d2dc01c0d31aaf23347a57e1ae842",
+    "clearance-input/manifest.json": "6f0d18e7fce2aaf666470d81780f9071c6a65be142ac1ae5f646f35684dbc0c3"
+  }
+}

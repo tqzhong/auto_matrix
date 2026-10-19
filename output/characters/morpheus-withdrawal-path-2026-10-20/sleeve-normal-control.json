@@ -1,0 +1,14 @@
+[
+  {
+    "side": "R",
+    "approximateRadialOutward": 2311,
+    "approximateRadialInward": 1,
+    "nearZero": 0
+  },
+  {
+    "side": "L",
+    "approximateRadialOutward": 2311,
+    "approximateRadialInward": 1,
+    "nearZero": 0
+  }
+]
