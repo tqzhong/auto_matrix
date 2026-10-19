@@ -31,4 +31,13 @@
 
 新增 45 秒写入租约，以版本号和原租约值原子竞争。新实例等待旧实例最后保存并释放，再载入该快照；角色、模拟、API 和输入在交接完成前不可用。每 15 秒保存/续租，未改变的暂停存档只更新租约时间；旧写入者不能覆盖新版本。异常退出通过过期恢复，保存响应丢失仍核对确切提交。无新依赖，数据库仅新增 nullable `lease_until` 列，权限及 payload 格式保持。
 
-先保留云存档 revision 224 / tick 12180 的完整压缩副本，并成功解压验证 85 人及记忆、暂停状态；备份位于本地 `cloud-checkpoint-backup.json`，不提交。Supabase 界面已确认字段类型 timestamp with time zone，见 `lease-schema.png`。四项交接回归先失败，连接等待状态亦先失败；最终隔离部署检查 63/63、生产构建通过，客户端产物 `index-B6of8rcW.js`。交接修复尚待本次发布后的实机验收。
+先保留云存档 revision 224 / tick 12180 的完整压缩副本，并成功解压验证 85 人及记忆、暂停状态；备份位于本地 `cloud-checkpoint-backup.json`，不提交。Supabase 界面已确认字段类型 timestamp with time zone，见 `lease-schema.png`。四项交接回归先失败，连接等待状态亦先失败；最终隔离部署检查 63/63、生产构建通过，客户端产物 `index-B6of8rcW.js`。交接修复的上线验收如下。
+
+
+## 交接修复上线验收
+
+- 提交 `113ffe7e8b00b02e78321a360c4939287674d161` 已推送并由 Codex 发布，`dep-dbav09jrjlhs73aptg30` 显示 Live。首个新实例 9qq9x 在 18:28:23 接管并恢复 tick 12180。首次迁移时旧版 sbrxb 的退出保存被版本保护拒绝，新实例未因此重启；这是旧协议退出记录，不隐去该失败。
+- 为验证两个支持租约的实例，执行一次同版本 Restart service。日志显示 j449w 在 18:48:30 等待，9qq9x 在 18:48:38 停止，j449w 在 18:48:41 接管并恢复 tick 12861。`before-restart-world.json` 与 `after-restart-world.json` 的 tick、暂停状态、Neo 位置、生命 100 和金钱 $114 精确一致。浏览器自动接回 Neo，未重新建档。
+- 重启后实际按键前进/转向，`post-restart-play-samples.json` 的 4,898 个样本记录最大位置变化 2.752569 米、生命保持 100，最终暂停在 tick 13325 / 第 3 天 21:34。74 次探测无超时，中位 271ms、最大 2077ms；该采样连接除手动结束外未断开。短按 150ms 空格未记录高度变化（y 始终为 1），不能把本轮写成跳跃验收通过；后续需排查低帧率/输入响应。
+- `neo-handover-play.json` 的较早 10 分钟采样在按键前结束，位移为 0；保留该记录，不用它证明移动成功。运行时重复包量、浏览器同步延迟与视觉粗糙仍在，不以本轮存档交接修复宣布完整游戏体验达标。
+- `handover-verify.log` 记录 HTTPS、双向 Socket.IO 以及 224 素材通过，探测 626ms。`handover-final-status.json` 为 ready=true、running=false、tick=13325、uptime≈858s；`handover-runtime-log.txt`、`handover-render-live.png`、`neo-final-paused.png` 留存发布、交接和最终画面。未推进三部曲主线，不增加电影质量完成组。
