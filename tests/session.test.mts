@@ -10,7 +10,7 @@ async function waitFor(check: () => boolean) {
   assert.ok(check(), 'expected socket event before timeout');
 }
 
-async function setup(t: TestContext, replyToPing = true) {
+async function setup(t: TestContext, replyToPing = true, deferSnapshot = false) {
   const http = createServer(); const server = new Server(http);
   await new Promise<void>(resolve => http.listen(0, '127.0.0.1', resolve));
   const address = http.address() as { port: number };
@@ -35,7 +35,7 @@ async function setup(t: TestContext, replyToPing = true) {
       if (message.type === 'play_as') socket.emit('message', { type: 'player_state', data: { agentId: message.data.agentId }, tick: 1 });
       if (message.type === 'leave_character') socket.emit('message', { type: 'player_state', data: { agentId: null }, tick: 1 });
     });
-    socket.emit('message', { type: 'world_state_full', data: { agents: {}, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 7500 }, tick: 1 });
+    if (!deferSnapshot) socket.emit('message', { type: 'world_state_full', data: { agents: {}, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 7500 }, tick: 1 });
   });
   const client = new SocketClient(callbacks);
   t.after(async () => {
@@ -44,9 +44,18 @@ async function setup(t: TestContext, replyToPing = true) {
     if (previousLocation) Object.defineProperty(globalThis, 'location', previousLocation);
     else Reflect.deleteProperty(globalThis, 'location');
   });
-  client.connect(); await waitFor(() => snapshots === 1);
+  client.connect(); await waitFor(() => deferSnapshot ? wires.length === 1 : snapshots === 1);
   return { client, messages, states, wires, health, snapshots: () => snapshots };
 }
+
+test('a standby connection stays connecting until the handed-over world arrives', async t => {
+  const game = await setup(t, true, true);
+  await waitFor(() => game.health.length >= 3);
+  assert.equal(game.health.at(-1), 'connecting');
+  assert.equal(game.health.includes('ready'), false);
+  game.wires[0].emit('message', { type: 'world_state_full', data: { agents: {}, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 7500 }, tick: 42 });
+  await waitFor(() => game.health.at(-1) === 'ready');
+});
 
 test('connected transport is not reported ready until a server round trip succeeds', async t => {
   const game = await setup(t);

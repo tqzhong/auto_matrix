@@ -11,7 +11,9 @@ import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { gunzipSync } from 'node:zlib';
 
 function database(t: TestContext) {
-  let row: { id: string; revision: number; payload: string } | null = null;
+  let row: { id: string; revision: number; payload: string; updated_at: string; lease_until: string | null } | null = null;
+  let now = Date.now();
+  t.mock.method(Date, 'now', () => now);
   let failure = 0;
   let loseReply = false;
   const requests: string[] = [];
@@ -26,27 +28,77 @@ function database(t: TestContext) {
     const next = JSON.parse(options.body as string);
     if (options.method === 'POST' && row) return new Response('', { status: 409 });
     if (options.method === 'PATCH' && url.searchParams.get('revision') !== `eq.${row?.revision}`) return Response.json([]);
-    row = next;
+    if (options.method === 'PATCH' && url.searchParams.has('lease_until') && url.searchParams.get('lease_until') !== (row?.lease_until === null ? 'is.null' : `eq.${row?.lease_until}`)) return Response.json([]);
+    row = { ...row, ...next };
     if (loseReply) { loseReply = false; throw new Error('response lost after commit'); }
-    return Response.json([{ revision: next.revision }]);
+    return Response.json([row]);
   });
   return { cloud: () => new SupabaseCheckpointStore('https://test.supabase.co', 'sb_secret_test'),
-    row: () => row, requests, fail: (status: number) => { failure = status; }, loseReply: () => { loseReply = true; } };
+    row: () => row, requests, fail: (status: number) => { failure = status; }, loseReply: () => { loseReply = true; },
+    advance: (ms: number) => { now += ms; } };
 }
+
+test('a replacement waits for the final save and acquires that exact checkpoint', async t => {
+  const db = database(t), old = db.cloud(), fresh = db.cloud();
+  await old.load(); assert.equal(await old.acquire(), true); await old.save('before deploy');
+  assert.equal(await fresh.load(), 'before deploy');
+  assert.equal(await fresh.acquire(), false, 'the new process must not run a second world');
+  await old.save('last actions before shutdown'); await old.release();
+  assert.equal(await fresh.acquire(), true);
+  assert.equal(await fresh.load(), 'last actions before shutdown');
+  await fresh.save('first resumed action');
+  await assert.rejects(old.save('stale shutdown'), /lease|another instance/);
+  assert.equal(await db.cloud().load(), 'first resumed action');
+});
+
+test('an expired writer cannot resume after another instance acquires its revision', async t => {
+  const db = database(t), old = db.cloud();
+  await old.load(); await old.acquire(); await old.save('recoverable progress');
+  db.advance(46000);
+  const first = db.cloud(), second = db.cloud(); await first.load(); await second.load();
+  assert.deepEqual((await Promise.all([first.acquire(), second.acquire()])).sort(), [false, true]);
+  await assert.rejects(old.save('late stale progress'), /lease|another instance/);
+  assert.equal(await db.cloud().load(), 'recoverable progress');
+});
+
+test('paused checkpoints renew their lease without rewriting the compressed world', async t => {
+  const db = database(t), old = db.cloud();
+  await old.load(); await old.acquire(); await old.save('paused world');
+  const payload = db.row()!.payload, revision = db.row()!.revision;
+  db.advance(30000); await old.save('paused world');
+  assert.equal(db.row()!.revision, revision);
+  assert.equal(db.row()!.payload, payload);
+  db.advance(20000);
+  const fresh = db.cloud(); await fresh.load(); assert.equal(await fresh.acquire(), false);
+  db.advance(26000); assert.equal(await fresh.acquire(), true);
+});
+
+test('the first migration waits for a legacy server to finish saving', async t => {
+  const db = database(t), seed = db.cloud(); await seed.load(); await seed.acquire(); await seed.save('legacy world');
+  db.row()!.lease_until = null;
+  const fresh = db.cloud(); await fresh.load(); assert.equal(await fresh.acquire(), false);
+  db.advance(30000); db.row()!.revision++; db.row()!.updated_at = new Date(Date.now()).toISOString();
+  db.advance(30000); assert.equal(await fresh.acquire(), false);
+  db.advance(16000); assert.equal(await fresh.acquire(), true);
+  assert.equal(await fresh.load(), 'legacy world');
+});
 
 test('a lost save response is reconciled before saving newer progress', async t => {
   const db = database(t), cloud = db.cloud();
-  await cloud.load(); await cloud.save('before timeout');
+  await cloud.load(); await cloud.acquire(); await cloud.save('before timeout');
+  db.advance(30000);
   db.loseReply(); await assert.rejects(cloud.save('committed but response lost'), /response lost/);
+  db.advance(30000);
   await cloud.save('later progress');
   assert.equal(await db.cloud().load(), 'later progress');
   assert.equal(db.row()!.revision, 3);
 });
 
 test('reconciling a lost response still refuses another instance’s newer save', async t => {
-  const db = database(t), old = db.cloud(); await old.load();
+  const db = database(t), old = db.cloud(); await old.load(); await old.acquire();
   db.loseReply(); await assert.rejects(old.save('first progress'), /response lost/);
-  const fresh = db.cloud(); await fresh.load(); await fresh.save('other instance');
+  db.advance(46000);
+  const fresh = db.cloud(); await fresh.load(); await fresh.acquire(); await fresh.save('other instance');
   await assert.rejects(old.save('stale progress'), /changed in another instance/);
   assert.equal(await db.cloud().load(), 'other instance');
 });
@@ -76,8 +128,9 @@ test('a new cloud instance restores Neo, paused time and memories from one compr
   const checkpoint = { version: 1 as const, tick: 420, day: 4, timeOfDay: 8000, phase: 'phase2_awakening' as const,
     agents: Object.fromEntries(world.agents), events: [], relationships: [],
     memories: memory.getCheckpoint(world.agents.keys()), simulation: { running: false, speed: 2 } };
-  const first = new CheckpointStore('/unused/world.json', db.cloud());
+  const cloud = db.cloud(), first = new CheckpointStore('/unused/world.json', cloud);
   assert.equal(await first.load(), null);
+  await cloud.acquire();
   const saving = first.save(checkpoint);
   world.agents.get('neo')!.health = 1;
   await saving;
@@ -97,7 +150,7 @@ test('a new cloud instance restores Neo, paused time and memories from one compr
 
 test('database errors cannot become a fresh world or overwrite a recoverable save', async t => {
   const db = database(t), cloud = db.cloud();
-  await cloud.load(); await cloud.save('saved progress');
+  await cloud.load(); await cloud.acquire(); await cloud.save('saved progress');
   const original = structuredClone(db.row());
   db.fail(503);
   const next = db.cloud();
@@ -110,18 +163,19 @@ test('database errors cannot become a fresh world or overwrite a recoverable sav
 
 test('an older process cannot overwrite the new instance and unchanged shutdown saves are skipped', async t => {
   const db = database(t), old = db.cloud();
-  await old.load(); await old.save('before deploy');
+  await old.load(); await old.acquire(); await old.save('before deploy');
   const fresh = db.cloud(); await fresh.load();
   const count = db.requests.length;
   await old.save('before deploy'); assert.equal(db.requests.length, count);
-  await fresh.save('new progress');
+  db.advance(46000); await fresh.acquire(); await fresh.save('new progress');
   await assert.rejects(old.save('stale progress'), /changed in another instance/);
   assert.equal(await db.cloud().load(), 'new progress');
 });
 
 test('queued saves keep the latest snapshot after a failed request', async t => {
-  const db = database(t), store = new CheckpointStore('/unused/world.json', db.cloud());
+  const db = database(t), cloud = db.cloud(), store = new CheckpointStore('/unused/world.json', cloud);
   await store.load();
+  await cloud.acquire();
   const snapshot = (tick: number) => ({ version: 1 as const, tick, phase: 'phase1_normal_life' as const, agents: {}, events: [], relationships: [], memories: {} });
   db.fail(503); await assert.rejects(store.save(snapshot(1)), /HTTP 503/);
   db.fail(0); await Promise.all([store.save(snapshot(2)), store.save(snapshot(3))]);
@@ -131,6 +185,7 @@ test('queued saves keep the latest snapshot after a failed request', async t => 
 test('incomplete cloud saves fail closed and explicit cloud configuration cannot fall back to disk', async t => {
   const db = database(t), cloud = db.cloud();
   await cloud.load();
+  await cloud.acquire();
   await cloud.save(JSON.stringify({ version: 1, tick: 1, agents: {}, events: [], relationships: [] }));
   await assert.rejects(new CheckpointStore('/unused/world.json', db.cloud()).load(), /missing character memories/);
   assert.throws(() => SupabaseCheckpointStore.fromEnvironment({ MATRIX_CLOUD_SAVE: 'supabase' }), /require/);

@@ -64,6 +64,10 @@ players.onReplaced = (socketId, tick) => {
 };
 let speed = 1;
 let worldReady = false;
+let acceptingPlayers = false;
+let cloudSaveTimer: ReturnType<typeof setInterval> | undefined;
+let signalReady: () => void;
+const ready = new Promise<void>(resolve => { signalReady = resolve; });
 
 function simulationState(): SimulationState {
   const agents = [...world.agents.values()];
@@ -98,7 +102,7 @@ async function saveWorld(running = simLoop.isRunning()): Promise<void> {
     relationships: [...world.agents.keys()].flatMap(id => relationships.getRelationshipsForAgent(id)), sandbox: sandbox.state, conversations: conversations.getCheckpoint() })]).catch(error => {
     if (error instanceof CloudCheckpointConflictError) {
       // Serving an unsavable fork silently loses the player's next actions.
-      worldReady = false; simLoop.stop(); clearInterval(playerTimer);
+      worldReady = acceptingPlayers = false; simLoop.stop(); clearInterval(playerTimer); clearInterval(cloudSaveTimer);
       console.error('[Save] Conflicting writer; closing this instance for checkpoint recovery');
       sockets.getIO().close(() => process.exit(1));
     }
@@ -141,7 +145,8 @@ eventBus.on('phase_change', data => {
 
 app.use(express.static(path.join(__dirname, '../../client/dist')));
 app.use(express.json());
-app.get('/api/status', (_req, res) => res.json({ ...simulationState(), phase: story.getCurrentPhaseId(), agentCount: world.agents.size, uptime: process.uptime() }));
+app.get('/api/status', (_req, res) => res.json({ ...simulationState(), ready: acceptingPlayers, phase: story.getCurrentPhaseId(), agentCount: world.agents.size, uptime: process.uptime() }));
+app.use('/api', (_req, res, next) => acceptingPlayers ? next() : res.status(503).json({ error: 'World checkpoint handover in progress' }));
 app.get('/api/world', (_req, res) => res.json(snapshot()));
 app.get('/api/sandbox', (_req, res) => res.json(sandbox.state));
 app.get('/api/agents', (_req, res) => res.json([...world.agents.values()]));
@@ -163,13 +168,19 @@ players.onStoryRole = (socketId, agentId, tick) => {
   sockets.getIO().to(socketId).emit('message', { type: 'player_state', data: { agentId }, tick, timestamp: Date.now() });
 };
 
-sockets.getIO().on('connection', socket => {
+sockets.getIO().on('connection', async socket => {
+  if (!acceptingPlayers) {
+    socket.emit('message', { type: 'notification', data: { message: '服务器正在交接存档，请稍候，完成后会自动接入。', level: 'info' }, tick: 0, timestamp: Date.now() });
+    await ready;
+    if (!socket.connected) return;
+  }
   sockets.sendFullState(socket.id, snapshot(), simLoop.getTick());
   for (const record of conversations.getActiveConversations()) {
     socket.emit('message', { type: 'conversation_start', data: { id: record.id, participants: record.participants, location: record.location }, tick: record.startTick, timestamp: Date.now() } satisfies ServerMessage);
     for (const line of record.messages) socket.emit('message', { type: 'conversation_message', data: { conversationId: record.id, speaker: line.speaker, content: line.content, tone: line.tone }, tick: line.tick, timestamp: Date.now() } satisfies ServerMessage);
   }
   socket.on('message', (message: unknown) => {
+    if (!acceptingPlayers) return;
     if (!message || typeof message !== 'object') return;
     const { type, data } = message as { type?: string; data?: { speed?: number; kind?: string; agentId?: string; target?: string; takeover?: boolean } };
     if (type === 'play_as' && typeof data?.agentId === 'string') {
@@ -244,7 +255,7 @@ let previousTimeScale = 1;
 let lastPlayerStep = Date.now();
 const playerTimer = setInterval(() => {
   const now = Date.now();
-  if (!worldReady) { lastPlayerStep = now; return; }
+  if (!acceptingPlayers) { lastPlayerStep = now; return; }
   const journey = sandbox.life.film.state;
   const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
   players.step(Math.min(0.1, (now - lastPlayerStep) / 1000), simLoop.isRunning(), simLoop.getTick(), now);
@@ -312,7 +323,17 @@ async function main(): Promise<void> {
   relationships.initialize();
   manager.initializeAllAgents();
   if (!cloudSave) await memory.loadAll();
-  const checkpoint = await checkpoints.load();
+  let checkpoint = await checkpoints.load();
+  const listen = () => httpServer.listen(config.server.port, config.server.host, () => console.log(`[Auto Matrix] ${world.agents.size} residents · ${llm.enabled ? 'model-enhanced' : 'local simulation'} · http://localhost:${config.server.port}`));
+  if (cloudSave) {
+    // Validate storage first, then let Render retire the old instance. No game
+    // snapshot or inputs are served until its final save has been acquired.
+    listen();
+    console.log('[Save] Waiting for cloud checkpoint handover');
+    while (!await cloudSave.acquire()) await new Promise(resolve => setTimeout(resolve, 1000));
+    checkpoint = await checkpoints.load();
+    console.log('[Save] Cloud checkpoint acquired');
+  }
   if (cloudSave) memory.restoreCheckpoint(checkpoint?.memories ?? {});
   if (checkpoint) {
     conversations.restore(checkpoint.conversations);
@@ -342,15 +363,25 @@ async function main(): Promise<void> {
   if (!sandbox.state.traffic) sandbox.traffic.restore();
   evolution.evaluate(simLoop.getTick(), [...world.agents.values()], world.globalEvents);
   worldReady = true;
+  if (cloudSave) {
+    // Publish the initial POST before accepting players if this is a new world.
+    await saveWorld(checkpoint?.simulation?.running !== false);
+    cloudSaveTimer = setInterval(() => { void saveWorld().catch(error => console.error('[Save] Failed:', error)); }, 15000);
+  }
   simLoop.setTickRate(config.simulation.tickRateMs / speed);
   if (checkpoint?.simulation?.running !== false) simLoop.start();
-  httpServer.listen(config.server.port, config.server.host, () => console.log(`[Auto Matrix] ${world.agents.size} residents · ${llm.enabled ? 'model-enhanced' : 'local simulation'} · http://localhost:${config.server.port}`));
+  acceptingPlayers = true;
+  signalReady!();
+  if (!cloudSave) listen();
 }
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => {
   const running = simLoop.isRunning();
   simLoop.stop();
   clearInterval(playerTimer);
-  void saveWorld(running).catch(error => console.error('[Save] Failed:', error)).finally(() => { sockets.getIO().close(); httpServer.close(); process.exit(0); });
+  clearInterval(cloudSaveTimer);
+  const saving = saveWorld(running);
+  worldReady = acceptingPlayers = false;
+  void saving.then(() => cloudSave?.release()).catch(error => console.error('[Save] Failed:', error)).finally(() => { sockets.getIO().close(); httpServer.close(); process.exit(0); });
 });
-main().catch(error => { clearInterval(playerTimer); console.error(error); process.exitCode = 1; });
+main().catch(error => { clearInterval(playerTimer); clearInterval(cloudSaveTimer); console.error(error); sockets.getIO().close(); httpServer.close(); process.exitCode = 1; });
