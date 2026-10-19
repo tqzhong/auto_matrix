@@ -45,7 +45,7 @@ export class CharacterViewer {
       <nav aria-label="选择检视人物">${Object.keys(NOTES).map(id => `<button data-preview="${id}">${CHARACTERS[id].nameCn}</button>`).join('')}</nav>
       <div class="character-stage" aria-label="可拖动旋转的三维人物模型"></div>
       <div class="character-viewer-info"><span class="eyebrow">THE MATRIX / 1999</span><h3 id="preview-name">NEO</h3><p id="preview-notes"></p><p class="model-note">拖动旋转 · 实际游戏内模型<br>电影造型近似还原，非演员扫描资产</p></div>
-      <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
+      <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option><option value="ambush-crouch" disabled>旧楼 · 蹲下与起身</option><option value="ambush-crouch-walk" disabled>旧楼 · 蹲行</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
     document.body.appendChild(this.root);
     this.root.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -108,6 +108,10 @@ export class CharacterViewer {
   private select(id: string): void {
     const state = this.agents()[id]; if (!state || !this.models) return;
     this.id = id; this.angle = 0.22;
+    this.root.querySelectorAll<HTMLOptionElement>('option[value^="ambush-"]').forEach(option => { option.disabled = id !== 'morpheus'; });
+    if (id !== 'morpheus' && this.motion.startsWith('ambush-')) {
+      this.motion = 'idle'; this.root.querySelector<HTMLSelectElement>('#preview-motion')!.value = this.motion;
+    }
     this.glasses = true;
     if (this.current) this.current.root.visible = false;
     let rig = this.rigs.get(id);
@@ -133,9 +137,12 @@ export class CharacterViewer {
     if (!this.renderer || !this.models || !this.current) return;
     const now = performance.now(); const time = (now - this.started) / 1000; const delta = Math.min(.05, (now - this.lastFrame) / 1000); this.lastFrame = now;
     const jumpTime = time % 1.6; const height = this.motion === 'jump' ? Math.max(0, PLAYER_JUMP_SPEED * jumpTime - .5 * PLAYER_GRAVITY * jumpTime * jumpTime) : 0;
+    const ambush = this.id === 'morpheus' && this.motion.startsWith('ambush-');
+    const crouching = ambush && (this.motion === 'ambush-crouch-walk' || time % 7 >= 1 && time % 7 < 4.5);
     this.current.root.position.y = height;
-    this.models.animate(this.current, delta, { speed: this.motion === 'walk' ? PLAYER_WALK_SPEED : this.motion === 'run' ? PLAYER_RUN_SPEED : 0,
+    this.models.animate(this.current, delta, { speed: this.motion === 'walk' ? PLAYER_WALK_SPEED : this.motion === 'run' ? PLAYER_RUN_SPEED : this.motion === 'ambush-crouch-walk' ? PLAYER_WALK_SPEED * .48 : 0,
       grounded: height === 0, verticalVelocity: height > 0 ? PLAYER_JUMP_SPEED - PLAYER_GRAVITY * jumpTime : 0, turn: 0,
+      ambushWardrobe: ambush ? 'coat' : undefined, crouching,
       parkOutfit: this.agents()[this.id]?.currentLocation === 'film_sunrise_garden',
       attack: this.motion === 'combat' ? Math.floor(time / .72) : undefined }, 1);
     this.current.root.rotation.y = this.angle;

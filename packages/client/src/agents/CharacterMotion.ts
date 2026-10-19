@@ -659,8 +659,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (freeCrouch) {
     // Preserve a partial local transition; older cold poses start settled.
     state.ambushCrouch ??= crouch;
-    state.ambushCrouch = mix(state.ambushCrouch, crouch, 1 - Math.exp(-8 * dt));
-    crouch = state.ambushCrouch;
+    state.ambushCrouch = mix(state.ambushCrouch, crouch, 1 - Math.exp(-6 * dt));
+    // Ease the initial knee bend with the same phase as the loose waist.
+    crouch = state.ambushCrouch ** 3 * (state.ambushCrouch * (state.ambushCrouch * 6 - 15) + 10);
   }
   const pills = input.pills && pillPose(input.pills);
   const exiting = input.pills?.role === 'neo' && input.pills.phase === 'taking' && input.pills.elapsed > PILL_TIMING.stand && input.pills.elapsed < PILL_TIMING.exit;
@@ -739,8 +740,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (deusLocked || smithLocked) { state.speed = smithFinale?.[input.smithFinale!.role].speed ?? 0; state.turn = 0; state.airborne = 0; state.phase = 0; }
   if (smithLocked) { state.seated = 0; state.combo = 0; }
   const run = smooth(clamp((state.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED)));
-  const stride = mix(.84, 1.22, run);
-  const stance = mix(.6, .42, run);
+  const crouchGait = freeCrouch ? crouch * (1 - state.airborne) : 0;
+  const stride = mix(mix(.84, 1.22, run), .46, crouchGait);
+  const stance = mix(mix(.6, .42, run), .65, crouchGait);
   if (input.grounded) state.phase += speed * dt / (2 * stride / stance);
   if (smithLocked) state.phase = (smithFinale![input.smithFinale!.role].travel ?? 0) / (2 * stride / stance);
   if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
@@ -779,7 +781,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38 - (smithFinale?.fallen ?? 0) * 1.38 - mealSeatHeight;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
-    const lift = foot.lift * mix(.22, .55, run) * moving;
+    const lift = foot.lift * mix(mix(.22, .55, run), .12, crouchGait) * moving;
     const planted = solveLeg(foot.z * moving, hipHeight - .15 - lift);
     const airHip = input.verticalVelocity > 0 ? -.6 + offset * .45 : -.12 + offset * .18;
     const airKnee = input.verticalVelocity > 0 ? 1.02 : .3;
@@ -805,6 +807,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       grip: Math.max(run * .6, guard),
     };
   });
+  if (!input.armed && crouchGait) for (const [i, arm] of arms.entries()) {
+    const balance = crouchGait * (1 - guard) * (1 - recoil);
+    arm.shoulder = mix(arm.shoulder, -.28 + Math.cos(cycle + i * Math.PI) * moving * .08, balance);
+    arm.elbow = mix(arm.elbow, -.9, balance);
+    arm.outward = mix(arm.outward, (i ? 1 : -1) * .18, balance);
+  }
   const doorPush = input.helDanceDoor === undefined ? 0 : smooth(clamp(input.helDanceDoor * 3)) * (1 - smooth(clamp((input.helDanceDoor - .8) / .2)));
   if (doorPush) for (let i = 0; i < 2; i++) {
     arms[i].shoulder = mix(arms[i].shoulder, -1.48, doorPush);

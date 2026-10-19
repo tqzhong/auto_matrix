@@ -5,8 +5,8 @@ import type { MotionState } from './CharacterMotion.js';
 type TailPanel = HeroRig['panels'][number] & { work: Float64Array };
 
 /** Wrap the old-building tails around the actual posed lower clothes.
- * Shared horizontal support planes keep adjacent rows outside the same body
- * slab; vertex-only capsule pushes can leave their intervening faces inside. */
+ * Neighboring rows sample the same body slab; stable radial columns and
+ * cloth clearance keep the joining faces off a moving calf. */
 export class AmbushCoatTails {
   private panels: TailPanel[];
   private ring: { panel: TailPanel; column: number }[];
@@ -16,10 +16,8 @@ export class AmbushCoatTails {
   private supports: Float64Array;
   private low: Float64Array;
   private high: Float64Array;
-  private outline: Float64Array;
-  private boundary = Array.from({ length: 44 }, () => new THREE.Vector2());
-  private lengths = new Float64Array(44);
-  private inner: { mesh: THREE.SkinnedMesh; points: Float64Array; vertices: Uint32Array; index: Uint32Array; ranges: Float64Array }[];
+  private inner: { mesh: THREE.SkinnedMesh; points: Float64Array; vertices: Uint32Array; edges: Uint32Array;
+    bands: Map<number, number[]>; visits: Uint32Array }[];
   private cloud: number[] = [];
   private order: number[] = [];
   private hull: number[] = [];
@@ -41,7 +39,6 @@ export class AmbushCoatTails {
       this.normals.push(x / length, z / length);
     }
     this.supports = new Float64Array(points.length); this.low = new Float64Array(this.rows); this.high = new Float64Array(this.rows);
-    this.outline = new Float64Array(points.length * 2);
     this.inner = meshes.map(mesh => {
       const a = mesh.geometry.attributes, source = mesh.geometry.index!, selected: number[] = [];
       const coat = mesh.name === 'morpheus-ambush-coat';
@@ -68,8 +65,14 @@ export class AmbushCoatTails {
         if (local === undefined) { local = vertices.length; vertices.push(id); if (coat) welded.set(key, local); }
         remap.set(id, local); return local;
       });
-      return { mesh, points: new Float64Array(vertices.length * 3), vertices: Uint32Array.from(vertices),
-        index: Uint32Array.from(index), ranges: new Float64Array(selected.length / 3 * 2) };
+      const edges: number[] = [], visited = new Set<number>();
+      for (let i = 0; i < index.length; i += 3) for (let j = 0; j < 3; j++) {
+        const a = Math.min(index[i + j], index[i + (j + 1) % 3]), b = Math.max(index[i + j], index[i + (j + 1) % 3]);
+        const key = a * vertices.length + b;
+        if (!visited.has(key)) { visited.add(key); edges.push(a, b); }
+      }
+      return { mesh, points: new Float64Array(vertices.length * 3), vertices: Uint32Array.from(vertices), edges: Uint32Array.from(edges),
+        bands: new Map<number, number[]>(), visits: new Uint32Array(edges.length / 2) };
     });
   }
 
@@ -101,7 +104,7 @@ export class AmbushCoatTails {
     this.extendHull(farthest, b, middle, right);
   }
 
-  private containHull(): void {
+  private containHull(clearance: number): void {
     // Interior and repeated triangle-cut points cannot change a support
     // maximum. Partition their convex hull without sorting every cut point.
     if (!this.cloudCount) return;
@@ -117,12 +120,17 @@ export class AmbushCoatTails {
     const size = this.hullCount;
     for (let i = 0; i < size; i++) {
       const x = this.cloud[this.hull[i] * 2], z = this.cloud[this.hull[i] * 2 + 1];
-      for (let k = 0; k < this.supports.length; k++) this.supports[k] = Math.max(this.supports[k], x * this.normals[k * 2] + z * this.normals[k * 2 + 1] + .018);
+      // Leave room for the triangles joining radial samples, not just their
+      // vertices: a straight cloth edge cuts slightly inside a curved calf.
+      for (let k = 0; k < this.supports.length; k++) this.supports[k] = Math.max(this.supports[k], x * this.normals[k * 2] + z * this.normals[k * 2 + 1] + clearance);
     }
   }
 
 
   update(motion: MotionState, coat: number): void {
+    const pelvis = this.rig.bones.get('pelvis')!;
+    this.inverse.copy(pelvis.matrixWorld).invert();
+    const floor = this.rig.root.getWorldPosition(this.point).y + .025;
     // The saved motion clock is the entire wind state. A fresh model and a
     // paused frame therefore reconstruct the same surface without settling.
     for (const panel of this.panels) for (let i = 0; i < panel.rest.length / 3; i++) {
@@ -130,16 +138,36 @@ export class AmbushCoatTails {
       panel.work[i * 3] = x * (1 + flare * .24) + Math.sin(motion.time * 5 + y * 3) * flare * .035 + panel.mesh.position.x;
       panel.work[i * 3 + 1] = y + flare * .18 + panel.mesh.position.y;
       panel.work[i * 3 + 2] = z - flare * .65 + Math.sin(motion.phase * Math.PI * 2 + y * 3 + x * 3) * flare * .09 + panel.mesh.position.z;
+      if (motion.ambushCrouch && motion.wasGrounded) {
+        this.point.fromArray(panel.work, i * 3).applyMatrix4(pelvis.matrixWorld);
+        const height = this.point.y - floor, contact = Math.max(0, -height);
+        if (height < .2) {
+          // Lay the excess length outward instead of burying it below the
+          // floor or collapsing successive cloth rings onto the same edge.
+          const radius = Math.hypot(panel.work[i * 3], panel.work[i * 3 + 2]);
+          panel.work[i * 3] *= 1 + contact / radius;
+          panel.work[i * 3 + 2] *= 1 + contact / radius;
+          this.point.fromArray(panel.work, i * 3).applyMatrix4(pelvis.matrixWorld);
+          // A monotone fold retains distinct rows at floor contact. A hard
+          // clamp makes consecutive rows share a plane and can erase faces.
+          this.point.y = floor + .2 * Math.exp(height / .2 - 1);
+          this.point.applyMatrix4(this.inverse).toArray(panel.work, i * 3);
+        }
+      }
     }
-    this.inverse.copy(this.rig.bones.get('pelvis')!.matrixWorld).invert();
     for (const part of this.inner) {
       part.mesh.skeleton.update(); this.transform.multiplyMatrices(this.inverse, part.mesh.matrixWorld);
       for (let i = 0; i < part.vertices.length; i++) {
         part.mesh.getVertexPosition(part.vertices[i], this.point).applyMatrix4(this.transform); this.point.toArray(part.points, i * 3);
       }
-      for (let i = 0; i < part.index.length; i += 3) {
-        const a = part.points[part.index[i] * 3 + 1], b = part.points[part.index[i + 1] * 3 + 1], c = part.points[part.index[i + 2] * 3 + 1];
-        part.ranges[i / 3 * 2] = Math.min(a, b, c); part.ranges[i / 3 * 2 + 1] = Math.max(a, b, c);
+      for (const band of part.bands.values()) band.length = 0;
+      part.visits.fill(0);
+      for (let edge = 0; edge < part.edges.length; edge += 2) {
+        const a = part.points[part.edges[edge] * 3 + 1], b = part.points[part.edges[edge + 1] * 3 + 1];
+        for (let key = Math.floor(Math.min(a, b) * 10); key <= Math.floor(Math.max(a, b) * 10); key++) {
+          let band = part.bands.get(key); if (!band) part.bands.set(key, band = []);
+          band.push(edge);
+        }
       }
     }
     for (let row = 0; row < this.rows; row++) {
@@ -152,6 +180,11 @@ export class AmbushCoatTails {
     for (let row = 0; row < this.rows; row++) {
       const previous = Math.max(0, row - 1), next = Math.min(this.rows - 1, row + 1);
       const low = Math.min(this.low[row], this.low[previous], this.low[next]), high = Math.max(this.high[row], this.high[previous], this.high[next]);
+      // Standing, the sewn waist follows its nearby surface. Once lowered
+      // onto the thighs it shares the free skirt's broader contact, so a
+      // passing knee cannot suddenly release an entire row.
+      const spread = .7 * THREE.MathUtils.lerp(THREE.MathUtils.smoothstep(row, 0, 8), 1,
+        THREE.MathUtils.smootherstep(motion.ambushCrouch ?? 0, 0, 1));
       this.supports.fill(-Infinity);
       // A small rounded source outline keeps successive columns distinct
       // when a concave corrugation would share a single support vertex.
@@ -159,79 +192,54 @@ export class AmbushCoatTails {
         const id = (row * this.columns + column) * 3, x = panel.work[id], z = panel.work[id + 2];
         for (let k = 0; k < this.supports.length; k++) this.supports[k] = Math.max(this.supports[k], x * this.normals[k * 2] + z * this.normals[k * 2 + 1] + .001);
       }
-      const front = this.supports[this.supports.length - 1];
       this.cloudCount = 0;
-      for (const part of this.inner) for (let f = 0; f < part.index.length / 3; f++) {
-        if (part.ranges[f * 2] > high || part.ranges[f * 2 + 1] < low) continue;
-        const ia = part.index[f * 3] * 3, ib = part.index[f * 3 + 1] * 3, ic = part.index[f * 3 + 2] * 3;
-        const ax = part.points[ia], ay = part.points[ia + 1], az = part.points[ia + 2];
-        const bx = part.points[ib], by = part.points[ib + 1], bz = part.points[ib + 2];
-        const cx = part.points[ic], cy = part.points[ic + 1], cz = part.points[ic + 2];
-        if (Math.min(az, bz, cz) > front) continue;
-        // A clipped triangle's extrema are retained vertices, edge cuts,
-        // and intersections with both a height plane and the front plane.
-        for (let j = 0; j < 3; j++) {
-          const id = part.index[f * 3 + j] * 3, next = part.index[f * 3 + (j + 1) % 3] * 3;
+      for (const part of this.inner) {
+        // The unbuttoned leading edges can move forward around a knee.
+        // Cutting the body at a fixed front plane made those edges jump
+        // sideways as soon as a knee touched that plane.
+        // Each vertex and cut edge contributes once. Repeating them for
+        // every incident triangle multiplies the hull work without adding
+        // any contact information.
+        for (let id = 0; id < part.points.length; id += 3) {
+          const x = part.points[id], y = part.points[id + 1], z = part.points[id + 2];
+          if (y < low - spread || y > high + spread) continue;
+          // Spread a contact vertically before it reaches a cloth row. This
+          // keeps a passing calf from instantly releasing a whole hem ring.
+          const proximity = 1 - THREE.MathUtils.smoothstep(Math.max(low - y, y - high, 0), 0, spread);
+          if (proximity > 0) this.collect(x * proximity, z * proximity);
+        }
+        // Query only edges crossing this slab, not the entire costume for
+        // each of its 33 rows. Bands preserve every edge and exact plane cut.
+        for (let key = Math.floor(low * 10); key <= Math.floor(high * 10); key++) for (const edge of part.bands.get(key) ?? []) {
+          if (part.visits[edge / 2] === row + 1) continue;
+          part.visits[edge / 2] = row + 1;
+          const id = part.edges[edge] * 3, next = part.edges[edge + 1] * 3;
           const x = part.points[id], y = part.points[id + 1], z = part.points[id + 2];
           const nx = part.points[next], ny = part.points[next + 1], nz = part.points[next + 2];
-          if (y >= low && y <= high && z <= front) this.collect(x, z);
           for (let bound = 0; bound < 2; bound++) {
             const height = bound ? high : low;
             if ((y - height) * (ny - height) < 0) {
               const t = (height - y) / (ny - y), cut = z + (nz - z) * t;
-              if (cut <= front) this.collect(x + (nx - x) * t, cut);
+              this.collect(x + (nx - x) * t, cut);
             }
           }
-          if ((z - front) * (nz - front) < 0) {
-            const t = (front - z) / (nz - z), cut = y + (ny - y) * t;
-            if (cut >= low && cut <= high) this.collect(x + (nx - x) * t, front);
-          }
-        }
-        const determinant = (by - ay) * (cz - az) - (bz - az) * (cy - ay);
-        if (determinant !== 0) for (let bound = 0; bound < 2; bound++) {
-          const height = bound ? high : low;
-          const u = ((height - ay) * (cz - az) - (front - az) * (cy - ay)) / determinant;
-          const v = ((by - ay) * (front - az) - (bz - az) * (height - ay)) / determinant;
-          if (u >= 0 && v >= 0 && u + v <= 1) this.collect(ax + u * (bx - ax) + v * (cx - ax), front);
         }
       }
-      this.containHull();
-      for (let i = 0; i < this.ring.length; i++) {
-        const previous = (i + this.ring.length - 1) % this.ring.length;
-        const a = this.normals[previous * 2], b = this.normals[previous * 2 + 1], c = this.normals[i * 2], d = this.normals[i * 2 + 1], determinant = a * d - b * c;
-        this.outline[i * 2] = (this.supports[previous] * d - b * this.supports[i]) / determinant;
-        this.outline[i * 2 + 1] = (a * this.supports[i] - this.supports[previous] * c) / determinant;
-      }
-      // Keep each side/back column on its shared support plane across rows.
-      // Only the cut's leading columns need redistribution; redistributing
-      // the whole ring twists otherwise clear waist faces into the trousers.
-      for (const [side, panel] of this.panels.entries()) {
-        const at = (column: number) => (side ? this.ring.length - 1 - column : column) * 2;
-        let first = 0;
-        while (first < this.columns - 1 && this.outline[at(first) + 1] > front) first++;
-        const anchor = first ? Math.min(this.columns - 1, first + 2) : 0;
-        let count = 0;
-        const append = (x: number, z: number) => {
-          if (count && Math.hypot(x - this.boundary[count - 1].x, z - this.boundary[count - 1].y) < 1e-9) return;
-          this.boundary[count++].set(x, z);
-        };
-        if (first) {
-          const before = at(first - 1), after = at(first), t = (front - this.outline[before + 1]) / (this.outline[after + 1] - this.outline[before + 1]);
-          append(THREE.MathUtils.lerp(this.outline[before], this.outline[after], t), front);
-          for (let column = first; column <= anchor; column++) append(this.outline[at(column)], this.outline[at(column) + 1]);
-          this.lengths[0] = 0;
-          for (let i = 1; i < count; i++) this.lengths[i] = this.lengths[i - 1] + this.boundary[i].distanceTo(this.boundary[i - 1]);
-        }
-        let segment = 1;
+      this.containHull(.03 + .04 * THREE.MathUtils.smoothstep(row, 8, 24));
+      // Keep each cloth column on a stable radial direction. Following the
+      // intersection of nearly parallel supporting planes lets a small knee
+      // movement slide that column abruptly along the entire contact edge.
+      for (const panel of this.panels) {
         for (let column = 0; column < this.columns; column++) {
           const id = (row * this.columns + column) * 3;
-          if (!first || column > anchor) {
-            panel.work[id] = this.outline[at(column)]; panel.work[id + 2] = this.outline[at(column) + 1]; continue;
+          const restX = panel.rest[id] + panel.mesh.position.x, restZ = panel.rest[id + 2] + panel.mesh.position.z, length = Math.hypot(restX, restZ);
+          const x = restX / length, z = restZ / length;
+          let radius = Infinity;
+          for (let k = 0; k < this.supports.length; k++) {
+            const dot = x * this.normals[k * 2] + z * this.normals[k * 2 + 1];
+            if (dot > 1e-8) radius = Math.min(radius, this.supports[k] / dot);
           }
-          const distance = this.lengths[count - 1] * column / anchor;
-          while (segment < count - 1 && this.lengths[segment] < distance) segment++;
-          const a = this.boundary[segment - 1], b = this.boundary[segment], t = (distance - this.lengths[segment - 1]) / (this.lengths[segment] - this.lengths[segment - 1]);
-          panel.work[id] = THREE.MathUtils.lerp(a.x, b.x, t); panel.work[id + 2] = THREE.MathUtils.lerp(a.y, b.y, t);
+          panel.work[id] = x * radius; panel.work[id + 2] = z * radius;
         }
       }
     }
