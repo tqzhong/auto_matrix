@@ -67,6 +67,18 @@ test('connected transport is not reported ready until a server round trip succee
   assert.ok(game.health.includes('offline'));
 });
 
+test('the client acknowledges world state only after applying it', async t => {
+  const game = await setup(t, true, true);
+  assert.equal(game.wires[0].handshake.auth.stateAcknowledgements, true);
+  const receipt = new Promise<void>((resolve, reject) => game.wires[0].timeout(2000).emit('message', {
+    type: 'world_state_full', data: { agents: {}, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 7500 }, tick: 42,
+  }, (error: Error | null) => { if (error) { reject(error); return; } assert.equal(game.snapshots(), 1); resolve(); }));
+  await receipt;
+  await new Promise<void>((resolve, reject) => game.wires[0].timeout(2000).emit('message', {
+    type: 'world_state_delta', data: { agents: {}, dirtyChunks: {}, events: [] }, tick: 43,
+  }, (error: Error | null) => error ? reject(error) : resolve()));
+});
+
 test('a one-way connection is shown as slow instead of ready', async t => {
   const game = await setup(t, false);
   await new Promise(resolve => setTimeout(resolve, 4200));

@@ -31,12 +31,13 @@ async function stream(t: TestContext) {
   const address = `http://127.0.0.1:${(http.address() as { port: number }).port}`;
   const clients: ReturnType<typeof io>[] = [];
   t.after(async () => { for (const client of clients) client.disconnect(); await new Promise<void>(resolve => server.getIO().close(() => resolve())); });
-  const connect = async () => {
-    const client = io(address, { transports: ['websocket'], autoConnect: false }), messages: ServerMessage[] = [];
-    clients.push(client); client.on('message', message => messages.push(message));
+  const connect = async (stateAcknowledgements = false) => {
+    const client = io(address, { transports: ['websocket'], autoConnect: false, auth: { stateAcknowledgements } }), messages: ServerMessage[] = [];
+    const receipts: (() => void)[] = [];
+    clients.push(client); client.on('message', (message, receipt) => { messages.push(message); if (receipt) receipts.push(receipt); });
     await new Promise<void>((resolve, reject) => { client.once('connect', resolve); client.once('connect_error', reject); client.connect(); });
     const flush = () => new Promise<void>((resolve, reject) => client.timeout(2000).emit('session_ping', (error: Error | null) => error ? reject(error) : resolve()));
-    return { client, messages, flush };
+    return { client, messages, receipts, flush };
   };
   return { server, connect, ...await connect() };
 }
@@ -124,4 +125,56 @@ test('joining or resynchronizing a client cannot hide a pending update from anot
   assert.equal((newcomer.messages.at(-1)!.data as WorldStateDelta).agents.neo.position?.x, neo.position.x);
   game.server.sendFullState(game.client.id!, full, 2); await game.flush();
   assert.deepEqual(game.messages.at(-1)!.data, JSON.parse(JSON.stringify(full)), 'explicit resync remains unconditional');
+});
+
+test('a slow receiver gets the latest coherent state without queuing every simulation frame', async t => {
+  const game = await stream(t), slow = await game.connect(true), world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, smith = world.agents.get('smith')!, state = sandbox();
+  const base = { agents: {}, dirtyChunks: {}, events: [] };
+  const full: WorldStateFull = { agents: { neo, smith }, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 7000, sandbox: state };
+  game.server.sendFullState(slow.client.id!, full, 1); await slow.flush();
+  const events = [] as WorldStateDelta['events'];
+  for (let i = 0; i < 20; i++) {
+    neo.position.x += .25;
+    const event = { id: `event-${i}`, type: 'anomaly', tick: i + 2 } as WorldStateDelta['events'][number]; events.push(event);
+    game.server.broadcastDelta({ ...base, agents: { neo, smith }, events: [event], traffic: { elapsed: i, cars: [] } }, i + 2);
+  }
+  game.server.broadcastDelta({ ...base, agents: { smith: { health: 0, status: 'dead' }, neo: { controller: null, currentPath: [], currentAction: null } },
+    dirtyChunks: { street: { blocks: [1, 2] } }, sandbox: state }, 22);
+  await slow.flush(); await game.flush();
+  assert.equal(slow.messages.length, 1, 'unacknowledged snapshot must not have 21 updates queued behind it');
+  assert.equal(game.messages.length, 21, 'a slow receiver must not hold back other clients');
+  assert.equal(slow.receipts.length, 1);
+  const expectedX = neo.position.x;
+  neo.position.x += 100; state.serial = 50;
+  slow.receipts.shift()!(); await slow.flush();
+  const latest = slow.messages.at(-1)!; const delta = latest.data as WorldStateDelta;
+  assert.equal(slow.messages.length, 2); assert.equal(latest.tick, 22);
+  assert.equal(delta.agents.neo.position!.x, expectedX, 'queued data must not alias the mutable world');
+  assert.equal(delta.agents.smith.health, 0); assert.equal(delta.agents.smith.status, 'dead');
+  assert.equal(delta.agents.neo.controller, null); assert.deepEqual(delta.agents.neo.currentPath, []); assert.equal(delta.agents.neo.currentAction, null);
+  assert.deepEqual(delta.events, events); assert.deepEqual(delta.dirtyChunks, { street: { blocks: [1, 2] } });
+  assert.equal(delta.sandbox!.serial, 0); assert.equal(delta.traffic, undefined, 'a later sandbox snapshot replaces earlier fast traffic');
+  game.server.broadcastDelta({ ...base, sandbox: state }, 23);
+  const traffic = { elapsed: 51, cars: [{ distance: 12, speed: 4 }] };
+  game.server.broadcastDelta({ ...base, traffic }, 24);
+  await slow.flush(); assert.equal(slow.messages.length, 2);
+  slow.receipts.shift()!(); await slow.flush();
+  const next = slow.messages.at(-1)!.data as WorldStateDelta;
+  assert.equal(next.sandbox!.serial, 50); assert.deepEqual(next.traffic, traffic, 'traffic newer than the snapshot remains the final override');
+});
+
+test('resynchronization replaces pending state and retains updates following the new snapshot', async t => {
+  const game = await stream(t), slow = await game.connect(true), world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, base = { dirtyChunks: {}, events: [] };
+  game.server.broadcastDelta({ ...base, agents: { neo } }, 1); await slow.flush();
+  game.server.broadcastDelta({ ...base, agents: { neo: { health: 12 } } }, 2);
+  const full: WorldStateFull = { agents: { neo: { ...neo, health: 75 } }, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 8000 };
+  game.server.sendFullState(slow.client.id!, full, 3);
+  game.server.broadcastDelta({ ...base, agents: { neo: { health: 68 } } }, 4);
+  await slow.flush(); assert.equal(slow.messages.length, 1);
+  slow.receipts.shift()!(); await slow.flush();
+  assert.equal(slow.messages[1].type, 'world_state_full'); assert.deepEqual(slow.messages[1].data, JSON.parse(JSON.stringify(full)));
+  slow.receipts.shift()!(); await slow.flush();
+  assert.equal(slow.messages[2].type, 'world_state_delta'); assert.equal((slow.messages[2].data as WorldStateDelta).agents.neo.health, 68);
 });

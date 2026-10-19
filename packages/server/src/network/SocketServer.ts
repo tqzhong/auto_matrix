@@ -1,11 +1,15 @@
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer, type Socket } from 'socket.io';
 import type { Server as HTTPServer } from 'http';
 import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryPhaseId, WorldEvent, EvolutionUpdate } from '@auto_matrix/shared';
+
+type StateMessage = { type: 'world_state_full'; data: WorldStateFull; tick: number; timestamp: number }
+  | { type: 'world_state_delta'; data: WorldStateDelta; tick: number; timestamp: number };
 
 export class SocketServer {
   private io: SocketIOServer;
   private lastFields = new Map<string, string>();
   private lastTick?: number;
+  private stateStreams = new WeakMap<Socket, { waiting: boolean; full?: StateMessage; delta?: Extract<StateMessage, { type: 'world_state_delta' }> }>();
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -25,12 +29,13 @@ export class SocketServer {
   }
 
   sendFullState(socketId: string, data: WorldStateFull, tick: number): void {
-    this.io.to(socketId).emit('message', {
+    const socket = this.io.sockets.sockets.get(socketId);
+    if (socket) this.sendState(socket, {
       type: 'world_state_full',
       data,
       tick,
       timestamp: Date.now(),
-    } satisfies ServerMessage);
+    });
   }
 
   broadcastDelta(data: WorldStateDelta, tick: number): void {
@@ -44,14 +49,48 @@ export class SocketServer {
       if (key !== 'agents' && key !== 'dirtyChunks' && key !== 'events') changed = this.changed(`world:${key}`, value) || changed;
     }
     if (!changed) return;
-    // Keep each meaningful packet intact: scene actors and their performance
-    // clocks must arrive together, including the stationary members of a cast.
-    this.io.emit('message', {
+    // Scene actors and their performance clocks travel together, including
+    // stationary cast members, even when waiting frames are coalesced below.
+    const message: StateMessage = {
       type: 'world_state_delta',
       data,
       tick,
       timestamp: Date.now(),
-    } satisfies ServerMessage);
+    };
+    for (const socket of this.io.sockets.sockets.values()) this.sendState(socket, message);
+  }
+
+  private sendState(socket: Socket, message: StateMessage): void {
+    // Older open tabs keep their existing protocol until they reload.
+    if (socket.handshake.auth.stateAcknowledgements !== true) { socket.emit('message', message); return; }
+    let stream = this.stateStreams.get(socket);
+    if (!stream) { stream = { waiting: false }; this.stateStreams.set(socket, stream); }
+    if (stream.waiting) {
+      // Freeze queued values: the simulation keeps mutating its live objects.
+      const next = JSON.parse(JSON.stringify(message)) as StateMessage;
+      if (next.type === 'world_state_full') {
+        stream.full = next; stream.delta = undefined;
+      } else if (!stream.delta) {
+        stream.delta = next;
+      } else {
+        const previous = stream.delta.data, data = next.data;
+        const agents = { ...previous.agents };
+        for (const [id, state] of Object.entries(data.agents)) agents[id] = { ...agents[id], ...state };
+        const merged = { ...previous, ...data, agents, dirtyChunks: { ...previous.dirtyChunks, ...data.dirtyChunks }, events: [...previous.events, ...data.events] };
+        // Full sandbox replaces traffic; a newer explicit traffic field wins.
+        if (data.sandbox && !data.traffic) delete merged.traffic;
+        stream.delta = { ...next, data: merged };
+      }
+      return;
+    }
+    stream.waiting = true;
+    socket.emit('message', message, () => {
+      stream.waiting = false;
+      if (!socket.connected) return;
+      const next = stream.full ?? stream.delta;
+      if (stream.full) stream.full = undefined; else stream.delta = undefined;
+      if (next) this.sendState(socket, next);
+    });
   }
 
   private changed(key: string, value: unknown): boolean {
