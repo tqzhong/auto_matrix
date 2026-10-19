@@ -5,10 +5,12 @@
 ## 已上线版本（2026-10-19）
 
 - 正式入口：<https://matrixai.online>；`www.matrixai.online` 自动跳转到根域名。两者均已验证并签发 HTTPS 证书。
-- Render 服务：`matrixai` / `srv-dba4redg1s2s73apj6c0`，Singapore，Free；备用入口 <https://matrixai-s0sd.onrender.com>。已发布 `86eb392b5a61fb8aeac0111e9a133f7ff227cb70`，增加墨菲斯旧楼蹲伏服装、步态及人物检视修正。发布记录 `dep-dbapfelg1s2s73d0k3cg`：由 Codex 触发，Render 上 54 项测试通过，构建成功，2026-10-19 12:11:20 显示 Live；新实例从 tick 5062 的云存档恢复。
+- Render 服务：`matrixai` / `srv-dba4redg1s2s73apj6c0`，Singapore，Free；备用入口 <https://matrixai-s0sd.onrender.com>。已发布 `94d55cf879a97c7662451ae56f5f7965703b5475`，增加 Neo 公寓座机的左手包握、贴耳、连续拿放与人物检视预览。发布记录 `dep-dbaruaom7kps73a2bvig`：由 Codex 触发，Render 上部署检查和构建通过，2026-10-19 14:59:44 显示 Live；新实例从 tick 6286 的云存档恢复，客户端文件为 `index-BQFlrsJM.js`。
 - Supabase 项目：`matrixai` / `kywbietilqfwuvvpyooe`，Singapore，Free。连接密钥仅保存在 Render 的私密环境变量中。
 - 阿里云 DNS：`@ A 216.24.57.1`，`www CNAME matrixai-s0sd.onrender.com`，TTL 10 分钟。原来的三个额外 GitHub Pages A 记录已暂停保留；旧主 A 值为 `185.199.108.153`，旧 www 值为 `tqzhong.github.io`。其他记录未改动。
-- 本次验收：HTTPS、双向 Socket.IO、224 个素材及模型/音乐分段请求通过，连接探测往返 197 毫秒。正式站人物检视的“旧楼 · 蹲行”“旧楼 · 蹲下与起身”可运行，切回 Neo 后重置预览并禁用墨菲斯专用选项。Neo 咖啡馆存档恢复，浏览器实际键盘移动、转向、跳跃后，独立只读采样记录位置最大变化约 6.27 米、y=1→2.6625→1，生命 100；最后暂停于 tick 6286、第 2 天 15:34。没有推进主线。记录和截图见本地 `output/deployment/matrixai-crouch-2026-10-19/`。
+- 本次验收：HTTPS、双向 Socket.IO、224 个素材及模型/音乐分段请求通过，连接探测往返 172 毫秒。正式站人物检视的“公寓 · 接听与放回座机”已检查正面与左侧，切到 Trinity 后重置预览并禁用 Neo 专用选项。Neo 咖啡馆存档恢复，浏览器实际键盘移动、转向、跳跃后，90 秒独立只读采样记录位置最大变化约 3.67 米、y=1→2.66026→1，生命 100；最后在界面暂停于 tick 9195、第 3 天 03:42。没有推进主线。记录和截图见 [本次部署验收](../output/deployment/matrixai-landline-2026-10-19/README.md)。
+- 本次保留了一次暂停状态下没有移动的失败尝试；之后界面与服务器均确认恢复运行，实际移动和跳跃成功。浏览器曾显示同步延迟提示，不能据此宣布全程流畅，也未定位该提示的原因。独立采样接收时间差中位 17 毫秒、95 分位 1490 毫秒、最大 2127 毫秒，仅供本次观察，不等于输入延迟或帧率。
+- 前版 `86eb392` 的墨菲斯旧楼蹲行、蹲下/起身预览，以及 Neo 移动约 6.27 米、跳跃、暂停验收保留在 `output/deployment/matrixai-crouch-2026-10-19/`。
 - 前版 `0c4f4d3` 另已实测 V 切换视角、G 日常活动、睡眠与通勤；55 秒远端采样的 10 次操作往返为 173–853 毫秒，无超时。仍不能保证免费跨境线路一直流畅。本次人物预览出现四条已有的纹理尚无图像数据警告；素材成功加载不等于人物视觉与浏览器帧率全部达标。
 - 发布回归命令 `npm run test:deploy` 的 54 项检查和生产构建通过，覆盖连接恢复、角色控制、移动、暂停、云存档、模拟与带宽压缩；这不是三部曲全部剧情的完整验收。
 - 试玩前点击进入 Neo；存档暂停时，点击显眼的“继续游玩”。当前是共享世界，其他访客会进入同一个世界。Render 工作区自定义域名额度已用满（2 / 2），本次未添加付费服务。
