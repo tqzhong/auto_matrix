@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-20",
+  "commit": "1ce32d6e0d0668087665c97ca5f108acf8638d73",
+  "deployment": "dep-dbb5mkpjfumc73dahjug",
+  "bundle": "index-Iu4QQyG0.js",
+  "tests": {
+    "baselinePassed": 13,
+    "reproductionsFailed": 4,
+    "focusedPassed": 27,
+    "isolatedDeployPassed": 69,
+    "isolatedInteriorsPassed": 15
+  },
+  "unchangedIsolatedFiles": 897,
+  "native": {
+    "samples": 1427,
+    "staticFurnitureCollisions": 0,
+    "nearTableSamples": 232,
+    "nearestX": 995.1062620449042,
+    "rightTableEdgeWithRadius": 995.1,
+    "maximumTravel": 20.353285863668024,
+    "heightMaxObserved": 1.8499999999999999,
+    "connections": [
+      {
+        "at": 1792433443851,
+        "kind": "connect"
+      },
+      {
+        "at": 1792434489351,
+        "kind": "disconnect",
+        "reason": "io client disconnect"
+      }
+    ],
+    "probeTimeouts": 1,
+    "probeCount": 209,
+    "successfulProbeMedianMs": 351.0433330000378,
+    "runningStateAgeMedianMs": 164,
+    "final": {
+      "at": 1792434393281,
+      "serverAt": 1792434393011,
+      "tick": 17207,
+      "position": {
+        "x": 999.1448101103122,
+        "y": 1,
+        "z": 669.2473853548953
+      },
+      "rotation": 14.137285327947854,
+      "controller": "player",
+      "health": 100,
+      "simulation": {
+        "running": false,
+        "speed": 1,
+        "timeScale": 1,
+        "tick": 17207,
+        "mode": "rules",
+        "llmStatus": "offline",
+        "population": 85,
+        "awakened": 72,
+        "tension": 0,
+        "anomaly": 96,
+        "conversations": 1,
+        "day": 4,
+        "chapter": "Thomas Anderson 的普通一天",
+        "chapterDescription": "吃早餐，去公司上班；晚上可以回家、散步或约朋友。留意生活里不合常理的小事。"
+      }
+    }
+  },
+  "limitations": [
+    "Collider and sampled mesh checks do not prove all body poses never intersect furniture.",
+    "A latency notice still occurred; this is not sustained frame-rate or network acceptance.",
+    "Furniture appearance was retained; no new trilogy film-fidelity completion.",
+    "Full doff action remains unshipped."
+  ],
+  "sha256": {
+    "baseline.log": "5f7ac5d42db88f2abd10070ee1a449fa34935c31a94055e2154b7a87071dae1b",
+    "before.log": "9d28a5955dfd3cc299adfd6fc4fa25f7007c193cd98f1f8c5a28918f0e8e9790",
+    "after.log": "c0dbfdd1fa91358bc7c7f917b110e4d32bb71cc8bd52a7d54803b188f6c574f0",
+    "isolated-tests.log": "0d2c4ce59688f3ae0cdf5fa5726e7dfffd093c9eefea06cb11145bab6c8b2e1e",
+    "isolated-interiors.log": "8ecab8ffb04ad4e2bcfe5a6f0fff412e70c73b6f289b9917ad1244ac3f98327d",
+    "isolated-build.log": "9da0122b7d374d85b2473c8f60b5069f930714be3ed07e28849b22b8216c198f",
+    "published-check.log": "46078e627fb890cccc0138c6d619c9623f64a017741057636b5f35c64d32e7c8",
+    "pre-release-world.json": "f3b542e0fa4ed8d0a41cf488759ff51b37bc727c17e6ad59dab5bf63a69ea54c",
+    "post-release-world.json": "cc05e63bebd7fa22235946bdbaaba5a321ea623b8231189fc35d01b1d4612099",
+    "after-coffee-world.json": "1ad48812258960ef12208dbdd3acbd00dda4855ca0eb21eb63d5bba2f2e24fea",
+    "final-world.json": "dc3f1ed0fa331f301bdd00a9c6081d0915a28060140024e2b18bec1de88701e3",
+    "play-samples.json": "c3d4d7e8626d80ef114b3c1ec59f57f61c1bc3395b7cc71daf1359d5b5f543e2",
+    "play-summary.json": "a470a75b3c64d27bcbdc44f399ff7f79bffe2d2ae76b76ee6a6907cfaf3d5fcb",
+    "neo-table-clear.png": "db8ae357f9083e160ae526b95bb68a7f505e0f4ddf6aa8d896e7e0da7fb9ccee",
+    "neo-final-paused.png": "0c59e0c676c9fa3acfcf06650f20025ac262cc9666f4a13b0471bcb6231bd5d7",
+    "render-live.png": "7cc93eb9d109d145ef202d60949f23fa369f6727a882b0c57fb28445e4db710d"
+  }
+}
