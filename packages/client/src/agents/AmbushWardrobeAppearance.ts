@@ -44,6 +44,9 @@ export class AmbushWardrobeAppearance {
   private fittedArmhole = false;
   private drapeIndices: number[] = [];
   private coatDrapeIndices: number[] = [];
+  private drapedDetails: { mesh: THREE.SkinnedMesh; targets: number[] }[] = [];
+  private waistBindings: { mesh: THREE.SkinnedMesh; vertices: { id: number; original: number[]; hips: number[]; pelvis: number }[] }[] = [];
+  private crouchBinding = 0;
   private hemBindings?: { shirt: number[][]; covered: number[][] };
   private hemShirt = false;
   private tails: AmbushCoatTails;
@@ -314,7 +317,7 @@ export class AmbushWardrobeAppearance {
     this.coat = this.make('morpheus-ambush-coat', this.geometry(opened, openedIndices, true), leather);
     if (outerPositions) {
       this.coat.geometry.morphTargetsRelative = true;
-      this.coatDrapeIndices = this.addDrapeTargets(this.coat, [0, 1].map(side => opened.map(vertex => vertex.drape![side])));
+      this.coatDrapeIndices = this.addDrapeTargets(this.coat, this.drapeIndices.map((_, side) => opened.map(vertex => vertex.drape![side])));
       this.coat.updateMorphTargets();
     }
     const lapels: Vertex[] = [], lapelIndices: number[] = [], steps = 12;
@@ -330,6 +333,19 @@ export class AmbushWardrobeAppearance {
       }
     }
     this.lapels = this.make('morpheus-ambush-lapels', this.geometry(lapels, lapelIndices), leather);
+    for (const mesh of this.meshes.filter(mesh => /ambush-(collar|tie|lapels)$/.test(mesh.name))) {
+      mesh.geometry.morphTargetsRelative = true;
+      this.drapedDetails.push({ mesh, targets: this.addDrapeTargets(mesh) }); mesh.updateMorphTargets();
+    }
+    this.waistBindings = this.meshes.map(mesh => {
+      const a = mesh.geometry.attributes, vertices = [];
+      for (let id = 0; id < a.position.count; id++) {
+        const names = [0, 1, 2, 3].map(k => mesh.skeleton.bones[a.skinIndex.getComponent(id, k)].name);
+        const hips = [0, 1, 2, 3].filter(k => /^hip_[LR]$/.test(names[k]) && a.skinWeight.getComponent(id, k) > 0), pelvis = names.indexOf('pelvis');
+        if (hips.length && pelvis >= 0) vertices.push({ id, hips, pelvis, original: [0, 1, 2, 3].map(k => a.skinWeight.getComponent(id, k)) });
+      }
+      return { mesh, vertices };
+    });
     this.tails = new AmbushCoatTails(rig, [trousers, rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh, this.source, this.coat]);
     this.vertices.clear(); this.bands.clear();
   }
@@ -388,18 +404,19 @@ export class AmbushWardrobeAppearance {
     const fittedNormals = Array.from({ length: a.normal.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(a.normal, i)
       .add(sculptNormal ? new THREE.Vector3().fromBufferAttribute(sculptNormal, i) : new THREE.Vector3()));
     const torso = mesh.skeleton.bones.map(bone => /^(pelvis|spine|chest|hip_[LR])$/.test(bone.name)), targets: number[] = [];
-    for (const [sideIndex, side] of [-1, 1].entries()) {
+    for (const [sideIndex, side] of [-1, 1, 0].entries()) {
       const delta = new Float32Array(a.position.count * 3), changed = new Set<number>();
       for (let i = 0; i < a.position.count; i++) {
-        if (drapes) {
+        if (drapes && side) {
           drapes[sideIndex][i].toArray(delta, i * 3); if (drapes[sideIndex][i].lengthSq() > 0) changed.add(i); continue;
         }
         const waist = [0, 1, 2, 3].reduce((sum, k) => sum + (torso[a.skinIndex.getComponent(i, k)] ? a.skinWeight.getComponent(i, k) : 0), 0);
-        const amount = THREE.MathUtils.smoothstep(waist, .8, .99) * (1 - THREE.MathUtils.smoothstep(a.position.getY(i), 2.42, 2.85))
-          * THREE.MathUtils.smoothstep(a.position.getZ(i), .02, .28) * THREE.MathUtils.smoothstep(side * a.position.getX(i), -.15, .28);
+        const point = side ? new THREE.Vector3().fromBufferAttribute(a.position, i) : fitted[i];
+        const amount = THREE.MathUtils.smoothstep(waist, .8, .99) * (1 - THREE.MathUtils.smoothstep(point.y, side ? 2.42 : 2.5, side ? 2.85 : 3.3))
+          * THREE.MathUtils.smoothstep(point.z, .02, .28) * (side ? THREE.MathUtils.smoothstep(side * point.x, -.15, .28) : 1);
         // Lift and roll the loose front over the flexing thigh. The upper
         // waist and sleeves keep their fit; the two sides can move separately.
-        delta[i * 3 + 1] = amount * .10; delta[i * 3 + 2] = amount * .06;
+        delta[i * 3 + 1] = amount * (side ? .10 : .3); delta[i * 3 + 2] = amount * (side ? .06 : .12);
         if (amount > 0) changed.add(i);
       }
       const points = fitted.map((point, i) => point.clone().add(new THREE.Vector3().fromArray(delta, i * 3)));
@@ -423,7 +440,7 @@ export class AmbushWardrobeAppearance {
         normal.copy(sum).normalize().sub(fittedNormals[i]).toArray(normalDelta, i * 3);
       }
       const positionTarget = new THREE.BufferAttribute(delta, 3), normalTarget = new THREE.BufferAttribute(normalDelta, 3);
-      positionTarget.name = normalTarget.name = `ambushHipDrape_${sideIndex ? 'L' : 'R'}`;
+      positionTarget.name = normalTarget.name = side ? `ambushHipDrape_${sideIndex ? 'L' : 'R'}` : 'ambushCrouchDrape';
       targets.push(geometry.morphAttributes.position.length);
       geometry.morphAttributes.position.push(positionTarget); geometry.morphAttributes.normal.push(normalTarget);
     }
@@ -495,8 +512,8 @@ export class AmbushWardrobeAppearance {
     if (!this.fittedArmhole || input.realWorld || !input.ambushWardrobe || input.performance
       || input.wetwall || input.sixth || input.bathroom || input.basement
       || input.tvExit || input.crosscut || input.betrayal) return 0;
-    // Fade the existing standing fit with the body instead of snapping it off.
-    return (1 - (motion.ambushCrouch ?? (input.crouching ? 1 : 0))) * (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
+    // The thigh still needs its gait clearance while the body is crouched.
+    return (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
       * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
   }
   relaxedArmOffset(input: MotionInput, motion: MotionState): number {
@@ -508,11 +525,28 @@ export class AmbushWardrobeAppearance {
       + .055 * THREE.MathUtils.smoothstep(motion.speed, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED)) * this.clothBlend(input, motion);
   }
   poseDrape(input: MotionInput, motion: MotionState): void {
+    const crouch = THREE.MathUtils.smootherstep(motion.ambushCrouch ?? 0, 0, 1);
+    if (crouch !== this.crouchBinding) {
+      // Release the loose waist from the thigh as it folds into the crouch.
+      // Preserve the existing running fit and restore exact weights on rising.
+      for (const { mesh, vertices } of this.waistBindings) {
+        if (mesh === this.source && (!input.ambushWardrobe || input.realWorld)) continue;
+        const attribute = mesh.geometry.attributes.skinWeight;
+        for (const { id, original, hips, pelvis } of vertices) {
+          for (let k = 0; k < 4; k++) attribute.setComponent(id, k, original[k]);
+          attribute.setComponent(id, pelvis, original[pelvis] + hips.reduce((sum, k) => sum + original[k] * crouch, 0));
+          for (const k of hips) attribute.setComponent(id, k, original[k] * (1 - crouch));
+        }
+        if (vertices.length) attribute.needsUpdate = true;
+      }
+      this.crouchBinding = crouch;
+    }
     const amount = this.clothBlend(input, motion);
     for (const [i, index] of this.drapeIndices.entries()) {
       const hip = this.rig.bones.get(`hip_${i ? 'L' : 'R'}`)!;
-      this.source.morphTargetInfluences![index] = amount * THREE.MathUtils.smoothstep(-hip.rotation.x, .3, 1.3);
+      this.source.morphTargetInfluences![index] = i === 2 ? crouch : amount * THREE.MathUtils.smoothstep(-hip.rotation.x, .3, 1.3);
       if (this.coatDrapeIndices.length) this.coat.morphTargetInfluences![this.coatDrapeIndices[i]] = this.source.morphTargetInfluences![index];
+      for (const { mesh, targets } of this.drapedDetails) mesh.morphTargetInfluences![targets[i]] = this.source.morphTargetInfluences![index];
     }
   }
   poseTails(input: MotionInput, motion: MotionState, coat: number): boolean {
