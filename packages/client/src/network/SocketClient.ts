@@ -52,6 +52,7 @@ export class SocketClient {
     this.socket = io({
       path: '/socket.io',
       transports: ['websocket', 'polling'],
+      auth: { stateAcknowledgements: true },
       reconnection: true,
       reconnectionAttempts: 100,
       reconnectionDelay: 1000,
@@ -76,8 +77,10 @@ export class SocketClient {
 
     this.socket.on('connect_error', () => { this.callbacks.onConnection?.(false); this.callbacks.onHealth?.('offline'); });
 
-    this.socket.on('message', (msg: ServerMessage) => {
+    this.socket.on('message', (msg: ServerMessage, receipt?: () => void) => {
       this.handleMessage(msg);
+      // Release the next state only once this one has reached the game.
+      receipt?.();
     });
 
     this.socket.on('world_state_full', (msg: ServerMessage) => {
