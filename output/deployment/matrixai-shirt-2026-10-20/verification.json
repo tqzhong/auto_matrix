@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-20",
+  "runtimeCommit": "b4dc4144ce20ccac9a6f7764c39579018d230116",
+  "deployedCommit": "d313b94cdd740df0c99d299b8a4435029f4ea363",
+  "deployment": "dep-dbbdc7u7bikc73855vug",
+  "status": "live",
+  "bundle": "index-Yvjjmxdq.js",
+  "renderTestsPassed": 69,
+  "websiteCheck": {
+    "https": true,
+    "bidirectionalWebSocket": true,
+    "roundTripMs": 187,
+    "assetsVerified": 224,
+    "modelAndMusicRanges": true
+  },
+  "preservedAcrossDeployment": {
+    "tick": true,
+    "paused": true,
+    "position": true,
+    "health": true,
+    "neoLife": true
+  },
+  "native": {
+    "observationSeconds": 564.722,
+    "samples": 208,
+    "connections": [
+      {
+        "at": 1792465691133,
+        "kind": "connect"
+      },
+      {
+        "at": 1792466255855,
+        "kind": "disconnect",
+        "reason": "io client disconnect"
+      }
+    ],
+    "maximumTravel": 4.429144057768461,
+    "heightMax": 2.5625000000000004,
+    "airborneSamples": 1,
+    "probeCount": 112,
+    "probeTimeouts": 0,
+    "probeMedianMs": 319.97820800000045,
+    "probeMaxMs": 3278.228124999965,
+    "runningStateAgeMedianMs": 351,
+    "runningStateAgeMaxMs": 3634,
+    "firstPersonTurnScreenshots": [
+      "neo-first-person-before-turn.png",
+      "neo-first-person-after-turn.png"
+    ],
+    "final": {
+      "tick": 17556,
+      "running": false,
+      "day": 4,
+      "position": {
+        "x": 1001.815501148887,
+        "y": 1,
+        "z": 672.7807585959981
+      },
+      "health": 100,
+      "money": 102,
+      "satiety": 94.61500000000551
+    }
+  },
+  "limitations": [
+    "Native wardrobe preview uses the outer coat; it does not expose the repaired shirt front for close visual acceptance.",
+    "One airborne sample confirms a jump but does not measure the full trajectory or frame rate.",
+    "Zero probe timeouts in this session do not guarantee sustained latency; maximum observed running state age was 3634 ms.",
+    "Full coat removal and trilogy film-fidelity acceptance remain incomplete."
+  ],
+  "sha256": {
+    "world-before.json": "02834d2af8f6885b320eacdff927e9e90cd2ad3ff8a24511f941921a83a0327b",
+    "world-after-deploy.json": "02834d2af8f6885b320eacdff927e9e90cd2ad3ff8a24511f941921a83a0327b",
+    "world-after-play.json": "91bf794e78fa652aa924e3848a8eeb8794d173fb22fdc29adaf2e1381baf3afb",
+    "play-samples.json": "0776fe02c33c91335a3a372efc5c6bd7256b8676c34a094d0a993e38ac9e4d20",
+    "play-summary.json": "5702718f810ca96207bfb438821375a29e79c65ec2dde1b6c02cb48f8a91ac37",
+    "live-check.log": "acbd002f3deabd7d8a531f4207d2e103d636a8b3e80bd2ef1bc8aa490c4a093e",
+    "render-live.txt": "3e2771962abf063883a76d9eaf3246daf2d231a0fd7b6c083760cb2ac2cac7fa",
+    "render-live.png": "9604b3981b6b2f721339cc0b23a4c11eea7db314d896e91e70c83ad20a450fce",
+    "morpheus-preview.png": "eb7ff39b04a559d95ffa9f53704cd08567a7ec14c6f16962c3119b7b5d86f531",
+    "neo-first-person-before-turn.png": "0eba35cf8fb15b72abe7c9f958164e868ff3995e48e5741845e977c24db3e257",
+    "neo-first-person-after-turn.png": "a6b915c59e9ebb682fa2abd3cda61a5214313c5b0fcfd6140a4a6355dbddd297",
+    "neo-final-paused.png": "2a322610e7040c7058e7d8f4ff19a129f5523429183891518f7cc8b4f07d921a"
+  }
+}

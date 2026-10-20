@@ -75,13 +75,15 @@
   "limitations": [
     "12 ordinary pose samples are not continuous collision proof",
     "whole-coat removal remains failing and is not shipped",
-    "native website verification pending"
+    "Native movement and coat preview checked; shirt-only close view is not available in the preview."
   ],
   "runtimeCommit": "b4dc4144ce20ccac9a6f7764c39579018d230116",
   "deployment": {
-    "status": "pending",
-    "observedBundle": "index-Iu4QQyG0.js",
+    "status": "live",
+    "deployedCommit": "d313b94cdd740df0c99d299b8a4435029f4ea363",
+    "id": "dep-dbbdc7u7bikc73855vug",
+    "observedBundle": "index-Yvjjmxdq.js",
     "expectedBundle": "index-Yvjjmxdq.js",
-    "blocker": "Render existing tab is a network error page; browser safety policy denied observing it. User asked to reopen normal console; no bypass attempted."
+    "evidence": "../../deployment/matrixai-shirt-2026-10-20/verification.json"
   }
 }
