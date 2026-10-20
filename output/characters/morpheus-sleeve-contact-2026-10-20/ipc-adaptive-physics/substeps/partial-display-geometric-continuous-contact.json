@@ -1,0 +1,119 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0,
+    "seconds": 0.4237105008214712
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0,
+    "seconds": 0.3893020832911134
+  },
+  {
+    "frame": 3,
+    "time": 0.8166666666666668,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0,
+    "seconds": 0.46574616711586714
+  },
+  {
+    "frame": 4,
+    "time": 0.8250000000000001,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0,
+    "seconds": 0.44897408317774534
+  },
+  {
+    "frame": 5,
+    "time": 0.8333333333333334,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.61474609375,
+    "seconds": 0.38577825017273426
+  },
+  {
+    "frame": 6,
+    "time": 0.8416666666666667,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.259765625,
+    "seconds": 0.4250112073495984
+  },
+  {
+    "frame": 7,
+    "time": 0.8500000000000001,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.5927734375,
+    "seconds": 0.41064979135990143
+  },
+  {
+    "frame": 8,
+    "time": 0.8520833333333334,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.6552734375,
+    "seconds": 0.34665633272379637
+  },
+  {
+    "frame": 9,
+    "time": 0.8541666666666667,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.7216796875,
+    "seconds": 0.4179611662402749
+  },
+  {
+    "frame": 10,
+    "time": 0.8562500000000001,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.50390625,
+    "seconds": 0.3852187916636467
+  },
+  {
+    "frame": 11,
+    "time": 0.8583333333333334,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.857421875,
+    "seconds": 0.3262093747034669
+  },
+  {
+    "frame": 12,
+    "time": 0.8604166666666667,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.77783203125,
+    "seconds": 0.37131450045853853
+  },
+  {
+    "frame": 13,
+    "time": 0.8625,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.732421875,
+    "seconds": 0.41363504249602556
+  }
+]

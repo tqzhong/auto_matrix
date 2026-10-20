@@ -1,0 +1,13 @@
+..F
+======================================================================
+FAIL: test_smaller_positive_gap_is_not_a_geometric_crossing (__main__.ContinuousChecks.test_smaller_positive_gap_is_not_a_geometric_crossing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/continuous-check.test.py", line 27, in test_smaller_positive_gap_is_not_a_geometric_crossing
+    self.assertTrue(result['stepCollisionFree'])
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.181s
+
+FAILED (failures=1)

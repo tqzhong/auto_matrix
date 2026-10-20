@@ -1,0 +1,12 @@
+{
+  "observedAt": "2026-10-20T05:33:24Z",
+  "status": "failed",
+  "session": 39081,
+  "pid": 44292,
+  "exitCode": 1,
+  "error": "prescribed body/cuff advance stalled",
+  "completedFrames": 3,
+  "completedThroughSeconds": 0.8666666666666667,
+  "evidence": "ipc-bound-bake.log",
+  "source": "ipc_cloth-uncoupled.py"
+}

@@ -1,0 +1,69 @@
+{"acceptedSample": {"frame": 1, "time": 0.8, "sourceFrame": 1, "substep": 0, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"frame": 1, "time": 0.8, "seconds": 0.377256540581584, "steps": [], "maximumEdgeStretch": 1.0, "p99EdgeStretch": 1.0, "bodyDifference": 0.0}
+{"iteration": 0, "energy": 0.016677590727337425, "residual": 5.896014032929066, "maximumNewtonStep": 0.0005323059842307137, "alpha": 1.0}
+{"iteration": 20, "energy": 0.006660882170809791, "residual": 0.05769245880032397, "maximumNewtonStep": 1.1871986269449811e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.0066607541315755765, "residual": 0.01047663717023852, "maximumNewtonStep": 1.201409611625574e-05, "alpha": 1.0}
+{"sourceFrame": 2, "substep": 1, "advance": 1, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 2, "time": 0.8083333333333333, "sourceFrame": 2, "substep": 1, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"iteration": 0, "energy": 0.027287609182925117, "residual": 13.981848326255893, "maximumNewtonStep": 0.0007441020734012036, "alpha": 1.0}
+{"iteration": 20, "energy": 0.010482893678014674, "residual": 0.02715712169931481, "maximumNewtonStep": 0.00013334993468357544, "alpha": 0.25}
+{"iteration": 40, "energy": 0.010481462623142835, "residual": 0.0031176509737346953, "maximumNewtonStep": 1.0281635235793646e-05, "alpha": 1.0}
+{"sourceFrame": 2, "substep": 2, "advance": 1, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 3, "time": 0.8166666666666668, "sourceFrame": 2, "substep": 2, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"iteration": 0, "energy": 0.03582128577136232, "residual": 13.778320794813203, "maximumNewtonStep": 0.0009283729038470467, "alpha": 1.0}
+{"iteration": 20, "energy": 0.016514536282982214, "residual": 0.02684961805958028, "maximumNewtonStep": 7.123016012142325e-05, "alpha": 1.0}
+{"sourceFrame": 2, "substep": 3, "advance": 1, "prescribedFraction": 0.97900390625, "remainingBodyMetres": 4.961275408277288e-07, "remainingPinsMetres": 2.2031826748016015e-06}
+{"sourceFrame": 2, "substep": 3, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 4, "time": 0.8250000000000001, "sourceFrame": 2, "substep": 3, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"iteration": 0, "energy": 0.07448286350567873, "residual": 4.03699330182504, "maximumNewtonStep": 0.004342566676169418, "alpha": 0.22705078125}
+{"iteration": 20, "energy": 0.0245113450459487, "residual": 0.007531712440721995, "maximumNewtonStep": 7.205814492940215e-05, "alpha": 1.0}
+{"sourceFrame": 2, "substep": 4, "advance": 1, "prescribedFraction": 0.30322265625, "remainingBodyMetres": 1.646451164560858e-05, "remainingPinsMetres": 7.311492271963593e-05}
+{"iteration": 0, "energy": 0.02521708350096681, "residual": 0.007211598928762298, "maximumNewtonStep": 3.31802969502815e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.02521601741114667, "residual": 5.0702693704420584e-05, "maximumNewtonStep": 2.230969003652802e-06, "alpha": 1.0}
+{"sourceFrame": 2, "substep": 4, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 5, "time": 0.8333333333333334, "sourceFrame": 2, "substep": 4, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.61474609375}}
+{"frame": 2, "time": 0.8333333333333334, "seconds": 164.9969170410186, "steps": [{"substep": 1, "advances": 1, "iterations": 60, "residual": 0.00019703332739074068}, {"substep": 2, "advances": 1, "iterations": 43, "residual": 0.000746296334269609}, {"substep": 3, "advances": 2, "iterations": 0, "residual": 8.868446888210318e-05}, {"substep": 4, "advances": 2, "iterations": 36, "residual": 2.1894764800391885e-05}], "maximumEdgeStretch": 1.0136525847652897, "p99EdgeStretch": 1.0033340377844, "bodyDifference": 0.0}
+{"iteration": 0, "energy": 0.1695937395905363, "residual": 0.8293472292357315, "maximumNewtonStep": 0.005184667886861541, "alpha": 0.0380859375}
+{"iteration": 20, "energy": 0.05600446219159481, "residual": 0.09517241013009885, "maximumNewtonStep": 0.0004642548941004717, "alpha": 0.5}
+{"iteration": 40, "energy": 0.05595989583142901, "residual": 0.06181040567402485, "maximumNewtonStep": 0.00024121895530873337, "alpha": 1.0}
+{"iteration": 60, "energy": 0.05593750079477351, "residual": 0.005872166201349355, "maximumNewtonStep": 5.3886557465934965e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.05593730847723077, "residual": 1.7880448191828335e-05, "maximumNewtonStep": 1.1325051706929922e-06, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 1, "advance": 1, "prescribedFraction": 0.03076171875, "remainingBodyMetres": 0.0001502184090895753, "remainingPinsMetres": 0.0006439131209277048}
+{"iteration": 0, "energy": 0.05763621261150475, "residual": 0.07436312389432664, "maximumNewtonStep": 5.246973376181379e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.05763134484358444, "residual": 0.0001860559781093566, "maximumNewtonStep": 2.469351941877462e-06, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 1, "advance": 2, "prescribedFraction": 0.33203125, "remainingBodyMetres": 0.00010034120294655224, "remainingPinsMetres": 0.0004301138424946775}
+{"iteration": 0, "energy": 0.06190729004678715, "residual": 0.3459251701758364, "maximumNewtonStep": 0.00017535637280748494, "alpha": 0.7265625}
+{"iteration": 20, "energy": 0.061800465247638776, "residual": 0.00017262074933514164, "maximumNewtonStep": 3.4794146012925254e-06, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 1, "advance": 3, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 6, "time": 0.8416666666666667, "sourceFrame": 3, "substep": 1, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.259765625}}
+{"iteration": 0, "energy": 0.19183938775877665, "residual": 0.8802891299958779, "maximumNewtonStep": 0.004375999291267654, "alpha": 0.091796875}
+{"iteration": 20, "energy": 0.09586801113627247, "residual": 0.27439362678526397, "maximumNewtonStep": 8.407073334045498e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.09581210525047444, "residual": 0.19829515050500426, "maximumNewtonStep": 7.453448000554702e-05, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 2, "advance": 1, "prescribedFraction": 0.0888671875, "remainingBodyMetres": 0.00014121287222224055, "remainingPinsMetres": 0.0006053107726201983}
+{"iteration": 0, "energy": 0.09772534429750843, "residual": 0.1024928385270113, "maximumNewtonStep": 5.748492498286017e-05, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 2, "advance": 2, "prescribedFraction": 0.267578125, "remainingBodyMetres": 0.00010342739664714884, "remainingPinsMetres": 0.0004433428510401856}
+{"iteration": 0, "energy": 0.10395653221005247, "residual": 0.5107155615171721, "maximumNewtonStep": 0.0001988161979523012, "alpha": 0.41015625}
+{"iteration": 20, "energy": 0.10378342058587058, "residual": 0.0011947269030194315, "maximumNewtonStep": 1.7352248911098556e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.10377441998015953, "residual": 0.07074891097963754, "maximumNewtonStep": 0.0001996053646645686, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 2, "advance": 3, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 7, "time": 0.8500000000000001, "sourceFrame": 3, "substep": 2, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.5927734375}}
+{"iteration": 0, "energy": 0.21237470951786797, "residual": 0.76088216111235, "maximumNewtonStep": 0.005734295218279377, "alpha": 0.1253662109375}
+{"iteration": 20, "energy": 0.14368831749116892, "residual": 1.2408840821005698, "maximumNewtonStep": 0.0006759839589304736, "alpha": 1.0}
+{"iteration": 40, "energy": 0.1431929038782866, "residual": 0.004812501389446922, "maximumNewtonStep": 2.837555598373422e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.14319072978561975, "residual": 0.0007552554592949383, "maximumNewtonStep": 1.0837821170063215e-05, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 3, "advance": 1, "prescribedFraction": 0.130859375, "remainingBodyMetres": 0.00013470466910803225, "remainingPinsMetres": 0.0005774132772046921}
+{"iteration": 0, "energy": 0.14954733950986104, "residual": 0.1776157363744314, "maximumNewtonStep": 4.280494195686412e-05, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 3, "advance": 2, "prescribedFraction": 0.62939453125, "remainingBodyMetres": 4.9922287037595936e-05, "remainingPinsMetres": 0.00021399251826091994}
+{"iteration": 0, "energy": 0.15185263050031714, "residual": 0.026669024038837197, "maximumNewtonStep": 1.6861197828959946e-05, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 3, "advance": 3, "prescribedFraction": 0.560546875, "remainingBodyMetres": 2.1938505045816792e-05, "remainingPinsMetres": 9.40396808763802e-05}
+{"iteration": 0, "energy": 0.15374641903975222, "residual": 0.024255024766172764, "maximumNewtonStep": 1.8710234165828643e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.153745470923207, "residual": 0.0009364803240819463, "maximumNewtonStep": 5.219827458644841e-06, "alpha": 1.0}
+{"sourceFrame": 3, "substep": 3, "advance": 4, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 278, in <module>
+    bake(args.frames, args.substeps, args.output, args.raw_newton)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 253, in bake
+    save_sample(.8+(frame-1+blend)/30, frame+1, substep)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 212, in save_sample
+    raise RuntimeError(f'the exported substep crosses: {row}')
+RuntimeError: the exported substep crosses: {'frame': 8, 'time': 0.8583333333333334, 'sourceFrame': 3, 'substep': 3, 'endpointIntersects': False, 'collisionFreeStep': 0.04480934143066406, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0181884765625}

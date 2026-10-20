@@ -1,0 +1,425 @@
+{
+  "date": "2026-10-20",
+  "parentRevision": "2e2bbbd5810f82a4d970536a206b4c5793915d23",
+  "scope": "Offline garment development; no runtime asset, website or save changes",
+  "status": "incomplete",
+  "verifierCorrection": {
+    "before": "2/3 tests pass; tilted separated surfaces falsely rejected",
+    "after": "4/4 tests pass, including the two actual garment edge trajectories",
+    "optimizerCCD": "unchanged default conservative clearance",
+    "playbackCCD": {
+      "minimumDistanceMetres": 0,
+      "toleranceMetres": 1e-09,
+      "conservativeRescaling": 1
+    },
+    "previousFirstInterval": {
+      "start": 0.8,
+      "end": 0.8333333333333334,
+      "geometricallyClear": true,
+      "defaultOptimizerSafeStep": 0.636962890625
+    },
+    "actualCrossing": {
+      "interval": [
+        0.8333333333333334,
+        0.8666666666666667
+      ],
+      "edgeContacts": [
+        {
+          "ids": [
+            1238,
+            1240,
+            54003,
+            54006
+          ],
+          "polynomial": [
+            9.497626341347386e-10,
+            -1.0001458051454358e-08,
+            1.3613170664599744e-08,
+            1.0861877815088647e-12
+          ],
+          "roots": [
+            {
+              "blend": 0.11205243169142587,
+              "timeSeconds": 0.8370684143897142,
+              "segmentParameters": [
+                0.42442528466731105,
+                0.4793877206319409
+              ],
+              "separationMetres": 9.157343818008584e-17,
+              "interiorContact": true
+            },
+            {
+              "blend": 0.6225999019692497,
+              "timeSeconds": 0.854086663398975,
+              "segmentParameters": [
+                0.5631958054894733,
+                0.5908577167933693
+              ],
+              "separationMetres": 8.589399690288571e-17,
+              "interiorContact": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "uncoupledControl": {
+    "observedAt": "2026-10-20T05:33:24Z",
+    "status": "failed",
+    "session": 39081,
+    "pid": 44292,
+    "exitCode": 1,
+    "error": "prescribed body/cuff advance stalled",
+    "completedFrames": 3,
+    "completedThroughSeconds": 0.8666666666666667,
+    "evidence": "ipc-bound-bake.log",
+    "source": "ipc_cloth-uncoupled.py"
+  },
+  "fixed120HzControl": {
+    "status": "failed",
+    "session": 2009,
+    "pid": 80280,
+    "exitCode": 1,
+    "acceptedThroughSeconds": 0.85,
+    "acceptedSamples": 7,
+    "rejected": {
+      "frame": 8,
+      "time": 0.8583333333333334,
+      "sourceFrame": 3,
+      "substep": 3,
+      "endpointIntersects": false,
+      "collisionFreeStep": 0.04480934143066406,
+      "stepCollisionFree": false,
+      "optimizerSafeStep": 0.0181884765625
+    },
+    "source": "ipc_cloth-coupled-fixed-step.py"
+  },
+  "coupledMathTests": "5/5 passed",
+  "adaptiveRun": {
+    "status": "running when last checked",
+    "processVerifiedLiveAt": "2026-10-20T06:34:46.844061+00:00",
+    "pid": 89096,
+    "session": 45925,
+    "targetEndSeconds": 1.0,
+    "acceptedSamplesAtSnapshot": 36,
+    "acceptedThroughSecondsAtSnapshot": 0.8833333333333334,
+    "run": {
+      "resume": "ipc-coupled-physics",
+      "resumedAt": 0.8500000000000001,
+      "requestedEnd": 1.0,
+      "maximumStepSeconds": 0.008333333333333333,
+      "sourceSha256": "3149a1028bd03e08047649f0a358baa78703d547ddcc47c7aad2b75d6d81ecc9"
+    },
+    "copiedAcceptedFiles": 27,
+    "copiedFilesByteIdentical": true,
+    "allAcceptedSamplesInternallyChecked": true,
+    "rejectionsAtSnapshot": [
+      {
+        "number": 1,
+        "sourceFrame": 3,
+        "startTime": 0.8500000000000001,
+        "endTime": 0.8583333333333334,
+        "depth": 0,
+        "error": "the exported substep crosses: {'frame': 8, 'time': 0.8583333333333334, 'sourceFrame': 3, 'substep': 3.0, 'integrationSeconds': 0.008333333333333288, 'endpointIntersects': False, 'collisionFreeStep': 0.04480934143066406, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0181884765625}"
+      },
+      {
+        "number": 2,
+        "sourceFrame": 3,
+        "startTime": 0.8500000000000001,
+        "endTime": 0.8541666666666667,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 8, 'time': 0.8541666666666667, 'sourceFrame': 3, 'substep': 2.5000000000000027, 'integrationSeconds': 0.004166666666666644, 'endpointIntersects': False, 'collisionFreeStep': 0.48822927474975586, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1162109375}"
+      },
+      {
+        "number": 3,
+        "sourceFrame": 3,
+        "startTime": 0.8541666666666667,
+        "endTime": 0.8583333333333334,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 10, 'time': 0.8583333333333334, 'sourceFrame': 3, 'substep': 3.0, 'integrationSeconds': 0.004166666666666644, 'endpointIntersects': False, 'collisionFreeStep': 0.2520723342895508, 'stepCollisionFree': False, 'optimizerSafeStep': 0.090087890625}"
+      },
+      {
+        "number": 4,
+        "sourceFrame": 3,
+        "startTime": 0.8583333333333334,
+        "endTime": 0.8666666666666667,
+        "depth": 0,
+        "error": "the exported substep crosses: {'frame': 12, 'time': 0.8666666666666667, 'sourceFrame': 3, 'substep': 4.0, 'integrationSeconds': 0.00833333333333332, 'endpointIntersects': False, 'collisionFreeStep': 0.05972886085510254, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0191650390625}"
+      },
+      {
+        "number": 5,
+        "sourceFrame": 3,
+        "startTime": 0.8583333333333334,
+        "endTime": 0.8625,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 12, 'time': 0.8625, 'sourceFrame': 3, 'substep': 3.500000000000001, 'integrationSeconds': 0.00416666666666666, 'endpointIntersects': False, 'collisionFreeStep': 0.2006072998046875, 'stepCollisionFree': False, 'optimizerSafeStep': 0.05908203125}"
+      },
+      {
+        "number": 6,
+        "sourceFrame": 3,
+        "startTime": 0.8625,
+        "endTime": 0.8666666666666667,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 14, 'time': 0.8666666666666667, 'sourceFrame': 3, 'substep': 4.0, 'integrationSeconds': 0.00416666666666666, 'endpointIntersects': False, 'collisionFreeStep': 0.2791919708251953, 'stepCollisionFree': False, 'optimizerSafeStep': 0.093505859375}"
+      },
+      {
+        "number": 7,
+        "sourceFrame": 4,
+        "startTime": 0.8666666666666667,
+        "endTime": 0.875,
+        "depth": 0,
+        "error": "the exported substep crosses: {'frame': 16, 'time': 0.875, 'sourceFrame': 4, 'substep': 1.0, 'integrationSeconds': 0.008333333333333349, 'endpointIntersects': False, 'collisionFreeStep': 0.025972604751586914, 'stepCollisionFree': False, 'optimizerSafeStep': 0.016357421875}"
+      },
+      {
+        "number": 8,
+        "sourceFrame": 4,
+        "startTime": 0.8666666666666667,
+        "endTime": 0.8708333333333333,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 16, 'time': 0.8708333333333333, 'sourceFrame': 4, 'substep': 0.4999999999999991, 'integrationSeconds': 0.004166666666666674, 'endpointIntersects': False, 'collisionFreeStep': 0.09386682510375977, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0615234375}"
+      },
+      {
+        "number": 9,
+        "sourceFrame": 4,
+        "startTime": 0.8666666666666667,
+        "endTime": 0.86875,
+        "depth": 2,
+        "error": "the exported substep crosses: {'frame': 16, 'time': 0.86875, 'sourceFrame': 4, 'substep': 0.24999999999999867, 'integrationSeconds': 0.002083333333333337, 'endpointIntersects': False, 'collisionFreeStep': 0.16935324668884277, 'stepCollisionFree': False, 'optimizerSafeStep': 0.084716796875}"
+      },
+      {
+        "number": 10,
+        "sourceFrame": 4,
+        "startTime": 0.86875,
+        "endTime": 0.8708333333333333,
+        "depth": 2,
+        "error": "the exported substep crosses: {'frame': 18, 'time': 0.8708333333333333, 'sourceFrame': 4, 'substep': 0.4999999999999991, 'integrationSeconds': 0.002083333333333337, 'endpointIntersects': False, 'collisionFreeStep': 0.049653053283691406, 'stepCollisionFree': False, 'optimizerSafeStep': 0.029296875}"
+      },
+      {
+        "number": 11,
+        "sourceFrame": 4,
+        "startTime": 0.86875,
+        "endTime": 0.8697916666666667,
+        "depth": 3,
+        "error": "the exported substep crosses: {'frame': 18, 'time': 0.8697916666666667, 'sourceFrame': 4, 'substep': 0.3749999999999989, 'integrationSeconds': 0.0010416666666666686, 'endpointIntersects': False, 'collisionFreeStep': 0.2495136260986328, 'stepCollisionFree': False, 'optimizerSafeStep': 0.12109375}"
+      },
+      {
+        "number": 12,
+        "sourceFrame": 4,
+        "startTime": 0.8697916666666667,
+        "endTime": 0.8708333333333333,
+        "depth": 3,
+        "error": "the exported substep crosses: {'frame': 20, 'time': 0.8708333333333333, 'sourceFrame': 4, 'substep': 0.4999999999999991, 'integrationSeconds': 0.0010416666666666686, 'endpointIntersects': False, 'collisionFreeStep': 0.14574146270751953, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0859375}"
+      },
+      {
+        "number": 13,
+        "sourceFrame": 4,
+        "startTime": 0.8708333333333333,
+        "endTime": 0.875,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 22, 'time': 0.875, 'sourceFrame': 4, 'substep': 1.0, 'integrationSeconds': 0.004166666666666674, 'endpointIntersects': False, 'collisionFreeStep': 0.056336164474487305, 'stepCollisionFree': False, 'optimizerSafeStep': 0.03466796875}"
+      },
+      {
+        "number": 14,
+        "sourceFrame": 4,
+        "startTime": 0.8708333333333333,
+        "endTime": 0.8729166666666667,
+        "depth": 2,
+        "error": "the exported substep crosses: {'frame': 22, 'time': 0.8729166666666667, 'sourceFrame': 4, 'substep': 0.7499999999999996, 'integrationSeconds': 0.002083333333333337, 'endpointIntersects': False, 'collisionFreeStep': 0.06596803665161133, 'stepCollisionFree': False, 'optimizerSafeStep': 0.04150390625}"
+      },
+      {
+        "number": 15,
+        "sourceFrame": 4,
+        "startTime": 0.8718750000000001,
+        "endTime": 0.8729166666666667,
+        "depth": 3,
+        "error": "the exported substep crosses: {'frame': 23, 'time': 0.8729166666666667, 'sourceFrame': 4, 'substep': 0.7499999999999996, 'integrationSeconds': 0.0010416666666666686, 'endpointIntersects': False, 'collisionFreeStep': 0.15395450592041016, 'stepCollisionFree': False, 'optimizerSafeStep': 0.095703125}"
+      },
+      {
+        "number": 16,
+        "sourceFrame": 4,
+        "startTime": 0.8729166666666667,
+        "endTime": 0.875,
+        "depth": 2,
+        "error": "the exported substep crosses: {'frame': 25, 'time': 0.875, 'sourceFrame': 4, 'substep': 1.0, 'integrationSeconds': 0.002083333333333337, 'endpointIntersects': False, 'collisionFreeStep': 0.1568441390991211, 'stepCollisionFree': False, 'optimizerSafeStep': 0.11328125}"
+      },
+      {
+        "number": 17,
+        "sourceFrame": 4,
+        "startTime": 0.8739583333333334,
+        "endTime": 0.875,
+        "depth": 3,
+        "error": "the exported substep crosses: {'frame': 26, 'time': 0.875, 'sourceFrame': 4, 'substep': 1.0, 'integrationSeconds': 0.0010416666666666686, 'endpointIntersects': False, 'collisionFreeStep': 0.19781208038330078, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1259765625}"
+      },
+      {
+        "number": 18,
+        "sourceFrame": 4,
+        "startTime": 0.8744791666666667,
+        "endTime": 0.875,
+        "depth": 4,
+        "error": "the exported substep crosses: {'frame': 27, 'time': 0.875, 'sourceFrame': 4, 'substep': 1.0, 'integrationSeconds': 0.0005208333333333343, 'endpointIntersects': False, 'collisionFreeStep': 0.23839950561523438, 'stepCollisionFree': False, 'optimizerSafeStep': 0.095703125}"
+      },
+      {
+        "number": 19,
+        "sourceFrame": 4,
+        "startTime": 0.875,
+        "endTime": 0.8833333333333334,
+        "depth": 0,
+        "error": "the exported substep crosses: {'frame': 29, 'time': 0.8833333333333334, 'sourceFrame': 4, 'substep': 2.0, 'integrationSeconds': 0.008333333333333378, 'endpointIntersects': False, 'collisionFreeStep': 0.021769285202026367, 'stepCollisionFree': False, 'optimizerSafeStep': 0.010498046875}"
+      },
+      {
+        "number": 20,
+        "sourceFrame": 4,
+        "startTime": 0.875,
+        "endTime": 0.8791666666666667,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 29, 'time': 0.8791666666666667, 'sourceFrame': 4, 'substep': 1.4999999999999973, 'integrationSeconds': 0.004166666666666689, 'endpointIntersects': False, 'collisionFreeStep': 0.2455272674560547, 'stepCollisionFree': False, 'optimizerSafeStep': 0.09228515625}"
+      },
+      {
+        "number": 21,
+        "sourceFrame": 4,
+        "startTime": 0.875,
+        "endTime": 0.8770833333333333,
+        "depth": 2,
+        "error": "the exported substep crosses: {'frame': 29, 'time': 0.8770833333333333, 'sourceFrame': 4, 'substep': 1.249999999999996, 'integrationSeconds': 0.0020833333333333446, 'endpointIntersects': False, 'collisionFreeStep': 0.06888628005981445, 'stepCollisionFree': False, 'optimizerSafeStep': 0.048828125}"
+      },
+      {
+        "number": 22,
+        "sourceFrame": 4,
+        "startTime": 0.875,
+        "endTime": 0.8760416666666666,
+        "depth": 3,
+        "error": "the exported substep crosses: {'frame': 29, 'time': 0.8760416666666666, 'sourceFrame': 4, 'substep': 1.1249999999999953, 'integrationSeconds': 0.0010416666666666723, 'endpointIntersects': False, 'collisionFreeStep': 0.3328514099121094, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1953125}"
+      },
+      {
+        "number": 23,
+        "sourceFrame": 4,
+        "startTime": 0.8791666666666667,
+        "endTime": 0.8833333333333334,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 33, 'time': 0.8833333333333334, 'sourceFrame': 4, 'substep': 2.0, 'integrationSeconds': 0.004166666666666689, 'endpointIntersects': False, 'collisionFreeStep': 0.08153128623962402, 'stepCollisionFree': False, 'optimizerSafeStep': 0.04443359375}"
+      },
+      {
+        "number": 24,
+        "sourceFrame": 4,
+        "startTime": 0.8812500000000001,
+        "endTime": 0.8833333333333334,
+        "depth": 2,
+        "error": "the exported substep crosses: {'frame': 34, 'time': 0.8833333333333334, 'sourceFrame': 4, 'substep': 2.0, 'integrationSeconds': 0.0020833333333333446, 'endpointIntersects': False, 'collisionFreeStep': 0.12475872039794922, 'stepCollisionFree': False, 'optimizerSafeStep': 0.072265625}"
+      },
+      {
+        "number": 25,
+        "sourceFrame": 4,
+        "startTime": 0.8812500000000001,
+        "endTime": 0.8822916666666667,
+        "depth": 3,
+        "error": "the exported substep crosses: {'frame': 34, 'time': 0.8822916666666667, 'sourceFrame': 4, 'substep': 1.8749999999999993, 'integrationSeconds': 0.0010416666666666723, 'endpointIntersects': False, 'collisionFreeStep': 0.34499359130859375, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1171875}"
+      }
+    ]
+  },
+  "independentPartialAudit": {
+    "samples": 36,
+    "fromSeconds": 0.8,
+    "throughSeconds": 0.8833333333333334,
+    "displayVertices": 13386,
+    "displayFaces": 25796,
+    "bodyLayers": 13,
+    "selfIntersections": 0,
+    "bodyIntersections": 0,
+    "allLinearIntervalsClear": true,
+    "maximumCuffErrorMetres": 3.446784493994203e-08,
+    "maximumNeckErrorMetres": 5.96612872762814e-08,
+    "maximumEdgeStretch": 1.0576935192715278,
+    "maximumP99EdgeStretch": 1.0092069927882419,
+    "strainGuard": "p99 < 1.2 and maximum < 1.5; unchanged, not calibrated leather constants",
+    "snapshot": "ipc-adaptive-review/snapshot.json"
+  },
+  "offlinePreview": {
+    "timeSeconds": 0.8666666666666667,
+    "sample": 15,
+    "views": [
+      "front",
+      "rear"
+    ],
+    "source": "complete exported garment and all 13 body layers with diagnostic colors",
+    "nativeGameScreenshot": false
+  },
+  "limitations": [
+    "The one-second diagnostic is still running; the original full withdrawal failure around one second has not yet been passed by this run.",
+    "Independent audits cover only the stated 36 frozen samples, not later running output.",
+    "Body and boundary inputs between their original 30 Hz samples are interpolated linearly; native rig interpolation must be checked before integration.",
+    "Full eight-second withdrawal, cuff/neck release, grasp, landing, natural leather motion, runtime save/retry and native game verification remain unfinished.",
+    "No high-quality trilogy scene group is completed by these offline controls."
+  ],
+  "primarySources": [
+    "https://github.com/ipc-sim/ipc-toolkit/blob/v1.6.0/src/ipc/ccd/tight_inclusion_ccd.cpp",
+    "https://ipctk.xyz/python-api/candidates.html",
+    "https://ipctk.xyz/python-api/ccd.html"
+  ],
+  "sha256": {
+    "ipc_cloth.py": "3149a1028bd03e08047649f0a358baa78703d547ddcc47c7aad2b75d6d81ecc9",
+    "ipc_cloth-uncoupled.py": "3919048919225caabc2a8c291a6989bf156099ac85f047d8bbb847041e13f9b5",
+    "ipc_cloth-coupled-fixed-step.py": "57bf3f22255910bd8d5513a873c9c4d384e4cb646f9631fd9424dae0a373e574",
+    "continuous_check.py": "4979187ab4ee597b58aa1e5aca79b0dc38f993614d0a56d0035660d251cfd7e0",
+    "continuous-contact.py": "cc78ad86b2adb10d0f25b6d70dcb0a5738684a14c6796823f421c1d66f3f3320",
+    "continuous-check.test.py": "a4a2cd0810ef64327b9980a1c60890591f493149d687d1b73d9bf5366359b9bf",
+    "contact-fixtures.json": "cf1692c27db204c5f498294e1026f7de25a0daaf597758d382d60ef383e8e8b6",
+    "inspect-continuous.py": "518e59b7574f78abf2547841b4cc701ed2941788754946bc2afb96cbbaf02540",
+    "ipc-material.test.py": "1a4097a73b4f1fd922d4ef2dfaf90537d9c8055e12c7d8d6fb771951f498f22b",
+    "audit-boundaries.py": "e4a54b3d4cc466273bcfbc715a0e8320c986405c726d335e8530b631a77bf044",
+    "audit-ipc.mts": "5f0b93d6e07de9cae13d7be3dc0124a2d609f19bdc2557b7f2535f73f7f2fc47",
+    "cloth-strain.test.mts": "5099f5c481e9e5dc72c7756c3074bb020d356ebc2790c8a23c90f9849f52d035",
+    "export-review.mts": "b9651d7170aa8a96044b24fd1d4a2e31027755c5d2b6d76b2c60dffa3697711e",
+    "render-review.py": "6a4e338c306be08177ae5742728e77220dffb5c37f9d0962c3862b5c6b94d60a",
+    "continuous-check-before.log": "8ccf414977e0ad1f1e817f99cf699aadf4cf9aa7a82fc097de0118b7ea24c16c",
+    "continuous-check-after.log": "472618d3b146b591f34bb281993dde7046f9535a387e7fbc131d4256928e59c6",
+    "ipc-adaptive-tests.log": "223d694dcc2d9f816e04683ded4317f160c906ec6cfc8ee3ca478961ff8769cf",
+    "ipc-coupled-bake.log": "e9ef57c5810ce62b916218c3707ac43ca0b2ffe99b2ae5db5f2fc15499e27d96",
+    "ipc-bound-bake.log": "24777844a8700e23242194b35208ebd77b0aadcad5446356bbd132c52b12ba12",
+    "adaptive-progress-at-review.log": "08c895edcd61a49f9f343ceb9159bb796f6b0f6d1368543c76f86795a94af5a3",
+    "ipc-adaptive-strain-partial.log": "c128fd026ff342cba9743d04e3889b913d16e29b7d2dda5c6ce3828b469dd94d",
+    "ipc-adaptive-display-partial.log": "9b95b1c4b72b02821ec35c427dbff68b3f90e227cd6520e7e5c8dd0585fa7e22",
+    "ipc-adaptive-boundaries-partial.log": "e6b052b6557e5d5d690fc854376dcc6af37798b0b48539594cd2146d39087269",
+    "ipc-adaptive-continuous-partial.log": "9851165ec172b6aa8eea7bf237aff4b33a92d5b42bd5e44b66ffa4dbe12a67ca",
+    "ipc-bound-physics/partial-display-geometric-continuous-contact.json": "21d04f1edced5777dae52a944459f8301a454d883d38eff788a053e6ca9d2ab3",
+    "ipc-bound-physics/edge-contact-roots-3.json": "94dfdaca7738325cbe698a8f46a6dc9281c8bf80d12b37fbca7a0119db20ef72",
+    "ipc-adaptive-physics/substeps/partial-contact-results.json": "338cf1d8f8868cb920fb9a19dc9d8aa5109226701834e9471b0729ed82cdbc8b",
+    "ipc-adaptive-physics/substeps/partial-boundary-results.json": "4e58fdf864af29122d3199d658432754ebff6bd7c97a1b4cf1a395b01869ac3d",
+    "ipc-adaptive-physics/substeps/partial-display-geometric-continuous-contact.json": "e7b67fcf0fd465b8db9d4bef08bfa955c9ed299e2407e2317f4f4b5c6e41cd56",
+    "ipc-adaptive-physics/substeps/partial-strain-results.json": "3d73a5c008a18b1041e0571df7e76de9a6b1a639c869cd0eeaf54eba136c0b27",
+    "ipc-adaptive-physics-substeps-15-front.png": "32d1069d2622d0a680d8d500b8760c90d45357fff823c21d37f6a58c059fd9cb",
+    "ipc-adaptive-physics-substeps-15-rear.png": "36ebebca6cd2fe8b62b598d370ba30cea4129caab7cc1201ecb6ee9867077ac0",
+    "uncoupled-exit.json": "cd690f8c7c254125c5676a0149e29e03971a848d9ef96a70e07dd1f1085df334",
+    "coupled-exit.json": "c0b948405f9821236509a2595c70c714112b548262280cf07823b54918634953",
+    "ipc-substep-boundaries-before.log": "afd2875ea7901ef512a1b34b272fb18d5a56c9fa3c6352cf64513682688730bc",
+    "ipc-substep-boundaries-after.log": "55b0a5019f41884eac122a5294ce061b265568de5ba623c6a607c925755c1627",
+    "ipc-bound-boundaries-time-control.log": "3126a41864dc0e040da1d78a78cc71ff7504c0cd4549e98f6f87bcd633a1adfb",
+    "adaptive-export-before.log": "7f6b433277b30d5a62a0cd9387e01dafa480d837e3dec3182f97575eba75261a",
+    "ipc-coupled-test-margin-control.log": "15013e776f959632f5661a5d421911c55825a098ea25595a32ce22c413decc9d",
+    "ipc-adaptive-review/snapshot.json": "6ef77941d8e5f3e2a84146b635ef5ce6ebb581f5a5986a02e2e044babd052e95",
+    "ipc-adaptive-review/progress.json": "d2769fdbab66deb51194ff99972bd1bd1ee30dc7d8bb36c821ed01b1b8a64a32",
+    "ipc-adaptive-review/display.log": "9f8d5509004652adfdbad9f91ee385f9e9d3583305ddc98b9d920551a3b3a485",
+    "ipc-adaptive-review/boundaries.log": "287fe4874ead53a97c4ec0238bdb5b1ee41de61de29779a3205d0a35d888e762",
+    "ipc-adaptive-review/continuous.log": "f283802a6026fc91af77c193884685b995d743c6718335ccd06fff0797a07c8f",
+    "ipc-adaptive-review/strain.log": "c6ca75c280e6605d912c9d36627a245aa168c972c360f211e0004eb432f3a1bc",
+    "ipc-adaptive-review/partial-contact-results.json": "84f3e4e0ed976fadb65cf9f1d5e02160f098f3ebd117d71143b784c9ac11ee8d",
+    "ipc-adaptive-review/partial-boundary-results.json": "ac0d6ee6464619a70431c64baa45eca34b12821d9d2e84822a6cbb6e4e1cbfc1",
+    "ipc-adaptive-review/partial-display-geometric-continuous-contact.json": "5f394d237a17009552a2167c2be6ab6f97bf57e758e509fda618c861bd75d306",
+    "ipc-adaptive-review/partial-strain-results.json": "0d1006a40962141bac4c37ebd5cc2d586c5d13f8db7f8cdcde15d77b1d15ea61"
+  },
+  "earlierIndependentPartialAudit": {
+    "samples": 13,
+    "fromSeconds": 0.8,
+    "throughSeconds": 0.8625,
+    "displayVertices": 13386,
+    "displayFaces": 25796,
+    "bodyLayers": 13,
+    "selfIntersections": 0,
+    "bodyIntersections": 0,
+    "allLinearIntervalsClear": true,
+    "maximumCuffErrorMetres": 3.3622307623657114e-08,
+    "maximumNeckErrorMetres": 5.96248317348617e-08,
+    "maximumEdgeStretch": 1.0465394761406008,
+    "maximumP99EdgeStretch": 1.008231337672627,
+    "strainGuard": "p99 < 1.2 and maximum < 1.5; unchanged, not calibrated leather constants"
+  }
+}

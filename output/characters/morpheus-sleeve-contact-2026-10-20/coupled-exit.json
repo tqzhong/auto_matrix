@@ -1,0 +1,19 @@
+{
+  "status": "failed",
+  "session": 2009,
+  "pid": 80280,
+  "exitCode": 1,
+  "acceptedThroughSeconds": 0.85,
+  "acceptedSamples": 7,
+  "rejected": {
+    "frame": 8,
+    "time": 0.8583333333333334,
+    "sourceFrame": 3,
+    "substep": 3,
+    "endpointIntersects": false,
+    "collisionFreeStep": 0.04480934143066406,
+    "stepCollisionFree": false,
+    "optimizerSafeStep": 0.0181884765625
+  },
+  "source": "ipc_cloth-coupled-fixed-step.py"
+}

@@ -1,0 +1,218 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "maximumCuffErrorMetres": 3.286899228400863e-08,
+    "maximumNeckErrorMetres": 5.928032504773641e-08
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "maximumCuffErrorMetres": 3.1123656733127216e-08,
+    "maximumNeckErrorMetres": 5.9324301776374685e-08
+  },
+  {
+    "frame": 3,
+    "time": 0.8166666666666668,
+    "maximumCuffErrorMetres": 3.328770092479916e-08,
+    "maximumNeckErrorMetres": 5.898850068841876e-08
+  },
+  {
+    "frame": 4,
+    "time": 0.8250000000000001,
+    "maximumCuffErrorMetres": 3.3306019788668066e-08,
+    "maximumNeckErrorMetres": 5.953826305320543e-08
+  },
+  {
+    "frame": 5,
+    "time": 0.8333333333333334,
+    "maximumCuffErrorMetres": 3.1889423963536547e-08,
+    "maximumNeckErrorMetres": 5.9069297753974926e-08
+  },
+  {
+    "frame": 6,
+    "time": 0.8416666666666667,
+    "maximumCuffErrorMetres": 3.2862392245513194e-08,
+    "maximumNeckErrorMetres": 5.943962183191297e-08
+  },
+  {
+    "frame": 7,
+    "time": 0.8500000000000001,
+    "maximumCuffErrorMetres": 3.2006812435182026e-08,
+    "maximumNeckErrorMetres": 5.8630175621813506e-08
+  },
+  {
+    "frame": 8,
+    "time": 0.8520833333333334,
+    "maximumCuffErrorMetres": 3.327923516317844e-08,
+    "maximumNeckErrorMetres": 5.954601823736967e-08
+  },
+  {
+    "frame": 9,
+    "time": 0.8541666666666667,
+    "maximumCuffErrorMetres": 3.3622307623657114e-08,
+    "maximumNeckErrorMetres": 5.92697241007265e-08
+  },
+  {
+    "frame": 10,
+    "time": 0.8562500000000001,
+    "maximumCuffErrorMetres": 3.133562408310343e-08,
+    "maximumNeckErrorMetres": 5.838462341563959e-08
+  },
+  {
+    "frame": 11,
+    "time": 0.8583333333333334,
+    "maximumCuffErrorMetres": 3.251128381929035e-08,
+    "maximumNeckErrorMetres": 5.9372058541312296e-08
+  },
+  {
+    "frame": 12,
+    "time": 0.8604166666666667,
+    "maximumCuffErrorMetres": 3.2763227178812106e-08,
+    "maximumNeckErrorMetres": 5.7128035432266094e-08
+  },
+  {
+    "frame": 13,
+    "time": 0.8625,
+    "maximumCuffErrorMetres": 3.318007187292052e-08,
+    "maximumNeckErrorMetres": 5.96248317348617e-08
+  },
+  {
+    "frame": 14,
+    "time": 0.8645833333333334,
+    "maximumCuffErrorMetres": 3.231950451888067e-08,
+    "maximumNeckErrorMetres": 5.872863562203722e-08
+  },
+  {
+    "frame": 15,
+    "time": 0.8666666666666667,
+    "maximumCuffErrorMetres": 3.263793263316078e-08,
+    "maximumNeckErrorMetres": 5.957289262123184e-08
+  },
+  {
+    "frame": 16,
+    "time": 0.8677083333333333,
+    "maximumCuffErrorMetres": 3.156034445439838e-08,
+    "maximumNeckErrorMetres": 5.8256103646222954e-08
+  },
+  {
+    "frame": 17,
+    "time": 0.86875,
+    "maximumCuffErrorMetres": 3.0921735944484454e-08,
+    "maximumNeckErrorMetres": 5.438521940115525e-08
+  },
+  {
+    "frame": 18,
+    "time": 0.8692708333333333,
+    "maximumCuffErrorMetres": 3.2152645398084335e-08,
+    "maximumNeckErrorMetres": 5.929218933482481e-08
+  },
+  {
+    "frame": 19,
+    "time": 0.8697916666666667,
+    "maximumCuffErrorMetres": 3.0758862610264766e-08,
+    "maximumNeckErrorMetres": 5.9416102765029405e-08
+  },
+  {
+    "frame": 20,
+    "time": 0.8703125,
+    "maximumCuffErrorMetres": 3.1924754616920305e-08,
+    "maximumNeckErrorMetres": 5.415436816631693e-08
+  },
+  {
+    "frame": 21,
+    "time": 0.8708333333333333,
+    "maximumCuffErrorMetres": 3.185479882730546e-08,
+    "maximumNeckErrorMetres": 5.855754230126e-08
+  },
+  {
+    "frame": 22,
+    "time": 0.8718750000000001,
+    "maximumCuffErrorMetres": 3.1692396569479994e-08,
+    "maximumNeckErrorMetres": 5.9275404317985105e-08
+  },
+  {
+    "frame": 23,
+    "time": 0.8723958333333334,
+    "maximumCuffErrorMetres": 3.293373978291651e-08,
+    "maximumNeckErrorMetres": 5.8449737440805484e-08
+  },
+  {
+    "frame": 24,
+    "time": 0.8729166666666667,
+    "maximumCuffErrorMetres": 3.193460793494831e-08,
+    "maximumNeckErrorMetres": 5.797139432392682e-08
+  },
+  {
+    "frame": 25,
+    "time": 0.8739583333333334,
+    "maximumCuffErrorMetres": 3.376490312542456e-08,
+    "maximumNeckErrorMetres": 5.876150154161143e-08
+  },
+  {
+    "frame": 26,
+    "time": 0.8744791666666667,
+    "maximumCuffErrorMetres": 3.169709504764404e-08,
+    "maximumNeckErrorMetres": 5.7349620476720676e-08
+  },
+  {
+    "frame": 27,
+    "time": 0.8747395833333333,
+    "maximumCuffErrorMetres": 3.031611050797783e-08,
+    "maximumNeckErrorMetres": 5.953643392559453e-08
+  },
+  {
+    "frame": 28,
+    "time": 0.875,
+    "maximumCuffErrorMetres": 3.3464449684545104e-08,
+    "maximumNeckErrorMetres": 5.7938867084352564e-08
+  },
+  {
+    "frame": 29,
+    "time": 0.8755208333333333,
+    "maximumCuffErrorMetres": 3.2383495143334566e-08,
+    "maximumNeckErrorMetres": 5.9191973172934494e-08
+  },
+  {
+    "frame": 30,
+    "time": 0.8760416666666666,
+    "maximumCuffErrorMetres": 3.334065095967996e-08,
+    "maximumNeckErrorMetres": 5.866943801693419e-08
+  },
+  {
+    "frame": 31,
+    "time": 0.8770833333333333,
+    "maximumCuffErrorMetres": 3.33374759941826e-08,
+    "maximumNeckErrorMetres": 5.878930325383707e-08
+  },
+  {
+    "frame": 32,
+    "time": 0.8791666666666667,
+    "maximumCuffErrorMetres": 3.446784493994203e-08,
+    "maximumNeckErrorMetres": 5.963727891756315e-08
+  },
+  {
+    "frame": 33,
+    "time": 0.8812500000000001,
+    "maximumCuffErrorMetres": 3.431171170507171e-08,
+    "maximumNeckErrorMetres": 5.947311077068564e-08
+  },
+  {
+    "frame": 34,
+    "time": 0.8817708333333334,
+    "maximumCuffErrorMetres": 3.144135457897622e-08,
+    "maximumNeckErrorMetres": 5.961307178664453e-08
+  },
+  {
+    "frame": 35,
+    "time": 0.8822916666666667,
+    "maximumCuffErrorMetres": 3.123258444496545e-08,
+    "maximumNeckErrorMetres": 5.96612872762814e-08
+  },
+  {
+    "frame": 36,
+    "time": 0.8833333333333334,
+    "maximumCuffErrorMetres": 3.3132828230945294e-08,
+    "maximumNeckErrorMetres": 5.87004111958759e-08
+  }
+]

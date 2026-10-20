@@ -1,0 +1,31 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "maximumCuffErrorMetres": 3.286899228400863e-08,
+    "maximumNeckErrorMetres": 5.928032504773641e-08
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "maximumCuffErrorMetres": 7.808852898590714e-05,
+    "maximumNeckErrorMetres": 0.0004568609211418176
+  },
+  {
+    "frame": 3,
+    "time": 0.8166666666666668,
+    "maximumCuffErrorMetres": 0.000733795426378966,
+    "maximumNeckErrorMetres": 0.0035920473323703597
+  },
+  {
+    "frame": 4,
+    "time": 0.8250000000000001,
+    "maximumCuffErrorMetres": 0.0024208829001618917,
+    "maximumNeckErrorMetres": 0.010607349609531925
+  }
+]
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/audit-boundaries.py", line 28, in <module>
+    assert all(max(r['maximumCuffErrorMetres'],r['maximumNeckErrorMetres'])<.0001 for r in rows), 'the displayed boundaries left their validated paths'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: the displayed boundaries left their validated paths

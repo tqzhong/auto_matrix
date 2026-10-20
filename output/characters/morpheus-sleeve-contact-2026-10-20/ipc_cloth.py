@@ -1,6 +1,8 @@
 """Offline sewn-coat control with continuous contact; never edits runtime assets."""
 import argparse
 import json
+import hashlib
+import shutil
 import time
 from pathlib import Path
 import numpy as np
@@ -8,8 +10,21 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import spsolve
 import ipctk
 from cloth_embedding import embed_panels
+from continuous_check import measure_step
 
 BASE = Path(__file__).parent
+
+
+class ClothStepError(RuntimeError):
+    pass
+
+
+def prescribed_response(gradient, hessian, free, fixed_motion):
+    """Move the free garment with imposed cuff/body motion before CCD."""
+    motion = fixed_motion.ravel().copy()
+    rhs = -gradient[free]-(hessian[free]@motion)
+    motion[free] = spsolve(hessian[free][:, free].tocsc(), rhs)
+    return motion.reshape(fixed_motion.shape)
 
 
 def springs(x, edges, rest, stiffness, project=True):
@@ -104,7 +119,7 @@ def prepare():
     return points, faces, edges, rest, stiffness, mass, np.asarray(pin_ids), pin_frames, body, np.vstack(combined_faces), structural_count
 
 
-def bake(frame_end, substeps, output, raw_newton=False):
+def bake(frame_end, substeps, output, raw_newton=False, resume=None):
     ipctk.set_num_threads(4)
     points, faces, edges, rest, stiffness, mass, pins, pin_frames, body, all_faces, structural_count = prepare()
     n = len(points)
@@ -131,10 +146,48 @@ def bake(frame_end, substeps, output, raw_newton=False):
     inertial_hessian = sp.diags(inertial, format='csr')
     velocity = np.zeros_like(points)
     out = BASE/output
-    out.mkdir(exist_ok=True)
+    out.mkdir(exist_ok=False)
+    samples = out/'substeps'
+    samples.mkdir(exist_ok=True)
     (out/'embedding.json').write_text(json.dumps(embedding_report, indent=2))
     rows = []
+    sample_rows = []
+    rejections = []
     started = time.perf_counter()
+    resumed_at = None
+    if resume:
+        source = BASE/resume
+        checkpoint = np.load(source/'substeps/checkpoint.npz')
+        x[:] = checkpoint['positions']
+        velocity[:] = checkpoint['velocity']
+        resumed_at = float(checkpoint['time'])
+        coordinate = (resumed_at-.8)*30
+        lower = min(int(np.floor(coordinate)), len(body)-2)
+        blend = coordinate-lower
+        body_error = float(np.max(np.abs(x[n:]-((1-blend)*body[lower]+blend*body[lower+1]))))
+        pin_error = float(np.max(np.abs(x[pins]-((1-blend)*pin_frames[lower]+blend*pin_frames[lower+1]))))
+        assert body_error < 1e-12 and pin_error < 1e-12, 'checkpoint does not match the current body/cuff paths'
+        rows = json.loads((source/'progress.json').read_text())
+        sample_rows = json.loads((source/'substeps/progress.json').read_text())
+        assert sample_rows[-1]['time'] == resumed_at
+        assert sample_rows[-1]['stepCollisionFree'] and not sample_rows[-1]['endpointIntersects']
+        last = sample_rows[-1]['frame']
+        shown_before = np.vstack([np.fromfile(source/f'substeps/{part}-{last}.bin', np.float32).reshape(-1, 3)
+                                  for part in ('cloth', 'body')])
+        assert np.array_equal(surface(x).astype(np.float32), shown_before), 'checkpoint changed the displayed surface'
+        for target, origin, records in ((out, source, rows), (samples, source/'substeps', sample_rows)):
+            for row in records:
+                for part in ('cage', 'cloth', 'body'):
+                    name = f'{part}-{row["frame"]}.bin'
+                    shutil.copyfile(origin/name, target/name)
+            (target/'progress.json').write_text(json.dumps(records, indent=2))
+        shutil.copyfile(source/'substeps/checkpoint.npz', samples/'checkpoint.npz')
+        assert not ipctk.has_intersections(mesh, surface(x)), 'checkpoint intersects'
+        print(json.dumps({'resumedAt': resumed_at, 'acceptedSamples': len(sample_rows),
+            'bodyErrorMetres': body_error, 'pinErrorMetres': pin_error, 'displayUnchanged': True}), flush=True)
+    (out/'run.json').write_text(json.dumps({'resume': resume, 'resumedAt': resumed_at,
+        'requestedEnd': .8+(frame_end-1)/30, 'maximumStepSeconds': h,
+        'sourceSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}, indent=2))
 
     def evaluate(state, predicted, derivatives=True, project=True):
         energy, gradient, hessian = springs(state[:n], edges, rest, stiffness, project=project)
@@ -146,17 +199,22 @@ def bake(frame_end, substeps, output, raw_newton=False):
         energy += potential(contacts, mesh, visible)
         if not derivatives:
             return energy
-        gradient += inertial*delta + mesh.to_full_dof(potential.gradient(contacts, mesh, visible))[:3*n]
-        hessian += inertial_hessian + mesh.to_full_dof(potential.hessian(contacts, mesh, visible,
-            project_hessian_to_psd=ipctk.PSDProjectionMethod.CLAMP))[:3*n, :3*n]
-        return energy, gradient[free], hessian[free][:, free]
+        full_gradient = mesh.to_full_dof(potential.gradient(contacts, mesh, visible))
+        full_gradient[:3*n] += gradient + inertial*delta
+        full_hessian = mesh.to_full_dof(potential.hessian(contacts, mesh, visible,
+            project_hessian_to_psd=ipctk.PSDProjectionMethod.CLAMP))
+        full_hessian += sp.block_diag((hessian+inertial_hessian,
+            sp.csr_matrix((x[n:].size, x[n:].size))), format='csr')
+        return energy, full_gradient, full_hessian
 
     def relax(predicted):
         for iteration in range(200):
-            energy, gradient, hessian = evaluate(x, predicted, project=not raw_newton)
+            energy, full_gradient, full_hessian = evaluate(x, predicted, project=not raw_newton)
+            gradient, hessian = full_gradient[free], full_hessian[free][:, free]
             displacement = spsolve(hessian.tocsc(), -gradient)
             if gradient@displacement >= 0:
-                energy, gradient, hessian = evaluate(x, predicted, project=True)
+                energy, full_gradient, full_hessian = evaluate(x, predicted, project=True)
+                gradient, hessian = full_gradient[free], full_hessian[free][:, free]
                 displacement = spsolve(hessian.tocsc(), -gradient)
             residual = float(np.linalg.norm(gradient, np.inf))
             # A one-micrometre Newton update is below displayed cloth detail.
@@ -174,38 +232,95 @@ def bake(frame_end, substeps, output, raw_newton=False):
                     break
                 alpha *= .5
             if alpha <= 1e-10:
-                raise RuntimeError(f'line search stalled: residual={residual}, energy={energy}')
+                raise ClothStepError(f'line search stalled: residual={residual}, energy={energy}')
             x[:] += alpha*direction
             if iteration % 20 == 0:
                 print(json.dumps({'iteration': iteration, 'energy': energy, 'residual': residual,
                     'maximumNewtonStep': float(np.max(np.abs(displacement))), 'alpha': alpha}), flush=True)
-        raise RuntimeError(f'contact solve did not converge: residual={residual}')
+        raise ClothStepError(f'contact solve did not converge: residual={residual}')
 
+    def save_sample(at, source_frame, substep):
+        visible = surface(x).astype(np.float32)
+        number = len(sample_rows)+1
+        previous = np.fromfile(samples/f'cloth-{number-1}.bin', np.float32).reshape(-1, 3) if number > 1 else visible[:visible_count]
+        previous_body = np.fromfile(samples/f'body-{number-1}.bin', np.float32).reshape(-1, 3) if number > 1 else visible[visible_count:]
+        check = measure_step(mesh, np.vstack((previous, previous_body)).astype(float), visible.astype(float))
+        row = {'frame': number, 'time': at, 'sourceFrame': source_frame, 'substep': substep,
+               'integrationSeconds': h if number > 1 else 0., **check}
+        if check['endpointIntersects'] or not check['stepCollisionFree']:
+            raise ClothStepError(f'the exported substep crosses: {row}')
+        x[:n].astype(np.float32).tofile(samples/f'cage-{number}.bin')
+        visible[:visible_count].tofile(samples/f'cloth-{number}.bin')
+        visible[visible_count:].tofile(samples/f'body-{number}.bin')
+        sample_rows.append(row)
+        (samples/'progress.json').write_text(json.dumps(sample_rows, indent=2))
+        np.savez(samples/'checkpoint.npz', positions=x, velocity=velocity, time=at,
+            source_frame=source_frame, substep=substep)
+        print(json.dumps({'acceptedSample': row}), flush=True)
+
+    def advance_interval(frame, start_blend, blend, steps, depth=0):
+        nonlocal h, inertial, inertial_hessian, velocity
+        previous = x.copy()
+        previous_velocity = velocity.copy()
+        h = (blend-start_blend)/30
+        inertial = np.repeat(mass/h**2, 3)
+        inertial_hessian = sp.diags(inertial, format='csr')
+        wanted_body = body[frame-1]*(1-blend)+body[frame]*blend
+        wanted_pins = pin_frames[frame-1]*(1-blend)+pin_frames[frame]*blend
+        predicted = previous[:n]+h*velocity
+        predicted[:, 2] -= h*h*9.81
+        try:
+            for advance in range(80):
+                fixed = np.zeros_like(x)
+                fixed[n:] = wanted_body-x[n:]
+                fixed[pins] = wanted_pins-x[pins]
+                _, gradient, hessian = evaluate(x, predicted)
+                direction = prescribed_response(gradient, hessian, free, fixed)
+                alpha = ipctk.compute_collision_free_stepsize(mesh, surface(x), surface(x+direction))
+                x[:] += alpha*direction
+                iterations, residual = relax(predicted)
+                print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend, 'advance': advance+1,
+                    'prescribedFraction': alpha, 'remainingBodyMetres': float(np.max(np.abs(x[n:]-wanted_body))),
+                    'remainingPinsMetres': float(np.max(np.abs(x[pins]-wanted_pins)))}), flush=True)
+                if alpha == 1:
+                    break
+            else:
+                raise ClothStepError('prescribed body/cuff advance stalled')
+            velocity = (x[:n]-previous[:n])/h
+            save_sample(.8+(frame-1+blend)/30, frame+1, blend*substeps)
+        except ClothStepError as error:
+            rejection = {'number': len(rejections)+1, 'sourceFrame': frame+1,
+                'startTime': .8+(frame-1+start_blend)/30, 'endTime': .8+(frame-1+blend)/30,
+                'depth': depth, 'error': str(error)}
+            np.savez(samples/f'rejected-{rejection["number"]}.npz', previous=previous,
+                previous_velocity=previous_velocity, positions=x, velocity=velocity)
+            rejections.append(rejection)
+            (out/'rejections.json').write_text(json.dumps(rejections, indent=2))
+            print(json.dumps({'rejected': rejection}), flush=True)
+            x[:] = previous
+            velocity[:] = previous_velocity
+            if depth >= 8:
+                raise
+            middle = (start_blend+blend)/2
+            advance_interval(frame, start_blend, middle, steps, depth+1)
+            advance_interval(frame, middle, blend, steps, depth+1)
+            return
+        steps.append({'sourceBlend': blend, 'integrationSeconds': h, 'advances': advance+1,
+            'iterations': iterations, 'residual': residual})
+
+    if not resume:
+        save_sample(.8, 1, 0)
     for frame in range(frame_end):
+        if resumed_at is not None and .8+frame/30 <= resumed_at+1e-10:
+            continue
         steps = []
         if frame:
             for substep in range(1, substeps+1):
                 blend = substep/substeps
-                wanted_body = body[frame-1]*(1-blend)+body[frame]*blend
-                wanted_pins = pin_frames[frame-1]*(1-blend)+pin_frames[frame]*blend
-                previous = x[:n].copy()
-                predicted = previous+h*velocity
-                predicted[:, 2] -= h*h*9.81
-                # Move fixed geometry only as far as CCD permits; relax the free
-                # panels before advancing again. Never teleport a collider through cloth.
-                for advance in range(80):
-                    target = x.copy()
-                    target[n:] = wanted_body
-                    target[pins] = wanted_pins
-                    alpha = ipctk.compute_collision_free_stepsize(mesh, surface(x), surface(target))
-                    x[:] += alpha*(target-x)
-                    iterations, residual = relax(predicted)
-                    if alpha == 1:
-                        break
-                else:
-                    raise RuntimeError('prescribed body/cuff advance stalled')
-                velocity = (x[:n]-previous)/h
-                steps.append({'substep': substep, 'advances': advance+1, 'iterations': iterations, 'residual': residual})
+                start_blend = (sample_rows[-1]['time']-.8)*30-(frame-1)
+                if blend <= start_blend+1e-9:
+                    continue
+                advance_interval(frame, start_blend, blend, steps)
         visible = surface(x)
         assert not ipctk.has_intersections(mesh, visible), f'frame {frame+1} intersects'
         x[:n].astype(np.float32).tofile(out/f'cage-{frame+1}.bin')
@@ -219,6 +334,7 @@ def bake(frame_end, substeps, output, raw_newton=False):
         (out/'progress.json').write_text(json.dumps(rows, indent=2))
         print(json.dumps(row), flush=True)
     (out/'summary.json').write_text(json.dumps(rows, indent=2))
+    (samples/'summary.json').write_text(json.dumps(sample_rows, indent=2))
 
 
 if __name__ == '__main__':
@@ -227,5 +343,6 @@ if __name__ == '__main__':
     parser.add_argument('--substeps', type=int, default=4)
     parser.add_argument('--output', default='ipc-physics')
     parser.add_argument('--raw-newton', action='store_true')
+    parser.add_argument('--resume')
     args = parser.parse_args()
-    bake(args.frames, args.substeps, args.output, args.raw_newton)
+    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume)

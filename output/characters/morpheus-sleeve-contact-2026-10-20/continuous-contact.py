@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 import numpy as np
 import ipctk
+from continuous_check import measure_step
 
 base = Path(__file__).parent
 folder = base / (sys.argv[1] if len(sys.argv) > 1 else 'facing-physics')
@@ -36,16 +37,14 @@ rows = []
 for frame in frames:
     end = positions(frame['frame'])
     now = time.perf_counter()
-    row = {'frame': frame['frame'], 'time': frame['time'],
-           'endpointIntersects': ipctk.has_intersections(mesh, end),
-           'collisionFreeStep': ipctk.compute_collision_free_stepsize(mesh, start, end)}
+    row = {'frame': frame['frame'], 'time': frame['time'], **measure_step(mesh, start, end)}
     row['seconds'] = time.perf_counter()-now
     rows.append(row)
     print(json.dumps(row), flush=True)
     start = end
     # CCD requires a valid starting configuration; retain the first failure.
-    if row['endpointIntersects'] or row['collisionFreeStep'] < 1:
+    if row['endpointIntersects'] or not row['stepCollisionFree']:
         break
-name = ('partial-' if partial else '')+('display-' if display else '')+'continuous-contact.json'
+name = ('partial-' if partial else '')+('display-' if display else '')+'geometric-continuous-contact.json'
 (folder/name).write_text(json.dumps(rows, indent=2))
-assert not any(r['endpointIntersects'] or r['collisionFreeStep'] < 1 for r in rows), rows[-1]
+assert not any(r['endpointIntersects'] or not r['stepCollisionFree'] for r in rows), rows[-1]

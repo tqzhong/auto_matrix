@@ -1,0 +1,17 @@
+TAP version 13
+# {"frame":25,"time":0.8739583333333334,"minimum":0.9839815846278841,"median":1.0001075679505043,"p99":1.0092069927882419,"maximum":1.0576935192715278}
+# Subtest: the leather panels retain their size during shoulder release
+ok 1 - the leather panels retain their size during shoulder release
+  ---
+  duration_ms: 1022.513875
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2798.001875

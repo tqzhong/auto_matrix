@@ -1,0 +1,29 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0,
+    "seconds": 0.1869300827383995
+  },
+  {
+    "frame": 2,
+    "time": 0.8333333333333334,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.636962890625,
+    "seconds": 0.5193393332883716
+  },
+  {
+    "frame": 3,
+    "time": 0.8666666666666667,
+    "endpointIntersects": false,
+    "collisionFreeStep": 0.11204767227172852,
+    "stepCollisionFree": false,
+    "optimizerSafeStep": 0.0682373046875,
+    "seconds": 0.3357380414381623
+  }
+]

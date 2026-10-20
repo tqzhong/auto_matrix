@@ -4,8 +4,9 @@ import test from 'node:test';
 
 const base = new URL('./', import.meta.url);
 const result = new URL(process.env.MORPHEUS_STRAIN_RESULT ?? 'facing-physics/', base);
+const partial = process.env.MORPHEUS_STRAIN_PARTIAL === '1';
 const cage = JSON.parse(await readFile(new URL('../morpheus-shoulder-release-2026-10-20/cage-fit-4.json', base), 'utf8'));
-const frames = JSON.parse(await readFile(new URL('summary.json', result), 'utf8'));
+const frames = JSON.parse(await readFile(new URL(partial ? 'progress.json' : 'summary.json', result), 'utf8'));
 const edges = new Map<string, [number, number]>();
 for (let i = 0; i < cage.indices.length; i += 3) {
   for (let k = 0; k < 3; k++) {
@@ -25,7 +26,7 @@ test('the leather panels retain their size during shoulder release', async () =>
     rows.push({frame:frame.frame,time:frame.time,minimum:ratio[0],median:ratio[Math.floor(ratio.length*.5)],
       p99:ratio[Math.floor(ratio.length*.99)],maximum:ratio.at(-1)!});
   }
-  await writeFile(new URL('strain-results.json', result), JSON.stringify(rows,null,2));
+  await writeFile(new URL(partial ? 'partial-strain-results.json' : 'strain-results.json', result), JSON.stringify(rows,null,2));
   const worst = rows.reduce((a,b) => a.maximum > b.maximum ? a : b);
   console.log(JSON.stringify(worst));
   // An authoring guard against visibly elastic leather, not a measured material specification.

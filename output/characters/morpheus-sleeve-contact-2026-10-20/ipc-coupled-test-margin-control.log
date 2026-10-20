@@ -1,0 +1,13 @@
+...F.
+======================================================================
+FAIL: test_prescribed_body_motion_pushes_cloth_before_contact (__main__.MaterialTests.test_prescribed_body_motion_pushes_cloth_before_contact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc-material.test.py", line 28, in test_prescribed_body_motion_pushes_cloth_before_contact
+    self.assertTrue(ipctk.is_step_collision_free(mesh,start,end))
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.654s
+
+FAILED (failures=1)

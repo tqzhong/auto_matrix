@@ -3,10 +3,32 @@ import unittest
 import json
 import numpy as np
 import ipctk
-from ipc_cloth import springs, BASE
+import scipy.sparse as sp
+from ipc_cloth import springs, prescribed_response, BASE
 from cloth_embedding import embed_panels
+from continuous_check import measure_step
 
 class MaterialTests(unittest.TestCase):
+    def test_prescribed_body_motion_pushes_cloth_before_contact(self):
+        start=np.array([[-.002,-.002,.0002],[.002,-.002,.0002],[0.,.002,.0002],
+                        [-.01,-.01,0.],[.01,-.01,0.],[0.,.01,0.]])
+        faces=np.array([[0,1,2],[3,4,5]])
+        mesh=ipctk.CollisionMesh(start,ipctk.edges(faces),faces)
+        fixed=np.zeros_like(start);fixed[3:,2]=.0004
+        # The previous separated update moves the body through stationary cloth.
+        self.assertFalse(ipctk.is_step_collision_free(mesh,start,start+fixed))
+        contacts=ipctk.NormalCollisions();contacts.build(mesh,start,.001)
+        potential=ipctk.BarrierPotential(.001,1e6)
+        gradient=potential.gradient(contacts,mesh,start)
+        hessian=potential.hessian(contacts,mesh,start,project_hessian_to_psd=ipctk.PSDProjectionMethod.CLAMP)
+        hessian+=sp.diags(np.r_[np.full(9,100.),np.zeros(9)],format='csr')
+        motion=prescribed_response(gradient,hessian,np.arange(9),fixed)
+        end=start+motion
+        np.testing.assert_array_equal(motion[3:],fixed[3:])
+        self.assertGreater(float(end[:3,2].min()-end[3:,2].max()),0.)
+        # The caller still applies the optimizer's conservative approach limit.
+        self.assertTrue(measure_step(mesh,start,end)['stepCollisionFree'])
+
     def test_complete_display_embedding_preserves_rigid_motion(self):
         cage=json.loads((BASE.parent/'morpheus-shoulder-release-2026-10-20/cage-fit-4.json').read_text())
         display=json.loads((BASE/'input/manifest.json').read_text())
