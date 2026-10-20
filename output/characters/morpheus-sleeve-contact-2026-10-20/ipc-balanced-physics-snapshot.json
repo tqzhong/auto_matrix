@@ -1,0 +1,221 @@
+{
+  "observedAt": "2026-10-20T07:44:39.694815+00:00",
+  "pid": 32453,
+  "session": 33642,
+  "process": "32453 20:59 Rs   output/tools/cloth-ipc-venv/bin/python output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py --frames 7 --resume ipc-balanced-control --output ipc-balanced-physics",
+  "live": true,
+  "completeSummaryExists": false,
+  "command": "--frames 7 --resume ipc-balanced-control --output ipc-balanced-physics",
+  "run": {
+    "resume": "ipc-balanced-control",
+    "resumedAt": 0.8666666666666667,
+    "requestedEnd": 1.0,
+    "maximumStepSeconds": 0.008333333333333333,
+    "sourceSha256": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1"
+  },
+  "acceptedSamples": 18,
+  "acceptedThroughSeconds": 0.9333333333333333,
+  "rejections": [
+    {
+      "number": 1,
+      "sourceFrame": 5,
+      "startTime": 0.9166666666666667,
+      "endTime": 0.925,
+      "depth": 0,
+      "error": "the exported substep crosses: {'frame': 16, 'time': 0.925, 'sourceFrame': 5, 'substep': 3.0, 'integrationSeconds': 0.008333333333333304, 'endpointIntersects': False, 'collisionFreeStep': 0.2223910093307495, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1741943359375}"
+    }
+  ],
+  "progress": [
+    {
+      "frame": 1,
+      "time": 0.8,
+      "sourceFrame": 1,
+      "substep": 0,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 2,
+      "time": 0.8083333333333333,
+      "sourceFrame": 2,
+      "substep": 1,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 3,
+      "time": 0.8166666666666668,
+      "sourceFrame": 2,
+      "substep": 2,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 4,
+      "time": 0.8250000000000001,
+      "sourceFrame": 2,
+      "substep": 3,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 5,
+      "time": 0.8333333333333334,
+      "sourceFrame": 2,
+      "substep": 4,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 0.61474609375
+    },
+    {
+      "frame": 6,
+      "time": 0.8416666666666667,
+      "sourceFrame": 3,
+      "substep": 1,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 0.259765625
+    },
+    {
+      "frame": 7,
+      "time": 0.8500000000000001,
+      "sourceFrame": 3,
+      "substep": 2,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 0.5927734375
+    },
+    {
+      "frame": 8,
+      "time": 0.8583333333333334,
+      "sourceFrame": 3,
+      "substep": 3.0,
+      "integrationSeconds": 0.008333333333333288,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 9,
+      "time": 0.8666666666666667,
+      "sourceFrame": 3,
+      "substep": 4.0,
+      "integrationSeconds": 0.00833333333333332,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 10,
+      "time": 0.875,
+      "sourceFrame": 4,
+      "substep": 1.0,
+      "integrationSeconds": 0.008333333333333349,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 11,
+      "time": 0.8833333333333334,
+      "sourceFrame": 4,
+      "substep": 2.0,
+      "integrationSeconds": 0.008333333333333378,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 0.3818359375
+    },
+    {
+      "frame": 12,
+      "time": 0.8916666666666667,
+      "sourceFrame": 4,
+      "substep": 3.0,
+      "integrationSeconds": 0.008333333333333304,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 13,
+      "time": 0.9,
+      "sourceFrame": 4,
+      "substep": 4.0,
+      "integrationSeconds": 0.008333333333333333,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 14,
+      "time": 0.9083333333333334,
+      "sourceFrame": 5,
+      "substep": 1.0,
+      "integrationSeconds": 0.008333333333333363,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 15,
+      "time": 0.9166666666666667,
+      "sourceFrame": 5,
+      "substep": 2.0,
+      "integrationSeconds": 0.008333333333333274,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 16,
+      "time": 0.9208333333333334,
+      "sourceFrame": 5,
+      "substep": 2.5000000000000018,
+      "integrationSeconds": 0.004166666666666652,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 17,
+      "time": 0.925,
+      "sourceFrame": 5,
+      "substep": 3.0,
+      "integrationSeconds": 0.004166666666666652,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    {
+      "frame": 18,
+      "time": 0.9333333333333333,
+      "sourceFrame": 5,
+      "substep": 4.0,
+      "integrationSeconds": 0.008333333333333333,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    }
+  ]
+}

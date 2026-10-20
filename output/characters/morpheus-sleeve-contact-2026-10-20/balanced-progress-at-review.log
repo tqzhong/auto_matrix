@@ -1,0 +1,136 @@
+{"resumedAt": 0.8666666666666667, "acceptedSamples": 9, "bodyErrorMetres": 1.1102230246251565e-16, "pinErrorMetres": 1.3877787807814457e-17, "displayUnchanged": true}
+{"sourceFrame": 4, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333349, "barrierStiffness": 145163097.48525026, "maximumBarrierStiffness": 14463625863.931557, "minimumGapMetres": 1.896524754118311e-05}
+{"iteration": 0, "energy": 0.8329802406181855, "residual": 29.347229958592447, "maximumNewtonStep": 0.0032366799757489683, "alpha": 1.0}
+{"iteration": 20, "energy": 0.7930652400574819, "residual": 0.13812803851713817, "maximumNewtonStep": 0.0003770777246197867, "alpha": 0.5}
+{"iteration": 40, "energy": 0.793042844048874, "residual": 0.07557018101861647, "maximumNewtonStep": 2.4643474940273708e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.7930419942047374, "residual": 0.004341235500736368, "maximumNewtonStep": 2.8014895464434516e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 0.7930419782349403, "residual": 0.0006611733812187937, "maximumNewtonStep": 1.0135102430684586e-06, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 0.25, "advance": 1, "prescribedFraction": 0.447021484375, "remainingBodyMetres": 0.000213555620121042, "remainingPinsMetres": 0.0008874956963601383}
+{"iteration": 0, "energy": 0.8051793952018729, "residual": 0.6583407111261036, "maximumNewtonStep": 0.0001964560307506706, "alpha": 1.0}
+{"iteration": 20, "energy": 0.8047774063139568, "residual": 0.049431084909510425, "maximumNewtonStep": 4.39173905315872e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.8047086115332109, "residual": 0.009341883891097663, "maximumNewtonStep": 1.7028919224352893e-06, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 0.25, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 10, "time": 0.875, "sourceFrame": 4, "substep": 1.0, "integrationSeconds": 0.008333333333333349, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 4, "sourceBlend": 0.5, "integrationSeconds": 0.008333333333333378, "barrierStiffness": 144850716.21871072, "maximumBarrierStiffness": 14463625863.931456, "minimumGapMetres": 2.1042411366068457e-05}
+{"iteration": 0, "energy": 0.8102515418772758, "residual": 16.1111744536405, "maximumNewtonStep": 0.0007386448554350993, "alpha": 1.0}
+{"iteration": 20, "energy": 0.7838111437113126, "residual": 0.7040255007156575, "maximumNewtonStep": 0.0002144104197539609, "alpha": 1.0}
+{"iteration": 40, "energy": 0.7824184697416748, "residual": 0.043122541159226035, "maximumNewtonStep": 0.0003524647652951905, "alpha": 0.5}
+{"iteration": 60, "energy": 0.7823229898121173, "residual": 0.0043500331330719455, "maximumNewtonStep": 3.450968177777045e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.7823217997364962, "residual": 0.0005704143231616832, "maximumNewtonStep": 4.9525342691743415e-06, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 0.5, "advance": 1, "prescribedFraction": 0.897216796875, "remainingBodyMetres": 3.969400268033496e-05, "remainingPinsMetres": 0.00016496056872742498}
+{"iteration": 0, "energy": 0.7851769673990878, "residual": 0.10178156762544088, "maximumNewtonStep": 3.956087717623848e-05, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 0.5, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 11, "time": 0.8833333333333334, "sourceFrame": 4, "substep": 2.0, "integrationSeconds": 0.008333333333333378, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.3818359375}}
+{"sourceFrame": 4, "sourceBlend": 0.75, "integrationSeconds": 0.008333333333333304, "barrierStiffness": 144828293.83723155, "maximumBarrierStiffness": 14463625863.931713, "minimumGapMetres": 2.162607882119645e-05}
+{"iteration": 0, "energy": 0.8267079509669847, "residual": 38.12041884981394, "maximumNewtonStep": 0.0025470058158688093, "alpha": 0.548583984375}
+{"iteration": 20, "energy": 0.7670272049062579, "residual": 0.08921769246467742, "maximumNewtonStep": 9.573315997520633e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.7668918802354945, "residual": 0.029524961493071808, "maximumNewtonStep": 0.00028258809526363033, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 0.75, "advance": 1, "prescribedFraction": 0.95703125, "remainingBodyMetres": 1.6594167391303927e-05, "remainingPinsMetres": 6.89621379953119e-05}
+{"iteration": 0, "energy": 0.768284462068396, "residual": 0.01990079204937034, "maximumNewtonStep": 1.322301935111082e-05, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 0.75, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 12, "time": 0.8916666666666667, "sourceFrame": 4, "substep": 3.0, "integrationSeconds": 0.008333333333333304, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 4, "sourceBlend": 1.0, "integrationSeconds": 0.008333333333333333, "barrierStiffness": 144665034.52813333, "maximumBarrierStiffness": 14463625863.931612, "minimumGapMetres": 2.190025498197662e-05}
+{"iteration": 0, "energy": 0.7722861071270412, "residual": 14.1497211436215, "maximumNewtonStep": 0.0013289296548032606, "alpha": 0.695556640625}
+{"iteration": 20, "energy": 0.7523312225875805, "residual": 0.09416535446591257, "maximumNewtonStep": 0.0002798040998470206, "alpha": 0.5}
+{"iteration": 40, "energy": 0.752240778412104, "residual": 0.002399054776215978, "maximumNewtonStep": 1.0393238840325183e-05, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 1.0, "advance": 1, "prescribedFraction": 0.8643798828125, "remainingBodyMetres": 5.237534082880302e-05, "remainingPinsMetres": 0.00021766174804770805}
+{"iteration": 0, "energy": 0.7575883697489645, "residual": 0.0649876858531637, "maximumNewtonStep": 3.273976259421714e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.7575485168991857, "residual": 0.033448185879486184, "maximumNewtonStep": 0.00010555673652669508, "alpha": 1.0}
+{"sourceFrame": 4, "sourceBlend": 1.0, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 13, "time": 0.9, "sourceFrame": 4, "substep": 4.0, "integrationSeconds": 0.008333333333333333, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"frame": 4, "time": 0.9, "seconds": 251.7898873751983, "steps": [{"sourceBlend": 0.25, "integrationSeconds": 0.008333333333333349, "advances": 2, "iterations": 44, "residual": 0.006608528931253521}, {"sourceBlend": 0.5, "integrationSeconds": 0.008333333333333378, "advances": 2, "iterations": 13, "residual": 0.014690964493423914}, {"sourceBlend": 0.75, "integrationSeconds": 0.008333333333333304, "advances": 2, "iterations": 8, "residual": 0.009731631086436682}, {"sourceBlend": 1.0, "integrationSeconds": 0.008333333333333333, "advances": 2, "iterations": 38, "residual": 0.003074814101174758}], "maximumEdgeStretch": 1.0464473907549674, "p99EdgeStretch": 1.0076599379047089, "bodyDifference": 0.0}
+{"sourceFrame": 5, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333363, "barrierStiffness": 144636258.6393151, "maximumBarrierStiffness": 14463625863.931509, "minimumGapMetres": 2.2308457781886794e-05}
+{"iteration": 0, "energy": 0.7570606455833682, "residual": 2.360614457162675, "maximumNewtonStep": 0.0015799840450674005, "alpha": 1.0}
+{"iteration": 20, "energy": 0.7315189560186407, "residual": 0.0859760355186626, "maximumNewtonStep": 0.00018609246375868177, "alpha": 1.0}
+{"iteration": 40, "energy": 0.7314870730337948, "residual": 8.204688544515388e-05, "maximumNewtonStep": 2.8382622922053966e-06, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.25, "advance": 1, "prescribedFraction": 0.312255859375, "remainingBodyMetres": 0.0004655789466596616, "remainingPinsMetres": 0.0018989431361556026}
+{"iteration": 0, "energy": 0.7864645758941557, "residual": 3.6050083747537887, "maximumNewtonStep": 0.0010218980872384728, "alpha": 1.0}
+{"iteration": 20, "energy": 0.7771235224379547, "residual": 0.029413616550083628, "maximumNewtonStep": 7.915901757046692e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.7770732352640377, "residual": 0.0002507838924536432, "maximumNewtonStep": 2.9614779973172347e-06, "alpha": 1.0}
+{"iteration": 60, "energy": 0.7770731647321627, "residual": 0.0006758481940978103, "maximumNewtonStep": 1.3644919140973464e-05, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.25, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 14, "time": 0.9083333333333334, "sourceFrame": 5, "substep": 1.0, "integrationSeconds": 0.008333333333333363, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 5, "sourceBlend": 0.5, "integrationSeconds": 0.008333333333333274, "barrierStiffness": 144788842.7079947, "maximumBarrierStiffness": 14463625863.931816, "minimumGapMetres": 2.2724231515316627e-05}
+{"iteration": 0, "energy": 0.7910493787276627, "residual": 3.9253994512843007, "maximumNewtonStep": 0.0016364431674534571, "alpha": 1.0}
+{"iteration": 20, "energy": 0.7589084694094342, "residual": 0.7169875844001848, "maximumNewtonStep": 0.0001971247793312945, "alpha": 1.0}
+{"iteration": 40, "energy": 0.7588739177013999, "residual": 0.0033531698632527918, "maximumNewtonStep": 7.538445471455505e-06, "alpha": 1.0}
+{"iteration": 60, "energy": 0.7588732457859734, "residual": 0.001072027954231003, "maximumNewtonStep": 4.087593223064756e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 0.7588730627272755, "residual": 0.0010027255161570575, "maximumNewtonStep": 4.0583649557360284e-06, "alpha": 1.0}
+{"iteration": 100, "energy": 0.7588726579374496, "residual": 0.00267355468602188, "maximumNewtonStep": 1.1722854699936858e-05, "alpha": 1.0}
+{"iteration": 120, "energy": 0.7581694451290322, "residual": 0.021117737388586036, "maximumNewtonStep": 5.639192408950048e-05, "alpha": 1.0}
+{"iteration": 140, "energy": 0.7581619225955757, "residual": 0.0006593409556711616, "maximumNewtonStep": 9.96300137380906e-06, "alpha": 1.0}
+{"iteration": 160, "energy": 0.7581257794742002, "residual": 0.2252982258116887, "maximumNewtonStep": 0.00017354225824772746, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.5, "advance": 1, "prescribedFraction": 0.26171875, "remainingBodyMetres": 0.000499790818139445, "remainingPinsMetres": 0.002038482088652661}
+{"iteration": 0, "energy": 0.8208149825272845, "residual": 8.076460311855499, "maximumNewtonStep": 0.000938200754561239, "alpha": 0.810546875}
+{"iteration": 20, "energy": 0.8101117868361756, "residual": 0.8609137027675954, "maximumNewtonStep": 0.00010086676612808563, "alpha": 1.0}
+{"iteration": 40, "energy": 0.8100141024954878, "residual": 0.02045934989777367, "maximumNewtonStep": 0.0002197953648804122, "alpha": 1.0}
+{"iteration": 60, "energy": 0.8099276367936814, "residual": 0.0005055716155028861, "maximumNewtonStep": 3.6471647173822e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 0.8099276235610198, "residual": 0.00021231518583836716, "maximumNewtonStep": 2.492969996101065e-06, "alpha": 1.0}
+{"iteration": 100, "energy": 0.8099276199745389, "residual": 0.0001234727732471144, "maximumNewtonStep": 2.0313682094066596e-06, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.5, "advance": 2, "prescribedFraction": 0.818359375, "remainingBodyMetres": 9.078231657611013e-05, "remainingPinsMetres": 0.0003702711606341745}
+{"iteration": 0, "energy": 0.824822995383241, "residual": 0.18717934341594383, "maximumNewtonStep": 9.654369635719887e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.8246326792839498, "residual": 0.03181484134796492, "maximumNewtonStep": 6.563194859438193e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.8246194887340261, "residual": 0.002382556602741115, "maximumNewtonStep": 6.273670735784342e-06, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.5, "advance": 3, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 15, "time": 0.9166666666666667, "sourceFrame": 5, "substep": 2.0, "integrationSeconds": 0.008333333333333274, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 5, "sourceBlend": 0.75, "integrationSeconds": 0.008333333333333304, "barrierStiffness": 144711190.49001738, "maximumBarrierStiffness": 14463625863.931713, "minimumGapMetres": 2.270759788244075e-05}
+{"iteration": 0, "energy": 0.8517145788673628, "residual": 2.972650684471886, "maximumNewtonStep": 0.0022737667001941873, "alpha": 1.0}
+{"iteration": 20, "energy": 0.8090516880113194, "residual": 2.1597565149729694, "maximumNewtonStep": 0.0029340185515923213, "alpha": 0.30914306640625}
+{"iteration": 40, "energy": 0.8065240698814891, "residual": 0.1477985733898802, "maximumNewtonStep": 0.00019428059830408592, "alpha": 0.25}
+{"iteration": 60, "energy": 0.806368678186933, "residual": 0.325273810155309, "maximumNewtonStep": 4.07003721348998e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.806354266437186, "residual": 0.6837697746183447, "maximumNewtonStep": 4.853105585784542e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.80628420208211, "residual": 0.011482127929875269, "maximumNewtonStep": 0.00014121843744932717, "alpha": 0.5}
+{"iteration": 120, "energy": 0.8062778523754568, "residual": 0.00017116028991771143, "maximumNewtonStep": 1.1199013631470462e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.8062778495165188, "residual": 6.230428383130634e-05, "maximumNewtonStep": 2.649426780535468e-06, "alpha": 1.0}
+{"iteration": 160, "energy": 0.8062778283862716, "residual": 0.0008391267110319856, "maximumNewtonStep": 1.058717318381201e-05, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.75, "advance": 1, "prescribedFraction": 0.2734375, "remainingBodyMetres": 0.00049185763054993, "remainingPinsMetres": 0.0020061252301026167}
+{"iteration": 0, "energy": 0.8412597873076024, "residual": 1.5044707698223991, "maximumNewtonStep": 0.00027508853323885015, "alpha": 1.0}
+{"iteration": 20, "energy": 0.8405733886650966, "residual": 0.11580873637590113, "maximumNewtonStep": 6.776382521057283e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.8404842543422719, "residual": 0.056115821763304236, "maximumNewtonStep": 0.00040306829297670905, "alpha": 1.0}
+{"iteration": 60, "energy": 0.8404661273527955, "residual": 0.0046381879356651055, "maximumNewtonStep": 1.7647334533696845e-05, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.75, "advance": 2, "prescribedFraction": 0.438720703125, "remainingBodyMetres": 0.00027606950503766825, "remainingPinsMetres": 0.001125996558595195}
+{"iteration": 0, "energy": 0.8771758828001308, "residual": 1.1495610363310762, "maximumNewtonStep": 0.0002060276947185932, "alpha": 1.0}
+{"iteration": 20, "energy": 0.8745124840219666, "residual": 0.13143039099423537, "maximumNewtonStep": 7.054664513610111e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.8745045413656074, "residual": 0.0012130027133023333, "maximumNewtonStep": 5.2956104159585775e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.8744871672161612, "residual": 0.0013880319087943571, "maximumNewtonStep": 1.2435695806941414e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.8744866758824947, "residual": 0.0004226702272246835, "maximumNewtonStep": 7.247958861065814e-06, "alpha": 1.0}
+{"iteration": 100, "energy": 0.8744866221814949, "residual": 0.00014623990321101015, "maximumNewtonStep": 3.2742737330802674e-06, "alpha": 1.0}
+{"iteration": 120, "energy": 0.8744865892399065, "residual": 0.00021970491222553581, "maximumNewtonStep": 6.814379608594285e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.8744721700415647, "residual": 0.000793890888095776, "maximumNewtonStep": 1.0303078309599957e-05, "alpha": 1.0}
+{"iteration": 160, "energy": 0.874472125433875, "residual": 7.660514822552458e-05, "maximumNewtonStep": 2.0724644488479302e-06, "alpha": 1.0}
+{"iteration": 180, "energy": 0.874472054849802, "residual": 0.001050156657481793, "maximumNewtonStep": 5.827229707279962e-05, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.75, "advance": 3, "prescribedFraction": 0.68994140625, "remainingBodyMetres": 8.559772250923969e-05, "remainingPinsMetres": 0.00034912490952536575}
+{"iteration": 0, "energy": 0.8925511042907163, "residual": 0.32897516286344586, "maximumNewtonStep": 6.287984190119686e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.892462278014085, "residual": 0.09891069001684698, "maximumNewtonStep": 8.140500696852187e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.8924557604117977, "residual": 0.000671953860985831, "maximumNewtonStep": 2.670757677118425e-06, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.75, "advance": 4, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"rejected": {"number": 1, "sourceFrame": 5, "startTime": 0.9166666666666667, "endTime": 0.925, "depth": 0, "error": "the exported substep crosses: {'frame': 16, 'time': 0.925, 'sourceFrame': 5, 'substep': 3.0, 'integrationSeconds': 0.008333333333333304, 'endpointIntersects': False, 'collisionFreeStep': 0.2223910093307495, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1741943359375}"}}
+{"sourceFrame": 5, "sourceBlend": 0.6250000000000004, "integrationSeconds": 0.004166666666666652, "barrierStiffness": 578545034.5572685, "maximumBarrierStiffness": 57854503455.72685, "minimumGapMetres": 2.270759788244075e-05}
+{"iteration": 0, "energy": 2.6804994566927935, "residual": 20.244155877168243, "maximumNewtonStep": 0.0013770940410841271, "alpha": 0.323974609375}
+{"iteration": 20, "energy": 2.653753645110299, "residual": 0.29709546259933883, "maximumNewtonStep": 2.2261930557269708e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 2.65374634064032, "residual": 0.013024094414187753, "maximumNewtonStep": 5.722078239582308e-06, "alpha": 1.0}
+{"iteration": 60, "energy": 2.6537462945980206, "residual": 0.0018130454326811263, "maximumNewtonStep": 4.184997899965123e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 2.653746290573186, "residual": 0.0002584356475329175, "maximumNewtonStep": 1.0947198896732412e-06, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.6250000000000004, "advance": 1, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 16, "time": 0.9208333333333334, "sourceFrame": 5, "substep": 2.5000000000000018, "integrationSeconds": 0.004166666666666652, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 5, "sourceBlend": 0.75, "integrationSeconds": 0.004166666666666652, "barrierStiffness": 578545034.5572685, "maximumBarrierStiffness": 57854503455.72685, "minimumGapMetres": 2.2693507273677126e-05}
+{"iteration": 0, "energy": 2.722689290819302, "residual": 12.45948895523892, "maximumNewtonStep": 0.001450683128779435, "alpha": 0.544677734375}
+{"iteration": 20, "energy": 2.693536952832928, "residual": 0.2707717035911689, "maximumNewtonStep": 0.00043738810734364686, "alpha": 1.0}
+{"iteration": 40, "energy": 2.6933247661710094, "residual": 0.008446590956555037, "maximumNewtonStep": 5.886749732375347e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 2.6933110996590983, "residual": 0.0009523162887808858, "maximumNewtonStep": 1.4305302390274146e-05, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 0.75, "advance": 1, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 17, "time": 0.925, "sourceFrame": 5, "substep": 3.0, "integrationSeconds": 0.004166666666666652, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 5, "sourceBlend": 1.0, "integrationSeconds": 0.008333333333333333, "barrierStiffness": 580697598.7986153, "maximumBarrierStiffness": 14463625863.931612, "minimumGapMetres": 2.2673122147837338e-05}
+{"iteration": 0, "energy": 2.842247541725365, "residual": 47.35062341630905, "maximumNewtonStep": 0.0015825149830969866, "alpha": 1.0}
+{"iteration": 20, "energy": 2.766025495273856, "residual": 0.409715472157451, "maximumNewtonStep": 0.0002874872849059171, "alpha": 1.0}
+{"iteration": 40, "energy": 2.7643694181922474, "residual": 0.14605847485186266, "maximumNewtonStep": 5.540035929331462e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 2.7643645392500185, "residual": 0.02607511864963246, "maximumNewtonStep": 1.846315850966034e-05, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 1.0, "advance": 1, "prescribedFraction": 0.647216796875, "remainingBodyMetres": 0.00023882200139269116, "remainingPinsMetres": 0.0009740762626002297}
+{"iteration": 0, "energy": 2.839220679761657, "residual": 6.292238613529411, "maximumNewtonStep": 0.00023916189640614993, "alpha": 1.0}
+{"iteration": 20, "energy": 2.835612282290038, "residual": 0.04176955558891779, "maximumNewtonStep": 5.3945963531459215e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 2.8356048205559437, "residual": 0.00652256767064574, "maximumNewtonStep": 5.152647335228358e-06, "alpha": 1.0}
+{"sourceFrame": 5, "sourceBlend": 1.0, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 18, "time": 0.9333333333333333, "sourceFrame": 5, "substep": 4.0, "integrationSeconds": 0.008333333333333333, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"frame": 5, "time": 0.9333333333333333, "seconds": 1249.0025833323598, "steps": [{"sourceBlend": 0.25, "integrationSeconds": 0.008333333333333363, "advances": 2, "iterations": 73, "residual": 0.00012247276100871285}, {"sourceBlend": 0.5, "integrationSeconds": 0.008333333333333274, "advances": 3, "iterations": 60, "residual": 0.00032220125922474696}, {"sourceBlend": 0.6250000000000004, "integrationSeconds": 0.004166666666666652, "advances": 1, "iterations": 82, "residual": 0.00021283442513497786}, {"sourceBlend": 0.75, "integrationSeconds": 0.004166666666666652, "advances": 1, "iterations": 72, "residual": 0.00018472773529265574}, {"sourceBlend": 1.0, "integrationSeconds": 0.008333333333333333, "advances": 2, "iterations": 55, "residual": 0.00164557108352692}], "maximumEdgeStretch": 1.0459261394575388, "p99EdgeStretch": 1.0157092082169894, "bodyDifference": 0.0}
+{"sourceFrame": 6, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333363, "barrierStiffness": 580759357.349716, "maximumBarrierStiffness": 14463625863.931509, "minimumGapMetres": 2.2608514331614924e-05}
+{"iteration": 0, "energy": 3.0562147524385797, "residual": 18.781052576362654, "maximumNewtonStep": 0.0019485855905008022, "alpha": 0.6494140625}

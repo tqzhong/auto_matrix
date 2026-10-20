@@ -1,0 +1,335 @@
+{
+  "date": "2026-10-20",
+  "parentRevision": "4bebfbfebf4b391a39e80b297fb50c7a1571ab3d",
+  "status": "incomplete",
+  "scope": "Offline character garment authoring; no game runtime, assets, saves or deployment changed.",
+  "change": {
+    "beforeStiffness": 1000000.0,
+    "after": "Toolkit initial_barrier_stiffness from free physical/barrier gradients; lower bound uses average cloth mass divided by integration step squared.",
+    "activationDistanceMetres": 0.001,
+    "optimizerCCD": "unchanged conservative default",
+    "playbackCCD": "unchanged geometric zero-gap check at 1e-9 tolerance",
+    "newtonStoppingMetres": 1e-06,
+    "displayFaces": 25796,
+    "bodyLayers": 13,
+    "failedControl": "Fixed 120 Hz constant-stiffness control had clear endpoints but crossed between .85 and .858333 seconds."
+  },
+  "measuredContact": {
+    "currentStiffness": 1000000.0,
+    "balancedStiffness": 148107528846.67654,
+    "maximumStiffness": 14810752884667.654,
+    "minimumDistanceSquared": 8.493834177712135e-13,
+    "energyGradientNorm": 87.19512990854203,
+    "currentBarrierGradientNorm": 4.783072328445071
+  },
+  "constantAdaptiveControl": {
+    "at": "2026-10-20T07:00:12.187158+00:00",
+    "pid": 89096,
+    "session": 45925,
+    "reason": "Deliberate stop for the measured contact-force scaling experiment; not a timeout or crash.",
+    "lastAcceptedSample": {
+      "frame": 45,
+      "time": 0.8958333333333334,
+      "sourceFrame": 4,
+      "substep": 3.5,
+      "integrationSeconds": 0.004166666666666667,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 0.12890625
+    },
+    "samples": 45,
+    "frozenSourceSha256": "3149a1028bd03e08047649f0a358baa78703d547ddcc47c7aad2b75d6d81ecc9",
+    "confirmedExitCode": 130,
+    "status": "stopped intentionally after retaining accepted checkpoint and rejected trials"
+  },
+  "firstComparison": {
+    "samples": 9,
+    "start": 0.8,
+    "end": 0.8666666666666667,
+    "completeControl": true,
+    "fullGarmentSelfIntersections": 0,
+    "bodyIntersections": 0,
+    "allContinuousIntervalsClear": true,
+    "maximumCuffErrorMetres": 3.3306019788668066e-08,
+    "maximumNeckErrorMetres": 5.957289262123184e-08,
+    "maximumEdgeStretch": 1.0482493517501539,
+    "p99EdgeStretch": 1.0078997511502792,
+    "changeFromConstantStiffnessAtSameTimeMetres": {
+      "maximum": 0.006571692880243063,
+      "p99": 0.0028767918702214956
+    }
+  },
+  "firstComparisonExitCode": 0,
+  "firstComparisonSolveSeconds": 178.74448266625404,
+  "regressionTests": {
+    "before": {
+      "material": 5,
+      "continuous": 4
+    },
+    "after": {
+      "material": 5,
+      "continuous": 4
+    },
+    "allPassed": true
+  },
+  "resumeComparisons": [
+    {
+      "from": "ipc-coupled-physics",
+      "to": "ipc-balanced-control",
+      "copiedFiles": 27,
+      "byteIdentical": true
+    },
+    {
+      "from": "ipc-balanced-control",
+      "to": "ipc-balanced-physics",
+      "copiedFiles": 36,
+      "byteIdentical": true
+    }
+  ],
+  "runningExperiments": [
+    {
+      "observedAt": "2026-10-20T07:44:39.694815+00:00",
+      "pid": 32453,
+      "session": 33642,
+      "process": "32453 20:59 Rs   output/tools/cloth-ipc-venv/bin/python output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py --frames 7 --resume ipc-balanced-control --output ipc-balanced-physics",
+      "live": true,
+      "completeSummaryExists": false,
+      "command": "--frames 7 --resume ipc-balanced-control --output ipc-balanced-physics",
+      "run": {
+        "resume": "ipc-balanced-control",
+        "resumedAt": 0.8666666666666667,
+        "requestedEnd": 1.0,
+        "maximumStepSeconds": 0.008333333333333333,
+        "sourceSha256": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1"
+      },
+      "acceptedSamples": 18,
+      "acceptedThroughSeconds": 0.9333333333333333,
+      "rejections": [
+        {
+          "number": 1,
+          "sourceFrame": 5,
+          "startTime": 0.9166666666666667,
+          "endTime": 0.925,
+          "depth": 0,
+          "error": "the exported substep crosses: {'frame': 16, 'time': 0.925, 'sourceFrame': 5, 'substep': 3.0, 'integrationSeconds': 0.008333333333333304, 'endpointIntersects': False, 'collisionFreeStep': 0.2223910093307495, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1741943359375}"
+        }
+      ]
+    },
+    {
+      "observedAt": "2026-10-20T07:44:39.694815+00:00",
+      "pid": 38600,
+      "session": 41223,
+      "process": "",
+      "live": false,
+      "completeSummaryExists": true,
+      "command": "--frames 4 --resume ipc-balanced-control --output ipc-balanced-raw-control --raw-newton",
+      "run": {
+        "resume": "ipc-balanced-control",
+        "resumedAt": 0.8666666666666667,
+        "requestedEnd": 0.9,
+        "maximumStepSeconds": 0.008333333333333333,
+        "sourceSha256": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1"
+      },
+      "acceptedSamples": 13,
+      "acceptedThroughSeconds": 0.9,
+      "rejections": []
+    }
+  ],
+  "sparseSolverControls": {
+    "direct": {
+      "source": {
+        "number": 27,
+        "sourceFrame": 4,
+        "startTime": 0.8833333333333334,
+        "endTime": 0.8875000000000001,
+        "depth": 1,
+        "error": "the exported substep crosses: {'frame': 37, 'time': 0.8875000000000001, 'sourceFrame': 4, 'substep': 2.5000000000000018, 'integrationSeconds': 0.004166666666666652, 'endpointIntersects': False, 'collisionFreeStep': 0.007845878601074219, 'stepCollisionFree': False, 'optimizerSafeStep': 0.003662109375}"
+      },
+      "matrixShape": [
+        8388,
+        8388
+      ],
+      "matrixNonzeros": 549702,
+      "rows": [
+        {
+          "ordering": "COLAMD",
+          "seconds": 0.5527457501739264,
+          "factorNonzeros": 5090902,
+          "relativeResidual": 1.3864263646617073e-13,
+          "maximumDisplacementDifferenceMetres": 0.0
+        },
+        {
+          "ordering": "MMD_AT_PLUS_A",
+          "seconds": 11.552117167040706,
+          "factorNonzeros": 28813530,
+          "relativeResidual": 1.981892048788028e-13,
+          "maximumDisplacementDifferenceMetres": 3.2672432467850676e-15
+        },
+        {
+          "ordering": "MMD_ATA",
+          "seconds": 0.7336493749171495,
+          "factorNonzeros": 5288145,
+          "relativeResidual": 2.2808326926119867e-13,
+          "maximumDisplacementDifferenceMetres": 5.79085932851664e-15
+        },
+        {
+          "ordering": "MMD_AT_PLUS_A",
+          "seconds": 11.731716042384505,
+          "factorNonzeros": 28813530,
+          "relativeResidual": 1.981892048788028e-13,
+          "maximumDisplacementDifferenceMetres": 3.2672432467850676e-15
+        },
+        {
+          "ordering": "COLAMD",
+          "seconds": 0.5785217089578509,
+          "factorNonzeros": 5090902,
+          "relativeResidual": 1.3864263646617073e-13,
+          "maximumDisplacementDifferenceMetres": 0.0
+        }
+      ],
+      "note": "Same machine with the original bake still running; offline solve, not game FPS."
+    },
+    "iterative": [
+      {
+        "method": "diagonal-cg",
+        "seconds": 2.4915599999949336,
+        "info": 0,
+        "iterations": 2561,
+        "relativeResidual": 9.609530552165045e-11,
+        "maximumDisplacementDifferenceMetres": 1.1086468657169057e-12,
+        "matchesDirectSolve": true
+      },
+      {
+        "method": "ilu-gmres",
+        "seconds": 0.4800692917779088,
+        "info": 0,
+        "iterations": 7,
+        "relativeResidual": 2.13909293376131e-11,
+        "maximumDisplacementDifferenceMetres": 4.129314078171742e-14,
+        "matchesDirectSolve": true
+      }
+    ],
+    "adopted": false,
+    "reason": "Symmetric ordering and diagonal CG were slower. ILU-GMRES showed only a small single-system gain, insufficient evidence to replace the direct solve. Raw spring Newton completed but was not faster in this observation; none of these alternatives was adopted.",
+    "rawSpringNewton": {
+      "exitCode": 0,
+      "completedThroughSeconds": 0.9,
+      "seconds": 423.14282995741814,
+      "projectedSecondsThroughSameTime": 251.7898873751983,
+      "maximumDisplayVertexDifferenceMetres": 0.0010965421480671263,
+      "adopted": false,
+      "note": "Separate runs under different concurrent load. Timing is not a controlled speedup ratio; this discarded candidate only has internal collision checks, not the independent full-surface audit."
+    }
+  },
+  "visualReview": {
+    "time": 0.8666666666666667,
+    "views": [
+      "front",
+      "rear"
+    ],
+    "nativeGame": false,
+    "result": "Complete diagnostic garment remains around the body without obvious gross inflation in this pose; material, natural folds and full motion are not accepted."
+  },
+  "filmReference": {
+    "reviewed": "../morpheus-ambush-wardrobe-2026-10-16/reference/README-reference.md",
+    "images": [
+      "coat-detail-02.png",
+      "coat-detail-11.png"
+    ],
+    "scope": "Shoulders move backward out of the coat. Final cuff sequence, receiving hand and landing point are obscured; those remain game choreography rather than observed film facts."
+  },
+  "limitations": [
+    "Independent full-surface/boundary/continuous/strain audits cover only the first nineteen accepted samples from .8 through .9416667 seconds.",
+    "The longer calibrated run still encountered rejected geometric crossings and nonconvergence; failed trials are subdivided with unchanged checks. The report does not establish completion of the one-second diagnostic.",
+    "Physical material parameters are not calibrated leather; body and boundaries still linearly interpolate the original 30 Hz inputs.",
+    "Full withdrawal, cuff/neck release, gripping and landing, world garment, save/retry, native game and all 42 high-quality scene groups remain unfinished."
+  ],
+  "primarySources": [
+    "https://github.com/ipc-sim/ipc-toolkit/blob/v1.6.0/src/ipc/barrier/adaptive_stiffness.cpp",
+    "https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.spsolve.html"
+  ],
+  "sha256": {
+    "ipc_cloth.py": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1",
+    "ipc_cloth-adaptive-constant.py": "3149a1028bd03e08047649f0a358baa78703d547ddcc47c7aad2b75d6d81ecc9",
+    "profile-linear.py": "7e6f38d39d2e864bf1fefb8605b44120cefb739f3acfb610d48bfe75fda258fc",
+    "profile-iterative.py": "dea1b492bbc6780912c1a54bab75f6a24ea5448d850cebe67df584da89dc67c9",
+    "inspect-rejected.py": "0d150e21c8204a6ce43a05e7f0acc7cac9ed18e2f676c632c8668cd2f57ba537",
+    "adaptive-stop-request.json": "ffffe14c9b4d3be4fc9c3102095fcdc8ed37b4225ccba2d58732decda2cc92fb",
+    "linear-profile.log": "ad60c720664beb98b5f92ee34ea18c01840030bf3aa775b2dbbf5b1d01e1cf74",
+    "iterative-profile.log": "8c4b14d8183dbe67e9e9e08e5367098ee5af32a18e3e03e97e8eedb3853941e1",
+    "linear-profile/results.json": "18957822ff0ebcc92bbb5c7055f63c000911a29ecca540a7ee9dd5cca055bd89",
+    "linear-profile/iterative-results.json": "a02bb0d80ffe65c865f1972864648a6a1ff79515aa2fcbe05e222e9a7fc9ae0f",
+    "rejected-contact-31.log": "28694a417ce2f00ff2e7993e024f5bd5cb536d42645e456a8019fdf1737f1f8c",
+    "ipc-adaptive-physics/rejected-contact-31.json": "9ae46b683835ee252fe00a3b1a557a6b834b5dbca70e1ebedecf743acf289f7d",
+    "ipc-adaptive-bake.log": "5ead6c7c397c6b8403c0d45fe100410f1b142dfb9e83de7c0ee8afc5a73851ee",
+    "ipc-balanced-control.log": "d706d7d257797d8784716799d2109a464ea47b503680a1d8121d01e8fcba08bd",
+    "ipc-balanced-control/verification.json": "2b38dc3039fd6c29d2fdbb50c43077602464563e5f04b69c7704f1938b000c6e",
+    "ipc-balanced-control/summary.json": "9bb5e7537ef49e3fc7ab306929d0faade701aab0a06d41b1d59096ec06fcf33f",
+    "ipc-balanced-control/substeps/summary.json": "5bec675744eaa26a1d7079291dc54d85b098849d63f3b146f79b2bfb5682c7f8",
+    "ipc-balanced-control/run.json": "a9b1389e549c8cf345c11e324bd486a0238a4f07e7d99ae53e740e39e6056372",
+    "ipc-balanced-control-substeps-9-front.png": "b66281a09b810b03c9f1adc12101696ce807cb453dc971d4acbece540bbd3ae5",
+    "ipc-balanced-control-substeps-9-rear.png": "262ade9cbe1d416ace327ddc12269c73ae5f527124e63735cad1d5086e646a5c",
+    "ipc-balanced-physics-snapshot.json": "3e9d9c014fe3cf6c1829eff4469b3ce03b35003fbb897e93d75f90ae891af1ae",
+    "ipc-balanced-raw-control-snapshot.json": "ddb576d4b8a6f9395c8d72aa8abcb05a3b5d1d31d1674c4e40e2cf15f4ce620b",
+    "balanced-progress-at-review.log": "b0a4c041d6144996c14681ffa5ae0df56c3da50cb62bc715a1e4f7d70109c502",
+    "raw-progress-at-review.log": "0d52496290632ca764be30b2f16f6cda4cada9487f7f94b9a6c55ff89514a7f6",
+    "ipc-balanced-control/display.log": "fda54f85f60121f015e1dbe437499ed1034c2aa3f173e85d215952635e83fcf4",
+    "ipc-balanced-control/boundaries.log": "809701fbd19d8597ddbf94e027fc517b70e71be1d91ec5f1b775cd1996bc1beb",
+    "ipc-balanced-control/continuous.log": "f2afca1a1676bc440d03ee67736899610fe610b7dadadb8cb42e061f26980ff5",
+    "ipc-balanced-control/strain.log": "16a16a9e8f0640dde74cbcfb7cb3d031bec4e55499aeeef247fd02d0f76d1589",
+    "ipc-balanced-control/substeps/contact-results.json": "e028873059b1c3671a4181e5211cb2c06b2a47d8f4dd6880ddee671e9e0db9f6",
+    "ipc-balanced-control/substeps/boundary-results.json": "58c1f41d05cee9eb77573f7c44789df3d9afa51bf9c340254220f7320355a93d",
+    "ipc-balanced-control/substeps/display-geometric-continuous-contact.json": "4925e41f2533c0d249b48a4471fcb1d59f56a6a1e531357e98f1b2211ef1d51c",
+    "ipc-balanced-control/substeps/strain-results.json": "d293dcae3cee60644a1aea80b808eb6a7278f72d3413054d9206c59bc54df880",
+    "balanced-baseline-ipc-material.test.py.log": "fe3f6c4af606f1a5f4a31f2662fb52de299a65a2f5cb09ae14c6f763ab5b9c57",
+    "balanced-baseline-continuous-check.test.py.log": "5482a5c2073375d5ed3ebbebc6fd4d2c3957bb6b45d779caa470c253e4fec4a4",
+    "balanced-final-ipc-material.test.py.log": "5613f9469a2fb87651b4201a4c32a719975cce9041bf8140b26641f78add2343",
+    "balanced-final-continuous-check.test.py.log": "583e2621f8c4ced08d26f83058529458e06740a6f0a6d83ecd40f57d485851e3",
+    "ipc-balanced-raw-control.log": "0d52496290632ca764be30b2f16f6cda4cada9487f7f94b9a6c55ff89514a7f6",
+    "ipc-balanced-raw-control/summary.json": "a3dea856713b465f6a1a0a7a68ab6ad11c7ed511a197452e75a7646fb8ce770b",
+    "ipc-balanced-raw-control/substeps/summary.json": "5ac0946c213499148008aa2063d957eab1e83d1440c120e0d91af841eb2acb29",
+    "ipc-balanced-review-19-front.png": "9307a86d504e64704d8b41f1dddd03bb9056e287e3136232eefd62267b3a7810",
+    "ipc-balanced-review-19-rear.png": "f5f26854c5f63cee156caf7b0e21f55d19213033542392fdc921e94b27cf8231",
+    "ipc-balanced-review/strain.log": "a7ee57eaec20269166e9a29fe13d6509068ff2150d91766506d21a3dfcb4401d",
+    "ipc-balanced-review/partial-strain-results.json": "aef25fe4a3e08c25d3f1f795218ac68892ce2a54bb3837b94250f2277d957fea",
+    "ipc-balanced-review/partial-boundary-results.json": "4004b9342922032df441a3101b55702b7a34f8e42af4b2cd668329edb01046f3",
+    "ipc-balanced-review/display.log": "91a7e3bc07fd68c891b56e60043fb2441eba102116b290e74228a5a7dee4f3d6",
+    "ipc-balanced-review/snapshot.json": "293883c91a6dc867fd8c400ebb7a5b50b9e503dc6a4e5c67883f4f7374ffbe30",
+    "ipc-balanced-review/partial-display-geometric-continuous-contact.json": "73f943a2b49c93742e889daaf0f0c28632e42fe1662c1852c0acc8c25f5371e5",
+    "ipc-balanced-review/boundaries.log": "b8baae06bfa47c2b5836623006dd003a7060003de897ab6c6fee367addbe058f",
+    "ipc-balanced-review/continuous.log": "87acc59a8d06e48b2174b9d394d85711439d5b84a73f91880a441b982e3d8bf0",
+    "ipc-balanced-review/progress.json": "fbd19851382d8b7f9c67269613e30a88126903fb7a8a28093d4f5ca779d2dd24",
+    "ipc-balanced-review/partial-contact-results.json": "496e16e1e185be19f7f4a85e0f58df3e5772acea0c6eec9252fc5f972f14309d",
+    "balanced-status-at-commit.json": "7f8e72c87416c0d50ee7e2ecec28b1ff4c34cccdc95e6a43e0e40bac75b072f0"
+  },
+  "independentLongerPrefix": {
+    "samples": 19,
+    "start": 0.8,
+    "end": 0.9416666666666667,
+    "completeRun": false,
+    "fullGarmentSelfIntersections": 0,
+    "bodyIntersections": 0,
+    "allContinuousIntervalsClear": true,
+    "maximumCuffErrorMetres": 3.465633381736055e-08,
+    "maximumNeckErrorMetres": 5.963735741481591e-08,
+    "maximumEdgeStretch": 1.0796101273950738,
+    "p99EdgeStretch": 1.021450807128696,
+    "auditExitCodes": {
+      "display": 0,
+      "boundaries": 0,
+      "continuous": 0,
+      "strain": 0
+    },
+    "visualReview": {
+      "time": 0.9416666666666667,
+      "views": [
+        "front",
+        "rear"
+      ],
+      "nativeGame": false,
+      "result": "No obvious gross inflation in these complete diagnostic views. Folds remain lumpy, especially around the shoulders and sleeves; this is not natural-leather or film-fidelity acceptance."
+    }
+  },
+  "latestRunObservation": "balanced-status-at-commit.json"
+}

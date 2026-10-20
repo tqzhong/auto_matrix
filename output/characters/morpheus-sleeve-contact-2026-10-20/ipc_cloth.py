@@ -140,7 +140,9 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
     free_vertices = np.setdiff1d(np.arange(n), pins)
     free = (free_vertices[:, None]*3+np.arange(3)).ravel()
     dhat = .001
-    potential = ipctk.BarrierPotential(dhat, 1e6)
+    unit_barrier = ipctk.BarrierPotential(dhat, 1.)
+    potential = unit_barrier
+    diagonal = float(np.linalg.norm(np.ptp(collision_reference, axis=0)))
     h = 1/(30*substeps)
     inertial = np.repeat(mass/h**2, 3)
     inertial_hessian = sp.diags(inertial, format='csr')
@@ -259,7 +261,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
         print(json.dumps({'acceptedSample': row}), flush=True)
 
     def advance_interval(frame, start_blend, blend, steps, depth=0):
-        nonlocal h, inertial, inertial_hessian, velocity
+        nonlocal h, inertial, inertial_hessian, velocity, potential
         previous = x.copy()
         previous_velocity = velocity.copy()
         h = (blend-start_blend)/30
@@ -269,6 +271,22 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
         wanted_pins = pin_frames[frame-1]*(1-blend)+pin_frames[frame]*blend
         predicted = previous[:n]+h*velocity
         predicted[:, 2] -= h*h*9.81
+        visible = surface(x)
+        contacts = ipctk.NormalCollisions()
+        contacts.build(mesh, visible, dhat)
+        _, physical_gradient, _ = springs(x[:n], edges, rest, stiffness)
+        physical_gradient += inertial*(x[:n]-predicted).ravel()
+        barrier_gradient = mesh.to_full_dof(unit_barrier.gradient(contacts, mesh, visible))
+        # This objective uses M/h² rather than M, so scale the toolkit's
+        # mass-based lower stiffness bound by the same time factor.
+        barrier_stiffness, maximum_stiffness = ipctk.initial_barrier_stiffness(
+            diagonal, ipctk.ClampedLogBarrier(), dhat, float(mass.mean()/h**2),
+            physical_gradient[free], barrier_gradient[free])
+        potential = ipctk.BarrierPotential(dhat, barrier_stiffness)
+        print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend,
+            'integrationSeconds': h, 'barrierStiffness': barrier_stiffness,
+            'maximumBarrierStiffness': maximum_stiffness,
+            'minimumGapMetres': float(np.sqrt(contacts.compute_minimum_distance(mesh, visible)))}), flush=True)
         try:
             for advance in range(80):
                 fixed = np.zeros_like(x)

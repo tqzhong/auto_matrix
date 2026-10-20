@@ -1,0 +1,2 @@
+{"method": "diagonal-cg", "seconds": 2.4915599999949336, "info": 0, "iterations": 2561, "relativeResidual": 9.609530552165045e-11, "maximumDisplacementDifferenceMetres": 1.1086468657169057e-12, "matchesDirectSolve": true}
+{"method": "ilu-gmres", "seconds": 0.4800692917779088, "info": 0, "iterations": 7, "relativeResidual": 2.13909293376131e-11, "maximumDisplacementDifferenceMetres": 4.129314078171742e-14, "matchesDirectSolve": true}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-20T07:00:12.187158+00:00",
+  "pid": 89096,
+  "session": 45925,
+  "reason": "Deliberate stop for the measured contact-force scaling experiment; not a timeout or crash.",
+  "lastAcceptedSample": {
+    "frame": 45,
+    "time": 0.8958333333333334,
+    "sourceFrame": 4,
+    "substep": 3.5,
+    "integrationSeconds": 0.004166666666666667,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.12890625
+  },
+  "samples": 45,
+  "frozenSourceSha256": "3149a1028bd03e08047649f0a358baa78703d547ddcc47c7aad2b75d6d81ecc9",
+  "confirmedExitCode": 130,
+  "status": "stopped intentionally after retaining accepted checkpoint and rejected trials"
+}

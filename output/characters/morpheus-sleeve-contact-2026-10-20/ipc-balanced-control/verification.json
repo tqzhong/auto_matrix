@@ -1,0 +1,17 @@
+{
+  "samples": 9,
+  "start": 0.8,
+  "end": 0.8666666666666667,
+  "completeControl": true,
+  "fullGarmentSelfIntersections": 0,
+  "bodyIntersections": 0,
+  "allContinuousIntervalsClear": true,
+  "maximumCuffErrorMetres": 3.3306019788668066e-08,
+  "maximumNeckErrorMetres": 5.957289262123184e-08,
+  "maximumEdgeStretch": 1.0482493517501539,
+  "p99EdgeStretch": 1.0078997511502792,
+  "changeFromConstantStiffnessAtSameTimeMetres": {
+    "maximum": 0.006571692880243063,
+    "p99": 0.0028767918702214956
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "source": {
+    "number": 27,
+    "sourceFrame": 4,
+    "startTime": 0.8833333333333334,
+    "endTime": 0.8875000000000001,
+    "depth": 1,
+    "error": "the exported substep crosses: {'frame': 37, 'time': 0.8875000000000001, 'sourceFrame': 4, 'substep': 2.5000000000000018, 'integrationSeconds': 0.004166666666666652, 'endpointIntersects': False, 'collisionFreeStep': 0.007845878601074219, 'stepCollisionFree': False, 'optimizerSafeStep': 0.003662109375}"
+  },
+  "matrixShape": [
+    8388,
+    8388
+  ],
+  "matrixNonzeros": 549702,
+  "rows": [
+    {
+      "ordering": "COLAMD",
+      "seconds": 0.5527457501739264,
+      "factorNonzeros": 5090902,
+      "relativeResidual": 1.3864263646617073e-13,
+      "maximumDisplacementDifferenceMetres": 0.0
+    },
+    {
+      "ordering": "MMD_AT_PLUS_A",
+      "seconds": 11.552117167040706,
+      "factorNonzeros": 28813530,
+      "relativeResidual": 1.981892048788028e-13,
+      "maximumDisplacementDifferenceMetres": 3.2672432467850676e-15
+    },
+    {
+      "ordering": "MMD_ATA",
+      "seconds": 0.7336493749171495,
+      "factorNonzeros": 5288145,
+      "relativeResidual": 2.2808326926119867e-13,
+      "maximumDisplacementDifferenceMetres": 5.79085932851664e-15
+    },
+    {
+      "ordering": "MMD_AT_PLUS_A",
+      "seconds": 11.731716042384505,
+      "factorNonzeros": 28813530,
+      "relativeResidual": 1.981892048788028e-13,
+      "maximumDisplacementDifferenceMetres": 3.2672432467850676e-15
+    },
+    {
+      "ordering": "COLAMD",
+      "seconds": 0.5785217089578509,
+      "factorNonzeros": 5090902,
+      "relativeResidual": 1.3864263646617073e-13,
+      "maximumDisplacementDifferenceMetres": 0.0
+    }
+  ],
+  "note": "Same machine with the original bake still running; offline solve, not game FPS."
+}

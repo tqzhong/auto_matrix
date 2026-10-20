@@ -1,0 +1,93 @@
+{
+  "observedAt": "2026-10-20T08:26:21.914501+00:00",
+  "session": 33642,
+  "pid": 32453,
+  "process": "32453 01:02:41 Rs   output/tools/cloth-ipc-venv/bin/python output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py --frames 7 --resume ipc-balanced-control --output ipc-balanced-physics",
+  "live": true,
+  "completeSummaryExists": false,
+  "run": {
+    "resume": "ipc-balanced-control",
+    "resumedAt": 0.8666666666666667,
+    "requestedEnd": 1.0,
+    "maximumStepSeconds": 0.008333333333333333,
+    "sourceSha256": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1"
+  },
+  "acceptedSamples": 29,
+  "acceptedThroughSeconds": 0.9708333333333334,
+  "rejections": [
+    {
+      "number": 1,
+      "sourceFrame": 5,
+      "startTime": 0.9166666666666667,
+      "endTime": 0.925,
+      "depth": 0,
+      "error": "the exported substep crosses: {'frame': 16, 'time': 0.925, 'sourceFrame': 5, 'substep': 3.0, 'integrationSeconds': 0.008333333333333304, 'endpointIntersects': False, 'collisionFreeStep': 0.2223910093307495, 'stepCollisionFree': False, 'optimizerSafeStep': 0.1741943359375}"
+    },
+    {
+      "number": 2,
+      "sourceFrame": 6,
+      "startTime": 0.9416666666666667,
+      "endTime": 0.9500000000000001,
+      "depth": 0,
+      "error": "the exported substep crosses: {'frame': 20, 'time': 0.9500000000000001, 'sourceFrame': 6, 'substep': 2.0, 'integrationSeconds': 0.008333333333333392, 'endpointIntersects': False, 'collisionFreeStep': 0.20922553539276123, 'stepCollisionFree': False, 'optimizerSafeStep': 0.140869140625}"
+    },
+    {
+      "number": 3,
+      "sourceFrame": 6,
+      "startTime": 0.9583333333333334,
+      "endTime": 0.9666666666666667,
+      "depth": 0,
+      "error": "the exported substep crosses: {'frame': 23, 'time': 0.9666666666666667, 'sourceFrame': 6, 'substep': 4.0, 'integrationSeconds': 0.008333333333333333, 'endpointIntersects': False, 'collisionFreeStep': 0.1079336404800415, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0743408203125}"
+    },
+    {
+      "number": 4,
+      "sourceFrame": 6,
+      "startTime": 0.9625,
+      "endTime": 0.9666666666666667,
+      "depth": 1,
+      "error": "contact solve did not converge: residual=0.007326279902016321"
+    },
+    {
+      "number": 5,
+      "sourceFrame": 6,
+      "startTime": 0.9625,
+      "endTime": 0.9645833333333333,
+      "depth": 2,
+      "error": "the exported substep crosses: {'frame': 24, 'time': 0.9645833333333333, 'sourceFrame': 6, 'substep': 3.75, 'integrationSeconds': 0.0020833333333333333, 'endpointIntersects': False, 'collisionFreeStep': 0.38233208656311035, 'stepCollisionFree': False, 'optimizerSafeStep': 0.259765625}"
+    },
+    {
+      "number": 6,
+      "sourceFrame": 6,
+      "startTime": 0.9645833333333333,
+      "endTime": 0.9666666666666667,
+      "depth": 2,
+      "error": "the exported substep crosses: {'frame': 26, 'time': 0.9666666666666667, 'sourceFrame': 6, 'substep': 4.0, 'integrationSeconds': 0.0020833333333333333, 'endpointIntersects': False, 'collisionFreeStep': 0.3078932762145996, 'stepCollisionFree': False, 'optimizerSafeStep': 0.2559814453125}"
+    },
+    {
+      "number": 7,
+      "sourceFrame": 7,
+      "startTime": 0.9666666666666667,
+      "endTime": 0.9750000000000001,
+      "depth": 0,
+      "error": "the exported substep crosses: {'frame': 28, 'time': 0.9750000000000001, 'sourceFrame': 7, 'substep': 1.0, 'integrationSeconds': 0.008333333333333363, 'endpointIntersects': False, 'collisionFreeStep': 0.5496788024902344, 'stepCollisionFree': False, 'optimizerSafeStep': 0.4677734375}"
+    },
+    {
+      "number": 8,
+      "sourceFrame": 7,
+      "startTime": 0.9666666666666667,
+      "endTime": 0.9708333333333334,
+      "depth": 1,
+      "error": "contact solve did not converge: residual=0.28573071990400895"
+    },
+    {
+      "number": 9,
+      "sourceFrame": 7,
+      "startTime": 0.9708333333333334,
+      "endTime": 0.9750000000000001,
+      "depth": 1,
+      "error": "contact solve did not converge: residual=0.42593708656429063"
+    }
+  ],
+  "independentAuditThroughSeconds": 0.9416666666666667,
+  "note": "This is a dated observation of the running job, not completion or an audit of later samples."
+}
