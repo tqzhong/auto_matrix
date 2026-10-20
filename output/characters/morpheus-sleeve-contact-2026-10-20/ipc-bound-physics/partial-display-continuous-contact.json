@@ -1,0 +1,16 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "seconds": 0.469802750274539
+  },
+  {
+    "frame": 2,
+    "time": 0.8333333333333334,
+    "endpointIntersects": false,
+    "collisionFreeStep": 0.636962890625,
+    "seconds": 0.5403713742271066
+  }
+]

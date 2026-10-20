@@ -1,0 +1,18 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "self": 0,
+    "body": 0,
+    "parts": {}
+  },
+  {
+    "frame": 2,
+    "time": 0.8333333333333334,
+    "self": 16,
+    "body": 8,
+    "parts": {
+      "morpheus-ambush-shirt": 8
+    }
+  }
+]

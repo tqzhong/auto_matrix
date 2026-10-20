@@ -1,0 +1,12 @@
+{"frame": 1, "time": 0.8, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.005968375131487846}
+{"frame": 2, "time": 0.8333333333333334, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.009909000247716904}
+{"frame": 3, "time": 0.8666666666666667, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.008842832408845425}
+{"frame": 4, "time": 0.9, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.007011624984443188}
+{"frame": 5, "time": 0.9333333333333333, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.007612249813973904}
+{"frame": 6, "time": 0.9666666666666667, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.008503290824592113}
+{"frame": 7, "time": 1, "endpointIntersects": true, "collisionFreeStep": 0.67486572265625, "seconds": 0.009994708932936192}
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/continuous-contact.py", line 33, in <module>
+    assert not any(r['endpointIntersects'] or r['collisionFreeStep'] < 1 for r in rows), rows[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'frame': 7, 'time': 1, 'endpointIntersects': True, 'collisionFreeStep': 0.67486572265625, 'seconds': 0.009994708932936192}

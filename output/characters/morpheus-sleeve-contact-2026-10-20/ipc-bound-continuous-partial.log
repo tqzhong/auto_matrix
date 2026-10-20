@@ -1,0 +1,7 @@
+{"frame": 1, "time": 0.8, "endpointIntersects": false, "collisionFreeStep": 1.0, "seconds": 0.469802750274539}
+{"frame": 2, "time": 0.8333333333333334, "endpointIntersects": false, "collisionFreeStep": 0.636962890625, "seconds": 0.5403713742271066}
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/continuous-contact.py", line 51, in <module>
+    assert not any(r['endpointIntersects'] or r['collisionFreeStep'] < 1 for r in rows), rows[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'frame': 2, 'time': 0.8333333333333334, 'endpointIntersects': False, 'collisionFreeStep': 0.636962890625, 'seconds': 0.5403713742271066}

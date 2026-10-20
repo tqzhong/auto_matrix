@@ -1,0 +1,358 @@
+{
+  "date": "2026-10-20",
+  "scope": "Offline authoring in progress; no runtime asset or website change",
+  "base": "4204fba5b74b92051a42e8ff9ed78c44763a4755",
+  "authoringDependencies": {
+    "ipctk": "1.6.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "previousBlenderFailure": {
+    "firstCrossingInterval": [
+      0.9666666666666667,
+      1
+    ],
+    "maximumCollisionFreeFraction": 0.67486572265625,
+    "physicalFaces": 5534,
+    "displayFaces": 25796,
+    "bodyLayers": 13
+  },
+  "cageOnlyIPC": {
+    "completedFrames": 2,
+    "maximumStretch": 1.0145338626647733,
+    "displayContacts": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "self": 16,
+        "body": 8,
+        "parts": {
+          "morpheus-ambush-shirt": 8
+        }
+      }
+    ],
+    "accepted": false
+  },
+  "initialDisplayIPC": {
+    "auditedFrames": 2,
+    "displayContacts": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      }
+    ],
+    "boundaryError": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "maximumCuffErrorMetres": 3.286899228400863e-08,
+        "maximumNeckErrorMetres": 5.928032504773641e-08
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "maximumCuffErrorMetres": 0.002623171012494996,
+        "maximumNeckErrorMetres": 0.001596293856368096
+      }
+    ],
+    "accepted": false
+  },
+  "current": {
+    "status": "incomplete",
+    "plannedDiagnosticFrames": 7,
+    "auditedFrames": 3,
+    "auditedThroughSeconds": 0.8666666666666667,
+    "contacts": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      },
+      {
+        "frame": 3,
+        "time": 0.8666666666666667,
+        "self": 0,
+        "body": 0,
+        "parts": {}
+      }
+    ],
+    "boundaries": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "maximumCuffErrorMetres": 3.286899228400863e-08,
+        "maximumNeckErrorMetres": 5.928032504773641e-08
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "maximumCuffErrorMetres": 3.1889423963536547e-08,
+        "maximumNeckErrorMetres": 5.9069297753974926e-08
+      },
+      {
+        "frame": 3,
+        "time": 0.8666666666666667,
+        "maximumCuffErrorMetres": 3.263793263316078e-08,
+        "maximumNeckErrorMetres": 5.957289262123184e-08
+      }
+    ],
+    "physics": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "seconds": 0.0654472503811121,
+        "steps": [],
+        "maximumEdgeStretch": 1,
+        "p99EdgeStretch": 1,
+        "bodyDifference": 0
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "seconds": 121.07402358390391,
+        "steps": [
+          {
+            "substep": 1,
+            "advances": 1,
+            "iterations": 59,
+            "residual": 0.00018491079789647772
+          },
+          {
+            "substep": 2,
+            "advances": 1,
+            "iterations": 44,
+            "residual": 8.794263148981e-05
+          },
+          {
+            "substep": 3,
+            "advances": 1,
+            "iterations": 36,
+            "residual": 2.836031307355217e-05
+          },
+          {
+            "substep": 4,
+            "advances": 1,
+            "iterations": 44,
+            "residual": 1.4346085112260679e-05
+          }
+        ],
+        "maximumEdgeStretch": 1.0136521832218153,
+        "p99EdgeStretch": 1.0033343480921169,
+        "bodyDifference": 0
+      },
+      {
+        "frame": 3,
+        "time": 0.8666666666666667,
+        "seconds": 468.1852431250736,
+        "steps": [
+          {
+            "substep": 1,
+            "advances": 1,
+            "iterations": 78,
+            "residual": 1.3655329902512213e-05
+          },
+          {
+            "substep": 2,
+            "advances": 1,
+            "iterations": 79,
+            "residual": 3.445969168291529e-05
+          },
+          {
+            "substep": 3,
+            "advances": 4,
+            "iterations": 10,
+            "residual": 7.46034123997874e-05
+          },
+          {
+            "substep": 4,
+            "advances": 11,
+            "iterations": 15,
+            "residual": 8.739057945499756e-06
+          }
+        ],
+        "maximumEdgeStretch": 1.0456460192400758,
+        "p99EdgeStretch": 1.0078551048725655,
+        "bodyDifference": 0
+      }
+    ],
+    "embedding": {
+      "maximumRestErrorMetres": 1.1055538232381505e-07,
+      "maximumConstantError": 2.886579864025407e-15,
+      "maximumAbsoluteWeight": 1.6974776096167843,
+      "nonzeros": 52977
+    },
+    "mathTestsPassed": 4,
+    "newtonUpdateToleranceMetres": 1e-06,
+    "linearDisplayPlaybackAccepted": false,
+    "continuousDisplayAudit": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "endpointIntersects": false,
+        "collisionFreeStep": 1.0,
+        "seconds": 0.469802750274539
+      },
+      {
+        "frame": 2,
+        "time": 0.8333333333333334,
+        "endpointIntersects": false,
+        "collisionFreeStep": 0.636962890625,
+        "seconds": 0.5403713742271066
+      }
+    ],
+    "linearInterpolationSamples": {
+      "frames": [
+        1,
+        2
+      ],
+      "samples": [
+        {
+          "blend": 0.0,
+          "intersects": false
+        },
+        {
+          "blend": 0.05,
+          "intersects": false
+        },
+        {
+          "blend": 0.1,
+          "intersects": false
+        },
+        {
+          "blend": 0.15000000000000002,
+          "intersects": false
+        },
+        {
+          "blend": 0.2,
+          "intersects": false
+        },
+        {
+          "blend": 0.25,
+          "intersects": false
+        },
+        {
+          "blend": 0.30000000000000004,
+          "intersects": false
+        },
+        {
+          "blend": 0.35000000000000003,
+          "intersects": false
+        },
+        {
+          "blend": 0.4,
+          "intersects": false
+        },
+        {
+          "blend": 0.45,
+          "intersects": false
+        },
+        {
+          "blend": 0.5,
+          "intersects": false
+        },
+        {
+          "blend": 0.55,
+          "intersects": false
+        },
+        {
+          "blend": 0.6000000000000001,
+          "intersects": false
+        },
+        {
+          "blend": 0.65,
+          "intersects": false
+        },
+        {
+          "blend": 0.7000000000000001,
+          "intersects": false
+        },
+        {
+          "blend": 0.75,
+          "intersects": false
+        },
+        {
+          "blend": 0.8,
+          "intersects": false
+        },
+        {
+          "blend": 0.8500000000000001,
+          "intersects": false
+        },
+        {
+          "blend": 0.9,
+          "intersects": false
+        },
+        {
+          "blend": 0.9500000000000001,
+          "intersects": false
+        },
+        {
+          "blend": 1.0,
+          "intersects": false
+        }
+      ],
+      "collisionFreeStep": 0.636962890625,
+      "isStepCollisionFree": false
+    }
+  },
+  "limitations": [
+    "Only the explicitly listed completed cache frames have independent display and boundary audits.",
+    "The original first crossing near 1 second has not yet been crossed by an accepted complete run.",
+    "Current IPC control still needs full withdrawal, release, hand contact, landing, runtime integration, save recovery and native game verification.",
+    "Length springs and weak bending diagonals are an offline control, not a complete C-IPC implementation or a calibrated leather material.",
+    "The initial 0.1-micrometre optimization tolerance exhausted iterations; the current one-micrometre stopping rule does not relax CCD or mesh-intersection tests.",
+    "The first exported display interval 0.8\u20130.833333 seconds fails full garment/body continuous collision checking (safe fraction 0.636962890625; isStepCollisionFree false). All 21 uniformly sampled intermediate states are intersection-free, so this report records a continuous-safety failure, not a measured penetration depth. Endpoint passes do not validate linear cache playback."
+  ],
+  "sha256": {
+    "ipc_cloth.py": "3919048919225caabc2a8c291a6989bf156099ac85f047d8bbb847041e13f9b5",
+    "cloth_embedding.py": "533f4ac2226d0775c243c781dd107b3b4a664a4d898c96dba36c7a1672122719",
+    "ipc-material.test.py": "0f1e99f8757d94132c082ce61c0c8c01223f3c0d4d96b74b96b9dcad06a23e64",
+    "audit-ipc.mts": "5f0b93d6e07de9cae13d7be3dc0124a2d609f19bdc2557b7f2535f73f7f2fc47",
+    "audit-boundaries.py": "7cc88fa8f938cbe01cbd8b295f2076671d43a69231f5afe3130f2df8121cc14d",
+    "continuous-contact.py": "f3c78ad2afe3a85d600576165a9c0e22e603f20a6bbb7f3cb99480043d159916",
+    "cloth-strain.test.mts": "b7ca3b2ff210bd713e0c86acc03c3784cc1451ee2df5d9bd065103c4e7e65aef",
+    "build-collar-band.py": "fd3f9becc9d8ec68de75de79cc4e8f0e7da6799554d9063505f99f0ee59e7d19",
+    "requirements.txt": "77c71296350ca19e7fb84446d4534070debafb0489fc2a22cafe01edeb669d1f",
+    "input/manifest.json": "01eb9e0acb023d2f9112bb7c3a9fe5fc5a459854001475ecb5d2c44779cdbf54",
+    "input/body-1.bin": "1f18265210e74d092eaba21edf6d17d3fa6a6bb463c666ef98cdd1af1e5d7611",
+    "input/body-73.bin": "6e9aa2944b916e42b9d7e0e1f776cdd46d42590cfb85e2335a042c9d8ffe2d9e",
+    "collar-guide.json": "70116c931ad64366a69452e167bd09412106c956c9c236efc57804cd51ae7735",
+    "lifted-band/band-guide.json": "50de2c1ae13245765a54533f2e7e4effeef1ad17e6491b3d30ab7faa053212e1",
+    "ipc-material.log": "e24cf9dfba799feab49446d070ed956971aed2412b96e446508ab629dc78ef3f",
+    "continuous-before.log": "d6bf9d2e0df7e00ffed8ef15821cecdc924dcdb5eba729e758fb7c915910b62d",
+    "ipc-newton-physics/contact-results.json": "c78a9c80fb49ecf4c0f38398038eb7b56780ceb452ea6d30226173742b6320e6",
+    "ipc-display-physics/partial-boundary-results.json": "470ee615280d36375ad062f2cd17a1191c08be086d7bc3268b0e31720c8abcbd",
+    "ipc-bound-physics/partial-contact-results.json": "b389b9e2eefe545718d2075aff70f2a4770a7b9914b7da97487926ebbc06cfbd",
+    "ipc-bound-physics/partial-boundary-results.json": "e05825b17cd340f26a4ca14681ba5a33a28adc952c4bc90cd6ef9288b986be19",
+    "continuous-cage-control.log": "4e2b74cdbb26199e79045f3e38c5904e113519dca0be553f256effcb9cd15824",
+    "ipc-bound-continuous-partial.log": "bb2a7016a411b6b8d18cfbd2a14b3a5faa7ba3709bf5f999ef6a03bf21e2ceca",
+    "ipc-bound-physics/partial-display-continuous-contact.json": "909a14069933d203f25a4371a75d2d2b758577f72bfc6e4146de0f2f0501ba16",
+    "ipc-bound-physics/linear-interpolation-audit.json": "7c07bb82e5d04c08808607829500e7ef101832776ba17ec5ea35b940f237259c"
+  }
+}
