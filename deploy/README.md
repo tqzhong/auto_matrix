@@ -1,6 +1,26 @@
-# matrixai.online 免费部署
+# 部署与本机试玩
 
-使用 Render 的 **Hobby 工作区 + Free Web Service** 运行现有 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 留在阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，玩家的浏览器负责 3D 渲染。部署配置见根目录 `render.yaml`，不购买服务器或持久磁盘，不使用付费语言模型。
+## 当前方式（2026-10-21）
+
+用户要求暂撤公网部署，继续开发游戏，持续提供最新网页试玩入口。今后的验证、提交和推送继续进行，试玩版更新到 **<http://localhost:5173/>**；不再按旧流程主动恢复或发布到 Render。这个地址只在运行服务的电脑上可用，需要电脑和服务保持运行。
+
+- Render `matrixai` 的 Auto-Deploy 已保存为 **Off**，默认 `matrixai-s0sd.onrender.com` 入口已保存为 **Disabled**；仓库 `render.yaml` 同步关闭自动部署。服务目前仍处于流量超额引起的工作区暂停，不宣称已删除服务或额外完成手动暂停。
+- 阿里云会话已失效。选中 `@ A 216.24.57.1` 和 `www CNAME matrixai-s0sd.onrender.com` 的暂停操作触发登录，未确认成功，已取消该对话。**DNS 暂停尚待用户重新登录。** 在暂停解析前保留 Render 自定义域名绑定，避免留下仍指向 Render 的无绑定解析；域名、其他 DNS 记录和 Supabase 云存档没有删除。
+- 试玩进程只监听 `127.0.0.1:5173`，显式关闭云存档与付费模型。单独保存到项目 `output/local-preview/data/`，从 Neo 的普通生活开始；不会覆盖根目录 `data/` 或云端世界。
+- 本次直接使用已经验证的独立发布构建 `index-Dh28UYzo.js`，699 个运行源码/素材文件与 `e398a3e` 的已提交版本全部相同，包含实时 gzip 同步修正。工作区未完成的脱外套代码没有混入。
+- 原生网页按键已实测移动、跳跃、V 切换及鼠标转向；250 个采样中相对起点最大位移约 3.98 米，最高 y=2.641，转角范围约 1.529 弧度。真实关闭并重启服务后，tick 3757、暂停、日期/时间、Neo 位置/朝向/生命/地点/觉醒和完整生活状态十项保持，页面自动重新接管 Neo。这些是局部试玩与读档检查，不是三部曲画面质量或稳定帧率验收。
+
+当前本机服务的重启命令如下；关闭现有同端口进程后再运行，不能同时启动两个实例写同一存档。以后替换为通过测试的新构建时，继续使用同一个端口和存档目录。
+
+```bash
+HOST=127.0.0.1 PORT=5173 MATRIX_CLOUD_SAVE= SUPABASE_URL= SUPABASE_SECRET_KEY= LLM_API_KEY= \
+MATRIX_DATA_DIR="$PWD/output/local-preview/data" \
+node output/deployment/matrixai-bandwidth-2026-10-20/release/packages/server/dist/index.js
+```
+
+控制台截图、原生采样和重启核对保存在本地 `output/deployment/render-withdrawal-2026-10-21/`。以下为此前公网部署记录；其中的“继续发布”授权流程已由本节的新要求替代。
+
+此前使用 Render 的 **Hobby 工作区 + Free Web Service** 运行 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 位于阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，浏览器负责 3D 渲染。没有购买服务器或持久磁盘。
 
 ## 当前版本（2026-10-20）
 
