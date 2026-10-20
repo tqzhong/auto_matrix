@@ -1,0 +1,31 @@
+         10441 function calls in 3.857 seconds
+
+   Ordered by: cumulative time
+   List reduced from 163 to 25 due to restriction <25>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       18    0.217    0.012    2.452    0.136 /Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/membrane.py:37(membrane_energy)
+       18    0.000    0.000    1.437    0.080 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_coo.py:368(tocsr)
+       18    0.281    0.016    1.404    0.078 /Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py:60(springs)
+       54    0.000    0.000    1.172    0.022 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/numpy/_core/einsumfunc.py:1242(einsum)
+       54    1.172    0.022    1.172    0.022 {built-in method numpy._core._multiarray_umath.c_einsum}
+       18    0.000    0.000    0.976    0.054 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_compressed.py:1072(sum_duplicates)
+       18    0.000    0.000    0.881    0.049 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_compressed.py:1124(sort_indices)
+       18    0.881    0.049    0.881    0.049 {built-in method scipy.sparse._sparsetools.csr_sort_indices}
+       18    0.000    0.000    0.458    0.025 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_coo.py:414(_coo_to_compressed)
+       18    0.457    0.025    0.457    0.025 {built-in method scipy.sparse._sparsetools.coo_tocsr}
+        9    0.279    0.031    0.280    0.031 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/numpy/linalg/_linalg.py:1513(eigh)
+       27    0.128    0.005    0.128    0.005 {method 'at' of 'numpy.ufunc' objects}
+       18    0.001    0.000    0.124    0.007 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_coo.py:32(__init__)
+      288    0.110    0.000    0.110    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+       27    0.073    0.003    0.074    0.003 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/numpy/lib/_index_tricks_impl.py:343(__getitem__)
+       36    0.070    0.002    0.070    0.002 {method 'repeat' of 'numpy.ndarray' objects}
+       18    0.063    0.004    0.063    0.004 {built-in method scipy.sparse._sparsetools.csr_sum_duplicates}
+       72    0.001    0.000    0.058    0.001 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_base.py:1695(_get_index_dtype)
+       72    0.002    0.000    0.057    0.001 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_sputils.py:263(get_index_dtype)
+       72    0.000    0.000    0.044    0.001 {method 'max' of 'numpy.ndarray' objects}
+       18    0.001    0.000    0.044    0.002 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/numpy/lib/_shape_base_impl.py:1157(tile)
+       72    0.000    0.000    0.044    0.001 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/numpy/_core/_methods.py:39(_amax)
+      342    0.044    0.000    0.044    0.000 {built-in method numpy.array}
+       54    0.000    0.000    0.044    0.001 /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/_coo.py:62(<genexpr>)
+       63    0.032    0.001    0.032    0.001 {method 'copy' of 'numpy.ndarray' objects}

@@ -1,0 +1,94 @@
+{
+  "sourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "samples": [
+    2,
+    7,
+    14
+  ],
+  "vertices": 13386,
+  "triangles": 25796,
+  "rows": [
+    {
+      "sample": 2,
+      "repeat": 0,
+      "energy": 0.0005718935711860109,
+      "springDerivativesSeconds": 0.16117254085838795,
+      "membraneDerivativesSeconds": 0.2759340414777398,
+      "membraneEnergyOnlySeconds": 0.012851458042860031,
+      "springEnergyOnlySeconds": 0.0057495832443237305
+    },
+    {
+      "sample": 7,
+      "repeat": 0,
+      "energy": 0.018228395949459266,
+      "springDerivativesSeconds": 0.15571237448602915,
+      "membraneDerivativesSeconds": 0.2714375415816903,
+      "membraneEnergyOnlySeconds": 0.014512665569782257,
+      "springEnergyOnlySeconds": 0.0063786255195736885
+    },
+    {
+      "sample": 14,
+      "repeat": 0,
+      "energy": 0.09379705932276342,
+      "springDerivativesSeconds": 0.15250854194164276,
+      "membraneDerivativesSeconds": 0.2565985005348921,
+      "membraneEnergyOnlySeconds": 0.013432959094643593,
+      "springEnergyOnlySeconds": 0.005577499978244305
+    },
+    {
+      "sample": 2,
+      "repeat": 1,
+      "energy": 0.0005718935711860109,
+      "springDerivativesSeconds": 0.1536138327792287,
+      "membraneDerivativesSeconds": 0.2583581246435642,
+      "membraneEnergyOnlySeconds": 0.012667374685406685,
+      "springEnergyOnlySeconds": 0.006685624830424786
+    },
+    {
+      "sample": 7,
+      "repeat": 1,
+      "energy": 0.018228395949459266,
+      "springDerivativesSeconds": 0.15127912536263466,
+      "membraneDerivativesSeconds": 0.25684074964374304,
+      "membraneEnergyOnlySeconds": 0.013501041568815708,
+      "springEnergyOnlySeconds": 0.005574749782681465
+    },
+    {
+      "sample": 14,
+      "repeat": 1,
+      "energy": 0.09379705932276342,
+      "springDerivativesSeconds": 0.15274620801210403,
+      "membraneDerivativesSeconds": 0.2595147080719471,
+      "membraneEnergyOnlySeconds": 0.012489709071815014,
+      "springEnergyOnlySeconds": 0.004701750352978706
+    },
+    {
+      "sample": 2,
+      "repeat": 2,
+      "energy": 0.0005718935711860109,
+      "springDerivativesSeconds": 0.14834570791572332,
+      "membraneDerivativesSeconds": 0.25734874978661537,
+      "membraneEnergyOnlySeconds": 0.012297541834414005,
+      "springEnergyOnlySeconds": 0.005521165207028389
+    },
+    {
+      "sample": 7,
+      "repeat": 2,
+      "energy": 0.018228395949459266,
+      "springDerivativesSeconds": 0.14941704086959362,
+      "membraneDerivativesSeconds": 0.2586530838161707,
+      "membraneEnergyOnlySeconds": 0.013945957645773888,
+      "springEnergyOnlySeconds": 0.005372124724090099
+    },
+    {
+      "sample": 14,
+      "repeat": 2,
+      "energy": 0.09379705932276342,
+      "springDerivativesSeconds": 0.15094016678631306,
+      "membraneDerivativesSeconds": 0.26181199960410595,
+      "membraneEnergyOnlySeconds": 0.012554125860333443,
+      "springEnergyOnlySeconds": 0.0072981249541044235
+    }
+  ],
+  "scope": "Profiled material evaluations on frozen accepted poses in one process; not total bake time or game FPS."
+}

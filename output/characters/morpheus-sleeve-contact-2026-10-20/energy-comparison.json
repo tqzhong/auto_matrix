@@ -1,0 +1,423 @@
+{
+  "baselineSourceSha256": "75a2ea959bd678b2a0d922adb894a991ddcd04261ede494b1016c38a8fe27815",
+  "optimizedSourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "membraneSourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b",
+  "displayVertices": 13386,
+  "triangles": 25796,
+  "comparisons": 56,
+  "springEnergyExactlyEqual": true,
+  "springGradientExactlyEqual": true,
+  "springSparseHessianExactlyEqual": true,
+  "combinedEnergyExactlyEqual": true,
+  "sampleSha256": {
+    "cloth-1.bin": "f4311942cc0df11c9d9da70b12e3de7c8632bef622ac1ac86e649ecb80da6018",
+    "cloth-2.bin": "c3fe1b3f012e8ff1f02b26a7bfdbaf7c0d63db7ec006b9c0473c2d5399a62d09",
+    "cloth-3.bin": "69f4d659bf090f4d7f4f02a3c9487c869e5ceefcc61edc2c69171063f407fa55",
+    "cloth-4.bin": "211f3cea69dd9548a986435a97603547b2ea6d7bdf8440212d1434bb57953fc3",
+    "cloth-5.bin": "02691902977178617146bcc3be53240ca0615e778e4867477fa1edf7ecdc6b5b",
+    "cloth-6.bin": "6e50b13a8e6f51afc49c3387d992073975f55eff2bceb31e02e65c7426dbac50",
+    "cloth-7.bin": "68ab2de5bfeea0196382387a6d9b6fa9c85652df6a3f1a28897e2dd274ee2f57",
+    "cloth-8.bin": "35b9f254e571aa8b6bc9f1a5631d9053350c860c123d7c274f1a444140363df5",
+    "cloth-9.bin": "977149121c04819c5026241a11c5891472813d0265e29379f5ed786eec768389",
+    "cloth-10.bin": "ec362b0f18d8bf140672195e7b580ef7608ba88b21b70889fa8be3179f89ec75",
+    "cloth-11.bin": "882b97db9c394ef12ced4330397fdc61936857d0a0326b7ea1066c3021ef0261",
+    "cloth-12.bin": "56db590088997636cb2543508c9497ddb82c2fa7f3990b2c6d659d8172d61018",
+    "cloth-13.bin": "20fa710f2f3c0be682427d72311118f3f799d23d5294c222274a8409df58724a",
+    "cloth-14.bin": "164800abc49c5adede34c361447cd4c56e200d56343120ec2b679975243f7ac9"
+  },
+  "rows": [
+    {
+      "sample": 1,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 2.726707049092445e-07,
+      "membraneEnergy": 1.0512226215071131e-06
+    },
+    {
+      "sample": 1,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 2.726707049092445e-07,
+      "membraneEnergy": 1.0512226215071131e-06
+    },
+    {
+      "sample": 1,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 3.554641991422744e-09,
+      "membraneEnergy": 1.0512226215071131e-06
+    },
+    {
+      "sample": 1,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 3.554641991422744e-09,
+      "membraneEnergy": 1.0512226215071131e-06
+    },
+    {
+      "sample": 2,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.00015440909503003011,
+      "membraneEnergy": 0.0005666426038299212
+    },
+    {
+      "sample": 2,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.00015440909503003011,
+      "membraneEnergy": 0.0005666426038299212
+    },
+    {
+      "sample": 2,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 5.250967356089743e-06,
+      "membraneEnergy": 0.0005666426038299212
+    },
+    {
+      "sample": 2,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 5.250967356089743e-06,
+      "membraneEnergy": 0.0005666426038299212
+    },
+    {
+      "sample": 3,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.0008436950470938203,
+      "membraneEnergy": 0.0032066204919666383
+    },
+    {
+      "sample": 3,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.0008436950470938203,
+      "membraneEnergy": 0.0032066204919666383
+    },
+    {
+      "sample": 3,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 2.6894873485465938e-05,
+      "membraneEnergy": 0.0032066204919666383
+    },
+    {
+      "sample": 3,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 2.6894873485465938e-05,
+      "membraneEnergy": 0.0032066204919666383
+    },
+    {
+      "sample": 4,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.0015096734527165446,
+      "membraneEnergy": 0.005770989571941084
+    },
+    {
+      "sample": 4,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.0015096734527165446,
+      "membraneEnergy": 0.005770989571941084
+    },
+    {
+      "sample": 4,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 4.852786485413261e-05,
+      "membraneEnergy": 0.005770989571941084
+    },
+    {
+      "sample": 4,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 4.852786485413261e-05,
+      "membraneEnergy": 0.005770989571941084
+    },
+    {
+      "sample": 5,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.0023527296433788775,
+      "membraneEnergy": 0.009073686278496123
+    },
+    {
+      "sample": 5,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.0023527296433788775,
+      "membraneEnergy": 0.009073686278496123
+    },
+    {
+      "sample": 5,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 5.696502922096254e-05,
+      "membraneEnergy": 0.009073686278496123
+    },
+    {
+      "sample": 5,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 5.696502922096254e-05,
+      "membraneEnergy": 0.009073686278496123
+    },
+    {
+      "sample": 6,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.003448887624142861,
+      "membraneEnergy": 0.013193479279793207
+    },
+    {
+      "sample": 6,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.003448887624142861,
+      "membraneEnergy": 0.013193479279793207
+    },
+    {
+      "sample": 6,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 8.509273391754454e-05,
+      "membraneEnergy": 0.013193479279793207
+    },
+    {
+      "sample": 6,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 8.509273391754454e-05,
+      "membraneEnergy": 0.013193479279793207
+    },
+    {
+      "sample": 7,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.0047265154731468,
+      "membraneEnergy": 0.01810822841414868
+    },
+    {
+      "sample": 7,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.0047265154731468,
+      "membraneEnergy": 0.01810822841414868
+    },
+    {
+      "sample": 7,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.00012016753531058612,
+      "membraneEnergy": 0.01810822841414868
+    },
+    {
+      "sample": 7,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.00012016753531058612,
+      "membraneEnergy": 0.01810822841414868
+    },
+    {
+      "sample": 8,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.005971015317814658,
+      "membraneEnergy": 0.022074311866524986
+    },
+    {
+      "sample": 8,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.005971015317814658,
+      "membraneEnergy": 0.022074311866524986
+    },
+    {
+      "sample": 8,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.00015497663136125627,
+      "membraneEnergy": 0.022074311866524986
+    },
+    {
+      "sample": 8,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.00015497663136125627,
+      "membraneEnergy": 0.022074311866524986
+    },
+    {
+      "sample": 9,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.007536457418929218,
+      "membraneEnergy": 0.027089453403945852
+    },
+    {
+      "sample": 9,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.007536457418929218,
+      "membraneEnergy": 0.027089453403945852
+    },
+    {
+      "sample": 9,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.0002115001960381009,
+      "membraneEnergy": 0.027089453403945852
+    },
+    {
+      "sample": 9,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.0002115001960381009,
+      "membraneEnergy": 0.027089453403945852
+    },
+    {
+      "sample": 10,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.009460748970245998,
+      "membraneEnergy": 0.033394583299461614
+    },
+    {
+      "sample": 10,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.009460748970245998,
+      "membraneEnergy": 0.033394583299461614
+    },
+    {
+      "sample": 10,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.0003288404461795915,
+      "membraneEnergy": 0.033394583299461614
+    },
+    {
+      "sample": 10,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.0003288404461795915,
+      "membraneEnergy": 0.033394583299461614
+    },
+    {
+      "sample": 11,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.011260650087706662,
+      "membraneEnergy": 0.03895681554229135
+    },
+    {
+      "sample": 11,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.011260650087706662,
+      "membraneEnergy": 0.03895681554229135
+    },
+    {
+      "sample": 11,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.0004141046797252789,
+      "membraneEnergy": 0.03895681554229135
+    },
+    {
+      "sample": 11,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.0004141046797252789,
+      "membraneEnergy": 0.03895681554229135
+    },
+    {
+      "sample": 12,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.013484289084292925,
+      "membraneEnergy": 0.045806859020364805
+    },
+    {
+      "sample": 12,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.013484289084292925,
+      "membraneEnergy": 0.045806859020364805
+    },
+    {
+      "sample": 12,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.0004985802510948125,
+      "membraneEnergy": 0.045806859020364805
+    },
+    {
+      "sample": 12,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.0004985802510948125,
+      "membraneEnergy": 0.045806859020364805
+    },
+    {
+      "sample": 13,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.020413252382372175,
+      "membraneEnergy": 0.06710235310710944
+    },
+    {
+      "sample": 13,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.020413252382372175,
+      "membraneEnergy": 0.06710235310710944
+    },
+    {
+      "sample": 13,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.0009251586027726083,
+      "membraneEnergy": 0.06710235310710944
+    },
+    {
+      "sample": 13,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.0009251586027726083,
+      "membraneEnergy": 0.06710235310710944
+    },
+    {
+      "sample": 14,
+      "structuralElastic": true,
+      "project": true,
+      "energy": 0.029006162297272126,
+      "membraneEnergy": 0.09220280456773686
+    },
+    {
+      "sample": 14,
+      "structuralElastic": true,
+      "project": false,
+      "energy": 0.029006162297272126,
+      "membraneEnergy": 0.09220280456773686
+    },
+    {
+      "sample": 14,
+      "structuralElastic": false,
+      "project": true,
+      "energy": 0.0015942547550265558,
+      "membraneEnergy": 0.09220280456773686
+    },
+    {
+      "sample": 14,
+      "structuralElastic": false,
+      "project": false,
+      "energy": 0.0015942547550265558,
+      "membraneEnergy": 0.09220280456773686
+    }
+  ],
+  "scope": "Frozen accepted poses and unchanged membrane source; this does not establish a complete trajectory or end-to-end bake speed."
+}

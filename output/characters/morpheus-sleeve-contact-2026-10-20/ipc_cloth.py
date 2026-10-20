@@ -57,13 +57,12 @@ def strain_free_stepsize(x, direction, edges, rest):
     return float(.99*np.min(roots))
 
 
-def springs(x, edges, rest, stiffness, project=True, strain_count=0, structural_elastic=True):
+def springs(x, edges, rest, stiffness, project=True, strain_count=0, structural_elastic=True, derivatives=True):
     """Length springs, including explicit stitches and weak bending diagonals."""
     n = len(x)
     a, b = edges.T
     delta = x[a]-x[b]
     length = np.linalg.norm(delta, axis=1)
-    unit = delta/length[:, None]
     stretch = length-rest
     elastic = stiffness.copy()
     if not structural_elastic:
@@ -71,12 +70,6 @@ def springs(x, edges, rest, stiffness, project=True, strain_count=0, structural_
         # Keep sewn roots, bending diagonals and the separate strain barrier.
         elastic[:strain_count] = 0
     energy = .5*np.sum(elastic*stretch**2)
-    radial_force = elastic*stretch
-    radial_hessian = elastic.copy()
-    transverse = 1-rest/length
-    if project:
-        transverse = np.maximum(0, transverse)
-    transverse *= elastic
     # A smooth logarithmic barrier augments the existing spring material.
     # It limits structural edges, not stitches or bending diagonals.
     ratio = length[:strain_count]/rest[:strain_count]
@@ -87,9 +80,18 @@ def springs(x, edges, rest, stiffness, project=True, strain_count=0, structural_
     gap = STRAIN_LIMIT-ratio[active]
     logarithm = np.log(gap/(STRAIN_LIMIT-STRAIN_ONSET))
     barrier = -amount**2*logarithm
+    energy += np.sum(stiffness[active]*rest[active]**2*barrier)
+    if not derivatives:
+        return float(energy)
+    unit = delta/length[:, None]
+    radial_force = elastic*stretch
+    radial_hessian = elastic.copy()
+    transverse = 1-rest/length
+    if project:
+        transverse = np.maximum(0, transverse)
+    transverse *= elastic
     first = -2*amount*logarithm+amount**2/gap
     second = -2*logarithm+4*amount/gap+(amount/gap)**2
-    energy += np.sum(stiffness[active]*rest[active]**2*barrier)
     added_force = stiffness[active]*rest[active]*first
     radial_force[active] += added_force
     radial_hessian[active] += stiffness[active]*second
@@ -269,9 +271,15 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         'contactActivationMetres': CONTACT_ACTIVATION,
         'sourceSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}, indent=2))
 
-    def material(state, project=True):
-        energy, gradient, hessian = springs(state[:n], edges, rest, stiffness,
-            project=project, strain_count=structural_count, structural_elastic=not full_surface)
+    def material(state, project=True, derivatives=True):
+        result = springs(state[:n], edges, rest, stiffness, project=project,
+            strain_count=structural_count, structural_elastic=not full_surface, derivatives=derivatives)
+        if not derivatives:
+            energy = result
+            if full_surface:
+                energy += membrane_energy(state[:n], faces, membrane_rest, project=project, derivatives=False)
+            return energy
+        energy, gradient, hessian = result
         if full_surface:
             membrane_e, membrane_g, membrane_h = membrane_energy(state[:n], faces, membrane_rest, project=project)
             energy += membrane_e
@@ -280,7 +288,10 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         return energy, gradient, hessian
 
     def evaluate(state, predicted, derivatives=True, project=True):
-        energy, gradient, hessian = material(state, project)
+        if derivatives:
+            energy, gradient, hessian = material(state, project)
+        else:
+            energy = material(state, project, derivatives=False)
         delta = (state[:n]-predicted).ravel()
         energy += .5*np.dot(inertial*delta, delta)
         visible = surface(state)

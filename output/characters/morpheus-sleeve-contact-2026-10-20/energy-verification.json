@@ -1,0 +1,101 @@
+{
+  "verifiedAt": "2026-10-20T15:53:02.936036+00:00",
+  "baselineCommit": "bb435aa",
+  "baselineSourceSha256": "75a2ea959bd678b2a0d922adb894a991ddcd04261ede494b1016c38a8fe27815",
+  "optimizedSourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "scope": "Offline garment-authoring optimization only. No runtime game files, GLB, textures, save state, server settings or dependencies changed.",
+  "change": "Line-search energy evaluations skip spring and membrane derivatives; full Newton evaluations keep the previous derivatives.",
+  "equivalence": {
+    "frozenPoses": 14,
+    "materialAndProjectionCombinations": 56,
+    "displayVertices": 13386,
+    "triangles": 25796,
+    "energyExactlyEqual": true,
+    "gradientExactlyEqual": true,
+    "sparseHessianExactlyEqual": true,
+    "membraneSourceUnchanged": true,
+    "materialLimitsAndCollisionThresholdsUnchanged": true,
+    "scope": "These comparisons are on frozen accepted poses, not proof of a bitwise-identical complete trajectory."
+  },
+  "tests": {
+    "baseline": {
+      "passed": 22,
+      "failed": 0
+    },
+    "newBefore": {
+      "passed": 0,
+      "failed": 2
+    },
+    "after": {
+      "passed": 24,
+      "failed": 0
+    }
+  },
+  "measurement": {
+    "evaluations": 9,
+    "poseIds": [
+      2,
+      7,
+      14
+    ],
+    "fullMaterialMedianSeconds": 0.4119719574227929,
+    "energyOnlyMedianSeconds": 0.019075791351497173,
+    "pairedTimeRatioMedian": 0.04674065763447339,
+    "scope": "Same-process cProfile material measurements after the previous bake stopped and before the new bake/audits started. Not whole-bake speed or browser FPS."
+  },
+  "checkpoint": {
+    "acceptedSamples": 17,
+    "startTime": 0.8,
+    "endTime": 0.8604166666666667,
+    "selfIntersections": 0,
+    "bodyIntersections": 0,
+    "continuousChecksPassed": 17,
+    "maximumSurfaceStretch": 1.278092410378751,
+    "maximumP99SurfaceStretch": 1.011248632330952,
+    "maximumCuffErrorMetres": 3.411458419681628e-08,
+    "maximumNeckErrorMetres": 5.953826305320543e-08,
+    "positionsAndVelocityPreserved": true,
+    "originalProcessStoppedIntentionallyWithExitCode": 130
+  },
+  "resumedBake": {
+    "output": "ipc-membrane-energy-physics",
+    "targetTime": 1.0,
+    "resume": {
+      "resumedAt": 0.8604166666666667,
+      "acceptedSamples": 17,
+      "bodyErrorMetres": 2.168404344971009e-19,
+      "pinErrorMetres": 2.220446049250313e-16,
+      "displayUnchanged": true
+    },
+    "statusAtObservation": "51899 09:03 168.7 Rs   /Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/bin/python ipc_cloth.py --full-surface --resume ipc-membrane-energy-checkpoint --frames 7 --substeps 4 --output ipc-membrane-energy-physics",
+    "completed": false,
+    "integrationNote": "The existing resume loop continues from the exact accepted state and returns to its normal substep targets; its adaptive subdivision history is not stored in the checkpoint."
+  },
+  "deployment": {
+    "performed": false,
+    "reason": "Authoring-only change; Render also remains suspended for exhausted free outbound bandwidth.",
+    "lastSuccessfulCommit": "d313b94cdd740df0c99d299b8a4435029f4ea363"
+  },
+  "remaining": [
+    "Complete eight-second withdrawal, release, grasp and drop",
+    "Film-costume likeness and natural leather motion",
+    "Runtime integration, native visual and performance checks",
+    "All 42 trilogy quality groups and continuous playthrough"
+  ],
+  "evidenceSha256": {
+    "energy-only.test.py": "b34a4459ecb13774d7ef2e3a91f3153ee35aa391a99617828076c1edfee0f893",
+    "profile-energy.py": "18fa9f4175fe431f41dd75223eefec5514250ad758bd75b613c101d165de29e8",
+    "verify-energy.py": "7fe40382a6db2db77f21b1664b4d613329463013609cb008148666b3544f0289",
+    "energy-comparison.json": "3c10c30b6d38eb9b496d94d235fb0aa419396d9162fdc26b4184eca05f67e7cd",
+    "energy-paired.json": "46c75e129de47b52cd1d0757f70e35cb72c39ccc977d86f6b9df49fe7e402e84",
+    "energy-paired-profile.txt": "a37953a07df7625c5009f5a50259691d5a7d72981681bbdd345848d29085453e",
+    "energy-checkpoint-verification.json": "709df99e6767538213d51ad9abd33de963aa9112c8f7d6ed1bbf39083da3ce62",
+    "energy-test-results.log": "d9b81cedb47ca546dc15abd5ffd41c089b031f0aebfdf296a5a02ee14fcf3ce6",
+    "energy-resume-observation.log": "d07e062351447177ac4072d90efe2c933781f5cb5d4e7e8d2a29e4c2841cfc19",
+    "ipc-membrane-energy-checkpoint/substeps/partial-contact-results.json": "dfc37e8e6d2bb4bd68d055e754ef4f3bfd8c21fe1062c1512b02e228363dc39d",
+    "ipc-membrane-energy-checkpoint/substeps/partial-display-geometric-continuous-contact.json": "fedc166f39e837195f4843e69f9621aeb6b8391334d1efc6021722ef9353d480",
+    "ipc-membrane-energy-checkpoint/substeps/partial-boundary-results.json": "5f934438d1bbfb207acac6b03f595a397aba1fbb51b10da6488346ffe1f591ab",
+    "ipc-membrane-energy-checkpoint/substeps/partial-surface-strain-results.json": "92cbf74f45a1f58005409ec9263513fbebf093442bd05f294c07575956637e2d"
+  },
+  "logFormatting": "Removed trailing blank lines from the committed cProfile text; original raw output retained locally."
+}

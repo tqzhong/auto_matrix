@@ -1,0 +1,279 @@
+baseline membrane
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.019s
+
+OK
+
+baseline strain-limit
+....
+----------------------------------------------------------------------
+Ran 4 tests in 1.324s
+
+OK
+
+baseline ipc-material
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 2.171s
+
+OK
+
+baseline surface-strain
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.029s
+
+OK
+
+baseline continuous-check
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.212s
+
+OK
+
+new regression before optimization
+EEEEEEEEEEEEEEEEEEEEEE
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=0.97, elastic=True, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=0.97, elastic=True, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=0.97, elastic=False, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=0.97, elastic=False, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.0, elastic=True, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.0, elastic=True, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.0, elastic=False, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.0, elastic=False, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.025, elastic=True, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.025, elastic=True, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.025, elastic=False, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.025, elastic=False, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.06, elastic=True, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.06, elastic=True, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.06, elastic=False, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.06, elastic=False, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.099, elastic=True, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.099, elastic=True, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.099, elastic=False, project=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_matches_full_derivatives_in_both_material_modes (__main__.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) (scale=1.099, elastic=False, project=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 23, in test_energy_matches_full_derivatives_in_both_material_modes
+    only = springs(points, edges, rest, stiffness, project=project,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_only_still_rejects_overextended_structural_edges (__main__.EnergyOnlyTests.test_energy_only_still_rejects_overextended_structural_edges) (elastic=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 37, in test_energy_only_still_rejects_overextended_structural_edges
+    springs(np.array([[0., 0., 0.], [.331, 0., 0.]]),
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+======================================================================
+ERROR: test_energy_only_still_rejects_overextended_structural_edges (__main__.EnergyOnlyTests.test_energy_only_still_rejects_overextended_structural_edges) (elastic=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/energy-only.test.py", line 37, in test_energy_only_still_rejects_overextended_structural_edges
+    springs(np.array([[0., 0., 0.], [.331, 0., 0.]]),
+TypeError: springs() got an unexpected keyword argument 'derivatives'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.010s
+
+FAILED (errors=22)
+
+after energy-only
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.017s
+
+OK
+
+after membrane
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.022s
+
+OK
+
+after strain-limit
+....
+----------------------------------------------------------------------
+Ran 4 tests in 1.918s
+
+OK
+
+after ipc-material
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 2.714s
+
+OK
+
+after surface-strain
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.039s
+
+OK
+
+after continuous-check
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.250s
+
+OK
