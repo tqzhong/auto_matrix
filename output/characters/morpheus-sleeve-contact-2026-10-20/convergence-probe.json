@@ -1,0 +1,41 @@
+{
+  "solverSourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "rejectedStateSha256": "c783c4e1545c64fd1a283d558e1589f44e204844609394885058b8b74499627e",
+  "rejection": {
+    "number": 1,
+    "sourceFrame": 3,
+    "startTime": 0.8604166666666667,
+    "endTime": 0.8666666666666667,
+    "depth": 0,
+    "error": "contact solve did not converge: residual=0.13043902379218358"
+  },
+  "interval": {
+    "sourceFrame": 3,
+    "sourceBlend": 1.0,
+    "integrationSeconds": 0.0062499999999999925,
+    "barrierStiffness": 2.0566509306337654e+17,
+    "maximumBarrierStiffness": 5.772245751890004e+17,
+    "minimumGapMetres": 9.723756912671974e-06
+  },
+  "initial": {
+    "energy": 0.14396311884962582,
+    "maximumGradient": 0.04378219033201925,
+    "maximumNewtonStep": 0.00011599097484141619,
+    "relativeLinearResidual": 1.2594186519009867e-13
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "converged": true,
+      "iterations": 167,
+      "residual": 0.0005391583625511426
+    }
+  ],
+  "converged": true,
+  "seconds": 679.3540161671117,
+  "finalEnergy": 0.1439587246279435,
+  "maximumFinalNewtonStep": 9.263866696266378e-07,
+  "finalEndpointIntersects": false,
+  "fixedBodyAndCuffsUnchanged": true,
+  "scope": "Fixed-contact solve only; further body/cuff advancement and exported animation checks are still required."
+}

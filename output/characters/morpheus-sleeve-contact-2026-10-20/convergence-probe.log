@@ -1,0 +1,51 @@
+{"frozenState": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc-membrane-energy-physics/substeps/rejected-1.npz", "initial": {"energy": 0.14396311884962582, "maximumGradient": 0.04378219033201925, "maximumNewtonStep": 0.00011599097484141619, "relativeLinearResidual": 1.2594186519009867e-13}}
+{"iteration": 0, "energy": 0.14396311884962582, "residual": 0.04378219033201925, "maximumNewtonStep": 0.00011599097484145146, "alpha": 1.0}
+{"iteration": 20, "energy": 0.14395887650003047, "residual": 0.005569488385584505, "maximumNewtonStep": 2.0135089919714106e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.14395879522684935, "residual": 0.0022189571379448397, "maximumNewtonStep": 3.749565914384727e-06, "alpha": 1.0}
+{"iteration": 60, "energy": 0.14395878660713154, "residual": 0.0016571550716241543, "maximumNewtonStep": 2.5598001790817276e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 0.14395878235126494, "residual": 0.0012578900591439916, "maximumNewtonStep": 1.7952329638895475e-06, "alpha": 1.0}
+{"iteration": 100, "energy": 0.1439587798147254, "residual": 0.0010547326560324992, "maximumNewtonStep": 1.2988047884284373e-06, "alpha": 1.0}
+{"iteration": 120, "energy": 0.14395877825879383, "residual": 0.0008737964736994797, "maximumNewtonStep": 1.1315553911332454e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.14395877717339847, "residual": 0.0007157049010841917, "maximumNewtonStep": 1.0448400715567399e-06, "alpha": 1.0}
+{"iteration": 160, "energy": 0.14395874659899713, "residual": 0.0019110564957991686, "maximumNewtonStep": 1.7453454409288633e-05, "alpha": 1.0}
+{
+  "solverSourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "rejectedStateSha256": "c783c4e1545c64fd1a283d558e1589f44e204844609394885058b8b74499627e",
+  "rejection": {
+    "number": 1,
+    "sourceFrame": 3,
+    "startTime": 0.8604166666666667,
+    "endTime": 0.8666666666666667,
+    "depth": 0,
+    "error": "contact solve did not converge: residual=0.13043902379218358"
+  },
+  "interval": {
+    "sourceFrame": 3,
+    "sourceBlend": 1.0,
+    "integrationSeconds": 0.0062499999999999925,
+    "barrierStiffness": 2.0566509306337654e+17,
+    "maximumBarrierStiffness": 5.772245751890004e+17,
+    "minimumGapMetres": 9.723756912671974e-06
+  },
+  "initial": {
+    "energy": 0.14396311884962582,
+    "maximumGradient": 0.04378219033201925,
+    "maximumNewtonStep": 0.00011599097484141619,
+    "relativeLinearResidual": 1.2594186519009867e-13
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "converged": true,
+      "iterations": 167,
+      "residual": 0.0005391583625511426
+    }
+  ],
+  "converged": true,
+  "seconds": 679.3540161671117,
+  "finalEnergy": 0.1439587246279435,
+  "maximumFinalNewtonStep": 9.263866696266378e-07,
+  "finalEndpointIntersects": false,
+  "fixedBodyAndCuffsUnchanged": true,
+  "scope": "Fixed-contact solve only; further body/cuff advancement and exported animation checks are still required."
+}
