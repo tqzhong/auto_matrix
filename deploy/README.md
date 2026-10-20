@@ -2,13 +2,20 @@
 
 使用 Render 的 **Hobby 工作区 + Free Web Service** 运行现有 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 留在阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，玩家的浏览器负责 3D 渲染。部署配置见根目录 `render.yaml`，不购买服务器或持久磁盘，不使用付费语言模型。
 
-## 待发布修正（2026-10-20）
+## 当前版本（2026-10-20）
 
 `b4dc4144ce20ccac9a6f7764c39579018d230116` 已推送：修正墨菲斯旧楼衬衫前襟的23组自交。独立发布副本部署检查69/69，服装首轮46/47，唯一旧法线保护范围精确更新后相关两项2/2；三包构建通过，客户端为 `index-Yvjjmxdq.js`。其他1,133个已跟踪文件与基线相同，未混入未完成的脱衣改动。详见[修正与验证](../output/characters/morpheus-shirt-placket-2026-10-20/README.md)。
 
-Render 原标签页显示“无法访问此站点”，浏览器安全检查拒绝接管错误页；已请用户重新打开正常控制台，之后由 Codex 发布。网站复查仍为 `index-Iu4QQyG0.js`，此提交尚未验收上线。用户对后续自行测试、推送、发布与验收的授权保持有效，无需再次批准发布。
+已恢复正常 Render 控制台并由 Codex 发布最新提交 `d313b94cdd740df0c99d299b8a4435029f4ea363`（包含上述运行修正及说明）。部署 `dep-dbbdc7u7bikc73855vug` 显示 Live，Render 部署检查69/69，正式站确认提供 `index-Yvjjmxdq.js`。仍使用原免费服务和云存档；用户对后续自行测试、推送、发布与验收的授权保持有效。
 
-## 当前版本（2026-10-20）
+- 发布交接前后 tick17207、暂停状态、Neo位置/生命及完整 `neoLife` 内容保持，没有重建世界。HTTPS、双向 Socket.IO、224个素材和 GLB/MP3 分段请求通过，探测187ms。
+- 正式页面加载墨菲斯旧楼动作预览，并以 Neo 原生按键实测走动、转向、跳跃及 V 切换视角。208个采样中最大位移4.43米，跳跃有一个离地样本 y=2.5625，随后落回 y=1；第一人称转向前后截图保留。
+- 独立观察连接约9分25秒，没有自动断开；112次探测无超时，中位320ms、最大3278ms。运行状态年龄中位351ms、最大3634ms，仍不代表持续低延迟或帧率验收。试玩后暂停于 tick17556 / 第4天15:52，生命100、金钱$102、饱腹约95。
+- 人物预览仍显示外套，不能据此验收内部衬衫前襟近景；完整脱外套及三部曲高质量验收仍未完成。
+
+本轮[汇总及完整范围](../output/deployment/matrixai-shirt-2026-10-20/verification.json)、[发布截图](../output/deployment/matrixai-shirt-2026-10-20/render-live.png)、[转向前](../output/deployment/matrixai-shirt-2026-10-20/neo-first-person-before-turn.png)、[转向后](../output/deployment/matrixai-shirt-2026-10-20/neo-first-person-after-turn.png)和[最终暂停画面](../output/deployment/matrixai-shirt-2026-10-20/neo-final-paused.png)入库；完整采样、存档备份与日志保留在同一本地目录。
+
+## 2026-10-20 日常场景碰撞修复
 
 `1ce32d6e0d0668087665c97ca5f108acf8638d73` 已由 Codex 推送并发布到 <https://matrixai.online>。Render 部署 `dep-dbb5mkpjfumc73dahjug` 显示 Live，客户端为 `index-Iu4QQyG0.js`；仍使用原来的免费服务和云存档。
 
