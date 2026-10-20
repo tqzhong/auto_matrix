@@ -1,0 +1,21 @@
+{
+  "matrixShape": [
+    39591,
+    39591
+  ],
+  "matrixNonzeros": 1334223,
+  "rows": [
+    {
+      "method": "COLAMD",
+      "seconds": 2.0596115002408624,
+      "info": 0,
+      "iterations": 0,
+      "factorNonzeros": 20071473,
+      "relativeResidual": 2.3711588121234147e-13,
+      "maximumDisplacementDifferenceMetres": 0.0,
+      "matchesDirectSolve": true
+    }
+  ],
+  "sourceState": "ipc-membrane-energy-physics/substeps/rejected-1.npz",
+  "scope": "Same complete-garment matrix; other bakes were running. Not a full trajectory comparison."
+}

@@ -1,0 +1,110 @@
+{"resumedAt": 0.8604166666666667, "acceptedSamples": 17, "bodyErrorMetres": 2.168404344971009e-19, "pinErrorMetres": 2.220446049250313e-16, "displayUnchanged": true}
+{"sourceFrame": 3, "sourceBlend": 1.0, "integrationSeconds": 0.0062499999999999925, "barrierStiffness": 2.0566509306337654e+17, "maximumBarrierStiffness": 5.772245751890004e+17, "minimumGapMetres": 9.723756912671974e-06}
+{"iteration": 0, "energy": 0.1822754113956152, "residual": 18.604105397858365, "maximumNewtonStep": 0.003816650441174328, "alpha": 0.01611328125}
+{"iteration": 20, "energy": 0.1621881858605761, "residual": 489.6848354779165, "maximumNewtonStep": 0.0020832048556464026, "alpha": 0.0263671875}
+{"iteration": 40, "energy": 0.14875383928766547, "residual": 282.7837722944983, "maximumNewtonStep": 0.0008058415130442915, "alpha": 0.0546875}
+{"iteration": 60, "energy": 0.1458066091703588, "residual": 60.29760135811356, "maximumNewtonStep": 0.0006786261812752259, "alpha": 0.25}
+{"iteration": 80, "energy": 0.1451030008897358, "residual": 41.91777204071936, "maximumNewtonStep": 0.0004504099606768731, "alpha": 0.0032958984375}
+{"iteration": 100, "energy": 0.14464886552117132, "residual": 34.72444270880921, "maximumNewtonStep": 0.0010506279458413314, "alpha": 7.62939453125e-05}
+{"iteration": 120, "energy": 0.14443734758209442, "residual": 17.888266834981852, "maximumNewtonStep": 0.0003102042848199449, "alpha": 0.5}
+{"iteration": 140, "energy": 0.1440721804984156, "residual": 0.8894843378769454, "maximumNewtonStep": 0.00012134375912541488, "alpha": 0.005859375}
+{"iteration": 160, "energy": 0.14405784131266766, "residual": 0.08394796794897803, "maximumNewtonStep": 0.00023442030914172957, "alpha": 0.078125}
+{"iteration": 180, "energy": 0.14399998784314, "residual": 1.2680075261092438, "maximumNewtonStep": 0.0002566912861339313, "alpha": 1.0}
+{"iteration": 200, "energy": 0.14396127837089845, "residual": 0.04665231929977333, "maximumNewtonStep": 7.52043189103288e-05, "alpha": 1.0}
+{"iteration": 220, "energy": 0.14395882796355894, "residual": 0.002794066170651641, "maximumNewtonStep": 9.575928494020227e-06, "alpha": 1.0}
+{"iteration": 240, "energy": 0.14395879282476515, "residual": 0.002102569783294555, "maximumNewtonStep": 3.50960883967303e-06, "alpha": 1.0}
+{"iteration": 260, "energy": 0.14395878561838993, "residual": 0.0015678197972859701, "maximumNewtonStep": 2.3989084196084574e-06, "alpha": 1.0}
+{"iteration": 280, "energy": 0.14395878177144514, "residual": 0.0012156897951974273, "maximumNewtonStep": 1.6812508611801563e-06, "alpha": 1.0}
+{"iteration": 300, "energy": 0.14395877946400576, "residual": 0.001018971118167537, "maximumNewtonStep": 1.233676620393536e-06, "alpha": 1.0}
+{"iteration": 320, "energy": 0.14395877804051066, "residual": 0.0008421032751670752, "maximumNewtonStep": 1.1154603260677625e-06, "alpha": 1.0}
+{"iteration": 340, "energy": 0.14395877700227835, "residual": 0.0006884245802892719, "maximumNewtonStep": 1.0281874872157147e-06, "alpha": 1.0}
+{"iteration": 360, "energy": 0.14395873296401346, "residual": 0.001573903042478288, "maximumNewtonStep": 1.1959217413902039e-05, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 1, "prescribedFraction": 0.060546875, "remainingBodyMetres": 0.00010920159411398345, "remainingPinsMetres": 0.00046009892444484266}
+{"iteration": 0, "energy": 0.14657538692414523, "residual": 75.3876071021674, "maximumNewtonStep": 0.0010686591481291125, "alpha": 7.62939453125e-05}
+{"iteration": 20, "energy": 0.14633152011879336, "residual": 0.0010530457121488484, "maximumNewtonStep": 7.314217732181512e-06, "alpha": 1.0}
+{"iteration": 40, "energy": 0.14628234695473394, "residual": 0.02334974180521333, "maximumNewtonStep": 8.346445153790116e-06, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 2, "prescribedFraction": 0.166015625, "remainingBodyMetres": 9.107242321615416e-05, "remainingPinsMetres": 0.00038371531394130326}
+{"iteration": 0, "energy": 0.14881393167216445, "residual": 9.869658383275034, "maximumNewtonStep": 0.001036663394261414, "alpha": 7.62939453125e-05}
+{"iteration": 20, "energy": 0.14880877584316365, "residual": 0.0017789629590738846, "maximumNewtonStep": 1.1720700996773198e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.1488072974253622, "residual": 0.02306725929760101, "maximumNewtonStep": 4.130196669344233e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.1487545813919243, "residual": 0.08180827401435231, "maximumNewtonStep": 0.0002597059909963596, "alpha": 0.000885009765625}
+{"iteration": 80, "energy": 0.1486236063610125, "residual": 0.672361876217218, "maximumNewtonStep": 0.00012458290085157523, "alpha": 1.0}
+{"iteration": 100, "energy": 0.1485988864725923, "residual": 0.0007028839953303446, "maximumNewtonStep": 1.9171156031158273e-06, "alpha": 1.0}
+{"iteration": 120, "energy": 0.14859878100230864, "residual": 0.001459592338741102, "maximumNewtonStep": 3.361177657195601e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.1485980266352797, "residual": 0.07101876003793348, "maximumNewtonStep": 1.6900969158278912e-05, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 3, "prescribedFraction": 0.205078125, "remainingBodyMetres": 7.239546142377706e-05, "remainingPinsMetres": 0.000305023696824433}
+{"iteration": 0, "energy": 0.15414624776952288, "residual": 813.2940325626342, "maximumNewtonStep": 0.0005631827486441728, "alpha": 0.0009765625}
+{"iteration": 20, "energy": 0.15127334693403413, "residual": 0.0007350780411368345, "maximumNewtonStep": 2.5162706163485897e-06, "alpha": 1.0}
+{"iteration": 40, "energy": 0.15127331060636282, "residual": 0.0005774610551408299, "maximumNewtonStep": 2.0267144264381884e-06, "alpha": 1.0}
+{"iteration": 60, "energy": 0.1512732545951366, "residual": 0.00121723506818394, "maximumNewtonStep": 4.404414221703123e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 0.15125921514001742, "residual": 0.16598780602440255, "maximumNewtonStep": 0.00024332457719678776, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 4, "prescribedFraction": 0.265625, "remainingBodyMetres": 5.31654169830878e-05, "remainingPinsMetres": 0.00022400177735544188}
+{"iteration": 0, "energy": 0.15547006506240255, "residual": 362.9574222343338, "maximumNewtonStep": 0.00014739313756055716, "alpha": 0.00732421875}
+{"iteration": 20, "energy": 0.15355709197536854, "residual": 0.5595413349797965, "maximumNewtonStep": 6.792067543246887e-05, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 5, "prescribedFraction": 0.33984375, "remainingBodyMetres": 3.509748230524218e-05, "remainingPinsMetres": 0.00014787617333230502}
+{"iteration": 0, "energy": 0.15662911204040217, "residual": 215.0198356275772, "maximumNewtonStep": 0.00015249584802059363, "alpha": 0.003662109375}
+{"iteration": 20, "energy": 0.1561429677424746, "residual": 0.002703662288307644, "maximumNewtonStep": 1.3994799167711411e-05, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 6, "prescribedFraction": 0.5, "remainingBodyMetres": 1.754874115261762e-05, "remainingPinsMetres": 7.393808666615251e-05}
+{"iteration": 0, "energy": 0.15938416829426522, "residual": 221.87420930942315, "maximumNewtonStep": 0.0001693997285644175, "alpha": 0.00244140625}
+{"iteration": 20, "energy": 0.15881163327955933, "residual": 3.6085444067255144, "maximumNewtonStep": 0.00026004528095560853, "alpha": 0.25}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 7, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 6.776263578034403e-21}
+{"rejected": {"number": 1, "sourceFrame": 3, "startTime": 0.8604166666666667, "endTime": 0.8666666666666667, "depth": 0, "error": "the exported substep crosses: {'frame': 18, 'time': 0.8666666666666667, 'sourceFrame': 3, 'substep': 4.0, 'integrationSeconds': 0.0062499999999999925, 'maximumEdgeStretch': 1.0693161795955717, 'maximumSurfaceStretch': 1.2763354543958343, 'p99SurfaceStretch': 1.010818192321295, 'endpointIntersects': False, 'collisionFreeStep': 0.19602131843566895, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0498046875}"}}
+{"sourceFrame": 3, "sourceBlend": 0.9062500000000001, "integrationSeconds": 0.0031249999999999963, "barrierStiffness": 2.056864123908453e+17, "maximumBarrierStiffness": 2.308898300756002e+18, "minimumGapMetres": 9.723756912671974e-06}
+{"iteration": 0, "energy": 0.17478128726573744, "residual": 217.90233950121439, "maximumNewtonStep": 0.0022839290366322646, "alpha": 0.006591796875}
+{"iteration": 20, "energy": 0.14595066928679976, "residual": 70.13565740560135, "maximumNewtonStep": 0.0006302219934820433, "alpha": 0.119140625}
+{"iteration": 40, "energy": 0.1435129532494189, "residual": 14.061739981565834, "maximumNewtonStep": 0.00022997533791942881, "alpha": 0.03125}
+{"iteration": 60, "energy": 0.14300011089682826, "residual": 0.482081229748641, "maximumNewtonStep": 0.00013184728679114006, "alpha": 0.5}
+{"iteration": 80, "energy": 0.14278635538292225, "residual": 0.7563414318463471, "maximumNewtonStep": 0.00025938573184372304, "alpha": 0.021484375}
+{"iteration": 100, "energy": 0.1427315618910206, "residual": 0.00442226220114549, "maximumNewtonStep": 1.0013290415440278e-05, "alpha": 1.0}
+{"iteration": 120, "energy": 0.1427314862597234, "residual": 0.008251113062074109, "maximumNewtonStep": 4.438356250343052e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.14273143880011763, "residual": 0.0009043949446350236, "maximumNewtonStep": 3.923484620074093e-06, "alpha": 1.0}
+{"iteration": 160, "energy": 0.1427258349713175, "residual": 0.04712241224677284, "maximumNewtonStep": 5.8186132374726376e-05, "alpha": 1.0}
+{"iteration": 180, "energy": 0.14264880340408678, "residual": 0.0003514574005466931, "maximumNewtonStep": 1.2650603209149932e-06, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 0.9062500000000001, "advance": 1, "prescribedFraction": 0.0859375, "remainingBodyMetres": 5.312509983923519e-05, "remainingPinsMetres": 0.00022383190918938423}
+{"iteration": 0, "energy": 0.1500066975972043, "residual": 507.4301409120914, "maximumNewtonStep": 0.0005174844843810938, "alpha": 0.0010986328125}
+{"iteration": 20, "energy": 0.1473486451057246, "residual": 0.00394977295121896, "maximumNewtonStep": 6.9233448655154025e-06, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 0.9062500000000001, "advance": 2, "prescribedFraction": 0.59765625, "remainingBodyMetres": 2.1374551888442284e-05, "remainingPinsMetres": 9.005736971291756e-05}
+{"iteration": 0, "energy": 0.15302389499692018, "residual": 566.5805444875, "maximumNewtonStep": 3.3468656241944194e-05, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 0.9062500000000001, "advance": 3, "prescribedFraction": 0.5, "remainingBodyMetres": 1.0687275944221142e-05, "remainingPinsMetres": 4.502868485645878e-05}
+{"iteration": 0, "energy": 0.15086175901832982, "residual": 78.78329007089147, "maximumNewtonStep": 0.0009730865514135315, "alpha": 0.0003662109375}
+{"iteration": 20, "energy": 0.15076255223012958, "residual": 0.00027388383749530026, "maximumNewtonStep": 2.334370043960934e-06, "alpha": 1.0}
+{"iteration": 40, "energy": 0.15076233007917011, "residual": 0.00312836592732885, "maximumNewtonStep": 3.24620629133358e-05, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 0.9062500000000001, "advance": 4, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 18, "time": 0.8635416666666667, "sourceFrame": 3, "substep": 3.6250000000000004, "integrationSeconds": 0.0031249999999999963, "maximumEdgeStretch": 1.0711115696132998, "maximumSurfaceStretch": 1.2760774524787304, "p99SurfaceStretch": 1.0112160834758943, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.119140625}}
+{"sourceFrame": 3, "sourceBlend": 1.0, "integrationSeconds": 0.0031249999999999963, "barrierStiffness": 2.056104807988926e+17, "maximumBarrierStiffness": 2.308898300756002e+18, "minimumGapMetres": 9.721747308234037e-06}
+{"iteration": 0, "energy": 0.1726522647618657, "residual": 60.49820183117106, "maximumNewtonStep": 0.003017407138143288, "alpha": 0.0068359375}
+{"iteration": 20, "energy": 0.14515919123189994, "residual": 541.4816170278226, "maximumNewtonStep": 0.0008961408068591966, "alpha": 0.59765625}
+{"iteration": 40, "energy": 0.13548453020669404, "residual": 57.32200979047093, "maximumNewtonStep": 0.00033735998021850366, "alpha": 0.439453125}
+{"iteration": 60, "energy": 0.13510531051605956, "residual": 0.7958590176231137, "maximumNewtonStep": 0.00021907193384365748, "alpha": 1.0}
+{"iteration": 80, "energy": 0.13503370737042558, "residual": 0.20424329684176357, "maximumNewtonStep": 4.555076228340357e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.13502097283117845, "residual": 0.006511122146802897, "maximumNewtonStep": 4.457214078183433e-06, "alpha": 1.0}
+{"iteration": 120, "energy": 0.1350195464133391, "residual": 0.002869832640115713, "maximumNewtonStep": 2.1610430306752815e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.13501954439888988, "residual": 0.0012013555976663453, "maximumNewtonStep": 1.4229529717235622e-06, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 1, "prescribedFraction": 0.046875, "remainingBodyMetres": 5.539540325116832e-05, "remainingPinsMetres": 0.00023339737539405242}
+{"iteration": 0, "energy": 0.14484186336508315, "residual": 1677.21362647737, "maximumNewtonStep": 0.00030003028203759316, "alpha": 0.003662109375}
+{"iteration": 20, "energy": 0.1393720957620883, "residual": 0.0009338156318058988, "maximumNewtonStep": 3.944597645877273e-06, "alpha": 1.0}
+{"iteration": 40, "energy": 0.13930335604520389, "residual": 0.0713262214741649, "maximumNewtonStep": 2.1022462884184857e-06, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 2, "prescribedFraction": 0.5625, "remainingBodyMetres": 2.423548892238614e-05, "remainingPinsMetres": 0.00010211135173489663}
+{"iteration": 0, "energy": 0.14700112711706384, "residual": 1691.8816668006414, "maximumNewtonStep": 6.33674823986657e-05, "alpha": 0.029296875}
+{"iteration": 20, "energy": 0.14125539741529866, "residual": 0.0012347641570985418, "maximumNewtonStep": 1.0546199957625982e-05, "alpha": 1.0}
+{"iteration": 40, "energy": 0.14113530535362204, "residual": 0.4639359738939513, "maximumNewtonStep": 0.000273504380102203, "alpha": 1.0}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 3, "prescribedFraction": 0.5390625, "remainingBodyMetres": 1.1171045675162361e-05, "remainingPinsMetres": 4.706695119030546e-05}
+{"iteration": 0, "energy": 0.14287754327368093, "residual": 17.22123953294737, "maximumNewtonStep": 9.131505913445854e-06, "alpha": 0.04296875}
+{"sourceFrame": 3, "sourceBlend": 1.0, "advance": 4, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 19, "time": 0.8666666666666667, "sourceFrame": 3, "substep": 4.0, "integrationSeconds": 0.0031249999999999963, "maximumEdgeStretch": 1.0698001561027746, "maximumSurfaceStretch": 1.2763708868647494, "p99SurfaceStretch": 1.0108839629776207, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.134765625}}
+{"frame": 3, "time": 0.8666666666666667, "seconds": 8457.97354129143, "steps": [{"sourceBlend": 0.9062500000000001, "integrationSeconds": 0.0031249999999999963, "advances": 4, "iterations": 58, "residual": 0.00018628116424271855}, {"sourceBlend": 1.0, "integrationSeconds": 0.0031249999999999963, "advances": 4, "iterations": 10, "residual": 0.0002950802900639561}], "maximumEdgeStretch": 1.0698137464497872, "p99EdgeStretch": 1.0053295767675672, "bodyDifference": 0.0}
+{
+  "originalSourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "candidateSourceSha256": "8f5551c0cc6ea877b05e1f5e3ae9e8e4ed92d306e41a76fb87f4b2548a669d5f",
+  "change": {
+    "before": "for iteration in range(200):",
+    "after": "for iteration in range(600):"
+  },
+  "checkpoint": "ipc-membrane-energy-checkpoint",
+  "checkpointSha256": "89004929876e85ceba1b03705d64f464a13b81bc5836f09034adc5554731052e",
+  "requestedEnd": 0.8666666666666667,
+  "output": "ipc-membrane-budget600-control",
+  "pid": 90607,
+  "exitCode": 0,
+  "seconds": 8460.40024487488
+}

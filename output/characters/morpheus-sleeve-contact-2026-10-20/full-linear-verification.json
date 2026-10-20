@@ -1,0 +1,317 @@
+{
+  "matrixShape": [
+    39591,
+    39591
+  ],
+  "vertices": 13386,
+  "triangles": 25796,
+  "solverSourceSha256": "bd4b011851e36260ef08099cae7f9bd8eed7bcf76f491e360ac21c377e58c116",
+  "rhsKinds": [
+    "free Newton motion",
+    "response to body and cuff motion"
+  ],
+  "rows": [
+    {
+      "rejection": 1,
+      "integrationSeconds": 0.0062499999999999925,
+      "stateSha256": "c783c4e1545c64fd1a283d558e1589f44e204844609394885058b8b74499627e",
+      "maximumMatrixAsymmetry": 2.7939677238464355e-09,
+      "maximumDisplacementDifferencesMetres": [
+        1.9845048894437297e-16,
+        2.5590213813004442e-14
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 11.16876162495464,
+          "factorNonzeros": 20071473,
+          "relativeResiduals": [
+            1.2875305275020497e-13,
+            5.8444353440802024e-15
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 4.79390237480402,
+          "factorNonzeros": 11318076,
+          "relativeResiduals": [
+            9.373991736373104e-14,
+            8.47596120581265e-15
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 10.619927791878581,
+          "factorNonzeros": 20071473,
+          "relativeResiduals": [
+            1.2875305275020497e-13,
+            5.8444353440802024e-15
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        1.984494830927481e-16,
+        2.5590057958942147e-14
+      ]
+    },
+    {
+      "rejection": 2,
+      "integrationSeconds": 0.008333333333333349,
+      "stateSha256": "9a9388fe5ef7638a6261887023c886f2e92203ea13525717239d00cb7dc92a45",
+      "maximumMatrixAsymmetry": 3.725290298461914e-09,
+      "maximumDisplacementDifferencesMetres": [
+        2.8676078744890174e-17,
+        1.043546759421643e-13
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 9.307069624774158,
+          "factorNonzeros": 20081871,
+          "relativeResiduals": [
+            1.2971981447254168e-14,
+            1.50116349698258e-14
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 2.7891697911545634,
+          "factorNonzeros": 11299896,
+          "relativeResiduals": [
+            6.8666044632088566e-15,
+            6.145268608964164e-15
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 6.6297551253810525,
+          "factorNonzeros": 20081871,
+          "relativeResiduals": [
+            1.2971981447254168e-14,
+            1.50116349698258e-14
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        2.867600926171872e-17,
+        1.0433819606914252e-13
+      ]
+    },
+    {
+      "rejection": 4,
+      "integrationSeconds": 0.002083333333333337,
+      "stateSha256": "824deaebcc9fe5ad748c79b7c913640bbfc8f41e63682f8df902ab22dee44877",
+      "maximumMatrixAsymmetry": 1.862645149230957e-09,
+      "maximumDisplacementDifferencesMetres": [
+        3.8476471629026593e-19,
+        1.4995333899625673e-15
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 8.20058058295399,
+          "factorNonzeros": 19725081,
+          "relativeResiduals": [
+            6.732155599998176e-14,
+            1.5357466573260356e-14
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 3.15602295845747,
+          "factorNonzeros": 11332386,
+          "relativeResiduals": [
+            4.351112194960061e-14,
+            1.2854110750335837e-14
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 6.180048583075404,
+          "factorNonzeros": 19725081,
+          "relativeResiduals": [
+            6.732155599998176e-14,
+            1.5357466573260356e-14
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        3.8476471629026593e-19,
+        1.4994889062571757e-15
+      ]
+    },
+    {
+      "rejection": 5,
+      "integrationSeconds": 0.002083333333333337,
+      "stateSha256": "cef9e3998d47bf79c15f8807fc1e64deb81f5e9ece72b3a5d2dc8b0df40ebd23",
+      "maximumMatrixAsymmetry": 1.862645149230957e-09,
+      "maximumDisplacementDifferencesMetres": [
+        8.101737791589374e-20,
+        8.101737791589374e-20
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 4.9514898750931025,
+          "factorNonzeros": 19698357,
+          "relativeResiduals": [
+            2.10946244723589e-13,
+            2.10946244723589e-13
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 3.1951366253197193,
+          "factorNonzeros": 11284866,
+          "relativeResiduals": [
+            1.4754956884793388e-13,
+            1.4754956884793388e-13
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 5.334624333307147,
+          "factorNonzeros": 19698357,
+          "relativeResiduals": [
+            2.10946244723589e-13,
+            2.10946244723589e-13
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        8.099752558119247e-20,
+        8.099752558119247e-20
+      ]
+    },
+    {
+      "rejection": 6,
+      "integrationSeconds": 0.008333333333333378,
+      "stateSha256": "38762b5e9270c9a9583ff349cf15904ce10c57af17d4f3760a447b4ec7723906",
+      "maximumMatrixAsymmetry": 1.862645149230957e-09,
+      "maximumDisplacementDifferencesMetres": [
+        7.862630978491326e-17,
+        4.3966360500219404e-13
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 5.627275167033076,
+          "factorNonzeros": 20123679,
+          "relativeResiduals": [
+            9.436155522708817e-15,
+            1.0208965238240184e-14
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 3.225411457940936,
+          "factorNonzeros": 11325258,
+          "relativeResiduals": [
+            8.422089035539883e-15,
+            5.694865914165894e-15
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 5.307750666514039,
+          "factorNonzeros": 20123679,
+          "relativeResiduals": [
+            9.436155522708817e-15,
+            1.0208965238240184e-14
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        7.859301080217432e-17,
+        4.3966674918849424e-13
+      ]
+    },
+    {
+      "rejection": 7,
+      "integrationSeconds": 0.004166666666666689,
+      "stateSha256": "d906c62b1c333f711601974ea72ea52853ea9a2f99b434bc0ac59cedfac040bd",
+      "maximumMatrixAsymmetry": 3.725290298461914e-09,
+      "maximumDisplacementDifferencesMetres": [
+        9.702850091942941e-18,
+        9.702850091942941e-18
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 6.298223459161818,
+          "factorNonzeros": 19930161,
+          "relativeResiduals": [
+            1.3070452682922483e-13,
+            1.3070452682922483e-13
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 2.4952155835926533,
+          "factorNonzeros": 11184786,
+          "relativeResiduals": [
+            1.4862141722844596e-13,
+            1.4862141722844596e-13
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 6.1369185000658035,
+          "factorNonzeros": 19930161,
+          "relativeResiduals": [
+            1.3070452682922483e-13,
+            1.3070452682922483e-13
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        9.702850919123554e-18,
+        9.702850919123554e-18
+      ]
+    },
+    {
+      "rejection": 8,
+      "integrationSeconds": 0.0020833333333333446,
+      "stateSha256": "53e74ca91290d8c530a4c64590f817eb489f7aaa1bd49bfce09c1f82196b7ca7",
+      "maximumMatrixAsymmetry": 1.862645149230957e-09,
+      "maximumDisplacementDifferencesMetres": [
+        7.405698393350504e-19,
+        7.405698393350504e-19
+      ],
+      "solves": [
+        {
+          "method": "COLAMD",
+          "seconds": 5.642472292296588,
+          "factorNonzeros": 19685763,
+          "relativeResiduals": [
+            2.610291427180781e-13,
+            2.610291427180781e-13
+          ]
+        },
+        {
+          "method": "symmetric-MMD",
+          "seconds": 2.0936442082747817,
+          "factorNonzeros": 11262474,
+          "relativeResiduals": [
+            9.82644321720294e-14,
+            9.82644321720294e-14
+          ]
+        },
+        {
+          "method": "COLAMD",
+          "seconds": 5.318799541331828,
+          "factorNonzeros": 19685763,
+          "relativeResiduals": [
+            2.610291427180781e-13,
+            2.610291427180781e-13
+          ]
+        }
+      ],
+      "productionSolverDifferencesMetres": [
+        7.405584656016278e-19,
+        7.405584656016278e-19
+      ]
+    }
+  ],
+  "scope": "Recorded full-garment systems; no animation or runtime asset has changed."
+}

@@ -1,0 +1,44 @@
+{
+  "rows": [
+    {
+      "repeat": 0,
+      "evaluationSeconds": 0.6598587920889258,
+      "linearSeconds": 1.9925096249207854,
+      "ccdSeconds": 0.11782233323901892,
+      "lineSearchSeconds": 0.10372341703623533,
+      "lineSearchEvaluations": 1,
+      "alpha": 1.0,
+      "energy": 0.14396311884962582,
+      "maximumNewtonStep": 0.00011599097484144298,
+      "relativeLinearResidual": 1.3602119144489403e-13
+    },
+    {
+      "repeat": 1,
+      "evaluationSeconds": 0.5485235415399075,
+      "linearSeconds": 1.9563762079924345,
+      "ccdSeconds": 0.12249612528830767,
+      "lineSearchSeconds": 0.09914087504148483,
+      "lineSearchEvaluations": 1,
+      "alpha": 1.0,
+      "energy": 0.14396311884962582,
+      "maximumNewtonStep": 0.000115990974841482,
+      "relativeLinearResidual": 1.5731783880919072e-13
+    },
+    {
+      "repeat": 2,
+      "evaluationSeconds": 0.5323291663080454,
+      "linearSeconds": 1.893265875056386,
+      "ccdSeconds": 0.11135958414524794,
+      "lineSearchSeconds": 0.1179152075201273,
+      "lineSearchEvaluations": 1,
+      "alpha": 1.0,
+      "energy": 0.14396311884962582,
+      "maximumNewtonStep": 0.00011599097484145541,
+      "relativeLinearResidual": 1.0903962892160748e-13
+    }
+  ],
+  "sourceState": "ipc-membrane-energy-physics/substeps/rejected-1.npz",
+  "vertices": 13386,
+  "triangles": 25796,
+  "scope": "Three frozen Newton iterations with real complete geometry; not total bake time or game FPS."
+}

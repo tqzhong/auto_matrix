@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 import numpy as np
 import scipy.sparse as sp
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import spsolve, splu
 import ipctk
 from cloth_embedding import embed_panels
 from continuous_check import measure_step
@@ -26,11 +26,22 @@ class ClothStepError(RuntimeError):
     pass
 
 
+def solve_contact(matrix, rhs):
+    """Factor a projected contact matrix without breaking its symmetric sparsity."""
+    factor = splu(matrix, permc_spec='MMD_AT_PLUS_A', diag_pivot_thresh=0,
+                  options={'SymmetricMode': True})
+    solution = factor.solve(rhs)
+    error = float(np.max(np.abs(matrix@solution-rhs)))
+    if not np.all(np.isfinite(solution)) or error > 1e-7*np.max(np.abs(rhs)):
+        raise ClothStepError(f'contact linear solve lost accuracy: residual={error}')
+    return solution
+
+
 def prescribed_response(gradient, hessian, free, fixed_motion):
     """Move the free garment with imposed cuff/body motion before CCD."""
     motion = fixed_motion.ravel().copy()
     rhs = -gradient[free]-(hessian[free]@motion)
-    motion[free] = spsolve(hessian[free][:, free].tocsc(), rhs)
+    motion[free] = solve_contact(hessian[free][:, free].tocsc(), rhs)
     return motion.reshape(fixed_motion.shape)
 
 
@@ -309,14 +320,15 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         return energy, full_gradient, full_hessian
 
     def relax(predicted):
+        linear_solve = spsolve if raw_newton else solve_contact
         for iteration in range(200):
             energy, full_gradient, full_hessian = evaluate(x, predicted, project=not raw_newton)
             gradient, hessian = full_gradient[free], full_hessian[free][:, free]
-            displacement = spsolve(hessian.tocsc(), -gradient)
+            displacement = linear_solve(hessian.tocsc(), -gradient)
             if gradient@displacement >= 0:
                 energy, full_gradient, full_hessian = evaluate(x, predicted, project=True)
                 gradient, hessian = full_gradient[free], full_hessian[free][:, free]
-                displacement = spsolve(hessian.tocsc(), -gradient)
+                displacement = solve_contact(hessian.tocsc(), -gradient)
             residual = float(np.linalg.norm(gradient, np.inf))
             # A one-micrometre Newton update is below displayed cloth detail.
             # This only stops energy minimization; CCD and zero-intersection

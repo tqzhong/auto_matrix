@@ -1,0 +1,20 @@
+{
+  "resume": "ipc-linear-resume-checkpoint",
+  "resumedAt": 0.8791666666666667,
+  "requestedEnd": 1.0,
+  "maximumStepSeconds": 0.008333333333333333,
+  "fullSurfacePhysics": true,
+  "physicalVertices": 13386,
+  "membrane": {
+    "model": "area-weighted Green strain",
+    "modulusNewtonsPerMetre": 50000.0,
+    "poissonRatio": 0.3,
+    "sourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b"
+  },
+  "displayVertices": 13386,
+  "prescribedVertices": 189,
+  "structuralStrainOnset": 1.03,
+  "structuralStrainLimit": 1.1,
+  "contactActivationMetres": 1e-05,
+  "sourceSha256": "bd4b011851e36260ef08099cae7f9bd8eed7bcf76f491e360ac21c377e58c116"
+}

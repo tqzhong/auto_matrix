@@ -1,0 +1,8 @@
+{
+  "pid": 51899,
+  "checkpoint": "ipc-linear-resume-checkpoint",
+  "acceptedSamples": 27,
+  "lastTime": 0.8791666666666667,
+  "checkpointSha256": "13f8e82c61e60816fe155a03e4fb04e3053232e771edbb0a63fad78d96e44377",
+  "reason": "The symmetric factorization passed 14 recorded systems, a complete exported interval, four geometry audits, and 24 regression tests. Preserve all accepted old-solver states before resuming with it."
+}

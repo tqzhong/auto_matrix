@@ -1,0 +1,171 @@
+{
+  "baseCommit": "b5bd39a",
+  "originalSolverSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+  "adoptedSolverSha256": "bd4b011851e36260ef08099cae7f9bd8eed7bcf76f491e360ac21c377e58c116",
+  "change": "Use symmetric MMD ordering without diagonal pivoting only for projected contact matrices; retain ordinary pivoting for unprojected Newton, 200 iterations and every geometry/material gate.",
+  "profile": {
+    "frozenFullMatrices": 7,
+    "rhsPerMatrix": 2,
+    "maximumProductionDifferenceMetres": 4.3966674918849424e-13,
+    "maximumRelativeResidual": 2.610291427180781e-13,
+    "baselineMedianSeconds": 6.158483541570604,
+    "candidateMedianSeconds": 3.15602295845747,
+    "scope": "Paired same-process full-matrix factorizations under concurrent load; not total bake time or game FPS."
+  },
+  "fixedContactControl": {
+    "oldIterations": 167,
+    "newIterations": 167,
+    "maximumPositionDifferenceMetres": 9.769962616701378e-15,
+    "oldSeconds": 679.3540161671117,
+    "newSeconds": 935.4069366250187,
+    "timingLimitation": "Different runs and host load; these wall times do not show a speed improvement."
+  },
+  "completeStep": {
+    "startTime": 0.8760416666666666,
+    "requestedInterval": {
+      "sourceFrame": 4,
+      "sourceBlend": 0.312499999999999,
+      "integrationSeconds": 0.0010416666666666723,
+      "barrierStiffness": 2.078944830149106e+17,
+      "maximumBarrierStiffness": 2.0780084706803737e+19,
+      "minimumGapMetres": 9.725453663702207e-06
+    },
+    "accepted": {
+      "frame": 26,
+      "time": 0.8770833333333333,
+      "sourceFrame": 4,
+      "substep": 1.249999999999996,
+      "integrationSeconds": 0.001041666666666737,
+      "maximumEdgeStretch": 1.062298109450173,
+      "maximumSurfaceStretch": 1.2820011848113766,
+      "p99SurfaceStretch": 1.0093840179560325,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 0.248046875
+    },
+    "linearSolves": 108,
+    "maximumLinearResidual": 2.3463083907975337e-13,
+    "seconds": 585.5696955826133,
+    "scope": "One complete interval after a frozen prefix; not the full withdrawal.",
+    "identicalExportFiles": 78,
+    "independentAudits": {
+      "samples": 26,
+      "startTime": 0.8,
+      "lastTime": 0.8770833333333333,
+      "allChecksPassed": true,
+      "physicalAndDisplayedVertices": 13386,
+      "triangles": 25796,
+      "bodyLayers": 13,
+      "maximumSurfaceStretch": 1.2822497871735523,
+      "maximumP99SurfaceStretch": 1.011248632330952,
+      "maximumBoundaryErrorMetres": 5.957289262123184e-08
+    }
+  },
+  "rejectedBudgetChange": {
+    "iterations": 600,
+    "run": {
+      "originalSourceSha256": "6b4c74d8fb8589193b9331ebc26e598e0b5adcdce2d0752ae57a9262cc789f6a",
+      "candidateSourceSha256": "8f5551c0cc6ea877b05e1f5e3ae9e8e4ed92d306e41a76fb87f4b2548a669d5f",
+      "change": {
+        "before": "for iteration in range(200):",
+        "after": "for iteration in range(600):"
+      },
+      "checkpoint": "ipc-membrane-energy-checkpoint",
+      "checkpointSha256": "89004929876e85ceba1b03705d64f464a13b81bc5836f09034adc5554731052e",
+      "requestedEnd": 0.8666666666666667,
+      "output": "ipc-membrane-budget600-control",
+      "pid": 90607,
+      "exitCode": 0,
+      "seconds": 8460.40024487488
+    },
+    "rejections": [
+      {
+        "number": 1,
+        "sourceFrame": 3,
+        "startTime": 0.8604166666666667,
+        "endTime": 0.8666666666666667,
+        "depth": 0,
+        "error": "the exported substep crosses: {'frame': 18, 'time': 0.8666666666666667, 'sourceFrame': 3, 'substep': 4.0, 'integrationSeconds': 0.0062499999999999925, 'maximumEdgeStretch': 1.0693161795955717, 'maximumSurfaceStretch': 1.2763354543958343, 'p99SurfaceStretch': 1.010818192321295, 'endpointIntersects': False, 'collisionFreeStep': 0.19602131843566895, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0498046875}"
+      }
+    ],
+    "identicalExportFiles": 57,
+    "independentAudits": {
+      "samples": 19,
+      "startTime": 0.8,
+      "lastTime": 0.8666666666666667,
+      "allChecksPassed": true,
+      "physicalAndDisplayedVertices": 13386,
+      "triangles": 25796,
+      "bodyLayers": 13,
+      "maximumSurfaceStretch": 1.278092410378751,
+      "maximumP99SurfaceStretch": 1.011248632330952,
+      "maximumBoundaryErrorMetres": 5.957289262123184e-08
+    },
+    "decision": "Do not adopt: the large converged interval still crossed during displayed interpolation; subdivision was still necessary."
+  },
+  "regression": {
+    "beforePassed": 24,
+    "afterPassed": 24,
+    "afterLog": "linear-regression-after.log"
+  },
+  "resume": {
+    "checkpoint": {
+      "pid": 51899,
+      "checkpoint": "ipc-linear-resume-checkpoint",
+      "acceptedSamples": 27,
+      "lastTime": 0.8791666666666667,
+      "checkpointSha256": "13f8e82c61e60816fe155a03e4fb04e3053232e771edbb0a63fad78d96e44377",
+      "reason": "The symmetric factorization passed 14 recorded systems, a complete exported interval, four geometry audits, and 24 regression tests. Preserve all accepted old-solver states before resuming with it."
+    },
+    "oldProcessExitCode": 130,
+    "independentAudits": {
+      "samples": 27,
+      "startTime": 0.8,
+      "lastTime": 0.8791666666666667,
+      "allChecksPassed": true,
+      "physicalAndDisplayedVertices": 13386,
+      "triangles": 25796,
+      "bodyLayers": 13,
+      "maximumSurfaceStretch": 1.2822497871735523,
+      "maximumP99SurfaceStretch": 1.011248632330952,
+      "maximumBoundaryErrorMetres": 5.963727891756315e-08
+    },
+    "newProcessId": 49804,
+    "newRun": {
+      "resume": "ipc-linear-resume-checkpoint",
+      "resumedAt": 0.8791666666666667,
+      "requestedEnd": 1.0,
+      "maximumStepSeconds": 0.008333333333333333,
+      "fullSurfacePhysics": true,
+      "physicalVertices": 13386,
+      "membrane": {
+        "model": "area-weighted Green strain",
+        "modulusNewtonsPerMetre": 50000.0,
+        "poissonRatio": 0.3,
+        "sourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b"
+      },
+      "displayVertices": 13386,
+      "prescribedVertices": 189,
+      "structuralStrainOnset": 1.03,
+      "structuralStrainLimit": 1.1,
+      "contactActivationMetres": 1e-05,
+      "sourceSha256": "bd4b011851e36260ef08099cae7f9bd8eed7bcf76f491e360ac21c377e58c116"
+    },
+    "observed": {
+      "resumedAt": 0.8791666666666667,
+      "acceptedSamples": 27,
+      "bodyErrorMetres": 6.938893903907228e-18,
+      "pinErrorMetres": 2.220446049250313e-16,
+      "displayUnchanged": true
+    }
+  },
+  "preserved": {
+    "protectedTrackedWorktreeFiles": 6,
+    "runtimeAssetsChanged": false,
+    "gamePreviewUpdated": false,
+    "cloudDeployed": false,
+    "qualityGroupsAccepted": 0
+  },
+  "remaining": "Complete eight-second withdrawal, actual grip/release/drop, film-quality leather and characters, runtime integration and native gameplay verification."
+}

@@ -1,0 +1,66 @@
+{
+  "matrixShape": [
+    39591,
+    39591
+  ],
+  "matrixNonzeros": 1334223,
+  "rows": [
+    {
+      "method": "COLAMD",
+      "seconds": 2.2963060000911355,
+      "info": 0,
+      "iterations": 0,
+      "factorNonzeros": 20071473,
+      "relativeResidual": 2.3711588121234147e-13,
+      "maximumDisplacementDifferenceMetres": 0.0,
+      "matchesDirectSolve": true,
+      "status": "complete"
+    },
+    {
+      "method": "MMD_ATA",
+      "seconds": 1.618314541876316,
+      "info": 0,
+      "iterations": 0,
+      "factorNonzeros": 21544053,
+      "relativeResidual": 1.3009775185240591e-13,
+      "maximumDisplacementDifferenceMetres": 8.94433440378243e-17,
+      "matchesDirectSolve": true,
+      "status": "complete"
+    },
+    {
+      "method": "symmetric-MMD",
+      "seconds": 0.7909252913668752,
+      "info": 0,
+      "iterations": 0,
+      "factorNonzeros": 11318076,
+      "relativeResidual": 1.2791856002908254e-13,
+      "maximumDisplacementDifferenceMetres": 8.959205125962664e-17,
+      "matchesDirectSolve": true,
+      "status": "complete"
+    },
+    {
+      "method": "ilu-gmres",
+      "seconds": 1.9080889588221908,
+      "info": 0,
+      "iterations": 22,
+      "factorNonzeros": 7637460,
+      "relativeResidual": 3.081117680297957e-11,
+      "maximumDisplacementDifferenceMetres": 2.4931588364625968e-14,
+      "matchesDirectSolve": true,
+      "status": "complete"
+    },
+    {
+      "method": "COLAMD",
+      "seconds": 1.9869337501004338,
+      "info": 0,
+      "iterations": 0,
+      "factorNonzeros": 20071473,
+      "relativeResidual": 2.3711588121234147e-13,
+      "maximumDisplacementDifferenceMetres": 0.0,
+      "matchesDirectSolve": true,
+      "status": "complete"
+    }
+  ],
+  "sourceState": "ipc-membrane-energy-physics/substeps/rejected-1.npz",
+  "scope": "Frozen complete-garment linear system with concurrent bakes; not a trajectory or game FPS."
+}

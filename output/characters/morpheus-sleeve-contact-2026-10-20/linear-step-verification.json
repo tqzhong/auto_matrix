@@ -1,0 +1,29 @@
+{
+  "startTime": 0.8760416666666666,
+  "requestedInterval": {
+    "sourceFrame": 4,
+    "sourceBlend": 0.312499999999999,
+    "integrationSeconds": 0.0010416666666666723,
+    "barrierStiffness": 2.078944830149106e+17,
+    "maximumBarrierStiffness": 2.0780084706803737e+19,
+    "minimumGapMetres": 9.725453663702207e-06
+  },
+  "accepted": {
+    "frame": 26,
+    "time": 0.8770833333333333,
+    "sourceFrame": 4,
+    "substep": 1.249999999999996,
+    "integrationSeconds": 0.001041666666666737,
+    "maximumEdgeStretch": 1.062298109450173,
+    "maximumSurfaceStretch": 1.2820011848113766,
+    "p99SurfaceStretch": 1.0093840179560325,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.248046875
+  },
+  "linearSolves": 108,
+  "maximumLinearResidual": 2.3463083907975337e-13,
+  "seconds": 585.5696955826133,
+  "scope": "One complete interval after a frozen prefix; not the full withdrawal."
+}
