@@ -1,0 +1,87 @@
+{
+  "base": "c205f916de048e8e179bbd38ec29f5c7ebd5f307",
+  "runtimeFiles": [
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts"
+  ],
+  "fullShirt": {
+    "vertices": 11977,
+    "faces": 23046,
+    "sameIndices": true,
+    "beforeSelf": 23,
+    "afterSelf": 0,
+    "affectedBeforeVertices": 25
+  },
+  "testResults": {
+    "existingBaseline": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "sha256": "2c569668d0dea2917ff764e66079bdaae092e534d8db72f24d405a56d158daaa"
+    },
+    "newRegressionBefore": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "sha256": "a3718aeec392bafa18135405a487b9169fc2f0404a589ffeca91f9fdbe2bd05e"
+    },
+    "relatedAfter": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "sha256": "fd959e53048686e5d833061355a591fde6b51608c0667bddd972d0a64893d4c6"
+    },
+    "withdrawalAfter": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "sha256": "713423f529d46db0e18f633cf4e4b91fdc39c1f258fe8e4f7406dddd0e2faf4d"
+    },
+    "isolatedDeploy": {
+      "tests": 69,
+      "pass": 69,
+      "fail": 0,
+      "sha256": "5e90f813d6536a65b26dde0b10277c754a6ae67a757e19b71dd47b1fd4e7e8e4"
+    },
+    "isolatedWardrobeInitial": {
+      "tests": 47,
+      "pass": 46,
+      "fail": 1,
+      "sha256": "e9c0514323ce6c326aa03874222de83f8aa038068e29edcbb4a248648a096672"
+    },
+    "isolatedChangedTestsFinal": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "sha256": "41e02c8a2272701fe6db82bf703dbefaa8357bfe66ba54552074e2f4e7327bb0"
+    }
+  },
+  "manifest": {
+    "base": "c205f916de048e8e179bbd38ec29f5c7ebd5f307",
+    "unchanged": 1133,
+    "changed": [
+      "packages/client/src/agents/AmbushWardrobeAppearance.ts",
+      "tests/ambush-wardrobe.test.mts"
+    ],
+    "missing": [],
+    "extra": [
+      "tests/ambush-shirt-seam.test.mts"
+    ]
+  },
+  "build": {
+    "passed": true,
+    "bundle": "index-Yvjjmxdq.js",
+    "existingLargeChunkWarning": true
+  },
+  "limitations": [
+    "12 ordinary pose samples are not continuous collision proof",
+    "whole-coat removal remains failing and is not shipped",
+    "native website verification pending"
+  ],
+  "runtimeCommit": "b4dc4144ce20ccac9a6f7764c39579018d230116",
+  "deployment": {
+    "status": "pending",
+    "observedBundle": "index-Iu4QQyG0.js",
+    "expectedBundle": "index-Yvjjmxdq.js",
+    "blocker": "Render existing tab is a network error page; browser safety policy denied observing it. User asked to reopen normal console; no bypass attempted."
+  }
+}

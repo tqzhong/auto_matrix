@@ -2,6 +2,12 @@
 
 使用 Render 的 **Hobby 工作区 + Free Web Service** 运行现有 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 留在阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，玩家的浏览器负责 3D 渲染。部署配置见根目录 `render.yaml`，不购买服务器或持久磁盘，不使用付费语言模型。
 
+## 待发布修正（2026-10-20）
+
+`b4dc4144ce20ccac9a6f7764c39579018d230116` 已推送：修正墨菲斯旧楼衬衫前襟的23组自交。独立发布副本部署检查69/69，服装首轮46/47，唯一旧法线保护范围精确更新后相关两项2/2；三包构建通过，客户端为 `index-Yvjjmxdq.js`。其他1,133个已跟踪文件与基线相同，未混入未完成的脱衣改动。详见[修正与验证](../output/characters/morpheus-shirt-placket-2026-10-20/README.md)。
+
+Render 原标签页显示“无法访问此站点”，浏览器安全检查拒绝接管错误页；已请用户重新打开正常控制台，之后由 Codex 发布。网站复查仍为 `index-Iu4QQyG0.js`，此提交尚未验收上线。用户对后续自行测试、推送、发布与验收的授权保持有效，无需再次批准发布。
+
 ## 当前版本（2026-10-20）
 
 `1ce32d6e0d0668087665c97ca5f108acf8638d73` 已由 Codex 推送并发布到 <https://matrixai.online>。Render 部署 `dep-dbb5mkpjfumc73dahjug` 显示 Live，客户端为 `index-Iu4QQyG0.js`；仍使用原来的免费服务和云存档。

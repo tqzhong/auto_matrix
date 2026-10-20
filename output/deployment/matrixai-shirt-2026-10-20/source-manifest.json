@@ -1,0 +1,12 @@
+{
+  "base": "c205f916de048e8e179bbd38ec29f5c7ebd5f307",
+  "unchanged": 1133,
+  "changed": [
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts",
+    "tests/ambush-wardrobe.test.mts"
+  ],
+  "missing": [],
+  "extra": [
+    "tests/ambush-shirt-seam.test.mts"
+  ]
+}
