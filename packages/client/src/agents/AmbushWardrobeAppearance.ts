@@ -129,6 +129,25 @@ export class AmbushWardrobeAppearance {
       const a = vertices[end - 1], b = vertices[end], t = (v - a.v) / (b.v - a.v);
       return { u: THREE.MathUtils.lerp(a.u, b.u, t), v, scale: THREE.MathUtils.lerp(a.scale, b.scale, t) };
     };
+    // The mirrored front folds also cross their centre seam near the waist.
+    // Recover the lateral spacing from each original UV row, leaving the
+    // depth relief, sewn centre, topology and outer edge of the strip intact.
+    const frontSeam = cloth.filter(vertex => Math.abs(vertex.point.x) < 1e-6 && vertex.point.z > .1
+      && vertex.point.y > 2.6 && vertex.point.y < 2.95).sort((a, b) => a.uv.y - b.uv.y).map(vertex => {
+      const x = .1, y = vertex.point.y, index = this.source.geometry.index!;
+      let front = -Infinity, edge = vertex.uv.x;
+      for (const i of this.band(this.source, y)) {
+        const a = cloth[index.getX(i)], b = cloth[index.getX(i + 1)], c = cloth[index.getX(i + 2)];
+        const denominator = (b.point.y - c.point.y) * (a.point.x - c.point.x) + (c.point.x - b.point.x) * (a.point.y - c.point.y);
+        if (Math.abs(denominator) < 1e-9) continue;
+        const u = ((b.point.y - c.point.y) * (x - c.point.x) + (c.point.x - b.point.x) * (y - c.point.y)) / denominator;
+        const v = ((c.point.y - a.point.y) * (x - c.point.x) + (a.point.x - c.point.x) * (y - c.point.y)) / denominator, w = 1 - u - v;
+        if (Math.min(u, v, w) < -1e-6) continue;
+        const z = u * a.point.z + v * b.point.z + w * c.point.z;
+        if (z > front) { front = z; edge = u * a.uv.x + v * b.uv.x + w * c.uv.x; }
+      }
+      return { u: vertex.uv.x, v: vertex.uv.y, scale: .1 / Math.abs(edge - vertex.uv.x) };
+    });
     const clothIndex = this.source.geometry.index!, hemReturns = new Map<number, { outer: number; thickness: number }>();
     // The donor extrudes each open hem edge inward, sharing its UV and
     // weights. Preserve that return after unfolding instead of fitting its
@@ -142,6 +161,13 @@ export class AmbushWardrobeAppearance {
     const unfolded = cloth.map(vertex => vertex.point.clone()), unfoldedNormals = new Set<number>();
     for (let i = 0; i < cloth.length; i++) {
       const vertex = cloth[i], p = vertex.point;
+      if (Math.abs(p.x) < .1 && p.z > .1 && p.y > 2.65 && p.y < 2.9) {
+        const centre = row(frontSeam, vertex.uv.y);
+        const amount = (1 - THREE.MathUtils.smoothstep(Math.abs(p.x), .04, .1)) * THREE.MathUtils.smoothstep(p.y, 2.65, 2.72)
+          * (1 - THREE.MathUtils.smoothstep(p.y, 2.83, 2.9));
+        unfolded[i].x = THREE.MathUtils.lerp(p.x, (vertex.uv.x - centre.u) * centre.scale, amount);
+        if (amount > 0) unfoldedNormals.add(i);
+      }
       if (Math.abs(p.x) >= .1 || p.z >= -.1 || p.y >= 2.7) continue;
       const side = vertex.uv.x < .38 ? -1 : 1, centre = row(seams[side < 0 ? 0 : 1], vertex.uv.y);
       const amount = (1 - THREE.MathUtils.smoothstep(Math.abs(p.x), .04, .1)) * (1 - THREE.MathUtils.smoothstep(p.y, 2.566, 2.7));
