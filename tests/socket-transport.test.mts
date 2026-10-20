@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import { createServer } from 'node:http';
+import { gunzipSync } from 'node:zlib';
 import { io } from 'socket.io-client';
 import { SocketServer } from '../packages/server/src/network/SocketServer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -22,6 +23,43 @@ test('world updates use compressed wire bytes and a command can complete a round
   assert.deepEqual((await received as { data: unknown }).data, JSON.parse(JSON.stringify(data)));
   const bytes = wire.bytesRead - before, raw = Buffer.byteLength(JSON.stringify(data));
   assert.ok(bytes < raw / 4, `a ${raw}-byte world update used ${bytes} wire bytes`);
+  await new Promise<void>((resolve, reject) => client.timeout(2000).emit('session_ping', (error: Error | null) => error ? reject(error) : resolve()));
+});
+
+test('state compression reduces wire bytes when WebSocket compression is unavailable', async t => {
+  const http = createServer(), server = new SocketServer(http);
+  await new Promise<void>(resolve => http.listen(0, '127.0.0.1', resolve));
+  const client = io(`http://127.0.0.1:${(http.address() as { port: number }).port}`, {
+    transports: ['websocket'], perMessageDeflate: false, autoConnect: false,
+    auth: { stateAcknowledgements: true, stateCompression: 'gzip' },
+  });
+  t.after(async () => { client.disconnect(); await new Promise<void>(resolve => server.getIO().close(() => resolve())); });
+  await new Promise<void>((resolve, reject) => { client.once('connect', resolve); client.once('connect_error', reject); client.connect(); });
+  const wire = (client.io.engine.transport as unknown as { ws: { extensions: string; _socket: { bytesRead: number } } }).ws;
+  assert.equal(wire.extensions, '', 'the fallback must not depend on permessage-deflate negotiation');
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const data: WorldStateFull = { agents: Object.fromEntries(world.agents), chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 7000 };
+  const receive = () => new Promise<{ payload: Buffer; receipt: () => void }>(resolve => client.once('message', (payload, receipt) => resolve({ payload, receipt })));
+  const before = wire._socket.bytesRead, full = receive();
+  server.sendFullState(client.id!, data, 1);
+  const first = await full;
+  assert.ok(Buffer.isBuffer(first.payload), 'without transport compression the world must use the negotiated gzip payload');
+  const decoded = JSON.parse(gunzipSync(first.payload).toString('utf8')) as ServerMessage;
+  assert.equal(decoded.type, 'world_state_full'); assert.deepEqual(decoded.data, JSON.parse(JSON.stringify(data)));
+  assert.ok(wire._socket.bytesRead - before < Buffer.byteLength(JSON.stringify(data)) / 4, 'binary framing must retain the bandwidth saving');
+  const neo = world.agents.get('neo')!;
+  const pending = receive();
+  for (let i = 0; i < 20; i++) {
+    neo.position.x += .25;
+    server.broadcastDelta({ agents: { neo }, dirtyChunks: {}, events: [] }, i + 2);
+  }
+  const expected = JSON.parse(JSON.stringify(neo));
+  neo.position.x += 100;
+  first.receipt();
+  const last = await pending, delta = JSON.parse(gunzipSync(last.payload).toString('utf8')) as ServerMessage;
+  assert.equal(delta.tick, 21);
+  assert.deepEqual((delta.data as WorldStateDelta).agents.neo, expected, 'compression must preserve the latest frozen state after coalescing');
+  last.receipt();
   await new Promise<void>((resolve, reject) => client.timeout(2000).emit('session_ping', (error: Error | null) => error ? reject(error) : resolve()));
 });
 

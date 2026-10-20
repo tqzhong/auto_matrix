@@ -42,6 +42,8 @@ export class SocketClient {
   private resumeAgent: string | null = null;
   private restoreOnSnapshot = false;
   private healthTimer?: ReturnType<typeof setInterval>;
+  private receiveQueue = Promise.resolve();
+  private connectionVersion = 0;
 
   constructor(callbacks: SocketCallbacks) {
     this.callbacks = callbacks;
@@ -52,7 +54,7 @@ export class SocketClient {
     this.socket = io({
       path: '/socket.io',
       transports: ['websocket', 'polling'],
-      auth: { stateAcknowledgements: true },
+      auth: { stateAcknowledgements: true, stateCompression: typeof DecompressionStream === 'function' ? 'gzip' : undefined },
       reconnection: true,
       reconnectionAttempts: 100,
       reconnectionDelay: 1000,
@@ -70,6 +72,7 @@ export class SocketClient {
 
     this.socket.on('disconnect', () => {
       this.connected = false;
+      this.connectionVersion++; this.receiveQueue = Promise.resolve();
       clearInterval(this.healthTimer);
       this.callbacks.onConnection?.(false);
       this.callbacks.onHealth?.('offline');
@@ -77,18 +80,39 @@ export class SocketClient {
 
     this.socket.on('connect_error', () => { this.callbacks.onConnection?.(false); this.callbacks.onHealth?.('offline'); });
 
-    this.socket.on('message', (msg: ServerMessage, receipt?: () => void) => {
-      this.handleMessage(msg);
-      // Release the next state only once this one has reached the game.
-      receipt?.();
+    this.socket.on('message', (msg: ServerMessage | ArrayBuffer | ArrayBufferView, receipt?: () => void) => {
+      this.receiveMessage(msg, receipt);
     });
 
     this.socket.on('world_state_full', (msg: ServerMessage) => {
-      this.handleMessage(msg);
+      this.receiveMessage(msg);
     });
 
     this.socket.on('world_state_delta', (msg: ServerMessage) => {
-      this.handleMessage(msg);
+      this.receiveMessage(msg);
+    });
+  }
+
+  private receiveMessage(msg: ServerMessage | ArrayBuffer | ArrayBufferView, receipt?: () => void): void {
+    const version = this.connectionVersion;
+    // Decode asynchronously, but keep role changes, effects and state in wire order.
+    this.receiveQueue = this.receiveQueue.then(async () => {
+      if (version !== this.connectionVersion || !this.connected) return;
+      let message: ServerMessage;
+      if (msg instanceof ArrayBuffer || ArrayBuffer.isView(msg)) {
+        const bytes = msg instanceof ArrayBuffer ? msg : new Uint8Array(msg.buffer, msg.byteOffset, msg.byteLength).slice().buffer;
+        const decoded = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        message = await new Response(decoded).json() as ServerMessage;
+      } else message = msg;
+      if (version !== this.connectionVersion || !this.connected) return;
+      this.handleMessage(message);
+      // Release the next state only once decoding and application both finish.
+      receipt?.();
+    }).catch(error => {
+      if (version !== this.connectionVersion || !this.socket) return;
+      console.warn('[Socket] Could not read state; reconnecting without compression.', error);
+      this.socket.auth = { ...this.socket.auth, stateCompression: undefined };
+      this.reconnect();
     });
   }
 
@@ -201,6 +225,7 @@ export class SocketClient {
   }
 
   dispose(): void {
+    this.connectionVersion++; this.receiveQueue = Promise.resolve();
     clearInterval(this.healthTimer);
     if (this.socket) {
       this.socket.disconnect();
