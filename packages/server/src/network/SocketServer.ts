@@ -1,5 +1,6 @@
 import { Server as SocketIOServer, type Socket } from 'socket.io';
 import type { Server as HTTPServer } from 'http';
+import { gzipSync } from 'node:zlib';
 import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryPhaseId, WorldEvent, EvolutionUpdate } from '@auto_matrix/shared';
 
 type StateMessage = { type: 'world_state_full'; data: WorldStateFull; tick: number; timestamp: number }
@@ -9,6 +10,7 @@ export class SocketServer {
   private io: SocketIOServer;
   private lastFields = new Map<string, string>();
   private lastTick?: number;
+  private compressedStates = new WeakMap<StateMessage, Buffer>();
   private stateStreams = new WeakMap<Socket, { waiting: boolean; full?: StateMessage; delta?: Extract<StateMessage, { type: 'world_state_delta' }> }>();
 
   constructor(httpServer: HTTPServer) {
@@ -84,13 +86,23 @@ export class SocketServer {
       return;
     }
     stream.waiting = true;
-    socket.emit('message', message, () => {
+    const receipt = () => {
       stream.waiting = false;
       if (!socket.connected) return;
       const next = stream.full ?? stream.delta;
       if (stream.full) stream.full = undefined; else stream.delta = undefined;
       if (next) this.sendState(socket, next);
-    });
+    };
+    if (socket.handshake.auth.stateCompression === 'gzip') {
+      // Some browser/proxy connections do not negotiate permessage-deflate.
+      // Encode only frames actually sent, once for clients sharing a broadcast.
+      let compressed = this.compressedStates.get(message);
+      if (!compressed) {
+        compressed = gzipSync(JSON.stringify(message), { level: 1 });
+        this.compressedStates.set(message, compressed);
+      }
+      socket.compress(false).emit('message', compressed, receipt);
+    } else socket.emit('message', message, receipt);
   }
 
   private changed(key: string, value: unknown): boolean {

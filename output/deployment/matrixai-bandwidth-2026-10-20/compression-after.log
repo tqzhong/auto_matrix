@@ -1,0 +1,166 @@
+TAP version 13
+# Subtest: a standby connection stays connecting until the handed-over world arrives
+ok 1 - a standby connection stays connecting until the handed-over world arrives
+  ---
+  duration_ms: 57.95675
+  type: 'test'
+  ...
+# Subtest: connected transport is not reported ready until a server round trip succeeds
+ok 2 - connected transport is not reported ready until a server round trip succeeds
+  ---
+  duration_ms: 32.860917
+  type: 'test'
+  ...
+# Subtest: the client acknowledges world state only after applying it
+ok 3 - the client acknowledges world state only after applying it
+  ---
+  duration_ms: 18.890583
+  type: 'test'
+  ...
+# Subtest: a one-way connection is shown as slow instead of ready
+ok 4 - a one-way connection is shown as slow instead of ready
+  ---
+  duration_ms: 4216.526625
+  type: 'test'
+  ...
+# Subtest: a temporary disconnect resumes the last confirmed character after the new world snapshot
+ok 5 - a temporary disconnect resumes the last confirmed character after the new world snapshot
+  ---
+  duration_ms: 696.795083
+  type: 'test'
+  ...
+# Subtest: a replaced page stops resuming its old character, including after a reconnect
+ok 6 - a replaced page stops resuming its old character, including after a reconnect
+  ---
+  duration_ms: 1041.413167
+  type: 'test'
+  ...
+# Subtest: explicitly leaving while offline cancels automatic character restoration
+ok 7 - explicitly leaving while offline cancels automatic character restoration
+  ---
+  duration_ms: 1343.215459
+  type: 'test'
+  ...
+# Subtest: gzip state, role assignment and ordinary messages are applied in wire order before acknowledging
+ok 8 - gzip state, role assignment and ordinary messages are applied in wire order before acknowledging
+  ---
+  duration_ms: 40.229416
+  type: 'test'
+  ...
+# Subtest: a browser without DecompressionStream keeps the ordinary state protocol
+ok 9 - a browser without DecompressionStream keeps the ordinary state protocol
+  ---
+  duration_ms: 31.003542
+  type: 'test'
+  ...
+# [Socket] Could not read state; reconnecting without compression. TypeError
+#     at handleKnownInternalErrors (node:internal/webstreams/adapters:115:21)
+#     at Gunzip.<anonymous> (node:internal/webstreams/adapters:476:13)
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at Gunzip.<anonymous> (node:internal/streams/end-of-stream:61:21)
+#     at Gunzip.<anonymous> (node:internal/util:580:20)
+#     at Gunzip.onerror (node:internal/streams/end-of-stream:149:14)
+#     at Gunzip.emit (node:events:531:35)
+#     at emitErrorNT (node:internal/streams/destroy:170:8)
+#     at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'Z_DATA_ERROR',
+#   [cause]: Error: incorrect header check
+#       at genericNodeError (node:internal/errors:983:15)
+#       at wrappedFn (node:internal/errors:537:14)
+#       at Zlib.zlibOnError [as onerror] (node:zlib:191:17) {
+#     errno: -3,
+#     code: 'Z_DATA_ERROR'
+#   }
+# }
+# Subtest: corrupt compressed state reconnects using ordinary snapshots and restores the confirmed character
+ok 10 - corrupt compressed state reconnects using ordinary snapshots and restores the confirmed character
+  ---
+  duration_ms: 38.32825
+  type: 'test'
+  ...
+# Subtest: a disconnect discards an in-flight decompression without delaying the new connection
+ok 11 - a disconnect discards an in-flight decompression without delaying the new connection
+  ---
+  duration_ms: 55.200334
+  type: 'test'
+  ...
+# [Socket] Client connected: McdIudYKX1ZkrdXwAAAA
+# [Socket] Client disconnected: McdIudYKX1ZkrdXwAAAA
+# Subtest: world updates use compressed wire bytes and a command can complete a round trip
+ok 12 - world updates use compressed wire bytes and a command can complete a round trip
+  ---
+  duration_ms: 58.111416
+  type: 'test'
+  ...
+# [Socket] Client connected: w1F7MCVNNDeafAkwAAAB
+# [Socket] Client disconnected: w1F7MCVNNDeafAkwAAAB
+# Subtest: state compression reduces wire bytes when WebSocket compression is unavailable
+ok 13 - state compression reduces wire bytes when WebSocket compression is unavailable
+  ---
+  duration_ms: 22.058625
+  type: 'test'
+  ...
+# [Socket] Client connected: NSA4NqGtBI0wVOeyAAAC
+# [Socket] Client disconnected: NSA4NqGtBI0wVOeyAAAC
+# Subtest: a paused world does not repeatedly transmit unchanged characters, traffic or sandbox state
+ok 14 - a paused world does not repeatedly transmit unchanged characters, traffic or sandbox state
+  ---
+  duration_ms: 39.822667
+  type: 'test'
+  ...
+# [Socket] Client connected: hbnDpm7V5njp94LjAAAD
+# [Socket] Client disconnected: hbnDpm7V5njp94LjAAAD
+# Subtest: moving snapshots retain their complete cast, including stationary changes, nulls and replaced arrays
+ok 15 - moving snapshots retain their complete cast, including stationary changes, nulls and replaced arrays
+  ---
+  duration_ms: 28.466708
+  type: 'test'
+  ...
+# [Socket] Client connected: xXS-p4NUtqar5vAgAAAE
+# [Socket] Client disconnected: xXS-p4NUtqar5vAgAAAE
+# Subtest: sandbox and fast traffic updates stay coherent across resets and repeated story events
+ok 16 - sandbox and fast traffic updates stay coherent across resets and repeated story events
+  ---
+  duration_ms: 13.051583
+  type: 'test'
+  ...
+# [Socket] Client connected: jU1KIRN2b5tvJbLpAAAF
+# [Socket] Client connected: a0dwfqY4a-kghIRCAAAG
+# [Socket] Client disconnected: jU1KIRN2b5tvJbLpAAAF
+# [Socket] Client disconnected: a0dwfqY4a-kghIRCAAAG
+# Subtest: joining or resynchronizing a client cannot hide a pending update from another player
+ok 17 - joining or resynchronizing a client cannot hide a pending update from another player
+  ---
+  duration_ms: 15.666792
+  type: 'test'
+  ...
+# [Socket] Client connected: RgHs5UqobTT5ltcoAAAH
+# [Socket] Client connected: jIRB3yuBHlAHsadOAAAI
+# [Socket] Client disconnected: RgHs5UqobTT5ltcoAAAH
+# [Socket] Client disconnected: jIRB3yuBHlAHsadOAAAI
+# Subtest: a slow receiver gets the latest coherent state without queuing every simulation frame
+ok 18 - a slow receiver gets the latest coherent state without queuing every simulation frame
+  ---
+  duration_ms: 32.745708
+  type: 'test'
+  ...
+# [Socket] Client connected: 8nwXQWiLVY4PmwIvAAAJ
+# [Socket] Client connected: o_ifmKKKdxGzyyasAAAK
+# [Socket] Client disconnected: 8nwXQWiLVY4PmwIvAAAJ
+# [Socket] Client disconnected: o_ifmKKKdxGzyyasAAAK
+# Subtest: resynchronization replaces pending state and retains updates following the new snapshot
+ok 19 - resynchronization replaces pending state and retains updates following the new snapshot
+  ---
+  duration_ms: 18.013542
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8202.17725

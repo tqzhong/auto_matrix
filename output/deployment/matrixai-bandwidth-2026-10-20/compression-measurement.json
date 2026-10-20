@@ -1,0 +1,48 @@
+{
+  "sourceSha256": "f70dbd7673964d562e2aae748fcb44e55885cf5ff3e75146218d06b41e16ad0c",
+  "statesCompared": 200,
+  "fixedSequence": {
+    "rawBytes": 1589284,
+    "gzipBytes": 478793,
+    "ratio": 0.3012633361941604,
+    "encodeMilliseconds": {
+      "median": 0.12225000000000819,
+      "p95": 0.5162090000000035,
+      "max": 0.7761669999999867
+    },
+    "decodeMilliseconds": {
+      "median": 0.2838329999999587,
+      "p95": 0.985416999999984,
+      "max": 16.235957999999982
+    }
+  },
+  "limitedConnection": [
+    {
+      "compressed": false,
+      "bandwidthBytesPerSecond": 32000,
+      "producedStates": 110,
+      "receivedStates": 7,
+      "lastReceivedTick": 85,
+      "latestStateAgeMs": 1293,
+      "medianStateAgeMs": 1293,
+      "peakQueuedBytes": 39106,
+      "generatedWireBytes": 170240,
+      "transmittedWireBytes": 170240,
+      "roundTripMs": 690.3435000000009
+    },
+    {
+      "compressed": true,
+      "bandwidthBytesPerSecond": 32000,
+      "producedStates": 98,
+      "receivedStates": 35,
+      "lastReceivedTick": 96,
+      "latestStateAgeMs": 104,
+      "medianStateAgeMs": 105,
+      "peakQueuedBytes": 7354,
+      "generatedWireBytes": 115927,
+      "transmittedWireBytes": 115927,
+      "roundTripMs": 72.5682080000006
+    }
+  ],
+  "scope": "Same captured world, 20 Hz moving Neo and traffic, full sandbox every tenth frame. Node Web Streams decoding, not a browser FPS measurement. No production requests."
+}

@@ -1,0 +1,134 @@
+{
+  "verifiedAt": "2026-10-20T15:04:50.100205+00:00",
+  "baselineCommit": "51770187fabc449e9454ed5d665f6fa3129f9d7a",
+  "runtimeScope": [
+    "packages/client/src/network/SocketClient.ts",
+    "packages/server/src/network/SocketServer.ts"
+  ],
+  "protocol": "Optional gzip binary state on acknowledgement-capable connections. Complete logical state is preserved.",
+  "behavior": [
+    "No changed simulation frequency or game state fields",
+    "State coalescing remains before compression",
+    "Decode, state application, role assignment and notification processing retain wire order",
+    "Old in-flight decoded state is discarded on disconnect",
+    "Unsupported browsers keep JSON; corrupt frames reconnect using JSON without taking a character from another session"
+  ],
+  "tests": {
+    "originalTransportBaseline": {
+      "passed": 14,
+      "failed": 0
+    },
+    "newRegressionBeforeFix": {
+      "passed": 0,
+      "failed": 2
+    },
+    "intermediateTransport": {
+      "passed": 19,
+      "failed": 0
+    },
+    "finalIsolatedDeployment": {
+      "passed": 75,
+      "failed": 0,
+      "includesRealClientServerReconnect": true
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "buildWarning": "Existing client chunk is larger than 500 kB"
+  },
+  "release": {
+    "baseline": "51770187fabc449e9454ed5d665f6fa3129f9d7a",
+    "filesChecked": 1136,
+    "unchanged": 1132,
+    "changed": [
+      "packages/client/src/network/SocketClient.ts",
+      "packages/server/src/network/SocketServer.ts",
+      "tests/session.test.mts",
+      "tests/socket-transport.test.mts"
+    ],
+    "changedSourceSha256": {
+      "packages/client/src/network/SocketClient.ts": "7440d859e76a265b427cf5c53d02387c46f25e6dc0d4fd3af54a51444abd1ffa",
+      "packages/server/src/network/SocketServer.ts": "070126e151acc86000dc6ad4fcacf236f49c404629b119785213120ccf8e2fe1",
+      "tests/session.test.mts": "06c92adbc3b3d342719f78ab9a868a0c52f0fe9473a3cac7c9ddec6e74a7550e",
+      "tests/socket-transport.test.mts": "38aaa2bbd02cdd24d34aa0e621d6cc2846bce81d5ec91b04f48402b1ebed7211"
+    },
+    "workspaceSharedPackage": "/Users/tianqizhong/ai_project/auto_matrix/output/deployment/matrixai-bandwidth-2026-10-20/release/packages/shared",
+    "clientBundle": "index-Dh28UYzo.js"
+  },
+  "measurement": {
+    "sourceSha256": "f70dbd7673964d562e2aae748fcb44e55885cf5ff3e75146218d06b41e16ad0c",
+    "statesCompared": 200,
+    "fixedSequence": {
+      "rawBytes": 1589284,
+      "gzipBytes": 478793,
+      "ratio": 0.3012633361941604,
+      "encodeMilliseconds": {
+        "median": 0.12225000000000819,
+        "p95": 0.5162090000000035,
+        "max": 0.7761669999999867
+      },
+      "decodeMilliseconds": {
+        "median": 0.2838329999999587,
+        "p95": 0.985416999999984,
+        "max": 16.235957999999982
+      }
+    },
+    "limitedConnection": [
+      {
+        "compressed": false,
+        "bandwidthBytesPerSecond": 32000,
+        "producedStates": 110,
+        "receivedStates": 7,
+        "lastReceivedTick": 85,
+        "latestStateAgeMs": 1293,
+        "medianStateAgeMs": 1293,
+        "peakQueuedBytes": 39106,
+        "generatedWireBytes": 170240,
+        "transmittedWireBytes": 170240,
+        "roundTripMs": 690.3435000000009
+      },
+      {
+        "compressed": true,
+        "bandwidthBytesPerSecond": 32000,
+        "producedStates": 98,
+        "receivedStates": 35,
+        "lastReceivedTick": 96,
+        "latestStateAgeMs": 104,
+        "medianStateAgeMs": 105,
+        "peakQueuedBytes": 7354,
+        "generatedWireBytes": 115927,
+        "transmittedWireBytes": 115927,
+        "roundTripMs": 72.5682080000006
+      }
+    ],
+    "scope": "Same captured world, 20 Hz moving Neo and traffic, full sandbox every tenth frame. Node Web Streams decoding, not a browser FPS measurement. No production requests."
+  },
+  "runtime": {
+    "node": "v22.23.2"
+  },
+  "deployment": {
+    "performed": false,
+    "lastSuccessfulCommit": "d313b94cdd740df0c99d299b8a4435029f4ea363",
+    "reason": "Render free-workspace outbound bandwidth suspension; prior verified HTTP 503",
+    "pendingClientBundle": "index-Dh28UYzo.js",
+    "productionSaveModified": false
+  },
+  "remaining": [
+    "Actual browser playback, input latency, decompression cost and sustained bandwidth after hosting recovers",
+    "Static asset caching and further bandwidth reductions",
+    "Complete clothing removal and triangle/material contact across the full action",
+    "All 42 trilogy quality groups and continuous playthrough acceptance"
+  ],
+  "dependenciesAdded": [],
+  "evidenceSha256": {
+    "transport-baseline.log": "844367b151ee46d323ffa0cff3d326ebb0795a2278684c48cf34208d841338eb",
+    "compression-before.log": "0e186218ae5bd0e8bf4d4ef5b056d20d2d0fb2ebdbdbec28a95cd28f59d8cb67",
+    "compression-after.log": "2c5616826a06ea46620355b502e178c18a50057174acfd61a061bf68b9626969",
+    "typecheck.log": "12a99fb746f7f1bbd1189120e797bfb2bad84ebe4d733b874bcc69a16fecb460",
+    "release-tests-final.log": "8580d842c64dd174145b05acb517899863a6338f95c43e5045e34662f93f5267",
+    "release-build.log": "15ae17e04d7017eeffc768c427389307053060b0bb74d952055fd7802b74c011",
+    "compression-measurement.json": "81c0dbf6b8f4f6d4f801c0d113353d21b588b118306f5ce76a9ab1262d33c138",
+    "release-source-check.json": "50a0ac017fd7933cf2342303acfa6f373ede313a3a44c4e452dbf2d5249ed395",
+    "measure-compression.mts": "ee5b8717e987b1c5eef7b182eab3be5bbafeb3c9fc6a04ced65c133917ece283"
+  },
+  "logFormatting": "Trailing whitespace removed in committed logs; changed raw logs retained locally."
+}

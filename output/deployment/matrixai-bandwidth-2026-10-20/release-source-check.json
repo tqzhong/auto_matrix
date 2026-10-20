@@ -1,0 +1,19 @@
+{
+  "baseline": "51770187fabc449e9454ed5d665f6fa3129f9d7a",
+  "filesChecked": 1136,
+  "unchanged": 1132,
+  "changed": [
+    "packages/client/src/network/SocketClient.ts",
+    "packages/server/src/network/SocketServer.ts",
+    "tests/session.test.mts",
+    "tests/socket-transport.test.mts"
+  ],
+  "changedSourceSha256": {
+    "packages/client/src/network/SocketClient.ts": "7440d859e76a265b427cf5c53d02387c46f25e6dc0d4fd3af54a51444abd1ffa",
+    "packages/server/src/network/SocketServer.ts": "070126e151acc86000dc6ad4fcacf236f49c404629b119785213120ccf8e2fe1",
+    "tests/session.test.mts": "06c92adbc3b3d342719f78ab9a868a0c52f0fe9473a3cac7c9ddec6e74a7550e",
+    "tests/socket-transport.test.mts": "38aaa2bbd02cdd24d34aa0e621d6cc2846bce81d5ec91b04f48402b1ebed7211"
+  },
+  "workspaceSharedPackage": "/Users/tianqizhong/ai_project/auto_matrix/output/deployment/matrixai-bandwidth-2026-10-20/release/packages/shared",
+  "clientBundle": "index-Dh28UYzo.js"
+}
