@@ -6,14 +6,15 @@ await mkdir(output, { recursive: true });
 const input = process.argv[3] ?? 'release-input';
 const data = JSON.parse(await readFile(new URL(`${input}/manifest.json`, base), 'utf8'));
 const folder = process.argv[2] ?? 'release-self-05';
-const folderLabel = folder.split('/').filter(Boolean).at(-1)!;
+const folderLabel = process.argv[4] ?? folder.split('/').filter(Boolean).at(-1)!;
 const values = async (name: string) => {
   const bytes = await readFile(new URL(`${folder}/${name}`, base));
   const a = new Float32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
   return Array.from({ length: a.length / 3 }, (_, i) => [a[3*i] / .4, a[3*i+2] / .4, -a[3*i+1] / .4]);
 };
 const rows = [];
-for (const frame of [1, 10, 16, 25]) {
+const frames = process.env.MORPHEUS_CLOTH_FULL ? [1, 10, 16, 25, 40, 55, 73] : [1, 10, 16, 25];
+for (const frame of frames) {
   const vertices = await values(`cloth-${frame}.bin`), bodies = await values(`body-${frame}.bin`);
   let offset = 0;
   const surfaces = data.bodyInitial.map((part: { name: string; vertices: number[][] }) => {
@@ -39,7 +40,8 @@ for (const frame of [1, 10, 16, 25]) {
     texcoords: vertices.map(() => [0,0]), color: [.65,.04,.025], side: 2, texture: null, face: null, vertexColors: null });
   for (const [view, eye] of [['front', [5,3.6,8]], ['rear', [-5,3.6,-8]]] as const) {
     const label = `sleeve-${folderLabel}-${frame}-${view}`;
-    await writeFile(new URL(`${label}.json`, output), JSON.stringify({ width: 720, height: 900, eye, target: [0,2.7,0], fov: 29,
+    await writeFile(new URL(`${label}.json`, output), JSON.stringify({ width: 720, height: 900, eye,
+      target: [0,process.env.MORPHEUS_CLOTH_FULL ? 2.2 : 2.7,0], fov: process.env.MORPHEUS_CLOTH_FULL ? 34 : 29,
       surfaces, renderSource: 'COMPLETE COAT + ACTUAL BODY / CONTACT DIAGNOSIS' }));
   }
 }

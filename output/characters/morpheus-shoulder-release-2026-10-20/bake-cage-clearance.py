@@ -8,22 +8,24 @@ from mathutils import Matrix
 import numpy as np
 
 base = Path(__file__).parent
+work = Path(sys.argv[sys.argv.index('--')+1]) if '--' in sys.argv else base
 sys.path.insert(0,str(base.parents[2]/'scripts'))
 from cloth_collision import keyframe_collider_vertices
 from cloth_display import bind_display_to_cage
 
-folder = base.parent/'morpheus-withdrawal-path-2026-10-20/clearance-input'
+folder = Path(sys.argv[sys.argv.index('--input')+1]) if '--input' in sys.argv else base.parent/'morpheus-withdrawal-path-2026-10-20/clearance-input'
 data = json.loads((folder/'manifest.json').read_text())
-cage = json.loads((base/'cage-fit-4.json').read_text())
-original_controls = json.loads((base/'shoulder-physics/metadata.json').read_text())['cuffs']
-guide = json.loads((base/'collar-guide.json').read_text())
-out = base/'cage-clearance-physics'
+cage_path = Path(sys.argv[sys.argv.index('--cage')+1]) if '--cage' in sys.argv else base/'cage-fit-4.json'
+cage = json.loads(cage_path.read_text())
+original_controls = json.loads((base/'boundary-controls.json').read_text())['cuffs']
+guide = json.loads((work/'collar-guide.json').read_text())
+out = Path(sys.argv[sys.argv.index('--output')+1]) if '--output' in sys.argv else work/'cage-clearance-physics'
 out.mkdir(exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 scene.render.fps = 30
 scene.frame_start = 1
-scene.frame_end = 25
+scene.frame_end = len(data['frames']) if '--full-withdrawal' in sys.argv else 25
 scene.gravity = (0,0,-981)
 scale = 100
 model = np.asarray(cage['points'])
@@ -86,6 +88,23 @@ def collar_frames():
         coordinates[collar_ids] = np.asarray(frame['points'])[:,[0,2,1]]*[40,-40,40]
         yield frame['frame'],coordinates.ravel()
 keyframe_collider_vertices(cloth,collar_frames())
+cuff_release = 29 if '--release-cuffs' in sys.argv else None
+collar_release = 29 if '--release-collar' in sys.argv else None
+assert not collar_release or cuff_release, 'release the cuffs before testing the unsupported neckline'
+if cuff_release:
+    released = cloth.vertex_groups.new(name='cuffs without finger contact')
+    released.add(mapped([vertex for cuff in original_controls for vertex in cuff['ring']]),1,'REPLACE')
+    if collar_release:
+        released.add(collar_ids,1,'REPLACE')
+    release = cloth.modifiers.new('release complete cuffs after 1.7 seconds','VERTEX_WEIGHT_MIX')
+    release.vertex_group_a = pin.name
+    release.vertex_group_b = released.name
+    release.default_weight_a = release.default_weight_b = 0
+    release.mix_mode = 'SUB'
+    release.mix_set = 'A'
+    for frame,weight in [(1,0),(cuff_release-1,0),(cuff_release,1)]:
+        release.mask_constant = weight
+        release.keyframe_insert('mask_constant',frame=frame)
 scene.frame_set(1)
 bind_display_to_cage(display,cloth)
 
@@ -112,7 +131,7 @@ floor.collision.thickness_outer = .001
 
 simulation = cloth.modifiers.new('stable cage material','CLOTH')
 settings = simulation.settings
-settings.quality = 20
+settings.quality = 200 if '--fine-steps' in sys.argv else 20
 settings.mass = 3/len(points)
 settings.tension_stiffness = settings.tension_stiffness_max = 35
 settings.compression_stiffness = settings.compression_stiffness_max = 35
@@ -134,8 +153,9 @@ simulation.point_cache.frame_end = scene.frame_end
 scene.frame_set(1)
 bpy.context.view_layer.update()
 (out/'metadata.json').write_text(json.dumps({'physicalVertices':len(points),'physicalFaces':len(faces),
-    'displayVertices':len(display_points),'displayFaces':len(data['indices'])//3,'stitches':len(stitches),
-    'clothDistanceMetres':simulation.collision_settings.distance_min/scale,'massTotal':settings.mass*len(points),'airDamping':settings.air_damping,'frames':scene.frame_end,
+    'input':str(folder.resolve().relative_to(base.parents[2])),
+    'displayVertices':len(display_points),'displayFaces':len(data['indices'])//3,'stitches':len(stitches),'cuffReleaseFrame':cuff_release,'collarReleaseFrame':collar_release,
+    'clothDistanceMetres':simulation.collision_settings.distance_min/scale,'massTotal':settings.mass*len(points),'airDamping':settings.air_damping,'quality':settings.quality,'frames':scene.frame_end,
     'bodyParts':[part['name'] for part in data['bodies']],
     'scope':'Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production.'},indent=2))
 bpy.ops.wm.save_as_mainfile(filepath=str(out/'withdrawal.blend'))
@@ -145,12 +165,20 @@ for frame in range(1,scene.frame_end+1):
     scene.frame_set(frame)
     graph = bpy.context.evaluated_depsgraph_get()
     evaluated = {}
+    pin_weights = {}
     for name,obj,count in [('cloth',display,len(display_points)),('cage',cloth,len(points)),('body',body,len(initial))]:
         owner = obj.evaluated_get(graph)
         actual = owner.to_mesh()
         assert len(actual.vertices) == count
         if name == 'cloth':
             assert [int(i) for face in actual.polygons for i in face.vertices] == data['indices']
+        if name == 'cage':
+            for label,ids in [('cuffs',mapped([vertex for cuff in original_controls for vertex in cuff['ring']])),('collar',collar_ids)]:
+                weights = [next((group.weight for group in actual.vertices[i].groups if group.group == pin.index),0) for i in ids]
+                pin_weights[label] = [min(weights),max(weights)]
+                release_frame = cuff_release if label == 'cuffs' else collar_release
+                expected_weight = 0 if release_frame and frame >= release_frame else 1
+                assert all(abs(weight-expected_weight) < 1e-6 for weight in weights)
         coordinates = np.empty(count*3,dtype=np.float32)
         actual.vertices.foreach_get('co',coordinates)
         owner.to_mesh_clear()
@@ -162,7 +190,7 @@ for frame in range(1,scene.frame_end+1):
     assert float((error/np.spacing(np.abs(expected)+np.float32(1))).max()) <= 2
     solved = cloth.evaluated_get(graph).modifiers[simulation.name].solver_result
     row = {'frame':frame,'time':data['frames'][frame-1]['time'],'seconds':time.perf_counter()-started,
-           'solverStatus':sorted(solved.status) if frame > 1 else [],'bodyDifference':float(error.max()),
+           'solverStatus':sorted(solved.status) if frame > 1 else [],'bodyDifference':float(error.max()),'pinWeights':pin_weights,
            'displayMaximumDrift':float(np.linalg.norm(evaluated['cloth'].reshape(-1,3)-display_points/scale,axis=1).max())}
     rows.append(row)
     (out/'progress.json').write_text(json.dumps(rows))

@@ -4,10 +4,10 @@ import { makeModel, meshSurface, worldPoints } from '../morpheus-ambush-doff-202
 import { WithdrawalBody } from './WithdrawalBody.mjs';
 import { WithdrawalCuffs } from './WithdrawalCuffs.mjs';
 
-const h = await makeModel(), directory = new URL('./clearance-input/', import.meta.url);
+const h = await makeModel(), directory = new URL(process.argv[2] ?? './clearance-input/', import.meta.url);
 await mkdir(directory, { recursive: true });
 const body = new WithdrawalBody(h.rig); body.pose(.8);
-const guides = new WithdrawalCuffs(h.rig);
+const guides = new WithdrawalCuffs(h.rig, body);
 const clothes = ['morpheus-ambush-coat', 'morpheus-ambush-lapels'].map(name => h.rig.root.getObjectByName(name) as THREE.Mesh);
 clothes.push(...h.rig.panels.map(panel => panel.mesh));
 const bodies: THREE.Mesh[] = [];

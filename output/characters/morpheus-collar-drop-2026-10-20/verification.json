@@ -1,0 +1,3065 @@
+{
+  "date": "2026-10-20",
+  "scope": "Offline Morpheus wardrobe authoring. Complete doffing remains unaccepted; runtime and delivered GLB unchanged.",
+  "baseCommit": "26175f1e2a5f37da2344912db1d7c494edae2b16",
+  "bodyRoute": "Restored the original body route after rejecting lateral and raised-hand candidates.",
+  "releaseBugBefore": {
+    "file": "cuff-release-baseline.log",
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "measurements": [
+      {
+        "releasedSleeves": [
+          {
+            "time": 1.7,
+            "side": "R",
+            "difference": 0.18052280551583055
+          },
+          {
+            "time": 1.7,
+            "side": "L",
+            "difference": 2.469802862156647
+          },
+          {
+            "time": 1.8,
+            "side": "R",
+            "difference": 0.1757124623991756
+          },
+          {
+            "time": 1.8,
+            "side": "L",
+            "difference": 2.3926552689753002
+          },
+          {
+            "time": 2,
+            "side": "R",
+            "difference": 0.08006851722688602
+          },
+          {
+            "time": 2,
+            "side": "L",
+            "difference": 1.2778225320344963
+          },
+          {
+            "time": 2.2,
+            "side": "R",
+            "difference": 0.005056413822462025
+          },
+          {
+            "time": 2.2,
+            "side": "L",
+            "difference": 0.0918126117660445
+          },
+          {
+            "time": 2.3,
+            "side": "R",
+            "difference": 2.220446049250313e-16
+          },
+          {
+            "time": 2.3,
+            "side": "L",
+            "difference": 1.1102230246251565e-16
+          },
+          {
+            "time": 3.2,
+            "side": "R",
+            "difference": 2.220446049250313e-16
+          },
+          {
+            "time": 3.2,
+            "side": "L",
+            "difference": 3.3306690738754696e-16
+          }
+        ]
+      }
+    ]
+  },
+  "currentBodyHandsCuffs": {
+    "file": "independent-cuff-body.log",
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "measurements": [
+      {
+        "releasedSleeves": [
+          {
+            "time": 1.7,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 1.7,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 1.8,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 1.8,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 2,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 2,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 2.2,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 2.2,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 2.3,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 2.3,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 3.2,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 3.2,
+            "side": "L",
+            "difference": 0
+          }
+        ]
+      },
+      {
+        "maximumReleaseVelocityChange": 3.060256909943673e-06
+      },
+      {
+        "worst": {
+          "time": 1.1916666666666667,
+          "side": "R",
+          "sectionPoints": 504,
+          "clearance": 0.005126441792362791,
+          "worstPoint": {
+            "x": 0.03670395477632393,
+            "y": -0.2790956985633397,
+            "z": 0.10607875565279357
+          },
+          "closestPoint": {
+            "x": 0.033701941555575265,
+            "y": -0.2790677400563546,
+            "z": 0.1102341786631289
+          },
+          "nonPlanarity": 0.002110389099442645
+        },
+        "sampledSections": 140
+      },
+      {
+        "anatomy": [
+          {
+            "time": 0,
+            "self": 0,
+            "maximumPIP": 23.578796043466607,
+            "maximumDIP": 20.94915991424377
+          },
+          {
+            "time": 0.3,
+            "self": 0,
+            "maximumPIP": 23.578796043466607,
+            "maximumDIP": 20.94915991424393
+          },
+          {
+            "time": 0.4,
+            "self": 0,
+            "maximumPIP": 24.512930623799402,
+            "maximumDIP": 21.22004164051553
+          },
+          {
+            "time": 0.5,
+            "self": 0,
+            "maximumPIP": 28.412055290126037,
+            "maximumDIP": 22.315965437453876
+          },
+          {
+            "time": 0.6,
+            "self": 0,
+            "maximumPIP": 33.06732632093232,
+            "maximumDIP": 22.95562442329697
+          },
+          {
+            "time": 0.7,
+            "self": 0,
+            "maximumPIP": 35.77109100659665,
+            "maximumDIP": 22.75290881055378
+          },
+          {
+            "time": 0.8,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 1.15,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 1.4,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 1.7,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 3.2,
+            "self": 0,
+            "maximumPIP": 36.30558205385193,
+            "maximumDIP": 22.656380527777014
+          },
+          {
+            "time": 3.3,
+            "self": 0,
+            "maximumPIP": 35.981023852687656,
+            "maximumDIP": 22.717175614616462
+          },
+          {
+            "time": 3.4,
+            "self": 0,
+            "maximumPIP": 34.24925341747026,
+            "maximumDIP": 22.92558560649145
+          },
+          {
+            "time": 3.5,
+            "self": 0,
+            "maximumPIP": 30.86325510943682,
+            "maximumDIP": 22.787146202543603
+          },
+          {
+            "time": 3.6,
+            "self": 0,
+            "maximumPIP": 26.853988452958227,
+            "maximumDIP": 21.906889776629594
+          },
+          {
+            "time": 3.7,
+            "self": 0,
+            "maximumPIP": 24.15391826062528,
+            "maximumDIP": 21.114564381836082
+          },
+          {
+            "time": 3.8,
+            "self": 0,
+            "maximumPIP": 23.57879604346651,
+            "maximumDIP": 20.94915991424393
+          },
+          {
+            "time": 8,
+            "self": 0,
+            "maximumPIP": 23.578796043466543,
+            "maximumDIP": 20.949159914243786
+          }
+        ]
+      },
+      {
+        "maximumStep": 0.02474208212784463,
+        "sizeDifference": 5.828670879282072e-16,
+        "coldDifference": 5.557721570830963e-13
+      },
+      {
+        "preparation": [
+          {
+            "time": 0,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.016666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.03333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.05,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.06666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.08333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.1,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.11666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.13333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.15,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.16666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.18333333333333332,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.2,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.21666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.23333333333333334,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.25,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.26666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.2833333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.3,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.31666666666666665,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.3333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.35,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.36666666666666664,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.38333333333333336,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.4,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.4166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.43333333333333335,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.45,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.4666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.48333333333333334,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.55,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5833333333333334,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.65,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6833333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.75,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7833333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.8,
+            "self": 0,
+            "body": 0
+          }
+        ]
+      },
+      {
+        "baseline": 23,
+        "results": [
+          {
+            "time": 0,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 0
+          },
+          {
+            "time": 0.4,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 4.710277376051325e-16
+          },
+          {
+            "time": 0.8,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 0
+          },
+          {
+            "time": 1.2,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 6.753223014464259e-16
+          },
+          {
+            "time": 1.6,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 7.447602459741819e-16
+          },
+          {
+            "time": 2,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 6.753223014464259e-16
+          },
+          {
+            "time": 2.4,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 2.220446049250313e-16
+          },
+          {
+            "time": 2.6,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 7.108895957933346e-16
+          },
+          {
+            "time": 2.8,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 6.661338147750939e-16
+          },
+          {
+            "time": 3,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 8.671119018262734e-16
+          },
+          {
+            "time": 3.1,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 3.510833468576701e-16
+          },
+          {
+            "time": 3.2,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 6.377745716588144e-16
+          }
+        ]
+      },
+      {
+        "maximumStep": 0.05021980640079352,
+        "maximumFootDrift": 7.468261590855957e-16,
+        "maximumReachError": 1.1957467920563633e-15
+      },
+      {
+        "recovery": [
+          {
+            "time": 3.2,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 3.5,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 3.8,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 4.1,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 4.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 4.9,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 5.2,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 5.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 6.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 7,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 7.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 8,
+            "newPairs": 0,
+            "skin": 0
+          }
+        ]
+      },
+      {
+        "coldMaximumDifference": 2.2860149897625325e-14,
+        "maximumJointDifference": 1.2427743010384781e-14
+      }
+    ]
+  },
+  "frozenGarmentScope": "A counterfactual hand-route control, not a coupled-cloth acceptance test.",
+  "frozenOriginalHands": {
+    "file": "hand-exit-original-packed.log",
+    "tests": 12,
+    "pass": 1,
+    "fail": 11,
+    "measurements": [
+      {
+        "time": 2.1,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.2,
+        "skinCrossings": 28
+      },
+      {
+        "time": 2.3,
+        "skinCrossings": 411
+      },
+      {
+        "time": 2.4000000000000004,
+        "skinCrossings": 242
+      },
+      {
+        "time": 2.5,
+        "skinCrossings": 110
+      },
+      {
+        "time": 2.6,
+        "skinCrossings": 142
+      },
+      {
+        "time": 2.7,
+        "skinCrossings": 207
+      },
+      {
+        "time": 2.8,
+        "skinCrossings": 178
+      },
+      {
+        "time": 2.9000000000000004,
+        "skinCrossings": 140
+      },
+      {
+        "time": 3,
+        "skinCrossings": 203
+      },
+      {
+        "time": 3.0999999999999996,
+        "skinCrossings": 138
+      },
+      {
+        "time": 3.2,
+        "skinCrossings": 210
+      }
+    ]
+  },
+  "frozenLateralHands": {
+    "file": "hand-exit-packed-fixture.log",
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "measurements": [
+      {
+        "time": 2.1,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.2,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.3,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.4000000000000004,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.5,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.6,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.7,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.8,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.9000000000000004,
+        "skinCrossings": 0
+      },
+      {
+        "time": 3,
+        "skinCrossings": 0
+      },
+      {
+        "time": 3.0999999999999996,
+        "skinCrossings": 0
+      },
+      {
+        "time": 3.2,
+        "skinCrossings": 0
+      }
+    ]
+  },
+  "raisedHandCandidateBody": {
+    "file": "opening-body-cuff.log",
+    "tests": 10,
+    "pass": 8,
+    "fail": 2,
+    "measurements": [
+      {
+        "releasedSleeves": [
+          {
+            "time": 1.7,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 1.7,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 1.8,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 1.8,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 2,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 2,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 2.2,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 2.2,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 2.3,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 2.3,
+            "side": "L",
+            "difference": 0
+          },
+          {
+            "time": 3.2,
+            "side": "R",
+            "difference": 0
+          },
+          {
+            "time": 3.2,
+            "side": "L",
+            "difference": 0
+          }
+        ]
+      },
+      {
+        "maximumReleaseVelocityChange": 3.060256909943673e-06
+      },
+      {
+        "worst": {
+          "time": 1.1916666666666667,
+          "side": "R",
+          "sectionPoints": 504,
+          "clearance": 0.005126441792362791,
+          "worstPoint": {
+            "x": 0.03670395477632393,
+            "y": -0.2790956985633397,
+            "z": 0.10607875565279357
+          },
+          "closestPoint": {
+            "x": 0.033701941555575265,
+            "y": -0.2790677400563546,
+            "z": 0.1102341786631289
+          },
+          "nonPlanarity": 0.002110389099442645
+        },
+        "sampledSections": 140
+      },
+      {
+        "anatomy": [
+          {
+            "time": 0,
+            "self": 0,
+            "maximumPIP": 23.578796043466607,
+            "maximumDIP": 20.94915991424377
+          },
+          {
+            "time": 0.3,
+            "self": 0,
+            "maximumPIP": 23.578796043466607,
+            "maximumDIP": 20.94915991424393
+          },
+          {
+            "time": 0.4,
+            "self": 0,
+            "maximumPIP": 24.512930623799402,
+            "maximumDIP": 21.22004164051553
+          },
+          {
+            "time": 0.5,
+            "self": 0,
+            "maximumPIP": 28.412055290126037,
+            "maximumDIP": 22.315965437453876
+          },
+          {
+            "time": 0.6,
+            "self": 0,
+            "maximumPIP": 33.06732632093232,
+            "maximumDIP": 22.95562442329697
+          },
+          {
+            "time": 0.7,
+            "self": 0,
+            "maximumPIP": 35.77109100659665,
+            "maximumDIP": 22.75290881055378
+          },
+          {
+            "time": 0.8,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 1.15,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 1.4,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 1.7,
+            "self": 0,
+            "maximumPIP": 36.30558205385196,
+            "maximumDIP": 22.65638052777703
+          },
+          {
+            "time": 3.2,
+            "self": 0,
+            "maximumPIP": 36.30558205385193,
+            "maximumDIP": 22.65638052777698
+          },
+          {
+            "time": 3.3,
+            "self": 0,
+            "maximumPIP": 35.98102385268765,
+            "maximumDIP": 22.71717561461651
+          },
+          {
+            "time": 3.4,
+            "self": 0,
+            "maximumPIP": 34.24925341747026,
+            "maximumDIP": 22.92558560649145
+          },
+          {
+            "time": 3.5,
+            "self": 0,
+            "maximumPIP": 30.86325510943682,
+            "maximumDIP": 22.787146202543685
+          },
+          {
+            "time": 3.6,
+            "self": 0,
+            "maximumPIP": 26.853988452958255,
+            "maximumDIP": 21.906889776629594
+          },
+          {
+            "time": 3.7,
+            "self": 0,
+            "maximumPIP": 24.15391826062528,
+            "maximumDIP": 21.114564381836082
+          },
+          {
+            "time": 3.8,
+            "self": 0,
+            "maximumPIP": 23.57879604346651,
+            "maximumDIP": 20.94915991424393
+          },
+          {
+            "time": 8,
+            "self": 0,
+            "maximumPIP": 23.578796043466543,
+            "maximumDIP": 20.949159914243786
+          }
+        ]
+      },
+      {
+        "maximumStep": 0.02474208212784463,
+        "sizeDifference": 5.828670879282072e-16,
+        "coldDifference": 5.557721570830963e-13
+      },
+      {
+        "preparation": [
+          {
+            "time": 0,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.016666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.03333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.05,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.06666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.08333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.1,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.11666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.13333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.15,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.16666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.18333333333333332,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.2,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.21666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.23333333333333334,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.25,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.26666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.2833333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.3,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.31666666666666665,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.3333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.35,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.36666666666666664,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.38333333333333336,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.4,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.4166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.43333333333333335,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.45,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.4666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.48333333333333334,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.55,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.5833333333333334,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.65,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6666666666666666,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.6833333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7166666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7333333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.75,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7666666666666667,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.7833333333333333,
+            "self": 0,
+            "body": 0
+          },
+          {
+            "time": 0.8,
+            "self": 0,
+            "body": 0
+          }
+        ]
+      },
+      {
+        "baseline": 23,
+        "results": [
+          {
+            "time": 0,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 0
+          },
+          {
+            "time": 0.4,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 4.710277376051325e-16
+          },
+          {
+            "time": 0.8,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 0
+          },
+          {
+            "time": 1.2,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 6.753223014464259e-16
+          },
+          {
+            "time": 1.6,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 7.447602459741819e-16
+          },
+          {
+            "time": 2,
+            "self": 23,
+            "newPairs": 0,
+            "skin": 0,
+            "reachError": 6.753223014464259e-16
+          },
+          {
+            "time": 2.4,
+            "self": 223,
+            "newPairs": 200,
+            "skin": 0,
+            "reachError": 4.440892098500626e-16
+          },
+          {
+            "time": 2.6,
+            "self": 397,
+            "newPairs": 374,
+            "skin": 0,
+            "reachError": 3.885780586188048e-16
+          },
+          {
+            "time": 2.8,
+            "self": 371,
+            "newPairs": 348,
+            "skin": 0,
+            "reachError": 7.130536482749599e-16
+          },
+          {
+            "time": 3,
+            "self": 299,
+            "newPairs": 276,
+            "skin": 0,
+            "reachError": 5.551115123125783e-17
+          },
+          {
+            "time": 3.1,
+            "self": 283,
+            "newPairs": 260,
+            "skin": 0,
+            "reachError": 5.3533015581491455e-16
+          },
+          {
+            "time": 3.2,
+            "self": 277,
+            "newPairs": 254,
+            "skin": 0,
+            "reachError": 4.871083751574258e-16
+          }
+        ]
+      },
+      {
+        "maximumStep": 0.06261943019516397,
+        "maximumFootDrift": 7.468261590855957e-16,
+        "maximumReachError": 1.159106867033638e-15
+      },
+      {
+        "recovery": [
+          {
+            "time": 3.2,
+            "newPairs": 254,
+            "skin": 0
+          },
+          {
+            "time": 3.5,
+            "newPairs": 161,
+            "skin": 0
+          },
+          {
+            "time": 3.8,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 4.1,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 4.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 4.9,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 5.2,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 5.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 6.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 7,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 7.6,
+            "newPairs": 0,
+            "skin": 0
+          },
+          {
+            "time": 8,
+            "newPairs": 0,
+            "skin": 0
+          }
+        ]
+      },
+      {
+        "coldMaximumDifference": 2.2860149897625325e-14,
+        "maximumJointDifference": 1.4088634218740083e-14
+      }
+    ]
+  },
+  "raisedHandCandidateFrozenGarment": {
+    "file": "hand-exit-opening.log",
+    "tests": 12,
+    "pass": 7,
+    "fail": 5,
+    "measurements": [
+      {
+        "time": 2.1,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.2,
+        "skinCrossings": 28
+      },
+      {
+        "time": 2.3,
+        "skinCrossings": 1878
+      },
+      {
+        "time": 2.4000000000000004,
+        "skinCrossings": 585
+      },
+      {
+        "time": 2.5,
+        "skinCrossings": 301
+      },
+      {
+        "time": 2.6,
+        "skinCrossings": 17
+      },
+      {
+        "time": 2.7,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.8,
+        "skinCrossings": 0
+      },
+      {
+        "time": 2.9000000000000004,
+        "skinCrossings": 0
+      },
+      {
+        "time": 3,
+        "skinCrossings": 0
+      },
+      {
+        "time": 3.0999999999999996,
+        "skinCrossings": 0
+      },
+      {
+        "time": 3.2,
+        "skinCrossings": 0
+      }
+    ]
+  },
+  "collar": {
+    "samples": 289,
+    "timeInterpolation": "linear interpolation of the exported 30 Hz body and curve samples; 120 Hz samples are not a continuous-time proof",
+    "minimumConservativeEdgeClearanceMetres": 0.003673211377759067,
+    "minimumVertexClearanceMetres": 0.003919533453881741,
+    "edgeCrossings": 0,
+    "requiredMarginMetres": 0.0035
+  },
+  "inputComparison": {
+    "bodyFramesByteIdenticalToOriginal": 73,
+    "restFieldsIdentical": true
+  },
+  "controls": {
+    "early-collar": {
+      "directory": "cage-clearance-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "frames": 25,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 25,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "contact-test.log",
+        "tests": 4,
+        "pass": 1,
+        "fail": 3,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 178,
+            "body": 36,
+            "parts": {
+              "morpheus-ambush-shirt": 36
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 774,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 731,
+            "body": 99,
+            "parts": {
+              "morpheus-ambush-shirt": 99
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "binding-test.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.485129432328789e-07,
+            "maximumCollarMetres": 1.084660849528017e-05
+          }
+        ]
+      },
+      "accepted": false
+    },
+    "front-bound": {
+      "directory": "front-bound-physics",
+      "metadata": {
+        "physicalVertices": 2901,
+        "physicalFaces": 5387,
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 96,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 2.9999999650754035,
+        "airDamping": 0.006894174497574568,
+        "frames": 25,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 25,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "front-bound-contact.log",
+        "tests": 4,
+        "pass": 1,
+        "fail": 3,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 106,
+            "body": 95,
+            "parts": {
+              "Anatomical_head_and_hands": 23,
+              "morpheus-ambush-shirt": 69,
+              "morpheus-ambush-collar": 3
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 630,
+            "body": 232,
+            "parts": {
+              "Anatomical_head_and_hands": 70,
+              "Tailored_trousers": 12,
+              "morpheus-ambush-shirt": 150
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 1020,
+            "body": 227,
+            "parts": {
+              "Anatomical_head_and_hands": 13,
+              "morpheus-ambush-shirt": 214
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "front-bound-binding.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 9.367762815763626e-06
+          }
+        ]
+      },
+      "accepted": false
+    },
+    "fine-steps": {
+      "directory": "fine-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 200,
+        "frames": 25,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 25,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "fine-contact.log",
+        "tests": 4,
+        "pass": 1,
+        "fail": 3,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 45,
+            "body": 42,
+            "parts": {
+              "morpheus-ambush-shirt": 40,
+              "morpheus-ambush-collar": 2
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 250,
+            "body": 36,
+            "parts": {
+              "morpheus-ambush-shirt": 36
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 212,
+            "body": 37,
+            "parts": {
+              "morpheus-ambush-shirt": 37
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "fine-binding-diagnostic.log",
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "measurements": [
+          {
+            "maximumCuffMetres": 0.0001160443632362132,
+            "maximumCollarMetres": 0.00019387991588405031,
+            "physicalCuffMetres": 0.000116066577477371,
+            "physicalCollarMetres": 0.00019301949648175117
+          }
+        ]
+      },
+      "accepted": false
+    },
+    "margin-collar": {
+      "directory": "margin-collar/cage-clearance-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 20,
+        "frames": 73,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 73,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "margin-collar/contact-test.log",
+        "tests": 7,
+        "pass": 1,
+        "fail": 6,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 193,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 837,
+            "body": 35,
+            "parts": {
+              "morpheus-ambush-shirt": 35
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 914,
+            "body": 170,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "morpheus-ambush-shirt": 144
+            }
+          },
+          {
+            "frame": 40,
+            "time": 2.1,
+            "self": 1035,
+            "body": 34,
+            "parts": {
+              "Tailored_trousers": 22,
+              "morpheus-ambush-shirt": 12
+            }
+          },
+          {
+            "frame": 55,
+            "time": 2.6,
+            "self": 726,
+            "body": 166,
+            "parts": {
+              "Anatomical_head_and_hands": 142,
+              "morpheus-ambush-shirt": 24
+            }
+          },
+          {
+            "frame": 73,
+            "time": 3.2,
+            "self": 489,
+            "body": 238,
+            "parts": {
+              "Anatomical_head_and_hands": 210,
+              "Tailored_trousers": 6,
+              "morpheus-ambush-shirt": 22
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "margin-collar/binding-test.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 9.513361741764312e-06,
+            "physicalCuffMetres": 1.9943137308154144e-07,
+            "physicalCollarMetres": 2.554577923705012e-07
+          }
+        ]
+      },
+      "accepted": false
+    },
+    "lateral-hands": {
+      "directory": "hand-arc/cage-clearance-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "input": "output/characters/morpheus-collar-drop-2026-10-20/hand-arc-input",
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 20,
+        "frames": 73,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 73,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "hand-arc/contact-test.log",
+        "tests": 7,
+        "pass": 1,
+        "fail": 6,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 193,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 837,
+            "body": 35,
+            "parts": {
+              "morpheus-ambush-shirt": 35
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 914,
+            "body": 170,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "morpheus-ambush-shirt": 144
+            }
+          },
+          {
+            "frame": 40,
+            "time": 2.1,
+            "self": 1141,
+            "body": 42,
+            "parts": {
+              "Tailored_trousers": 8,
+              "morpheus-ambush-shirt": 34
+            }
+          },
+          {
+            "frame": 55,
+            "time": 2.6,
+            "self": 1620,
+            "body": 1157,
+            "parts": {
+              "Anatomical_head_and_hands": 987,
+              "morpheus-ambush-shirt": 170
+            }
+          },
+          {
+            "frame": 73,
+            "time": 3.2,
+            "self": 1971,
+            "body": 1027,
+            "parts": {
+              "Anatomical_head_and_hands": 1027
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "hand-arc/binding-test.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 9.513361741764312e-06,
+            "physicalCuffMetres": 1.9943137308154144e-07,
+            "physicalCollarMetres": 2.554577923705012e-07
+          }
+        ]
+      },
+      "accepted": false,
+      "hands": {
+        "file": "hand-arc/hand-contact.log",
+        "tests": 12,
+        "pass": 1,
+        "fail": 11,
+        "measurements": [
+          {
+            "time": 2.1,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.2,
+            "skinCrossings": 72
+          },
+          {
+            "time": 2.3,
+            "skinCrossings": 16
+          },
+          {
+            "time": 2.4000000000000004,
+            "skinCrossings": 316
+          },
+          {
+            "time": 2.5,
+            "skinCrossings": 1339
+          },
+          {
+            "time": 2.6,
+            "skinCrossings": 987
+          },
+          {
+            "time": 2.7,
+            "skinCrossings": 804
+          },
+          {
+            "time": 2.8,
+            "skinCrossings": 954
+          },
+          {
+            "time": 2.9000000000000004,
+            "skinCrossings": 480
+          },
+          {
+            "time": 3,
+            "skinCrossings": 523
+          },
+          {
+            "time": 3.0999999999999996,
+            "skinCrossings": 640
+          },
+          {
+            "time": 3.2,
+            "skinCrossings": 1027
+          }
+        ]
+      }
+    },
+    "lateral-independent-cuffs": {
+      "directory": "released-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "input": "output/characters/morpheus-collar-drop-2026-10-20/released-input",
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 20,
+        "frames": 73,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 73,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "released-contact.log",
+        "tests": 7,
+        "pass": 1,
+        "fail": 6,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 193,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 837,
+            "body": 35,
+            "parts": {
+              "morpheus-ambush-shirt": 35
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 914,
+            "body": 170,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "morpheus-ambush-shirt": 144
+            }
+          },
+          {
+            "frame": 40,
+            "time": 2.1,
+            "self": 988,
+            "body": 84,
+            "parts": {
+              "Tailored_trousers": 14,
+              "morpheus-ambush-shirt": 70
+            }
+          },
+          {
+            "frame": 55,
+            "time": 2.6,
+            "self": 2211,
+            "body": 1104,
+            "parts": {
+              "Anatomical_head_and_hands": 954,
+              "morpheus-ambush-shirt": 150
+            }
+          },
+          {
+            "frame": 73,
+            "time": 3.2,
+            "self": 1252,
+            "body": 280,
+            "parts": {
+              "Anatomical_head_and_hands": 280
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "released-binding.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 9.513361741764312e-06,
+            "physicalCuffMetres": 1.9943137308154144e-07,
+            "physicalCollarMetres": 2.554577923705012e-07
+          }
+        ]
+      },
+      "accepted": false,
+      "hands": {
+        "file": "released-hand-contact.log",
+        "tests": 12,
+        "pass": 1,
+        "fail": 11,
+        "measurements": [
+          {
+            "time": 2.1,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.2,
+            "skinCrossings": 52
+          },
+          {
+            "time": 2.3,
+            "skinCrossings": 14
+          },
+          {
+            "time": 2.4000000000000004,
+            "skinCrossings": 433
+          },
+          {
+            "time": 2.5,
+            "skinCrossings": 887
+          },
+          {
+            "time": 2.6,
+            "skinCrossings": 954
+          },
+          {
+            "time": 2.7,
+            "skinCrossings": 408
+          },
+          {
+            "time": 2.8,
+            "skinCrossings": 419
+          },
+          {
+            "time": 2.9000000000000004,
+            "skinCrossings": 713
+          },
+          {
+            "time": 3,
+            "skinCrossings": 581
+          },
+          {
+            "time": 3.0999999999999996,
+            "skinCrossings": 446
+          },
+          {
+            "time": 3.2,
+            "skinCrossings": 280
+          }
+        ]
+      }
+    },
+    "original-body-independent-cuffs": {
+      "directory": "independent-cuff/cage-clearance-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "input": "output/characters/morpheus-collar-drop-2026-10-20/independent-cuff-input",
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 20,
+        "frames": 73,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 73,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "independent-cuff-contact.log",
+        "tests": 7,
+        "pass": 1,
+        "fail": 6,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 193,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 837,
+            "body": 35,
+            "parts": {
+              "morpheus-ambush-shirt": 35
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 914,
+            "body": 170,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "morpheus-ambush-shirt": 144
+            }
+          },
+          {
+            "frame": 40,
+            "time": 2.1,
+            "self": 1254,
+            "body": 126,
+            "parts": {
+              "Anatomical_head_and_hands": 104,
+              "morpheus-ambush-shirt": 22
+            }
+          },
+          {
+            "frame": 55,
+            "time": 2.6,
+            "self": 859,
+            "body": 133,
+            "parts": {
+              "Anatomical_head_and_hands": 74,
+              "morpheus-ambush-shirt": 59
+            }
+          },
+          {
+            "frame": 73,
+            "time": 3.2,
+            "self": 478,
+            "body": 47,
+            "parts": {
+              "Anatomical_head_and_hands": 30,
+              "morpheus-ambush-shirt": 17
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "independent-cuff-binding-final.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 9.513361741764312e-06,
+            "physicalCuffMetres": 1.9943137308154144e-07,
+            "physicalCollarMetres": 2.554577923705012e-07,
+            "cuffBindingMetres": 3.453084893899103e-07,
+            "collarBindingMetres": 9.51347828850534e-06,
+            "freedCuffMotionMetres": 0
+          }
+        ]
+      },
+      "accepted": false,
+      "hands": {
+        "file": "independent-cuff-hand.log",
+        "tests": 12,
+        "pass": 2,
+        "fail": 10,
+        "measurements": [
+          {
+            "time": 2.1,
+            "skinCrossings": 104
+          },
+          {
+            "time": 2.2,
+            "skinCrossings": 50
+          },
+          {
+            "time": 2.3,
+            "skinCrossings": 425
+          },
+          {
+            "time": 2.4000000000000004,
+            "skinCrossings": 388
+          },
+          {
+            "time": 2.5,
+            "skinCrossings": 202
+          },
+          {
+            "time": 2.6,
+            "skinCrossings": 74
+          },
+          {
+            "time": 2.7,
+            "skinCrossings": 58
+          },
+          {
+            "time": 2.8,
+            "skinCrossings": 30
+          },
+          {
+            "time": 2.9000000000000004,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3.0999999999999996,
+            "skinCrossings": 18
+          },
+          {
+            "time": 3.2,
+            "skinCrossings": 30
+          }
+        ]
+      }
+    },
+    "free-cuffs": {
+      "directory": "free-cuff-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "input": "output/characters/morpheus-collar-drop-2026-10-20/independent-cuff-input",
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "cuffReleaseFrame": 29,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 20,
+        "frames": 73,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 73,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "free-cuff-contact.log",
+        "tests": 7,
+        "pass": 1,
+        "fail": 6,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 193,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 837,
+            "body": 35,
+            "parts": {
+              "morpheus-ambush-shirt": 35
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 914,
+            "body": 170,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "morpheus-ambush-shirt": 144
+            }
+          },
+          {
+            "frame": 40,
+            "time": 2.1,
+            "self": 938,
+            "body": 36,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "Tailored_trousers": 10
+            }
+          },
+          {
+            "frame": 55,
+            "time": 2.6,
+            "self": 2778,
+            "body": 121,
+            "parts": {
+              "morpheus-ambush-shirt": 121
+            }
+          },
+          {
+            "frame": 73,
+            "time": 3.2,
+            "self": 1621,
+            "body": 18,
+            "parts": {
+              "morpheus-ambush-shirt": 18
+            }
+          }
+        ]
+      },
+      "binding": {
+        "file": "free-cuff-binding-final.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 1.4294423430153064e-05,
+            "physicalCuffMetres": 1.9943137308154144e-07,
+            "physicalCollarMetres": 2.554577923705012e-07,
+            "cuffBindingMetres": 3.453084893899103e-07,
+            "collarBindingMetres": 1.4290159200996441e-05,
+            "freedCuffMotionMetres": 0.6456630436837507
+          }
+        ]
+      },
+      "accepted": false,
+      "hands": {
+        "file": "free-cuff-hand.log",
+        "tests": 12,
+        "pass": 10,
+        "fail": 2,
+        "measurements": [
+          {
+            "time": 2.1,
+            "skinCrossings": 26
+          },
+          {
+            "time": 2.2,
+            "skinCrossings": 58
+          },
+          {
+            "time": 2.3,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.4000000000000004,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.5,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.6,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.7,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.8,
+            "skinCrossings": 0
+          },
+          {
+            "time": 2.9000000000000004,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3.0999999999999996,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3.2,
+            "skinCrossings": 0
+          }
+        ]
+      },
+      "comparison": {
+        "sameDisplayedFramesBeforeRelease": 28,
+        "samePhysicalFramesBeforeRelease": 28,
+        "sameBodyFrames": 73
+      }
+    },
+    "free-garment": {
+      "directory": "free-garment-physics",
+      "metadata": {
+        "physicalVertices": 3005,
+        "physicalFaces": 5534,
+        "input": "output/characters/morpheus-collar-drop-2026-10-20/independent-cuff-input",
+        "displayVertices": 13386,
+        "displayFaces": 25796,
+        "stitches": 183,
+        "cuffReleaseFrame": 29,
+        "collarReleaseFrame": 29,
+        "clothDistanceMetres": 0.0030000001192092896,
+        "massTotal": 3.0000000505242497,
+        "airDamping": 0.006655574310570955,
+        "quality": 20,
+        "frames": 73,
+        "bodyParts": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "Anatomical_head_and_hands",
+          "Tailored_trousers",
+          "shoes01",
+          "high-poly",
+          "Anatomical_wrist_skin",
+          "morpheus-ambush-shirt",
+          "morpheus-ambush-collar",
+          "morpheus-ambush-tie"
+        ],
+        "scope": "Offline cage control; all displayed triangles and actual body layers retained. Not accepted for production."
+      },
+      "frames": 73,
+      "solverStates": [
+        "SUCCESS"
+      ],
+      "contact": {
+        "file": "free-garment-contact.log",
+        "tests": 7,
+        "pass": 1,
+        "fail": 6,
+        "measurements": [
+          {
+            "frame": 1,
+            "time": 0.8,
+            "self": 0,
+            "body": 0,
+            "parts": {}
+          },
+          {
+            "frame": 10,
+            "time": 1.1,
+            "self": 193,
+            "body": 30,
+            "parts": {
+              "morpheus-ambush-shirt": 30
+            }
+          },
+          {
+            "frame": 16,
+            "time": 1.3,
+            "self": 837,
+            "body": 35,
+            "parts": {
+              "morpheus-ambush-shirt": 35
+            }
+          },
+          {
+            "frame": 25,
+            "time": 1.6,
+            "self": 914,
+            "body": 170,
+            "parts": {
+              "Anatomical_head_and_hands": 26,
+              "morpheus-ambush-shirt": 144
+            }
+          },
+          {
+            "frame": 40,
+            "time": 2.1,
+            "self": 469,
+            "body": 52,
+            "parts": {
+              "Anatomical_head_and_hands": 38,
+              "morpheus-ambush-shirt": 14
+            }
+          },
+          {
+            "frame": 55,
+            "time": 2.6,
+            "self": 487,
+            "body": 42,
+            "parts": {
+              "Anatomical_head_and_hands": 32,
+              "morpheus-ambush-shirt": 10
+            }
+          },
+          {
+            "frame": 73,
+            "time": 3.2,
+            "self": 414,
+            "body": 0,
+            "parts": {}
+          }
+        ]
+      },
+      "binding": {
+        "file": "free-garment-binding.log",
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "measurements": [
+          {
+            "maximumCuffMetres": 3.3647092730056643e-07,
+            "maximumCollarMetres": 9.513361741764312e-06,
+            "physicalCuffMetres": 1.9943137308154144e-07,
+            "physicalCollarMetres": 2.3708481370626308e-07,
+            "cuffBindingMetres": 3.7342202920143806e-07,
+            "collarBindingMetres": 9.51347828850534e-06,
+            "freedCuffMotionMetres": 0.5922477647671991
+          }
+        ]
+      },
+      "accepted": false,
+      "hands": {
+        "file": "free-garment-hand.log",
+        "tests": 12,
+        "pass": 3,
+        "fail": 9,
+        "measurements": [
+          {
+            "time": 2.1,
+            "skinCrossings": 38
+          },
+          {
+            "time": 2.2,
+            "skinCrossings": 26
+          },
+          {
+            "time": 2.3,
+            "skinCrossings": 119
+          },
+          {
+            "time": 2.4000000000000004,
+            "skinCrossings": 94
+          },
+          {
+            "time": 2.5,
+            "skinCrossings": 80
+          },
+          {
+            "time": 2.6,
+            "skinCrossings": 32
+          },
+          {
+            "time": 2.7,
+            "skinCrossings": 64
+          },
+          {
+            "time": 2.8,
+            "skinCrossings": 70
+          },
+          {
+            "time": 2.9000000000000004,
+            "skinCrossings": 32
+          },
+          {
+            "time": 3,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3.0999999999999996,
+            "skinCrossings": 0
+          },
+          {
+            "time": 3.2,
+            "skinCrossings": 0
+          }
+        ]
+      },
+      "physicalAndDisplay": [
+        {
+          "frame": 10,
+          "time": 1.1,
+          "mesh": "cage",
+          "self": 55,
+          "body": 0,
+          "pairs": {
+            "coat/coat": 17,
+            "coat/lapels": 38
+          },
+          "maximumIntersectionSegmentMetres": 0.03063033176351377
+        },
+        {
+          "frame": 10,
+          "time": 1.1,
+          "mesh": "cloth",
+          "self": 193,
+          "body": 30,
+          "pairs": {
+            "coat/coat": 116,
+            "coat/lapels": 47,
+            "coat/tail-1": 8,
+            "coat/tail-2": 22
+          },
+          "maximumIntersectionSegmentMetres": 0.01648814601079865
+        },
+        {
+          "frame": 25,
+          "time": 1.6,
+          "mesh": "cage",
+          "self": 147,
+          "body": 0,
+          "pairs": {
+            "coat/coat": 37,
+            "coat/lapels": 109,
+            "lapels/lapels": 1
+          },
+          "maximumIntersectionSegmentMetres": 0.03892408770697521
+        },
+        {
+          "frame": 25,
+          "time": 1.6,
+          "mesh": "cloth",
+          "self": 914,
+          "body": 170,
+          "pairs": {
+            "coat/coat": 472,
+            "lapels/lapels": 12,
+            "coat/lapels": 430
+          },
+          "maximumIntersectionSegmentMetres": 0.04965533959765478
+        },
+        {
+          "frame": 40,
+          "time": 2.1,
+          "mesh": "cage",
+          "self": 49,
+          "body": 52,
+          "pairs": {
+            "coat/coat": 28,
+            "lapels/lapels": 2,
+            "coat/lapels": 19
+          },
+          "maximumIntersectionSegmentMetres": 0.021977015758989096
+        },
+        {
+          "frame": 40,
+          "time": 2.1,
+          "mesh": "cloth",
+          "self": 469,
+          "body": 52,
+          "pairs": {
+            "coat/coat": 401,
+            "lapels/lapels": 20,
+            "coat/lapels": 48
+          },
+          "maximumIntersectionSegmentMetres": 0.023505273572454383
+        },
+        {
+          "frame": 55,
+          "time": 2.6,
+          "mesh": "cage",
+          "self": 43,
+          "body": 0,
+          "pairs": {
+            "coat/coat": 18,
+            "lapels/lapels": 2,
+            "coat/lapels": 23
+          },
+          "maximumIntersectionSegmentMetres": 0.01986744982587244
+        },
+        {
+          "frame": 55,
+          "time": 2.6,
+          "mesh": "cloth",
+          "self": 487,
+          "body": 42,
+          "pairs": {
+            "coat/coat": 404,
+            "lapels/lapels": 7,
+            "coat/lapels": 76
+          },
+          "maximumIntersectionSegmentMetres": 0.021734494856119228
+        },
+        {
+          "frame": 73,
+          "time": 3.2,
+          "mesh": "cage",
+          "self": 29,
+          "body": 0,
+          "pairs": {
+            "coat/coat": 27,
+            "lapels/lapels": 2
+          },
+          "maximumIntersectionSegmentMetres": 0.029121154647674258
+        },
+        {
+          "frame": 73,
+          "time": 3.2,
+          "mesh": "cloth",
+          "self": 414,
+          "body": 0,
+          "pairs": {
+            "coat/coat": 368,
+            "lapels/lapels": 18,
+            "coat/lapels": 19,
+            "coat/tail-2": 9
+          },
+          "maximumIntersectionSegmentMetres": 0.022250252727848533
+        }
+      ],
+      "comparison": {
+        "sameDisplayedFramesBeforeRelease": 28,
+        "samePhysicalFramesBeforeRelease": 28,
+        "sameBodyFrames": 73
+      }
+    }
+  },
+  "acceptedClothAsset": false,
+  "highQualityTrilogyGroupsAdded": 0,
+  "remaining": [
+    "Physical and displayed garment self intersections",
+    "Hands and arms fully leaving the garment: no intersection alone does not prove a completed doff",
+    "Full 0–8 s grip, release and landing",
+    "Runtime world garment, save restoration and native gameplay verification"
+  ],
+  "lastVerifiedPublishedRuntime": "1ce32d6e0d0668087665c97ca5f108acf8638d73",
+  "newGameplayDeployment": false,
+  "newNativeGameplayVerification": false,
+  "references": [
+    "https://github.com/blender/blender/blob/v4.5.3/source/blender/blenkernel/intern/cloth.cc#L273-L281"
+  ],
+  "sha256": {
+    "hand-exit-fixture.json.gz": "4389a3d9973d7b4fd4bf3b19ff841781d8ba3e0bb8d9e90ac6d2e1038db849a3",
+    "export-guide.py": "94868f3c6843c29729dbf25938f0e0a5332b6e11d83ff9c48c011299d10b4700",
+    "cuff-release.test.mts": "de9ef58ade328bea93a81130a9c77eb5cdf2fce7693236dd1437954fa91dbf9a",
+    "hand-exit.test.mts": "b6e3fa6b6484c744b8d3353adb3de8566412d01874c17a3ef3b4ffff100a44c5",
+    "inspect-panels.mts": "a7fe94f2af1efa84e952eaff6b1a9cbe1a9f58b5c13abff86d4e625d05ecc465",
+    "WithdrawalBody-lateral-control.mts": "bcfde597ede9874d32453cefdd8a35abe6223efda3d9367cf0b09b057688eb5e",
+    "WithdrawalBody-opening-control.mts": "78c37812db5b41e9544fd16629dba3a68ad2d2af60e5d9f4fdf6b6f04b5d527d",
+    "independent-cuff-input/manifest.json": "5b8587697cc1810869c7c67959454698a2f6c42a3afc145000cdaa4b69fa0d4d",
+    "independent-cuff/collar-guide.json": "2bc63ba18e60cadaf61e298e290805e763d6ff6579f9d23b7f841f706caecaf0",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/WithdrawalBody.mts": "41ba64b16d2b35bb639cae4b5a5f01144afd190dfe096d729c1e70bb64779062",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/WithdrawalCuffs.mts": "f2641bc8cbaa4f8ada3987f7d1b6de46a948b3235e18ca9185c97703b6ac6017",
+    "output/characters/morpheus-shoulder-release-2026-10-20/bake-cage-clearance.py": "154c5811c77c6e6c30b0d25346a64b203fa568ea663c9a8f1b6b216a35a6ddde",
+    "output/characters/morpheus-shoulder-release-2026-10-20/cage-binding.test.mts": "b8261c66c88e53bfbe807bafd6547cde0969540e452109f31c5aeefe6441b986",
+    "cage-clearance-physics/metadata.json": "098a7cc3bf3a944187ccea68b3be978608dcd60a3109ea4776f5ce90b04b23d9",
+    "cage-clearance-physics/summary.json": "44da08312b88bc8ae856bdfb1154e1964434edaec88f0cbbed191a9f7f834522",
+    "cage-clearance-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "cage-clearance-physics/cloth-10.bin": "658a3cd25aa374c655500fb45f63d9791df58a54dc688100e0672a5352878d43",
+    "cage-clearance-physics/cloth-16.bin": "5ff62b0f344be9bca485589a1d8e625ecb8e5a7857ffcccdfb63dce130736699",
+    "cage-clearance-physics/cloth-25.bin": "fd5ddd9ca506c1d8aff29e3a79a5195471f25ba95ea7ed385cf978a3844bc43e",
+    "front-bound-physics/metadata.json": "d0fcf17f1fcf13ff3f3743920770a01d589ccfe8e7d504f51c7213398b092e60",
+    "front-bound-physics/summary.json": "12c73701d1c2beee63fec44d90e0cf1d96ba0772dadf5fa27f8ca5caeb1265a7",
+    "front-bound-physics/cloth-1.bin": "8889170817ebe4c67e535c757daaa5f162a457a04863991c1399c53a48b2a173",
+    "front-bound-physics/cloth-10.bin": "d494706b24cb0455db8985133c3496377e03917e8de9d458ce8a7fb49c5bf340",
+    "front-bound-physics/cloth-16.bin": "b6cbe3857c843db59d69c9a5931d3a4018b26d3785cdaed49d2494a5f34f039f",
+    "front-bound-physics/cloth-25.bin": "323e4c4735e0cf661a46352079d23d153e2f17a15f8c50d9cbed44e2305d24c0",
+    "fine-physics/metadata.json": "9fa72feb6ce0f8ec81e92c11e89482a0753bf6c64307194f60412b385e1eaa45",
+    "fine-physics/summary.json": "b6334e33dfbd679ef2cde507b5a5fb316ff14920449804595486646214018e51",
+    "fine-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "fine-physics/cloth-10.bin": "3a57e9a895d9feb0cb59bde6ebfca8839834d75d3fa8dc206bd3c5025b56336c",
+    "fine-physics/cloth-16.bin": "a11e807cf460c482d10b1ef09c2aaa1fd28c48b6d5d2b916ec30563be33a9d79",
+    "fine-physics/cloth-25.bin": "4f215dd1e0bd9e5467f70119ef4323d8bd99e61c332a57fc027cc1d772142950",
+    "margin-collar/cage-clearance-physics/metadata.json": "4b76c8dcdbbd85a2f4fd112232a451d88ea9d4244915f3cae05bbb494e5e26bb",
+    "margin-collar/cage-clearance-physics/summary.json": "22f273aa5166ea23a3c2747ad5e372a9ac0d9d50642452726217e30dab27c4e7",
+    "margin-collar/cage-clearance-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "margin-collar/cage-clearance-physics/cloth-10.bin": "2a9a1dfd53731a61e0013b5f5732b7f434a679ecfe00f1e4efc59bfb79d54f18",
+    "margin-collar/cage-clearance-physics/cloth-16.bin": "edcfd3913d994b31b97b779c17efcd9dd9440354726dafad6287c5a694a61de5",
+    "margin-collar/cage-clearance-physics/cloth-25.bin": "2546202a94c7534f60697f42cad55b9a950774882ab864268b86a9dbfd4545e4",
+    "margin-collar/cage-clearance-physics/cloth-40.bin": "f9e8d52ba7893c1bc97294b9c29c373b2a6e731aa550eda63f587fb8b0361b5b",
+    "margin-collar/cage-clearance-physics/cloth-55.bin": "983ffe689ddefc4372dc7a9ae0d458b607c9a7bc3c6ff0a0c4709ca0591457e1",
+    "margin-collar/cage-clearance-physics/cloth-73.bin": "69b112f799075864c9144cc5d0d2dee8c9db011b9aab5e5eb5cf1ee8abb2fd45",
+    "hand-arc/cage-clearance-physics/metadata.json": "af294502909678cef7d9b3e18f62b800c0bc2762f1b132e072aa525be2ae8973",
+    "hand-arc/cage-clearance-physics/summary.json": "45746d8a720774a6b214bf7149db096e30050e3058c027e7e7b741809676c4b9",
+    "hand-arc/cage-clearance-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "hand-arc/cage-clearance-physics/cloth-10.bin": "2a9a1dfd53731a61e0013b5f5732b7f434a679ecfe00f1e4efc59bfb79d54f18",
+    "hand-arc/cage-clearance-physics/cloth-16.bin": "edcfd3913d994b31b97b779c17efcd9dd9440354726dafad6287c5a694a61de5",
+    "hand-arc/cage-clearance-physics/cloth-25.bin": "2546202a94c7534f60697f42cad55b9a950774882ab864268b86a9dbfd4545e4",
+    "hand-arc/cage-clearance-physics/cloth-40.bin": "eda6c76d10cf029bec8168a6d906141928595cca833814870244098bb0f7b084",
+    "hand-arc/cage-clearance-physics/cloth-55.bin": "3202025061e8157a4fb14c5a13b5e2c537e25f05c28e08e4d005506e7800762e",
+    "hand-arc/cage-clearance-physics/cloth-73.bin": "448c3ed3d89d06985c7c30e68db559c5652ff432805c13001670426999b13372",
+    "released-physics/metadata.json": "32565c0d00d1ca448b67dbd6045a4edfe947c2520cff12679c8c6d4a50344ce8",
+    "released-physics/summary.json": "1bb2f355a9e4c24a1e4bdd0d035dfbb50584309bf09c94b41b87e3464e6ad3d9",
+    "released-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "released-physics/cloth-10.bin": "2a9a1dfd53731a61e0013b5f5732b7f434a679ecfe00f1e4efc59bfb79d54f18",
+    "released-physics/cloth-16.bin": "edcfd3913d994b31b97b779c17efcd9dd9440354726dafad6287c5a694a61de5",
+    "released-physics/cloth-25.bin": "2546202a94c7534f60697f42cad55b9a950774882ab864268b86a9dbfd4545e4",
+    "released-physics/cloth-40.bin": "30bd71ca654c5af798608a5da6acbe3da27ff8869c39c13ad8c2b904503ac1e2",
+    "released-physics/cloth-55.bin": "4555c1562a4ed53a0626b39b860f75d2066ebf87525443f974a71c2a1ec6fd2e",
+    "released-physics/cloth-73.bin": "f4ba058adaa474649db2baa85ccf740d7b043ee4dc24d59d02153b0289be408d",
+    "independent-cuff/cage-clearance-physics/metadata.json": "91c57e7d4335bfd205e8fb37b0cc787d9f3b5314e5b56afc27837b5aaa4fcc20",
+    "independent-cuff/cage-clearance-physics/summary.json": "b82be928099a7b31e2ab431c81b2c0705094c5f394bedd0163b4156b04db7026",
+    "independent-cuff/cage-clearance-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "independent-cuff/cage-clearance-physics/cloth-10.bin": "2a9a1dfd53731a61e0013b5f5732b7f434a679ecfe00f1e4efc59bfb79d54f18",
+    "independent-cuff/cage-clearance-physics/cloth-16.bin": "edcfd3913d994b31b97b779c17efcd9dd9440354726dafad6287c5a694a61de5",
+    "independent-cuff/cage-clearance-physics/cloth-25.bin": "2546202a94c7534f60697f42cad55b9a950774882ab864268b86a9dbfd4545e4",
+    "independent-cuff/cage-clearance-physics/cloth-40.bin": "11bc0cd4e6f60da0f2d1cb3bd4b67526b1eaf2a167218b1c8c9b49c97cb1715c",
+    "independent-cuff/cage-clearance-physics/cloth-55.bin": "8c14bd2224369e5562b2a19e27f10647557d57c4d4f537524d8702cc6c728a69",
+    "independent-cuff/cage-clearance-physics/cloth-73.bin": "232b5c2ffa416c65e37cf09f3cc6aec75f824704607b541009aa6afd48e42af3",
+    "free-cuff-physics/metadata.json": "195b7f3ceac5fd09b6a7ebf5892a9224a53cf987212e5a141acbe20fe815239a",
+    "free-cuff-physics/summary.json": "38813fb34e6cb1201e07023d716ed53a0067ddd7e059b2bd00c888c7ae6e9406",
+    "free-cuff-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "free-cuff-physics/cloth-10.bin": "2a9a1dfd53731a61e0013b5f5732b7f434a679ecfe00f1e4efc59bfb79d54f18",
+    "free-cuff-physics/cloth-16.bin": "edcfd3913d994b31b97b779c17efcd9dd9440354726dafad6287c5a694a61de5",
+    "free-cuff-physics/cloth-25.bin": "2546202a94c7534f60697f42cad55b9a950774882ab864268b86a9dbfd4545e4",
+    "free-cuff-physics/cloth-40.bin": "19527a21b87469c65b7d8e11f0b472b0de2450735df3772d7b4d304712e341d9",
+    "free-cuff-physics/cloth-55.bin": "2f4ea949ea6f729d74decdd1ede12aa75c626aedd4ca67d92467b8140d336561",
+    "free-cuff-physics/cloth-73.bin": "d67ccfeea9bac9676e3fb008175297986b30d9da82cc27afde228118ad549a2c",
+    "free-garment-physics/metadata.json": "732b4de8941c88e5ca88256f200bbe46bb745d215368c8a24b7051db0ead0af4",
+    "free-garment-physics/summary.json": "902d6cdbf84b700dcdeec0c48eecc368015a9ffb6f265d349336105c70e384a4",
+    "free-garment-physics/cloth-1.bin": "e0a0b4192cb5e5353b3471cda3076f163773927d3284f48eeda9f49bbe753bec",
+    "free-garment-physics/cloth-10.bin": "2a9a1dfd53731a61e0013b5f5732b7f434a679ecfe00f1e4efc59bfb79d54f18",
+    "free-garment-physics/cloth-16.bin": "edcfd3913d994b31b97b779c17efcd9dd9440354726dafad6287c5a694a61de5",
+    "free-garment-physics/cloth-25.bin": "2546202a94c7534f60697f42cad55b9a950774882ab864268b86a9dbfd4545e4",
+    "free-garment-physics/cloth-40.bin": "15dfa77b6d855928ad93181cb8391cb8a65ff9e49979b0cf68905b4d76cc7390",
+    "free-garment-physics/cloth-55.bin": "45c7943cbfded6a051b17daf99741100346617b904ffddd67e5fa67d2b7860aa",
+    "free-garment-physics/cloth-73.bin": "ab9ab083bfad606363161915f46bd03731f49490816d24479afe3cd14d95981b"
+  }
+}

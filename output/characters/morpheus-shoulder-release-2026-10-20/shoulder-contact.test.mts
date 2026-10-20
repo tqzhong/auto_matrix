@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import test from 'node:test';
 import { auditCage } from '../morpheus-ambush-doff-2026-10-17/cloth-rebuild/cage-contact.mjs';
 
-const input = new URL('../morpheus-withdrawal-path-2026-10-20/clearance-input/', import.meta.url);
+const input = new URL(process.env.MORPHEUS_CLOTH_INPUT ?? '../morpheus-withdrawal-path-2026-10-20/clearance-input/', import.meta.url);
 const result = new URL(process.env.MORPHEUS_CLOTH_RESULT ?? '../morpheus-withdrawal-path-2026-10-20/clearance-physics/', import.meta.url);
 const data = JSON.parse(await readFile(new URL('manifest.json', input), 'utf8'));
 const rows: object[] = [];
@@ -12,7 +12,8 @@ const points = async (name: string) => {
   const a = new Float32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
   return Array.from({ length: a.length / 3 }, (_, i) => [a[i*3] / .4, a[i*3+2] / .4, -a[i*3+1] / .4]);
 };
-for (const frame of [1, 10, 16, 25]) test(`the whole garment clears all visible body layers at ${data.frames[frame-1].time} seconds`, async () => {
+const frames = process.env.MORPHEUS_CLOTH_FULL ? [1, 10, 16, 25, 40, 55, 73] : [1, 10, 16, 25];
+for (const frame of frames) test(`the whole garment clears all visible body layers at ${data.frames[frame-1].time} seconds`, async () => {
   const vertices = await points(`cloth-${frame}.bin`), body = await points(`body-${frame}.bin`);
   let offset = 0;
   const bodies = data.bodies.map((part: { name: string; count: number; indices: number[] }) => {

@@ -1,0 +1,29 @@
+TAP version 13
+# {"releasedSleeves":[{"time":1.7,"side":"R","difference":0.18052280551583055},{"time":1.7,"side":"L","difference":2.469802862156647},{"time":1.8,"side":"R","difference":0.1757124623991756},{"time":1.8,"side":"L","difference":2.3926552689753002},{"time":2,"side":"R","difference":0.08006851722688602},{"time":2,"side":"L","difference":1.2778225320344963},{"time":2.2,"side":"R","difference":0.005056413822462025},{"time":2.2,"side":"L","difference":0.0918126117660445},{"time":2.3,"side":"R","difference":2.220446049250313e-16},{"time":2.3,"side":"L","difference":1.1102230246251565e-16},{"time":3.2,"side":"R","difference":2.220446049250313e-16},{"time":3.2,"side":"L","difference":3.3306690738754696e-16}]}
+# Subtest: moving the freed hand cannot drag the sleeve after the rim has cleared the fingers
+not ok 1 - moving the freed hand cannot drag the sleeve after the rim has cleared the fingers
+  ---
+  duration_ms: 1871.627792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-collar-drop-2026-10-20/cuff-release.test.mts:1:317'
+  failureType: 'testCodeFailure'
+  error: 'the released garment is still driven by the hand'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-collar-drop-2026-10-20/cuff-release.test.mts:17:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2420.008042

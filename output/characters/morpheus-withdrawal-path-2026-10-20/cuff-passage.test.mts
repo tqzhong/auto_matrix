@@ -76,7 +76,7 @@ function aperture(ring: THREE.Vector3[], points: THREE.Vector3[], indices: numbe
 test('each complete cuff can slide past the actual hand without forcing skin through its opening', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
   const body = new WithdrawalBody(h.rig); body.pose(.8);
-  const cuffs = new WithdrawalCuffs(h.rig);
+  const cuffs = new WithdrawalCuffs(h.rig, body);
   const rings = cuffRings(h.rig.root.getObjectByName('morpheus-ambush-coat') as THREE.Mesh);
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const indices = Array.from(skin.geometry.index!.array), rows = [];
@@ -132,7 +132,7 @@ test('the complete cuff path preserves the opening and restores the same saved p
   cold.rig.root.position.set(12,5,-3); cold.rig.root.rotation.y = 1.14; cold.rig.root.scale.setScalar(.4); cold.rig.root.updateMatrixWorld(true);
   const body = new WithdrawalBody(h.rig), coldBody = new WithdrawalBody(cold.rig);
   body.pose(.8); coldBody.pose(.8);
-  const path = new WithdrawalCuffs(h.rig), restored = new WithdrawalCuffs(cold.rig);
+  const path = new WithdrawalCuffs(h.rig, body), restored = new WithdrawalCuffs(cold.rig, coldBody);
   const rings = cuffRings(h.rig.root.getObjectByName('morpheus-ambush-coat') as THREE.Mesh);
   const localPoints = [new THREE.Vector3(.03,-.082,.015),new THREE.Vector3(-.08,-.082,0),new THREE.Vector3(.14,-.082,.1)];
   const warmStart = h.rig.bones.get('wrist_R')!.matrixWorld.clone(), coldStart = cold.rig.bones.get('wrist_R')!.matrixWorld.clone();

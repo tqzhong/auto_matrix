@@ -1,0 +1,80 @@
+TAP version 13
+# {"releasedSleeves":[{"time":1.7,"side":"R","difference":0},{"time":1.7,"side":"L","difference":0},{"time":1.8,"side":"R","difference":0},{"time":1.8,"side":"L","difference":0},{"time":2,"side":"R","difference":0},{"time":2,"side":"L","difference":0},{"time":2.2,"side":"R","difference":0},{"time":2.2,"side":"L","difference":0},{"time":2.3,"side":"R","difference":0},{"time":2.3,"side":"L","difference":0},{"time":3.2,"side":"R","difference":0},{"time":3.2,"side":"L","difference":0}]}
+# Subtest: moving the freed hand cannot drag the sleeve after the rim has cleared the fingers
+ok 1 - moving the freed hand cannot drag the sleeve after the rim has cleared the fingers
+  ---
+  duration_ms: 3770.565125
+  type: 'test'
+  ...
+# {"maximumReleaseVelocityChange":0.000003060256909943673}
+# Subtest: the released sleeve retains its movement without a velocity snap at the last finger contact
+ok 2 - the released sleeve retains its movement without a velocity snap at the last finger contact
+  ---
+  duration_ms: 2849.112667
+  type: 'test'
+  ...
+# {"worst":{"time":1.1916666666666667,"side":"R","sectionPoints":504,"clearance":0.005126441792362791,"worstPoint":{"x":0.03670395477632393,"y":-0.2790956985633397,"z":0.10607875565279357},"closestPoint":{"x":0.033701941555575265,"y":-0.2790677400563546,"z":0.1102341786631289},"nonPlanarity":0.002110389099442645},"sampledSections":140}
+# Subtest: each complete cuff can slide past the actual hand without forcing skin through its opening
+ok 3 - each complete cuff can slide past the actual hand without forcing skin through its opening
+  ---
+  duration_ms: 13261.609667
+  type: 'test'
+  ...
+# {"anatomy":[{"time":0,"self":0,"maximumPIP":23.578796043466607,"maximumDIP":20.94915991424377},{"time":0.3,"self":0,"maximumPIP":23.578796043466607,"maximumDIP":20.94915991424393},{"time":0.4,"self":0,"maximumPIP":24.512930623799402,"maximumDIP":21.22004164051553},{"time":0.5,"self":0,"maximumPIP":28.412055290126037,"maximumDIP":22.315965437453876},{"time":0.6,"self":0,"maximumPIP":33.06732632093232,"maximumDIP":22.95562442329697},{"time":0.7,"self":0,"maximumPIP":35.77109100659665,"maximumDIP":22.75290881055378},{"time":0.8,"self":0,"maximumPIP":36.30558205385196,"maximumDIP":22.65638052777703},{"time":1.15,"self":0,"maximumPIP":36.30558205385196,"maximumDIP":22.65638052777703},{"time":1.4,"self":0,"maximumPIP":36.30558205385196,"maximumDIP":22.65638052777703},{"time":1.7,"self":0,"maximumPIP":36.30558205385196,"maximumDIP":22.65638052777703},{"time":3.2,"self":0,"maximumPIP":36.30558205385193,"maximumDIP":22.656380527777014},{"time":3.3,"self":0,"maximumPIP":35.981023852687656,"maximumDIP":22.717175614616462},{"time":3.4,"self":0,"maximumPIP":34.24925341747026,"maximumDIP":22.92558560649145},{"time":3.5,"self":0,"maximumPIP":30.86325510943682,"maximumDIP":22.787146202543603},{"time":3.6,"self":0,"maximumPIP":26.853988452958227,"maximumDIP":21.906889776629594},{"time":3.7,"self":0,"maximumPIP":24.15391826062528,"maximumDIP":21.114564381836082},{"time":3.8,"self":0,"maximumPIP":23.57879604346651,"maximumDIP":20.94915991424393},{"time":8,"self":0,"maximumPIP":23.578796043466543,"maximumDIP":20.949159914243786}]}
+# Subtest: gathering and relaxing the thumbs preserves anatomy and does not fold skin through the other fingers
+ok 4 - gathering and relaxing the thumbs preserves anatomy and does not fold skin through the other fingers
+  ---
+  duration_ms: 28513.405667
+  type: 'test'
+  ...
+# {"maximumStep":0.02474208212784463,"sizeDifference":5.828670879282072e-16,"coldDifference":5.557721570830963e-13}
+# Subtest: the complete cuff path preserves the opening and restores the same saved position in another world placement
+ok 5 - the complete cuff path preserves the opening and restores the same saved position in another world placement
+  ---
+  duration_ms: 4323.565959
+  type: 'test'
+  ...
+# {"preparation":[{"time":0,"self":0,"body":0},{"time":0.016666666666666666,"self":0,"body":0},{"time":0.03333333333333333,"self":0,"body":0},{"time":0.05,"self":0,"body":0},{"time":0.06666666666666667,"self":0,"body":0},{"time":0.08333333333333333,"self":0,"body":0},{"time":0.1,"self":0,"body":0},{"time":0.11666666666666667,"self":0,"body":0},{"time":0.13333333333333333,"self":0,"body":0},{"time":0.15,"self":0,"body":0},{"time":0.16666666666666666,"self":0,"body":0},{"time":0.18333333333333332,"self":0,"body":0},{"time":0.2,"self":0,"body":0},{"time":0.21666666666666667,"self":0,"body":0},{"time":0.23333333333333334,"self":0,"body":0},{"time":0.25,"self":0,"body":0},{"time":0.26666666666666666,"self":0,"body":0},{"time":0.2833333333333333,"self":0,"body":0},{"time":0.3,"self":0,"body":0},{"time":0.31666666666666665,"self":0,"body":0},{"time":0.3333333333333333,"self":0,"body":0},{"time":0.35,"self":0,"body":0},{"time":0.36666666666666664,"self":0,"body":0},{"time":0.38333333333333336,"self":0,"body":0},{"time":0.4,"self":0,"body":0},{"time":0.4166666666666667,"self":0,"body":0},{"time":0.43333333333333335,"self":0,"body":0},{"time":0.45,"self":0,"body":0},{"time":0.4666666666666667,"self":0,"body":0},{"time":0.48333333333333334,"self":0,"body":0},{"time":0.5,"self":0,"body":0},{"time":0.5166666666666667,"self":0,"body":0},{"time":0.5333333333333333,"self":0,"body":0},{"time":0.55,"self":0,"body":0},{"time":0.5666666666666667,"self":0,"body":0},{"time":0.5833333333333334,"self":0,"body":0},{"time":0.6,"self":0,"body":0},{"time":0.6166666666666667,"self":0,"body":0},{"time":0.6333333333333333,"self":0,"body":0},{"time":0.65,"self":0,"body":0},{"time":0.6666666666666666,"self":0,"body":0},{"time":0.6833333333333333,"self":0,"body":0},{"time":0.7,"self":0,"body":0},{"time":0.7166666666666667,"self":0,"body":0},{"time":0.7333333333333333,"self":0,"body":0},{"time":0.75,"self":0,"body":0},{"time":0.7666666666666667,"self":0,"body":0},{"time":0.7833333333333333,"self":0,"body":0},{"time":0.8,"self":0,"body":0}]}
+# Subtest: hands move around the full leather tails while preparing to withdraw the sleeves
+ok 6 - hands move around the full leather tails while preparing to withdraw the sleeves
+  ---
+  duration_ms: 48162.001167
+  type: 'test'
+  ...
+# {"baseline":23,"results":[{"time":0,"self":23,"newPairs":0,"skin":0,"reachError":0},{"time":0.4,"self":23,"newPairs":0,"skin":0,"reachError":4.710277376051325e-16},{"time":0.8,"self":23,"newPairs":0,"skin":0,"reachError":0},{"time":1.2,"self":23,"newPairs":0,"skin":0,"reachError":6.753223014464259e-16},{"time":1.6,"self":23,"newPairs":0,"skin":0,"reachError":7.447602459741819e-16},{"time":2,"self":23,"newPairs":0,"skin":0,"reachError":6.753223014464259e-16},{"time":2.4,"self":23,"newPairs":0,"skin":0,"reachError":2.220446049250313e-16},{"time":2.6,"self":23,"newPairs":0,"skin":0,"reachError":7.108895957933346e-16},{"time":2.8,"self":23,"newPairs":0,"skin":0,"reachError":6.661338147750939e-16},{"time":3,"self":23,"newPairs":0,"skin":0,"reachError":8.671119018262734e-16},{"time":3.1,"self":23,"newPairs":0,"skin":0,"reachError":3.510833468576701e-16},{"time":3.2,"self":23,"newPairs":0,"skin":0,"reachError":6.377745716588144e-16}]}
+# Subtest: withdrawing the arms does not introduce shirt folds through the torso or hands
+ok 7 - withdrawing the arms does not introduce shirt folds through the torso or hands
+  ---
+  duration_ms: 7988.2715
+  type: 'test'
+  ...
+# {"maximumStep":0.05021980640079352,"maximumFootDrift":7.468261590855957e-16,"maximumReachError":1.1957467920563633e-15}
+# Subtest: the withdrawal keeps planted feet and restores identical saved body surfaces
+ok 8 - the withdrawal keeps planted feet and restores identical saved body surfaces
+  ---
+  duration_ms: 7755.5095
+  type: 'test'
+  ...
+# {"recovery":[{"time":3.2,"newPairs":0,"skin":0},{"time":3.5,"newPairs":0,"skin":0},{"time":3.8,"newPairs":0,"skin":0},{"time":4.1,"newPairs":0,"skin":0},{"time":4.6,"newPairs":0,"skin":0},{"time":4.9,"newPairs":0,"skin":0},{"time":5.2,"newPairs":0,"skin":0},{"time":5.6,"newPairs":0,"skin":0},{"time":6,"newPairs":0,"skin":0},{"time":6.6,"newPairs":0,"skin":0},{"time":7,"newPairs":0,"skin":0},{"time":7.6,"newPairs":0,"skin":0},{"time":8,"newPairs":0,"skin":0}]}
+# Subtest: after exiting the sleeves the hands clear the body and return continuously to the original standing pose
+ok 9 - after exiting the sleeves the hands clear the body and return continuously to the original standing pose
+  ---
+  duration_ms: 8229.519917
+  type: 'test'
+  ...
+# {"coldMaximumDifference":2.2860149897625325e-14,"maximumJointDifference":1.2427743010384781e-14}
+# Subtest: a fresh transformed body restores the same saved withdrawal surfaces
+ok 10 - a fresh transformed body restores the same saved withdrawal surfaces
+  ---
+  duration_ms: 2787.271833
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75761.080458
