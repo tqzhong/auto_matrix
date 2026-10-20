@@ -1,0 +1,2 @@
+{"frame": 1, "time": 0.8, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0, "seconds": 0.3365386249497533}
+{"frame": 2, "time": 0.8083333333333333, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.912109375, "seconds": 0.4001031257212162}

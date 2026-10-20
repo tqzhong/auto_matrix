@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-20T10:35:47.920893+00:00",
+  "pid": 8917,
+  "session": 8264,
+  "lastAccepted": {
+    "frame": 3,
+    "time": 0.8166666666666668,
+    "sourceFrame": 2,
+    "substep": 2.0,
+    "integrationSeconds": 0.008333333333333363,
+    "maximumEdgeStretch": 1.0313026586233487,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.689208984375
+  },
+  "reason": "Deliberate stop after independent full-triangle strain audit failed on the accepted .8083333333 sample (maximum 1.8614679656361786). Endpoint and continuous contact passed; structural edge limits alone missed this thin-triangle deformation. Not timeout or crash.",
+  "sourceSha256": "c395fbf8b96f6d0cebd546c57847d0f6372ce70601bd9e8b556092c2eb16dc27",
+  "confirmedExitCode": 130,
+  "frozenSource": "ipc_cloth-full-no-material-gate.py"
+}

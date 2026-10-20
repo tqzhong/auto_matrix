@@ -1,0 +1,76 @@
+{"acceptedSample": {"frame": 1, "time": 0.8, "sourceFrame": 1, "substep": 0, "integrationSeconds": 0.0, "maximumEdgeStretch": 1.0012547682721955, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"frame": 1, "time": 0.8, "seconds": 0.3902070000767708, "steps": [], "maximumEdgeStretch": 1.0, "p99EdgeStretch": 1.0, "bodyDifference": 0.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333333, "barrierStiffness": 32469143.673326228, "maximumBarrierStiffness": 3246914367.332623, "minimumGapMetres": 2.243546187261062e-05}
+{"iteration": 0, "energy": 1.1553863039473464, "residual": 308.1599219179736, "maximumNewtonStep": 0.007934632692961132, "alpha": 0.03567554149653131}
+{"iteration": 20, "energy": 0.13662217540916674, "residual": 1.5538491831332029, "maximumNewtonStep": 0.0001767926602432464, "alpha": 0.5}
+{"iteration": 40, "energy": 0.13640566182074373, "residual": 0.323978676702168, "maximumNewtonStep": 0.00011546554776646539, "alpha": 1.0}
+{"iteration": 60, "energy": 0.13634711480896833, "residual": 0.15334888071669894, "maximumNewtonStep": 6.813269275432641e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.13632679590738714, "residual": 0.13669567426808982, "maximumNewtonStep": 7.584435072607126e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.13632011750328754, "residual": 0.12345357193961348, "maximumNewtonStep": 1.560135854457583e-05, "alpha": 1.0}
+{"iteration": 120, "energy": 0.136317957199532, "residual": 0.11273828237512973, "maximumNewtonStep": 8.199924406994196e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.1363164019865453, "residual": 0.10304070087714479, "maximumNewtonStep": 1.1913275381692182e-05, "alpha": 1.0}
+{"iteration": 160, "energy": 0.1363152392985037, "residual": 0.09466657874433793, "maximumNewtonStep": 0.0001228794261367536, "alpha": 0.5}
+{"iteration": 180, "energy": 0.13631399105237746, "residual": 0.089913145786916, "maximumNewtonStep": 1.2256994479436754e-05, "alpha": 1.0}
+{"rejected": {"number": 1, "sourceFrame": 2, "startTime": 0.8, "endTime": 0.8083333333333333, "depth": 0, "error": "contact solve did not converge: residual=0.08057075049141815"}}
+{"sourceFrame": 2, "sourceBlend": 0.125, "integrationSeconds": 0.004166666666666667, "barrierStiffness": 129876574.69330491, "maximumBarrierStiffness": 12987657469.330492, "minimumGapMetres": 2.243546187261062e-05}
+{"iteration": 0, "energy": 4.584521633504939, "residual": 335.57805767117316, "maximumNewtonStep": 0.006614390668123366, "alpha": 0.048210950943182715}
+{"iteration": 20, "energy": 0.5261852471216709, "residual": 4.897259653454235, "maximumNewtonStep": 0.00042820686065938945, "alpha": 0.5}
+{"iteration": 40, "energy": 0.5246076557625554, "residual": 1.0105095456905815, "maximumNewtonStep": 7.376060178139903e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.5245325735202263, "residual": 0.8790133190976803, "maximumNewtonStep": 0.00014291299058264548, "alpha": 1.0}
+{"iteration": 80, "energy": 0.5242382829575454, "residual": 0.7921523117498737, "maximumNewtonStep": 6.62369411770588e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.5242057399396146, "residual": 0.8257609124131022, "maximumNewtonStep": 9.872724392649372e-06, "alpha": 1.0}
+{"iteration": 120, "energy": 0.5241638864130945, "residual": 0.8444290084810575, "maximumNewtonStep": 8.593200667852202e-06, "alpha": 1.0}
+{"iteration": 140, "energy": 0.5241522159886759, "residual": 0.8707865846948408, "maximumNewtonStep": 4.942524365998343e-06, "alpha": 1.0}
+{"iteration": 160, "energy": 0.5241433395986048, "residual": 0.9140145451450934, "maximumNewtonStep": 2.9455418131931595e-06, "alpha": 1.0}
+{"iteration": 180, "energy": 0.5241246239494568, "residual": 0.999943078752807, "maximumNewtonStep": 4.6293854290567505e-05, "alpha": 1.0}
+{"rejected": {"number": 2, "sourceFrame": 2, "startTime": 0.8, "endTime": 0.8041666666666667, "depth": 1, "error": "contact solve did not converge: residual=1.091472152615836"}}
+{"sourceFrame": 2, "sourceBlend": 0.0625, "integrationSeconds": 0.0020833333333333333, "barrierStiffness": 519506298.77321965, "maximumBarrierStiffness": 51950629877.32197, "minimumGapMetres": 2.243546187261062e-05}
+{"iteration": 0, "energy": 18.346030125869905, "residual": 1343.0814724853276, "maximumNewtonStep": 0.015177609507454554, "alpha": 0.01509311395761567}
+{"iteration": 20, "energy": 2.0452207903551405, "residual": 3635.235355335184, "maximumNewtonStep": 0.00037342095035604653, "alpha": 1.0}
+{"iteration": 40, "energy": 2.0361177195398192, "residual": 1037.4181972762728, "maximumNewtonStep": 0.000422602607282575, "alpha": 1.0}
+{"iteration": 60, "energy": 2.033625334787241, "residual": 119.47723623419327, "maximumNewtonStep": 7.623845502883137e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 2.0333638989415945, "residual": 21.15504415505029, "maximumNewtonStep": 0.00012059415345577312, "alpha": 1.0}
+{"iteration": 100, "energy": 2.0325443203605182, "residual": 4671.8875151556695, "maximumNewtonStep": 0.00031844220476821914, "alpha": 0.021504205393361595}
+{"iteration": 120, "energy": 2.031838411958128, "residual": 87.46898507931918, "maximumNewtonStep": 7.466119418001469e-05, "alpha": 1.0}
+{"iteration": 140, "energy": 2.031724481216983, "residual": 32.36988113528764, "maximumNewtonStep": 7.113808307259018e-06, "alpha": 1.0}
+{"iteration": 160, "energy": 2.031613071882044, "residual": 44.517149227779555, "maximumNewtonStep": 1.1146188841460366e-05, "alpha": 1.0}
+{"iteration": 180, "energy": 2.0314902837050473, "residual": 55.4553187421227, "maximumNewtonStep": 1.892659560312913e-05, "alpha": 1.0}
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 365, in advance_interval
+    iterations, residual = relax(predicted)
+                           ^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 302, in relax
+    raise ClothStepError(f'contact solve did not converge: residual={residual}')
+ClothStepError: contact solve did not converge: residual=0.08057075049141815
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 365, in advance_interval
+    iterations, residual = relax(predicted)
+                           ^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 302, in relax
+    raise ClothStepError(f'contact solve did not converge: residual={residual}')
+ClothStepError: contact solve did not converge: residual=1.091472152615836
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 433, in <module>
+    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume, args.full_surface)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 407, in bake
+    advance_interval(frame, start_blend, blend, steps)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 389, in advance_interval
+    advance_interval(frame, start_blend, middle, steps, depth+1)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 389, in advance_interval
+    advance_interval(frame, start_blend, middle, steps, depth+1)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 365, in advance_interval
+    iterations, residual = relax(predicted)
+                           ^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 275, in relax
+    displacement = spsolve(hessian.tocsc(), -gradient)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/scipy/sparse/linalg/_dsolve/linsolve.py", line 289, in spsolve
+    x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

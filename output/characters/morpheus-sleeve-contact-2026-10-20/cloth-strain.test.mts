@@ -16,12 +16,13 @@ for (let i = 0; i < cage.indices.length; i += 3) {
 }
 const distance = (a: number[], b: number[]) => Math.hypot(...a.map((v, i) => v-b[i]));
 const lengths = [...edges.values()].map(([a,b]) => distance(cage.points[a], cage.points[b]));
-test('the leather panels retain their size during shoulder release', async () => {
+test('the physical control mesh retains its size during shoulder release', async () => {
   const rows = [];
   for (const frame of frames) {
     const bytes = await readFile(new URL(`cage-${frame.frame}.bin`, result));
     const values = new Float32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset+bytes.byteLength));
     const points = Array.from({length: values.length/3}, (_,i) => [values[3*i]/.4,values[3*i+2]/.4,-values[3*i+1]/.4]);
+    assert.equal(points.length, cage.points.length, 'this audit requires the original control mesh; use the full-surface strain audit for direct surface simulation');
     const ratio = [...edges.values()].map(([a,b],i) => distance(points[a],points[b])/lengths[i]).sort((a,b) => a-b);
     rows.push({frame:frame.frame,time:frame.time,minimum:ratio[0],median:ratio[Math.floor(ratio.length*.5)],
       p99:ratio[Math.floor(ratio.length*.99)],maximum:ratio.at(-1)!});

@@ -1,0 +1,13 @@
+...F
+======================================================================
+FAIL: test_unstrained_complete_surface_has_no_artificial_contact_force (__main__.StrainLimitTests.test_unstrained_complete_surface_has_no_artificial_contact_force)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/strain-limit.test.py", line 17, in test_unstrained_complete_surface_has_no_artificial_contact_force
+    self.assertEqual(potential(contacts, mesh, positions), 0.)
+AssertionError: 3.533897663926423e-08 != 0.0
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.036s
+
+FAILED (failures=1)

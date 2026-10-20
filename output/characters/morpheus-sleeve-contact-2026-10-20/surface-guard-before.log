@@ -1,0 +1,32 @@
+EEE...
+======================================================================
+ERROR: test_actual_failed_triangles_are_rejected_by_the_material_guard (__main__.SurfaceStrainTests.test_actual_failed_triangles_are_rejected_by_the_material_guard) (name='affine-display')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/surface-strain.test.py", line 17, in test_actual_failed_triangles_are_rejected_by_the_material_guard
+    self.assertFalse(surface_strain.material_within_limits(result))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'surface_strain' has no attribute 'material_within_limits'
+
+======================================================================
+ERROR: test_actual_failed_triangles_are_rejected_by_the_material_guard (__main__.SurfaceStrainTests.test_actual_failed_triangles_are_rejected_by_the_material_guard) (name='direct-thin-triangle')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/surface-strain.test.py", line 17, in test_actual_failed_triangles_are_rejected_by_the_material_guard
+    self.assertFalse(surface_strain.material_within_limits(result))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'surface_strain' has no attribute 'material_within_limits'
+
+======================================================================
+ERROR: test_actual_failed_triangles_are_rejected_by_the_material_guard (__main__.SurfaceStrainTests.test_actual_failed_triangles_are_rejected_by_the_material_guard)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/surface-strain.test.py", line 18, in test_actual_failed_triangles_are_rejected_by_the_material_guard
+    self.assertTrue(surface_strain.material_within_limits(np.ones((100, 2))))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'surface_strain' has no attribute 'material_within_limits'
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.035s
+
+FAILED (errors=3)

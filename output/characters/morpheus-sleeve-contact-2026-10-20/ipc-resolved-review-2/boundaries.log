@@ -1,0 +1,14 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "maximumCuffErrorMetres": 3.286899228400863e-08,
+    "maximumNeckErrorMetres": 5.928032504773641e-08
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "maximumCuffErrorMetres": 3.1123656733127216e-08,
+    "maximumNeckErrorMetres": 5.9324301776374685e-08
+  }
+]

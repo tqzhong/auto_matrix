@@ -11,8 +11,14 @@ from scipy.sparse.linalg import spsolve
 import ipctk
 from cloth_embedding import embed_panels
 from continuous_check import measure_step
+from surface_strain import triangle_stretch, material_within_limits
 
 BASE = Path(__file__).parent
+STRAIN_ONSET = 1.03
+STRAIN_LIMIT = 1.1
+# The complete surface's measured rest separation is 22.4 micrometres.
+# A 1 mm activation radius repels neighboring cloth before any motion.
+CONTACT_ACTIVATION = .00001
 
 
 class ClothStepError(RuntimeError):
@@ -27,7 +33,30 @@ def prescribed_response(gradient, hessian, free, fixed_motion):
     return motion.reshape(fixed_motion.shape)
 
 
-def springs(x, edges, rest, stiffness, project=True):
+def strain_free_stepsize(x, direction, edges, rest):
+    """Keep every structural edge below its length limit along the whole step."""
+    a, b = edges.T
+    delta = x[a]-x[b]
+    step = direction[a]-direction[b]
+    square_limit = (STRAIN_LIMIT*rest)**2
+    constant = np.sum(delta**2, axis=1)-square_limit
+    if np.any(constant >= 0):
+        raise ClothStepError('the structural edges already exceed their strain limit')
+    crossing = np.sum((delta+step)**2, axis=1) >= square_limit
+    if not np.any(crossing):
+        return 1.
+    quadratic = np.sum(step[crossing]**2, axis=1)
+    linear = 2*np.sum(delta[crossing]*step[crossing], axis=1)
+    constant = constant[crossing]
+    discriminant = np.sqrt(linear**2-4*quadratic*constant)
+    roots = np.empty_like(linear)
+    forward = linear >= 0
+    roots[forward] = -2*constant[forward]/(linear[forward]+discriminant[forward])
+    roots[~forward] = (-linear[~forward]+discriminant[~forward])/(2*quadratic[~forward])
+    return float(.99*np.min(roots))
+
+
+def springs(x, edges, rest, stiffness, project=True, strain_count=0):
     """Length springs, including explicit stitches and weak bending diagonals."""
     n = len(x)
     a, b = edges.T
@@ -36,15 +65,35 @@ def springs(x, edges, rest, stiffness, project=True):
     unit = delta/length[:, None]
     stretch = length-rest
     energy = .5*np.sum(stiffness*stretch**2)
-    force = (stiffness*stretch)[:, None]*unit
-    gradient = np.zeros_like(x)
-    np.add.at(gradient, a, force)
-    np.add.at(gradient, b, -force)
+    radial_force = stiffness*stretch
+    radial_hessian = stiffness.copy()
     transverse = 1-rest/length
     if project:
         transverse = np.maximum(0, transverse)
+    transverse *= stiffness
+    # A smooth logarithmic barrier augments the existing spring material.
+    # It limits structural edges, not stitches or bending diagonals.
+    ratio = length[:strain_count]/rest[:strain_count]
+    if np.any(ratio >= STRAIN_LIMIT):
+        raise ClothStepError('the structural edges exceed their strain limit')
+    active = np.flatnonzero(ratio > STRAIN_ONSET)
+    amount = ratio[active]-STRAIN_ONSET
+    gap = STRAIN_LIMIT-ratio[active]
+    logarithm = np.log(gap/(STRAIN_LIMIT-STRAIN_ONSET))
+    barrier = -amount**2*logarithm
+    first = -2*amount*logarithm+amount**2/gap
+    second = -2*logarithm+4*amount/gap+(amount/gap)**2
+    energy += np.sum(stiffness[active]*rest[active]**2*barrier)
+    added_force = stiffness[active]*rest[active]*first
+    radial_force[active] += added_force
+    radial_hessian[active] += stiffness[active]*second
+    transverse[active] += added_force/length[active]
+    force = radial_force[:, None]*unit
+    gradient = np.zeros_like(x)
+    np.add.at(gradient, a, force)
+    np.add.at(gradient, b, -force)
     outer = unit[:, :, None]*unit[:, None, :]
-    blocks = stiffness[:, None, None]*(outer+transverse[:, None, None]*(np.eye(3)-outer))
+    blocks = radial_hessian[:, None, None]*outer+transverse[:, None, None]*(np.eye(3)-outer)
     ia = (3*a[:, None]+np.arange(3)).repeat(3, axis=1).ravel()
     ja = np.tile(3*a[:, None]+np.arange(3), (1, 3)).ravel()
     ib = (3*b[:, None]+np.arange(3)).repeat(3, axis=1).ravel()
@@ -55,11 +104,16 @@ def springs(x, edges, rest, stiffness, project=True):
     return float(energy), gradient.ravel(), hessian
 
 
-def prepare():
+def prepare(full_surface=False):
     cage = json.loads((BASE.parent/'morpheus-shoulder-release-2026-10-20/cage-fit-4.json').read_text())
     manifest = json.loads((BASE/'input/manifest.json').read_text())
     guide = json.loads((BASE/'lifted-band/band-guide.json').read_text())
     cuffs = json.loads((BASE.parent/'morpheus-shoulder-release-2026-10-20/boundary-controls.json').read_text())['cuffs']
+    if full_surface:
+        cage = {**manifest, 'mappedControls': {str(i): i for i in range(len(manifest['points']))}}
+        # The real rim follows the same authored path. Interior facing vertices
+        # remain material DOFs: transporting that strip as hard pins distorted it.
+        guide = json.loads((BASE/'lifted-band/collar-guide.json').read_text())
     points = np.asarray(cage['points'])[:, [0, 2, 1]]*[.4, -.4, .4]
     faces = np.asarray(cage['indices'], dtype=np.int32).reshape(-1, 3)
     edges = ipctk.edges(faces)
@@ -119,19 +173,25 @@ def prepare():
     return points, faces, edges, rest, stiffness, mass, np.asarray(pin_ids), pin_frames, body, np.vstack(combined_faces), structural_count
 
 
-def bake(frame_end, substeps, output, raw_newton=False, resume=None):
+def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surface=False):
     ipctk.set_num_threads(4)
-    points, faces, edges, rest, stiffness, mass, pins, pin_frames, body, all_faces, structural_count = prepare()
+    points, faces, edges, rest, stiffness, mass, pins, pin_frames, body, all_faces, structural_count = prepare(full_surface)
     n = len(points)
     x = np.vstack((points, body[0]))
     reference = x.copy()
     cage = json.loads((BASE.parent/'morpheus-shoulder-release-2026-10-20/cage-fit-4.json').read_text())
     manifest = json.loads((BASE/'input/manifest.json').read_text())
-    embedding, embedding_report = embed_panels(cage, manifest)
+    if full_surface:
+        embedding = sp.eye(n, format='csc')
+        embedding_report = {'type': 'identity', 'physicalVertices': n, 'displayVertices': n,
+                            'nonzeros': n, 'maximumRestErrorMetres': 0.}
+    else:
+        embedding, embedding_report = embed_panels(cage, manifest)
     shown = np.asarray(manifest['points'])[:, [0, 2, 1]]*[.4, -.4, .4]
     visible_count = len(shown)
     collision_reference = np.vstack((shown, body[0]))
-    all_faces = np.vstack((np.asarray(manifest['indices']).reshape(-1, 3), all_faces[len(faces):]+visible_count-n))
+    display_faces = np.asarray(manifest['indices']).reshape(-1, 3)
+    all_faces = np.vstack((display_faces, all_faces[len(faces):]+visible_count-n))
     mapping = sp.block_diag((embedding, sp.eye(len(body[0]))), format='csc')
     mesh = ipctk.CollisionMesh(collision_reference, ipctk.edges(all_faces), all_faces, mapping)
     mesh.can_collide = ipctk.make_static_obstacle_filter(visible_count)
@@ -139,7 +199,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
     assert not ipctk.has_intersections(mesh, surface(x)), 'the input garment already intersects'
     free_vertices = np.setdiff1d(np.arange(n), pins)
     free = (free_vertices[:, None]*3+np.arange(3)).ravel()
-    dhat = .001
+    dhat = CONTACT_ACTIVATION
     unit_barrier = ipctk.BarrierPotential(dhat, 1.)
     potential = unit_barrier
     diagonal = float(np.linalg.norm(np.ptp(collision_reference, axis=0)))
@@ -177,6 +237,10 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
         shown_before = np.vstack([np.fromfile(source/f'substeps/{part}-{last}.bin', np.float32).reshape(-1, 3)
                                   for part in ('cloth', 'body')])
         assert np.array_equal(surface(x).astype(np.float32), shown_before), 'checkpoint changed the displayed surface'
+        for row in sample_rows:
+            cached = np.fromfile(source/f'substeps/cloth-{row["frame"]}.bin', np.float32).reshape(-1, 3).astype(float)
+            if not material_within_limits(triangle_stretch(shown, cached, display_faces)):
+                raise ClothStepError(f'the resumed cache exceeds the rendered material limits at sample {row["frame"]}')
         for target, origin, records in ((out, source, rows), (samples, source/'substeps', sample_rows)):
             for row in records:
                 for part in ('cage', 'cloth', 'body'):
@@ -189,10 +253,15 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
             'bodyErrorMetres': body_error, 'pinErrorMetres': pin_error, 'displayUnchanged': True}), flush=True)
     (out/'run.json').write_text(json.dumps({'resume': resume, 'resumedAt': resumed_at,
         'requestedEnd': .8+(frame_end-1)/30, 'maximumStepSeconds': h,
+        'fullSurfacePhysics': full_surface, 'physicalVertices': n,
+        'displayVertices': visible_count, 'prescribedVertices': len(pins),
+        'structuralStrainOnset': STRAIN_ONSET, 'structuralStrainLimit': STRAIN_LIMIT,
+        'contactActivationMetres': CONTACT_ACTIVATION,
         'sourceSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}, indent=2))
 
     def evaluate(state, predicted, derivatives=True, project=True):
-        energy, gradient, hessian = springs(state[:n], edges, rest, stiffness, project=project)
+        energy, gradient, hessian = springs(state[:n], edges, rest, stiffness,
+            project=project, strain_count=structural_count)
         delta = (state[:n]-predicted).ravel()
         energy += .5*np.dot(inertial*delta, delta)
         visible = surface(state)
@@ -227,6 +296,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
             direction = np.zeros_like(x)
             direction.ravel()[free] = displacement
             alpha = ipctk.compute_collision_free_stepsize(mesh, surface(x), surface(x+direction))
+            alpha = min(alpha, strain_free_stepsize(x, direction, edges[:structural_count], rest[:structural_count]))
             slope = float(gradient@displacement)
             assert slope < 0, ('non-descent direction', slope)
             while alpha > 1e-10:
@@ -243,12 +313,22 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
 
     def save_sample(at, source_frame, substep):
         visible = surface(x).astype(np.float32)
+        exported = x[:n].astype(np.float32).astype(float)
+        lengths = np.linalg.norm(exported[edges[:structural_count, 0]]-exported[edges[:structural_count, 1]], axis=1)/rest[:structural_count]
+        if np.max(lengths) >= STRAIN_LIMIT:
+            raise ClothStepError(f'the exported garment exceeds its strain limit: {np.max(lengths)}')
+        stretch = triangle_stretch(shown, visible[:visible_count].astype(float), display_faces)
+        if not material_within_limits(stretch):
+            raise ClothStepError(f'the rendered garment exceeds its material limits: maximum={np.max(stretch)}, p99={np.quantile(stretch[:, 1], .99)}')
         number = len(sample_rows)+1
         previous = np.fromfile(samples/f'cloth-{number-1}.bin', np.float32).reshape(-1, 3) if number > 1 else visible[:visible_count]
         previous_body = np.fromfile(samples/f'body-{number-1}.bin', np.float32).reshape(-1, 3) if number > 1 else visible[visible_count:]
         check = measure_step(mesh, np.vstack((previous, previous_body)).astype(float), visible.astype(float))
         row = {'frame': number, 'time': at, 'sourceFrame': source_frame, 'substep': substep,
-               'integrationSeconds': h if number > 1 else 0., **check}
+               'integrationSeconds': h if number > 1 else 0.,
+               'maximumEdgeStretch': float(np.max(lengths)),
+               'maximumSurfaceStretch': float(np.max(stretch)),
+               'p99SurfaceStretch': float(np.quantile(stretch[:, 1], .99)), **check}
         if check['endpointIntersects'] or not check['stepCollisionFree']:
             raise ClothStepError(f'the exported substep crosses: {row}')
         x[:n].astype(np.float32).tofile(samples/f'cage-{number}.bin')
@@ -274,7 +354,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
         visible = surface(x)
         contacts = ipctk.NormalCollisions()
         contacts.build(mesh, visible, dhat)
-        _, physical_gradient, _ = springs(x[:n], edges, rest, stiffness)
+        _, physical_gradient, _ = springs(x[:n], edges, rest, stiffness, strain_count=structural_count)
         physical_gradient += inertial*(x[:n]-predicted).ravel()
         barrier_gradient = mesh.to_full_dof(unit_barrier.gradient(contacts, mesh, visible))
         # This objective uses M/h² rather than M, so scale the toolkit's
@@ -286,7 +366,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
         print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend,
             'integrationSeconds': h, 'barrierStiffness': barrier_stiffness,
             'maximumBarrierStiffness': maximum_stiffness,
-            'minimumGapMetres': float(np.sqrt(contacts.compute_minimum_distance(mesh, visible)))}), flush=True)
+            'minimumGapMetres': float(np.sqrt(contacts.compute_minimum_distance(mesh, visible))) if len(contacts) else None}), flush=True)
         try:
             for advance in range(80):
                 fixed = np.zeros_like(x)
@@ -295,6 +375,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None):
                 _, gradient, hessian = evaluate(x, predicted)
                 direction = prescribed_response(gradient, hessian, free, fixed)
                 alpha = ipctk.compute_collision_free_stepsize(mesh, surface(x), surface(x+direction))
+                alpha = min(alpha, strain_free_stepsize(x, direction, edges[:structural_count], rest[:structural_count]))
                 x[:] += alpha*direction
                 iterations, residual = relax(predicted)
                 print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend, 'advance': advance+1,
@@ -362,5 +443,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', default='ipc-physics')
     parser.add_argument('--raw-newton', action='store_true')
     parser.add_argument('--resume')
+    parser.add_argument('--full-surface', action='store_true')
     args = parser.parse_args()
-    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume)
+    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume, args.full_surface)

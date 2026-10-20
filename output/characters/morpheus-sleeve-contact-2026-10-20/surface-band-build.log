@@ -1,0 +1,7 @@
+{"facingVertices": 202, "originalRimVertices": 67, "fixedEdges": 467, "fixedTriangles": 266, "maximumRimRoundoffMetres": 1.3877787807814458e-18}
+{"frame": 22, "time": 1.5, "maximumFixedEdgeStretch": 1.6839348840267792, "maximumFixedTriangleStretch": 17.12736463528538}
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/build-surface-band.py", line 100, in <module>
+    assert all(row['maximumFixedEdgeStretch'] < 1.1 for row in strain), 'the prescribed collar motion itself exceeds the material limit'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: the prescribed collar motion itself exceeds the material limit

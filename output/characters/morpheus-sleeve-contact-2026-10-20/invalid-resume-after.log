@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 448, in <module>
+    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume, args.full_surface)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 243, in bake
+    raise ClothStepError(f'the resumed cache exceeds the rendered material limits at sample {row["frame"]}')
+ClothStepError: the resumed cache exceeds the rendered material limits at sample 2

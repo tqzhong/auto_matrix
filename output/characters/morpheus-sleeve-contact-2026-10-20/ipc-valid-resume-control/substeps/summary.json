@@ -1,0 +1,14 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "sourceFrame": 1,
+    "substep": 0,
+    "integrationSeconds": 0.0,
+    "maximumEdgeStretch": 1.0012547682721955,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0
+  }
+]

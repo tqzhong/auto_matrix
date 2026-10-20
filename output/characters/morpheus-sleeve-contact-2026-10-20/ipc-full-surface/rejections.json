@@ -1,0 +1,18 @@
+[
+  {
+    "number": 1,
+    "sourceFrame": 2,
+    "startTime": 0.8,
+    "endTime": 0.8083333333333333,
+    "depth": 0,
+    "error": "contact solve did not converge: residual=0.08057075049141815"
+  },
+  {
+    "number": 2,
+    "sourceFrame": 2,
+    "startTime": 0.8,
+    "endTime": 0.8041666666666667,
+    "depth": 1,
+    "error": "contact solve did not converge: residual=1.091472152615836"
+  }
+]

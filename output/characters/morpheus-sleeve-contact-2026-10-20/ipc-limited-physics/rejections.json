@@ -1,0 +1,10 @@
+[
+  {
+    "number": 1,
+    "sourceFrame": 5,
+    "startTime": 0.9083333333333334,
+    "endTime": 0.9166666666666667,
+    "depth": 0,
+    "error": "contact solve did not converge: residual=0.024940758333627994"
+  }
+]

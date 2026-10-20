@@ -1,0 +1,447 @@
+{
+  "facingVertices": 202,
+  "originalRimVertices": 67,
+  "fixedEdges": 467,
+  "fixedTriangles": 266,
+  "maximumRimRoundoffMetres": 1.3877787807814458e-18,
+  "rows": [
+    {
+      "frame": 1,
+      "time": 0.8,
+      "maximumFixedEdgeStretch": 1.0000000000001945,
+      "maximumFixedTriangleStretch": 1.0000000000012856
+    },
+    {
+      "frame": 2,
+      "time": 0.8333333333333334,
+      "maximumFixedEdgeStretch": 1.0010777369909274,
+      "maximumFixedTriangleStretch": 1.0103941900786837
+    },
+    {
+      "frame": 3,
+      "time": 0.8666666666666667,
+      "maximumFixedEdgeStretch": 1.0078929157321967,
+      "maximumFixedTriangleStretch": 1.080791797440633
+    },
+    {
+      "frame": 4,
+      "time": 0.9,
+      "maximumFixedEdgeStretch": 1.0242990894387793,
+      "maximumFixedTriangleStretch": 1.2846379375629844
+    },
+    {
+      "frame": 5,
+      "time": 0.9333333333333333,
+      "maximumFixedEdgeStretch": 1.0523344531992191,
+      "maximumFixedTriangleStretch": 1.7403660618730379
+    },
+    {
+      "frame": 6,
+      "time": 0.9666666666666667,
+      "maximumFixedEdgeStretch": 1.0924729385733702,
+      "maximumFixedTriangleStretch": 2.5594639297352413
+    },
+    {
+      "frame": 7,
+      "time": 1,
+      "maximumFixedEdgeStretch": 1.1438644857779916,
+      "maximumFixedTriangleStretch": 3.7438116541829536
+    },
+    {
+      "frame": 8,
+      "time": 1.0333333333333334,
+      "maximumFixedEdgeStretch": 1.2046059301222842,
+      "maximumFixedTriangleStretch": 5.2159970162416744
+    },
+    {
+      "frame": 9,
+      "time": 1.0666666666666667,
+      "maximumFixedEdgeStretch": 1.2721725395846448,
+      "maximumFixedTriangleStretch": 6.881170999690949
+    },
+    {
+      "frame": 10,
+      "time": 1.1,
+      "maximumFixedEdgeStretch": 1.3431569567906387,
+      "maximumFixedTriangleStretch": 8.642829183145386
+    },
+    {
+      "frame": 11,
+      "time": 1.1333333333333333,
+      "maximumFixedEdgeStretch": 1.4140146665387316,
+      "maximumFixedTriangleStretch": 10.405709535797698
+    },
+    {
+      "frame": 12,
+      "time": 1.1666666666666667,
+      "maximumFixedEdgeStretch": 1.4812369473513918,
+      "maximumFixedTriangleStretch": 12.079447229885933
+    },
+    {
+      "frame": 13,
+      "time": 1.2000000000000002,
+      "maximumFixedEdgeStretch": 1.541630995265716,
+      "maximumFixedTriangleStretch": 13.583451116036802
+    },
+    {
+      "frame": 14,
+      "time": 1.2333333333333334,
+      "maximumFixedEdgeStretch": 1.5925785366958276,
+      "maximumFixedTriangleStretch": 14.852231943939863
+    },
+    {
+      "frame": 15,
+      "time": 1.2666666666666666,
+      "maximumFixedEdgeStretch": 1.6322754380353368,
+      "maximumFixedTriangleStretch": 15.8408296193469
+    },
+    {
+      "frame": 16,
+      "time": 1.3,
+      "maximumFixedEdgeStretch": 1.6599611540972943,
+      "maximumFixedTriangleStretch": 16.530312334214987
+    },
+    {
+      "frame": 17,
+      "time": 1.3333333333333335,
+      "maximumFixedEdgeStretch": 1.6761496436315084,
+      "maximumFixedTriangleStretch": 16.93347585929957
+    },
+    {
+      "frame": 18,
+      "time": 1.3666666666666667,
+      "maximumFixedEdgeStretch": 1.6828719535564547,
+      "maximumFixedTriangleStretch": 17.10089259939754
+    },
+    {
+      "frame": 19,
+      "time": 1.4,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 20,
+      "time": 1.4333333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 21,
+      "time": 1.4666666666666668,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 22,
+      "time": 1.5,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 23,
+      "time": 1.5333333333333332,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 24,
+      "time": 1.5666666666666669,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284977
+    },
+    {
+      "frame": 25,
+      "time": 1.6,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 26,
+      "time": 1.6333333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 27,
+      "time": 1.6666666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 28,
+      "time": 1.7000000000000002,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 29,
+      "time": 1.7333333333333334,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 30,
+      "time": 1.7666666666666666,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 31,
+      "time": 1.8,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.127364635285353
+    },
+    {
+      "frame": 32,
+      "time": 1.8333333333333335,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 33,
+      "time": 1.8666666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 34,
+      "time": 1.9000000000000001,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284902
+    },
+    {
+      "frame": 35,
+      "time": 1.9333333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 36,
+      "time": 1.9666666666666668,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 37,
+      "time": 2,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284902
+    },
+    {
+      "frame": 38,
+      "time": 2.033333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284977
+    },
+    {
+      "frame": 39,
+      "time": 2.0666666666666664,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 40,
+      "time": 2.1,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284945
+    },
+    {
+      "frame": 41,
+      "time": 2.1333333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284902
+    },
+    {
+      "frame": 42,
+      "time": 2.166666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284977
+    },
+    {
+      "frame": 43,
+      "time": 2.2,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284977
+    },
+    {
+      "frame": 44,
+      "time": 2.2333333333333334,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 45,
+      "time": 2.2666666666666666,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 46,
+      "time": 2.3,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284902
+    },
+    {
+      "frame": 47,
+      "time": 2.3333333333333335,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284977
+    },
+    {
+      "frame": 48,
+      "time": 2.3666666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 49,
+      "time": 2.4000000000000004,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284902
+    },
+    {
+      "frame": 50,
+      "time": 2.4333333333333336,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 51,
+      "time": 2.466666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284977
+    },
+    {
+      "frame": 52,
+      "time": 2.5,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 53,
+      "time": 2.533333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267157,
+      "maximumFixedTriangleStretch": 17.127364635284945
+    },
+    {
+      "frame": 54,
+      "time": 2.5666666666666664,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.12736463528518
+    },
+    {
+      "frame": 55,
+      "time": 2.6,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 56,
+      "time": 2.6333333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 57,
+      "time": 2.666666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267634,
+      "maximumFixedTriangleStretch": 17.127364635285282
+    },
+    {
+      "frame": 58,
+      "time": 2.7,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 59,
+      "time": 2.7333333333333334,
+      "maximumFixedEdgeStretch": 1.6839348840267314,
+      "maximumFixedTriangleStretch": 17.127364635285108
+    },
+    {
+      "frame": 60,
+      "time": 2.7666666666666666,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    {
+      "frame": 61,
+      "time": 2.8,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 62,
+      "time": 2.833333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284874
+    },
+    {
+      "frame": 63,
+      "time": 2.866666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.127364635285353
+    },
+    {
+      "frame": 64,
+      "time": 2.9000000000000004,
+      "maximumFixedEdgeStretch": 1.6839348840266997,
+      "maximumFixedTriangleStretch": 17.127364635284902
+    },
+    {
+      "frame": 65,
+      "time": 2.9333333333333336,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 66,
+      "time": 2.966666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.127364635285353
+    },
+    {
+      "frame": 67,
+      "time": 3,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 68,
+      "time": 3.033333333333333,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 69,
+      "time": 3.0666666666666664,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 70,
+      "time": 3.0999999999999996,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 71,
+      "time": 3.1333333333333337,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 72,
+      "time": 3.166666666666667,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    },
+    {
+      "frame": 73,
+      "time": 3.2,
+      "maximumFixedEdgeStretch": 1.6839348840267472,
+      "maximumFixedTriangleStretch": 17.127364635285147
+    }
+  ]
+}

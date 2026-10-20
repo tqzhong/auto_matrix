@@ -1,0 +1,46 @@
+[
+  {
+    "at": "2026-10-20T10:13:07.570798+00:00",
+    "pid": 95520,
+    "session": 95860,
+    "folder": "ipc-full-surface",
+    "lastAccepted": {
+      "frame": 1,
+      "time": 0.8,
+      "sourceFrame": 1,
+      "substep": 0,
+      "integrationSeconds": 0.0,
+      "maximumEdgeStretch": 1.0012547682721955,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    "reason": "Deliberate stop for measured rest-force inconsistency: 1 mm activation produces 12,283 contacts and 89.48 N maximum vertex force before motion; smaller integration steps only increase this artificial force. Not timeout or crash.",
+    "sourceSha256": "b62ea51c639138630de16b77f116f0ad797fbc27c277e294a97bd941b0a9e42c",
+    "confirmedExitCode": 130,
+    "frozenSource": "ipc_cloth-full-wide-contact.py"
+  },
+  {
+    "at": "2026-10-20T10:13:07.576925+00:00",
+    "pid": 97131,
+    "session": 11528,
+    "folder": "ipc-full-raw-control",
+    "lastAccepted": {
+      "frame": 1,
+      "time": 0.8,
+      "sourceFrame": 1,
+      "substep": 0,
+      "integrationSeconds": 0.0,
+      "maximumEdgeStretch": 1.0012547682721955,
+      "endpointIntersects": false,
+      "collisionFreeStep": 1.0,
+      "stepCollisionFree": true,
+      "optimizerSafeStep": 1.0
+    },
+    "reason": "Deliberate stop for measured rest-force inconsistency: 1 mm activation produces 12,283 contacts and 89.48 N maximum vertex force before motion; smaller integration steps only increase this artificial force. Not timeout or crash.",
+    "sourceSha256": "b62ea51c639138630de16b77f116f0ad797fbc27c277e294a97bd941b0a9e42c",
+    "confirmedExitCode": 130,
+    "frozenSource": "ipc_cloth-full-wide-contact.py"
+  }
+]

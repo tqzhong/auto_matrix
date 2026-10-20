@@ -1,0 +1,14 @@
+{
+  "physicalVertices": 13386,
+  "faces": 25796,
+  "structuralEdges": 39179,
+  "allEdges": 77986,
+  "pins": 189,
+  "zeroRestStitches": 0,
+  "maximumFixedEdgeStretch": 1.0096781710718772,
+  "maximumFixedEdgeStretchThroughOneSecond": 1.0033216875966489,
+  "restEnergy": 0.0,
+  "restGradientNorm": 0.0,
+  "finiteHessian": true,
+  "totalMassKg": 3.0
+}

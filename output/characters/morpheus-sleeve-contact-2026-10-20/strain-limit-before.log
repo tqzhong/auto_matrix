@@ -1,0 +1,31 @@
+EEE
+======================================================================
+ERROR: test_limit_preserves_unstretched_material_and_matches_derivatives (__main__.StrainLimitTests.test_limit_preserves_unstretched_material_and_matches_derivatives)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/strain-limit.test.py", line 14, in test_limit_preserves_unstretched_material_and_matches_derivatives
+    after = cloth.springs(quiet, edges, rest, stiffness, project=False, strain_count=1)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: springs() got an unexpected keyword argument 'strain_count'
+
+======================================================================
+ERROR: test_overextended_cloth_cannot_be_accepted_as_finite_energy (__main__.StrainLimitTests.test_overextended_cloth_cannot_be_accepted_as_finite_energy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/strain-limit.test.py", line 36, in test_overextended_cloth_cannot_be_accepted_as_finite_energy
+    cloth.springs(x, np.array([[0, 1]]), np.array([.3]),
+TypeError: springs() got an unexpected keyword argument 'strain_count'
+
+======================================================================
+ERROR: test_step_limits_stretch_including_prescribed_boundary_motion (__main__.StrainLimitTests.test_step_limits_stretch_including_prescribed_boundary_motion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/strain-limit.test.py", line 47, in test_step_limits_stretch_including_prescribed_boundary_motion
+    alpha = cloth.strain_free_stepsize(x, direction, edges, rest)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'ipc_cloth' has no attribute 'strain_free_stepsize'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (errors=3)

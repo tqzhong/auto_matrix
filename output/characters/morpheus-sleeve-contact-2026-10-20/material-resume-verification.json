@@ -1,0 +1,10 @@
+{
+  "invalidBeforeExitCode": 0,
+  "invalidBeforeWasAccepted": true,
+  "invalidAfterExitCode": 1,
+  "invalidAfterSummaryExists": false,
+  "invalidAfterCopiedSamples": 0,
+  "validResumeExitCode": 0,
+  "validCopiedFilesByteIdentical": 7,
+  "validThroughSeconds": 0.8
+}

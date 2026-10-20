@@ -1,0 +1,357 @@
+{
+  "date": "2026-10-20T10:52:49.734634+00:00",
+  "parentRevision": "136615d29d4f32cdf7bfd09c6e3cbee5b6413f5b",
+  "status": "incomplete: no complete motion is accepted",
+  "scope": "Offline garment authoring and verification. No game code, GLB, saves or website deployment changed.",
+  "previousEvidenceCorrection": {
+    "physicalCageChecksWereNotDisplayedMaterialChecks": true,
+    "previousNineSampleMaximumDisplayedTriangleStretch": 19.041149012909894,
+    "previousNineSampleP99AtEnd": 1.7399266236777073,
+    "extended33SampleWorst": {
+      "frame": 29,
+      "time": 0.9708333333333334,
+      "triangles": 25796,
+      "minimum": 0.0690241028069903,
+      "maximum": 26.404444778645125,
+      "p99": 2.432624544108823,
+      "worstTriangle": 3445
+    },
+    "note": "Earlier complete-surface intersection checks remain valid, but their separate strain result measured only the 3,005-node physical cage. It cannot establish material fidelity for the 13,386 displayed vertices."
+  },
+  "calibratedCageControl": {
+    "independentSamples": 33,
+    "throughSeconds": 0.9833333333333334,
+    "contactExitCode": 0,
+    "continuousExitCode": 0,
+    "boundaryExitCode": 0,
+    "physicalEdgeStrainExitCode": 1,
+    "displayedTriangleStrainExitCode": 1,
+    "stop": {
+      "at": "2026-10-20T08:51:12.827949+00:00",
+      "pid": 32453,
+      "session": 33642,
+      "reason": "Deliberate stop after independent material validation failed at .9833333333 seconds with maximum edge stretch 1.53468600006. This is not a timeout or process crash.",
+      "lastAcceptedSample": {
+        "frame": 34,
+        "time": 0.9875,
+        "sourceFrame": 7,
+        "substep": 2.5,
+        "integrationSeconds": 0.004166666666666667,
+        "endpointIntersects": false,
+        "collisionFreeStep": 1.0,
+        "stepCollisionFree": true,
+        "optimizerSafeStep": 0.45068359375
+      },
+      "samples": 34,
+      "sourceSha256": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1",
+      "strainEvidence": "ipc-balanced-review-33/partial-strain-results.json",
+      "confirmedExitCode": 130,
+      "frozenSource": "ipc_cloth-balanced-unlimited.py"
+    }
+  },
+  "changes": {
+    "directPhysicalVertices": 13386,
+    "displayedVertices": 13386,
+    "displayedFaces": 25796,
+    "bodyLayers": 13,
+    "prescribedBoundaryVertices": 189,
+    "material": "Existing edge-spring material augmented with a logarithmic structural-edge barrier (onset 1.03, upper bound 1.1). This is not a complete C-IPC membrane implementation or calibrated leather.",
+    "boundary": "All 67 actual collar-rim vertices and both complete cuff rings retain their original paths. Interior facing vertices are free material DOFs; a separate attempt to hard-transport the full 12 mm strip failed and was not adopted.",
+    "activationMetres": 1e-05,
+    "restForceControl": [
+      {
+        "activationMetres": 0.001,
+        "contactCount": 12283,
+        "restBarrierEnergy": 1.1474263097685893,
+        "barrierStiffness": 32469143.673326228,
+        "maximumRestForceNewtons": 89.47692218581564,
+        "restPhysicalEnergy": 0.01002459375
+      },
+      {
+        "activationMetres": 1e-05,
+        "contactCount": 0,
+        "restBarrierEnergy": 0.0,
+        "barrierStiffness": 3246888235438118.5,
+        "maximumRestForceNewtons": 0.0,
+        "restPhysicalEnergy": 0.01002459375
+      }
+    ],
+    "unchangedGeometricChecks": "Complete garment versus all 13 body layers; conservative optimization CCD and independent geometric playback CCD; original 0.1 mm boundary tolerance.",
+    "newMaterialGate": "Every exported sample and every inherited sample in a resumed cache must pass full displayed-triangle strain (maximum < 1.5, p99 < 1.2), in addition to structural-edge and contact checks. No geometry is omitted."
+  },
+  "preflight": {
+    "physicalVertices": 13386,
+    "faces": 25796,
+    "structuralEdges": 39179,
+    "allEdges": 77986,
+    "pins": 189,
+    "zeroRestStitches": 0,
+    "maximumFixedEdgeStretch": 1.0096781710718772,
+    "maximumFixedEdgeStretchThroughOneSecond": 1.0033216875966489,
+    "restEnergy": 0.0,
+    "restGradientNorm": 0.0,
+    "finiteHessian": true,
+    "totalMassKg": 3.0
+  },
+  "rejectedInteriorFacingControl": {
+    "source": "build-surface-band.py",
+    "originalRimVertices": 67,
+    "facingVertices": 202,
+    "bandWidthMetres": 0.012,
+    "worst": {
+      "frame": 22,
+      "time": 1.5,
+      "maximumFixedEdgeStretch": 1.6839348840267792,
+      "maximumFixedTriangleStretch": 17.12736463528538
+    },
+    "adopted": false
+  },
+  "otherStoppedControls": {
+    "limitedEmbedded": {
+      "at": "2026-10-20T09:23:11.479940+00:00",
+      "pid": 78370,
+      "session": 69645,
+      "reason": "Deliberate stop because independent full display strain inspection exposed severe deformation in the inherited affine-mapped surface already at the resumed .866667 checkpoint. Structural cage strain limits alone do not address this. Not a timeout or crash.",
+      "samples": 16,
+      "lastAccepted": {
+        "frame": 16,
+        "time": 0.9166666666666667,
+        "sourceFrame": 5,
+        "substep": 2.0,
+        "integrationSeconds": 0.004166666666666637,
+        "maximumEdgeStretch": 1.0423415463869006,
+        "endpointIntersects": false,
+        "collisionFreeStep": 1.0,
+        "stepCollisionFree": true,
+        "optimizerSafeStep": 1.0
+      },
+      "sourceSha256": "b6d6f5f4a428432e3d7eb76f5b9b156a645eaac946c0eb071992da95bda8c66e",
+      "confirmedExitCode": 130,
+      "frozenSource": "ipc_cloth-limited-embedded.py"
+    },
+    "wideContactFullSurface": [
+      {
+        "at": "2026-10-20T10:13:07.570798+00:00",
+        "pid": 95520,
+        "session": 95860,
+        "folder": "ipc-full-surface",
+        "lastAccepted": {
+          "frame": 1,
+          "time": 0.8,
+          "sourceFrame": 1,
+          "substep": 0,
+          "integrationSeconds": 0.0,
+          "maximumEdgeStretch": 1.0012547682721955,
+          "endpointIntersects": false,
+          "collisionFreeStep": 1.0,
+          "stepCollisionFree": true,
+          "optimizerSafeStep": 1.0
+        },
+        "reason": "Deliberate stop for measured rest-force inconsistency: 1 mm activation produces 12,283 contacts and 89.48 N maximum vertex force before motion; smaller integration steps only increase this artificial force. Not timeout or crash.",
+        "sourceSha256": "b62ea51c639138630de16b77f116f0ad797fbc27c277e294a97bd941b0a9e42c",
+        "confirmedExitCode": 130,
+        "frozenSource": "ipc_cloth-full-wide-contact.py"
+      },
+      {
+        "at": "2026-10-20T10:13:07.576925+00:00",
+        "pid": 97131,
+        "session": 11528,
+        "folder": "ipc-full-raw-control",
+        "lastAccepted": {
+          "frame": 1,
+          "time": 0.8,
+          "sourceFrame": 1,
+          "substep": 0,
+          "integrationSeconds": 0.0,
+          "maximumEdgeStretch": 1.0012547682721955,
+          "endpointIntersects": false,
+          "collisionFreeStep": 1.0,
+          "stepCollisionFree": true,
+          "optimizerSafeStep": 1.0
+        },
+        "reason": "Deliberate stop for measured rest-force inconsistency: 1 mm activation produces 12,283 contacts and 89.48 N maximum vertex force before motion; smaller integration steps only increase this artificial force. Not timeout or crash.",
+        "sourceSha256": "b62ea51c639138630de16b77f116f0ad797fbc27c277e294a97bd941b0a9e42c",
+        "confirmedExitCode": 130,
+        "frozenSource": "ipc_cloth-full-wide-contact.py"
+      }
+    ]
+  },
+  "directSurfaceDynamicControl": {
+    "source": "ipc_cloth-full-no-material-gate.py",
+    "sourceSha256": "c395fbf8b96f6d0cebd546c57847d0f6372ce70601bd9e8b556092c2eb16dc27",
+    "independentlyAuditedSamples": 2,
+    "startSeconds": 0.8,
+    "endSeconds": 0.8083333333333333,
+    "contactExitCode": 0,
+    "continuousExitCode": 0,
+    "boundaryExitCode": 0,
+    "materialExitCode": 1,
+    "maximumCuffErrorMetres": 3.286899228400863e-08,
+    "maximumNeckErrorMetres": 5.9324301776374685e-08,
+    "sameTimeComparison": {
+      "before": {
+        "frame": 2,
+        "time": 0.8083333333333333,
+        "triangles": 25796,
+        "minimum": 0.7912765104454452,
+        "maximum": 11.575879185226515,
+        "p99": 1.060671880687485,
+        "worstTriangle": 3445
+      },
+      "after": {
+        "frame": 2,
+        "time": 0.8083333333333333,
+        "triangles": 25796,
+        "minimum": 0.8708924478908617,
+        "maximum": 1.8614679656361786,
+        "p99": 1.0026784274596934,
+        "worstTriangle": 5768
+      }
+    },
+    "adoptedAsGameAsset": false,
+    "stop": {
+      "at": "2026-10-20T10:35:47.920893+00:00",
+      "pid": 8917,
+      "session": 8264,
+      "lastAccepted": {
+        "frame": 3,
+        "time": 0.8166666666666668,
+        "sourceFrame": 2,
+        "substep": 2.0,
+        "integrationSeconds": 0.008333333333333363,
+        "maximumEdgeStretch": 1.0313026586233487,
+        "endpointIntersects": false,
+        "collisionFreeStep": 1.0,
+        "stepCollisionFree": true,
+        "optimizerSafeStep": 0.689208984375
+      },
+      "reason": "Deliberate stop after independent full-triangle strain audit failed on the accepted .8083333333 sample (maximum 1.8614679656361786). Endpoint and continuous contact passed; structural edge limits alone missed this thin-triangle deformation. Not timeout or crash.",
+      "sourceSha256": "c395fbf8b96f6d0cebd546c57847d0f6372ce70601bd9e8b556092c2eb16dc27",
+      "confirmedExitCode": 130,
+      "frozenSource": "ipc_cloth-full-no-material-gate.py"
+    }
+  },
+  "verification": {
+    "finalMathematicalTests": {
+      "materialAndRestForces": 4,
+      "existingDerivativesAndEmbedding": 5,
+      "continuousContact": 4,
+      "fullSurfaceStrainAndActualFailures": 4
+    },
+    "all17Passed": true,
+    "actualInvalidResumeRegression": {
+      "invalidBeforeExitCode": 0,
+      "invalidBeforeWasAccepted": true,
+      "invalidAfterExitCode": 1,
+      "invalidAfterSummaryExists": false,
+      "invalidAfterCopiedSamples": 0,
+      "validResumeExitCode": 0,
+      "validCopiedFilesByteIdentical": 7,
+      "validThroughSeconds": 0.8
+    }
+  },
+  "visualReview": {
+    "timeSeconds": 0.8083333333333333,
+    "viewsInspected": [
+      "old rear",
+      "direct rear",
+      "direct front"
+    ],
+    "nativeGame": false,
+    "result": "The same very early pose appears broadly similar in these full-body diagnostic renders; this camera does not resolve the remaining thin-triangle failure. No natural-cloth, film-fidelity or full-motion acceptance."
+  },
+  "limitations": [
+    "The direct-surface dynamic control still fails the full-triangle material limit; it is not a usable game animation.",
+    "The worst remaining triangle is 5768, with vertices 3094/3199/3200 near a cuff. Its rest quality is 0.007699 and one edge is only 0.279 mm long; structural-edge limits do not bound its in-plane shear.",
+    "All recorded bake processes were deliberately stopped after measured failures; no bake is left running by this record.",
+    "Full eight-second withdrawal, actual cuff/collar release, cloth grip and landing, world garment, save/retry and native-game inspection remain incomplete.",
+    "Body inputs still interpolate 30 Hz authored poses. Character likeness, natural materials and all 42 high-quality scene groups remain unaccepted."
+  ],
+  "nextAction": "Improve the thin cuff triangles/material shear behavior, retain the complete surface and true boundary paths, then rerun full-triangle strain and continuous contact before extending withdrawal.",
+  "primarySources": [
+    "https://ipc-sim.github.io/C-IPC/",
+    "https://ipc-sim.github.io/C-IPC/file/paper.pdf"
+  ],
+  "sha256": {
+    "balanced-material-stop-request.json": "ffe5e280b5a0c955ddf05bab38b618b74e0b426feace5ed9f3cad15b04b967cc",
+    "build-surface-band.py": "a728721dfdea15f3ba5452aaac7849fd05079cfc112f0cbebbd79cd8c96a1d98",
+    "cloth-strain.test.mts": "bea37831f3bffa14660aadb665140d834a1e251bfb4c3ea5c89caf18a812db09",
+    "full-surface-preflight.json": "f7a341b33bfd8f898e9a8abdb821593736d6ba4d85b1818c51102132c9b4f784",
+    "guard-continuous-final.log": "9bb3ce0fccbf6ba768187fdd22e582487dfbf1ab676ddb5480139324c46302e0",
+    "guard-embedding-final.log": "fe0a88adf3e73591d6d665c708efc3b786b4011c72287847bebcada5c212b91f",
+    "guard-material-final.log": "6b8d4002dc25aff6c687957357fef5bdc0f3a12de030635ca805a2344ab366dd",
+    "inspect-rest-contact.py": "deb86ab69bf79d9c9c514de470cd524fda1ef5143d62ca7b3cc6863bfa3e9fd0",
+    "invalid-resume-after.log": "a63f8e56c85e54f2306973aaa9e39f15be948b6cd35e7cff11cf5b656c412d3c",
+    "invalid-resume-before.log": "ce1107779787d733687c084c6f52cf65a045e31daa2fa135b531a35278d832a4",
+    "ipc-balanced-bake.log": "0a49522a0cbcfb3fe470f83e09692d30f8e7440a8c0f6fb19fe7ec89961a5e5a",
+    "ipc-balanced-control-substeps-2-rear.png": "60ea7da84263b5136507ed01aba5ffb8d2b296fd77d878d315512b40e428728e",
+    "ipc-balanced-control/full-surface-strain.log": "c0965a144f8d52c1667fd435851bddb4f99f619bae6f818f08e758205769f635",
+    "ipc-balanced-control/substeps/surface-strain-results.json": "71e823b8fc35b851fdf96d7021514f3ce196beaf777d1efb8d1038e7b2ab210a",
+    "ipc-balanced-physics/rejections.json": "4fd4d0014e649c4f72e53a5ecad132dd5ce297b1a869ab245ac54edf4c4e83f0",
+    "ipc-balanced-physics/run.json": "99cb0e3f080bc0a3db6fac17028bb32191833f06bfc089da3fcef901f1d868c9",
+    "ipc-balanced-review-33-33-rear.png": "86bca4f3ee3563c3ee0ec34632d9fcc27a2594b3d1377c23174f2a3473ed8c9a",
+    "ipc-balanced-review-33/boundaries.log": "a0dae191957c3e19543ce1bdb4063c2e455a128de636d0eca8ccacca2bef6b94",
+    "ipc-balanced-review-33/continuous.log": "99d87a5d06b26ae1031ac335149c2a9e76dc3379ec95ea0834c4ea5ed8629e13",
+    "ipc-balanced-review-33/display.log": "a9a358ce49f097edfe508cabd941b513c656ec12fbb6f641f6b6fd5a05688f7d",
+    "ipc-balanced-review-33/full-surface-strain.log": "5ac95f6714f914e22430fbbfc4146ab029fcc56bfea8816a9019b54a1aa8b403",
+    "ipc-balanced-review-33/partial-boundary-results.json": "ecc0e7b4f8600cc68d42207fe093288ed91beeac487ea8a4220af005947f54f6",
+    "ipc-balanced-review-33/partial-contact-results.json": "f026c0a2c7c43632c3a23ad4fe90f52c584b65d09d8d631ff6fecdeb89f53b9e",
+    "ipc-balanced-review-33/partial-display-geometric-continuous-contact.json": "2bda393230644fc266a1218e992567ded431c3985ea0ff31911495ad46e37dfe",
+    "ipc-balanced-review-33/partial-strain-results.json": "bff7e308b11edc69c13b13c1a524ef2eb78acc72047dcb49fe5784f79e86d244",
+    "ipc-balanced-review-33/partial-surface-strain-results.json": "ffb841743c8e4ab4662b72e97c85bd31090aadee485f5fa0d70f5fd92c117208",
+    "ipc-balanced-review-33/progress.json": "eb7e41decf46a2a14d78abc16b69ac21fb36f4abd9bed03690f4839367718524",
+    "ipc-balanced-review-33/snapshot.json": "7f72ed14f24aa6cd9a7b96284fa445d0e343a2046726b82b9248deb62bbfc370",
+    "ipc-balanced-review-33/strain.log": "19ed9dfc06f4efe42f59a964ee7a2ef81213247e5a680db8064b558baae3f245",
+    "ipc-full-raw-control.log": "b71a32da8b29191b2f5ddceb23e562b584efcc359368ac40b85bae2afb947162",
+    "ipc-full-raw-control/rejections.json": "0c8cea780076f3b54e4fccd33473aedfc74262b7c816a4f8c8e7fa9f867e8ae0",
+    "ipc-full-raw-control/run.json": "852e584428c55d4c5cd8155ac11190a55e21ed8b0a6f97a776c4971fe976b326",
+    "ipc-full-surface.log": "c079de41f6d9187c8cc291b11c0696ed048dc7f2dffcec61bc3db9218f8a1e04",
+    "ipc-full-surface/rejections.json": "30d8ea3be7827bbcee7385e11344f32fb00c5ee20aa22a23a68b80a3ec358ae4",
+    "ipc-full-surface/run.json": "dcbdc5a9a39a9010c44641a45589a61364720b24cd72d20ba2afd11f1ddfbad2",
+    "ipc-invalid-resume-before/run.json": "94e15f86419e352499e37fa5805b97eddad4f45fbefd1aba68b45210584d97eb",
+    "ipc-invalid-resume-before/summary.json": "9bb5e7537ef49e3fc7ab306929d0faade701aab0a06d41b1d59096ec06fcf33f",
+    "ipc-limited-bake.log": "38db3f1966bc912759a56391b0f8de1891d7511649a5d3a0a137701b2d50531a",
+    "ipc-limited-physics/rejections.json": "310bc35e011a541a6cd30ccc91d25de3f3e0e7bd3b6dd7d78ba8bf8492515785",
+    "ipc-limited-physics/run.json": "e2f2dab74fcb8325b970c2028752c2e7f05f7cee85959f253c31d4d6e2d8badf",
+    "ipc-resolved-review-2-2-front.png": "b1de52a6e9cac988a5c2f074276fb9030f0fd39dc97f76ac2c537c7279dfb68f",
+    "ipc-resolved-review-2-2-rear.png": "54f54e2be07bf16e89995157e319a06e8bcc621b4d82c5445c486f1d5a3794d9",
+    "ipc-resolved-review-2/boundaries.log": "cb82dc4c5e26af5b2f40bbe59981ed0fd59d37fb5fbde8a13c280fbc745d9116",
+    "ipc-resolved-review-2/continuous.log": "16a79038344dcf5e3748e978fff05ef8655113a3350d92bf3f65549d899574ca",
+    "ipc-resolved-review-2/display.log": "ceed4dd0fbc84efe572540e757996bebea4fd58276f8be985959838fd9d0213b",
+    "ipc-resolved-review-2/partial-boundary-results.json": "e72025326650a371f30d62f1333ad6cf5ae2da170f64f1854226a79ed58f2ffc",
+    "ipc-resolved-review-2/partial-contact-results.json": "efe93fc9a6f7c85e6b459e9dff547cf137d87af8ba916f2e0c98a171f784f8c7",
+    "ipc-resolved-review-2/partial-display-geometric-continuous-contact.json": "073790f3d19048cfe4d8305e1607bd85114a48742845aedd007a506922c15bb2",
+    "ipc-resolved-review-2/partial-surface-strain-results.json": "6ec6aa16e89dc575e20d8ce499c635ebb8cd18c42ea0aa472e244e29ea109bbb",
+    "ipc-resolved-review-2/progress.json": "c1b68f764df761da6216ccc2e118adad2280e579a32793055381b1ad06900fa1",
+    "ipc-resolved-review-2/snapshot.json": "742241c63f16f810aca706df7fa7a4be8846dd1832a22ec85cabab5fa0e9be18",
+    "ipc-resolved-review-2/surface-strain.log": "67895317f65477aeb6c8d94aace60f0f1cffc67a465b5652e1ea4a08d99bc795",
+    "ipc-resolved-surface.log": "e0fd549b0a7d8c2164fe874fcc86d36c9543b4d555e5a87cd5e7cf07e7ea97a7",
+    "ipc-resolved-surface/run.json": "08078464f49fd845b3c2251440a643dec64db619763280742a88e4a94736d167",
+    "ipc-valid-resume-control/run.json": "6ce8d48dc9173da9ca1f12929671a457ce30a53fd07289cf62207f9d95927683",
+    "ipc-valid-resume-control/substeps/summary.json": "3f6ad26e058a282ca1d5f54629cc50c9e4e849f8a93b8a5b7b1831f2075dcfab",
+    "ipc-valid-resume-control/summary.json": "6a602907d1fa3d6f92888f00a34c53dbe514d0c16e85335b51d40561b7069444",
+    "ipc_cloth-balanced-unlimited.py": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1",
+    "ipc_cloth-full-no-material-gate.py": "c395fbf8b96f6d0cebd546c57847d0f6372ce70601bd9e8b556092c2eb16dc27",
+    "ipc_cloth-full-wide-contact.py": "b62ea51c639138630de16b77f116f0ad797fbc27c277e294a97bd941b0a9e42c",
+    "ipc_cloth-limited-embedded.py": "b6d6f5f4a428432e3d7eb76f5b9b156a645eaac946c0eb071992da95bda8c66e",
+    "ipc_cloth.py": "c6db5b282409e95909e37f6a90ab43c68c4864cb47b9791e5533ca116925681f",
+    "limited-embedding-stop-request.json": "5256d3ec7fec2fea3a23a6a94e539c95c28df53cb1d6c0b2d3bf78f94c118fd6",
+    "material-resume-verification.json": "047d57d0239c73792a88b75a8ea7217831c957566814c0cd6a3ebd79275c307b",
+    "resolved-material-stop-request.json": "9748784f823c5d0a8a61e6fde93ddf4cbf5e0dee6b57af6690f80a2d5e8591ae",
+    "rest-contact-forces.json": "37ebf153d08753b00aac9c76478e066f0cde0a0008ebd6c322a1914051dbdf1d",
+    "rest-force-after.log": "fe0c0267fe1507a5b1e49d626d2f54d97a0eea676c6e580c30f8691c09da59b0",
+    "rest-force-before.log": "793f5f724b3c0891475e8aab68a8162020f29739dbf5b40cdffa852b1c71bfa4",
+    "strain-limit-after.log": "7ba600c131d14938fa296eb6eb208c575bf239a15b65439f37d0578df0fff9bf",
+    "strain-limit-before.log": "cb931e059ffc6f7ba9cf70daded09b23475913d4c3d6bdf84168cdd7a97a0033",
+    "strain-limit.test.py": "70ef4389e039e92e8fff3e9e360f01aa8ff16256952d1f90db1971878d46789a",
+    "surface-band-build.log": "0b3ae8d7e90d70e9eca718608966d4611e79d6bbba56b0bad29eb0ed4c6648c8",
+    "surface-band/verification.json": "d292ac71c44a7a869b35cf3d15f4060df5f6fe276162d6316f2ae5cc694f3b87",
+    "surface-guard-after.log": "b975f21fc36900d09e02e66ed5b8b90f29685e9d834e49485dc354245946626f",
+    "surface-guard-before.log": "e5b6f8aa4bc4ad312e939856f900614b2744354f159a6d065494808cf9d30ee8",
+    "surface-rest-force-stop-requests.json": "02d6dbacaf9a27d23268f8818255e9f8b6292508bb581949bd317c47969122ab",
+    "surface-strain-fixtures.json": "2dc912050352bcd4ddde413dee587f6f083815544e564941a953b38e96ddd18d",
+    "surface-strain.test.py": "3969a751fd2a469e43db4a738802b4004ac5c53962d4b6a4a50d34beb6979fc1",
+    "surface_strain.py": "a1640bfb7dbfa033406b07b10c70c88d2d8324410aaa429fdd684a9dc6dc420b",
+    "valid-resume-control.log": "ddcda717fa5040856e2a05ecdd50deca2bf810692067df07e304b58a5962623f"
+  }
+}

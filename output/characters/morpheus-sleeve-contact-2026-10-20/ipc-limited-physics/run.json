@@ -1,0 +1,9 @@
+{
+  "resume": "ipc-balanced-control",
+  "resumedAt": 0.8666666666666667,
+  "requestedEnd": 1.0,
+  "maximumStepSeconds": 0.008333333333333333,
+  "structuralStrainOnset": 1.03,
+  "structuralStrainLimit": 1.1,
+  "sourceSha256": "b6d6f5f4a428432e3d7eb76f5b9b156a645eaac946c0eb071992da95bda8c66e"
+}

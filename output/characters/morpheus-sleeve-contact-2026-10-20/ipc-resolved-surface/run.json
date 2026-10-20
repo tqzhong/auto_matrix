@@ -1,0 +1,14 @@
+{
+  "resume": null,
+  "resumedAt": null,
+  "requestedEnd": 1.0,
+  "maximumStepSeconds": 0.008333333333333333,
+  "fullSurfacePhysics": true,
+  "physicalVertices": 13386,
+  "displayVertices": 13386,
+  "prescribedVertices": 189,
+  "structuralStrainOnset": 1.03,
+  "structuralStrainLimit": 1.1,
+  "contactActivationMetres": 1e-05,
+  "sourceSha256": "c395fbf8b96f6d0cebd546c57847d0f6372ce70601bd9e8b556092c2eb16dc27"
+}

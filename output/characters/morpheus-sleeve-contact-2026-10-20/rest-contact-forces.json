@@ -1,0 +1,18 @@
+[
+  {
+    "activationMetres": 0.001,
+    "contactCount": 12283,
+    "restBarrierEnergy": 1.1474263097685893,
+    "barrierStiffness": 32469143.673326228,
+    "maximumRestForceNewtons": 89.47692218581564,
+    "restPhysicalEnergy": 0.01002459375
+  },
+  {
+    "activationMetres": 1e-05,
+    "contactCount": 0,
+    "restBarrierEnergy": 0.0,
+    "barrierStiffness": 3246888235438118.5,
+    "maximumRestForceNewtons": 0.0,
+    "restPhysicalEnergy": 0.01002459375
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-20T08:51:12.827949+00:00",
+  "pid": 32453,
+  "session": 33642,
+  "reason": "Deliberate stop after independent material validation failed at .9833333333 seconds with maximum edge stretch 1.53468600006. This is not a timeout or process crash.",
+  "lastAcceptedSample": {
+    "frame": 34,
+    "time": 0.9875,
+    "sourceFrame": 7,
+    "substep": 2.5,
+    "integrationSeconds": 0.004166666666666667,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.45068359375
+  },
+  "samples": 34,
+  "sourceSha256": "b887faee524b396457bbc3698e3c1f03341bd85d6f6c4a3e3dd017e3d44d59e1",
+  "strainEvidence": "ipc-balanced-review-33/partial-strain-results.json",
+  "confirmedExitCode": 130,
+  "frozenSource": "ipc_cloth-balanced-unlimited.py"
+}

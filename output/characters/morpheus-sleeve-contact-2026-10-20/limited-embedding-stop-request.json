@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-20T09:23:11.479940+00:00",
+  "pid": 78370,
+  "session": 69645,
+  "reason": "Deliberate stop because independent full display strain inspection exposed severe deformation in the inherited affine-mapped surface already at the resumed .866667 checkpoint. Structural cage strain limits alone do not address this. Not a timeout or crash.",
+  "samples": 16,
+  "lastAccepted": {
+    "frame": 16,
+    "time": 0.9166666666666667,
+    "sourceFrame": 5,
+    "substep": 2.0,
+    "integrationSeconds": 0.004166666666666637,
+    "maximumEdgeStretch": 1.0423415463869006,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0
+  },
+  "sourceSha256": "b6d6f5f4a428432e3d7eb76f5b9b156a645eaac946c0eb071992da95bda8c66e",
+  "confirmedExitCode": 130,
+  "frozenSource": "ipc_cloth-limited-embedded.py"
+}
