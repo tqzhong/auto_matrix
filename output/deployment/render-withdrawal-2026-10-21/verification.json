@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-21",
+  "render": {
+    "service": "srv-dba4redg1s2s73apj6c0",
+    "autoDeploy": "off",
+    "defaultSubdomain": "disabled",
+    "workspaceSuspendedForBandwidth": true,
+    "serviceDeleted": false,
+    "customDomainsRetained": true,
+    "dnsPause": "pending-user-login",
+    "cloudSaveUnchanged": true
+  },
+  "preview": {
+    "url": "http://localhost:5173/",
+    "host": "127.0.0.1",
+    "data": "output/local-preview/data",
+    "cloudSave": false,
+    "paidModel": false,
+    "bundle": "/assets/index-Dh28UYzo.js",
+    "runtimeCommit": "e398a3e",
+    "runtimeFilesCompared": 699,
+    "runtimeFileMismatches": [],
+    "assetsVerified": 224,
+    "modelAndMusicRanges": true
+  },
+  "native": {
+    "samples": 250,
+    "maximumTravel": 3.9817724687678413,
+    "maximumHeight": 2.6406249999999996,
+    "yawSpan": 1.5289260184397389,
+    "restart": {
+      "groups": {
+        "tick": true,
+        "paused": true,
+        "day": true,
+        "time": true,
+        "position": true,
+        "rotation": true,
+        "health": true,
+        "currentLocation": true,
+        "isAwakened": true,
+        "neoLife": true
+      },
+      "tick": 3757,
+      "controller": "player"
+    }
+  },
+  "protectedWipFilesUnchanged": 6,
+  "limitations": [
+    "DNS remains pending expired Alibaba Cloud session. No deletion or extra service-level suspension was performed.",
+    "Local preview requires this computer and the server process to remain running.",
+    "Fresh independent local save; this does not restore or overwrite the online save.",
+    "Partial native input and restart check; not a full trilogy or stable-frame-rate acceptance."
+  ]
+}

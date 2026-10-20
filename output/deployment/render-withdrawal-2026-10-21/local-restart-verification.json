@@ -1,0 +1,16 @@
+{
+  "groups": {
+    "tick": true,
+    "paused": true,
+    "day": true,
+    "time": true,
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "currentLocation": true,
+    "isAwakened": true,
+    "neoLife": true
+  },
+  "tick": 3757,
+  "controller": "player"
+}
