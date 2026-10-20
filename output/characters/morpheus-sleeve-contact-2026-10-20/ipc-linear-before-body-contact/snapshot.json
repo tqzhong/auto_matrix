@@ -1,0 +1,10 @@
+{
+  "source": "ipc-linear-physics",
+  "reason": "Preserve accepted old-band trajectory before adopting independently audited body lookahead",
+  "samples": 29,
+  "lastTime": 0.8833333333333334,
+  "checkpointSha256": "1407dfda0c7c03877a4e84cd4809ae942ef4b4bd94e06e063a441efd980f9c8c",
+  "solverSha256": "bd4b011851e36260ef08099cae7f9bd8eed7bcf76f491e360ac21c377e58c116",
+  "finiteState": true,
+  "cacheCopiesIdentical": true
+}

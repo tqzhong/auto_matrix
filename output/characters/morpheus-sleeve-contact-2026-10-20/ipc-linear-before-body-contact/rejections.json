@@ -1,0 +1,18 @@
+[
+  {
+    "number": 1,
+    "sourceFrame": 4,
+    "startTime": 0.8791666666666667,
+    "endTime": 0.8833333333333334,
+    "depth": 0,
+    "error": "the exported substep crosses: {'frame': 28, 'time': 0.8833333333333334, 'sourceFrame': 4, 'substep': 2.0, 'integrationSeconds': 0.004166666666666726, 'maximumEdgeStretch': 1.054612044125286, 'maximumSurfaceStretch': 1.2820006301406086, 'p99SurfaceStretch': 1.0083831115223894, 'endpointIntersects': False, 'collisionFreeStep': 0.4836740493774414, 'stepCollisionFree': False, 'optimizerSafeStep': 0.07470703125}"
+  },
+  {
+    "number": 2,
+    "sourceFrame": 4,
+    "startTime": 0.8833333333333334,
+    "endTime": 0.8916666666666667,
+    "depth": 0,
+    "error": "contact solve did not converge: residual=18.63749139418374"
+  }
+]

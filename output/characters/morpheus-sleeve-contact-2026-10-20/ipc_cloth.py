@@ -10,6 +10,7 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import spsolve, splu
 import ipctk
 from cloth_embedding import embed_panels
+from contact_bands import contact_bands, SELF_ACTIVATION as CONTACT_ACTIVATION
 from continuous_check import measure_step
 from surface_strain import triangle_stretch, material_within_limits
 from membrane import prepare_membrane, membrane_energy, MODULUS, POISSON_RATIO
@@ -17,9 +18,6 @@ from membrane import prepare_membrane, membrane_energy, MODULUS, POISSON_RATIO
 BASE = Path(__file__).parent
 STRAIN_ONSET = 1.03
 STRAIN_LIMIT = 1.1
-# The complete surface's measured rest separation is 22.4 micrometres.
-# A 1 mm activation radius repels neighboring cloth before any motion.
-CONTACT_ACTIVATION = .00001
 
 
 class ClothStepError(RuntimeError):
@@ -219,9 +217,8 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
     assert not ipctk.has_intersections(mesh, surface(x)), 'the input garment already intersects'
     free_vertices = np.setdiff1d(np.arange(n), pins)
     free = (free_vertices[:, None]*3+np.arange(3)).ravel()
-    dhat = CONTACT_ACTIVATION
-    unit_barrier = ipctk.BarrierPotential(dhat, 1.)
-    potential = unit_barrier
+    bands = contact_bands(collision_reference, ipctk.edges(all_faces), all_faces, mapping, visible_count)
+    potentials = [ipctk.BarrierPotential(radius, 1.) for _, radius in bands]
     diagonal = float(np.linalg.norm(np.ptp(collision_reference, axis=0)))
     h = 1/(30*substeps)
     inertial = np.repeat(mass/h**2, 3)
@@ -279,7 +276,8 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
                      'sourceSha256': hashlib.sha256((BASE/'membrane.py').read_bytes()).hexdigest()} if full_surface else None,
         'displayVertices': visible_count, 'prescribedVertices': len(pins),
         'structuralStrainOnset': STRAIN_ONSET, 'structuralStrainLimit': STRAIN_LIMIT,
-        'contactActivationMetres': CONTACT_ACTIVATION,
+        'contactActivationMetres': [radius for _, radius in bands],
+        'contactSourceSha256': hashlib.sha256((BASE/'contact_bands.py').read_bytes()).hexdigest(),
         'sourceSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}, indent=2))
 
     def material(state, project=True, derivatives=True):
@@ -306,18 +304,20 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         delta = (state[:n]-predicted).ravel()
         energy += .5*np.dot(inertial*delta, delta)
         visible = surface(state)
-        contacts = ipctk.NormalCollisions()
-        contacts.build(mesh, visible, dhat)
-        energy += potential(contacts, mesh, visible)
-        if not derivatives:
-            return energy
-        full_gradient = mesh.to_full_dof(potential.gradient(contacts, mesh, visible))
-        full_gradient[:3*n] += gradient + inertial*delta
-        full_hessian = mesh.to_full_dof(potential.hessian(contacts, mesh, visible,
-            project_hessian_to_psd=ipctk.PSDProjectionMethod.CLAMP))
-        full_hessian += sp.block_diag((hessian+inertial_hessian,
-            sp.csr_matrix((x[n:].size, x[n:].size))), format='csr')
-        return energy, full_gradient, full_hessian
+        if derivatives:
+            full_gradient = np.zeros(x.size)
+            full_gradient[:3*n] = gradient + inertial*delta
+            full_hessian = sp.block_diag((hessian+inertial_hessian,
+                sp.csr_matrix((x[n:].size, x[n:].size))), format='csr')
+        for (contact_mesh, radius), potential in zip(bands, potentials):
+            contacts = ipctk.NormalCollisions()
+            contacts.build(contact_mesh, visible, radius)
+            energy += potential(contacts, contact_mesh, visible)
+            if derivatives:
+                full_gradient += contact_mesh.to_full_dof(potential.gradient(contacts, contact_mesh, visible))
+                full_hessian += contact_mesh.to_full_dof(potential.hessian(contacts, contact_mesh, visible,
+                    project_hessian_to_psd=ipctk.PSDProjectionMethod.CLAMP))
+        return (energy, full_gradient, full_hessian) if derivatives else energy
 
     def relax(predicted):
         linear_solve = spsolve if raw_newton else solve_contact
@@ -383,7 +383,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         print(json.dumps({'acceptedSample': row}), flush=True)
 
     def advance_interval(frame, start_blend, blend, steps, depth=0):
-        nonlocal h, inertial, inertial_hessian, velocity, potential
+        nonlocal h, inertial, inertial_hessian, velocity, potentials
         previous = x.copy()
         previous_velocity = velocity.copy()
         h = (blend-start_blend)/30
@@ -394,21 +394,24 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         predicted = previous[:n]+h*velocity
         predicted[:, 2] -= h*h*9.81
         visible = surface(x)
-        contacts = ipctk.NormalCollisions()
-        contacts.build(mesh, visible, dhat)
         _, physical_gradient, _ = material(x)
         physical_gradient += inertial*(x[:n]-predicted).ravel()
-        barrier_gradient = mesh.to_full_dof(unit_barrier.gradient(contacts, mesh, visible))
-        # This objective uses M/h² rather than M, so scale the toolkit's
-        # mass-based lower stiffness bound by the same time factor.
-        barrier_stiffness, maximum_stiffness = ipctk.initial_barrier_stiffness(
-            diagonal, ipctk.ClampedLogBarrier(), dhat, float(mass.mean()/h**2),
-            physical_gradient[free], barrier_gradient[free])
-        potential = ipctk.BarrierPotential(dhat, barrier_stiffness)
-        print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend,
-            'integrationSeconds': h, 'barrierStiffness': barrier_stiffness,
-            'maximumBarrierStiffness': maximum_stiffness,
-            'minimumGapMetres': float(np.sqrt(contacts.compute_minimum_distance(mesh, visible))) if len(contacts) else None}), flush=True)
+        potentials = []
+        for contact_mesh, radius in bands:
+            contacts = ipctk.NormalCollisions()
+            contacts.build(contact_mesh, visible, radius)
+            unit = ipctk.BarrierPotential(radius, 1.)
+            barrier_gradient = contact_mesh.to_full_dof(unit.gradient(contacts, contact_mesh, visible))
+            # Each contact band uses the same M/h² objective and its own
+            # activation distance when balancing barrier stiffness.
+            barrier_stiffness, maximum_stiffness = ipctk.initial_barrier_stiffness(
+                diagonal, ipctk.ClampedLogBarrier(), radius, float(mass.mean()/h**2),
+                physical_gradient[free], barrier_gradient[free])
+            potentials.append(ipctk.BarrierPotential(radius, barrier_stiffness))
+            print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend,
+                'integrationSeconds': h, 'contactActivationMetres': radius,
+                'barrierStiffness': barrier_stiffness, 'maximumBarrierStiffness': maximum_stiffness,
+                'minimumGapMetres': float(np.sqrt(contacts.compute_minimum_distance(contact_mesh, visible))) if len(contacts) else None}), flush=True)
         try:
             for advance in range(80):
                 fixed = np.zeros_like(x)

@@ -1,0 +1,12 @@
+{
+  "nestedSolverFunctionsMatchTestedControl": [
+    "material",
+    "evaluate",
+    "relax",
+    "save_sample",
+    "advance_interval"
+  ],
+  "resumeSampleFilesIdentical": 15,
+  "solverSha256": "94189724200f26251a9863a237a7be370244106a3ae61e9c2167fded5010e163",
+  "contactSha256": "29f3dab5660ca7b1f52b91288f576e3e3e96f4691d1a710929b62e49b22cba4d"
+}

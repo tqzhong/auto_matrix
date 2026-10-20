@@ -1,0 +1,72 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "sourceFrame": 1,
+    "substep": 0,
+    "integrationSeconds": 0.0,
+    "maximumEdgeStretch": 1.0012547682721955,
+    "maximumSurfaceStretch": 1.0013327871889222,
+    "p99SurfaceStretch": 1.0000293002687841,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "sourceFrame": 2,
+    "substep": 1.0,
+    "integrationSeconds": 0.008333333333333333,
+    "maximumEdgeStretch": 1.015017337409351,
+    "maximumSurfaceStretch": 1.0176094660604362,
+    "p99SurfaceStretch": 1.001058890418931,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0
+  },
+  {
+    "frame": 3,
+    "time": 0.8166666666666668,
+    "sourceFrame": 2,
+    "substep": 2.0,
+    "integrationSeconds": 0.008333333333333363,
+    "maximumEdgeStretch": 1.0306244960340774,
+    "maximumSurfaceStretch": 1.0423937121423084,
+    "p99SurfaceStretch": 1.0023088464121355,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.73046875
+  },
+  {
+    "frame": 4,
+    "time": 0.8250000000000001,
+    "sourceFrame": 2,
+    "substep": 3.0,
+    "integrationSeconds": 0.008333333333333281,
+    "maximumEdgeStretch": 1.0369799244978253,
+    "maximumSurfaceStretch": 1.0707938144960514,
+    "p99SurfaceStretch": 1.0039039801432668,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0
+  },
+  {
+    "frame": 5,
+    "time": 0.8333333333333334,
+    "sourceFrame": 2,
+    "substep": 4.0,
+    "integrationSeconds": 0.00833333333333331,
+    "maximumEdgeStretch": 1.0449295093374131,
+    "maximumSurfaceStretch": 1.0953732361417647,
+    "p99SurfaceStretch": 1.005141709545264,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.882080078125
+  }
+]

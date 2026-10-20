@@ -1,0 +1,53 @@
+{"acceptedSample": {"frame": 1, "time": 0.8, "sourceFrame": 1, "substep": 0, "integrationSeconds": 0.0, "maximumEdgeStretch": 1.0012547682721955, "maximumSurfaceStretch": 1.0013327871889222, "p99SurfaceStretch": 1.0000293002687841, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"frame": 1, "time": 0.8, "seconds": 2.129941999912262, "steps": [], "maximumEdgeStretch": 1.0, "p99EdgeStretch": 1.0, "bodyDifference": 0.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333333, "contactActivationMetres": 1e-05, "barrierStiffness": 3246888235438118.5, "maximumBarrierStiffness": 3.2468882354381184e+17, "minimumGapMetres": null}
+{"sourceFrame": 2, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333333, "contactActivationMetres": 0.0002, "barrierStiffness": 20293214403.825287, "maximumBarrierStiffness": 2029321440382.5288, "minimumGapMetres": null}
+{"iteration": 0, "energy": 0.009801184039896316, "residual": 11.038121298279714, "maximumNewtonStep": 0.0017311433134414847, "alpha": 0.22514806702572368}
+{"iteration": 20, "energy": 0.0012827633974150888, "residual": 0.19949851679584, "maximumNewtonStep": 0.0001369154908430125, "alpha": 1.0}
+{"iteration": 40, "energy": 0.0012528979327316395, "residual": 0.027631890028150405, "maximumNewtonStep": 3.502452785345093e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.0012426887785382706, "residual": 0.015663039999852208, "maximumNewtonStep": 1.7770920285097633e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.001241696153021827, "residual": 0.00026079667669414824, "maximumNewtonStep": 3.5107234447105696e-06, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "advance": 1, "prescribedFraction": 0.016862043638672407, "remainingBodyMetres": 2.3231074427074172e-05, "remainingPinsMetres": 0.00010142378934487398}
+{"iteration": 0, "energy": 0.0013711104739281615, "residual": 0.2639158464495108, "maximumNewtonStep": 4.1600602868679215e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.0013679564222266265, "residual": 0.006806333522568125, "maximumNewtonStep": 7.699283904794312e-06, "alpha": 1.0}
+{"iteration": 40, "energy": 0.001367934501732961, "residual": 0.0001332506955466344, "maximumNewtonStep": 5.538677510902367e-06, "alpha": 1.0}
+{"iteration": 60, "energy": 0.0013677334782148684, "residual": 0.00014625791316480295, "maximumNewtonStep": 4.184275384883824e-06, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 2, "time": 0.8083333333333333, "sourceFrame": 2, "substep": 1.0, "integrationSeconds": 0.008333333333333333, "maximumEdgeStretch": 1.015017337409351, "maximumSurfaceStretch": 1.0176094660604362, "p99SurfaceStretch": 1.001058890418931, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 2, "sourceBlend": 0.5, "integrationSeconds": 0.008333333333333363, "contactActivationMetres": 1e-05, "barrierStiffness": 3246888235438096.0, "maximumBarrierStiffness": 3.246888235438096e+17, "minimumGapMetres": null}
+{"sourceFrame": 2, "sourceBlend": 0.5, "integrationSeconds": 0.008333333333333363, "contactActivationMetres": 0.0002, "barrierStiffness": 22090725852.121582, "maximumBarrierStiffness": 2029321440382.5146, "minimumGapMetres": 0.00018457059332582839}
+{"iteration": 0, "energy": 0.01675556063680125, "residual": 10.409009179268411, "maximumNewtonStep": 0.0009152808181785121, "alpha": 1.0}
+{"iteration": 20, "energy": 0.005371808472785949, "residual": 1.839855539684005, "maximumNewtonStep": 0.0001324318082143869, "alpha": 1.0}
+{"iteration": 40, "energy": 0.00531422913945285, "residual": 0.056695971841707646, "maximumNewtonStep": 9.103608460629949e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.0052714146365435205, "residual": 0.01056207096676697, "maximumNewtonStep": 2.462663182357055e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.005270723600275182, "residual": 0.10187709771428072, "maximumNewtonStep": 1.4153029969484119e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.005267965509765008, "residual": 0.000787875210328641, "maximumNewtonStep": 2.126915346818204e-06, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.5, "advance": 1, "prescribedFraction": 0.4736328125, "remainingBodyMetres": 1.2437802070053294e-05, "remainingPinsMetres": 5.4301793962506506e-05}
+{"iteration": 0, "energy": 0.005421433097129538, "residual": 0.05262947083314321, "maximumNewtonStep": 1.3808770789240498e-05, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.5, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 3, "time": 0.8166666666666668, "sourceFrame": 2, "substep": 2.0, "integrationSeconds": 0.008333333333333363, "maximumEdgeStretch": 1.0306244960340774, "maximumSurfaceStretch": 1.0423937121423084, "p99SurfaceStretch": 1.0023088464121355, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.73046875}}
+{"sourceFrame": 2, "sourceBlend": 0.75, "integrationSeconds": 0.008333333333333281, "contactActivationMetres": 1e-05, "barrierStiffness": 3254397010668656.5, "maximumBarrierStiffness": 3.2468882354381594e+17, "minimumGapMetres": 9.754361796717755e-06}
+{"sourceFrame": 2, "sourceBlend": 0.75, "integrationSeconds": 0.008333333333333281, "contactActivationMetres": 0.0002, "barrierStiffness": 22029149030.207508, "maximumBarrierStiffness": 2029321440382.5542, "minimumGapMetres": 0.00016408661762689066}
+{"iteration": 0, "energy": 0.04523341620707791, "residual": 313.1272409739689, "maximumNewtonStep": 0.0011198433917642883, "alpha": 1.0}
+{"iteration": 20, "energy": 0.012213489549517242, "residual": 0.08648022432954826, "maximumNewtonStep": 0.00010606600048310228, "alpha": 1.0}
+{"iteration": 40, "energy": 0.012099267466247827, "residual": 0.07937283820833284, "maximumNewtonStep": 0.00025077077061112606, "alpha": 0.5}
+{"iteration": 60, "energy": 0.01207633794796296, "residual": 0.002450097871211933, "maximumNewtonStep": 8.529480585816967e-06, "alpha": 1.0}
+{"iteration": 80, "energy": 0.012073796184989528, "residual": 0.08608708266467281, "maximumNewtonStep": 5.893490135318933e-05, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.75, "advance": 1, "prescribedFraction": 0.7348040154007334, "remainingBodyMetres": 6.266452857534022e-06, "remainingPinsMetres": 2.73585019305439e-05}
+{"iteration": 0, "energy": 0.012203103021508153, "residual": 0.006539391879488793, "maximumNewtonStep": 6.413244102494519e-06, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.75, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 4, "time": 0.8250000000000001, "sourceFrame": 2, "substep": 3.0, "integrationSeconds": 0.008333333333333281, "maximumEdgeStretch": 1.0369799244978253, "maximumSurfaceStretch": 1.0707938144960514, "p99SurfaceStretch": 1.0039039801432668, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"sourceFrame": 2, "sourceBlend": 1.0, "integrationSeconds": 0.00833333333333331, "contactActivationMetres": 1e-05, "barrierStiffness": 3256154179821258.0, "maximumBarrierStiffness": 3.246888235438136e+17, "minimumGapMetres": 9.616442539472389e-06}
+{"sourceFrame": 2, "sourceBlend": 1.0, "integrationSeconds": 0.00833333333333331, "contactActivationMetres": 0.0002, "barrierStiffness": 22043427068.52369, "maximumBarrierStiffness": 2029321440382.5398, "minimumGapMetres": 0.00015939637684237492}
+{"iteration": 0, "energy": 0.08543414422300821, "residual": 11.117089127250516, "maximumNewtonStep": 0.0036331750909956106, "alpha": 0.212158203125}
+{"iteration": 20, "energy": 0.024671890445675686, "residual": 1.9050211496580425, "maximumNewtonStep": 0.0004227012786902474, "alpha": 0.5}
+{"iteration": 40, "energy": 0.02453922129845153, "residual": 0.06700953873696058, "maximumNewtonStep": 4.498618790895288e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.024512725353971664, "residual": 0.006613910374960868, "maximumNewtonStep": 1.2772880099197958e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.024512340383525347, "residual": 0.0032934611710893147, "maximumNewtonStep": 7.333760965773753e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.024511699526283622, "residual": 0.0017841173653304926, "maximumNewtonStep": 1.9602022927403103e-06, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 1.0, "advance": 1, "prescribedFraction": 0.233154296875, "remainingBodyMetres": 1.8120193089998793e-05, "remainingPinsMetres": 7.911035938601083e-05}
+{"iteration": 0, "energy": 0.02513422074632036, "residual": 0.09401730088494897, "maximumNewtonStep": 3.881366776918012e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.025121671306534577, "residual": 0.018151149839844845, "maximumNewtonStep": 0.0003004374123071011, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 1.0, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 5, "time": 0.8333333333333334, "sourceFrame": 2, "substep": 4.0, "integrationSeconds": 0.00833333333333331, "maximumEdgeStretch": 1.0449295093374131, "maximumSurfaceStretch": 1.0953732361417647, "p99SurfaceStretch": 1.005141709545264, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.882080078125}}
+{"frame": 2, "time": 0.8333333333333334, "seconds": 3520.861866832711, "steps": [{"sourceBlend": 0.25, "integrationSeconds": 0.008333333333333333, "advances": 2, "iterations": 69, "residual": 6.535992115266838e-05}, {"sourceBlend": 0.5, "integrationSeconds": 0.008333333333333363, "advances": 2, "iterations": 11, "residual": 7.114359740045568e-05}, {"sourceBlend": 0.75, "integrationSeconds": 0.008333333333333281, "advances": 2, "iterations": 9, "residual": 0.0009231047355483879}, {"sourceBlend": 1.0, "integrationSeconds": 0.00833333333333331, "advances": 2, "iterations": 35, "residual": 0.00020680468203306609}], "maximumEdgeStretch": 1.0447650376682038, "p99EdgeStretch": 1.0023728891985806, "bodyDifference": 0.0}

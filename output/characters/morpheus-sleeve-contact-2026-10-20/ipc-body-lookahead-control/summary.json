@@ -1,0 +1,49 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "seconds": 2.129941999912262,
+    "steps": [],
+    "maximumEdgeStretch": 1.0,
+    "p99EdgeStretch": 1.0,
+    "bodyDifference": 0.0
+  },
+  {
+    "frame": 2,
+    "time": 0.8333333333333334,
+    "seconds": 3520.861866832711,
+    "steps": [
+      {
+        "sourceBlend": 0.25,
+        "integrationSeconds": 0.008333333333333333,
+        "advances": 2,
+        "iterations": 69,
+        "residual": 6.535992115266838e-05
+      },
+      {
+        "sourceBlend": 0.5,
+        "integrationSeconds": 0.008333333333333363,
+        "advances": 2,
+        "iterations": 11,
+        "residual": 7.114359740045568e-05
+      },
+      {
+        "sourceBlend": 0.75,
+        "integrationSeconds": 0.008333333333333281,
+        "advances": 2,
+        "iterations": 9,
+        "residual": 0.0009231047355483879
+      },
+      {
+        "sourceBlend": 1.0,
+        "integrationSeconds": 0.00833333333333331,
+        "advances": 2,
+        "iterations": 35,
+        "residual": 0.00020680468203306609
+      }
+    ],
+    "maximumEdgeStretch": 1.0447650376682038,
+    "p99EdgeStretch": 1.0023728891985806,
+    "bodyDifference": 0.0
+  }
+]

@@ -1,0 +1,122 @@
+{
+  "createdAt": "2026-10-20T23:36:19.453064+00:00",
+  "scope": "Offline complete-garment contact authoring; no runtime assets or public deployment changed.",
+  "geometry": {
+    "vertices": 13386,
+    "triangles": 25796,
+    "bodyLayers": 13,
+    "prescribedBoundaryVertices": 189,
+    "unchanged": true,
+    "minimumTriangleHeightMetres": 2.25537545549078e-05,
+    "minimumRestSelfGapMetres": 2.243546187261062e-05,
+    "minimumRestBodyGapMetres": 0.0002607039491942308
+  },
+  "contactActivationMetres": {
+    "self": 1e-05,
+    "body": 0.0002
+  },
+  "tests": {
+    "before": 24,
+    "after": 28,
+    "newTests": [
+      "pair partition without omissions or duplicates",
+      "equal-radius energy and gradient/Hessian equivalence",
+      "body response before the narrow self-contact range",
+      "zero added force on the complete rest costume"
+    ]
+  },
+  "control": {
+    "samples": 5,
+    "start": 0.8,
+    "end": 0.8333333333333334,
+    "staticAndContinuousContactPassed": true,
+    "boundaryPassed": true,
+    "materialPassed": true,
+    "maximumBoundaryErrorMetres": 5.953826305320543e-08,
+    "maximumSurfaceStretch": 1.0953732361417647,
+    "maximumP99SurfaceStretch": 1.005141709545264,
+    "previousSamples": 7,
+    "newSamples": 5,
+    "previousRejectedIntervals": 2,
+    "newRejectedIntervals": 0,
+    "previousRecordedSeconds": 3262.653826375492,
+    "newRecordedSeconds": 3520.861866832711,
+    "speedClaim": false,
+    "timingLimitation": "Different times and concurrent load; the comparison establishes fewer exported-path rejections, not whole-bake speed."
+  },
+  "oldPrefixPreserved": {
+    "source": "ipc-linear-physics",
+    "reason": "Preserve accepted old-band trajectory before adopting independently audited body lookahead",
+    "samples": 29,
+    "lastTime": 0.8833333333333334,
+    "checkpointSha256": "1407dfda0c7c03877a4e84cd4809ae942ef4b4bd94e06e063a441efd980f9c8c",
+    "solverSha256": "bd4b011851e36260ef08099cae7f9bd8eed7bcf76f491e360ac21c377e58c116",
+    "finiteState": true,
+    "cacheCopiesIdentical": true,
+    "start": 0.8,
+    "end": 0.8833333333333334,
+    "staticAndContinuousContactPassed": true,
+    "boundaryPassed": true,
+    "materialPassed": true,
+    "maximumBoundaryErrorMetres": 5.963727891756315e-08,
+    "maximumSurfaceStretch": 1.2822497871735523,
+    "maximumP99SurfaceStretch": 1.011248632330952,
+    "oldProcessExitCode": 130
+  },
+  "productionSourceCheck": {
+    "nestedSolverFunctionsMatchTestedControl": [
+      "material",
+      "evaluate",
+      "relax",
+      "save_sample",
+      "advance_interval"
+    ],
+    "resumeSampleFilesIdentical": 15,
+    "solverSha256": "94189724200f26251a9863a237a7be370244106a3ae61e9c2167fded5010e163",
+    "contactSha256": "29f3dab5660ca7b1f52b91288f576e3e3e96f4691d1a710929b62e49b22cba4d"
+  },
+  "newContinuation": {
+    "resume": "ipc-body-lookahead-control",
+    "resumedAt": 0.8333333333333334,
+    "requestedEnd": 1.0,
+    "maximumStepSeconds": 0.008333333333333333,
+    "fullSurfacePhysics": true,
+    "physicalVertices": 13386,
+    "membrane": {
+      "model": "area-weighted Green strain",
+      "modulusNewtonsPerMetre": 50000.0,
+      "poissonRatio": 0.3,
+      "sourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b"
+    },
+    "displayVertices": 13386,
+    "prescribedVertices": 189,
+    "structuralStrainOnset": 1.03,
+    "structuralStrainLimit": 1.1,
+    "contactActivationMetres": [
+      1e-05,
+      0.0002
+    ],
+    "contactSourceSha256": "29f3dab5660ca7b1f52b91288f576e3e3e96f4691d1a710929b62e49b22cba4d",
+    "sourceSha256": "94189724200f26251a9863a237a7be370244106a3ae61e9c2167fded5010e163"
+  },
+  "checkpointSha256": "fe5d8f39baa3cc793fb89b34b30ae7326d0fe3b21af68b640fbcb5589e28593f",
+  "inputManifestSha256": "01eb9e0acb023d2f9112bb7c3a9fe5fc5a459854001475ecb5d2c44779cdbf54",
+  "visualReview": {
+    "type": "Offline complete actual surfaces with diagnostic materials, not game pixels",
+    "frames": [
+      "ipc-linear-resume-checkpoint-substeps-27-front.png",
+      "ipc-linear-resume-checkpoint-substeps-27-rear.png",
+      "ipc-body-lookahead-control-substeps-5-front.png",
+      "ipc-body-lookahead-control-substeps-5-rear.png"
+    ],
+    "observations": "No obvious gross crossings in the inspected early poses; natural leather drape, complete withdrawal and film likeness remain unaccepted."
+  },
+  "protectedWipFilesUnchanged": 6,
+  "limitations": [
+    "Only 33.3 milliseconds of the new contact model were independently audited.",
+    "Full eight-second withdrawal, real grasp/release/drop, world-coat integration and game-play acceptance remain unfinished.",
+    "Mesh spacing was diagnosed; no retopology or vertex removal was performed.",
+    "Local preview remains http://localhost:5173/ and has not received the unfinished garment cache.",
+    "Render auto-deploy and its default subdomain remain off; workspace quota suspension remains in effect. AliDNS pause still awaits login."
+  ]
+}
