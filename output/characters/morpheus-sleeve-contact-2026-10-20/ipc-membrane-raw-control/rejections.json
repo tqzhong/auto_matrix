@@ -1,0 +1,10 @@
+[
+  {
+    "number": 1,
+    "sourceFrame": 2,
+    "startTime": 0.8166666666666668,
+    "endTime": 0.8250000000000001,
+    "depth": 0,
+    "error": "the exported substep crosses: {'frame': 4, 'time': 0.8250000000000001, 'sourceFrame': 2, 'substep': 3.0, 'integrationSeconds': 0.008333333333333281, 'maximumEdgeStretch': 1.0374059517197656, 'maximumSurfaceStretch': 1.0690825819501275, 'p99SurfaceStretch': 1.0039877046090535, 'endpointIntersects': False, 'collisionFreeStep': 0.2707340717315674, 'stepCollisionFree': False, 'optimizerSafeStep': 0.141357421875}"
+  }
+]

@@ -44,9 +44,12 @@ class StrainLimitTests(unittest.TestCase):
 
     def test_overextended_cloth_cannot_be_accepted_as_finite_energy(self):
         x = np.array([[0., 0., 0.], [.331, 0., 0.]])
-        with self.assertRaises(cloth.ClothStepError):
-            cloth.springs(x, np.array([[0, 1]]), np.array([.3]),
-                          np.array([120.]), strain_count=1)
+        for structural_elastic in (True, False):
+            with self.subTest(structural_elastic=structural_elastic):
+                with self.assertRaises(cloth.ClothStepError):
+                    cloth.springs(x, np.array([[0, 1]]), np.array([.3]),
+                                  np.array([120.]), strain_count=1,
+                                  structural_elastic=structural_elastic)
 
     def test_step_limits_stretch_including_prescribed_boundary_motion(self):
         x = np.array([[0., 0., 0.], [.3, 0., 0.]])

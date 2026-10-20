@@ -1,0 +1,7 @@
+{"frame": 1, "time": 0.8, "triangles": 25796, "minimum": 0.9959760048117899, "maximum": 1.0013327871889222, "p99": 1.0000293002687841, "worstTriangle": 3445, "withinMaterialLimits": true}
+{"frame": 2, "time": 0.8083333333333333, "triangles": 25796, "minimum": 0.9808533313939465, "maximum": 1.0182977445356838, "p99": 1.0010353519191209, "worstTriangle": 20218, "withinMaterialLimits": true}
+{"frame": 3, "time": 0.8166666666666668, "triangles": 25796, "minimum": 0.9567486234991833, "maximum": 1.0452320870641836, "p99": 1.002370779943321, "worstTriangle": 20218, "withinMaterialLimits": true}
+{"frame": 4, "time": 0.8208333333333334, "triangles": 25796, "minimum": 0.9422583325745428, "maximum": 1.059543380699037, "p99": 1.003132445725676, "worstTriangle": 20218, "withinMaterialLimits": true}
+{"frame": 5, "time": 0.8250000000000001, "triangles": 25796, "minimum": 0.9267112725863076, "maximum": 1.074778235030053, "p99": 1.003985703370591, "worstTriangle": 20218, "withinMaterialLimits": true}
+{"frame": 6, "time": 0.8291666666666667, "triangles": 25796, "minimum": 0.9121497701268866, "maximum": 1.0883549734357054, "p99": 1.004611107063863, "worstTriangle": 20218, "withinMaterialLimits": true}
+{"frame": 7, "time": 0.8333333333333334, "triangles": 25796, "minimum": 0.8997002556449978, "maximum": 1.1101737985951947, "p99": 1.0053641928970518, "worstTriangle": 9673, "withinMaterialLimits": true}

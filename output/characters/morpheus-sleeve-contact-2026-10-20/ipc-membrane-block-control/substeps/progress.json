@@ -1,0 +1,30 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "sourceFrame": 1,
+    "substep": 0,
+    "integrationSeconds": 0.0,
+    "maximumEdgeStretch": 1.0012547682721955,
+    "maximumSurfaceStretch": 1.0013327871889222,
+    "p99SurfaceStretch": 1.0000293002687841,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 1.0
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "sourceFrame": 2,
+    "substep": 1.0,
+    "integrationSeconds": 0.008333333333333333,
+    "maximumEdgeStretch": 1.0150152734808062,
+    "maximumSurfaceStretch": 1.018297414382095,
+    "p99SurfaceStretch": 1.0010471392257543,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.76953125
+  }
+]

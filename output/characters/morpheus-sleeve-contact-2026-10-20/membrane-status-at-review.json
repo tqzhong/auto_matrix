@@ -1,0 +1,41 @@
+{
+  "observedAt": "2026-10-20T13:33:55.659998+00:00",
+  "session": 30175,
+  "pid": 86494,
+  "elapsed": "11:24",
+  "command": "/Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/bin/python ipc_cloth.py --full-surface --resume ipc-membrane-control --frames 7 --substeps 4 --output ipc-membrane-physics",
+  "run": {
+    "resume": "ipc-membrane-control",
+    "resumedAt": 0.8333333333333334,
+    "requestedEnd": 1.0,
+    "maximumStepSeconds": 0.008333333333333333,
+    "fullSurfacePhysics": true,
+    "physicalVertices": 13386,
+    "membrane": {
+      "model": "area-weighted Green strain",
+      "modulusNewtonsPerMetre": 50000.0,
+      "poissonRatio": 0.3,
+      "sourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b"
+    },
+    "displayVertices": 13386,
+    "prescribedVertices": 189,
+    "structuralStrainOnset": 1.03,
+    "structuralStrainLimit": 1.1,
+    "contactActivationMetres": 1e-05,
+    "sourceSha256": "75a2ea959bd678b2a0d922adb894a991ddcd04261ede494b1016c38a8fe27815"
+  },
+  "lastAccepted": {
+    "frame": 7,
+    "time": 0.8333333333333334,
+    "sourceFrame": 2,
+    "substep": 4.0,
+    "integrationSeconds": 0.004166666666666655,
+    "maximumEdgeStretch": 1.0450369089936007,
+    "maximumSurfaceStretch": 1.1101737985951947,
+    "p99SurfaceStretch": 1.0053641928970518,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.3037109375
+  }
+}

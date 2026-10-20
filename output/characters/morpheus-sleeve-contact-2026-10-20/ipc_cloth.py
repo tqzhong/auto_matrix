@@ -12,6 +12,7 @@ import ipctk
 from cloth_embedding import embed_panels
 from continuous_check import measure_step
 from surface_strain import triangle_stretch, material_within_limits
+from membrane import prepare_membrane, membrane_energy, MODULUS, POISSON_RATIO
 
 BASE = Path(__file__).parent
 STRAIN_ONSET = 1.03
@@ -56,7 +57,7 @@ def strain_free_stepsize(x, direction, edges, rest):
     return float(.99*np.min(roots))
 
 
-def springs(x, edges, rest, stiffness, project=True, strain_count=0):
+def springs(x, edges, rest, stiffness, project=True, strain_count=0, structural_elastic=True):
     """Length springs, including explicit stitches and weak bending diagonals."""
     n = len(x)
     a, b = edges.T
@@ -64,13 +65,18 @@ def springs(x, edges, rest, stiffness, project=True, strain_count=0):
     length = np.linalg.norm(delta, axis=1)
     unit = delta/length[:, None]
     stretch = length-rest
-    energy = .5*np.sum(stiffness*stretch**2)
-    radial_force = stiffness*stretch
-    radial_hessian = stiffness.copy()
+    elastic = stiffness.copy()
+    if not structural_elastic:
+        # Full-surface dynamics uses a triangle membrane for in-plane elasticity.
+        # Keep sewn roots, bending diagonals and the separate strain barrier.
+        elastic[:strain_count] = 0
+    energy = .5*np.sum(elastic*stretch**2)
+    radial_force = elastic*stretch
+    radial_hessian = elastic.copy()
     transverse = 1-rest/length
     if project:
         transverse = np.maximum(0, transverse)
-    transverse *= stiffness
+    transverse *= elastic
     # A smooth logarithmic barrier augments the existing spring material.
     # It limits structural edges, not stitches or bending diagonals.
     ratio = length[:strain_count]/rest[:strain_count]
@@ -177,6 +183,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
     ipctk.set_num_threads(4)
     points, faces, edges, rest, stiffness, mass, pins, pin_frames, body, all_faces, structural_count = prepare(full_surface)
     n = len(points)
+    membrane_rest = prepare_membrane(points, faces) if full_surface else None
     x = np.vstack((points, body[0]))
     reference = x.copy()
     cage = json.loads((BASE.parent/'morpheus-shoulder-release-2026-10-20/cage-fit-4.json').read_text())
@@ -254,14 +261,26 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
     (out/'run.json').write_text(json.dumps({'resume': resume, 'resumedAt': resumed_at,
         'requestedEnd': .8+(frame_end-1)/30, 'maximumStepSeconds': h,
         'fullSurfacePhysics': full_surface, 'physicalVertices': n,
+        'membrane': {'model': 'area-weighted Green strain', 'modulusNewtonsPerMetre': MODULUS,
+                     'poissonRatio': POISSON_RATIO,
+                     'sourceSha256': hashlib.sha256((BASE/'membrane.py').read_bytes()).hexdigest()} if full_surface else None,
         'displayVertices': visible_count, 'prescribedVertices': len(pins),
         'structuralStrainOnset': STRAIN_ONSET, 'structuralStrainLimit': STRAIN_LIMIT,
         'contactActivationMetres': CONTACT_ACTIVATION,
         'sourceSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}, indent=2))
 
-    def evaluate(state, predicted, derivatives=True, project=True):
+    def material(state, project=True):
         energy, gradient, hessian = springs(state[:n], edges, rest, stiffness,
-            project=project, strain_count=structural_count)
+            project=project, strain_count=structural_count, structural_elastic=not full_surface)
+        if full_surface:
+            membrane_e, membrane_g, membrane_h = membrane_energy(state[:n], faces, membrane_rest, project=project)
+            energy += membrane_e
+            gradient += membrane_g
+            hessian += membrane_h
+        return energy, gradient, hessian
+
+    def evaluate(state, predicted, derivatives=True, project=True):
+        energy, gradient, hessian = material(state, project)
         delta = (state[:n]-predicted).ravel()
         energy += .5*np.dot(inertial*delta, delta)
         visible = surface(state)
@@ -354,7 +373,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         visible = surface(x)
         contacts = ipctk.NormalCollisions()
         contacts.build(mesh, visible, dhat)
-        _, physical_gradient, _ = springs(x[:n], edges, rest, stiffness, strain_count=structural_count)
+        _, physical_gradient, _ = material(x)
         physical_gradient += inertial*(x[:n]-predicted).ravel()
         barrier_gradient = mesh.to_full_dof(unit_barrier.gradient(contacts, mesh, visible))
         # This objective uses M/h² rather than M, so scale the toolkit's

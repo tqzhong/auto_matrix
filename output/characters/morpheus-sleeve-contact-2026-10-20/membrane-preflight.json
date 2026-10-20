@@ -1,0 +1,11 @@
+{
+  "physicalVertices": 13386,
+  "faces": 25796,
+  "prescribedVertices": 189,
+  "bodyVertices": 51490,
+  "restEnergy": 1.5102874811050496e-27,
+  "maximumRestForce": 5.874693717220883e-12,
+  "finiteHessian": true,
+  "hessianNonzeros": 825696,
+  "assemblySeconds": 0.2796686664223671
+}

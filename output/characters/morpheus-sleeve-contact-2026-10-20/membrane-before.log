@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/membrane.test.py", line 9, in <module>
+    from membrane import prepare_membrane, membrane_energy
+ModuleNotFoundError: No module named 'membrane'

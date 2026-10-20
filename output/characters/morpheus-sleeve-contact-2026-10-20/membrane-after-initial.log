@@ -1,0 +1,13 @@
+.F...
+======================================================================
+FAIL: test_failed_cuff_triangle_resists_the_same_applied_load (__main__.MembraneTests.test_failed_cuff_triangle_resists_the_same_applied_load)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/membrane.test.py", line 77, in test_failed_cuff_triangle_resists_the_same_applied_load
+    self.assertLess(np.linalg.norm(result.jac), 1e-6)
+AssertionError: np.float64(0.0007094000095758674) not less than 1e-06
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.034s
+
+FAILED (failures=1)

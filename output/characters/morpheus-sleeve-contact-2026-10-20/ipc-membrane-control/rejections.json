@@ -1,0 +1,18 @@
+[
+  {
+    "number": 1,
+    "sourceFrame": 2,
+    "startTime": 0.8166666666666668,
+    "endTime": 0.8250000000000001,
+    "depth": 0,
+    "error": "the exported substep crosses: {'frame': 4, 'time': 0.8250000000000001, 'sourceFrame': 2, 'substep': 3.0, 'integrationSeconds': 0.008333333333333281, 'maximumEdgeStretch': 1.0378235587997566, 'maximumSurfaceStretch': 1.07515767972516, 'p99SurfaceStretch': 1.003880752697985, 'endpointIntersects': False, 'collisionFreeStep': 0.322451114654541, 'stepCollisionFree': False, 'optimizerSafeStep': 0.159423828125}"
+  },
+  {
+    "number": 2,
+    "sourceFrame": 2,
+    "startTime": 0.8250000000000001,
+    "endTime": 0.8333333333333334,
+    "depth": 0,
+    "error": "the exported substep crosses: {'frame': 6, 'time': 0.8333333333333334, 'sourceFrame': 2, 'substep': 4.0, 'integrationSeconds': 0.00833333333333331, 'maximumEdgeStretch': 1.0445749938399733, 'maximumSurfaceStretch': 1.1046064275137009, 'p99SurfaceStretch': 1.005105331219358, 'endpointIntersects': False, 'collisionFreeStep': 0.10566091537475586, 'stepCollisionFree': False, 'optimizerSafeStep': 0.0615234375}"
+  }
+]

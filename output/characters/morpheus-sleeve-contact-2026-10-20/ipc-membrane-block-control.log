@@ -1,0 +1,48 @@
+{"acceptedSample": {"frame": 1, "time": 0.8, "sourceFrame": 1, "substep": 0, "integrationSeconds": 0.0, "maximumEdgeStretch": 1.0012547682721955, "maximumSurfaceStretch": 1.0013327871889222, "p99SurfaceStretch": 1.0000293002687841, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 1.0}}
+{"frame": 1, "time": 0.8, "seconds": 0.4830243745818734, "steps": [], "maximumEdgeStretch": 1.0, "p99EdgeStretch": 1.0, "bodyDifference": 0.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "integrationSeconds": 0.008333333333333333, "barrierStiffness": 3246888235438118.5, "maximumBarrierStiffness": 3.2468882354381184e+17, "minimumGapMetres": null}
+{"iteration": 0, "energy": 0.009801184038709682, "residual": 11.038121295328137, "maximumNewtonStep": 0.0017307500050488703, "alpha": 0.2254058282506268}
+{"iteration": 20, "energy": 0.0012933629130910552, "residual": 0.20339819138173923, "maximumNewtonStep": 0.00012181074902459562, "alpha": 1.0}
+{"iteration": 40, "energy": 0.0012570844421668681, "residual": 0.032971753964599254, "maximumNewtonStep": 5.978981320870588e-05, "alpha": 1.0}
+{"iteration": 60, "energy": 0.0012523522742007792, "residual": 0.0016908101733757919, "maximumNewtonStep": 1.5103562152892359e-05, "alpha": 1.0}
+{"iteration": 80, "energy": 0.0012456199737243291, "residual": 0.15475267753968897, "maximumNewtonStep": 5.724663304488555e-05, "alpha": 1.0}
+{"iteration": 100, "energy": 0.0012238206357134702, "residual": 0.3254308399810199, "maximumNewtonStep": 2.695356298492683e-05, "alpha": 1.0}
+{"iteration": 120, "energy": 0.001222191305442945, "residual": 0.020153949353502596, "maximumNewtonStep": 4.252859390214797e-05, "alpha": 1.0}
+{"iteration": 140, "energy": 0.001221938986891671, "residual": 0.015708369238346898, "maximumNewtonStep": 1.5408062242265435e-05, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "advance": 1, "prescribedFraction": 0.01686204370728376, "remainingBodyMetres": 2.323107442545047e-05, "remainingPinsMetres": 0.0001014237893377963}
+{"iteration": 0, "energy": 0.0013540606062263972, "residual": 0.6942882616671963, "maximumNewtonStep": 3.984141826786351e-05, "alpha": 1.0}
+{"iteration": 20, "energy": 0.0013513038225412598, "residual": 0.013959711014524749, "maximumNewtonStep": 0.00015575476605272855, "alpha": 0.5}
+{"iteration": 40, "energy": 0.0013501840940506138, "residual": 0.00040686178900843986, "maximumNewtonStep": 1.4610931399151565e-06, "alpha": 1.0}
+{"sourceFrame": 2, "sourceBlend": 0.25, "advance": 2, "prescribedFraction": 1.0, "remainingBodyMetres": 0.0, "remainingPinsMetres": 0.0}
+{"acceptedSample": {"frame": 2, "time": 0.8083333333333333, "sourceFrame": 2, "substep": 1.0, "integrationSeconds": 0.008333333333333333, "maximumEdgeStretch": 1.0150152734808062, "maximumSurfaceStretch": 1.018297414382095, "p99SurfaceStretch": 1.0010471392257543, "endpointIntersects": false, "collisionFreeStep": 1.0, "stepCollisionFree": true, "optimizerSafeStep": 0.76953125}}
+{"sourceFrame": 2, "sourceBlend": 0.5, "integrationSeconds": 0.008333333333333363, "barrierStiffness": 1.4112250796718282e+16, "maximumBarrierStiffness": 3.246888235438096e+17, "minimumGapMetres": 9.971939650493052e-06}
+{"iteration": 0, "energy": 0.03368880057788955, "residual": 0.17835391319202878, "maximumNewtonStep": 0.0022282661819765536, "alpha": 0.01220703125}
+{"iteration": 20, "energy": 0.006150336292562536, "residual": 11.714547568342661, "maximumNewtonStep": 0.0003723170040410442, "alpha": 0.255859375}
+{"iteration": 40, "energy": 0.005135527001291664, "residual": 1.755492597412541, "maximumNewtonStep": 0.00015138254413933448, "alpha": 0.375}
+{"iteration": 60, "energy": 0.005081829015033241, "residual": 0.1903819867057571, "maximumNewtonStep": 0.00016548778915437682, "alpha": 1.0}
+{"iteration": 80, "energy": 0.005042744563687381, "residual": 0.029814660934110015, "maximumNewtonStep": 0.0001350621936807939, "alpha": 1.0}
+{"iteration": 100, "energy": 0.00501458861089159, "residual": 0.047315026558570034, "maximumNewtonStep": 3.530205152627848e-05, "alpha": 1.0}
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 467, in <module>
+    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume, args.full_surface)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 441, in bake
+    advance_interval(frame, start_blend, blend, steps)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 399, in advance_interval
+    iterations, residual = relax(predicted)
+                           ^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 322, in relax
+    if evaluate(x+alpha*direction, predicted, False) <= energy+1e-4*alpha*slope:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 283, in evaluate
+    energy, gradient, hessian = material(state, project)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 276, in material
+    membrane_e, membrane_g, membrane_h = membrane_energy(state[:n], faces, membrane_rest, project=project)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/membrane.py", line 66, in membrane_energy
+    curvature = np.einsum('mis,mst,mjt->mij', basis, second, basis)
+                          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/lib/python3.12/site-packages/numpy/linalg/_linalg.py", line 1654, in eigh
+    w, vt = gufunc(a, signature=signature)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

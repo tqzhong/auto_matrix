@@ -1,0 +1,63 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "seconds": 0.3919962923973799,
+    "steps": [],
+    "maximumEdgeStretch": 1.0,
+    "p99EdgeStretch": 1.0,
+    "bodyDifference": 0.0
+  },
+  {
+    "frame": 2,
+    "time": 0.8333333333333334,
+    "seconds": 3262.653826375492,
+    "steps": [
+      {
+        "sourceBlend": 0.25,
+        "integrationSeconds": 0.008333333333333333,
+        "advances": 2,
+        "iterations": 98,
+        "residual": 6.126346330799325e-05
+      },
+      {
+        "sourceBlend": 0.5,
+        "integrationSeconds": 0.008333333333333363,
+        "advances": 2,
+        "iterations": 38,
+        "residual": 1.9042977350440418e-05
+      },
+      {
+        "sourceBlend": 0.6250000000000008,
+        "integrationSeconds": 0.004166666666666641,
+        "advances": 2,
+        "iterations": 5,
+        "residual": 0.0002640288932494696
+      },
+      {
+        "sourceBlend": 0.75,
+        "integrationSeconds": 0.004166666666666641,
+        "advances": 2,
+        "iterations": 36,
+        "residual": 0.1262027567375286
+      },
+      {
+        "sourceBlend": 0.8750000000000003,
+        "integrationSeconds": 0.004166666666666655,
+        "advances": 2,
+        "iterations": 7,
+        "residual": 0.0006181242155256408
+      },
+      {
+        "sourceBlend": 1.0,
+        "integrationSeconds": 0.004166666666666655,
+        "advances": 2,
+        "iterations": 39,
+        "residual": 0.00012889152365153886
+      }
+    ],
+    "maximumEdgeStretch": 1.0449292682887459,
+    "p99EdgeStretch": 1.0023949956478355,
+    "bodyDifference": 0.0
+  }
+]

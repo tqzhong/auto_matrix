@@ -1,0 +1,17 @@
+{
+  "samples": [
+    {
+      "mode": "stress-projected",
+      "seconds": 0.2732414174824953,
+      "energy": 0.0005666426038299212,
+      "maximumForce": 1.934108863826992
+    },
+    {
+      "mode": "complete-triangle-projected",
+      "seconds": 0.5097460420802236,
+      "energy": 0.0005666426038299212,
+      "maximumForce": 1.934108863826992
+    }
+  ],
+  "sameEnergyAndGradient": true
+}
