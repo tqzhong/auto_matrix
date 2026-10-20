@@ -612,7 +612,7 @@ test('the actual saved renderer preserves rear-seam relief without adding visibl
   assert.deepEqual(failures, [], 'fitting must not introduce crossings elsewhere in the same rear seam');
 });
 
-test('the unfolded back keeps a closed, smoothly shaded centre seam and unchanged cloth outside the hem and neck joins', async () => {
+test('the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins', async () => {
   const h = await model();
   try {
     h.pose('shirt');
@@ -627,9 +627,10 @@ test('the unfolded back keeps a closed, smoothly shaded centre seam and unchange
     for (let i = 0; i < b.position.count; i++) {
       const point = new THREE.Vector3().fromBufferAttribute(b.position, i);
       // The unfolded strip is at |x| < .1; its original boundary return is
-      // .012 thick. Apart from the separately bounded sewn neck join, normals
-      // outside that complete local hem band stay untouched.
-      if (!neckJoin.has(i) && (Math.abs(point.x) >= .112 || point.z >= -.088 || point.y >= 2.712)) {
+      // .012 thick. The front seam repair occupies a separate narrow waist
+      // strip; normals outside these strips and the sewn neck stay untouched.
+      const frontStrip = Math.abs(point.x) < .1 && point.z > .1 && point.y > 2.65 && point.y < 2.9;
+      if (!frontStrip && !neckJoin.has(i) && (Math.abs(point.x) >= .112 || point.z >= -.088 || point.y >= 2.712)) {
         for (let n = 0; n < 3; n++) assert.equal(a.normal.getComponent(i, n), b.normal.getComponent(i, n), `unchanged normal ${i}/${n}`);
         unchangedNormals++;
       }
@@ -644,7 +645,7 @@ test('the unfolded back keeps a closed, smoothly shaded centre seam and unchange
         let ids = centre.get(key); if (!ids) centre.set(key, ids = []); ids.push(i);
       }
     }
-    assert.ok(unchangedNormals > 10000, 'all normals outside the local hem strip are compared');
+    assert.ok(unchangedNormals > 10000, 'all normals outside the local fitted strips are compared');
     assert.ok(unchangedSleeves > 1000, 'sleeve points unaffected by the existing torso/waist fit remain exact');
     assert.ok(centre.size >= 9, 'the delivered hem-to-back centreline is covered');
     for (const [key, ids] of centre) {

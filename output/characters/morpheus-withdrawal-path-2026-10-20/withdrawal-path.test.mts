@@ -33,21 +33,17 @@ test('withdrawing the arms does not introduce shirt folds through the torso or h
   const body = new WithdrawalBody(h.rig);
   const shirt = h.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
-  const pair = (a: number, b: number) => [a, b].sort((x, y) => x - y).join(':');
   const initial = auditCage(meshSurface(shirt), [meshSurface(skin)]);
-  const existing = new Set(initial.self.map(row => pair(row.face, row.other)));
-  // Keep the known centre-placket defect visible; this test isolates new arm
-  // crossings rather than declaring the existing whole shirt acceptable.
-  assert.equal(initial.selfCount, 23);
+  assert.equal(initial.selfCount, 0, 'the corrected centre seam must not reintroduce the old 23 crossings');
   const results = [];
   for (const time of [0, .4, .8, 1.2, 1.6, 2, 2.4, 2.6, 2.8, 3, 3.1, 3.2]) {
     body.pose(time);
     const result = auditCage(meshSurface(shirt), [meshSurface(skin)]);
-    results.push({ time, self: result.selfCount, newPairs: result.self.filter(row => !existing.has(pair(row.face, row.other))).length, skin: result.bodyCount,
+    results.push({ time, self: result.selfCount, skin: result.bodyCount,
       reachError: Math.max(...body.errors.map(row => row.distance), 0) });
   }
   console.log(JSON.stringify({ baseline: initial.selfCount, results }));
-  assert.ok(results.every(row => row.newPairs === 0 && row.skin === 0), `arms enter the torso or shirt: ${JSON.stringify(results)}`);
+  assert.ok(results.every(row => row.self === 0 && row.skin === 0), `arms enter the torso or shirt: ${JSON.stringify(results)}`);
   assert.ok(results.every(row => row.reachError < 1e-6), 'both wrist paths must be reachable without hidden clamping');
 });
 
@@ -82,15 +78,14 @@ test('after exiting the sleeves the hands clear the body and return continuously
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const initialSkin = worldPoints(skin), initialShirt = worldPoints(shirt);
   const baseline = auditCage(meshSurface(shirt), [meshSurface(skin)]);
-  const pair = (a: number, b: number) => [a, b].sort((x, y) => x - y).join(':');
-  const existing = new Set(baseline.self.map(row => pair(row.face, row.other)));
+  assert.equal(baseline.selfCount, 0);
   const rows = [];
   for (const time of [3.2, 3.5, 3.8, 4.1, 4.6, 4.9, 5.2, 5.6, 6, 6.6, 7, 7.6, 8]) {
     body.pose(time); const result = auditCage(meshSurface(shirt), [meshSurface(skin)]);
-    rows.push({ time, newPairs: result.self.filter(row => !existing.has(pair(row.face, row.other))).length, skin: result.bodyCount });
+    rows.push({ time, self: result.selfCount, skin: result.bodyCount });
   }
   console.log(JSON.stringify({ recovery: rows }));
-  assert.ok(rows.every(row => row.newPairs === 0 && row.skin === 0), `recovery intersects: ${JSON.stringify(rows)}`);
+  assert.ok(rows.every(row => row.self === 0 && row.skin === 0), `recovery intersects: ${JSON.stringify(rows)}`);
   const difference = Math.max(...worldPoints(skin).map((point, i) => point.distanceTo(initialSkin[i])), ...worldPoints(shirt).map((point, i) => point.distanceTo(initialShirt[i])));
   assert.ok(difference < 1e-5, `exiting the saved action would jump ${difference}`);
 });
