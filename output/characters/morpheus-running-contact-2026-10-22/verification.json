@@ -149,8 +149,16 @@
     "pass": 9,
     "fail": 1,
     "exitCode": 1,
-    "failedSnapshots": 3,
-    "failedPoses": [
+    "failedSnapshots": 5,
+    "log": "running-sewn-tangent.log",
+    "upperGate": {
+      "tests": 4,
+      "pass": 3,
+      "fail": 1,
+      "exitCode": 1,
+      "log": "running-final-upper.log"
+    },
+    "failedPoseExamples": [
       {
         "profile": "run",
         "frame": 72
@@ -164,14 +172,8 @@
         "frame": 156
       }
     ],
-    "log": "running-sewn-tangent.log",
-    "upperGate": {
-      "tests": 4,
-      "pass": 3,
-      "fail": 1,
-      "exitCode": 1,
-      "log": "running-final-upper.log"
-    }
+    "examplesAreComplete": false,
+    "failureCountSource": "running-sewn-tangent.log diagnostic: 90 complete-surface snapshots; 5 fail contact or self-contact"
   },
   "qualityAcceptedGroups": 0,
   "qualityTotalGroups": 42,
