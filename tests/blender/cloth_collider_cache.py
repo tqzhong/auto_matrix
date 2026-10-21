@@ -6,18 +6,20 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import tempfile
 
 import bpy
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
-from cloth_collision import keyframe_collider_vertices
+from cloth_collision import cache_collider_vertices, keyframe_collider_vertices
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--output', type=Path, required=True)
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
 results = []
-for mode in ['keyed-vertices', 'keyed-translation']:
+cache_directory = tempfile.TemporaryDirectory(prefix='collider-physics-')
+for mode in ['keyed-vertices', 'keyed-translation', 'pc2-vertices']:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.fps = 30
@@ -44,7 +46,10 @@ for mode in ['keyed-vertices', 'keyed-translation']:
         positions[:, 2] = min(1, max(0, (frame-1)/30))
         return positions
 
-    if mode == 'keyed-vertices':
+    if mode == 'pc2-vertices':
+        cache_collider_vertices(plane, ((frame, sample(frame).ravel()) for frame in range(1, 62)),
+                                Path(cache_directory.name) / 'rising-plane.pc2')
+    elif mode == 'keyed-vertices':
         keyframe_collider_vertices(plane, ((frame, sample(frame).ravel()) for frame in range(1, 62)))
     else:
         for frame in range(1, 62):
@@ -74,6 +79,8 @@ for mode in ['keyed-vertices', 'keyed-translation']:
         points = np.asarray([list(owner.matrix_world @ vertex.co) for vertex in actual.vertices], dtype=np.float32)
         owner.to_mesh_clear()
         assert np.abs(points-expected).max() < 1e-6, 'collision mesh differs from its input sample'
+        if mode == 'pc2-vertices':
+            assert points.tobytes() == expected.tobytes(), 'native point cache changed an integer-frame sample'
         records.append({'frame': frame, 'bodyHeight': float(expected[0, 2]),
                         'clothMinimum': float(heights.min()), 'clothMaximum': float(heights.max())})
     results.append({'mode': mode, 'records': records})
@@ -90,3 +97,4 @@ for result in results:
     assert all(record['clothMinimum'] > record['bodyHeight']-.003 for record in records), 'cloth crossed the moving collider'
     assert records[-1]['clothMinimum'] > .99, 'visible collider moved without physically lifting the cloth'
     print(result['mode'], records[-1], flush=True)
+cache_directory.cleanup()
