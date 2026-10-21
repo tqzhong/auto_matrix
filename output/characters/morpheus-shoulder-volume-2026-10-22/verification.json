@@ -1,0 +1,56 @@
+{
+  "baselineCommit": "82e59f720852bb73788f7a73351ebe3136d492c9",
+  "adopted": "Only the two material lines; no shoulder geometry changes.",
+  "shoulderGeometryFixed": false,
+  "highQualityGroupsAccepted": 0,
+  "wardrobeBaseline": {
+    "log": "material-wardrobe-baseline.log",
+    "tests": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "wardrobeFinal": {
+    "log": "material-wardrobe-final.log",
+    "tests": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "deploy": {
+    "log": "material-deploy-final.log",
+    "tests": 75,
+    "passed": 75,
+    "failed": 0
+  },
+  "shoulderPendingRegression": {
+    "log": "shoulder-repro-final.log",
+    "tests": 3,
+    "passed": 0,
+    "failed": 3
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "material-typecheck.log"
+  },
+  "build": {
+    "passed": true,
+    "log": "material-build.log",
+    "existingLargeChunkWarning": true,
+    "bundle": "index-DeK3mGvM.js"
+  },
+  "native": {
+    "qa": "native-material-check.json",
+    "local": "local-native-check.json",
+    "qaTabClosed": true,
+    "qaServerPid": 54454,
+    "qaServerStopped": true,
+    "observedControlTimeout": "Opening the viewer timed out once; fresh UI state showed it had opened, and verification continued without repeating the click or restarting the server.",
+    "scope": "Real native character viewer; not a complete gameplay or frame rate acceptance."
+  },
+  "localUpdate": "local-update-verification.json",
+  "sourceAudit": "source-audit.json",
+  "protectedWipFiles": 11,
+  "newDependencies": false,
+  "originalCharacterAssetsUnchanged": true,
+  "geometryCandidatesAdopted": false,
+  "retiredRenderServiceReconnected": false
+}

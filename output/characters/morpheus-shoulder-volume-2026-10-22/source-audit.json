@@ -1,0 +1,15 @@
+{
+  "baselineRuntimeCommit": "82e59f720852bb73788f7a73351ebe3136d492c9",
+  "packageFilesCompared": 702,
+  "unchangedFiles": 701,
+  "changedRuntimeFiles": [
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts"
+  ],
+  "newDependencies": false,
+  "sourceAssetsAndBackendChanged": false,
+  "protectedWorktreeFilesUnchanged": 11,
+  "appearanceSha256": "6ce518b1a0220a7503aa86cda735189e98c64cf115344c8feaf42c53a2bca386",
+  "adoptedRootSourceMatchesCandidate": true,
+  "liveRuntimeMatchesCandidate": true,
+  "liveRuntimeFilesCompared": 702
+}

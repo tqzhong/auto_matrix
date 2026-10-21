@@ -1,0 +1,23 @@
+[
+  {
+    "file": "material-typecheck.log",
+    "rawLocalFile": "raw-material-typecheck.log",
+    "rawSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5",
+    "committedSha256": "12a99fb746f7f1bbd1189120e797bfb2bad84ebe4d733b874bcc69a16fecb460",
+    "onlyTrailingWhitespaceChanged": true
+  },
+  {
+    "file": "shoulder-red-and-baseline.log",
+    "rawLocalFile": "raw-shoulder-red-and-baseline.log",
+    "rawSha256": "97fbc2469cf1602cc8b598b1afc23e977f36a22a9087266ac427cc98ce53058a",
+    "committedSha256": "8453b95ae11bb4471a19f30ab85c3bde305a12b99a5a0e7fa06592e2ff53a784",
+    "onlyTrailingWhitespaceChanged": true
+  },
+  {
+    "file": "shoulder-repro-final.log",
+    "rawLocalFile": "raw-shoulder-repro-final.log",
+    "rawSha256": "dfc6ab9a40bb6294bc4a72f9ee26d1d370265bd4ad7f21ec750feee9643eb0b8",
+    "committedSha256": "52da8e59914b94b5f6ffaa83cb1c84ff020161945ee1079518d6c8aafcbc7fc0",
+    "onlyTrailingWhitespaceChanged": true
+  }
+]

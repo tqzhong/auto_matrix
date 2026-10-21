@@ -284,7 +284,7 @@ export class AmbushWardrobeAppearance {
     this.leather = new THREE.DataTexture(data, size, size, THREE.RGBAFormat); this.leather.name = 'morpheus-ambush-leather-grain';
     this.leather.wrapS = this.leather.wrapT = THREE.RepeatWrapping; this.leather.repeat.set(4, 5); this.leather.needsUpdate = true;
     const shirt = new THREE.MeshStandardMaterial({ color: 0x172021, roughness: .83, bumpMap: fabric, bumpScale: .0008, side: THREE.DoubleSide });
-    const leather = new THREE.MeshPhysicalMaterial({ color: 0x181613, roughness: .3, clearcoat: .65, clearcoatRoughness: .28, bumpMap: this.leather, bumpScale: .006, side: THREE.DoubleSide });
+    const leather = new THREE.MeshPhysicalMaterial({ color: 0x181613, roughness: .46, clearcoat: .12, clearcoatRoughness: .48, bumpMap: this.leather, bumpScale: .0016, side: THREE.DoubleSide });
     const silk = new THREE.MeshPhysicalMaterial({ color: 0x626e3c, roughness: .5, sheen: .5, sheenColor: new THREE.Color(0xa2ac70), bumpMap: fabric, bumpScale: .0008, side: THREE.DoubleSide });
     for (const material of [shirt, leather, silk]) this.materials.add(material);
     // Close the knit donor's low round neckline with a shirt stand sampled
@@ -609,7 +609,7 @@ export class AmbushWardrobeAppearance {
         if (mode !== 'coat') continue;
         const material = part.mesh.material as THREE.MeshStandardMaterial;
         if (material.map !== null || material.bumpMap !== this.leather) { material.map = null; material.bumpMap = this.leather; material.needsUpdate = true; }
-        material.color.setHex(0x181613); material.roughness = .3; material.metalness = 0; material.bumpScale = .006;
+        material.color.setHex(0x181613); material.roughness = .46; material.metalness = 0; material.bumpScale = .0016;
       }
     }
   }

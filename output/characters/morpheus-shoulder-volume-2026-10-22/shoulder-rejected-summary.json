@@ -1,0 +1,705 @@
+{
+  "adopted": false,
+  "scope": "Frozen real jab, combo 0 frame 12; these are not native or continuous gameplay checks.",
+  "records": [
+    {
+      "strength": 0,
+      "affected": [
+        0,
+        0
+      ],
+      "skinRoundTripMaximum": 0,
+      "scaleMinimum": null,
+      "scaleMaximum": null,
+      "source": "shoulder-dual-0-12.json",
+      "layersCount": 170,
+      "coatSelfCount": 146,
+      "shirtSelfCount": 82
+    },
+    {
+      "strength": 0.5,
+      "affected": [
+        3296,
+        3419
+      ],
+      "skinRoundTripMaximum": 1.2039144527278655e-07,
+      "scaleMinimum": 0.9999999552965164,
+      "scaleMaximum": 1.0000000386498868,
+      "source": "shoulder-dual-0-12.json",
+      "layersCount": 158,
+      "coatSelfCount": 132,
+      "shirtSelfCount": 84
+    },
+    {
+      "strength": 1,
+      "affected": [
+        3296,
+        3419
+      ],
+      "skinRoundTripMaximum": 1.2148264733094177e-07,
+      "scaleMinimum": 0.9999999552965164,
+      "scaleMaximum": 1.0000000386498868,
+      "source": "shoulder-dual-0-12.json",
+      "layersCount": 144,
+      "coatSelfCount": 126,
+      "shirtSelfCount": 96
+    },
+    {
+      "passes": 0,
+      "changed": 0,
+      "maxWeightChange": 0,
+      "source": "shoulder-topology-0-12.json",
+      "coatCount": 146,
+      "shirtCount": 82,
+      "layersCount": 170
+    },
+    {
+      "passes": 5,
+      "changed": 2354,
+      "maxWeightChange": 0.03642783352156975,
+      "source": "shoulder-topology-0-12.json",
+      "coatCount": 150,
+      "shirtCount": 82,
+      "layersCount": 162
+    },
+    {
+      "passes": 15,
+      "changed": 2354,
+      "maxWeightChange": 0.07947412520180697,
+      "source": "shoulder-topology-0-12.json",
+      "coatCount": 146,
+      "shirtCount": 82,
+      "layersCount": 164
+    },
+    {
+      "passes": 40,
+      "changed": 2354,
+      "maxWeightChange": 0.14234489896181768,
+      "source": "shoulder-topology-0-12.json",
+      "coatCount": 146,
+      "shirtCount": 86,
+      "layersCount": 172
+    },
+    {
+      "passes": 40,
+      "changed": 2354,
+      "maxWeightChange": 0.14234489896181768,
+      "source": "shoulder-combined-0-12.json",
+      "coatCount": 134,
+      "shirtCount": 78,
+      "layersCount": 146,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "passes": 200,
+      "changed": 2350,
+      "maxWeightChange": 0.2743197803018317,
+      "source": "shoulder-combined-0-12.json",
+      "coatCount": 150,
+      "shirtCount": 78,
+      "layersCount": 138,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "passes": 100,
+      "changed": 4607,
+      "maxWeightChange": 0.21910740505208248,
+      "source": "shoulder-broad-0-12.json",
+      "coatCount": 176,
+      "shirtCount": 134,
+      "layersCount": 255,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 5,
+      "shared": false,
+      "file": "shoulder-mush-5-separate.json",
+      "maxShift": [
+        0.010804227189924543,
+        0.008749513155644045
+      ],
+      "reflections": [
+        37,
+        46
+      ],
+      "skinRoundTripError": 1.2232850489403362e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 152,
+      "shirtCount": 86,
+      "layersCount": 174,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 5,
+      "shared": true,
+      "file": "shoulder-mush-5-shared.json",
+      "maxShift": [
+        0.022154106734004454,
+        0.008749513155644045
+      ],
+      "reflections": [
+        37,
+        46
+      ],
+      "skinRoundTripError": 1.1942641861473528e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 126,
+      "shirtCount": 86,
+      "layersCount": 161,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 20,
+      "shared": false,
+      "file": "shoulder-mush-20-separate.json",
+      "maxShift": [
+        0.02845443528656778,
+        0.02537516489869782
+      ],
+      "reflections": [
+        14,
+        30
+      ],
+      "skinRoundTripError": 1.190882183993e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 140,
+      "shirtCount": 84,
+      "layersCount": 158,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 20,
+      "shared": true,
+      "file": "shoulder-mush-20-shared.json",
+      "maxShift": [
+        0.031085266188082578,
+        0.02537516489869782
+      ],
+      "reflections": [
+        14,
+        30
+      ],
+      "skinRoundTripError": 1.1911252431353231e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 140,
+      "shirtCount": 84,
+      "layersCount": 146,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 60,
+      "shared": false,
+      "file": "shoulder-mush-60-separate.json",
+      "maxShift": [
+        0.0575818923974592,
+        0.05197401912029625
+      ],
+      "reflections": [
+        0,
+        1
+      ],
+      "skinRoundTripError": 1.1957641372422842e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 140,
+      "shirtCount": 74,
+      "layersCount": 186,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 60,
+      "shared": true,
+      "file": "shoulder-mush-60-shared.json",
+      "maxShift": [
+        0.05606943672330079,
+        0.05197401912029625
+      ],
+      "reflections": [
+        0,
+        1
+      ],
+      "skinRoundTripError": 1.1988595804842082e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 126,
+      "shirtCount": 74,
+      "layersCount": 164,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 120,
+      "shared": false,
+      "file": "shoulder-mush-120-separate.json",
+      "maxShift": [
+        0.08094682288541626,
+        0.0744192077317473
+      ],
+      "reflections": [
+        0,
+        0
+      ],
+      "skinRoundTripError": 1.2172621321679482e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 120,
+      "shirtCount": 40,
+      "layersCount": 258,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 120,
+      "shared": true,
+      "file": "shoulder-mush-120-shared.json",
+      "maxShift": [
+        0.0792633057890204,
+        0.0744192077317473
+      ],
+      "reflections": [
+        0,
+        0
+      ],
+      "skinRoundTripError": 1.1941927205099234e-07,
+      "source": "shoulder-mush-contact.json",
+      "coatCount": 96,
+      "shirtCount": 40,
+      "layersCount": 137,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 20,
+      "shared": true,
+      "detail": 0,
+      "file": "shoulder-unfold-20-0.0.json",
+      "maxShift": [
+        0.04667324240499974,
+        0.03703119425814407
+      ],
+      "reflections": [
+        14,
+        30
+      ],
+      "skinRoundTripError": 1.19573711320374e-07,
+      "source": "shoulder-unfold-contact.json",
+      "coatCount": 4,
+      "shirtCount": 0,
+      "layersCount": 56,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 59
+    },
+    {
+      "iterations": 20,
+      "shared": true,
+      "detail": 0.5,
+      "file": "shoulder-unfold-20-0.5.json",
+      "maxShift": [
+        0.0333403221294917,
+        0.027220699738362376
+      ],
+      "reflections": [
+        14,
+        30
+      ],
+      "skinRoundTripError": 1.2072516862753068e-07,
+      "source": "shoulder-unfold-contact.json",
+      "coatCount": 10,
+      "shirtCount": 0,
+      "layersCount": 57,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 60,
+      "shared": true,
+      "detail": 0,
+      "file": "shoulder-unfold-60-0.0.json",
+      "maxShift": [
+        0.08829879656620797,
+        0.08207876680008942
+      ],
+      "reflections": [
+        0,
+        1
+      ],
+      "skinRoundTripError": 1.2028467999041132e-07,
+      "source": "shoulder-unfold-contact.json",
+      "coatCount": 22,
+      "shirtCount": 0,
+      "layersCount": 62,
+      "coatBodyCount": 189,
+      "shirtBodyCount": 250
+    },
+    {
+      "iterations": 60,
+      "shared": true,
+      "detail": 0.5,
+      "file": "shoulder-unfold-60-0.5.json",
+      "maxShift": [
+        0.05757799950658158,
+        0.05432897721855225
+      ],
+      "reflections": [
+        0,
+        1
+      ],
+      "skinRoundTripError": 1.194640375475477e-07,
+      "source": "shoulder-unfold-contact.json",
+      "coatCount": 10,
+      "shirtCount": 0,
+      "layersCount": 30,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 158
+    },
+    {
+      "iterations": 120,
+      "shared": true,
+      "detail": 0,
+      "file": "shoulder-unfold-120-0.0.json",
+      "maxShift": [
+        0.12991505693519306,
+        0.12976217122841388
+      ],
+      "reflections": [
+        0,
+        0
+      ],
+      "skinRoundTripError": 1.2044132576014497e-07,
+      "source": "shoulder-unfold-contact.json",
+      "coatCount": 64,
+      "shirtCount": 0,
+      "layersCount": 97,
+      "coatBodyCount": 247,
+      "shirtBodyCount": 231
+    },
+    {
+      "iterations": 120,
+      "shared": true,
+      "detail": 0.5,
+      "file": "shoulder-unfold-120-0.5.json",
+      "maxShift": [
+        0.08300865273033449,
+        0.08004752872323814
+      ],
+      "reflections": [
+        0,
+        0
+      ],
+      "skinRoundTripError": 1.1961142068262971e-07,
+      "source": "shoulder-unfold-contact.json",
+      "coatCount": 16,
+      "shirtCount": 0,
+      "layersCount": 26,
+      "coatBodyCount": 45,
+      "shirtBodyCount": 228
+    },
+    {
+      "iterations": 20,
+      "shared": true,
+      "detail": 0.5,
+      "raisedOnly": true,
+      "gap": 0,
+      "planeResidual": 0,
+      "infeasibleVertices": 0,
+      "file": "shoulder-layer-fit-0.0.json",
+      "maxShift": [
+        0.03334032212949173,
+        0.027220699738362376
+      ],
+      "skinRoundTripError": 1.162018993989745e-07,
+      "source": "shoulder-layer-fit-contact.json",
+      "coatCount": 6,
+      "shirtCount": 0,
+      "layersCount": 57,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 20,
+      "shared": true,
+      "detail": 0.5,
+      "raisedOnly": true,
+      "gap": 0.001,
+      "planeResidual": 1.8951853975046618e-16,
+      "infeasibleVertices": 0,
+      "file": "shoulder-layer-fit-0.001.json",
+      "maxShift": [
+        0.03879525327916248,
+        0.027220699738362376
+      ],
+      "skinRoundTripError": 1.162018993989745e-07,
+      "source": "shoulder-layer-fit-contact.json",
+      "coatCount": 164,
+      "shirtCount": 0,
+      "layersCount": 35,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "iterations": 20,
+      "shared": true,
+      "detail": 0.5,
+      "raisedOnly": true,
+      "gap": 0.003,
+      "planeResidual": 4.90059381963448e-16,
+      "infeasibleVertices": 0,
+      "file": "shoulder-layer-fit-0.003.json",
+      "maxShift": [
+        0.11246950969059377,
+        0.027220699738362376
+      ],
+      "skinRoundTripError": 1.162018993989745e-07,
+      "source": "shoulder-layer-fit-contact.json",
+      "coatCount": 274,
+      "shirtCount": 0,
+      "layersCount": 94,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "tangentScale": 1,
+      "gap": 0,
+      "planeResidual": 0,
+      "infeasibleVertices": 0,
+      "raisedOnly": true,
+      "file": "shoulder-signed-1.0-0.0.json",
+      "maxShift": [
+        0.03108526618808254,
+        0.025375164898697376
+      ],
+      "skinRoundTripError": 1.1700422107302213e-07,
+      "source": "shoulder-signed-contact.json",
+      "coatCount": 146,
+      "shirtCount": 80,
+      "layersCount": 192,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "tangentScale": 1,
+      "gap": 0.001,
+      "planeResidual": 0.0018269250174789058,
+      "infeasibleVertices": 2,
+      "raisedOnly": true,
+      "file": "shoulder-signed-1.0-0.001.json",
+      "maxShift": [
+        0.03108526618808254,
+        0.025375164898697376
+      ],
+      "skinRoundTripError": 1.1700422107302213e-07,
+      "source": "shoulder-signed-contact.json",
+      "coatCount": 198,
+      "shirtCount": 80,
+      "layersCount": 134,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "tangentScale": 0.5,
+      "gap": 0,
+      "planeResidual": 0,
+      "infeasibleVertices": 0,
+      "raisedOnly": true,
+      "file": "shoulder-signed-0.5-0.0.json",
+      "maxShift": [
+        0.032843697746269336,
+        0.02845770312608585
+      ],
+      "skinRoundTripError": 1.1715995350860951e-07,
+      "source": "shoulder-signed-contact.json",
+      "coatCount": 112,
+      "shirtCount": 0,
+      "layersCount": 160,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "tangentScale": 0.5,
+      "gap": 0.001,
+      "planeResidual": 3.2526065174565133e-18,
+      "infeasibleVertices": 0,
+      "raisedOnly": true,
+      "file": "shoulder-signed-0.5-0.001.json",
+      "maxShift": [
+        0.032843697746269336,
+        0.02845770312608585
+      ],
+      "skinRoundTripError": 1.1715995350860951e-07,
+      "source": "shoulder-signed-contact.json",
+      "coatCount": 196,
+      "shirtCount": 0,
+      "layersCount": 114,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-envelope-0.001-False.json",
+      "raisedOnly": true,
+      "gap": 0.001,
+      "constrained": false,
+      "infeasible": 0,
+      "maxShift": 0.06542567638350728,
+      "skinRoundTripError": 1.1740779109311287e-07,
+      "source": "shoulder-envelope-contact.json",
+      "coatCount": 58,
+      "shirtCount": 0,
+      "layersCount": 83,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-envelope-0.001-True.json",
+      "raisedOnly": true,
+      "gap": 0.001,
+      "constrained": true,
+      "infeasible": 0,
+      "maxShift": 0.06537174751020738,
+      "skinRoundTripError": 1.1582459075067907e-07,
+      "source": "shoulder-envelope-contact.json",
+      "coatCount": 174,
+      "shirtCount": 0,
+      "layersCount": 40,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-envelope-0.003-False.json",
+      "raisedOnly": true,
+      "gap": 0.003,
+      "constrained": false,
+      "infeasible": 0,
+      "maxShift": 0.06378238675633478,
+      "skinRoundTripError": 1.1769529288758474e-07,
+      "source": "shoulder-envelope-contact.json",
+      "coatCount": 104,
+      "shirtCount": 0,
+      "layersCount": 110,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-envelope-0.003-True.json",
+      "raisedOnly": true,
+      "gap": 0.003,
+      "constrained": true,
+      "infeasible": 0,
+      "maxShift": 0.11247910221107202,
+      "skinRoundTripError": 1.1576678918791995e-07,
+      "source": "shoulder-envelope-contact.json",
+      "coatCount": 330,
+      "shirtCount": 0,
+      "layersCount": 94,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-flow.json",
+      "raisedOnly": true,
+      "parts": [
+        {
+          "maxShift": 0.6278192049218498
+        },
+        {
+          "maxShift": 0.6081506638035801
+        }
+      ],
+      "skinRoundTripError": 1.2071625912804284e-07,
+      "source": "shoulder-flow-contact.json",
+      "coatCount": 466,
+      "shirtCount": 406,
+      "layersCount": 686,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 20
+    },
+    {
+      "file": "shoulder-taubin-5.json",
+      "raisedOnly": true,
+      "steps": 5,
+      "maxShift": [
+        0.005455987122184781,
+        0.0024798742865909202
+      ],
+      "skinRoundTripError": 1.2009761348483474e-07,
+      "source": "shoulder-taubin-contact.json",
+      "coatCount": 140,
+      "shirtCount": 82,
+      "layersCount": 166,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-taubin-20.json",
+      "raisedOnly": true,
+      "steps": 20,
+      "maxShift": [
+        0.011903434507894146,
+        0.00617715441390425
+      ],
+      "skinRoundTripError": 1.1862643872098406e-07,
+      "source": "shoulder-taubin-contact.json",
+      "coatCount": 138,
+      "shirtCount": 88,
+      "layersCount": 163,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "file": "shoulder-taubin-60.json",
+      "raisedOnly": true,
+      "steps": 60,
+      "maxShift": [
+        0.013769655253339645,
+        0.009755100494191022
+      ],
+      "skinRoundTripError": 1.2031482366064263e-07,
+      "source": "shoulder-taubin-contact.json",
+      "coatCount": 140,
+      "shirtCount": 98,
+      "layersCount": 172,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "offset": -0.03,
+      "source": "shoulder-stance-0-12.json",
+      "coatCount": 258,
+      "shirtCount": 208,
+      "layersCount": 328,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "offset": 0,
+      "source": "shoulder-stance-0-12.json",
+      "coatCount": 196,
+      "shirtCount": 142,
+      "layersCount": 254,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "offset": 0.3,
+      "source": "shoulder-stance-0-12.json",
+      "coatCount": 0,
+      "shirtCount": 0,
+      "layersCount": 96,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    },
+    {
+      "offset": 0.6,
+      "source": "shoulder-stance-0-12.json",
+      "coatCount": 0,
+      "shirtCount": 0,
+      "layersCount": 84,
+      "coatBodyCount": 0,
+      "shirtBodyCount": 0
+    }
+  ]
+}

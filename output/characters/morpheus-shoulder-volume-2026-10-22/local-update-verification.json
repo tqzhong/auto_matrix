@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-DeK3mGvM.js",
+  "servedBundleSha256": "6bb105c4d3cead615cb4d6f5097b0d8e9509632b4852322c952157bdb0235dc2",
+  "copiedAssets": [
+    "index-DeK3mGvM.js"
+  ],
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "serverPid": 82106,
+  "fullWorldSnapshotPreserved": true,
+  "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "protectedWorktreeFilesUnchanged": 11,
+  "cloudSave": false,
+  "afterNativeReloadFullWorldPreserved": true,
+  "nativeBundleReadFromDom": true
+}
