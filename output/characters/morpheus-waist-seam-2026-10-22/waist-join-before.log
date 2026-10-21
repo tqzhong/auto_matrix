@@ -1,0 +1,396 @@
+TAP version 13
+# Subtest: the sewn tail rim stays against the actual upper coat while standing, moving and crouching
+not ok 1 - the sewn tail rim stays against the actual upper coat while standing, moving and crouching
+  ---
+  duration_ms: 17654.997584
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-waist-seam-2026-10-22/release/tests/ambush-coat-tail.test.mts:1:10013'
+  failureType: 'testCodeFailure'
+  error: |-
+    the actual sewn rim separates from its coat: [{"profile":"idle","frame":12,"samples":82,"minimum":0.029915131062837212,"maximum":0.05986791758125327,"maximumMetres":0.02394716703250131},{"profile":"idle","frame":30,"samples":82,"minimum":0.029915131062837122,"maximum":0.05986791758125327,"maximumMetres":0.02394716703250131},{"profile":"idle","frame":60,"samples":82,"minimum":0.029917564553281567,"maximum":0.05985651709791892,"maximumMetres":0.02394260683916757},{"profile":"idle","frame":90,"samples":82,"minimum":0.029920216990257584,"maximum":0.05982926135543484,"maximumMetres":0.02393170454217394},{"profile":"walk","frame":12,"samples":82,"minimum":0.02277028958243101,"maximum":0.060635939862657987,"maximumMetres":0.024254375945063196}]
+    + actual - expected
+
+    + [
+    +   {
+    +     frame: 12,
+    +     maximum: 0.05986791758125327,
+    +     maximumMetres: 0.02394716703250131,
+    +     minimum: 0.029915131062837212,
+    +     profile: 'idle',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 30,
+    +     maximum: 0.05986791758125327,
+    +     maximumMetres: 0.02394716703250131,
+    +     minimum: 0.029915131062837122,
+    +     profile: 'idle',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 60,
+    +     maximum: 0.05985651709791892,
+    +     maximumMetres: 0.02394260683916757,
+    +     minimum: 0.029917564553281567,
+    +     profile: 'idle',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 90,
+    +     maximum: 0.05982926135543484,
+    +     maximumMetres: 0.02393170454217394,
+    +     minimum: 0.029920216990257584,
+    +     profile: 'idle',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 12,
+    +     maximum: 0.060635939862657987,
+    +     maximumMetres: 0.024254375945063196,
+    +     minimum: 0.02277028958243101,
+    +     profile: 'walk',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 30,
+    +     maximum: 0.05866042341157309,
+    +     maximumMetres: 0.023464169364629237,
+    +     minimum: 0.029919856200963074,
+    +     profile: 'walk',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 60,
+    +     maximum: 0.0600983796435798,
+    +     maximumMetres: 0.02403935185743192,
+    +     minimum: 0.0289578183231827,
+    +     profile: 'walk',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 90,
+    +     maximum: 0.061280498153078844,
+    +     maximumMetres: 0.02451219926123154,
+    +     minimum: 0.02936842209649756,
+    +     profile: 'walk',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 12,
+    +     maximum: 0.05693567977682991,
+    +     maximumMetres: 0.022774271910731964,
+    +     minimum: 0.016136536037496003,
+    +     profile: 'run',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 30,
+    +     maximum: 0.05962147929832856,
+    +     maximumMetres: 0.023848591719331427,
+    +     minimum: 0.028998209952425014,
+    +     profile: 'run',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 60,
+    +     maximum: 0.5350214817424274,
+    +     maximumMetres: 0.21400859269697095,
+    +     minimum: 0.03069015928998842,
+    +     profile: 'run',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 90,
+    +     maximum: 0.0573906417359873,
+    +     maximumMetres: 0.02295625669439492,
+    +     minimum: 0.03003635344870152,
+    +     profile: 'run',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 12,
+    +     maximum: 0.06063592951638564,
+    +     maximumMetres: 0.024254371806554258,
+    +     minimum: 0.02277031603501299,
+    +     profile: 'turn',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 30,
+    +     maximum: 0.058660395090038224,
+    +     maximumMetres: 0.02346415803601529,
+    +     minimum: 0.029919863130898432,
+    +     profile: 'turn',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 60,
+    +     maximum: 0.06009833340975101,
+    +     maximumMetres: 0.024039333363900406,
+    +     minimum: 0.028957849342010348,
+    +     profile: 'turn',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 90,
+    +     maximum: 0.061280500077870045,
+    +     maximumMetres: 0.02451220003114802,
+    +     minimum: 0.029368449787507803,
+    +     profile: 'turn',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 12,
+    +     maximum: 0.6541899937769825,
+    +     maximumMetres: 0.261675997510793,
+    +     minimum: 0.030339941924698913,
+    +     profile: 'crouch',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 30,
+    +     maximum: 0.5734476213977455,
+    +     maximumMetres: 0.22937904855909821,
+    +     minimum: 0.03013425200474608,
+    +     profile: 'crouch',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 60,
+    +     maximum: 0.5894127315275262,
+    +     maximumMetres: 0.23576509261101047,
+    +     minimum: 0.02999638838245862,
+    +     profile: 'crouch',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 90,
+    +     maximum: 0.6337224980027351,
+    +     maximumMetres: 0.253488999201094,
+    +     minimum: 0.030308186828480053,
+    +     profile: 'crouch',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 12,
+    +     maximum: 0.29536290263079074,
+    +     maximumMetres: 0.1181451610523163,
+    +     minimum: 0.029950416698214084,
+    +     profile: 'rise',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 30,
+    +     maximum: 0.3495956044203455,
+    +     maximumMetres: 0.1398382417681382,
+    +     minimum: 0.030011630502002694,
+    +     profile: 'rise',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 60,
+    +     maximum: 0.059631101793771964,
+    +     maximumMetres: 0.023852440717508788,
+    +     minimum: 0.02970901088535223,
+    +     profile: 'rise',
+    +     samples: 82
+    +   },
+    +   {
+    +     frame: 90,
+    +     maximum: 0.059829236291829374,
+    +     maximumMetres: 0.02393169451673175,
+    +     minimum: 0.029920228030826633,
+    +     profile: 'rise',
+    +     samples: 82
+    +   }
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      profile: 'idle'
+      frame: 12
+      samples: 82
+      minimum: 0.029915131062837212
+      maximum: 0.05986791758125327
+      maximumMetres: 0.02394716703250131
+    1:
+      profile: 'idle'
+      frame: 30
+      samples: 82
+      minimum: 0.029915131062837122
+      maximum: 0.05986791758125327
+      maximumMetres: 0.02394716703250131
+    2:
+      profile: 'idle'
+      frame: 60
+      samples: 82
+      minimum: 0.029917564553281567
+      maximum: 0.05985651709791892
+      maximumMetres: 0.02394260683916757
+    3:
+      profile: 'idle'
+      frame: 90
+      samples: 82
+      minimum: 0.029920216990257584
+      maximum: 0.05982926135543484
+      maximumMetres: 0.02393170454217394
+    4:
+      profile: 'walk'
+      frame: 12
+      samples: 82
+      minimum: 0.02277028958243101
+      maximum: 0.060635939862657987
+      maximumMetres: 0.024254375945063196
+    5:
+      profile: 'walk'
+      frame: 30
+      samples: 82
+      minimum: 0.029919856200963074
+      maximum: 0.05866042341157309
+      maximumMetres: 0.023464169364629237
+    6:
+      profile: 'walk'
+      frame: 60
+      samples: 82
+      minimum: 0.0289578183231827
+      maximum: 0.0600983796435798
+      maximumMetres: 0.02403935185743192
+    7:
+      profile: 'walk'
+      frame: 90
+      samples: 82
+      minimum: 0.02936842209649756
+      maximum: 0.061280498153078844
+      maximumMetres: 0.02451219926123154
+    8:
+      profile: 'run'
+      frame: 12
+      samples: 82
+      minimum: 0.016136536037496003
+      maximum: 0.05693567977682991
+      maximumMetres: 0.022774271910731964
+    9:
+      profile: 'run'
+      frame: 30
+      samples: 82
+      minimum: 0.028998209952425014
+      maximum: 0.05962147929832856
+      maximumMetres: 0.023848591719331427
+    10:
+      profile: 'run'
+      frame: 60
+      samples: 82
+      minimum: 0.03069015928998842
+      maximum: 0.5350214817424274
+      maximumMetres: 0.21400859269697095
+    11:
+      profile: 'run'
+      frame: 90
+      samples: 82
+      minimum: 0.03003635344870152
+      maximum: 0.0573906417359873
+      maximumMetres: 0.02295625669439492
+    12:
+      profile: 'turn'
+      frame: 12
+      samples: 82
+      minimum: 0.02277031603501299
+      maximum: 0.06063592951638564
+      maximumMetres: 0.024254371806554258
+    13:
+      profile: 'turn'
+      frame: 30
+      samples: 82
+      minimum: 0.029919863130898432
+      maximum: 0.058660395090038224
+      maximumMetres: 0.02346415803601529
+    14:
+      profile: 'turn'
+      frame: 60
+      samples: 82
+      minimum: 0.028957849342010348
+      maximum: 0.06009833340975101
+      maximumMetres: 0.024039333363900406
+    15:
+      profile: 'turn'
+      frame: 90
+      samples: 82
+      minimum: 0.029368449787507803
+      maximum: 0.061280500077870045
+      maximumMetres: 0.02451220003114802
+    16:
+      profile: 'crouch'
+      frame: 12
+      samples: 82
+      minimum: 0.030339941924698913
+      maximum: 0.6541899937769825
+      maximumMetres: 0.261675997510793
+    17:
+      profile: 'crouch'
+      frame: 30
+      samples: 82
+      minimum: 0.03013425200474608
+      maximum: 0.5734476213977455
+      maximumMetres: 0.22937904855909821
+    18:
+      profile: 'crouch'
+      frame: 60
+      samples: 82
+      minimum: 0.02999638838245862
+      maximum: 0.5894127315275262
+      maximumMetres: 0.23576509261101047
+    19:
+      profile: 'crouch'
+      frame: 90
+      samples: 82
+      minimum: 0.030308186828480053
+      maximum: 0.6337224980027351
+      maximumMetres: 0.253488999201094
+    20:
+      profile: 'rise'
+      frame: 12
+      samples: 82
+      minimum: 0.029950416698214084
+      maximum: 0.29536290263079074
+      maximumMetres: 0.1181451610523163
+    21:
+      profile: 'rise'
+      frame: 30
+      samples: 82
+      minimum: 0.030011630502002694
+      maximum: 0.3495956044203455
+      maximumMetres: 0.1398382417681382
+    22:
+      profile: 'rise'
+      frame: 60
+      samples: 82
+      minimum: 0.02970901088535223
+      maximum: 0.059631101793771964
+      maximumMetres: 0.023852440717508788
+    23:
+      profile: 'rise'
+      frame: 90
+      samples: 82
+      minimum: 0.029920228030826633
+      maximum: 0.059829236291829374
+      maximumMetres: 0.02393169451673175
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-waist-seam-2026-10-22/release/tests/ambush-coat-tail.test.mts:204:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# [{"profile":"idle","frame":12,"samples":82,"minimum":0.029915131062837212,"maximum":0.05986791758125327,"maximumMetres":0.02394716703250131},{"profile":"idle","frame":30,"samples":82,"minimum":0.029915131062837122,"maximum":0.05986791758125327,"maximumMetres":0.02394716703250131},{"profile":"idle","frame":60,"samples":82,"minimum":0.029917564553281567,"maximum":0.05985651709791892,"maximumMetres":0.02394260683916757},{"profile":"idle","frame":90,"samples":82,"minimum":0.029920216990257584,"maximum":0.05982926135543484,"maximumMetres":0.02393170454217394},{"profile":"walk","frame":12,"samples":82,"minimum":0.02277028958243101,"maximum":0.060635939862657987,"maximumMetres":0.024254375945063196},{"profile":"walk","frame":30,"samples":82,"minimum":0.029919856200963074,"maximum":0.05866042341157309,"maximumMetres":0.023464169364629237},{"profile":"walk","frame":60,"samples":82,"minimum":0.0289578183231827,"maximum":0.0600983796435798,"maximumMetres":0.02403935185743192},{"profile":"walk","frame":90,"samples":82,"minimum":0.02936842209649756,"maximum":0.061280498153078844,"maximumMetres":0.02451219926123154},{"profile":"run","frame":12,"samples":82,"minimum":0.016136536037496003,"maximum":0.05693567977682991,"maximumMetres":0.022774271910731964},{"profile":"run","frame":30,"samples":82,"minimum":0.028998209952425014,"maximum":0.05962147929832856,"maximumMetres":0.023848591719331427},{"profile":"run","frame":60,"samples":82,"minimum":0.03069015928998842,"maximum":0.5350214817424274,"maximumMetres":0.21400859269697095},{"profile":"run","frame":90,"samples":82,"minimum":0.03003635344870152,"maximum":0.0573906417359873,"maximumMetres":0.02295625669439492},{"profile":"turn","frame":12,"samples":82,"minimum":0.02277031603501299,"maximum":0.06063592951638564,"maximumMetres":0.024254371806554258},{"profile":"turn","frame":30,"samples":82,"minimum":0.029919863130898432,"maximum":0.058660395090038224,"maximumMetres":0.02346415803601529},{"profile":"turn","frame":60,"samples":82,"minimum":0.028957849342010348,"maximum":0.06009833340975101,"maximumMetres":0.024039333363900406},{"profile":"turn","frame":90,"samples":82,"minimum":0.029368449787507803,"maximum":0.061280500077870045,"maximumMetres":0.02451220003114802},{"profile":"crouch","frame":12,"samples":82,"minimum":0.030339941924698913,"maximum":0.6541899937769825,"maximumMetres":0.261675997510793},{"profile":"crouch","frame":30,"samples":82,"minimum":0.03013425200474608,"maximum":0.5734476213977455,"maximumMetres":0.22937904855909821},{"profile":"crouch","frame":60,"samples":82,"minimum":0.02999638838245862,"maximum":0.5894127315275262,"maximumMetres":0.23576509261101047},{"profile":"crouch","frame":90,"samples":82,"minimum":0.030308186828480053,"maximum":0.6337224980027351,"maximumMetres":0.253488999201094},{"profile":"rise","frame":12,"samples":82,"minimum":0.029950416698214084,"maximum":0.29536290263079074,"maximumMetres":0.1181451610523163},{"profile":"rise","frame":30,"samples":82,"minimum":0.030011630502002694,"maximum":0.3495956044203455,"maximumMetres":0.1398382417681382},{"profile":"rise","frame":60,"samples":82,"minimum":0.02970901088535223,"maximum":0.059631101793771964,"maximumMetres":0.023852440717508788},{"profile":"rise","frame":90,"samples":82,"minimum":0.029920228030826633,"maximum":0.059829236291829374,"maximumMetres":0.02393169451673175}]
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18433.592791

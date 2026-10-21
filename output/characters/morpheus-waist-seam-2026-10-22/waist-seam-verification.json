@@ -1,0 +1,76 @@
+{
+  "acceptedRuntimeChange": false,
+  "runtimeRestoredToCommittedSource": true,
+  "baseline": "99705e9",
+  "runtimeBaseline": "e398a3e",
+  "localPreview": "http://localhost:5173/",
+  "geometryScope": {
+    "tailTriangles": 5120,
+    "tailRimVertices": 82,
+    "sampledPoses": 24
+  },
+  "redRegression": {
+    "log": "waist-join-before.log",
+    "exitCode": 1,
+    "maximumMetres": 0.261676
+  },
+  "initialOverlap": {
+    "source": "candidate-sewn-rim-initial.ts",
+    "fullTests": 10,
+    "pass": 7,
+    "fail": 3,
+    "log": "waist-contact-initial-overlap.log"
+  },
+  "nearestHem": {
+    "source": "candidate-hem-nearest.ts",
+    "targetedTests": 2,
+    "pass": 1,
+    "fail": 1,
+    "log": "waist-hem-nearest-probe.log"
+  },
+  "lowerHem": {
+    "source": "candidate-hem-lower.ts",
+    "targetedTests": 2,
+    "targetedPassed": 2,
+    "maximumRimGapMetres": 0.002799985,
+    "fullTests": 10,
+    "pass": 9,
+    "fail": 1,
+    "log": "waist-contact-lower-regression.log",
+    "typecheckExitCode": 0,
+    "remaining": "running raises the real trousers through the first tail row; upper coat itself does not intersect trousers at the run12 probe"
+  },
+  "tangentProbe": {
+    "log": "tangent-run12.log",
+    "accepted": false,
+    "remaining": "4 trouser and 4 upper coat triangle contacts; maximum first-free-row lift .14472 model units"
+  },
+  "unchanged": [
+    "running local preview",
+    "runtime GLB assets",
+    "game saves",
+    "protected worktree files",
+    "42 high-quality group completion count"
+  ],
+  "next": "work in isolated release; fit the connected upper/lower cloth around the raised thigh, then run complete contacts, continuity, cold load, build and native browser checks before adoption",
+  "sourceSha256": {
+    "candidate-sewn-rim-initial.ts": "c433338b8080535a407c75cd845988798b64fada95d4352a1467a609b4235fc7",
+    "candidate-hem-nearest.ts": "15830e10197feb3af715cb563c525d95905140b215a87f1c8f9d2c9bd66cafb8",
+    "candidate-hem-lower.ts": "5d9cb831d08c38fd2e57eecb832af7ac5642bba1f2016dab30ea149dad87ceb1",
+    "sewn-rim-regression.test.mts": "9964e052712650e7421cd7ba10d7159a9f3de3265b60c7d00ab029c3b1c45a0d"
+  },
+  "terminalLogNormalization": {
+    "waist-contact-lower-regression.log": {
+      "rawSha256": "c2d91950b49678c450076802e97fcb36873285916a87f26d7d41ff11ac2fcbf1",
+      "change": "trailing whitespace and empty final lines only; raw file kept locally"
+    },
+    "waist-join-before.log": {
+      "rawSha256": "4d556240c1a844ae00876986647f4714bcdc8bc5b39ab1929ca3ef76c2a1f1d1",
+      "change": "trailing whitespace and empty final lines only; raw file kept locally"
+    },
+    "waist-typecheck-lower.log": {
+      "rawSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5",
+      "change": "trailing whitespace and empty final lines only; raw file kept locally"
+    }
+  }
+}
