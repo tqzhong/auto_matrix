@@ -1,0 +1,32 @@
+{
+  "scope": "paired synchronous animation CPU in one Node process; not browser FPS; concurrent validation load",
+  "result": [
+    {
+      "name": "before",
+      "samples": 90,
+      "median": 25.946,
+      "p95": 36.979,
+      "sleeve": null
+    },
+    {
+      "name": "after",
+      "samples": 90,
+      "median": 35.682,
+      "p95": 47.015,
+      "sleeve": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "vertices": 2388,
+          "normalVertices": 2574,
+          "faces": 5208
+        },
+        {
+          "mesh": "morpheus-ambush-coat",
+          "vertices": 2388,
+          "normalVertices": 2574,
+          "faces": 5208
+        }
+      ]
+    }
+  ]
+}

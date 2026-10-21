@@ -1,0 +1,104 @@
+[
+  {
+    "offset": 0,
+    "coatSelf": {
+      "count": 148,
+      "examples": [
+        {
+          "first": 2494,
+          "second": 8168,
+          "line": 0.019406104802406916
+        },
+        {
+          "first": 8168,
+          "second": 2494,
+          "line": 0.019406104802406912
+        },
+        {
+          "first": 2698,
+          "second": 8274,
+          "line": 0.015983210579215836
+        },
+        {
+          "first": 8274,
+          "second": 2698,
+          "line": 0.015983210579215836
+        }
+      ]
+    },
+    "shirtSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 81,
+      "examples": [
+        {
+          "first": 8166,
+          "second": 2828,
+          "line": 0.013884578673471662
+        },
+        {
+          "first": 11366,
+          "second": 12788,
+          "line": 0.013710412461852915
+        },
+        {
+          "first": 8166,
+          "second": 2827,
+          "line": 0.012777945661283825
+        },
+        {
+          "first": 8168,
+          "second": 2843,
+          "line": 0.012554962967342863
+        }
+      ]
+    }
+  },
+  {
+    "offset": 0.03,
+    "coatSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "shirtSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "offset": 0.06,
+    "coatSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "shirtSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "offset": 0.09,
+    "coatSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "shirtSelf": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    }
+  }
+]

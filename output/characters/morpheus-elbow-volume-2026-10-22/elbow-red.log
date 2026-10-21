@@ -1,0 +1,54 @@
+TAP version 13
+# Subtest: the complete old-building upper coat does not fold through itself at the real guarding elbows
+not ok 1 - the complete old-building upper coat does not fold through itself at the real guarding elbows
+  ---
+  duration_ms: 4983.181417
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-elbow-volume-2026-10-22/release/tests/ambush-elbow-fit.test.mts:1:4596'
+  failureType: 'testCodeFailure'
+  error: |-
+    the guarding leather sleeves cross themselves: {"count":420,"examples":[{"first":13851,"second":13845,"line":0.017786868905020577},{"first":13845,"second":13851,"line":0.017786868905020573},{"first":4234,"second":4236,"line":0.017786865608291937},{"first":4236,"second":4234,"line":0.017786865608291937}]}
+
+    420 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 420
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-elbow-volume-2026-10-22/release/tests/ambush-elbow-fit.test.mts:91:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the complete underlying shirt does not fold through itself with the same guarding arms
+not ok 2 - the complete underlying shirt does not fold through itself with the same guarding arms
+  ---
+  duration_ms: 3748.79
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-elbow-volume-2026-10-22/release/tests/ambush-elbow-fit.test.mts:1:5348'
+  failureType: 'testCodeFailure'
+  error: |-
+    the guarding woven sleeves cross themselves: {"count":288,"examples":[{"first":4675,"second":4237,"line":0.02064854910486393},{"first":4237,"second":4675,"line":0.020648549104863925},{"first":14735,"second":15169,"line":0.02064854724972076},{"first":15169,"second":14735,"line":0.02064854724972076}]}
+
+    288 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 288
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-elbow-volume-2026-10-22/release/tests/ambush-elbow-fit.test.mts:103:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9591.939792

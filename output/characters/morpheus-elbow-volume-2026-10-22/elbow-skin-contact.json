@@ -1,0 +1,34 @@
+[
+  {
+    "name": "before",
+    "skinFaces": 61552,
+    "garments": [
+      {
+        "name": "morpheus-ambush-shirt",
+        "count": 0,
+        "examples": []
+      },
+      {
+        "name": "morpheus-ambush-coat",
+        "count": 0,
+        "examples": []
+      }
+    ]
+  },
+  {
+    "name": "after",
+    "skinFaces": 61552,
+    "garments": [
+      {
+        "name": "morpheus-ambush-shirt",
+        "count": 0,
+        "examples": []
+      },
+      {
+        "name": "morpheus-ambush-coat",
+        "count": 0,
+        "examples": []
+      }
+    ]
+  }
+]

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: closing the actual fingers moves the hand while leaving the worn shirt and coat cuffs with the wrist
+ok 1 - closing the actual fingers moves the hand while leaving the worn shirt and coat cuffs with the wrist
+  ---
+  duration_ms: 12663.992833
+  type: 'test'
+  ...
+# Subtest: cloth rebinding preserves the actual bind surface, normalized arm weights and original donor data
+ok 2 - cloth rebinding preserves the actual bind surface, normalized arm weights and original donor data
+  ---
+  duration_ms: 10193.7675
+  type: 'test'
+  ...
+# Subtest: the complete old-building upper coat does not fold through itself at the real guarding elbows
+ok 3 - the complete old-building upper coat does not fold through itself at the real guarding elbows
+  ---
+  duration_ms: 18872.994375
+  type: 'test'
+  ...
+# Subtest: the complete underlying shirt does not fold through itself with the same guarding arms
+ok 4 - the complete underlying shirt does not fold through itself with the same guarding arms
+  ---
+  duration_ms: 12404.10925
+  type: 'test'
+  ...
+# Subtest: the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+ok 5 - the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+  ---
+  duration_ms: 39927.860292
+  type: 'test'
+  ...
+# Subtest: both actual sleeves preserve a paused and cold guard, then restore their original surface on leaving the old-building costume
+ok 6 - both actual sleeves preserve a paused and cold guard, then restore their original surface on leaving the old-building costume
+  ---
+  duration_ms: 20991.169416
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 93554.173166

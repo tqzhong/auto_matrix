@@ -1,0 +1,51 @@
+{
+  "scope": "base geometry attributes, skin indices/weights and mesh transforms; hand bone matrices are checked separately in the cold-pose regression",
+  "frames": 540,
+  "results": [
+    {
+      "profile": "idle",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "run",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "crouch",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "jab",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "cross",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "kick",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "phone-right",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "phone-left",
+      "frames": 60,
+      "byteIdentical": true
+    },
+    {
+      "profile": "exit",
+      "frames": 60,
+      "byteIdentical": true
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "baselineRuntimeCommit": "21bc5d468ceb58da1691ca8bd2629294ab0201cb",
+  "baselinePackageFilesCompared": 701,
+  "unchangedBaselineFiles": 700,
+  "changedBaselineFiles": [
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts"
+  ],
+  "addedRuntimeFiles": [
+    "packages/client/src/agents/AmbushSleeveBend.ts"
+  ],
+  "runtimeFilesAfter": 702,
+  "protectedWorktreeFilesUnchanged": 11,
+  "candidateOnly": false,
+  "sourceSha256": {
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "95cda4a14ebd82d8a034ffbbc2d8b9d1e29f407730afa2e8be20766e4ef3dd38",
+    "packages/client/src/agents/AmbushSleeveBend.ts": "23a29bee6e52d862be9f24fa8d0798a646253fc57f5ce8aa8a7e81803366c947"
+  },
+  "testSha256": {
+    "tests/ambush-elbow-fit.test.mts": "b292344838166778cfbda2f725a58f3a964611a4c0107afcf01da759ac145198"
+  },
+  "clientBundle": "index-DM1Bb9rS.js",
+  "clientBundleSha256": "1b84faca41479d5d9e457a7c0c93eeef8f88861e3661454e9ac926ed44c5ad15",
+  "adoptedFilesMatchCandidate": true,
+  "sourceAssetsAndBackendChanged": false
+}

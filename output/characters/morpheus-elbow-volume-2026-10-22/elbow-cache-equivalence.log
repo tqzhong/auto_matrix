@@ -1,0 +1,9 @@
+idle 60/60 exact
+run 60/60 exact
+crouch 60/60 exact
+jab 60/60 exact
+cross 60/60 exact
+kick 60/60 exact
+phone-right 60/60 exact
+phone-left 60/60 exact
+exit 60/60 exact

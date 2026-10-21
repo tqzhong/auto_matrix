@@ -1,0 +1,1409 @@
+[
+  {
+    "combo": 0,
+    "frame": 0,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 3,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 6,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 18,
+      "examples": [
+        {
+          "first": 1750,
+          "second": 2104,
+          "line": 0.017191574906153067
+        },
+        {
+          "first": 1755,
+          "second": 2104,
+          "line": 0.01530452781643232
+        },
+        {
+          "first": 1754,
+          "second": 2102,
+          "line": 0.012916235462682973
+        },
+        {
+          "first": 1753,
+          "second": 2105,
+          "line": 0.012866480476904231
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 9,
+    "coat": {
+      "count": 138,
+      "examples": [
+        {
+          "first": 413,
+          "second": 409,
+          "line": 0.016959366613983902
+        },
+        {
+          "first": 409,
+          "second": 413,
+          "line": 0.016959366613983895
+        },
+        {
+          "first": 585,
+          "second": 1806,
+          "line": 0.015065690927791956
+        },
+        {
+          "first": 1806,
+          "second": 585,
+          "line": 0.015065690927791954
+        }
+      ]
+    },
+    "shirt": {
+      "count": 96,
+      "examples": [
+        {
+          "first": 620,
+          "second": 2114,
+          "line": 0.014980578321862005
+        },
+        {
+          "first": 2114,
+          "second": 620,
+          "line": 0.014980578321862005
+        },
+        {
+          "first": 2307,
+          "second": 2340,
+          "line": 0.012792027027117583
+        },
+        {
+          "first": 2340,
+          "second": 2307,
+          "line": 0.012792027027117583
+        }
+      ]
+    },
+    "layers": {
+      "count": 178,
+      "examples": [
+        {
+          "first": 1990,
+          "second": 2020,
+          "line": 0.022710286171889187
+        },
+        {
+          "first": 1955,
+          "second": 2304,
+          "line": 0.018826288684557477
+        },
+        {
+          "first": 1989,
+          "second": 2339,
+          "line": 0.017806025828703324
+        },
+        {
+          "first": 1756,
+          "second": 2105,
+          "line": 0.01773747380115741
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 12,
+    "coat": {
+      "count": 146,
+      "examples": [
+        {
+          "first": 417,
+          "second": 1953,
+          "line": 0.031017388273484967
+        },
+        {
+          "first": 1953,
+          "second": 417,
+          "line": 0.031017388273484967
+        },
+        {
+          "first": 420,
+          "second": 418,
+          "line": 0.03037068909109539
+        },
+        {
+          "first": 418,
+          "second": 420,
+          "line": 0.030370689091095388
+        }
+      ]
+    },
+    "shirt": {
+      "count": 82,
+      "examples": [
+        {
+          "first": 2307,
+          "second": 2340,
+          "line": 0.015707253395049768
+        },
+        {
+          "first": 2340,
+          "second": 2307,
+          "line": 0.015707253395049768
+        },
+        {
+          "first": 2301,
+          "second": 2302,
+          "line": 0.012509456660206149
+        },
+        {
+          "first": 2302,
+          "second": 2301,
+          "line": 0.012509456660206145
+        }
+      ]
+    },
+    "layers": {
+      "count": 170,
+      "examples": [
+        {
+          "first": 1990,
+          "second": 2020,
+          "line": 0.02314702510828101
+        },
+        {
+          "first": 1989,
+          "second": 2339,
+          "line": 0.020531556201054207
+        },
+        {
+          "first": 1955,
+          "second": 2304,
+          "line": 0.01794845324457873
+        },
+        {
+          "first": 1756,
+          "second": 2105,
+          "line": 0.01776483969371979
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 15,
+    "coat": {
+      "count": 102,
+      "examples": [
+        {
+          "first": 407,
+          "second": 413,
+          "line": 0.02830241362709788
+        },
+        {
+          "first": 413,
+          "second": 407,
+          "line": 0.02830241362709788
+        },
+        {
+          "first": 419,
+          "second": 413,
+          "line": 0.02131273678811664
+        },
+        {
+          "first": 413,
+          "second": 419,
+          "line": 0.021312736788116633
+        }
+      ]
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 120,
+      "examples": [
+        {
+          "first": 410,
+          "second": 501,
+          "line": 0.024063415944670145
+        },
+        {
+          "first": 417,
+          "second": 2305,
+          "line": 0.0194953301294847
+        },
+        {
+          "first": 1756,
+          "second": 2105,
+          "line": 0.018848726212902348
+        },
+        {
+          "first": 1989,
+          "second": 2339,
+          "line": 0.016625882176360015
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 19,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 38,
+      "examples": [
+        {
+          "first": 1754,
+          "second": 2102,
+          "line": 0.017801441751667077
+        },
+        {
+          "first": 1949,
+          "second": 2298,
+          "line": 0.016377172010398997
+        },
+        {
+          "first": 1753,
+          "second": 2105,
+          "line": 0.014748801166314301
+        },
+        {
+          "first": 1951,
+          "second": 2298,
+          "line": 0.01315164075505007
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 25,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 37,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 53,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 71,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 0,
+    "frame": 89,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 0,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 3,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 6,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 9,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 78,
+      "examples": [
+        {
+          "first": 10038,
+          "second": 12795,
+          "line": 0.03074792449848743
+        },
+        {
+          "first": 10036,
+          "second": 11015,
+          "line": 0.018410600350088457
+        },
+        {
+          "first": 11363,
+          "second": 12595,
+          "line": 0.018023081861388474
+        },
+        {
+          "first": 10040,
+          "second": 12795,
+          "line": 0.015700107759378697
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 12,
+    "coat": {
+      "count": 138,
+      "examples": [
+        {
+          "first": 10034,
+          "second": 10030,
+          "line": 0.016654877260310355
+        },
+        {
+          "first": 10030,
+          "second": 10034,
+          "line": 0.01665487726031035
+        },
+        {
+          "first": 11417,
+          "second": 10206,
+          "line": 0.014916677513261915
+        },
+        {
+          "first": 10206,
+          "second": 11417,
+          "line": 0.014916677513261912
+        }
+      ]
+    },
+    "shirt": {
+      "count": 96,
+      "examples": [
+        {
+          "first": 11136,
+          "second": 12610,
+          "line": 0.014893643731978486
+        },
+        {
+          "first": 12610,
+          "second": 11136,
+          "line": 0.014893643731978485
+        },
+        {
+          "first": 12801,
+          "second": 12840,
+          "line": 0.012743314160559478
+        },
+        {
+          "first": 12840,
+          "second": 12801,
+          "line": 0.012743314160559478
+        }
+      ]
+    },
+    "layers": {
+      "count": 180,
+      "examples": [
+        {
+          "first": 11601,
+          "second": 12520,
+          "line": 0.022630179478908777
+        },
+        {
+          "first": 11564,
+          "second": 12796,
+          "line": 0.01995770028506368
+        },
+        {
+          "first": 11602,
+          "second": 12833,
+          "line": 0.01720837594499968
+        },
+        {
+          "first": 11363,
+          "second": 12595,
+          "line": 0.015887686590290898
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 15,
+    "coat": {
+      "count": 144,
+      "examples": [
+        {
+          "first": 10097,
+          "second": 11566,
+          "line": 0.027197367980844753
+        },
+        {
+          "first": 11566,
+          "second": 10097,
+          "line": 0.027197367980844753
+        },
+        {
+          "first": 10035,
+          "second": 10037,
+          "line": 0.02702952963980254
+        },
+        {
+          "first": 10037,
+          "second": 10035,
+          "line": 0.027029529639802527
+        }
+      ]
+    },
+    "shirt": {
+      "count": 82,
+      "examples": [
+        {
+          "first": 12801,
+          "second": 12840,
+          "line": 0.016576775515273888
+        },
+        {
+          "first": 12840,
+          "second": 12801,
+          "line": 0.016576775515273888
+        },
+        {
+          "first": 12799,
+          "second": 12798,
+          "line": 0.01514697962058429
+        },
+        {
+          "first": 12798,
+          "second": 12799,
+          "line": 0.015146979620584282
+        }
+      ]
+    },
+    "layers": {
+      "count": 160,
+      "examples": [
+        {
+          "first": 11601,
+          "second": 12520,
+          "line": 0.023023397965720404
+        },
+        {
+          "first": 11602,
+          "second": 12833,
+          "line": 0.020164070751568574
+        },
+        {
+          "first": 11564,
+          "second": 12796,
+          "line": 0.018681496575622174
+        },
+        {
+          "first": 10027,
+          "second": 11015,
+          "line": 0.01640181071099503
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 19,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 78,
+      "examples": [
+        {
+          "first": 10038,
+          "second": 12795,
+          "line": 0.030357742089109043
+        },
+        {
+          "first": 11363,
+          "second": 12595,
+          "line": 0.01813228025432864
+        },
+        {
+          "first": 10036,
+          "second": 11015,
+          "line": 0.017538812075663518
+        },
+        {
+          "first": 10040,
+          "second": 12795,
+          "line": 0.01643933616256569
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 25,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 4,
+      "examples": [
+        {
+          "first": 11365,
+          "second": 12598,
+          "line": 0.0010629341682535515
+        },
+        {
+          "first": 11366,
+          "second": 12595,
+          "line": 0.0008525455455841574
+        },
+        {
+          "first": 11366,
+          "second": 12598,
+          "line": 0.00042809866802620555
+        },
+        {
+          "first": 11365,
+          "second": 12595,
+          "line": 0.00020877559037395244
+        }
+      ]
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 37,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 53,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 71,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 1,
+    "frame": 89,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 0,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 3,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 6,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 9,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 12,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 15,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 19,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 25,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 37,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 53,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 71,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "combo": 2,
+    "frame": 89,
+    "coat": {
+      "count": 0,
+      "examples": []
+    },
+    "shirt": {
+      "count": 0,
+      "examples": []
+    },
+    "layers": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowCoat": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowShirt": {
+      "count": 0,
+      "examples": []
+    },
+    "elbowLayers": {
+      "count": 0,
+      "examples": []
+    }
+  }
+]

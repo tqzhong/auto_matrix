@@ -1,0 +1,193 @@
+{
+  "runtimeBaseline": "21bc5d468ceb58da1691ca8bd2629294ab0201cb",
+  "clientBundle": "index-DM1Bb9rS.js",
+  "adopted": true,
+  "tests": {
+    "fullOutfit": {
+      "log": "elbow-complete-gate.log",
+      "runtimeVersion": "uncached, shoulder minimum .09",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "wardrobe": {
+      "log": "elbow-wardrobe-gate.log",
+      "runtimeVersion": "first candidate, shoulder minimum .04; non-combat and scripted poses",
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "phone": {
+      "log": "elbow-phone-gate.log",
+      "runtimeVersion": "uncached, shoulder minimum .09",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "deploy": {
+      "log": "elbow-deploy-gate.log",
+      "runtimeVersion": "uncached; backend unchanged",
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "focusedFinal": {
+      "log": "elbow-cached-focused.log",
+      "runtimeVersion": "final cached runtime",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "strengthenedBodyRepeat": {
+      "log": "elbow-complete-skin-gate.log",
+      "runtimeVersion": "final cached runtime; one test already included in focused count",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    }
+  },
+  "uniqueTestsAcrossUnit": 130,
+  "strengthenedRepeatAlreadyIncluded": true,
+  "allLongGatesPrecedeSkinFrameCache": true,
+  "finalRuntimeFocusedRetested": true,
+  "cacheEquivalenceFrames": 540,
+  "cacheEquivalenceScope": "base geometry attributes, skin indices/weights and mesh transforms; hand bone matrices are checked separately in the cold-pose regression",
+  "guard": {
+    "frame": 15,
+    "combo": 2,
+    "before": {
+      "coat": 420,
+      "shirt": 288,
+      "layers": 580
+    },
+    "after": {
+      "coat": 0,
+      "shirt": 0,
+      "layers": 0
+    },
+    "selfCountsIncludeBothDirections": true
+  },
+  "geometry": {
+    "movedVerticesPerLayer": 2388,
+    "normalVerticesPerLayer": 2574,
+    "normalFacesPerLayer": 5208,
+    "fullBodyContactFaces": 61552,
+    "bodyAndLayerContactFrames": [
+      6,
+      15,
+      25,
+      37
+    ],
+    "facesUvsWeightsPreserved": true,
+    "originalAssetsUnchanged": true
+  },
+  "remainingCombat": {
+    "sampledPoses": 36,
+    "elbowRegionFailedPoses": 0,
+    "wholeGarmentFailedPoses": 10,
+    "wholeGarmentPass": false,
+    "fullFailures": "elbow-sweep-summary.json",
+    "next": "shoulder/armhole self-contact and shirt/leather contact"
+  },
+  "cpu": {
+    "scope": "paired Node animation CPU under concurrent validation; not browser FPS",
+    "run": [
+      {
+        "name": "before",
+        "samples": 90,
+        "median": 27.203,
+        "p95": 44.229,
+        "sleeve": null
+      },
+      {
+        "name": "after",
+        "samples": 90,
+        "median": 36.72,
+        "p95": 62.953,
+        "sleeve": [
+          {
+            "mesh": "morpheus-ambush-shirt",
+            "vertices": 2388,
+            "normalVertices": 2574,
+            "faces": 5208
+          },
+          {
+            "mesh": "morpheus-ambush-coat",
+            "vertices": 2388,
+            "normalVertices": 2574,
+            "faces": 5208
+          }
+        ]
+      }
+    ],
+    "guard": [
+      {
+        "name": "before",
+        "samples": 90,
+        "median": 25.946,
+        "p95": 36.979,
+        "sleeve": null
+      },
+      {
+        "name": "after",
+        "samples": 90,
+        "median": 35.682,
+        "p95": 47.015,
+        "sleeve": [
+          {
+            "mesh": "morpheus-ambush-shirt",
+            "vertices": 2388,
+            "normalVertices": 2574,
+            "faces": 5208
+          },
+          {
+            "mesh": "morpheus-ambush-coat",
+            "vertices": 2388,
+            "normalVertices": 2574,
+            "faces": 5208
+          }
+        ]
+      }
+    ],
+    "performanceAcceptedAsFilmQuality": false
+  },
+  "typecheckBeforeCacheExitCode": 0,
+  "finalThreePackageBuildExitCode": 0,
+  "sourceAudit": "source-audit.json",
+  "localUpdate": "local-update-verification.json",
+  "nativeInitial": {
+    "url": "http://localhost:5199/",
+    "bundle": "index-CiEsIve1.js",
+    "screenshots": [
+      "native-elbow-combat-front.png",
+      "native-elbow-combat-side.png",
+      "native-elbow-walk.png"
+    ],
+    "console": [],
+    "serverAndTabClosed": true
+  },
+  "nativeFinal": {
+    "url": "http://localhost:5173/",
+    "bundle": "index-DM1Bb9rS.js",
+    "bundleReadFromDom": true,
+    "screenshot": "local-elbow-preview.png",
+    "console": []
+  },
+  "qualityAcceptedGroups": 0,
+  "qualityTotalGroups": 42,
+  "renderDeployment": false,
+  "browserFpsMeasured": false,
+  "worldAfterNativeReloadByteIdentical": true
+}

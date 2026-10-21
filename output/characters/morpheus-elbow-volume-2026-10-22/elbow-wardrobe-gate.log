@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: shirt-only old-building Morpheus has actual full cloth over waist and sleeves, rather than the crew-neck chest insert
+ok 1 - shirt-only old-building Morpheus has actual full cloth over waist and sleeves, rather than the crew-neck chest insert
+  ---
+  duration_ms: 3508.133917
+  type: 'test'
+  ...
+# Subtest: the old-building coat has an open front showing a real skinned green tie and folded collar
+ok 2 - the old-building coat has an open front showing a real skinned green tie and folded collar
+  ---
+  duration_ms: 2584.625709
+  type: 'test'
+  ...
+# Subtest: the delivered shirt collar and tie stay outside their actual torso through the phone and folded bathroom poses
+ok 3 - the delivered shirt collar and tie stay outside their actual torso through the phone and folded bathroom poses
+  ---
+  duration_ms: 4331.216125
+  type: 'test'
+  ...
+# Subtest: full sleeves follow the actual phone wrists without entering the handset casing
+ok 4 - full sleeves follow the actual phone wrists without entering the handset casing
+  ---
+  duration_ms: 10283.951417
+  type: 'test'
+  ...
+# Subtest: new full shirt stays clear of the actual pipe shaft and bathroom floor and intact fixtures
+ok 5 - new full shirt stays clear of the actual pipe shaft and bathroom floor and intact fixtures
+  ---
+  duration_ms: 7912.929791
+  type: 'test'
+  ...
+# Subtest: the leather layer covers the real shirt sleeves and waist without covering the open front tie
+ok 6 - the leather layer covers the real shirt sleeves and waist without covering the open front tie
+  ---
+  duration_ms: 11180.127667
+  type: 'test'
+  ...
+# Subtest: both actual forearm cuff sections remain covered while the hands exchange and hold the phone
+ok 7 - both actual forearm cuff sections remain covered while the hands exchange and hold the phone
+  ---
+  duration_ms: 10029.231416
+  type: 'test'
+  ...
+# Subtest: appearance materials remain stable when paused, restore on exit, and release only their owned GPU resources
+ok 8 - appearance materials remain stable when paused, restore on exit, and release only their owned GPU resources
+  ---
+  duration_ms: 6038.7425
+  type: 'test'
+  ...
+# Subtest: the actual trouser waist stays under the complete shirt around its sides and back
+ok 9 - the actual trouser waist stays under the complete shirt around its sides and back
+  ---
+  duration_ms: 55738.28325
+  type: 'test'
+  ...
+# waist 0s: 147/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 1.55s: 150/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 2.2s: 147/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 4s: 152/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 7.6s: 147/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# Subtest: the fitted shirt hem follows the actual trouser waist through bent bathroom and pipe poses
+ok 10 - the fitted shirt hem follows the actual trouser waist through bent bathroom and pipe poses
+  ---
+  duration_ms: 221610.286458
+  type: 'test'
+  ...
+# bathroom ready/0: 272/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# bathroom counter/0.325: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# bathroom capturing/2.5: 343/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# bathroom breakout/1.6: 282/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 0.32: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 1.05: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 4: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 9.4: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 14.8: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1656 actual cloth-triangle comparisons across 64/64 directions
+# Subtest: the old-building trouser rear seam remains a continuous surface in the actual crouched poses
+ok 11 - the old-building trouser rear seam remains a continuous surface in the actual crouched poses
+  ---
+  duration_ms: 6471.404583
+  type: 'test'
+  ...
+# counter: rear waist edge 119-126 posed/bind ratio 1.0060840770330577
+# counter: rear waist edge 119-127 posed/bind ratio 1.0009540252308613
+# counter: rear waist edge 174-177 posed/bind ratio 1.0047027993151632
+# breakout: rear waist edge 119-126 posed/bind ratio 0.8877955987063219
+# breakout: rear waist edge 119-127 posed/bind ratio 0.7216532087346224
+# breakout: rear waist edge 174-177 posed/bind ratio 0.7405216684360316
+# Subtest: static shirt skinning restores the same saved surface and releases only its own trouser geometry
+ok 12 - static shirt skinning restores the same saved surface and releases only its own trouser geometry
+  ---
+  duration_ms: 12953.80725
+  type: 'test'
+  ...
+# Subtest: the actual tie panels remain above the shirt triangles in the folded bathroom poses
+ok 13 - the actual tie panels remain above the shirt triangles in the folded bathroom poses
+  ---
+  duration_ms: 9125.0885
+  type: 'test'
+  ...
+# Subtest: the torso transition adds no large shirt folds beyond the delivered cloth microseams
+ok 14 - the torso transition adds no large shirt folds beyond the delivered cloth microseams
+  ---
+  duration_ms: 8190.086709
+  type: 'test'
+  ...
+# ready: donor 22 crossings, maximum 0.005392783603807642; fitted 0, maximum -Infinity
+# Subtest: the actual saved renderer preserves rear-seam relief without adding visible cloth crossings
+ok 15 - the actual saved renderer preserves rear-seam relief without adding visible cloth crossings
+  ---
+  duration_ms: 14369.700958
+  type: 'test'
+  ...
+# actual capturing seam 9838/20620: donor line 0.0420674674550576, fitted 0; line length is not penetration depth
+# actual capturing seam 9842/20624: donor line 0.03786689186604251, fitted 0; line length is not penetration depth
+# capturing: rear region donor 29 crossings; fitted 0
+# ready: rear region donor 18 crossings; fitted 0
+# counter: rear region donor 33 crossings; fitted 0
+# breakout: rear region donor 26 crossings; fitted 0
+# pipe 0.32: rear region donor 40 crossings; fitted 0
+# pipe 1.05: rear region donor 40 crossings; fitted 0
+# pipe 14.8: rear region donor 50 crossings; fitted 0
+# Subtest: the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+ok 16 - the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+  ---
+  duration_ms: 6089.949916
+  type: 'test'
+  ...
+# Subtest: rear-seam intersection measurement retains an on-plane vertex and coincident cut endpoints
+ok 17 - rear-seam intersection measurement retains an on-plane vertex and coincident cut endpoints
+  ---
+  duration_ms: 0.69725
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 391693.234541

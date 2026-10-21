@@ -3,6 +3,7 @@ import type { HeroRig } from './HeroModel.js';
 import type { MotionInput, MotionState } from './CharacterMotion.js';
 import { AmbushCoatTails } from './AmbushCoatTails.js';
 import { AmbushHipClearance } from './AmbushHipClearance.js';
+import { AmbushSleeveBend } from './AmbushSleeveBend.js';
 import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED } from '@auto_matrix/shared';
 
 interface Vertex { point: THREE.Vector3; normal: THREE.Vector3; uv: THREE.Vector2; joints: number[]; weights: number[]; drape?: THREE.Vector3[] }
@@ -52,6 +53,7 @@ export class AmbushWardrobeAppearance {
   private hemShirt = false;
   private tails: AmbushCoatTails;
   private hipClearance?: AmbushHipClearance;
+  private sleeveBend?: AmbushSleeveBend;
 
   constructor(private rig: HeroRig, fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
@@ -348,6 +350,7 @@ export class AmbushWardrobeAppearance {
       this.coatDrapeIndices = this.addDrapeTargets(this.coat, this.drapeIndices.map((_, side) => opened.map(vertex => vertex.drape![side])));
       this.coat.updateMorphTargets();
       this.hipClearance = new AmbushHipClearance(rig, this.coat, this.coatDrapeIndices);
+      this.sleeveBend = new AmbushSleeveBend(rig, this.source, this.coat);
     }
     const lapels: Vertex[] = [], lapelIndices: number[] = [], steps = 12;
     for (const side of [-1, 1]) {
@@ -550,10 +553,12 @@ export class AmbushWardrobeAppearance {
     // waist. Retarget the relaxed stance with the fitted cut; scripted grips
     // retain their own poses. The hem has its separate hip-driven correction.
     if (input.armed || input.ambushEscort || input.ambushCall) return 0;
-    return (.09 + .06 * THREE.MathUtils.smoothstep(motion.speed, 0, PLAYER_WALK_SPEED)
-      + .055 * THREE.MathUtils.smoothstep(motion.speed, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED)) * this.clothBlend(input, motion)
-      * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3)
+    const relaxed = THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3)
       * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
+    const offset = .09 + .06 * THREE.MathUtils.smoothstep(motion.speed, 0, PLAYER_WALK_SPEED)
+      + .055 * THREE.MathUtils.smoothstep(motion.speed, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED);
+    // Keep a small clearance at the leather armhole during authored attacks.
+    return THREE.MathUtils.lerp(.09, offset, relaxed) * this.clothBlend(input, motion);
   }
   poseDrape(input: MotionInput, motion: MotionState): void {
     const crouch = THREE.MathUtils.smootherstep(motion.ambushCrouch ?? 0, 0, 1);
@@ -580,6 +585,7 @@ export class AmbushWardrobeAppearance {
       for (const { mesh, targets } of this.drapedDetails) mesh.morphTargetInfluences![targets[i]] = this.source.morphTargetInfluences![index];
     }
     this.hipClearance?.update(crouch);
+    this.sleeveBend?.update(input.realWorld !== true && Boolean(input.ambushWardrobe));
   }
   poseTails(input: MotionInput, motion: MotionState, coat: number): boolean {
     if (input.realWorld || input.ambushWardrobe !== 'coat' || !this.rig.panels.some(panel => panel.mesh.visible)) return false;

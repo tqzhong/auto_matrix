@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+ok 1 - the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+  ---
+  duration_ms: 75440.127458
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 80361.99675
