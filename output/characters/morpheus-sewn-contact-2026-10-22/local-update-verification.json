@@ -1,0 +1,18 @@
+{
+  "time": "2026-10-21T19:33:51.995985+00:00",
+  "url": "http://localhost:5173/",
+  "bundle": "index-py2UkB9Q.js",
+  "servedBundleSha256": "cb5b49718fab8354c7ce1d8cd861ae188ddae985591991ae116e9d4c8fd4a247",
+  "copiedClientFiles": [
+    "assets/index-py2UkB9Q.js"
+  ],
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "fullWorldSnapshotPreserved": true,
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "protectedWorktreeFilesUnchanged": 11,
+  "cloudSave": false,
+  "dataDirectory": "output/local-preview/data"
+}

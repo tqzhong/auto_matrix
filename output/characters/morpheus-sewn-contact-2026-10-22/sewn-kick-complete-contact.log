@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the sewn old-building coat clears the raised thigh during a real front kick
+ok 1 - the sewn old-building coat clears the raised thigh during a real front kick
+  ---
+  duration_ms: 17600.522667
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19024.993667

@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: the sewn old-building coat clears the raised thigh during a real front kick
+not ok 1 - the sewn old-building coat clears the raised thigh during a real front kick
+  ---
+  duration_ms: 5578.714791
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/tests/ambush-upper-fit.test.mts:1:11706'
+  failureType: 'testCodeFailure'
+  error: 'The sewn coat boundary is inside an obstacle: 0/2351'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    AmbushCoatSeam.lift (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/packages/client/src/agents/AmbushCoatSeam.ts:211:42)
+    AmbushCoatSeam.update (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/packages/client/src/agents/AmbushCoatSeam.ts:233:25)
+    AmbushCoatTails.update (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/packages/client/src/agents/AmbushCoatTails.ts:323:15)
+    AmbushWardrobeAppearance.poseTails (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/packages/client/src/agents/AmbushWardrobeAppearance.ts:586:55)
+    HeroModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/packages/client/src/agents/HeroModel.ts:1424:41)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/tests/ambush-upper-fit.test.mts:212:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6986.599708

@@ -1,0 +1,43 @@
+[
+  {
+    "profile": "jab",
+    "frames": 90,
+    "success": true
+  },
+  {
+    "profile": "cross",
+    "frames": 90,
+    "success": true
+  },
+  {
+    "profile": "kick",
+    "frame": 13,
+    "success": false,
+    "error": "The sewn coat boundary is inside an obstacle: 0/2427"
+  },
+  {
+    "profile": "palm",
+    "frames": 90,
+    "success": true
+  },
+  {
+    "profile": "guard",
+    "frames": 90,
+    "success": true
+  },
+  {
+    "profile": "hit",
+    "frames": 90,
+    "success": true
+  },
+  {
+    "profile": "armed-run",
+    "frames": 90,
+    "success": true
+  },
+  {
+    "profile": "jump",
+    "frames": 90,
+    "success": true
+  }
+]

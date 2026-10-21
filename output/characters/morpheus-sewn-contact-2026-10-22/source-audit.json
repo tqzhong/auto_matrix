@@ -1,0 +1,33 @@
+{
+  "baselineRuntimeCommit": "cd2854306e14b28988b31649f0d6c0b21650a985",
+  "baselinePackageFilesCompared": 700,
+  "unchangedBaselineFiles": 696,
+  "changedBaselineFiles": [
+    "packages/client/src/agents/AmbushCoatTails.ts",
+    "packages/client/src/agents/AmbushHipClearance.ts",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts",
+    "packages/client/src/player/CharacterViewer.ts"
+  ],
+  "addedRuntimeFiles": [
+    "packages/client/src/agents/AmbushCoatSeam.ts"
+  ],
+  "runtimeFilesAfter": 701,
+  "sourceSha256": {
+    "packages/client/src/agents/AmbushCoatTails.ts": "93bf2eb9ebe8b13bb7dd7bc4b3ce6c1cc11d48764344f9140715322d45e3d653",
+    "packages/client/src/agents/AmbushHipClearance.ts": "b8a4b5ebed7ddc7c09ccfb79aa0b61c5bca28616ef968c4068135b7d05af6a9c",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "56c482e74d7276dc751976ebc7e5c2f2dac9f734dac625067640ca82120e4d37",
+    "packages/client/src/player/CharacterViewer.ts": "692bccdce611b59f3ec4384b87ea51abbe9dc626777b7bc5299e6fd37c170b97",
+    "packages/client/src/agents/AmbushCoatSeam.ts": "859b547ab1ed32aaf68f8ea1d084e203f32e41e8744c2733896e2e57999b197e"
+  },
+  "testSha256": {
+    "tests/ambush-coat-tail.test.mts": "69ddba1646890101442604aaee119bd1abe2a150c86b16994e46594ebc3677d9",
+    "tests/ambush-crouch-fit.test.mts": "1e1a07537d2558ee39a9271790bbb783aba5808a068fe8498c3da7d6ee652318",
+    "tests/ambush-upper-fit.test.mts": "f6a13dc9f4bf4a2954310896c39d628e08543222dac9e2c9184f80923b218efe"
+  },
+  "protectedWorktreeFilesUnchanged": 11,
+  "clientBundle": "index-py2UkB9Q.js",
+  "clientBundleSha256": "cb5b49718fab8354c7ce1d8cd861ae188ddae985591991ae116e9d4c8fd4a247",
+  "candidateOnly": false,
+  "assetsAndBackendChanged": false,
+  "rootSourcesMatchCandidate": true
+}

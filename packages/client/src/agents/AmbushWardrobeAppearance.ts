@@ -541,9 +541,9 @@ export class AmbushWardrobeAppearance {
     if (!this.fittedArmhole || input.realWorld || !input.ambushWardrobe || input.performance
       || input.wetwall || input.sixth || input.bathroom || input.basement
       || input.tvExit || input.crosscut || input.betrayal) return 0;
-    // The thigh still needs its gait clearance while the body is crouched.
-    return (1 - motion.airborne) * (1 - motion.seated) * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3)
-      * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
+    // A kick still raises the thigh through the hem. Suppress the relaxed
+    // arm offset during combat, rather than removing this cloth clearance.
+    return (1 - motion.airborne) * (1 - motion.seated);
   }
   relaxedArmOffset(input: MotionInput, motion: MotionState): number {
     // The lowered stock bind pose squeezes this actor's forearms into the
@@ -551,7 +551,9 @@ export class AmbushWardrobeAppearance {
     // retain their own poses. The hem has its separate hip-driven correction.
     if (input.armed || input.ambushEscort || input.ambushCall) return 0;
     return (.09 + .06 * THREE.MathUtils.smoothstep(motion.speed, 0, PLAYER_WALK_SPEED)
-      + .055 * THREE.MathUtils.smoothstep(motion.speed, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED)) * this.clothBlend(input, motion);
+      + .055 * THREE.MathUtils.smoothstep(motion.speed, PLAYER_WALK_SPEED, PLAYER_RUN_SPEED)) * this.clothBlend(input, motion)
+      * THREE.MathUtils.smoothstep(motion.attackAge, 1, 1.3) * THREE.MathUtils.smoothstep(motion.skillAge, 1, 1.3)
+      * THREE.MathUtils.smoothstep(motion.hitAge, .3, .5);
   }
   poseDrape(input: MotionInput, motion: MotionState): void {
     const crouch = THREE.MathUtils.smootherstep(motion.ambushCrouch ?? 0, 0, 1);
@@ -585,6 +587,7 @@ export class AmbushWardrobeAppearance {
   }
   update(input: MotionInput): void {
     const mode = input.realWorld !== true ? input.ambushWardrobe : undefined;
+    this.tails.setEnabled(mode === 'coat');
     // Covering the same shirt must not restore its intersecting old cut or
     // waistband binding. Leaving this wardrobe still restores both originals.
     this.setHemBinding(Boolean(mode));
@@ -605,6 +608,7 @@ export class AmbushWardrobeAppearance {
     }
   }
   dispose(): void {
+    this.tails.dispose();
     this.trousers.geometry = this.originalTrousers; this.fittedTrousers.dispose();
     for (const mesh of this.meshes) { mesh.removeFromParent(); mesh.geometry.dispose(); }
     for (const material of this.materials) material.dispose(); this.leather.dispose();

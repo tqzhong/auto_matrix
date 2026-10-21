@@ -1,0 +1,131 @@
+Excerpt from sewn-topology-first.log; full original retained locally.
+SHA256: 2c82da84c4a3c59f94b0607b762e2a057530d96cfe750a59b739402d5e83276d
+
+TAP version 13
+# Subtest: the complete moving coat tails restore from saved motion and stay identical while paused
+ok 1 - the complete moving coat tails restore from saved motion and stay identical while paused
+  ---
+  duration_ms: 8570.699792
+  type: 'test'
+  ...
+# Subtest: sewing refines only the first tail strip, preserves the lower topology and UVs, and restores the other costume
+not ok 2 - sewing refines only the first tail strip, preserves the lower topology and UVs, and restores the other costume
+  ---
+  duration_ms: 3828.553125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/tests/ambush-coat-tail.test.mts:1:10088'
+  failureType: 'testCodeFailure'
+  error: |-
+    all lower original triangles retain their ordering and connectivity
+    + actual - expected
+
+      [
+        41,
+    +   42,
+        82,
+    +   82,
+        42,
+    -   82,
+        83,
+        42,
+    +   43,
+    -   42,
+        83,
+    +   83,
+        43,
+    -   83,
+        84,
+        43,
+    +   44,
+    -   43,
+        84,
+    +   84,
+        44,
+    -   84,
+        85,
+        44,
+    +   45,
+    -   44,
+        85,
+    +   85,
+        45,
+    -   85,
+        86,
+        45,
+    +   46,
+    -   45,
+        86,
+    +   86,
+        46,
+    -   86,
+        87,
+        46,
+    +   47,
+    -   46,
+        87,
+    +   87,
+        47,
+    -   87,
+        88,
+        47,
+    +   48,
+    -   47,
+        88,
+    +   88,
+        48,
+    -   88,
+        89,
+        48,
+    +   49,
+    -   48,
+        89,
+    +   89,
+        49,
+    -   89,
+        90,
+        49,
+    +   50,
+    -   49,
+        90,
+    +   90,
+        50,
+    -   90,
+        91,
+
+[Repeated full index-array diff omitted from this excerpt.]
+
+    7427: 1350
+    7428: 1309
+    7429: 1310
+    7430: 1350
+    7431: 1350
+    7432: 1310
+    7433: 1351
+    7434: 1310
+    7435: 1311
+    7436: 1351
+    7437: 1351
+    7438: 1311
+    7439: 1352
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sewn-contact-2026-10-22/release/tests/ambush-coat-tail.test.mts:172:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..0
+# Subtest: tests/ambush-crouch-transition.test.mts
+ok 2 - tests/ambush-crouch-transition.test.mts
+  ---
+  duration_ms: 678.245917
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13216.13775

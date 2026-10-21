@@ -1,0 +1,584 @@
+{
+  "date": "2026-10-22",
+  "scope": "Sewn Morpheus old-building waist and front-kick thigh clearance; not full combat garment acceptance",
+  "baselineRuntimeCommit": "cd2854306e14b28988b31649f0d6c0b21650a985",
+  "tests": {
+    "fullOutfit": {
+      "log": "sewn-final-complete-gate.log",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "wardrobeAndPhone": {
+      "log": "sewn-final-wardrobe-gate.log",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "deploy": {
+      "log": "sewn-deploy-gate.log",
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "strengthenedKickRepeat": {
+      "log": "sewn-kick-complete-contact.log",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "uniqueAcceptedTests": 107,
+    "repeatAlreadyIncludedInUniqueCount": true,
+    "runningContinuousFrames": 120,
+    "runningIntervalSnapshots": 90,
+    "kickAnimatedFrames": 54,
+    "kickCompleteContactFrames": [
+      13,
+      19,
+      25,
+      37,
+      53
+    ],
+    "kickUpperCoatSelfContactCovered": false,
+    "typecheckExitCode": 0,
+    "buildExitCode": 0
+  },
+  "waist": {
+    "poses": 24,
+    "rimVerticesEachPose": 82,
+    "beforeMaximumMetres": 0.2612287856619596,
+    "afterMaximumMetres": 0.0017825847290937153,
+    "acceptanceMetres": 0.003,
+    "before": [
+      {
+        "profile": "idle",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.029915131062837212,
+        "maximum": 0.05986791758125327,
+        "maximumMetres": 0.02394716703250131
+      },
+      {
+        "profile": "idle",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.029915131062837122,
+        "maximum": 0.05986791758125327,
+        "maximumMetres": 0.02394716703250131
+      },
+      {
+        "profile": "idle",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.029917564553281567,
+        "maximum": 0.05985651709791892,
+        "maximumMetres": 0.02394260683916757
+      },
+      {
+        "profile": "idle",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.029920216990257584,
+        "maximum": 0.05982926135543484,
+        "maximumMetres": 0.02393170454217394
+      },
+      {
+        "profile": "walk",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.007429706476975445,
+        "maximum": 0.060635939862657987,
+        "maximumMetres": 0.024254375945063196
+      },
+      {
+        "profile": "walk",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.029919856200963074,
+        "maximum": 0.05866042341157309,
+        "maximumMetres": 0.023464169364629237
+      },
+      {
+        "profile": "walk",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.009305386920138176,
+        "maximum": 0.0600983796435798,
+        "maximumMetres": 0.02403935185743192
+      },
+      {
+        "profile": "walk",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.029374359883638186,
+        "maximum": 0.061280498153078844,
+        "maximumMetres": 0.02451219926123154
+      },
+      {
+        "profile": "run",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.01310562019114143,
+        "maximum": 0.05693567977682991,
+        "maximumMetres": 0.022774271910731964
+      },
+      {
+        "profile": "run",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.029148591556498755,
+        "maximum": 0.05962147929832856,
+        "maximumMetres": 0.023848591719331427
+      },
+      {
+        "profile": "run",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.030070557894071,
+        "maximum": 0.5223590464697203,
+        "maximumMetres": 0.20894361858788812
+      },
+      {
+        "profile": "run",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.03003635344870152,
+        "maximum": 0.0573906417359873,
+        "maximumMetres": 0.02295625669439492
+      },
+      {
+        "profile": "turn",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.007429694402058296,
+        "maximum": 0.06063592951638564,
+        "maximumMetres": 0.024254371806554258
+      },
+      {
+        "profile": "turn",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.029919863130898432,
+        "maximum": 0.058660395090038224,
+        "maximumMetres": 0.02346415803601529
+      },
+      {
+        "profile": "turn",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.009305383913923911,
+        "maximum": 0.06009833340975101,
+        "maximumMetres": 0.024039333363900406
+      },
+      {
+        "profile": "turn",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.02937437485782427,
+        "maximum": 0.061280500077870045,
+        "maximumMetres": 0.02451220003114802
+      },
+      {
+        "profile": "crouch",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.030324313315319457,
+        "maximum": 0.653071964154899,
+        "maximumMetres": 0.2612287856619596
+      },
+      {
+        "profile": "crouch",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.0301345799484253,
+        "maximum": 0.573448844895788,
+        "maximumMetres": 0.2293795379583152
+      },
+      {
+        "profile": "crouch",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.02999638838245862,
+        "maximum": 0.5894127315275262,
+        "maximumMetres": 0.23576509261101047
+      },
+      {
+        "profile": "crouch",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.030308186828480053,
+        "maximum": 0.6337224980027351,
+        "maximumMetres": 0.253488999201094
+      },
+      {
+        "profile": "rise",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.02995641846467741,
+        "maximum": 0.29740724367293886,
+        "maximumMetres": 0.11896289746917554
+      },
+      {
+        "profile": "rise",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.03001174278770657,
+        "maximum": 0.3496095730722747,
+        "maximumMetres": 0.1398438292289099
+      },
+      {
+        "profile": "rise",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.02970901088535223,
+        "maximum": 0.059631101793771964,
+        "maximumMetres": 0.023852440717508788
+      },
+      {
+        "profile": "rise",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.029920228030826633,
+        "maximum": 0.059829236291829374,
+        "maximumMetres": 0.02393169451673175
+      }
+    ],
+    "after": [
+      {
+        "profile": "idle",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.0029999964585748647,
+        "maximum": 0.004187599919943533,
+        "maximumMetres": 0.0016750399679774132
+      },
+      {
+        "profile": "idle",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.0029999964585748647,
+        "maximum": 0.004187599919943582,
+        "maximumMetres": 0.0016750399679774331
+      },
+      {
+        "profile": "idle",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.002999995408331515,
+        "maximum": 0.00419701614821303,
+        "maximumMetres": 0.001678806459285212
+      },
+      {
+        "profile": "idle",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.0029999952951886176,
+        "maximum": 0.004210631610683167,
+        "maximumMetres": 0.0016842526442732667
+      },
+      {
+        "profile": "walk",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.0029828351969423323,
+        "maximum": 0.004222704261655712,
+        "maximumMetres": 0.0016890817046622847
+      },
+      {
+        "profile": "walk",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.0029996530885482483,
+        "maximum": 0.004259192226082854,
+        "maximumMetres": 0.0017036768904331416
+      },
+      {
+        "profile": "walk",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.0029871516693988254,
+        "maximum": 0.004247869164144794,
+        "maximumMetres": 0.0016991476656579175
+      },
+      {
+        "profile": "walk",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.0029999961958496143,
+        "maximum": 0.004304948640321304,
+        "maximumMetres": 0.0017219794561285217
+      },
+      {
+        "profile": "run",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.0029999314157566873,
+        "maximum": 0.004399215977377292,
+        "maximumMetres": 0.0017596863909509167
+      },
+      {
+        "profile": "run",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.0029999928586814844,
+        "maximum": 0.0043719342981475475,
+        "maximumMetres": 0.001748773719259019
+      },
+      {
+        "profile": "run",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.0029999937039183154,
+        "maximum": 0.004456461822734288,
+        "maximumMetres": 0.0017825847290937153
+      },
+      {
+        "profile": "run",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.0029943249389325706,
+        "maximum": 0.00416424845304119,
+        "maximumMetres": 0.0016656993812164762
+      },
+      {
+        "profile": "turn",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.002982832750159959,
+        "maximum": 0.0042227043024114595,
+        "maximumMetres": 0.0016890817209645839
+      },
+      {
+        "profile": "turn",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.0029996529562315417,
+        "maximum": 0.00425919225002713,
+        "maximumMetres": 0.0017036769000108522
+      },
+      {
+        "profile": "turn",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.002987149895076544,
+        "maximum": 0.0042478692282574785,
+        "maximumMetres": 0.0016991476913029914
+      },
+      {
+        "profile": "turn",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.0029999965063787245,
+        "maximum": 0.004304948647536087,
+        "maximumMetres": 0.0017219794590144348
+      },
+      {
+        "profile": "crouch",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.0029733384135867263,
+        "maximum": 0.004197577495969833,
+        "maximumMetres": 0.0016790309983879333
+      },
+      {
+        "profile": "crouch",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.002999979162604137,
+        "maximum": 0.004172369731466469,
+        "maximumMetres": 0.0016689478925865878
+      },
+      {
+        "profile": "crouch",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.0029804405964565083,
+        "maximum": 0.004172070965688834,
+        "maximumMetres": 0.001668828386275534
+      },
+      {
+        "profile": "crouch",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.002978781995825775,
+        "maximum": 0.0041720746285437305,
+        "maximumMetres": 0.0016688298514174922
+      },
+      {
+        "profile": "rise",
+        "frame": 12,
+        "samples": 82,
+        "minimum": 0.0029897847261701653,
+        "maximum": 0.004206671984193216,
+        "maximumMetres": 0.0016826687936772864
+      },
+      {
+        "profile": "rise",
+        "frame": 30,
+        "samples": 82,
+        "minimum": 0.002988028590830474,
+        "maximum": 0.00417232114999672,
+        "maximumMetres": 0.0016689284599986879
+      },
+      {
+        "profile": "rise",
+        "frame": 60,
+        "samples": 82,
+        "minimum": 0.0029999963324550873,
+        "maximum": 0.00424829189174621,
+        "maximumMetres": 0.0016993167566984842
+      },
+      {
+        "profile": "rise",
+        "frame": 90,
+        "samples": 82,
+        "minimum": 0.002999996526236389,
+        "maximum": 0.004210644722862438,
+        "maximumMetres": 0.0016842578891449753
+      }
+    ]
+  },
+  "topology": {
+    "beforeFaces": 5120,
+    "coarseFirstStripFacesReplaced": 160,
+    "refinedFirstStripFaces": 1280,
+    "lowerOriginalFacesPreserved": 4960,
+    "afterFaces": 6240,
+    "lowerOrderingConnectivityWindingAndUvsPreserved": true,
+    "otherCostumesRestoreOriginalGeometry": true
+  },
+  "firstFailures": {
+    "rimDistance": {
+      "log": "sewn-current-rim-red.log",
+      "exitCode": 1
+    },
+    "winding": {
+      "log": "sewn-topology-first-summary.log",
+      "exitCode": 1,
+      "fullOriginalLocalLog": "sewn-topology-first.log",
+      "fullOriginalSha256": "2c82da84c4a3c59f94b0607b762e2a057530d96cfe750a59b739402d5e83276d"
+    },
+    "kickBoundary": {
+      "log": "sewn-kick-red.log",
+      "exitCode": 1
+    },
+    "combatClearanceAloneInsufficient": {
+      "log": "sewn-kick-first.log",
+      "exitCode": 1
+    }
+  },
+  "finiteActionSmoke": [
+    {
+      "profile": "jab",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "cross",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "kick",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "palm",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "guard",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "hit",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "armed-run",
+      "frames": 90,
+      "success": true
+    },
+    {
+      "profile": "jump",
+      "frames": 90,
+      "success": true
+    }
+  ],
+  "cpu": {
+    "scope": "paired synchronous model animation CPU in one Node process; not browser FPS; concurrent validation load",
+    "result": [
+      {
+        "name": "before",
+        "samples": 90,
+        "median": 22.651,
+        "p95": 28.738,
+        "fitter": {
+          "vertices": 755,
+          "attachments": 31,
+          "normalVertices": 837
+        },
+        "tailFaces": 5120
+      },
+      {
+        "name": "after",
+        "samples": 90,
+        "median": 27.838,
+        "p95": 53.173,
+        "fitter": {
+          "vertices": 755,
+          "attachments": 31,
+          "normalVertices": 837
+        },
+        "tailFaces": 6240
+      }
+    ]
+  },
+  "sourceAudit": "source-audit.json",
+  "localUpdate": "local-update-verification.json",
+  "nativeQa": {
+    "url": "http://localhost:5199/",
+    "bundle": "index-py2UkB9Q.js",
+    "proof": "native-current-combat.png",
+    "warningsAndErrors": []
+  },
+  "knownExistingElbowSelfContact": {
+    "pose": "front kick frame15, shoulder offset0",
+    "baselineCount": 420,
+    "currentCount": 420,
+    "countIncludesBothDirections": true,
+    "dominantExampleBones": [
+      "shoulder_L",
+      "elbow_L"
+    ],
+    "shoulderOffsetRangeRadians": [
+      0.06,
+      0.3
+    ],
+    "remainingAfterShoulderOffset": 304,
+    "fixed": false
+  },
+  "qualityAcceptedGroups": 0,
+  "qualityTotalGroups": 42,
+  "browserFpsMeasured": false,
+  "renderDeployment": false,
+  "nativeLocal": {
+    "url": "http://localhost:5173/",
+    "bundle": "index-py2UkB9Q.js",
+    "selectedMotion": "Morpheus / old-building run",
+    "proof": "local-sewn-preview.png",
+    "warningsAndErrors": []
+  }
+}

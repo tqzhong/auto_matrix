@@ -1,0 +1,187 @@
+[
+  {
+    "frame": 15,
+    "rightHip": -1.3323206830583643,
+    "leftHip": -0.30023082916827987,
+    "checks": [
+      {
+        "gain": 1.5,
+        "trouserContacts": 32,
+        "selfContacts": 420
+      },
+      {
+        "gain": 1.65,
+        "trouserContacts": 32,
+        "selfContacts": 420
+      },
+      {
+        "gain": 1.8,
+        "trouserContacts": 23,
+        "selfContacts": 420
+      },
+      {
+        "gain": 2,
+        "trouserContacts": 0,
+        "selfContacts": 420
+      },
+      {
+        "gain": 2.25,
+        "trouserContacts": 0,
+        "selfContacts": 420
+      },
+      {
+        "gain": 2.5,
+        "trouserContacts": 0,
+        "selfContacts": 420
+      }
+    ]
+  },
+  {
+    "frame": 20,
+    "rightHip": -1.2968222525648567,
+    "leftHip": -0.2982885087194165,
+    "checks": [
+      {
+        "gain": 1.5,
+        "trouserContacts": 22,
+        "selfContacts": 416
+      },
+      {
+        "gain": 1.65,
+        "trouserContacts": 0,
+        "selfContacts": 416
+      },
+      {
+        "gain": 1.8,
+        "trouserContacts": 0,
+        "selfContacts": 416
+      },
+      {
+        "gain": 2,
+        "trouserContacts": 0,
+        "selfContacts": 416
+      },
+      {
+        "gain": 2.25,
+        "trouserContacts": 0,
+        "selfContacts": 416
+      },
+      {
+        "gain": 2.5,
+        "trouserContacts": 0,
+        "selfContacts": 416
+      }
+    ]
+  },
+  {
+    "frame": 25,
+    "rightHip": -1.0227426206544916,
+    "leftHip": -0.29651343947055325,
+    "checks": [
+      {
+        "gain": 1.5,
+        "trouserContacts": 0,
+        "selfContacts": 392
+      },
+      {
+        "gain": 1.65,
+        "trouserContacts": 0,
+        "selfContacts": 392
+      },
+      {
+        "gain": 1.8,
+        "trouserContacts": 0,
+        "selfContacts": 392
+      },
+      {
+        "gain": 2,
+        "trouserContacts": 0,
+        "selfContacts": 392
+      },
+      {
+        "gain": 2.25,
+        "trouserContacts": 0,
+        "selfContacts": 392
+      },
+      {
+        "gain": 2.5,
+        "trouserContacts": 0,
+        "selfContacts": 392
+      }
+    ]
+  },
+  {
+    "frame": 32,
+    "rightHip": -0.523020583827441,
+    "leftHip": -0.2943824681503089,
+    "checks": [
+      {
+        "gain": 1.5,
+        "trouserContacts": 0,
+        "selfContacts": 362
+      },
+      {
+        "gain": 1.65,
+        "trouserContacts": 0,
+        "selfContacts": 362
+      },
+      {
+        "gain": 1.8,
+        "trouserContacts": 0,
+        "selfContacts": 362
+      },
+      {
+        "gain": 2,
+        "trouserContacts": 0,
+        "selfContacts": 362
+      },
+      {
+        "gain": 2.25,
+        "trouserContacts": 0,
+        "selfContacts": 362
+      },
+      {
+        "gain": 2.5,
+        "trouserContacts": 0,
+        "selfContacts": 362
+      }
+    ]
+  },
+  {
+    "frame": 40,
+    "rightHip": -0.2901686226919725,
+    "leftHip": -0.2901686226919725,
+    "checks": [
+      {
+        "gain": 1.5,
+        "trouserContacts": 0,
+        "selfContacts": 348
+      },
+      {
+        "gain": 1.65,
+        "trouserContacts": 0,
+        "selfContacts": 348
+      },
+      {
+        "gain": 1.8,
+        "trouserContacts": 0,
+        "selfContacts": 348
+      },
+      {
+        "gain": 2,
+        "trouserContacts": 0,
+        "selfContacts": 348
+      },
+      {
+        "gain": 2.25,
+        "trouserContacts": 0,
+        "selfContacts": 348
+      },
+      {
+        "gain": 2.5,
+        "trouserContacts": 0,
+        "selfContacts": 348
+      }
+    ]
+  }
+]

@@ -1,8 +1,12 @@
 import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionState } from './CharacterMotion.js';
+import { AmbushCoatSeam } from './AmbushCoatSeam.js';
 
-type TailPanel = HeroRig['panels'][number] & { work: Float64Array };
+type TailPanel = HeroRig['panels'][number] & { work: Float64Array; waist: Float64Array };
+type InnerSurface = { mesh: THREE.SkinnedMesh; points: Float64Array; vertices: Uint32Array; triangles: Uint32Array; edges: Uint32Array;
+  bands: Map<number, number[]>; visits: Uint32Array };
+type WaistAnchor = { panel: TailPanel; vertex: number; ids: number[]; weights: THREE.Vector3; outward: number; point: THREE.Vector3 };
 
 /** Wrap the old-building tails around the actual posed lower clothes.
  * Neighboring rows sample the same body slab; stable radial columns and
@@ -16,8 +20,13 @@ export class AmbushCoatTails {
   private supports: Float64Array;
   private low: Float64Array;
   private high: Float64Array;
-  private inner: { mesh: THREE.SkinnedMesh; points: Float64Array; vertices: Uint32Array; edges: Uint32Array;
-    bands: Map<number, number[]>; visits: Uint32Array }[];
+  private inner: InnerSurface[];
+  private waist: InnerSurface;
+  private seam: AmbushCoatSeam;
+  private waistRows: number;
+  private anchors: WaistAnchor[] = [];
+  private triangle = new THREE.Triangle();
+  private normal = new THREE.Vector3();
   private cloud: number[] = [];
   private order: number[] = [];
   private hull: number[] = [];
@@ -28,10 +37,10 @@ export class AmbushCoatTails {
   private point = new THREE.Vector3();
 
   constructor(private rig: HeroRig, meshes: THREE.SkinnedMesh[]) {
-    this.panels = rig.panels.map(panel => ({ ...panel, work: new Float64Array(panel.rest.length) }));
-    const uv = this.panels[0].mesh.geometry.attributes.uv;
+    const uv = rig.panels[0].mesh.geometry.attributes.uv;
     let columns = 0; while (columns < uv.count && uv.getY(columns) === 0) columns++;
     this.columns = columns; this.rows = uv.count / columns;
+    this.panels = rig.panels.map(panel => ({ ...panel, work: new Float64Array(panel.rest.length), waist: new Float64Array(columns * 3) }));
     this.ring = this.panels.flatMap((panel, side) => Array.from({ length: columns }, (_, i) => ({ panel, column: side ? columns - 1 - i : i })));
     const points = this.ring.map(({ panel, column }) => [panel.rest[column * 3] + panel.mesh.position.x, panel.rest[column * 3 + 2] + panel.mesh.position.z]);
     for (let i = 0; i < points.length; i++) {
@@ -71,9 +80,52 @@ export class AmbushCoatTails {
         const key = a * vertices.length + b;
         if (!visited.has(key)) { visited.add(key); edges.push(a, b); }
       }
-      return { mesh, points: new Float64Array(vertices.length * 3), vertices: Uint32Array.from(vertices), edges: Uint32Array.from(edges),
+      return { mesh, points: new Float64Array(vertices.length * 3), vertices: Uint32Array.from(vertices), triangles: Uint32Array.from(index), edges: Uint32Array.from(edges),
         bands: new Map<number, number[]>(), visits: new Uint32Array(edges.length / 2) };
     });
+    this.seam = new AmbushCoatSeam(rig.panels, this.columns, this.inner);
+    this.waist = this.inner.find(part => part.mesh.name === 'morpheus-ambush-coat')!;
+    const joint = this.waist.mesh.skeleton.bones.indexOf(rig.bones.get('pelvis')!);
+    const bind = this.waist.mesh.skeleton.boneInverses[joint].clone().multiply(this.waist.mesh.bindMatrix);
+    const rest = Array.from(this.waist.vertices, id => new THREE.Vector3().fromBufferAttribute(this.waist.mesh.geometry.attributes.position, id).applyMatrix4(bind));
+    const bottom = Math.min(...rest.map(point => point.y)), panel = this.panels[0];
+    const step = Math.abs(panel.rest[this.columns * 3 + 1] - panel.rest[1]);
+    this.waistRows = 1;
+    const uses = new Map<number, { count: number; face: number }>();
+    for (let i = 0; i < this.waist.triangles.length; i += 3) for (let j = 0; j < 3; j++) {
+      const a = this.waist.triangles[i + j], b = this.waist.triangles[i + (j + 1) % 3];
+      const key = Math.min(a, b) * rest.length + Math.max(a, b);
+      const edge = uses.get(key);
+      if (edge) edge.count++; else uses.set(key, { count: 1, face: i });
+    }
+    const hem = [];
+    for (const [key, { count, face }] of uses) {
+      const a = Math.floor(key / rest.length), b = key % rest.length;
+      const dy = rest[a].y - rest[b].y, dx = rest[a].x - rest[b].x, dz = rest[a].z - rest[b].z;
+      if (count === 1 && Math.max(rest[a].y, rest[b].y) < bottom + step && dy * dy < dx * dx + dz * dz) {
+        const other = this.waist.triangles.subarray(face, face + 3).find(id => id !== a && id !== b)!;
+        const original = this.waist.triangles.subarray(face, face + 3);
+        const orientation = original.some((id, i) => id === a && original[(i + 1) % 3] === b) ? 1 : -1;
+        hem.push([a, b, other, orientation]);
+      }
+    }
+    // Sew to the real lower boundary. Use the fixed skeleton rest space so
+    // loading a moving or crouched save is identical.
+    for (const panel of this.panels) for (let vertex = 0; vertex < this.waistRows * columns; vertex++) {
+      const point = new THREE.Vector3().fromArray(panel.rest, vertex * 3).add(panel.mesh.position);
+      point.y = bottom - step;
+      let distance = Infinity, ids: number[] = [], outward = 1;
+      const weights = new THREE.Vector3();
+      for (const [a, b, other, orientation] of hem) {
+        const segment = new THREE.Line3(rest[a], rest[b]); segment.closestPointToPoint(point, true, this.point);
+        const value = this.point.distanceToSquared(point);
+        if (value >= distance) continue;
+        distance = value; ids = [a, b, other];
+        const amount = segment.closestPointToPointParameter(point, true); weights.set(1 - amount, amount, 0);
+        outward = orientation;
+      }
+      this.anchors.push({ panel, vertex, ids, weights, outward, point: new THREE.Vector3() });
+    }
   }
 
   private collect(x: number, z: number): void {
@@ -170,6 +222,30 @@ export class AmbushCoatTails {
         }
       }
     }
+    for (const anchor of this.anchors) {
+      const [a, b, c] = anchor.ids;
+      this.triangle.a.fromArray(this.waist.points, a * 3); this.triangle.b.fromArray(this.waist.points, b * 3); this.triangle.c.fromArray(this.waist.points, c * 3);
+      this.triangle.getNormal(this.normal).multiplyScalar(anchor.outward);
+      anchor.point.copy(this.triangle.a).multiplyScalar(anchor.weights.x).addScaledVector(this.triangle.b, anchor.weights.y)
+        .addScaledVector(this.triangle.c, anchor.weights.z).addScaledVector(this.normal, .003);
+      // Drop along the actual tangent. A global downward offset can cross
+      // the upper piece when the hem normal tilts upward over a running knee.
+      anchor.point.x += .004 * this.normal.x * this.normal.y;
+      anchor.point.y -= .004 * (1 - this.normal.y * this.normal.y);
+      anchor.point.z += .004 * this.normal.z * this.normal.y;
+      anchor.point.toArray(anchor.panel.work, anchor.vertex * 3);
+      if (Math.floor(anchor.vertex / this.columns) === this.waistRows - 1) {
+        const offset = anchor.vertex % this.columns * 3;
+        for (let axis = 0; axis < 3; axis++) anchor.panel.waist[offset + axis] = anchor.point.getComponent(axis)
+          - anchor.panel.rest[anchor.vertex * 3 + axis] - anchor.panel.mesh.position.getComponent(axis);
+      }
+    }
+    for (const panel of this.panels) for (let row = this.waistRows; row < Math.min(8, this.rows); row++) {
+      const amount = 1 - THREE.MathUtils.smoothstep(row, this.waistRows - 1, 8);
+      for (let column = 0; column < this.columns; column++) for (let axis = 0; axis < 3; axis++) {
+        panel.work[(row * this.columns + column) * 3 + axis] += panel.waist[column * 3 + axis] * amount;
+      }
+    }
     for (let row = 0; row < this.rows; row++) {
       this.low[row] = Infinity; this.high[row] = -Infinity;
       for (const { panel, column } of this.ring) {
@@ -178,13 +254,12 @@ export class AmbushCoatTails {
       }
     }
     for (let row = 0; row < this.rows; row++) {
+      if (row < this.waistRows) continue;
       const previous = Math.max(0, row - 1), next = Math.min(this.rows - 1, row + 1);
       const low = Math.min(this.low[row], this.low[previous], this.low[next]), high = Math.max(this.high[row], this.high[previous], this.high[next]);
-      // Standing, the sewn waist follows its nearby surface. Once lowered
-      // onto the thighs it shares the free skirt's broader contact, so a
-      // passing knee cannot suddenly release an entire row.
-      const spread = .7 * THREE.MathUtils.lerp(THREE.MathUtils.smoothstep(row, 0, 8), 1,
-        THREE.MathUtils.smootherstep(motion.ambushCrouch ?? 0, 0, 1));
+      // A sewn rim cannot expand like the free hem. Release its attachment
+      // smoothly into the existing broad thigh/calf contact below the waist.
+      const release = THREE.MathUtils.smoothstep(row, this.waistRows - 1, 8), spread = .7 * release;
       this.supports.fill(-Infinity);
       // A small rounded source outline keeps successive columns distinct
       // when a concave corrugation would share a single support vertex.
@@ -225,14 +300,15 @@ export class AmbushCoatTails {
           }
         }
       }
-      this.containHull(.03 + .04 * THREE.MathUtils.smoothstep(row, 8, 24));
+      this.containHull(.004 + .026 * release + .04 * THREE.MathUtils.smoothstep(row, 8, 24));
       // Keep each cloth column on a stable radial direction. Following the
       // intersection of nearly parallel supporting planes lets a small knee
       // movement slide that column abruptly along the entire contact edge.
       for (const panel of this.panels) {
         for (let column = 0; column < this.columns; column++) {
           const id = (row * this.columns + column) * 3;
-          const restX = panel.rest[id] + panel.mesh.position.x, restZ = panel.rest[id + 2] + panel.mesh.position.z, length = Math.hypot(restX, restZ);
+          const restX = panel.rest[id] + panel.mesh.position.x + panel.waist[column * 3] * (1 - release);
+          const restZ = panel.rest[id + 2] + panel.mesh.position.z + panel.waist[column * 3 + 2] * (1 - release), length = Math.hypot(restX, restZ);
           const x = restX / length, z = restZ / length;
           let radius = Infinity;
           for (let k = 0; k < this.supports.length; k++) {
@@ -244,17 +320,9 @@ export class AmbushCoatTails {
       }
     }
 
-    for (const panel of this.panels) {
-      const position = panel.mesh.geometry.attributes.position; let changed = false;
-      for (let i = 0; i < position.count; i++) for (let axis = 0; axis < 3; axis++) {
-        const id = i * 3 + axis, value = Math.fround(panel.work[id] - panel.mesh.position.getComponent(axis));
-        changed ||= position.array[id] !== value; position.array[id] = value; panel.velocity[id] = 0;
-      }
-      if (changed) {
-        position.needsUpdate = true; panel.mesh.geometry.computeVertexNormals();
-        panel.mesh.geometry.computeBoundingBox(); panel.mesh.geometry.computeBoundingSphere();
-        panel.mesh.geometry.boundingSphere!.radius += 1e-6;
-      }
-    }
+    this.seam.update(this.panels);
   }
+
+  setEnabled(enabled: boolean): void { this.seam.setEnabled(enabled); }
+  dispose(): void { this.seam.dispose(); }
 }
