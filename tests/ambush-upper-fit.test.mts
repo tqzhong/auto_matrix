@@ -152,3 +152,52 @@ test('the complete fitted upper coat keeps its saved shape while paused, rebuild
   const donor = h.rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
   assert.ok(donor.morphTargetInfluences!.every(value => value === 0), 'the baked outer cut never deforms the ship knit');
 });
+
+test('the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  const state = newMotion(), input: MotionInput = { speed: PLAYER_RUN_SPEED, grounded: true, verticalVelocity: 0, turn: 0, ambushWardrobe: 'coat' };
+  for (let frame = 0; frame < 27; frame++) h.models.animate(h.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60);
+  h.rig.root.updateMatrixWorld(true);
+  const coat = h.rig.root.getObjectByName('morpheus-ambush-coat') as THREE.SkinnedMesh;
+  const trousers = h.rig.root.getObjectByName('Tailored_trousers') as THREE.SkinnedMesh;
+  assert.ok(coat.visible && trousers.visible);
+  assert.ok(coat.geometry.index!.count / 3 > 20000);
+  const result = crossings(faces(coat), faces(trousers), false);
+  assert.equal(result.count, 0, `the full upper coat crosses the raised thigh: ${JSON.stringify(result)}`);
+});
+
+test('the complete worn coat clears itself and every real inner layer on every frame of the first running strides', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  const state = newMotion(), input: MotionInput = { speed: PLAYER_RUN_SPEED, grounded: true, verticalVelocity: 0, turn: 0, ambushWardrobe: 'coat' };
+  const coat = h.rig.root.getObjectByName('morpheus-ambush-coat') as THREE.SkinnedMesh;
+  let snapshots = 0;
+  for (let frame = 0; frame < 120; frame++) {
+    h.models.animate(h.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60); h.rig.root.updateMatrixWorld(true);
+    for (let id = 0; id < coat.geometry.attributes.position.count; id++) {
+      const point = coat.getVertexPosition(id, new THREE.Vector3());
+      assert.ok(coat.boundingBox!.containsPoint(point) && coat.boundingSphere!.containsPoint(point), `${frame}/${id}: the corrected running coat escapes its render bounds`);
+    }
+    const outer: THREE.Mesh[] = [], inner: THREE.Mesh[] = [];
+    h.rig.root.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const garment = object === coat || object.name === 'morpheus-ambush-lapels' || h.rig.panels.some(panel => panel.mesh === object);
+      (garment ? outer : inner).push(object);
+    });
+    assert.equal(outer.length, 4, 'retain the full upper coat, lapels and both tails');
+    const flatten = (meshes: THREE.Mesh[]) => {
+      let offset = 0;
+      return meshes.flatMap(mesh => {
+        const result = faces(mesh).map(face => ({ ...face, ids: face.ids.map(id => id + offset) }));
+        offset += mesh.geometry.attributes.position.count; return result;
+      });
+    };
+    const cloth = flatten(outer), self = crossings(cloth, cloth, true);
+    assert.equal(self.count, 0, `${frame}: complete running coat crosses itself: ${JSON.stringify(self)}`);
+    for (const mesh of inner) {
+      const result = crossings(cloth, faces(mesh), false);
+      assert.equal(result.count, 0, `${frame}: complete running coat crosses ${mesh.name}: ${JSON.stringify(result)}`);
+    }
+    snapshots++;
+  }
+  assert.equal(snapshots, 120);
+});

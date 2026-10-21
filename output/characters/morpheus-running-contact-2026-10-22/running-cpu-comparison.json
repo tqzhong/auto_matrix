@@ -1,0 +1,23 @@
+{
+  "scope": "paired synchronous model animation CPU in one Node process; not browser FPS; concurrent validation load",
+  "result": [
+    {
+      "name": "before",
+      "samples": 90,
+      "median": 18.838,
+      "p95": 20.902,
+      "fitter": null
+    },
+    {
+      "name": "after",
+      "samples": 90,
+      "median": 20.725,
+      "p95": 23.267,
+      "fitter": {
+        "vertices": 755,
+        "attachments": 31,
+        "normalVertices": 837
+      }
+    }
+  ]
+}

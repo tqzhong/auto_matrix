@@ -1,0 +1,381 @@
+TAP version 13
+# Subtest: both complete old-building coat tails clear every real inner layer through locomotion, turns and speed transitions
+not ok 1 - both complete old-building coat tails clear every real inner layer through locomotion, turns and speed transitions
+  ---
+  duration_ms: 84655.062542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-running-contact-2026-10-22/sewn-release/tests/ambush-coat-tail.test.mts:1:4664'
+  failureType: 'testCodeFailure'
+  error: |-
+    the actual complete tails cross the visible outfit: [{"profile":"run","frame":72,"contacts":[{"panel":1,"name":"Tailored_trousers","count":40,"examples":[{"first":1,"second":831,"line":0.04812671541787794},{"first":10,"second":1012,"line":0.039745738922403726},{"first":5,"second":988,"line":0.03798972991710525},{"first":10,"second":1011,"line":0.036766163157272796}]}]},{"profile":"run","frame":132,"contacts":[{"panel":0,"name":"Tailored_trousers","count":41,"examples":[{"first":8,"second":2254,"line":0.04789812114693191},{"first":8,"second":2259,"line":0.04514994607334533},{"first":2,"second":2073,"line":0.0355929090368865},{"first":4,"second":2230,"line":0.03476037872704035}]}]},{"profile":"run","frame":156,"contacts":[{"panel":1,"name":"Tailored_trousers","count":35,"examples":[{"first":2,"second":86,"line":0.04507872070180172},{"first":1,"second":873,"line":0.04301955606165814},{"first":8,"second":1010,"line":0.035507545177836455},{"first":2,"second":873,"line":0.03525100763422016}]}]}]
+    + actual - expected
+
+    + [
+    +   {
+    +     contacts: [
+    +       {
+    +         count: 40,
+    +         examples: [
+    +           {
+    +             first: 1,
+    +             line: 0.04812671541787794,
+    +             second: 831
+    +           },
+    +           {
+    +             first: 10,
+    +             line: 0.039745738922403726,
+    +             second: 1012
+    +           },
+    +           {
+    +             first: 5,
+    +             line: 0.03798972991710525,
+    +             second: 988
+    +           },
+    +           {
+    +             first: 10,
+    +             line: 0.036766163157272796,
+    +             second: 1011
+    +           }
+    +         ],
+    +         name: 'Tailored_trousers',
+    +         panel: 1
+    +       }
+    +     ],
+    +     frame: 72,
+    +     profile: 'run'
+    +   },
+    +   {
+    +     contacts: [
+    +       {
+    +         count: 41,
+    +         examples: [
+    +           {
+    +             first: 8,
+    +             line: 0.04789812114693191,
+    +             second: 2254
+    +           },
+    +           {
+    +             first: 8,
+    +             line: 0.04514994607334533,
+    +             second: 2259
+    +           },
+    +           {
+    +             first: 2,
+    +             line: 0.0355929090368865,
+    +             second: 2073
+    +           },
+    +           {
+    +             first: 4,
+    +             line: 0.03476037872704035,
+    +             second: 2230
+    +           }
+    +         ],
+    +         name: 'Tailored_trousers',
+    +         panel: 0
+    +       }
+    +     ],
+    +     frame: 132,
+    +     profile: 'run'
+    +   },
+    +   {
+    +     contacts: [
+    +       {
+    +         count: 35,
+    +         examples: [
+    +           {
+    +             first: 2,
+    +             line: 0.04507872070180172,
+    +             second: 86
+    +           },
+    +           {
+    +             first: 1,
+    +             line: 0.04301955606165814,
+    +             second: 873
+    +           },
+    +           {
+    +             first: 8,
+    +             line: 0.035507545177836455,
+    +             second: 1010
+    +           },
+    +           {
+    +             first: 2,
+    +             line: 0.03525100763422016,
+    +             second: 873
+    +           }
+    +         ],
+    +         name: 'Tailored_trousers',
+    +         panel: 1
+    +       }
+    +     ],
+    +     frame: 156,
+    +     profile: 'run'
+    +   },
+    +   {
+    +     contacts: [
+    +       {
+    +         count: 35,
+    +         examples: [
+    +           {
+    +             first: 2,
+    +             line: 0.046963960225938295,
+    +             second: 2073
+    +           },
+    +           {
+    +             first: 6,
+    +             line: 0.04432950687421498,
+    +             second: 2253
+    +           },
+    +           {
+    +             first: 6,
+    +             line: 0.024798527494506832,
+    +             second: 1329
+    +           },
+    +           {
+    +             first: 5,
+    +             line: 0.02433075750954855,
+    +             second: 2252
+    +           }
+    +         ],
+    +         name: 'Tailored_trousers',
+    +         panel: 0
+    +       }
+    +     ],
+    +     frame: 84,
+    +     profile: 'accelerate-stop'
+    +   },
+    +   {
+    +     contacts: [
+    +       {
+    +         count: 39,
+    +         examples: [
+    +           {
+    +             first: 8,
+    +             line: 0.04485238467908778,
+    +             second: 1010
+    +           },
+    +           {
+    +             first: 5,
+    +             line: 0.035322031881840604,
+    +             second: 989
+    +           },
+    +           {
+    +             first: 1,
+    +             line: 0.03517282776214292,
+    +             second: 872
+    +           },
+    +           {
+    +             first: 4,
+    +             line: 0.03292506891974113,
+    +             second: 87
+    +           }
+    +         ],
+    +         name: 'Tailored_trousers',
+    +         panel: 1
+    +       }
+    +     ],
+    +     frame: 108,
+    +     profile: 'accelerate-stop'
+    +   }
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      profile: 'run'
+      frame: 72
+      contacts:
+        0:
+          panel: 1
+          name: 'Tailored_trousers'
+          count: 40
+          examples:
+            0:
+              first: 1
+              second: 831
+              line: 0.04812671541787794
+            1:
+              first: 10
+              second: 1012
+              line: 0.039745738922403726
+            2:
+              first: 5
+              second: 988
+              line: 0.03798972991710525
+            3:
+              first: 10
+              second: 1011
+              line: 0.036766163157272796
+    1:
+      profile: 'run'
+      frame: 132
+      contacts:
+        0:
+          panel: 0
+          name: 'Tailored_trousers'
+          count: 41
+          examples:
+            0:
+              first: 8
+              second: 2254
+              line: 0.04789812114693191
+            1:
+              first: 8
+              second: 2259
+              line: 0.04514994607334533
+            2:
+              first: 2
+              second: 2073
+              line: 0.0355929090368865
+            3:
+              first: 4
+              second: 2230
+              line: 0.03476037872704035
+    2:
+      profile: 'run'
+      frame: 156
+      contacts:
+        0:
+          panel: 1
+          name: 'Tailored_trousers'
+          count: 35
+          examples:
+            0:
+              first: 2
+              second: 86
+              line: 0.04507872070180172
+            1:
+              first: 1
+              second: 873
+              line: 0.04301955606165814
+            2:
+              first: 8
+              second: 1010
+              line: 0.035507545177836455
+            3:
+              first: 2
+              second: 873
+              line: 0.03525100763422016
+    3:
+      profile: 'accelerate-stop'
+      frame: 84
+      contacts:
+        0:
+          panel: 0
+          name: 'Tailored_trousers'
+          count: 35
+          examples:
+            0:
+              first: 2
+              second: 2073
+              line: 0.046963960225938295
+            1:
+              first: 6
+              second: 2253
+              line: 0.04432950687421498
+            2:
+              first: 6
+              second: 1329
+              line: 0.024798527494506832
+            3:
+              first: 5
+              second: 2252
+              line: 0.02433075750954855
+    4:
+      profile: 'accelerate-stop'
+      frame: 108
+      contacts:
+        0:
+          panel: 1
+          name: 'Tailored_trousers'
+          count: 39
+          examples:
+            0:
+              first: 8
+              second: 1010
+              line: 0.04485238467908778
+            1:
+              first: 5
+              second: 989
+              line: 0.035322031881840604
+            2:
+              first: 1
+              second: 872
+              line: 0.03517282776214292
+            3:
+              first: 4
+              second: 87
+              line: 0.03292506891974113
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-running-contact-2026-10-22/sewn-release/tests/ambush-coat-tail.test.mts:121:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# 90 complete-surface snapshots; 5 fail contact or self-contact
+# Subtest: the complete moving coat tails restore from saved motion and stay identical while paused
+ok 2 - the complete moving coat tails restore from saved motion and stay identical while paused
+  ---
+  duration_ms: 6896.761334
+  type: 'test'
+  ...
+# Subtest: the complete fitted tails also clear the actual upper coat and lapels at their waist join
+ok 3 - the complete fitted tails also clear the actual upper coat and lapels at their waist join
+  ---
+  duration_ms: 12027.018958
+  type: 'test'
+  ...
+# Subtest: the sewn tail rim stays against the actual upper coat while standing, moving and crouching
+ok 4 - the sewn tail rim stays against the actual upper coat while standing, moving and crouching
+  ---
+  duration_ms: 18834.903583
+  type: 'test'
+  ...
+# [{"profile":"idle","frame":12,"samples":82,"minimum":0.0029999964585748647,"maximum":0.004187599919943533,"maximumMetres":0.0016750399679774132},{"profile":"idle","frame":30,"samples":82,"minimum":0.0029999964585748647,"maximum":0.004187599919943582,"maximumMetres":0.0016750399679774331},{"profile":"idle","frame":60,"samples":82,"minimum":0.002999995408331515,"maximum":0.00419701614821303,"maximumMetres":0.001678806459285212},{"profile":"idle","frame":90,"samples":82,"minimum":0.0029999952951886176,"maximum":0.004210631610683167,"maximumMetres":0.0016842526442732667},{"profile":"walk","frame":12,"samples":82,"minimum":0.0029828351969423323,"maximum":0.004222704261655712,"maximumMetres":0.0016890817046622847},{"profile":"walk","frame":30,"samples":82,"minimum":0.0029996530885482483,"maximum":0.004259192226082854,"maximumMetres":0.0017036768904331416},{"profile":"walk","frame":60,"samples":82,"minimum":0.0029871516693988254,"maximum":0.004247869164144794,"maximumMetres":0.0016991476656579175},{"profile":"walk","frame":90,"samples":82,"minimum":0.0029999961958496143,"maximum":0.004304948640321304,"maximumMetres":0.0017219794561285217},{"profile":"run","frame":12,"samples":82,"minimum":0.0029999314157566873,"maximum":0.004399215977377292,"maximumMetres":0.0017596863909509167},{"profile":"run","frame":30,"samples":82,"minimum":0.0029999928586814844,"maximum":0.0043719342981475475,"maximumMetres":0.001748773719259019},{"profile":"run","frame":60,"samples":82,"minimum":0.0029999937039183154,"maximum":0.004456461822734288,"maximumMetres":0.0017825847290937153},{"profile":"run","frame":90,"samples":82,"minimum":0.0029943249389325706,"maximum":0.00416424845304119,"maximumMetres":0.0016656993812164762},{"profile":"turn","frame":12,"samples":82,"minimum":0.002982832750159959,"maximum":0.0042227043024114595,"maximumMetres":0.0016890817209645839},{"profile":"turn","frame":30,"samples":82,"minimum":0.0029996529562315417,"maximum":0.00425919225002713,"maximumMetres":0.0017036769000108522},{"profile":"turn","frame":60,"samples":82,"minimum":0.002987149895076544,"maximum":0.0042478692282574785,"maximumMetres":0.0016991476913029914},{"profile":"turn","frame":90,"samples":82,"minimum":0.0029999965063787245,"maximum":0.004304948647536087,"maximumMetres":0.0017219794590144348},{"profile":"crouch","frame":12,"samples":82,"minimum":0.0029776253922690226,"maximum":0.004197577495969833,"maximumMetres":0.0016790309983879333},{"profile":"crouch","frame":30,"samples":82,"minimum":0.0029999791584406736,"maximum":0.004172369731466469,"maximumMetres":0.0016689478925865878},{"profile":"crouch","frame":60,"samples":82,"minimum":0.0029804405964565083,"maximum":0.004172070965688834,"maximumMetres":0.001668828386275534},{"profile":"crouch","frame":90,"samples":82,"minimum":0.002978781995825775,"maximum":0.0041720746285437305,"maximumMetres":0.0016688298514174922},{"profile":"rise","frame":12,"samples":82,"minimum":0.0029897847261701653,"maximum":0.004206671984193216,"maximumMetres":0.0016826687936772864},{"profile":"rise","frame":30,"samples":82,"minimum":0.002988028590830474,"maximum":0.00417232114999672,"maximumMetres":0.0016689284599986879},{"profile":"rise","frame":60,"samples":82,"minimum":0.0029999963324550873,"maximum":0.00424829189174621,"maximumMetres":0.0016993167566984842},{"profile":"rise","frame":90,"samples":82,"minimum":0.002999996526236389,"maximum":0.004210644722862438,"maximumMetres":0.0016842578891449753}]
+# Subtest: the complete old-building crouch outfit and real hands clear actual inner clothes through movement and transitions
+ok 5 - the complete old-building crouch outfit and real hands clear actual inner clothes through movement and transitions
+  ---
+  duration_ms: 198630.832666
+  type: 'test'
+  ...
+# Subtest: the complete crouched coat stays above the floor without collapsing its hem faces
+ok 6 - the complete crouched coat stays above the floor without collapsing its hem faces
+  ---
+  duration_ms: 5158.35
+  type: 'test'
+  ...
+# Subtest: the ground-contacting hem remains continuous while crouching and rising
+ok 7 - the ground-contacting hem remains continuous while crouching and rising
+  ---
+  duration_ms: 11385.300708
+  type: 'test'
+  ...
+# Subtest: entering and leaving a free old-building crouch keeps actual pelvis and wrists continuous
+ok 8 - entering and leaving a free old-building crouch keeps actual pelvis and wrists continuous
+  ---
+  duration_ms: 6906.716
+  type: 'test'
+  ...
+# Subtest: shirt and coat surfaces blend into and out of the crouch without an abrupt wardrobe change
+ok 9 - shirt and coat surfaces blend into and out of the crouch without an abrupt wardrobe change
+  ---
+  duration_ms: 10317.107709
+  type: 'test'
+  ...
+# Subtest: a saved partial crouch restores its complete real outfit cold and does not drift while paused
+ok 10 - a saved partial crouch restores its complete real outfit cold and does not drift while paused
+  ---
+  duration_ms: 5930.521334
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 9
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215799.029167

@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+not ok 1 - the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+  ---
+  duration_ms: 2439.023292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-running-contact-2026-10-22/release/tests/ambush-upper-fit.test.mts:1:9166'
+  failureType: 'testCodeFailure'
+  error: |-
+    the full upper coat crosses the raised thigh: {"count":23,"examples":[{"first":20110,"second":2515,"line":0.015174903483763876},{"first":9345,"second":2131,"line":0.014633509003527872},{"first":20107,"second":2131,"line":0.0146030785327915},{"first":9324,"second":2515,"line":0.013619029599104066}]}
+
+    23 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 23
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-running-contact-2026-10-22/release/tests/ambush-upper-fit.test.mts:166:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2918.245042

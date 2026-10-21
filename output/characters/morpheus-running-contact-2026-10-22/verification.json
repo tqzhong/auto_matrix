@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-22",
+  "scope": "Runtime Morpheus old-building raised-thigh and thin-hem correction; no sewn-waist or offline-cloth adoption",
+  "baseline": {
+    "existingUpperTests": {
+      "log": "running-existing-baseline.log",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "newRegressionFirstRun": {
+      "log": "running-contact-red.log",
+      "exitCode": 1,
+      "upperCoatTrouserIntersections": 23,
+      "poseTimeSeconds": 0.45
+    },
+    "earlyThinHemSelfCrossing": {
+      "state": {
+        "time": 0.18333333333333332,
+        "phase": 0.4091320319017227,
+        "speed": 7.469253469756397,
+        "turn": 0,
+        "airborne": 0,
+        "wasGrounded": true,
+        "landing": 0,
+        "attackAge": 10.183333333333342,
+        "combo": 0,
+        "hitAge": 10.183333333333342,
+        "hitPause": 0,
+        "verticalVelocity": 0,
+        "skillAge": 10.183333333333342,
+        "shotAge": 10.183333333333342,
+        "seated": 0,
+        "climbPhase": 0,
+        "ambushCrouch": 0
+      },
+      "self": {
+        "count": 8,
+        "examples": [
+          {
+            "first": 19361,
+            "second": 20361,
+            "line": 0.021981516568574118
+          },
+          {
+            "first": 20361,
+            "second": 19361,
+            "line": 0.021981516568574118
+          },
+          {
+            "first": 19360,
+            "second": 20374,
+            "line": 0.0014070796864464018
+          },
+          {
+            "first": 20374,
+            "second": 19360,
+            "line": 0.0014070796864463983
+          }
+        ]
+      }
+    }
+  },
+  "tests": {
+    "completeOutfitGate": {
+      "log": "running-complete-gate.log",
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "strengthenedDenseBoundsRepeat": {
+      "log": "running-dense-bounds.log",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "deploy": {
+      "log": "running-deploy-gate.log",
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "exitCode": 0
+    },
+    "uniqueAcceptedTests": 88,
+    "denseFrames": 120,
+    "denseSeconds": 2,
+    "existingLocomotionSnapshots": 90,
+    "collisionTolerancesUnchanged": true,
+    "typecheckExitCode": 0,
+    "productionBuildExitCode": 0,
+    "unchangedLargeChunkWarning": true,
+    "weldedVertices": {
+      "duplicateGroups": 634,
+      "maximum": 0
+    }
+  },
+  "cpu": {
+    "scope": "paired synchronous model animation CPU in one Node process; not browser FPS; concurrent validation load",
+    "result": [
+      {
+        "name": "before",
+        "samples": 90,
+        "median": 18.838,
+        "p95": 20.902,
+        "fitter": null
+      },
+      {
+        "name": "after",
+        "samples": 90,
+        "median": 20.725,
+        "p95": 23.267,
+        "fitter": {
+          "vertices": 755,
+          "attachments": 31,
+          "normalVertices": 837
+        }
+      }
+    ]
+  },
+  "sourceAudit": "source-audit.json",
+  "localUpdate": "local-update-verification.json",
+  "native": {
+    "qaUrl": "http://localhost:5199/",
+    "userPreviewUrl": "http://localhost:5173/",
+    "qaMotions": [
+      "old-building walk",
+      "old-building run",
+      "crouch transition",
+      "crouch walking",
+      "switch to Neo resets idle and disables old-building options"
+    ],
+    "liveSelected": "Morpheus / old-building run",
+    "qaWarningsAndErrors": [],
+    "liveWarningsAndErrors": [],
+    "liveProof": "local-running-preview.png",
+    "fullGameplayRecorded": false,
+    "browserFpsMeasured": false
+  },
+  "rejectedSewnCandidate": {
+    "adopted": false,
+    "gateTests": 10,
+    "pass": 9,
+    "fail": 1,
+    "exitCode": 1,
+    "failedSnapshots": 3,
+    "failedPoses": [
+      {
+        "profile": "run",
+        "frame": 72
+      },
+      {
+        "profile": "run",
+        "frame": 132
+      },
+      {
+        "profile": "run",
+        "frame": 156
+      }
+    ],
+    "log": "running-sewn-tangent.log",
+    "upperGate": {
+      "tests": 4,
+      "pass": 3,
+      "fail": 1,
+      "exitCode": 1,
+      "log": "running-final-upper.log"
+    }
+  },
+  "qualityAcceptedGroups": 0,
+  "qualityTotalGroups": 42,
+  "remaining": [
+    "visible waist separation",
+    "stiff tails and overly glossy leather",
+    "actor likeness and natural movement",
+    "sewn transition collision-free mesh",
+    "complete doffing and full trilogy native acceptance"
+  ],
+  "renderDeployment": false
+}

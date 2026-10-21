@@ -1,0 +1,29 @@
+{
+  "baselineRuntimeCommit": "e398a3e17b6d090cbcde30369114fed67bd8307e",
+  "packageFilesCompared": 699,
+  "unchangedBaselineFiles": 697,
+  "changedBaselineFiles": [
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts",
+    "packages/client/src/player/CharacterViewer.ts"
+  ],
+  "addedRuntimeFiles": [
+    "packages/client/src/agents/AmbushHipClearance.ts"
+  ],
+  "missing": [],
+  "runtimeFilesAfter": 700,
+  "candidateSourceMatchesRoot": true,
+  "sourceSha256": {
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "354e68f50a529dbbc5b7e94588ce4b6597d9a7c81ebc497cfd2e58812ea7e77b",
+    "packages/client/src/player/CharacterViewer.ts": "5bb6ac8028012cacd632c5a14a57137342f1bac977f9680f8b65e1460ef59427",
+    "packages/client/src/agents/AmbushHipClearance.ts": "5cbdcfb7ff49fb8db13126e40922a426531cee420c4cbf75ea1f1954a5586f8c"
+  },
+  "testSha256": {
+    "tests/ambush-upper-fit.test.mts": "514bc3529d68098665bcac3b77482ca066ac70bc8a8a30af698f93a6826f42f7"
+  },
+  "protectedWorktreeFilesUnchanged": 11,
+  "tailSourceUnchanged": true,
+  "clientBundle": "index-Br0xO0mm.js",
+  "clientBundleSha256": "16b023eb6597b05de7bd56b67158dccbbb13429cf6148ede7edb45a44742a6b0",
+  "clientIndexSha256": "be40fe88dde5ce2230b08d7e354321b472352d1ec31662da38f5827cd105a18a",
+  "runtimeAssetsAndBackendChanged": false
+}

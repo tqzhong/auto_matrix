@@ -1,0 +1,89 @@
+TAP version 13
+# Subtest: both complete old-building coat tails clear every real inner layer through locomotion, turns and speed transitions
+ok 1 - both complete old-building coat tails clear every real inner layer through locomotion, turns and speed transitions
+  ---
+  duration_ms: 120852.312792
+  type: 'test'
+  ...
+# 90 complete-surface snapshots; 0 fail contact or self-contact
+# Subtest: the complete moving coat tails restore from saved motion and stay identical while paused
+ok 2 - the complete moving coat tails restore from saved motion and stay identical while paused
+  ---
+  duration_ms: 8852.321291
+  type: 'test'
+  ...
+# Subtest: the complete fitted tails also clear the actual upper coat and lapels at their waist join
+ok 3 - the complete fitted tails also clear the actual upper coat and lapels at their waist join
+  ---
+  duration_ms: 14528.219875
+  type: 'test'
+  ...
+# Subtest: the complete old-building crouch outfit and real hands clear actual inner clothes through movement and transitions
+ok 4 - the complete old-building crouch outfit and real hands clear actual inner clothes through movement and transitions
+  ---
+  duration_ms: 272486.485458
+  type: 'test'
+  ...
+# Subtest: the complete crouched coat stays above the floor without collapsing its hem faces
+ok 5 - the complete crouched coat stays above the floor without collapsing its hem faces
+  ---
+  duration_ms: 9788.713167
+  type: 'test'
+  ...
+# Subtest: the ground-contacting hem remains continuous while crouching and rising
+ok 6 - the ground-contacting hem remains continuous while crouching and rising
+  ---
+  duration_ms: 13738.016625
+  type: 'test'
+  ...
+# Subtest: entering and leaving a free old-building crouch keeps actual pelvis and wrists continuous
+ok 7 - entering and leaving a free old-building crouch keeps actual pelvis and wrists continuous
+  ---
+  duration_ms: 11742.035833
+  type: 'test'
+  ...
+# Subtest: shirt and coat surfaces blend into and out of the crouch without an abrupt wardrobe change
+ok 8 - shirt and coat surfaces blend into and out of the crouch without an abrupt wardrobe change
+  ---
+  duration_ms: 15023.43525
+  type: 'test'
+  ...
+# Subtest: a saved partial crouch restores its complete real outfit cold and does not drift while paused
+ok 9 - a saved partial crouch restores its complete real outfit cold and does not drift while paused
+  ---
+  duration_ms: 9021.879958
+  type: 'test'
+  ...
+# Subtest: the complete old-building outer costume clears itself and all actual inner layers through ordinary movement
+ok 10 - the complete old-building outer costume clears itself and all actual inner layers through ordinary movement
+  ---
+  duration_ms: 261215.691959
+  type: 'test'
+  ...
+# Subtest: the complete fitted upper coat keeps its saved shape while paused, rebuilds cold and releases its corrections on leaving
+ok 11 - the complete fitted upper coat keeps its saved shape while paused, rebuilds cold and releases its corrections on leaving
+  ---
+  duration_ms: 13372.212667
+  type: 'test'
+  ...
+# Subtest: the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+ok 12 - the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+  ---
+  duration_ms: 6051.160833
+  type: 'test'
+  ...
+# Subtest: the complete worn coat clears itself and every real inner layer on every frame of the first running strides
+ok 13 - the complete worn coat clears itself and every real inner layer on every frame of the first running strides
+  ---
+  duration_ms: 303533.372583
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 585409.083042

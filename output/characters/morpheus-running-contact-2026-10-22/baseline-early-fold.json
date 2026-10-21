@@ -1,0 +1,46 @@
+{
+  "state": {
+    "time": 0.18333333333333332,
+    "phase": 0.4091320319017227,
+    "speed": 7.469253469756397,
+    "turn": 0,
+    "airborne": 0,
+    "wasGrounded": true,
+    "landing": 0,
+    "attackAge": 10.183333333333342,
+    "combo": 0,
+    "hitAge": 10.183333333333342,
+    "hitPause": 0,
+    "verticalVelocity": 0,
+    "skillAge": 10.183333333333342,
+    "shotAge": 10.183333333333342,
+    "seated": 0,
+    "climbPhase": 0,
+    "ambushCrouch": 0
+  },
+  "self": {
+    "count": 8,
+    "examples": [
+      {
+        "first": 19361,
+        "second": 20361,
+        "line": 0.021981516568574118
+      },
+      {
+        "first": 20361,
+        "second": 19361,
+        "line": 0.021981516568574118
+      },
+      {
+        "first": 19360,
+        "second": 20374,
+        "line": 0.0014070796864464018
+      },
+      {
+        "first": 20374,
+        "second": 19360,
+        "line": 0.0014070796864463983
+      }
+    ]
+  }
+}

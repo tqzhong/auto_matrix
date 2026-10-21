@@ -1,0 +1,24 @@
+{
+  "time": "2026-10-21T18:53:14.162351+00:00",
+  "url": "http://localhost:5173/",
+  "bundle": "index-Br0xO0mm.js",
+  "servedBundleSha256": "16b023eb6597b05de7bd56b67158dccbbb13429cf6148ede7edb45a44742a6b0",
+  "copiedClientFiles": [
+    "assets/index-Br0xO0mm.js"
+  ],
+  "oldBundleRetained": true,
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "worldSnapshotExactlyPreserved": true,
+  "statusKeysPreserved": {
+    "ready": true,
+    "running": false,
+    "tick": 3757,
+    "day": 1,
+    "chapter": "Thomas Anderson \u7684\u666e\u901a\u4e00\u5929"
+  },
+  "dataDirectory": "output/local-preview/data",
+  "cloudSave": false,
+  "paidModel": false,
+  "protectedWorktreeFilesUnchanged": 11
+}
