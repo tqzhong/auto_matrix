@@ -112,7 +112,7 @@ test('the complete old-building crouch outfit and real hands clear actual inner 
       }
       if (wardrobe === 'coat') {
         assert.equal(outer.length, 4);
-        assert.equal(h.rig.panels.reduce((n, panel) => n + panel.mesh.geometry.index!.count / 3, 0), 5120);
+        assert.equal(h.rig.panels.reduce((n, panel) => n + panel.mesh.geometry.index!.count / 3, 0), 6240);
         const flatten = (meshes: THREE.Mesh[]) => {
           let offset = 0;
           return meshes.flatMap(mesh => { const result = faces(mesh).map(face => ({ ...face, ids: face.ids.map(id => id + offset) })); offset += mesh.geometry.attributes.position.count; return result; });

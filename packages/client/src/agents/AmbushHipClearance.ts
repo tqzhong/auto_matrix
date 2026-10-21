@@ -115,11 +115,16 @@ export class AmbushHipClearance {
     this.rig.root.updateMatrixWorld(true);
     this.inverse.copy(this.rig.bones.get('pelvis')!.matrixWorld).invert();
     this.toPelvis.copy(this.inverse).multiply(this.mesh.matrixWorld).multiply(this.mesh.bindMatrixInverse);
+    // A deep front kick raises the trouser rim beyond the ordinary running
+    // cut. Unfold the same cloth field smoothly at that larger hip flexion.
+    const extra = ['R', 'L'].map(side => .75 * THREE.MathUtils.smoothstep(-this.rig.bones.get(`hip_${side}`)!.rotation.x, 1.27, 1.33));
     for (const [slot, id] of this.vertices.entries()) {
       this.direction.set(0, 0, 0);
+      let liftX = 0, liftY = 0, liftZ = 0;
       for (let side = 0; side < 2; side++) {
         const target = this.targets[side], delta = geometry.morphAttributes.position[target], weight = influences[target];
         this.direction.x += delta.getX(id) * weight; this.direction.y += delta.getY(id) * weight; this.direction.z += delta.getZ(id) * weight;
+        liftX += delta.getX(id) * weight * extra[side]; liftY += delta.getY(id) * weight * extra[side]; liftZ += delta.getZ(id) * weight * extra[side];
       }
       const x = this.direction.x, y = this.direction.y, z = this.direction.z;
       this.skin.elements.fill(0);
@@ -135,9 +140,9 @@ export class AmbushHipClearance {
       for (const target of this.targets) this.direction.addScaledVector(new THREE.Vector3().fromBufferAttribute(geometry.morphAttributes.position[target], id), influences[target]);
       this.direction.applyMatrix4(this.matrix).toArray(this.base, id * 3);
       this.linear.setFromMatrix4(this.matrix); this.direction.copy(delta).applyMatrix3(this.linear);
-      this.shifts[id * 3] = amount * (x * 1.5 - this.direction.x);
-      this.shifts[id * 3 + 1] = amount * (y * 1.5 - this.direction.y);
-      this.shifts[id * 3 + 2] = amount * (z * 1.5 - this.direction.z);
+      this.shifts[id * 3] = amount * (x * 1.5 + liftX - this.direction.x);
+      this.shifts[id * 3 + 1] = amount * (y * 1.5 + liftY - this.direction.y);
+      this.shifts[id * 3 + 2] = amount * (z * 1.5 + liftZ - this.direction.z);
       this.linear.invert().toArray(this.inverses, slot * 9);
     }
     for (const attachment of this.attachments) {

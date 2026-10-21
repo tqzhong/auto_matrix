@@ -100,7 +100,7 @@ test('the complete old-building outer costume clears itself and all actual inner
       });
       assert.equal(outer.length, 4, 'retain the whole upper coat, both long tails and both lapels');
       assert.ok(outer.find(mesh => mesh.name === 'morpheus-ambush-coat')!.geometry.index!.count / 3 > 20000, 'retain the actual complete sleeves and torso');
-      assert.equal(h.rig.panels.reduce((n, panel) => n + panel.mesh.geometry.index!.count / 3, 0), 5120);
+      assert.equal(h.rig.panels.reduce((n, panel) => n + panel.mesh.geometry.index!.count / 3, 0), 6240);
       for (const mesh of outer) if (mesh instanceof THREE.SkinnedMesh) {
         for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
           const point = mesh.getVertexPosition(i, new THREE.Vector3());
@@ -200,4 +200,33 @@ test('the complete worn coat clears itself and every real inner layer on every f
     snapshots++;
   }
   assert.equal(snapshots, 120);
+});
+
+test('the sewn old-building coat clears the raised thigh during a real front kick', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  const state = newMotion(), input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+    attack: 1, combo: 2, ambushWardrobe: 'coat' };
+  const coat = h.rig.root.getObjectByName('morpheus-ambush-coat') as THREE.SkinnedMesh;
+  const trousers = h.rig.root.getObjectByName('Tailored_trousers') as THREE.SkinnedMesh;
+  for (let frame = 0; frame < 54; frame++) {
+    h.models.animate(h.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60);
+    if (![13, 19, 25, 37, 53].includes(frame)) continue;
+    h.rig.root.updateMatrixWorld(true);
+    const result = crossings(faces(coat), faces(trousers), false);
+    assert.equal(result.count, 0, `${frame}: the upper coat crosses the kicking thigh: ${JSON.stringify(result)}`);
+    const tails = h.rig.panels.map(panel => panel.mesh), surfaces = tails.map(faces);
+    h.rig.root.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh) || tails.includes(object)) return;
+      const inner = faces(object);
+      for (const [side, surface] of surfaces.entries()) {
+        const contact = crossings(surface, inner, false);
+        assert.equal(contact.count, 0, `${frame}/${side}: the kicking tail crosses ${object.name}: ${JSON.stringify(contact)}`);
+      }
+    });
+    for (const [side, surface] of surfaces.entries()) {
+      const self = crossings(surface, surface, true);
+      assert.equal(self.count, 0, `${frame}/${side}: the kicking tail crosses itself: ${JSON.stringify(self)}`);
+    }
+    assert.equal(crossings(surfaces[0], surfaces[1], false).count, 0, 'the complete tails stay separated during the kick');
+  }
 });

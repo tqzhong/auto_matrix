@@ -93,7 +93,7 @@ test('both complete old-building coat tails clear every real inner layer through
       if (frame <= 0 || frame % 12) continue;
       h.rig.root.updateMatrixWorld(true);
       const cloth = tails.map(mesh => faces(mesh)), contacts = [];
-      assert.equal(cloth.reduce((sum, triangles) => sum + triangles.length, 0), 5120, 'retain both complete original tail panels');
+      assert.equal(cloth.reduce((sum, triangles) => sum + triangles.length, 0), 6240, 'retain both complete tail panels with the sewn first strip subdivided');
       for (const surface of cloth) for (const face of surface) assert.ok(new THREE.Triangle(...face.points as [THREE.Vector3, THREE.Vector3, THREE.Vector3]).getArea() > 1e-8, `${profile}/${frame}/${face.face}: retained face area ${new THREE.Triangle(...face.points as [THREE.Vector3, THREE.Vector3, THREE.Vector3]).getArea()}, points ${JSON.stringify(face.points.map(p => p.toArray()))}`);
       assert.ok(tails.every(mesh => mesh.visible), 'neither panel can be hidden to avoid contact');
       for (const mesh of tails) for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
@@ -117,7 +117,7 @@ test('both complete old-building coat tails clear every real inner layer through
       if (contacts.length) failures.push({ profile, frame, contacts });
     }
   }
-  t.diagnostic(`90 complete-surface snapshots; ${failures.length} fail contact or self-contact`);
+  t.diagnostic(`90 complete-surface snapshots; ${failures.length} fail contact or self-contact; complete failures ${JSON.stringify(failures)}`);
   assert.deepEqual(failures, [], `the actual complete tails cross the visible outfit: ${JSON.stringify(failures.slice(0, 3))}`);
 });
 
@@ -154,4 +154,78 @@ test('the complete fitted tails also clear the actual upper coat and lapels at t
     }
   }
   assert.deepEqual(failures, [], `the lower and upper pieces cross at the actual waist: ${JSON.stringify(failures)}`);
+});
+
+test('sewing refines only the first tail strip, preserves the lower topology and UVs, and restores the other costume', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  const originals = h.rig.panels.map(({ mesh }) => ({ geometry: mesh.geometry, index: Array.from(mesh.geometry.index!.array),
+    positions: Array.from(mesh.geometry.attributes.position.array), uv: Array.from(mesh.geometry.attributes.uv.array) }));
+  const state = newMotion(), input: MotionInput = { speed: PLAYER_RUN_SPEED, grounded: true, verticalVelocity: 0, turn: 0, ambushWardrobe: 'coat' };
+  for (let frame = 0; frame < 30; frame++) h.models.animate(h.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60);
+  for (const [side, { mesh }] of h.rig.panels.entries()) {
+    const original = originals[side], geometry = mesh.geometry, uv = original.geometry.attributes.uv;
+    let columns = 0; while (columns < uv.count && uv.getY(columns) === 0) columns++;
+    assert.notEqual(geometry, original.geometry);
+    assert.equal(geometry.index!.count / 3, 3120);
+    const originalFirstStrip = (columns - 1) * 6;
+    const lower = Array.from(geometry.index!.array).slice(originalFirstStrip * 8).map(id => id - columns * 7);
+    assert.deepEqual(lower, original.index.slice(originalFirstStrip), 'all lower original triangles retain their ordering and connectivity');
+    for (let id = columns; id < uv.count; id++) {
+      assert.equal(geometry.attributes.uv.getX(id + columns * 7), uv.getX(id));
+      assert.equal(geometry.attributes.uv.getY(id + columns * 7), uv.getY(id));
+    }
+    assert.deepEqual(Array.from(original.geometry.attributes.position.array), original.positions, 'the other costume has not been overwritten');
+    assert.deepEqual(Array.from(original.geometry.attributes.uv.array), original.uv);
+  }
+  const outside = { ...input, realWorld: true, ambushWardrobe: undefined };
+  h.models.animate(h.rig, advanceMotion(state, outside, 0), state, outside, 0);
+  for (const [side, { mesh }] of h.rig.panels.entries()) assert.equal(mesh.geometry, originals[side].geometry, 'leaving restores the original costume geometry');
+});
+
+test('the sewn tail rim stays against the actual upper coat while standing, moving and crouching', async t => {
+  const h = await model(); t.after(() => h.models.dispose());
+  h.rig.root.position.set(4, 2, -3);
+  const upper = h.rig.root.getObjectByName('morpheus-ambush-coat') as THREE.SkinnedMesh;
+  const a = upper.geometry.attributes, index = upper.geometry.index!, waist = [];
+  const torso = (id: number) => [0, 1, 2, 3].reduce((sum, k) => sum + (/^(pelvis|spine|chest|hip_[LR])$/.test(upper.skeleton.bones[a.skinIndex.getComponent(id, k)].name) ? a.skinWeight.getComponent(id, k) : 0), 0) > .8;
+  for (let i = 0; i < index.count; i += 3) {
+    const ids = [0, 1, 2].map(k => index.getX(i + k));
+    if (ids.every(torso)) waist.push(ids);
+  }
+  assert.ok(waist.length > 0);
+  const triangle = new THREE.Triangle(), closest = new THREE.Vector3();
+  const measurements = [], failures = [];
+  for (const [profile, speed, turn] of [['idle', 0, 0], ['walk', PLAYER_WALK_SPEED, 0], ['run', PLAYER_RUN_SPEED, 0], ['turn', PLAYER_WALK_SPEED, -1], ['crouch', PLAYER_WALK_SPEED, 0], ['rise', 0, 0]] as const) {
+    const state = newMotion();
+    for (let frame = -30; frame <= 90; frame++) {
+      const input: MotionInput = { speed, grounded: true, verticalVelocity: 0, turn, ambushWardrobe: 'coat',
+        crouching: (profile === 'crouch' || profile === 'rise') && frame >= 0 && (profile !== 'rise' || frame < 45) };
+      h.rig.root.rotation.y = .43 + turn * (frame + 30) / 60;
+      h.models.animate(h.rig, advanceMotion(state, input, 1 / 60), state, input, 1 / 60);
+      if (![12, 30, 60, 90].includes(frame)) continue;
+      h.rig.root.updateMatrixWorld(true); upper.skeleton.update();
+      const actual = points(upper);
+      let maximum = -Infinity, minimum = Infinity, samples = 0;
+      for (const { mesh } of h.rig.panels) {
+        const uv = mesh.geometry.attributes.uv;
+        for (let i = 0; i < uv.count && uv.getY(i) === 0; i++) {
+          const point = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+          let gap = Infinity;
+          for (const ids of waist) {
+            triangle.set(actual[ids[0]], actual[ids[1]], actual[ids[2]]).closestPointToPoint(point, closest);
+            gap = Math.min(gap, closest.distanceTo(point));
+          }
+          samples++;
+          maximum = Math.max(maximum, gap); minimum = Math.min(minimum, gap);
+        }
+      }
+      const result = { profile, frame, samples, minimum, maximum, maximumMetres: maximum * .4 };
+      measurements.push(result);
+      // The sewn rim needs millimetres of material clearance, not a skirt
+      // visibly floating centimetres outside its own upper garment.
+      if (samples !== 82 || maximum > .0075) failures.push(result);
+    }
+  }
+  t.diagnostic(JSON.stringify(measurements));
+  assert.deepEqual(failures, [], `the actual sewn rim separates from its coat: ${JSON.stringify(failures.slice(0, 5))}`);
 });

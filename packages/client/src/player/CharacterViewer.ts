@@ -45,7 +45,7 @@ export class CharacterViewer {
       <nav aria-label="选择检视人物">${Object.keys(NOTES).map(id => `<button data-preview="${id}">${CHARACTERS[id].nameCn}</button>`).join('')}</nav>
       <div class="character-stage" aria-label="可拖动旋转的三维人物模型"></div>
       <div class="character-viewer-info"><span class="eyebrow">THE MATRIX / 1999</span><h3 id="preview-name">NEO</h3><p id="preview-notes"></p><p class="model-note">拖动旋转 · 实际游戏内模型<br>电影造型近似还原，非演员扫描资产</p></div>
-      <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option><option value="apartment-call">公寓 · 接听与放回座机</option><option value="ambush-walk" disabled>旧楼 · 行走</option><option value="ambush-run" disabled>旧楼 · 奔跑</option><option value="ambush-crouch" disabled>旧楼 · 蹲下与起身</option><option value="ambush-crouch-walk" disabled>旧楼 · 蹲行</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
+      <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option><option value="apartment-call">公寓 · 接听与放回座机</option><option value="ambush-walk" disabled>旧楼 · 行走</option><option value="ambush-run" disabled>旧楼 · 奔跑</option><option value="ambush-combat" disabled>旧楼 · 连招</option><option value="ambush-crouch" disabled>旧楼 · 蹲下与起身</option><option value="ambush-crouch-walk" disabled>旧楼 · 蹲行</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
     document.body.appendChild(this.root);
     this.root.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -156,7 +156,7 @@ export class CharacterViewer {
       ambushWardrobe: ambush ? 'coat' : undefined, crouching,
       wakeCall: landline ? { phase, elapsed: callElapsed, nightmare: true } : undefined, homeClothes: landline, glasses: landline ? false : undefined,
       parkOutfit: this.agents()[this.id]?.currentLocation === 'film_sunrise_garden',
-      attack: this.motion === 'combat' ? Math.floor(time / .72) : undefined }, 1);
+      attack: this.motion === 'combat' || this.motion === 'ambush-combat' ? Math.floor(time / .72) : undefined }, 1);
     this.current.root.rotation.y = this.angle;
     if (this.current.hero) this.current.hero.glasses.visible = this.glasses && !landline;
     const distance = this.zoom ? 1.95 : landline ? this.camera.aspect < .75 ? 6.8 : 5.6 : this.camera.aspect < 0.75 ? 12.8 : 10.8;
