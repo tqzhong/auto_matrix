@@ -1,0 +1,52 @@
+{
+  "tests": 35,
+  "successful": true,
+  "failures": 0,
+  "errors": 0,
+  "files": [
+    "ipc-material.test.py",
+    "strain-limit.test.py",
+    "surface-strain.test.py",
+    "continuous-check.test.py",
+    "membrane.test.py",
+    "energy-only.test.py",
+    "contact-bands.test.py",
+    "embedded-membrane.test.py",
+    "embedded-material.test.py",
+    "embedding-bend.test.py"
+  ],
+  "bindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+  "solverSha256": "d7a4bc782658a4063c459095be508edb0ef5b50c5ed1683d9c26be574300e947",
+  "testSourceSha256": {
+    "ipc-material.test.py": "1a4097a73b4f1fd922d4ef2dfaf90537d9c8055e12c7d8d6fb771951f498f22b",
+    "strain-limit.test.py": "ab05818855a12361903190294aa2ed5953d5cd8d14cf8ee67cef2d43bd5385fd",
+    "surface-strain.test.py": "3969a751fd2a469e43db4a738802b4004ac5c53962d4b6a4a50d34beb6979fc1",
+    "continuous-check.test.py": "a4a2cd0810ef64327b9980a1c60890591f493149d687d1b73d9bf5366359b9bf",
+    "membrane.test.py": "2c29205d0818576fd0500a9ae30a3001cfe229141079585086e5a91514d0a976",
+    "energy-only.test.py": "b34a4459ecb13774d7ef2e3a91f3153ee35aa391a99617828076c1edfee0f893",
+    "contact-bands.test.py": "7e5a2172b7fac83a78564f0d06590429f16766d23458483a276d4add6f1d023a",
+    "embedded-membrane.test.py": "08a5793f0a77ebc7b48accd5fdba233f34039e6e1bd47adf94ac0b2750356d93",
+    "embedded-material.test.py": "ca9f24fd417247eb3aac39c867139c2efb738d6ff8f4f54bc249654b0911278b",
+    "embedding-bend.test.py": "eeaab9e635aa9f29b29001607fa1b02a91b3dac148dce475653c22de2b178806"
+  },
+  "standaloneBendFixture": {
+    "withoutLocalInputManifest": true,
+    "originalGeometryIdentical": true,
+    "copiedFiles": [
+      "cloth_embedding.py",
+      "surface_strain.py",
+      "embedding-bend.test.py",
+      "embedding-bend-fixture.npz",
+      "cloth_embedding_old.py",
+      "../morpheus-shoulder-release-2026-10-20/cage-fit-4.json"
+    ],
+    "oldExitCode": 1,
+    "newExitCode": 0,
+    "oldMaximumEdges": [
+      6.809907094184641,
+      6.540677264374861,
+      6.6680295710283835
+    ],
+    "fixtureSha256": "e1cde9c6b2422c8fc072dec11b21c779fe9369959aff320c2e08dbf306c539ae"
+  }
+}

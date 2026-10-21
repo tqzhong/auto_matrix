@@ -1,0 +1,9 @@
+{
+  "source": "ipc-embedded-material-physics",
+  "samples": 18,
+  "lastTime": 0.9291666666666667,
+  "checkpointSha256": "75b3f76b64af2a369ce1621a0bdb833029a5b682c093163f1208cdcb98f1b278",
+  "finiteState": true,
+  "reason": "Preserve the earlier pivot-stencil control; analytic bends reproduce its mapping discontinuity. Continue the from-rest smooth-binding control instead.",
+  "independentAuditsPending": false
+}

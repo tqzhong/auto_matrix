@@ -1,0 +1,8 @@
+{
+  "source": "ipc-smooth-binding-control",
+  "samples": 7,
+  "lastTime": 0.8500000000000001,
+  "checkpointSha256": "c05cbe3f9eb48cd9280a6b7f63ce568ca9ce99c5e2083fee3324ec967659dd5c",
+  "bindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+  "finiteState": true
+}

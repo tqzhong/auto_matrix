@@ -1,0 +1,214 @@
+{
+  "scope": "Offline complete garment binding and authoring; no runtime asset or playable-build update",
+  "displayVertices": 13386,
+  "displayTriangles": 25796,
+  "bodyLayers": 13,
+  "prescribedBoundaryVertices": 189,
+  "reducedVertices": 3005,
+  "bindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+  "solverSha256": "d7a4bc782658a4063c459095be508edb0ef5b50c5ed1683d9c26be574300e947",
+  "rootCause": "Adjacent display vertices changed four-pivot affine stencils abruptly; a smooth 15 mm control bend produced up to 8.63-fold triangle stretch.",
+  "change": "Distance-tapered 32-neighbour affine stencils; four extrapolating rows blend with minimum-norm affine coordinates to retain the original absolute coefficient bound below 2.",
+  "analyticCases": [
+    {
+      "mapping": "old",
+      "case": "bend-0",
+      "directMaximumTriangle": 1.0629850164946295,
+      "maxEdge": 6.809907094184411,
+      "maxTriangle": 8.628830583363342,
+      "maxPositionError": 0.02770579151653014,
+      "maximumWeight": 1.6974776096167843,
+      "nonzeros": 52977
+    },
+    {
+      "mapping": "old",
+      "case": "bend-2",
+      "directMaximumTriangle": 1.0617837521640265,
+      "maxEdge": 6.54067726437532,
+      "maxTriangle": 8.051199560325903,
+      "maxPositionError": 0.02770579151653013,
+      "maximumWeight": 1.6974776096167843,
+      "nonzeros": 52977
+    },
+    {
+      "mapping": "old",
+      "case": "twist",
+      "directMaximumTriangle": 1.053007661850761,
+      "maxEdge": 6.6680295710283835,
+      "maxTriangle": 7.804497770911911,
+      "maxPositionError": 0.014911604905759901,
+      "maximumWeight": 1.6974776096167843,
+      "nonzeros": 52977
+    },
+    {
+      "mapping": "smooth",
+      "case": "bend-0",
+      "directMaximumTriangle": 1.0629850164946295,
+      "maxEdge": 1.0677421702386038,
+      "maxTriangle": 1.08023745366235,
+      "maxPositionError": 0.004688285970765151,
+      "maximumWeight": 1.99999999,
+      "nonzeros": 422493
+    },
+    {
+      "mapping": "smooth",
+      "case": "bend-2",
+      "directMaximumTriangle": 1.0617837521640265,
+      "maxEdge": 1.058283364300631,
+      "maxTriangle": 1.0890435393219633,
+      "maxPositionError": 0.004688285970765149,
+      "maximumWeight": 1.99999999,
+      "nonzeros": 422493
+    },
+    {
+      "mapping": "smooth",
+      "case": "twist",
+      "directMaximumTriangle": 1.053007661850761,
+      "maxEdge": 1.050943810948157,
+      "maxTriangle": 1.068765568454586,
+      "maxPositionError": 0.0024942870158500634,
+      "maximumWeight": 1.99999999,
+      "nonzeros": 422493
+    }
+  ],
+  "tests": {
+    "tests": 35,
+    "successful": true,
+    "failures": 0,
+    "errors": 0,
+    "files": [
+      "ipc-material.test.py",
+      "strain-limit.test.py",
+      "surface-strain.test.py",
+      "continuous-check.test.py",
+      "membrane.test.py",
+      "energy-only.test.py",
+      "contact-bands.test.py",
+      "embedded-membrane.test.py",
+      "embedded-material.test.py",
+      "embedding-bend.test.py"
+    ],
+    "bindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+    "solverSha256": "d7a4bc782658a4063c459095be508edb0ef5b50c5ed1683d9c26be574300e947",
+    "testSourceSha256": {
+      "ipc-material.test.py": "1a4097a73b4f1fd922d4ef2dfaf90537d9c8055e12c7d8d6fb771951f498f22b",
+      "strain-limit.test.py": "ab05818855a12361903190294aa2ed5953d5cd8d14cf8ee67cef2d43bd5385fd",
+      "surface-strain.test.py": "3969a751fd2a469e43db4a738802b4004ac5c53962d4b6a4a50d34beb6979fc1",
+      "continuous-check.test.py": "a4a2cd0810ef64327b9980a1c60890591f493149d687d1b73d9bf5366359b9bf",
+      "membrane.test.py": "2c29205d0818576fd0500a9ae30a3001cfe229141079585086e5a91514d0a976",
+      "energy-only.test.py": "b34a4459ecb13774d7ef2e3a91f3153ee35aa391a99617828076c1edfee0f893",
+      "contact-bands.test.py": "7e5a2172b7fac83a78564f0d06590429f16766d23458483a276d4add6f1d023a",
+      "embedded-membrane.test.py": "08a5793f0a77ebc7b48accd5fdba233f34039e6e1bd47adf94ac0b2750356d93",
+      "embedded-material.test.py": "ca9f24fd417247eb3aac39c867139c2efb738d6ff8f4f54bc249654b0911278b",
+      "embedding-bend.test.py": "eeaab9e635aa9f29b29001607fa1b02a91b3dac148dce475653c22de2b178806"
+    },
+    "standaloneBendFixture": {
+      "withoutLocalInputManifest": true,
+      "originalGeometryIdentical": true,
+      "copiedFiles": [
+        "cloth_embedding.py",
+        "surface_strain.py",
+        "embedding-bend.test.py",
+        "embedding-bend-fixture.npz",
+        "cloth_embedding_old.py",
+        "../morpheus-shoulder-release-2026-10-20/cage-fit-4.json"
+      ],
+      "oldExitCode": 1,
+      "newExitCode": 0,
+      "oldMaximumEdges": [
+        6.809907094184641,
+        6.540677264374861,
+        6.6680295710283835
+      ],
+      "fixtureSha256": "e1cde9c6b2422c8fc072dec11b21c779fe9369959aff320c2e08dbf306c539ae"
+    }
+  },
+  "solverPhysicsUnchangedExceptBinding": true,
+  "solverDiff": "Only an additional binding-source provenance hash; same material, path, gravity and contact/strain/acceptance limits.",
+  "frozenHistoricalFailure": {
+    "originalControlPositionsUnchanged": true,
+    "originalBindingArraysIdentical": true
+  },
+  "oldControl": {
+    "samples": 18,
+    "from": 0.8,
+    "to": 0.9291666666666667,
+    "staticAndContinuousContactPassed": true,
+    "boundariesPassed": true,
+    "surfaceMaterialPassed": true,
+    "maximumBoundaryErrorMetres": 5.957289262123184e-08,
+    "maximumSurfaceStretch": 1.3393021543195767,
+    "maximumP99SurfaceStretch": 1.060854793633234,
+    "maximumDisplayEdgeStretch": 1.0997505134459185,
+    "snapshot": {
+      "source": "ipc-embedded-material-physics",
+      "samples": 18,
+      "lastTime": 0.9291666666666667,
+      "checkpointSha256": "75b3f76b64af2a369ce1621a0bdb833029a5b682c093163f1208cdcb98f1b278",
+      "finiteState": true,
+      "reason": "Preserve the earlier pivot-stencil control; analytic bends reproduce its mapping discontinuity. Continue the from-rest smooth-binding control instead.",
+      "independentAuditsPending": false
+    },
+    "stop": {
+      "pid": 86923,
+      "signal": "SIGINT",
+      "terminalExitCode": 130,
+      "reason": "Analytic smooth bends reproduce discontinuities in its four-pivot mapping. Preserve the accepted checkpoint and continue the from-rest smooth control."
+    }
+  },
+  "fromRestSmoothControl": {
+    "samples": 7,
+    "from": 0.8,
+    "to": 0.8500000000000001,
+    "staticAndContinuousContactPassed": true,
+    "boundariesPassed": true,
+    "surfaceMaterialPassed": true,
+    "maximumBoundaryErrorMetres": 5.953826305320543e-08,
+    "maximumSurfaceStretch": 1.0605306181295824,
+    "maximumP99SurfaceStretch": 1.005408853680074,
+    "maximumDisplayEdgeStretch": 1.0525650981469539,
+    "snapshot": {
+      "source": "ipc-smooth-binding-control",
+      "samples": 7,
+      "lastTime": 0.8500000000000001,
+      "checkpointSha256": "c05cbe3f9eb48cd9280a6b7f63ce568ca9ce99c5e2083fee3324ec967659dd5c",
+      "bindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+      "finiteState": true
+    }
+  },
+  "rejectedOldResume": {
+    "message": "checkpoint changed the displayed surface",
+    "terminalExitCode": 1,
+    "meaning": "Old control coordinates must not be reinterpreted using new binding weights.",
+    "log": "smooth-binding-rejected-resume-confirmed.log"
+  },
+  "visualReview": {
+    "files": [
+      "ipc-smooth-binding-reviewed-substeps-7-front.png",
+      "ipc-smooth-binding-reviewed-substeps-7-rear.png"
+    ],
+    "type": "Actual complete surfaces with diagnostic colors; offline, not native game pixels",
+    "observations": "No obvious gross body/garment crossings in these two early views. Waist/tail junction has an obvious silhouette step; the back vent shows the inner layer. Sleeve cuffs and tail remain stiff. Film clothing quality has not passed."
+  },
+  "cost": {
+    "oldMappingNonzeros": 52977,
+    "newMappingNonzeros": 422493,
+    "speedClaim": false,
+    "tradeoff": "Wider stencils increase sparse coupling; this fixes deformation continuity, not demonstrated bake speed."
+  },
+  "ongoing": {
+    "folder": "ipc-smooth-binding-control",
+    "requestedEnd": 0.9,
+    "completionClaim": false
+  },
+  "limitations": [
+    "Seven independently audited samples cover only .8-.85 seconds, not the full eight-second action.",
+    "The existing 3 kg lumped cage inertia and material calibration remain approximations.",
+    "Complete sleeve withdrawal, real grasp/release/floor contact, natural leather, runtime integration and native game validation remain unfinished.",
+    "Playable local preview retains its previously verified build at http://localhost:5173/.",
+    "Render configuration is retired; final service deletion and DNS withdrawal still await user confirmation/login.",
+    "No additional high-quality trilogy group is accepted.",
+    "The standalone bend regression includes compact original garment geometry; the remaining authoring suite still needs the locally exported body-animation input."
+  ],
+  "protectedWorktreeFilesUnchanged": 6
+}

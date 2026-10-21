@@ -1,0 +1,62 @@
+[
+  {
+    "mapping": "old",
+    "case": "bend-0",
+    "directMaximumTriangle": 1.0629850164946295,
+    "maxEdge": 6.809907094184411,
+    "maxTriangle": 8.628830583363342,
+    "maxPositionError": 0.02770579151653014,
+    "maximumWeight": 1.6974776096167843,
+    "nonzeros": 52977
+  },
+  {
+    "mapping": "old",
+    "case": "bend-2",
+    "directMaximumTriangle": 1.0617837521640265,
+    "maxEdge": 6.54067726437532,
+    "maxTriangle": 8.051199560325903,
+    "maxPositionError": 0.02770579151653013,
+    "maximumWeight": 1.6974776096167843,
+    "nonzeros": 52977
+  },
+  {
+    "mapping": "old",
+    "case": "twist",
+    "directMaximumTriangle": 1.053007661850761,
+    "maxEdge": 6.6680295710283835,
+    "maxTriangle": 7.804497770911911,
+    "maxPositionError": 0.014911604905759901,
+    "maximumWeight": 1.6974776096167843,
+    "nonzeros": 52977
+  },
+  {
+    "mapping": "smooth",
+    "case": "bend-0",
+    "directMaximumTriangle": 1.0629850164946295,
+    "maxEdge": 1.0677421702386038,
+    "maxTriangle": 1.08023745366235,
+    "maxPositionError": 0.004688285970765151,
+    "maximumWeight": 1.99999999,
+    "nonzeros": 422493
+  },
+  {
+    "mapping": "smooth",
+    "case": "bend-2",
+    "directMaximumTriangle": 1.0617837521640265,
+    "maxEdge": 1.058283364300631,
+    "maxTriangle": 1.0890435393219633,
+    "maxPositionError": 0.004688285970765149,
+    "maximumWeight": 1.99999999,
+    "nonzeros": 422493
+  },
+  {
+    "mapping": "smooth",
+    "case": "twist",
+    "directMaximumTriangle": 1.053007661850761,
+    "maxEdge": 1.050943810948157,
+    "maxTriangle": 1.068765568454586,
+    "maxPositionError": 0.0024942870158500634,
+    "maximumWeight": 1.99999999,
+    "nonzeros": 422493
+  }
+]

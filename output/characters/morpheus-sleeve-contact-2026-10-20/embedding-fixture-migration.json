@@ -1,0 +1,8 @@
+{
+  "sourceFixtureCommit": "2c1b2fd",
+  "originalFixtureSha256": "d3b84d9cebd5d4a77d65344c7adb4bf14c7ad16ebc26888efa201999d82ecb30",
+  "currentFixtureSha256": "582e07d7609ef3be1ec25b4beadc0b3dc22c6539e803251085d850459fe10b3c",
+  "positionsUnchanged": true,
+  "originalBindingArraysIdentical": true,
+  "reason": "Keep the actual failed visible surface fixed while independently improving the displacement binding."
+}

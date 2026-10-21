@@ -1,0 +1,7 @@
+{
+  "baseline": "2c1b2fd",
+  "solverSha256": "7dcc17c19d579040ad9b15844c5f2b6a87e69ead3a4f5106ad62c8da9aa937d5",
+  "bindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+  "change": "Only the displacement binding import; no material, contact, path or acceptance-limit change.",
+  "fromRest": true
+}

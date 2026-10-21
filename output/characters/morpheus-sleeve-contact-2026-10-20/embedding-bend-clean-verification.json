@@ -1,0 +1,20 @@
+{
+  "withoutLocalInputManifest": true,
+  "originalGeometryIdentical": true,
+  "copiedFiles": [
+    "cloth_embedding.py",
+    "surface_strain.py",
+    "embedding-bend.test.py",
+    "embedding-bend-fixture.npz",
+    "cloth_embedding_old.py",
+    "../morpheus-shoulder-release-2026-10-20/cage-fit-4.json"
+  ],
+  "oldExitCode": 1,
+  "newExitCode": 0,
+  "oldMaximumEdges": [
+    6.809907094184641,
+    6.540677264374861,
+    6.6680295710283835
+  ],
+  "fixtureSha256": "e1cde9c6b2422c8fc072dec11b21c779fe9369959aff320c2e08dbf306c539ae"
+}

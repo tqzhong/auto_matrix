@@ -1,0 +1,29 @@
+FFF
+======================================================================
+FAIL: test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits (__main__.EmbeddingBendTests.test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits) (motion='bend-0')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/yd/89hxs3vx4ns36rxhsrmcm4dc0000gn/T/matrix-embedding-5ru2360l/garment/embedding-bend.test.py", line 47, in test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits
+    self.assertLess(lengths.max(), 1.1, 'binding creates edge stretching absent from the authored bend')
+AssertionError: np.float64(6.809907094184641) not less than 1.1 : binding creates edge stretching absent from the authored bend
+
+======================================================================
+FAIL: test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits (__main__.EmbeddingBendTests.test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits) (motion='bend-2')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/yd/89hxs3vx4ns36rxhsrmcm4dc0000gn/T/matrix-embedding-5ru2360l/garment/embedding-bend.test.py", line 47, in test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits
+    self.assertLess(lengths.max(), 1.1, 'binding creates edge stretching absent from the authored bend')
+AssertionError: np.float64(6.540677264374861) not less than 1.1 : binding creates edge stretching absent from the authored bend
+
+======================================================================
+FAIL: test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits (__main__.EmbeddingBendTests.test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits) (motion='twist')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/yd/89hxs3vx4ns36rxhsrmcm4dc0000gn/T/matrix-embedding-5ru2360l/garment/embedding-bend.test.py", line 47, in test_smooth_lateral_bend_keeps_the_complete_display_within_material_limits
+    self.assertLess(lengths.max(), 1.1, 'binding creates edge stretching absent from the authored bend')
+AssertionError: np.float64(6.6680295710283835) not less than 1.1 : binding creates edge stretching absent from the authored bend
+
+----------------------------------------------------------------------
+Ran 1 test in 16.051s
+
+FAILED (failures=3)

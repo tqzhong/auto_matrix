@@ -294,6 +294,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
                      'displayMaterialVertices': visible_count,
                      'embeddingSourceSha256': hashlib.sha256((BASE/'embedded_membrane.py').read_bytes()).hexdigest()},
         'displayVertices': visible_count, 'prescribedVertices': len(pins),
+        'displacementBindingSha256': hashlib.sha256((BASE/'cloth_embedding.py').read_bytes()).hexdigest() if not full_surface else None,
         'materialDomain': 'complete displayed membrane, stitches, bending and strain barrier',
         'inertiaDomain': 'area-lumped full surface, total 3 kg' if full_surface else 'area-lumped reduced cage, total 3 kg',
         'coarseEdgeStretchDiagnosticOnly': not full_surface,

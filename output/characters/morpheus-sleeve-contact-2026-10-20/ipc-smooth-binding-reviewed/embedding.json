@@ -1,0 +1,7 @@
+{
+  "maximumRestErrorMetres": 1.1055538232381505e-07,
+  "maximumConstantError": 7.216449660063518e-15,
+  "maximumAbsoluteWeight": 1.99999999,
+  "nonzeros": 422493,
+  "boundedAffineRows": 4
+}

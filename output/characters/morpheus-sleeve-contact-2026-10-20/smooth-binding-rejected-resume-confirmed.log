@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 514, in <module>
+    bake(args.frames, args.substeps, args.output, args.raw_newton, args.resume, args.full_surface)
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/ipc_cloth.py", line 270, in bake
+    assert np.array_equal(surface(x).astype(np.float32), shown_before), 'checkpoint changed the displayed surface'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: checkpoint changed the displayed surface

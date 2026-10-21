@@ -39,13 +39,21 @@ class EmbeddedMaterialTests(unittest.TestCase):
         exec(compile(ast.Module(body=[material], type_ignores=[]), str(source), 'exec'), context)
         cls.context = context
         cls.material = staticmethod(context['material'])
-        cls.failed = np.load(base/'embedded-material-failure-fixture.npz')['positions']
+        fixture = np.load(base/'embedded-material-failure-fixture.npz')
+        cls.failed = fixture['positions']
+        cls.failed_mapping = sp.csr_matrix((fixture['mapping_data'], fixture['mapping_indices'],
+            fixture['mapping_indptr']), shape=tuple(fixture['mapping_shape']))
 
     def test_actual_rejected_visible_edge_cannot_have_finite_material_energy(self):
+        # Keep the failed visible surface fixed when improving the binding;
+        # applying new weights to old control positions changes the test case.
+        context = {**self.context, 'embedding': self.failed_mapping,
+                   'membrane_dofs': sp.kron(self.failed_mapping, sp.eye(3), format='csr')}
+        material = FunctionType(self.material.__code__, context, argdefs=self.material.__defaults__)
         for derivatives in (True, False):
             with self.subTest(derivatives=derivatives):
                 with self.assertRaises(cloth.ClothStepError):
-                    self.material(self.failed, derivatives=derivatives)
+                    material(self.failed, derivatives=derivatives)
 
     def test_material_and_virtual_work_include_all_visible_seams_and_bending(self):
         c = self.context

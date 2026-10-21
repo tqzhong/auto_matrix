@@ -1,0 +1,29 @@
+{
+  "resume": null,
+  "resumedAt": null,
+  "requestedEnd": 0.9,
+  "maximumStepSeconds": 0.008333333333333333,
+  "fullSurfacePhysics": false,
+  "physicalVertices": 3005,
+  "membrane": {
+    "model": "area-weighted Green strain",
+    "modulusNewtonsPerMetre": 50000.0,
+    "poissonRatio": 0.3,
+    "sourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b",
+    "displayMaterialVertices": 13386,
+    "embeddingSourceSha256": "d259031a8cfa4a418189df854c78a8da25bb5cfb353381907bbecfa2459b646d"
+  },
+  "displayVertices": 13386,
+  "prescribedVertices": 189,
+  "materialDomain": "complete displayed membrane, stitches, bending and strain barrier",
+  "inertiaDomain": "area-lumped reduced cage, total 3 kg",
+  "coarseEdgeStretchDiagnosticOnly": true,
+  "structuralStrainOnset": 1.03,
+  "structuralStrainLimit": 1.1,
+  "contactActivationMetres": [
+    1e-05,
+    0.0002
+  ],
+  "contactSourceSha256": "29f3dab5660ca7b1f52b91288f576e3e3e96f4691d1a710929b62e49b22cba4d",
+  "sourceSha256": "7dcc17c19d579040ad9b15844c5f2b6a87e69ead3a4f5106ad62c8da9aa937d5"
+}

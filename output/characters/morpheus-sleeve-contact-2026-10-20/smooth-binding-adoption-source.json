@@ -1,0 +1,7 @@
+{
+  "oldBindingSha256": "533f4ac2226d0775c243c781dd107b3b4a664a4d898c96dba36c7a1672122719",
+  "newBindingSha256": "d269a97e9a73e10c908b48296fea9113ebcbd585d24083c438e53ef5e4a5ca3c",
+  "ongoingOldRun": "ipc-embedded-material-physics",
+  "ongoingCandidateRun": "ipc-smooth-binding-control",
+  "testedCandidateMatchesProduction": true
+}
