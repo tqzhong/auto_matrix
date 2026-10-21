@@ -1,0 +1,15 @@
+{
+  "testedSourceSha256": "65f989c6c7d33749f64a2bf6a3c6a85f03da050f33b781d27c2d2ee36e1a2768",
+  "sourceSha256": "be48ba4ad7840296491d79204fb25f1fe698d5d04c7f5f46b1266aaeb2f89d81",
+  "unchangedNestedSolverFunctions": [
+    "material",
+    "evaluate",
+    "relax",
+    "save_sample",
+    "advance_interval"
+  ],
+  "differencesFromTestedControl": [
+    "Remove unused membrane_energy import",
+    "Describe full-surface inertia and diagnostic mode accurately"
+  ]
+}

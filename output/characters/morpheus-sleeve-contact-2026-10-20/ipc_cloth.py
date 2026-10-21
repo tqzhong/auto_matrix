@@ -10,10 +10,11 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import spsolve, splu
 import ipctk
 from cloth_embedding import embed_panels
+from embedded_membrane import embedded_membrane
 from contact_bands import contact_bands, SELF_ACTIVATION as CONTACT_ACTIVATION
 from continuous_check import measure_step
 from surface_strain import triangle_stretch, material_within_limits
-from membrane import prepare_membrane, membrane_energy, MODULUS, POISSON_RATIO
+from membrane import prepare_membrane, MODULUS, POISSON_RATIO
 
 BASE = Path(__file__).parent
 STRAIN_ONSET = 1.03
@@ -131,6 +132,14 @@ def prepare(full_surface=False):
         # The real rim follows the same authored path. Interior facing vertices
         # remain material DOFs: transporting that strip as hard pins distorted it.
         guide = json.loads((BASE/'lifted-band/collar-guide.json').read_text())
+    if not full_surface:
+        rim = json.loads((BASE/'lifted-band/collar-guide.json').read_text())
+        ids = [cage['mappedControls'][str(i)] for i in rim['ids']]
+        initial = np.asarray(rim['frames'][0]['points'])
+        rest_rim = np.asarray(cage['points'])[ids]
+        guide = {'ids': ids, 'frames': [{**frame,
+            'points': (rest_rim+np.asarray(frame['points'])-initial).tolist()}
+            for frame in rim['frames']]}
     points = np.asarray(cage['points'])[:, [0, 2, 1]]*[.4, -.4, .4]
     faces = np.asarray(cage['indices'], dtype=np.int32).reshape(-1, 3)
     edges = ipctk.edges(faces)
@@ -194,7 +203,6 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
     ipctk.set_num_threads(4)
     points, faces, edges, rest, stiffness, mass, pins, pin_frames, body, all_faces, structural_count = prepare(full_surface)
     n = len(points)
-    membrane_rest = prepare_membrane(points, faces) if full_surface else None
     x = np.vstack((points, body[0]))
     reference = x.copy()
     cage = json.loads((BASE.parent/'morpheus-shoulder-release-2026-10-20/cage-fit-4.json').read_text())
@@ -209,6 +217,12 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
     visible_count = len(shown)
     collision_reference = np.vstack((shown, body[0]))
     display_faces = np.asarray(manifest['indices']).reshape(-1, 3)
+    _, _, fine_edges, fine_rest, fine_stiffness, *fine_data = prepare(True)
+    fine_structural_count = fine_data[-1]
+    membrane_rest = prepare_membrane(shown, display_faces)
+    membrane_dofs = sp.kron(embedding, sp.eye(3), format='csr')
+    display_edges = ipctk.edges(display_faces)
+    display_rest = np.linalg.norm(shown[display_edges[:, 0]]-shown[display_edges[:, 1]], axis=1)
     all_faces = np.vstack((display_faces, all_faces[len(faces):]+visible_count-n))
     mapping = sp.block_diag((embedding, sp.eye(len(body[0]))), format='csc')
     mesh = ipctk.CollisionMesh(collision_reference, ipctk.edges(all_faces), all_faces, mapping)
@@ -256,6 +270,9 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         assert np.array_equal(surface(x).astype(np.float32), shown_before), 'checkpoint changed the displayed surface'
         for row in sample_rows:
             cached = np.fromfile(source/f'substeps/cloth-{row["frame"]}.bin', np.float32).reshape(-1, 3).astype(float)
+            cached_lengths = np.linalg.norm(cached[display_edges[:, 0]]-cached[display_edges[:, 1]], axis=1)/display_rest
+            if cached_lengths.max() >= STRAIN_LIMIT:
+                raise ClothStepError('the resumed displayed edges exceed their strain limit')
             if not material_within_limits(triangle_stretch(shown, cached, display_faces)):
                 raise ClothStepError(f'the resumed cache exceeds the rendered material limits at sample {row["frame"]}')
         for target, origin, records in ((out, source, rows), (samples, source/'substeps', sample_rows)):
@@ -273,28 +290,29 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         'fullSurfacePhysics': full_surface, 'physicalVertices': n,
         'membrane': {'model': 'area-weighted Green strain', 'modulusNewtonsPerMetre': MODULUS,
                      'poissonRatio': POISSON_RATIO,
-                     'sourceSha256': hashlib.sha256((BASE/'membrane.py').read_bytes()).hexdigest()} if full_surface else None,
+                     'sourceSha256': hashlib.sha256((BASE/'membrane.py').read_bytes()).hexdigest(),
+                     'displayMaterialVertices': visible_count,
+                     'embeddingSourceSha256': hashlib.sha256((BASE/'embedded_membrane.py').read_bytes()).hexdigest()},
         'displayVertices': visible_count, 'prescribedVertices': len(pins),
+        'materialDomain': 'complete displayed membrane, stitches, bending and strain barrier',
+        'inertiaDomain': 'area-lumped full surface, total 3 kg' if full_surface else 'area-lumped reduced cage, total 3 kg',
+        'coarseEdgeStretchDiagnosticOnly': not full_surface,
         'structuralStrainOnset': STRAIN_ONSET, 'structuralStrainLimit': STRAIN_LIMIT,
         'contactActivationMetres': [radius for _, radius in bands],
         'contactSourceSha256': hashlib.sha256((BASE/'contact_bands.py').read_bytes()).hexdigest(),
         'sourceSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}, indent=2))
 
     def material(state, project=True, derivatives=True):
-        result = springs(state[:n], edges, rest, stiffness, project=project,
-            strain_count=structural_count, structural_elastic=not full_surface, derivatives=derivatives)
+        visible = shown+embedding@(state[:n]-points)
+        result = springs(visible, fine_edges, fine_rest, fine_stiffness, project=project,
+            strain_count=fine_structural_count, structural_elastic=False, derivatives=derivatives)
+        fine = embedded_membrane(state[:n]-points, shown, display_faces, membrane_rest,
+            embedding, membrane_dofs, project=project, derivatives=derivatives)
         if not derivatives:
-            energy = result
-            if full_surface:
-                energy += membrane_energy(state[:n], faces, membrane_rest, project=project, derivatives=False)
-            return energy
+            return result+fine
         energy, gradient, hessian = result
-        if full_surface:
-            membrane_e, membrane_g, membrane_h = membrane_energy(state[:n], faces, membrane_rest, project=project)
-            energy += membrane_e
-            gradient += membrane_g
-            hessian += membrane_h
-        return energy, gradient, hessian
+        return (energy+fine[0], membrane_dofs.T@gradient+fine[1],
+                (membrane_dofs.T@hessian@membrane_dofs).tocsr()+fine[2])
 
     def evaluate(state, predicted, derivatives=True, project=True):
         if derivatives:
@@ -333,12 +351,12 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
             # A one-micrometre Newton update is below displayed cloth detail.
             # This only stops energy minimization; CCD and zero-intersection
             # checks remain independent and are not relaxed.
-            if np.max(np.abs(displacement)) < 1e-6:
-                return iteration, residual
             direction = np.zeros_like(x)
             direction.ravel()[free] = displacement
+            if np.max(np.abs(embedding@direction[:n])) < 1e-6:
+                return iteration, residual
             alpha = ipctk.compute_collision_free_stepsize(mesh, surface(x), surface(x+direction))
-            alpha = min(alpha, strain_free_stepsize(x, direction, edges[:structural_count], rest[:structural_count]))
+            alpha = min(alpha, strain_free_stepsize(surface(x), surface(x+direction)-surface(x), display_edges, display_rest))
             slope = float(gradient@displacement)
             assert slope < 0, ('non-descent direction', slope)
             while alpha > 1e-10:
@@ -355,10 +373,11 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
 
     def save_sample(at, source_frame, substep):
         visible = surface(x).astype(np.float32)
+        display_lengths = np.linalg.norm(visible[display_edges[:, 0]].astype(float)-visible[display_edges[:, 1]], axis=1)/display_rest
+        if display_lengths.max() >= STRAIN_LIMIT:
+            raise ClothStepError(f'the displayed edges exceed their strain limit: {display_lengths.max()}')
         exported = x[:n].astype(np.float32).astype(float)
         lengths = np.linalg.norm(exported[edges[:structural_count, 0]]-exported[edges[:structural_count, 1]], axis=1)/rest[:structural_count]
-        if np.max(lengths) >= STRAIN_LIMIT:
-            raise ClothStepError(f'the exported garment exceeds its strain limit: {np.max(lengths)}')
         stretch = triangle_stretch(shown, visible[:visible_count].astype(float), display_faces)
         if not material_within_limits(stretch):
             raise ClothStepError(f'the rendered garment exceeds its material limits: maximum={np.max(stretch)}, p99={np.quantile(stretch[:, 1], .99)}')
@@ -369,6 +388,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
         row = {'frame': number, 'time': at, 'sourceFrame': source_frame, 'substep': substep,
                'integrationSeconds': h if number > 1 else 0.,
                'maximumEdgeStretch': float(np.max(lengths)),
+               'maximumDisplayEdgeStretch': float(display_lengths.max()),
                'maximumSurfaceStretch': float(np.max(stretch)),
                'p99SurfaceStretch': float(np.quantile(stretch[:, 1], .99)), **check}
         if check['endpointIntersects'] or not check['stepCollisionFree']:
@@ -420,7 +440,7 @@ def bake(frame_end, substeps, output, raw_newton=False, resume=None, full_surfac
                 _, gradient, hessian = evaluate(x, predicted)
                 direction = prescribed_response(gradient, hessian, free, fixed)
                 alpha = ipctk.compute_collision_free_stepsize(mesh, surface(x), surface(x+direction))
-                alpha = min(alpha, strain_free_stepsize(x, direction, edges[:structural_count], rest[:structural_count]))
+                alpha = min(alpha, strain_free_stepsize(surface(x), surface(x+direction)-surface(x), display_edges, display_rest))
                 x[:] += alpha*direction
                 iterations, residual = relax(predicted)
                 print(json.dumps({'sourceFrame': frame+1, 'sourceBlend': blend, 'advance': advance+1,

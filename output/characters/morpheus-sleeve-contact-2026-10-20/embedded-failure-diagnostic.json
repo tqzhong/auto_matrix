@@ -1,0 +1,244 @@
+{
+  "physicalVertices": 3005,
+  "unmappedControls": [
+    254,
+    255,
+    513,
+    974,
+    1003,
+    1004,
+    1762,
+    1778,
+    1800,
+    1802,
+    1805,
+    1808,
+    1817,
+    1830,
+    1839,
+    1854,
+    2285,
+    2323,
+    2334,
+    2436,
+    2453,
+    2468,
+    2499,
+    2510,
+    2517,
+    2575,
+    2582,
+    2584,
+    2597,
+    2611,
+    2679,
+    2681,
+    2686,
+    2689,
+    2716,
+    2768,
+    2769,
+    2783,
+    2788,
+    2792,
+    2804,
+    2807,
+    2808,
+    2817,
+    2839,
+    2840,
+    2854,
+    2860,
+    2865,
+    2876,
+    2880,
+    2901,
+    2916,
+    2919,
+    2920,
+    2948,
+    2949,
+    2969,
+    2972,
+    2973,
+    2991,
+    2997,
+    2998
+  ],
+  "coarseSpringEnergy": 0.0013715573085317056,
+  "coarseStrainBarrierEnergy": 0.00032977109108985026,
+  "coarseStrainBarrierMaxGradient": 2.6508105648251292,
+  "rejections": [
+    {
+      "file": "rejected-1.npz",
+      "previous": {
+        "maxStretch": 1.0488778874730036,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000003696,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-2.npz",
+      "previous": {
+        "maxStretch": 1.0488778874730036,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000002137,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-3.npz",
+      "previous": {
+        "maxStretch": 1.0793006653703738,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000005892,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-4.npz",
+      "previous": {
+        "maxStretch": 1.0967841623552679,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.100000000000099,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-5.npz",
+      "previous": {
+        "maxStretch": 1.0967841623552679,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.100000000000432,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-6.npz",
+      "previous": {
+        "maxStretch": 1.0967841623552679,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000001824,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-7.npz",
+      "previous": {
+        "maxStretch": 1.0967841623552679,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000008678,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-8.npz",
+      "previous": {
+        "maxStretch": 1.0992097060205688,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000010137,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    },
+    {
+      "file": "rejected-9.npz",
+      "previous": {
+        "maxStretch": 1.0992097060205688,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      },
+      "positions": {
+        "maxStretch": 1.1000000000015049,
+        "edge": [
+          354,
+          355
+        ],
+        "restLength": 0.00013178843319850726
+      }
+    }
+  ]
+}

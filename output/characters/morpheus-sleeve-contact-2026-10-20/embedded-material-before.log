@@ -1,0 +1,31 @@
+FFF
+======================================================================
+FAIL: test_actual_rejected_visible_edge_cannot_have_finite_material_energy (__main__.EmbeddedMaterialTests.test_actual_rejected_visible_edge_cannot_have_finite_material_energy) (derivatives=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/embedded-material.test.py", line 46, in test_actual_rejected_visible_edge_cannot_have_finite_material_energy
+    with self.assertRaises(cloth.ClothStepError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ClothStepError not raised
+
+======================================================================
+FAIL: test_actual_rejected_visible_edge_cannot_have_finite_material_energy (__main__.EmbeddedMaterialTests.test_actual_rejected_visible_edge_cannot_have_finite_material_energy) (derivatives=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/embedded-material.test.py", line 46, in test_actual_rejected_visible_edge_cannot_have_finite_material_energy
+    with self.assertRaises(cloth.ClothStepError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ClothStepError not raised
+
+======================================================================
+FAIL: test_material_and_virtual_work_include_all_visible_seams_and_bending (__main__.EmbeddedMaterialTests.test_material_and_virtual_work_include_all_visible_seams_and_bending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-sleeve-contact-2026-10-20/embedded-material.test.py", line 59, in test_material_and_virtual_work_include_all_visible_seams_and_bending
+    self.assertAlmostEqual(energy, expected[0]+membrane[0], delta=1e-10)
+AssertionError: 1.2009750157772592 != 1.232608554424011 within 1e-10 delta (0.03163353864675189 difference)
+
+----------------------------------------------------------------------
+Ran 2 tests in 13.415s
+
+FAILED (failures=3)

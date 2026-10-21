@@ -1,0 +1,21 @@
+{
+  "pid": 91808,
+  "command": "/Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/bin/python ipc_cloth.py --full-surface --resume ipc-body-lookahead-control --frames 7 --substeps 4 --output ipc-body-lookahead-physics",
+  "auditedFrozenSamples": 11,
+  "lastLiveSample": {
+    "frame": 12,
+    "time": 0.8583333333333334,
+    "sourceFrame": 3,
+    "substep": 3.0,
+    "integrationSeconds": 0.004166666666666644,
+    "maximumEdgeStretch": 1.0703094145783016,
+    "maximumSurfaceStretch": 1.274700772278791,
+    "p99SurfaceStretch": 1.010756683489225,
+    "endpointIntersects": false,
+    "collisionFreeStep": 1.0,
+    "stepCollisionFree": true,
+    "optimizerSafeStep": 0.701171875
+  },
+  "checkpointSha256": "1972badf7869f6356f099108f3c37a915a4af8e1b64508a1a5f4bd2bd5a03001",
+  "reason": "Retain the full-DOF reference and continue the independently audited displayed-material reduction; no runtime assets are being replaced."
+}

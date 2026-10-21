@@ -1,0 +1,26 @@
+{
+  "resume": "ipc-embedded-membrane-guarded-control",
+  "resumedAt": 0.8333333333333334,
+  "requestedEnd": 0.9,
+  "maximumStepSeconds": 0.008333333333333333,
+  "fullSurfacePhysics": false,
+  "physicalVertices": 3005,
+  "membrane": {
+    "model": "area-weighted Green strain",
+    "modulusNewtonsPerMetre": 50000.0,
+    "poissonRatio": 0.3,
+    "sourceSha256": "4361768a9110014720a797b0cf959c21284efa32412ec4a135a69e815699cc2b",
+    "displayMaterialVertices": 13386,
+    "embeddingSourceSha256": "d259031a8cfa4a418189df854c78a8da25bb5cfb353381907bbecfa2459b646d"
+  },
+  "displayVertices": 13386,
+  "prescribedVertices": 189,
+  "structuralStrainOnset": 1.03,
+  "structuralStrainLimit": 1.1,
+  "contactActivationMetres": [
+    1e-05,
+    0.0002
+  ],
+  "contactSourceSha256": "29f3dab5660ca7b1f52b91288f576e3e3e96f4691d1a710929b62e49b22cba4d",
+  "sourceSha256": "f745dd98118865c547b7e23844deb5d131846c18ca3e2fa3134408ddc422ebed"
+}

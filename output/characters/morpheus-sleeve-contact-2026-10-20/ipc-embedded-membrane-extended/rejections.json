@@ -1,0 +1,74 @@
+[
+  {
+    "number": 1,
+    "sourceFrame": 4,
+    "startTime": 0.875,
+    "endTime": 0.8833333333333334,
+    "depth": 0,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 2,
+    "sourceFrame": 4,
+    "startTime": 0.875,
+    "endTime": 0.8791666666666667,
+    "depth": 1,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 3,
+    "sourceFrame": 4,
+    "startTime": 0.8770833333333333,
+    "endTime": 0.8791666666666667,
+    "depth": 2,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 4,
+    "sourceFrame": 4,
+    "startTime": 0.878125,
+    "endTime": 0.8791666666666667,
+    "depth": 3,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 5,
+    "sourceFrame": 4,
+    "startTime": 0.878125,
+    "endTime": 0.8786458333333333,
+    "depth": 4,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 6,
+    "sourceFrame": 4,
+    "startTime": 0.878125,
+    "endTime": 0.8783854166666667,
+    "depth": 5,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 7,
+    "sourceFrame": 4,
+    "startTime": 0.878125,
+    "endTime": 0.8782552083333334,
+    "depth": 6,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 8,
+    "sourceFrame": 4,
+    "startTime": 0.8781901041666667,
+    "endTime": 0.8782552083333334,
+    "depth": 7,
+    "error": "the structural edges already exceed their strain limit"
+  },
+  {
+    "number": 9,
+    "sourceFrame": 4,
+    "startTime": 0.8781901041666667,
+    "endTime": 0.87822265625,
+    "depth": 8,
+    "error": "the structural edges already exceed their strain limit"
+  }
+]

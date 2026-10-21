@@ -1,0 +1,39 @@
+test_authored_cuffs_and_neck_are_independent_of_free_panels (<run_path>.MaterialTests.test_authored_cuffs_and_neck_are_independent_of_free_panels) ... ok
+test_ccd_catches_a_crossing_missed_by_endpoint_checks (<run_path>.MaterialTests.test_ccd_catches_a_crossing_missed_by_endpoint_checks) ... ok
+test_complete_display_embedding_preserves_rigid_motion (<run_path>.MaterialTests.test_complete_display_embedding_preserves_rigid_motion) ... ok
+test_prescribed_body_motion_pushes_cloth_before_contact (<run_path>.MaterialTests.test_prescribed_body_motion_pushes_cloth_before_contact) ... ok
+test_spring_derivatives_match_energy_differences (<run_path>.MaterialTests.test_spring_derivatives_match_energy_differences) ... ok
+test_limit_preserves_unstretched_material_and_matches_derivatives (<run_path>.StrainLimitTests.test_limit_preserves_unstretched_material_and_matches_derivatives) ... ok
+test_overextended_cloth_cannot_be_accepted_as_finite_energy (<run_path>.StrainLimitTests.test_overextended_cloth_cannot_be_accepted_as_finite_energy) ... ok
+test_step_limits_stretch_including_prescribed_boundary_motion (<run_path>.StrainLimitTests.test_step_limits_stretch_including_prescribed_boundary_motion) ... ok
+test_unstrained_complete_surface_has_no_artificial_contact_force (<run_path>.StrainLimitTests.test_unstrained_complete_surface_has_no_artificial_contact_force) ... ok
+test_actual_failed_triangles_are_rejected_by_the_material_guard (<run_path>.SurfaceStrainTests.test_actual_failed_triangles_are_rejected_by_the_material_guard) ... ok
+test_rigid_motion_preserves_both_material_directions (<run_path>.SurfaceStrainTests.test_rigid_motion_preserves_both_material_directions) ... ok
+test_shear_is_detected_even_when_one_edge_keeps_its_length (<run_path>.SurfaceStrainTests.test_shear_is_detected_even_when_one_edge_keeps_its_length) ... ok
+test_uniaxial_stretch_is_measured_in_the_material_frame (<run_path>.SurfaceStrainTests.test_uniaxial_stretch_is_measured_in_the_material_frame) ... ok
+test_actual_coat_and_shirt_intervals (<run_path>.ContinuousChecks.test_actual_coat_and_shirt_intervals) ... ok
+test_contact_exactly_at_the_endpoint_is_rejected (<run_path>.ContinuousChecks.test_contact_exactly_at_the_endpoint_is_rejected) ... ok
+test_crossing_with_clear_endpoints_is_rejected (<run_path>.ContinuousChecks.test_crossing_with_clear_endpoints_is_rejected) ... ok
+test_smaller_positive_gap_is_not_a_geometric_crossing (<run_path>.ContinuousChecks.test_smaller_positive_gap_is_not_a_geometric_crossing) ... ok
+test_exact_gradient_and_hessian_match_finite_differences (<run_path>.MembraneTests.test_exact_gradient_and_hessian_match_finite_differences) ... ok
+test_failed_cuff_triangle_resists_the_same_applied_load (<run_path>.MembraneTests.test_failed_cuff_triangle_resists_the_same_applied_load) ... ok
+test_projected_hessian_is_nonnegative_under_compression_and_shear (<run_path>.MembraneTests.test_projected_hessian_is_nonnegative_under_compression_and_shear) ... ok
+test_rest_and_rigid_motion_do_not_create_forces (<run_path>.MembraneTests.test_rest_and_rigid_motion_do_not_create_forces) ... ok
+test_uniform_deformation_does_not_depend_on_triangle_shape (<run_path>.MembraneTests.test_uniform_deformation_does_not_depend_on_triangle_shape) ... ok
+test_energy_matches_full_derivatives_in_both_material_modes (<run_path>.EnergyOnlyTests.test_energy_matches_full_derivatives_in_both_material_modes) ... ok
+test_energy_only_still_rejects_overextended_structural_edges (<run_path>.EnergyOnlyTests.test_energy_only_still_rejects_overextended_structural_edges) ... ok
+test_bands_partition_all_original_pairs (<run_path>.ContactBandTests.test_bands_partition_all_original_pairs) ... ok
+test_body_contact_responds_before_reaching_tiny_self_contact_radius (<run_path>.ContactBandTests.test_body_contact_responds_before_reaching_tiny_self_contact_radius) ... ok
+test_complete_costume_has_no_added_rest_repulsion (<run_path>.ContactBandTests.test_complete_costume_has_no_added_rest_repulsion) ... ok
+test_equal_radii_recover_original_contact_energy_and_derivatives (<run_path>.ContactBandTests.test_equal_radii_recover_original_contact_energy_and_derivatives) ... ok
+test_complete_displayed_costume_contributes_its_material (<run_path>.EmbeddedMembraneTests.test_complete_displayed_costume_contributes_its_material) ... ok
+test_identity_mapping_preserves_full_material_exactly (<run_path>.EmbeddedMembraneTests.test_identity_mapping_preserves_full_material_exactly) ... ok
+test_reduced_gradient_and_hessian_match_finite_differences (<run_path>.EmbeddedMembraneTests.test_reduced_gradient_and_hessian_match_finite_differences) ... ok
+test_actual_rejected_visible_edge_cannot_have_finite_material_energy (<run_path>.EmbeddedMaterialTests.test_actual_rejected_visible_edge_cannot_have_finite_material_energy) ... ok
+test_identity_mode_preserves_the_full_surface_material (<run_path>.EmbeddedMaterialTests.test_identity_mode_preserves_the_full_surface_material) ... ok
+test_material_and_virtual_work_include_all_visible_seams_and_bending (<run_path>.EmbeddedMaterialTests.test_material_and_virtual_work_include_all_visible_seams_and_bending) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 51.987s
+
+OK

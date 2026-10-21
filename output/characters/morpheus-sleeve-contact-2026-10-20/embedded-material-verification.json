@@ -1,0 +1,137 @@
+{
+  "scope": "Offline garment authoring; no runtime asset or playable-build change",
+  "solverSha256": "be48ba4ad7840296491d79204fb25f1fe698d5d04c7f5f46b1266aaeb2f89d81",
+  "displayVertices": 13386,
+  "displayTriangles": 25796,
+  "bodyLayers": 13,
+  "prescribedBoundaryVertices": 189,
+  "reducedVertices": 3005,
+  "material": "All displayed triangles, stitches, bending diagonals and strain barriers contribute energy, gradient and Hessian through the existing displacement embedding.",
+  "inertia": "Existing 3 kg area-lumped cage approximation retained; this is not the full consistent projected mass.",
+  "invisibleControlEdges": "Not cloth topology; no longer assigned material or a strain acceptance limit. Fine displayed edges still require stretch < 1.1.",
+  "tests": {
+    "initialMembrane": 31,
+    "reproducedFailures": 3,
+    "production": 34,
+    "passed": true,
+    "identityFullSurfaceCompatibilityPassed": true
+  },
+  "oldReducedControl": {
+    "samples": 13,
+    "from": 0.8,
+    "to": 0.8781901041666667,
+    "staticAndContinuousContactPassed": true,
+    "boundariesPassed": true,
+    "surfaceMaterialPassed": true,
+    "maximumBoundaryErrorMetres": 5.957289262123184e-08,
+    "maximumSurfaceStretch": 1.1638288557342316,
+    "maximumP99SurfaceStretch": 1.0173676920159282,
+    "maximumDisplayEdgeStretch": 1.0991762474304667,
+    "failure": "The displayed edge [354,355] approached 1.1 without its own strain-barrier energy; nine subdivisions still reached the boundary.",
+    "rejectedIntervals": 9,
+    "terminalExitCode": 1
+  },
+  "correctedReducedControl": {
+    "samples": 13,
+    "from": 0.8,
+    "to": 0.9,
+    "staticAndContinuousContactPassed": true,
+    "boundariesPassed": true,
+    "surfaceMaterialPassed": true,
+    "maximumBoundaryErrorMetres": 5.957289262123184e-08,
+    "maximumSurfaceStretch": 1.2140540008974094,
+    "maximumP99SurfaceStretch": 1.0305407219985636,
+    "maximumDisplayEdgeStretch": 1.0988207441077709,
+    "rejectedIntervals": 0,
+    "terminalExitCode": 0,
+    "recordedElapsedSeconds": 45601.72657550033
+  },
+  "speedClaim": false,
+  "timingLimitation": "Runs occurred at different times under uncontrolled host load; no whole-bake speed comparison was performed.",
+  "fullReference": {
+    "samples": 11,
+    "from": 0.8,
+    "to": 0.8541666666666667,
+    "staticAndContinuousContactPassed": true,
+    "boundariesPassed": true,
+    "surfaceMaterialPassed": true,
+    "maximumBoundaryErrorMetres": 5.953826305320543e-08,
+    "maximumSurfaceStretch": 1.2754129051858305,
+    "maximumP99SurfaceStretch": 1.0105598344157465,
+    "snapshot": {
+      "source": "ipc-body-lookahead-physics",
+      "samples": 11,
+      "lastTime": 0.8541666666666667,
+      "checkpointSha256": "74350f56a3fd98034804c6440871f5fa53fe2c8e8c1a2b271e44f5320da21491",
+      "solverSha256": "94189724200f26251a9863a237a7be370244106a3ae61e9c2167fded5010e163",
+      "finiteState": true
+    },
+    "stop": {
+      "pid": 91808,
+      "command": "/Users/tianqizhong/ai_project/auto_matrix/output/tools/cloth-ipc-venv/bin/python ipc_cloth.py --full-surface --resume ipc-body-lookahead-control --frames 7 --substeps 4 --output ipc-body-lookahead-physics",
+      "auditedFrozenSamples": 11,
+      "lastLiveSample": {
+        "frame": 12,
+        "time": 0.8583333333333334,
+        "sourceFrame": 3,
+        "substep": 3.0,
+        "integrationSeconds": 0.004166666666666644,
+        "maximumEdgeStretch": 1.0703094145783016,
+        "maximumSurfaceStretch": 1.274700772278791,
+        "p99SurfaceStretch": 1.010756683489225,
+        "endpointIntersects": false,
+        "collisionFreeStep": 1.0,
+        "stepCollisionFree": true,
+        "optimizerSafeStep": 0.701171875
+      },
+      "checkpointSha256": "1972badf7869f6356f099108f3c37a915a4af8e1b64508a1a5f4bd2bd5a03001",
+      "reason": "Retain the full-DOF reference and continue the independently audited displayed-material reduction; no runtime assets are being replaced."
+    },
+    "exitCode": 130
+  },
+  "productionSourceCheck": {
+    "testedSourceSha256": "65f989c6c7d33749f64a2bf6a3c6a85f03da050f33b781d27c2d2ee36e1a2768",
+    "sourceSha256": "be48ba4ad7840296491d79204fb25f1fe698d5d04c7f5f46b1266aaeb2f89d81",
+    "unchangedNestedSolverFunctions": [
+      "material",
+      "evaluate",
+      "relax",
+      "save_sample",
+      "advance_interval"
+    ],
+    "differencesFromTestedControl": [
+      "Remove unused membrane_energy import",
+      "Describe full-surface inertia and diagnostic mode accurately"
+    ]
+  },
+  "resume": {
+    "samples": 13,
+    "byteIdenticalCoordinateFiles": 39,
+    "checkpointIdentical": true,
+    "checkpointSha256": "0ae10bede906cddc6cb9b7e34e8f00666fe41ff37597ab2168ffd49499676b42",
+    "lastTime": 0.9
+  },
+  "continuation": {
+    "folder": "ipc-embedded-material-physics",
+    "requestedEnd": 1.0,
+    "resumedAt": 0.9,
+    "completionClaim": false
+  },
+  "visualReview": {
+    "type": "Offline actual garment and body surfaces in diagnostic colors, not native game rendering",
+    "files": [
+      "ipc-embedded-material-control-substeps-13-front.png",
+      "ipc-embedded-material-control-substeps-13-rear.png"
+    ],
+    "observations": "No obvious gross crossings or twisted hands in these two early views. Waist/coat-tail transition and sleeve cuffs still look stiff; film leather and full movement remain unaccepted."
+  },
+  "protectedWorktreeFilesUnchanged": 6,
+  "limitations": [
+    "Only .8–.9 seconds independently accepted; not the eight-second action.",
+    "Reduced displacement and lumped cage inertia approximate full dynamics; fine wrinkles may be restricted.",
+    "Real grasp, release, floor contact, world-coat handoff and runtime integration remain unfinished.",
+    "Local preview stays at http://localhost:5173/ with the previously verified build.",
+    "Render automatic deployment/default subdomain remain disabled; DNS pause still waits for Alibaba login.",
+    "42 high-quality trilogy groups remain unaccepted."
+  ]
+}

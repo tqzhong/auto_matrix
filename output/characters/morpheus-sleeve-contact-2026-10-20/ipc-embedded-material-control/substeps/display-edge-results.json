@@ -1,0 +1,93 @@
+[
+  {
+    "frame": 1,
+    "time": 0.8,
+    "edges": 39179,
+    "maximum": 1.0012547682721955,
+    "passed": true
+  },
+  {
+    "frame": 2,
+    "time": 0.8083333333333333,
+    "edges": 39179,
+    "maximum": 1.0021252471681588,
+    "passed": true
+  },
+  {
+    "frame": 3,
+    "time": 0.8166666666666668,
+    "edges": 39179,
+    "maximum": 1.0032550834480825,
+    "passed": true
+  },
+  {
+    "frame": 4,
+    "time": 0.8250000000000001,
+    "edges": 39179,
+    "maximum": 1.0032782706511054,
+    "passed": true
+  },
+  {
+    "frame": 5,
+    "time": 0.8333333333333334,
+    "edges": 39179,
+    "maximum": 1.0040167299961547,
+    "passed": true
+  },
+  {
+    "frame": 6,
+    "time": 0.8416666666666667,
+    "edges": 39179,
+    "maximum": 1.0092002665546438,
+    "passed": true
+  },
+  {
+    "frame": 7,
+    "time": 0.8500000000000001,
+    "edges": 39179,
+    "maximum": 1.0144086847437621,
+    "passed": true
+  },
+  {
+    "frame": 8,
+    "time": 0.8583333333333334,
+    "edges": 39179,
+    "maximum": 1.0198637879508778,
+    "passed": true
+  },
+  {
+    "frame": 9,
+    "time": 0.8666666666666667,
+    "edges": 39179,
+    "maximum": 1.0253866617706449,
+    "passed": true
+  },
+  {
+    "frame": 10,
+    "time": 0.875,
+    "edges": 39179,
+    "maximum": 1.0551977109941637,
+    "passed": true
+  },
+  {
+    "frame": 11,
+    "time": 0.8833333333333334,
+    "edges": 39179,
+    "maximum": 1.094782519829586,
+    "passed": true
+  },
+  {
+    "frame": 12,
+    "time": 0.8916666666666667,
+    "edges": 39179,
+    "maximum": 1.0980770827835176,
+    "passed": true
+  },
+  {
+    "frame": 13,
+    "time": 0.9,
+    "edges": 39179,
+    "maximum": 1.0988207441077709,
+    "passed": true
+  }
+]

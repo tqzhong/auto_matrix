@@ -1,0 +1,8 @@
+{
+  "source": "ipc-body-lookahead-physics",
+  "samples": 11,
+  "lastTime": 0.8541666666666667,
+  "checkpointSha256": "74350f56a3fd98034804c6440871f5fa53fe2c8e8c1a2b271e44f5320da21491",
+  "solverSha256": "94189724200f26251a9863a237a7be370244106a3ae61e9c2167fded5010e163",
+  "finiteState": true
+}
