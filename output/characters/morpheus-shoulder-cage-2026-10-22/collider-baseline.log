@@ -1,0 +1,6 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+keyed-vertices {'frame': 61, 'bodyHeight': 1.0, 'clothMinimum': 1.0899051427841187, 'clothMaximum': 1.1204376220703125}
+keyed-translation {'frame': 61, 'bodyHeight': 1.0, 'clothMinimum': 1.0877134799957275, 'clothMaximum': 1.1190781593322754}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+
+Blender quit

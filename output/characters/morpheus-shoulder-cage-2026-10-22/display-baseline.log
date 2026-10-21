@@ -1,0 +1,7 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+Info: Saved as "display-baseline.blend"
+{"cagePoints": 312, "displayPoints": 2664, "records": [{"frame": 1, "maximumErrorMetres": 1.8024400477711773e-07}, {"frame": 2, "maximumErrorMetres": 2.5561029908669655e-07}, {"frame": 1, "maximumErrorMetres": 1.8024400477711773e-07}, {"frame": 1, "phase": "saved-blend-reload", "maximumErrorMetres": 1.8024400477711773e-07}, {"frame": 2, "phase": "saved-blend-reload", "maximumErrorMetres": 2.5561029908669655e-07}]}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+Read blend: "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-cage-2026-10-22/display-baseline.blend"
+
+Blender quit

@@ -1,0 +1,4601 @@
+{
+  "scope": "All included geometry trials are rejected; no runtime asset or deformer adopted. Self-contact scans count both directions and examples are not the complete count.",
+  "trials": [
+    {
+      "source": "shoulder-arap-contact.json",
+      "sha256": "cf4c2c1c2c73de2bcae40323cbf9c2e7b96a73f62a88e6e1afaf7c15db4b358a",
+      "result": [
+        {
+          "file": "shoulder-arap-20.json",
+          "raisedOnly": true,
+          "iterations": 20,
+          "parts": [
+            {
+              "activeVertices": 1970,
+              "globalIterations": 20,
+              "maximumRelativeLinearResidual": 9.976947966434427e-10,
+              "maximumCgSteps": 118,
+              "energy": 0.3720686134738713,
+              "maxShift": 0.16652509812672178
+            },
+            {
+              "activeVertices": 1968,
+              "globalIterations": 20,
+              "maximumRelativeLinearResidual": 9.961523549623926e-10,
+              "maximumCgSteps": 103,
+              "energy": 0.3279408990959092,
+              "maxShift": 0.15340104544288755
+            }
+          ],
+          "skinRoundTripError": 1.2001299938724544e-07,
+          "coat": {
+            "count": 328,
+            "examples": [
+              {
+                "first": 1768,
+                "second": 1996,
+                "line": 0.022480251184170883
+              },
+              {
+                "first": 1996,
+                "second": 1768,
+                "line": 0.022480251184170883
+              },
+              {
+                "first": 282,
+                "second": 292,
+                "line": 0.018492472526671272
+              },
+              {
+                "first": 292,
+                "second": 282,
+                "line": 0.01849247252667127
+              }
+            ]
+          },
+          "shirt": {
+            "count": 278,
+            "examples": [
+              {
+                "first": 2435,
+                "second": 2253,
+                "line": 0.018011114220385347
+              },
+              {
+                "first": 2253,
+                "second": 2435,
+                "line": 0.018011114220385344
+              },
+              {
+                "first": 2236,
+                "second": 2441,
+                "line": 0.01551967826629524
+              },
+              {
+                "first": 2441,
+                "second": 2236,
+                "line": 0.015519678266295236
+              }
+            ]
+          },
+          "layers": {
+            "count": 941,
+            "examples": [
+              {
+                "first": 1589,
+                "second": 1939,
+                "line": 0.05506483472176395
+              },
+              {
+                "first": 7255,
+                "second": 7832,
+                "line": 0.04793314757220416
+              },
+              {
+                "first": 597,
+                "second": 695,
+                "line": 0.04005584331857158
+              },
+              {
+                "first": 1615,
+                "second": 1964,
+                "line": 0.0348235707877084
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 57,
+            "examples": [
+              {
+                "first": 1706,
+                "second": 9505,
+                "line": 0.030161637122917813
+              },
+              {
+                "first": 9438,
+                "second": 23070,
+                "line": 0.028866199902367128
+              },
+              {
+                "first": 1251,
+                "second": 9334,
+                "line": 0.026309132209070236
+              },
+              {
+                "first": 1211,
+                "second": 9326,
+                "line": 0.020763280902449312
+              }
+            ]
+          },
+          "shirtBody": {
+            "count": 67,
+            "examples": [
+              {
+                "first": 1795,
+                "second": 9369,
+                "line": 0.031889555545280876
+              },
+              {
+                "first": 10273,
+                "second": 23065,
+                "line": 0.02980875174975739
+              },
+              {
+                "first": 1995,
+                "second": 9504,
+                "line": 0.02623149396886382
+              },
+              {
+                "first": 1802,
+                "second": 9376,
+                "line": 0.021331687086055963
+              }
+            ]
+          }
+        },
+        {
+          "file": "shoulder-arap-60.json",
+          "raisedOnly": true,
+          "iterations": 60,
+          "parts": [
+            {
+              "activeVertices": 1970,
+              "globalIterations": 60,
+              "maximumRelativeLinearResidual": 9.976947966434427e-10,
+              "maximumCgSteps": 118,
+              "energy": 0.36541820028320915,
+              "maxShift": 0.19568920822525707
+            },
+            {
+              "activeVertices": 1968,
+              "globalIterations": 60,
+              "maximumRelativeLinearResidual": 9.99122958197529e-10,
+              "maximumCgSteps": 103,
+              "energy": 0.32347637051206546,
+              "maxShift": 0.16924957446588013
+            }
+          ],
+          "skinRoundTripError": 1.2006185781671226e-07,
+          "coat": {
+            "count": 358,
+            "examples": [
+              {
+                "first": 6039,
+                "second": 590,
+                "line": 0.0195133706023563
+              },
+              {
+                "first": 590,
+                "second": 6039,
+                "line": 0.019513370602356295
+              },
+              {
+                "first": 5694,
+                "second": 5707,
+                "line": 0.01616809753414861
+              },
+              {
+                "first": 5707,
+                "second": 5694,
+                "line": 0.01616809753414861
+              }
+            ]
+          },
+          "shirt": {
+            "count": 314,
+            "examples": [
+              {
+                "first": 693,
+                "second": 6614,
+                "line": 0.02220064291993922
+              },
+              {
+                "first": 6614,
+                "second": 693,
+                "line": 0.022200642919939215
+              },
+              {
+                "first": 2077,
+                "second": 2514,
+                "line": 0.01723249402944407
+              },
+              {
+                "first": 2514,
+                "second": 2077,
+                "line": 0.01723249402944407
+              }
+            ]
+          },
+          "layers": {
+            "count": 1099,
+            "examples": [
+              {
+                "first": 16855,
+                "second": 18315,
+                "line": 0.04253359997855435
+              },
+              {
+                "first": 1572,
+                "second": 1921,
+                "line": 0.04191024846627475
+              },
+              {
+                "first": 1937,
+                "second": 2287,
+                "line": 0.037182608905807206
+              },
+              {
+                "first": 1616,
+                "second": 1965,
+                "line": 0.03551244151673149
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 59,
+            "examples": [
+              {
+                "first": 9382,
+                "second": 23058,
+                "line": 0.03137969089558573
+              },
+              {
+                "first": 1446,
+                "second": 9369,
+                "line": 0.030473144580576955
+              },
+              {
+                "first": 1451,
+                "second": 9374,
+                "line": 0.022756003062413592
+              },
+              {
+                "first": 1646,
+                "second": 9504,
+                "line": 0.018646318475567747
+              }
+            ]
+          },
+          "shirtBody": {
+            "count": 107,
+            "examples": [
+              {
+                "first": 10274,
+                "second": 23058,
+                "line": 0.027494016739058744
+              },
+              {
+                "first": 1794,
+                "second": 9368,
+                "line": 0.026452504541969336
+              },
+              {
+                "first": 1802,
+                "second": 9379,
+                "line": 0.025572888577911852
+              },
+              {
+                "first": 10278,
+                "second": 23060,
+                "line": 0.024635389880629327
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": "blender-shirt-check-12.json",
+      "sha256": "5c3c8ea1448466cf7fa112ff687c901dc41c8c26a2e92ca5149330db2ddc8326",
+      "result": {
+        "gameFrame": 12,
+        "sceneFrame": 49,
+        "layer": "shirt",
+        "inputPoseError": 1.319786773640643e-07,
+        "shaderRoundTripError": 1.201116735870031e-07,
+        "self": {
+          "count": 702,
+          "examples": [
+            {
+              "first": 1865,
+              "second": 1908,
+              "line": 0.0377261959045003
+            },
+            {
+              "first": 1908,
+              "second": 1865,
+              "line": 0.0377261959045003
+            },
+            {
+              "first": 2462,
+              "second": 2461,
+              "line": 0.03692620377377083
+            },
+            {
+              "first": 2461,
+              "second": 2462,
+              "line": 0.03692620377377082
+            }
+          ]
+        },
+        "body": {
+          "count": 225,
+          "examples": [
+            {
+              "first": 1875,
+              "second": 9420,
+              "line": 0.028547945525066825
+            },
+            {
+              "first": 1801,
+              "second": 9373,
+              "line": 0.023748068386544526
+            },
+            {
+              "first": 12185,
+              "second": 40055,
+              "line": 0.02330811546558532
+            },
+            {
+              "first": 1906,
+              "second": 8676,
+              "line": 0.02327313578874076
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source": "prebind-skinning-contact.json",
+      "sha256": "52f75c1d2533a2461f8ce98e822ebde758c32ba06b58b363e6a343980b2c3d9a",
+      "result": [
+        {
+          "combo": 0,
+          "frame": -1,
+          "counts": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.01373998188136976
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.013732655886535786
+            },
+            {
+              "vertices": 2032,
+              "maxShift": 0.014675897004121351
+            }
+          ],
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 0,
+            "examples": []
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "coatCorrectedAnatomy": {
+            "count": 608,
+            "examples": [
+              {
+                "first": 7426,
+                "second": 23679,
+                "line": 0.028257651211965187
+              },
+              {
+                "first": 17035,
+                "second": 29968,
+                "line": 0.028166769488659576
+              },
+              {
+                "first": 7420,
+                "second": 23675,
+                "line": 0.02285078040405194
+              },
+              {
+                "first": 17033,
+                "second": 29972,
+                "line": 0.022820689716367998
+              }
+            ]
+          },
+          "shirtCorrectedAnatomy": {
+            "count": 620,
+            "examples": [
+              {
+                "first": 8003,
+                "second": 23679,
+                "line": 0.02136128819795508
+              },
+              {
+                "first": 18495,
+                "second": 29968,
+                "line": 0.021277893758904574
+              },
+              {
+                "first": 12941,
+                "second": 26782,
+                "line": 0.019754153991694334
+              },
+              {
+                "first": 2447,
+                "second": 20489,
+                "line": 0.019721612174164137
+              }
+            ]
+          }
+        },
+        {
+          "combo": 0,
+          "frame": 6,
+          "counts": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.02873388088014234
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.028725573931219467
+            },
+            {
+              "vertices": 2032,
+              "maxShift": 0.03078861543153447
+            }
+          ],
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 0,
+            "examples": []
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "coatCorrectedAnatomy": {
+            "count": 661,
+            "examples": [
+              {
+                "first": 7426,
+                "second": 23679,
+                "line": 0.029905211899660764
+              },
+              {
+                "first": 17035,
+                "second": 29968,
+                "line": 0.028693412711556593
+              },
+              {
+                "first": 475,
+                "second": 18822,
+                "line": 0.02589242215643595
+              },
+              {
+                "first": 17033,
+                "second": 29972,
+                "line": 0.023860415118230983
+              }
+            ]
+          },
+          "shirtCorrectedAnatomy": {
+            "count": 696,
+            "examples": [
+              {
+                "first": 18495,
+                "second": 29968,
+                "line": 0.02180042368239798
+              },
+              {
+                "first": 8000,
+                "second": 23674,
+                "line": 0.020703280249879687
+              },
+              {
+                "first": 8003,
+                "second": 23679,
+                "line": 0.018548334251827038
+              },
+              {
+                "first": 7968,
+                "second": 23642,
+                "line": 0.017097701571343882
+              }
+            ]
+          }
+        },
+        {
+          "combo": 0,
+          "frame": 12,
+          "counts": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.07118765195780588
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.0711555091053033
+            },
+            {
+              "vertices": 2032,
+              "maxShift": 0.07557954539769957
+            }
+          ],
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 108,
+            "examples": [
+              {
+                "first": 417,
+                "second": 2302,
+                "line": 0.037079124353475705
+              },
+              {
+                "first": 1754,
+                "second": 2102,
+                "line": 0.03588686743730281
+              },
+              {
+                "first": 1750,
+                "second": 2340,
+                "line": 0.026811385405926296
+              },
+              {
+                "first": 418,
+                "second": 2305,
+                "line": 0.02609953486087689
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "coatCorrectedAnatomy": {
+            "count": 678,
+            "examples": [
+              {
+                "first": 17034,
+                "second": 30044,
+                "line": 0.02930728948325486
+              },
+              {
+                "first": 17088,
+                "second": 30022,
+                "line": 0.02177383921634294
+              },
+              {
+                "first": 600,
+                "second": 19011,
+                "line": 0.02176925188383537
+              },
+              {
+                "first": 1959,
+                "second": 20763,
+                "line": 0.020684345181346032
+              }
+            ]
+          },
+          "shirtCorrectedAnatomy": {
+            "count": 737,
+            "examples": [
+              {
+                "first": 2515,
+                "second": 20254,
+                "line": 0.026052527970351753
+              },
+              {
+                "first": 2518,
+                "second": 20283,
+                "line": 0.024138864723164493
+              },
+              {
+                "first": 18494,
+                "second": 30045,
+                "line": 0.019297865913377957
+              },
+              {
+                "first": 18549,
+                "second": 30022,
+                "line": 0.01848579621937578
+              }
+            ]
+          }
+        },
+        {
+          "combo": 1,
+          "frame": 12,
+          "counts": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.07519855402799971
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.07516382299656674
+            },
+            {
+              "vertices": 2032,
+              "maxShift": 0.07981740212748983
+            }
+          ],
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 130,
+            "examples": [
+              {
+                "first": 11365,
+                "second": 12598,
+                "line": 0.039896939368263606
+              },
+              {
+                "first": 10038,
+                "second": 12798,
+                "line": 0.03842726651483987
+              },
+              {
+                "first": 11108,
+                "second": 12337,
+                "line": 0.029531797852853297
+              },
+              {
+                "first": 11567,
+                "second": 12597,
+                "line": 0.027436219795657135
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "coatCorrectedAnatomy": {
+            "count": 678,
+            "examples": [
+              {
+                "first": 7427,
+                "second": 23747,
+                "line": 0.02682841406756383
+              },
+              {
+                "first": 7477,
+                "second": 23729,
+                "line": 0.022559917091617067
+              },
+              {
+                "first": 10215,
+                "second": 25316,
+                "line": 0.02240261612008569
+              },
+              {
+                "first": 11576,
+                "second": 27052,
+                "line": 0.021169832029634704
+              }
+            ]
+          },
+          "shirtCorrectedAnatomy": {
+            "count": 740,
+            "examples": [
+              {
+                "first": 13009,
+                "second": 26553,
+                "line": 0.026287481339424282
+              },
+              {
+                "first": 13014,
+                "second": 26572,
+                "line": 0.022896638890681813
+              },
+              {
+                "first": 8053,
+                "second": 23729,
+                "line": 0.019352717808859072
+              },
+              {
+                "first": 11203,
+                "second": 25316,
+                "line": 0.018801867072978186
+              }
+            ]
+          }
+        },
+        {
+          "combo": 2,
+          "frame": 15,
+          "counts": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.02046622024442412
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.020460236791380322
+            },
+            {
+              "vertices": 2032,
+              "maxShift": 0.022099273754010475
+            }
+          ],
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 0,
+            "examples": []
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "coatCorrectedAnatomy": {
+            "count": 676,
+            "examples": [
+              {
+                "first": 17006,
+                "second": 30038,
+                "line": 0.022590279461790604
+              },
+              {
+                "first": 7388,
+                "second": 23643,
+                "line": 0.020213566114734932
+              },
+              {
+                "first": 17088,
+                "second": 30022,
+                "line": 0.018625491595682185
+              },
+              {
+                "first": 17035,
+                "second": 30044,
+                "line": 0.017562968048925435
+              }
+            ]
+          },
+          "shirtCorrectedAnatomy": {
+            "count": 788,
+            "examples": [
+              {
+                "first": 18494,
+                "second": 30044,
+                "line": 0.03309526194623786
+              },
+              {
+                "first": 7965,
+                "second": 23643,
+                "line": 0.021345475352730597
+              },
+              {
+                "first": 18466,
+                "second": 30038,
+                "line": 0.020022077497967458
+              },
+              {
+                "first": 7954,
+                "second": 23729,
+                "line": 0.019215520608222073
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": "prebind-layer-fit-contact.json",
+      "sha256": "9336262dfe79d23bc50d0825b257e4a4f41f6b2d6f21623a293fe32689e68b60",
+      "result": [
+        {
+          "file": "prebind-layer-fit-pose.json",
+          "raisedOnly": true,
+          "changedCoatVertices": 111,
+          "infeasibleVertices": 0,
+          "maximumProjectionShift": 0.028776156000175027,
+          "maximumPlaneResidual": 2.6020852139652106e-18,
+          "skinRoundTripError": 1.1496703315901267e-07,
+          "coat": {
+            "count": 26,
+            "examples": [
+              {
+                "first": 1750,
+                "second": 1752,
+                "line": 0.0396671225116612
+              },
+              {
+                "first": 1752,
+                "second": 1750,
+                "line": 0.03966712251166119
+              },
+              {
+                "first": 5656,
+                "second": 5654,
+                "line": 0.02756543934966945
+              },
+              {
+                "first": 5654,
+                "second": 5656,
+                "line": 0.027565439349669447
+              }
+            ]
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 40,
+            "examples": [
+              {
+                "first": 182,
+                "second": 259,
+                "line": 0.02059658070938011
+              },
+              {
+                "first": 110,
+                "second": 180,
+                "line": 0.01939920338856141
+              },
+              {
+                "first": 112,
+                "second": 192,
+                "line": 0.01868219491973027
+              },
+              {
+                "first": 180,
+                "second": 255,
+                "line": 0.018615029138390023
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "prebind-layer-offset-contact.json",
+      "sha256": "7faea7145839c678531197384a5314214fd5e07ec29ac9243be9518266f21084",
+      "result": [
+        {
+          "file": "prebind-layer-offset-pose.json",
+          "raisedOnly": true,
+          "changedCoatVertices": 1984,
+          "maximumShift": 0.06804116692521502,
+          "originalNormalGapRange": [
+            0.00026636846374462745,
+            0.06010285725893056
+          ],
+          "skinRoundTripError": 1.1867539776222697e-07,
+          "coat": {
+            "count": 192,
+            "examples": [
+              {
+                "first": 1955,
+                "second": 418,
+                "line": 0.02646093164453172
+              },
+              {
+                "first": 418,
+                "second": 1955,
+                "line": 0.026460931644531713
+              },
+              {
+                "first": 5661,
+                "second": 5667,
+                "line": 0.02554128687813422
+              },
+              {
+                "first": 5667,
+                "second": 5661,
+                "line": 0.02554128687813422
+              }
+            ]
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 78,
+            "examples": [
+              {
+                "first": 181,
+                "second": 259,
+                "line": 0.024068682487664823
+              },
+              {
+                "first": 184,
+                "second": 264,
+                "line": 0.023974902350497162
+              },
+              {
+                "first": 1954,
+                "second": 2105,
+                "line": 0.020534876799531178
+              },
+              {
+                "first": 112,
+                "second": 183,
+                "line": 0.019081489174357338
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "prebind-neighbour-planes-contact.json",
+      "sha256": "ac84c6a9083d01b0035bddfd2f9451220f30063cd8d7a8c607745442b5c1ea34",
+      "result": [
+        {
+          "file": "prebind-neighbour-planes-pose.json",
+          "raisedOnly": true,
+          "vertices": 1984,
+          "changed": 628,
+          "maxShift": 0.08787962760363024,
+          "maximumPlaneResidual": 8.734246650377031e-06,
+          "iterations": 1000,
+          "neighbourConstraints": 40,
+          "skinRoundTripError": 1.1820680904743672e-07,
+          "coat": {
+            "count": 574,
+            "examples": [
+              {
+                "first": 601,
+                "second": 603,
+                "line": 0.06941910091763981
+              },
+              {
+                "first": 603,
+                "second": 601,
+                "line": 0.06941910091763981
+              },
+              {
+                "first": 602,
+                "second": 603,
+                "line": 0.06354568714172214
+              },
+              {
+                "first": 603,
+                "second": 602,
+                "line": 0.06354568714172214
+              }
+            ]
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 96,
+            "examples": [
+              {
+                "first": 1750,
+                "second": 630,
+                "line": 0.033982885241916394
+              },
+              {
+                "first": 1749,
+                "second": 630,
+                "line": 0.02736516975976701
+              },
+              {
+                "first": 182,
+                "second": 259,
+                "line": 0.020891017564890677
+              },
+              {
+                "first": 1751,
+                "second": 623,
+                "line": 0.019981069841798448
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "apose-initial-contact.json",
+      "sha256": "682a712087c4f416143cb3544b448263a555244dee0dfb7b2b793209464d5eef",
+      "result": [
+        {
+          "file": "apose-before-cut.json",
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "file": "apose-authored-cut.json",
+          "coat": {
+            "count": 184,
+            "examples": [
+              {
+                "first": 1822,
+                "second": 2096,
+                "line": 0.009143296321239272
+              },
+              {
+                "first": 2096,
+                "second": 1822,
+                "line": 0.009143296321239272
+              },
+              {
+                "first": 11711,
+                "second": 11433,
+                "line": 0.009142517657063622
+              },
+              {
+                "first": 11433,
+                "second": 11711,
+                "line": 0.00914251765706362
+              }
+            ]
+          },
+          "shirt": {
+            "count": 144,
+            "examples": [
+              {
+                "first": 2170,
+                "second": 2444,
+                "line": 0.007099650683021523
+              },
+              {
+                "first": 2444,
+                "second": 2170,
+                "line": 0.007099650683021522
+              },
+              {
+                "first": 12944,
+                "second": 12666,
+                "line": 0.007097090147293332
+              },
+              {
+                "first": 12666,
+                "second": 12944,
+                "line": 0.00709709014729333
+              }
+            ]
+          },
+          "layers": {
+            "count": 184,
+            "examples": [
+              {
+                "first": 11575,
+                "second": 12672,
+                "line": 0.010221678990514236
+              },
+              {
+                "first": 1960,
+                "second": 2172,
+                "line": 0.01022073986532762
+              },
+              {
+                "first": 11434,
+                "second": 12943,
+                "line": 0.009315513779072745
+              },
+              {
+                "first": 1821,
+                "second": 2445,
+                "line": 0.009311532133877512
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": "apose-cut-contact.json",
+      "sha256": "22a98c1fc034713dd25b4d557a4070d86771e63a624d5cc705a3e60a693de7d5",
+      "result": [
+        {
+          "dual": false,
+          "combo": 0,
+          "frame": -1,
+          "corrections": [],
+          "coat": {
+            "count": 526,
+            "examples": [
+              {
+                "first": 1802,
+                "second": 1619,
+                "line": 0.02767586674693531
+              },
+              {
+                "first": 1619,
+                "second": 1802,
+                "line": 0.027675866746935306
+              },
+              {
+                "first": 11228,
+                "second": 11413,
+                "line": 0.027674506640293257
+              },
+              {
+                "first": 11413,
+                "second": 11228,
+                "line": 0.027674506640293254
+              }
+            ]
+          },
+          "shirt": {
+            "count": 476,
+            "examples": [
+              {
+                "first": 2310,
+                "second": 506,
+                "line": 0.03452410546999987
+              },
+              {
+                "first": 506,
+                "second": 2310,
+                "line": 0.03452410546999986
+              },
+              {
+                "first": 12806,
+                "second": 11018,
+                "line": 0.03449182964132331
+              },
+              {
+                "first": 11018,
+                "second": 12806,
+                "line": 0.0344918296413233
+              }
+            ]
+          },
+          "layers": {
+            "count": 995,
+            "examples": [
+              {
+                "first": 1964,
+                "second": 2310,
+                "line": 0.059093727898333365
+              },
+              {
+                "first": 11571,
+                "second": 12806,
+                "line": 0.05908623991365573
+              },
+              {
+                "first": 1961,
+                "second": 2311,
+                "line": 0.05490996297449123
+              },
+              {
+                "first": 11574,
+                "second": 12805,
+                "line": 0.054903670008170646
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 0,
+          "frame": 6,
+          "corrections": [],
+          "coat": {
+            "count": 572,
+            "examples": [
+              {
+                "first": 2095,
+                "second": 1824,
+                "line": 0.046286224599033615
+              },
+              {
+                "first": 1824,
+                "second": 2095,
+                "line": 0.04628622459903361
+              },
+              {
+                "first": 1672,
+                "second": 1738,
+                "line": 0.04306786860359103
+              },
+              {
+                "first": 1738,
+                "second": 1672,
+                "line": 0.04306786860359102
+              }
+            ]
+          },
+          "shirt": {
+            "count": 508,
+            "examples": [
+              {
+                "first": 2173,
+                "second": 2309,
+                "line": 0.05640908320465075
+              },
+              {
+                "first": 2309,
+                "second": 2173,
+                "line": 0.05640908320465075
+              },
+              {
+                "first": 2343,
+                "second": 2121,
+                "line": 0.05627029305942187
+              },
+              {
+                "first": 2121,
+                "second": 2343,
+                "line": 0.05627029305942186
+              }
+            ]
+          },
+          "layers": {
+            "count": 973,
+            "examples": [
+              {
+                "first": 1944,
+                "second": 2292,
+                "line": 0.0911490584465031
+              },
+              {
+                "first": 2094,
+                "second": 2442,
+                "line": 0.07972796395830348
+              },
+              {
+                "first": 359,
+                "second": 439,
+                "line": 0.07061135599518202
+              },
+              {
+                "first": 11559,
+                "second": 12792,
+                "line": 0.06810371999409659
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 0,
+          "frame": 12,
+          "corrections": [],
+          "coat": {
+            "count": 666,
+            "examples": [
+              {
+                "first": 2099,
+                "second": 2093,
+                "line": 0.13438301163872737
+              },
+              {
+                "first": 2093,
+                "second": 2099,
+                "line": 0.13438301163872735
+              },
+              {
+                "first": 1754,
+                "second": 1941,
+                "line": 0.06510145988280229
+              },
+              {
+                "first": 1941,
+                "second": 1754,
+                "line": 0.06510145988280229
+              }
+            ]
+          },
+          "shirt": {
+            "count": 696,
+            "examples": [
+              {
+                "first": 2442,
+                "second": 2448,
+                "line": 0.11955528477398208
+              },
+              {
+                "first": 2448,
+                "second": 2442,
+                "line": 0.11955528477398208
+              },
+              {
+                "first": 2309,
+                "second": 2173,
+                "line": 0.09389415747818353
+              },
+              {
+                "first": 2173,
+                "second": 2309,
+                "line": 0.09389415747818351
+              }
+            ]
+          },
+          "layers": {
+            "count": 1108,
+            "examples": [
+              {
+                "first": 1824,
+                "second": 2170,
+                "line": 0.13287399487681834
+              },
+              {
+                "first": 2094,
+                "second": 2442,
+                "line": 0.11300612219115133
+              },
+              {
+                "first": 1946,
+                "second": 2294,
+                "line": 0.0920923953624243
+              },
+              {
+                "first": 1945,
+                "second": 2343,
+                "line": 0.09084002849155506
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 1,
+          "frame": 12,
+          "corrections": [],
+          "coat": {
+            "count": 682,
+            "examples": [
+              {
+                "first": 11708,
+                "second": 11706,
+                "line": 0.13902316014371346
+              },
+              {
+                "first": 11706,
+                "second": 11708,
+                "line": 0.13902316014371344
+              },
+              {
+                "first": 11284,
+                "second": 11346,
+                "line": 0.08136684570028993
+              },
+              {
+                "first": 11346,
+                "second": 11284,
+                "line": 0.08136684570028993
+              }
+            ]
+          },
+          "shirt": {
+            "count": 700,
+            "examples": [
+              {
+                "first": 12940,
+                "second": 12938,
+                "line": 0.12406650468337693
+              },
+              {
+                "first": 12938,
+                "second": 12940,
+                "line": 0.1240665046833769
+              },
+              {
+                "first": 12807,
+                "second": 12671,
+                "line": 0.09066025844918098
+              },
+              {
+                "first": 12671,
+                "second": 12807,
+                "line": 0.09066025844918096
+              }
+            ]
+          },
+          "layers": {
+            "count": 1129,
+            "examples": [
+              {
+                "first": 11439,
+                "second": 12666,
+                "line": 0.13516696889503035
+              },
+              {
+                "first": 11705,
+                "second": 12938,
+                "line": 0.1152839125604257
+              },
+              {
+                "first": 11557,
+                "second": 12790,
+                "line": 0.09323279921741563
+              },
+              {
+                "first": 11576,
+                "second": 12806,
+                "line": 0.09245041904655099
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 2,
+          "frame": 15,
+          "corrections": [],
+          "coat": {
+            "count": 558,
+            "examples": [
+              {
+                "first": 2095,
+                "second": 1824,
+                "line": 0.04237582651653851
+              },
+              {
+                "first": 1824,
+                "second": 2095,
+                "line": 0.04237582651653849
+              },
+              {
+                "first": 11712,
+                "second": 11439,
+                "line": 0.04167849973851548
+              },
+              {
+                "first": 11439,
+                "second": 11712,
+                "line": 0.041678499738515465
+              }
+            ]
+          },
+          "shirt": {
+            "count": 476,
+            "examples": [
+              {
+                "first": 2309,
+                "second": 2173,
+                "line": 0.04475512437725557
+              },
+              {
+                "first": 2173,
+                "second": 2309,
+                "line": 0.04475512437725556
+              },
+              {
+                "first": 12807,
+                "second": 12671,
+                "line": 0.04434283576738311
+              },
+              {
+                "first": 12671,
+                "second": 12807,
+                "line": 0.0443428357673831
+              }
+            ]
+          },
+          "layers": {
+            "count": 941,
+            "examples": [
+              {
+                "first": 1944,
+                "second": 2292,
+                "line": 0.06836819976109725
+              },
+              {
+                "first": 11559,
+                "second": 12792,
+                "line": 0.06774031724737488
+              },
+              {
+                "first": 11349,
+                "second": 12582,
+                "line": 0.06266229484299807
+              },
+              {
+                "first": 1738,
+                "second": 2086,
+                "line": 0.06264136992125718
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": -1,
+          "corrections": [
+            {
+              "vertices": 2040,
+              "maxShift": 0.01525784691150521
+            },
+            {
+              "vertices": 2000,
+              "maxShift": 0.015121421047345068
+            }
+          ],
+          "coat": {
+            "count": 540,
+            "examples": [
+              {
+                "first": 1821,
+                "second": 1828,
+                "line": 0.03695068271012634
+              },
+              {
+                "first": 1828,
+                "second": 1821,
+                "line": 0.03695068271012633
+              },
+              {
+                "first": 11435,
+                "second": 11434,
+                "line": 0.03694998716367895
+              },
+              {
+                "first": 11434,
+                "second": 11435,
+                "line": 0.036949987163678935
+              }
+            ]
+          },
+          "shirt": {
+            "count": 484,
+            "examples": [
+              {
+                "first": 12666,
+                "second": 12667,
+                "line": 0.04034994303908148
+              },
+              {
+                "first": 12667,
+                "second": 12666,
+                "line": 0.04034994303908148
+              },
+              {
+                "first": 2170,
+                "second": 2177,
+                "line": 0.04034982625776425
+              },
+              {
+                "first": 2177,
+                "second": 2170,
+                "line": 0.040349826257764246
+              }
+            ]
+          },
+          "layers": {
+            "count": 924,
+            "examples": [
+              {
+                "first": 1964,
+                "second": 2310,
+                "line": 0.06299119173969461
+              },
+              {
+                "first": 11571,
+                "second": 12806,
+                "line": 0.06298408742736307
+              },
+              {
+                "first": 1961,
+                "second": 2311,
+                "line": 0.05994978014148601
+              },
+              {
+                "first": 11574,
+                "second": 12805,
+                "line": 0.0599441636656976
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": 6,
+          "corrections": [
+            {
+              "vertices": 2040,
+              "maxShift": 0.03246135577643617
+            },
+            {
+              "vertices": 2000,
+              "maxShift": 0.0321360099480679
+            }
+          ],
+          "coat": {
+            "count": 530,
+            "examples": [
+              {
+                "first": 1824,
+                "second": 2095,
+                "line": 0.06654521117567945
+              },
+              {
+                "first": 2095,
+                "second": 1824,
+                "line": 0.06654521117567944
+              },
+              {
+                "first": 1594,
+                "second": 1738,
+                "line": 0.053938422895649596
+              },
+              {
+                "first": 1738,
+                "second": 1594,
+                "line": 0.053938422895649596
+              }
+            ]
+          },
+          "shirt": {
+            "count": 508,
+            "examples": [
+              {
+                "first": 2173,
+                "second": 2309,
+                "line": 0.05424332459307671
+              },
+              {
+                "first": 2309,
+                "second": 2173,
+                "line": 0.054243324593076694
+              },
+              {
+                "first": 2103,
+                "second": 2290,
+                "line": 0.0447812906946085
+              },
+              {
+                "first": 2290,
+                "second": 2103,
+                "line": 0.0447812906946085
+              }
+            ]
+          },
+          "layers": {
+            "count": 979,
+            "examples": [
+              {
+                "first": 1772,
+                "second": 2173,
+                "line": 0.08076566149057184
+              },
+              {
+                "first": 11705,
+                "second": 12938,
+                "line": 0.07991004222354472
+              },
+              {
+                "first": 2094,
+                "second": 2442,
+                "line": 0.07732954129514007
+              },
+              {
+                "first": 1944,
+                "second": 2292,
+                "line": 0.07110434927957619
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": 12,
+          "corrections": [
+            {
+              "vertices": 2040,
+              "maxShift": 0.07975937780474161
+            },
+            {
+              "vertices": 2000,
+              "maxShift": 0.07891898173418431
+            }
+          ],
+          "coat": {
+            "count": 788,
+            "examples": [
+              {
+                "first": 360,
+                "second": 1950,
+                "line": 0.16162633281568367
+              },
+              {
+                "first": 1950,
+                "second": 360,
+                "line": 0.16162633281568367
+              },
+              {
+                "first": 2099,
+                "second": 2093,
+                "line": 0.15754070496187764
+              },
+              {
+                "first": 2093,
+                "second": 2099,
+                "line": 0.1575407049618776
+              }
+            ]
+          },
+          "shirt": {
+            "count": 726,
+            "examples": [
+              {
+                "first": 2120,
+                "second": 2309,
+                "line": 0.1979368386553515
+              },
+              {
+                "first": 2309,
+                "second": 2120,
+                "line": 0.1979368386553515
+              },
+              {
+                "first": 2292,
+                "second": 2290,
+                "line": 0.15498671094991165
+              },
+              {
+                "first": 2290,
+                "second": 2292,
+                "line": 0.15498671094991162
+              }
+            ]
+          },
+          "layers": {
+            "count": 1235,
+            "examples": [
+              {
+                "first": 1945,
+                "second": 2309,
+                "line": 0.1451064917500831
+              },
+              {
+                "first": 1824,
+                "second": 2170,
+                "line": 0.14389634792531006
+              },
+              {
+                "first": 2093,
+                "second": 2445,
+                "line": 0.14359233402873942
+              },
+              {
+                "first": 1944,
+                "second": 2292,
+                "line": 0.1401382079104776
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 1,
+          "frame": 12,
+          "corrections": [
+            {
+              "vertices": 2040,
+              "maxShift": 0.08424937413634301
+            },
+            {
+              "vertices": 2000,
+              "maxShift": 0.08335662937415202
+            }
+          ],
+          "coat": {
+            "count": 822,
+            "examples": [
+              {
+                "first": 9979,
+                "second": 11561,
+                "line": 0.1665588986790676
+              },
+              {
+                "first": 11561,
+                "second": 9979,
+                "line": 0.1665588986790676
+              },
+              {
+                "first": 11706,
+                "second": 11708,
+                "line": 0.1665524252754807
+              },
+              {
+                "first": 11708,
+                "second": 11706,
+                "line": 0.16655242527548067
+              }
+            ]
+          },
+          "shirt": {
+            "count": 762,
+            "examples": [
+              {
+                "first": 12612,
+                "second": 12807,
+                "line": 0.20345209680707108
+              },
+              {
+                "first": 12807,
+                "second": 12612,
+                "line": 0.20345209680707108
+              },
+              {
+                "first": 12611,
+                "second": 12807,
+                "line": 0.1711885062962709
+              },
+              {
+                "first": 12807,
+                "second": 12611,
+                "line": 0.1711885062962709
+              }
+            ]
+          },
+          "layers": {
+            "count": 1254,
+            "examples": [
+              {
+                "first": 11706,
+                "second": 12943,
+                "line": 0.14960518715913862
+              },
+              {
+                "first": 11559,
+                "second": 12792,
+                "line": 0.1477287457070436
+              },
+              {
+                "first": 11439,
+                "second": 12666,
+                "line": 0.14706032623360987
+              },
+              {
+                "first": 11558,
+                "second": 12807,
+                "line": 0.13243776796685888
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 2,
+          "frame": 15,
+          "corrections": [
+            {
+              "vertices": 2040,
+              "maxShift": 0.023068429509878963
+            },
+            {
+              "vertices": 2000,
+              "maxShift": 0.022831168139531906
+            }
+          ],
+          "coat": {
+            "count": 538,
+            "examples": [
+              {
+                "first": 1824,
+                "second": 2095,
+                "line": 0.05221428635367858
+              },
+              {
+                "first": 2095,
+                "second": 1824,
+                "line": 0.05221428635367857
+              },
+              {
+                "first": 11439,
+                "second": 11712,
+                "line": 0.051359134108863544
+              },
+              {
+                "first": 11712,
+                "second": 11439,
+                "line": 0.051359134108863544
+              }
+            ]
+          },
+          "shirt": {
+            "count": 480,
+            "examples": [
+              {
+                "first": 2173,
+                "second": 2309,
+                "line": 0.04242077868280134
+              },
+              {
+                "first": 2309,
+                "second": 2173,
+                "line": 0.042420778682801336
+              },
+              {
+                "first": 12671,
+                "second": 12807,
+                "line": 0.04198073876188066
+              },
+              {
+                "first": 12807,
+                "second": 12671,
+                "line": 0.04198073876188066
+              }
+            ]
+          },
+          "layers": {
+            "count": 1002,
+            "examples": [
+              {
+                "first": 2094,
+                "second": 2442,
+                "line": 0.0803026253068626
+              },
+              {
+                "first": 11705,
+                "second": 12938,
+                "line": 0.07972381035215384
+              },
+              {
+                "first": 1771,
+                "second": 2173,
+                "line": 0.0559744131714435
+              },
+              {
+                "first": 11380,
+                "second": 12671,
+                "line": 0.05558353518463714
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "apose-cut-preserved-contact.json",
+      "sha256": "e39d8762347add7a1b6f30d32c326d0c209a81c2f511dc827e60e460bcee2a1d",
+      "result": [
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": -1,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.014775179346477174
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.014600006685814626
+            }
+          ],
+          "coat": {
+            "count": 316,
+            "examples": [
+              {
+                "first": 9971,
+                "second": 10039,
+                "line": 0.026447752199005335
+              },
+              {
+                "first": 10039,
+                "second": 9971,
+                "line": 0.026447752199005335
+              },
+              {
+                "first": 352,
+                "second": 416,
+                "line": 0.02644252361339168
+              },
+              {
+                "first": 416,
+                "second": 352,
+                "line": 0.02644252361339168
+              }
+            ]
+          },
+          "shirt": {
+            "count": 280,
+            "examples": [
+              {
+                "first": 10941,
+                "second": 11015,
+                "line": 0.027298829085513194
+              },
+              {
+                "first": 11015,
+                "second": 10941,
+                "line": 0.027298829085513194
+              },
+              {
+                "first": 431,
+                "second": 501,
+                "line": 0.027280487161453502
+              },
+              {
+                "first": 501,
+                "second": 431,
+                "line": 0.027280487161453502
+              }
+            ]
+          },
+          "layers": {
+            "count": 544,
+            "examples": [
+              {
+                "first": 1952,
+                "second": 2301,
+                "line": 0.023197656234289474
+              },
+              {
+                "first": 11567,
+                "second": 12799,
+                "line": 0.02318147950541823
+              },
+              {
+                "first": 11562,
+                "second": 12794,
+                "line": 0.021939463760421805
+              },
+              {
+                "first": 1949,
+                "second": 2298,
+                "line": 0.021931382188633827
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": 6,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.031070681941895762
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.030615802327485363
+            }
+          ],
+          "coat": {
+            "count": 336,
+            "examples": [
+              {
+                "first": 9971,
+                "second": 10039,
+                "line": 0.02974437814476753
+              },
+              {
+                "first": 10039,
+                "second": 9971,
+                "line": 0.02974437814476753
+              },
+              {
+                "first": 352,
+                "second": 416,
+                "line": 0.0295822672326602
+              },
+              {
+                "first": 416,
+                "second": 352,
+                "line": 0.0295822672326602
+              }
+            ]
+          },
+          "shirt": {
+            "count": 288,
+            "examples": [
+              {
+                "first": 12796,
+                "second": 12798,
+                "line": 0.028327691923153306
+              },
+              {
+                "first": 12798,
+                "second": 12796,
+                "line": 0.028327691923153306
+              },
+              {
+                "first": 2304,
+                "second": 2302,
+                "line": 0.02527578575248756
+              },
+              {
+                "first": 2302,
+                "second": 2304,
+                "line": 0.025275785752487553
+              }
+            ]
+          },
+          "layers": {
+            "count": 533,
+            "examples": [
+              {
+                "first": 1952,
+                "second": 2301,
+                "line": 0.031156334172695522
+              },
+              {
+                "first": 11567,
+                "second": 12799,
+                "line": 0.028036130590092797
+              },
+              {
+                "first": 11367,
+                "second": 12803,
+                "line": 0.02704848739058543
+              },
+              {
+                "first": 11287,
+                "second": 12437,
+                "line": 0.026080382064609768
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": 12,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.07767021147601902
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.07649463519654012
+            }
+          ],
+          "coat": {
+            "count": 398,
+            "examples": [
+              {
+                "first": 407,
+                "second": 413,
+                "line": 0.03850618257789444
+              },
+              {
+                "first": 413,
+                "second": 407,
+                "line": 0.03850618257789444
+              },
+              {
+                "first": 1665,
+                "second": 1675,
+                "line": 0.03559213404329103
+              },
+              {
+                "first": 1675,
+                "second": 1665,
+                "line": 0.03559213404329103
+              }
+            ]
+          },
+          "shirt": {
+            "count": 316,
+            "examples": [
+              {
+                "first": 2085,
+                "second": 2083,
+                "line": 0.041307015444389465
+              },
+              {
+                "first": 2083,
+                "second": 2085,
+                "line": 0.04130701544438946
+              },
+              {
+                "first": 624,
+                "second": 2158,
+                "line": 0.028600979180267754
+              },
+              {
+                "first": 2158,
+                "second": 624,
+                "line": 0.02860097918026775
+              }
+            ]
+          },
+          "layers": {
+            "count": 628,
+            "examples": [
+              {
+                "first": 1952,
+                "second": 2301,
+                "line": 0.03934153563745787
+              },
+              {
+                "first": 1594,
+                "second": 2443,
+                "line": 0.03370652589626525
+              },
+              {
+                "first": 112,
+                "second": 192,
+                "line": 0.03135404698153226
+              },
+              {
+                "first": 1500,
+                "second": 1848,
+                "line": 0.031112988040340742
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 1,
+          "frame": 12,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.08208716301749001
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.0808394129059244
+            }
+          ],
+          "coat": {
+            "count": 418,
+            "examples": [
+              {
+                "first": 10032,
+                "second": 10034,
+                "line": 0.039449295441047756
+              },
+              {
+                "first": 10034,
+                "second": 10032,
+                "line": 0.039449295441047756
+              },
+              {
+                "first": 11278,
+                "second": 11284,
+                "line": 0.036580933878635036
+              },
+              {
+                "first": 11284,
+                "second": 11278,
+                "line": 0.036580933878635036
+              }
+            ]
+          },
+          "shirt": {
+            "count": 314,
+            "examples": [
+              {
+                "first": 12583,
+                "second": 12577,
+                "line": 0.04178772747306227
+              },
+              {
+                "first": 12577,
+                "second": 12583,
+                "line": 0.04178772747306226
+              },
+              {
+                "first": 11015,
+                "second": 11006,
+                "line": 0.031406917972925094
+              },
+              {
+                "first": 11006,
+                "second": 11015,
+                "line": 0.03140691797292509
+              }
+            ]
+          },
+          "layers": {
+            "count": 640,
+            "examples": [
+              {
+                "first": 11567,
+                "second": 12799,
+                "line": 0.03987707990310496
+              },
+              {
+                "first": 11205,
+                "second": 12937,
+                "line": 0.03396926421489151
+              },
+              {
+                "first": 11107,
+                "second": 12340,
+                "line": 0.032559806368179255
+              },
+              {
+                "first": 9731,
+                "second": 10700,
+                "line": 0.032424710717258845
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 2,
+          "frame": 15,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.022143617311460327
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.021863863163125326
+            }
+          ],
+          "coat": {
+            "count": 344,
+            "examples": [
+              {
+                "first": 9971,
+                "second": 10039,
+                "line": 0.02974437497219527
+              },
+              {
+                "first": 10039,
+                "second": 9971,
+                "line": 0.02974437497219527
+              },
+              {
+                "first": 352,
+                "second": 416,
+                "line": 0.029739109734333812
+              },
+              {
+                "first": 416,
+                "second": 352,
+                "line": 0.029739109734333812
+              }
+            ]
+          },
+          "shirt": {
+            "count": 280,
+            "examples": [
+              {
+                "first": 12796,
+                "second": 12798,
+                "line": 0.028365719687263244
+              },
+              {
+                "first": 12798,
+                "second": 12796,
+                "line": 0.028365719687263244
+              },
+              {
+                "first": 2302,
+                "second": 2304,
+                "line": 0.028314926500528106
+              },
+              {
+                "first": 2304,
+                "second": 2302,
+                "line": 0.028314926500528095
+              }
+            ]
+          },
+          "layers": {
+            "count": 531,
+            "examples": [
+              {
+                "first": 1952,
+                "second": 2301,
+                "line": 0.028207536030200618
+              },
+              {
+                "first": 11567,
+                "second": 12799,
+                "line": 0.027944038707211336
+              },
+              {
+                "first": 1752,
+                "second": 2313,
+                "line": 0.02738339402207899
+              },
+              {
+                "first": 11367,
+                "second": 12803,
+                "line": 0.02660350118810391
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "apose-source-initial-contact.json",
+      "sha256": "43761f63dc6b68979907fc6bf1bd54a8488354fa0fea4d66b59c3bc5c7c2a23d",
+      "result": [
+        {
+          "file": "apose-source-cut.json",
+          "coat": {
+            "count": 0,
+            "examples": []
+          },
+          "shirt": {
+            "count": 0,
+            "examples": []
+          },
+          "layers": {
+            "count": 344,
+            "examples": [
+              {
+                "first": 11559,
+                "second": 12786,
+                "line": 0.012751301881762937
+              },
+              {
+                "first": 1944,
+                "second": 2290,
+                "line": 0.012747115543116406
+              },
+              {
+                "first": 11558,
+                "second": 12787,
+                "line": 0.012720188119709718
+              },
+              {
+                "first": 1945,
+                "second": 2297,
+                "line": 0.012717971561511235
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": "apose-source-cut-contact.json",
+      "sha256": "bf1d61f616cdbb9d84dfe88dc6f1a6c83331e578677d2b97610b0b4ce0641b81",
+      "result": [
+        {
+          "dual": false,
+          "combo": 0,
+          "frame": -1,
+          "corrections": [],
+          "coat": {
+            "count": 304,
+            "examples": [
+              {
+                "first": 362,
+                "second": 1956,
+                "line": 0.026839185095615677
+              },
+              {
+                "first": 1956,
+                "second": 362,
+                "line": 0.026839185095615677
+              },
+              {
+                "first": 9977,
+                "second": 11563,
+                "line": 0.026823770458437153
+              },
+              {
+                "first": 11563,
+                "second": 9977,
+                "line": 0.026823770458437153
+              }
+            ]
+          },
+          "shirt": {
+            "count": 288,
+            "examples": [
+              {
+                "first": 441,
+                "second": 2305,
+                "line": 0.025519226422778412
+              },
+              {
+                "first": 2305,
+                "second": 441,
+                "line": 0.025519226422778412
+              },
+              {
+                "first": 10947,
+                "second": 12795,
+                "line": 0.025516713400054916
+              },
+              {
+                "first": 12795,
+                "second": 10947,
+                "line": 0.025516713400054916
+              }
+            ]
+          },
+          "layers": {
+            "count": 560,
+            "examples": [
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.034905733623047955
+              },
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.03490563729371512
+              },
+              {
+                "first": 357,
+                "second": 439,
+                "line": 0.03135700227810695
+              },
+              {
+                "first": 9982,
+                "second": 10949,
+                "line": 0.03135332220740485
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 0,
+          "frame": 6,
+          "corrections": [],
+          "coat": {
+            "count": 330,
+            "examples": [
+              {
+                "first": 359,
+                "second": 529,
+                "line": 0.02305402593838639
+              },
+              {
+                "first": 529,
+                "second": 359,
+                "line": 0.02305402593838639
+              },
+              {
+                "first": 10044,
+                "second": 11560,
+                "line": 0.022753969784662514
+              },
+              {
+                "first": 11560,
+                "second": 10044,
+                "line": 0.022753969784662514
+              }
+            ]
+          },
+          "shirt": {
+            "count": 328,
+            "examples": [
+              {
+                "first": 11020,
+                "second": 12792,
+                "line": 0.022903777031986875
+              },
+              {
+                "first": 12792,
+                "second": 11020,
+                "line": 0.022903777031986875
+              },
+              {
+                "first": 632,
+                "second": 2291,
+                "line": 0.022658994721117244
+              },
+              {
+                "first": 2291,
+                "second": 632,
+                "line": 0.022658994721117244
+              }
+            ]
+          },
+          "layers": {
+            "count": 681,
+            "examples": [
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.03604858636872335
+              },
+              {
+                "first": 11278,
+                "second": 12510,
+                "line": 0.03285638794528224
+              },
+              {
+                "first": 11379,
+                "second": 12614,
+                "line": 0.031528032492696506
+              },
+              {
+                "first": 11559,
+                "second": 12786,
+                "line": 0.0312767659677395
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 0,
+          "frame": 12,
+          "corrections": [],
+          "coat": {
+            "count": 350,
+            "examples": [
+              {
+                "first": 406,
+                "second": 408,
+                "line": 0.029293470966044764
+              },
+              {
+                "first": 408,
+                "second": 406,
+                "line": 0.029293470966044764
+              },
+              {
+                "first": 1663,
+                "second": 1669,
+                "line": 0.028696162809746583
+              },
+              {
+                "first": 1669,
+                "second": 1663,
+                "line": 0.028696162809746583
+              }
+            ]
+          },
+          "shirt": {
+            "count": 338,
+            "examples": [
+              {
+                "first": 2012,
+                "second": 2018,
+                "line": 0.03290751221668425
+              },
+              {
+                "first": 2018,
+                "second": 2012,
+                "line": 0.03290751221668425
+              },
+              {
+                "first": 495,
+                "second": 497,
+                "line": 0.029783984923533638
+              },
+              {
+                "first": 497,
+                "second": 495,
+                "line": 0.029783984923533634
+              }
+            ]
+          },
+          "layers": {
+            "count": 591,
+            "examples": [
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.036048586027931685
+              },
+              {
+                "first": 1737,
+                "second": 2087,
+                "line": 0.03347625107691908
+              },
+              {
+                "first": 11278,
+                "second": 12510,
+                "line": 0.03285639068998209
+              },
+              {
+                "first": 11379,
+                "second": 12614,
+                "line": 0.03152802974587153
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 1,
+          "frame": 12,
+          "corrections": [],
+          "coat": {
+            "count": 352,
+            "examples": [
+              {
+                "first": 11280,
+                "second": 11282,
+                "line": 0.028992369560847928
+              },
+              {
+                "first": 11282,
+                "second": 11280,
+                "line": 0.028992369560847928
+              },
+              {
+                "first": 11349,
+                "second": 11383,
+                "line": 0.025883547030218876
+              },
+              {
+                "first": 11383,
+                "second": 11349,
+                "line": 0.02588354703021887
+              }
+            ]
+          },
+          "shirt": {
+            "count": 334,
+            "examples": [
+              {
+                "first": 12512,
+                "second": 12514,
+                "line": 0.03327341556647508
+              },
+              {
+                "first": 12514,
+                "second": 12512,
+                "line": 0.03327341556647508
+              },
+              {
+                "first": 11003,
+                "second": 11005,
+                "line": 0.03070808916966631
+              },
+              {
+                "first": 11005,
+                "second": 11003,
+                "line": 0.03070808916966631
+              }
+            ]
+          },
+          "layers": {
+            "count": 577,
+            "examples": [
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.036048680251069956
+              },
+              {
+                "first": 1665,
+                "second": 2014,
+                "line": 0.03285390268278592
+              },
+              {
+                "first": 1772,
+                "second": 2118,
+                "line": 0.031513940684882946
+              },
+              {
+                "first": 11341,
+                "second": 12580,
+                "line": 0.03132319524458615
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": false,
+          "combo": 2,
+          "frame": 15,
+          "corrections": [],
+          "coat": {
+            "count": 288,
+            "examples": [
+              {
+                "first": 359,
+                "second": 536,
+                "line": 0.024285787902926965
+              },
+              {
+                "first": 536,
+                "second": 359,
+                "line": 0.024285787902926962
+              },
+              {
+                "first": 10044,
+                "second": 11560,
+                "line": 0.022754124242355404
+              },
+              {
+                "first": 11560,
+                "second": 10044,
+                "line": 0.022754124242355404
+              }
+            ]
+          },
+          "shirt": {
+            "count": 276,
+            "examples": [
+              {
+                "first": 11020,
+                "second": 12792,
+                "line": 0.022903931897209864
+              },
+              {
+                "first": 12792,
+                "second": 11020,
+                "line": 0.022903931897209864
+              },
+              {
+                "first": 512,
+                "second": 2292,
+                "line": 0.022888443627801562
+              },
+              {
+                "first": 2292,
+                "second": 512,
+                "line": 0.022888443627801562
+              }
+            ]
+          },
+          "layers": {
+            "count": 620,
+            "examples": [
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.036048683102541806
+              },
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.036048588722802026
+              },
+              {
+                "first": 11278,
+                "second": 12510,
+                "line": 0.03285638429683625
+              },
+              {
+                "first": 1665,
+                "second": 2014,
+                "line": 0.0328539017890002
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": -1,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.01548612219654933
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.015430517514350107
+            }
+          ],
+          "coat": {
+            "count": 254,
+            "examples": [
+              {
+                "first": 362,
+                "second": 1956,
+                "line": 0.02890744554903861
+              },
+              {
+                "first": 1956,
+                "second": 362,
+                "line": 0.02890744554903861
+              },
+              {
+                "first": 9977,
+                "second": 11563,
+                "line": 0.02889142552722118
+              },
+              {
+                "first": 11563,
+                "second": 9977,
+                "line": 0.02889142552722118
+              }
+            ]
+          },
+          "shirt": {
+            "count": 274,
+            "examples": [
+              {
+                "first": 441,
+                "second": 2305,
+                "line": 0.02763769455282427
+              },
+              {
+                "first": 2305,
+                "second": 441,
+                "line": 0.02763769455282427
+              },
+              {
+                "first": 10947,
+                "second": 12795,
+                "line": 0.027634965273027536
+              },
+              {
+                "first": 12795,
+                "second": 10947,
+                "line": 0.027634965273027536
+              }
+            ]
+          },
+          "layers": {
+            "count": 606,
+            "examples": [
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.03650394496981832
+              },
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.03650384660505554
+              },
+              {
+                "first": 9982,
+                "second": 10949,
+                "line": 0.03214677051408088
+              },
+              {
+                "first": 357,
+                "second": 439,
+                "line": 0.032142903817617384
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": 6,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.03185339649010116
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.031737315192136704
+            }
+          ],
+          "coat": {
+            "count": 298,
+            "examples": [
+              {
+                "first": 2210,
+                "second": 7283,
+                "line": 0.02864287862285581
+              },
+              {
+                "first": 7283,
+                "second": 2210,
+                "line": 0.02864287862285581
+              },
+              {
+                "first": 11351,
+                "second": 11778,
+                "line": 0.020340133532418016
+              },
+              {
+                "first": 11778,
+                "second": 11351,
+                "line": 0.020340133532418016
+              }
+            ]
+          },
+          "shirt": {
+            "count": 302,
+            "examples": [
+              {
+                "first": 438,
+                "second": 622,
+                "line": 0.024108618014964375
+              },
+              {
+                "first": 622,
+                "second": 438,
+                "line": 0.024108618014964372
+              },
+              {
+                "first": 13010,
+                "second": 12583,
+                "line": 0.02092761242213492
+              },
+              {
+                "first": 12583,
+                "second": 13010,
+                "line": 0.020927612422134916
+              }
+            ]
+          },
+          "layers": {
+            "count": 650,
+            "examples": [
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.03948007151719742
+              },
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.03861904518531588
+              },
+              {
+                "first": 1665,
+                "second": 2014,
+                "line": 0.03560166085940926
+              },
+              {
+                "first": 11278,
+                "second": 12510,
+                "line": 0.03455457644264299
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 0,
+          "frame": 12,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.07696760597164919
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.07685393247954804
+            }
+          ],
+          "coat": {
+            "count": 420,
+            "examples": [
+              {
+                "first": 1733,
+                "second": 1673,
+                "line": 0.025514922118594057
+              },
+              {
+                "first": 1673,
+                "second": 1733,
+                "line": 0.02551492211859405
+              },
+              {
+                "first": 11607,
+                "second": 11709,
+                "line": 0.024424010971701014
+              },
+              {
+                "first": 11709,
+                "second": 11607,
+                "line": 0.024424010971701014
+              }
+            ]
+          },
+          "shirt": {
+            "count": 458,
+            "examples": [
+              {
+                "first": 504,
+                "second": 498,
+                "line": 0.027411829675653684
+              },
+              {
+                "first": 498,
+                "second": 504,
+                "line": 0.027411829675653678
+              },
+              {
+                "first": 2022,
+                "second": 2082,
+                "line": 0.026801128750783887
+              },
+              {
+                "first": 2082,
+                "second": 2022,
+                "line": 0.026801128750783876
+              }
+            ]
+          },
+          "layers": {
+            "count": 813,
+            "examples": [
+              {
+                "first": 1665,
+                "second": 2015,
+                "line": 0.05178240064137726
+              },
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.03861906577831971
+              },
+              {
+                "first": 7251,
+                "second": 7827,
+                "line": 0.03792650283115382
+              },
+              {
+                "first": 1798,
+                "second": 2146,
+                "line": 0.035525781005570224
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 1,
+          "frame": 12,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.08134303893292753
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.08122128986246209
+            }
+          ],
+          "coat": {
+            "count": 430,
+            "examples": [
+              {
+                "first": 11697,
+                "second": 9980,
+                "line": 0.02724088522668105
+              },
+              {
+                "first": 9980,
+                "second": 11697,
+                "line": 0.02724088522668104
+              },
+              {
+                "first": 11553,
+                "second": 11702,
+                "line": 0.026975904417132237
+              },
+              {
+                "first": 11702,
+                "second": 11553,
+                "line": 0.026975904417132233
+              }
+            ]
+          },
+          "shirt": {
+            "count": 446,
+            "examples": [
+              {
+                "first": 11012,
+                "second": 11010,
+                "line": 0.027949075636591023
+              },
+              {
+                "first": 11010,
+                "second": 11012,
+                "line": 0.02794907563659102
+              },
+              {
+                "first": 12518,
+                "second": 12578,
+                "line": 0.0264890530594567
+              },
+              {
+                "first": 12578,
+                "second": 12518,
+                "line": 0.026489053059456695
+              }
+            ]
+          },
+          "layers": {
+            "count": 835,
+            "examples": [
+              {
+                "first": 11278,
+                "second": 12509,
+                "line": 0.05336539304265912
+              },
+              {
+                "first": 16858,
+                "second": 18319,
+                "line": 0.03922320835701104
+              },
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.03861917069708883
+              },
+              {
+                "first": 11409,
+                "second": 12642,
+                "line": 0.03659581276982425
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "dual": true,
+          "combo": 2,
+          "frame": 15,
+          "corrections": [
+            {
+              "vertices": 2060,
+              "maxShift": 0.022989995211707286
+            },
+            {
+              "vertices": 2020,
+              "maxShift": 0.022903697646190834
+            }
+          ],
+          "coat": {
+            "count": 252,
+            "examples": [
+              {
+                "first": 11607,
+                "second": 11709,
+                "line": 0.024920001333272598
+              },
+              {
+                "first": 11709,
+                "second": 11607,
+                "line": 0.024920001333272598
+              },
+              {
+                "first": 2165,
+                "second": 1736,
+                "line": 0.021003275973218917
+              },
+              {
+                "first": 1736,
+                "second": 2165,
+                "line": 0.021003275973218914
+              }
+            ]
+          },
+          "shirt": {
+            "count": 262,
+            "examples": [
+              {
+                "first": 12839,
+                "second": 12941,
+                "line": 0.025026097963937066
+              },
+              {
+                "first": 12941,
+                "second": 12839,
+                "line": 0.025026097963937066
+              },
+              {
+                "first": 2085,
+                "second": 2514,
+                "line": 0.021126691794729535
+              },
+              {
+                "first": 2514,
+                "second": 2085,
+                "line": 0.021126691794729535
+              }
+            ]
+          },
+          "layers": {
+            "count": 599,
+            "examples": [
+              {
+                "first": 1728,
+                "second": 2014,
+                "line": 0.03861917029318398
+              },
+              {
+                "first": 11343,
+                "second": 12510,
+                "line": 0.03861906444788772
+              },
+              {
+                "first": 11278,
+                "second": 12510,
+                "line": 0.03455454469724482
+              },
+              {
+                "first": 1665,
+                "second": 2014,
+                "line": 0.03455200389000678
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "shoulder-arc-contact.json",
+      "sha256": "62517df536516960f839ef87dd45196cfbba1a239693a776ad0fd31b524e0ad6",
+      "result": [
+        {
+          "combo": 0,
+          "frame": -1,
+          "corrections": [
+            {
+              "count": 2060,
+              "maxShift": 0.04349709132420742
+            },
+            {
+              "count": 2020,
+              "maxShift": 0.04347293345795222
+            }
+          ],
+          "coat": {
+            "count": 154,
+            "examples": [
+              {
+                "first": 10043,
+                "second": 11572,
+                "line": 0.01715912553423068
+              },
+              {
+                "first": 11572,
+                "second": 10043,
+                "line": 0.01715912553423068
+              },
+              {
+                "first": 428,
+                "second": 1963,
+                "line": 0.017093673889113568
+              },
+              {
+                "first": 1963,
+                "second": 428,
+                "line": 0.017093673889113568
+              }
+            ]
+          },
+          "shirt": {
+            "count": 112,
+            "examples": [
+              {
+                "first": 2447,
+                "second": 2173,
+                "line": 0.014421697699049631
+              },
+              {
+                "first": 2173,
+                "second": 2447,
+                "line": 0.014421697699049628
+              },
+              {
+                "first": 12941,
+                "second": 12671,
+                "line": 0.014390034563416506
+              },
+              {
+                "first": 12671,
+                "second": 12941,
+                "line": 0.014390034563416502
+              }
+            ]
+          },
+          "layers": {
+            "count": 236,
+            "examples": [
+              {
+                "first": 1755,
+                "second": 2099,
+                "line": 0.019272305783708022
+              },
+              {
+                "first": 11364,
+                "second": 12593,
+                "line": 0.018749874743427992
+              },
+              {
+                "first": 11556,
+                "second": 12787,
+                "line": 0.01810572638817079
+              },
+              {
+                "first": 1994,
+                "second": 2340,
+                "line": 0.016195830667295345
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 0,
+          "frame": 6,
+          "corrections": [
+            {
+              "count": 2060,
+              "maxShift": 0.2312712530243158
+            },
+            {
+              "count": 2020,
+              "maxShift": 0.231309101816148
+            }
+          ],
+          "coat": {
+            "count": 252,
+            "examples": [
+              {
+                "first": 16849,
+                "second": 16867,
+                "line": 0.05603215904034346
+              },
+              {
+                "first": 16867,
+                "second": 16849,
+                "line": 0.05603215904034346
+              },
+              {
+                "first": 7254,
+                "second": 7280,
+                "line": 0.050198251131521224
+              },
+              {
+                "first": 7280,
+                "second": 7254,
+                "line": 0.050198251131521224
+              }
+            ]
+          },
+          "shirt": {
+            "count": 186,
+            "examples": [
+              {
+                "first": 4148,
+                "second": 7819,
+                "line": 0.05717060604222756
+              },
+              {
+                "first": 7819,
+                "second": 4148,
+                "line": 0.05717060604222756
+              },
+              {
+                "first": 7831,
+                "second": 7857,
+                "line": 0.05087408634858167
+              },
+              {
+                "first": 7857,
+                "second": 7831,
+                "line": 0.05087408634858167
+              }
+            ]
+          },
+          "layers": {
+            "count": 658,
+            "examples": [
+              {
+                "first": 7362,
+                "second": 7934,
+                "line": 0.10665063992884882
+              },
+              {
+                "first": 7278,
+                "second": 7856,
+                "line": 0.10648548820601092
+              },
+              {
+                "first": 7262,
+                "second": 7840,
+                "line": 0.1051895000644736
+              },
+              {
+                "first": 7373,
+                "second": 7949,
+                "line": 0.09964363066229176
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 0,
+          "frame": 12,
+          "corrections": [
+            {
+              "count": 2060,
+              "maxShift": 0.42638737338888527
+            },
+            {
+              "count": 2020,
+              "maxShift": 0.4264049066159385
+            }
+          ],
+          "coat": {
+            "count": 456,
+            "examples": [
+              {
+                "first": 7255,
+                "second": 7281,
+                "line": 0.07660904747277367
+              },
+              {
+                "first": 7281,
+                "second": 7255,
+                "line": 0.07660904747277367
+              },
+              {
+                "first": 589,
+                "second": 3593,
+                "line": 0.04730661564592348
+              },
+              {
+                "first": 3593,
+                "second": 589,
+                "line": 0.04730661564592348
+              }
+            ]
+          },
+          "shirt": {
+            "count": 352,
+            "examples": [
+              {
+                "first": 4148,
+                "second": 7819,
+                "line": 0.07962161969022516
+              },
+              {
+                "first": 7819,
+                "second": 4148,
+                "line": 0.07962161969022516
+              },
+              {
+                "first": 7832,
+                "second": 7858,
+                "line": 0.07673845194918912
+              },
+              {
+                "first": 7858,
+                "second": 7832,
+                "line": 0.07673845194918912
+              }
+            ]
+          },
+          "layers": {
+            "count": 1080,
+            "examples": [
+              {
+                "first": 7248,
+                "second": 7826,
+                "line": 0.25070774477004165
+              },
+              {
+                "first": 7373,
+                "second": 7949,
+                "line": 0.21297614717718996
+              },
+              {
+                "first": 7249,
+                "second": 7823,
+                "line": 0.2070102434017132
+              },
+              {
+                "first": 7363,
+                "second": 7939,
+                "line": 0.16249118699895282
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 1,
+          "frame": 12,
+          "corrections": [
+            {
+              "count": 2060,
+              "maxShift": 0.43923020317407324
+            },
+            {
+              "count": 2020,
+              "maxShift": 0.4392494924132049
+            }
+          ],
+          "coat": {
+            "count": 490,
+            "examples": [
+              {
+                "first": 13210,
+                "second": 16853,
+                "line": 0.14079172618977873
+              },
+              {
+                "first": 16853,
+                "second": 13210,
+                "line": 0.14079172618977873
+              },
+              {
+                "first": 13210,
+                "second": 13212,
+                "line": 0.13163944823815166
+              },
+              {
+                "first": 13212,
+                "second": 13210,
+                "line": 0.13163944823815166
+              }
+            ]
+          },
+          "shirt": {
+            "count": 374,
+            "examples": [
+              {
+                "first": 14648,
+                "second": 18311,
+                "line": 0.0833388556099512
+              },
+              {
+                "first": 18311,
+                "second": 14648,
+                "line": 0.0833388556099512
+              },
+              {
+                "first": 18330,
+                "second": 18352,
+                "line": 0.08271277071917137
+              },
+              {
+                "first": 18352,
+                "second": 18330,
+                "line": 0.08271277071917137
+              }
+            ]
+          },
+          "layers": {
+            "count": 1097,
+            "examples": [
+              {
+                "first": 16861,
+                "second": 18320,
+                "line": 0.2596753923416149
+              },
+              {
+                "first": 16984,
+                "second": 18445,
+                "line": 0.22059140625697374
+              },
+              {
+                "first": 16860,
+                "second": 18323,
+                "line": 0.21409761206466438
+              },
+              {
+                "first": 16970,
+                "second": 18431,
+                "line": 0.16655015572973322
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 2,
+          "frame": 15,
+          "corrections": [
+            {
+              "count": 2060,
+              "maxShift": 0.17229173169659837
+            },
+            {
+              "count": 2020,
+              "maxShift": 0.1723133734728825
+            }
+          ],
+          "coat": {
+            "count": 200,
+            "examples": [
+              {
+                "first": 7254,
+                "second": 7280,
+                "line": 0.05995366575210227
+              },
+              {
+                "first": 7280,
+                "second": 7254,
+                "line": 0.05995366575210227
+              },
+              {
+                "first": 7241,
+                "second": 7282,
+                "line": 0.04035232941607725
+              },
+              {
+                "first": 7282,
+                "second": 7241,
+                "line": 0.04035232941607725
+              }
+            ]
+          },
+          "shirt": {
+            "count": 154,
+            "examples": [
+              {
+                "first": 7820,
+                "second": 7814,
+                "line": 0.061624215364520216
+              },
+              {
+                "first": 7814,
+                "second": 7820,
+                "line": 0.0616242153645202
+              },
+              {
+                "first": 7831,
+                "second": 7857,
+                "line": 0.06065633711069464
+              },
+              {
+                "first": 7857,
+                "second": 7831,
+                "line": 0.06065633711069464
+              }
+            ]
+          },
+          "layers": {
+            "count": 541,
+            "examples": [
+              {
+                "first": 7278,
+                "second": 7856,
+                "line": 0.0916962687557168
+              },
+              {
+                "first": 7363,
+                "second": 7939,
+                "line": 0.08384422369724653
+              },
+              {
+                "first": 16895,
+                "second": 18354,
+                "line": 0.0834421953466048
+              },
+              {
+                "first": 7362,
+                "second": 7934,
+                "line": 0.08315035660907973
+              }
+            ]
+          },
+          "coatVisibleSkin": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtVisibleSkin": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "body-shoulder-contact.json",
+      "sha256": "7a959c03046e76b2105465d827fd7f151770147d99245087c173928eaaaa255f",
+      "result": [
+        {
+          "frame": -1,
+          "bodyFaces": 61552,
+          "patchFaces": 606,
+          "patchAgainstCompleteBody": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "frame": 6,
+          "bodyFaces": 61552,
+          "patchFaces": 606,
+          "patchAgainstCompleteBody": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "frame": 12,
+          "bodyFaces": 61552,
+          "patchFaces": 606,
+          "patchAgainstCompleteBody": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "fullbody-shoulder-contact.json",
+      "sha256": "b05e68652510d39d0bf0a80ffbc990c382dcca7c30431d3ff9f7804727533aca",
+      "result": [
+        {
+          "frame": -1,
+          "bodyFaces": 30732,
+          "patchFaces": 4318,
+          "patchAgainstCompleteBody": {
+            "count": 218,
+            "examples": [
+              {
+                "first": 20874,
+                "second": 21007,
+                "line": 0.017606557855187673
+              },
+              {
+                "first": 27165,
+                "second": 27304,
+                "line": 0.017606557855187673
+              },
+              {
+                "first": 20868,
+                "second": 21010,
+                "line": 0.016494500055779984
+              },
+              {
+                "first": 27163,
+                "second": 27301,
+                "line": 0.016494500055779984
+              }
+            ]
+          }
+        },
+        {
+          "frame": 6,
+          "bodyFaces": 30732,
+          "patchFaces": 4318,
+          "patchAgainstCompleteBody": {
+            "count": 254,
+            "examples": [
+              {
+                "first": 25060,
+                "second": 26908,
+                "line": 0.026913526937824745
+              },
+              {
+                "first": 26908,
+                "second": 25060,
+                "line": 0.026913526937824745
+              },
+              {
+                "first": 18755,
+                "second": 20619,
+                "line": 0.020861087929341646
+              },
+              {
+                "first": 20619,
+                "second": 18755,
+                "line": 0.020861087929341646
+              }
+            ]
+          }
+        },
+        {
+          "frame": 12,
+          "bodyFaces": 30732,
+          "patchFaces": 4318,
+          "patchAgainstCompleteBody": {
+            "count": 236,
+            "examples": [
+              {
+                "first": 25060,
+                "second": 26908,
+                "line": 0.026913525862950916
+              },
+              {
+                "first": 26908,
+                "second": 25060,
+                "line": 0.026913525862950916
+              },
+              {
+                "first": 25259,
+                "second": 25137,
+                "line": 0.017321237677054794
+              },
+              {
+                "first": 25137,
+                "second": 25259,
+                "line": 0.017321237677054787
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "source": "body-transferred-binding-contact.json",
+      "sha256": "b3d92ad80807655bbe977bd56f8ebe747c5ce0b935b51f91ac2f503da975602f",
+      "result": [
+        {
+          "combo": 0,
+          "frame": 6,
+          "coat": {
+            "count": 258,
+            "examples": [
+              {
+                "first": 2094,
+                "second": 1807,
+                "line": 0.0862451482694827
+              },
+              {
+                "first": 1807,
+                "second": 2094,
+                "line": 0.08624514826948268
+              },
+              {
+                "first": 16849,
+                "second": 16867,
+                "line": 0.07492276264749773
+              },
+              {
+                "first": 16867,
+                "second": 16849,
+                "line": 0.07492276264749773
+              }
+            ]
+          },
+          "shirt": {
+            "count": 216,
+            "examples": [
+              {
+                "first": 18309,
+                "second": 18327,
+                "line": 0.07139259345836785
+              },
+              {
+                "first": 18327,
+                "second": 18309,
+                "line": 0.07139259345836785
+              },
+              {
+                "first": 2448,
+                "second": 2156,
+                "line": 0.053690442018542346
+              },
+              {
+                "first": 2156,
+                "second": 2448,
+                "line": 0.05369044201854234
+              }
+            ]
+          },
+          "layers": {
+            "count": 595,
+            "examples": [
+              {
+                "first": 1633,
+                "second": 1983,
+                "line": 0.17972322282464837
+              },
+              {
+                "first": 2202,
+                "second": 1982,
+                "line": 0.1508044762350546
+              },
+              {
+                "first": 7278,
+                "second": 7856,
+                "line": 0.1057479146134821
+              },
+              {
+                "first": 1995,
+                "second": 2339,
+                "line": 0.10371584098013387
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 0,
+          "frame": 12,
+          "coat": {
+            "count": 440,
+            "examples": [
+              {
+                "first": 1807,
+                "second": 2094,
+                "line": 0.12548578337293823
+              },
+              {
+                "first": 2094,
+                "second": 1807,
+                "line": 0.12548578337293823
+              },
+              {
+                "first": 7279,
+                "second": 7280,
+                "line": 0.09184899972699195
+              },
+              {
+                "first": 7280,
+                "second": 7279,
+                "line": 0.09184899972699195
+              }
+            ]
+          },
+          "shirt": {
+            "count": 344,
+            "examples": [
+              {
+                "first": 7856,
+                "second": 7857,
+                "line": 0.09079676471663736
+              },
+              {
+                "first": 7857,
+                "second": 7856,
+                "line": 0.09079676471663736
+              },
+              {
+                "first": 2170,
+                "second": 2449,
+                "line": 0.07895006986810187
+              },
+              {
+                "first": 2449,
+                "second": 2170,
+                "line": 0.07895006986810185
+              }
+            ]
+          },
+          "layers": {
+            "count": 943,
+            "examples": [
+              {
+                "first": 7248,
+                "second": 7826,
+                "line": 0.22865720661507621
+              },
+              {
+                "first": 7249,
+                "second": 7823,
+                "line": 0.20592969309860695
+              },
+              {
+                "first": 7373,
+                "second": 7949,
+                "line": 0.20373198426484695
+              },
+              {
+                "first": 1633,
+                "second": 1983,
+                "line": 0.19297974555920414
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 1,
+          "frame": 12,
+          "coat": {
+            "count": 452,
+            "examples": [
+              {
+                "first": 11424,
+                "second": 11705,
+                "line": 0.12652098136707118
+              },
+              {
+                "first": 11705,
+                "second": 11424,
+                "line": 0.12652098136707116
+              },
+              {
+                "first": 16892,
+                "second": 16894,
+                "line": 0.09297591828384341
+              },
+              {
+                "first": 16894,
+                "second": 16892,
+                "line": 0.09297591828384341
+              }
+            ]
+          },
+          "shirt": {
+            "count": 394,
+            "examples": [
+              {
+                "first": 18352,
+                "second": 18354,
+                "line": 0.09352705696933447
+              },
+              {
+                "first": 18354,
+                "second": 18352,
+                "line": 0.09352705696933447
+              },
+              {
+                "first": 12939,
+                "second": 12666,
+                "line": 0.08053826248624708
+              },
+              {
+                "first": 12666,
+                "second": 12939,
+                "line": 0.08053826248624707
+              }
+            ]
+          },
+          "layers": {
+            "count": 971,
+            "examples": [
+              {
+                "first": 16861,
+                "second": 18320,
+                "line": 0.2341279135261535
+              },
+              {
+                "first": 16860,
+                "second": 18323,
+                "line": 0.21228775794817017
+              },
+              {
+                "first": 16984,
+                "second": 18445,
+                "line": 0.21055818274042892
+              },
+              {
+                "first": 11246,
+                "second": 12477,
+                "line": 0.18514850553039072
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        },
+        {
+          "combo": 2,
+          "frame": 15,
+          "coat": {
+            "count": 206,
+            "examples": [
+              {
+                "first": 11424,
+                "second": 11705,
+                "line": 0.06539030813908739
+              },
+              {
+                "first": 11705,
+                "second": 11424,
+                "line": 0.06539030813908739
+              },
+              {
+                "first": 1807,
+                "second": 2094,
+                "line": 0.06537585439237675
+              },
+              {
+                "first": 2094,
+                "second": 1807,
+                "line": 0.06537585439237674
+              }
+            ]
+          },
+          "shirt": {
+            "count": 174,
+            "examples": [
+              {
+                "first": 7831,
+                "second": 7857,
+                "line": 0.05026184482630759
+              },
+              {
+                "first": 7857,
+                "second": 7831,
+                "line": 0.05026184482630759
+              },
+              {
+                "first": 12656,
+                "second": 12940,
+                "line": 0.04613917222515927
+              },
+              {
+                "first": 12940,
+                "second": 12656,
+                "line": 0.04613917222515927
+              }
+            ]
+          },
+          "layers": {
+            "count": 492,
+            "examples": [
+              {
+                "first": 7278,
+                "second": 7856,
+                "line": 0.09117247640169425
+              },
+              {
+                "first": 16895,
+                "second": 18354,
+                "line": 0.08428801525684326
+              },
+              {
+                "first": 11384,
+                "second": 12615,
+                "line": 0.08285695065825899
+              },
+              {
+                "first": 1767,
+                "second": 2117,
+                "line": 0.08282345192003031
+              }
+            ]
+          },
+          "coatBody": {
+            "count": 0,
+            "examples": []
+          },
+          "shirtBody": {
+            "count": 0,
+            "examples": []
+          }
+        }
+      ]
+    },
+    {
+      "source": "apose-source-cut-report.json",
+      "sha256": "857162e5162aeb48060e10f1c0c2a083c7c94b67fd6b10f3c7c2060b03abdc29",
+      "result": {
+        "sourceVertexCount": 11605,
+        "sourceTriangleCount": 22310,
+        "sourceRebuildMaximumError": 1.1919775877444749e-07,
+        "identicalSourceIndices": true,
+        "coatPairedVertices": 10454,
+        "maximumAposeShift": [
+          0.06838567853083288,
+          0.06838567853083288
+        ]
+      }
+    }
+  ]
+}

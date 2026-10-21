@@ -1,0 +1,748 @@
+{
+  "blenderVersion": "4.5.3 LTS",
+  "scope": "Moving-collider adapter regression only. A rising plane must physically lift a zero-gravity cloth patch; all 61 evaluated collider samples also match input. Not character contact, full-garment or gameplay acceptance.",
+  "results": [
+    {
+      "mode": "keyed-vertices",
+      "records": [
+        {
+          "frame": 1,
+          "bodyHeight": 0.0,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 2,
+          "bodyHeight": 0.03333333507180214,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 3,
+          "bodyHeight": 0.06666667014360428,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 4,
+          "bodyHeight": 0.10000000149011612,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 5,
+          "bodyHeight": 0.13333334028720856,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 6,
+          "bodyHeight": 0.1666666716337204,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 7,
+          "bodyHeight": 0.20000000298023224,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 8,
+          "bodyHeight": 0.23333333432674408,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 9,
+          "bodyHeight": 0.2666666805744171,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 10,
+          "bodyHeight": 0.30000001192092896,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 11,
+          "bodyHeight": 0.3333333432674408,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 12,
+          "bodyHeight": 0.36666667461395264,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 13,
+          "bodyHeight": 0.4000000059604645,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 14,
+          "bodyHeight": 0.4333333373069763,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 15,
+          "bodyHeight": 0.46666666865348816,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 16,
+          "bodyHeight": 0.5,
+          "clothMinimum": 0.5029386878013611,
+          "clothMaximum": 0.5029386878013611
+        },
+        {
+          "frame": 17,
+          "bodyHeight": 0.5333333611488342,
+          "clothMinimum": 0.5353330373764038,
+          "clothMaximum": 0.5353345274925232
+        },
+        {
+          "frame": 18,
+          "bodyHeight": 0.5666666626930237,
+          "clothMinimum": 0.5686658620834351,
+          "clothMaximum": 0.5686668157577515
+        },
+        {
+          "frame": 19,
+          "bodyHeight": 0.6000000238418579,
+          "clothMinimum": 0.601999044418335,
+          "clothMaximum": 0.6020001769065857
+        },
+        {
+          "frame": 20,
+          "bodyHeight": 0.6333333253860474,
+          "clothMinimum": 0.6353321671485901,
+          "clothMaximum": 0.6353334784507751
+        },
+        {
+          "frame": 21,
+          "bodyHeight": 0.6666666865348816,
+          "clothMinimum": 0.6686654090881348,
+          "clothMaximum": 0.6686667799949646
+        },
+        {
+          "frame": 22,
+          "bodyHeight": 0.699999988079071,
+          "clothMinimum": 0.7019986510276794,
+          "clothMaximum": 0.702000081539154
+        },
+        {
+          "frame": 23,
+          "bodyHeight": 0.7333333492279053,
+          "clothMinimum": 0.7353319525718689,
+          "clothMaximum": 0.7353334426879883
+        },
+        {
+          "frame": 24,
+          "bodyHeight": 0.7666666507720947,
+          "clothMinimum": 0.7686651945114136,
+          "clothMaximum": 0.7686668038368225
+        },
+        {
+          "frame": 25,
+          "bodyHeight": 0.800000011920929,
+          "clothMinimum": 0.801998496055603,
+          "clothMaximum": 0.802000105381012
+        },
+        {
+          "frame": 26,
+          "bodyHeight": 0.8333333134651184,
+          "clothMinimum": 0.8353317379951477,
+          "clothMaximum": 0.8353334069252014
+        },
+        {
+          "frame": 27,
+          "bodyHeight": 0.8666666746139526,
+          "clothMinimum": 0.8686650395393372,
+          "clothMaximum": 0.8686667680740356
+        },
+        {
+          "frame": 28,
+          "bodyHeight": 0.8999999761581421,
+          "clothMinimum": 0.9019983410835266,
+          "clothMaximum": 0.9020001292228699
+        },
+        {
+          "frame": 29,
+          "bodyHeight": 0.9333333373069763,
+          "clothMinimum": 0.9353315830230713,
+          "clothMaximum": 0.9353334307670593
+        },
+        {
+          "frame": 30,
+          "bodyHeight": 0.9666666388511658,
+          "clothMinimum": 0.9686648845672607,
+          "clothMaximum": 0.9686667323112488
+        },
+        {
+          "frame": 31,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0019983053207397,
+          "clothMaximum": 1.002000093460083
+        },
+        {
+          "frame": 32,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.028009057044983,
+          "clothMaximum": 1.031875729560852
+        },
+        {
+          "frame": 33,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0457714796066284,
+          "clothMaximum": 1.0560417175292969
+        },
+        {
+          "frame": 34,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0548392534255981,
+          "clothMaximum": 1.0736844539642334
+        },
+        {
+          "frame": 35,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0614467859268188,
+          "clothMaximum": 1.087093710899353
+        },
+        {
+          "frame": 36,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0689588785171509,
+          "clothMaximum": 1.0972926616668701
+        },
+        {
+          "frame": 37,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0747121572494507,
+          "clothMaximum": 1.1052277088165283
+        },
+        {
+          "frame": 38,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0787663459777832,
+          "clothMaximum": 1.1106677055358887
+        },
+        {
+          "frame": 39,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0817477703094482,
+          "clothMaximum": 1.1145472526550293
+        },
+        {
+          "frame": 40,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0840423107147217,
+          "clothMaximum": 1.1170464754104614
+        },
+        {
+          "frame": 41,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0856014490127563,
+          "clothMaximum": 1.1186405420303345
+        },
+        {
+          "frame": 42,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0868631601333618,
+          "clothMaximum": 1.1197922229766846
+        },
+        {
+          "frame": 43,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0877511501312256,
+          "clothMaximum": 1.1204341650009155
+        },
+        {
+          "frame": 44,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0884164571762085,
+          "clothMaximum": 1.1209357976913452
+        },
+        {
+          "frame": 45,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0888234376907349,
+          "clothMaximum": 1.1212433576583862
+        },
+        {
+          "frame": 46,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.089113473892212,
+          "clothMaximum": 1.1214005947113037
+        },
+        {
+          "frame": 47,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0894652605056763,
+          "clothMaximum": 1.121484398841858
+        },
+        {
+          "frame": 48,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.089643120765686,
+          "clothMaximum": 1.1213939189910889
+        },
+        {
+          "frame": 49,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0896555185317993,
+          "clothMaximum": 1.1213181018829346
+        },
+        {
+          "frame": 50,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.089859127998352,
+          "clothMaximum": 1.1212167739868164
+        },
+        {
+          "frame": 51,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0899370908737183,
+          "clothMaximum": 1.121150016784668
+        },
+        {
+          "frame": 52,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0900062322616577,
+          "clothMaximum": 1.1209187507629395
+        },
+        {
+          "frame": 53,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.09004807472229,
+          "clothMaximum": 1.1206108331680298
+        },
+        {
+          "frame": 54,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0900475978851318,
+          "clothMaximum": 1.1203852891921997
+        },
+        {
+          "frame": 55,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0901051759719849,
+          "clothMaximum": 1.1202763319015503
+        },
+        {
+          "frame": 56,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.090126633644104,
+          "clothMaximum": 1.120182991027832
+        },
+        {
+          "frame": 57,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0900986194610596,
+          "clothMaximum": 1.120172142982483
+        },
+        {
+          "frame": 58,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.090258002281189,
+          "clothMaximum": 1.1203004121780396
+        },
+        {
+          "frame": 59,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0901517868041992,
+          "clothMaximum": 1.1205371618270874
+        },
+        {
+          "frame": 60,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.090181589126587,
+          "clothMaximum": 1.120471477508545
+        },
+        {
+          "frame": 61,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0899051427841187,
+          "clothMaximum": 1.1204376220703125
+        }
+      ]
+    },
+    {
+      "mode": "keyed-translation",
+      "records": [
+        {
+          "frame": 1,
+          "bodyHeight": 0.0,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 2,
+          "bodyHeight": 0.03333333507180214,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 3,
+          "bodyHeight": 0.06666667014360428,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 4,
+          "bodyHeight": 0.10000000149011612,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 5,
+          "bodyHeight": 0.13333334028720856,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 6,
+          "bodyHeight": 0.1666666716337204,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 7,
+          "bodyHeight": 0.20000000298023224,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 8,
+          "bodyHeight": 0.23333333432674408,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 9,
+          "bodyHeight": 0.2666666805744171,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 10,
+          "bodyHeight": 0.30000001192092896,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 11,
+          "bodyHeight": 0.3333333432674408,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 12,
+          "bodyHeight": 0.36666667461395264,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 13,
+          "bodyHeight": 0.4000000059604645,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 14,
+          "bodyHeight": 0.4333333373069763,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 15,
+          "bodyHeight": 0.46666666865348816,
+          "clothMinimum": 0.5,
+          "clothMaximum": 0.5
+        },
+        {
+          "frame": 16,
+          "bodyHeight": 0.5,
+          "clothMinimum": 0.5029386878013611,
+          "clothMaximum": 0.5029386878013611
+        },
+        {
+          "frame": 17,
+          "bodyHeight": 0.5333333611488342,
+          "clothMinimum": 0.5353332161903381,
+          "clothMaximum": 0.535334587097168
+        },
+        {
+          "frame": 18,
+          "bodyHeight": 0.5666666626930237,
+          "clothMinimum": 0.5686656832695007,
+          "clothMaximum": 0.5686668157577515
+        },
+        {
+          "frame": 19,
+          "bodyHeight": 0.6000000238418579,
+          "clothMinimum": 0.6019989848136902,
+          "clothMaximum": 0.6020001173019409
+        },
+        {
+          "frame": 20,
+          "bodyHeight": 0.6333333253860474,
+          "clothMinimum": 0.6353321671485901,
+          "clothMaximum": 0.6353334188461304
+        },
+        {
+          "frame": 21,
+          "bodyHeight": 0.6666666865348816,
+          "clothMinimum": 0.6686654090881348,
+          "clothMaximum": 0.6686667799949646
+        },
+        {
+          "frame": 22,
+          "bodyHeight": 0.699999988079071,
+          "clothMinimum": 0.7019984722137451,
+          "clothMaximum": 0.702000081539154
+        },
+        {
+          "frame": 23,
+          "bodyHeight": 0.7333333492279053,
+          "clothMinimum": 0.7353317737579346,
+          "clothMaximum": 0.7353334426879883
+        },
+        {
+          "frame": 24,
+          "bodyHeight": 0.7666666507720947,
+          "clothMinimum": 0.7686650156974792,
+          "clothMaximum": 0.7686667442321777
+        },
+        {
+          "frame": 25,
+          "bodyHeight": 0.800000011920929,
+          "clothMinimum": 0.8019983172416687,
+          "clothMaximum": 0.802000105381012
+        },
+        {
+          "frame": 26,
+          "bodyHeight": 0.8333333134651184,
+          "clothMinimum": 0.8353314995765686,
+          "clothMaximum": 0.8353334069252014
+        },
+        {
+          "frame": 27,
+          "bodyHeight": 0.8666666746139526,
+          "clothMinimum": 0.8686648011207581,
+          "clothMaximum": 0.8686667680740356
+        },
+        {
+          "frame": 28,
+          "bodyHeight": 0.8999999761581421,
+          "clothMinimum": 0.9019980430603027,
+          "clothMaximum": 0.9020000696182251
+        },
+        {
+          "frame": 29,
+          "bodyHeight": 0.9333333373069763,
+          "clothMinimum": 0.9353312849998474,
+          "clothMaximum": 0.9353334307670593
+        },
+        {
+          "frame": 30,
+          "bodyHeight": 0.9666666388511658,
+          "clothMinimum": 0.9686645865440369,
+          "clothMaximum": 0.9686667323112488
+        },
+        {
+          "frame": 31,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.001997947692871,
+          "clothMaximum": 1.002000093460083
+        },
+        {
+          "frame": 32,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0279923677444458,
+          "clothMaximum": 1.0321892499923706
+        },
+        {
+          "frame": 33,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.04396653175354,
+          "clothMaximum": 1.0562937259674072
+        },
+        {
+          "frame": 34,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0588244199752808,
+          "clothMaximum": 1.0758267641067505
+        },
+        {
+          "frame": 35,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.067523717880249,
+          "clothMaximum": 1.089260220527649
+        },
+        {
+          "frame": 36,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0743077993392944,
+          "clothMaximum": 1.097593903541565
+        },
+        {
+          "frame": 37,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0788687467575073,
+          "clothMaximum": 1.1032302379608154
+        },
+        {
+          "frame": 38,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0823113918304443,
+          "clothMaximum": 1.1069884300231934
+        },
+        {
+          "frame": 39,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0850625038146973,
+          "clothMaximum": 1.109724998474121
+        },
+        {
+          "frame": 40,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0870002508163452,
+          "clothMaximum": 1.1116760969161987
+        },
+        {
+          "frame": 41,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.088399052619934,
+          "clothMaximum": 1.1133910417556763
+        },
+        {
+          "frame": 42,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0890038013458252,
+          "clothMaximum": 1.1148475408554077
+        },
+        {
+          "frame": 43,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0894579887390137,
+          "clothMaximum": 1.1160762310028076
+        },
+        {
+          "frame": 44,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0898146629333496,
+          "clothMaximum": 1.1170921325683594
+        },
+        {
+          "frame": 45,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0900781154632568,
+          "clothMaximum": 1.1175284385681152
+        },
+        {
+          "frame": 46,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0897425413131714,
+          "clothMaximum": 1.1180357933044434
+        },
+        {
+          "frame": 47,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.089460015296936,
+          "clothMaximum": 1.1183273792266846
+        },
+        {
+          "frame": 48,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0892491340637207,
+          "clothMaximum": 1.1189438104629517
+        },
+        {
+          "frame": 49,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.089289903640747,
+          "clothMaximum": 1.1191067695617676
+        },
+        {
+          "frame": 50,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0892696380615234,
+          "clothMaximum": 1.119111180305481
+        },
+        {
+          "frame": 51,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0892711877822876,
+          "clothMaximum": 1.1190850734710693
+        },
+        {
+          "frame": 52,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0893868207931519,
+          "clothMaximum": 1.119023084640503
+        },
+        {
+          "frame": 53,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0893023014068604,
+          "clothMaximum": 1.118976354598999
+        },
+        {
+          "frame": 54,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0889569520950317,
+          "clothMaximum": 1.1191281080245972
+        },
+        {
+          "frame": 55,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0886266231536865,
+          "clothMaximum": 1.119388222694397
+        },
+        {
+          "frame": 56,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0880244970321655,
+          "clothMaximum": 1.119765043258667
+        },
+        {
+          "frame": 57,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.088058352470398,
+          "clothMaximum": 1.1200190782546997
+        },
+        {
+          "frame": 58,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0877552032470703,
+          "clothMaximum": 1.1198205947875977
+        },
+        {
+          "frame": 59,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0875859260559082,
+          "clothMaximum": 1.1196019649505615
+        },
+        {
+          "frame": 60,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0875710248947144,
+          "clothMaximum": 1.1193732023239136
+        },
+        {
+          "frame": 61,
+          "bodyHeight": 1.0,
+          "clothMinimum": 1.0877134799957275,
+          "clothMaximum": 1.1190781593322754
+        }
+      ]
+    }
+  ]
+}

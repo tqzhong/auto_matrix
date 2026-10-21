@@ -1,0 +1,8 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+Info: Saved as "cached-collider.blend"
+Info: Saved as "cached-collider.blend"
+{"samples": 91, "reloadSamples": 91, "subframes": 4, "shiftedSamples": 3, "invalidInputsRejected": 4, "maximumIntegerError": 0.0}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+Read blend: "/var/folders/yd/89hxs3vx4ns36rxhsrmcm4dc0000gn/T/collider-cache-89vagksw/cached-collider.blend"
+
+Blender quit

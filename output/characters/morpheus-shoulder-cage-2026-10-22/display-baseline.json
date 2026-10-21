@@ -1,0 +1,30 @@
+{
+  "blenderVersion": "4.5.3 LTS",
+  "scope": "Curved triangulated sleeve cage, independently detailed display, per-vertex rigid cage deformation, reference restoration and saved .blend reload. Binding contract only, not character/cloth collision, full doff, game saves or gameplay acceptance.",
+  "cagePoints": 312,
+  "displayPoints": 2664,
+  "records": [
+    {
+      "frame": 1,
+      "maximumErrorMetres": 1.8024400477711773e-07
+    },
+    {
+      "frame": 2,
+      "maximumErrorMetres": 2.5561029908669655e-07
+    },
+    {
+      "frame": 1,
+      "maximumErrorMetres": 1.8024400477711773e-07
+    },
+    {
+      "frame": 1,
+      "phase": "saved-blend-reload",
+      "maximumErrorMetres": 1.8024400477711773e-07
+    },
+    {
+      "frame": 2,
+      "phase": "saved-blend-reload",
+      "maximumErrorMetres": 2.5561029908669655e-07
+    }
+  ]
+}

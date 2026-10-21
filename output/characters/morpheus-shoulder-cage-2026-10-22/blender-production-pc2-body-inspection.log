@@ -1,0 +1,5 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+{"samples": 91, "maximumError": 0.0, "allBitIdentical": true, "allIndicesEqual": true}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+
+Blender quit

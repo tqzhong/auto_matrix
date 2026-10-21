@@ -1,0 +1,11 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/tests/blender/cloth_cache_precision.py", line 42, in <module>
+    assert not failed, f'Collider cache changed its exact supplied frame: {failed[:4]}'
+           ^^^^^^^^^^
+AssertionError: Collider cache changed its exact supplied frame: [{'frame': 16, 'maximumError': 1.9073486328125e-06, 'bitIdentical': False, 'indicesEqual': True}, {'frame': 41, 'maximumError': 3.5762786865234375e-07, 'bitIdentical': False, 'indicesEqual': True}, {'frame': 55, 'maximumError': 5.960464477539062e-07, 'bitIdentical': False, 'indicesEqual': True}, {'frame': 61, 'maximumError': 1.1920928955078125e-07, 'bitIdentical': False, 'indicesEqual': True}]
+
+Error: script failed, file: 'tests/blender/cloth_cache_precision.py', exiting.
+
+Blender quit

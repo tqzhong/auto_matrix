@@ -1,0 +1,31 @@
+{
+  "baselineRuntimeCommit": "bf2b8de56fa718348156d9b896beb4b700e00fc3",
+  "packageFilesCompared": 702,
+  "allPackageFilesUnchanged": true,
+  "protectedWipFilesUnchanged": 11,
+  "liveUrl": "http://localhost:5173/",
+  "bundle": "index-DeK3mGvM.js",
+  "completeWorldStillEqualToPreviousUnit": true,
+  "status": {
+    "running": false,
+    "speed": 1,
+    "timeScale": 1,
+    "tick": 3757,
+    "mode": "rules",
+    "llmStatus": "offline",
+    "population": 85,
+    "awakened": 68,
+    "tension": 0,
+    "anomaly": 92,
+    "conversations": 2,
+    "day": 1,
+    "chapter": "Thomas Anderson \u7684\u666e\u901a\u4e00\u5929",
+    "chapterDescription": "\u5403\u65e9\u9910\uff0c\u53bb\u516c\u53f8\u4e0a\u73ed\uff1b\u665a\u4e0a\u53ef\u4ee5\u56de\u5bb6\u3001\u6563\u6b65\u6216\u7ea6\u670b\u53cb\u3002\u7559\u610f\u751f\u6d3b\u91cc\u4e0d\u5408\u5e38\u7406\u7684\u5c0f\u4e8b\u3002",
+    "ready": true,
+    "phase": "phase3_war",
+    "agentCount": 85,
+    "uptime": 100170.875025792
+  },
+  "gameResourcesChanged": false,
+  "renderReconnected": false
+}

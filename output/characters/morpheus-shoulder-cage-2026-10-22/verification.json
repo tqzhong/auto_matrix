@@ -1,0 +1,25 @@
+{
+  "runtimeBaseline": "bf2b8de56fa718348156d9b896beb4b700e00fc3",
+  "adopted": "Offline PC2 collider sample import only; no new runtime geometry or game assets.",
+  "sourceSha256": {
+    "scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44",
+    "tests/blender/cloth_cache_precision.py": "f948d6a2cf603bfee1007646d3ecd7623e2e97ce8d7d7cde8a3de306ad1a9b9f",
+    "tests/blender/cloth_collider_cache.py": "2b9c94875ac92dde92a2c69c2df46f1b57fb86d07db6639bff78a2556a5476c6",
+    "tests/fixtures/cloth-collider-vertices.json": "1b3e633cc49d3417a68df9d185a76c170758dc7cf1788c524492dda8062b4f92",
+    "docs/cloth-authoring.md": "5a0d0b4266549dcba6f8923e784b86bcedafb74c261096020d4171d9cac04091",
+    "docs/trilogy-production-plan.md": "2453da0eab013cd1ba3135ce724176aa11b3dab0276e001cde365a616057565a"
+  },
+  "tests": {
+    "existingColliderBaseline": "passed",
+    "existingDisplayBaseline": "passed",
+    "newExactFrameRegressionBeforeFix": "failed, exit 1",
+    "newExactFrameRegressionAfterFix": "passed, exit 0",
+    "colliderPhysicsThreePathsAfterFix": "passed, exit 0",
+    "existingDisplayAfterFix": "passed, exit 0",
+    "actualVisibleHeadHands91FramePc2Input": "passed, exit 0"
+  },
+  "shoulderGeometryAdopted": false,
+  "highQualitySceneGroupsAccepted": 0,
+  "totalSceneGroups": 42,
+  "renderReconnected": false
+}
