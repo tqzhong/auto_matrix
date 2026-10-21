@@ -1,10 +1,11 @@
 # 部署与本机试玩
 
-## 当前方式（2026-10-21）
+## 当前方式（2026-10-22）
 
-用户要求暂撤公网部署，继续开发游戏，持续提供最新网页试玩入口。今后的验证、提交和推送继续进行，试玩版更新到 **<http://localhost:5173/>**；不再按旧流程主动恢复或发布到 Render。这个地址只在运行服务的电脑上可用，需要电脑和服务保持运行。
+用户要求解除本项目与 Render 的部署关联，继续开发游戏，持续提供最新网页试玩入口。今后的验证、提交和推送继续进行，试玩版更新到 **<http://localhost:5173/>**。这个地址只在运行服务的电脑上可用，需要电脑和服务保持运行。
 
-- Render `matrixai` 的 Auto-Deploy 已保存为 **Off**，默认 `matrixai-s0sd.onrender.com` 入口已保存为 **Disabled**；仓库 `render.yaml` 同步关闭自动部署。服务目前仍处于流量超额引起的工作区暂停，不宣称已删除服务或额外完成手动暂停。
+- 仓库根目录的 `render.yaml` 已移除，没有 Render 自动发布工作流。控制台此前关闭了自动部署和默认公网子域名；2026-10-22 核对 `matrixai` 仍因流量超额暂停，已到永久删除确认页，最终删除等待用户确认，不能算已删除。只处理 `srv-dba4redg1s2s73apj6c0`，不删除 Supabase 存档或其他项目。
+- 已产生的 GB 用量属于本月累计出站流量，不是可通过删文件释放的磁盘空间；停止/删除服务能阻止之后的消耗，不会重置本月已用额度。参考 [Render 流量规则](https://render.com/docs/outbound-bandwidth)。
 - 阿里云会话已失效。选中 `@ A 216.24.57.1` 和 `www CNAME matrixai-s0sd.onrender.com` 的暂停操作触发登录，未确认成功，已取消该对话。**DNS 暂停尚待用户重新登录。** 在暂停解析前保留 Render 自定义域名绑定，避免留下仍指向 Render 的无绑定解析；域名、其他 DNS 记录和 Supabase 云存档没有删除。
 - 试玩进程只监听 `127.0.0.1:5173`，显式关闭云存档与付费模型。单独保存到项目 `output/local-preview/data/`，从 Neo 的普通生活开始；不会覆盖根目录 `data/` 或云端世界。
 - 本次直接使用已经验证的独立发布构建 `index-Dh28UYzo.js`，699 个运行源码/素材文件与 `e398a3e` 的已提交版本全部相同，包含实时 gzip 同步修正。工作区未完成的脱外套代码没有混入。
@@ -18,7 +19,7 @@ MATRIX_DATA_DIR="$PWD/output/local-preview/data" \
 node output/deployment/matrixai-bandwidth-2026-10-20/release/packages/server/dist/index.js
 ```
 
-控制台截图、原生采样和重启核对保存在本地 `output/deployment/render-withdrawal-2026-10-21/`。以下为此前公网部署记录；其中的“继续发布”授权流程已由本节的新要求替代。
+控制台截图、原生采样和重启核对保存在本地 `output/deployment/render-withdrawal-2026-10-21/`，本次撤除证据保存在 `output/deployment/render-retirement-2026-10-22/`。以下为此前公网部署记录；其中的 Render 配置、首次部署和“继续发布”流程均是历史记录，已由本节的新要求替代，不能重新接入本项目。
 
 此前使用 Render 的 **Hobby 工作区 + Free Web Service** 运行 Node.js 游戏，Supabase **Free** 项目保存世界。域名 DNS 位于阿里云。网页、模型、音乐、API 和 Socket.IO 由同一个 HTTPS 域名提供，浏览器负责 3D 渲染。没有购买服务器或持久磁盘。
 
