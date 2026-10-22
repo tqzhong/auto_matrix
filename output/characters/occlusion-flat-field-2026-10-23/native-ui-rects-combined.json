@@ -1,0 +1,107 @@
+{
+  "extraRectSource": "Same page DOM observation immediately after native-medical-candidate.png and before second candidate sample. Full-screen transparent blackout excluded.",
+  "margin": 3,
+  "rects": [
+    {
+      "display": "flex",
+      "height": 82,
+      "opacity": 1,
+      "selector": "game-top",
+      "visibility": "visible",
+      "width": 1280,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "display": "block",
+      "height": 14,
+      "opacity": 0.6,
+      "selector": "game-crosshair",
+      "visibility": "visible",
+      "width": 14,
+      "x": 633,
+      "y": 345.796875
+    },
+    {
+      "display": "block",
+      "height": 74.296875,
+      "opacity": 1,
+      "selector": "game-objective",
+      "visibility": "visible",
+      "width": 147.0859375,
+      "x": 32,
+      "y": 125
+    },
+    {
+      "display": "block",
+      "height": 62.6953125,
+      "opacity": 1,
+      "selector": "game-event",
+      "visibility": "visible",
+      "width": 245,
+      "x": 1003,
+      "y": 126
+    },
+    {
+      "display": "block",
+      "height": 129,
+      "opacity": 1,
+      "selector": "game-vitals",
+      "visibility": "visible",
+      "width": 257,
+      "x": 32,
+      "y": 503
+    },
+    {
+      "display": "block",
+      "height": 12.5,
+      "opacity": 1,
+      "selector": "mouse-hint",
+      "visibility": "visible",
+      "width": 191.53125,
+      "x": 544.234375,
+      "y": 644.5
+    },
+    {
+      "display": "block",
+      "height": 106.59375,
+      "opacity": 1,
+      "selector": "session-notice",
+      "visibility": "visible",
+      "width": 440,
+      "x": 420,
+      "y": 90
+    },
+    {
+      "display": "block",
+      "height": 536.4921875,
+      "opacity": 1,
+      "selector": "performance-panel",
+      "visibility": "visible",
+      "width": 290,
+      "x": 974,
+      "y": 80
+    },
+    {
+      "selector": "sandbox-clock",
+      "x": 32,
+      "y": 87,
+      "width": 212.2109375,
+      "height": 14
+    },
+    {
+      "selector": "film-sequence",
+      "x": 340,
+      "y": 544,
+      "width": 600,
+      "height": 86
+    },
+    {
+      "selector": "sandbox-interact",
+      "x": 540,
+      "y": 446.3984375,
+      "width": 200,
+      "height": 46.5
+    }
+  ]
+}

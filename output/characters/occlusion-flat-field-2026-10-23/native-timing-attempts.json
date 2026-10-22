@@ -1,0 +1,17 @@
+{
+  "firstPause": {
+    "port": 5200,
+    "scene": "m1_recovery",
+    "elapsed": 10.022999999999994,
+    "visibleNeedleIntervalReachedAtPause": false
+  },
+  "secondAttempt": {
+    "port": 5202,
+    "seed": "Unedited actual historical version-1 checkpoint",
+    "locatorWaitTimedOut": true,
+    "pause": "m1_cabin step 0",
+    "portStopped": true,
+    "pid": 62447
+  },
+  "acceptance": "No native mounted-interval cold-load claim. Use the actual withdrawn paused save for restart; visible contact scope remains the model regression."
+}

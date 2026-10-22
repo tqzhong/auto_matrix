@@ -1,0 +1,34 @@
+{
+  "baseline": "d9731f07f2cfc986a78bd5e9a1ea064b0f50f151",
+  "filesVerified": 1167,
+  "packageFiles": 707,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/NebDeckRenderer.ts",
+      "before": "1586f211b4eb374bf26c2cbd26e99ea3f00e30f7def1cdee1c5a78e71c40bb5b",
+      "after": "6c90c0f84531adfaa406b05ee067c84e339276475dd13f97ca0812152981be39"
+    },
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "3402e869c6a3d918897bc29210c28d5c27153692e9e187daf335489b52c931b6",
+      "after": "bbeb8e2aa8f29d8158dc187a2dbe61db829907736966340442c21a0a0c151cb0"
+    },
+    {
+      "path": "tests/trinity-relay-renderer.test.mts",
+      "before": "b5d51e4374f414da0a18832ea0d203d8b1e5913183fb29c30f5ca803ca73200b",
+      "after": "c0a84ab9de11d8dac9209bde7f2e3d85e8ceaa9579daddfdb5a76c22c604cebb"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/neb-inactive-therapy.test.mts",
+      "after": "ddb5cd7ea0f3d1518273b319fa8d74bb38895ab431c7160bb3d8880e2185ff6b"
+    }
+  ],
+  "discardedShaderExperiment": "rejected-flat-field.patch.gz",
+  "temporaryMethodComparisonRemoved": true,
+  "browserProbeExcludedFromProduction": true,
+  "baselineFixtureChanges": [
+    "tests/trinity-relay-renderer.test.mts"
+  ]
+}

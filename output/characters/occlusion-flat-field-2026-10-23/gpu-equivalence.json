@@ -1,0 +1,2192 @@
+{
+  "measuredAt": "2026-10-22T22:33:31.201Z",
+  "width": 160,
+  "height": 96,
+  "outputType": "RGBA32F",
+  "inputAoType": "RGBA16F",
+  "tolerance": 0.000001,
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "glError": 0,
+  "compilerErrors": [],
+  "cases": 128,
+  "rgbaComparisons": 7864320,
+  "rows": [
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "white",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233182907104,
+        1
+      ],
+      "candidateRange": [
+        0.9990233182907104,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990232586860657,
+        1
+      ],
+      "candidateRange": [
+        0.9990232586860657,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233182907104,
+        1
+      ],
+      "candidateRange": [
+        0.9990233182907104,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990232586860657,
+        1
+      ],
+      "candidateRange": [
+        0.9990232586860657,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990234375,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.9990234375,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233182907104,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.9990233182907104,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233778953552,
+        1
+      ],
+      "candidateRange": [
+        0.9990233778953552,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233182907104,
+        1
+      ],
+      "candidateRange": [
+        0.9990233182907104,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233778953552,
+        1
+      ],
+      "candidateRange": [
+        0.9990233778953552,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990232586860657,
+        1
+      ],
+      "candidateRange": [
+        0.9990232586860657,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233778953552,
+        1
+      ],
+      "candidateRange": [
+        0.9990233778953552,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990232586860657,
+        1
+      ],
+      "candidateRange": [
+        0.9990232586860657,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990235567092896,
+        1
+      ],
+      "candidateRange": [
+        0.9990235567092896,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990234971046448,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.9990234971046448,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990233778953552,
+        1
+      ],
+      "candidateRange": [
+        0.9990233778953552,
+        1
+      ]
+    },
+    {
+      "pattern": "faint-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9990234971046448,
+        1
+      ],
+      "candidateRange": [
+        0.9990234971046448,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995109736919403,
+        1
+      ],
+      "candidateRange": [
+        0.19995109736919403,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995109736919403,
+        1
+      ],
+      "candidateRange": [
+        0.19995109736919403,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995109736919403,
+        1
+      ],
+      "candidateRange": [
+        0.19995109736919403,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995109736919403,
+        1
+      ],
+      "candidateRange": [
+        0.19995109736919403,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995109736919403,
+        1
+      ],
+      "candidateRange": [
+        0.19995109736919403,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995109736919403,
+        1
+      ],
+      "candidateRange": [
+        0.19995109736919403,
+        1
+      ]
+    },
+    {
+      "pattern": "hard-edge",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.19995111227035522,
+        1
+      ],
+      "candidateRange": [
+        0.19995111227035522,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.34985339641571045,
+        1
+      ],
+      "candidateRange": [
+        0.34985339641571045,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 0,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "checkerboard",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3498534560203552,
+        1
+      ],
+      "candidateRange": [
+        0.3498534560203552,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.25004276633262634,
+        1
+      ],
+      "candidateRange": [
+        0.25004276633262634,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.24185046553611755,
+        1
+      ],
+      "candidateRange": [
+        0.24185046553611755,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.2443847358226776,
+        1
+      ],
+      "candidateRange": [
+        0.2443847358226776,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.2443847805261612,
+        1
+      ],
+      "candidateRange": [
+        0.2443847805261612,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.36899808049201965,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.36899808049201965,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.36170831322669983,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.36170831322669983,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3583270311355591,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.3583270311355591,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.35833606123924255,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.35833606123924255,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.25144433975219727,
+        1
+      ],
+      "candidateRange": [
+        0.25144433975219727,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.2401711493730545,
+        1
+      ],
+      "candidateRange": [
+        0.2401711493730545,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.24649392068386078,
+        1
+      ],
+      "candidateRange": [
+        0.24649392068386078,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.24678173661231995,
+        1
+      ],
+      "candidateRange": [
+        0.24678173661231995,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3659350275993347,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.3659350275993347,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.36272475123405457,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.36272475123405457,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.35336270928382874,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.35336270928382874,
+        1
+      ]
+    },
+    {
+      "pattern": "radial-contact",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.3539973497390747,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.3539973497390747,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.09997556358575821,
+        1
+      ],
+      "candidateRange": [
+        0.09997556358575821,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.09997556358575821,
+        1
+      ],
+      "candidateRange": [
+        0.09997556358575821,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.09997555613517761,
+        1
+      ],
+      "candidateRange": [
+        0.09997555613517761,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.09997556358575821,
+        1
+      ],
+      "candidateRange": [
+        0.09997556358575821,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.09997556358575821,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.09997556358575821,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755710363388,
+        1
+      ],
+      "candidateRange": [
+        0.0999755710363388,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755784869194,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755784869194,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755784869194,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755784869194,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755784869194,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755784869194,
+        1
+      ]
+    },
+    {
+      "pattern": "border-seam",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.0999755784869194,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        0.0999755784869194,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "invalid-centers",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 1.1920928955078125e-7,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.9999999403953552,
+        1.0000001192092896
+      ],
+      "candidateRange": [
+        1,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "nearest",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 1,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 1,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 1,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 1,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 8,
+      "index": 0,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 8,
+      "index": 1,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 8,
+      "index": 2,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    },
+    {
+      "pattern": "colored-input",
+      "filter": "linear",
+      "radius": 8,
+      "index": 3,
+      "maxDelta": 5.960464477539063e-8,
+      "differences": 0,
+      "finite": true,
+      "originalRange": [
+        0.29980459809303284,
+        1
+      ],
+      "candidateRange": [
+        0.29980459809303284,
+        1
+      ]
+    }
+  ],
+  "passed": true
+}

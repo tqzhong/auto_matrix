@@ -1,0 +1,775 @@
+{
+  "browserMainThread": {
+    "supported": [
+      "long-animation-frame",
+      "longtask"
+    ],
+    "entries": [
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 245899.19999980927,
+        "duration": 52.90000057220459,
+        "navigationId": 7484,
+        "paintTime": 245952.10000038147,
+        "presentationTime": 246128,
+        "renderStart": 245930.30000019073,
+        "styleAndLayoutStart": 245952,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 245930.30000019073,
+            "duration": 21.699999809265137,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 245930.30000019073,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 245952.30000019073,
+        "duration": 50.10000038146973,
+        "navigationId": 7484,
+        "paintTime": 246002.4000005722,
+        "presentationTime": 246160,
+        "renderStart": 245982.10000038147,
+        "styleAndLayoutStart": 246000.9000005722,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 245982.19999980927,
+            "duration": 18.700000762939453,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 245982.19999980927,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 247085.60000038147,
+        "duration": 57.39999961853027,
+        "navigationId": 7484,
+        "paintTime": 247143,
+        "presentationTime": 247312,
+        "renderStart": 247115,
+        "styleAndLayoutStart": 247143,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 247115.10000038147,
+            "duration": 27.800000190734863,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 247115.10000038147,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 247347.19999980927,
+        "duration": 55.30000019073486,
+        "navigationId": 7484,
+        "paintTime": 247402.5,
+        "presentationTime": 247560,
+        "renderStart": 247377.5,
+        "styleAndLayoutStart": 247402.5,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 247378.19999980927,
+            "duration": 24.300000190734863,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 247378.19999980927,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 251810.19999980927,
+        "duration": 50.40000057220459,
+        "navigationId": 7484,
+        "paintTime": 251860.60000038147,
+        "presentationTime": 252028,
+        "renderStart": 251836.9000005722,
+        "styleAndLayoutStart": 251858.5,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 251837,
+            "duration": 21.40000057220459,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 251837,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 252956.9000005722,
+        "duration": 57.79999923706055,
+        "navigationId": 7484,
+        "paintTime": 253014.69999980927,
+        "presentationTime": 253180,
+        "renderStart": 252986.60000038147,
+        "styleAndLayoutStart": 253011.69999980927,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 252989.9000005722,
+            "duration": 21.799999237060547,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 252989.9000005722,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 255683.10000038147,
+        "duration": 50.80000019073486,
+        "navigationId": 7484,
+        "paintTime": 255733.9000005722,
+        "presentationTime": 255896,
+        "renderStart": 255713.60000038147,
+        "styleAndLayoutStart": 255732.4000005722,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 255713.60000038147,
+            "duration": 18.800000190734863,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 255713.60000038147,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 256086.10000038147,
+        "duration": 56.5,
+        "navigationId": 7484,
+        "paintTime": 256142.60000038147,
+        "presentationTime": 256296,
+        "renderStart": 256112.80000019073,
+        "styleAndLayoutStart": 256142.5,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 256112.80000019073,
+            "duration": 29.699999809265137,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 256112.80000019073,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 257223.4000005722,
+        "duration": 60.29999923706055,
+        "navigationId": 7484,
+        "paintTime": 257283.69999980927,
+        "presentationTime": 257428,
+        "renderStart": 257239.10000038147,
+        "styleAndLayoutStart": 257279.9000005722,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 257239.19999980927,
+            "duration": 40.70000076293945,
+            "navigationId": 7484,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 257239.19999980927,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792709023174",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9280
+          }
+        ]
+      }
+    ]
+  },
+  "medicalIdleUpdates": true,
+  "lights": [
+    {
+      "name": "neb-deck-light--39",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4377
+      ]
+    },
+    {
+      "name": "neb-deck-light--30",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4386
+      ]
+    },
+    {
+      "name": "neb-deck-light--21",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4395
+      ]
+    },
+    {
+      "name": "neb-deck-light--12",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4404
+      ]
+    },
+    {
+      "name": "neb-deck-light--3",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4413
+      ]
+    },
+    {
+      "name": "neb-deck-light-6",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4422
+      ]
+    },
+    {
+      "name": "neb-deck-light-15",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4431
+      ]
+    },
+    {
+      "name": "neb-deck-light-24",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4440
+      ]
+    },
+    {
+      "name": "neb-deck-light-33",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4449
+      ]
+    },
+    {
+      "name": "neb-deck-light-42",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4458
+      ]
+    },
+    {
+      "name": "neb-medical-task-light",
+      "type": "PointLight",
+      "intensity": 260,
+      "distance": 22,
+      "intersectsView": true,
+      "position": [
+        5370.5,
+        -91.8,
+        4395.5
+      ]
+    },
+    {
+      "name": "neb-cabin-light",
+      "type": "PointLight",
+      "intensity": 105,
+      "distance": 12,
+      "intersectsView": false,
+      "position": [
+        5389.2,
+        -95.4,
+        4384
+      ]
+    },
+    {
+      "name": "neb-cabin-bounce",
+      "type": "PointLight",
+      "intensity": 30,
+      "distance": 10,
+      "intersectsView": false,
+      "position": [
+        5384.4,
+        -96.2,
+        4386.5
+      ]
+    },
+    {
+      "name": "neb-core-task-light",
+      "type": "PointLight",
+      "intensity": 210,
+      "distance": 28,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -91,
+        4416
+      ]
+    },
+    {
+      "name": "neb-mess-task-light",
+      "type": "PointLight",
+      "intensity": 100,
+      "distance": 23,
+      "intersectsView": false,
+      "position": [
+        5370,
+        -92,
+        4438
+      ]
+    }
+  ],
+  "occlusionInPlace": true,
+  "shipStaticBatching": true,
+  "camera": {
+    "position": [
+      5372,
+      -97,
+      4400
+    ],
+    "quaternion": [
+      -0.16953341680772155,
+      0.22624033940848048,
+      0.04002141082442768,
+      0.9583694569869478
+    ],
+    "projection": [
+      1.4653625988902637,
+      0,
+      0,
+      0,
+      0,
+      2.605089064693802,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-22T22:49:41.647Z",
+  "scenes": [
+    "film_neb_deck"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 378,
+  "fps": 25.14389376903605,
+  "frameTime": {
+    "mean": 39.77108753265057,
+    "p95": 47.69999980926514
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.34074075386006997,
+      "p95": 0.8999996185302734
+    },
+    "agents": {
+      "mean": 6.338888864668589,
+      "p95": 11
+    },
+    "city": {
+      "mean": 0.37592595216458435,
+      "p95": 1
+    },
+    "film": {
+      "mean": 1.1201057963901095,
+      "p95": 2.3000001907348633
+    },
+    "effects": {
+      "mean": 0.12407409577142625,
+      "p95": 0.3000001907348633
+    },
+    "render": {
+      "mean": 7.60132272912081,
+      "p95": 12.100000381469727
+    },
+    "capture": {
+      "mean": 0.0013227487998033957,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 1.512169323270283,
+      "p95": 2.3000001907348633
+    },
+    "scene": {
+      "mean": 5.814550258495189,
+      "p95": 9.09999942779541
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.3034391453657201,
+      "p95": 0.6000003814697266
+    },
+    "occlusion.normals": {
+      "mean": 1.139417953592129,
+      "p95": 2.09999942779541
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0029100564421800077,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 1.5412698448019684,
+      "p95": 2.8000001907348633
+    },
+    "bloom": {
+      "mean": 0.1820105547627444,
+      "p95": 0.39999961853027344
+    },
+    "output": {
+      "mean": 0.015608469645182291,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.026984139094277035,
+      "p95": 0.10000038146972656
+    }
+  },
+  "gpuPassMs": {},
+  "gpuTiming": {
+    "mode": "cpu",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 0,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 435,
+    "p95": 435
+  },
+  "triangles": {
+    "mean": 1071270,
+    "p95": 1071270
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 162,
+      "triangles": 419182
+    },
+    "scene": {
+      "calls": 142,
+      "triangles": 326200
+    },
+    "occlusion": {
+      "calls": 113,
+      "triangles": 325870
+    },
+    "postprocessing": {
+      "calls": 18,
+      "triangles": 18
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Patient_body",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 136176
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 62256
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "trinity-logos-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 22128
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "neo-teeth-upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 10944
+    },
+    {
+      "name": "neo-teeth-lower",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 10416
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "Anatomical_wrist_skin",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 8940
+    },
+    {
+      "name": "Anatomical_wrist_skin",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 8940
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 6120
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 6120
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 24.611889400270005,
+  "fpsBeforeSampling": 24.966391405342737,
+  "pageVisibility": "visible",
+  "contextAntialias": true,
+  "profilingDrawInstrumentation": true,
+  "objects": 10208,
+  "visibleObjects": 823
+}

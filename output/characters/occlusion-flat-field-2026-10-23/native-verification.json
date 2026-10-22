@@ -1,0 +1,100 @@
+{
+  "productionColdLoadChecked": true,
+  "productionBundle": "index-CV5fPM4T.js",
+  "bothViewsAndMouseLookChecked": true,
+  "bedObservationChecked": true,
+  "bedObservationScope": "Paused cabin first-person ceiling and bedside observation, then mouse adjustment and standing handoff; no claim of a native mounted-therapy cold-load",
+  "cabinTransitionChecked": true,
+  "fullOrdinaryEscortToCoreChecked": true,
+  "coreConsentAndConnectionChecked": true,
+  "constructArrivalChecked": true,
+  "finalScene": "m1_construct",
+  "finalStep": 0,
+  "finalTick": 6807,
+  "neoHealth": 100,
+  "completedExactlyOnce": [
+    "m1_recovery",
+    "m1_cabin"
+  ],
+  "walk": {
+    "from": {
+      "x": 5391.4,
+      "y": -100,
+      "z": 4382
+    },
+    "to": {
+      "x": 5376.22721303378,
+      "y": -100,
+      "z": 4390.397334460813
+    },
+    "horizontalDisplacement": 17.34153079658922,
+    "scope": "Minimum recorded same-scene displacement before the remaining ordinary aisle/core walk; excludes transition teleport into the Construct",
+    "inputs": "Only native W keys, mouse drags, V toggles and normal G interactions; no agent-position writes or story edits"
+  },
+  "realBackendRestart": {
+    "oldPid": 39312,
+    "newPid": 64395,
+    "mainPidUnchanged": true,
+    "simulationPreserved": true,
+    "sandboxPreserved": true,
+    "neoFieldsPreserved": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isAwakened": true,
+      "isInMatrix": true
+    },
+    "memoryFileCount": 7,
+    "memoryHashesPreserved": true,
+    "changedPaths": [],
+    "fullApiBytesEqual": true,
+    "beforeSha256": "3d952d75146a643093178e6adcf77ce2151cdb9d8fac322ce14d13b51ca5a068",
+    "afterSha256": "3d952d75146a643093178e6adcf77ce2151cdb9d8fac322ce14d13b51ca5a068"
+  },
+  "restartCheckpoint": {
+    "scene": "m1_recovery",
+    "elapsed": 10.022999999999994,
+    "needlesVisible": false
+  },
+  "qaPortsStopped": [
+    5200,
+    5201,
+    5202
+  ],
+  "stoppedProcesses": [
+    {
+      "port": 5201,
+      "pid": 39318,
+      "portClosed": true
+    },
+    {
+      "port": 5200,
+      "pid": 64395,
+      "portClosed": true
+    },
+    {
+      "port": 5202,
+      "pid": 62447,
+      "portClosed": true
+    }
+  ],
+  "consoleCounts": {
+    "native-comparison-console.json": 0,
+    "native-production-first-console.json": 0,
+    "native-secondary-console.json": 0,
+    "native-production-final-console.json": 0
+  },
+  "discardedGpuProbeWarnings": {
+    "count": 2,
+    "file": "native-gpu-console.json",
+    "reason": "Cloning the reference material warns about render-target uniforms; all sampled input textures are replaced by synthetic textures before drawing. GL and shader compilation succeeded; shader experiment was rejected for lack of performance benefit."
+  },
+  "recordingMadeThisUnit": false,
+  "limitations": [
+    "Mounted-therapy native pause attempts missed their intended interval; retained as unaccepted in native-timing-attempts.json.",
+    "311 related cases include finite actual-skin contact tests; they do not prove arbitrary-pose no-clipping.",
+    "Same-camera CPU cost improved, overall 60 FPS not achieved.",
+    "Character, hands, environment and performance remain below high-quality trilogy acceptance."
+  ]
+}

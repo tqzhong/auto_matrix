@@ -1,0 +1,13 @@
+{
+  "viewport": [
+    1280,
+    720
+  ],
+  "comparedPixels": 481050,
+  "changedPixels": 0,
+  "changedFraction": 0.0,
+  "maxChannelDelta": 0,
+  "meanAbsChannelDelta": 0.0,
+  "mask": "native-ui-rects-combined.json",
+  "scope": "Two settled screenshots after same-page original/candidate sampling, third person only; not all scenes or first-person pixel equivalence."
+}

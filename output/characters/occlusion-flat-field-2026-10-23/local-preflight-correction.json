@@ -1,0 +1,5 @@
+{
+  "publicationBeforeCorrection": false,
+  "firstFailure": "Native report preflight included 2 warnings from the rejected synthetic GPU probe; native-verification.json was not created, so publication stopped before any source or bundle copy.",
+  "correction": "Preserve probe warnings explicitly; actual game console counts are separately zero. Use the already stopped processes and final saved world without relaunching QA."
+}

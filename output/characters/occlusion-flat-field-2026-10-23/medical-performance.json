@@ -1,0 +1,230 @@
+{
+  "scope": "Single native paused medical fixed camera, same page; 3s warmup/15s sampling, no recording/GPU query. Development draw instrumentation remains. Same-object original method used only for temporary comparison.",
+  "rows": [
+    {
+      "file": "medical-neo-2026-10-22T22-47-47-800Z.json",
+      "originalIdleWork": true,
+      "fps": 25.799312017362038,
+      "p95FrameMs": 45.39999961853027,
+      "filmCpuMs": {
+        "mean": 1.1319587599370897,
+        "p95": 2.1000003814697266
+      },
+      "calls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpuSamples": {},
+      "recording": false
+    },
+    {
+      "file": "medical-neo-2026-10-22T22-48-18-461Z.json",
+      "originalIdleWork": false,
+      "fps": 25.23587889409498,
+      "p95FrameMs": 47.30000019073486,
+      "filmCpuMs": {
+        "mean": 0.3992105057365016,
+        "p95": 0.9000005722045898
+      },
+      "calls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpuSamples": {},
+      "recording": false
+    },
+    {
+      "file": "medical-neo-2026-10-22T22-49-03-266Z.json",
+      "originalIdleWork": false,
+      "fps": 24.788101711493677,
+      "p95FrameMs": 49.59999942779541,
+      "filmCpuMs": {
+        "mean": 0.37935657347814644,
+        "p95": 0.8999996185302734
+      },
+      "calls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpuSamples": {},
+      "recording": false
+    },
+    {
+      "file": "medical-neo-2026-10-22T22-49-41-647Z.json",
+      "originalIdleWork": true,
+      "fps": 25.14389376903605,
+      "p95FrameMs": 47.69999980926514,
+      "filmCpuMs": {
+        "mean": 1.1201057963901095,
+        "p95": 2.3000001907348633
+      },
+      "calls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpuSamples": {},
+      "recording": false
+    }
+  ],
+  "conclusion": "Film update mean ~1.12\u20131.13ms original vs ~0.38\u20130.40ms candidate in both directions. Overall FPS ~24.8\u201325.8, no demonstrated FPS improvement or 60fps. Full visual quality unchanged by configuration."
+}

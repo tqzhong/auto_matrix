@@ -1,0 +1,29 @@
+{
+  "allGatesPassed": false,
+  "results": [
+    {
+      "log": "baseline-related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 1,
+      "elapsedSeconds": 12.703714415431023,
+      "tests": 26,
+      "pass": 25,
+      "fail": 1,
+      "skipped": 0
+    }
+  ]
+}

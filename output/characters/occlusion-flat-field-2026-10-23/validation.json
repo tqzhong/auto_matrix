@@ -1,0 +1,131 @@
+{
+  "allGatesPassed": true,
+  "results": [
+    {
+      "log": "baseline-related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 12.626915666274726,
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "shared-build.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.886871125549078
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/camera.test.mts",
+        "tests/recovery-eye-view.test.mts",
+        "tests/pod-eye-view.test.mts",
+        "tests/tracking-eye.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/download-setup.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/lafayette-camera.test.mts",
+        "tests/neb-inactive-therapy.test.mts",
+        "tests/frame-rate.test.mts",
+        "tests/postprocessing.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/interlude-scenes.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 113.30636016651988,
+      "tests": 311,
+      "pass": 311,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.59970183391124,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 12.045831624418497
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 18.937642958946526
+    }
+  ],
+  "frozenInputs": 1171,
+  "inputsUnchanged": true,
+  "build": {
+    "js": {
+      "name": "index-CV5fPM4T.js",
+      "bytes": 3751415,
+      "sha256": "b74b6f0b28b7e32d6466a3da720b84d9652e9a6f414130ac3fe6d578a80105b0"
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "developmentProbeExcluded": true,
+    "backendFilesUnchanged": 280
+  }
+}

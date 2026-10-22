@@ -1,0 +1,8 @@
+{
+  "originalBaseline": "25/26 existing cases passed; old first relay wardrobe assertion failed",
+  "originalFailure": "preexisting-trinity-failure.log",
+  "testFile": "tests/trinity-relay-renderer.test.mts",
+  "reason": "Independent delivered trinity-logos-sweater and trinity-logos-collar replace the Matrix jacket in FarewellAppearance. Old test targeted the obsolete jacket-as-knit behavior. Verify actual upper/collar geometry, visibility, knit materials, jacket exclusion, Matrix restoration.",
+  "runtimeClothingChanged": false,
+  "baselineWithCorrectFixture": "3/3 relay renderer cases pass"
+}

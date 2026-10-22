@@ -1,0 +1,155 @@
+{
+  "rows": [
+    {
+      "file": "neo-2026-10-22T22-34-29-309Z.json",
+      "optimized": false,
+      "fps": 39.81619191905966,
+      "p95": 27.299999237060547,
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "neo-2026-10-22T22-34-58-618Z.json",
+      "optimized": true,
+      "fps": 40.32822508995021,
+      "p95": 26.800000190734863,
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "neo-2026-10-22T22-35-48-608Z.json",
+      "optimized": true,
+      "fps": 23.138269497198518,
+      "p95": 57.59999942779541,
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "neo-2026-10-22T22-36-47-545Z.json",
+      "optimized": false,
+      "fps": 26.794105298197216,
+      "p95": 45.39999961853027,
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    }
+  ],
+  "adopted": false,
+  "reason": "Synthetic GPU equivalence passed within declared 1e-6. First adjacent FPS change ~+1.2%, reverse pair worsened amid ~40 to ~23 FPS drift. No repeatable benefit; restore original shader.",
+  "postProbeGuardCorrection": "An exact [1,1] host-side assertion was too strict for the original shader; measured original floating-point rounding already met the originally declared 1e-6 GPU tolerance. Dark-input cases were separately verified non-white."
+}

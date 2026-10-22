@@ -1,0 +1,30 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-CV5fPM4T.js",
+  "bundleBytes": 3751415,
+  "servedBundleSha256": "b74b6f0b28b7e32d6466a3da720b84d9652e9a6f414130ac3fe6d578a80105b0",
+  "backendDistFilesUnchanged": 280,
+  "serverRestartedForPublication": false,
+  "serverPid": 82166,
+  "mainRelaunchedEarlierInUnit": false,
+  "fullWorldSnapshotPreservedAcrossPublication": true,
+  "fullWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "memoryFilesPreservedAcrossPublication": 85,
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-DusAHr46.js",
+  "livePackageFilesMatchCandidate": 707,
+  "ownedSourceAndTestFilesCopied": 4,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "characterAssetsChanged": false,
+  "nativeReloadPending": false,
+  "nativeReloadVerified": true,
+  "nativeReloadWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "nativeConsoleWarningsAndErrors": 0,
+  "nativeViewport": [
+    1280,
+    720
+  ]
+}

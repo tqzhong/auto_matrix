@@ -1,0 +1,14 @@
+[
+  {
+    "level": "warn",
+    "message": "UniformsUtils: Textures of render targets cannot be cloned via cloneUniforms() or mergeUniforms().",
+    "timestamp": "2026-10-22T22:33:27.547Z",
+    "url": "http://127.0.0.1:5201/node_modules/.vite/deps/chunk-CQVNNYBC.js?v=ca01bf5a"
+  },
+  {
+    "level": "warn",
+    "message": "UniformsUtils: Textures of render targets cannot be cloned via cloneUniforms() or mergeUniforms().",
+    "timestamp": "2026-10-22T22:33:27.547Z",
+    "url": "http://127.0.0.1:5201/node_modules/.vite/deps/chunk-CQVNNYBC.js?v=ca01bf5a"
+  }
+]
