@@ -7,7 +7,7 @@ type Attributes = Record<'position' | 'normal' | 'skinIndex' | 'skinWeight', THR
 interface MaterialPoint { id: number; amount: number; s: number; n: number; b: number; t: number }
 interface Finger { joints: number[]; radius: number[]; rest: HandCurve; vertices: MaterialPoint[] }
 interface Hand {
-  side: string; wrist: number; bones: number[][]; caps: number[][]; axes: THREE.Vector3[][];
+  side: string; wrist: number; cacheable: boolean; bones: number[][]; caps: number[][]; axes: THREE.Vector3[][];
   vertices: number[]; faces: number[][]; offsets: Map<number, number>; triangles: number[][]; fingers: Finger[];
 }
 interface Binding { attributes: Attributes; hands: Hand[]; groups: number[]; groupCount: number }
@@ -148,7 +148,10 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
       return { joints, radius, rest, vertices: mapped };
     });
     const offsets = new Map(vertices.map((id, i) => [id, i]));
-    return { side, wrist, bones, caps, axes, vertices, faces, offsets, triangles: faces.map(face => face.map(id => offsets.get(id)!)), fingers };
+    const family = new Set([wrist, ...bones.flat()]);
+    const shaped = new Set([...caps.flat(), ...fingers.flatMap(finger => finger.vertices.map(v => v.id))]);
+    const cacheable = [...shaped].every(id => [0, 1, 2, 3].every(k => !a.skinWeight.getComponent(id, k) || family.has(a.skinIndex.getComponent(id, k))));
+    return { side, wrist, cacheable, bones, caps, axes, vertices, faces, offsets, triangles: faces.map(face => face.map(id => offsets.get(id)!)), fingers };
   });
   return { attributes: a, hands, groups: normalGroups, groupCount: normalKeys.size };
 }
@@ -169,6 +172,7 @@ export class FightingHands {
   private previous: (string | undefined)[] = [];
   private scratch: Float64Array;
   private normals: Float64Array;
+  private shapes = new Map<Hand, { key: string; delta: Float64Array }>();
 
   constructor(private rig: HeroRig) {
     this.skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
@@ -251,6 +255,67 @@ export class FightingHands {
     for (const name of attributes) this.skin.geometry.setAttribute(name, this.output[name]);
   }
 
+  private shapeFingers(hand: Hand, inverse: THREE.Matrix4, transform: number[]): void {
+    const skin = this.skin, data = this.scratch;
+    const key = hand.cacheable ? hand.bones.flatMap(joints => joints.flatMap(joint => skin.skeleton.bones[joint].quaternion.toArray())).join(',') : undefined;
+    const cached = this.shapes.get(hand);
+    // These material offsets live in wrist space. Reuse the articulation,
+    // while deform still updates skinning and every face normal this frame.
+    if (key !== undefined && cached?.key === key) {
+      for (let ordinal = 0; ordinal < hand.vertices.length; ordinal++) {
+        const at = ordinal * 15, offset = ordinal * 3;
+        data[at + 3] += cached.delta[offset]; data[at + 4] += cached.delta[offset + 1]; data[at + 5] += cached.delta[offset + 2];
+      }
+      return;
+    }
+    const delta = key !== undefined ? cached?.delta ?? new Float64Array(hand.vertices.length * 3) : undefined;
+    if (delta) {
+      const weights = this.binding.attributes.skinWeight.array;
+      // LBS adds wrist-space translation once, while its Float32 weights
+      // need not sum to exactly one. Remove that pose-dependent rounding
+      // term before caching the material shape, then apply it to current LBS.
+      for (let ordinal = 0; ordinal < hand.vertices.length; ordinal++) {
+        const at = ordinal * 15, offset = ordinal * 3, id = hand.vertices[ordinal] * 4;
+        const excess = weights[id] + weights[id + 1] + weights[id + 2] + weights[id + 3] - 1;
+        data[at + 3] = delta[offset] = data[at] + transform[12] * excess;
+        data[at + 4] = delta[offset + 1] = data[at + 1] + transform[13] * excess;
+        data[at + 5] = delta[offset + 2] = data[at + 2] + transform[14] * excess;
+      }
+    }
+    const sample = { p: new THREE.Vector3(), t: new THREE.Vector3(), n: new THREE.Vector3(), k: 0 };
+    const normal = new THREE.Vector3(), binormal = new THREE.Vector3(), goal = new THREE.Vector3();
+    for (const [digit, finger] of hand.fingers.entries()) {
+      const points = finger.joints.map(j => new THREE.Vector3().setFromMatrixPosition(skin.skeleton.bones[j].matrixWorld).applyMatrix4(inverse));
+      const caps = hand.caps[digit + 1], tip = new THREE.Vector3();
+      for (const id of caps) {
+        const ordinal = hand.offsets.get(id)!, at = ordinal * (delta ? 3 : 15), base = delta ?? data;
+        tip.x += base[at]; tip.y += base[at + 1]; tip.z += base[at + 2];
+      }
+      const curve = new HandCurve([...points, tip.divideScalar(caps.length)], finger.radius);
+      for (const v of finger.vertices) {
+        let interval = finger.rest.anchors.findIndex(s => s >= v.s); if (interval <= 0) interval = 1;
+        const start = finger.rest.anchors[interval - 1], end = finger.rest.anchors[interval], u = (v.s - start) / (end - start);
+        curve.sample(THREE.MathUtils.lerp(curve.anchors[interval - 1], curve.anchors[interval], u), sample);
+        normal.set(0, 0, 1).addScaledVector(sample.t, -sample.t.z).normalize(); binormal.crossVectors(sample.t, normal);
+        goal.copy(normal).multiplyScalar(v.n).addScaledVector(binormal, v.b).addScaledVector(sample.t, v.t);
+        const inner = goal.dot(sample.n); goal.add(sample.p);
+        if (inner > 0 && sample.k > 1e-8) goal.addScaledVector(sample.n, -Math.expm1(-sample.k * inner) / sample.k - inner);
+        const ordinal = hand.offsets.get(v.id)!, at = ordinal * 15, offset = delta ? ordinal * 3 : at, base = delta ?? data;
+        data[at + 3] += (goal.x - base[offset]) * v.amount;
+        data[at + 4] += (goal.y - base[offset + 1]) * v.amount;
+        data[at + 5] += (goal.z - base[offset + 2]) * v.amount;
+      }
+    }
+    if (delta) {
+      for (let ordinal = 0; ordinal < hand.vertices.length; ordinal++) {
+        const at = ordinal * 15, offset = ordinal * 3;
+        delta[offset] = data[at + 3] - delta[offset]; delta[offset + 1] = data[at + 4] - delta[offset + 1]; delta[offset + 2] = data[at + 5] - delta[offset + 2];
+        data[at + 3] = data[at] + delta[offset]; data[at + 4] = data[at + 1] + delta[offset + 1]; data[at + 5] = data[at + 2] + delta[offset + 2];
+      }
+      this.shapes.set(hand, { key: key!, delta });
+    }
+  }
+
   private deform(hand: Hand): void {
     const skin = this.skin, a = this.binding.attributes, data = this.scratch;
     const sourcePosition = a.position.array, indices = a.skinIndex.array, weights = a.skinWeight.array;
@@ -279,27 +344,7 @@ export class FightingHands {
       data[at + 9] = (f * g - d * i) / det; data[at + 10] = (aa * i - c * g) / det; data[at + 11] = (c * d - aa * f) / det;
       data[at + 12] = (d * h - e * g) / det; data[at + 13] = (b * g - aa * h) / det; data[at + 14] = (aa * e - b * d) / det;
     }
-    const sample = { p: new THREE.Vector3(), t: new THREE.Vector3(), n: new THREE.Vector3(), k: 0 };
-    const normal = new THREE.Vector3(), binormal = new THREE.Vector3(), goal = new THREE.Vector3();
-    for (const [digit, finger] of hand.fingers.entries()) {
-      const points = finger.joints.map(j => new THREE.Vector3().setFromMatrixPosition(skin.skeleton.bones[j].matrixWorld).applyMatrix4(inverse));
-      const caps = hand.caps[digit + 1], tip = new THREE.Vector3();
-      for (const id of caps) { const at = hand.offsets.get(id)! * 15; tip.x += data[at]; tip.y += data[at + 1]; tip.z += data[at + 2]; }
-      const curve = new HandCurve([...points, tip.divideScalar(caps.length)], finger.radius);
-      for (const v of finger.vertices) {
-        let interval = finger.rest.anchors.findIndex(s => s >= v.s); if (interval <= 0) interval = 1;
-        const start = finger.rest.anchors[interval - 1], end = finger.rest.anchors[interval], u = (v.s - start) / (end - start);
-        curve.sample(THREE.MathUtils.lerp(curve.anchors[interval - 1], curve.anchors[interval], u), sample);
-        normal.set(0, 0, 1).addScaledVector(sample.t, -sample.t.z).normalize(); binormal.crossVectors(sample.t, normal);
-        goal.copy(normal).multiplyScalar(v.n).addScaledVector(binormal, v.b).addScaledVector(sample.t, v.t);
-        const inner = goal.dot(sample.n); goal.add(sample.p);
-        if (inner > 0 && sample.k > 1e-8) goal.addScaledVector(sample.n, -Math.expm1(-sample.k * inner) / sample.k - inner);
-        const at = hand.offsets.get(v.id)! * 15;
-        data[at + 3] += (goal.x - data[at]) * v.amount;
-        data[at + 4] += (goal.y - data[at + 1]) * v.amount;
-        data[at + 5] += (goal.z - data[at + 2]) * v.amount;
-      }
-    }
+    this.shapeFingers(hand, inverse, transform);
     const normals = this.normals; normals.fill(0);
     for (const face of hand.triangles) {
       const p = face[0] * 15 + 3, q = face[1] * 15 + 3, r = face[2] * 15 + 3;
@@ -322,5 +367,5 @@ export class FightingHands {
     }
   }
 
-  dispose(): void { this.begin(); this.geometries.forEach(geometry => geometry.dispose()); }
+  dispose(): void { this.begin(); this.shapes.clear(); this.geometries.forEach(geometry => geometry.dispose()); }
 }
