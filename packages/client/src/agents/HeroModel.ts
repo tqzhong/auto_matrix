@@ -41,6 +41,7 @@ import { setCypherMouth } from './CypherMouth.js';
 import { MealPerformance } from './MealPerformance.js';
 import { MouseAppearance } from './MouseAppearance.js';
 import { crewMealAge } from '@auto_matrix/shared';
+import { SkinContinuity } from './SkinContinuity.js';
 
 export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -135,6 +136,7 @@ export class HeroModels {
   private constructs = new Map<HeroRig, ConstructPerformance>();
   private forearms = new ForearmTwist();
   private fightingHands = new Map<HeroRig, FightingHands>();
+  private skinContinuity = new Map<HeroRig, SkinContinuity[]>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
@@ -505,6 +507,9 @@ export class HeroModels {
     if (id === 'morpheus' && !support) this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
     if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
     if (!support && !guard) this.fightingHands.set(rig, new FightingHands(rig));
+    if (!support && !guard) this.skinContinuity.set(rig, wardrobe
+      .filter(part => part.mesh instanceof THREE.SkinnedMesh && /^(Wrist skin|Office skin|Tracking skin)$/.test((part.mesh.material as THREE.Material).name))
+      .map(part => new SkinContinuity(rig, part.mesh as THREE.SkinnedMesh)));
     enableSkinnedCulling(root);
     return rig;
   }
@@ -1422,6 +1427,7 @@ export class HeroModels {
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
     fightingHands?.update();
+    this.skinContinuity.get(rig)?.forEach(skin => skin.update());
     ambushWardrobe?.poseDrape(input, motion);
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
@@ -1508,6 +1514,7 @@ export class HeroModels {
     this.ambushWardrobes.forEach(p => p.dispose()); this.ambushWardrobes.clear();
     this.mice.forEach(p => p.dispose()); this.mice.clear();
     this.fightingHands.forEach(hands => hands.dispose()); this.fightingHands.clear();
+    this.skinContinuity.forEach(surfaces => surfaces.forEach(skin => skin.dispose())); this.skinContinuity.clear();
     this.forearms.dispose();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
