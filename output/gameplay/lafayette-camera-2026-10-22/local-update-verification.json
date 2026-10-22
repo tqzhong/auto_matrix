@@ -1,0 +1,26 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-CBViBJOR.js",
+  "bundleBytes": 3736014,
+  "servedBundleSha256": "df19fe68892ced0adf763f64c913691a3cdc9ae158fde8e6c9ba699c52815e1b",
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "serverPid": 82106,
+  "fullWorldSnapshotPreserved": true,
+  "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-js5izVei.js",
+  "livePackageFilesMatchCandidate": 704,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "assetsChanged": false,
+  "nativeReloadPending": false,
+  "nativeScriptUrls": [
+    "http://localhost:5173/assets/index-CBViBJOR.js"
+  ],
+  "nativeWarnErrors": [],
+  "fullWorldAfterNativeReloadSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "mainWorldAfterNativeReloadUnchanged": true
+}

@@ -2828,6 +2828,79 @@ test('the Construct and desert reveals use authored wide shots while first perso
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).z < -.7, 'the wide shot looks toward the harvesting towers');
 });
 
+test('Lafayette close follow keeps the lens in the room and the route visible beside Neo', t => {
+  const game = setup(t), center = FILM_SETS.film_lafayette.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  game.document.createElement = () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}, fill() {} }) });
+  Object.assign(game.state, { position: filmPosition('film_lafayette', -11, -9.73), currentLocation: 'film_lafayette' });
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  renderer.update(game.state, undefined, 0); renderer.root.updateMatrixWorld(true);
+  try { for (const aspect of [16 / 9, .65]) for (const [x, z, yaw] of [[-11, -9.73, 0], [-11, -13.3, Math.PI]] as const) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    Object.assign(game.state, { position: filmPosition('film_lafayette', x, z), rotation: yaw, currentLocation: 'film_lafayette' });
+    game.controls.possess(game.state); game.step(.6, 1 / 60, false);
+    const eye = new THREE.Vector3(center.x + x, game.state.position.y + 3.1, center.z + z);
+    const sight = game.camera.position.clone().sub(eye);
+    const obstruction = new THREE.Raycaster(eye, sight.clone().normalize(), .01, sight.length() + .12).intersectObject(renderer.root, true).find(hit => {
+      for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+      const mesh = hit.object as THREE.Mesh;
+      return mesh.castShadow && !Array.isArray(mesh.material) && !mesh.material.transparent;
+    });
+    assert.ok(!obstruction, `the minimum follow distance cannot put a rendered partition between Neo and the lens: ${aspect}/${x}/${z}/${yaw}, hit=${obstruction?.point.toArray()}`);
+    const ahead = new THREE.Vector3(center.x + x + Math.sin(yaw) * 6, game.state.position.y + .8, center.z + z + Math.cos(yaw) * 6).project(game.camera);
+    assert.ok(Math.abs(ahead.x) < .95 && Math.abs(ahead.y) < .95 && ahead.z > -1 && ahead.z < 1, `the nearby walking surface must stay in view: ${aspect}/${x}/${z}/${yaw}, ahead=${ahead.toArray()}`);
+    const head = new THREE.Vector3(center.x + x, game.state.position.y + 3.1, center.z + z).project(game.camera);
+    assert.ok(Math.abs(head.x) > .55 || Math.abs(head.y) > .65, `a compressed view must leave the central route clear of Neo’s head: ${aspect}/${x}/${z}/${yaw}, head=${head.toArray()}`);
+  } } finally { renderer.dispose(); }
+});
+
+for (const view of ['third-person', 'first-person']) for (const dt of [1 / 30, 1 / 60]) {
+  test(`${view} wall sliding keeps the intended walking view at ${Math.round(1 / dt)} fps`, t => {
+    const heading = -2.7, game = setup(t, heading), center = FILM_SETS.film_lafayette.center;
+    Object.assign(game.state, { position: filmPosition('film_lafayette', -9.15, -9.73), currentLocation: 'film_lafayette' });
+    game.controls.possess(game.state); if (view === 'first-person') { game.key('KeyV'); game.key('KeyV', false); }
+    game.step(.1, dt); game.key('KeyW'); game.step(1.5, dt);
+    assert.ok(game.group.position.x < center.x - 11, 'the actual partition must permit sliding along its face');
+    assert.ok(game.group.position.z > center.z - 9.8, 'the same partition must block the forward component');
+    assert.ok(Math.abs(angle(game.yaw(), heading)) < .03, 'the collision tangent must not turn the player view');
+    assert.ok(Math.abs(angle(game.group.children[0].rotation.y, heading)) < .03, 'the body keeps trying to walk in the requested direction');
+    game.key('KeyW', false); game.step(.5, dt); game.key('KeyW'); game.step(.25, dt);
+    const input = game.sent.at(-1)!;
+    assert.ok(Math.abs(angle(Math.atan2(input.x, input.z), heading)) < .03, 'pressing W again cannot inherit a collision-induced turn');
+  });
+}
+
+test('Lafayette follow keeps the eased lens clear while turning inside the actual tracking doorway', t => {
+  const game = setup(t), center = FILM_SETS.film_lafayette.center;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  game.document.createElement = () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, stroke() {}, fill() {} }) });
+  Object.assign(game.state, { position: filmPosition('film_lafayette', -6, -11.5), currentLocation: 'film_lafayette' });
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  renderer.update(game.state, undefined, 0); renderer.root.updateMatrixWorld(true);
+  try { for (const aspect of [16 / 9, .65]) for (const yaw of [0, Math.PI]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.state.rotation = yaw;
+    game.controls.possess(game.state); game.step(.5, 1 / 60, false);
+    game.event(game.canvas, 'mousedown', { button: 2 });
+    for (let frame = 0; frame < 60; frame++) {
+      game.event(game.document, 'mousemove', { movementX: -(Math.PI / 2) / (.0028 * 60), movementY: 0 });
+      game.step(1 / 60, 1 / 60, false); game.camera.updateMatrixWorld(true);
+      const head = new THREE.Vector3(center.x - 6, game.state.position.y + 3.1, center.z - 11.5);
+      for (const corner of [[0, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+        const centerRay = corner[0] === 0 && corner[1] === 0;
+        const origin = centerRay ? head : game.camera.position.clone();
+        const lens = centerRay ? game.camera.position.clone() : new THREE.Vector3(corner[0], corner[1], -1).unproject(game.camera), sight = lens.sub(origin);
+        const obstruction = new THREE.Raycaster(origin, sight.clone().normalize(), .01, sight.length() + .05).intersectObject(renderer.root, true).find(hit => {
+          for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+          const mesh = hit.object as THREE.Mesh;
+          return mesh.castShadow && !Array.isArray(mesh.material) && !mesh.material.transparent;
+        });
+        assert.ok(!obstruction, `eased lens crosses visible scenery at ${aspect}/${yaw}, frame=${frame}, corner=${corner}, camera=${game.camera.position.toArray()}, hit=${obstruction?.point.toArray()}`);
+      }
+    }
+    game.event(game.window, 'mouseup');
+  } } finally { renderer.dispose(); }
+});
+
 for (const view of ['third-person', 'first-person']) for (const [key, heading] of [['KeyD', -Math.PI / 2], ['KeyA', Math.PI / 2], ['KeyS', Math.PI]] as const) {
   test(`${view} camera follows ${key} without steering a held direction into circles`, t => {
     const game = setup(t); if (view === 'first-person') game.key('KeyV'); game.key(key);

@@ -1269,8 +1269,11 @@ export class PlayerControls {
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
+    // A wall can remove one velocity component without steering the player.
+    // Keep the requested heading, including while the released movement coasts.
+    const walkingHeading = this.movementForward || this.movementRight ? this.movementYaw + Math.atan2(-this.movementRight, this.movementForward) : this.facing;
     const heading = dropRoot ? dropRoot.yaw : this.motion.bathroom ? bathroomFightRoot(this.motion.bathroom, this.motion.bathroom.role).yaw : this.motion.sixth ? sixthPose(this.motion.sixth).yaw : this.motion.wetwall && this.wetwallGuide ? wetwallPose(this.motion.wetwall.start, this.motion.wetwall.role, this.wetwallGuide.progress, this.motion.wetwall.phase, this.motion.wetwall.elapsed, this.motion.wetwall.fallY, this.motion.wetwall.continued).yaw
-      : this.motion.dockGunnery ? Math.PI : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? Math.atan2(dx, dz) : this.facing;
+      : this.motion.dockGunnery ? Math.PI : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? walkingHeading : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.freewayPickup || this.motion.freewayRide || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || upperDiggerLocked(this.motion.upperDigger) || diggersLocked(this.motion.diggers) || this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
     if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
@@ -3062,21 +3065,27 @@ export class PlayerControls {
       // The cat passes beside Neo's silhouette, so its low body needs a wider shoulder gap.
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : doorwayView ? -2.5 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
-      const followDistance = wreckCabin || doorwayView ? 4.2 : state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
+      if (lafayetteWalking) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
+      const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
       const cabinCeiling = (point: THREE.Vector3) => cabinCenter
         && Math.abs(point.x - cabinCenter.x - CABIN.deck.x) < CABIN.deck.width / 2 + .5
         && Math.abs(point.z - cabinCenter.z - CABIN.deck.z) < CABIN.deck.depth / 2 + .5
         ? cabinCenter.y - 1 + CABIN.ceiling.headroom - this.camera.near - .12 : Infinity;
       let cameraDistance = followDistance;
-      for (let distance = 1; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
+      for (let distance = .5; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);
         const center = FILM_SETS.film_power_station.center;
         const blocked = state.currentLocation === 'film_power_station'
           ? primaryCameraBlocked(point.x - center.x, point.y - center.y + 1, point.z - center.z, .5)
-          : playerBlocked(point, state.isInMatrix, 0.5, this.structures);
-        if (blocked || point.y > cabinCeiling(point)) { cameraDistance = Math.max(2, distance - 1); break; }
+          // Hotel floor support is checked at a standing body's foot height.
+          : playerBlocked(lafayetteWalking ? { ...point, y: Math.min(point.y, this.position.y + 2) } : point, state.isInMatrix, 0.5, this.structures);
+        if (blocked || point.y > cabinCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
       }
+      // A tight shoulder view in the tracking passage must look over Neo,
+      // rather than putting the lens inside the wall or the back of his head.
+      if (lafayetteWalking) pivot.y += 2.1 * (1 - THREE.MathUtils.smoothstep(cameraDistance, 1.5, 4.5));
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
       if (wreckCabin) {
         const center = FILM_SETS.film_logos_wreck.center;
@@ -3088,6 +3097,17 @@ export class PlayerControls {
       }
       if (resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
+      if (lafayetteWalking) {
+        // Easing between two clear positions can still cut through a door jamb.
+        const sweep = this.camera.position.clone().sub(pivot), length = sweep.length(); sweep.normalize();
+        for (let distance = .25; distance <= length; distance += .25) {
+          const point = pivot.clone().addScaledVector(sweep, distance); point.y = Math.min(point.y, this.position.y + 2);
+          if (playerBlocked(point, state.isInMatrix, .5, this.structures)) {
+            this.camera.position.copy(pivot).addScaledVector(sweep, Math.max(0, distance - .5)); break;
+          }
+        }
+        if (cameraDistance < 4.5 || this.camera.position.distanceTo(pivot) < 4.5) { this.camera.near = .1; this.camera.updateProjectionMatrix(); }
+      }
       this.camera.position.y = Math.min(this.camera.position.y, cabinCeiling(this.camera.position));
       this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }

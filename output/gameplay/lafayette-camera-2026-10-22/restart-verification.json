@@ -1,0 +1,25 @@
+{
+  "actualBackendRestart": true,
+  "tick": 5885,
+  "paused": true,
+  "scene": "m1_mirror",
+  "publicGroupsEqual": {
+    "phase": true,
+    "timeOfDay": true,
+    "simulation": true,
+    "events": true,
+    "sandbox": true
+  },
+  "neoFieldsEqual": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "isAwakened": true,
+    "isInMatrix": true,
+    "currentLocation": true
+  },
+  "memoryFilesUnchanged": true,
+  "memoryFiles": 7,
+  "mainServerRestarted": false,
+  "renderReconnected": false
+}

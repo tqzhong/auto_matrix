@@ -1,0 +1,53 @@
+{
+  "baseline": "2e6590bc56c81a0b31a5322a93752327d25ef529",
+  "gates": {
+    "camera-baseline.log": {
+      "tests": 202,
+      "pass": 202,
+      "fail": 0
+    },
+    "wall-first-failure.log": {
+      "tests": 4,
+      "pass": 0,
+      "fail": 4
+    },
+    "close-rendered-baseline.log": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    "doorway-lens-first-failure.log": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1
+    },
+    "camera-targeted-final.log": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    "camera-regression.log": {
+      "tests": 237,
+      "pass": 237,
+      "fail": 0
+    },
+    "deploy-tests.log": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0
+    }
+  },
+  "typecheckExitCode": 0,
+  "productionBuildExitCode": 0,
+  "fullRepositoryTestsRun": false,
+  "sourceRuntimeFilesChanged": 1,
+  "newTestCases": 6,
+  "qaInstrumentationAdded": false,
+  "commands": {
+    "baseline": "node --import tsx --test tests/camera.test.mts tests/lafayette-camera.test.mts",
+    "regression": "node --import tsx --test tests/camera.test.mts tests/lafayette-camera.test.mts tests/pill-view.test.mts tests/mirror-contact.test.mts",
+    "deployment": "npm run test:deploy",
+    "typesAndBuild": "npm run typecheck && npm run build"
+  },
+  "behaviorTestsBeforeCorrespondingFix": true
+}

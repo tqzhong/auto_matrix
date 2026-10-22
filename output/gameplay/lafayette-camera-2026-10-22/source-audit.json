@@ -1,0 +1,23 @@
+{
+  "baseline": "2e6590bc56c81a0b31a5322a93752327d25ef529",
+  "verifiedSourceFiles": 1149,
+  "changed": [
+    {
+      "path": "packages/client/src/player/PlayerControls.ts",
+      "before": "6953d4608fbf89ce133b8003a640a3c434189c618fb11972770a39af9904c342",
+      "candidate": "4378440d39f367198a080f7717944f12bf41b6a3ac66330e48cbc7f4b00de7d0"
+    },
+    {
+      "path": "tests/camera.test.mts",
+      "before": "7413c884f0569dd5694129dc9d36bd82255fc8fb402c851f3335f02a2fc7f3df",
+      "candidate": "0af927abab2d706d4cb05655922df35e3c354c95474288fd730a6bdd19de2c3f"
+    }
+  ],
+  "packageFiles": 704,
+  "unchangedPackageFiles": 703,
+  "protectedWipFilesUnchanged": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "backendChanged": false,
+  "qaInstrumentationAdded": false
+}

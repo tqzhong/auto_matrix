@@ -1,0 +1,190 @@
+{
+  "README.md": {
+    "bytes": 6099,
+    "sha256": "4313780a9ea90e84f628c2f97c39fa316f1e78e94d88d1445f1f5f220fe25348"
+  },
+  "baseline-audit.json": {
+    "bytes": 247,
+    "sha256": "8e35c6438b388bbdcd9e29882f0771d2a8293e495393582c4fc251d03495d45c"
+  },
+  "source-audit.json": {
+    "bytes": 789,
+    "sha256": "3bcafe057b6205a9856217dc6ba59e5cb22327f563cab7b337e8883918c6d41b"
+  },
+  "protected-worktree.json": {
+    "bytes": 1243,
+    "sha256": "9964a8529526fd87e90e5507123eaa55da2f789a302f428ac9911dcf44d6af99"
+  },
+  "backend-dist-before.json": {
+    "bytes": 28627,
+    "sha256": "b79861559cdd69c1fe3acbe8ba03d3cd9723501dd2aa581d5d80e0b3278925e7"
+  },
+  "validation.json": {
+    "bytes": 1327,
+    "sha256": "539265b0e146dfae6a003192985a37fafc7502db93e891bccfdc423f4b98de65"
+  },
+  "native-verification.json": {
+    "bytes": 3471,
+    "sha256": "0a5342bef53a63966bfa34ecb3d281137e1c996f02e0fc3aad5ef117dfb78b26"
+  },
+  "restart-verification.json": {
+    "bytes": 510,
+    "sha256": "63595ee71aa30e9c0513da567daf0c8bd9664d55db2aaf90b83db95278a85087"
+  },
+  "local-update-verification.json": {
+    "bytes": 939,
+    "sha256": "0d4388b29e2973cefa6dc5449d0b163806956f4792239c3ff829d933a951ef8d"
+  },
+  "native-console.json": {
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "local-native-console.json": {
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "qa-processes-stopped.json": {
+    "bytes": 91,
+    "sha256": "56502e076203dbecf82a5478f66817dbe7b05f0961998a3e20efebe2d50c6f7b"
+  },
+  "publish-local-preview.py": {
+    "bytes": 3998,
+    "sha256": "3de27b38633f18e9a33bddddc5815cac5544d174e452b5ad58a54c5ef737a8a6"
+  },
+  "native-close-follow.png": {
+    "bytes": 108164,
+    "sha256": "c0c4cbd1e1889528f59528c07bd847aea303b67e4d0aea1a827bad2cc2e8348f"
+  },
+  "native-through-door.png": {
+    "bytes": 102826,
+    "sha256": "66130fda07834f841b76bc76920594b4c549e5f46dbbb85e569b6b7d33716ba0"
+  },
+  "native-first-person-wall.png": {
+    "bytes": 84225,
+    "sha256": "e89e692d7ea4b6e166ed20ff646ad1646fa49842f80e73c95d57042a6f0bd617"
+  },
+  "native-door-reconnected.png": {
+    "bytes": 96541,
+    "sha256": "2668d03469b2e3ddd86603fa18cf47b8c2af1c375aaae6a68ae61b898dd91f15"
+  },
+  "native-pod-paused.png": {
+    "bytes": 58395,
+    "sha256": "51cd53d93ab197a1d31a55c4121674386209bf78d06af571180b7d9200545358"
+  },
+  "local-native-reload.png": {
+    "bytes": 88501,
+    "sha256": "479829c2dd496ed16e7307c7d2dbeb11bc9ebd59996d55ea341812199e4413d9"
+  },
+  "native-recording/neo-2026-10-22T07-06-32-228Z.json": {
+    "bytes": 317,
+    "sha256": "e67ba2f47dcac80e29c371901c5d7189b29ee74d8391cd9417df0a370c148a7d"
+  },
+  "native-recording/excerpt-probe.json": {
+    "bytes": 376,
+    "sha256": "50d9677011d0264961113756e9ff11a9b2722f9f0bff3e862a2bff6dc90276b2"
+  },
+  "native-recording/wall-and-doorway.mp4": {
+    "bytes": 5439257,
+    "sha256": "7a04f6905ec9355415e9ca0ea67da8ac6ea893fa9c3f417d80a9669b81029b4b"
+  },
+  "build.log.gz": {
+    "bytes": 509,
+    "sha256": "40c00f10e3d1638ffd7a47f4754fa6345c3a4eed7fd89797c97e0c4d9987a0a6"
+  },
+  "camera-baseline.log.gz": {
+    "bytes": 10184,
+    "sha256": "5aa0347101bdf00152c98b297d729da4f59f911435c6e920ecd79520f6b3e06a"
+  },
+  "camera-regression.log.gz": {
+    "bytes": 11876,
+    "sha256": "8d4ad13d870b5b041702055840abb5822ef93640b9ff5096684448fe4962a9f5"
+  },
+  "camera-targeted-final.log.gz": {
+    "bytes": 405,
+    "sha256": "f171189612353781f2c1fd11ed9ff7c3f79430727b713f579387c73d010bcdb0"
+  },
+  "camera-targeted.log.gz": {
+    "bytes": 849,
+    "sha256": "1fdedba41bf8ed72dc12a9afff4dc4511bb9d031faae76901caa26bf80821b44"
+  },
+  "close-diagnostic.log.gz": {
+    "bytes": 632,
+    "sha256": "608acda9e97d2f53f258845cb3a474869f9c49511c941f19832e192a98417bbb"
+  },
+  "close-first-failure.log.gz": {
+    "bytes": 576,
+    "sha256": "67b0be847648adb506a98dbd4ce569f8b8503842bd962eff15581ee970d91dcd"
+  },
+  "close-first-fix.log.gz": {
+    "bytes": 701,
+    "sha256": "53375ae4efbaf8f653b4c6005c90a0873ccc1368e36831a988d45c55a815bfdf"
+  },
+  "close-rendered-baseline.log.gz": {
+    "bytes": 642,
+    "sha256": "b45826eb0e3a897d41825d82ffacf700b8eadb26b356d82f3a54bc8881032fc5"
+  },
+  "close-second-fix.log.gz": {
+    "bytes": 335,
+    "sha256": "c3c12b4f356739756a8384ca917d31442197bb703372a31daa1c66963517f5b7"
+  },
+  "deploy-tests.log.gz": {
+    "bytes": 5020,
+    "sha256": "17c52b25896cbd5bf9bc145fd9df39177fb218f37c7a09b656229d392fadb734"
+  },
+  "doorway-diagnostic-final.log.gz": {
+    "bytes": 704,
+    "sha256": "f6664fbbc1936f13f609a848171bcfa1e07b9dc13dbd8e56d8aedb080230dc50"
+  },
+  "doorway-diagnostic.log.gz": {
+    "bytes": 633,
+    "sha256": "42222a25b5c32cd2e78e124fed8c530bd18f302f963f3e094f789fc12c255df3"
+  },
+  "doorway-first-failure.log.gz": {
+    "bytes": 631,
+    "sha256": "b754906ea17dd31a053bd4282703118e9d235f532ddbf816523addfbe6042f1b"
+  },
+  "doorway-geometry-diagnostic.log.gz": {
+    "bytes": 821,
+    "sha256": "e43dd8ab648c92dc44e8c501607106d429c3071ed6870cc26d9d4669886e268d"
+  },
+  "doorway-lens-first-failure.log.gz": {
+    "bytes": 663,
+    "sha256": "33a2ffcfeba7a1f0d04863029ab103288280a6b7210c11296831e482ad3ed34b"
+  },
+  "doorway-triangle-diagnostic.log.gz": {
+    "bytes": 771,
+    "sha256": "efd2647d48886f5934a3cc156d16ba881390c16ce6a6b7a783095c3ec6377314"
+  },
+  "frame-extract.log.gz": {
+    "bytes": 950,
+    "sha256": "4b60cfebf367e27059341d90e3760a227d768ce6cd4cd532db221b2beed69684"
+  },
+  "native-client.log.gz": {
+    "bytes": 356,
+    "sha256": "c76b3da161a78850b546ad34e41797e5b5f47526cf9fce04bd117e0cb0a0b4bf"
+  },
+  "native-server-restarted.log.gz": {
+    "bytes": 201,
+    "sha256": "d9f228293ca70e189996a86a14007ea04bf8eb1128f62e58acc4e4a0ea8b90fd"
+  },
+  "native-server.log.gz": {
+    "bytes": 286,
+    "sha256": "a01f29bd2ebaf0738bc9f3457661f895dbc72663ae0773f00f7f17def4381176"
+  },
+  "video-encode.log.gz": {
+    "bytes": 1926,
+    "sha256": "6b730fd88877ee6c61db560ed31cb695c0b0320b4646d72eab568d2fd166e2c4"
+  },
+  "wall-first-failure.log.gz": {
+    "bytes": 700,
+    "sha256": "cdc673babb9ea98bcc0641f7b6115540e1611a4ab833bec767d41829b8f32f8d"
+  },
+  "wall-fixed.log.gz": {
+    "bytes": 718,
+    "sha256": "cd6f66d1b3707ad60974c56326a612738bdb124561fa976e2e0a0073c97fb436"
+  },
+  "native-final-ax.txt.gz": {
+    "bytes": 1308,
+    "sha256": "eb6fbb7e6bf1ccdbf4da2b451719ba60dcb833d695dce285573cbbd925c77dd5"
+  }
+}

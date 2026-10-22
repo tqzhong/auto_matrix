@@ -1,0 +1,111 @@
+{
+  "actualNativeUiRun": true,
+  "entry": "historical P0 QA checkpoint; ordinary dialogue and agency answer before recording; native red-pill choice begins recorded run",
+  "sourceSha256": "4378440d39f367198a080f7717944f12bf41b6a3ac66330e48cbc7f4b00de7d0",
+  "completedThisRun": [
+    "philosophy dialogue and agency answer",
+    "native red-pill choice, handoff, swallowing and drinking, rise",
+    "third-person held-W wall slide",
+    "V first-person wall slide",
+    "mouse steering and V return to third person",
+    "walk through actual tracking doorway",
+    "pause and actual backend restart at tracking-room checkpoint",
+    "resume W movement and V",
+    "G chair entry, mirror touch and silver transition",
+    "m1_pod step0 entry, pause and recording save"
+  ],
+  "wallSlide": {
+    "headingBefore": -2.438385444841507,
+    "headingAfter": -2.438385444841507,
+    "headingEqual": true,
+    "before": {
+      "x": 4727.21068416005,
+      "y": 85,
+      "z": 4407.077896945218
+    },
+    "after": {
+      "x": 4723.382791154352,
+      "y": 85,
+      "z": 4406.243533036605
+    },
+    "note": "Public authoritative heading corroborates the native run; six regressions test the rendered view, body heading and real scenery."
+  },
+  "restart": {
+    "actualBackendRestart": true,
+    "tick": 5885,
+    "paused": true,
+    "scene": "m1_mirror",
+    "publicGroupsEqual": {
+      "phase": true,
+      "timeOfDay": true,
+      "simulation": true,
+      "events": true,
+      "sandbox": true
+    },
+    "neoFieldsEqual": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "isAwakened": true,
+      "isInMatrix": true,
+      "currentLocation": true
+    },
+    "memoryFilesUnchanged": true,
+    "memoryFiles": 7,
+    "mainServerRestarted": false,
+    "renderReconnected": false
+  },
+  "final": {
+    "tick": 6005,
+    "paused": true,
+    "scene": "m1_pod",
+    "step": 0,
+    "health": 100,
+    "isAwakened": true,
+    "completedPillsAndMirror": true
+  },
+  "recording": {
+    "file": "neo-2026-10-22T07-06-32-228Z.webm",
+    "duration": 394.2510999994278,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 5171,
+    "rendering": {
+      "frames": 5733,
+      "fps": 14.543247640175634,
+      "p95FrameMs": 169.60000038146973,
+      "includesRecordingOverhead": true
+    },
+    "markers": []
+  },
+  "recordingBytes": 58749347,
+  "excerpt": {
+    "file": "native-recording/wall-and-doorway.mp4",
+    "sourceStartSeconds": 145,
+    "durationSeconds": 100.0,
+    "bytes": 5439257,
+    "note": "Continuous excerpt; original capture timing and gaps, includes navigation/checking waits; full original remains local."
+  },
+  "consoleWarnErrors": [],
+  "mainSaveUsed": false,
+  "renderReconnected": false,
+  "remaining": [
+    "FPS and responsiveness remain poor; recorded 14.54 render fps with capture overhead, no controlled performance comparison",
+    "first-person chair-entry view passing close to geometry still not addressed",
+    "first-person view preference persistence not addressed; this restart used third person",
+    "models, hands, clothing materials and whole-body contacts still below movie quality",
+    "finite camera route tests do not cover all layouts or arbitrary foreground props",
+    "blue branch, failure retry and whole P0/trilogy native acceptance incomplete"
+  ],
+  "qaProcessesStopped": [
+    {
+      "port": 5200,
+      "pid": 23078
+    },
+    {
+      "port": 5201,
+      "pid": 76888
+    }
+  ]
+}
