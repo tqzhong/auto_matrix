@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: the actual complete leather shoulder does not turn through its own armhole during the jab
+not ok 1 - the actual complete leather shoulder does not turn through its own armhole during the jab
+  ---
+  duration_ms: 3998.891792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-binding-2026-10-22/shoulder-red.test.mts:1:5042'
+  failureType: 'testCodeFailure'
+  error: |-
+    the forward shoulder folds the complete leather through itself: {"count":146,"examples":[{"first":417,"second":1953,"line":0.031017388273484967},{"first":1953,"second":417,"line":0.031017388273484967},{"first":420,"second":418,"line":0.03037068909109539},{"first":418,"second":420,"line":0.030370689091095388}]}
+
+    146 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 146
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-binding-2026-10-22/shoulder-red.test.mts:92:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the actual complete shirt shoulder stays continuous through the mirrored cross
+not ok 2 - the actual complete shirt shoulder stays continuous through the mirrored cross
+  ---
+  duration_ms: 3687.528458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-binding-2026-10-22/shoulder-red.test.mts:1:5393'
+  failureType: 'testCodeFailure'
+  error: |-
+    the mirrored forward shoulder folds the complete shirt through itself: {"count":96,"examples":[{"first":11136,"second":12610,"line":0.014893643731978486},{"first":12610,"second":11136,"line":0.014893643731978485},{"first":12801,"second":12840,"line":0.012743314160559478},{"first":12840,"second":12801,"line":0.012743314160559478}]}
+
+    96 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 96
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-binding-2026-10-22/shoulder-red.test.mts:98:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the two complete real garments stay separate before reaching a fully extended punch
+not ok 3 - the two complete real garments stay separate before reaching a fully extended punch
+  ---
+  duration_ms: 2533.226083
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-binding-2026-10-22/shoulder-red.test.mts:1:5741'
+  failureType: 'testCodeFailure'
+  error: |-
+    the forward shoulder crosses its actual shirt underlayer: {"count":18,"examples":[{"first":1750,"second":2104,"line":0.017191574906153067},{"first":1755,"second":2104,"line":0.01530452781643232},{"first":1754,"second":2102,"line":0.012916235462682973},{"first":1753,"second":2105,"line":0.012866480476904231}]}
+
+    18 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 18
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-shoulder-binding-2026-10-22/shoulder-red.test.mts:104:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10775.698209

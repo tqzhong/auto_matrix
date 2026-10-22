@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the complete old-building outer costume clears itself and all actual inner layers through ordinary movement
+ok 1 - the complete old-building outer costume clears itself and all actual inner layers through ordinary movement
+  ---
+  duration_ms: 565410.97325
+  type: 'test'
+  ...
+# Subtest: the complete fitted upper coat keeps its saved shape while paused, rebuilds cold and releases its corrections on leaving
+ok 2 - the complete fitted upper coat keeps its saved shape while paused, rebuilds cold and releases its corrections on leaving
+  ---
+  duration_ms: 24967.033334
+  type: 'test'
+  ...
+# Subtest: the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+ok 3 - the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+  ---
+  duration_ms: 9099.307541
+  type: 'test'
+  ...
+# Subtest: the complete worn coat clears itself and every real inner layer on every frame of the first running strides
+ok 4 - the complete worn coat clears itself and every real inner layer on every frame of the first running strides
+  ---
+  duration_ms: 372132.012125
+  type: 'test'
+  ...
+# Subtest: the sewn old-building coat clears the raised thigh during a real front kick
+ok 5 - the sewn old-building coat clears the raised thigh during a real front kick
+  ---
+  duration_ms: 9760.209834
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 984100.162834

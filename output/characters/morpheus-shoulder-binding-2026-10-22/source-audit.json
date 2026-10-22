@@ -1,0 +1,13 @@
+{
+  "baselineCommit": "a22fc15fcab7226e9fe9ffe160cd94f34293b53b",
+  "packageFilesCompared": 702,
+  "unchangedFiles": 699,
+  "changedPackageFiles": [
+    "packages/client/public/assets/characters/README.md",
+    "packages/client/public/assets/characters/morpheus.glb",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts"
+  ],
+  "newRuntimeDependencies": false,
+  "protectedWipFilesUnchanged": 11,
+  "candidateBundle": "index-BFFQbHpL.js"
+}

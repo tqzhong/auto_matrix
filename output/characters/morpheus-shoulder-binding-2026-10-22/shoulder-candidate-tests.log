@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: the complete old-building upper coat does not fold through itself at the real guarding elbows
+ok 1 - the complete old-building upper coat does not fold through itself at the real guarding elbows
+  ---
+  duration_ms: 11779.282083
+  type: 'test'
+  ...
+# Subtest: the complete underlying shirt does not fold through itself with the same guarding arms
+ok 2 - the complete underlying shirt does not fold through itself with the same guarding arms
+  ---
+  duration_ms: 13506.324875
+  type: 'test'
+  ...
+# Subtest: the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+ok 3 - the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+  ---
+  duration_ms: 36551.218292
+  type: 'test'
+  ...
+# Subtest: both actual sleeves preserve a paused and cold guard, then restore their original surface on leaving the old-building costume
+ok 4 - both actual sleeves preserve a paused and cold guard, then restore their original surface on leaving the old-building costume
+  ---
+  duration_ms: 17350.126292
+  type: 'test'
+  ...
+# Subtest: the actual complete leather shoulder does not turn through its own armhole during the jab
+ok 5 - the actual complete leather shoulder does not turn through its own armhole during the jab
+  ---
+  duration_ms: 14311.023792
+  type: 'test'
+  ...
+# Subtest: the actual complete shirt shoulder stays continuous through the mirrored cross
+ok 6 - the actual complete shirt shoulder stays continuous through the mirrored cross
+  ---
+  duration_ms: 13109.470459
+  type: 'test'
+  ...
+# Subtest: the two complete real garments stay separate before reaching a fully extended punch
+ok 7 - the two complete real garments stay separate before reaching a fully extended punch
+  ---
+  duration_ms: 8886.518084
+  type: 'test'
+  ...
+# Subtest: both intermediate shoulder cuts clear the complete outer costume and every visible inner layer
+ok 8 - both intermediate shoulder cuts clear the complete outer costume and every visible inner layer
+  ---
+  duration_ms: 109795.91275
+  type: 'test'
+  ...
+# Subtest: the baked shoulder cut preserves a paused pose and reconstructs the saved cross without changing hands
+ok 9 - the baked shoulder cut preserves a paused pose and reconstructs the saved cross without changing hands
+  ---
+  duration_ms: 28047.243625
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 257267.997167

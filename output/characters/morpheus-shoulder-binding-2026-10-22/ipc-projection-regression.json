@@ -1,0 +1,72 @@
+{
+  "witnessSourceVertexIds": [
+    12051,
+    12055,
+    12760,
+    12794
+  ],
+  "legacyStep": 0.184722900390625,
+  "legacyEndpointsIntersect": false,
+  "legacySweepRejected": true,
+  "acceptedStep": 0.0923614501953125,
+  "feasibilityRejections": 1,
+  "clearSourceMotionPreservedExactly": true,
+  "minimumDistanceUnits": "squared metres",
+  "constrainedControl": {
+    "context": "triangle-projection",
+    "mode": "constrained-projection",
+    "iterations": [
+      {
+        "iteration": 0,
+        "energy": 0.0009000000000000001,
+        "residual": 0.04,
+        "contacts": 0,
+        "minimumSquaredDistance": Infinity,
+        "reportedStep": 0.49749755859375,
+        "step": 0.49749755859375,
+        "maximumStep": 0.01989990234375,
+        "feasibilityRejections": 0,
+        "energyRejections": 0
+      },
+      {
+        "iteration": 1,
+        "energy": 0.00023176926913264477,
+        "residual": 0.017125377211133264,
+        "contacts": 1,
+        "minimumSquaredDistance": 1.0019540786742997e-08,
+        "reportedStep": 1.0,
+        "step": 1.0,
+        "maximumStep": 0.005025024414062501,
+        "feasibilityRejections": 0,
+        "energyRejections": 0
+      },
+      {
+        "iteration": 2,
+        "energy": 0.0002063804931748736,
+        "residual": 8.389779570061248e-05,
+        "contacts": 1,
+        "minimumSquaredDistance": 1.1423398448047003e-08,
+        "reportedStep": 1.0,
+        "step": 1.0,
+        "maximumStep": 4.911806821212597e-07,
+        "feasibilityRejections": 0,
+        "energyRejections": 0
+      },
+      {
+        "iteration": 3,
+        "energy": 0.00020638047247650149,
+        "residual": 3.849713494756546e-07,
+        "contacts": 1,
+        "minimumSquaredDistance": 1.1528736298323473e-08,
+        "unscaledDirectionMetres": 2.276205890249618e-09,
+        "converged": true,
+        "criterion": "newton-direction"
+      }
+    ],
+    "seconds": 0.07555983308702707,
+    "maximumCorrection": 0.020094109827697753,
+    "targetMotion": 0.04,
+    "actualMotion": 0.019905890180337046
+  },
+  "invalidStartRejected": true
+}

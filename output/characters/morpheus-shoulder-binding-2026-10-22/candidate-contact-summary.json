@@ -1,0 +1,83 @@
+{
+  "poseGroups": [
+    {
+      "combo": 0,
+      "label": "dense",
+      "poses": 55,
+      "failures": []
+    },
+    {
+      "combo": 0,
+      "label": "30fps",
+      "poses": 7,
+      "failures": []
+    },
+    {
+      "combo": 0,
+      "label": "120fps",
+      "poses": 8,
+      "failures": []
+    },
+    {
+      "combo": 1,
+      "label": "dense",
+      "poses": 55,
+      "failures": []
+    },
+    {
+      "combo": 1,
+      "label": "30fps",
+      "poses": 7,
+      "failures": []
+    },
+    {
+      "combo": 1,
+      "label": "120fps",
+      "poses": 8,
+      "failures": []
+    },
+    {
+      "combo": 2,
+      "label": "dense",
+      "poses": 55,
+      "failures": []
+    },
+    {
+      "combo": 2,
+      "label": "30fps",
+      "poses": 7,
+      "failures": []
+    },
+    {
+      "combo": 2,
+      "label": "120fps",
+      "poses": 8,
+      "failures": []
+    }
+  ],
+  "totalPoses": 210,
+  "chordIntervals": 14,
+  "chordFailures": [
+    {
+      "previousFrame": 10,
+      "frame": 11,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": false,
+      "seconds": 4.235515791922808,
+      "safeFraction": 0.9481201171875
+    }
+  ],
+  "scope": "Complete physical shirt and coat, original triangles; straight posed chords are diagnostic, not a proof of the nonlinear bone/morph game trajectory or contacts with other body layers.",
+  "actualBoneCurveSubdivision": {
+    "gameFrames": [
+      10,
+      11
+    ],
+    "substeps": 32,
+    "endpointsByteExact": true,
+    "allStepEndpointsAndSweepsClear": true,
+    "data": "candidate-left-subframe-paths.json",
+    "scope": "Finite actual bone-curve subdivision; no proof for arbitrary poses or nonlinear intervals between those samples."
+  }
+}

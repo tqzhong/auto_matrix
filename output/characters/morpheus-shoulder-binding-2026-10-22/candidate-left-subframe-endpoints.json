@@ -1,0 +1,26 @@
+[
+  {
+    "part": "shirt",
+    "subframe": 0,
+    "gameFrame": 10,
+    "maximumMetreError": 0.0
+  },
+  {
+    "part": "shirt",
+    "subframe": 32,
+    "gameFrame": 11,
+    "maximumMetreError": 0.0
+  },
+  {
+    "part": "coat",
+    "subframe": 0,
+    "gameFrame": 10,
+    "maximumMetreError": 0.0
+  },
+  {
+    "part": "coat",
+    "subframe": 32,
+    "gameFrame": 11,
+    "maximumMetreError": 0.0
+  }
+]

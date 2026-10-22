@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: the delivered Morpheus phone hand does not fold back across its forearm
+ok 1 - the delivered Morpheus phone hand does not fold back across its forearm
+  ---
+  duration_ms: 9413.639375
+  type: 'test'
+  ...
+# Subtest: starting the new ambush call cannot teleport the actual wrist
+ok 2 - starting the new ambush call cannot teleport the actual wrist
+  ---
+  duration_ms: 8609.160959
+  type: 'test'
+  ...
+# Subtest: the real Trinity right hand passes one continuous handset through both Morpheus hands
+ok 3 - the real Trinity right hand passes one continuous handset through both Morpheus hands
+  ---
+  duration_ms: 151764.130666
+  type: 'test'
+  ...
+# Subtest: each delivered gripping hand reaches the physical handset without entering the solid casing
+ok 4 - each delivered gripping hand reaches the physical handset without entering the solid casing
+  ---
+  duration_ms: 15697.283833
+  type: 'test'
+  ...
+# Subtest: Trinity keeps a clear grip throughout preparation and withdraws outside the moving handset
+ok 5 - Trinity keeps a clear grip throughout preparation and withdraws outside the moving handset
+  ---
+  duration_ms: 73487.298625
+  type: 'test'
+  ...
+# Subtest: 20 Hz authoritative approach and release keep the handset clear before and after a cold renderer rebuild
+ok 6 - 20 Hz authoritative approach and release keep the handset clear before and after a cold renderer rebuild
+  ---
+  duration_ms: 53597.550625
+  type: 'test'
+  ...
+# Subtest: running, paused and reversed cold actor loading reconstruct the same physical call
+ok 7 - running, paused and reversed cold actor loading reconstruct the same physical call
+  ---
+  duration_ms: 72662.936708
+  type: 'test'
+  ...
+# Subtest: holding at seven seconds keeps the left phone while route-driven feet continue walking
+ok 8 - holding at seven seconds keeps the left phone while route-driven feet continue walking
+  ---
+  duration_ms: 8392.473125
+  type: 'test'
+  ...
+# Subtest: the actual earpiece reaches the left head surface without putting the handset inside it
+ok 9 - the actual earpiece reaches the left head surface without putting the handset inside it
+  ---
+  duration_ms: 61295.441667
+  type: 'test'
+  ...
+# Subtest: listening keeps the supporting elbow below the shoulder rather than raised sideways
+ok 10 - listening keeps the supporting elbow below the shoulder rather than raised sideways
+  ---
+  duration_ms: 6297.668167
+  type: 'test'
+  ...
+# Subtest: the standalone wetwall call restores without old escort state and releases to ordinary hands
+ok 11 - the standalone wetwall call restores without old escort state and releases to ordinary hands
+  ---
+  duration_ms: 11245.387333
+  type: 'test'
+  ...
+# Subtest: both real hands contact opposite sides of the handset at each transfer without deep skin overlap
+ok 12 - both real hands contact opposite sides of the handset at each transfer without deep skin overlap
+  ---
+  duration_ms: 22900.144
+  type: 'test'
+  ...
+# Subtest: leaving the new call restores the existing right-hand phone path
+ok 13 - leaving the new call restores the existing right-hand phone path
+  ---
+  duration_ms: 10478.740125
+  type: 'test'
+  ...
+# Subtest: wearing leather preserves the complete fitted inner shirt through the same saved ordinary motion
+ok 14 - wearing leather preserves the complete fitted inner shirt through the same saved ordinary motion
+  ---
+  duration_ms: 26787.283042
+  type: 'test'
+  ...
+# Subtest: a covered fitted shirt survives pause and cold reconstruction while leaving restores the original donor
+ok 15 - a covered fitted shirt survives pause and cold reconstruction while leaving restores the original donor
+  ---
+  duration_ms: 25108.70625
+  type: 'test'
+  ...
+# Subtest: closing the actual fingers moves the hand while leaving the worn shirt and coat cuffs with the wrist
+ok 16 - closing the actual fingers moves the hand while leaving the worn shirt and coat cuffs with the wrist
+  ---
+  duration_ms: 8545.885833
+  type: 'test'
+  ...
+# Subtest: cloth rebinding preserves the actual bind surface, normalized arm weights and original donor data
+ok 17 - cloth rebinding preserves the actual bind surface, normalized arm weights and original donor data
+  ---
+  duration_ms: 8992.637209
+  type: 'test'
+  ...
+# Subtest: covering retains the repaired hem and leaving the garment restores its original binding
+ok 18 - covering retains the repaired hem and leaving the garment restores its original binding
+  ---
+  duration_ms: 17646.360333
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 604259.277041

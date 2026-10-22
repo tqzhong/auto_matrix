@@ -1,0 +1,262 @@
+{
+  "scope": "Complete physical shirt and coat, original triangles; straight posed chords are diagnostic, not a proof of the nonlinear bone/morph game trajectory or contacts with other body layers.",
+  "directory": "candidate-left-10-to-11-subframes",
+  "records": [
+    {
+      "previousFrame": 0,
+      "frame": 1,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6991123333573341
+    },
+    {
+      "previousFrame": 1,
+      "frame": 2,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6340538337826729
+    },
+    {
+      "previousFrame": 2,
+      "frame": 3,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5926763750612736
+    },
+    {
+      "previousFrame": 3,
+      "frame": 4,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5744595834985375
+    },
+    {
+      "previousFrame": 4,
+      "frame": 5,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5751000829041004
+    },
+    {
+      "previousFrame": 5,
+      "frame": 6,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5727709587663412
+    },
+    {
+      "previousFrame": 6,
+      "frame": 7,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5662059998139739
+    },
+    {
+      "previousFrame": 7,
+      "frame": 8,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5614705411717296
+    },
+    {
+      "previousFrame": 8,
+      "frame": 9,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5607579173520207
+    },
+    {
+      "previousFrame": 9,
+      "frame": 10,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5559777086600661
+    },
+    {
+      "previousFrame": 10,
+      "frame": 11,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5722749996930361
+    },
+    {
+      "previousFrame": 11,
+      "frame": 12,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5892897918820381
+    },
+    {
+      "previousFrame": 12,
+      "frame": 13,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5847001252695918
+    },
+    {
+      "previousFrame": 13,
+      "frame": 14,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.577131500467658
+    },
+    {
+      "previousFrame": 14,
+      "frame": 15,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5800928752869368
+    },
+    {
+      "previousFrame": 15,
+      "frame": 16,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.7353810407221317
+    },
+    {
+      "previousFrame": 16,
+      "frame": 17,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.7004891242831945
+    },
+    {
+      "previousFrame": 17,
+      "frame": 18,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.8024244168773293
+    },
+    {
+      "previousFrame": 18,
+      "frame": 19,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6723023755475879
+    },
+    {
+      "previousFrame": 19,
+      "frame": 20,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6429820423945785
+    },
+    {
+      "previousFrame": 20,
+      "frame": 21,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6528249997645617
+    },
+    {
+      "previousFrame": 21,
+      "frame": 22,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6394136250019073
+    },
+    {
+      "previousFrame": 22,
+      "frame": 23,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6090838341042399
+    },
+    {
+      "previousFrame": 23,
+      "frame": 24,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6345852501690388
+    },
+    {
+      "previousFrame": 24,
+      "frame": 25,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6874855412170291
+    },
+    {
+      "previousFrame": 25,
+      "frame": 26,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6037347922101617
+    },
+    {
+      "previousFrame": 26,
+      "frame": 27,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5694884583353996
+    },
+    {
+      "previousFrame": 27,
+      "frame": 28,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5705217076465487
+    },
+    {
+      "previousFrame": 28,
+      "frame": 29,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.5568878334015608
+    },
+    {
+      "previousFrame": 29,
+      "frame": 30,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6962769590318203
+    },
+    {
+      "previousFrame": 30,
+      "frame": 31,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.6519240001216531
+    },
+    {
+      "previousFrame": 31,
+      "frame": 32,
+      "startIntersections": false,
+      "endIntersections": false,
+      "linearPosedChordClear": true,
+      "seconds": 0.7634320426732302
+    }
+  ]
+}

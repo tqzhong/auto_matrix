@@ -1,0 +1,90 @@
+{
+  "baselineCommit": "a22fc15fcab7226e9fe9ffe160cd94f34293b53b",
+  "adopted": "Static bind-space shirt/coat position and normal cut; no pose cache or bone/hand/weight/face changes.",
+  "shoulderSamplesPassed": 210,
+  "sampleFrameRates": [
+    30,
+    60,
+    120
+  ],
+  "initialShoulderRegression": {
+    "tests": 3,
+    "failed": 3,
+    "log": "shoulder-baseline-red.log"
+  },
+  "existingBefore": {
+    "tests": 9,
+    "passed": 9,
+    "log": "garment-baseline.log"
+  },
+  "after": {
+    "shoulderAndElbow": {
+      "tests": 9,
+      "passed": 9,
+      "log": "shoulder-candidate-tests.log"
+    },
+    "completeOuterMovement": {
+      "tests": 5,
+      "passed": 5,
+      "log": "garment-candidate-upper.log"
+    },
+    "wardrobeAndPhone": {
+      "tests": 18,
+      "passed": 18,
+      "log": "wardrobe-candidate-regression.log"
+    },
+    "deployment": {
+      "tests": 75,
+      "passed": 75,
+      "log": "candidate-deploy-tests.log"
+    }
+  },
+  "boneCurveSubdivision": {
+    "gameFrames": [
+      10,
+      11
+    ],
+    "substeps": 32,
+    "endpointsByteExact": true,
+    "allStepEndpointsAndSweepsClear": true,
+    "data": "candidate-left-subframe-paths.json",
+    "scope": "Finite actual bone-curve subdivision; no proof for arbitrary poses or nonlinear intervals between those samples."
+  },
+  "sameCutExportParity": {
+    "frames": 162,
+    "meshChecks": 4860,
+    "log": "fit-round-4-codec-parity.json"
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "candidate-typecheck.log"
+  },
+  "productionBuild": {
+    "passed": true,
+    "log": "candidate-build.log",
+    "bundle": "index-BFFQbHpL.js",
+    "existingLargeChunkWarning": true
+  },
+  "asset": {
+    "sourceSHA256": "fee6a45f0581d88f57b6151c268a930ee98d7c66eb4038efa9047c70a2607064",
+    "outputSHA256": "23bb6e41f35682a00f6262e8c6efd1217611203fb1438cf08b2234b9719dbe94",
+    "sourceBytes": 8674000,
+    "outputBytes": 10153768,
+    "addedBytes": 1479768,
+    "originalBinaryUnchanged": true,
+    "originalAttributesAndTopologyUnchanged": true
+  },
+  "sourceAudit": "source-audit.json",
+  "native": "local-native-check.json",
+  "localUpdate": "local-update-verification.json",
+  "newRuntimeDependencies": false,
+  "protectedWipFilesUnchanged": 11,
+  "highQualityGroupsAccepted": 0,
+  "renderReconnected": false,
+  "remaining": [
+    "Natural cloth and film likeness",
+    "Complete doff and all 42 high-quality scene groups",
+    "Arbitrary contact, real material strain, full nonlinear trajectory proof and native FPS acceptance"
+  ],
+  "committedLogsNormalizeOnlyTrailingWhitespace": true
+}
