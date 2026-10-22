@@ -1,0 +1,29 @@
+{
+  "actualBackendRestart": true,
+  "beforePid": 59669,
+  "afterPid": 64310,
+  "differentProcesses": true,
+  "tick": 5911,
+  "paused": true,
+  "scene": "m1_mirror",
+  "awakeningElapsed": 13.205000000000009,
+  "publicGroupsEqual": {
+    "phase": true,
+    "timeOfDay": true,
+    "simulation": true,
+    "events": true,
+    "sandbox": true
+  },
+  "neoFieldsEqual": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "isAwakened": true,
+    "isInMatrix": true,
+    "currentLocation": true
+  },
+  "memoryFilesUnchanged": true,
+  "memoryFiles": 4,
+  "mainServerRestarted": false,
+  "renderReconnected": false
+}

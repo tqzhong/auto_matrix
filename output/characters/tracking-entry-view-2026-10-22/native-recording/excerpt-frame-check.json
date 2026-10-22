@@ -1,0 +1,26 @@
+[
+  {
+    "file": "native-recording/first-person-entry.mp4",
+    "sourceInterval": [
+      18,
+      42
+    ],
+    "sourceFramesInInterval": 180,
+    "encodedFrames": 180,
+    "countsEqual": true,
+    "sourceFirstTimestamp": 18.195,
+    "sourceLastTimestamp": 41.952
+  },
+  {
+    "file": "native-recording/cold-resume.mp4",
+    "sourceInterval": [
+      28,
+      44
+    ],
+    "sourceFramesInInterval": 139,
+    "encodedFrames": 139,
+    "countsEqual": true,
+    "sourceFirstTimestamp": 28.305,
+    "sourceLastTimestamp": 43.976
+  }
+]

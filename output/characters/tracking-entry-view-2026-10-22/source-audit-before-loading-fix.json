@@ -1,0 +1,47 @@
+{
+  "baseline": "6ff0425c3b96d2ee7afeabd7f4e7b886e53491b8",
+  "verifiedSourceFiles": 1149,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "c6556b648a3dccec8742fe1eccfe5d291ab7467a4772915cc66432b77fee87f8",
+      "candidate": "e2def263954a0d144a1a7821c5f854be36717397cdca50fb30638acb04d495f5"
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "1e37636473fcbae1445f543712e1d9d9aacd8071e16819e92dd64a9a4ce849bf",
+      "candidate": "18b0ec387e3815205d6599ddff727f1f0a0ffab31c2ab6e372b61ecbce625a04"
+    },
+    {
+      "path": "packages/client/src/agents/TrackingContact.ts",
+      "before": "983af095ac702b84f807243e8a4097d80a5b11253b94eff35fa68424957cca6f",
+      "candidate": "48a925d049c6bd9ef6951cb4bed7e3e74d9b989e17ae76e7e65b32948fe2e60c"
+    },
+    {
+      "path": "packages/client/src/engine/Engine.ts",
+      "before": "ecc897dd922d0d6924f262648d13805da03b7d49652237052a77f72f9afd05ef",
+      "candidate": "3f553ea1ad187c183126c55f05f93b8040925da2ca36c46c7488b42f3b752d1e"
+    },
+    {
+      "path": "packages/client/src/player/PlayerControls.ts",
+      "before": "4378440d39f367198a080f7717944f12bf41b6a3ac66330e48cbc7f4b00de7d0",
+      "candidate": "0cf96e7fa62a0e5d30e124ab8df5ff2eb287559fd4c743bf9624c3824159b386"
+    },
+    {
+      "path": "tests/mirror-contact.test.mts",
+      "before": "eb608463b9894df846c8a508711ba32214d3f191c188fa915f74a356ae15d2aa",
+      "candidate": "8dd303ce6d85e9b26a3bbe9c73caf46299d941d5a5bdce7d20c3f3ed4eca699c"
+    }
+  ],
+  "newTests": [
+    "tests/mirror-hand-surface.test.mts",
+    "tests/tracking-eye.test.mts"
+  ],
+  "packageFiles": 704,
+  "unchangedPackageFiles": 699,
+  "protectedWipFilesUnchanged": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "backendChanged": false,
+  "qaInstrumentationAdded": false
+}

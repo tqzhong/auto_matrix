@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MIRROR_TIMING, mirrorEntryPose, type AwakeningBeat } from '@auto_matrix/shared';
+import { MIRROR_TIMING, MIRROR_SEAT, PILL_ROOM, mirrorEntryPose, type AwakeningBeat } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -7,6 +7,39 @@ export function trackingContact(subject: THREE.Object3D): THREE.Vector3 | undefi
   const elbow = subject.getObjectByName('elbow_L'), wrist = subject.getObjectByName('wrist_L');
   if (!elbow || !wrist) return;
   return elbow.getWorldPosition(new THREE.Vector3()).lerp(wrist.getWorldPosition(new THREE.Vector3()), .35).add(new THREE.Vector3(0, .13, 0));
+}
+
+export function poseTrackingHand(rig: HeroRig, time: number): void {
+  const curl = THREE.MathUtils.smoothstep(time, 2.6, MIRROR_TIMING.touch) * (1 - THREE.MathUtils.smoothstep(time, MIRROR_TIMING.touch + .35, 5.1));
+  if (!curl) return;
+  // The index explores the glass; the longer fingers relax behind its pad.
+  for (const digit of [3, 4, 5]) for (const joint of [1, 2, 3])
+    rig.bones.get(`finger${digit}-${joint}_R`)!.rotation.z += curl * (joint === 1 ? .55 : .75);
+  if (time < MIRROR_TIMING.wired || time >= 4.65) return;
+  const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+  const wrist = rig.bones.get('wrist_R')!, elbow = rig.bones.get('elbow_R')!, shoulder = rig.bones.get('shoulder_R')!;
+  let tips = wrist.userData.mirrorIndexTips as number[] | undefined;
+  if (!tips) {
+    tips = []; const index = skin.skeleton.bones.indexOf(rig.bones.get('finger2-3_R')!);
+    const a = skin.geometry.attributes;
+    for (let id = 0; id < a.position.count; id++) if ([0, 1, 2, 3].some(k => a.skinIndex.getComponent(id, k) === index && a.skinWeight.getComponent(id, k) > .95)) tips.push(id);
+    wrist.userData.mirrorIndexTips = tips;
+  }
+  // SkinnedMesh.updateMatrixWorld also refreshes its inverse bind transform,
+  // including the first frame loaded directly into this seated performance.
+  rig.root.updateMatrixWorld(true); skin.skeleton.update();
+  const point = new THREE.Vector3(); let skinZ = Infinity;
+  for (const id of tips) { skin.localToWorld(skin.getVertexPosition(id, point)); skinZ = Math.min(skinZ, point.z); }
+  const progress = THREE.MathUtils.smoothstep(time, MIRROR_TIMING.wired, MIRROR_TIMING.touch);
+  const release = 1 - THREE.MathUtils.smoothstep(time, MIRROR_TIMING.touch + .35, 4.65);
+  const glassZ = rig.root.getWorldPosition(new THREE.Vector3()).z - MIRROR_SEAT.z + PILL_ROOM.mirror.z;
+  const target = wrist.getWorldPosition(new THREE.Vector3());
+  target.z += (glassZ + THREE.MathUtils.lerp(.215, .008, progress) - skinZ) * release;
+  const orientation = wrist.getWorldQuaternion(new THREE.Quaternion());
+  const pole = elbow.getWorldPosition(new THREE.Vector3()).sub(shoulder.getWorldPosition(new THREE.Vector3())).normalize();
+  reach(shoulder, elbow, wrist.position, target, pole);
+  wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+  rig.root.updateWorldMatrix(true, true);
 }
 
 export function placeTrackingFeet(rig: HeroRig, time: number = MIRROR_TIMING.sit, entry?: AwakeningBeat): void {

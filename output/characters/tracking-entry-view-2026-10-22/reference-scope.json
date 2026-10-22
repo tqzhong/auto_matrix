@@ -1,0 +1,25 @@
+{
+  "primarySource": {
+    "title": "Making the magic mirror moment in The Matrix",
+    "url": "https://beforesandafters.com/2019/03/29/making-the-magic-mirror-moment-in-the-matrix/",
+    "kind": "interview with the original effect artists and accompanying film stills",
+    "access": "read article and visually inspected in IAB; reference tab closed; no film media downloaded"
+  },
+  "scope": "Reference for an exploratory index-first touch, withdrawal and later silver inspection. Intentional silver distortion is not proof of a rig error. This is a game adaptation, not a shot-matched film recreation.",
+  "adopted": [
+    "post-pose anatomical eye for the hidden first-person body",
+    "index skin contact with remaining fingers relaxed behind it",
+    "continuous finger relaxation during inspection",
+    "existing full skin topology and UV retained"
+  ],
+  "notAdopted": [
+    "no new actor face model",
+    "no original film texture or mesh",
+    "no fluid simulation or exact film cinematography"
+  ],
+  "remaining": [
+    "mirror thread still follows the authored finger bone, not a separately queried skin pad",
+    "first-person arms/body remain hidden locally and shown in the reflection",
+    "body/wardrobe materials and likeness still require work"
+  ]
+}

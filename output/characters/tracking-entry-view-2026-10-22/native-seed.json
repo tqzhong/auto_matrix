@@ -1,0 +1,20 @@
+{
+  "source": "output/gameplay/lafayette-camera-2026-10-22/shutdown-checkpoint.json",
+  "sourceSha256": "e1a4426d73f1ba5adc304c3bc5691553dd9e576171e75a3608ef3c448d63449b",
+  "tick": 5885,
+  "simulation": {
+    "running": false,
+    "speed": 1
+  },
+  "neoLocation": "film_lafayette",
+  "position": {
+    "x": 4729.456494165149,
+    "y": 85,
+    "z": 4402.020784208168
+  },
+  "historicalCheckpointCopiedWithoutStoryOrPositionEdits": true,
+  "mainSaveUsed": false,
+  "memorySeed": "No per-agent memory files copied. Prior runtime has advanced to tick6005; its seven memories no longer match the historical tick5885 hashes. This native check reuses the world checkpoint only, with LLM disabled.",
+  "priorMemoriesEqualHistoricalRestart": false,
+  "initialMemoryFileCount": 0
+}

@@ -1,0 +1,203 @@
+{
+  "hand-second-ik.log": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-second-ik.log.gz",
+    "originalBytes": 599
+  },
+  "index-contact-first-failure.log": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "index-contact-first-failure.log.gz",
+    "originalBytes": 1089
+  },
+  "production-build-final.log": {
+    "compressedLog": "production-build-final.log.gz",
+    "originalBytes": 952
+  },
+  "typecheck-final.log": {
+    "compressedLog": "typecheck-final.log.gz",
+    "originalBytes": 136
+  },
+  "camera-regression-final.log": {
+    "tests": 240,
+    "pass": 240,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "camera-regression-final.log.gz",
+    "originalBytes": 69219
+  },
+  "production-build.log": {
+    "compressedLog": "production-build.log.gz",
+    "originalBytes": 952
+  },
+  "near-full-first-failure.log": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "near-full-first-failure.log.gz",
+    "originalBytes": 1130
+  },
+  "loading-eye-fixed.log": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "loading-eye-fixed.log.gz",
+    "originalBytes": 357
+  },
+  "hand-contact-first-failure.log": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-contact-first-failure.log.gz",
+    "originalBytes": 1064
+  },
+  "skin-entry-first-failure.log": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "skin-entry-first-failure.log.gz",
+    "originalBytes": 376
+  },
+  "related-regression-first-failure.log": {
+    "tests": 274,
+    "pass": 273,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "related-regression-first-failure.log.gz",
+    "originalBytes": 79835
+  },
+  "eye-first-failure.log": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "eye-first-failure.log.gz",
+    "originalBytes": 1054
+  },
+  "player-view-first.log": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "player-view-first.log.gz",
+    "originalBytes": 875
+  },
+  "hand-contact-fixed.log": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-contact-fixed.log.gz",
+    "originalBytes": 603
+  },
+  "eye-view-marker-failure.log": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "eye-view-marker-failure.log.gz",
+    "originalBytes": 1055
+  },
+  "hand-inspection-release.log": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-inspection-release.log.gz",
+    "originalBytes": 599
+  },
+  "hand-curl-first.log": {
+    "tests": 2,
+    "pass": 0,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-curl-first.log.gz",
+    "originalBytes": 2259
+  },
+  "existing-baseline.log": {
+    "tests": 267,
+    "pass": 267,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "existing-baseline.log.gz",
+    "originalBytes": 76989
+  },
+  "hand-first-ik.log": {
+    "tests": 2,
+    "pass": 1,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-first-ik.log.gz",
+    "originalBytes": 1316
+  },
+  "hand-curve-first.log": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-curve-first.log.gz",
+    "originalBytes": 367
+  },
+  "camera-baseline.log": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "camera-baseline.log.gz",
+    "originalBytes": 1067
+  },
+  "contact-baseline.log": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "contact-baseline.log.gz",
+    "originalBytes": 836
+  },
+  "deploy-tests.log": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "deploy-tests.log.gz",
+    "originalBytes": 20395
+  },
+  "hand-restoration-first.log": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "compressedLog": "hand-restoration-first.log.gz",
+    "originalBytes": 1070
+  }
+}

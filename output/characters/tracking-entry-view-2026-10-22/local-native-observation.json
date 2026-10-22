@@ -1,0 +1,9 @@
+{
+  "tabId": "42",
+  "scripts": [
+    "http://localhost:5173/assets/index-BvGeBp9t.js"
+  ],
+  "consoleWarnErrors": [],
+  "landingPaused": true,
+  "playerPossessed": false
+}

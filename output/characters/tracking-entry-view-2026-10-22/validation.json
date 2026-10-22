@@ -1,0 +1,123 @@
+{
+  "baseline": "6ff0425c3b96d2ee7afeabd7f4e7b886e53491b8",
+  "gates": {
+    "camera-baseline.log": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "contact-baseline.log": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "hand-first-failure.log": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "hand-contact-first-failure.log": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "hand-curl-first.log": {
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "hand-first-ik.log": {
+      "tests": 2,
+      "pass": 1,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "index-contact-first-failure.log": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "hand-restoration-first.log": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "player-view-first.log": {
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "existing-baseline.log": {
+      "tests": 267,
+      "pass": 267,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "related-regression-first-failure.log": {
+      "tests": 274,
+      "pass": 273,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "loading-eye-fixed.log": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "camera-regression-final.log": {
+      "tests": 240,
+      "pass": 240,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "deploy-tests.log": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    }
+  },
+  "typecheckExitCode": 0,
+  "productionBuildExitCode": 0,
+  "fullRepositoryTestsRun": false,
+  "runtimeSourceFilesChanged": 5,
+  "existingTestFilesExpanded": 1,
+  "newTestCases": 7,
+  "commands": {
+    "existingBaseline": "node --import tsx --test tests/camera.test.mts tests/lafayette-camera.test.mts tests/pill-view.test.mts tests/mirror-contact.test.mts tests/mirror-reflection.test.mts tests/mirror-region.test.mts tests/mirror-liquid.test.mts tests/mirror-guide-renderer.test.mts tests/fighting-hand-surface.test.mts tests/pill-hand-surface.test.mts",
+    "firstFullRelated": "same existing baseline list plus tests/tracking-eye.test.mts tests/mirror-hand-surface.test.mts",
+    "afterLoadingFallbackFix": "node --import tsx --test --test-concurrency=2 tests/camera.test.mts tests/lafayette-camera.test.mts tests/pill-view.test.mts tests/mirror-contact.test.mts tests/tracking-eye.test.mts",
+    "deployment": "npm run test:deploy",
+    "denseMirrorHands": "node --import tsx scan-mirror-hand.mts",
+    "finalTypesAndBuild": "npm run typecheck && npm run build",
+    "finiteGeometryComparison": "node --import tsx check-lens.mts"
+  },
+  "notes": [
+    "The first 274-test run passed 273 and failed the existing unloaded-head camera fallback case. That real loading behavior was fixed and its affected 240-test suite rerun successfully. The other 34 cases do not import PlayerControls; they were not needlessly repeated.",
+    "hand-first-failure.log and skin-entry-first-failure.log are early diagnostic filenames: those checks passed, rather than demonstrating failures.",
+    "The early eye-first-failure used the external patient marker. It was later rejected for this hidden local body; the anatomical cameraEye check and final 384-frame geometry comparison supply the final eye evidence."
+  ]
+}

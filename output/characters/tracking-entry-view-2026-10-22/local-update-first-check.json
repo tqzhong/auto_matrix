@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-BvGeBp9t.js",
+  "bundleBytes": 3737826,
+  "servedBundleSha256": "b12c802ab2436d77d69f2d22b9cf1707815705798cdcd69c874922f86caa08c3",
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "serverPid": 82106,
+  "fullWorldSnapshotPreserved": true,
+  "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-CBViBJOR.js",
+  "livePackageFilesMatchCandidate": 0,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "assetsChanged": false,
+  "nativeReloadPending": true
+}

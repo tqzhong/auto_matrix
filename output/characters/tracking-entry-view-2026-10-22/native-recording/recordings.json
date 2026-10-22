@@ -1,0 +1,47 @@
+[
+  {
+    "file": "neo-2026-10-22T08-32-59-333Z.webm",
+    "duration": 64.03560000038146,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 823,
+    "rendering": {
+      "frames": 1057,
+      "fps": 16.523235800344235,
+      "p95FrameMs": 187.4000005722046,
+      "includesRecordingOverhead": true
+    },
+    "markers": []
+  },
+  {
+    "file": "neo-2026-10-22T08-36-59-701Z.webm",
+    "duration": 119.32580000019074,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 1515,
+    "rendering": {
+      "frames": 1720,
+      "fps": 14.410961384682537,
+      "p95FrameMs": 212.5,
+      "includesRecordingOverhead": true
+    },
+    "markers": []
+  },
+  {
+    "file": "neo-2026-10-22T09-02-48-197Z.webm",
+    "duration": 68.79119999980927,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 811,
+    "rendering": {
+      "frames": 1131,
+      "fps": 16.479149500885935,
+      "p95FrameMs": 261.19999980926514,
+      "includesRecordingOverhead": true
+    },
+    "markers": []
+  }
+]
