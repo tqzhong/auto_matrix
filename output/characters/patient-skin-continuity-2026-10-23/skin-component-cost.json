@@ -1,0 +1,77 @@
+{
+  "scope": "CPU time inside the new component only, real delivered rigs in an offline geometry fixture; excludes browser, GPU, loading and the rest of animation.",
+  "rows": [
+    {
+      "id": "neo",
+      "mode": "paused",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.023832999999740423,
+      "componentP95Ms": 0.0508759999997892,
+      "maximumMs": 0.37191699999971206,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "neo",
+      "mode": "articulating",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.22662400000012894,
+      "componentP95Ms": 0.6381260000000566,
+      "maximumMs": 0.8202080000000933,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "trinity",
+      "mode": "paused",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.01704199999994671,
+      "componentP95Ms": 0.031833000000005995,
+      "maximumMs": 0.11516699999992852,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "trinity",
+      "mode": "articulating",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.20504100000016479,
+      "componentP95Ms": 0.29620799999975134,
+      "maximumMs": 0.31379199999992125,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "smith",
+      "mode": "paused",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.013083999999707885,
+      "componentP95Ms": 0.016834000000017113,
+      "maximumMs": 0.35566700000026685,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "smith",
+      "mode": "articulating",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.19700000000011642,
+      "componentP95Ms": 0.24099999999998545,
+      "maximumMs": 0.41991600000028484,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "morpheus",
+      "mode": "paused",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.03429200000027777,
+      "componentP95Ms": 0.04837500000030559,
+      "maximumMs": 0.5,
+      "fpsBenchmark": false
+    },
+    {
+      "id": "morpheus",
+      "mode": "articulating",
+      "measuredFrames": 60,
+      "componentMedianMs": 0.2553750000006403,
+      "componentP95Ms": 0.3975000000000364,
+      "maximumMs": 1.008125000000291,
+      "fpsBenchmark": false
+    }
+  ]
+}

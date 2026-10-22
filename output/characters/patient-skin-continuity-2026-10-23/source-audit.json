@@ -1,0 +1,39 @@
+{
+  "baseline": "5e4f8d78b223657c5f0b767d71caec4661a8015c",
+  "verifiedBaselineFiles": 1159,
+  "packageFiles": 705,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "18b0ec387e3815205d6599ddff727f1f0a0ffab31c2ab6e372b61ecbce625a04",
+      "candidate": "32c0cc003fd31a03e31ad5c714b775f442a3a6245de2dfd06532030f048c57f1"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/SkinContinuity.ts",
+      "sha256": "8c1b8e97ca7ec3f279622efba0a0725392a7217f8eafbecc57c50bf24e360f34"
+    },
+    {
+      "path": "tests/helpers/patient-skin.mts",
+      "sha256": "8daf4e04aa303d25f7e5557a54d2537891f82c2b7c1845df18981e2109dc63a7"
+    },
+    {
+      "path": "tests/patient-skin-continuity.test.mts",
+      "sha256": "bc4e9c45b4473a17f4311fe70ba00cda8024e0dcdf8da06beb97a70b594c70d8"
+    },
+    {
+      "path": "tests/skin-normal-field.test.mts",
+      "sha256": "6acad4c5efb758fd7d1170aeda07cf7bb7fb877d774991f0c1e37d412d432741"
+    }
+  ],
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false
+}

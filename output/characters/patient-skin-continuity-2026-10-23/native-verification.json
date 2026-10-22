@@ -1,0 +1,130 @@
+{
+  "entryTick": 5965,
+  "gripElapsed": 2.6480000000000006,
+  "realBackendRestart": {
+    "oldPid": 81536,
+    "newPid": 98408,
+    "mainPidUnchanged": true,
+    "simulationPreserved": true,
+    "sandboxPreserved": true,
+    "neoFieldsPreserved": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isAwakened": true,
+      "isInMatrix": true
+    },
+    "memoryFileCount": 6,
+    "memoryHashesPreserved": true,
+    "changedPaths": [],
+    "fullApiBytesEqual": true,
+    "beforeSha256": "32478fb752745bb864f044db450016694e18bed9f2d501da86698ed1d39c7898",
+    "afterSha256": "32478fb752745bb864f044db450016694e18bed9f2d501da86698ed1d39c7898"
+  },
+  "productionScriptsObserved": [
+    "http://127.0.0.1:5200/assets/index-CODo6do0.js"
+  ],
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "nativeSkinComparison": "Final weighted-field build and previous screenshot at the same saved grip clock were visually inspected; seam reduced, residual hand/skin/geometry patches remain. Not a pixel equality comparison.",
+  "normalInputCompleted": [
+    "breather continuation",
+    "disconnect",
+    "drain",
+    "rescue"
+  ],
+  "principalPreviewsChecked": [
+    "neo",
+    "trinity",
+    "smith",
+    "morpheus"
+  ],
+  "principalPreviewScope": "Ordinary combat preview only, finite captured instants; not all animations or all story wardrobes.",
+  "finalScene": "m1_recovery",
+  "finalStep": 0,
+  "finalTick": 6093,
+  "finalRunning": false,
+  "neoHealth": 100,
+  "consoleCounts": {
+    "native-entry-console.json": 0,
+    "native-production-console.json": 0,
+    "native-continuation-console.json": 0,
+    "native-viewer-console.json": 0
+  },
+  "recordings": [
+    {
+      "file": "neo-2026-10-22T19-46-20-321Z.webm",
+      "duration": 29.15389999961853,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 543,
+      "rendering": {
+        "frames": 1194,
+        "fps": 40.94281733150171,
+        "p95FrameMs": 36.29999923706055,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    {
+      "file": "neo-2026-10-22T19-48-39-701Z.webm",
+      "duration": 66.04739999961853,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 813,
+      "rendering": {
+        "frames": 1148,
+        "fps": 17.386690920115203,
+        "p95FrameMs": 200.5999994277954,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    }
+  ],
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "stoppedProcesses": [
+    {
+      "pid": 81539,
+      "port": 5201,
+      "command": [
+        "node",
+        "/Users/tianqizhong/ai_project/auto_matrix/output/characters/patient-skin-continuity-2026-10-23/candidate-release/node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5201",
+        "--strictPort"
+      ],
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/patient-skin-continuity-2026-10-23/candidate-release/packages/client",
+      "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/patient-skin-continuity-2026-10-23/qa-data",
+      "cloudDisabled": true
+    },
+    {
+      "pid": 98408,
+      "port": 5200,
+      "command": [
+        "node",
+        "packages/server/dist/index.js"
+      ],
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/patient-skin-continuity-2026-10-23/candidate-release",
+      "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/patient-skin-continuity-2026-10-23/qa-data",
+      "cloudDisabled": true
+    }
+  ],
+  "mainPid": 82166,
+  "renderReconnected": false,
+  "filmQualityAccepted": false,
+  "performanceBenchmark": false,
+  "remainingVisualIssues": [
+    "skin atlas, hand shape and geometry remain rough; normal-map detail is not covered by vertex-normal equality",
+    "rescue performance, bed contact and natural movement remain unaccepted",
+    "in-game recording showed substantial slow frames, not stable 60fps",
+    "likeness and complete 42 scene group film fidelity remain unaccepted"
+  ]
+}

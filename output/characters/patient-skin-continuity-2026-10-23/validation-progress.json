@@ -1,0 +1,126 @@
+{
+  "running": null,
+  "completed": [
+    {
+      "log": "baseline-final-reproduction.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/patient-skin-continuity.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 1,
+      "elapsedSeconds": 6.203993749804795,
+      "tests": 8,
+      "pass": 1,
+      "fail": 7,
+      "skipped": 0,
+      "expectedFailure": true
+    },
+    {
+      "log": "baseline-mirror-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/mirror-liquid.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/tracking-eye.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 45.9464888330549,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "shared-build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 2.775319625623524
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/pod-connection-contact.test.mts",
+        "tests/forearm-twist.test.mts",
+        "tests/pod-wrist-contact.test.mts",
+        "tests/pod-feed-surface.test.mts",
+        "tests/pod-renderer.test.mts",
+        "tests/pod-rescue-rig-contact.test.mts",
+        "tests/pod-instance-culling.test.mts",
+        "tests/pod-eye-view.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/wrist-skin.test.mts",
+        "tests/hand-curve-cache.test.mts",
+        "tests/mirror-liquid.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/tracking-eye.test.mts",
+        "tests/skin-normal-field.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 519.5427694581449,
+      "tests": 105,
+      "pass": 105,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 12.395676374435425,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 16.30208433419466
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 29.72535958327353
+    }
+  ],
+  "allGatesPassed": true
+}

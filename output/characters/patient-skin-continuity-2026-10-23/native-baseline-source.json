@@ -1,0 +1,14 @@
+{
+  "source": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-eye-clearance-2026-10-23/native-production-grip.png",
+  "sha256": "43c7e597d21f9501313309b3dd2b0a0d398602100b3515351a3ca6656cb1130a",
+  "verifiedBuild": "index-Cq-WL6DL.js",
+  "sourceCommit": "5e4f8d78b223657c5f0b767d71caec4661a8015c",
+  "tick": 5965,
+  "awakening": {
+    "kind": "breather",
+    "elapsed": 2.6480000000000006,
+    "emerged": true
+  },
+  "view": "first person, 1280x720 CSS, 16:9",
+  "comparisonScope": "Actual previous native production image of the same saved grip and source; visual comparison only, not same-page pixel equality or FPS evidence."
+}

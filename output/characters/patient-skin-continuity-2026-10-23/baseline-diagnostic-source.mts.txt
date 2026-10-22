@@ -1,0 +1,38 @@
+import test from 'node:test';
+import { writeFile } from 'node:fs/promises';
+import * as THREE from 'three';
+import { podPatient } from './helpers/pod-patient.mjs';
+
+test('measure the delivered patient hand and body surface continuity', async t => {
+  const h = await podPatient(t);
+  const hands = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+  const body = h.rig.root.getObjectByName('Patient_body') as THREE.SkinnedMesh;
+  const original = hands.geometry.attributes.position.clone(), bodyOriginal = body.geometry.attributes.position.clone();
+  const key = (a: THREE.BufferAttribute, i: number) => [a.getX(i), a.getY(i), a.getZ(i)].map(v => v.toFixed(5)).join(',');
+  const bodyPoints = new Map<string, number[]>();
+  for (let i = 0; i < bodyOriginal.count; i++) { const k = key(bodyOriginal, i), list = bodyPoints.get(k) ?? []; list.push(i); bodyPoints.set(k, list); }
+  const pairs: [number, number][] = [];
+  for (let i = 0; i < original.count; i++) for (const j of bodyPoints.get(key(original, i)) ?? []) pairs.push([i, j]);
+  const worldNormal = (mesh: THREE.SkinnedMesh, i: number) => {
+    const a = mesh.geometry.attributes, sum = new THREE.Matrix4(); sum.elements.fill(0);
+    for (let k = 0; k < 4; k++) {
+      const bone = new THREE.Matrix4().fromArray(mesh.skeleton.boneMatrices, a.skinIndex.getComponent(i, k) * 16), w = a.skinWeight.getComponent(i, k);
+      bone.elements.forEach((v, j) => { sum.elements[j] += v * w; });
+    }
+    sum.premultiply(mesh.bindMatrixInverse).multiply(mesh.bindMatrix);
+    return new THREE.Vector3().fromBufferAttribute(a.normal, i).applyMatrix3(new THREE.Matrix3().setFromMatrix4(sum))
+      .applyMatrix3(new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld)).normalize();
+  };
+  const report: unknown[] = [];
+  for (const elapsed of [0, 1.2, 2.05, 2.648, 3.6, 4.55, 5.5]) {
+    h.at(elapsed, 100, false, { kind: 'breather', elapsed, emerged: true });
+    hands.skeleton.update(); body.skeleton.update();
+    const samples = pairs.map(([i, j]) => ({ hand: i, body: j, y: original.getY(i),
+      gap: hands.localToWorld(hands.getVertexPosition(i, new THREE.Vector3())).distanceTo(body.localToWorld(body.getVertexPosition(j, new THREE.Vector3()))),
+      angle: THREE.MathUtils.radToDeg(worldNormal(hands, i).angleTo(worldNormal(body, j))) }));
+    report.push({ elapsed, pairs: samples.length, maximumGap: Math.max(...samples.map(p => p.gap)), maximumNormalAngle: Math.max(...samples.map(p => p.angle)), worst: samples.sort((a, b) => b.angle - a.angle).slice(0, 8),
+      materials: [hands, body].map(mesh => { const m = mesh.material as THREE.MeshPhysicalMaterial; return { mesh: mesh.name, material: m.type, name: m.name, color: m.color.toArray(), roughness: m.roughness, metalness: m.metalness, specularIntensity: m.specularIntensity, ior: m.ior }; }) });
+  }
+  await writeFile(new URL('../../skin-baseline-diagnostic.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');
+  console.log(JSON.stringify(report, null, 2));
+});

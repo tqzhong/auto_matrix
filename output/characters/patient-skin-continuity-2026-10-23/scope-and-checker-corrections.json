@@ -1,0 +1,20 @@
+{
+  "baselineSkinAndCacheTests": {
+    "tests": 13,
+    "pass": 9,
+    "fail": 4
+  },
+  "preExistingFailures": [
+    "neo wrist normal",
+    "trinity wrist normal",
+    "smith wrist normal",
+    "morpheus wrist normal"
+  ],
+  "expandedCandidateBeforeFinalTests": {
+    "tests": 16,
+    "pass": 16,
+    "fail": 0
+  },
+  "scope": "Same normal/material discontinuity also exists at the four delivered principal characters wrist skin. Apply the same field extension to the existing Wrist skin, Office skin and Tracking skin meshes; no geometry, UV, weight or contact changes.",
+  "fixtureCorrections": "Use Color.equals, named mock atlas textures and compact array comparisons; initial assertion printed both full normal arrays. Both original and corrected baseline failures retained."
+}

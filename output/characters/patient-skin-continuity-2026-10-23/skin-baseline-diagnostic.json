@@ -1,0 +1,646 @@
+[
+  {
+    "elapsed": 0,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 42.18583409102351,
+    "worst": [
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 42.18583409102351
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 42.18583409102349
+      },
+      {
+        "hand": 5849,
+        "body": 591,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 29.960833753368128
+      },
+      {
+        "hand": 21858,
+        "body": 12419,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 29.960833753368128
+      },
+      {
+        "hand": 12895,
+        "body": 2975,
+        "y": 2.181922674179077,
+        "gap": 0,
+        "angle": 26.40313154411105
+      },
+      {
+        "hand": 28897,
+        "body": 14795,
+        "y": 2.181922674179077,
+        "gap": 0,
+        "angle": 26.403131544111037
+      },
+      {
+        "hand": 28833,
+        "body": 14802,
+        "y": 2.1886425018310547,
+        "gap": 0,
+        "angle": 26.22870411902387
+      },
+      {
+        "hand": 12831,
+        "body": 2985,
+        "y": 2.1886425018310547,
+        "gap": 0,
+        "angle": 26.22870411902383
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  },
+  {
+    "elapsed": 1.2,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 42.18583409102351,
+    "worst": [
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 42.18583409102351
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 41.20909927740362
+      },
+      {
+        "hand": 5849,
+        "body": 591,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 32.49641592824717
+      },
+      {
+        "hand": 21858,
+        "body": 12419,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 29.960833753368128
+      },
+      {
+        "hand": 12821,
+        "body": 3214,
+        "y": 2.191876173019409,
+        "gap": 0,
+        "angle": 27.05300199867642
+      },
+      {
+        "hand": 28897,
+        "body": 14795,
+        "y": 2.181922674179077,
+        "gap": 0,
+        "angle": 26.403131544111037
+      },
+      {
+        "hand": 12831,
+        "body": 2985,
+        "y": 2.1886425018310547,
+        "gap": 0,
+        "angle": 26.26328070492804
+      },
+      {
+        "hand": 28833,
+        "body": 14802,
+        "y": 2.1886425018310547,
+        "gap": 0,
+        "angle": 26.22870411902387
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  },
+  {
+    "elapsed": 2.05,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 33.301333500798336,
+    "worst": [
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 33.301333500798336
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 30.318424323189934
+      },
+      {
+        "hand": 28828,
+        "body": 15032,
+        "y": 2.1975183486938477,
+        "gap": 0,
+        "angle": 23.904241491018894
+      },
+      {
+        "hand": 28991,
+        "body": 15130,
+        "y": 2.1795949935913086,
+        "gap": 0,
+        "angle": 23.022551299756476
+      },
+      {
+        "hand": 28818,
+        "body": 15031,
+        "y": 2.191876173019409,
+        "gap": 0,
+        "angle": 22.725925674838003
+      },
+      {
+        "hand": 21418,
+        "body": 11840,
+        "y": 3.497030735015869,
+        "gap": 0,
+        "angle": 22.249374850309135
+      },
+      {
+        "hand": 12988,
+        "body": 3314,
+        "y": 2.1795949935913086,
+        "gap": 0,
+        "angle": 22.190895664703653
+      },
+      {
+        "hand": 5402,
+        "body": 1,
+        "y": 3.497030735015869,
+        "gap": 0,
+        "angle": 21.69759217538358
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  },
+  {
+    "elapsed": 2.648,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 35.89551443026858,
+    "worst": [
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 35.89551443026858
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 33.043235385880664
+      },
+      {
+        "hand": 28828,
+        "body": 15032,
+        "y": 2.1975183486938477,
+        "gap": 0,
+        "angle": 29.55898374248206
+      },
+      {
+        "hand": 28818,
+        "body": 15031,
+        "y": 2.191876173019409,
+        "gap": 0,
+        "angle": 28.104003059476415
+      },
+      {
+        "hand": 28819,
+        "body": 15162,
+        "y": 2.183718204498291,
+        "gap": 0,
+        "angle": 24.609847213491207
+      },
+      {
+        "hand": 12826,
+        "body": 3213,
+        "y": 2.1975183486938477,
+        "gap": 0,
+        "angle": 23.451021936287077
+      },
+      {
+        "hand": 28991,
+        "body": 15130,
+        "y": 2.1795949935913086,
+        "gap": 0,
+        "angle": 23.164576696631357
+      },
+      {
+        "hand": 12988,
+        "body": 3314,
+        "y": 2.1795949935913086,
+        "gap": 0,
+        "angle": 22.97369728135825
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  },
+  {
+    "elapsed": 3.6,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 37.736792710109526,
+    "worst": [
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 37.736792710109526
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 35.46300560790313
+      },
+      {
+        "hand": 28828,
+        "body": 15032,
+        "y": 2.1975183486938477,
+        "gap": 0,
+        "angle": 35.301417845082106
+      },
+      {
+        "hand": 28818,
+        "body": 15031,
+        "y": 2.191876173019409,
+        "gap": 0,
+        "angle": 33.59627782801845
+      },
+      {
+        "hand": 28819,
+        "body": 15162,
+        "y": 2.183718204498291,
+        "gap": 0,
+        "angle": 29.82991961254726
+      },
+      {
+        "hand": 12826,
+        "body": 3213,
+        "y": 2.1975183486938477,
+        "gap": 0,
+        "angle": 28.414841009450722
+      },
+      {
+        "hand": 12821,
+        "body": 3214,
+        "y": 2.191876173019409,
+        "gap": 0,
+        "angle": 27.026648347975726
+      },
+      {
+        "hand": 28827,
+        "body": 14783,
+        "y": 2.198184013366699,
+        "gap": 0,
+        "angle": 26.553980833245344
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  },
+  {
+    "elapsed": 4.55,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 43.103306239872694,
+    "worst": [
+      {
+        "hand": 12826,
+        "body": 3213,
+        "y": 2.1975183486938477,
+        "gap": 0,
+        "angle": 43.103306239872694
+      },
+      {
+        "hand": 12821,
+        "body": 3214,
+        "y": 2.191876173019409,
+        "gap": 0,
+        "angle": 39.980624199926005
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 38.254841813057645
+      },
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 37.097995143717384
+      },
+      {
+        "hand": 12820,
+        "body": 3343,
+        "y": 2.183718204498291,
+        "gap": 0,
+        "angle": 34.94706602646553
+      },
+      {
+        "hand": 12827,
+        "body": 2965,
+        "y": 2.198184013366699,
+        "gap": 0,
+        "angle": 34.77373405983053
+      },
+      {
+        "hand": 21858,
+        "body": 12419,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 29.031633694421174
+      },
+      {
+        "hand": 12790,
+        "body": 3287,
+        "y": 2.1745574474334717,
+        "gap": 0,
+        "angle": 27.509974286711483
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  },
+  {
+    "elapsed": 5.5,
+    "pairs": 225,
+    "maximumGap": 0,
+    "maximumNormalAngle": 42.18583409102351,
+    "worst": [
+      {
+        "hand": 28834,
+        "body": 14799,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 42.18583409102351
+      },
+      {
+        "hand": 12830,
+        "body": 2983,
+        "y": 2.1824615001678467,
+        "gap": 0,
+        "angle": 42.18583409102349
+      },
+      {
+        "hand": 5849,
+        "body": 591,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 29.960833753368128
+      },
+      {
+        "hand": 21858,
+        "body": 12419,
+        "y": 3.528146266937256,
+        "gap": 0,
+        "angle": 29.960833753368128
+      },
+      {
+        "hand": 12895,
+        "body": 2975,
+        "y": 2.181922674179077,
+        "gap": 0,
+        "angle": 26.40313154411105
+      },
+      {
+        "hand": 28897,
+        "body": 14795,
+        "y": 2.181922674179077,
+        "gap": 0,
+        "angle": 26.403131544111037
+      },
+      {
+        "hand": 28833,
+        "body": 14802,
+        "y": 2.1886425018310547,
+        "gap": 0,
+        "angle": 26.22870411902387
+      },
+      {
+        "hand": 12831,
+        "body": 2985,
+        "y": 2.1886425018310547,
+        "gap": 0,
+        "angle": 26.22870411902383
+      }
+    ],
+    "materials": [
+      {
+        "mesh": "Anatomical_head_and_hands",
+        "material": "MeshPhysicalMaterial",
+        "name": "Skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01,
+        "specularIntensity": 0.45,
+        "ior": 1.5
+      },
+      {
+        "mesh": "Patient_body",
+        "material": "MeshStandardMaterial",
+        "name": "Tracking skin",
+        "color": [
+          0.82,
+          0.79,
+          0.77
+        ],
+        "roughness": 0.43,
+        "metalness": 0.01
+      }
+    ]
+  }
+]

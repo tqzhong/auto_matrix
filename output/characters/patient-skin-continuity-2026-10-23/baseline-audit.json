@@ -1,0 +1,17 @@
+{
+  "baseline": "5e4f8d78b223657c5f0b767d71caec4661a8015c",
+  "verifiedSourceFiles": 1159,
+  "packageFiles": 705,
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "mainPid": 82166,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "previousGoalTurn": "progress",
+  "previousEvidence": "5e4f8d7 committed/pushed calibrated pod eyes, hand framing, manual observation, native restart and continuation; served production verified.",
+  "nextAction": "Measure actual patient hand/body normal and geometry continuity before choosing a correction.",
+  "renderReconnected": false
+}

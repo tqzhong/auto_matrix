@@ -1,0 +1,15 @@
+{
+  "preSmoothingRelatedPasses": 104,
+  "preSmoothingBuild": "index-C0w7p8KT.js",
+  "published": false,
+  "nativeFinding": "Nearest-point normal extension still showed local lighting patches in the actual wrist transition.",
+  "independentCounterexample": "Two interior vertices near the same central seam vertex must still inherit opposite influences from neighbouring boundary normals. Nearest-only returned 0,0,1 at both.",
+  "counterexampleBefore": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1
+  },
+  "correction": "Interpolate the three nearest boundary directions with inverse squared-distance weights; keep the exact seam direction at coincident points and the original .1-unit fade width.",
+  "scope": "Only normal interpolation changes; vertex positions, UVs, joint weights, atlases and saved animation remain unchanged.",
+  "fullValidationRepeated": true
+}

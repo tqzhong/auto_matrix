@@ -1,0 +1,22 @@
+{
+  "preCorrectionGates": {
+    "related": 95,
+    "deploy": 75,
+    "typecheck": 0,
+    "build": 0
+  },
+  "additionalSourceReview": "Material.clone did not copy the original onBeforeCompile and customProgramCacheKey. That would drop the saved silver liquid effect on corrected Neo skin.",
+  "regressionBeforeFix": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1
+  },
+  "correction": "Preserve the original skin shader callback and program cache key on the matched material. The source matrixSilver uniform remains the live rig object, including values above zero.",
+  "additionalTestAfterFix": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0
+  },
+  "preCorrectionBuildPublished": false,
+  "fullValidationRepeated": true
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "file": "native-skin-observation.mp4",
+    "source": "neo-2026-10-22T19-46-20-321Z.webm",
+    "sourceStartSeconds": 0,
+    "requestedDurationSeconds": 29,
+    "duration": 29.0,
+    "width": 1280,
+    "height": 720,
+    "encodedFrameRate": "30/1",
+    "audio": "aac",
+    "bytes": 738466,
+    "sha256": "b71dbf8435d482f9cbba7a596f051a0a0a0f0f31db83ac4780e448975e60bb3b",
+    "speedChanged": false,
+    "stableFpsEvidence": false
+  },
+  {
+    "file": "native-oral-rescue.mp4",
+    "source": "neo-2026-10-22T19-48-39-701Z.webm",
+    "sourceStartSeconds": 0,
+    "requestedDurationSeconds": null,
+    "duration": 65.937,
+    "width": 1280,
+    "height": 720,
+    "encodedFrameRate": "30/1",
+    "audio": "aac",
+    "bytes": 2540274,
+    "sha256": "791f164768d69bb1c4772e9a1e81d15dd0e4878a4260890446575785a1ed6a4d",
+    "speedChanged": false,
+    "stableFpsEvidence": false
+  }
+]
