@@ -32,6 +32,7 @@ import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 import { AmbushWardrobeAppearance } from './AmbushWardrobeAppearance.js';
 import { PHONE_HAND } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
+import { FightingHands } from './FightingHands.js';
 import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
 import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
 import { ConsolePourPerformance } from './ConsolePourPerformance.js';
@@ -133,6 +134,7 @@ export class HeroModels {
   private jumps = new Map<HeroRig, JumpPerformance>();
   private constructs = new Map<HeroRig, ConstructPerformance>();
   private forearms = new ForearmTwist();
+  private fightingHands = new Map<HeroRig, FightingHands>();
   private workdays = new Map<HeroRig, OfficeWorkdayPerformance>();
   private apartments = new Map<HeroRig, ApartmentPerformance>();
   private wakeCalls = new Map<HeroRig, WakeCallPerformance>();
@@ -502,6 +504,7 @@ export class HeroModels {
     if (id === 'morpheus' && !support) this.constructSuits.set(rig, new ConstructSuitAppearance(rig, this.fabric));
     if (id === 'morpheus' && !support) this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
     if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
+    if (!support && !guard) this.fightingHands.set(rig, new FightingHands(rig));
     enableSkinnedCulling(root);
     return rig;
   }
@@ -971,6 +974,7 @@ export class HeroModels {
   }
 
   private gripHand(rig: HeroRig, side: string, grip: number): void {
+    if (this.fightingHands.get(rig)?.pose(side, grip)) return;
     if (grip <= 0) return;
     const wrist = rig.bones.get(`wrist_${side}`)!;
     let closed = wrist.userData.closedHand as THREE.Quaternion[][] | undefined;
@@ -1021,6 +1025,7 @@ export class HeroModels {
   }
 
   animate(rig: HeroRig, pose: Pose, motion: MotionState, input: MotionInput, delta: number): void {
+    const fightingHands = this.fightingHands.get(rig); fightingHands?.begin(input);
     if (input.interlude?.kind === 'meal' && (input.interlude.role === 'neo' || input.interlude.role === 'tank') && !this.meals.has(rig))
       this.meals.set(rig, new MealPerformance(rig, input.interlude.role));
     this.meals.get(rig)?.mouth(input.interlude);
@@ -1415,6 +1420,7 @@ export class HeroModels {
     this.apartments.get(rig)?.update(input.contact, input.computerCheck);
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
+    fightingHands?.update();
     ambushWardrobe?.poseDrape(input, motion);
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
@@ -1500,6 +1506,7 @@ export class HeroModels {
     this.constructSuits.forEach(p => p.dispose()); this.constructSuits.clear();
     this.ambushWardrobes.forEach(p => p.dispose()); this.ambushWardrobes.clear();
     this.mice.forEach(p => p.dispose()); this.mice.clear();
+    this.fightingHands.forEach(hands => hands.dispose()); this.fightingHands.clear();
     this.forearms.dispose();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
