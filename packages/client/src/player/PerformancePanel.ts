@@ -20,7 +20,7 @@ export class PerformancePanel {
   constructor(private engine: Engine) {
     this.panel.id = 'performance-panel';
     this.panel.style.cssText = 'position:fixed;z-index:9999;right:16px;top:80px;width:290px;padding:12px;background:#102019f2;color:#e6efdf;border:1px solid #94a386;font:12px/1.6 monospace';
-    this.panel.innerHTML = '<b>性能检查 · 开发模式</b><p>预热 3 秒，采样 15 秒；不录制视频。</p><button>测量当前场景</button><label style="display:block;margin-top:6px"><input type="checkbox"> 对照：收割塔参与接触阴影</label><label style="display:block;margin-top:6px"><input type="checkbox" data-pod-culling> 对照：绘制视野外培养舱</label><pre role="status" style="white-space:pre-wrap">尚未采样</pre>';
+    this.panel.innerHTML = '<b>性能检查 · 开发模式</b><p>预热 3 秒，采样 15 秒；不录制视频。</p><button>测量当前场景</button><label style="display:block;margin-top:6px"><input type="checkbox"> 对照：收割塔参与接触阴影</label><label style="display:block;margin-top:6px"><input type="checkbox" data-pod-culling> 对照：绘制视野外培养舱</label><label style="display:block;margin-top:6px"><input type="checkbox" data-occlusion-copy> 对照：保留阴影颜色拷贝</label><pre role="status" style="white-space:pre-wrap">尚未采样</pre>';
     this.panel.querySelector('button')!.onclick = () => this.start();
     const comparison = this.panel.querySelector<HTMLInputElement>('input')!;
     comparison.onchange = () => {
@@ -36,12 +36,17 @@ export class PerformancePanel {
       towers.frustumCulled = !culling.checked;
       this.status(culling.checked ? '绘制全部远景实例；可以测量当前场景。' : '只绘制视野内远景实例；可以测量当前场景。');
     };
+    const copy = this.panel.querySelector<HTMLInputElement>('[data-occlusion-copy]')!;
+    copy.onchange = () => {
+      this.engine.postProcessing.occlusionInPlace = !copy.checked;
+      this.status('可以测量当前场景。');
+    };
     document.body.appendChild(this.panel);
     this.gpuTimer = new GpuTimer(engine.renderer.getContext() as WebGL2RenderingContext);
     const support = document.createElement('p'); support.textContent = this.gpuTimer.supported ? `GPU计时：可用，${this.gpuTimer.counterBits}位计数器` : 'GPU计时：此浏览器未提供扩展';
     this.panel.appendChild(support);
     const mode = document.createElement('select'); mode.setAttribute('aria-label', 'GPU计时范围');
-    mode.innerHTML = '<option value="frame">整段渲染</option><option value="passes">分阶段（不可相加）</option><option value="empty">空区间校准</option><option value="no-occlusion">对照：跳过接触阴影</option><option value="no-render">对照：冻结3D画面</option>';
+    mode.innerHTML = '<option value="cpu">CPU / FPS（不插入GPU查询）</option><option value="frame">整段渲染</option><option value="passes">分阶段（不可相加）</option><option value="empty">空区间校准</option><option value="no-occlusion">对照：跳过接触阴影</option><option value="no-render">对照：冻结3D画面</option>';
     this.panel.appendChild(mode);
   }
 
@@ -53,7 +58,7 @@ export class PerformancePanel {
     const gpuMode = this.panel.querySelector('select')!.value;
     let gpuFrame = false;
     post.render = (...args) => {
-      this.gpuTimer.poll(); gpuFrame = performance.now() - this.startAt >= 3000 && this.gpuTimer.begin();
+      if (gpuMode !== 'cpu') { this.gpuTimer.poll(); gpuFrame = performance.now() - this.startAt >= 3000 && this.gpuTimer.begin(); }
       if (gpuMode === 'empty') this.gpuTimer.end('empty');
       try { if (gpuMode !== 'no-render') render.apply(post, gpuMode === 'no-occlusion' ? [false] : args); }
       finally { this.gpuTimer.end(gpuMode === 'passes' ? 'unfinished' : gpuMode === 'no-render' ? 'empty-without-rendering' : 'frame'); gpuFrame = false; }
@@ -130,6 +135,7 @@ export class PerformancePanel {
     this.engine.scene.traverse(() => objects++); this.engine.scene.traverseVisible(() => visibleObjects++);
     const podTowers = this.engine.scene.getObjectByName('pod-distant-towers');
     const report = {
+      occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
       podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
       podInstanceCulling: podTowers?.frustumCulled,
       camera: { position: this.engine.camera.position.toArray(), quaternion: this.engine.camera.quaternion.toArray(), projection: this.engine.camera.projectionMatrix.toArray() },
@@ -150,7 +156,7 @@ export class PerformancePanel {
       objects, visibleObjects,
     };
     this.meshTotals.clear();
-    this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\nGPU ms：${Object.entries(gpuPassMs).map(([name, time]) => `${name} ${time.mean.toFixed(2)}`).join(' · ') || '不可用'}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
+    this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\nGPU ms：${Object.entries(gpuPassMs).map(([name, time]) => `${name} ${time.mean.toFixed(2)}`).join(' · ') || (gpuTiming.mode === 'cpu' ? '未采样' : '不可用')}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
     try {
       const filename = `neo-${report.measuredAt.replace(/[:.]/g, '-')}.json`;
       const response = await fetch(`/__recording/${filename}`, { method: 'POST', body: JSON.stringify(report, null, 2) });

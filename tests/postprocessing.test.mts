@@ -6,6 +6,69 @@ import { WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
+test('default occlusion multiplies the existing color without copying or swapping it', t => {
+  const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 64, 64);
+  const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
+  const read = new THREE.WebGLRenderTarget(64, 64), write = read.clone();
+  const draws: { material: THREE.ShaderMaterial; target: THREE.WebGLRenderTarget | null }[] = [];
+  t.mock.method(GTAOPass.prototype, 'renderOverride', () => {});
+  t.mock.method(GTAOPass.prototype, 'renderPass', (_renderer, material, target) => { draws.push({ material, target }); });
+  try {
+    pass.render(renderer, write, read, 0, false);
+    assert.deepEqual(draws.map(draw => draw.material), [pass.gtaoMaterial, pass.pdMaterial, pass.blendMaterial]);
+    assert.equal(draws[2].target, read, 'the original scene color is already in the read buffer');
+    assert.equal(pass.blendMaterial.uniforms.tDiffuse.value, pass.pdRenderTarget.texture, 'the blend samples a separate AO texture, never the destination color');
+    assert.equal(pass.needsSwap, false, 'downstream passes must still read the buffer containing the scene');
+  } finally { pass.dispose(); read.dispose(); write.dispose(); }
+});
+
+test('occlusion retains the original output buffers for debug, screen, stencil and comparison paths', t => {
+  const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 64, 64);
+  const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
+  const read = new THREE.WebGLRenderTarget(64, 64), write = read.clone();
+  const draws: { material: THREE.ShaderMaterial; target: THREE.WebGLRenderTarget | null }[] = [];
+  t.mock.method(GTAOPass.prototype, 'renderOverride', () => {});
+  t.mock.method(GTAOPass.prototype, 'renderPass', (_renderer, material, target) => { draws.push({ material, target }); });
+  try {
+    for (const output of Object.values(GTAOPass.OUTPUT)) {
+      if (output === GTAOPass.OUTPUT.Default) continue;
+      draws.length = 0; pass.output = output;
+      pass.render(renderer, write, read, 0, false);
+      assert.equal(pass.needsSwap, true);
+      assert.ok(draws.every(draw => draw.target !== read), `debug output ${output} must not overwrite the scene color`);
+    }
+    pass.output = GTAOPass.OUTPUT.Default;
+    for (const fallback of ['screen', 'stencil', 'comparison']) {
+      draws.length = 0; pass.renderToScreen = fallback === 'screen'; pass.compositeInPlace = fallback !== 'comparison';
+      pass.render(renderer, write, read, 0, fallback === 'stencil');
+      assert.deepEqual(draws.map(draw => draw.material), [pass.gtaoMaterial, pass.pdMaterial, pass.copyMaterial, pass.blendMaterial]);
+      assert.equal(draws[2].target, fallback === 'screen' ? null : write);
+      assert.equal(draws[3].target, draws[2].target); assert.equal(pass.needsSwap, true);
+    }
+  } finally { pass.dispose(); read.dispose(); write.dispose(); }
+});
+
+test('occlusion clears the copy suppression after a render failure and can switch paths next frame', t => {
+  const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 64, 64);
+  const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
+  const read = new THREE.WebGLRenderTarget(64, 64), write = read.clone();
+  let fail = true, copies = 0;
+  t.mock.method(GTAOPass.prototype, 'renderOverride', () => {});
+  t.mock.method(GTAOPass.prototype, 'renderPass', (_renderer, material) => {
+    if (fail && material === pass.gtaoMaterial) throw new Error('AO draw failed');
+    if (material === pass.copyMaterial) copies++;
+  });
+  try {
+    assert.throws(() => pass.render(renderer, write, read, 0, false), /AO draw failed/);
+    fail = false; pass.renderPass(renderer, pass.copyMaterial, write);
+    assert.equal(copies, 1, 'direct copy calls outside a render must never be suppressed');
+    pass.compositeInPlace = false; pass.render(renderer, write, read, 0, false);
+    assert.equal(copies, 2); assert.equal(pass.needsSwap, true);
+    pass.compositeInPlace = true; pass.render(renderer, write, read, 0, false);
+    assert.equal(copies, 2); assert.equal(pass.needsSwap, false);
+  } finally { pass.dispose(); read.dispose(); write.dispose(); }
+});
+
 test('the occlusion pass skips hidden worlds and restores only the overlays it suppressed', t => {
   const scene = new THREE.Scene(); const hiddenWorld = new THREE.Group(); hiddenWorld.visible = false;
   const hiddenStreet = new THREE.Group(); hiddenStreet.add(new THREE.Sprite()); hiddenWorld.add(hiddenStreet); scene.add(hiddenWorld);

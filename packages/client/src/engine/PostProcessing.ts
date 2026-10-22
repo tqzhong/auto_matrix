@@ -8,7 +8,21 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 
 export class WorldOcclusionPass extends GTAOPass {
+  compositeInPlace = true;
+  private inPlace = false;
   private suppressed: THREE.Object3D[] = [];
+  render(...args: Parameters<GTAOPass['render']>): void {
+    this.inPlace = this.compositeInPlace && this.output === GTAOPass.OUTPUT.Default && !this.renderToScreen && !args[4];
+    this.needsSwap = !this.inPlace;
+    // Default AO only multiplies by its separate denoise texture. The scene
+    // color can stay in the read buffer, without a full-screen copy or swap.
+    try { super.render(args[0], this.inPlace ? args[2] : args[1], args[2], args[3], args[4]); }
+    finally { this.inPlace = false; }
+  }
+  renderPass(...args: Parameters<GTAOPass['renderPass']>): void {
+    if (this.inPlace && args[1] === this.copyMaterial) return;
+    super.renderPass(...args);
+  }
   overrideVisibility(): void {
     // The city remains loaded behind film interiors. Hidden branches cannot
     // contribute normals, so don't traverse or cache their individual objects.
@@ -41,7 +55,7 @@ export class PostProcessing {
   private composer: EffectComposer;
   private bloom: UnrealBloomPass;
   private output: OutputPass;
-  private occlusion: GTAOPass;
+  private occlusion: WorldOcclusionPass;
   private antialias: ShaderPass;
   private pixelRatio: number;
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
@@ -78,6 +92,8 @@ export class PostProcessing {
     this.pixelRatio = renderer.getPixelRatio(); this.resize(window.innerWidth, window.innerHeight);
   }
   render(occlusion = true): void { this.occlusion.enabled = occlusion; this.composer.render(); }
+  get occlusionInPlace(): boolean { return this.occlusion.compositeInPlace; }
+  set occlusionInPlace(value: boolean) { this.occlusion.compositeInPlace = value; }
   resize(w: number, h: number): void { this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * this.pixelRatio), 1 / (h * this.pixelRatio)); }
   dispose(): void { this.bloom.dispose(); this.output.dispose(); this.occlusion.dispose(); this.antialias.dispose(); this.composer.dispose(); }
 }
