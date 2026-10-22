@@ -83,16 +83,16 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
   }
   if (!support && !emerging) return;
   const center = FILM_SETS.film_power_plant_pods.center;
-  const z = -.6 / 3.4, rimX = 1.8 * Math.sqrt(1 - z * z) * (.84 - .16 * z);
+  const z = -.4 / 3.4, rimX = 1.8 * Math.sqrt(1 - z * z) * (.84 - .16 * z);
   for (const [i, side] of ['R', 'L'].entries()) {
     const sign = i ? 1 : -1;
     const shoulder = bone(`shoulder_${side}`), elbow = bone(`elbow_${side}`), wrist = bone(`wrist_${side}`);
-    const contact = new THREE.Vector3(center.x + sign * rimX, center.y - 1 + 2.16, center.z - 13.4);
+    const contact = new THREE.Vector3(center.x + sign * rimX, center.y - 1 + 2.16, center.z - 13.2);
     const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, Math.PI, 0)), support);
     // Calibrated to the shipped wrist/finger skin surface, rather than the bone center.
     const palm = new THREE.Vector3(-sign * .09, -.18, .15);
     const target = wrist.localToWorld(palm.clone()).lerp(contact, support).sub(palm.applyQuaternion(orientation));
-    reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(sign, .2, -.45));
+    reach(shoulder, elbow, wrist.position, target, wrist.position.clone().normalize().applyQuaternion(orientation).negate());
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
     wrist.updateWorldMatrix(false, true);
   }
@@ -106,7 +106,7 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
       const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, Math.PI, 0)), blend);
       const palm = new THREE.Vector3(-sign * .09, -.18, .15);
       const target = wrist.localToWorld(palm.clone()).lerp(contact, blend).sub(palm.applyQuaternion(orientation));
-      reach(shoulder, elbow, wrist.position, target, new THREE.Vector3(sign, -.25, .35));
+      reach(shoulder, elbow, wrist.position, target, wrist.position.clone().normalize().applyQuaternion(orientation).negate());
       wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
       for (let finger = 2; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
         bone(`finger${finger}-${segment}_${side}`).rotation.z = -sign * (.04 + .21 * emerging.tear);
@@ -116,18 +116,30 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
   }
   if (breather === undefined) return;
   const pose = podBreatherPose(breather), head = bone('head');
-  const orientation = head.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pose.tilt));
-  const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(orientation), lateral = new THREE.Vector3(1, 0, 0).applyQuaternion(orientation);
+  const headRotation = head.getWorldQuaternion(new THREE.Quaternion());
+  const orientation = headRotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pose.tilt));
+  const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(headRotation);
+  const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(orientation);
   const end = head.localToWorld(new THREE.Vector3(pose.x, pose.y, pose.z));
   for (const [i, side] of ['R', 'L'].entries()) {
     const sign = i ? 1 : -1, blend = i ? pose.reachL : pose.reachR;
     if (!blend) continue;
     const shoulder = bone(`shoulder_${side}`), elbow = bone(`elbow_${side}`), wrist = bone(`wrist_${side}`);
-    const rotation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(orientation, blend);
+    // The palms wrap around the tube axis. Point each elbow behind its
+    // palm instead of folding the wrist back to meet an arbitrary elbow pole.
+    const grip = orientation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -sign * Math.PI / 3));
+    const resting = wrist.getWorldQuaternion(new THREE.Quaternion()), rotation = resting.clone().slerp(grip, blend);
     const palm = new THREE.Vector3(-sign * .2, -.18, .13);
-    const contact = end.clone().addScaledVector(axis, i ? .44 : .15).addScaledVector(lateral, sign * POD_BREATHER.radius);
+    const radial = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
+    const contact = end.clone().addScaledVector(axis, i ? .44 : .15).addScaledVector(radial, sign * POD_BREATHER.radius);
     const target = wrist.localToWorld(palm.clone()).lerp(contact, blend).sub(palm.applyQuaternion(rotation));
-    reach(shoulder, elbow, wrist.position, target, lateral.clone().multiplyScalar(sign).add(new THREE.Vector3(0, -.7, 0)));
+    // Lift both the reach and return paths around the rigid chest connectors.
+    const arc = Math.sin(Math.PI * blend * blend);
+    target.y += (breather < 2 ? .35 : .25) * arc; target.addScaledVector(forward, .15 * arc);
+    // Wrist roll must not spin the elbow's bend plane around the reaching arm.
+    const axisAtWrist = wrist.position.clone().normalize();
+    const pole = axisAtWrist.clone().applyQuaternion(resting).negate().lerp(axisAtWrist.applyQuaternion(grip).negate(), blend);
+    reach(shoulder, elbow, wrist.position, target, pole);
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
       bone(`finger${finger}-${segment}_${side}`).rotation.set(finger === 1 ? .1 * blend : 0, 0,

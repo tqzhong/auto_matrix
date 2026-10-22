@@ -90,9 +90,9 @@ export function podEmergencePose(elapsed: number) {
 }
 export function podBreatherPose(elapsed: number) {
   const pull = smooth((elapsed - 2.05) / 1.15), lower = smooth((elapsed - 3.45) / 1.15), drop = smooth((elapsed - 4.85) / .65);
-  const release = smooth((elapsed - 4.55) / .55);
-  return { x: POD_BREATHER.mouth.x - .45 * lower, y: POD_BREATHER.mouth.y - .55 * lower, z: POD_BREATHER.mouth.z + .5 * pull - .23 * lower,
-    tilt: .85 * lower, drop, reachR: smooth((elapsed - 1.05) / .65) * (1 - release), reachL: smooth((elapsed - 1.4) / .6) * (1 - release) };
+  const release = smooth((elapsed - 4.55) / .95);
+  return { x: POD_BREATHER.mouth.x - .45 * lower, y: POD_BREATHER.mouth.y - .55 * lower, z: POD_BREATHER.mouth.z + .5 * pull,
+    tilt: .85 * lower, drop, reachR: smooth((elapsed - 1.05) / .65) * (1 - release), reachL: smooth((elapsed - 1.25) / .75) * (1 - release) };
 }
 export const mirrorSilver = (elapsed: number): number => clamp((elapsed - MIRROR_TIMING.touch) / (AWAKENING_SECONDS.mirror - MIRROR_TIMING.touch));
 

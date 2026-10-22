@@ -419,7 +419,7 @@ test('the shipped support-hand surfaces do not sit inside the solid pod rim', as
         if (!Array.from({ length: 4 }, (_, j) => weight.getComponent(i, j) > .2 && /^(wrist_|finger)/.test(object.skeleton.bones[index.getComponent(i, j)].name)).some(Boolean)) continue;
         const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
         const local = h.root.worldToLocal(point.clone());
-        if (Math.abs(local.x) < 1.3 || local.y < 2.02 || local.y > 2.2 || local.z < -14 || local.z > -12.8) continue;
+        if (Math.abs(local.x) < 1.25 || local.y < 2.02 || local.y > 2.2 || local.z < -16.5 || local.z > -9) continue;
         const hits = new THREE.Raycaster(point.clone().add(new THREE.Vector3(0, .3, 0)), new THREE.Vector3(0, -1, 0), 0, .6).intersectObjects(solids);
         let entry: THREE.Intersection | undefined;
         const normalMatrix = new THREE.Matrix3();
@@ -505,12 +505,13 @@ test('the breathing tube follows the actual lips, both grasping palms and the sa
   for (const elapsed of [2, 2.4, 2.8, 3.2, 3.6, 4, 4.5]) {
     const body = at(elapsed), pose = podBreatherPose(elapsed), end = mouthpiece.getWorldPosition(new THREE.Vector3());
     const head = body.getObjectByName('head')!, rotation = head.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pose.tilt));
-    const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation), lateral = new THREE.Vector3(1, 0, 0).applyQuaternion(rotation);
+    const axis = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation);
     for (const [i, side] of ['R', 'L'].entries()) {
       const sign = i ? 1 : -1, wrist = body.getObjectByName(`wrist_${side}`)!;
-      const contact = end.clone().addScaledVector(axis, i ? .44 : .15).addScaledVector(lateral, sign * POD_BREATHER.radius);
       const palm = wrist.localToWorld(new THREE.Vector3(-sign * .2, -.18, .13));
-      assert.ok(palm.distanceTo(contact) < .035, `the ${side} palm must hold the real tube at ${elapsed}s, gap ${palm.distanceTo(contact)}`);
+      const offset = palm.sub(end), along = offset.dot(axis), radial = offset.addScaledVector(axis, -along).length();
+      const gap = Math.hypot(along - (i ? .44 : .15), radial - POD_BREATHER.radius);
+      assert.ok(gap < .035, `the ${side} palm must hold the real tube at ${elapsed}s, gap ${gap}`);
     }
   }
   at(5.5); const resting = mouthpiece.getWorldPosition(new THREE.Vector3()), body = h.renderer.getAgentBody('neo')!, headBefore = body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3());

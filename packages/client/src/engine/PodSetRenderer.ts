@@ -6,6 +6,15 @@ import { PodMaintenanceRenderer } from './PodMaintenanceRenderer.js';
 import { PodDrainRenderer } from './PodDrainRenderer.js';
 import { PodRescueClawRenderer } from './PodRescueClawRenderer.js';
 
+// Entry offsets are relative to each real chest port: normal, signed side, height.
+const feedClearances = [
+  { normal: .08, lateral: 0, height: -.2 },
+  { normal: .3, lateral: -.4, height: -.6 },
+  { normal: .08, lateral: 0, height: -.2 },
+  { normal: .08, lateral: 0, height: -.2 },
+] as const;
+const leftFeedReturn = { normal: .08, lateral: .6, height: .8 };
+
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
   private root = new THREE.Group();
@@ -436,7 +445,9 @@ export class PodSetRenderer {
     });
     const thoracic = subject?.getObjectByName('thoracic-interfaces');
     const oralEntry = !beat || beat.kind === 'emerge' || beat.kind === 'breather' || beat.breatherRemoved === true;
+    const breatherPose = beat?.kind === 'breather' ? podBreatherPose(beat.elapsed) : undefined;
     this.feeds.forEach((feed, i) => {
+      const breatherReach = (i % 2 ? breatherPose?.reachL : breatherPose?.reachR) ?? 0;
       const port = thoracic?.children[i * 2 + 1];
       const outward = port ? new THREE.Vector3(0, 1, 0).applyQuaternion(port.getWorldQuaternion(new THREE.Quaternion()))
         .applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion()).invert()) : new THREE.Vector3(0, 1, 0);
@@ -445,13 +456,20 @@ export class PodSetRenderer {
       const release = THREE.MathUtils.smoothstep(disconnect, 3.05 + i * .16, 3.3 + i * .16);
       const end = contact.addScaledVector(outward, .12 + release * .3).lerp(start.clone().add(new THREE.Vector3(-side * .05, -.45, 0)), release);
       feed.plug.position.copy(end).addScaledVector(outward, -.06); feed.plug.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward);
-      // The loops flex as the hands lower, then return when Neo braces the rim again.
-      const deflect = beat?.kind === 'breather'
-        ? THREE.MathUtils.smoothstep(beat.elapsed, 3.2, 3.8) * (1 - THREE.MathUtils.smoothstep(beat.elapsed, 4.6, 5.1)) : 0;
-      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .05, oralEntry ? .3 : -.4, 1.7)),
-        end.clone().addScaledVector(outward, (oralEntry ? .25 : .6) * (1 - release))
-          .add(new THREE.Vector3(oralEntry ? side * (-.18 + (i < 2 ? .58 * deflect : 0)) * (1 - release) : 0,
-            !oralEntry ? 0 : (i < 2 ? .5 * deflect : -.15) * (1 - release), oralEntry && i < 2 ? -.2 * deflect * (1 - release) : 0)),
+      // Keep the entry loop behind the reaching forearms, then restore it as the hands return to the rim.
+      const loop = end.clone().addScaledVector(outward, (oralEntry ? .25 : .6) * (1 - release))
+        .add(new THREE.Vector3(oralEntry ? -side * .18 * (1 - release) : 0, oralEntry && i >= 2 ? -.15 * (1 - release) : 0, 0));
+      if (breatherReach) {
+        const held = feedClearances[i], returned = i === 1 ? leftFeedReturn : held, mix = THREE.MathUtils.lerp;
+        const returning = beat?.kind === 'breather' ? THREE.MathUtils.smoothstep(beat.elapsed, 4.55, 4.85) : 0;
+        const entry = end.clone().addScaledVector(outward, mix(held.normal, returned.normal, returning))
+          .add(new THREE.Vector3(side * mix(held.lateral, returned.lateral, returning), mix(held.height, returned.height, returning), 0));
+        loop.lerp(entry, breatherReach);
+      }
+      // The front leads unfold while the returning hands are lifted above them.
+      const unfold = beat?.kind === 'breather' && i < 2 ? THREE.MathUtils.smoothstep(beat.elapsed, i === 1 ? 4.65 : 4.75, i === 1 ? 4.85 : 4.95) : 0;
+      if (disconnect < 4) this.bend(feed.mesh, [start, start.clone().add(new THREE.Vector3(-side * .05, oralEntry ? .3 : -.4, 1.7 - 1.2 * breatherReach * (1 - unfold))),
+        loop,
         ...(oralEntry && i < 2 ? [end.clone().addScaledVector(outward, .12 * (1 - release))] : []), end]);
     });
     this.connections.visible = disconnect < 4;
