@@ -1,0 +1,113 @@
+{
+  "actualNativeUiRun": true,
+  "entry": "historical P0 QA checkpoint; ordinary UI from pills seating through philosophical agency answer, then native red-pill choice",
+  "completedThisRun": [
+    "four dialogue beats",
+    "agency answer",
+    "red-pill choice",
+    "handoff and drink",
+    "rise",
+    "WASD movement and mouse steering",
+    "V first-person switch",
+    "follow Morpheus through actual doorway",
+    "G tracing-chair entry",
+    "mirror touch and silver transition",
+    "m1_pod entry"
+  ],
+  "qaTickAfter": 6056,
+  "qaPausedAfter": true,
+  "sceneAfter": "m1_pod",
+  "stepAfter": 0,
+  "neoAwakened": true,
+  "recording": {
+    "file": "neo-2026-10-22T06-18-19-524Z.webm",
+    "duration": 544.2020999994278,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 8251,
+    "rendering": {
+      "frames": 10409,
+      "fps": 19.128952629199272,
+      "p95FrameMs": 152.30000019073486,
+      "includesRecordingOverhead": true
+    },
+    "markers": []
+  },
+  "recordingBytes": 85886284,
+  "excerpt": {
+    "file": "native-recording/mirror-to-pod.mp4",
+    "sourceStartSeconds": 390,
+    "durationSeconds": 62,
+    "bytes": 4008651,
+    "note": "Continuous source tail, original timing and capture gaps; 616 recorded video frames. Full raw recording remains local."
+  },
+  "samePageAB": {
+    "order": "B1 A1 A2 B2",
+    "meanBaselineRenderCpuMs": 17.90722891796066,
+    "meanCandidateRenderCpuMs": 16.16371680050099,
+    "renderCpuReduction": 0.09736359128748029,
+    "meanBaselineFps": 16.52272357313361,
+    "meanCandidateFps": 16.337385479173875,
+    "note": "Single background IAB page, 1280x720, pixelRatio1.5, same loaded paused scene; no recording or parallel build/tests during these four measurements; other OS load uncontrolled. No demonstrated FPS gain."
+  },
+  "pictureParity": {
+    "files": [
+      "native-ab-baseline.png",
+      "native-ab-candidate.png"
+    ],
+    "dimensions": [
+      1280,
+      720
+    ],
+    "scenePixelsChecked": 720175,
+    "differentPixels": 0,
+    "meanAbsoluteChannelError": 0.0,
+    "p95AbsoluteChannelError": 0.0,
+    "maximumChannelError": 0,
+    "excluded": "top HUD and right performance panel only; same loaded scene, assets, pause state, camera and postprocessing noise",
+    "note": "Original native screenshots are unchanged; no image retouch or color correction."
+  },
+  "consoleWarnErrorCount": 0,
+  "actualRestart": {
+    "actualBackendRestart": true,
+    "tick": 6056,
+    "paused": true,
+    "scene": "m1_pod",
+    "publicGroupsEqual": {
+      "phase": true,
+      "timeOfDay": true,
+      "simulation": true,
+      "events": true,
+      "sandbox": true
+    },
+    "neoFieldsEqual": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "isAwakened": true,
+      "isInMatrix": true,
+      "currentLocation": true
+    },
+    "memoryFilesUnchanged": true,
+    "memoryFiles": 7,
+    "mainServerRestarted": false,
+    "mainPort": 5173
+  },
+  "remaining": [
+    "first-person chair-entry camera passed close to geometry",
+    "wall sliding caused unwanted camera turns",
+    "reconnect reset first-person view to third person",
+    "mouse HUD interaction during pointer lock required menu/keyboard handling",
+    "models, materials and finger performance still not movie quality",
+    "full-body/prop continuous geometry acceptance not performed this unit",
+    "blue branch, failure/retry native play and whole P0/trilogy acceptance incomplete"
+  ],
+  "mainSaveUsed": false,
+  "renderReconnected": false,
+  "ownQaProcessesStopped": [
+    5776,
+    12000,
+    45713
+  ]
+}

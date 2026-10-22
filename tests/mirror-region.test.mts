@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { FILM_SETS, PILL_ROOM, MIRROR_FACE } from '@auto_matrix/shared';
 import { createMirrorSurface } from '../packages/client/src/engine/MirrorSurface.js';
 import { showMirrorSubject } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { enableSkinnedCulling } from '../packages/client/src/agents/SkinnedBounds.js';
 
 function roomMirror() {
   const scene = new THREE.Scene(), room = new THREE.Group(); scene.add(room);
@@ -116,4 +117,64 @@ test('a reflection render failure restores the borrowed render method, projectio
     assert.ok(Math.abs(mirror.camera.projectionMatrix.elements[0] - view.camera.projectionMatrix.elements[0]) < 1e-12,
       'the tighter horizontal projection must not leak into another pass');
   } finally { view.dispose(); }
+});
+
+test('the reflection reuses this frame\'s scene transforms without walking the hidden city again', t => {
+  const view = roomMirror(), hiddenCity = new THREE.Group(); hiddenCity.visible = false; view.scene.add(hiddenCity);
+  const subject = new THREE.Group(); subject.position.set(-2, 1, -4); view.room.add(subject);
+  const prop = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()); prop.position.set(.4, .2, .3); subject.add(prop);
+  const updates = t.mock.method(hiddenCity, 'updateMatrixWorld');
+  let paints = 0;
+  view.draw((scene, camera) => {
+    // This is the same scene-matrix entry condition used by WebGLRenderer.
+    if (scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
+    camera.updateMatrixWorld(); paints++;
+    assert.ok(new THREE.Vector3().setFromMatrixPosition(prop.matrixWorld).distanceTo(prop.position.clone().applyMatrix4(subject.matrix).applyMatrix4(view.room.matrixWorld)) < 1e-10,
+      'the reflection still sees the prop after this frame\'s actor movement');
+  });
+  try {
+    for (const moved of [0, .8]) {
+      subject.rotation.y = moved; prop.position.y = moved;
+      view.scene.updateMatrixWorld(true); const before = updates.mock.callCount();
+      view.paint();
+      assert.equal(updates.mock.callCount(), before, 'the color pass already updated the hidden city and every visible actor');
+      assert.equal(view.scene.matrixWorldAutoUpdate, true, 'the next main frame still updates its moving scene');
+    }
+    assert.equal(paints, 2);
+  } finally { view.dispose(); prop.geometry.dispose(); (prop.material as THREE.Material).dispose(); }
+});
+
+test('reflection matrix reuse restores the prior scene setting even when the reflected draw fails', () => {
+  const view = roomMirror();
+  try {
+    for (const auto of [true, false]) {
+      view.scene.matrixWorldAutoUpdate = auto;
+      view.draw(scene => { assert.equal(scene.matrixWorldAutoUpdate, false); throw new Error('reflected scene failed'); });
+      assert.throws(view.paint, /reflected scene failed/);
+      assert.equal(view.scene.matrixWorldAutoUpdate, auto, 'a failed secondary draw cannot disable later main-frame animation');
+    }
+  } finally { view.dispose(); }
+});
+
+
+test('a first-person body made visible for the mirror keeps current skinned culling bounds', () => {
+  const view = roomMirror(), body = new THREE.Group(), bone = new THREE.Bone(); view.room.add(body); body.add(bone);
+  const geometry = new THREE.BoxGeometry(), vertices = geometry.attributes.position.count;
+  geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(new Uint16Array(vertices * 4), 4));
+  geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(Array.from({ length: vertices * 4 }, (_, i) => i % 4 === 0 ? 1 : 0), 4));
+  const material = new THREE.MeshStandardMaterial(), skin = new THREE.SkinnedMesh(geometry, material); body.add(skin);
+  view.scene.updateMatrixWorld(true); skin.bind(new THREE.Skeleton([bone])); enableSkinnedCulling(body);
+  const nextFrame = showMirrorSubject(view.mirror, () => body);
+  view.draw(scene => {
+    if (scene.matrixWorldAutoUpdate) scene.updateMatrixWorld();
+    assert.equal(body.visible, true);
+    for (let i = 0; i < vertices; i++) assert.ok(skin.boundingBox!.containsPoint(skin.getVertexPosition(i, new THREE.Vector3())),
+      'moving a hidden first-person actor must not leave its reflection clipped by old skin bounds');
+  });
+  try {
+    for (const moved of [20, -25, 0]) {
+      body.visible = false; bone.position.x = moved; view.scene.updateMatrixWorld(true);
+      nextFrame(); view.paint(); assert.equal(body.visible, false, 'the direct first-person body stays hidden');
+    }
+  } finally { view.dispose(); geometry.dispose(); material.dispose(); }
 });

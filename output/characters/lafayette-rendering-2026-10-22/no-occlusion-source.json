@@ -1,0 +1,8 @@
+{
+  "variant": "diagnostic only: occlusion disabled",
+  "adopted": false,
+  "code": {
+    "PostProcessing.ts": "a0059f48c55d5f31999deb217b089dd9b8104582d0f7db22717dd89044832a6d"
+  },
+  "note": "Original full-detail candidate retained; this variant only isolates cost and will not be published."
+}

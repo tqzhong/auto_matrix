@@ -1,0 +1,6 @@
+{
+  "variant": "diagnostic only: shadow maps disabled",
+  "adopted": false,
+  "engineSha256": "512c4cc1df687ca61dbf8bcf1a35bc7f59749000a58d3a79e2c5d0af0e3a9733",
+  "occlusionRestored": true
+}

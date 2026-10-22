@@ -1,0 +1,7 @@
+{
+  "command": "npm run typecheck && npm run build > ../build.log 2>&1",
+  "exitCode": 0,
+  "sourceAudit": "source-audit.json",
+  "bundle": "index-js5izVei.js",
+  "note": "Observed terminal completion of the sequential command; build only begins after all three noEmit type checks succeed."
+}

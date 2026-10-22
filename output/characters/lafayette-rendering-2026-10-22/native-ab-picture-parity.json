@@ -1,0 +1,17 @@
+{
+  "files": [
+    "native-ab-baseline.png",
+    "native-ab-candidate.png"
+  ],
+  "dimensions": [
+    1280,
+    720
+  ],
+  "scenePixelsChecked": 720175,
+  "differentPixels": 0,
+  "meanAbsoluteChannelError": 0.0,
+  "p95AbsoluteChannelError": 0.0,
+  "maximumChannelError": 0,
+  "excluded": "top HUD and right performance panel only; same loaded scene, assets, pause state, camera and postprocessing noise",
+  "note": "Original native screenshots are unchanged; no image retouch or color correction."
+}

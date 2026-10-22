@@ -132,7 +132,11 @@ function boundMirrorReflection(mirror: Reflector): void {
         renderer.setRenderTarget(target);
       }
     };
+    const matrices = args[1].matrixWorldAutoUpdate;
+    // The color pass already updated scene transforms; newly revealed subjects
+    // refresh their own bounds. Only the reflected camera needs a new matrix.
+    args[1].matrixWorldAutoUpdate = false;
     try { reflect(...args); }
-    finally { renderer.render = render; }
+    finally { renderer.render = render; args[1].matrixWorldAutoUpdate = matrices; }
   };
 }

@@ -1,0 +1,242 @@
+{
+  "measuredAt": "2026-10-22T06:04:41.188Z",
+  "scenes": [
+    "film_lafayette"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 338,
+  "fps": 22.535927083141974,
+  "frameTime": {
+    "mean": 44.37359050331908,
+    "p95": 62.89999961853027
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.5002958704028609,
+      "p95": 1.1000003814697266
+    },
+    "agents": {
+      "mean": 6.522781053238367,
+      "p95": 11.399999618530273
+    },
+    "city": {
+      "mean": 0.2325443798268335,
+      "p95": 0.40000057220458984
+    },
+    "film": {
+      "mean": 0.2837278462020603,
+      "p95": 0.5
+    },
+    "effects": {
+      "mean": 0.17751476750571346,
+      "p95": 0.2999992370605469
+    },
+    "render": {
+      "mean": 16.154142029892057,
+      "p95": 26.899999618530273
+    },
+    "capture": {
+      "mean": 0.007396444061098719,
+      "p95": 0.09999942779541016
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 2.624556222610925,
+      "p95": 4.5
+    },
+    "scene": {
+      "mean": 15.762426051867784,
+      "p95": 26.59999942779541
+    },
+    "bloom": {
+      "mean": 0.28875738064918294,
+      "p95": 0.5999994277954102
+    },
+    "output": {
+      "mean": 0.04171598592453454,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.03550296422292495,
+      "p95": 0.10000038146972656
+    }
+  },
+  "calls": {
+    "mean": 482,
+    "p95": 482
+  },
+  "triangles": {
+    "mean": 3192893,
+    "p95": 3192893
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 275,
+      "triangles": 1682386
+    },
+    "scene": {
+      "calls": 155,
+      "triangles": 1231872
+    },
+    "reflectionOrPreview": {
+      "calls": 37,
+      "triangles": 278620
+    },
+    "postprocessing": {
+      "calls": 15,
+      "triangles": 15
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 372940
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 256440
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246528
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 246208
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 227528
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 220940
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 124512
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 99280
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 91680
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 88720
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 63200
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 62256
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 61632
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 56882
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 56448
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 4,
+      "triangles": 56448
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 53760
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 5,
+      "triangles": 51240
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 46352
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 4,
+      "triangles": 46132
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 22.564874004693667,
+  "objects": 8980,
+  "visibleObjects": 687
+}

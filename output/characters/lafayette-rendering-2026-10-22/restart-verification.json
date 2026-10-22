@@ -1,0 +1,25 @@
+{
+  "actualBackendRestart": true,
+  "tick": 6056,
+  "paused": true,
+  "scene": "m1_pod",
+  "publicGroupsEqual": {
+    "phase": true,
+    "timeOfDay": true,
+    "simulation": true,
+    "events": true,
+    "sandbox": true
+  },
+  "neoFieldsEqual": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "isAwakened": true,
+    "isInMatrix": true,
+    "currentLocation": true
+  },
+  "memoryFilesUnchanged": true,
+  "memoryFiles": 7,
+  "mainServerRestarted": false,
+  "mainPort": 5173
+}

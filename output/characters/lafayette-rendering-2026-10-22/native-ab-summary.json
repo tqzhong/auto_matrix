@@ -1,0 +1,38 @@
+[
+  {
+    "mode": "B1",
+    "baseline": true,
+    "fps": 16.50461530228762,
+    "renderMeanMs": 18.040562273508094,
+    "sceneMeanMs": 15.789959853911496,
+    "recordingActive": false,
+    "calls": 562.85140562249
+  },
+  {
+    "mode": "A1",
+    "baseline": false,
+    "fps": 15.983735379098668,
+    "renderMeanMs": 15.544166644414267,
+    "sceneMeanMs": 13.53541667064031,
+    "recordingActive": false,
+    "calls": 564
+  },
+  {
+    "mode": "A2",
+    "baseline": false,
+    "fps": 16.691035579249082,
+    "renderMeanMs": 16.783266956587713,
+    "sceneMeanMs": 14.564541850906918,
+    "recordingActive": false,
+    "calls": 564
+  },
+  {
+    "mode": "B2",
+    "baseline": true,
+    "fps": 16.5408318439796,
+    "renderMeanMs": 17.773895562413227,
+    "sceneMeanMs": 15.620883528008518,
+    "recordingActive": false,
+    "calls": 566
+  }
+]

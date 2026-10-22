@@ -1,0 +1,28 @@
+{
+  "baseline": "b4d1cdca8f7851e814bd6e861a19ba432d50ad70",
+  "changed": [
+    {
+      "path": "packages/client/src/engine/FilmSetRenderer.ts",
+      "before": "54b99b79472cc6f15e4217fee7b34418bb5bf37f210d2e577ee1b6deee680653",
+      "candidate": "824fd2c5d83a49774093ea369e634980ddd3ddde520d143544f8a70314e61ce2"
+    },
+    {
+      "path": "packages/client/src/engine/MirrorSurface.ts",
+      "before": "362d2d239a1b6c94a974f842726c7ddbd5f0dd976511fbb9052bcbdce3e4b143",
+      "candidate": "72b86c5ab3ca8c95d1f96856ad41f1b590de86d1750f567cb69de7569faae4ff"
+    },
+    {
+      "path": "tests/mirror-region.test.mts",
+      "before": "19f391021f60e3f7180a8daab316e7acd9a504db304bb01f1360fe1a22d04859",
+      "candidate": "7d4dce12dde5c4b41822b073c95e640d622e6c1a926a39177e52e64e1111a0f6"
+    }
+  ],
+  "newTests": [],
+  "packageFiles": 704,
+  "unchangedPackageFiles": 702,
+  "protectedWipFilesUnchanged": 11,
+  "qaInstrumentationRemoved": true,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "backendChanged": false
+}

@@ -1,0 +1,17 @@
+{
+  "files": [
+    "native-baseline-choice.png",
+    "native-candidate-choice.png"
+  ],
+  "dimensions": [
+    1280,
+    720
+  ],
+  "scenePixelsChecked": 495589,
+  "differentPixels": 88660,
+  "meanAbsoluteChannelError": 0.23805276818761784,
+  "p95AbsoluteChannelError": 2.0,
+  "maximumChannelError": 12,
+  "excluded": "top HUD; performance panel; pause modal; bottom choice UI",
+  "note": "Two native captures after client reconnect, not simultaneous; no images modified or color corrected."
+}
