@@ -1,0 +1,301 @@
+{
+  "occlusionInPlace": true,
+  "shipStaticBatching": true,
+  "camera": {
+    "position": [
+      5372,
+      -97,
+      4400
+    ],
+    "quaternion": [
+      -0.16953341680772155,
+      0.22624033940848048,
+      0.04002141082442768,
+      0.9583694569869478
+    ],
+    "projection": [
+      1.4653625988902637,
+      0,
+      0,
+      0,
+      0,
+      2.605089064693802,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-22T22:07:54.553Z",
+  "scenes": [
+    "film_neb_deck"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 460,
+  "fps": 30.569023388078595,
+  "frameTime": {
+    "mean": 32.712854032163264,
+    "p95": 36
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.17021741659744927,
+      "p95": 0.3000001907348633
+    },
+    "agents": {
+      "mean": 2.408695658393528,
+      "p95": 2.8000001907348633
+    },
+    "city": {
+      "mean": 0.1576086728469185,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 0.7621739138727602,
+      "p95": 1.1000003814697266
+    },
+    "effects": {
+      "mean": 0.07978263523267663,
+      "p95": 0.19999980926513672
+    },
+    "render": {
+      "mean": 2.8954347838526187,
+      "p95": 3.3000001907348633
+    },
+    "capture": {
+      "mean": 0,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "occlusion.normals": {
+      "mean": 0.6156521776448125,
+      "p95": 0.7000007629394531
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0008695643881092901,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 0.7684782587963602,
+      "p95": 0.9000005722045898
+    },
+    "bloom": {
+      "mean": 0.0860869843026866,
+      "p95": 0.19999980926513672
+    },
+    "output": {
+      "mean": 0.006739131264064623,
+      "p95": 0.09999942779541016
+    },
+    "antialias": {
+      "mean": 0.01108695527781611,
+      "p95": 0.10000038146972656
+    },
+    "worldMatrices": {
+      "mean": 0.8368191521671603,
+      "p95": 1
+    },
+    "scene": {
+      "mean": 2.0128540088927824,
+      "p95": 2.3000001907348633
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.11220044404073479,
+      "p95": 0.19999980926513672
+    }
+  },
+  "gpuPassMs": {},
+  "gpuTiming": {
+    "mode": "cpu-no-shadows",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 0,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 273,
+    "p95": 273
+  },
+  "triangles": {
+    "mean": 652088,
+    "p95": 652088
+  },
+  "drawsPerFrame": {
+    "scene": {
+      "calls": 142,
+      "triangles": 326200
+    },
+    "occlusion": {
+      "calls": 113,
+      "triangles": 325870
+    },
+    "postprocessing": {
+      "calls": 18,
+      "triangles": 18
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 123264
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 123104
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 123104
+    },
+    {
+      "name": "Patient_body",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 90784
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 23066
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 23066
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 14304
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 14304
+    },
+    {
+      "name": "neo-teeth-upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 7296
+    },
+    {
+      "name": "neo-teeth-lower",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 6944
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 6640
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 6640
+    },
+    {
+      "name": "Anatomical_wrist_skin",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 5960
+    },
+    {
+      "name": "Anatomical_wrist_skin",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 5960
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 5252
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 5252
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 4080
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 2,
+      "triangles": 4080
+    },
+    {
+      "name": "",
+      "parent": "neb-interior-deck",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 2288
+    },
+    {
+      "name": "neb-medical-pillow",
+      "parent": "neb-medical-bed",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 1944
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 32.862942187767054,
+  "fpsBeforeSampling": 30.160226201696513,
+  "pageVisibility": "visible",
+  "contextAntialias": true,
+  "profilingDrawInstrumentation": true,
+  "objects": 10208,
+  "visibleObjects": 823
+}

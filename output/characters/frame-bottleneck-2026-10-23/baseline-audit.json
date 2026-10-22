@@ -1,0 +1,17 @@
+{
+  "revision": "49fd03cf6bb9d4d145695aa2497ec60ecc75d093",
+  "verifiedSourceFiles": 1167,
+  "packageFiles": 707,
+  "configs": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "mainPid": 82166,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "previousGoalTurn": "progress",
+  "previousEvidence": "49fd03c committed/pushed; recovery eye, neck view and real cabin release verified. Performance remains unaccepted.",
+  "nextAction": "Profile a single native game page with query-free render and occlusion controls.",
+  "renderReconnected": false
+}

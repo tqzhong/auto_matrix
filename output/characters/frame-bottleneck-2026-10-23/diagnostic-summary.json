@@ -1,0 +1,227 @@
+{
+  "singleGamePage": true,
+  "viewport": [
+    1280,
+    720
+  ],
+  "pixelRatio": 1.5,
+  "queryFree": true,
+  "rows": [
+    {
+      "file": "diagnostic-neo-2026-10-22T22-04-26-056Z.json",
+      "mode": "cpu",
+      "fps": 42.005600746766234,
+      "p95FrameMs": 25.5,
+      "calls": 435,
+      "triangles": 1071270,
+      "agentCpuMs": 1.7979397735958431,
+      "renderCpuMs": 3.14215528757183,
+      "recording": false,
+      "gpuSamples": {},
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "diagnostic-neo-2026-10-22T22-05-27-919Z.json",
+      "mode": "cpu-no-occlusion",
+      "fps": 59.95091893469622,
+      "p95FrameMs": 18.59999942779541,
+      "calls": 319,
+      "triangles": 745397,
+      "agentCpuMs": 1.62055557568868,
+      "renderCpuMs": 2.3496666622161864,
+      "recording": false,
+      "gpuSamples": {},
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "diagnostic-neo-2026-10-22T22-07-54-553Z.json",
+      "mode": "cpu-no-shadows",
+      "fps": 30.569023388078595,
+      "p95FrameMs": 36,
+      "calls": 273,
+      "triangles": 652088,
+      "agentCpuMs": 2.408695658393528,
+      "renderCpuMs": 2.8954347838526187,
+      "recording": false,
+      "gpuSamples": {},
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "diagnostic-neo-2026-10-22T22-10-26-640Z.json",
+      "mode": "cpu-no-render",
+      "fps": 60.00400026668444,
+      "p95FrameMs": 19,
+      "calls": 0,
+      "triangles": 0,
+      "agentCpuMs": 2.189456154318417,
+      "renderCpuMs": 0.0013318543428850755,
+      "recording": false,
+      "gpuSamples": {},
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    },
+    {
+      "file": "diagnostic-neo-2026-10-22T22-14-20-361Z.json",
+      "mode": "cpu",
+      "fps": 27.503263097963725,
+      "p95FrameMs": 43.20000076293945,
+      "calls": 435,
+      "triangles": 1071270,
+      "agentCpuMs": 4.515217398675744,
+      "renderCpuMs": 6.269806783556362,
+      "recording": false,
+      "gpuSamples": {},
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      }
+    }
+  ],
+  "conclusion": "Full rendering drifted from about 42 to 27.5 fps; skipping AO and skipping 3D each reached about 60. This identifies a costly rendering path, not a proven unique hardware bottleneck or a shipping quality reduction."
+}

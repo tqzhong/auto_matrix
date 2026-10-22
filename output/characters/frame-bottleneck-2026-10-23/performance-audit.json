@@ -1,0 +1,300 @@
+{
+  "date": "2026-10-23",
+  "baselineRevision": "49fd03cf6bb9d4d145695aa2497ec60ecc75d093",
+  "device": {
+    "cpuGpu": "Apple M3",
+    "unifiedMemoryGiB": 24
+  },
+  "scope": "One native IAB game page, paused medical recovery checkpoint, fixed camera; warmup 3 s then 15 s, no recording or GPU timing queries. Draw-call profiling still adds diagnostic overhead. Not general gameplay or minimum-hardware certification.",
+  "comparisons": [
+    {
+      "file": "comparison-neo-2026-10-22T22-20-51-392Z.json",
+      "path": "original",
+      "fps": 39.80849247788909,
+      "p95FrameMs": 26.700000762939453,
+      "drawCalls": {
+        "mean": 434.82608695652175,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071247.7391304348,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "recordingActive": false,
+      "gpuSamples": {},
+      "pageVisibility": "visible",
+      "glErrorAtStop": 0
+    },
+    {
+      "file": "comparison-neo-2026-10-22T22-21-19-090Z.json",
+      "path": "polynomial-experiment",
+      "fps": 39.68306811372262,
+      "p95FrameMs": 26.899999618530273,
+      "drawCalls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "recordingActive": false,
+      "gpuSamples": {},
+      "pageVisibility": "visible",
+      "glErrorAtStop": 0
+    },
+    {
+      "file": "comparison-neo-2026-10-22T22-24-10-558Z.json",
+      "path": "polynomial-experiment",
+      "fps": 28.91292735042735,
+      "p95FrameMs": 41.30000019073486,
+      "drawCalls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "recordingActive": false,
+      "gpuSamples": {},
+      "pageVisibility": "visible",
+      "glErrorAtStop": 0
+    },
+    {
+      "file": "comparison-neo-2026-10-22T22-24-48-990Z.json",
+      "path": "original",
+      "fps": 28.742722623820228,
+      "p95FrameMs": 43.39999961853027,
+      "drawCalls": {
+        "mean": 435,
+        "p95": 435
+      },
+      "triangles": {
+        "mean": 1071270,
+        "p95": 1071270
+      },
+      "camera": {
+        "position": [
+          5372,
+          -97,
+          4400
+        ],
+        "quaternion": [
+          -0.16953341680772155,
+          0.22624033940848048,
+          0.04002141082442768,
+          0.9583694569869478
+        ],
+        "projection": [
+          1.4653625988902637,
+          0,
+          0,
+          0,
+          0,
+          2.605089064693802,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "recordingActive": false,
+      "gpuSamples": {},
+      "pageVisibility": "visible",
+      "glErrorAtStop": 0
+    }
+  ],
+  "decision": {
+    "shaderExperimentAdopted": false,
+    "productionCodeChanged": false,
+    "reason": "Adjacent pairs show -0.315% and +0.592% FPS differences while full-frame timing drifts from ~40 to ~29 FPS. No repeatable material gain established. Candidate tests verify shader path selection only, not a performance benefit or pixel equality.",
+    "diagnosticConclusion": "Full rendering ~27.5–42 FPS; omitting AO or all 3D each reached ~60 in separate controls. Rendering is a costly path; these controls do not uniquely prove GPU saturation or rule out browser scheduling, contention, memory pressure or thermals.",
+    "stable60Achieved": false,
+    "memoryUpgradeJustified": false,
+    "serverUpgradeJustifiedForLocalRendering": false,
+    "nextActions": [
+      "Profile frame pacing/compositor separately from GPU query instrumentation.",
+      "Optimize AO/normal pass cost with same-camera image verification before accepting changes.",
+      "Reduce redundant scene/shadow submissions and use local detail levels where image quality is retained.",
+      "Validate actual walking, turning and combat at agreed resolution/quality with slow-frame percentiles."
+    ]
+  },
+  "preservation": {
+    "mainPid": 82166,
+    "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+    "mainSaveTick": 3757,
+    "mainPaused": true,
+    "verifiedCounts": {
+      "protected-worktree.json": 11,
+      "root-package-before.json": 707,
+      "backend-dist-before.json": 280,
+      "main-memories-before.json": 85
+    },
+    "qaStopped": [
+      {
+        "pid": 13740,
+        "port": 5201,
+        "command": "node /Users/tianqizhong/ai_project/auto_matrix/output/characters/frame-bottleneck-2026-10-23/candidate-release/node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5201 --strictPort",
+        "portClosed": true
+      },
+      {
+        "pid": 13737,
+        "port": 5200,
+        "command": "node packages/server/dist/index.js",
+        "portClosed": true
+      }
+    ],
+    "previewRestored": "http://localhost:5173/",
+    "renderReconnected": false
+  },
+  "acceptance": {
+    "highQualityTrilogyGroups": 0,
+    "totalTrilogyGroups": 42,
+    "goalStatus": "active",
+    "previousTurn": "progress: recovery eye/cabin view 49fd03c",
+    "thisTurn": "diagnostic evidence; rejected shader experiment, no runtime improvement claimed"
+  },
+  "reproduction": {
+    "experimentalPatch": "diagnostic-and-rejected-shader.patch.gz",
+    "appliedToProduction": false,
+    "logs": [
+      "baseline-graphics-tests.log.gz",
+      "diagnostics-typecheck.log.gz",
+      "weights-reproduction.log.gz",
+      "weights-candidate-first.log.gz",
+      "weights-typecheck.log.gz"
+    ],
+    "experimentalChecks": "Baseline graphics 10/10; proposed exact-exponent selector tests original 0/2 and candidate plus graphics 12/12; candidate typecheck passed. No production build or runtime acceptance because this change was rejected for lack of measured gain.",
+    "pixelEqualityVerified": false,
+    "sources": [
+      {
+        "title": "MDN Animation performance and frame rate",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/Animation_performance_and_frame_rate"
+      },
+      {
+        "title": "Three.js Optimize Lots of Objects",
+        "url": "https://threejs.org/manual/pages/optimize-lots-of-objects.html"
+      }
+    ]
+  }
+}

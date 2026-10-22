@@ -1,0 +1,110 @@
+{
+  "occlusionInPlace": true,
+  "shipStaticBatching": true,
+  "camera": {
+    "position": [
+      5372,
+      -97,
+      4400
+    ],
+    "quaternion": [
+      -0.16953341680772155,
+      0.22624033940848048,
+      0.04002141082442768,
+      0.9583694569869478
+    ],
+    "projection": [
+      1.4653625988902637,
+      0,
+      0,
+      0,
+      0,
+      2.605089064693802,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-22T22:10:26.640Z",
+  "scenes": [
+    "film_neb_deck"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 901,
+  "fps": 60.00400026668444,
+  "frameTime": {
+    "mean": 16.665555555555557,
+    "p95": 19
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.11476134301290396,
+      "p95": 0.20000076293945312
+    },
+    "agents": {
+      "mean": 2.189456154318417,
+      "p95": 3.1000003814697266
+    },
+    "city": {
+      "mean": 0.10332965004060429,
+      "p95": 0.20000076293945312
+    },
+    "film": {
+      "mean": 0.5148723477396399,
+      "p95": 0.8000001907348633
+    },
+    "effects": {
+      "mean": 0.05227525649668771,
+      "p95": 0.10000038146972656
+    },
+    "render": {
+      "mean": 0.0013318543428850755,
+      "p95": 0
+    },
+    "capture": {
+      "mean": 0.00011098715626571605,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {},
+  "gpuPassMs": {},
+  "gpuTiming": {
+    "mode": "cpu-no-render",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 0,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 0,
+    "p95": 0
+  },
+  "triangles": {
+    "mean": 0,
+    "p95": 0
+  },
+  "drawsPerFrame": {},
+  "heaviestMeshes": [],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 59.97600950468198,
+  "fpsBeforeSampling": 25.052996742256617,
+  "pageVisibility": "visible",
+  "contextAntialias": true,
+  "profilingDrawInstrumentation": true,
+  "objects": 10208,
+  "visibleObjects": 823
+}
