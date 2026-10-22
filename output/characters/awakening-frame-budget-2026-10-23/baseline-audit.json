@@ -1,0 +1,12 @@
+{
+  "baseline": "699e61dfd993fc5cef358253ec91f31a91102e76",
+  "verifiedSourceFiles": 1163,
+  "packageFiles": 706,
+  "protectedWipFiles": 11,
+  "mainPid": 82166,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "previousGoalTurn": "progress",
+  "previousEvidence": "699e61d skin seam correction tested, native restart and play verified, local bundle and remote main verified",
+  "nextAction": "Measure actual grip and medical scenes without recording before choosing a correction",
+  "renderReconnected": false
+}

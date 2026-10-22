@@ -1,0 +1,36 @@
+{
+  "scope": "Only the six newly merged static geometries; original CPU geometries remain owned until disposal. Not total process RAM or GPU memory.",
+  "batches": [
+    {
+      "vertices": 594,
+      "triangles": 656,
+      "typedArrayBytes": 22944
+    },
+    {
+      "vertices": 792,
+      "triangles": 396,
+      "typedArrayBytes": 27720
+    },
+    {
+      "vertices": 852,
+      "triangles": 1144,
+      "typedArrayBytes": 34128
+    },
+    {
+      "vertices": 1228,
+      "triangles": 744,
+      "typedArrayBytes": 43760
+    },
+    {
+      "vertices": 570,
+      "triangles": 828,
+      "typedArrayBytes": 23208
+    },
+    {
+      "vertices": 476,
+      "triangles": 288,
+      "typedArrayBytes": 16960
+    }
+  ],
+  "generatedTypedArrayBytes": 168720
+}

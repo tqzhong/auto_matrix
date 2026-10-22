@@ -1,0 +1,11 @@
+{
+  "pid": 16110,
+  "port": 5200,
+  "command": [
+    "node",
+    "packages/server/dist/index.js"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/baseline-release",
+  "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/qa-data",
+  "cloudDisabled": true
+}

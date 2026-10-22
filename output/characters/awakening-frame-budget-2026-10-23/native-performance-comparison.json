@@ -1,0 +1,148 @@
+{
+  "device": "Apple M3 / ANGLE Metal",
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "samePage": true,
+  "orderPerState": [
+    "B",
+    "A",
+    "A",
+    "B"
+  ],
+  "warmupSeconds": 3,
+  "sampleSeconds": 15,
+  "gpuQueriesInserted": false,
+  "recording": false,
+  "parallelTestsOrBuilds": false,
+  "rows": [
+    {
+      "file": "native-paused-1.json",
+      "sourceReport": "neo-2026-10-22T20-10-17-314Z.json",
+      "worldRunning": false,
+      "batching": true,
+      "fps": 41.72443211902573,
+      "p95FrameMs": 25.799999237060547,
+      "calls": 444,
+      "triangles": 1074828,
+      "agentCpuMs": 1.6740031706279164,
+      "renderCpuMs": 3.2877192930741743,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-paused-2.json",
+      "sourceReport": "neo-2026-10-22T20-10-49-929Z.json",
+      "worldRunning": false,
+      "batching": false,
+      "fps": 41.39266281670394,
+      "p95FrameMs": 26.199999809265137,
+      "calls": 518,
+      "triangles": 1070424,
+      "agentCpuMs": 1.7357487732277592,
+      "renderCpuMs": 3.642190010267371,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-paused-3.json",
+      "sourceReport": "neo-2026-10-22T20-11-40-461Z.json",
+      "worldRunning": false,
+      "batching": false,
+      "fps": 31.456810199870702,
+      "p95FrameMs": 37.69999980926514,
+      "calls": 518,
+      "triangles": 1070424,
+      "agentCpuMs": 2.2871035924673584,
+      "renderCpuMs": 4.2276955800127025,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-paused-4.json",
+      "sourceReport": "neo-2026-10-22T20-13-06-279Z.json",
+      "worldRunning": false,
+      "batching": true,
+      "fps": 32.197424206472895,
+      "p95FrameMs": 35.19999980926514,
+      "calls": 444,
+      "triangles": 1074828,
+      "agentCpuMs": 2.1921487504785713,
+      "renderCpuMs": 4.153512406940303,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-running-1.json",
+      "sourceReport": "neo-2026-10-22T20-15-29-236Z.json",
+      "worldRunning": true,
+      "batching": true,
+      "fps": 31.207281699063113,
+      "p95FrameMs": 35.39999961853027,
+      "calls": 444,
+      "triangles": 1074828,
+      "agentCpuMs": 5.078891272229681,
+      "renderCpuMs": 3.3270789067119932,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-running-2.json",
+      "sourceReport": "neo-2026-10-22T20-16-03-863Z.json",
+      "worldRunning": true,
+      "batching": false,
+      "fps": 30.927354043705098,
+      "p95FrameMs": 35.89999961853027,
+      "calls": 518,
+      "triangles": 1070424,
+      "agentCpuMs": 4.390107511704968,
+      "renderCpuMs": 3.3176344348538307,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-running-3.json",
+      "sourceReport": "neo-2026-10-22T20-16-53-844Z.json",
+      "worldRunning": true,
+      "batching": false,
+      "fps": 30.763892132068822,
+      "p95FrameMs": 37.19999980926514,
+      "calls": 518,
+      "triangles": 1070424,
+      "agentCpuMs": 4.686580090295701,
+      "renderCpuMs": 3.5893939377425554,
+      "maximumCameraDifference": 0
+    },
+    {
+      "file": "native-running-4.json",
+      "sourceReport": "neo-2026-10-22T20-17-40-117Z.json",
+      "worldRunning": true,
+      "batching": true,
+      "fps": 31.11354440769886,
+      "p95FrameMs": 36.19999980926514,
+      "calls": 444,
+      "triangles": 1074828,
+      "agentCpuMs": 4.4528907820805745,
+      "renderCpuMs": 3.104925071912353,
+      "maximumCameraDifference": 0
+    }
+  ],
+  "summary": {
+    "paused": {
+      "unbatchedMeanFps": 36.424736508287324,
+      "batchedMeanFps": 36.96092816274931,
+      "nominalFpsChangePercent": 1.4720536258100214,
+      "unbatchedCalls": 518,
+      "batchedCalls": 444,
+      "unbatchedTriangles": 1070424,
+      "batchedTriangles": 1074828
+    },
+    "running": {
+      "unbatchedMeanFps": 30.84562308788696,
+      "batchedMeanFps": 31.160413053380985,
+      "nominalFpsChangePercent": 1.0205336575536572,
+      "unbatchedCalls": 518,
+      "batchedCalls": 444,
+      "unbatchedTriangles": 1070424,
+      "batchedTriangles": 1074828
+    }
+  },
+  "conclusion": "74 fewer submissions per frame. Observed FPS differences are small relative to repeated-sample variation; stable improvement and 60fps are not established. Larger bounds render 4404 additional triangles in this view.",
+  "firstPersonPixelScope": "Only qualitative V/mouse observations; no first-person pixel equality claim because the initial camera transition was not proven settled."
+}

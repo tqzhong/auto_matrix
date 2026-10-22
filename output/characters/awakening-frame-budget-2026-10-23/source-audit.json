@@ -1,0 +1,37 @@
+{
+  "baseline": "699e61dfd993fc5cef358253ec91f31a91102e76",
+  "verifiedBaselineFiles": 1163,
+  "packageFiles": 706,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/NebDeckRenderer.ts",
+      "before": "1a2b13ae73fdbaabb46feec0552902ff5f93863f44cc504cc8fbee6f71e2be39",
+      "candidate": "1586f211b4eb374bf26c2cbd26e99ea3f00e30f7def1cdee1c5a78e71c40bb5b"
+    },
+    {
+      "path": "packages/client/src/engine/StaticGeometry.ts",
+      "before": "8fc3ed21b8549497be97080f20bda53a160ae48f886ba010d81b4bcc9c24876b",
+      "candidate": "2afbe06bd90e62fe466d02df86981f29c2dd5fe405eb013bbaeaad2e057096d8"
+    },
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "31045a23d72603f71b9ca7e35e9d5369a5102025c8ccb49ad594704b3807310c",
+      "candidate": "3402e869c6a3d918897bc29210c28d5c27153692e9e187daf335489b52c931b6"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/neb-static-batching.test.mts",
+      "sha256": "db86ee85da3acf67a5e67cca1aa44e27062c2a0b528db67c21e3aaafc5bdeb85"
+    }
+  ],
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false
+}

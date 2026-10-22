@@ -1,0 +1,16 @@
+{
+  "input": "D held for 900ms through native browser input",
+  "before": {
+    "x": 5391.4,
+    "y": -100,
+    "z": 4382
+  },
+  "after": {
+    "x": 5391.4,
+    "y": -100,
+    "z": 4384.466849599857
+  },
+  "horizontalDisplacement": 2.466849599856687,
+  "finalRotation": 0.06386665238935707,
+  "privateStateInjection": false
+}

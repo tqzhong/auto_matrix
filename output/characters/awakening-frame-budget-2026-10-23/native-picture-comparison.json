@@ -1,0 +1,21 @@
+{
+  "imageSize": {
+    "width": 1280,
+    "height": 720
+  },
+  "samePageAndNoise": true,
+  "actualUiRectanglesEqual": true,
+  "maskFullScreenContainers": false,
+  "uiMarginPx": 3,
+  "comparedPixels": 552622,
+  "changedPixels": 1845,
+  "changedPercent": 0.333862929814593,
+  "maxChannelDifference": 9,
+  "meanAbsoluteChannelDifference": 0.003998513752016146,
+  "changedBounds": [
+    128,
+    240,
+    1247,
+    647
+  ]
+}

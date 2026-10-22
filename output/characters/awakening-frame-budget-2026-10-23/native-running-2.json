@@ -1,0 +1,301 @@
+{
+  "occlusionInPlace": true,
+  "shipStaticBatching": false,
+  "camera": {
+    "position": [
+      5372,
+      -97,
+      4400
+    ],
+    "quaternion": [
+      -0.16953341680772155,
+      0.22624033940848048,
+      0.04002141082442768,
+      0.9583694569869478
+    ],
+    "projection": [
+      1.4653625988902637,
+      0,
+      0,
+      0,
+      0,
+      2.605089064693802,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-22T20:16:03.863Z",
+  "scenes": [
+    "film_neb_deck"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 465,
+  "fps": 30.927354043705098,
+  "frameTime": {
+    "mean": 32.33383620812975,
+    "p95": 35.89999961853027
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.2462366001580351,
+      "p95": 0.5
+    },
+    "agents": {
+      "mean": 4.390107511704968,
+      "p95": 6.699999809265137
+    },
+    "city": {
+      "mean": 0.10645160469957578,
+      "p95": 0.20000076293945312
+    },
+    "film": {
+      "mean": 0.4821505392751386,
+      "p95": 0.6999998092651367
+    },
+    "effects": {
+      "mean": 0.06688170689408497,
+      "p95": 0.19999980926513672
+    },
+    "render": {
+      "mean": 3.3176344348538307,
+      "p95": 5
+    },
+    "capture": {
+      "mean": 0.00043010916761172715,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 0.6898924858339371,
+      "p95": 1.0999994277954102
+    },
+    "scene": {
+      "mean": 2.605161275145828,
+      "p95": 3.90000057220459
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.09720432527603641,
+      "p95": 0.19999980926513672
+    },
+    "occlusion.normals": {
+      "mean": 0.47440860091999015,
+      "p95": 0.7000007629394531
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0015053779848160282,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 0.6096774603730889,
+      "p95": 0.9000005722045898
+    },
+    "bloom": {
+      "mean": 0.07591397275206863,
+      "p95": 0.19999980926513672
+    },
+    "output": {
+      "mean": 0.007526877618605091,
+      "p95": 0.09999942779541016
+    },
+    "antialias": {
+      "mean": 0.01010753672610047,
+      "p95": 0.10000038146972656
+    }
+  },
+  "gpuPassMs": {},
+  "gpuTiming": {
+    "mode": "cpu",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 0,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 518,
+    "p95": 518
+  },
+  "triangles": {
+    "mean": 1070424,
+    "p95": 1070424
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 192,
+      "triangles": 417802
+    },
+    "scene": {
+      "calls": 170,
+      "triangles": 326470
+    },
+    "occlusion": {
+      "calls": 138,
+      "triangles": 326134
+    },
+    "postprocessing": {
+      "calls": 18,
+      "triangles": 18
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Patient_body",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 136176
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 62256
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "trinity-logos-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 22128
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 21456
+    },
+    {
+      "name": "neo-teeth-upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 10944
+    },
+    {
+      "name": "neo-teeth-lower",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 10416
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "shoes01",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 9960
+    },
+    {
+      "name": "Anatomical_wrist_skin",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 8940
+    },
+    {
+      "name": "Anatomical_wrist_skin",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 8940
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "Tailored_trousers",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 7878
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 6120
+    },
+    {
+      "name": "high-poly",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 6120
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 30.103480714957676,
+  "objects": 10310,
+  "visibleObjects": 917
+}

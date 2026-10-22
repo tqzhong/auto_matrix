@@ -1,0 +1,124 @@
+{
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "viewScope": "Switching and mouse input work; the medical bed first-person framing is still poor and not accepted.",
+  "performanceComparisonChecked": true,
+  "pictureComparisonChecked": true,
+  "pictureScope": "Third-person same-page comparison; no first-person pixel equality claim.",
+  "realBackendRestart": {
+    "oldPid": 16110,
+    "newPid": 35916,
+    "mainPidUnchanged": true,
+    "simulationPreserved": true,
+    "sandboxPreserved": true,
+    "neoFieldsPreserved": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isAwakened": true,
+      "isInMatrix": true
+    },
+    "memoryFileCount": 7,
+    "memoryHashesPreserved": true,
+    "changedPaths": [],
+    "fullApiBytesEqual": true,
+    "beforeSha256": "560997c667d6eeba07b4357505916c8afef4f2860b3cf60908ff094e54f1dad6",
+    "afterSha256": "560997c667d6eeba07b4357505916c8afef4f2860b3cf60908ff094e54f1dad6"
+  },
+  "productionScriptsObserved": [
+    "http://127.0.0.1:5200/assets/index-D3Lj55YI.js"
+  ],
+  "normalInputCompleted": [
+    "start muscle treatment",
+    "wake in cabin",
+    "rise and check interface",
+    "D movement"
+  ],
+  "walk": {
+    "input": "D held for 900ms through native browser input",
+    "before": {
+      "x": 5391.4,
+      "y": -100,
+      "z": 4382
+    },
+    "after": {
+      "x": 5391.4,
+      "y": -100,
+      "z": 4384.466849599857
+    },
+    "horizontalDisplacement": 2.466849599856687,
+    "finalRotation": 0.06386665238935707,
+    "privateStateInjection": false
+  },
+  "finalScene": "m1_cabin",
+  "finalStep": 1,
+  "finalTick": 6849,
+  "finalRunning": false,
+  "neoHealth": 100,
+  "consoleCounts": {
+    "native-profile-console.json": 0,
+    "native-production-console.json": 0,
+    "native-continuation-console.json": 0
+  },
+  "recordings": [
+    {
+      "file": "neo-2026-10-22T20-21-10-951Z.webm",
+      "duration": 103.077,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1480,
+      "rendering": {
+        "frames": 2172,
+        "fps": 21.077117395990786,
+        "p95FrameMs": 170.10000038146973,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    }
+  ],
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "stoppedProcesses": [
+    {
+      "pid": 25932,
+      "port": 5201,
+      "command": [
+        "node",
+        "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/candidate-release/node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5201",
+        "--strictPort"
+      ],
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/candidate-release/packages/client",
+      "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/qa-data",
+      "cloudDisabled": true
+    },
+    {
+      "pid": 35916,
+      "port": 5200,
+      "command": [
+        "node",
+        "packages/server/dist/index.js"
+      ],
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/candidate-release",
+      "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/awakening-frame-budget-2026-10-23/qa-data",
+      "cloudDisabled": true
+    }
+  ],
+  "mainPid": 82166,
+  "renderReconnected": false,
+  "filmQualityAccepted": false,
+  "stable60fpsAccepted": false,
+  "remainingVisualIssues": [
+    "medical first-person framing faces the wall and crops the body",
+    "character likeness, hands, clothing and bed contacts are still rough",
+    "large dynamic slow frames remain; reducing draw count did not establish stable FPS gains",
+    "the cabin escort to core and full chapter were not completed in this unit"
+  ]
+}

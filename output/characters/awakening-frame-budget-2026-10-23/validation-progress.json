@@ -1,0 +1,104 @@
+{
+  "running": null,
+  "completed": [
+    {
+      "log": "baseline-final-reproduction.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/neb-static-batching.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 1,
+      "elapsedSeconds": 0.32447462528944016,
+      "tests": 2,
+      "pass": 0,
+      "fail": 2,
+      "skipped": 0,
+      "expectedFailure": true
+    },
+    {
+      "log": "shared-build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.8231982085853815
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/static-geometry.test.mts",
+        "tests/neb-static-batching.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/neb-subjects.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/download-setup.test.mts",
+        "tests/crew-meal-renderer.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/console-pour-model.test.mts",
+        "tests/pod-renderer.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 25.44612191710621,
+      "tests": 62,
+      "pass": 62,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.13655604235828,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.956137583591044
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 18.158129875548184
+    }
+  ],
+  "allGatesPassed": true
+}
