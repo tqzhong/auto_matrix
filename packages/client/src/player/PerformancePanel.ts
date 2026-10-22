@@ -1,5 +1,5 @@
 import type { Engine, FrameProfile } from '../engine/Engine.js';
-import type { Object3D } from 'three';
+import { Frustum, Matrix4, PointLight, Sphere, Vector3, type Object3D } from 'three';
 import { GpuTimer } from './GpuTimer.js';
 
 // Opt-in development measurement. It observes actual frames without creating a
@@ -9,6 +9,7 @@ export class PerformancePanel {
   private frames: FrameProfile[] = [];
   private passes: Record<string, number[]> = {};
   private startAt = 0;
+  private fpsBeforeSampling = 0;
   private restoreAutoReset = true;
   private restoreMatrices?: Engine['scene']['updateMatrixWorld'];
   private restoreDraw?: Engine['renderer']['renderBufferDirect'];
@@ -16,6 +17,8 @@ export class PerformancePanel {
   private meshTotals = new Map<Object3D, { calls: number; triangles: number }>();
   private gpuTimer: GpuTimer;
   private restorePost?: Engine['postProcessing']['render'];
+  private browserObservers: PerformanceObserver[] = [];
+  private browserEntries: PerformanceEntry[] = [];
 
   constructor(private engine: Engine) {
     this.panel.id = 'performance-panel';
@@ -41,6 +44,9 @@ export class PerformancePanel {
       this.engine.postProcessing.occlusionInPlace = !copy.checked;
       this.status('可以测量当前场景。');
     };
+    const live = document.createElement('p'); this.panel.appendChild(live);
+    const fpsTimer = window.setInterval(() => { live.textContent = `当前 ${engine.fps.toFixed(1)} fps · ${document.visibilityState}`; }, 500);
+    window.addEventListener('beforeunload', () => window.clearInterval(fpsTimer), { once: true });
     document.body.appendChild(this.panel);
     const shipLabel = document.createElement('label'); shipLabel.style.cssText = 'display:block;margin-top:6px';
     shipLabel.innerHTML = '<input type="checkbox" data-ship-static> 对照：飞船固定结构逐件绘制';
@@ -61,22 +67,32 @@ export class PerformancePanel {
     const support = document.createElement('p'); support.textContent = this.gpuTimer.supported ? `GPU计时：可用，${this.gpuTimer.counterBits}位计数器` : 'GPU计时：此浏览器未提供扩展';
     this.panel.appendChild(support);
     const mode = document.createElement('select'); mode.setAttribute('aria-label', 'GPU计时范围');
-    mode.innerHTML = '<option value="cpu">CPU / FPS（不插入GPU查询）</option><option value="frame">整段渲染</option><option value="passes">分阶段（不可相加）</option><option value="empty">空区间校准</option><option value="no-occlusion">对照：跳过接触阴影</option><option value="no-render">对照：冻结3D画面</option>';
+    mode.innerHTML = '<option value="cpu">CPU / FPS（不插入GPU查询）</option><option value="cpu-no-occlusion">CPU对照：跳过接触阴影</option><option value="cpu-no-shadows">CPU对照：跳过动态阴影</option><option value="cpu-no-render">CPU对照：冻结3D画面</option><option value="frame">整段渲染</option><option value="passes">分阶段（不可相加）</option><option value="empty">空区间校准</option><option value="no-occlusion">对照：跳过接触阴影</option><option value="no-render">对照：冻结3D画面</option>';
     this.panel.appendChild(mode);
   }
 
   private status(text: string): void { this.panel.querySelector('[role="status"]')!.textContent = text; }
   private start(): void {
-    this.frames = []; this.passes = {}; this.drawTotals = {}; this.meshTotals.clear(); this.startAt = performance.now();
+    this.frames = []; this.passes = {}; this.drawTotals = {}; this.meshTotals.clear(); this.startAt = performance.now(); this.fpsBeforeSampling = this.engine.fps;
+    this.browserEntries = [];
+    for (const type of ['longtask', 'long-animation-frame']) {
+      if (!PerformanceObserver.supportedEntryTypes.includes(type)) continue;
+      const observer = new PerformanceObserver(list => { this.browserEntries.push(...list.getEntries()); });
+      observer.observe({ type }); this.browserObservers.push(observer);
+    }
     this.gpuTimer.dispose(); this.gpuTimer = new GpuTimer(this.engine.renderer.getContext() as WebGL2RenderingContext);
     const post = this.engine.postProcessing, render = post.render; this.restorePost = render;
     const gpuMode = this.panel.querySelector('select')!.value;
+    const gpuQueries = !gpuMode.startsWith('cpu'), noRender = gpuMode === 'no-render' || gpuMode === 'cpu-no-render';
+    const noOcclusion = gpuMode === 'no-occlusion' || gpuMode === 'cpu-no-occlusion';
     let gpuFrame = false;
     post.render = (...args) => {
-      if (gpuMode !== 'cpu') { this.gpuTimer.poll(); gpuFrame = performance.now() - this.startAt >= 3000 && this.gpuTimer.begin(); }
+      if (gpuQueries) { this.gpuTimer.poll(); gpuFrame = performance.now() - this.startAt >= 3000 && this.gpuTimer.begin(); }
       if (gpuMode === 'empty') this.gpuTimer.end('empty');
-      try { if (gpuMode !== 'no-render') render.apply(post, gpuMode === 'no-occlusion' ? [false] : args); }
-      finally { this.gpuTimer.end(gpuMode === 'passes' ? 'unfinished' : gpuMode === 'no-render' ? 'empty-without-rendering' : 'frame'); gpuFrame = false; }
+      const shadows = this.engine.renderer.shadowMap.enabled;
+      if (gpuMode === 'cpu-no-shadows') this.engine.renderer.shadowMap.enabled = false;
+      try { if (!noRender) render.apply(post, noOcclusion ? [false] : args); }
+      finally { this.engine.renderer.shadowMap.enabled = shadows; this.gpuTimer.end(gpuMode === 'passes' ? 'unfinished' : noRender ? 'empty-without-rendering' : 'frame'); gpuFrame = false; }
     };
     this.restoreAutoReset = this.engine.renderer.info.autoReset; this.engine.renderer.info.autoReset = false;
     let frameDraws: typeof this.drawTotals = {};
@@ -128,6 +144,8 @@ export class PerformancePanel {
   }
 
   private async finish(): Promise<void> {
+    for (const observer of this.browserObservers) { this.browserEntries.push(...observer.takeRecords()); observer.disconnect(); }
+    this.browserObservers = [];
     this.engine.onProfile = undefined; this.engine.postProcessing.onMeasure = undefined;
     this.engine.postProcessing.render = this.restorePost!; this.gpuTimer.poll();
     this.engine.renderer.info.autoReset = this.restoreAutoReset;
@@ -149,7 +167,18 @@ export class PerformancePanel {
     let objects = 0; let visibleObjects = 0;
     this.engine.scene.traverse(() => objects++); this.engine.scene.traverseVisible(() => visibleObjects++);
     const podTowers = this.engine.scene.getObjectByName('pod-distant-towers');
+    const lightFrustum = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(this.engine.camera.projectionMatrix, this.engine.camera.matrixWorldInverse));
+    const lights: { name: string; type: string; intensity: number; distance: number; intersectsView: boolean; position: number[] }[] = [];
+    this.engine.scene.traverseVisible(object => {
+      if (object instanceof PointLight) {
+        const position = object.getWorldPosition(new Vector3());
+        lights.push({ name: object.name, type: object.type, intensity: object.intensity, distance: object.distance, intersectsView: !object.distance || lightFrustum.intersectsSphere(new Sphere(position, object.distance)), position: position.toArray() });
+      }
+    });
     const report = {
+      browserMainThread: { supported: PerformanceObserver.supportedEntryTypes.filter(type => ['longtask', 'long-animation-frame'].includes(type)),
+        entries: this.browserEntries.filter(entry => entry.startTime >= this.startAt + 3000).map(entry => entry.toJSON()) },
+      lights,
       occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
       shipStaticBatching: this.engine.scene.getObjectByName('neb-interior-deck')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
       podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
@@ -168,11 +197,12 @@ export class PerformancePanel {
         calls: total.calls / this.frames.length, triangles: total.triangles / this.frames.length,
       })),
       gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string : 'unavailable',
-      recordingActive: Boolean(this.engine.onRendered), engineFpsDisplay: this.engine.fps,
+      recordingActive: Boolean(this.engine.onRendered), engineFpsDisplay: this.engine.fps, fpsBeforeSampling: this.fpsBeforeSampling,
+      pageVisibility: document.visibilityState, contextAntialias: gl.getContextAttributes()?.antialias, profilingDrawInstrumentation: true,
       objects, visibleObjects,
     };
     this.meshTotals.clear();
-    this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\nGPU ms：${Object.entries(gpuPassMs).map(([name, time]) => `${name} ${time.mean.toFixed(2)}`).join(' · ') || (gpuTiming.mode === 'cpu' ? '未采样' : '不可用')}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
+    this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\nGPU ms：${Object.entries(gpuPassMs).map(([name, time]) => `${name} ${time.mean.toFixed(2)}`).join(' · ') || (gpuTiming.mode.startsWith('cpu') ? '未采样' : '不可用')}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
     try {
       const filename = `neo-${report.measuredAt.replace(/[:.]/g, '-')}.json`;
       const response = await fetch(`/__recording/${filename}`, { method: 'POST', body: JSON.stringify(report, null, 2) });

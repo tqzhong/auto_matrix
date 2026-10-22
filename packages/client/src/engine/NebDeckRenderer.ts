@@ -552,8 +552,8 @@ export class NebDeckRenderer {
     const consoleActive = journey?.scene === 'm1_cypher_console' && !journey.visiting || relayActive;
     this.operatorCables.forEach(cable => { cable.visible = !consoleActive; });
     const mounted = Boolean(recovery && active && t >= 2.1 && t < 7.4);
-    this.root.updateWorldMatrix(true, true); recoverySubject?.updateWorldMatrix(true, true);
-    if (skin && this.skinContacts.size === 0 && t >= 2.1 && t < 7) {
+    if (mounted) { this.root.updateWorldMatrix(true, false); recoverySubject?.updateWorldMatrix(true, true); }
+    if (mounted && skin && this.skinContacts.size === 0 && t < 7) {
       // First person removes the head triangles from the visible skin. Contact
       // sampling still uses the complete delivered geometry without changing that view.
       const fullHead = head?.userData.contactSkinGeometry ? head.clone() : head;
@@ -573,6 +573,8 @@ export class NebDeckRenderer {
       });
     }
     this.needles.forEach((needle, i) => {
+      for (const part of [needle.tip, needle.shaft, needle.hub, needle.signal]) part.visible = mounted;
+      if (!mounted) return;
       const bone = recoverySubject?.getObjectByName(needle.bone);
       const fallback = new THREE.Vector3(i % 2 ? .32 : -.32, 1.32, needle.port.z);
       const target = bone ? this.therapyRig.worldToLocal(bone.localToWorld((this.skinContacts.get(i) ?? needle.offset).clone())) : fallback;
@@ -582,8 +584,6 @@ export class NebDeckRenderer {
       needle.tip.position.copy(tip); needle.shaft.position.copy(tip).y += .12;
       needle.hub.position.copy(tip).y += .28;
       needle.signal.position.copy(needle.hub.position).add(new THREE.Vector3(0, -.005, .05));
-      for (const part of [needle.tip, needle.shaft, needle.hub, needle.signal]) part.visible = mounted;
-      if (!mounted) return;
       const start = needle.hub.position.clone().add(new THREE.Vector3(0, .055, 0)), side = Math.sign(needle.port.x);
       const curve = new THREE.CubicBezierCurve3(start, start.clone().add(new THREE.Vector3(side * .32, -.12, 0)),
         new THREE.Vector3(needle.port.x - side * .3, needle.port.y - .32, needle.port.z), needle.port);

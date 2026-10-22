@@ -38,14 +38,20 @@ test('the real ship shows Trinity clothed, then restores her Matrix leather rath
   const h = await models(t), rig = h.characters.create(h.world.agents.get('trinity')!);
   await new Promise(resolve => setImmediate(resolve)); assert.ok(rig.hero);
   const jacket = rig.hero.wardrobe.find(part => /Fitted.leather.jacket/i.test(part.mesh.name))!;
+  const knit = ['trinity-logos-sweater', 'trinity-logos-collar'].map(name => rig.hero!.wardrobe.find(part => part.mesh.name === name)!);
+  assert.ok(knit.every(part => part?.mesh.userData.logosCostume && part.mesh.geometry.attributes.position.count > 100), 'check the actual delivered knit upper and collar');
   const matrix = (realWorld: boolean) => h.characters.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld }, 0);
   matrix(false); const original = { color: jacket.mesh.material.color.clone(), roughness: jacket.mesh.material.roughness, map: jacket.mesh.material.map };
   matrix(true);
-  assert.equal(jacket.mesh.visible, true, 'her only upper garment must remain visible in the real world');
-  assert.ok(jacket.mesh.material.roughness > .9, 'the real-world garment must read as cloth');
-  assert.ok(jacket.mesh.material.bumpMap?.name.includes('knit'));
+  assert.equal(jacket.mesh.visible, false, 'the Matrix jacket cannot overlap the real-world knit upper');
+  for (const part of knit) {
+    assert.equal(part.mesh.visible, true, 'her real-world upper and collar must remain visible');
+    assert.ok(part.mesh.material.roughness > .9, 'the real-world garment must read as cloth');
+    assert.ok(part.mesh.material.bumpMap?.name.includes('knit'));
+  }
   assert.equal(rig.hero.glasses.visible, false);
   matrix(false); assert.equal(jacket.mesh.visible, true);
+  assert.ok(knit.every(part => !part.mesh.visible), 'returning to the Matrix hides both real-world garments');
   assert.equal(jacket.mesh.material.color.getHex(), original.color.getHex());
   assert.equal(jacket.mesh.material.roughness, original.roughness);
   assert.equal(jacket.mesh.material.map, original.map);
