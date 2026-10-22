@@ -392,9 +392,12 @@ export class PlayerControls {
       : this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
     const podEye = this.firstPerson && (this.motion.performance === 'float' || this.motion.performance === 'lift');
     const podHead = this.firstPerson && this.motion.performance === 'pod' && this.authoritative?.currentLocation === 'film_power_plant_pods';
+    const medicalHead = this.firstPerson && this.id === 'neo' && this.authoritative?.currentLocation === 'film_neb_deck'
+      && (this.motion.performance === 'recover' || this.motion.cabin?.kind === 'wake');
+    const supportedHead = podHead || medicalHead;
     const podElevation = podEye ? 1.42 * (1 - podRescuePose(this.motion.podRescue ?? 0).board) : 0;
     const hammerGunner = this.motion.hammerPilot?.role === 'ghost' && this.motion.hammerPilot.flight.gunnery;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, podHead ? -1.45 : podEye ? podElevation - 1.48 : hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, podHead ? 1.45 : podEye ? podElevation + 1.1 : this.firstPerson && this.motion.performance === 'fall' ? 2.6 : this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
+    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, supportedHead ? -1.45 : podEye ? podElevation - 1.48 : hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, medicalHead ? 1.85 : podHead ? 1.45 : podEye ? podElevation + 1.1 : this.firstPerson && this.motion.performance === 'fall' ? 2.6 : this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
     this.ceasefireAim = this.reloadAim = false;
     if (this.motion.dockGunnery) Object.assign(this, dockGunneryAngles(this.yaw, this.pitch));
     if (hammerGunner) Object.assign(this, hammerGunneryAngles(this.yaw, this.pitch));
@@ -3332,6 +3335,29 @@ export class PlayerControls {
     const forward = rotation ? new THREE.Vector3(Math.sin(yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(yaw) * Math.cos(this.pitch)).applyQuaternion(rotation)
       : new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch - 1.47), -Math.sin(this.pitch - 1.47), Math.cos(this.yaw) * Math.cos(this.pitch - 1.47));
     this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
+  }
+
+  syncRecoveryCamera(group: THREE.Group): void {
+    const state = this.authoritative;
+    if (!this.firstPerson || this.id !== 'neo' || state?.currentLocation !== 'film_neb_deck'
+      || this.motion.performance !== 'recover' && this.motion.cabin?.kind !== 'wake') return;
+    const head = group.getObjectByName('head'); if (!head) return;
+    // Sample after the current mattress/bed-exit pose. Both position and the
+    // cranial frame follow the actor; mouse angles remain relative to that frame.
+    head.updateWorldMatrix(true, false);
+    const marker = (head.userData.patientEye ?? head.userData.cameraEye) as THREE.Vector3 | undefined;
+    const eye = head.localToWorld(marker?.clone() ?? new THREE.Vector3(0, .1, .32));
+    const rotation = head.getWorldQuaternion(new THREE.Quaternion()), yaw = this.yaw - state.rotation;
+    const sit = recoveryBodyPose(this.motion.recovery ?? 0).sit;
+    this.pitch = THREE.MathUtils.clamp(this.pitch, THREE.MathUtils.lerp(-1.45, -.4, sit), THREE.MathUtils.lerp(1.85, 1.1, sit));
+    this.camera.up.set(0, 1, 0).applyQuaternion(rotation);
+    this.camera.position.copy(eye);
+    // Keep the cranial basis continuous when looking past 90 degrees toward the
+    // chest; lookAt with a fixed up vector would roll over at that crossing.
+    this.camera.quaternion.copy(rotation)
+      .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(this.pitch, yaw, 0, 'YXZ')))
+      .multiply(new THREE.Quaternion(0, 1, 0, 0));
+    this.camera.near = .06; this.camera.updateProjectionMatrix();
   }
 
   syncTrackingCamera(group: THREE.Group): void {
