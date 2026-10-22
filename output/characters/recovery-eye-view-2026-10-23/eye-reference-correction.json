@@ -1,0 +1,16 @@
+{
+  "initialEyeReference": "cameraEye",
+  "adoptedEyeReference": "patientEye with cameraEye fallback, preserving the existing exposed-face calibration",
+  "initialOffsetNotAnOldVersionDefect": 0.09429151143782229,
+  "nativeFinding": "The anatomical marker prototype exposed the lower neck opening. The registered marker improves framing but does not close that opening.",
+  "fixtureCorrections": [
+    "Use an awakened real-world actor, as in the actual save.",
+    "Refresh attached skinned bind inverses with updateMatrixWorld, as the renderer does before drawing.",
+    "A temporary h.group typo was a test fixture error, corrected to the local group variable."
+  ],
+  "validOpeningReproduction": "eye-original-neck-rendered-fixture.log: 8 pass, 1 fail without the closure",
+  "validOpeningCorrection": "eye-final-focused.log: 9 pass, 0 fail; 12 actual skin rays over 3 medical poses",
+  "rejectedClosureMaterial": "Body atlas applied to head UVs, visible brown mismatch; use the original neck atlas and patient skin parameters.",
+  "nativeCeilingInterpretation": "The dark default view shows overhead ribs and lights; the previous wall label was too specific.",
+  "unpublishedAuthoringFailure": "A relative-path module write failed before tests; restored using the absolute candidate path. No live source was changed."
+}

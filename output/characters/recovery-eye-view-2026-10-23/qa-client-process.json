@@ -1,0 +1,16 @@
+{
+  "pid": 74762,
+  "port": 5201,
+  "command": [
+    "node",
+    "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/candidate-release/node_modules/vite/bin/vite.js",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "5201",
+    "--strictPort"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/candidate-release/packages/client",
+  "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/qa-data",
+  "cloudDisabled": true
+}

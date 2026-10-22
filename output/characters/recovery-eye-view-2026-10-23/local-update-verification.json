@@ -1,0 +1,31 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-DusAHr46.js",
+  "bundleBytes": 3751415,
+  "servedBundleSha256": "e5dd7eb5bde20da95e83c849f170fee0ee91cbf2d45b3c224812e074e09d607d",
+  "backendDistFilesUnchanged": 280,
+  "serverRestartedForPublication": false,
+  "serverPid": 82166,
+  "mainRelaunchedEarlierInUnit": false,
+  "fullWorldSnapshotPreservedAcrossPublication": true,
+  "fullWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "memoryFilesPreservedAcrossPublication": 85,
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-D3Lj55YI.js",
+  "livePackageFilesMatchCandidate": 707,
+  "ownedSourceAndTestFilesCopied": 6,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "characterAssetsChanged": false,
+  "nativeReloadPending": false,
+  "nativeScriptsVerified": true,
+  "nativeWarningsErrors": 0,
+  "fullWorldPreservedAfterNativeReload": true,
+  "memoryFilesPreservedAfterNativeReload": 85,
+  "nativeViewport": [
+    432,
+    670
+  ]
+}

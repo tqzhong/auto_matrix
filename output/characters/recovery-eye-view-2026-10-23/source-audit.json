@@ -1,0 +1,45 @@
+{
+  "baseline": "bc0a6769b39afe43cfd2a6960a1a2b926f854435",
+  "verifiedBaselineFiles": 1164,
+  "packageFiles": 706,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "32c0cc003fd31a03e31ad5c714b775f442a3a6245de2dfd06532030f048c57f1",
+      "candidate": "cd96bb91f3ba3e3e37caddc73c5ebe1df107dcdea6a3e0f49ca7e257e04cfba3"
+    },
+    {
+      "path": "packages/client/src/engine/Engine.ts",
+      "before": "cb52efdf494664a403dfcde14a1c51e138873f01e4c07f4cc2baf7551a1e5bb6",
+      "candidate": "dd301eaa591adabfe82f86435b7303a9f2efd66cd69e85a59ffd54dd9ada1a00"
+    },
+    {
+      "path": "packages/client/src/player/PlayerControls.ts",
+      "before": "cc7411916d8c8918854ef63ac0dbabbf09ed62791903aa9ef122e39ff1aaf396",
+      "candidate": "94b02a8863f4740b134e1fb83615b3ff11eff8399f3a5f1d2577b91742598d45"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/helpers/recovery-view.mts",
+      "sha256": "76e5e672d2d0852f8f85d2e26ef820d26a1da211969b1b40a572ff956933e44b"
+    },
+    {
+      "path": "tests/recovery-eye-view.test.mts",
+      "sha256": "a1fe6a12a161eb3dc2469af3eeee62abb764c900ad07787164a68917c5636924"
+    },
+    {
+      "path": "packages/client/src/agents/PatientNeckView.ts",
+      "sha256": "18ff8fe6ecd2c38efd42408abb1bf2fde7c8002b9ee71b4c0f248fa2cb03ede8"
+    }
+  ],
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false
+}

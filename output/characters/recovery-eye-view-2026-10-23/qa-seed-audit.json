@@ -1,0 +1,20 @@
+{
+  "source": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/patient-skin-continuity-2026-10-23/qa-data",
+  "version": 1,
+  "tick": 6093,
+  "scene": "m1_recovery",
+  "step": 0,
+  "running": false,
+  "memoryFiles": 7,
+  "hashes": {
+    "world.json": "4e13ac6915b5ae8d1b9a25ef06e4f01826117cecf2fd0509de7cc6e2010bc154",
+    "memories/sparks.json": "54601f5d2417260f5db5bd61d98fba8f2c185f065dd7389e98611372de2fe395",
+    "memories/cas.json": "23d76d823090b6110eb86dcf60da1f62438d72de7f7f9f23fb15188866e027d3",
+    "memories/citizen_8.json": "8c454cf2343656cea17c4fca3e9be8e5e296f9717cde9df827c643e150ce4a02",
+    "memories/mauser.json": "2ac7e47042ae2652069eadc6a11bd5292c68358aa86060029e3ba806622ee806",
+    "memories/binary.json": "8c8b0362b21d89163f1c3cfb522c5f03d5e850031bdba1b305c4b760aa628040",
+    "memories/vector.json": "0036aae19a71a92f8243f696f487c75dbb62db340a03b129311701200b8bdda4",
+    "memories/ak.json": "b8f23ebfba06fd32d47f9396654dd2596f3fb8f9daae55146362c4a5b1b52440"
+  },
+  "stateEdited": false
+}

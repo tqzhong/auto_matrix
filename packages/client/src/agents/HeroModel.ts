@@ -42,6 +42,7 @@ import { MealPerformance } from './MealPerformance.js';
 import { MouseAppearance } from './MouseAppearance.js';
 import { crewMealAge } from '@auto_matrix/shared';
 import { SkinContinuity } from './SkinContinuity.js';
+import { patientNeckView } from './PatientNeckView.js';
 
 export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -56,6 +57,7 @@ export interface HeroRig {
   glasses: THREE.Group;
   silver: { value: number };
   trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry; firstPerson: THREE.BufferGeometry; patientFirstPerson: THREE.BufferGeometry };
+  patientNeck?: THREE.SkinnedMesh;
   wardrobe: { mesh: THREE.Mesh; color: THREE.Color; map: THREE.Texture | null; bumpMap: THREE.Texture | null; bumpScale: number;
     roughness: number; metalness: number; side: THREE.Side; emissive: THREE.Color; emissiveIntensity: number; outer: boolean; hair: boolean; cloth: boolean }[];
   officeRole?: 'rhineheart' | 'courier' | 'police';
@@ -510,6 +512,10 @@ export class HeroModels {
     if (!support && !guard) this.skinContinuity.set(rig, wardrobe
       .filter(part => part.mesh instanceof THREE.SkinnedMesh && /^(Wrist skin|Office skin|Tracking skin)$/.test((part.mesh.material as THREE.Material).name))
       .map(part => new SkinContinuity(rig, part.mesh as THREE.SkinnedMesh)));
+    if (id === 'neo' && !support) {
+      rig.patientNeck = patientNeckView(rig);
+      if (rig.patientNeck) { root.add(rig.patientNeck); this.geometries.add(rig.patientNeck.geometry); this.materials.add(rig.patientNeck.material as THREE.Material); }
+    }
     enableSkinnedCulling(root);
     return rig;
   }
@@ -1056,6 +1062,7 @@ export class HeroModels {
     if (rig.trackingSkin) {
       const skin = rig.trackingSkin; skin.mesh.geometry = interactionView ? patient ? skin.patientFirstPerson : skin.firstPerson : trackingShirt ? skin.covered : skin.original;
     }
+    if (rig.patientNeck) rig.patientNeck.visible = interactionView && patient && (input.performance === 'recover' || input.cabin?.kind === 'wake');
     const completePatientBody = rig.wardrobe.some(part => part.mesh.userData.patientBody);
     const farewellAppearance = this.farewellAppearances.get(rig);
     const ambushWardrobe = this.ambushWardrobes.get(rig);

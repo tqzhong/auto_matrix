@@ -1,0 +1,26 @@
+{
+  "initialRelated": {
+    "tests": 262,
+    "pass": 261,
+    "fail": 1
+  },
+  "cause": "The recovery pitch cap at 1.45 radians prevented looking below the body horizon in the existing camera behavior regression.",
+  "rangeOnlyResult": {
+    "tests": 7,
+    "pass": 6,
+    "fail": 1,
+    "maximumTurnRadians": 3.1415926535897687
+  },
+  "followup": "Compose cranial orientation, mouse yaw/pitch and camera forward basis directly to remove the lookAt singularity at 90 degrees.",
+  "finalFocused": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "maximumTurnRadians": 0.020000000000025088
+  },
+  "rawLogs": [
+    "eye-before-body-range.log",
+    "eye-expanded-range.log",
+    "eye-continuous-range.log"
+  ]
+}

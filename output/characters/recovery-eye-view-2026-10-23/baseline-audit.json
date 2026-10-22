@@ -1,0 +1,17 @@
+{
+  "baseline": "bc0a6769b39afe43cfd2a6960a1a2b926f854435",
+  "verifiedSourceFiles": 1164,
+  "packageFiles": 706,
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "mainPid": 82166,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "previousGoalTurn": "progress",
+  "previousEvidence": "bc0a676 committed and pushed fixed deck batching, 62/75 gates and native restart/play; actual FPS and image limits retained",
+  "nextAction": "Reproduce medical/cabin eye and direction errors with the delivered actor before changing camera code",
+  "renderReconnected": false
+}

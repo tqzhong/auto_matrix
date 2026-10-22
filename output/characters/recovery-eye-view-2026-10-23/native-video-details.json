@@ -1,0 +1,49 @@
+{
+  "source": "neo-2026-10-22T21-37-25-505Z.webm",
+  "sourceProbe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "vp9",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "0/0"
+      },
+      {
+        "codec_name": "opus",
+        "avg_frame_rate": "0/0"
+      }
+    ],
+    "format": {}
+  },
+  "sourceDurationFromPacketTimestamps": 166.32,
+  "sourceHeaderDurationAvailable": false,
+  "output": "native-medical-cabin.mp4",
+  "outputProbe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "nb_frames": "4980"
+      },
+      {
+        "codec_name": "aac",
+        "avg_frame_rate": "0/0",
+        "nb_frames": "7798"
+      }
+    ],
+    "format": {
+      "duration": "166.320000"
+    }
+  },
+  "outputBytes": 7748599,
+  "timeScaleChanged": false,
+  "encodingFpsIsNotGameFps": true,
+  "recordedRenderFps": 12.380410344522316,
+  "recordingIncludesCaptureOverhead": true
+}

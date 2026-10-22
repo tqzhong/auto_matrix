@@ -1,0 +1,45 @@
+{
+  "changedFile": "tests/recovery-eye-view.test.mts",
+  "reason": "The old release lacks the new post-pose method. Its optional hook must be absent without turning baseline behavior comparisons into API TypeErrors.",
+  "runtimeSourceChanged": false,
+  "beforeSha256": "9c0a1201991b3dba6016bc9a05978d781057ab11ac8c5dbb7b8a94516b2dce91",
+  "afterSha256": "a1fe6a12a161eb3dc2469af3eeee62abb764c900ad07787164a68917c5636924",
+  "finalFocused": [
+    {
+      "log": "baseline-final-corrected-fixture.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/recovery-eye-view.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 1,
+      "elapsedSeconds": 10.062043707817793,
+      "tests": 11,
+      "pass": 4,
+      "fail": 7,
+      "skipped": 0,
+      "expectedFailure": true
+    },
+    {
+      "log": "candidate-final-corrected-fixture.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/recovery-eye-view.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.197629292495549,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    }
+  ],
+  "coverage": "The full 267 cases passed on the exact final runtime; the only subsequent change was an optional test hook, and all final 11 changed-file cases were rerun. Existing 256 cases, deployment, types and production build were not rerun because their inputs and runtime code did not change."
+}

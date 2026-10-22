@@ -1,0 +1,137 @@
+{
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "bedObservationChecked": true,
+  "cabinTransitionChecked": true,
+  "viewScope": "Real V and mouse drags on the final production build; low gaze kept through native G therapy, cabin sit/inspection and release. Offline 121-frame high/low exits also checked.",
+  "realBackendRestart": {
+    "oldPid": 74759,
+    "newPid": 96697,
+    "mainPidUnchanged": true,
+    "simulationPreserved": true,
+    "sandboxPreserved": true,
+    "neoFieldsPreserved": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isAwakened": true,
+      "isInMatrix": true
+    },
+    "memoryFileCount": 7,
+    "memoryHashesPreserved": true,
+    "changedPaths": [],
+    "fullApiBytesEqual": true,
+    "beforeSha256": "dc626e6de39f619fff22d80164d5f945463c442af6a2971f409a5bd92328bfc4",
+    "afterSha256": "dc626e6de39f619fff22d80164d5f945463c442af6a2971f409a5bd92328bfc4"
+  },
+  "productionScripts": [
+    "http://127.0.0.1:5200/assets/index-DusAHr46.js"
+  ],
+  "normalInputCompleted": [
+    "start muscle treatment",
+    "wake in cabin",
+    "rise and check interface",
+    "D movement",
+    "raise gaze and turn",
+    "V third person"
+  ],
+  "walk": {
+    "input": "D held for 900ms through native browser input",
+    "before": {
+      "x": 5391.4,
+      "y": -100,
+      "z": 4382
+    },
+    "after": {
+      "x": 5391.4,
+      "y": -100,
+      "z": 4385.123620980125
+    },
+    "horizontalDisplacement": 3.1236209801254518,
+    "finalRotation": 0.017177234390438768,
+    "privateStateInjection": false
+  },
+  "finalScene": "m1_cabin",
+  "finalStep": 1,
+  "finalTick": 6308,
+  "finalRunning": false,
+  "neoHealth": 100,
+  "consoleCounts": {
+    "native-production-console.json": 0,
+    "native-continuation-console.json": 0,
+    "native-initial-console.json": 0,
+    "native-closure-initial-console.json": 0,
+    "native-marker-console.json": 0
+  },
+  "recordings": [
+    {
+      "file": "neo-2026-10-22T21-37-25-505Z.webm",
+      "duration": 166.47319999980925,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1666,
+      "rendering": {
+        "frames": 2061,
+        "fps": 12.380410344522316,
+        "p95FrameMs": 254.69999980926514,
+        "includesRecordingOverhead": true
+      },
+      "markers": [
+        {
+          "seconds": 24.433099999427796,
+          "title": "\u75c5\u5e8a\u89c2\u5bdf"
+        },
+        {
+          "seconds": 83.94489999961853,
+          "title": "\u8d77\u8eab\u4e0e\u884c\u8d70\u4ea4\u63a5"
+        }
+      ]
+    }
+  ],
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "stoppedProcesses": [
+    {
+      "pid": 74762,
+      "port": 5201,
+      "command": [
+        "node",
+        "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/candidate-release/node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5201",
+        "--strictPort"
+      ],
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/candidate-release/packages/client",
+      "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/qa-data",
+      "cloudDisabled": true
+    },
+    {
+      "pid": 96697,
+      "port": 5200,
+      "command": [
+        "node",
+        "packages/server/dist/index.js"
+      ],
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/candidate-release",
+      "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/qa-data",
+      "cloudDisabled": true
+    }
+  ],
+  "mainPid": 82166,
+  "renderReconnected": false,
+  "filmQualityAccepted": false,
+  "stable60fpsAccepted": false,
+  "remainingVisualIssues": [
+    "Neck closure still shows a visible tone and surface boundary under extreme downward gaze; character and skin fidelity are not accepted.",
+    "Medical default view shows sparse overhead ribs and lighting; it was previously mislabelled as a wall.",
+    "Character likeness, hands, clothing, contact and ship surfaces remain rough.",
+    "The recording includes substantial capture overhead and slow frames; it is not a no-recording performance comparison.",
+    "Escort to the core and the full chapter were not completed in this unit."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "oldPid": 74759,
+  "newPid": 96697,
+  "mainPidUnchanged": true,
+  "simulationPreserved": true,
+  "sandboxPreserved": true,
+  "neoFieldsPreserved": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "currentLocation": true,
+    "isAwakened": true,
+    "isInMatrix": true
+  },
+  "memoryFileCount": 7,
+  "memoryHashesPreserved": true,
+  "changedPaths": [],
+  "fullApiBytesEqual": true,
+  "beforeSha256": "dc626e6de39f619fff22d80164d5f945463c442af6a2971f409a5bd92328bfc4",
+  "afterSha256": "dc626e6de39f619fff22d80164d5f945463c442af6a2971f409a5bd92328bfc4"
+}

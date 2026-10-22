@@ -1,0 +1,25 @@
+{
+  "reproduction": "eye-before-release-limit.log",
+  "before": {
+    "tests": 11,
+    "pass": 9,
+    "fail": 2,
+    "downwardReleaseTurnRadians": 3.1415926535897363,
+    "upwardStandingPitch": -1.4499999999996658
+  },
+  "correction": "Interpolate the supported pitch limits to normal standing limits using the existing saved sit pose.",
+  "focused": "eye-release-limit-corrected.log",
+  "after": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "releaseTurnRadiansBothCases": 0,
+    "upwardStandingPitch": -0.40000000000002744,
+    "downwardStandingPitch": 1.0999999999996055,
+    "maximumAdjacentTurns": [
+      0.26824800562103257,
+      0.18245236392023895
+    ]
+  },
+  "scope": "Two finite 121-frame cabin exits plus one ordinary frame per case, not arbitrary motion proof."
+}

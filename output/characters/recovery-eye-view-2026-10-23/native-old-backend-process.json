@@ -1,0 +1,11 @@
+{
+  "pid": 74759,
+  "port": 5200,
+  "command": [
+    "node",
+    "packages/server/dist/index.js"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/candidate-release",
+  "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/recovery-eye-view-2026-10-23/qa-data",
+  "cloudDisabled": true
+}

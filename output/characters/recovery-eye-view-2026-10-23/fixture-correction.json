@@ -1,0 +1,11 @@
+{
+  "firstCandidate": {
+    "tests": 4,
+    "pass": 3,
+    "fail": 1
+  },
+  "cause": "The fixture mutated the same AgentState object and possessed at the old pod coordinates. Paused frames were still easing from that unrelated location.",
+  "sourceEvidence": "packages/client/src/main.ts replaces agent records on snapshots and agent updates, lines 179 and 200 in baseline bc0a676.",
+  "correction": "Possess at the actual recovery position, replace the record when the saved beat changes, and reuse it during unchanged paused frames. No production state-smoothing change.",
+  "fullBaselineAndCandidateRepeated": true
+}

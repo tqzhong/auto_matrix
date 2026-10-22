@@ -1,0 +1,209 @@
+{
+  "allGatesPassed": true,
+  "results": [
+    {
+      "log": "baseline-final-corrected-fixture.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/recovery-eye-view.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 1,
+      "elapsedSeconds": 10.062043707817793,
+      "tests": 11,
+      "pass": 4,
+      "fail": 7,
+      "skipped": 0,
+      "expectedFailure": true
+    },
+    {
+      "log": "pre-native-baseline-related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/camera.test.mts",
+        "tests/pod-eye-view.test.mts",
+        "tests/tracking-eye.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/download-setup.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/lafayette-camera.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 132.47936708293855,
+      "tests": 256,
+      "pass": 256,
+      "fail": 0,
+      "skipped": 0,
+      "reusedFrom": "pre-native-validation.json",
+      "baselineInputsVerified": "bc0a6769b39afe43cfd2a6960a1a2b926f854435"
+    },
+    {
+      "log": "shared-build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.919458333402872
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/camera.test.mts",
+        "tests/recovery-eye-view.test.mts",
+        "tests/pod-eye-view.test.mts",
+        "tests/tracking-eye.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/download-setup.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/lafayette-camera.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 117.0983204152435,
+      "tests": 267,
+      "pass": 267,
+      "fail": 0,
+      "skipped": 0,
+      "runtimeInputsStillIdentical": true,
+      "testOnlyFollowup": "candidate-final-corrected-fixture.log"
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.957195041701198,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 13.352948792278767
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 20.94578729197383
+    },
+    {
+      "log": "candidate-final-corrected-fixture.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "tests/recovery-eye-view.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.197629292495549,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    }
+  ],
+  "inputsUnchanged": true,
+  "build": {
+    "js": {
+      "name": "index-DusAHr46.js",
+      "bytes": 3751415,
+      "sha256": "e5dd7eb5bde20da95e83c849f170fee0ee91cbf2d45b3c224812e074e09d607d"
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "inputsUnchanged": true
+  },
+  "finalTestOnlyCorrection": {
+    "changedFile": "tests/recovery-eye-view.test.mts",
+    "reason": "The old release lacks the new post-pose method. Its optional hook must be absent without turning baseline behavior comparisons into API TypeErrors.",
+    "runtimeSourceChanged": false,
+    "beforeSha256": "9c0a1201991b3dba6016bc9a05978d781057ab11ac8c5dbb7b8a94516b2dce91",
+    "afterSha256": "a1fe6a12a161eb3dc2469af3eeee62abb764c900ad07787164a68917c5636924",
+    "finalFocused": [
+      {
+        "log": "baseline-final-corrected-fixture.log",
+        "command": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "tests/recovery-eye-view.test.mts"
+        ],
+        "cwd": "baseline-release",
+        "exitCode": 1,
+        "elapsedSeconds": 10.062043707817793,
+        "tests": 11,
+        "pass": 4,
+        "fail": 7,
+        "skipped": 0,
+        "expectedFailure": true
+      },
+      {
+        "log": "candidate-final-corrected-fixture.log",
+        "command": [
+          "node",
+          "--import",
+          "tsx",
+          "--test",
+          "tests/recovery-eye-view.test.mts"
+        ],
+        "cwd": "candidate-release",
+        "exitCode": 0,
+        "elapsedSeconds": 11.197629292495549,
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0
+      }
+    ],
+    "coverage": "The full 267 cases passed on the exact final runtime; the only subsequent change was an optional test hook, and all final 11 changed-file cases were rerun. Existing 256 cases, deployment, types and production build were not rerun because their inputs and runtime code did not change."
+  }
+}
