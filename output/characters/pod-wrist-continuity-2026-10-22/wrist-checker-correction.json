@@ -1,0 +1,1 @@
+{"initialDiagnosticUsesActualRenderer":false,"cause":"The isolated HeroModels fixture omitted AgentRenderer's reclined parent rotation, vertical offset and forward offset. Its angles and reach sweeps are not gameplay measurements.","initialLogsRetained":true,"correctedFixture":"tests/helpers/pod-patient.mts","productionEditedBeforeCorrection":false}

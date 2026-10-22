@@ -1,0 +1,9 @@
+{
+  "path": "tests/helpers/pod-patient.mts",
+  "change": "Remove one extra trailing LF found by git diff --check; no runtime or test behavior changes.",
+  "beforeSha256": "00cfa939896a85b19e51a12e07987278e46394f3692dcdeb090cf9f0dda22922",
+  "afterSha256": "846a7f9674e4d4727ba137aeb94636311e0204b6bf547d8a1488eac5e392ee71",
+  "previousValidationLogs": "logs/pre-whitespace-cleanup.tar.gz",
+  "previousArchiveSha256": "3dc0d3e5d880378b79e2f38ea750dc09511ee2898ffc23dbaace4486e7e36fa0",
+  "fullCandidateValidationRepeated": true
+}

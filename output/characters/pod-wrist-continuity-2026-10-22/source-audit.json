@@ -1,0 +1,53 @@
+{
+  "baseline": "139ed811e4f7bd89125d7ba76dafb666f662af5c",
+  "verifiedBaselineFiles": 1154,
+  "packageFiles": 705,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/PodWakePerformance.ts",
+      "before": "ad77dd6afc8bab5a78e5b679dda107756fab9993fff0fb550240075b8812e415",
+      "candidate": "4e26e226173dcef7d00ada28135615bdde0a8b1e1376bfac09378a5697dc4711"
+    },
+    {
+      "path": "packages/client/src/engine/PodSetRenderer.ts",
+      "before": "0087902ba9ac0bce21f290b477352c93a7f6560e4d4ac6c5975e68276d38a44d",
+      "candidate": "3561d413ba578b6f58e9412f756d730bc471b98debe0ff065f563b9948078a64"
+    },
+    {
+      "path": "packages/shared/src/constants/awakening.ts",
+      "before": "df8d7ac38d515032e3c1651718dbb5df522ea083be931bb7349683f04f8b996a",
+      "candidate": "85fd532c49c506fe8a7191ad359e8a9df49cfe860abf82afaf6d4565a71b4caf"
+    },
+    {
+      "path": "tests/pod-connection-contact.test.mts",
+      "before": "bf181b20e3e096d60232279153f07ad1a250e935b0deac6d45425db55e2f61cd",
+      "candidate": "f73fd345341e1ae47ff1b3e2106c004951bc5cdaf32264d6cedc4d81dd5d95fe"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/helpers/pod-patient.mts",
+      "sha256": "846a7f9674e4d4727ba137aeb94636311e0204b6bf547d8a1488eac5e392ee71"
+    },
+    {
+      "path": "tests/helpers/skin-surface.mts",
+      "sha256": "3dc86a85fbb3a117b0e9b730a92a95ca8bb47b48f6673765790cb5cd39e2e6b7"
+    },
+    {
+      "path": "tests/pod-wrist-contact.test.mts",
+      "sha256": "9ff4704cf80882edcf3e4ad51c3ab0c37f70a6d43baa0e1dd7eace230a773760"
+    },
+    {
+      "path": "tests/pod-feed-surface.test.mts",
+      "sha256": "f32429bec7095e9c40aa7af39c5adfde21812dec9c397f788b1267bc567db6ff"
+    }
+  ],
+  "rootDependencyFilesVerified": [
+    "package.json",
+    "package-lock.json"
+  ],
+  "protectedWipFiles": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false
+}

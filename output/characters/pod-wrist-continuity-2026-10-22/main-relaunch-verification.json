@@ -1,0 +1,20 @@
+{
+  "pid": 82166,
+  "apiSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "rawApiUnchanged": false,
+  "differingPaths": [
+    "/agents/neo/mind/thought"
+  ],
+  "simulationPreserved": true,
+  "sandboxPreserved": true,
+  "neoFieldsPreserved": [
+    "currentLocation",
+    "position",
+    "rotation",
+    "health",
+    "isAwakened",
+    "isInMatrix"
+  ],
+  "memoriesPreserved": 85,
+  "renderReconnected": false
+}

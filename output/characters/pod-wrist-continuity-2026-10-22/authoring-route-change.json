@@ -1,0 +1,19 @@
+{
+  "stoppedPid": 57729,
+  "command": "/Users/tianqizhong/.nvm/versions/node/v22.23.2/bin/node --max-old-space-size=8192 --import tsx tests/pod-feed-fit.mts",
+  "lastProgress": {
+    "feed": 1,
+    "poses": 89,
+    "early": 96,
+    "late": 96,
+    "middle": 128,
+    "completedMiddle": 58,
+    "first": {
+      "distance": 0.08,
+      "x": 0,
+      "y": 0,
+      "cost": 0.0064
+    }
+  },
+  "reason": "Change the fixed rim lead, which currently sends chest cables far forward through the forearm workspace; test a rearward hanging route before adding more intermediate animation keys. This is a geometry design change, not a timeout or an exhaustive-search conclusion."
+}

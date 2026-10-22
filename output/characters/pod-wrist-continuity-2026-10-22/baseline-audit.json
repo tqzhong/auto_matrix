@@ -1,0 +1,10 @@
+{
+  "baseline": "139ed811e4f7bd89125d7ba76dafb666f662af5c",
+  "verifiedSourceFiles": 1154,
+  "packageFiles": 705,
+  "protectedFiles": 11,
+  "previousGoalTurn": "progress",
+  "previousEvidence": "139ed81 removed one redundant fullscreen copy; both views pixel-identical but no stable FPS increase. Current first-person native pod picture still shows sharp wrist deformation and skin mismatch.",
+  "nextAction": "Diagnose actual joint angles and hand/body seam geometry through the breather sequence, then correct and verify the visible wrist deformation.",
+  "renderReconnected": false
+}

@@ -1,0 +1,23 @@
+{
+  "validationAllPassed": true,
+  "relatedTests": 69,
+  "deploymentTests": 75,
+  "nativeEvidenceMatchesRebuiltBundle": true,
+  "servedBundleSha256": "6752329fb3bfb4ff5cb17c39f505a7e22a7d6d4b618813113574c4175893802e",
+  "rootOwnedFilesMatchCandidate": 8,
+  "protectedWipFilesUnchanged": 11,
+  "livePackageFilesMatchCandidate": 705,
+  "backendDistFilesUnchanged": 280,
+  "mainPid": 82166,
+  "mainWorldUnchangedSincePublication": true,
+  "mainMemoriesUnchangedSinceNativeCheck": 85,
+  "mainTick": 3757,
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "archivedLogFiles": 99,
+  "renderReconnected": false,
+  "filmQualityAccepted": false,
+  "stable60FpsAccepted": false
+}

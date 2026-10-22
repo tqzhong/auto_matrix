@@ -1,0 +1,6 @@
+{
+  "packages/client/src/agents/PodWakePerformance.ts": "ad77dd6afc8bab5a78e5b679dda107756fab9993fff0fb550240075b8812e415",
+  "packages/client/src/engine/PodSetRenderer.ts": "0087902ba9ac0bce21f290b477352c93a7f6560e4d4ac6c5975e68276d38a44d",
+  "packages/shared/src/constants/awakening.ts": "df8d7ac38d515032e3c1651718dbb5df522ea083be931bb7349683f04f8b996a",
+  "tests/pod-connection-contact.test.mts": "bf181b20e3e096d60232279153f07ad1a250e935b0deac6d45425db55e2f61cd"
+}

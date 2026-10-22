@@ -1,0 +1,14 @@
+{
+  "serverPid": 42264,
+  "vitePid": 32502,
+  "serverPort": 5200,
+  "vitePort": 5201,
+  "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-wrist-continuity-2026-10-22/runtime-state-entry",
+  "sourceCheckpointTick": 5925,
+  "serverCommand": [
+    "/Users/tianqizhong/.nvm/versions/node/v22.23.2/bin/node",
+    "packages/server/dist/index.js"
+  ],
+  "node": "/Users/tianqizhong/.nvm/versions/node/v22.23.2/bin/node",
+  "mainPid": 82166
+}

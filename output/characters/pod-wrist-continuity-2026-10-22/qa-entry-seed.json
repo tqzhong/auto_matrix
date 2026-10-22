@@ -1,0 +1,18 @@
+{
+  "source": "output/characters/tracking-entry-view-2026-10-22/runtime-state/world.json",
+  "sha256": "58bbc45e3e23bff24c1a1e323a27c2537c1fbf4e58938a0091eee7e16b076701",
+  "tick": 5925,
+  "scene": "m1_pod",
+  "memoryFiles": {
+    "sparks.json": "157f599e0d556a6c6beb52b82f06f22c6af712ebb6633fe8550cb06046aade20",
+    "cas.json": "3a9a9ae3c3327a04736fab04f4eeda3667d14bfc75dcdc43a8fb8729e9bd9de8",
+    "mauser.json": "2bc620df2887f726147b5f9911f15ef7a1f499830fa60dc5f5fbd18a8d8599ba",
+    "binary.json": "924240d3bef18327a12ec3b09baa42b27e5d79e78de8ffac70ca21a4a94e4197",
+    "vector.json": "425fa8a126c9feb6d0c5bfb8313ccc93172fbc141a7844baa6a570e1c092a0c4",
+    "ak.json": "84bcb33c3e44890f26476f7cfa580c0c276a334d0a836fdfd151ad7f07a152ac"
+  },
+  "historicalCheckpointCopiedWithoutStoryOrPositionEdits": true,
+  "mainSaveUsed": false,
+  "renderReconnected": false,
+  "gripCheckpointPreserved": true
+}

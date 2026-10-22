@@ -1,0 +1,54 @@
+[
+  {
+    "source": "output/characters/pod-wrist-continuity-2026-10-22/candidate-release/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-22T16-15-20-400Z.webm",
+    "output": "native-emergence-grip.mp4",
+    "startSeconds": 0,
+    "requestedDuration": 24,
+    "continuous": true,
+    "speedChanged": false,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "24.016000",
+        "size": "778776"
+      }
+    }
+  },
+  {
+    "source": "output/characters/pod-wrist-continuity-2026-10-22/candidate-release/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-22T16-18-12-139Z.webm",
+    "output": "native-disconnect-rescue.mp4",
+    "startSeconds": 21,
+    "requestedDuration": 46,
+    "continuous": true,
+    "speedChanged": false,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "46.000000",
+        "size": "2593797"
+      }
+    }
+  }
+]

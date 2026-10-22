@@ -1,0 +1,11 @@
+{
+  "reason": "Previous turn was interrupted; ps and all three listen-port checks confirmed no remaining main or QA server.",
+  "pid": 82166,
+  "command": [
+    "node",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/server/dist/index.js"
+  ],
+  "savedWorldSha256": "b2bda084d2ce7cc8fad1815ce9b69814bf91f3bd1d35df0bfdc7def00732e771",
+  "memoryFiles": 85,
+  "renderReconnected": false
+}

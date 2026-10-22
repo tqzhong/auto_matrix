@@ -1,0 +1,20 @@
+{
+  "5200": {
+    "pid": 56729,
+    "command": "node packages/server/dist/index.js"
+  },
+  "5201": {
+    "pid": 56844,
+    "command": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5201 --strictPort"
+  },
+  "baseline-release": {
+    "sharedResolution": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-wrist-continuity-2026-10-22/baseline-release/packages/shared/dist/index.js",
+    "rootNodeModulesUnchanged": true,
+    "dependenciesDownloaded": false
+  },
+  "candidate-release": {
+    "sharedResolution": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-wrist-continuity-2026-10-22/candidate-release/packages/shared/dist/index.js",
+    "rootNodeModulesUnchanged": true,
+    "dependenciesDownloaded": false
+  }
+}

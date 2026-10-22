@@ -1,0 +1,32 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-i7Yn8qBL.js",
+  "bundleBytes": 3741467,
+  "servedBundleSha256": "6752329fb3bfb4ff5cb17c39f505a7e22a7d6d4b618813113574c4175893802e",
+  "backendDistFilesUnchanged": 280,
+  "serverRestartedForPublication": false,
+  "serverPid": 82166,
+  "mainRelaunchedEarlierInUnit": true,
+  "earlierRelaunchEvidence": "main-relaunch-verification.json",
+  "fullWorldSnapshotPreservedAcrossPublication": true,
+  "fullWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "memoryFilesPreservedAcrossPublication": 85,
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-BLEhj-db.js",
+  "livePackageFilesMatchCandidate": 705,
+  "ownedSourceAndTestFilesCopied": 8,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "characterAssetsChanged": false,
+  "nativeReloadPending": false,
+  "nativeLoadedScripts": [
+    "http://localhost:5173/assets/index-i7Yn8qBL.js"
+  ],
+  "nativeConsoleWarningsAndErrors": 0,
+  "fullWorldSnapshotPreservedAfterNativeReload": true,
+  "validationRepeatedAfterWhitespaceCleanup": true,
+  "nativeEvidenceMatchesFinalRebuiltBundle": true,
+  "ownedTestWhitespaceCleanupAfterPublication": true
+}

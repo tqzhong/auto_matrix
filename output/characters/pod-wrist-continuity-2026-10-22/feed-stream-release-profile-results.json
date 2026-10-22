@@ -1,0 +1,59 @@
+{
+  "poses": 151,
+  "rayComparisons": 2304,
+  "geometryChecks": 3863,
+  "maximumObservedHeapBytes": 942458424,
+  "rimLead": {
+    "resting": 1.7,
+    "grasping": 0.5
+  },
+  "eliminated": [],
+  "solutions": [
+    {
+      "feed": 0,
+      "selected": {
+        "normal": 0.08,
+        "lateral": 0,
+        "height": -0.2,
+        "cost": 0.0464
+      },
+      "survivors": 1
+    },
+    {
+      "feed": 1,
+      "selected": {
+        "normal": 0.3,
+        "lateral": -0.4,
+        "height": -0.6,
+        "cost": 0.61,
+        "returned": {
+          "normal": 0.08,
+          "lateral": 0.6,
+          "height": 0.8,
+          "cost": 1.0064000000000002
+        }
+      },
+      "survivors": 3
+    },
+    {
+      "feed": 2,
+      "selected": {
+        "normal": 0.08,
+        "lateral": 0,
+        "height": -0.2,
+        "cost": 0.0464
+      },
+      "survivors": 1
+    },
+    {
+      "feed": 3,
+      "selected": {
+        "normal": 0.08,
+        "lateral": 0,
+        "height": -0.2,
+        "cost": 0.0464
+      },
+      "survivors": 1
+    }
+  ]
+}

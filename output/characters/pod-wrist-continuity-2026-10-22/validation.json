@@ -1,0 +1,112 @@
+{
+  "allGatesPassed": true,
+  "results": [
+    {
+      "log": "baseline-extra-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/pod-renderer.test.mts",
+        "tests/pod-rescue-rig-contact.test.mts",
+        "tests/pod-instance-culling.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 14.435738375410438,
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "shared-build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 9.858396207913756
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/pod-connection-contact.test.mts",
+        "tests/forearm-twist.test.mts",
+        "tests/pod-wrist-contact.test.mts",
+        "tests/pod-feed-surface.test.mts",
+        "tests/pod-renderer.test.mts",
+        "tests/pod-rescue-rig-contact.test.mts",
+        "tests/pod-instance-culling.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 600.9921674160287,
+      "tests": 69,
+      "pass": 69,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 14.218814166262746,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 20.397496208548546
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 30.97719979286194
+    }
+  ],
+  "inputsUnchanged": true,
+  "build": {
+    "js": {
+      "name": "index-i7Yn8qBL.js",
+      "bytes": 3741467,
+      "sha256": "6752329fb3bfb4ff5cb17c39f505a7e22a7d6d4b618813113574c4175893802e"
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "inputsUnchanged": true
+  }
+}

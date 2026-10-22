@@ -1,0 +1,95 @@
+{
+  "entryTick": 5925,
+  "gripTick": 5965,
+  "gripElapsed": 2.6480000000000006,
+  "realBackendRestart": {
+    "oldPid": 32501,
+    "newPid": 42264,
+    "mainPidUnchanged": true,
+    "simulationPreserved": true,
+    "sandboxPreserved": true,
+    "neoFieldsPreserved": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isAwakened": true,
+      "isInMatrix": true
+    },
+    "memoryFileCount": 6,
+    "memoryHashesPreserved": true,
+    "changedPaths": [],
+    "awakening": {
+      "kind": "breather",
+      "elapsed": 2.6480000000000006,
+      "emerged": true
+    }
+  },
+  "productionScriptsObserved": [
+    "http://127.0.0.1:5200/assets/index-i7Yn8qBL.js"
+  ],
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "normalInputCompleted": [
+    "emerge",
+    "breather",
+    "disconnect",
+    "drain",
+    "rescue"
+  ],
+  "finalScene": "m1_recovery",
+  "finalStep": 0,
+  "finalTick": 6062,
+  "finalRunning": false,
+  "neoHealth": 100,
+  "consoleCounts": {
+    "native-entry-console.json": 0,
+    "native-production-console.json": 0,
+    "native-continuation-console.json": 0
+  },
+  "recordings": [
+    {
+      "file": "neo-2026-10-22T16-15-20-400Z.webm",
+      "duration": 48.589800000190735,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1164,
+      "rendering": {
+        "frames": 2885,
+        "fps": 59.3628171409922,
+        "p95FrameMs": 19.300000190734863,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    {
+      "file": "neo-2026-10-22T16-18-12-139Z.webm",
+      "duration": 70.53219999980927,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1165,
+      "rendering": {
+        "frames": 2107,
+        "fps": 29.898124907802796,
+        "p95FrameMs": 110.70000076293945,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    }
+  ],
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "mainPid": 82166,
+  "renderReconnected": false,
+  "filmQualityAccepted": false,
+  "performanceBenchmark": false,
+  "remainingVisualIssues": [
+    "first-person mouthpiece blocks much of the default forward view during oral pull",
+    "skin, clothing, water and overall character likeness remain rough",
+    "medical bed and rescue are continuity checks rather than full contact acceptance"
+  ]
+}

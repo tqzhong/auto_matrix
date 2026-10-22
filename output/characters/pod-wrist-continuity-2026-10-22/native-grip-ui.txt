@@ -1,0 +1,6 @@
+Browser tab: 5, Title: "MATRIX — 可游玩的自主开放世界", URL: "http://127.0.0.1:5201/?record".
+The following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 142-143
++					145 text 1 ms 生命
++				146 text 世界已暂停，角色暂时不能移动。点击继续游玩。
+The focused UI element is 47 button 开始录制
