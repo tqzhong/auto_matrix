@@ -265,10 +265,13 @@ test('the entry keeps the shipped body outside the actual chair solids while tur
         rig.root.position.set(center.x + pose.x, center.y - 1, center.z + pose.z); rig.root.rotation.y = pose.yaw;
         const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, performance: 'touch' as const, mirrorBeat: mirrorTime(saved), mirrorEntry: saved };
         const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
-        for (const part of rig.wardrobe) {
-          const mesh = part.mesh; if (!mesh.visible || !(mesh instanceof THREE.SkinnedMesh)) continue;
+        const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+        for (const mesh of [...rig.wardrobe.map(part => part.mesh), skin]) {
+          if (!mesh.visible || !(mesh instanceof THREE.SkinnedMesh)) continue;
+          const skinVertices = mesh === skin ? new Set(Array.from(mesh.geometry.index!.array)) : undefined;
           mesh.skeleton.update();
           for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+            if (skinVertices && !skinVertices.has(i)) continue;
             mesh.localToWorld(mesh.getVertexPosition(i, point));
             if (elapsed < entry.duration) {
               mirror.worldToLocal(onGlass.copy(point));

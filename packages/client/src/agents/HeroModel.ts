@@ -20,7 +20,7 @@ import { OfficeWorkdayPerformance } from './OfficeWorkdayPerformance.js';
 import { ApartmentPerformance } from './ApartmentPerformance.js';
 import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
-import { placeTrackingFeet, wireTrackingElectrode } from './TrackingContact.js';
+import { placeTrackingFeet, poseTrackingHand, wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
 import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor, ambushShotRecoil, mouseRoomGuard } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
@@ -1395,6 +1395,7 @@ export class HeroModels {
     if ((input.construct || input.reveal) && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
     this.constructs.get(rig)?.update(input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
+    if (input.performance === 'touch') poseTrackingHand(rig, input.mirrorBeat ?? 0);
     if (input.farewell) { this.farewellSupport(rig, input.farewell); this.farewellContact(rig, input.farewell); }
     if (input.pills && !this.pills.has(rig)) this.pills.set(rig, new PillPerformance(rig));
     this.pills.get(rig)?.update(input.pills);

@@ -1339,6 +1339,7 @@ export class PlayerControls {
     if (this.motion.hammerPilot) { this.camera.near = .06; this.camera.fov = this.firstPerson ? 72 : 64; }
     if (this.motion.logosPilot) { this.camera.near = .04; this.camera.fov = this.firstPerson ? 76 : 64; }
     this.camera.up.set(0, 1, 0);
+    if (this.firstPerson && this.motion.mirrorBeat !== undefined) this.camera.near = .06;
     this.camera.updateProjectionMatrix();
     this.cameraStep += this.motion.speed * delta;
     const target = new THREE.Vector3(this.position.x, this.position.y + (this.firstPerson ? 2.99 : 2.05) - (this.motion.pills ? .9 : 0) - (this.motion.mirrorBeat !== undefined ? THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9 : 0) - (this.motion.reveal?.kind === 'construct' ? .62 : 0) - (this.motion.crouching ? 1.1 : 0), this.position.z);
@@ -2462,10 +2463,7 @@ export class PlayerControls {
       if (resetCamera) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-6 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.mirrorEntry && this.firstPerson) {
-      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
-      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .23)) : target;
-      const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
-      this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+      this.syncTrackingCamera(group);
     } else if (this.motion.mirrorBeat !== undefined && !this.firstPerson) {
       const center = FILM_SETS.film_lafayette.center;
       const ideal = new THREE.Vector3(center.x + MIRROR_SEAT.x + 5.2, center.y + 5.1, center.z + MIRROR_SEAT.z + 2);
@@ -3292,6 +3290,20 @@ export class PlayerControls {
     group.updateWorldMatrix(true, true);
     const localEye = head.userData.cameraEye as THREE.Vector3 | undefined;
     const eye = head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .1, .32));
+    const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+    this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+  }
+
+  syncTrackingCamera(group: THREE.Group): void {
+    if (!this.firstPerson || this.motion.mirrorBeat === undefined) return;
+    const head = group.getObjectByName('head');
+    // Engine calls this after the current feet, seated body and head are posed.
+    group.updateWorldMatrix(true, true);
+    // This body is hidden locally and revealed in the mirror. Use its eye,
+    // rather than the external patient-view marker beyond the face surface.
+    const marker = head?.userData.cameraEye as THREE.Vector3 | undefined;
+    const eye = head ? head.localToWorld(marker?.clone() ?? new THREE.Vector3(0, .1, .23))
+      : new THREE.Vector3(this.position.x, this.position.y + 2.99 - THREE.MathUtils.smoothstep(this.motion.mirrorBeat, .65, MIRROR_TIMING.sit) * .9, this.position.z);
     const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
   }
