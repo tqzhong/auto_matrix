@@ -97,7 +97,9 @@ export class PodSetRenderer {
     const oralPath = [[-1.5, 1.9, -14.8], [-1.5, 1.6, -11.4], [0, 3.1, -12.35], [0, 3.1, -13.05], [0, 3.1, -13.7]];
     this.oralTube = this.tube(oralPath, POD_BREATHER.radius, oralGlass, this.breather); this.oralTube.name = 'pod-oral-feed';
     this.oralCore = this.tube(oralPath, .035, oralFluid, this.breather); this.oralCore.name = 'pod-oral-core';
-    this.mesh(new THREE.CylinderGeometry(.083, .068, .22, 20), rubber, 0, .11, 0, this.mouthpiece).name = 'pod-oral-nozzle';
+    const nozzle = [[.068, -.106], [.083, .106], [.08, .11], [.074, .11], [.071, .106], [.056, -.106], [.059, -.11], [.065, -.11], [.068, -.106]]
+      .map(([radius, y]) => new THREE.Vector2(radius, y));
+    this.mesh(new THREE.LatheGeometry(nozzle, 64), rubber, 0, .11, 0, this.mouthpiece).name = 'pod-oral-nozzle';
     for (const y of [.065, .18]) {
       const cuff = this.mesh(new THREE.TorusGeometry(.085, .012, 6, 24), this.steel, 0, y, 0, this.mouthpiece); cuff.rotation.x = Math.PI / 2;
     }

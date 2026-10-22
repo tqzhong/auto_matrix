@@ -40,7 +40,7 @@ import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matr
 import { dockBriefingLocked } from '@auto_matrix/shared';
 import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION, SHAFT_SEAL } from '@auto_matrix/shared';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
@@ -50,7 +50,7 @@ import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { officeClipboardPoint } from '@auto_matrix/shared';
-import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RUNOFF, podRunoffHeight, POD_RESCUE, podRescuePose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RUNOFF, podRunoffHeight, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
@@ -92,6 +92,7 @@ export class PlayerControls {
   private empAim = false;
   private primaryAim = false;
   private primaryViewPhase?: string;
+  private podView?: { kind: string; automatic: boolean; yaw: number; pitch: number };
   private sealAim = false;
   private templeAim = false;
   private ceasefireAim = false;
@@ -206,6 +207,7 @@ export class PlayerControls {
     this.facing = state.rotation; this.cameraReady = false; this.motion.attack = undefined;
     this.motion.computerCheck = undefined;
     this.cableAim = this.bookAim = this.morningAim = this.signingAim = this.catchAim = this.reloadAim = false;
+    this.podView = undefined;
     if (changedActor) this.pitch = .24;
     else if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
     this.cablePitch = undefined;
@@ -300,6 +302,7 @@ export class PlayerControls {
       if (event.code === 'Digit4') this.action('barricade');
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
+        this.podView = undefined;
         if (this.ambushCallTarget && !this.ambushCallCancelled) { this.watchingAmbushCall = false; this.cameraReady = false; }
         if (this.motion.freewayPickup) {
           const phase = this.motion.freewayPickup.phase;
@@ -371,6 +374,7 @@ export class PlayerControls {
     if (!this.id || !this.enabled || (document.pointerLockElement !== this.canvas && !this.dragging)) return;
     const movementX = this.dragPoint ? event.clientX - this.dragPoint.x : event.movementX;
     const movementY = this.dragPoint ? event.clientY - this.dragPoint.y : event.movementY;
+    if ((movementX || movementY) && this.podView) this.podView.automatic = false;
     if ((movementX || movementY) && this.watchingAmbush && this.ambushDoorway) this.ambushDoorwayCancelled = true;
     if (movementX || movementY) this.leaveAmbushCallView();
     if (!this.firstPerson && this.motion.epilogue?.kind === 'dawn' && trilogyEpilogueLocked(this.motion.epilogue)) {
@@ -387,9 +391,10 @@ export class PlayerControls {
       : this.firstPerson && this.motion.recovery !== undefined && !this.motion.download ? Math.PI / 2 * (1 - recoveryBodyPose(this.motion.recovery).sit)
       : this.firstPerson && this.motion.deusPact ? DEUS_PACT.reclineAngle * .82 * deusPactPose(this.motion.deusPact).seated : 0;
     const podEye = this.firstPerson && (this.motion.performance === 'float' || this.motion.performance === 'lift');
+    const podHead = this.firstPerson && this.motion.performance === 'pod' && this.authoritative?.currentLocation === 'film_power_plant_pods';
     const podElevation = podEye ? 1.42 * (1 - podRescuePose(this.motion.podRescue ?? 0).board) : 0;
     const hammerGunner = this.motion.hammerPilot?.role === 'ghost' && this.motion.hammerPilot.flight.gunnery;
-    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, podEye ? podElevation - 1.48 : hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, podEye ? podElevation + 1.1 : this.firstPerson && this.motion.performance === 'fall' ? 2.6 : this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
+    this.pitch = THREE.MathUtils.clamp(this.pitch + movementY * 0.002, podHead ? -1.45 : podEye ? podElevation - 1.48 : hammerGunner ? -.65 : this.motion.epilogue?.kind === 'ceasefire' && this.motion.epilogue.phase === 'retreat' ? -1.3 : this.motion.dockGunnery ? -.85 : this.motion.diggers ? -.65 : this.motion.dockGate ? -1.35 : this.motion.mirrorBeat !== undefined ? -.9 : -.4, podHead ? 1.45 : podEye ? podElevation + 1.1 : this.firstPerson && this.motion.performance === 'fall' ? 2.6 : this.motion.dockGunnery ? .4 : this.motion.diggers ? .5 : this.motion.dockGate ? 1.35 : this.motion.catch ? 1.55 : this.motion.computerCheck || this.motion.primaryDemolition?.phase === 'mounting' ? 1.5 : 1.1 + recline);
     this.ceasefireAim = this.reloadAim = false;
     if (this.motion.dockGunnery) Object.assign(this, dockGunneryAngles(this.yaw, this.pitch));
     if (hammerGunner) Object.assign(this, hammerGunneryAngles(this.yaw, this.pitch));
@@ -1311,7 +1316,7 @@ export class PlayerControls {
     const bathroomWide = !this.firstPerson && Boolean(this.motion.bathroom);
     const basementWide = !this.firstPerson && Boolean(dropRoot);
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined || this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     if (drainWide) this.camera.fov = this.camera.aspect < .85 ? 80 : 70;
     this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance) && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
@@ -2479,12 +2484,7 @@ export class PlayerControls {
     } else if ((this.motion.performance === 'pod' || this.motion.performance === 'fall') && state.currentLocation === 'film_power_plant_pods') {
       const center = FILM_SETS.film_power_plant_pods.center;
       if (this.firstPerson) {
-        const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
-        const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(center.x, center.y + 1.45, center.z - 15);
-        const forward = head ? new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(1, 0, 0), this.pitch)
-          .applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion())).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw - state.rotation)
-          : new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch - 1.47), -Math.sin(this.pitch - 1.47), Math.cos(this.yaw) * Math.cos(this.pitch - 1.47));
-        this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
+        this.syncPodCamera(group);
       } else {
         const falling = this.motion.performance === 'fall', head = group.getObjectByName('head'), pelvis = group.getObjectByName('pelvis');
         group.updateWorldMatrix(true, true);
@@ -2503,18 +2503,7 @@ export class PlayerControls {
       }
     } else if (this.firstPerson && state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
-      const boarding = podRescuePose(this.motion.podRescue ?? 0);
-      const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
-      const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : new THREE.Vector3(this.position.x, this.position.y + 3.25 - boarding.settle * 1.1, this.position.z - .25);
-      const crew = recoveryCrewPose({ elapsed: this.motion.podRescue ?? 0, role: 'morpheus', boarding: true });
-      const center = FILM_SETS.film_power_plant_pods.center;
-      const dx = center.x + crew.x - eye.x, dz = center.z + crew.z - eye.z;
-      const crewPitch = -Math.atan2(center.y + 3.2 - boarding.settle * .75 - eye.y, Math.hypot(dx, dz));
-      const receiving = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, POD_RESCUE.lowered, 10.1);
-      const pitch = THREE.MathUtils.clamp(this.pitch - 1.42 * (1 - boarding.board) + (crewPitch - .24) * receiving, -1.48, 1.1);
-      const yaw = this.yaw - Math.PI / 2 * (1 - boarding.board) + (Math.atan2(dx, dz) - Math.PI) * receiving;
-      const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
-      this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
+      this.syncPodCamera(group);
     } else if (state.currentLocation === 'film_power_plant_pods' &&
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
       // The ordinary rear boom rises through the tower behind the drain.
@@ -3292,6 +3281,57 @@ export class PlayerControls {
     const eye = head.localToWorld(localEye?.clone() ?? new THREE.Vector3(0, .1, .32));
     const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
+  }
+
+  syncPodCamera(group: THREE.Group, journey?: FilmJourney): void {
+    const state = this.authoritative;
+    if (!this.firstPerson || state?.currentLocation !== 'film_power_plant_pods' || !['pod', 'fall', 'float', 'lift'].includes(this.motion.performance ?? '')) {
+      this.podView = undefined; return;
+    }
+    group.updateWorldMatrix(true, true);
+    const head = group.getObjectByName('head'), center = FILM_SETS.film_power_plant_pods.center;
+    const marker = head?.userData.cameraEye as THREE.Vector3 | undefined;
+    const floating = this.motion.performance === 'float' || this.motion.performance === 'lift';
+    const boarding = floating ? podRescuePose(this.motion.podRescue ?? 0) : undefined;
+    const eye = head ? head.localToWorld(marker?.clone() ?? new THREE.Vector3(0, .1, .32))
+      : boarding ? new THREE.Vector3(this.position.x, this.position.y + 3.25 - boarding.settle * 1.1, this.position.z - .25)
+        : new THREE.Vector3(center.x, center.y + 1.45, center.z - 15);
+    if (boarding) {
+      this.podView = undefined;
+      const crew = recoveryCrewPose({ elapsed: this.motion.podRescue ?? 0, role: 'morpheus', boarding: true });
+      const dx = center.x + crew.x - eye.x, dz = center.z + crew.z - eye.z;
+      const crewPitch = -Math.atan2(center.y + 3.2 - boarding.settle * .75 - eye.y, Math.hypot(dx, dz));
+      const receiving = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, POD_RESCUE.lowered, 10.1);
+      const pitch = THREE.MathUtils.clamp(this.pitch - 1.42 * (1 - boarding.board) + (crewPitch - .24) * receiving, -1.48, 1.1);
+      const yaw = this.yaw - Math.PI / 2 * (1 - boarding.board) + (Math.atan2(dx, dz) - Math.PI) * receiving;
+      const forward = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+      this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward)); return;
+    }
+    const rotation = head?.getWorldQuaternion(new THREE.Quaternion());
+    if (head && rotation && journey?.scene === 'm1_pod' && !journey.visiting && journey.actor === this.id) {
+      const beat = journey.awakening, kind = beat?.kind ?? 'emerge';
+      if (this.podView?.kind !== kind) this.podView = { kind, automatic: kind === 'breather', yaw: this.yaw, pitch: this.pitch };
+      if (beat?.kind === 'breather' && this.podView?.automatic) {
+        const right = group.getObjectByName('wrist_R'), left = group.getObjectByName('wrist_L');
+        if (right && left) {
+          // Centre the two wrist directions to include the hands below the pipe.
+          // The saved reach/release clock also controls the amount of attention.
+          const rightDirection = right.getWorldPosition(new THREE.Vector3()).sub(eye).normalize();
+          const leftDirection = left.getWorldPosition(new THREE.Vector3()).sub(eye).normalize();
+          const target = rightDirection.add(leftDirection).normalize().applyQuaternion(rotation.clone().invert()), pose = podBreatherPose(beat.elapsed);
+          const yaw = this.podView.yaw - state.rotation, pitch = this.podView.pitch;
+          const direction = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch))
+            .lerp(target, Math.min(pose.reachR, pose.reachL)).normalize();
+          this.yaw = this.movementYaw = state.rotation + Math.atan2(direction.x, direction.z);
+          this.pitch = Math.atan2(-direction.y, Math.hypot(direction.x, direction.z));
+        }
+      }
+    }
+    const yaw = this.yaw - state.rotation;
+    if (this.motion.performance === 'pod' && this.camera.fov !== 78) { this.camera.fov = 78; this.camera.updateProjectionMatrix(); }
+    const forward = rotation ? new THREE.Vector3(Math.sin(yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(yaw) * Math.cos(this.pitch)).applyQuaternion(rotation)
+      : new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch - 1.47), -Math.sin(this.pitch - 1.47), Math.cos(this.yaw) * Math.cos(this.pitch - 1.47));
+    this.camera.position.copy(eye); this.camera.lookAt(eye.add(forward));
   }
 
   syncTrackingCamera(group: THREE.Group): void {

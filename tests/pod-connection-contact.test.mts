@@ -452,8 +452,10 @@ test('the pod first-person eye follows the shipped head and keeps the support ha
     for (const elapsed of [0, .6, 1.3, 2.4]) {
       const body = h.at(elapsed); controls.possess(h.neo); controls.performing = true; controls.firstPerson = true;
       controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
-      const eye = body.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .1, .32));
-      assert.ok(camera.position.distanceTo(eye) < .05, `at ${elapsed}s the view must follow the actual eyes, gap ${camera.position.distanceTo(eye)}`);
+      const marker = body.getObjectByName('head')!.userData.cameraEye as THREE.Vector3;
+      assert.ok(marker, 'the delivered head must supply its calibrated eye');
+      const eye = body.getObjectByName('head')!.localToWorld(marker.clone());
+      assert.ok(camera.position.distanceTo(eye) < 1e-6, `at ${elapsed}s the view must follow the actual eyes, gap ${camera.position.distanceTo(eye)}`);
       h.renderer.setPlayerMotion(controls.motion); h.at(elapsed, 100, true);
       assert.equal(body.visible, true, 'first person must retain the real hands and body while hiding the head surface');
       const head = body.getObjectByName('head')!, skin: THREE.SkinnedMesh[] = [];
@@ -720,8 +722,10 @@ test('the falling and floating eye camera uses the actual head and preserves fre
       controls.possess(h.neo); controls.performing = true; controls.firstPerson = true;
       controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
       assert.ok(body.quaternion.angleTo(rotation) < 1e-7, 'the player camera cannot rotate the saved descending body');
-      const eye = body.getObjectByName('head')!.localToWorld(new THREE.Vector3(0, .1, .32));
-      assert.ok(camera.position.distanceTo(eye) < .045, `the eye floats away from Neo at ${elapsed}s: ${camera.position.distanceTo(eye)}`);
+      const head = body.getObjectByName('head')!, marker = head.userData.cameraEye as THREE.Vector3;
+      assert.ok(marker, 'the delivered head must supply its calibrated eye');
+      const eye = head.localToWorld(marker.clone());
+      assert.ok(camera.position.distanceTo(eye) < 1e-6, `the eye floats away from Neo at ${elapsed}s: ${camera.position.distanceTo(eye)}`);
       if (elapsed >= 4.8 && elapsed < 7) {
         controls.firstPerson = false; controls.update(1 / 60, h.neo, h.renderer.getAgent('neo')!, false);
         const local = h.root.worldToLocal(camera.position.clone()), floor = podRunoffHeight(local.x, local.z);
