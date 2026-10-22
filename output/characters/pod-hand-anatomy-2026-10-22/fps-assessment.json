@@ -1,0 +1,101 @@
+{
+  "purpose": "Answer FPS hardware and implementation question; existing sample, not a new benchmark of current live build.",
+  "productionChanged": false,
+  "hardware": {
+    "soc": "Apple M3",
+    "gpuCores": 10,
+    "unifiedMemoryGiB": 24,
+    "displayHz": 60
+  },
+  "currentMemoryPressureObservation": {
+    "systemWideMemoryFreePercentage": 54,
+    "doesNotEstablishEveryScenePeak": true
+  },
+  "profileSource": "output/characters/lafayette-rendering-2026-10-22/native-ab-A1.json",
+  "profile": {
+    "measuredAt": "2026-10-22T06:10:58.091Z",
+    "scenes": [
+      "film_lafayette"
+    ],
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "pixelRatio": 1.5
+    },
+    "fps": 15.983735379098668,
+    "frameTime": {
+      "mean": 62.56359832556178,
+      "p95": 77
+    },
+    "cpuMs": {
+      "controls": {
+        "mean": 0.5433333516120911,
+        "p95": 1.1000003814697266
+      },
+      "agents": {
+        "mean": 6.747916674613952,
+        "p95": 10.399999618530273
+      },
+      "city": {
+        "mean": 0.24333330790201824,
+        "p95": 0.40000057220458984
+      },
+      "film": {
+        "mean": 0.23041663567225137,
+        "p95": 0.5
+      },
+      "effects": {
+        "mean": 0.0975000500679016,
+        "p95": 0.19999980926513672
+      },
+      "render": {
+        "mean": 15.544166644414267,
+        "p95": 24
+      },
+      "capture": {
+        "mean": 0.006666664282480876,
+        "p95": 0.09999942779541016
+      }
+    },
+    "calls": {
+      "mean": 564,
+      "p95": 564
+    },
+    "triangles": {
+      "mean": 3809103,
+      "p95": 3809103
+    },
+    "drawsPerFrame": {
+      "shadows": {
+        "calls": 275,
+        "triangles": 1682386
+      },
+      "scene": {
+        "calls": 157,
+        "triangles": 1232128
+      },
+      "reflectionOrPreview": {
+        "calls": 37,
+        "triangles": 278620
+      },
+      "occlusion": {
+        "calls": 76,
+        "triangles": 615950
+      },
+      "postprocessing": {
+        "calls": 19,
+        "triangles": 19
+      }
+    },
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+    "recordingActive": false
+  },
+  "interpretation": {
+    "frameBudget60FpsMs": 16.666666666666668,
+    "drawSubmissionTimersAreNotGpuTimers": true,
+    "cpuAndGpuBottleneckNotIsolated": true,
+    "clientRendersOnPlayerMachine": true,
+    "minimumHardwareFor60FpsNotEstablished": true,
+    "nextMeasurements": "Repeat same saved pose and viewport without capture or competing tests, compare controlled resolution / shadow / reflection trials, then optimize demonstrated redundant work and verify visual parity."
+  }
+}

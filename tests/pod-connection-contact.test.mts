@@ -9,6 +9,10 @@ import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js'
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import type { HeroRig } from '../packages/client/src/agents/HeroModel.js';
+import { handSurface } from './helpers/hand-surface.mjs';
+import { bends, fingerGroups } from './helpers/fighting-hand-fixture.mjs';
+import { HandCurve } from '../packages/client/src/agents/HandCurve.js';
 
 async function loadGeometry(id: string) {
   const glb = await readFile(new URL(`../packages/client/public/assets/characters/${id}.glb`, import.meta.url));
@@ -585,9 +589,9 @@ test('the attached breathing nozzle touches the shipped mouth surface instead of
 
 test('the chest feed surfaces avoid the moving arms during emergence, oral removal and release', async t => {
   const h = await setup(t);
-  const beats: AwakeningBeat[] = [0, .4, .75, 1.35, 1.7, 2.4, 3.2, 3.6, 4, 4.5, 4.8, 5, 5.5].map(elapsed => ({ kind: 'breather', elapsed }));
+  const beats: AwakeningBeat[] = [0, .4, .7, 1, 1.63, 2.4, 3.4, 4.2].map(elapsed => ({ kind: 'emerge', elapsed }));
+  beats.push(...[0, .4, .75, 1.35, 1.7, 2.4, 3.2, 3.6, 4, 4.5, 4.8, 5, 5.5].map(elapsed => ({ kind: 'breather' as const, elapsed })));
   beats.push(...[0, 1.8, 3.5].map(elapsed => ({ kind: 'disconnect' as const, elapsed, breatherRemoved: true })));
-  beats.push(...[.7, 1.63, 2.4, 3.4, 4.2].map(elapsed => ({ kind: 'emerge' as const, elapsed })));
   beats.push(...[.7, 2.4, 4.5].map(elapsed => ({ kind: 'breather' as const, elapsed, emerged: true })));
   for (const beat of beats) {
     const body = h.at(beat.elapsed, 100, false, beat), skin: THREE.Mesh[] = [];
@@ -816,4 +820,56 @@ test('Neo recoils with the real cervical needle withdrawal and settles before lo
   const before = forward(2.7), pulling = forward(3.08), released = forward(3.78);
   assert.ok(pulling.y - before.y > .07, 'the head must react when the neck needle is pulled rather than only scanning sideways');
   assert.ok(Math.abs(released.y - before.y) < .07, 'the extraction recoil must settle before the drain releases the body');
+});
+
+test('pod breathing and membrane gestures preserve both complete hand surfaces', async t => {
+  const h = await setup(t);
+  const rig = (h.renderer as unknown as { agents: Map<string, { rig: { hero: HeroRig } }> }).agents.get('neo')!.rig.hero;
+  const hands = Object.fromEntries(['R', 'L'].map(side => [side, handSurface(rig, side)]));
+  const beats: AwakeningBeat[] = [{ kind: 'breather', elapsed: 2.4, emerged: true }];
+  beats.push(...[0, .4, .7, 1.63, 4.2, 5.2].map(elapsed => ({ kind: 'emerge' as const, elapsed })));
+  beats.push(...[0, 1.35, 2, 3.2, 4.5, 5.5].map(elapsed => ({ kind: 'breather' as const, elapsed, emerged: true })));
+  beats.push({ kind: 'breather', elapsed: 2.4 });
+  for (const beat of beats) {
+    h.at(beat.elapsed, 100, false, beat);
+    for (const side of ['R', 'L']) {
+      const hand = hands[side], result = hand.draw();
+      assert.equal(hand.vertices.length, 6673); assert.equal(hand.triangles.length, 12472);
+      assert.equal(result.self.count, 0, `${side}/${beat.kind}/${beat.elapsed}: ${JSON.stringify(result.self)}`);
+      const twins = new Map<number, THREE.Vector3>(), attributes = hand.group.skin.geometry.attributes;
+      for (const [id, point] of result.points) {
+        assert.ok(point.toArray().every(Number.isFinite));
+        const twin = twins.get(hand.weld[id]);
+        if (twin) assert.ok(twin.distanceTo(point) < 2e-6, 'the hand cannot split at its original UV seams');
+        else twins.set(hand.weld[id], point);
+        const normal = new THREE.Vector3().fromBufferAttribute(attributes.normal, id);
+        assert.ok(normal.toArray().every(Number.isFinite) && normal.length() > .99 && normal.length() < 1.01);
+      }
+      for (const finger of bends(rig, side, fingerGroups(rig, side)))
+        assert.ok(finger.PIP <= (finger.digit === 1 ? 100 : 115) && finger.DIP <= 90,
+          `${side}/${beat.kind}/${beat.elapsed}: digit ${finger.digit} exceeds the existing curl limits`);
+    }
+  }
+  h.at(2.4, 100, false, { kind: 'breather', elapsed: 2.4, emerged: true });
+  const expected = Object.fromEntries(['R', 'L'].map(side => [side, hands[side].posePoints()]));
+  await t.test('a cold hand uses the same skin pad and restores the complete saved grip', async cold => {
+    const restored = await setup(cold);
+    restored.at(2.4, 900, false, { kind: 'breather', elapsed: 2.4, emerged: true });
+    const rig = (restored.renderer as unknown as { agents: Map<string, { rig: { hero: HeroRig } }> }).agents.get('neo')!.rig.hero;
+    for (const side of ['R', 'L']) {
+      const actual = handSurface(rig, side).posePoints();
+      for (const [id, point] of expected[side]) assert.ok(point.distanceTo(actual.get(id)!) < 2e-6,
+        `${side} cold skin vertex ${id} retains a previous pose`);
+    }
+  });
+});
+
+
+test('moving the held breathing tube reuses the unchanged finger material shape', async t => {
+  const h = await setup(t);
+  h.at(2.4, 100, false, { kind: 'breather', elapsed: 2.4, emerged: true });
+  const samples = t.mock.method(HandCurve.prototype, 'sample');
+  for (const elapsed of [2.6, 2.8, 3, 3.2, 3.6, 4])
+    h.at(elapsed, 100, false, { kind: 'breather', elapsed, emerged: true });
+  assert.equal(samples.mock.callCount(), 0, 'pulling a held tube changes the arm pose, not the finger material articulation');
 });

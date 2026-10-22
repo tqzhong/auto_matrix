@@ -1,0 +1,145 @@
+{
+  "samePageOrder": [
+    "B2",
+    "A2",
+    "B3",
+    "A3"
+  ],
+  "samePausedBeat": {
+    "kind": "breather",
+    "elapsed": 2.9430000000000014,
+    "emerged": true
+  },
+  "runs": [
+    {
+      "run": "B1",
+      "file": "native-profile-before.json",
+      "fps": 18.18411920210105,
+      "p95FrameMs": 71.5,
+      "calls": 142,
+      "triangles": 2844793,
+      "sceneTriangles": 1344174,
+      "shadowTriangles": 164298,
+      "occlusionTriangles": 1336302,
+      "renderCpuMs": 8.908759113645901,
+      "recording": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "podDistantNormals": null
+    },
+    {
+      "run": "A1",
+      "file": "native-profile-after.json",
+      "fps": 37.79430815000142,
+      "p95FrameMs": 37.19999980926514,
+      "calls": 135,
+      "triangles": 1735993,
+      "sceneTriangles": 1344174,
+      "shadowTriangles": 164298,
+      "occlusionTriangles": 227502,
+      "renderCpuMs": 6.051499138012975,
+      "recording": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "podDistantNormals": null
+    },
+    {
+      "run": "B2",
+      "file": "native-same-page-baseline.json",
+      "fps": 33.70165378006569,
+      "p95FrameMs": 36.90000057220459,
+      "calls": 142,
+      "triangles": 2844793,
+      "sceneTriangles": 1344174,
+      "shadowTriangles": 164298,
+      "occlusionTriangles": 1336302,
+      "renderCpuMs": 6.492899396245531,
+      "recording": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "podDistantNormals": true
+    },
+    {
+      "run": "A2",
+      "file": "native-same-page-optimized.json",
+      "fps": 36.7923962371753,
+      "p95FrameMs": 35.09999942779541,
+      "calls": 135,
+      "triangles": 1735993,
+      "sceneTriangles": 1344174,
+      "shadowTriangles": 164298,
+      "occlusionTriangles": 227502,
+      "renderCpuMs": 6.2746835418894324,
+      "recording": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "podDistantNormals": false
+    },
+    {
+      "run": "B3",
+      "file": "native-same-page-baseline-repeat.json",
+      "fps": 34.56697852444517,
+      "p95FrameMs": 34.19999980926514,
+      "calls": 142,
+      "triangles": 2844793,
+      "sceneTriangles": 1344174,
+      "shadowTriangles": 164298,
+      "occlusionTriangles": 1336302,
+      "renderCpuMs": 6.665125231292666,
+      "recording": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "podDistantNormals": true
+    },
+    {
+      "run": "A3",
+      "file": "native-same-page-optimized-repeat.json",
+      "fps": 36.687700947143504,
+      "p95FrameMs": 34.39999961853027,
+      "calls": 135,
+      "triangles": 1735993,
+      "sceneTriangles": 1344174,
+      "shadowTriangles": 164298,
+      "occlusionTriangles": 227502,
+      "renderCpuMs": 6.253720517167162,
+      "recording": false,
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "podDistantNormals": false
+    }
+  ],
+  "baselineFpsMean": 34.13431615225543,
+  "optimizedFpsMean": 36.740048592159404,
+  "samePageFpsChangePercent": 7.633761954629925,
+  "trianglesSavedPerFrame": 1108800,
+  "triangleReductionPercent": 38.97647385943371,
+  "colorAndShadowGeometryTotalsEqual": true,
+  "not60FpsAcceptance": true,
+  "initialReloadedPairNotUsedForClaim": "B1/A1 are separate page loads and differ in randomly generated postprocessing noise; later B2/A2/B3/A3 hold the page, view, noise, saved pose and viewport fixed. Do not claim a twofold improvement.",
+  "cpuTimingsAreNotGpuTimings": true,
+  "scope": "One paused first-person pod checkpoint, single game tab, 1280x720 CSS, DPR1.5, no capture. No whole-game or moving-animation FPS claim."
+}

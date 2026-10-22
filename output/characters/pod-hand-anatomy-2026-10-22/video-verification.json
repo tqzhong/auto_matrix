@@ -1,0 +1,40 @@
+{
+  "source": "native-recording/neo-2026-10-22T10-51-37-384Z.webm",
+  "sourceStartSeconds": 280,
+  "sourceEndSeconds": 313,
+  "clip": "native-rescue-recovery.mp4",
+  "method": "One continuous 33-second interval, original timestamp cadence, H264 VFR and AAC; no interpolation, speed change or reordered frames.",
+  "sourceFramesInInterval": 335,
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "r_frame_rate": "2000/1",
+        "avg_frame_rate": "335000/32667",
+        "duration": "32.667000",
+        "nb_read_frames": "335"
+      },
+      {
+        "index": 1,
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "r_frame_rate": "0/0",
+        "avg_frame_rate": "0/0",
+        "duration": "33.000000",
+        "nb_read_frames": "1547"
+      }
+    ],
+    "format": {
+      "duration": "33.000000",
+      "size": "2470742"
+    }
+  },
+  "localRawFilesRetained": true,
+  "capturesNotFpsBenchmark": true
+}

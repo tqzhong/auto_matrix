@@ -17,8 +17,15 @@ export class PerformancePanel {
   constructor(private engine: Engine) {
     this.panel.id = 'performance-panel';
     this.panel.style.cssText = 'position:fixed;z-index:9999;right:16px;top:80px;width:290px;padding:12px;background:#102019f2;color:#e6efdf;border:1px solid #94a386;font:12px/1.6 monospace';
-    this.panel.innerHTML = '<b>性能检查 · 开发模式</b><p>预热 3 秒，采样 15 秒；不录制视频。</p><button>测量当前场景</button><pre role="status" style="white-space:pre-wrap">尚未采样</pre>';
+    this.panel.innerHTML = '<b>性能检查 · 开发模式</b><p>预热 3 秒，采样 15 秒；不录制视频。</p><button>测量当前场景</button><label style="display:block;margin-top:6px"><input type="checkbox"> 对照：收割塔参与接触阴影</label><pre role="status" style="white-space:pre-wrap">尚未采样</pre>';
     this.panel.querySelector('button')!.onclick = () => this.start();
+    const comparison = this.panel.querySelector<HTMLInputElement>('input')!;
+    comparison.onchange = () => {
+      const towers = this.engine.scene.getObjectByName('pod-distant-towers');
+      if (!towers) { comparison.checked = false; this.status('请在培养舱场景使用此对照项。'); return; }
+      towers.userData.distantBackdrop = !comparison.checked;
+      this.status(comparison.checked ? '原始远景法线；可以测量当前场景。' : '优化远景法线；可以测量当前场景。');
+    };
     document.body.appendChild(this.panel);
   }
 
@@ -48,7 +55,7 @@ export class PerformancePanel {
       const start = performance.now(); matrices.call(this.engine.scene, force);
       if (performance.now() - this.startAt >= 3000) (this.passes.worldMatrices ??= []).push(performance.now() - start);
     };
-    this.panel.querySelector('button')!.disabled = true; this.status('预热中，保持当前视角…');
+    this.panel.querySelector('button')!.disabled = true; this.panel.querySelector<HTMLInputElement>('input')!.disabled = true; this.status('预热中，保持当前视角…');
     this.engine.postProcessing.onMeasure = (name, ms) => {
       if (performance.now() - this.startAt >= 3000) (this.passes[name] ??= []).push(ms);
     };
@@ -87,7 +94,9 @@ export class PerformancePanel {
     const gl = this.engine.renderer.getContext(); const debug = gl.getExtension('WEBGL_debug_renderer_info');
     let objects = 0; let visibleObjects = 0;
     this.engine.scene.traverse(() => objects++); this.engine.scene.traverseVisible(() => visibleObjects++);
+    const podTowers = this.engine.scene.getObjectByName('pod-distant-towers');
     const report = {
+      podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
       measuredAt: new Date().toISOString(), scenes: [...new Set(this.frames.map(frame => frame.scene))],
       viewport: { width: window.innerWidth, height: window.innerHeight, pixelRatio: this.engine.renderer.getPixelRatio() },
       frames: this.frames.length, fps: 1000 / frameTime.mean, frameTime, cpuMs: sections, passCpuMs: passes,
@@ -111,6 +120,6 @@ export class PerformancePanel {
       if (!response.ok) throw new Error(await response.text());
       this.status(this.panel.querySelector('[role="status"]')!.textContent!.replace('保存报告中…', `已保存 ${filename}`));
     } catch (error) { this.status(`报告未保存：${error instanceof Error ? error.message : String(error)}`); }
-    this.panel.querySelector('button')!.disabled = false;
+    this.panel.querySelector('button')!.disabled = false; this.panel.querySelector<HTMLInputElement>('input')!.disabled = false;
   }
 }

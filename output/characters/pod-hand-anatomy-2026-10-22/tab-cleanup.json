@@ -1,0 +1,35 @@
+{
+  "closed": [
+    {
+      "id": "20",
+      "url": "http://localhost:5173/",
+      "state": "paused landing; main world has no controlled actors"
+    },
+    {
+      "id": "21",
+      "url": "http://localhost:5173/",
+      "state": "paused landing; main world has no controlled actors"
+    },
+    {
+      "id": "42",
+      "url": "http://localhost:5173/",
+      "state": "paused landing; duplicate preview created by agent"
+    },
+    {
+      "id": "12",
+      "url": "https://matrixai.online/",
+      "state": "disconnected retired Render page; no live game session"
+    },
+    {
+      "id": "43",
+      "url": "http://127.0.0.1:5201/?profile",
+      "state": "paused QA landing; replaced by a clean final-candidate page"
+    }
+  ],
+  "visibilityObservation": {
+    "preview42": "visible",
+    "qa43": "visible"
+  },
+  "mainSaveEdited": false,
+  "renderReconnected": false
+}

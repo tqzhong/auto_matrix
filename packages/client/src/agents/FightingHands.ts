@@ -157,7 +157,7 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
 }
 
 /** Rounded material coordinates preserve finger volume through a bend.
- * Neo's pill and mirror gestures retain their authored joints and targets. */
+ * Neo's pill, mirror and pod grips retain their authored joints and targets. */
 export class FightingHands {
   private skin: THREE.SkinnedMesh;
   private base: Attributes;
@@ -215,12 +215,12 @@ export class FightingHands {
   begin(input?: MotionInput): void {
     // PlayerControls also sends zero outside the mirror sequence. A timed
     // story gesture at zero still opts out; only this inactive tint is neutral.
-    const tracking = input?.performance === 'touch';
-    this.authored = input?.pills?.role === 'neo' || tracking;
+    const tracking = input?.performance === 'touch', pod = input?.podBreather !== undefined;
+    this.authored = input?.pills?.role === 'neo' || tracking || pod;
     this.enabled = Boolean(input && !input.armed && (!input.seated || this.authored) && !input.floorSeated && !input.riding && !(input.climbing ?? 0)
       && Object.entries(input).every(([key, value]) => value === undefined || value === false || (key === 'mirror' && value === 0)
         || (key === 'pills' && this.authored) || tracking && ['performance', 'mirror', 'mirrorBeat', 'mirrorEntry'].includes(key)
-        || ordinaryInputs.has(key as keyof MotionInput)));
+        || pod && ['performance', 'podWake', 'podBreather'].includes(key) || ordinaryInputs.has(key as keyof MotionInput)));
     for (const name of attributes) this.skin.geometry.setAttribute(name, this.base[name]);
   }
 

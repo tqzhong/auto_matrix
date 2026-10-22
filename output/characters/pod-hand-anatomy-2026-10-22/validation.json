@@ -1,0 +1,65 @@
+{
+  "baseline": "98ae9a06b1a19acdebab9ca847d4a94e171e5277",
+  "tests": [
+    {
+      "log": "pod-baseline.log",
+      "passed": 47,
+      "failed": 1,
+      "committedLog": "pod-baseline.log.gz"
+    },
+    {
+      "log": "pod-regression-world-frame.log",
+      "passed": 53,
+      "failed": 0,
+      "committedLog": "pod-regression-world-frame.log.gz"
+    },
+    {
+      "log": "pod-hand-local-frame-final.log",
+      "passed": 7,
+      "failed": 0,
+      "committedLog": "pod-hand-local-frame-final.log.gz"
+    },
+    {
+      "log": "related-hand-regression.log",
+      "passed": 9,
+      "failed": 4,
+      "committedLog": "related-hand-regression.log.gz"
+    },
+    {
+      "log": "related-hand-regression-final.log",
+      "passed": 24,
+      "failed": 0,
+      "committedLog": "related-hand-regression-final.log.gz"
+    },
+    {
+      "log": "pod-occlusion-validated.log",
+      "passed": 15,
+      "failed": 0,
+      "committedLog": "pod-occlusion-validated.log.gz"
+    },
+    {
+      "log": "deploy-tests.log",
+      "passed": 75,
+      "failed": 0,
+      "committedLog": "deploy-tests.log.gz"
+    }
+  ],
+  "scope": "53 pod/truth tests passed before final wrist-local math; all 7 affected tests passed after that change, including added cache and cold hand checks. No claim of a final combined 54-test run. The first related run passed fighting-hand 9 tests and failed loading 4 other files during a transient syntax edit; only those 4 files were rerun, 24 tests passed.",
+  "finalClientTypecheckExitCode": 0,
+  "finalClientBuildExitCode": 0,
+  "finalTypecheckLog": "typecheck-profile.log",
+  "finalBuildLog": "production-build-profile.log",
+  "earlierThreePackageTypecheckAndBuildExitCode": 0,
+  "native": "native-verification.json",
+  "performance": "native-performance-comparison.json",
+  "samePageImageDifference": "native-same-page-picture-comparison.json",
+  "sourceAudit": "source-audit.json",
+  "movieQualityAcceptedGroups": 0,
+  "totalSceneGroups": 42,
+  "renderReconnected": false,
+  "protectedRootWipFilesUnchanged": 11,
+  "not60FpsAcceptance": true,
+  "finalTypecheckCommittedLog": "typecheck-profile.log.gz",
+  "finalBuildCommittedLog": "production-build-profile.log.gz",
+  "diffCheckNote": "Initial staged diff check flagged unchanged whitespace emitted by test logs. Logs preserved byte-exact in gzip; code/docs are not reformatted."
+}

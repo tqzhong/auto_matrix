@@ -1,0 +1,41 @@
+{
+  "rawRecordings": [
+    {
+      "file": "neo-2026-10-22T10-13-48-481Z.webm",
+      "duration": 90.5665999994278,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1020,
+      "rendering": {
+        "frames": 1315,
+        "fps": 14.520700839305348,
+        "p95FrameMs": 257.5,
+        "includesRecordingOverhead": true
+      },
+      "markers": [],
+      "bytes": 8525568,
+      "sha256": "30d6969591c48a33632a666b2df02be76c359060d24e00147431c514063cab8c"
+    },
+    {
+      "file": "neo-2026-10-22T10-51-37-384Z.webm",
+      "duration": 319.83920000076296,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 4999,
+      "rendering": {
+        "frames": 7900,
+        "fps": 24.700383936309276,
+        "p95FrameMs": 172.69999980926514,
+        "includesRecordingOverhead": true
+      },
+      "markers": [],
+      "bytes": 37267120,
+      "sha256": "3c4699f8aa0153ac7fff7450cfed36ff334988d4c38edecd83662eb45bc48efc"
+    }
+  ],
+  "totalDurationSeconds": 410.40580000019077,
+  "captureAndWaitingIncluded": true,
+  "notFpsBenchmark": true
+}

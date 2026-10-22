@@ -1,0 +1,22 @@
+{
+  "purpose": "Temporarily suspend only this unit's remaining CPU-heavy regression while measuring actual browser frames; resume the same job afterward.",
+  "at": 1792664558.857141,
+  "processes": [
+    {
+      "pid": 49685,
+      "ppid": 61628,
+      "stat": "Ss",
+      "command": "node --import tsx --test --test-concurrency=2 tests/hand-curve-cache.test.mts tests/hand-pose.test.mts tests/mirror-hand-surface.test.mts tests/pill-hand-surface.test.mts",
+      "pausedStat": "Ts"
+    },
+    {
+      "pid": 49700,
+      "ppid": 49685,
+      "stat": "R",
+      "command": "/Users/tianqizhong/.nvm/versions/node/v22.23.2/bin/node --import tsx --test-concurrency=2 tests/hand-pose.test.mts",
+      "pausedStat": "T"
+    }
+  ],
+  "resumed": true,
+  "resumedAt": 1792664636.085353
+}

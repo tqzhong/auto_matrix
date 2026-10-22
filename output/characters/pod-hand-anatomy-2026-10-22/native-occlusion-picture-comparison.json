@@ -1,0 +1,14 @@
+{
+  "comparedPixels": 644518,
+  "changedPixels": 128537,
+  "changedFraction": 0.1994312028523641,
+  "pixelsOverThreeLevels": 8513,
+  "fractionOverThreeLevels": 0.013208320015887842,
+  "maxChannelError": 16,
+  "meanAbsoluteChannelError": 0.24375062708359838,
+  "rmse": 0.7195231027977185,
+  "excluded": "Union of measured visible UI rectangles, plus a three-pixel antialias margin; other rendered pixels retained.",
+  "limitedToOnePausedFirstPersonView": true,
+  "reloadNoiseWasNotHeldConstant": true,
+  "notAnIsolatedRenderingChangeComparison": true
+}

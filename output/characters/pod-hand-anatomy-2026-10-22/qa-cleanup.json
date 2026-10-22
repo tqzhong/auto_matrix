@@ -1,0 +1,21 @@
+{
+  "processes": [
+    {
+      "pid": 64187,
+      "command": "node packages/server/dist/index.js",
+      "verifiedCwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-hand-anatomy-2026-10-22/candidate-release",
+      "sigtermSent": true
+    },
+    {
+      "pid": 23202,
+      "command": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5201 --strictPort",
+      "verifiedCwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-hand-anatomy-2026-10-22/candidate-release/packages/client",
+      "sigtermSent": true
+    }
+  ],
+  "mainPidUntouched": 82106,
+  "qaTabClosed": 44,
+  "bothPortsClosed": true,
+  "backendGracefulExitCode": 0,
+  "viteExitCode": 143
+}

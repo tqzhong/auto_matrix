@@ -1,0 +1,13 @@
+{
+  "sameLoadedPage": true,
+  "sameNoiseTextures": true,
+  "comparedPixels": 636230,
+  "changedPixels": 37929,
+  "changedFraction": 0.05961523348474608,
+  "pixelsOverThreeLevels": 3371,
+  "maxChannelError": 15,
+  "meanAbsoluteChannelError": 0.07949850420969357,
+  "rmse": 0.4391535415526961,
+  "excluded": "Union of actual visible UI rectangles and three-pixel edge margin.",
+  "limitedToOnePausedFirstPersonView": true
+}

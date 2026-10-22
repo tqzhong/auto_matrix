@@ -1,0 +1,20 @@
+{
+  "baseline": "98ae9a06b1a19acdebab9ca847d4a94e171e5277",
+  "verifiedSourceFiles": 1151,
+  "packageFiles": 704,
+  "protectedFiles": 11,
+  "backendDistFiles": 280,
+  "worldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "previousGoalTurn": "progress",
+  "previousEvidence": "Prior goal turn investigated M3 / 24GiB memory and actual no-capture Lafayette FPS, and reproduced baseline pod chest-feed contact failure; no production edits then. Commit98ae9a0 is the clean release baseline.",
+  "renderReconnected": false,
+  "podBaselineTests": {
+    "tests": 48,
+    "passed": 47,
+    "failed": 1,
+    "exitCode": 1,
+    "log": "pod-baseline.log",
+    "preExistingFailure": "chest feed 0 intersects actual emerge skin at 0.7s, side 6, segment 22; no candidate changes applied"
+  },
+  "userSteering": "User asks what determines low FPS and hardware requirements for 60fps; inspected local hardware, memory pressure, renderer and previous no-capture native profile before proposing optimizations."
+}

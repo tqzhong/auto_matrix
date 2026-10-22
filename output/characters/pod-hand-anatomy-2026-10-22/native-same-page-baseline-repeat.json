@@ -1,0 +1,259 @@
+{
+  "podDistantNormals": true,
+  "measuredAt": "2026-10-22T10:45:02.157Z",
+  "scenes": [
+    "film_power_plant_pods"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 519,
+  "fps": 34.56697852444517,
+  "frameTime": {
+    "mean": 28.929343630448273,
+    "p95": 34.19999980926514
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.5944123810196658,
+      "p95": 1.6000003814697266
+    },
+    "agents": {
+      "mean": 5.428323655688923,
+      "p95": 7.300000190734863
+    },
+    "city": {
+      "mean": 0.1572254434486345,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 0.5346820698997189,
+      "p95": 0.8000001907348633
+    },
+    "effects": {
+      "mean": 0.14778421288051127,
+      "p95": 0.2999992370605469
+    },
+    "render": {
+      "mean": 6.665125231292666,
+      "p95": 8.800000190734863
+    },
+    "capture": {
+      "mean": 0.0023121401983419135,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 1.2011560631165845,
+      "p95": 1.6999998092651367
+    },
+    "scene": {
+      "mean": 4.824470169052683,
+      "p95": 6.399999618530273
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.2192677937031711,
+      "p95": 0.39999961853027344
+    },
+    "occlusion.normals": {
+      "mean": 1.0816955603156706,
+      "p95": 1.5999994277954102
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.005202315446269305,
+      "p95": 0.09999942779541016
+    },
+    "occlusion": {
+      "mean": 1.4867051754843064,
+      "p95": 2.1000003814697266
+    },
+    "bloom": {
+      "mean": 0.27244700356485296,
+      "p95": 0.5
+    },
+    "output": {
+      "mean": 0.023121379933145923,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.034874754374656605,
+      "p95": 0.10000038146972656
+    }
+  },
+  "calls": {
+    "mean": 142,
+    "p95": 142
+  },
+  "triangles": {
+    "mean": 2844793,
+    "p95": 2844793
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 37,
+      "triangles": 164298
+    },
+    "scene": {
+      "calls": 49,
+      "triangles": 1344174
+    },
+    "occlusion": {
+      "calls": 37,
+      "triangles": 1336302
+    },
+    "postprocessing": {
+      "calls": 19,
+      "triangles": 19
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "",
+      "parent": "pod-distant-towers",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 1105920
+    },
+    {
+      "name": "",
+      "parent": "pod-distant-towers",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 760320
+    },
+    {
+      "name": "",
+      "parent": "pod-distant-towers",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 207360
+    },
+    {
+      "name": "Patient_body",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 136176
+    },
+    {
+      "name": "",
+      "parent": "pod-distant-towers",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 92160
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 83196
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 77376
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 77376
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 40320
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 36864
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 36864
+    },
+    {
+      "name": "",
+      "parent": "pod-distant-towers",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 34560
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 27648
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 23952
+    },
+    {
+      "name": "",
+      "parent": "pod-distant-towers",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 13824
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 13248
+    },
+    {
+      "name": "pod-runoff-channel",
+      "parent": "pod-drain",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 11776
+    },
+    {
+      "name": "pod-drain-outer",
+      "parent": "pod-drain",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 11776
+    },
+    {
+      "name": "",
+      "parent": "",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 11520
+    },
+    {
+      "name": "",
+      "parent": "pod-drain",
+      "type": "Mesh",
+      "calls": 2,
+      "triangles": 6912
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 35.08771929824562,
+  "objects": 9348,
+  "visibleObjects": 308
+}

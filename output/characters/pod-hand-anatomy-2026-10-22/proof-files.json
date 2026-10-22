@@ -1,0 +1,397 @@
+{
+  "files": [
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/README.md",
+      "bytes": 6821,
+      "sha256": "693d5e1441334d1207242f1e52ab9b753cf54bf74035a35cdef4d89236fb6181"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/audit-source.py",
+      "bytes": 2538,
+      "sha256": "33d8603c0ba8def4577d79de5098e259d73d8fd5b1174045f979d6f9696fd066"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/baseline-audit.json",
+      "bytes": 1026,
+      "sha256": "b874b99c97375628f125d87527eb859947302ae97299201b683d7a1b32cb2b57"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/source-audit.json",
+      "bytes": 2059,
+      "sha256": "97473d48abec05f2dafd4cea02aa05ef37bd8018450ecc24e5e15720fa2481e0"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/candidate-build.json",
+      "bytes": 185,
+      "sha256": "e2221753a98e469b0deeb58cfc077c6c8485c17ae6fb751e463bd9026c5ea12f"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/protected-worktree.json",
+      "bytes": 1243,
+      "sha256": "9964a8529526fd87e90e5507123eaa55da2f789a302f428ac9911dcf44d6af99"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/fps-assessment.json",
+      "bytes": 2629,
+      "sha256": "1fd03cc611d82d964f2ced1c613e5e7a26b85338d5390c88bcaa6b829d7fe7a6"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/validation.json",
+      "bytes": 2358,
+      "sha256": "29fcadd942c36b17e61f1a6c86e468a93cf81333385556699af00b5fb200488b"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-verification.json",
+      "bytes": 5681,
+      "sha256": "d6641afe422d936d5dea2cbf9999743ad10b05d2e34c14f1da1fdb761cf6195b"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-seed.json",
+      "bytes": 2439,
+      "sha256": "197b7208a3720b35d4473ab0fb0642c354b1b8eccded5d813cd380f4855f8262"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/restart-verification.json",
+      "bytes": 681,
+      "sha256": "b7ccc13a3db230842eec2cf453516a72e66adbf88bb8513d3d52eb63739e65ac"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-console-before-restart.json",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-console-final.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-performance-comparison.json",
+      "bytes": 4409,
+      "sha256": "c1e01c908dda3c4f3b66c1fff382f711fabdc24bd0da6e572ff4dc5699429cc7"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-profile-before.json",
+      "bytes": 4812,
+      "sha256": "92a838b7309eb502aae76765953d730ce2a3a4b63f9a1c8a4fda90580df8dc0c"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-profile-after.json",
+      "bytes": 4964,
+      "sha256": "83be46a3252db9e90236ee1ac4227471e3bc515ee7d40887f4307a1d513ae532"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-baseline.json",
+      "bytes": 5013,
+      "sha256": "d3dabcfcade6110184ec2ff1c995a166275caaf90b42bc6d42676c5f19f9e556"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-optimized.json",
+      "bytes": 4958,
+      "sha256": "859aee262b78a60bc35be2f0bf8a2bb5e56aeaecac18d80912822931fcd267a3"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-baseline-repeat.json",
+      "bytes": 5014,
+      "sha256": "d241f1bb02d3e4c5e6f966bb2a2c7f7a34d94d6a71cb471526d8b5767dbd6dd7"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-optimized-repeat.json",
+      "bytes": 4975,
+      "sha256": "7a583e3fb82594ef2454f15026cdcc0a12c4cca3ce7d6c6621cfa338f0d7f589"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-picture-comparison.json",
+      "bytes": 422,
+      "sha256": "78fef8ae25e86b3f37321e74b6d613ac6666ce8753968bf449776d97ebb1d827"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-occlusion-picture-comparison.json",
+      "bytes": 552,
+      "sha256": "883c193a59bd517d6425b34c39dbeebe6f163706ecab1ab6d88bd90f19eb1db8"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-ui-before.json",
+      "bytes": 992,
+      "sha256": "98fef29faa7ab311f5a201612638b951ad25d5c36ef3b2b5b68bbf19c4f0f7a9"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-ui-after.json",
+      "bytes": 992,
+      "sha256": "98fef29faa7ab311f5a201612638b951ad25d5c36ef3b2b5b68bbf19c4f0f7a9"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-baseline.png",
+      "bytes": 95700,
+      "sha256": "e573b16c4a176804c928e10e97db05c2b8c6d2e1d64209fed145a8397750196d"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-same-page-optimized.png",
+      "bytes": 95623,
+      "sha256": "a1d39311f21d02c91696e9f309c0282b10c10f46fb720d459423a2a5d46cd453"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-cold-grip.png",
+      "bytes": 87597,
+      "sha256": "7b9fd787b206f6ec43a62702a37b2621f925113947f2eb07d11c4484343afc8a"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-emerge-first-person.png",
+      "bytes": 60458,
+      "sha256": "ea51253450aaaa68dbcd4604573550e8e79f623c7850e255eea1aff254407688"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-emerge-third-person.png",
+      "bytes": 65681,
+      "sha256": "ad2c8228a09f8bee331f7b91715d210738e46ecdb99a3262ccbcb699af7aaa27"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-grip-first-person.png",
+      "bytes": 88414,
+      "sha256": "151d7d9e74cc749854140868cd6556fa667530218d23019d9ed411ab9647af32"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-grip-third-person.png",
+      "bytes": 67730,
+      "sha256": "d31872230608ad06e6fe902e3b3bf5e675de43a449d24f524ddcf8a7b3fb0f32"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-maintenance-first-person.png",
+      "bytes": 87169,
+      "sha256": "b03626700f81cb26d211b77218ab52fc4a005883fb9649f2ff5a0e591cfced19"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-recovery-paused.png",
+      "bytes": 94703,
+      "sha256": "5506fc32801acf159d746a11fa9a666bcc9aafae471d51ac5a4108bfb41f6d91"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/published-preview.png",
+      "bytes": 88490,
+      "sha256": "4505d72d6f7a2466072283ef15940dc7fd16247fd55f764e08cea49e5ef8ec34"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/published-console.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/recordings.json",
+      "bytes": 1100,
+      "sha256": "832f70d7d1851ac5f4a4f319e222ae804addb6ada5f7a6b7a06ccff68f68da98"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/video-verification.json",
+      "bytes": 1089,
+      "sha256": "9bf1033e448f5192989e58a2c592a96e1e8d13bac783b3b65b119305822672ac"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/native-rescue-recovery.mp4",
+      "bytes": 2470742,
+      "sha256": "f6d50e49d44393a1a86ca61dfd742f241f756a2b3a04f4e67f628e83d1e00c3d"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/qa-cleanup.json",
+      "bytes": 708,
+      "sha256": "5804e599d7d91ab80cf43b010c09b1b071d9b889cacefaa53681b4bbca068ea3"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/tab-cleanup.json",
+      "bytes": 876,
+      "sha256": "3186b269145f65a6716ae8f2db4839419c84e3635b4b3d9bb22f93c252c0865e"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/profile-test-processes.json",
+      "bytes": 780,
+      "sha256": "121a4e3ec6763d281ea84459eb6a78c38d31001cc9f594ad20672ee32ea56067"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/publish-local-preview.py",
+      "bytes": 4979,
+      "sha256": "7ae05232d820cdf8fd4714211a58af436417d69f01c08743b13eba0f1f15c91e"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/local-update-verification.json",
+      "bytes": 923,
+      "sha256": "3a3609a9282e2637411de448ce7aa504057ed51d8415eade9ffd9b342019cebb"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-baseline.log.gz",
+      "bytes": 3152,
+      "sha256": "47a4cc5aebd9744079eaee892ef6bd4bf73c391a447e310ffb04212f471743b3",
+      "uncompressedBytes": 12744,
+      "uncompressedSha256": "982a26fcbc8d639d853fdc16f92468782c87a0450e79a0a89253b9aa546b4c86"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/feed-first-failure.log.gz",
+      "bytes": 591,
+      "sha256": "47f45e6578feb6119c4e5688942a825f7618cf56cad462fcbb97308ce19238ba",
+      "uncompressedBytes": 1143,
+      "uncompressedSha256": "d7ef904a8a3c984b8355f0acaf6a92166ff11a39a9cd0a3782a875245ebddffa"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/feed-clearance-first.log.gz",
+      "bytes": 430,
+      "sha256": "5ddc3b1d1bee8f63fe362db13cbab085c11d6c937f7ff0baca66fd84f9f29516",
+      "uncompressedBytes": 1112,
+      "uncompressedSha256": "633ee3b1b30b350b82d0e35a732620eae8c15d748a6964bdd20863cde9e6eaeb"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-hand-first-failure.log.gz",
+      "bytes": 636,
+      "sha256": "92b78beb9eb5803440f1179e43b7e9616545ba649e466a3166e1c77f190d4434",
+      "uncompressedBytes": 1291,
+      "uncompressedSha256": "6a37c7e3306327c2cf6bf2d7b62f0deacb9cdbebaa20f9263a98d4bf1c072888"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-hand-curve-first.log.gz",
+      "bytes": 810,
+      "sha256": "916c82fee789c05440f07038313b5373c5ba8480b5348df2f1dfacc51cec8dac",
+      "uncompressedBytes": 1977,
+      "uncompressedSha256": "5c2283cb0d23c5c5853c8f6ba15669eed180e388ef2095b9f5a254b38ae41849"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-thumb-limit-first.log.gz",
+      "bytes": 1008,
+      "sha256": "b4b029bbbf4b5009a090fbdae579db969e70dd49c9cd7575af1b791c2d826a34",
+      "uncompressedBytes": 2956,
+      "uncompressedSha256": "4a44beb6d110ccfcc91d4795bee68fcdfdd955be635900f55b4359be024679eb"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-thumb-curve-first.log.gz",
+      "bytes": 810,
+      "sha256": "3270986d384f5a745dbe470ff1528c247476eab006de5e4fad94fdf62fc2ef78",
+      "uncompressedBytes": 1975,
+      "uncompressedSha256": "b04c167187bbf7c6663f889a28abb30e283d21c10ad8e7475db2d9dc0fbc498c"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-thumb-binding-first.log.gz",
+      "bytes": 812,
+      "sha256": "8619299c5107094b997e536ede2276e7d567effdaf55b0bb0099561ba8e053cf",
+      "uncompressedBytes": 1975,
+      "uncompressedSha256": "0a2385ae4da7a989026e75a42400fb17fdedcb8f3a5430b94ef213d191ca99d5"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-thumb-reachable-first.log.gz",
+      "bytes": 745,
+      "sha256": "0075c9d7b97a9cc200242e35323721e57c5b5437f1e5065d262bd6ab343b577f",
+      "uncompressedBytes": 1777,
+      "uncompressedSha256": "0d1aac9de16a9d26a1e36956e6c23b79ed8fe83ad034aa3b8dfe9d980843f495"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-thumb-reachable.log.gz",
+      "bytes": 894,
+      "sha256": "2a477c91ef144ab4bec48790feae81f7a30604fb6812b68f4205b7a806e20ecd",
+      "uncompressedBytes": 2697,
+      "uncompressedSha256": "b91c4faa94bc287d81666e0ca6a0d1614f44b7095f6e9277ac1cdaf15d63f864"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-thumb-pad-calibrated.log.gz",
+      "bytes": 387,
+      "sha256": "4fb438f9e7d8c455d21216e89e1753dfe29f6435dc24a6187d16f38025f23233",
+      "uncompressedBytes": 1024,
+      "uncompressedSha256": "986605849b0f159d87216c61a42c08804caf72e4e5a1de29a01414e3db55e78c"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-regression-world-frame.log.gz",
+      "bytes": 3055,
+      "sha256": "f6dd1a2dfc8ca2fc804943b1ae6930952aa4da3095dc52348a8aa822d8a107bc",
+      "uncompressedBytes": 13236,
+      "uncompressedSha256": "d2ef6db39e5a9e6aff7f5ce3d68aea73afa5940bb26bc76a76afbf5d0b9be6dd"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-hand-cache-first-failure.log.gz",
+      "bytes": 558,
+      "sha256": "1f09b412875014aec062e2c66420568434ce34f5f76569cb81a4bdf5a402aa1b",
+      "uncompressedBytes": 1102,
+      "uncompressedSha256": "a5a325e81fccb9a12b50bb7807b021eddb8465df1c2930fb01a17dfba06ef046"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-hand-local-frame.log.gz",
+      "bytes": 749,
+      "sha256": "f0789773bc13bd2f34992d158f06e72d9290e5eeff753fededc7140dca4ebdd4",
+      "uncompressedBytes": 1780,
+      "uncompressedSha256": "c44564b52fbd0b458bd795ccfc7ed9eb399a6891513ef08c036f120853e806e4"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-hand-local-frame-final.log.gz",
+      "bytes": 554,
+      "sha256": "725cd79583f987a2fe0d59c02a81011001e5c26b042485f646c2d7d4563004c8",
+      "uncompressedBytes": 1750,
+      "uncompressedSha256": "e13bae29f3d44f86fbbb8e126eeba6d666d0f77d4150af31f374799d0f60c0ab"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/related-hand-regression.log.gz",
+      "bytes": 1349,
+      "sha256": "f3f4c9d931201ceabe13284e17d07ab012f935c16e5dd94a13bc912ee892acae",
+      "uncompressedBytes": 8782,
+      "uncompressedSha256": "a58660a74e32baa9831217164616921e72aac61b08179433e3992f8b8996cda8"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/related-hand-regression-final.log.gz",
+      "bytes": 1317,
+      "sha256": "149932c802e7d53dcb831c49d96df0049325c70b54dffad344c0176ace0b6fe6",
+      "uncompressedBytes": 6084,
+      "uncompressedSha256": "6a5363b23fd6dcbb7f3d5a2e1cdf28147d024c6c63434c6b44b0291ac21b282b"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-occlusion-first-failure.log.gz",
+      "bytes": 860,
+      "sha256": "1fc0110a75d1d931198d34cfcc7ba7f62351dd359b6102846813549cf4a9480d",
+      "uncompressedBytes": 2346,
+      "uncompressedSha256": "023d0a551bacd495dadb279b799ba3c20423ae2ed76e674a02d3e6d05bcf41dc"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-occlusion-final.log.gz",
+      "bytes": 1432,
+      "sha256": "73407527dbb1e1a5b4ae843fc428f8d8389818404ba4738dcb0d2904e5a77f47",
+      "uncompressedBytes": 4805,
+      "uncompressedSha256": "b2f7077082dd8d29939d2843634865af93eb494437dabb7a80de4396803d6524"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/pod-occlusion-validated.log.gz",
+      "bytes": 1089,
+      "sha256": "0cebcfa42e0a05f462fcac152e73e9b2a3fa46561166ea1a04d76ba78aa0cd72",
+      "uncompressedBytes": 3910,
+      "uncompressedSha256": "68db2e7ac756ba45f848f3bdda0ffb3174d7c4edf3780f34dc76d2e07246e881"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/deploy-tests.log.gz",
+      "bytes": 5003,
+      "sha256": "f45dbd66cd0f4434f13da1c5dc6bde8bccb148b8da7bf5f183192baf73877e3b",
+      "uncompressedBytes": 20364,
+      "uncompressedSha256": "55fef341de599e975759a422a922868c8c4f595b63a834dbf0b43d51c9b0d0b9"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/typecheck.log.gz",
+      "bytes": 103,
+      "sha256": "791db621ddc21f139326fc67476b46927357e9e34d850876047ef07c0f6d423f",
+      "uncompressedBytes": 136,
+      "uncompressedSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/typecheck-profile.log.gz",
+      "bytes": 20,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "uncompressedBytes": 0,
+      "uncompressedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/production-build.log.gz",
+      "bytes": 509,
+      "sha256": "c01b0d8d6017e693bd217a83f13e145402d2a164bcd119d7f0ce80bb71dd3253",
+      "uncompressedBytes": 952,
+      "uncompressedSha256": "1b30815090b95b93dca113c2855085e4789eed857121a3c9c2066c274167f969"
+    },
+    {
+      "path": "output/characters/pod-hand-anatomy-2026-10-22/production-build-profile.log.gz",
+      "bytes": 460,
+      "sha256": "667ebbde8b14a41868d231d1bf05d14e99163e5e0b5e30f84849936043e7fd81",
+      "uncompressedBytes": 733,
+      "uncompressedSha256": "06c8b9f70f62f4b30914af11b33f36aefdecacecd427b9be44cd78833556f394"
+    }
+  ],
+  "bytes": 3404866,
+  "excluded": "Raw WebM, full game worlds, database/memories, candidates, diagnostics and temporary assets remain local only.",
+  "logStorage": "Lossless deterministic gzip copies; original uncompressed logs remain local, no log content normalized."
+}
