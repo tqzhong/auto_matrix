@@ -42,6 +42,21 @@ export class PerformancePanel {
       this.status('可以测量当前场景。');
     };
     document.body.appendChild(this.panel);
+    const shipLabel = document.createElement('label'); shipLabel.style.cssText = 'display:block;margin-top:6px';
+    shipLabel.innerHTML = '<input type="checkbox" data-ship-static> 对照：飞船固定结构逐件绘制';
+    this.panel.insertBefore(shipLabel, this.panel.querySelector('pre'));
+    const shipComparison = shipLabel.querySelector('input')!;
+    shipComparison.onchange = () => {
+      const deck = this.engine.scene.getObjectByName('neb-interior-deck');
+      const batches = deck?.children.filter(object => object.userData.unbatchedSiblings);
+      if (!deck || !batches?.length) { shipComparison.checked = false; this.status('请在飞船场景使用此对照项。'); return; }
+      for (const batch of batches) {
+        batch.visible = !shipComparison.checked;
+        const pieces = batch.userData.unbatchedSiblings as Object3D[];
+        if (shipComparison.checked) deck.add(...pieces); else deck.remove(...pieces);
+      }
+      this.status('可以测量当前场景。');
+    };
     this.gpuTimer = new GpuTimer(engine.renderer.getContext() as WebGL2RenderingContext);
     const support = document.createElement('p'); support.textContent = this.gpuTimer.supported ? `GPU计时：可用，${this.gpuTimer.counterBits}位计数器` : 'GPU计时：此浏览器未提供扩展';
     this.panel.appendChild(support);
@@ -136,6 +151,7 @@ export class PerformancePanel {
     const podTowers = this.engine.scene.getObjectByName('pod-distant-towers');
     const report = {
       occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
+      shipStaticBatching: this.engine.scene.getObjectByName('neb-interior-deck')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
       podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
       podInstanceCulling: podTowers?.frustumCulled,
       camera: { position: this.engine.camera.position.toArray(), quaternion: this.engine.camera.quaternion.toArray(), projection: this.engine.camera.projectionMatrix.toArray() },

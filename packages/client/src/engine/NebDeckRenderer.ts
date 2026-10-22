@@ -14,6 +14,7 @@ import { createConsoleJug } from '../agents/ConsoleJug.js';
 import { CypherConsoleRenderer } from './CypherConsoleRenderer.js';
 import { CrewMealRenderer } from './CrewMealRenderer.js';
 import { CREW_MEAL } from '@auto_matrix/shared';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** The Nebuchadnezzar is one continuous deck: medical bay, operator core and mess.
  * The central aisle remains open so recovery hands control back to the player. */
@@ -83,6 +84,9 @@ export class NebDeckRenderer {
     this.shipLossScene();
     for (const child of [...root.children]) this.deckRig.add(child);
     this.deckRig.name = 'neb-interior-deck'; root.add(this.deckRig);
+    // Only anonymous fixed deck siblings: named controls and child renderers
+    // retain their own motion, visibility and contact geometry.
+    batchStaticGeometry(this.deckRig, new Set(), false).forEach(geometry => this.geometries.add(geometry));
     this.escapeExterior = new NebEscapeRenderer(root);
   }
 

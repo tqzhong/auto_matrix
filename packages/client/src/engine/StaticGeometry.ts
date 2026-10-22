@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** Batch fixed siblings, keeping their animated parent and material unchanged. */
-export function batchStaticGeometry(root: THREE.Object3D, movable: ReadonlySet<THREE.Mesh>): THREE.BufferGeometry[] {
+export function batchStaticGeometry(root: THREE.Object3D, movable: ReadonlySet<THREE.Mesh>, recursive = true): THREE.BufferGeometry[] {
   const geometries: THREE.BufferGeometry[] = [];
-  root.traverse(parent => {
+  const visit = (parent: THREE.Object3D) => {
     const batches = new Map<string, THREE.Mesh[]>();
     for (const child of parent.children) {
       if (!(child instanceof THREE.Mesh) || child instanceof THREE.SkinnedMesh || child instanceof THREE.InstancedMesh
@@ -23,8 +23,10 @@ export function batchStaticGeometry(root: THREE.Object3D, movable: ReadonlySet<T
       const geometry = mergeGeometries(parts)!; parts.forEach(part => part.dispose()); geometries.push(geometry);
       const first = batch[0]; const mesh = new THREE.Mesh(geometry, first.material);
       mesh.castShadow = first.castShadow; mesh.receiveShadow = first.receiveShadow; mesh.renderOrder = first.renderOrder; mesh.layers.mask = first.layers.mask;
+      if (!recursive && import.meta.env?.DEV) mesh.userData.unbatchedSiblings = batch;
       parent.remove(...batch); parent.add(mesh);
     }
-  });
+  };
+  if (recursive) root.traverse(visit); else visit(root);
   return geometries;
 }
