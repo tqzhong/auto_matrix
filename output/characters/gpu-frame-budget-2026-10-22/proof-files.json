@@ -1,0 +1,186 @@
+{
+  "files": [
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/README.md",
+      "bytes": 4440,
+      "sha256": "0cea136a420912c1d2088e0f1cf719b93708ca624ed9871155669b062b5dc075"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/audit-source.py",
+      "bytes": 2654,
+      "sha256": "0ee7f1cd978a122bccd9015d2a4eec3a72e8acb42b8b023ef7ec5e5a294a60ae"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/sync-development-source.py",
+      "bytes": 4234,
+      "sha256": "7a7b37d36337c29b1857c57dd2c4ee03b281ade2592af52444b376ac243f23e2"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/baseline-audit.json",
+      "bytes": 564,
+      "sha256": "d90aafbf2ab63d95dc47be26efce3a9e5ac1fd81a2c8009a9ef3d99881eac72f"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/source-audit.json",
+      "bytes": 971,
+      "sha256": "09149ff3e208e309848ebea7ad7251376d0d473021f29f5abe0fbe83fc441507"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/candidate-build.json",
+      "bytes": 239,
+      "sha256": "f488f7f274b842d38a63a266bc9e3e94a88f9cefcc151bfab6bb34432f0f707c"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/protected-worktree.json",
+      "bytes": 1243,
+      "sha256": "9964a8529526fd87e90e5507123eaa55da2f789a302f428ac9911dcf44d6af99"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/validation.json",
+      "bytes": 2261,
+      "sha256": "d612ace40c58b4abf05726c748cd38b3793645482c1c15769a02ef35ceb00fc5"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/measurement-verification.json",
+      "bytes": 7016,
+      "sha256": "1bb84bec039d7bfdd070a428c078b0ebc19990d2ad67f230f1d77ee3714a108e"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-verification.json",
+      "bytes": 1098,
+      "sha256": "1897703808cbaa9c0acdcaab29afc08e67b7192ebfaba4bea98868a06d4bfb60"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-first.json",
+      "bytes": 6129,
+      "sha256": "f08bc4f84565ff9095d8abcb398e40e8fd7fbef0e7aee3ad2b395e27af063348"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-frame.json",
+      "bytes": 5800,
+      "sha256": "83d871c17cba7539755eff74ad67322cfaa022e8eb426ab90d40abcc90839a18"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-empty.json",
+      "bytes": 5784,
+      "sha256": "401e1e156488974278bc0f704b042b4cf0244e10724618f22b0b52ded2b477e6"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-no-render.json",
+      "bytes": 2108,
+      "sha256": "13faf65b1129a4ef7ce21c9a7cab279804589d4941aff489fa5563a0d525fc03"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-no-occlusion.json",
+      "bytes": 5350,
+      "sha256": "016ad3ad904baab53fd464d2377c244dc8c1416826c99e272aec5677d8b046ea"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-frame-repeat.json",
+      "bytes": 5790,
+      "sha256": "aacbe789647c4b47e560b3a96b234346ecdab98fdbab8480d72600524e42384d"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-profile.png",
+      "bytes": 77095,
+      "sha256": "63d79ffbedae33e49b6edf9e3f09919cad23edaf9246f77216adb31fadf931f7"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-frame.png",
+      "bytes": 74874,
+      "sha256": "7e315345368d14cb5fc0c4c1454eb96d3591a789e2d2d860e1dd274a719c1d0c"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-empty.png",
+      "bytes": 74972,
+      "sha256": "5c246b664f3505f5d88083813fe06057f65a344ee4f455efbee4688ee7dcd669"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-no-render.png",
+      "bytes": 76136,
+      "sha256": "09d6546287e45e49c50723e402bd612b20e00127116c69d6dcfd8457c9e36358"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-no-occlusion.png",
+      "bytes": 75315,
+      "sha256": "f299e07bacb5d0b48f93d5c527993d0d0570082d076a1f09cf2a475985d9327a"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-gpu-frame-repeat.png",
+      "bytes": 74878,
+      "sha256": "26ddd0da56e1e7f9d2daf8f7b7c0b505fe7346838b8459ebb32b4e017376e194"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-render-restored-first-person.png",
+      "bytes": 94784,
+      "sha256": "fcf66c488bba4c34e03e6816acb97cb9f0e70d0b8c05d763772ea45392b4e1d0"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-console.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/native-console-final.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/published-preview.png",
+      "bytes": 88462,
+      "sha256": "a400aa46e8bac594860fab8900f961e9cc650268b7b81bd77c76a19c36545507"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/published-console.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/local-update-verification.json",
+      "bytes": 979,
+      "sha256": "2e99566e014f02d82a52d414cdfaddaedb5f1de29c697b0b33b13bcab6039f3b"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/qa-cleanup.json",
+      "bytes": 692,
+      "sha256": "445df2b491e7ff6a4c71ae3eb72929c7f7eb1782b77b9c091fad1e3edbea025d"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/gpu-timer-tests.log.gz",
+      "bytes": 442,
+      "sha256": "18c45917baee902dd03fe99429a99a3e5ed206ded890c30c01eff116376b9506"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/related-tests.log.gz",
+      "bytes": 1600,
+      "sha256": "0641f585cf08c367d0f7f19f9e6a24a4c433ee54232db5df68055d6188093923"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/client-typecheck.log.gz",
+      "bytes": 20,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/client-typecheck-calibration.log.gz",
+      "bytes": 20,
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/typecheck.log.gz",
+      "bytes": 103,
+      "sha256": "791db621ddc21f139326fc67476b46927357e9e34d850876047ef07c0f6d423f"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/production-build.log.gz",
+      "bytes": 509,
+      "sha256": "1eda2cdcc917f94eabe81beee9c6c31a09708d30dabf72e7a52d467ade615421"
+    },
+    {
+      "path": "output/characters/gpu-frame-budget-2026-10-22/deploy-tests.log.gz",
+      "bytes": 4996,
+      "sha256": "5781ba2a95a2659dcb6070829381a0ba9bb1b3a11aa07342726377719879d422"
+    }
+  ],
+  "bytes": 701567,
+  "excluded": "Full worlds, databases/memories, candidate/baseline directories, raw local logs and recordings remain local only."
+}

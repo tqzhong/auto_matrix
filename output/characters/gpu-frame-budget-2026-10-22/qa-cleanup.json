@@ -1,0 +1,21 @@
+{
+  "processes": [
+    {
+      "pid": 37568,
+      "command": "node packages/server/dist/index.js",
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/gpu-frame-budget-2026-10-22/candidate-release",
+      "sigtermSent": true
+    },
+    {
+      "pid": 37667,
+      "command": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5201 --strictPort",
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/gpu-frame-budget-2026-10-22/candidate-release/packages/client",
+      "sigtermSent": true
+    }
+  ],
+  "qaTabClosed": 48,
+  "mainPidUntouched": 82106,
+  "bothPortsClosed": true,
+  "backendGracefulExitCode": 0,
+  "viteExitCode": 143
+}

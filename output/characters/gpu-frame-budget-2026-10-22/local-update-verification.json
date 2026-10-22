@@ -1,0 +1,28 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-ByDoGF_7.js",
+  "bundleBytes": 3740057,
+  "servedBundleSha256": "88e3f58eb601d6c8a0d1660f4ebd8e1e0e793298c5de77bd88b719f4c88f1dbe",
+  "productionJsAndIndexUnchanged": true,
+  "developmentSourceSynced": [
+    "packages/client/src/player/PerformancePanel.ts",
+    "packages/client/src/player/GpuTimer.ts"
+  ],
+  "livePackageFilesMatchCandidate": 705,
+  "backendDistFilesUnchanged": 280,
+  "serverPid": 82106,
+  "serverRestarted": false,
+  "fullWorldSnapshotPreserved": true,
+  "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "tick": 3757,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "normalGameEffectsChanged": false,
+  "nativeOpenPending": false,
+  "actualNativeTab": 49,
+  "nativeLoadedScript": "/assets/index-ByDoGF_7.js",
+  "nativeConsoleWarnings": 0,
+  "nativeConsoleErrors": 0,
+  "fullWorldIdenticalAfterNativeOpen": true,
+  "qaProcessesStopped": true
+}

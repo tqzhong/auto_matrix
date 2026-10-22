@@ -1,0 +1,112 @@
+{
+  "podDistantNormals": false,
+  "podInstanceCulling": true,
+  "camera": {
+    "position": [
+      5061.8,
+      -91.8,
+      4409.5
+    ],
+    "quaternion": [
+      -0.23720027648506328,
+      0.36236453926437023,
+      0.09590491467683032,
+      0.8962311179935453
+    ],
+    "projection": [
+      0.8829481371285887,
+      0,
+      0,
+      0,
+      0,
+      1.569685577117491,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-22T11:53:34.414Z",
+  "scenes": [
+    "film_power_plant_pods"
+  ],
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "frames": 901,
+  "fps": 60.001200024763456,
+  "frameTime": {
+    "mean": 16.666333333121404,
+    "p95": 18.199999809265137
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.12807989914329942,
+      "p95": 0.20000076293945312
+    },
+    "agents": {
+      "mean": 0.9061043333927878,
+      "p95": 1.5
+    },
+    "city": {
+      "mean": 0.10510543819008339,
+      "p95": 0.19999980926513672
+    },
+    "film": {
+      "mean": 0.11853495395673103,
+      "p95": 0.20000076293945312
+    },
+    "effects": {
+      "mean": 0.035294114683365053,
+      "p95": 0.10000038146972656
+    },
+    "render": {
+      "mean": 0.030854599854260784,
+      "p95": 0.10000038146972656
+    },
+    "capture": {
+      "mean": 0.00022197642945555286,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {},
+  "gpuPassMs": {
+    "empty-without-rendering": {
+      "mean": 0,
+      "p95": 0,
+      "samples": 899
+    }
+  },
+  "gpuTiming": {
+    "mode": "no-render",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 2,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 0,
+    "p95": 0
+  },
+  "triangles": {
+    "mean": 0,
+    "p95": 0
+  },
+  "drawsPerFrame": {},
+  "heaviestMeshes": [],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 60.030983667021694,
+  "objects": 9348,
+  "visibleObjects": 321
+}

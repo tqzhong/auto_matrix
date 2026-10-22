@@ -1,0 +1,29 @@
+{
+  "baseline": "4badd2d206a08e00c5adccdd1a86660c28481a65",
+  "verifiedBaselineFiles": 1152,
+  "packageFilesBefore": 704,
+  "packageFilesAfter": 705,
+  "changed": [
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "934ac3a13e7dc13721a73dc0579d33ed1c839dcc3f6e47cd5724b06d5723aa51",
+      "candidate": "3a40888e6d20b56739af1ddcdd2ce1a1d176708c8fd979f3b29971896d1b96dc"
+    }
+  ],
+  "unchangedBaselineFiles": 1151,
+  "newRuntimeFiles": [
+    "packages/client/src/player/GpuTimer.ts"
+  ],
+  "newTests": [
+    "tests/gpu-timer.test.mts"
+  ],
+  "newFileSha256": {
+    "packages/client/src/player/GpuTimer.ts": "016cc029ef782ea0b13f7cad5ed358026d09b3c2ef7b5f010910b7e686765f20",
+    "tests/gpu-timer.test.mts": "93b0655e7d67fe473780781f33cd6b5b50e11ff72b4bf57b01cc1205427e694b"
+  },
+  "protectedWipFilesUnchanged": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false,
+  "renderReconnected": false
+}

@@ -1,0 +1,240 @@
+{
+  "runs": [
+    {
+      "file": "native-gpu-first.json",
+      "mode": "initial-passes",
+      "fps": 35.202112125832315,
+      "p95FrameMs": 37.09999942779541,
+      "calls": 291,
+      "triangles": 839937,
+      "gpuPassMs": {
+        "scene": {
+          "mean": 11.03665147619047,
+          "p95": 15.173708,
+          "samples": 525
+        },
+        "occlusion": {
+          "mean": 16.550892470476207,
+          "p95": 21.173583,
+          "samples": 525
+        },
+        "bloom": {
+          "mean": 16.748502973333334,
+          "p95": 21.304542,
+          "samples": 525
+        },
+        "output": {
+          "mean": 14.086488146666664,
+          "p95": 21.440499,
+          "samples": 525
+        },
+        "antialias": {
+          "mean": 14.737684910476181,
+          "p95": 22.54775,
+          "samples": 525
+        }
+      },
+      "gpuTiming": {
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 20
+      },
+      "cpuMs": {
+        "controls": 0.6810964176920726,
+        "agents": 5.148960284790155,
+        "city": 0.25179584625763346,
+        "film": 0.9202268524746814,
+        "effects": 0.17863894861001373,
+        "render": 9.989981081625464,
+        "capture": 0.0015122894979379578
+      }
+    },
+    {
+      "file": "native-gpu-frame.json",
+      "mode": "frame",
+      "fps": 35.04579317063423,
+      "p95FrameMs": 33.80000019073486,
+      "calls": 291,
+      "triangles": 839937,
+      "gpuPassMs": {
+        "frame": {
+          "mean": 34.50087650383137,
+          "p95": 42.566624,
+          "samples": 522
+        }
+      },
+      "gpuTiming": {
+        "mode": "frame",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 4,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "cpuMs": {
+        "controls": 0.6034220597589878,
+        "agents": 4.3781369194785,
+        "city": 0.2931558623513341,
+        "film": 0.7262357613886264,
+        "effects": 0.2249049270107719,
+        "render": 7.633840281700453,
+        "capture": 0.001520911097073283
+      }
+    },
+    {
+      "file": "native-gpu-empty.json",
+      "mode": "empty",
+      "fps": 34.51706157568936,
+      "p95FrameMs": 34.69999980926514,
+      "calls": 291,
+      "triangles": 839937,
+      "gpuPassMs": {
+        "empty": {
+          "mean": 0,
+          "p95": 0,
+          "samples": 515
+        }
+      },
+      "gpuTiming": {
+        "mode": "empty",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 3,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "cpuMs": {
+        "controls": 0.5256756649974691,
+        "agents": 3.287065620127792,
+        "city": 0.43397682698076756,
+        "film": 0.6463320687931017,
+        "effects": 0.15810810737168007,
+        "render": 6.19324321820469,
+        "capture": 0.0015444000715454573
+      }
+    },
+    {
+      "file": "native-no-render.json",
+      "mode": "no-render",
+      "fps": 60.001200024763456,
+      "p95FrameMs": 18.199999809265137,
+      "calls": 0,
+      "triangles": 0,
+      "gpuPassMs": {
+        "empty-without-rendering": {
+          "mean": 0,
+          "p95": 0,
+          "samples": 899
+        }
+      },
+      "gpuTiming": {
+        "mode": "no-render",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 2,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "cpuMs": {
+        "controls": 0.12807989914329942,
+        "agents": 0.9061043333927878,
+        "city": 0.10510543819008339,
+        "film": 0.11853495395673103,
+        "effects": 0.035294114683365053,
+        "render": 0.030854599854260784,
+        "capture": 0.00022197642945555286
+      }
+    },
+    {
+      "file": "native-no-occlusion.json",
+      "mode": "no-occlusion",
+      "fps": 47.26729689669092,
+      "p95FrameMs": 25.699999809265137,
+      "calls": 202,
+      "triangles": 589587,
+      "gpuPassMs": {
+        "frame": {
+          "mean": 24.066744436260617,
+          "p95": 30.471083,
+          "samples": 706
+        }
+      },
+      "gpuTiming": {
+        "mode": "no-occlusion",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 4,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "cpuMs": {
+        "controls": 0.3914084380781147,
+        "agents": 3.5767605835283307,
+        "city": 0.4477464514718929,
+        "film": 0.6880281784165073,
+        "effects": 0.1733802956594548,
+        "render": 5.400422534136705,
+        "capture": 0.002112673369931503
+      }
+    },
+    {
+      "file": "native-gpu-frame-repeat.json",
+      "mode": "frame",
+      "fps": 34.70669505540522,
+      "p95FrameMs": 34.40000057220459,
+      "calls": 291,
+      "triangles": 839937,
+      "gpuPassMs": {
+        "frame": {
+          "mean": 38.231913636363664,
+          "p95": 46.868707,
+          "samples": 517
+        }
+      },
+      "gpuTiming": {
+        "mode": "frame",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 4,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "cpuMs": {
+        "controls": 0.36698658040755083,
+        "agents": 3.2479846482084715,
+        "city": 0.41938578190135406,
+        "film": 0.5988483612001971,
+        "effects": 0.16276392140452556,
+        "render": 5.904798456437299,
+        "capture": 0.0011516285491767633
+      }
+    }
+  ],
+  "samePageForCalibratedRuns": true,
+  "cameraMaxComponentDelta": 8.881784197001252e-16,
+  "view": "Third-person breather2.943, not the previous first-person37fps test",
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "calibrationPassed": true,
+  "drawingPathAffectsFps": true,
+  "not60FpsAcceptance": true,
+  "frozen3dIsDiagnosticOnly": true,
+  "gpuIntervalsNotAdditive": true,
+  "gpuTimingCaveat": "Reported elapsed query intervals on ANGLE Metal cannot be treated as exclusive hardware work or summed into the CPU/browser frame interval. Query boundaries may change command-buffer submission. Ablation FPS is stronger evidence here than the per-pass timing sum. Installed ANGLE revision not established.",
+  "sources": [
+    "https://registry.khronos.org/webgl/extensions/EXT_disjoint_timer_query_webgl2/",
+    "https://chromium.googlesource.com/angle/angle/+/8ce63479cbe11d0e9c94cfe884b5e80f2800a729/src/libANGLE/renderer/metal/QueryMtl.mm",
+    "https://chromium.googlesource.com/angle/angle/+/4a77b0f5237515960673b9bd1bc5a229f0eeaa95/src/libANGLE/renderer/metal/mtl_command_buffer.mm"
+  ],
+  "nextAction": "Optimize the contact-shadow/drawing path while retaining character detail, then remeasure actual rendered gameplay; do not ship frozen rendering or remove AO as a60fps fix."
+}

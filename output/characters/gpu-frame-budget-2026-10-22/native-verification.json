@@ -1,0 +1,30 @@
+{
+  "actualNativeUiRun": true,
+  "url": "http://127.0.0.1:5201/?profile",
+  "source": "output/characters/pod-hand-anatomy-2026-10-22/grip-checkpoint.json",
+  "sourceCopiedWithoutStoryOrPositionEdits": true,
+  "inputs": "NormalUI: enter Neo, select GPU measurement range, start18s samples, canvas focus and V after measurements. No private engine evaluation or story injection.",
+  "actualBackendRestart": false,
+  "scope": "GPU/development diagnostics at a fixed third-person pod checkpoint, not new story or motion-FPS acceptance.",
+  "final": {
+    "tick": 5941,
+    "running": false,
+    "scene": "m1_pod",
+    "step": 0,
+    "awakening": {
+      "kind": "breather",
+      "elapsed": 2.9430000000000014,
+      "emerged": true
+    },
+    "health": 100
+  },
+  "renderingRestoredAfterNoRenderControl": {
+    "fullFrameRepeatReport": "native-gpu-frame-repeat.json",
+    "drawCalls": 291,
+    "nativeFirstPersonScreenshot": "native-render-restored-first-person.png",
+    "frozenRenderingNotShipped": true
+  },
+  "consoleWarningsAndErrors": [],
+  "newRecording": false,
+  "renderReconnected": false
+}

@@ -1,0 +1,10 @@
+{
+  "baseline": "4badd2d206a08e00c5adccdd1a86660c28481a65",
+  "verifiedSourceFiles": 1152,
+  "packageFiles": 704,
+  "protectedFiles": 11,
+  "previousGoalTurn": "progress",
+  "previousEvidence": "4badd2d shipped frustum-selected pod geometry and a paused view cache. Final no-capture FPS37.49/37.61 tied despite53% fewer submitted triangles; fixed picture593491 pixels identical; native turn/restart/rescue passed.",
+  "nextQuestion": "Measure actual GPU duration rather than CPU submission timing before choosing a bottleneck fix.",
+  "renderReconnected": false
+}

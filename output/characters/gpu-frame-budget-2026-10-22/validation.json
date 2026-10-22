@@ -1,0 +1,72 @@
+{
+  "baseline": "4badd2d206a08e00c5adccdd1a86660c28481a65",
+  "tests": [
+    {
+      "log": "gpu-timer-tests.log",
+      "passed": 4,
+      "failed": 0
+    },
+    {
+      "log": "related-tests.log",
+      "passed": 23,
+      "failed": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "passed": 75,
+      "failed": 0
+    }
+  ],
+  "threePackageTypecheckExitCode": 0,
+  "threePackageBuildExitCode": 0,
+  "productionJsAndHtmlIdenticalToPublished": true,
+  "diagnosticSourcesOnly": true,
+  "sourceAudit": "source-audit.json",
+  "measurement": "measurement-verification.json",
+  "native": "native-verification.json",
+  "newStoryAcceptance": false,
+  "noRenderedGameFpsImprovementClaim": true,
+  "frozen3dNotShipped": true,
+  "normalEffectsUnchanged": true,
+  "movieQualityAcceptedGroups": 0,
+  "totalSceneGroups": 42,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "committedLogs": [
+    {
+      "log": "gpu-timer-tests.log",
+      "committedLog": "gpu-timer-tests.log.gz",
+      "uncompressedSha256": "81aa5bfec240967ed416ec191e2fc2681709537293fcb756a3a681503154c364"
+    },
+    {
+      "log": "related-tests.log",
+      "committedLog": "related-tests.log.gz",
+      "uncompressedSha256": "d736449f54550ea23f43f6d47dc8b38d3ac41a14bc7154597b8261457898a837"
+    },
+    {
+      "log": "client-typecheck.log",
+      "committedLog": "client-typecheck.log.gz",
+      "uncompressedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "log": "client-typecheck-calibration.log",
+      "committedLog": "client-typecheck-calibration.log.gz",
+      "uncompressedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "log": "typecheck.log",
+      "committedLog": "typecheck.log.gz",
+      "uncompressedSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5"
+    },
+    {
+      "log": "production-build.log",
+      "committedLog": "production-build.log.gz",
+      "uncompressedSha256": "59d3b3b1e0b542aba277aab8d5258f36bbafbc27fcb30d1f17a99910903ec83c"
+    },
+    {
+      "log": "deploy-tests.log",
+      "committedLog": "deploy-tests.log.gz",
+      "uncompressedSha256": "8a4b3c0ae2d0d2fe7ee090b4734c7cc6808161ba82fabd010094916021999fb5"
+    }
+  ]
+}
