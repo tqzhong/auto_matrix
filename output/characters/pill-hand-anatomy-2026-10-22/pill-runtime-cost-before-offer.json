@@ -1,0 +1,58 @@
+{
+  "baseline": false,
+  "sourceHashes": {
+    "packages/client/src/agents/FightingHands.ts": "67283539cce63b4cb4ff5ff1fa98dd3caa917ff0208ef6380ab1361978160fbc",
+    "packages/client/src/agents/PillPerformance.ts": "0f61e7c6327d4b3767338fbd15229c0bd56ab6a6b032c670efa9fcecbd5f0e8c"
+  },
+  "rows": [
+    {
+      "role": "neo",
+      "kind": "paused",
+      "samples": 32,
+      "medianMS": 1.0165419999998448,
+      "p95MS": 2.3832499999998618,
+      "maxMS": 2.464791999999761
+    },
+    {
+      "role": "neo",
+      "kind": "pinch",
+      "samples": 32,
+      "medianMS": 22.093166000000565,
+      "p95MS": 37.98625000000084,
+      "maxMS": 43.06762499999968
+    },
+    {
+      "role": "neo",
+      "kind": "cup",
+      "samples": 32,
+      "medianMS": 17.286583000000064,
+      "p95MS": 22.15925000000061,
+      "maxMS": 23.29950000000008
+    },
+    {
+      "role": "morpheus",
+      "kind": "paused",
+      "samples": 32,
+      "medianMS": 0.6959589999987656,
+      "p95MS": 2.432958999999755,
+      "maxMS": 3.7588749999995343
+    },
+    {
+      "role": "morpheus",
+      "kind": "pinch",
+      "samples": 32,
+      "medianMS": 0.6730829999996786,
+      "p95MS": 1.603624999999738,
+      "maxMS": 1.9478330000001733
+    },
+    {
+      "role": "morpheus",
+      "kind": "cup",
+      "samples": 32,
+      "medianMS": 0.4148750000003929,
+      "p95MS": 1.812207999999373,
+      "maxMS": 1.9748749999998836
+    }
+  ],
+  "note": "Node per actor CPU only, includes HeroModels and matrix update. Not browser FPS. Other validation processes may be active; do not claim a stable speedup."
+}

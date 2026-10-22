@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: both offered capsules stay outside the complete palm surface while Morpheus opens his hands
+not ok 1 - both offered capsules stay outside the complete palm surface while Morpheus opens his hands
+  ---
+  duration_ms: 5719.188625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pill-hand-anatomy-2026-10-22/candidate-release/tests/pill-hand-surface.test.mts:1:7333'
+  failureType: 'testCodeFailure'
+  error: '2.4/red: face 20594 enters the capsule by 0.0035899306888770507'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pill-hand-anatomy-2026-10-22/candidate-release/tests/pill-hand-surface.test.mts:141:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6318.932917

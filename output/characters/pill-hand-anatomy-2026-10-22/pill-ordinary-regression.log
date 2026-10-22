@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: a saved combat hand restores the same skin after unrelated movement and a release
+ok 1 - a saved combat hand restores the same skin after unrelated movement and a release
+  ---
+  duration_ms: 8300.872041
+  type: 'test'
+  ...
+# Subtest: a phone gesture restores the original right-hand binding after a fighting grip
+ok 2 - a phone gesture restores the original right-hand binding after a fighting grip
+  ---
+  duration_ms: 5021.067958
+  type: 'test'
+  ...
+# Subtest: partially posed prop fingers match the original gesture without combat posing
+ok 3 - partially posed prop fingers match the original gesture without combat posing
+  ---
+  duration_ms: 5756.369959
+  type: 'test'
+  ...
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+ok 4 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+  ---
+  duration_ms: 23417.212042
+  type: 'test'
+  ...
+# Subtest: the zero mirror tint from player controls keeps ordinary fighting hands enabled
+ok 5 - the zero mirror tint from player controls keeps ordinary fighting hands enabled
+  ---
+  duration_ms: 2860.406042
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47706.159917

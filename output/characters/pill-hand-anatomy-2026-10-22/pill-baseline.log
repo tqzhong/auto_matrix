@@ -1,0 +1,239 @@
+TAP version 13
+# Subtest: neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 1 - neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 5433.2825
+  type: 'test'
+  ...
+# {"id":"neo","choice":"red","probes":851,"maximumSkinStep":0.04982076975960463,"maximumTurn":0.09603106935275849}
+# Subtest: neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 2 - neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 5007.202125
+  type: 'test'
+  ...
+# {"id":"neo","choice":"blue","probes":851,"maximumSkinStep":0.04982076975853766,"maximumTurn":0.09417437209435008}
+# Subtest: morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 3 - morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+  ---
+  duration_ms: 11521.898125
+  type: 'test'
+  ...
+# {"id":"morpheus","choice":"red","probes":1696,"maximumSkinStep":0.01572263684249004,"maximumTurn":0.03696412962610055}
+# Subtest: late wrist contact corrections update the forearm in the same frame
+ok 4 - late wrist contact corrections update the forearm in the same frame
+  ---
+  duration_ms: 1146.709083
+  type: 'test'
+  ...
+# Subtest: shared hero assets retain neutral geometry, hand targets and independent restored forearms
+ok 5 - shared hero assets retain neutral geometry, hand targets and independent restored forearms
+  ---
+  duration_ms: 20321.903166
+  type: 'test'
+  ...
+# Subtest: neo: turning the palm preserves the actual forearm and cuff cross-section
+ok 6 - neo: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 1236.466459
+  type: 'test'
+  ...
+# {"id":"neo","sampleCount":8013,"minimumRadius":0.8930728764065317}
+# Subtest: trinity: turning the palm preserves the actual forearm and cuff cross-section
+ok 7 - trinity: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 679.774167
+  type: 'test'
+  ...
+# {"id":"trinity","sampleCount":5386,"minimumRadius":0.8930729694064649}
+# Subtest: smith: turning the palm preserves the actual forearm and cuff cross-section
+ok 8 - smith: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 713.712916
+  type: 'test'
+  ...
+# {"id":"smith","sampleCount":2455,"minimumRadius":0.893072990680801}
+# Subtest: morpheus: turning the palm preserves the actual forearm and cuff cross-section
+ok 9 - morpheus: turning the palm preserves the actual forearm and cuff cross-section
+  ---
+  duration_ms: 2879.792708
+  type: 'test'
+  ...
+# {"id":"morpheus","sampleCount":4948,"minimumRadius":0.8930728137982399}
+# Subtest: a distant pill glass avoids a room-wide transmission pass while close and zoomed views keep refraction
+ok 10 - a distant pill glass avoids a room-wide transmission pass while close and zoomed views keep refraction
+  ---
+  duration_ms: 7.906584
+  type: 'test'
+  ...
+# Subtest: the console first-person eye follows Neo while he reaches for and drinks from the mug
+ok 11 - the console first-person eye follows Neo while he reaches for and drinks from the mug
+  ---
+  duration_ms: 3232.436459
+  type: 'test'
+  ...
+# Subtest: first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+ok 12 - first-person pill taking retains the actual hands and owned props, including a paused or restored pose
+  ---
+  duration_ms: 2555.795041
+  type: 'test'
+  ...
+# Subtest: possessing Morpheus does not borrow Neo's drinking glance
+ok 13 - possessing Morpheus does not borrow Neo's drinking glance
+  ---
+  duration_ms: 5310.694583
+  type: 'test'
+  ...
+# Subtest: the conversation frames neo and keeps capsules hidden until the offer
+ok 14 - the conversation frames neo and keeps capsules hidden until the offer
+  ---
+  duration_ms: 2356.273208
+  type: 'test'
+  ...
+# Subtest: the conversation frames morpheus and keeps capsules hidden until the offer
+ok 15 - the conversation frames morpheus and keeps capsules hidden until the offer
+  ---
+  duration_ms: 4731.932958
+  type: 'test'
+  ...
+# Subtest: first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+ok 16 - first-person pill eyes follow the real seated, leaning and standing head while near hand props clear the clip plane
+  ---
+  duration_ms: 1947.530708
+  type: 'test'
+  ...
+# Subtest: the first-person conversation retains the chosen look direction even after a long answer
+ok 17 - the first-person conversation retains the chosen look direction even after a long answer
+  ---
+  duration_ms: 1841.976375
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear neo's real eyes and the pill conversation
+ok 18 - the padded chairs clear neo's real eyes and the pill conversation
+  ---
+  duration_ms: 2377.684875
+  type: 'test'
+  ...
+# Subtest: the padded chairs clear morpheus's real eyes and the pill conversation
+ok 19 - the padded chairs clear morpheus's real eyes and the pill conversation
+  ---
+  duration_ms: 4875.414667
+  type: 'test'
+  ...
+# Subtest: Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+ok 20 - Neo grips the outside of the drinking glass without putting his fingers through the glass and water
+  ---
+  duration_ms: 2484.87225
+  type: 'test'
+  ...
+# Subtest: Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+ok 21 - Neo pinches either capsule between real thumb and index pads without folding the fingertip back or burying the pill
+  ---
+  duration_ms: 2349.36675
+  type: 'test'
+  ...
+# Subtest: reaching for a pill closes the hand continuously instead of snapping into the pinch
+ok 22 - reaching for a pill closes the hand continuously instead of snapping into the pinch
+  ---
+  duration_ms: 1620.268708
+  type: 'test'
+  ...
+# Subtest: Neo wraps all five fingers around the upright glass with opposing thumb support
+ok 23 - Neo wraps all five fingers around the upright glass with opposing thumb support
+  ---
+  duration_ms: 1988.977708
+  type: 'test'
+  ...
+# Subtest: bringing the glass to the mouth keeps the wrist aligned with the forearm
+ok 24 - bringing the glass to the mouth keeps the wrist aligned with the forearm
+  ---
+  duration_ms: 1652.21175
+  type: 'test'
+  ...
+# Subtest: the cup grasp blends continuously and restores the saved hand after other gestures and view changes
+ok 25 - the cup grasp blends continuously and restores the saved hand after other gestures and view changes
+  ---
+  duration_ms: 1494.128542
+  type: 'test'
+  ...
+# Subtest: Neo leaves the chairs facing the open tracking-room doorway
+ok 26 - Neo leaves the chairs facing the open tracking-room doorway
+  ---
+  duration_ms: 4.056083
+  type: 'test'
+  ...
+# Subtest: the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+ok 27 - the seated meeting waits for Neo to answer and pursue the explanation before offering pills
+  ---
+  duration_ms: 1139.716666
+  type: 'test'
+  ...
+# Subtest: the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+ok 28 - the belief, unfinished question and saved sitting pose survive pause, release, restore and retry
+  ---
+  duration_ms: 1059.418291
+  type: 'test'
+  ...
+# Subtest: existing offering and choice saves continue without inserting a new unanswered conversation
+ok 29 - existing offering and choice saves continue without inserting a new unanswered conversation
+  ---
+  duration_ms: 1265.290125
+  type: 'test'
+  ...
+# Subtest: cold loading restores both pill performers before a player reconnects
+ok 30 - cold loading restores both pill performers before a player reconnects
+  ---
+  duration_ms: 1405.712458
+  type: 'test'
+  ...
+# Subtest: pill pose restoration leaves occupied and dead performers alone
+ok 31 - pill pose restoration leaves occupied and dead performers alone
+  ---
+  duration_ms: 226.89725
+  type: 'test'
+  ...
+# Subtest: Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+ok 32 - Morpheus waits for an explicit pill choice and red completes only after the handoff and drink
+  ---
+  duration_ms: 2020.617416
+  type: 'test'
+  ...
+# Subtest: after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+ok 33 - after the red pill Morpheus leads Neo to the tracking chair instead of appearing there
+  ---
+  duration_ms: 1863.512792
+  type: 'test'
+  ...
+# Subtest: blue takes the same physical sequence before preserving the daily-life save
+ok 34 - blue takes the same physical sequence before preserving the daily-life save
+  ---
+  duration_ms: 1479.982625
+  type: 'test'
+  ...
+# Subtest: pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+ok 35 - pill gestures survive pause, disconnection, save restore and retry without changing the chosen color
+  ---
+  duration_ms: 1525.901
+  type: 'test'
+  ...
+# Subtest: a pill performance reserves Morpheus and rejects movement, combat and remote choices
+ok 36 - a pill performance reserves Morpheus and rejects movement, combat and remote choices
+  ---
+  duration_ms: 1061.176541
+  type: 'test'
+  ...
+# Subtest: an occupied Morpheus is never moved into the pill performance
+ok 37 - an occupied Morpheus is never moved into the pill performance
+  ---
+  duration_ms: 179.131041
+  type: 'test'
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50423.502875

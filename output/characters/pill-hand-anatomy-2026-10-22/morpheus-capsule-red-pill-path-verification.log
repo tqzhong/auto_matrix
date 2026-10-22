@@ -1,0 +1,80 @@
+{"checked":10,"role":"neo","choice":"red","phase":"taking","elapsed":0.3499,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":20,"role":"neo","choice":"red","phase":"taking","elapsed":0.5,"side":"L","self":0,"maximumPIP":23.268643565978344,"maximumDIP":25.38825232221762}
+{"checked":30,"role":"neo","choice":"red","phase":"taking","elapsed":0.75,"side":"L","self":0,"maximumPIP":31.489433791662417,"maximumDIP":30.190088105797045}
+{"checked":40,"role":"neo","choice":"red","phase":"taking","elapsed":1,"side":"L","self":0,"maximumPIP":47.15029460676978,"maximumDIP":47.739779124718744}
+{"checked":50,"role":"neo","choice":"red","phase":"taking","elapsed":1.25,"side":"L","self":0,"maximumPIP":63.42799318300618,"maximumDIP":64.37283928307934}
+{"checked":60,"role":"neo","choice":"red","phase":"taking","elapsed":1.5,"side":"L","self":0,"maximumPIP":76.04038472662202,"maximumDIP":76.11232123895229}
+{"checked":70,"role":"neo","choice":"red","phase":"taking","elapsed":1.75,"side":"L","self":0,"maximumPIP":82.06909485326365,"maximumDIP":81.24911197760446}
+{"checked":80,"role":"neo","choice":"red","phase":"taking","elapsed":2,"side":"L","self":0,"maximumPIP":82.26090767575042,"maximumDIP":81.40642479275002}
+{"checked":90,"role":"neo","choice":"red","phase":"taking","elapsed":2.5,"side":"L","self":0,"maximumPIP":82.26090767591728,"maximumDIP":81.4059452213248}
+{"checked":100,"role":"neo","choice":"red","phase":"taking","elapsed":3,"side":"L","self":0,"maximumPIP":82.26090767656947,"maximumDIP":81.40244826818622}
+{"checked":110,"role":"neo","choice":"red","phase":"taking","elapsed":3.5,"side":"L","self":0,"maximumPIP":82.26090767615415,"maximumDIP":81.40181399514792}
+{"checked":120,"role":"neo","choice":"red","phase":"taking","elapsed":3.7499,"side":"L","self":0,"maximumPIP":82.26090767615415,"maximumDIP":81.40181399514792}
+{"checked":130,"role":"neo","choice":"red","phase":"taking","elapsed":3.9,"side":"L","self":0,"maximumPIP":73.40561206155112,"maximumDIP":73.75590593414562}
+{"checked":140,"role":"neo","choice":"red","phase":"taking","elapsed":4.15,"side":"L","self":0,"maximumPIP":36.30844929357477,"maximumDIP":35.80528098569769}
+{"checked":150,"role":"neo","choice":"red","phase":"taking","elapsed":4.35,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899198}
+{"checked":160,"role":"neo","choice":"red","phase":"taking","elapsed":4.55,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899283}
+{"checked":170,"role":"neo","choice":"red","phase":"taking","elapsed":4.8,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.8317551478993}
+{"checked":180,"role":"neo","choice":"red","phase":"taking","elapsed":5.05,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789943}
+{"checked":190,"role":"neo","choice":"red","phase":"taking","elapsed":5.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903735}
+{"checked":200,"role":"neo","choice":"red","phase":"taking","elapsed":5.8,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789924}
+{"checked":210,"role":"neo","choice":"red","phase":"taking","elapsed":6.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789924}
+{"checked":220,"role":"neo","choice":"red","phase":"taking","elapsed":6.8,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":230,"role":"neo","choice":"red","phase":"taking","elapsed":7.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":240,"role":"neo","choice":"red","phase":"taking","elapsed":7.8,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789942}
+{"checked":250,"role":"neo","choice":"red","phase":"taking","elapsed":8.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903692}
+{"checked":260,"role":"neo","choice":"red","phase":"taking","elapsed":8.7,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899226}
+{"checked":270,"role":"neo","choice":"red","phase":"taking","elapsed":8.95,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899283}
+{"checked":280,"role":"neo","choice":"red","phase":"taking","elapsed":9.1999,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903706}
+{"checked":290,"role":"neo","choice":"red","phase":"taking","elapsed":10.5,"side":"L","self":0,"maximumPIP":23.605717252130713,"maximumDIP":25.593560110806873}
+{"checked":300,"role":"neo","choice":"red","phase":"taking","elapsed":13,"side":"L","self":0,"maximumPIP":23.616957555628446,"maximumDIP":25.475748401893345}
+{"checked":310,"role":"neo","choice":"blue","phase":"taking","elapsed":0.2,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":320,"role":"neo","choice":"blue","phase":"taking","elapsed":0.4,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789321}
+{"checked":330,"role":"neo","choice":"blue","phase":"taking","elapsed":0.65,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147708378}
+{"checked":340,"role":"neo","choice":"blue","phase":"taking","elapsed":0.9,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514734332}
+{"checked":350,"role":"neo","choice":"blue","phase":"taking","elapsed":1.15,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755146903724}
+{"checked":360,"role":"neo","choice":"blue","phase":"taking","elapsed":1.4,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755146496082}
+{"checked":370,"role":"neo","choice":"blue","phase":"taking","elapsed":1.65,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755146226183}
+{"checked":380,"role":"neo","choice":"blue","phase":"taking","elapsed":1.8001,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755146174487}
+{"checked":390,"role":"neo","choice":"blue","phase":"taking","elapsed":2.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755146237963}
+{"checked":400,"role":"neo","choice":"blue","phase":"taking","elapsed":2.8,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147036894}
+{"checked":410,"role":"neo","choice":"blue","phase":"taking","elapsed":3.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514784007}
+{"checked":420,"role":"neo","choice":"blue","phase":"taking","elapsed":3.6501,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":430,"role":"neo","choice":"blue","phase":"taking","elapsed":3.8,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":440,"role":"neo","choice":"blue","phase":"taking","elapsed":4.05,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":450,"role":"neo","choice":"blue","phase":"taking","elapsed":4.3,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903767}
+{"checked":460,"role":"neo","choice":"blue","phase":"taking","elapsed":4.45,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899283}
+{"checked":470,"role":"neo","choice":"blue","phase":"taking","elapsed":4.7,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789924}
+{"checked":480,"role":"neo","choice":"blue","phase":"taking","elapsed":4.95,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899358}
+{"checked":490,"role":"neo","choice":"blue","phase":"taking","elapsed":5.2,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899283}
+{"checked":500,"role":"neo","choice":"blue","phase":"taking","elapsed":5.6,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899024}
+{"checked":510,"role":"neo","choice":"blue","phase":"taking","elapsed":6.1,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903735}
+{"checked":520,"role":"neo","choice":"blue","phase":"taking","elapsed":6.6,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":530,"role":"neo","choice":"blue","phase":"taking","elapsed":7.1,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":540,"role":"neo","choice":"blue","phase":"taking","elapsed":7.6,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":550,"role":"neo","choice":"blue","phase":"taking","elapsed":8.1,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147899198}
+{"checked":560,"role":"neo","choice":"blue","phase":"taking","elapsed":8.6,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903735}
+{"checked":570,"role":"neo","choice":"blue","phase":"taking","elapsed":8.85,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.8317551478993}
+{"checked":580,"role":"neo","choice":"blue","phase":"taking","elapsed":9.1,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.831755147903753}
+{"checked":590,"role":"neo","choice":"blue","phase":"taking","elapsed":9.6,"side":"L","self":0,"maximumPIP":23.579387996581875,"maximumDIP":25.83175514789933}
+{"checked":600,"role":"neo","choice":"blue","phase":"taking","elapsed":11,"side":"L","self":0,"maximumPIP":23.616957555836922,"maximumDIP":25.47152367775844}
+{"checked":610,"role":"morpheus","choice":"red","phase":"offering","elapsed":0,"side":"L","self":0,"maximumPIP":23.56278430950158,"maximumDIP":21.27291464430966}
+{"checked":620,"role":"morpheus","choice":"red","phase":"offering","elapsed":0.5,"side":"L","self":0,"maximumPIP":23.56278430950158,"maximumDIP":21.27291464430966}
+{"checked":630,"role":"morpheus","choice":"red","phase":"offering","elapsed":1,"side":"L","self":0,"maximumPIP":23.56278430950158,"maximumDIP":21.27291464430966}
+{"checked":640,"role":"morpheus","choice":"red","phase":"offering","elapsed":1.5,"side":"L","self":0,"maximumPIP":23.56278430950158,"maximumDIP":21.27291464430966}
+{"checked":650,"role":"morpheus","choice":"red","phase":"offering","elapsed":2,"side":"L","self":0,"maximumPIP":23.56278430950158,"maximumDIP":21.27291464430966}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"role":"morpheus","choice":"red","phase":"offering","elapsed":2.4}/R: face 20594 enters red capsule by 0.0035899306888770507
+    at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pill-hand-anatomy-2026-10-22/verify-pill-hand-path.mts:71:20) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.2

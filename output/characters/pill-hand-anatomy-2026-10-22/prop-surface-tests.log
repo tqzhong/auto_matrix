@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a capsule face crossing is detected even when all three skin vertices are outside
+ok 1 - a capsule face crossing is detected even when all three skin vertices are outside
+  ---
+  duration_ms: 1.385708
+  type: 'test'
+  ...
+# Subtest: capsule distance uses a finite medial segment and its rounded caps
+ok 2 - capsule distance uses a finite medial segment and its rounded caps
+  ---
+  duration_ms: 0.784583
+  type: 'test'
+  ...
+# Subtest: a triangle enclosing the glass axis cannot pass a vertex-only wall check
+ok 3 - a triangle enclosing the glass axis cannot pass a vertex-only wall check
+  ---
+  duration_ms: 0.660541
+  type: 'test'
+  ...
+# Subtest: the glass slab clips away faces above the rim and preserves outside faces
+ok 4 - the glass slab clips away faces above the rim and preserves outside faces
+  ---
+  duration_ms: 0.2215
+  type: 'test'
+  ...
+# Subtest: a conservative sloped-wall bound refines rather than rejecting a valid near-wall triangle
+ok 5 - a conservative sloped-wall bound refines rather than rejecting a valid near-wall triangle
+  ---
+  duration_ms: 0.679875
+  type: 'test'
+  ...
+# Subtest: a real skin point beyond the existing glass contact margin fails
+ok 6 - a real skin point beyond the existing glass contact margin fails
+  ---
+  duration_ms: 0.125708
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 486.703958

@@ -153,8 +153,8 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
   return { attributes: a, hands, groups: normalGroups, groupCount: normalKeys.size };
 }
 
-/** Combat hands use rounded material coordinates, with compressible inner
- * creases. Explicit prop gestures retain their original skin and solver. */
+/** Rounded material coordinates preserve finger volume through a bend.
+ * Neo's pill gestures retain their authored joints and prop targets. */
 export class FightingHands {
   private skin: THREE.SkinnedMesh;
   private base: Attributes;
@@ -164,6 +164,7 @@ export class FightingHands {
   private closed: THREE.Quaternion[][][];
   private snapshots: number[][] = [[], []];
   private enabled = false;
+  private authored = false;
   private amounts = [0, 0];
   private previous: (string | undefined)[] = [];
   private scratch: Float64Array;
@@ -210,13 +211,15 @@ export class FightingHands {
   begin(input?: MotionInput): void {
     // PlayerControls also sends zero outside the mirror sequence. A timed
     // story gesture at zero still opts out; only this inactive tint is neutral.
-    this.enabled = Boolean(input && !input.armed && !input.seated && !input.floorSeated && !input.riding && !(input.climbing ?? 0)
-      && Object.entries(input).every(([key, value]) => value === undefined || value === false || (key === 'mirror' && value === 0) || ordinaryInputs.has(key as keyof MotionInput)));
+    this.authored = input?.pills?.role === 'neo';
+    this.enabled = Boolean(input && !input.armed && (!input.seated || this.authored) && !input.floorSeated && !input.riding && !(input.climbing ?? 0)
+      && Object.entries(input).every(([key, value]) => value === undefined || value === false || (key === 'mirror' && value === 0)
+        || (key === 'pills' && this.authored) || ordinaryInputs.has(key as keyof MotionInput)));
     for (const name of attributes) this.skin.geometry.setAttribute(name, this.base[name]);
   }
 
   pose(side: string, grip: number): boolean {
-    if (!this.enabled) return false;
+    if (!this.enabled || this.authored) return false;
     const which = side === 'R' ? 0 : 1, hand = this.binding.hands[which], amount = THREE.MathUtils.clamp(grip, 0, 1);
     if (amount > 0) {
       hand.bones.forEach((joints, d) => joints.forEach((joint, j) => this.skin.skeleton.bones[joint].quaternion.slerp(this.closed[which][d][j], d === 0 ? amount * amount : amount)));
@@ -234,7 +237,9 @@ export class FightingHands {
     const keys = this.binding.hands.map((hand, which) => {
       const current = hand.bones.flatMap(joints => joints.flatMap(joint => this.skin.skeleton.bones[joint].quaternion.toArray()));
       const wrist = this.skin.skeleton.bones[hand.wrist];
-      return current.every((v, i) => v === this.snapshots[which][i]) ? [this.amounts[which], ...wrist.quaternion.toArray(), ...wrist.position.toArray(), ...wrist.scale.toArray()].join(',') : undefined;
+      const pose = this.authored ? ['authored', ...current] : [this.amounts[which]];
+      return this.authored || current.every((v, i) => v === this.snapshots[which][i])
+        ? [...pose, ...wrist.quaternion.toArray(), ...wrist.position.toArray(), ...wrist.scale.toArray()].join(',') : undefined;
     });
     if (keys.some((v, i) => v !== this.previous[i]) || this.previous.length === 0) {
       for (const name of attributes) (this.output[name].array as Float32Array).set(this.base[name].array);

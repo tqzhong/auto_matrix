@@ -1,0 +1,74 @@
+{
+  "status": "hand geometry fix published; whole scene acceptance remains pending",
+  "baselineCommit": "6e3235fe6903ca527fbc526a4e67efc81818746a",
+  "sourceHashes": {
+    "packages/client/src/agents/FightingHands.ts": "67283539cce63b4cb4ff5ff1fa98dd3caa917ff0208ef6380ab1361978160fbc",
+    "packages/client/src/agents/PillPerformance.ts": "1f6e2215f59f3a47c56717d88631402d0d3d092402740ccb4ab31fd51a0d7777"
+  },
+  "newRegressionTests": 8,
+  "relatedPillRegressionTests": 37,
+  "ordinaryHandIsolationTests": 5,
+  "deploymentRegressionTests": 75,
+  "geometryControlTests": 6,
+  "typecheck": "passed",
+  "productionBuild": "passed; existing large chunk warning retained",
+  "fullHandPath": {
+    "complete": true,
+    "sourceHashes": {
+      "packages/client/src/agents/FightingHands.ts": "67283539cce63b4cb4ff5ff1fa98dd3caa917ff0208ef6380ab1361978160fbc",
+      "packages/client/src/agents/PillPerformance.ts": "1f6e2215f59f3a47c56717d88631402d0d3d092402740ccb4ab31fd51a0d7777"
+    },
+    "actorFrames": 415,
+    "fullHandPoses": 830,
+    "originalFacesPerHand": 12472,
+    "originalVerticesPerHand": 6673,
+    "maximumPIP": 82.2609076767401,
+    "maximumDIP": 81.40642482509126,
+    "maximumSeamGap": 0,
+    "capsuleTriangles": 4567,
+    "minimumCapsuleGap": -0.001281549742461063,
+    "cupTriangles": 154638,
+    "cupSubdivisions": 0,
+    "minimumCupLowerBound": 0.0015769924761338955,
+    "selfIntersectionThreshold": 1e-05,
+    "allFacesRetained": true,
+    "sampling": "100ms throughout; 50ms during grip transitions; explicit boundary samples; both actors and both hands",
+    "continuousMathematicalProof": false
+  },
+  "coverage": {
+    "neo": "taking: both choices, 0–17 seconds",
+    "morpheus": "offering, taking, talking beat 0, choice and done"
+  },
+  "limitations": [
+    "Finite poses; not a continuous proof, complete body or furniture contact verification.",
+    "Neo seating and every dialogue beat were not scanned at the same density.",
+    "Character likeness, natural materials, dynamic deformation cost and browser FPS remain unfinished."
+  ],
+  "acceptedFilmSceneGroups": 0,
+  "localPreview": {
+    "url": "http://localhost:5173/",
+    "bundle": "index-AWO4j4d3.js",
+    "bundleBytes": 3733860,
+    "servedBundleSha256": "8128a25569bf7501a987f5963c82e1e8db423d9fa5b03873329a2fc835a612bd",
+    "backendDistFilesUnchanged": 280,
+    "serverRestarted": false,
+    "serverPid": 82106,
+    "fullWorldSnapshotPreserved": true,
+    "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+    "tick": 3757,
+    "running": false,
+    "previousBundleRetained": true,
+    "previousBundle": "index-CztavNhD.js",
+    "livePackageFilesMatchCandidate": 704,
+    "protectedWipFilesUnchanged": 11,
+    "renderReconnected": false,
+    "assetsChanged": false,
+    "nativeReloadPending": false,
+    "afterNativeReloadFullWorldPreserved": true,
+    "nativeBundleReadFromDom": true,
+    "nativeWarnings": 0,
+    "nativeErrors": 0,
+    "temporaryQaPortsStopped": true,
+    "deliveryTab": "19"
+  }
+}

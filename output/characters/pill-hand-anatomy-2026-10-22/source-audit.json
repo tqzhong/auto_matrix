@@ -1,0 +1,24 @@
+{
+  "baseline": "6e3235fe6903ca527fbc526a4e67efc81818746a",
+  "trackedFiles": 1146,
+  "packageFiles": 704,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "faa887daa9282ae1bc192d4e0420d90e8dbd6c532cfd54537aecb6dc14e3cdb0",
+      "candidate": "67283539cce63b4cb4ff5ff1fa98dd3caa917ff0208ef6380ab1361978160fbc"
+    },
+    {
+      "path": "packages/client/src/agents/PillPerformance.ts",
+      "before": "5a4f39ae23b1b6bb5c1d843c5250db81a72f8eafd96556dec676e2eca64fa532",
+      "candidate": "1f6e2215f59f3a47c56717d88631402d0d3d092402740ccb4ab31fd51a0d7777"
+    }
+  ],
+  "newTests": [
+    "tests/pill-hand-surface.test.mts",
+    "tests/helpers/pill-prop-contact.mts"
+  ],
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "baselineFilesIndividuallyVerifiedAgainstGitBlobIds": true
+}

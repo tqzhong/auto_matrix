@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: red: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+ok 1 - red: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+  ---
+  duration_ms: 20249.309708
+  type: 'test'
+  ...
+# Subtest: blue: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+ok 2 - blue: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+  ---
+  duration_ms: 16462.738666
+  type: 'test'
+  ...
+# Subtest: capsule ownership changes hands at a continuous world position
+ok 3 - capsule ownership changes hands at a continuous world position
+  ---
+  duration_ms: 10158.683625
+  type: 'test'
+  ...
+# Subtest: saved pill skin restores after phone, other colors and camera changes
+ok 4 - saved pill skin restores after phone, other colors and camera changes
+  ---
+  duration_ms: 25989.999833
+  type: 'test'
+  ...
+# Subtest: the actual skin stays continuous at pill grip and seat transition boundaries
+not ok 5 - the actual skin stays continuous at pill grip and seat transition boundaries
+  ---
+  duration_ms: 9015.330833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pill-hand-anatomy-2026-10-22/candidate-release/tests/pill-hand-surface.test.mts:1:4793'
+  failureType: 'testCodeFailure'
+  error: 'red/11/R: the hand skin jumps 0.0023558858322059724 in 0.2ms'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pill-hand-anatomy-2026-10-22/candidate-release/tests/pill-hand-surface.test.mts:89:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83604.417292

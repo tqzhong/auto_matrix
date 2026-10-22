@@ -1,0 +1,283 @@
+[
+  {
+    "mode": "normal",
+    "vertices": [
+      {
+        "id": 12893,
+        "gap": 0.002355885834125411,
+        "weights": [
+          {
+            "bone": "wrist_R",
+            "weight": 0.5891778469085693
+          },
+          {
+            "bone": "forearm_twist_R_3",
+            "weight": 0.2723831236362457
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0.13843905925750732
+          },
+          {
+            "bone": "forearm_twist_R_2",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 12894,
+        "gap": 0.0022105758234876437,
+        "weights": [
+          {
+            "bone": "wrist_R",
+            "weight": 0.5599194765090942
+          },
+          {
+            "bone": "forearm_twist_R_3",
+            "weight": 0.2725957930088043
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0.16748476028442383
+          },
+          {
+            "bone": "forearm_twist_R_2",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 12191,
+        "gap": 0.002090076676132409,
+        "weights": [
+          {
+            "bone": "wrist_R",
+            "weight": 0.7904872298240662
+          },
+          {
+            "bone": "forearm_twist_R_3",
+            "weight": 0.20951278507709503
+          },
+          {
+            "bone": "forearm_twist_R_2",
+            "weight": 0
+          },
+          {
+            "bone": "pelvis",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 12189,
+        "gap": 0.002053549808982103,
+        "weights": [
+          {
+            "bone": "wrist_R",
+            "weight": 0.791409432888031
+          },
+          {
+            "bone": "forearm_twist_R_3",
+            "weight": 0.20859059691429138
+          },
+          {
+            "bone": "forearm_twist_R_2",
+            "weight": 0
+          },
+          {
+            "bone": "pelvis",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 12826,
+        "gap": 0.0020422695010269424,
+        "weights": [
+          {
+            "bone": "wrist_R",
+            "weight": 0.7994999885559082
+          },
+          {
+            "bone": "forearm_twist_R_3",
+            "weight": 0.2004999965429306
+          },
+          {
+            "bone": "forearm_twist_R_2",
+            "weight": 0
+          },
+          {
+            "bone": "pelvis",
+            "weight": 0
+          }
+        ]
+      }
+    ],
+    "bones": [
+      {
+        "name": "shoulder_R",
+        "angle": 0.16629581284963987
+      },
+      {
+        "name": "elbow_R",
+        "angle": 0.32516339086600193
+      },
+      {
+        "name": "wrist_R",
+        "angle": 0.16154986988293465
+      },
+      {
+        "name": "shoulder_L",
+        "angle": 0.16629581284963987
+      },
+      {
+        "name": "elbow_L",
+        "angle": 0.32516339086600193
+      },
+      {
+        "name": "wrist_L",
+        "angle": 0.16154986988293465
+      },
+      {
+        "name": "forearm_twist_R_1",
+        "angle": 0.1612245263793218
+      },
+      {
+        "name": "forearm_twist_R_2",
+        "angle": 0.16102900476026089
+      },
+      {
+        "name": "forearm_twist_R_3",
+        "angle": 0.16096377810954715
+      },
+      {
+        "name": "forearm_twist_L_1",
+        "angle": 0.1612245263793218
+      },
+      {
+        "name": "forearm_twist_L_2",
+        "angle": 0.16102900476026089
+      },
+      {
+        "name": "forearm_twist_L_3",
+        "angle": 0.16096377810954715
+      }
+    ]
+  },
+  {
+    "mode": "skip-zero-ik",
+    "vertices": [
+      {
+        "id": 9841,
+        "gap": 5.2161989293329065e-11,
+        "weights": [
+          {
+            "bone": "finger1-3_R",
+            "weight": 1
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0
+          },
+          {
+            "bone": "finger1-2_R",
+            "weight": 0
+          },
+          {
+            "bone": "wrist_R",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 10117,
+        "gap": 5.211857456277553e-11,
+        "weights": [
+          {
+            "bone": "finger1-3_R",
+            "weight": 1
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0
+          },
+          {
+            "bone": "finger1-2_R",
+            "weight": 0
+          },
+          {
+            "bone": "wrist_R",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 10115,
+        "gap": 5.1963364871024633e-11,
+        "weights": [
+          {
+            "bone": "finger1-3_R",
+            "weight": 1
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0
+          },
+          {
+            "bone": "finger1-2_R",
+            "weight": 0
+          },
+          {
+            "bone": "wrist_R",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 9838,
+        "gap": 5.194836588322177e-11,
+        "weights": [
+          {
+            "bone": "finger1-3_R",
+            "weight": 1
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0
+          },
+          {
+            "bone": "finger1-2_R",
+            "weight": 0
+          },
+          {
+            "bone": "wrist_R",
+            "weight": 0
+          }
+        ]
+      },
+      {
+        "id": 9902,
+        "gap": 5.1941159477449006e-11,
+        "weights": [
+          {
+            "bone": "finger1-3_R",
+            "weight": 1
+          },
+          {
+            "bone": "finger1-1_R",
+            "weight": 0
+          },
+          {
+            "bone": "finger1-2_R",
+            "weight": 0
+          },
+          {
+            "bone": "wrist_R",
+            "weight": 0
+          }
+        ]
+      }
+    ],
+    "bones": []
+  }
+]

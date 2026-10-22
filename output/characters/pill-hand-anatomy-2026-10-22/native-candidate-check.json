@@ -1,0 +1,7 @@
+{
+  "url": "http://127.0.0.1:5200/qa-pill-hands.html",
+  "actualGameModels": true,
+  "fullSceneAcceptance": false,
+  "warningsAndErrors": [],
+  "scope": "Native game GLB/textures/materials: red/blue pinch, cup front/back, continuous Neo and seated Morpheus. Final Morpheus palm offset checked after the capsule-contact correction. No player commands or furniture on this inspection stage."
+}
