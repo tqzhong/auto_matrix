@@ -1,0 +1,12 @@
+{
+  "source": "output/characters/pod-hand-anatomy-2026-10-22/grip-checkpoint.json",
+  "sha256": "4f00ce04f04968f6e531ac030d183e0fcf8385af7679789c4242cea5a5f9b441",
+  "memoryFiles": 6,
+  "tick": 5941,
+  "simulation": {
+    "running": false,
+    "speed": 1
+  },
+  "stateEdited": false,
+  "mainSaveUsed": false
+}

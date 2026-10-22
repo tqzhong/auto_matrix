@@ -1,0 +1,21 @@
+{
+  "actualNativeUiRun": true,
+  "enteredViaNormalUi": true,
+  "samePageOriginalVsInPlace": true,
+  "actualFirstPersonVSwitch": true,
+  "views": [
+    "third-person",
+    "first-person"
+  ],
+  "scene": "m1_pod",
+  "tick": 5941,
+  "running": false,
+  "storyAdvanced": false,
+  "actualBackendRestart": false,
+  "videoRecorded": false,
+  "consoleWarningsAndErrors": [],
+  "scope": "Static rendering/composition and FPS ablation only; no new full story, movement FPS, restart or save-reload acceptance.",
+  "existingVisualProblems": [
+    "Wrist/skin/material and movie-quality character fidelity remain incomplete."
+  ]
+}

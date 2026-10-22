@@ -1,0 +1,28 @@
+{
+  "baseline": "0697449211cf4ac3eaba73b42634728ae5e2838a",
+  "verifiedBaselineFiles": 1154,
+  "packageFiles": 705,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/PostProcessing.ts",
+      "before": "348a9f545b2663cbfaf06a224f1af36c44b985186785adffd239f1a1a06ffdeb",
+      "candidate": "f1e6deb3683884d4ef6a7e4b93b2abf8642c6a855854c63052c4cf3c275140d4"
+    },
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "3a40888e6d20b56739af1ddcdd2ce1a1d176708c8fd979f3b29971896d1b96dc",
+      "candidate": "31045a23d72603f71b9ca7e35e9d5369a5102025c8ccb49ad594704b3807310c"
+    },
+    {
+      "path": "tests/postprocessing.test.mts",
+      "before": "0f6d4030b44c9146c44497da92dbc36864817da66b03b173120a87e174cda13a",
+      "candidate": "41be41fe53b9da165e7c970cc1d7d3bbee3eb7bc710899486d7d343a50dd9ff7"
+    }
+  ],
+  "unchangedBaselineFiles": 1151,
+  "protectedWipFilesUnchanged": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false,
+  "renderReconnected": false
+}

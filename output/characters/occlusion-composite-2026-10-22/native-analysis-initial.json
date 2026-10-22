@@ -1,0 +1,8 @@
+{
+  "strictJsonCameraEqualityPassed": false,
+  "cause": "Projection matrix differed by floating-point rounding, while position and quaternion were identical.",
+  "maxProjectionDelta": 6.661338147750939e-16,
+  "correctedCameraTolerance": 1e-12,
+  "noNewNativeMeasurements": true,
+  "frameReportsRetained": true
+}

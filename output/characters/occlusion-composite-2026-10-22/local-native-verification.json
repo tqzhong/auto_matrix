@@ -1,0 +1,9 @@
+{
+  "url": "http://localhost:5173/",
+  "scripts": [
+    "http://localhost:5173/assets/index-BLEhj-db.js"
+  ],
+  "consoleWarningsAndErrors": [],
+  "landingPaused": true,
+  "enteredMainSave": false
+}

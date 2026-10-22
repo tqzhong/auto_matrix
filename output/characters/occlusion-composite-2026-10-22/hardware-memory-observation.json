@@ -1,0 +1,14 @@
+{
+  "hardware": {
+    "exitCode": 0,
+    "output": "Apple M3\n25769803776\n"
+  },
+  "memoryPressure": {
+    "exitCode": 0,
+    "output": "The system has 25769803776 (1572864 pages with a page size of 16384).\n\nStats: \nPages free: 25495 \nPages purgeable: 6942 \nPages purged: 283403805 \n\nSwap I/O:\nSwapins: 2642168 \nSwapouts: 4971920 \n\nPage Q counts:\nPages active: 458989 \nPages inactive: 456347 \nPages speculative: 2030 \nPages throttled: 0 \nPages wired down: 222537 \n\nCompressor Stats:\nPages used by compressor: 369515 \nPages decompressed: 777118660 \nPages compressed: 1098140866 \n\nFile I/O:\nPageins: 3421076726 \nPageouts: 11432127 \n\nSystem-wide memory free percentage: 61%\n"
+  },
+  "swap": {
+    "exitCode": 0,
+    "output": "vm.swapusage: total = 11264.00M  used = 10600.19M  free = 663.81M  (encrypted)\n"
+  }
+}

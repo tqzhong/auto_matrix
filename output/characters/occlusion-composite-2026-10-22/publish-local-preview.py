@@ -1,0 +1,69 @@
+import hashlib, json, os, re, shutil, subprocess, urllib.request
+from pathlib import Path
+
+root = Path(__file__).resolve().parents[3]
+unit = Path(__file__).resolve().parent
+candidate = unit / 'candidate-release'
+live = root / 'output/deployment/matrixai-bandwidth-2026-10-20/release'
+sha = lambda data: hashlib.sha256(data).hexdigest()
+def fetch(path):
+    with urllib.request.urlopen('http://127.0.0.1:5173/' + path, timeout=15) as response: return response.read()
+def manifest(folder): return {str(p.relative_to(folder)): sha(p.read_bytes()) for p in folder.rglob('*') if p.is_file()}
+
+audit = json.loads((unit / 'source-audit.json').read_text())
+for name, count in [('related-tests.log', 26), ('deploy-tests.log', 75)]:
+    log = (unit / name).read_text()
+    assert re.search(r'^# pass ' + str(count) + r'$', log, re.M) and re.search(r'^# fail 0$', log, re.M), name
+assert json.loads((unit / 'validation.json').read_text())['allGatesPassed']
+assert json.loads((unit / 'native-performance-comparison.json').read_text())['not60FpsAcceptance']
+for name in ['native-picture-comparison.json', 'native-first-person-comparison.json']:
+    picture = json.loads((unit / name).read_text())
+    assert picture['changedPixels'] == 0 and picture['comparedPixels'] > 500000
+assert json.loads((unit / 'native-console.json').read_text()) == []
+protected = json.loads((unit / 'protected-worktree.json').read_text())
+for name, digest in protected.items(): assert sha((root / name).read_bytes()) == digest, name
+backend = live / 'packages/server/dist'
+before_backend = json.loads((unit / 'backend-dist-before.json').read_text())
+assert manifest(backend) == before_backend
+command = 'node output/deployment/matrixai-bandwidth-2026-10-20/release/packages/server/dist/index.js'
+assert subprocess.check_output(['ps', '-p', '82106', '-o', 'command='], text=True).strip() == command
+old_world = (unit / 'full-world-before.json').read_bytes()
+assert fetch('api/world') == old_world
+names = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', audit['baseline'], 'packages'], cwd=root, text=True).splitlines()
+assert len(names) == audit['packageFiles'] == 705
+changed = {row['path']: row for row in audit['changed']}
+for name in names:
+    expected = changed[name]['before'] if name in changed else sha((candidate / name).read_bytes())
+    assert sha((live / name).read_bytes()) == expected, name
+for row in audit['changed']:
+    assert sha((root / row['path']).read_bytes()) == sha((candidate / row['path']).read_bytes()) == row['candidate']
+client = live / 'packages/client/dist'
+dist = candidate / 'packages/client/dist'
+before_index = (client / 'index.html').read_bytes()
+(unit / 'local-index-before.html').write_bytes(before_index)
+html = (dist / 'index.html').read_text()
+bundle = re.search(r'/assets/(index-[^" ]+\.js)', html).group(1)
+css = re.search(r'/assets/(index-[^" ]+\.css)', html).group(1)
+old_bundle = re.search(rb'/assets/(index-[^" ]+\.js)', before_index).group(1).decode()
+old_js = (client / 'assets' / old_bundle).read_bytes()
+assert (dist / 'assets' / css).read_bytes() == (client / 'assets' / css).read_bytes()
+new_js = (dist / 'assets' / bundle).read_bytes()
+assert sha(new_js) == json.loads((unit / 'candidate-build.json').read_text())['js']['sha256']
+temp = client / 'assets' / (bundle + '.tmp'); temp.write_bytes(new_js); os.replace(temp, client / 'assets' / bundle)
+for row in audit['changed']:
+    if row['path'].startswith('packages/'): shutil.copy2(candidate / row['path'], live / row['path'])
+temp = client / 'index.html.tmp'; temp.write_bytes((dist / 'index.html').read_bytes()); os.replace(temp, client / 'index.html')
+assert fetch('') == (dist / 'index.html').read_bytes() and fetch('assets/' + bundle) == new_js
+assert (client / 'assets' / old_bundle).read_bytes() == old_js
+assert manifest(backend) == before_backend and fetch('api/world') == old_world
+assert subprocess.check_output(['ps', '-p', '82106', '-o', 'command='], text=True).strip() == command
+for name in names: assert (live / name).read_bytes() == (candidate / name).read_bytes(), name
+for name, digest in protected.items(): assert sha((root / name).read_bytes()) == digest, name
+world = json.loads(old_world)
+report = {'url': 'http://localhost:5173/', 'bundle': bundle, 'bundleBytes': len(new_js), 'servedBundleSha256': sha(new_js),
+    'backendDistFilesUnchanged': len(before_backend), 'serverRestarted': False, 'serverPid': 82106,
+    'fullWorldSnapshotPreserved': True, 'fullWorldSha256': sha(old_world), 'tick': world['simulation']['tick'], 'running': world['simulation']['running'],
+    'previousBundleRetained': True, 'previousBundle': old_bundle, 'livePackageFilesMatchCandidate': len(names),
+    'protectedWipFilesUnchanged': len(protected), 'renderReconnected': False, 'assetsChanged': False, 'nativeReloadPending': True}
+(unit / 'local-update-verification.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report, indent=2))

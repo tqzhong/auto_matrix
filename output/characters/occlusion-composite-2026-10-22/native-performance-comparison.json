@@ -1,0 +1,54 @@
+{
+  "order": "B/A/A/B",
+  "reports": [
+    {
+      "file": "native-sample-1.json",
+      "inPlace": true,
+      "fps": 34.154736967631116,
+      "p95ms": 36,
+      "calls": 290,
+      "triangles": 839936
+    },
+    {
+      "file": "native-sample-2.json",
+      "inPlace": false,
+      "fps": 34.42489779111784,
+      "p95ms": 35.5,
+      "calls": 291,
+      "triangles": 839937
+    },
+    {
+      "file": "native-sample-3.json",
+      "inPlace": false,
+      "fps": 29.760117439028463,
+      "p95ms": 42.90000057220459,
+      "calls": 291,
+      "triangles": 839937
+    },
+    {
+      "file": "native-sample-4.json",
+      "inPlace": true,
+      "fps": 30.9702912133937,
+      "p95ms": 41,
+      "calls": 290,
+      "triangles": 839936
+    }
+  ],
+  "originalMeanFps": 32.09250761507315,
+  "inPlaceMeanFps": 32.56251409051241,
+  "meanFpsChangePercent": 1.4645364615213374,
+  "cameraMaxDifference": 6.661338147750939e-16,
+  "cameraTolerance": 1e-12,
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "stableFpsImprovementProven": false,
+  "not60FpsAcceptance": true,
+  "reason": "Within-path variation is larger than between-path difference. Fixed paused third-person view only; not general gameplay.",
+  "noGpuQueriesDuringFrames": true,
+  "noRecordingOrParallelTests": true,
+  "samePageCameraAndNoise": true
+}

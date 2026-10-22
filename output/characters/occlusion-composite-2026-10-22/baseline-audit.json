@@ -1,0 +1,10 @@
+{
+  "baseline": "0697449211cf4ac3eaba73b42634728ae5e2838a",
+  "verifiedSourceFiles": 1154,
+  "packageFiles": 705,
+  "protectedFiles": 11,
+  "previousGoalTurn": "progress",
+  "previousEvidence": "0697449 added GPU calibration/ablation tools. Third-person complete35fps, AO-disabled47fps, frozen3D60fps; production unchanged. GPU query values are not exclusive/additive wall times.",
+  "nextAction": "Remove the redundant GTAO default full-color copy by multiplicative blending into the existing read buffer, keeping AO settings and fallback paths.",
+  "renderReconnected": false
+}

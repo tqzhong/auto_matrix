@@ -1,0 +1,52 @@
+{
+  "baseline": {
+    "baseline-postprocessing.log": {
+      "passed": 5,
+      "failed": 0
+    },
+    "baseline-related.log": {
+      "passed": 23,
+      "failed": 0
+    },
+    "baseline-deploy.log": {
+      "passed": 75,
+      "failed": 0
+    }
+  },
+  "candidate": {
+    "candidate-postprocessing.log": {
+      "passed": 8,
+      "failed": 0
+    },
+    "related-tests.log": {
+      "passed": 26,
+      "failed": 0
+    },
+    "deploy-tests.log": {
+      "passed": 75,
+      "failed": 0
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "packages": [
+        "shared",
+        "server",
+        "client"
+      ]
+    },
+    "build": {
+      "exitCode": 0,
+      "modules": 442
+    }
+  },
+  "allGatesPassed": true,
+  "buildWarnings": [
+    "Existing bundle-size advisory: minified main chunk exceeds 500kB."
+  ],
+  "reproduction": {
+    "existingTestsPassed": 5,
+    "newTestsPassed": 1,
+    "newTestsFailed": 2,
+    "log": "reproduction-postprocessing.log"
+  }
+}

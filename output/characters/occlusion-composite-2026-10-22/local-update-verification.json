@@ -1,0 +1,48 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-BLEhj-db.js",
+  "bundleBytes": 3740533,
+  "servedBundleSha256": "909fc4e6b1cc7270dc0a67e9951c2dcdd493b350b3bbf69f5680dc235e84c1a8",
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "serverPid": 82106,
+  "fullWorldSnapshotPreserved": true,
+  "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-ByDoGF_7.js",
+  "livePackageFilesMatchCandidate": 705,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "assetsChanged": false,
+  "nativeReloadPending": false,
+  "nativeActualBundleLoaded": "index-BLEhj-db.js",
+  "nativeConsoleWarningsAndErrors": [],
+  "fullWorldPreservedAfterNativeOpen": true,
+  "fullWorldAfterNativeOpenSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "qaServersSignalled": [
+    {
+      "pid": 71412,
+      "command": "node packages/server/dist/index.js",
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/occlusion-composite-2026-10-22/candidate-release",
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 71515,
+      "command": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5201 --strictPort",
+      "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/occlusion-composite-2026-10-22/candidate-release/packages/client",
+      "signal": "SIGTERM"
+    }
+  ],
+  "qaServersStopped": {
+    "backend": {
+      "pid": 71412,
+      "exitCode": 0
+    },
+    "vite": {
+      "pid": 71515,
+      "exitCode": 143
+    }
+  }
+}
