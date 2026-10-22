@@ -63,6 +63,11 @@ export class PillPerformance {
     const pole = new THREE.Vector3(side === 'L' ? .3 : -.3, -1, .15)
       .lerp(new THREE.Vector3(side === 'L' ? 1 : -1, -.6, -1.2), armrest).applyQuaternion(rootRotation);
     pole.addScaledVector(direction, -pole.dot(direction)).normalize();
+    // Fade the elbow plane as well as the contact; otherwise an almost-zero
+    // hand blend still holds the full IK pose until its last frame.
+    const currentPole = lower.getWorldPosition(new THREE.Vector3()).sub(start);
+    currentPole.addScaledVector(direction, -currentPole.dot(direction)).normalize();
+    pole.copy(currentPole.lerp(pole, blend).normalize());
     const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
     const aim = (joint: THREE.Bone, child: THREE.Bone, position: THREE.Vector3) => {
       joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(position.clone()).sub(joint.position).normalize()); joint.updateWorldMatrix(false, true);
@@ -71,10 +76,11 @@ export class PillPerformance {
     end.quaternion.copy(lower.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rootRotation).multiply(orientation));
     end.updateWorldMatrix(false, true);
   }
-  private fingers(side: 'R' | 'L', grip: number, thumb = grip): void {
+  private fingers(side: 'R' | 'L', grip: number, thumb = grip, blend = 1): void {
     for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
       const curl = finger === 1 ? thumb : grip;
-      this.bone(`finger${finger}-${segment}_${side}`).rotation.set(finger === 1 ? curl * .6 : 0, 0, (side === 'R' ? 1 : -1) * curl * (finger === 1 ? .2 : segment === 1 ? .65 : .9));
+      const rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(finger === 1 ? curl * .6 : 0, 0, (side === 'R' ? 1 : -1) * curl * (finger === 1 ? .2 : segment === 1 ? .65 : .9)));
+      this.bone(`finger${finger}-${segment}_${side}`).quaternion.slerp(rotation, blend);
     }
   }
   private orientation(side: 'R' | 'L', normal: THREE.Vector3, fingers: THREE.Vector3): THREE.Quaternion {
@@ -168,7 +174,9 @@ export class PillPerformance {
     const root = this.rig.root; root.updateWorldMatrix(true, true);
     if (gesture.role === 'morpheus') {
       for (const [side, color, object] of [['R', 'red', this.red], ['L', 'blue', this.blue]] as const) {
-        const palm = new THREE.Vector3(side === 'R' ? .082 : -.082, -.18, .015);
+        // Keep the capsule's rounded side above the full palm surface, not
+        // only its center or end caps. The hand IK preserves its world target.
+        const palm = new THREE.Vector3(side === 'R' ? .086 : -.086, -.18, .015);
         const rest = new THREE.Vector3(side === 'R' ? -1.04 : 1.04, 1.95, .35);
         if (side === 'R') { rest.y += pose.talk * .2; rest.z += pose.talk * .15; }
         // An exact half-turn has two interpolation paths. Supinate each palm
@@ -183,15 +191,20 @@ export class PillPerformance {
       return;
     }
     const side = gesture.choice === 'blue' ? 'R' : 'L';
-    const pinch = new THREE.Vector3(side === 'R' ? .14 : -.14, -.275, .12);
-    const contact = this.local(pillContact(gesture.choice ?? 'red')); contact.y += .022;
+    // Keep the capsule in front of the knuckles. The old point lay almost
+    // level with the index root, forcing its tip back into the first phalanx.
+    const pinch = new THREE.Vector3(side === 'R' ? .14 : -.14, -.27, .16);
+    const contact = this.local(pillContact(gesture.choice ?? 'red'));
+    contact.y += .022 * pillEase(time, PILL_TIMING.transfer, 2.15);
     const mouth = root.worldToLocal(this.bone('head').localToWorld(new THREE.Vector3(0, -.2, .36)));
-    const reach = gesture.phase === 'taking' ? pillEase(time, .35, PILL_TIMING.transfer) * (1 - pillEase(time, 3.85, 4.35)) : 0;
+    // Return the empty hand gently after swallowing, while keeping the
+    // original end of the return and the following cup pickup unchanged.
+    const reach = gesture.phase === 'taking' ? pillEase(time, .35, PILL_TIMING.transfer) * (1 - pillEase(time, 3.75, 4.35)) : 0;
     for (const restingSide of ['R', 'L'] as const) {
       const rest = pose.seat * (1 - (side === restingSide ? reach : 0)) * (restingSide === 'R' ? 1 - pose.cupReach : 1);
       if (!rest) continue;
       const knee = root.worldToLocal(this.bone('knee_' + restingSide).getWorldPosition(new THREE.Vector3())); knee.y += .13; knee.z -= .13;
-      this.fingers(restingSide, .18);
+      this.fingers(restingSide, .18, .18, rest);
       this.hand(restingSide, knee, this.orientation(restingSide, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)),
         new THREE.Vector3(restingSide === 'R' ? .082 : -.082, -.18, .015), rest);
     }
@@ -200,7 +213,7 @@ export class PillPerformance {
       // the opposite path rolls the wrist through a full extra revolution.
       const rotation = this.orientation(side, new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1))
         .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(-Math.SQRT1_2, side === 'R' ? -Math.SQRT1_2 : Math.SQRT1_2, 0), Math.PI * pillEase(time, 2.15, 3.45)));
-      this.fingers(side, .18 + .52 * reach);
+      this.fingers(side, .18 + .27 * reach);
       this.hand(side, contact.lerp(mouth, pillEase(time, 2.15, 3.45)), rotation, pinch, reach);
       this.pinch(side, pinch, reach);
       const pill = gesture.choice === 'blue' ? this.blue : this.red;
