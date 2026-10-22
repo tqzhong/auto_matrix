@@ -1,0 +1,19 @@
+{
+  "baseline": "77b99ea6bf19d9d13435cd5c98fe2e03049f169f",
+  "verifiedBaselineTrackedFiles": 1148,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "67283539cce63b4cb4ff5ff1fa98dd3caa917ff0208ef6380ab1361978160fbc",
+      "candidate": "c6556b648a3dccec8742fe1eccfe5d291ab7467a4772915cc66432b77fee87f8"
+    }
+  ],
+  "newTests": [
+    "tests/hand-curve-cache.test.mts"
+  ],
+  "packageFiles": 704,
+  "protectedWipFilesUnchanged": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "backendChanged": false
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "side": "R",
+    "cacheable": true,
+    "keysEqual": true,
+    "maxDelta": 2.5133416459155455e-9,
+    "deltaAt": 7111,
+    "deltaVertex": 8227,
+    "metrics": {
+      "position": {
+        "max": 1.1920928955078125e-7,
+        "id": 5972,
+        "component": 1,
+        "actual": 1.903230905532837,
+        "expected": 1.9032310247421265
+      },
+      "normal": {
+        "max": 7.748603820800781e-7,
+        "id": 6362,
+        "component": 1,
+        "actual": 0.5089941024780273,
+        "expected": 0.5089948773384094
+      },
+      "skinIndex": {
+        "max": 0,
+        "id": 0,
+        "component": 0,
+        "actual": 3,
+        "expected": 3
+      },
+      "skinWeight": {
+        "max": 0,
+        "id": 0,
+        "component": 0,
+        "actual": 1,
+        "expected": 1
+      }
+    },
+    "posedMaximum": 1.1920951807477352e-7
+  },
+  {
+    "side": "L",
+    "cacheable": true,
+    "keysEqual": true,
+    "maxDelta": 3.78562166752916e-8,
+    "deltaAt": 7112,
+    "deltaVertex": 24235,
+    "metrics": {
+      "position": {
+        "max": 1.1920928955078125e-7,
+        "id": 21903,
+        "component": 1,
+        "actual": 1.9290215969085693,
+        "expected": 1.9290217161178589
+      },
+      "normal": {
+        "max": 0.000016629695892333984,
+        "id": 21962,
+        "component": 1,
+        "actual": 0.332990437746048,
+        "expected": 0.33297380805015564
+      },
+      "skinIndex": {
+        "max": 0,
+        "id": 0,
+        "component": 0,
+        "actual": 3,
+        "expected": 3
+      },
+      "skinWeight": {
+        "max": 0,
+        "id": 0,
+        "component": 0,
+        "actual": 1,
+        "expected": 1
+      }
+    },
+    "posedMaximum": 1.3479957223364612e-7
+  }
+]

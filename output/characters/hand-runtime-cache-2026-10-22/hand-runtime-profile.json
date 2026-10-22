@@ -1,0 +1,223 @@
+{
+  "instrumentedDeformations": [
+    {
+      "phase": "reach",
+      "calls": 160,
+      "constantFingers": 76,
+      "totalMS": 522.0430470000015
+    },
+    {
+      "phase": "mouth",
+      "calls": 160,
+      "constantFingers": 160,
+      "totalMS": 454.10217099999886
+    },
+    {
+      "phase": "cup",
+      "calls": 160,
+      "constantFingers": 72,
+      "totalMS": 460.9876190000034
+    },
+    {
+      "phase": "drink",
+      "calls": 152,
+      "constantFingers": 152,
+      "totalMS": 414.1297490000038
+    },
+    {
+      "phase": "replace",
+      "calls": 152,
+      "constantFingers": 120,
+      "totalMS": 419.18558399999483
+    },
+    {
+      "phase": "stand",
+      "calls": 152,
+      "constantFingers": 0,
+      "totalMS": 406.3397880000025
+    }
+  ],
+  "hotFunctions": [
+    {
+      "function": "deform",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/FightingHands.ts",
+      "line": 0,
+      "selfMicroseconds": 2031162
+    },
+    {
+      "function": "sample",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/HandCurve.ts",
+      "line": 0,
+      "selfMicroseconds": 222752
+    },
+    {
+      "function": "(garbage collector)",
+      "url": "",
+      "line": -1,
+      "selfMicroseconds": 194374
+    },
+    {
+      "function": "post",
+      "url": "node:inspector",
+      "line": 117,
+      "selfMicroseconds": 83666
+    },
+    {
+      "function": "proto.deform",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/profile-hand-runtime.mts",
+      "line": 0,
+      "selfMicroseconds": 73798
+    },
+    {
+      "function": "update",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/FightingHands.ts",
+      "line": 0,
+      "selfMicroseconds": 57708
+    },
+    {
+      "function": "arc",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/HandCurve.ts",
+      "line": 0,
+      "selfMicroseconds": 42207
+    },
+    {
+      "function": "integrate",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/HandCurve.ts",
+      "line": 0,
+      "selfMicroseconds": 40626
+    },
+    {
+      "function": "updateWorldMatrix",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 7850,
+      "selfMicroseconds": 31041
+    },
+    {
+      "function": "",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/profile-hand-runtime.mts",
+      "line": 0,
+      "selfMicroseconds": 30458
+    },
+    {
+      "function": "HandCurve",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/HandCurve.ts",
+      "line": 0,
+      "selfMicroseconds": 26499
+    },
+    {
+      "function": "",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/FightingHands.ts",
+      "line": 0,
+      "selfMicroseconds": 18167
+    },
+    {
+      "function": "updateMatrixWorld",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 7810,
+      "selfMicroseconds": 18166
+    },
+    {
+      "function": "animate",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/HeroModel.ts",
+      "line": 24,
+      "selfMicroseconds": 18042
+    },
+    {
+      "function": "multiplyMatrices",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 6300,
+      "selfMicroseconds": 18042
+    },
+    {
+      "function": "update",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/PillPerformance.ts",
+      "line": 0,
+      "selfMicroseconds": 14958
+    },
+    {
+      "function": "applyMatrix4",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 5128,
+      "selfMicroseconds": 10709
+    },
+    {
+      "function": "advanceMotion",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/CharacterMotion.ts",
+      "line": 0,
+      "selfMicroseconds": 8667
+    },
+    {
+      "function": "updateMatrix",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 7802,
+      "selfMicroseconds": 7542
+    },
+    {
+      "function": "decompose",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 6683,
+      "selfMicroseconds": 6084
+    },
+    {
+      "function": "bone.updateMatrix",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/ForearmTwist.ts",
+      "line": 0,
+      "selfMicroseconds": 6000
+    },
+    {
+      "function": "set filename",
+      "url": "",
+      "line": -1,
+      "selfMicroseconds": 4542
+    },
+    {
+      "function": "onQuaternionChange",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 7286,
+      "selfMicroseconds": 4542
+    },
+    {
+      "function": "fingers",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/PillPerformance.ts",
+      "line": 0,
+      "selfMicroseconds": 4541
+    },
+    {
+      "function": "setFromPoints",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 4741,
+      "selfMicroseconds": 4500
+    },
+    {
+      "function": "",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/PillPerformance.ts",
+      "line": 0,
+      "selfMicroseconds": 3125
+    },
+    {
+      "function": "graspCup",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/hand-runtime-cache-2026-10-22/baseline-release/packages/client/src/agents/PillPerformance.ts",
+      "line": 0,
+      "selfMicroseconds": 3125
+    },
+    {
+      "function": "applyMatrix4",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 4206,
+      "selfMicroseconds": 3084
+    },
+    {
+      "function": "setFromEuler",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 3488,
+      "selfMicroseconds": 3083
+    },
+    {
+      "function": "Vector3",
+      "url": "file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js",
+      "line": 3975,
+      "selfMicroseconds": 3042
+    }
+  ],
+  "note": "CPU self samples of warmed offline animation, includes instrumentation overhead. Not browser FPS."
+}

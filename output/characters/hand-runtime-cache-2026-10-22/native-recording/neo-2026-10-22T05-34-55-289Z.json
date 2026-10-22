@@ -1,0 +1,20 @@
+{
+  "file": "neo-2026-10-22T05-34-55-289Z.webm",
+  "duration": 437.55669999980927,
+  "width": 1280,
+  "height": 720,
+  "audio": true,
+  "frames": 6674,
+  "rendering": {
+    "frames": 8427,
+    "fps": 19.261378923634265,
+    "p95FrameMs": 153.5,
+    "includesRecordingOverhead": true
+  },
+  "markers": [
+    {
+      "seconds": 360.99019999980925,
+      "title": "红蓝药丸抉择"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "sourceHashes": {
+    "baseline": "67283539cce63b4cb4ff5ff1fa98dd3caa917ff0208ef6380ab1361978160fbc",
+    "candidate": "c6556b648a3dccec8742fe1eccfe5d291ab7467a4772915cc66432b77fee87f8"
+  },
+  "loadMS": [
+    {
+      "version": "baseline",
+      "loadMS": 1612.8815
+    },
+    {
+      "version": "candidate",
+      "loadMS": 1380.8491250000002
+    }
+  ],
+  "results": [
+    {
+      "phase": "reach",
+      "samplesPerVersion": 180,
+      "baseline": {
+        "medianMS": 10.373000000001412,
+        "p95MS": 12.46979199999987,
+        "maxMS": 14.165082999999868
+      },
+      "candidate": {
+        "medianMS": 8.421458000000712,
+        "p95MS": 9.868709000000308,
+        "maxMS": 11.337749999999687
+      },
+      "medianReduction": 0.1881367010508468
+    },
+    {
+      "phase": "mouth",
+      "samplesPerVersion": 180,
+      "baseline": {
+        "medianMS": 9.094291999999768,
+        "p95MS": 10.9671670000007,
+        "maxMS": 11.833875000000262
+      },
+      "candidate": {
+        "medianMS": 5.472916000000623,
+        "p95MS": 6.778166999998575,
+        "maxMS": 9.146457999999257
+      },
+      "medianReduction": 0.39820318063233917
+    },
+    {
+      "phase": "cup",
+      "samplesPerVersion": 180,
+      "baseline": {
+        "medianMS": 9.092290999999022,
+        "p95MS": 10.397499999999127,
+        "maxMS": 10.916500000001179
+      },
+      "candidate": {
+        "medianMS": 7.53650000000016,
+        "p95MS": 9.303541000001132,
+        "maxMS": 10.528709000000163
+      },
+      "medianReduction": 0.1711109994168719
+    },
+    {
+      "phase": "drink",
+      "samplesPerVersion": 180,
+      "baseline": {
+        "medianMS": 9.764082999998209,
+        "p95MS": 12.3784169999999,
+        "maxMS": 14.262542000000394
+      },
+      "candidate": {
+        "medianMS": 6.128166999998939,
+        "p95MS": 7.200958000001265,
+        "maxMS": 10.083708000001934
+      },
+      "medianReduction": 0.3723765969625552
+    },
+    {
+      "phase": "replace",
+      "samplesPerVersion": 180,
+      "baseline": {
+        "medianMS": 8.895333000000392,
+        "p95MS": 10.943374999998923,
+        "maxMS": 14.380083000000013
+      },
+      "candidate": {
+        "medianMS": 5.925875000000815,
+        "p95MS": 9.127333000000363,
+        "maxMS": 10.236958999998024
+      },
+      "medianReduction": 0.33382201655626
+    },
+    {
+      "phase": "changing-combat",
+      "samplesPerVersion": 180,
+      "baseline": {
+        "medianMS": 9.124041999999463,
+        "p95MS": 10.813791000000492,
+        "maxMS": 11.9474999999984
+      },
+      "candidate": {
+        "medianMS": 9.019499999998516,
+        "p95MS": 10.799791999997979,
+        "maxMS": 31.135042000001704
+      },
+      "medianReduction": 0.011457860452741553
+    }
+  ],
+  "note": "Paired alternating offline frames after 180 changing warmup frames, including whole actor animation. Other validation may be active. Not browser FPS."
+}

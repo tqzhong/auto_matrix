@@ -1,0 +1,79 @@
+{
+  "url": "http://127.0.0.1:5201/?record&profile",
+  "source": "isolated QA copy of historical P0 entry checkpoint; ordinary native UI actions only",
+  "qaTick": 5312,
+  "qaPausedAfter": true,
+  "sceneAfter": "m1_mirror",
+  "stepAfter": 0,
+  "fateChoice": "agency",
+  "pillChoice": "red",
+  "completedThisRun": [
+    "native possession",
+    "seating",
+    "all four philosophy dialogue beats",
+    "agency answer",
+    "red pill choice",
+    "handoff",
+    "swallow",
+    "water glass",
+    "replace glass",
+    "rise",
+    "mirror objective entry"
+  ],
+  "notCompleted": [
+    "tracking room walk",
+    "blue branch native play",
+    "failure/restart native run",
+    "whole P0 longplay",
+    "film quality acceptance"
+  ],
+  "recording": {
+    "file": "neo-2026-10-22T05-34-55-289Z.webm",
+    "duration": 437.55669999980927,
+    "width": 1280,
+    "height": 720,
+    "audio": true,
+    "frames": 6674,
+    "rendering": {
+      "frames": 8427,
+      "fps": 19.261378923634265,
+      "p95FrameMs": 153.5,
+      "includesRecordingOverhead": true
+    },
+    "markers": [
+      {
+        "seconds": 360.99019999980925,
+        "title": "红蓝药丸抉择"
+      }
+    ]
+  },
+  "rawRecordingBytes": 55871474,
+  "excerpt": {
+    "file": "native-recording/native-red-pill.mp4",
+    "sourceStartSeconds": 345,
+    "durationSeconds": 92.401,
+    "bytes": 4786301,
+    "note": "Continuous tail excerpt with dialogue/choice waiting; transcoded H264/AAC, source capture gaps retained; not proof of smooth play"
+  },
+  "actualScenePerformance": {
+    "frames": 252,
+    "fps": 16.731771700669672,
+    "p95FrameMs": 153.19999980926514,
+    "recordingActive": true,
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+    "anotherMainPreviewTabOpen": true,
+    "agentCpuMeanMs": 12.15873016251458,
+    "renderCpuMeanMs": 21.59047619880192,
+    "drawCallsMean": 540.6230158730159,
+    "trianglesMean": 3499431.76984127,
+    "claim": "No matched native baseline and no FPS acceptance; this remains visibly slow"
+  },
+  "warnErrorLogs": [],
+  "mainSaveUsed": false,
+  "ownQaProcessesStopped": [
+    86777,
+    86874
+  ],
+  "mainServerPid": 82106,
+  "renderReconnected": false
+}

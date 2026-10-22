@@ -1,0 +1,7 @@
+{
+  "source": "output/gameplay/trilogy-pill-conversation-2026-10-12/entry-state",
+  "scope": "Independent historical P0 QA checkpoint, not the current player save. Historical NPC memories have the source limitations recorded in the 2026-10-12 README.",
+  "mainSaveModified": false,
+  "backendPort": 5200,
+  "clientPort": 5201
+}

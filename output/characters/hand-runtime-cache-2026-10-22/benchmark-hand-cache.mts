@@ -1,0 +1,13 @@
+import {writeFile,readFile} from 'node:fs/promises';import {createHash} from 'node:crypto';import {performance} from 'node:perf_hooks';import {FILM_SETS,PILL_ROOM,pillRoot} from '@auto_matrix/shared';
+const versions=[];
+for(const name of ['baseline','candidate']){const release=new URL('./'+name+'-release/',import.meta.url),{actor}=await import(new URL('tests/helpers/fighting-hand-fixture.mjs',release).href),{advanceMotion,newMotion}=await import(new URL('packages/client/src/agents/CharacterMotion.js',release).href),start=performance.now(),h=await actor('neo');versions.push({name,h,advanceMotion,newMotion,loadMS:performance.now()-start});}
+function draw(v:any,phase:string,t:number){if(phase==='changing-combat'){v.h.draw(t);return;}
+const pills={role:'neo' as const,choice:'red' as const,phase:'taking' as const,elapsed:t},center=FILM_SETS.film_lafayette.center,at=pillRoot({...pills,approach:{x:PILL_ROOM.seat,z:PILL_ROOM.z,yaw:-Math.PI/2}});v.h.rig.root.position.set(center.x+at.x,center.y-1,center.z+at.z);v.h.rig.root.rotation.y=at.yaw;
+const input={speed:0,grounded:true,verticalVelocity:0,turn:0,mirror:0,pills},motion=v.newMotion();v.h.models.animate(v.h.rig,v.advanceMotion(motion,input,0),motion,input,0);v.h.rig.root.updateMatrixWorld(true);}
+const phases=[['reach',.35,1.8],['mouth',2.15,3.45],['cup',4.1,5.3],['drink',5.55,6.6],['replace',7.7,9.2],['changing-combat',.1,.9]]as const;
+const results=[];try{
+for(let i=0;i<180;i++)for(const v of versions)draw(v,'reach',.4+8.7*(i%90)/89);
+for(const[phase,a,b]of phases){const times:any={baseline:[],candidate:[]};for(let round=0;round<2;round++)for(let i=0;i<90;i++)for(const v of round%2?versions.slice().reverse():versions){const t=a+(b-a)*i/89,start=performance.now();draw(v,phase,t);times[v.name].push(performance.now()-start);}
+const row:any={phase,samplesPerVersion:180};for(const v of versions){const x=times[v.name].slice().sort((a:number,b:number)=>a-b);row[v.name]={medianMS:x[90],p95MS:x[171],maxMS:x.at(-1)};}row.medianReduction=1-row.candidate.medianMS/row.baseline.medianMS;results.push(row);console.log(JSON.stringify(row));}
+const report={sourceHashes:Object.fromEntries(await Promise.all(versions.map(async v=>[v.name,createHash('sha256').update(await readFile(new URL('./'+v.name+'-release/packages/client/src/agents/FightingHands.ts',import.meta.url))).digest('hex')]))),loadMS:versions.map(v=>({version:v.name,loadMS:v.loadMS})),results,note:'Paired alternating offline frames after 180 changing warmup frames, including whole actor animation. Other validation may be active. Not browser FPS.'};await writeFile(new URL('hand-cache-benchmark.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+}finally{for(const v of versions)v.h.models.dispose();}
