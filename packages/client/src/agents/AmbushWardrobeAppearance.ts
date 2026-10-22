@@ -7,6 +7,7 @@ import { AmbushSleeveBend } from './AmbushSleeveBend.js';
 import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED } from '@auto_matrix/shared';
 
 interface Vertex { point: THREE.Vector3; normal: THREE.Vector3; uv: THREE.Vector2; joints: number[]; weights: number[]; drape?: THREE.Vector3[] }
+interface ShoulderCut { vertexCount: number; data: string }
 function weights(entries: [number, number][]): Pick<Vertex, 'joints' | 'weights'> {
   const merged = new Map<number, number>();
   for (const [joint, value] of entries) merged.set(joint, (merged.get(joint) ?? 0) + value);
@@ -57,6 +58,7 @@ export class AmbushWardrobeAppearance {
 
   constructor(private rig: HeroRig, fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+    const shoulderCut = this.source.userData.ambushShoulderFit as { shirt: ShoulderCut; coat: ShoulderCut } | undefined;
     const jacket = this.source.clone(false);
     const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
     const trousers = this.trousers = rig.root.getObjectByName('Tailored_trousers') as THREE.SkinnedMesh;
@@ -291,6 +293,7 @@ export class AmbushWardrobeAppearance {
     // from the actual neck, then fit the folded collar and tie to that cloth.
     const shirtVertices = this.vertices.get(this.source)!.slice(), shirtIndices = Array.from(this.source.geometry.index!.array);
     this.neckStand(shirtVertices, shirtIndices, skin);
+    this.fitShoulder(shirtVertices, shoulderCut?.shirt);
     this.source = this.make('morpheus-ambush-shirt', this.geometry(shirtVertices, shirtIndices, true), shirt);
     if (cutPositions && cutNormals) {
       for (const [name, attribute] of [['position', cutPositions], ['normal', cutNormals]] as const) {
@@ -344,6 +347,7 @@ export class AmbushWardrobeAppearance {
         for (let n = 1; n < ids.length - 1; n++) openedIndices.push(ids[0], ids[n], ids[n + 1]);
       }
     }
+    this.fitShoulder(opened, shoulderCut?.coat);
     this.coat = this.make('morpheus-ambush-coat', this.geometry(opened, openedIndices, true), leather);
     if (outerPositions) {
       this.coat.geometry.morphTargetsRelative = true;
@@ -515,6 +519,18 @@ export class AmbushWardrobeAppearance {
     const entries = selected.flatMap((v, n) => v.joints.map((joint, i) => [joint, v.weights[i] * amounts[n]] as [number, number]));
     return { point: new THREE.Vector3(x, y, front + offset), normal: normal.normalize(), uv: new THREE.Vector2(x * 4, y * 4),
       ...weights(entries) };
+  }
+  private fitShoulder(vertices: Vertex[], fit?: ShoulderCut): void {
+    if (!fit) return;
+    // The offline cut is applied once, before drape and sleeve rest caches.
+    // Keep float64 offsets exact; skinning still uses the original float32 mesh.
+    const bytes = Uint8Array.from(atob(fit.data), value => value.charCodeAt(0));
+    if (fit.vertexCount !== vertices.length || bytes.length !== vertices.length * 48) throw new Error('Morpheus shoulder cut does not match the garment');
+    const values = new DataView(bytes.buffer);
+    for (let i = 0; i < vertices.length; i++) for (let axis = 0; axis < 3; axis++) {
+      vertices[i].point.setComponent(axis, vertices[i].point.getComponent(axis) + values.getFloat64((i * 6 + axis) * 8, true));
+      vertices[i].normal.setComponent(axis, vertices[i].normal.getComponent(axis) + values.getFloat64((i * 6 + axis + 3) * 8, true));
+    }
   }
   private geometry(vertices: Vertex[], indices: number[], keepNormals = false): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
