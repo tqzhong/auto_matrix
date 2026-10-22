@@ -1,0 +1,24 @@
+{
+  "oldPid": 30901,
+  "newPid": 33814,
+  "mainPidUnchanged": true,
+  "simulationPreserved": true,
+  "sandboxPreserved": true,
+  "neoFieldsPreserved": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "currentLocation": true,
+    "isAwakened": true,
+    "isInMatrix": true
+  },
+  "memoryFileCount": 6,
+  "memoryHashesPreserved": true,
+  "changedPaths": [],
+  "fullApiBytesEqual": true,
+  "awakening": {
+    "kind": "breather",
+    "elapsed": 2.6480000000000006,
+    "emerged": true
+  }
+}

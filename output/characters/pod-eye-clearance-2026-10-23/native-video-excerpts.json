@@ -1,0 +1,56 @@
+[
+  {
+    "source": "output/characters/pod-eye-clearance-2026-10-23/candidate-release/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-22T18-10-43-922Z.webm",
+    "output": "native-eye-observation.mp4",
+    "startSeconds": 30,
+    "requestedDuration": 34,
+    "continuous": true,
+    "speedChanged": false,
+    "encodingDoesNotEstablishGameFps": true,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "34.000000",
+        "size": "1161353"
+      }
+    }
+  },
+  {
+    "source": "output/characters/pod-eye-clearance-2026-10-23/candidate-release/output/gameplay/neo-longplay-2026-09-20/neo-2026-10-22T18-13-50-227Z.webm",
+    "output": "native-oral-rescue.mp4",
+    "startSeconds": 0,
+    "requestedDuration": 62,
+    "continuous": true,
+    "speedChanged": false,
+    "encodingDoesNotEstablishGameFps": true,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "codec_type": "audio"
+        }
+      ],
+      "format": {
+        "duration": "62.000000",
+        "size": "2661302"
+      }
+    }
+  }
+]

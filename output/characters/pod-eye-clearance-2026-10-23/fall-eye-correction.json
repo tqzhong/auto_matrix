@@ -1,0 +1,17 @@
+{
+  "firstRelatedTests": {
+    "tests": 285,
+    "pass": 284,
+    "fail": 1
+  },
+  "failedTest": "the falling and floating eye camera uses the actual head and preserves free observation",
+  "cause": "Pod/fall used the calibrated cameraEye while the rescue branch and its old test retained the estimated local point. All pod patient views now read the same calibrated eye after current pose; existing rescue direction/receiving rules retained.",
+  "testChanges": "Both eye expectations use the delivered marker and tighten .05/.045 tolerances to 1e-6. New current-frame test covers emerge/disconnect/rescue.",
+  "correctionCheck": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "originalEvidence": "pre-fall-eye-correction",
+  "newFullValidationRequired": true
+}

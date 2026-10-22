@@ -1,0 +1,96 @@
+{
+  "entryTick": 5965,
+  "gripElapsed": 2.6480000000000006,
+  "realBackendRestart": {
+    "oldPid": 30901,
+    "newPid": 33814,
+    "mainPidUnchanged": true,
+    "simulationPreserved": true,
+    "sandboxPreserved": true,
+    "neoFieldsPreserved": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isAwakened": true,
+      "isInMatrix": true
+    },
+    "memoryFileCount": 6,
+    "memoryHashesPreserved": true,
+    "changedPaths": [],
+    "fullApiBytesEqual": true,
+    "awakening": {
+      "kind": "breather",
+      "elapsed": 2.6480000000000006,
+      "emerged": true
+    }
+  },
+  "productionScriptsObserved": [
+    "http://127.0.0.1:5200/assets/index-Cq-WL6DL.js"
+  ],
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "freeObservationAboveAndBelowChecked": true,
+  "normalInputCompleted": [
+    "breather continuation",
+    "disconnect",
+    "drain",
+    "rescue"
+  ],
+  "finalScene": "m1_recovery",
+  "finalStep": 0,
+  "finalTick": 6136,
+  "finalRunning": false,
+  "neoHealth": 100,
+  "consoleCounts": {
+    "native-entry-console.json": 0,
+    "native-production-console.json": 0,
+    "native-continuation-console.json": 0
+  },
+  "recordings": [
+    {
+      "file": "neo-2026-10-22T18-10-43-922Z.webm",
+      "duration": 71.4415,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1564,
+      "rendering": {
+        "frames": 3733,
+        "fps": 52.2558801865926,
+        "p95FrameMs": 28.90000057220459,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    },
+    {
+      "file": "neo-2026-10-22T18-13-50-227Z.webm",
+      "duration": 87.49489999961853,
+      "width": 1280,
+      "height": 720,
+      "audio": true,
+      "frames": 1656,
+      "rendering": {
+        "frames": 3471,
+        "fps": 39.69325237604886,
+        "p95FrameMs": 52.29999923706055,
+        "includesRecordingOverhead": true
+      },
+      "markers": []
+    }
+  ],
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "mainPid": 82166,
+  "renderReconnected": false,
+  "filmQualityAccepted": false,
+  "performanceBenchmark": false,
+  "remainingVisualIssues": [
+    "physical oral pipe remains in the close foreground; unconstrained viewing directions and other aspect ratios are not proven clear",
+    "skin, clothing, water and character likeness remain rough",
+    "medical bed and rescue are continuity checks rather than full contact acceptance",
+    "the original film reference was region-blocked; no new shot-by-shot film acceptance"
+  ]
+}

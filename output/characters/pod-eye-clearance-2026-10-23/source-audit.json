@@ -1,0 +1,42 @@
+{
+  "baseline": "49fc9e7c606386bc5f260638b90106cc0102fa64",
+  "verifiedBaselineFiles": 1158,
+  "packageFiles": 705,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/Engine.ts",
+      "before": "3f553ea1ad187c183126c55f05f93b8040925da2ca36c46c7488b42f3b752d1e",
+      "candidate": "cb52efdf494664a403dfcde14a1c51e138873f01e4c07f4cc2baf7551a1e5bb6"
+    },
+    {
+      "path": "packages/client/src/engine/PodSetRenderer.ts",
+      "before": "3561d413ba578b6f58e9412f756d730bc471b98debe0ff065f563b9948078a64",
+      "candidate": "b9cde80237f462894b3731fc83ce2541bb74548c640f3efff5017859cebe1cd5"
+    },
+    {
+      "path": "packages/client/src/player/PlayerControls.ts",
+      "before": "0ea458744ac711743c607acb8a9f8314fa79850fb5e6c0298932382d11cf57e1",
+      "candidate": "cc7411916d8c8918854ef63ac0dbabbf09ed62791903aa9ef122e39ff1aaf396"
+    },
+    {
+      "path": "tests/pod-connection-contact.test.mts",
+      "before": "f73fd345341e1ae47ff1b3e2106c004951bc5cdaf32264d6cedc4d81dd5d95fe",
+      "candidate": "c8fd113cd6c6a98725a6ceb9d61e73860eb1f3538bf004dc6c82e4b61df9db61"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/pod-eye-view.test.mts",
+      "sha256": "954e61bf69fc7b7da701992650d0911d33821cd3871fad896784f80f45a3020d"
+    }
+  ],
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "protectedWipFiles": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false
+}

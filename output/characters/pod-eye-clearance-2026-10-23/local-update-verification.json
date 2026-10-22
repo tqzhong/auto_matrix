@@ -1,0 +1,31 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-Cq-WL6DL.js",
+  "bundleBytes": 3743328,
+  "servedBundleSha256": "c1b64837e7fc88f64997385cdcbff9763afda9803de8fe1292c4cd5510d339fd",
+  "backendDistFilesUnchanged": 280,
+  "serverRestartedForPublication": false,
+  "serverPid": 82166,
+  "mainRelaunchedEarlierInUnit": false,
+  "fullWorldSnapshotPreservedAcrossPublication": true,
+  "fullWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "memoryFilesPreservedAcrossPublication": 85,
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "previousBundle": "index-i7Yn8qBL.js",
+  "livePackageFilesMatchCandidate": 705,
+  "ownedSourceAndTestFilesCopied": 5,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "characterAssetsChanged": false,
+  "nativeReloadPending": false,
+  "nativeScriptsObserved": [
+    "http://localhost:5173/assets/index-Cq-WL6DL.js"
+  ],
+  "nativeWarnings": 0,
+  "nativeErrors": 0,
+  "fullWorldPreservedAfterNativeOpen": true,
+  "memoryFilesPreservedAfterNativeOpen": 85,
+  "mainPidStillListening": true
+}

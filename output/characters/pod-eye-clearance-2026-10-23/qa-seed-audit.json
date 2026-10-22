@@ -1,0 +1,20 @@
+{
+  "source": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-wrist-continuity-2026-10-22/native-saved-grip-world.json",
+  "worldSha256": "efca6d4822cf6820c6c28fae5177933ac4fdc90496d83a62657ad6f1581ee4dd",
+  "copiedWorldSha256": "efca6d4822cf6820c6c28fae5177933ac4fdc90496d83a62657ad6f1581ee4dd",
+  "sourceTick": 5965,
+  "awakening": {
+    "kind": "breather",
+    "elapsed": 2.6480000000000006,
+    "emerged": true
+  },
+  "memoryFiles": {
+    "ak.json": "d6bfadad6f4cd0946550c5c7af8de9f88fe1c66d59d871d274e48246194703d9",
+    "binary.json": "1b1bf42aee7d38b29c8c49e1eeb0065272f6da45433234df205efe9ce1c48c2d",
+    "cas.json": "8c684903d686b8b413c3f3b92dd600414470f04d07c30c895e5cc6593211c0b7",
+    "mauser.json": "6b646ef50fc4723d93dbd6b1c4e220fdf4c9fe3c0af1dbd1b7f1836ceee66072",
+    "sparks.json": "444e03b832806b7c4d2cedbf6bde7dd399891ab088ca4875f9b4c29414b5e816",
+    "vector.json": "337d7ea344fffd5c5bf313401ee0ba6392e5591351d386c97eeba4610d132b2f"
+  },
+  "editedState": false
+}

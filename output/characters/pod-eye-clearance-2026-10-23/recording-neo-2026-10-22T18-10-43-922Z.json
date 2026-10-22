@@ -1,0 +1,15 @@
+{
+  "file": "neo-2026-10-22T18-10-43-922Z.webm",
+  "duration": 71.4415,
+  "width": 1280,
+  "height": 720,
+  "audio": true,
+  "frames": 1564,
+  "rendering": {
+    "frames": 3733,
+    "fps": 52.2558801865926,
+    "p95FrameMs": 28.90000057220459,
+    "includesRecordingOverhead": true
+  },
+  "markers": []
+}

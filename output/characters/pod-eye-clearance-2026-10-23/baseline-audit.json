@@ -1,0 +1,23 @@
+{
+  "baseline": "49fc9e7c606386bc5f260638b90106cc0102fa64",
+  "verifiedSourceFiles": 1158,
+  "packageFiles": 705,
+  "copyMethod": "APFS copy-on-write clones of individually Git-verified files; no WIP or authoring probes copied.",
+  "protectedFiles": 11,
+  "mainPid": 82166,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "mainTick": 3757,
+  "memories": 85,
+  "backendDistFiles": 280,
+  "previousGoalTurn": "progress",
+  "previousEvidence": "49fc9e7 committed/pushed pod wrist and feed-surface corrections; actual production/native and genuine restart completed.",
+  "nextAction": "Reproduce oversized oral pipe in actual first-person eye view, inspect mesh-derived eye markers and view/pipe intersections.",
+  "renderReconnected": false,
+  "rootConfigsVerified": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.base.json"
+  ],
+  "stagingSetupCorrection": "Initial shared build lacked the root tsconfig.base.json and emitted an invalid diagnostic build. Preserved failure logs, copied the Git-matched configuration and removed only the new staging shared dist before rebuilding. No runtime source edited.",
+  "buildDependencyCorrection": "One diagnostic was launched while the shared build session remained live and failed with missing dist/index.js. Both builds then exited 0 before the current diagnostic. A subsequent log-renaming command used the wrong cwd; its failure was inspected, and the current diagnostic uses the completed build without source changes."
+}
