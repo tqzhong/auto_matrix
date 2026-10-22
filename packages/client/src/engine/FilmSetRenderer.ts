@@ -112,8 +112,9 @@ export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object
     if (args[1].overrideMaterial || args[2] === reflectedCamera) return;
     const body = subject(); const wasVisible = body?.visible;
     const props = attachments().map(object => ({ object, visible: object.visible }));
-    if (body) body.visible = true;
-    for (const prop of props) prop.object.visible = true;
+    // Revealing a first-person body also refreshes its conservative skin bounds.
+    if (body) { body.visible = true; if (!wasVisible) body.updateMatrixWorld(true); }
+    for (const prop of props) { prop.object.visible = true; if (!prop.visible) prop.object.updateMatrixWorld(true); }
     try { renderReflection(...args); reflectedCamera = args[2]; }
     finally { if (body) body.visible = wasVisible!; for (const prop of props) prop.object.visible = prop.visible; }
   };
