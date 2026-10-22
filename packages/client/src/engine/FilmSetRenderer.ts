@@ -460,7 +460,7 @@ export class FilmSetRenderer {
       player?.id === 'trinity' && player.id === journey?.actor ? player.currentAction?.parameters.freewayHandoff as import('@auto_matrix/shared').FreewayHandoff | undefined : undefined,
       player?.id === 'morpheus' && player.id === journey?.actor ? player.currentAction?.parameters.truckRoad as import('@auto_matrix/shared').TruckRoad | undefined : undefined,
       player?.id === 'morpheus' && player.id === journey?.actor ? player.currentAction?.parameters.truckHood as import('@auto_matrix/shared').TruckHood | undefined : undefined);
-    this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject);
+    this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject, camera);
     this.neb?.update(journey, elapsed, journey?.scene === 'm2_relay' ? this.phoneBodies?.('trinity') : this.recoverySubject,
       ['m1_cypher_console', 'm1_meal', 'm2_relay'].includes(journey?.scene ?? '') ? this.phoneBodies : this.crosscutBodies);
     this.finale?.update(journey, elapsed);

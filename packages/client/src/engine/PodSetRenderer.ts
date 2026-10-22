@@ -41,6 +41,11 @@ export class PodSetRenderer {
   private mist: THREE.Points;
   private steel: THREE.MeshStandardMaterial;
   private dark: THREE.MeshStandardMaterial;
+  private distant = new THREE.Group();
+  private distantBatches: { mesh: THREE.InstancedMesh; matrices: Float32Array; bounds: THREE.Sphere[]; shown: number[] }[] = [];
+  private distantFrustum = new THREE.Frustum();
+  private distantProjection = new THREE.Matrix4();
+  private distantView: number[] = [];
 
   constructor(parent: THREE.Group) {
     parent.add(this.root);
@@ -263,6 +268,15 @@ export class PodSetRenderer {
   private instances(geometry: THREE.BufferGeometry, material: THREE.Material, matrices: THREE.Matrix4[], parent = this.root): void {
     this.geometries.add(geometry); const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
     matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix)); mesh.computeBoundingSphere(); parent.add(mesh);
+    if (parent === this.distant) {
+      const matrix = new THREE.Matrix4();
+      const bounds = matrices.map((_, i) => {
+        mesh.getMatrixAt(i, matrix); const sphere = geometry.boundingSphere!.clone().applyMatrix4(matrix);
+        sphere.radius += .002; return sphere;
+      });
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.distantBatches.push({ mesh, bounds, matrices: new Float32Array(mesh.instanceMatrix.array), shown: matrices.map((_, i) => i) });
+    }
   }
   private nearBank(): void {
     const bank = new THREE.Group(); this.root.add(bank);
@@ -326,7 +340,7 @@ export class PodSetRenderer {
     waterBank.position.set(0, 12, 25); this.root.add(waterBank);
   }
   private towers(pink: THREE.MeshStandardMaterial): void {
-    const distant = new THREE.Group(); distant.name = 'pod-distant-towers';
+    const distant = this.distant; distant.name = 'pod-distant-towers';
     distant.userData.distantBackdrop = true; this.root.add(distant);
     const towers: THREE.Matrix4[] = []; const pods: THREE.Matrix4[] = []; const lights: THREE.Matrix4[] = [];
     const conduits: THREE.Matrix4[] = []; const bands: THREE.Matrix4[] = []; const dummy = new THREE.Object3D();
@@ -360,7 +374,29 @@ export class PodSetRenderer {
   private link(mesh: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3): void {
     mesh.position.copy(from).add(to).multiplyScalar(.5); mesh.scale.y = from.distanceTo(to); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize());
   }
-  update(journey: FilmJourney | undefined, elapsed: number, firstPerson = false, subject?: THREE.Object3D): void {
+  private selectDistant(camera?: THREE.Camera): void {
+    const cull = camera && this.distant.frustumCulled;
+    if (cull) {
+      camera.updateWorldMatrix(true, false); this.distant.updateWorldMatrix(true, false);
+      this.distantProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).multiply(this.distant.matrixWorld);
+    }
+    const view = cull ? this.distantProjection.elements : [];
+    if (view.length === this.distantView.length && view.every((value, i) => Math.abs(value - this.distantView[i]) < 1e-12)) return;
+    this.distantView = view.slice();
+    if (cull) this.distantFrustum.setFromProjectionMatrix(this.distantProjection);
+    for (const batch of this.distantBatches) {
+      const shown: number[] = [];
+      for (let i = 0; i < batch.bounds.length; i++) if (!cull || this.distantFrustum.intersectsSphere(batch.bounds[i])) shown.push(i);
+      if (shown.length !== batch.shown.length || shown.some((index, i) => index !== batch.shown[i])) {
+        for (let i = 0; i < shown.length; i++) batch.mesh.instanceMatrix.array.set(batch.matrices.subarray(shown[i] * 16, shown[i] * 16 + 16), i * 16);
+        batch.mesh.instanceMatrix.needsUpdate = true; batch.shown = shown;
+      }
+      // Keep the original full-world bounds: a later camera must be able to
+      // restore this batch even when the preceding view selected no instances.
+      batch.mesh.count = shown.length;
+    }
+  }
+  update(journey: FilmJourney | undefined, elapsed: number, firstPerson = false, subject?: THREE.Object3D, camera?: THREE.Camera): void {
     const beat = journey?.visiting ? undefined : journey?.awakening;
     const disconnect = beat?.kind === 'disconnect' ? beat.elapsed : beat?.kind === 'rescue' ? 9 : 0;
     const clock = beat ? (beat.kind === 'rescue' ? 9 : 0) + beat.elapsed : journey?.scene === 'm1_pod' ? 0 : elapsed;
@@ -449,6 +485,7 @@ export class PodSetRenderer {
     const rippleSize = 1 + clock % 2.8 * 1.6; this.ripple.visible = disconnect >= 7 || rescuing;
     this.ripple.scale.setScalar(rippleSize); (this.ripple.material as THREE.MeshBasicMaterial).opacity = .3 * (1 - clock % 2.8 / 2.8);
     this.mist.position.x = Math.sin(clock * .13) * 2;
+    this.selectDistant(camera);
   }
   dispose(): void {
     this.disposed = true;

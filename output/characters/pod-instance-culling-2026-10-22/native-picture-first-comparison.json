@@ -1,0 +1,15 @@
+{
+  "samePageAndNoise": true,
+  "baseline": "native-final-baseline-repeat.png",
+  "candidate": "native-final-picture-optimized.png",
+  "uiMasks": [
+    "native-final-ui-baseline-repeat.json",
+    "native-final-ui-picture-optimized.json"
+  ],
+  "maskMethod": "Union of actual HUD child/panel rectangles plus3px margin; full-screen transparent containers and film blackout excluded.",
+  "comparedPixels": 536659,
+  "changedPixels": 3400,
+  "above3Levels": 1007,
+  "maxChannelDifference": 19,
+  "meanAbsoluteDifference": 0.010592697908106762
+}

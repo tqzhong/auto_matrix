@@ -1,0 +1,33 @@
+{
+  "baseline": "76f3284f67381c58c912fff0a40a2e65238daa9c",
+  "verifiedFiles": 1151,
+  "packageFiles": 704,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/FilmSetRenderer.ts",
+      "before": "824fd2c5d83a49774093ea369e634980ddd3ddde520d143544f8a70314e61ce2",
+      "candidate": "e8e7b9cc7d2b52be59d9c0464c7698583419589d35948455b8f91a001625ec97"
+    },
+    {
+      "path": "packages/client/src/engine/PodSetRenderer.ts",
+      "before": "04f39985b073445e803f1c662df83bb255cefb68f59a28b640ae9838b11a4770",
+      "candidate": "0087902ba9ac0bce21f290b477352c93a7f6560e4d4ac6c5975e68276d38a44d"
+    },
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "242d0053e947b5a2fd9020e491c42eb2f27ec26ef4b481e21f9cf370199502f1",
+      "candidate": "934ac3a13e7dc13721a73dc0579d33ed1c839dcc3f6e47cd5724b06d5723aa51"
+    }
+  ],
+  "unchangedFiles": 1148,
+  "changedRuntimeFiles": 3,
+  "newTests": [
+    "tests/pod-instance-culling.test.mts"
+  ],
+  "protectedWipFilesUnchanged": 11,
+  "assetsChanged": false,
+  "dependenciesChanged": false,
+  "serverSourceChanged": false,
+  "renderReconnected": false,
+  "newTestSha256": "42b4b84ba970449be08b1ec207f276cf0ffb76197eef7095ccffb93642f3d546"
+}

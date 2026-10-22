@@ -1,0 +1,97 @@
+{
+  "baseline": "76f3284f67381c58c912fff0a40a2e65238daa9c",
+  "tests": [
+    {
+      "log": "renderer-baseline.log",
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "log": "culling-first-failure.log",
+      "passed": 1,
+      "failed": 2
+    },
+    {
+      "log": "culling-cache-first-failure.log",
+      "passed": 0,
+      "failed": 1
+    },
+    {
+      "log": "culling-regression-full-surfaces.log",
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "passed": 75,
+      "failed": 0
+    }
+  ],
+  "typecheckExitCode": 0,
+  "threePackageBuildExitCode": 0,
+  "finalClientBuildExitCode": 0,
+  "finalBuild": "production-build-final.log",
+  "finalNative": "native-verification.json",
+  "performance": "native-performance-comparison.json",
+  "picture": "native-picture-comparison.json",
+  "sourceAudit": "source-audit.json",
+  "protectedRootWipFilesUnchanged": 11,
+  "stableFpsImprovementProven": false,
+  "not60FpsAcceptance": true,
+  "movieQualityAcceptedGroups": 0,
+  "totalSceneGroups": 42,
+  "assetsOrDependenciesChanged": false,
+  "renderReconnected": false,
+  "committedLogs": [
+    {
+      "log": "renderer-baseline.log",
+      "committedLog": "renderer-baseline.log.gz",
+      "uncompressedSha256": "e5d56dd56be81d5a5b2dcc123f2aa3c89e883c7b04976826e3c7f44024ad2eca"
+    },
+    {
+      "log": "culling-first-failure.log",
+      "committedLog": "culling-first-failure.log.gz",
+      "uncompressedSha256": "c449547bfc0f336f4db06ca828f85483424554d6a79cd9d1a30f1b1184eebd5b"
+    },
+    {
+      "log": "culling-regression.log",
+      "committedLog": "culling-regression.log.gz",
+      "uncompressedSha256": "94001666e2449eb124192b35fcc71d0e6f8b762f507e40fcae5a97df556d9f28"
+    },
+    {
+      "log": "culling-cache-first-failure.log",
+      "committedLog": "culling-cache-first-failure.log.gz",
+      "uncompressedSha256": "090fa1d15b3f944067546cbff305d94809e01fdf9cf5d4e3e72201793b0cbbd6"
+    },
+    {
+      "log": "culling-regression-final.log",
+      "committedLog": "culling-regression-final.log.gz",
+      "uncompressedSha256": "be83d29b2d062cfd545d279987c8a0d6f9384c3615a4ba403231ab760554c229"
+    },
+    {
+      "log": "culling-regression-full-surfaces.log",
+      "committedLog": "culling-regression-full-surfaces.log.gz",
+      "uncompressedSha256": "5b400bfa259fc996b0cc00e9580e48857a046c8ceb67bc2d9293a229952193f5"
+    },
+    {
+      "log": "deploy-tests.log",
+      "committedLog": "deploy-tests.log.gz",
+      "uncompressedSha256": "bb773db784ea94a41342dc49b4c2b9a4e87ab5bd2ad40a0525effce36ac5af0e"
+    },
+    {
+      "log": "typecheck.log",
+      "committedLog": "typecheck.log.gz",
+      "uncompressedSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5"
+    },
+    {
+      "log": "production-build.log",
+      "committedLog": "production-build.log.gz",
+      "uncompressedSha256": "070e5753cb5370358202735823e66bc6b70c15b24e7ec66f291ec127a13a0910"
+    },
+    {
+      "log": "production-build-final.log",
+      "committedLog": "production-build-final.log.gz",
+      "uncompressedSha256": "b6d0209480ca2857426af114d3b238f479d8ea63b9ad9292c9c68c0f03774754"
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "files": [
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/README.md",
+      "bytes": 5240,
+      "sha256": "20379fabe82e2e3c33a8a49496f39f1e3908abab0e88568982b0af8cf80a8700"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/audit-source.py",
+      "bytes": 2470,
+      "sha256": "ee513aedb4f2687afd7e5ec6e50ae4906b9756bb8e48e73fcf2006670f3ea82a"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/publish-local-preview.py",
+      "bytes": 5114,
+      "sha256": "b3735bedbf4ba6e183da2010269517c472238182f696aa1a5df2d6fb5c0d312f"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/baseline-audit.json",
+      "bytes": 714,
+      "sha256": "77e27a3f8276969c814505946b28f357593120f20bba9824e3baac77e36f447b"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/source-audit.json",
+      "bytes": 1226,
+      "sha256": "5712efd47e3cde9359f53d0499d80846d55e99b88b49efd275ef38bace528dfa"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/candidate-build.json",
+      "bytes": 185,
+      "sha256": "5b172a9a3ca3ac4d954e889f678ec4f92d323e67959291c57b9aab857286cb8e"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/protected-worktree.json",
+      "bytes": 1243,
+      "sha256": "9964a8529526fd87e90e5507123eaa55da2f789a302f428ac9911dcf44d6af99"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/validation.json",
+      "bytes": 3150,
+      "sha256": "5a11c6d209e0830b01e921e6180d1a7f21a4c749f71ab801dde94526bfa78a80"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-seed.json",
+      "bytes": 265,
+      "sha256": "74e964c9e75496f2182a0035d2c5efaab1b555c7f3344537de3406c1d5e351d4"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-verification.json",
+      "bytes": 2367,
+      "sha256": "c0b9f08e94febe1260601741f900e4daf591ea57571f8a63a7e16f22fa4fe1fa"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/restart-verification.json",
+      "bytes": 621,
+      "sha256": "972205d0861dd2a352e458daa4ad95070995b4944d455e54a4768cd8e2426cb9"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-console-before-restart.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-console-final.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-performance-initial.json",
+      "bytes": 1642,
+      "sha256": "566c91849951f6f568b6c06bcf0e17322b2a24c4badd543b99d77c9a4642e429"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-performance-comparison.json",
+      "bytes": 4013,
+      "sha256": "9df7105b4f9a0c189a42653259b7517ea1addf622beeb956800e6563847f4d24"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-picture-comparison.json",
+      "bytes": 717,
+      "sha256": "8d44c47201f3b828409cbec6c706bed3a291311ae87463923ef72cb8a29f4914"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-picture-first-comparison.json",
+      "bytes": 541,
+      "sha256": "6321987d948fce1d99e32f8ac8818f4b865e9a8bcf18c4cc37f2fc30ab7c0465"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-picture-difference.png",
+      "bytes": 403734,
+      "sha256": "8ef3370b828879d68cb2d2bec19e148cdb51a731e1b7ebf44008a42d63a99f81"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-ui-baseline.json",
+      "bytes": 297,
+      "sha256": "975879a02cb7e5023b6ec131c298551a2aa723daf4be3611166bfa9c088a81de"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-ui-optimized.json",
+      "bytes": 297,
+      "sha256": "975879a02cb7e5023b6ec131c298551a2aa723daf4be3611166bfa9c088a81de"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-final-ui-baseline-repeat.json",
+      "bytes": 868,
+      "sha256": "3ebd4cf5e1fa2111ee149a696f003dbbdf0b9514f0dca04501e28eac59a04203"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-final-ui-picture-optimized.json",
+      "bytes": 871,
+      "sha256": "687eccac3462699b51bef674fc056391a684262ca7889f778dbb4e5ba4c53a31"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-ui-picture-baseline.json",
+      "bytes": 871,
+      "sha256": "687eccac3462699b51bef674fc056391a684262ca7889f778dbb4e5ba4c53a31"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-ui-picture-optimized.json",
+      "bytes": 871,
+      "sha256": "687eccac3462699b51bef674fc056391a684262ca7889f778dbb4e5ba4c53a31"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-picture-baseline.png",
+      "bytes": 87475,
+      "sha256": "1ffc586ad65e9d5584f8c991109f02b9e88a5603ebdfdef2cb9dac3c0ae1ae0e"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-picture-optimized.png",
+      "bytes": 87329,
+      "sha256": "4fbe53d58f9d932339efa10cf15286b3957c35f11300d85aaccac442afee2127"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-final-baseline-repeat.png",
+      "bytes": 92918,
+      "sha256": "f1840cfea6d093cd897737bec1648cf78924b74a5a4743a9edb1cc7e2d4d8d6c"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-final-picture-optimized.png",
+      "bytes": 87795,
+      "sha256": "4d06fe3bc15985389f325fa74d77fd4f0876001578a9a2d37ce14b38fcdbabd1"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-turn-first-person.png",
+      "bytes": 66676,
+      "sha256": "7f9dbc956bff3671dca6d5f215dc80064309700ea2948fd754724ba4fcee0606"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-third-person.png",
+      "bytes": 64242,
+      "sha256": "f782b4de1cf94eace2051518798ec853df8f9c54a8a0888287e3c8351ac41bdb"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-cold-third-person.png",
+      "bytes": 62870,
+      "sha256": "ac64e10474af3a66ae00e82baf9328e2ed0932d6022b27ce245557f6228b7a25"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-cold-first-person.png",
+      "bytes": 86349,
+      "sha256": "0ec1f441da0c93e138657768f878513ed2a93914a7dc99791db9d9c4a54621ad"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-water-third-person.png",
+      "bytes": 43544,
+      "sha256": "c2982c3f6f94d12af923549ccff63eff415cf7ec2f36929eee7b067d64440db1"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-water-first-person.png",
+      "bytes": 64586,
+      "sha256": "8abc60c13074821011b67a604c5bf145d80cf8619a7dfd62eaadd30a3b2bf715"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-final-recovery.png",
+      "bytes": 82098,
+      "sha256": "1b5a11e73d6cd6fef0394c881c28ca1ee2c93af3ef80a9fa83771517993d6252"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/published-preview.png",
+      "bytes": 88472,
+      "sha256": "9cbec6a006d11b16313b6f435a1439619cf874995de594424a99a90052dacdc8"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/published-console.json",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/local-update-verification.json",
+      "bytes": 923,
+      "sha256": "c916fb3de49d7bb8372681154d5708a44369976ce206a2d0433f0d691bea02b8"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/qa-cleanup.json",
+      "bytes": 716,
+      "sha256": "1c345ea5877e6d590a981415e3894c4f625b64299ccf050a1d15752ab75d7aa2"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-B1.json",
+      "bytes": 5436,
+      "sha256": "7f78be53bff438d15314e967c2c536aafa1762fafa0a1c8b478bf7f826c7c1b2"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-A1.json",
+      "bytes": 5460,
+      "sha256": "acc8107e763b22a69c99d561d42ed2bfd011e35caacb497b43afb8e3eaccca73"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-B2.json",
+      "bytes": 5436,
+      "sha256": "417682dd2542e2d0b6c2bef4c2d25322e2352423c8186bc9d80e077869ddc52c"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-A2.json",
+      "bytes": 5388,
+      "sha256": "273b489e7f1e4983c19b188e974edc3cc3fff2d442b3662f5d9ef9e8ddc52a79"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-B3.json",
+      "bytes": 5439,
+      "sha256": "e72d1259daf2130c0eeed656303c8b1d0bd56bd653559c24b8d354a4862df1a9"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-A3.json",
+      "bytes": 5423,
+      "sha256": "af5bbe49676094247c9a559af20ed9e790776846ee0eb182a8b0af3559af3bc6"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-A4.json",
+      "bytes": 5448,
+      "sha256": "930a59a9b3f955863c15bf1118ec5440186a4a7476c93c500daa8fab42107a6e"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/native-profile-B4.json",
+      "bytes": 5465,
+      "sha256": "89537097f7feabe44e4c717232bdae87562605d3614de7ce6c82fcdbdc8bbdf9"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/renderer-baseline.log.gz",
+      "bytes": 1078,
+      "sha256": "20a2f7bb32fa2df4de8749bd2f16b292c8e292cfdd133d7b0a526a93d3db10ec"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/culling-first-failure.log.gz",
+      "bytes": 847,
+      "sha256": "9db08bc919c5ef53a6e30f4546b7bce5cbf5cd7927507aff89c3fe1acf9ff84a"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/culling-regression.log.gz",
+      "bytes": 1279,
+      "sha256": "c6a4a4a8fa189b094591e6c50e355e3e060be09795ff92a42de9483e1e57f05c"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/culling-cache-first-failure.log.gz",
+      "bytes": 601,
+      "sha256": "b372005a8b2f15906e9bf6bcb719a6ebd10a1b8ddcac78c6cfe178f2a9645e0f"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/culling-regression-final.log.gz",
+      "bytes": 1346,
+      "sha256": "58c58fcfd85505c28c7cf51e25490b2495f4c559683a255f27f57704d4454044"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/culling-regression-full-surfaces.log.gz",
+      "bytes": 1353,
+      "sha256": "d3c12347792ccfc21af26cf3cf7823539e76df4686f99b47f0cba5102a574ee5"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/deploy-tests.log.gz",
+      "bytes": 4978,
+      "sha256": "7a4999a03e5d40742777c9dbd99502f821db065413cc8a4ab77745c8d93c9223"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/typecheck.log.gz",
+      "bytes": 103,
+      "sha256": "791db621ddc21f139326fc67476b46927357e9e34d850876047ef07c0f6d423f"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/production-build.log.gz",
+      "bytes": 507,
+      "sha256": "b34a2ff66daa9d820e130429906ce614aadbf94492e90ce89cc47f44391739b3"
+    },
+    {
+      "path": "output/characters/pod-instance-culling-2026-10-22/production-build-final.log.gz",
+      "bytes": 460,
+      "sha256": "24a46907c65aa960cc0f1c367dece652481cd7e02974e3da57c39de63f1417ff"
+    }
+  ],
+  "bytes": 1409366,
+  "excluded": "Full worlds, database/memories, candidates, raw local logs, diagnostics and old recordings remain local only."
+}

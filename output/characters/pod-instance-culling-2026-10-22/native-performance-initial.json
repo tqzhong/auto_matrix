@@ -1,0 +1,52 @@
+{
+  "runs": [
+    {
+      "run": "B1",
+      "culling": false,
+      "fps": 33.68238511305276,
+      "p95FrameMs": 36.19999980926514,
+      "calls": 133,
+      "triangles": 1735737,
+      "filmCpuMs": 0.6731225341676252,
+      "renderCpuMs": 6.222924926064231
+    },
+    {
+      "run": "A1",
+      "culling": true,
+      "fps": 39.29155131583336,
+      "p95FrameMs": 30.100000381469727,
+      "calls": 133,
+      "triangles": 817129,
+      "filmCpuMs": 0.9852542295294293,
+      "renderCpuMs": 5.628983043412031
+    },
+    {
+      "run": "B2",
+      "culling": false,
+      "fps": 38.0136849280242,
+      "p95FrameMs": 31.700000762939453,
+      "calls": 133,
+      "triangles": 1735737,
+      "filmCpuMs": 0.6493870339335159,
+      "renderCpuMs": 6.058318709325039
+    },
+    {
+      "run": "A2",
+      "culling": true,
+      "fps": 37.97003770311301,
+      "p95FrameMs": 33.5,
+      "calls": 133,
+      "triangles": 817129,
+      "filmCpuMs": 1.063859636741772,
+      "renderCpuMs": 6.444736860509504
+    }
+  ],
+  "cameraMaxComponentDelta": 1.1102230246251565e-15,
+  "samePositionAndQuaternion": true,
+  "projectionDeltaIsFloatingPointConvergence": true,
+  "baselineMeanFps": 35.848035020538475,
+  "candidateMeanFps": 38.63079450947318,
+  "changePercent": 7.762655574678989,
+  "scope": "Initial uncached implementation; second pair tied, not proof of stable FPS improvement. All four reports retained. Final cached implementation measured separately.",
+  "initialPictureMaskRejected": "The initial DOM selector included two full-screen overlay containers, so it would exclude the entire game image; it is not used for picture acceptance."
+}

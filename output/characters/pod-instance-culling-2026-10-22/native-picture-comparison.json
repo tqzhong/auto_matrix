@@ -1,0 +1,17 @@
+{
+  "samePageAndNoise": true,
+  "sameUiPanelTextAndHeight": true,
+  "baseline": "native-picture-baseline.png",
+  "candidate": "native-picture-optimized.png",
+  "uiMasks": [
+    "native-ui-picture-baseline.json",
+    "native-ui-picture-optimized.json"
+  ],
+  "maskMethod": "Union of actual HUD child/panel rectangles plus3px; full-screen transparent containers/blackout excluded.",
+  "comparedPixels": 593491,
+  "changedPixels": 0,
+  "above3Levels": 0,
+  "maxChannelDifference": 0,
+  "meanAbsoluteDifference": 0.0,
+  "initialPairNote": "First pair changed performance panel height;3400 differing pixels clustered outside its left/bottom edges. Initial results retained, not relabelled as game geometry differences."
+}

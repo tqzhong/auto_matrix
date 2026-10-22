@@ -1,0 +1,31 @@
+{
+  "actualBackendRestart": true,
+  "beforePid": 12955,
+  "afterPid": 25859,
+  "publicGroupsEqual": {
+    "phase": true,
+    "timeOfDay": true,
+    "simulation": true,
+    "events": true,
+    "sandbox": true
+  },
+  "neoFieldsEqual": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "isAwakened": true,
+    "isInMatrix": true,
+    "currentLocation": true
+  },
+  "memoryFilesUnchanged": true,
+  "memoryFiles": 6,
+  "tick": 5941,
+  "paused": true,
+  "scene": "m1_pod",
+  "awakening": {
+    "kind": "breather",
+    "elapsed": 2.9430000000000014,
+    "emerged": true
+  },
+  "mainServerRestarted": false
+}

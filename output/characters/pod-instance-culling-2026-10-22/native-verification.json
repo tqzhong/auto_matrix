@@ -1,0 +1,77 @@
+{
+  "actualNativeUiRun": true,
+  "url": "http://127.0.0.1:5201/?profile",
+  "seed": {
+    "source": "output/characters/pod-hand-anatomy-2026-10-22/grip-checkpoint.json",
+    "sha256": "4f00ce04f04968f6e531ac030d183e0fcf8385af7679789c4242cea5a5f9b441",
+    "copiedWithoutPositionOrStoryEdits": true,
+    "mainSaveUsed": false,
+    "renderReconnected": false
+  },
+  "restart": {
+    "actualBackendRestart": true,
+    "beforePid": 12955,
+    "afterPid": 25859,
+    "publicGroupsEqual": {
+      "phase": true,
+      "timeOfDay": true,
+      "simulation": true,
+      "events": true,
+      "sandbox": true
+    },
+    "neoFieldsEqual": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "isAwakened": true,
+      "isInMatrix": true,
+      "currentLocation": true
+    },
+    "memoryFilesUnchanged": true,
+    "memoryFiles": 6,
+    "tick": 5941,
+    "paused": true,
+    "scene": "m1_pod",
+    "awakening": {
+      "kind": "breather",
+      "elapsed": 2.9430000000000014,
+      "emerged": true
+    },
+    "mainServerRestarted": false
+  },
+  "inputs": "Normal UI: enter Neo, V first/third person, mouse drag, comparison checkboxes, measure, browser reload, continue, G disconnect/rescue, pause. No private engine evaluation or story/position injection.",
+  "final": {
+    "scene": "m1_recovery",
+    "step": 0,
+    "tick": 6315,
+    "running": false,
+    "awakening": {
+      "kind": "recovery",
+      "elapsed": 0,
+      "started": false
+    },
+    "neo": {
+      "position": {
+        "x": 5369,
+        "y": -101,
+        "z": 4394
+      },
+      "rotation": 3.141592653589793,
+      "health": 100,
+      "currentLocation": "film_neb_deck",
+      "isInMatrix": false,
+      "isAwakened": true
+    },
+    "completedPod": true
+  },
+  "consoleWarningsAndErrors": [],
+  "scope": "One actual historical breather checkpoint, first/third-person turn, actual QA restart/cold load, then ordinary gameplay through drainage and rescue to medical recovery. Not whole P0/trilogy replay.",
+  "newRecording": false,
+  "limitations": [
+    "No stable FPS improvement established, final averages37.49/37.61.",
+    "First-person wrist/skin/body rendering remains rough.",
+    "View preference still needs V after reload.",
+    "Image equality covers one fixed view; geometry checks cover listed finite views.",
+    "Movie-quality accepted groups remain0/42."
+  ]
+}

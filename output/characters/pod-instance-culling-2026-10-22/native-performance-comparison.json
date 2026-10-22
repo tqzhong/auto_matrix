@@ -1,0 +1,176 @@
+{
+  "order": [
+    "B3",
+    "A3",
+    "A4",
+    "B4"
+  ],
+  "runs": [
+    {
+      "run": "B3",
+      "file": "native-profile-B3.json",
+      "culling": false,
+      "fps": 37.28809045072726,
+      "p95FrameMs": 35.19999980926514,
+      "calls": 133,
+      "triangles": 1735737,
+      "filmCpuMs": 0.5153297842505143,
+      "renderCpuMs": 6.470410012093883,
+      "draws": {
+        "shadows": {
+          "calls": 37,
+          "triangles": 164298
+        },
+        "scene": {
+          "calls": 47,
+          "triangles": 1343918
+        },
+        "occlusion": {
+          "calls": 30,
+          "triangles": 227502
+        },
+        "postprocessing": {
+          "calls": 19,
+          "triangles": 19
+        }
+      }
+    },
+    {
+      "run": "A3",
+      "file": "native-profile-A3.json",
+      "culling": true,
+      "fps": 37.39850405888655,
+      "p95FrameMs": 37.5,
+      "calls": 135,
+      "triangles": 817385,
+      "filmCpuMs": 0.5229537495514677,
+      "renderCpuMs": 6.973843420103352,
+      "draws": {
+        "shadows": {
+          "calls": 37,
+          "triangles": 164298
+        },
+        "scene": {
+          "calls": 49,
+          "triangles": 425566
+        },
+        "occlusion": {
+          "calls": 30,
+          "triangles": 227502
+        },
+        "postprocessing": {
+          "calls": 19,
+          "triangles": 19
+        }
+      }
+    },
+    {
+      "run": "A4",
+      "file": "native-profile-A4.json",
+      "culling": true,
+      "fps": 37.811965357263965,
+      "p95FrameMs": 32.39999961853027,
+      "calls": 135,
+      "triangles": 817385,
+      "filmCpuMs": 0.5374341170272425,
+      "renderCpuMs": 6.534094900992717,
+      "draws": {
+        "shadows": {
+          "calls": 37,
+          "triangles": 164298
+        },
+        "scene": {
+          "calls": 49,
+          "triangles": 425566
+        },
+        "occlusion": {
+          "calls": 30,
+          "triangles": 227502
+        },
+        "postprocessing": {
+          "calls": 19,
+          "triangles": 19
+        }
+      }
+    },
+    {
+      "run": "B4",
+      "file": "native-profile-B4.json",
+      "culling": false,
+      "fps": 37.697395149478155,
+      "p95FrameMs": 32.59999942779541,
+      "calls": 135,
+      "triangles": 1735993,
+      "filmCpuMs": 0.5199294771466937,
+      "renderCpuMs": 6.48994710205724,
+      "draws": {
+        "shadows": {
+          "calls": 37,
+          "triangles": 164298
+        },
+        "scene": {
+          "calls": 49,
+          "triangles": 1344174
+        },
+        "occlusion": {
+          "calls": 30,
+          "triangles": 227502
+        },
+        "postprocessing": {
+          "calls": 19,
+          "triangles": 19
+        }
+      }
+    }
+  ],
+  "samePageAndCameraAndNoise": true,
+  "cameraMaxComponentDelta": 4.440892098500626e-16,
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "camera": {
+    "position": [
+      5056,
+      -97.35118159085484,
+      4402.764765021298
+    ],
+    "quaternion": [
+      0,
+      0.9983452068498003,
+      0.05750519941735107,
+      0
+    ],
+    "projection": [
+      0.8339405447884166,
+      0,
+      0,
+      0,
+      0,
+      1.4825609685127406,
+      0,
+      0,
+      0,
+      0,
+      -1.0000240002880036,
+      -1,
+      0,
+      0,
+      -0.12000144001728022,
+      0
+    ]
+  },
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "baselineMeanFps": 37.492742800102704,
+  "candidateMeanFps": 37.60523470807526,
+  "changePercent": 0.3000364859202742,
+  "stableFpsImprovementProven": false,
+  "not60FpsAcceptance": true,
+  "scope": "Final cached implementation, one paused breather2.943 checkpoint, no capture or other game tabs. Four18s samples in BAAB order; CPU timings do not isolate GPU execution. First baseline had2 fewer draws/256 fewer triangles in other passes; compare final settled baseline separately.",
+  "settledGeometryDifference": {
+    "savedTrianglesPerFrame": 918608,
+    "baselineCalls": 135,
+    "candidateCalls": 135
+  }
+}

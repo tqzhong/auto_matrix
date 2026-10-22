@@ -1,0 +1,12 @@
+{
+  "baseline": "76f3284f67381c58c912fff0a40a2e65238daa9c",
+  "verifiedSourceFiles": 1151,
+  "packageFiles": 704,
+  "protectedFiles": 11,
+  "backendDistFiles": 280,
+  "mainWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "previousGoalTurn": "progress",
+  "previousEvidence": "Commit76f3284 shipped pod contact/hand correction and reduced far normal redraws. Same-page no-capture FPS34.13 to36.74, still below60; raw gameplay reached medical recovery with actual restart verification.",
+  "nextQuestion": "Can per-instance frustum selection reduce the remaining distant color geometry without removing any visible pods or adding draw submissions?",
+  "renderReconnected": false
+}
