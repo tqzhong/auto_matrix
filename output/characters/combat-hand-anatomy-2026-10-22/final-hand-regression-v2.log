@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: neo: the complete fighting hands stay closed surfaces throughout a full grip
+ok 1 - neo: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 283028.6945
+  type: 'test'
+  ...
+# Subtest: trinity: the complete fighting hands stay closed surfaces throughout a full grip
+ok 2 - trinity: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 251039.477959
+  type: 'test'
+  ...
+# Subtest: smith: the complete fighting hands stay closed surfaces throughout a full grip
+ok 3 - smith: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 263136.728917
+  type: 'test'
+  ...
+# Subtest: morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+ok 4 - morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 225327.968333
+  type: 'test'
+  ...
+# Subtest: a saved combat hand restores the same skin after unrelated movement and a release
+ok 5 - a saved combat hand restores the same skin after unrelated movement and a release
+  ---
+  duration_ms: 20165.439208
+  type: 'test'
+  ...
+# Subtest: a phone gesture restores the original right-hand binding after a fighting grip
+ok 6 - a phone gesture restores the original right-hand binding after a fighting grip
+  ---
+  duration_ms: 25439.778833
+  type: 'test'
+  ...
+# Subtest: partially posed prop fingers match the original gesture without combat posing
+ok 7 - partially posed prop fingers match the original gesture without combat posing
+  ---
+  duration_ms: 15333.318167
+  type: 'test'
+  ...
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+ok 8 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+  ---
+  duration_ms: 46697.71875
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1138994.746833

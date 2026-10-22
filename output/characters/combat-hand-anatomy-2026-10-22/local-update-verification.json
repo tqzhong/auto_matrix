@@ -1,0 +1,28 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-CztavNhD.js",
+  "bundleBytes": 3733457,
+  "servedBundleSha256": "25e3f6c87a87b85937f2e6a67c62368d5b0524c2becc828eaf73fa4fe3b2c2ae",
+  "backendDistFilesUnchanged": 280,
+  "serverRestarted": false,
+  "serverPid": 82106,
+  "fullWorldSnapshotPreserved": true,
+  "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+  "tick": 3757,
+  "running": false,
+  "previousBundleRetained": true,
+  "livePackageFilesMatchCandidate": 704,
+  "protectedWipFilesUnchanged": 11,
+  "renderReconnected": false,
+  "assetsChanged": false,
+  "afterNativeReloadFullWorldPreserved": true,
+  "nativeBundleReadFromDom": true,
+  "nativeWarningsAndErrors": 4,
+  "nativeErrors": 0,
+  "nativeWarnings": 4,
+  "nativeWarningMessages": [
+    "THREE.WebGLRenderer: Texture marked for update but no image data found."
+  ],
+  "temporaryQaPortsStopped": true,
+  "deliveryTab": "19"
+}

@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+ok 1 - the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+  ---
+  duration_ms: 18779.104917
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25424.953875

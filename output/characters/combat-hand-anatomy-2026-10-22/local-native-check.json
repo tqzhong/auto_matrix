@@ -1,0 +1,33 @@
+{
+  "scriptSources": [
+    "/assets/index-CztavNhD.js"
+  ],
+  "warningsAndErrors": [
+    {
+      "level": "warn",
+      "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+      "timestamp": "2026-10-22T03:36:34.020Z",
+      "url": "http://localhost:5173/assets/index-CztavNhD.js"
+    },
+    {
+      "level": "warn",
+      "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+      "timestamp": "2026-10-22T03:36:34.298Z",
+      "url": "http://localhost:5173/assets/index-CztavNhD.js"
+    },
+    {
+      "level": "warn",
+      "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+      "timestamp": "2026-10-22T03:36:34.540Z",
+      "url": "http://localhost:5173/assets/index-CztavNhD.js"
+    },
+    {
+      "level": "warn",
+      "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+      "timestamp": "2026-10-22T03:36:34.578Z",
+      "url": "http://localhost:5173/assets/index-CztavNhD.js"
+    }
+  ],
+  "preview": "Neo / 刺拳 · 直拳 · 正蹬",
+  "temporaryTabsClosed": true
+}

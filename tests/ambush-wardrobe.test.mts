@@ -620,6 +620,13 @@ test('the unfolded seams keep a closed, smoothly shaded back and unchanged cloth
     const donor = h.rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
     assert.deepEqual(Array.from(shirt.geometry.index!.array).slice(0, donor.geometry.index!.count), Array.from(donor.geometry.index!.array), 'the original connected garment faces are retained');
     const a = shirt.geometry.attributes, b = donor.geometry.attributes, centre = new Map<string, number[]>();
+    const shoulder = donor.userData.ambushShoulderFit.shirt as { vertexCount: number; data: string };
+    const cut = Buffer.from(shoulder.data, 'base64');
+    assert.equal(shoulder.vertexCount, a.position.count); assert.equal(cut.byteLength, shoulder.vertexCount * 48);
+    // The shipped shoulder cut is already part of the garment. Keep the
+    // strict guard against additional changes outside the seam/neck repairs.
+    const expected = (id: number, axis: number, normal: boolean) => Math.fround((normal ? b.normal : b.position).getComponent(id, axis)
+      + cut.readDoubleLE((id * 6 + axis + (normal ? 3 : 0)) * 8));
     const neckJoin = new Set<number>((donor.userData.ambushNeckStand?.updates ?? []).map(([id]: number[]) => id));
     assert.ok(neckJoin.size <= 100, 'the separate sewn neck repair may relight only its original rim and two faired corners');
     for (const id of neckJoin) assert.ok(b.position.getY(id) > 3.78 && Math.hypot(b.position.getX(id), b.position.getZ(id) - .08) < .3, `neck repair leaves its local join at ${id}`);
@@ -631,12 +638,12 @@ test('the unfolded seams keep a closed, smoothly shaded back and unchanged cloth
       // strip; normals outside these strips and the sewn neck stay untouched.
       const frontStrip = Math.abs(point.x) < .1 && point.z > .1 && point.y > 2.65 && point.y < 2.9;
       if (!frontStrip && !neckJoin.has(i) && (Math.abs(point.x) >= .112 || point.z >= -.088 || point.y >= 2.712)) {
-        for (let n = 0; n < 3; n++) assert.equal(a.normal.getComponent(i, n), b.normal.getComponent(i, n), `unchanged normal ${i}/${n}`);
+        for (let n = 0; n < 3; n++) assert.equal(a.normal.getComponent(i, n), expected(i, n, true), `unchanged normal beyond the baked shoulder cut ${i}/${n}`);
         unchangedNormals++;
       }
       const influence = (pattern: RegExp) => [0, 1, 2, 3].reduce((sum, n) => sum + (pattern.test(donor.skeleton.bones[b.skinIndex.getComponent(i, n)].name) ? b.skinWeight.getComponent(i, n) : 0), 0);
       if (Math.abs(point.x) > .5 && influence(/^(pelvis|spine|chest)$/) === 0 && influence(/^(pelvis|spine|chest|hip_[LR])$/) <= .8) {
-        for (let n = 0; n < 3; n++) assert.equal(a.position.getComponent(i, n), b.position.getComponent(i, n), `untouched sleeve ${i}/${n}`);
+        for (let n = 0; n < 3; n++) assert.equal(a.position.getComponent(i, n), expected(i, n, false), `untouched sleeve beyond the baked shoulder cut ${i}/${n}`);
         unchangedSleeves++;
       }
       assert.equal(a.uv.getX(i), b.uv.getX(i)); assert.equal(a.uv.getY(i), b.uv.getY(i));

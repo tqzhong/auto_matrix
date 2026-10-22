@@ -1,0 +1,43 @@
+{
+  "baselineCommit": "9388b8004e5780cca907a29d9309365adc54c2c0",
+  "baselineTrackedFiles": 1140,
+  "changedExistingFiles": [
+    "packages/client/src/agents/HeroModel.ts",
+    "tests/ambush-wardrobe.test.mts",
+    "tests/hand-pose.test.mts"
+  ],
+  "newFiles": [
+    "packages/client/src/agents/FightingHands.ts",
+    "packages/client/src/agents/HandCurve.ts",
+    "tests/fighting-hand-surface.test.mts",
+    "tests/helpers/fighting-hand-fixture.mts",
+    "tests/helpers/hand-surface.mts",
+    "tests/helpers/hand-self-contact.mts"
+  ],
+  "missingFiles": [],
+  "unchangedTrackedFiles": 1137,
+  "existingPackageFiles": 702,
+  "changedExistingPackageFiles": [
+    "packages/client/src/agents/HeroModel.ts"
+  ],
+  "unchangedPackageFiles": 701,
+  "newPackageFiles": [
+    "packages/client/src/agents/FightingHands.ts",
+    "packages/client/src/agents/HandCurve.ts"
+  ],
+  "publishedPackageFiles": 704,
+  "assetsUnchanged": true,
+  "protectedWipFiles": 11,
+  "protectedWipUnchanged": true,
+  "ownedFileSha256": {
+    "packages/client/src/agents/HeroModel.ts": "1e37636473fcbae1445f543712e1d9d9aacd8071e16819e92dd64a9a4ce849bf",
+    "tests/ambush-wardrobe.test.mts": "80f73e48e0ff0f21c996af052586aa08350b1fc7bf2ab2d3a846a042f8da39f8",
+    "tests/hand-pose.test.mts": "966840cef2ba7d95f596f0d7d5655f83fd0700c54ac4110b58aad0c2a8174e83",
+    "packages/client/src/agents/FightingHands.ts": "faa887daa9282ae1bc192d4e0420d90e8dbd6c532cfd54537aecb6dc14e3cdb0",
+    "packages/client/src/agents/HandCurve.ts": "c9a6168bb52089468b4872bf6b293f95be044e68c7486961c6e45047828a4137",
+    "tests/fighting-hand-surface.test.mts": "e33d7e2c45435348b21d47540f0f18616e592db5ffd1505e8e1d885487f689cd",
+    "tests/helpers/fighting-hand-fixture.mts": "9f48b7f8ede6f822d01afeaded9084db72a95ba286a1224e99a8f226e171bf43",
+    "tests/helpers/hand-surface.mts": "a091b4c5fea5dcb817afd252cbb163ad086427f7e332dcad51e6e3f9010d85ff",
+    "tests/helpers/hand-self-contact.mts": "ebc1b73ea1ebddbbf4ed6ba3ae59b424574ceb69c1e8cb8c12f9450670c49565"
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "baselineCommit": "9388b8004e5780cca907a29d9309365adc54c2c0",
+  "actors": [
+    "neo",
+    "trinity",
+    "smith",
+    "morpheus"
+  ],
+  "enabled": "explicit ordinary locomotion and unarmed combat inputs only",
+  "legacyPosingRetained": [
+    "props",
+    "armed",
+    "seated",
+    "riding",
+    "climbing",
+    "story and paired gestures",
+    "support actors and guards"
+  ],
+  "assetAndDependencyChanges": false,
+  "surface": {
+    "verticesPerHand": 6673,
+    "trianglesPerHand": 12472,
+    "gripsPerActorPerSide": 21,
+    "finitePoses": 168,
+    "crossingLineThreshold": 1e-05,
+    "crossingCountsAreBidirectional": true
+  },
+  "regressionLogs": {
+    "hand-baseline": {
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "fighting-hand-red": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "combat-fingers-red": {
+      "tests": 4,
+      "pass": 0,
+      "fail": 4,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "hand-candidate-regression": {
+      "tests": 22,
+      "pass": 20,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "final-hand-regression-v2": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "shared-hand-red": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "player-hand-red": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "player-hand-green": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "final-grip-regression": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "final-pistol-regression": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "opposition-baseline": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "opposition-candidate": {
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "final-garment-phone-regression": {
+      "tests": 34,
+      "pass": 33,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "wardrobe-normal-baseline": {
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "wardrobe-normal-baseline-updated": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "wardrobe-normal-candidate": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "final-deploy-tests": {
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    }
+  },
+  "failedLogsPreserved": [
+    "original full-surface and joint failures",
+    "first candidate 20/22 opposition sampling mismatch",
+    "first garment/phone 33/34 with the same baseline normal guard failure",
+    "shared-asset actor isolation failure before fix",
+    "neutral mirror tint from actual player controls opting out before fix"
+  ],
+  "testCorrections": {
+    "opposition": "sum weights over the same index/middle finger; original 0.07 limit retained; old/new controls both 4/4",
+    "garmentNormal": "strict float32 donor plus existing float64 shoulder cut; old/new controls both 1/1"
+  },
+  "typecheck": {
+    "fullBeforeNeutralTintFix": "final-typecheck-v2.log",
+    "exitCode": 0,
+    "finalClientTscIncludedIn": "final-client-build.log",
+    "serverAndSharedSourcesUnchangedAfterFullTypecheck": true
+  },
+  "build": {
+    "fullBuildBeforeNeutralTintFix": "final-build-v2.log",
+    "finalClientBuild": "final-client-build.log",
+    "exitCode": 0,
+    "largeChunkWarningRetained": true
+  },
+  "geometryControlAfterInstanceIsolation": {
+    "samples": 12,
+    "maxPosition": 0,
+    "maxNormal": 0,
+    "maxSkin": 0,
+    "maxPosed": 0
+  },
+  "cpuSample": {
+    "source": "cpu-benchmark-after.json",
+    "idleMedianRangeMs": [
+      0.28358299999854353,
+      0.3516250000002401
+    ],
+    "changingGripMedianRangeMs": [
+      10.077999999999975,
+      14.978541999999834
+    ],
+    "includesBaseActorAnimation": true,
+    "browserFpsClaim": false,
+    "stableSpeedupClaim": false
+  },
+  "sourceAudit": "source-audit.json",
+  "localUpdate": {
+    "url": "http://localhost:5173/",
+    "bundle": "index-CztavNhD.js",
+    "bundleBytes": 3733457,
+    "servedBundleSha256": "25e3f6c87a87b85937f2e6a67c62368d5b0524c2becc828eaf73fa4fe3b2c2ae",
+    "backendDistFilesUnchanged": 280,
+    "serverRestarted": false,
+    "serverPid": 82106,
+    "fullWorldSnapshotPreserved": true,
+    "fullWorldSha256": "a413ef0071c70b21fb833b3b06f73954e4f8a4ed01de34e872f12152634bc040",
+    "tick": 3757,
+    "running": false,
+    "previousBundleRetained": true,
+    "livePackageFilesMatchCandidate": 704,
+    "protectedWipFilesUnchanged": 11,
+    "renderReconnected": false,
+    "assetsChanged": false,
+    "afterNativeReloadFullWorldPreserved": true,
+    "nativeBundleReadFromDom": true,
+    "nativeWarningsAndErrors": 4,
+    "nativeErrors": 0,
+    "nativeWarnings": 4,
+    "nativeWarningMessages": [
+      "THREE.WebGLRenderer: Texture marked for update but no image data found."
+    ],
+    "temporaryQaPortsStopped": true,
+    "deliveryTab": "19"
+  },
+  "nativeQa": {
+    "fourActorCloseups": true,
+    "leftAndRight": true,
+    "palmAndBack": true,
+    "continuousGripWithFrozenCombatBody": true,
+    "finalIsolatedNeo": "native-candidate-isolated-neo.png",
+    "fixedGameEntry": "native-local-hands.png",
+    "gameplayVideo": false
+  },
+  "remaining": [
+    "film likeness and natural materials",
+    "story, prop and paired hand anatomy",
+    "other actors",
+    "startup and deformation costs",
+    "complete undressing",
+    "42 high-quality trilogy scene groups"
+  ],
+  "acceptedHighQualitySceneGroups": 0,
+  "continuousArbitraryContactProof": false
+}

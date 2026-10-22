@@ -1,0 +1,263 @@
+TAP version 13
+# Subtest: closing the actual fingers moves the hand while leaving the worn shirt and coat cuffs with the wrist
+ok 1 - closing the actual fingers moves the hand while leaving the worn shirt and coat cuffs with the wrist
+  ---
+  duration_ms: 17876.076458
+  type: 'test'
+  ...
+# Subtest: cloth rebinding preserves the actual bind surface, normalized arm weights and original donor data
+ok 2 - cloth rebinding preserves the actual bind surface, normalized arm weights and original donor data
+  ---
+  duration_ms: 14248.932375
+  type: 'test'
+  ...
+# Subtest: the complete old-building upper coat does not fold through itself at the real guarding elbows
+ok 3 - the complete old-building upper coat does not fold through itself at the real guarding elbows
+  ---
+  duration_ms: 22244.216
+  type: 'test'
+  ...
+# Subtest: the complete underlying shirt does not fold through itself with the same guarding arms
+ok 4 - the complete underlying shirt does not fold through itself with the same guarding arms
+  ---
+  duration_ms: 16621.432958
+  type: 'test'
+  ...
+# Subtest: the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+ok 5 - the real fitted elbow layers remain separate without deleting faces or changing their UVs and skin weights
+  ---
+  duration_ms: 28747.004459
+  type: 'test'
+  ...
+# Subtest: both actual sleeves preserve a paused and cold guard, then restore their original surface on leaving the old-building costume
+ok 6 - both actual sleeves preserve a paused and cold guard, then restore their original surface on leaving the old-building costume
+  ---
+  duration_ms: 16096.253625
+  type: 'test'
+  ...
+# Subtest: the actual complete leather shoulder does not turn through its own armhole during the jab
+ok 7 - the actual complete leather shoulder does not turn through its own armhole during the jab
+  ---
+  duration_ms: 22177.021208
+  type: 'test'
+  ...
+# Subtest: the actual complete shirt shoulder stays continuous through the mirrored cross
+ok 8 - the actual complete shirt shoulder stays continuous through the mirrored cross
+  ---
+  duration_ms: 16906.578667
+  type: 'test'
+  ...
+# Subtest: the two complete real garments stay separate before reaching a fully extended punch
+ok 9 - the two complete real garments stay separate before reaching a fully extended punch
+  ---
+  duration_ms: 9449.432125
+  type: 'test'
+  ...
+# Subtest: both intermediate shoulder cuts clear the complete outer costume and every visible inner layer
+ok 10 - both intermediate shoulder cuts clear the complete outer costume and every visible inner layer
+  ---
+  duration_ms: 74160.258833
+  type: 'test'
+  ...
+# Subtest: the baked shoulder cut preserves a paused pose and reconstructs the saved cross without changing hands
+ok 11 - the baked shoulder cut preserves a paused pose and reconstructs the saved cross without changing hands
+  ---
+  duration_ms: 12956.208167
+  type: 'test'
+  ...
+# Subtest: the complete old-building outer costume clears itself and all actual inner layers through ordinary movement
+ok 12 - the complete old-building outer costume clears itself and all actual inner layers through ordinary movement
+  ---
+  duration_ms: 329369.075833
+  type: 'test'
+  ...
+# Subtest: the complete fitted upper coat keeps its saved shape while paused, rebuilds cold and releases its corrections on leaving
+ok 13 - the complete fitted upper coat keeps its saved shape while paused, rebuilds cold and releases its corrections on leaving
+  ---
+  duration_ms: 17220.513834
+  type: 'test'
+  ...
+# Subtest: the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+ok 14 - the complete upper coat clears the actual raised thigh 0.45 seconds after starting to run
+  ---
+  duration_ms: 6003.562209
+  type: 'test'
+  ...
+# Subtest: the complete worn coat clears itself and every real inner layer on every frame of the first running strides
+ok 15 - the complete worn coat clears itself and every real inner layer on every frame of the first running strides
+  ---
+  duration_ms: 292683.416084
+  type: 'test'
+  ...
+# Subtest: the sewn old-building coat clears the raised thigh during a real front kick
+ok 16 - the sewn old-building coat clears the raised thigh during a real front kick
+  ---
+  duration_ms: 19649.556792
+  type: 'test'
+  ...
+# Subtest: shirt-only old-building Morpheus has actual full cloth over waist and sleeves, rather than the crew-neck chest insert
+ok 17 - shirt-only old-building Morpheus has actual full cloth over waist and sleeves, rather than the crew-neck chest insert
+  ---
+  duration_ms: 18921.350083
+  type: 'test'
+  ...
+# Subtest: the old-building coat has an open front showing a real skinned green tie and folded collar
+ok 18 - the old-building coat has an open front showing a real skinned green tie and folded collar
+  ---
+  duration_ms: 15462.896959
+  type: 'test'
+  ...
+# Subtest: the delivered shirt collar and tie stay outside their actual torso through the phone and folded bathroom poses
+ok 19 - the delivered shirt collar and tie stay outside their actual torso through the phone and folded bathroom poses
+  ---
+  duration_ms: 15121.653625
+  type: 'test'
+  ...
+# Subtest: full sleeves follow the actual phone wrists without entering the handset casing
+ok 20 - full sleeves follow the actual phone wrists without entering the handset casing
+  ---
+  duration_ms: 15680.537291
+  type: 'test'
+  ...
+# Subtest: new full shirt stays clear of the actual pipe shaft and bathroom floor and intact fixtures
+ok 21 - new full shirt stays clear of the actual pipe shaft and bathroom floor and intact fixtures
+  ---
+  duration_ms: 13744.815667
+  type: 'test'
+  ...
+# Subtest: the leather layer covers the real shirt sleeves and waist without covering the open front tie
+ok 22 - the leather layer covers the real shirt sleeves and waist without covering the open front tie
+  ---
+  duration_ms: 16771.432542
+  type: 'test'
+  ...
+# Subtest: both actual forearm cuff sections remain covered while the hands exchange and hold the phone
+ok 23 - both actual forearm cuff sections remain covered while the hands exchange and hold the phone
+  ---
+  duration_ms: 14947.94075
+  type: 'test'
+  ...
+# Subtest: appearance materials remain stable when paused, restore on exit, and release only their owned GPU resources
+ok 24 - appearance materials remain stable when paused, restore on exit, and release only their owned GPU resources
+  ---
+  duration_ms: 9167.330333
+  type: 'test'
+  ...
+# Subtest: the actual trouser waist stays under the complete shirt around its sides and back
+ok 25 - the actual trouser waist stays under the complete shirt around its sides and back
+  ---
+  duration_ms: 58606.080375
+  type: 'test'
+  ...
+# waist 0s: 147/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 1.55s: 150/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 2.2s: 147/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 4s: 152/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# waist 7.6s: 147/192 rays compare actual trouser and shirt triangles; 32/32 circumferential directions covered
+# Subtest: the fitted shirt hem follows the actual trouser waist through bent bathroom and pipe poses
+ok 26 - the fitted shirt hem follows the actual trouser waist through bent bathroom and pipe poses
+  ---
+  duration_ms: 157566.383209
+  type: 'test'
+  ...
+# bathroom ready/0: 272/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# bathroom counter/0.325: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# bathroom capturing/2.5: 343/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# bathroom breakout/1.6: 282/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 0.32: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 1.05: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 4: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 9.4: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# wetwall 14.8: 322/384 plane comparisons across 64/64 directions; 0 below lifted hem; 1650 actual cloth-triangle comparisons across 64/64 directions
+# Subtest: the old-building trouser rear seam remains a continuous surface in the actual crouched poses
+ok 27 - the old-building trouser rear seam remains a continuous surface in the actual crouched poses
+  ---
+  duration_ms: 5655.597958
+  type: 'test'
+  ...
+# counter: rear waist edge 119-126 posed/bind ratio 1.0060840770330577
+# counter: rear waist edge 119-127 posed/bind ratio 1.0009540252308613
+# counter: rear waist edge 174-177 posed/bind ratio 1.0047027993151632
+# breakout: rear waist edge 119-126 posed/bind ratio 0.8877955987063219
+# breakout: rear waist edge 119-127 posed/bind ratio 0.7216532087346224
+# breakout: rear waist edge 174-177 posed/bind ratio 0.7405216684360316
+# Subtest: static shirt skinning restores the same saved surface and releases only its own trouser geometry
+ok 28 - static shirt skinning restores the same saved surface and releases only its own trouser geometry
+  ---
+  duration_ms: 9126.757708
+  type: 'test'
+  ...
+# Subtest: the actual tie panels remain above the shirt triangles in the folded bathroom poses
+ok 29 - the actual tie panels remain above the shirt triangles in the folded bathroom poses
+  ---
+  duration_ms: 7677.945875
+  type: 'test'
+  ...
+# Subtest: the torso transition adds no large shirt folds beyond the delivered cloth microseams
+ok 30 - the torso transition adds no large shirt folds beyond the delivered cloth microseams
+  ---
+  duration_ms: 5879.7025
+  type: 'test'
+  ...
+# ready: donor 22 crossings, maximum 0.005392783603807642; fitted 0, maximum -Infinity
+# Subtest: the actual saved renderer preserves rear-seam relief without adding visible cloth crossings
+ok 31 - the actual saved renderer preserves rear-seam relief without adding visible cloth crossings
+  ---
+  duration_ms: 10484.825334
+  type: 'test'
+  ...
+# actual capturing seam 9838/20620: donor line 0.0420674674550576, fitted 0; line length is not penetration depth
+# actual capturing seam 9842/20624: donor line 0.03786689186604251, fitted 0; line length is not penetration depth
+# capturing: rear region donor 29 crossings; fitted 0
+# ready: rear region donor 18 crossings; fitted 0
+# counter: rear region donor 33 crossings; fitted 0
+# breakout: rear region donor 26 crossings; fitted 0
+# pipe 0.32: rear region donor 40 crossings; fitted 0
+# pipe 1.05: rear region donor 40 crossings; fitted 0
+# pipe 14.8: rear region donor 50 crossings; fitted 0
+# Subtest: the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+not ok 32 - the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+  ---
+  duration_ms: 2974.257083
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/candidate-release/tests/ambush-wardrobe.test.mts:1:43649'
+  failureType: 'testCodeFailure'
+  error: |-
+    unchanged normal 0/0
+    + actual - expected
+    
+    + -0.4839843809604645
+    - -0.48398417234420776
+               ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: -0.48398417234420776
+  actual: -0.4839843809604645
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/candidate-release/tests/ambush-wardrobe.test.mts:634:44)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: rear-seam intersection measurement retains an on-plane vertex and coincident cut endpoints
+ok 33 - rear-seam intersection measurement retains an on-plane vertex and coincident cut endpoints
+  ---
+  duration_ms: 2.795792
+  type: 'test'
+  ...
+# Subtest: the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+ok 34 - the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window
+  ---
+  duration_ms: 15066.605666
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 33
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 667146.901334

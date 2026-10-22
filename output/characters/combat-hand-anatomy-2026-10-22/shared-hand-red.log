@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+not ok 1 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+  ---
+  duration_ms: 11717.72775
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/candidate-release/tests/fighting-hand-surface.test.mts:1:5761'
+  failureType: 'testCodeFailure'
+  error: |-
+    neo: another actor opens the first actor's hand
+    + actual - expected
+    
+      {
+    +   normal: 'ed6b95b52fab856fa8fb9072497059183a4bf02bc68082e90a9c7f1a8c31eded',
+    +   position: '2287386fbc9437cb68901774ba94c59d0643d83cb3e99183c3e0050a18e40b79',
+    -   normal: '078c4210a47d6f7d37a6eb22ecee23b788a63f838a121bc43b55e1b756fb22f4',
+    -   position: '2b29e0e4fe44a892f8f1872c23b69599e8e897c0624fe4817b75668c7c4abe35',
+        skinIndex: 'ed9d7bc0420eb04c187ce47f79f310868852cc3106a39ed7b76d93d655f60ef8',
+        skinWeight: '8f542c3550b0234c5431233bc9fc74252616377e1524667190fc884e21382372'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    position: '2b29e0e4fe44a892f8f1872c23b69599e8e897c0624fe4817b75668c7c4abe35'
+    normal: '078c4210a47d6f7d37a6eb22ecee23b788a63f838a121bc43b55e1b756fb22f4'
+    skinIndex: 'ed9d7bc0420eb04c187ce47f79f310868852cc3106a39ed7b76d93d655f60ef8'
+    skinWeight: '8f542c3550b0234c5431233bc9fc74252616377e1524667190fc884e21382372'
+  actual:
+    position: '2287386fbc9437cb68901774ba94c59d0643d83cb3e99183c3e0050a18e40b79'
+    normal: 'ed6b95b52fab856fa8fb9072497059183a4bf02bc68082e90a9c7f1a8c31eded'
+    skinIndex: 'ed9d7bc0420eb04c187ce47f79f310868852cc3106a39ed7b76d93d655f60ef8'
+    skinWeight: '8f542c3550b0234c5431233bc9fc74252616377e1524667190fc884e21382372'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/candidate-release/tests/fighting-hand-surface.test.mts:112:39)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16857.876334

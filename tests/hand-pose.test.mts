@@ -41,11 +41,16 @@ for (const id of ['neo', 'trinity', 'smith', 'morpheus'] as const) {
       skin.skeleton.update();
       const { position, skinIndex, skinWeight } = skin.geometry.attributes;
       const thumb = new THREE.Vector3(), fingers: THREE.Vector3[] = []; let samples = 0;
-      for (let vertex = 0; vertex < position.count; vertex++) for (let part = 0; part < 4; part++) {
-        if (skinWeight.getComponent(vertex, part) < .95) continue;
-        const name = skin.skeleton.bones[skinIndex.getComponent(vertex, part)].name;
-        if (name === `finger1-3_${side}`) { thumb.add(skin.getVertexPosition(vertex, new THREE.Vector3()).applyMatrix4(skin.matrixWorld)); samples++; }
-        if (new RegExp(`^finger[23]-[123]_${side}$`).test(name)) fingers.push(skin.getVertexPosition(vertex, new THREE.Vector3()).applyMatrix4(skin.matrixWorld));
+      for (let vertex = 0; vertex < position.count; vertex++) {
+        let fingerWeight = 0;
+        for (let part = 0; part < 4; part++) {
+          const weight = skinWeight.getComponent(vertex, part), name = skin.skeleton.bones[skinIndex.getComponent(vertex, part)].name;
+          if (name === `finger1-3_${side}` && weight >= .95) { thumb.add(skin.getVertexPosition(vertex, new THREE.Vector3()).applyMatrix4(skin.matrixWorld)); samples++; }
+          if (new RegExp(`^finger[23]-[123]_${side}$`).test(name)) fingerWeight += weight;
+        }
+        // Measure the whole index/middle surface, including skin that spans
+        // adjacent phalanges. A knuckle need not belong to a single bone.
+        if (fingerWeight >= .95) fingers.push(skin.getVertexPosition(vertex, new THREE.Vector3()).applyMatrix4(skin.matrixWorld));
       }
       assert.ok(samples > 50 && fingers.length > 100, 'measure the actual thumb pad and finger surfaces');
       thumb.divideScalar(samples);

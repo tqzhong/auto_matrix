@@ -1,0 +1,26 @@
+[
+  {
+    "id": "neo",
+    "idleMedian": 0.35075000000006185,
+    "movingMedian": 10.077999999999975,
+    "movingMax": 12.449624999999742
+  },
+  {
+    "id": "trinity",
+    "idleMedian": 0.3516250000002401,
+    "movingMedian": 12.930124999999862,
+    "movingMax": 14.910499999999956
+  },
+  {
+    "id": "smith",
+    "idleMedian": 0.2950829999999769,
+    "movingMedian": 14.978541999999834,
+    "movingMax": 21.673915999999736
+  },
+  {
+    "id": "morpheus",
+    "idleMedian": 0.28358299999854353,
+    "movingMedian": 11.646082999999635,
+    "movingMax": 12.487166999999317
+  }
+]

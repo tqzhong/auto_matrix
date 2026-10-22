@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: cutlery: finger joints curl together without folded-back middle or distal segments
+ok 1 - cutlery: finger joints curl together without folded-back middle or distal segments
+  ---
+  duration_ms: 484.501125
+  type: 'test'
+  ...
+# {"maximumPIP":94.46749865699346,"maximumDIP":63.71602724870799}
+# Subtest: wine stem: finger joints curl together without folded-back middle or distal segments
+ok 2 - wine stem: finger joints curl together without folded-back middle or distal segments
+  ---
+  duration_ms: 242.38575
+  type: 'test'
+  ...
+# {"maximumPIP":94.19060381156426,"maximumDIP":62.29022205626014}
+# Subtest: jug handle: finger joints curl together without folded-back middle or distal segments
+ok 3 - jug handle: finger joints curl together without folded-back middle or distal segments
+  ---
+  duration_ms: 225.895666
+  type: 'test'
+  ...
+# {"maximumPIP":86.07729208281943,"maximumDIP":53.232604419368194}
+# Subtest: Cypher mug: finger joints curl together without folded-back middle or distal segments
+ok 4 - Cypher mug: finger joints curl together without folded-back middle or distal segments
+  ---
+  duration_ms: 171.227292
+  type: 'test'
+  ...
+# {"maximumPIP":78.75973520319361,"maximumDIP":45.667322809670395}
+# Subtest: Neo mug: finger joints curl together without folded-back middle or distal segments
+ok 5 - Neo mug: finger joints curl together without folded-back middle or distal segments
+  ---
+  duration_ms: 1830.911125
+  type: 'test'
+  ...
+# {"maximumPIP":78.93436604837147,"maximumDIP":45.851663804293175}
+# Subtest: grasping, carrying and releasing cannot snap finger joints between adjacent saved instants
+ok 6 - grasping, carrying and releasing cannot snap finger joints between adjacent saved instants
+  ---
+  duration_ms: 19649.343416
+  type: 'test'
+  ...
+# {"maximum":0.14148099929319227,"maximumWrist":0.07432842894866898,"maximumTravel":0.05515400964836537,"anatomySamples":5210,"maximumPIP":94.98074308652983,"maximumDIP":81.1153393671666,"where":"cypher/steak/performing/4.95: finger1-1_L"}
+# {"maximum":0.11529983697611729,"maximumWrist":0.051332956397862846,"maximumTravel":0.03551052586727375,"anatomySamples":735,"maximumPIP":86.07729208337517,"maximumDIP":53.232604419368194,"where":"cypher/console/performing/8.72: finger3-3_L"}
+# {"maximum":0.13607781597404078,"maximumWrist":0.059756554742191575,"maximumTravel":0.027952476271287375,"anatomySamples":1085,"maximumPIP":78.8783593321161,"maximumDIP":45.81188526992734,"where":"cypher/console/responding/9.54: finger1-1_R"}
+# {"maximum":0.09038491672259238,"maximumWrist":0.025788294509491036,"maximumTravel":0.02445465723981625,"anatomySamples":225,"maximumPIP":78.93436604837147,"maximumDIP":45.850625559349446,"where":"neo/console/accepting/0.77: finger1-1_R"}
+# {"maximum":0.03050199119265304,"maximumWrist":0.006963811953248669,"maximumTravel":0.01734823919438172,"anatomySamples":485,"maximumPIP":78.93436604862458,"maximumDIP":45.85166380534024,"where":"neo/console/sipping/0.93: elbow_R"}
+# {"maximum":0.04724323064817757,"maximumWrist":0.01657949519399915,"maximumTravel":0.021082314713757686,"anatomySamples":385,"maximumPIP":78.93436604837147,"maximumDIP":45.85062555935021,"where":"neo/console/returning/2.68: finger1-1_R"}
+# {"largestJointStep":0.14148099929319227}
+# Subtest: cold saved grips and releases reproduce the same actual finger skin after unrelated gestures
+ok 7 - cold saved grips and releases reproduce the same actual finger skin after unrelated gestures
+  ---
+  duration_ms: 6700.341417
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31560.404

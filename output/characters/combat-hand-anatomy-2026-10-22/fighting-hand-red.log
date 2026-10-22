@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: neo: the complete fighting hands stay closed surfaces throughout a full grip
+not ok 1 - neo: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 17613.935875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/release/tests/fighting-hand-surface.test.mts:1:475'
+  failureType: 'testCodeFailure'
+  error: |-
+    R, grip 0.35: {"count":20,"examples":[{"first":18113,"second":18119,"line":0.004504127284927116},{"first":18119,"second":18113,"line":0.004504127284927116},{"first":12226,"second":12228,"line":0.0017988827675224518},{"first":12228,"second":12226,"line":0.0017988827675224518}]}
+    
+    20 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 20
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/release/tests/fighting-hand-surface.test.mts:19:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18301.236375

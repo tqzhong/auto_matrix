@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+not ok 1 - the unfolded seams keep a closed, smoothly shaded back and unchanged cloth outside the fitted strips and neck joins
+  ---
+  duration_ms: 6947.352
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/release/tests/ambush-wardrobe.test.mts:1:43649'
+  failureType: 'testCodeFailure'
+  error: |-
+    unchanged normal 0/0
+    + actual - expected
+    
+    + -0.4839843809604645
+    - -0.48398417234420776
+               ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: -0.48398417234420776
+  actual: -0.4839843809604645
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/release/tests/ambush-wardrobe.test.mts:634:44)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10759.790417

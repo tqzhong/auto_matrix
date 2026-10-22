@@ -1,0 +1,602 @@
+[
+  {
+    "id": "neo",
+    "side": "R",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "neo",
+    "side": "L",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "neo",
+    "side": "R",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 118,
+      "examples": [
+        {
+          "first": 18075,
+          "second": 18117,
+          "line": 0.003495280606737916
+        },
+        {
+          "first": 18117,
+          "second": 18075,
+          "line": 0.003495280606737916
+        },
+        {
+          "first": 10292,
+          "second": 10540,
+          "line": 0.0030412898765293343
+        },
+        {
+          "first": 10540,
+          "second": 10292,
+          "line": 0.0030412898765293335
+        }
+      ]
+    }
+  },
+  {
+    "id": "neo",
+    "side": "L",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 118,
+      "examples": [
+        {
+          "first": 48822,
+          "second": 48860,
+          "line": 0.0034952806067379168
+        },
+        {
+          "first": 48860,
+          "second": 48822,
+          "line": 0.0034952806067379168
+        },
+        {
+          "first": 41037,
+          "second": 41285,
+          "line": 0.003041289876529334
+        },
+        {
+          "first": 41285,
+          "second": 41037,
+          "line": 0.0030412898765293326
+        }
+      ]
+    }
+  },
+  {
+    "id": "neo",
+    "side": "R",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1846,
+      "examples": [
+        {
+          "first": 19035,
+          "second": 22919,
+          "line": 0.009908231166912383
+        },
+        {
+          "first": 22919,
+          "second": 19035,
+          "line": 0.009908231166912383
+        },
+        {
+          "first": 19089,
+          "second": 19513,
+          "line": 0.008986334851041871
+        },
+        {
+          "first": 19513,
+          "second": 19089,
+          "line": 0.008986334851041871
+        }
+      ]
+    }
+  },
+  {
+    "id": "neo",
+    "side": "L",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1846,
+      "examples": [
+        {
+          "first": 49782,
+          "second": 53650,
+          "line": 0.009908231166912383
+        },
+        {
+          "first": 53650,
+          "second": 49782,
+          "line": 0.009908231166912383
+        },
+        {
+          "first": 49832,
+          "second": 50256,
+          "line": 0.008986334851041873
+        },
+        {
+          "first": 50256,
+          "second": 49832,
+          "line": 0.008986334851041873
+        }
+      ]
+    }
+  },
+  {
+    "id": "trinity",
+    "side": "R",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "trinity",
+    "side": "L",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "trinity",
+    "side": "R",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 162,
+      "examples": [
+        {
+          "first": 10954,
+          "second": 10996,
+          "line": 0.003902390793736615
+        },
+        {
+          "first": 10996,
+          "second": 10954,
+          "line": 0.003902390793736615
+        },
+        {
+          "first": 12370,
+          "second": 12467,
+          "line": 0.002989900035523805
+        },
+        {
+          "first": 12467,
+          "second": 12370,
+          "line": 0.002989900035523804
+        }
+      ]
+    }
+  },
+  {
+    "id": "trinity",
+    "side": "L",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 162,
+      "examples": [
+        {
+          "first": 42015,
+          "second": 42053,
+          "line": 0.003902390793736615
+        },
+        {
+          "first": 42053,
+          "second": 42015,
+          "line": 0.003902390793736615
+        },
+        {
+          "first": 43431,
+          "second": 43526,
+          "line": 0.002989900035523805
+        },
+        {
+          "first": 43526,
+          "second": 43431,
+          "line": 0.002989900035523804
+        }
+      ]
+    }
+  },
+  {
+    "id": "trinity",
+    "side": "R",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1850,
+      "examples": [
+        {
+          "first": 19345,
+          "second": 19769,
+          "line": 0.007861850353435396
+        },
+        {
+          "first": 19769,
+          "second": 19345,
+          "line": 0.007861850353435396
+        },
+        {
+          "first": 14029,
+          "second": 14303,
+          "line": 0.005444453913321627
+        },
+        {
+          "first": 14303,
+          "second": 14029,
+          "line": 0.005444453913321626
+        }
+      ]
+    }
+  },
+  {
+    "id": "trinity",
+    "side": "L",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1850,
+      "examples": [
+        {
+          "first": 50400,
+          "second": 50824,
+          "line": 0.007861850353435396
+        },
+        {
+          "first": 50824,
+          "second": 50400,
+          "line": 0.007861850353435396
+        },
+        {
+          "first": 45084,
+          "second": 45354,
+          "line": 0.005444453913321628
+        },
+        {
+          "first": 45354,
+          "second": 45084,
+          "line": 0.005444453913321628
+        }
+      ]
+    }
+  },
+  {
+    "id": "smith",
+    "side": "R",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "smith",
+    "side": "L",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "smith",
+    "side": "R",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 122,
+      "examples": [
+        {
+          "first": 18059,
+          "second": 18101,
+          "line": 0.003546481637054992
+        },
+        {
+          "first": 18101,
+          "second": 18059,
+          "line": 0.003546481637054992
+        },
+        {
+          "first": 10276,
+          "second": 10524,
+          "line": 0.0028584650630646812
+        },
+        {
+          "first": 10524,
+          "second": 10276,
+          "line": 0.0028584650630646812
+        }
+      ]
+    }
+  },
+  {
+    "id": "smith",
+    "side": "L",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 122,
+      "examples": [
+        {
+          "first": 48782,
+          "second": 48820,
+          "line": 0.003546481637054992
+        },
+        {
+          "first": 48820,
+          "second": 48782,
+          "line": 0.003546481637054992
+        },
+        {
+          "first": 40997,
+          "second": 41245,
+          "line": 0.0028584650630646934
+        },
+        {
+          "first": 41245,
+          "second": 40997,
+          "line": 0.002858465063064692
+        }
+      ]
+    }
+  },
+  {
+    "id": "smith",
+    "side": "R",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1830,
+      "examples": [
+        {
+          "first": 19019,
+          "second": 22895,
+          "line": 0.009724652802394195
+        },
+        {
+          "first": 22895,
+          "second": 19019,
+          "line": 0.009724652802394195
+        },
+        {
+          "first": 19073,
+          "second": 19497,
+          "line": 0.008821856998111879
+        },
+        {
+          "first": 19497,
+          "second": 19073,
+          "line": 0.008821856998111879
+        }
+      ]
+    }
+  },
+  {
+    "id": "smith",
+    "side": "L",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1830,
+      "examples": [
+        {
+          "first": 49742,
+          "second": 53602,
+          "line": 0.009724652802394195
+        },
+        {
+          "first": 53602,
+          "second": 49742,
+          "line": 0.009724652802394195
+        },
+        {
+          "first": 49792,
+          "second": 50216,
+          "line": 0.008821856998111879
+        },
+        {
+          "first": 50216,
+          "second": 49792,
+          "line": 0.008821856998111879
+        }
+      ]
+    }
+  },
+  {
+    "id": "morpheus",
+    "side": "R",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "morpheus",
+    "side": "L",
+    "grip": 0,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 0,
+      "examples": []
+    }
+  },
+  {
+    "id": "morpheus",
+    "side": "R",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 116,
+      "examples": [
+        {
+          "first": 10670,
+          "second": 10711,
+          "line": 0.0035842367874223528
+        },
+        {
+          "first": 10711,
+          "second": 10670,
+          "line": 0.0035842367874223528
+        },
+        {
+          "first": 10260,
+          "second": 10508,
+          "line": 0.003304444758568211
+        },
+        {
+          "first": 10508,
+          "second": 10260,
+          "line": 0.00330444475856821
+        }
+      ]
+    }
+  },
+  {
+    "id": "morpheus",
+    "side": "L",
+    "grip": 0.5,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 116,
+      "examples": [
+        {
+          "first": 41410,
+          "second": 41371,
+          "line": 0.0035842367874223393
+        },
+        {
+          "first": 41371,
+          "second": 41410,
+          "line": 0.0035842367874223385
+        },
+        {
+          "first": 40965,
+          "second": 41213,
+          "line": 0.0033044447585682105
+        },
+        {
+          "first": 41213,
+          "second": 40965,
+          "line": 0.0033044447585682105
+        }
+      ]
+    }
+  },
+  {
+    "id": "morpheus",
+    "side": "R",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1876,
+      "examples": [
+        {
+          "first": 19003,
+          "second": 22879,
+          "line": 0.009343921220399294
+        },
+        {
+          "first": 22879,
+          "second": 19003,
+          "line": 0.009343921220399294
+        },
+        {
+          "first": 19057,
+          "second": 19481,
+          "line": 0.00912564843357611
+        },
+        {
+          "first": 19481,
+          "second": 19057,
+          "line": 0.00912564843357611
+        }
+      ]
+    }
+  },
+  {
+    "id": "morpheus",
+    "side": "L",
+    "grip": 1,
+    "wholeComponentVertices": 6673,
+    "wholeComponentFaces": 12472,
+    "self": {
+      "count": 1876,
+      "examples": [
+        {
+          "first": 49710,
+          "second": 53570,
+          "line": 0.009343921220399294
+        },
+        {
+          "first": 53570,
+          "second": 49710,
+          "line": 0.009343921220399294
+        },
+        {
+          "first": 49760,
+          "second": 50184,
+          "line": 0.00912564843357611
+        },
+        {
+          "first": 50184,
+          "second": 49760,
+          "line": 0.00912564843357611
+        }
+      ]
+    }
+  }
+]

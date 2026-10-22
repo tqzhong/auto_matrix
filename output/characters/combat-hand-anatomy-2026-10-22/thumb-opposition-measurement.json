@@ -1,0 +1,90 @@
+[
+  {
+    "id": "neo",
+    "side": "R",
+    "padVertices": 194,
+    "singleJointSamples": 632,
+    "anatomicalVertices": 2221,
+    "fullFaces": 4063,
+    "singleJointGap": 0.07071606968204044,
+    "anatomicalVertexGap": 0.05607943757961093,
+    "fullSurfaceGap": 0.05604527600931496
+  },
+  {
+    "id": "neo",
+    "side": "L",
+    "padVertices": 194,
+    "singleJointSamples": 632,
+    "anatomicalVertices": 2221,
+    "fullFaces": 4063,
+    "singleJointGap": 0.07071606968204035,
+    "anatomicalVertexGap": 0.056079437579610515,
+    "fullSurfaceGap": 0.05604527600931451
+  },
+  {
+    "id": "trinity",
+    "side": "R",
+    "padVertices": 194,
+    "singleJointSamples": 658,
+    "anatomicalVertices": 2236,
+    "fullFaces": 4092,
+    "singleJointGap": 0.06022673173421104,
+    "anatomicalVertexGap": 0.04982324325668527,
+    "fullSurfaceGap": 0.04982324325668527
+  },
+  {
+    "id": "trinity",
+    "side": "L",
+    "padVertices": 194,
+    "singleJointSamples": 658,
+    "anatomicalVertices": 2236,
+    "fullFaces": 4092,
+    "singleJointGap": 0.060226731734211086,
+    "anatomicalVertexGap": 0.04982324325668546,
+    "fullSurfaceGap": 0.04982324325668546
+  },
+  {
+    "id": "smith",
+    "side": "R",
+    "padVertices": 194,
+    "singleJointSamples": 629,
+    "anatomicalVertices": 2223,
+    "fullFaces": 4067,
+    "singleJointGap": 0.06986120179075869,
+    "anatomicalVertexGap": 0.055150889648620444,
+    "fullSurfaceGap": 0.05512598742843416
+  },
+  {
+    "id": "smith",
+    "side": "L",
+    "padVertices": 194,
+    "singleJointSamples": 629,
+    "anatomicalVertices": 2223,
+    "fullFaces": 4067,
+    "singleJointGap": 0.06986120179075864,
+    "anatomicalVertexGap": 0.05515088964862039,
+    "fullSurfaceGap": 0.0551259874284341
+  },
+  {
+    "id": "morpheus",
+    "side": "R",
+    "padVertices": 194,
+    "singleJointSamples": 638,
+    "anatomicalVertices": 2212,
+    "fullFaces": 4046,
+    "singleJointGap": 0.07269618127320883,
+    "anatomicalVertexGap": 0.058800830516840846,
+    "fullSurfaceGap": 0.05875681115150244
+  },
+  {
+    "id": "morpheus",
+    "side": "L",
+    "padVertices": 194,
+    "singleJointSamples": 638,
+    "anatomicalVertices": 2212,
+    "fullFaces": 4046,
+    "singleJointGap": 0.07269618127320879,
+    "anatomicalVertexGap": 0.05880083051684079,
+    "fullSurfaceGap": 0.058756811151502386
+  }
+]

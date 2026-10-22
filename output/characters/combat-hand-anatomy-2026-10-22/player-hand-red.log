@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: the zero mirror tint from player controls keeps ordinary fighting hands enabled
+not ok 1 - the zero mirror tint from player controls keeps ordinary fighting hands enabled
+  ---
+  duration_ms: 11011.190709
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/candidate-release/tests/fighting-hand-surface.test.mts:1:7215'
+  failureType: 'testCodeFailure'
+  error: |-
+    the inactive silver tint must not opt out a controlled character
+    + actual - expected
+    
+      {
+    +   normal: 'f781b163b027e8e686f0bc3e59e6cd8ed0a07bef55c7c3f7c3571c6382c167e3',
+    +   position: '7c9aa0d1a3fb89872e86db780da66f451afb62bc186c01286c186e35068a9b06',
+    +   skinIndex: 'd188775b10a56bddc557bdc749955304edbd95a3aad6354a90a9fec9dbe94489',
+    +   skinWeight: '37b06c828412cdbde0905de23b8d503046e177f14b8a0d9239c20527e7a8c3dc'
+    -   normal: '078c4210a47d6f7d37a6eb22ecee23b788a63f838a121bc43b55e1b756fb22f4',
+    -   position: '2b29e0e4fe44a892f8f1872c23b69599e8e897c0624fe4817b75668c7c4abe35',
+    -   skinIndex: 'ed9d7bc0420eb04c187ce47f79f310868852cc3106a39ed7b76d93d655f60ef8',
+    -   skinWeight: '8f542c3550b0234c5431233bc9fc74252616377e1524667190fc884e21382372'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    position: '2b29e0e4fe44a892f8f1872c23b69599e8e897c0624fe4817b75668c7c4abe35'
+    normal: '078c4210a47d6f7d37a6eb22ecee23b788a63f838a121bc43b55e1b756fb22f4'
+    skinIndex: 'ed9d7bc0420eb04c187ce47f79f310868852cc3106a39ed7b76d93d655f60ef8'
+    skinWeight: '8f542c3550b0234c5431233bc9fc74252616377e1524667190fc884e21382372'
+  actual:
+    position: '7c9aa0d1a3fb89872e86db780da66f451afb62bc186c01286c186e35068a9b06'
+    normal: 'f781b163b027e8e686f0bc3e59e6cd8ed0a07bef55c7c3f7c3571c6382c167e3'
+    skinIndex: 'd188775b10a56bddc557bdc749955304edbd95a3aad6354a90a9fec9dbe94489'
+    skinWeight: '37b06c828412cdbde0905de23b8d503046e177f14b8a0d9239c20527e7a8c3dc'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/combat-hand-anatomy-2026-10-22/candidate-release/tests/fighting-hand-surface.test.mts:134:31)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14981.26725
