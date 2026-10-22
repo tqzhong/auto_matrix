@@ -100,7 +100,8 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
     for (const [i, side] of ['R', 'L'].entries()) {
       const sign = i ? 1 : -1, blend = 1 - smooth(emergence!, 3.65, 4.75);
       const shoulder = bone(`shoulder_${side}`), elbow = bone(`elbow_${side}`), wrist = bone(`wrist_${side}`);
-      const contact = new THREE.Vector3(center.x + sign * (.42 + .78 * emerging.tear),
+      // Begin outside the chest feeds; the final torn-film hand span stays unchanged.
+      const contact = new THREE.Vector3(center.x + sign * (.62 + .58 * emerging.tear),
         center.y - 1 + 2.5 + .2 * emerging.press + .7 * emerging.rise - .95 * emerging.clear, center.z - 14.5 + .75 * emerging.rise);
       const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, Math.PI, 0)), blend);
       const palm = new THREE.Vector3(-sign * .09, -.18, .15);
@@ -133,15 +134,32 @@ export function posePodWake(rig: HeroRig, elapsed: number | undefined, breather?
         -sign * THREE.MathUtils.lerp(finger === 1 ? .15 : .25, finger === 1 ? .15 : segment === 1 ? .3 : .42, blend));
     wrist.updateWorldMatrix(false, true);
     const thumb = [1, 2, 3].map(segment => bone(`finger1-${segment}_${side}`));
-    const tip = new THREE.Vector3(-sign * .02, -.02, .012);
-    const thumbContact = end.clone().addScaledVector(axis, i ? .44 : .15)
-      .addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(orientation), -POD_BREATHER.radius - .055);
-    const thumbTarget = thumb[2].localToWorld(tip.clone()).lerp(thumbContact, blend);
-    for (let iteration = 0; iteration < 8; iteration++) for (const joint of [...thumb].reverse()) {
-      const current = joint.worldToLocal(thumb[2].localToWorld(tip.clone())).normalize();
-      const desired = joint.worldToLocal(thumbTarget.clone()).normalize();
-      joint.quaternion.multiply(new THREE.Quaternion().setFromUnitVectors(current, desired));
-      joint.updateWorldMatrix(false, true);
+    const original = thumb.map(joint => joint.quaternion.clone());
+    let pad = thumb[2].userData.podPad as THREE.Vector3 | undefined;
+    if (!pad) {
+      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const a = skin.geometry.attributes, joint = skin.skeleton.bones.indexOf(thumb[2]);
+      pad = new THREE.Vector3(); let count = 0;
+      for (let vertex = 0; vertex < a.position.count; vertex++) {
+        if (![0, 1, 2, 3].some(k => a.skinIndex.getComponent(vertex, k) === joint && a.skinWeight.getComponent(vertex, k) > .95)) continue;
+        pad.add(new THREE.Vector3().fromBufferAttribute(a.position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[joint])); count++;
+      }
+      pad.divideScalar(count); thumb[2].userData.podPad = pad;
     }
+    // The completed palm contact fixes the tube in wrist space. Author the
+    // reachable thumb pose there, so arm motion cannot perturb the finger cache.
+    const restTip = thumb[1].position.clone().add(thumb[2].position).add(pad);
+    const center = new THREE.Vector3(-sign * (.2 + POD_BREATHER.radius), -.18, .13);
+    const normal = thumb[0].position.clone().sub(center), axial = normal.z;
+    normal.z = 0;
+    const distance = normal.length(), radius = POD_BREATHER.radius + .03;
+    const cosine = THREE.MathUtils.clamp((distance * distance + axial * axial + radius * radius - restTip.lengthSq()) / (2 * distance * radius), -1, 1);
+    normal.divideScalar(distance);
+    const tangent = new THREE.Vector3(-normal.y, normal.x, 0);
+    if (tangent.y > 0) tangent.negate();
+    const thumbContact = center.addScaledVector(normal, radius * cosine).addScaledVector(tangent, radius * Math.sqrt(1 - cosine * cosine));
+    const thumbRotation = new THREE.Quaternion().setFromUnitVectors(restTip.normalize(), thumbContact.sub(thumb[0].position).normalize());
+    thumb.forEach((joint, j) => joint.quaternion.slerpQuaternions(original[j], j === 0 ? thumbRotation : new THREE.Quaternion(), blend));
+    wrist.updateWorldMatrix(false, true);
   }
 }

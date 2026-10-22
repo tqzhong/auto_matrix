@@ -326,6 +326,8 @@ export class PodSetRenderer {
     waterBank.position.set(0, 12, 25); this.root.add(waterBank);
   }
   private towers(pink: THREE.MeshStandardMaterial): void {
+    const distant = new THREE.Group(); distant.name = 'pod-distant-towers';
+    distant.userData.distantBackdrop = true; this.root.add(distant);
     const towers: THREE.Matrix4[] = []; const pods: THREE.Matrix4[] = []; const lights: THREE.Matrix4[] = [];
     const conduits: THREE.Matrix4[] = []; const bands: THREE.Matrix4[] = []; const dummy = new THREE.Object3D();
     pink.side = THREE.DoubleSide;
@@ -347,13 +349,13 @@ export class PodSetRenderer {
       }
     }
     const glow = new THREE.MeshBasicMaterial({ color: 0xbb4137 }); this.materials.add(glow);
-    this.instances(new THREE.CylinderGeometry(1, 1.12, 1, 12), this.dark, towers);
-    this.instances(new THREE.CylinderGeometry(1, 1, 1, 6), this.steel, conduits);
-    this.instances(new THREE.CylinderGeometry(1, 1, 1, 12, 1, true), this.steel, bands);
-    this.instances(this.podShell(12), pink, pods);
-    this.instances(this.podRim(16), this.dark, pods);
-    this.instances(this.podFluid(16), pink, pods);
-    this.instances(new THREE.SphereGeometry(1, 6, 4), glow, lights);
+    this.instances(new THREE.CylinderGeometry(1, 1.12, 1, 12), this.dark, towers, distant);
+    this.instances(new THREE.CylinderGeometry(1, 1, 1, 6), this.steel, conduits, distant);
+    this.instances(new THREE.CylinderGeometry(1, 1, 1, 12, 1, true), this.steel, bands, distant);
+    this.instances(this.podShell(12), pink, pods, distant);
+    this.instances(this.podRim(16), this.dark, pods, distant);
+    this.instances(this.podFluid(16), pink, pods, distant);
+    this.instances(new THREE.SphereGeometry(1, 6, 4), glow, lights, distant);
   }
   private link(mesh: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3): void {
     mesh.position.copy(from).add(to).multiplyScalar(.5); mesh.scale.y = from.distanceTo(to); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize());

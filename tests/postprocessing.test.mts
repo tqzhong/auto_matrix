@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
+import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
 test('the occlusion pass skips hidden worlds and restores only the overlays it suppressed', t => {
   const scene = new THREE.Scene(); const hiddenWorld = new THREE.Group(); hiddenWorld.visible = false;
@@ -89,4 +90,35 @@ test('distant machine-city structures retain color-pass depth while foreground c
       });
     }
   } finally { pass.dispose(); city.dispose(); foreground.geometry.dispose(); foreground.material.dispose(); }
+});
+
+
+test('remote cultivation pods keep their color depth without repeating their geometry in local occlusion', () => {
+  const scene = new THREE.Scene(), root = new THREE.Group(); scene.add(root);
+  const set = new PodSetRenderer(root), remote: THREE.InstancedMesh[] = [], nearby: THREE.InstancedMesh[] = [];
+  root.traverse(object => {
+    if (!(object instanceof THREE.InstancedMesh)) return;
+    if (object.count >= 2000) remote.push(object);
+    if (object.count === 12 && (object.material as THREE.Material).depthWrite) nearby.push(object);
+  });
+  assert.equal(remote.length, 4); assert.ok(nearby.length >= 8);
+  assert.ok(remote.reduce((sum, mesh) => sum + mesh.geometry.index!.count / 3 * mesh.count, 0) > 1_000_000);
+  const before = remote.map(mesh => ({ geometry: mesh.geometry, instances: Array.from(mesh.instanceMatrix.array) }));
+  const visible = (object: THREE.Object3D) => { for (let parent: THREE.Object3D | null = object; parent; parent = parent.parent) if (!parent.visible) return false; return true; };
+  const presentNearby = nearby.filter(visible); assert.equal(presentNearby.length, 8, 'both visible banks must be checked independently of the hidden maintenance machine');
+  const basin = root.getObjectByName('pod-basin-leaf--1')!, hose = root.getObjectByName('pod-neck-feed')!;
+  const pass = new WorldOcclusionPass(scene, new THREE.PerspectiveCamera(), 64, 64);
+  try {
+    for (let frame = 0; frame < 2; frame++) {
+      pass.overrideVisibility();
+      assert.ok(remote.every(mesh => !visible(mesh)), 'thousands of remote pods cannot contribute to the foreground contact-shadow radius');
+      assert.ok(presentNearby.every(visible), 'the closer banks retain their contact shading');
+      assert.ok(visible(basin) && visible(hose), 'the actual basin and body connections still contribute normals');
+      pass.restoreVisibility();
+      remote.forEach((mesh, i) => {
+        assert.equal(visible(mesh), true); assert.equal((mesh.material as THREE.Material).depthWrite, true);
+        assert.equal(mesh.geometry, before[i].geometry); assert.deepEqual(Array.from(mesh.instanceMatrix.array), before[i].instances);
+      });
+    }
+  } finally { pass.dispose(); set.dispose(); }
 });

@@ -39,7 +39,7 @@ export class PodMembraneRenderer {
     };
     const head = local('head', new THREE.Vector3(0, .1, .32), new THREE.Vector3(0, 2.34, -14.93));
     const hands = [-1, 1].map(sign => beat && beat.kind !== 'emerge' ? new THREE.Vector3(sign * 1.53829644, 2.16, -13.4)
-      : local(`wrist_${sign < 0 ? 'R' : 'L'}`, new THREE.Vector3(-sign * .09, -.18, .15), new THREE.Vector3(sign * .42, 2.5, -14.5)));
+      : local(`wrist_${sign < 0 ? 'R' : 'L'}`, new THREE.Vector3(-sign * .09, -.18, .15), new THREE.Vector3(sign * .62, 2.5, -14.5)));
     const signature = [elapsed, ...head.toArray(), ...hands.flatMap(hand => hand.toArray())];
     if (signature.length === this.last.length && signature.every((value, i) => Math.abs(value - this.last[i]) < 1e-8)) return;
     this.last = signature;
