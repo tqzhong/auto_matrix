@@ -1,0 +1,1 @@
+{"role": "morpheus", "meshes": {"jacket": {"vertices": 10826, "triangles": 20270}, "lapel": {"vertices": 928, "triangles": 1224}}, "drape": {"maximumDrapeOffset": 0.06776485693024056, "affectedVertices": 3869}, "rimEdges": 226, "outputBytes": 11473740, "outputSha256": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed", "originalBinaryPreserved": true}

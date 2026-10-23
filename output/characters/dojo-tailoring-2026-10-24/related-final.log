@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 1 - neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 6347.11875
+  type: 'test'
+  ...
+# Subtest: neo: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 2 - neo: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 8805.894875
+  type: 'test'
+  ...
+# {"id":"neo","poses":33,"pairs":123,"maximumGap":0,"maximumAngle":0}
+# Subtest: neo: the actual two texture atlases meet with the same rendered skin tone
+ok 3 - neo: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 7687.493083
+  type: 'test'
+  ...
+# {"id":"neo","channels":369,"meanRelativeColorError":0.01063812646627848,"maximumRelativeColorError":0.06876068084359657}
+# Subtest: neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 4 - neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 7664.6275
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 5 - morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 10163.563917
+  type: 'test'
+  ...
+# Subtest: morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 6 - morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 8525.951
+  type: 'test'
+  ...
+# {"id":"morpheus","poses":33,"pairs":127,"maximumGap":0,"maximumAngle":0}
+# Subtest: morpheus: the actual two texture atlases meet with the same rendered skin tone
+ok 7 - morpheus: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 9180.132041
+  type: 'test'
+  ...
+# {"id":"morpheus","channels":381,"meanRelativeColorError":0.014044675017366146,"maximumRelativeColorError":0.1098226581102538}
+# Subtest: morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 8 - morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 11619.669834
+  type: 'test'
+  ...
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 9 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 5300.847584
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 10 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 12770.814542
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 11 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 24266.773125
+  type: 'test'
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 12 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 24402.540667
+  type: 'test'
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 13 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 8098.391583
+  type: 'test'
+  ...
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+ok 14 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 3753.866917
+  type: 'test'
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+ok 15 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 5640.429916
+  type: 'test'
+  ...
+# Subtest: neo: the gi collar follows the shoulders instead of being pulled around by the head
+ok 16 - neo: the gi collar follows the shoulders instead of being pulled around by the head
+  ---
+  duration_ms: 5079.515584
+  type: 'test'
+  ...
+# Subtest: neo: the collar has a continuous sewn surface without conflicting normals at each strip edge
+ok 17 - neo: the collar has a continuous sewn surface without conflicting normals at each strip edge
+  ---
+  duration_ms: 4072.622375
+  type: 'test'
+  ...
+# Subtest: morpheus: the gi collar follows the shoulders instead of being pulled around by the head
+ok 18 - morpheus: the gi collar follows the shoulders instead of being pulled around by the head
+  ---
+  duration_ms: 13956.882792
+  type: 'test'
+  ...
+# Subtest: morpheus: the collar has a continuous sewn surface without conflicting normals at each strip edge
+ok 19 - morpheus: the collar has a continuous sewn surface without conflicting normals at each strip edge
+  ---
+  duration_ms: 8021.3415
+  type: 'test'
+  ...
+# Subtest: Neo wears a cloth-colored sash with a contrasting collar, as in the film training scene
+ok 20 - Neo wears a cloth-colored sash with a contrasting collar, as in the film training scene
+  ---
+  duration_ms: 4249.357458
+  type: 'test'
+  ...
+# Subtest: neo: sewn collar stays joined and clear of the neck through actual combat and head turns
+ok 21 - neo: sewn collar stays joined and clear of the neck through actual combat and head turns
+  ---
+  duration_ms: 11869.196416
+  type: 'test'
+  ...
+# {"id":"neo","checked":33,"seamPairs":373,"maximumGap":0,"maximumAngle":0}
+# Subtest: morpheus: sewn collar stays joined and clear of the neck through actual combat and head turns
+ok 22 - morpheus: sewn collar stays joined and clear of the neck through actual combat and head turns
+  ---
+  duration_ms: 14350.1235
+  type: 'test'
+  ...
+# {"id":"morpheus","checked":33,"seamPairs":379,"maximumGap":0,"maximumAngle":0}
+# Subtest: neo: the complete exposed hands stay outside the new collar during strikes
+ok 23 - neo: the complete exposed hands stay outside the new collar during strikes
+  ---
+  duration_ms: 12204.287291
+  type: 'test'
+  ...
+# Subtest: morpheus: the complete exposed hands stay outside the new collar during strikes
+ok 24 - morpheus: the complete exposed hands stay outside the new collar during strikes
+  ---
+  duration_ms: 11833.316375
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 87257.993

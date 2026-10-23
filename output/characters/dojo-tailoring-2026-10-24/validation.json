@@ -1,0 +1,36 @@
+{
+  "baselineAssets": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "baselineNeck": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0
+  },
+  "initialNewRed": {
+    "tests": 5,
+    "pass": 0,
+    "fail": 5
+  },
+  "finalRelated": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0
+  },
+  "dojoAssetsFinal": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "inputsUnchanged": true,
+  "inputs": 1209,
+  "bundle": "index-TukPf1bu.js",
+  "bundleSha256": "2b240ffdebcf1515a17451a73d14c3d1d2e9313c9869f3db1d16d8fb72abe6f8",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "allRequiredGatesPassed": true,
+  "productionAssetHTTPMatches": true,
+  "stable60FPSClaim": false
+}

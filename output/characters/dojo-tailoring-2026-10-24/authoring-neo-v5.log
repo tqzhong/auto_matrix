@@ -1,0 +1,1 @@
+{"role": "neo", "meshes": {"jacket": {"vertices": 10827, "triangles": 20320}, "lapel": {"vertices": 896, "triangles": 1201}}, "drape": {"maximumDrapeOffset": 0.0964916555028093, "affectedVertices": 3972}, "rimEdges": 206, "outputBytes": 15383920, "outputSha256": "fa6f3be78b1ac209ded500d2fbbc7fb8e4be8cfaba8768c52d0a26ea1bc9f636", "originalBinaryPreserved": true}

@@ -1,0 +1,32 @@
+[
+  {
+    "role": "neo",
+    "originalBytes": 14466460,
+    "finalBytes": 15383920,
+    "addedBytes": 917460,
+    "originalActiveTriangles": 21988,
+    "finalActiveTriangles": 21521,
+    "drawPartsBefore": 20,
+    "drawPartsAfter": 20,
+    "originalBinaryPreserved": true,
+    "allOtherMeshesAndBindingsPreserved": true,
+    "newTextures": 0,
+    "changedMaterials": [
+      "neo-dojo-belt"
+    ]
+  },
+  {
+    "role": "morpheus",
+    "originalBytes": 10554884,
+    "finalBytes": 11473740,
+    "addedBytes": 918856,
+    "originalActiveTriangles": 21670,
+    "finalActiveTriangles": 21494,
+    "drawPartsBefore": 15,
+    "drawPartsAfter": 15,
+    "originalBinaryPreserved": true,
+    "allOtherMeshesAndBindingsPreserved": true,
+    "newTextures": 0,
+    "changedMaterials": []
+  }
+]

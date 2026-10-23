@@ -1,0 +1,28 @@
+{
+  "baseline": "8bbee6128b2896e8cae3912e9f9d4973c57077dd",
+  "changed": [
+    {
+      "path": "packages/client/public/assets/characters/morpheus.glb",
+      "before": "5ec07ba63e679f950dab8b5ff3fb5f5ed287d2ecb537daf26b7b4636f2643075",
+      "after": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed"
+    },
+    {
+      "path": "packages/client/public/assets/characters/neo.glb",
+      "before": "283661b4500a45dd4ade7988b68c78c72f5da626884e32ef942ed4ac63f4633a",
+      "after": "fa6f3be78b1ac209ded500d2fbbc7fb8e4be8cfaba8768c52d0a26ea1bc9f636"
+    }
+  ],
+  "new": [
+    {
+      "path": "scripts/build-dojo-tailoring.py",
+      "after": "13859caa99f81fc2f242ccc767480c81168995d44664b871deef7c74cc8c4fa9"
+    },
+    {
+      "path": "tests/dojo-tailoring.test.mts",
+      "after": "683dbced900cd69ab215655be83ad57ebfd57529ccdd9de54a8b7e46cd5213b0"
+    }
+  ],
+  "inputs": 1209,
+  "unchanged": 1205,
+  "packageFiles": 721
+}

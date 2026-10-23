@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: neo: the gi collar follows the shoulders instead of being pulled around by the head
+not ok 1 - neo: the gi collar follows the shoulders instead of being pulled around by the head
+  ---
+  duration_ms: 3271.254875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:1:386'
+  failureType: 'testCodeFailure'
+  error: 'jacket: turning the head pulls the training cloth by 0.09591641372597753'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:21:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: neo: the collar has a continuous sewn surface without conflicting normals at each strip edge
+not ok 2 - neo: the collar has a continuous sewn surface without conflicting normals at each strip edge
+  ---
+  duration_ms: 2582.978875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:1:1527'
+  failureType: 'testCodeFailure'
+  error: 'the same cloth point has disagreeing normals: 0.9847878504059953'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:36:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: the gi collar follows the shoulders instead of being pulled around by the head
+not ok 3 - morpheus: the gi collar follows the shoulders instead of being pulled around by the head
+  ---
+  duration_ms: 5538.46475
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:1:386'
+  failureType: 'testCodeFailure'
+  error: 'jacket: turning the head pulls the training cloth by 0.06359317691072118'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:21:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: the collar has a continuous sewn surface without conflicting normals at each strip edge
+not ok 4 - morpheus: the collar has a continuous sewn surface without conflicting normals at each strip edge
+  ---
+  duration_ms: 5139.147
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:1:1527'
+  failureType: 'testCodeFailure'
+  error: 'the same cloth point has disagreeing normals: 0.9894873200603627'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:36:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo wears a cloth-colored sash with a contrasting collar, as in the film training scene
+not ok 5 - Neo wears a cloth-colored sash with a contrasting collar, as in the film training scene
+  ---
+  duration_ms: 2768.791291
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:1:2414'
+  failureType: 'testCodeFailure'
+  error: 'the film sash matches the light gi; it is not a black belt'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-tailoring-2026-10-24/candidate-release/tests/dojo-tailoring.test.mts:46:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20445.002917

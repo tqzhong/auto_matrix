@@ -1,0 +1,37 @@
+{
+  "productionBundle": "index-TukPf1bu.js",
+  "nativeDojoSuccess": true,
+  "duelInput": "continue world, X, W 1150ms, F 460ms, F 510ms, F 400ms, F 600ms; then pause",
+  "result": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 3,
+    "complete": true
+  },
+  "nativeColdReloadVerified": true,
+  "nativeMovementAfterReloadVerified": true,
+  "coldReloadInput": "V first person, continue, W 300ms, D 300ms, V third person, pause",
+  "movementBefore": {
+    "x": 6336,
+    "y": 1,
+    "z": 4421.91660533372
+  },
+  "movementAfter": {
+    "x": 6337.248086168196,
+    "y": 1,
+    "z": 4420.807344760186
+  },
+  "movementDistance": 1.6697838492568955,
+  "rotationBefore": 3.141592653589793,
+  "rotationAfter": 1.6744276051557827,
+  "tickBeforeMove": 10138,
+  "tickAfterMove": 10141,
+  "paused": true,
+  "firstAndThirdPersonScreenshots": [
+    "cold-first-person.png",
+    "cold-third-person.png"
+  ],
+  "consoleWarningsAndErrors": 0,
+  "stable60FPSClaim": false,
+  "fullTrilogyQualityAcceptance": false
+}

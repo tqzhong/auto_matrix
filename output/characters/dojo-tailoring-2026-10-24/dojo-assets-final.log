@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+ok 1 - dojo costumes replace the city wardrobe, skin with punches and restore the original outfit
+  ---
+  duration_ms: 9066.144167
+  type: 'test'
+  ...
+# Subtest: dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+ok 2 - dojo bare soles stay on the mat and the sash follows the jacket through guard, punch and dodge
+  ---
+  duration_ms: 8689.923958
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19825.327375
