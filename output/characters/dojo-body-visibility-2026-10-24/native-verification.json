@@ -1,0 +1,34 @@
+{
+  "productionBundle": "index-CfGgNqoS.js",
+  "baselineOcclusionReproduced": true,
+  "missingMeshReproduced": false,
+  "cause": "At 431px the opaque status panel reached x=200 and covered the centered player; the same character was complete with a wide viewport. No mesh or camera code change was needed.",
+  "correctedVitalsRight": 139.99348640441897,
+  "nativeThirdAndFirstPersonMovementVerified": true,
+  "nativeReloadVerified": true,
+  "paused": true,
+  "fromPosition": {
+    "x": 6336,
+    "y": 1,
+    "z": 4425.60185680581
+  },
+  "toPosition": {
+    "x": 6338.783090709966,
+    "y": 1,
+    "z": 4424.98359992337
+  },
+  "responsiveWidths": [
+    431,
+    320,
+    480,
+    600,
+    1066
+  ],
+  "skillButtonsStayWithinPanel": true,
+  "filmQualityAccepted": false,
+  "visualLimitations": [
+    "top HUD remains crowded at narrow widths",
+    "dojo garden geometry still needs film fidelity work"
+  ],
+  "counterButtonTimingRetested": false
+}

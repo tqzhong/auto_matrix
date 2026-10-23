@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: a detached garment keeps its new skeleton bounds and restores the original owner on return
+ok 1 - a detached garment keeps its new skeleton bounds and restores the original owner on return
+  ---
+  duration_ms: 12.873708
+  type: 'test'
+  ...
+# Subtest: construction bounds include garment morph extrema through rotated and blended bones
+ok 2 - construction bounds include garment morph extrema through rotated and blended bones
+  ---
+  duration_ms: 2.786958
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 3 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 84.346083
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 4 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 341.290292
+  type: 'test'
+  ...
+# Subtest: the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+ok 5 - the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+  ---
+  duration_ms: 11.471166
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 6 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 47.4895
+  type: 'test'
+  ...
+# Subtest: the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+ok 7 - the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+  ---
+  duration_ms: 10.720916
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 8 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 54.355959
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1766.405292

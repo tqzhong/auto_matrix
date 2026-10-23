@@ -1,0 +1,126 @@
+[
+  {
+    "centralPlayerCorridorClear": true,
+    "height": 670,
+    "map": {
+      "right": 305,
+      "width": 100,
+      "x": 205
+    },
+    "skillButtons": [
+      {
+        "insidePanel": true,
+        "left": 21.829425811767575,
+        "right": 98.16405868530272,
+        "text": "Q\n子弹时间\n就绪",
+        "width": 76.33463287353516
+      },
+      {
+        "insidePanel": true,
+        "left": 21.829425811767575,
+        "right": 98.16405868530272,
+        "text": "C\n代码震荡\n剧情解锁",
+        "width": 76.33463287353516
+      }
+    ],
+    "vitals": {
+      "right": 107.9947910308838,
+      "width": 95.99609375,
+      "x": 11.998697280883787
+    },
+    "width": 320
+  },
+  {
+    "centralPlayerCorridorClear": true,
+    "height": 670,
+    "map": {
+      "right": 465,
+      "width": 100,
+      "x": 365
+    },
+    "skillButtons": [
+      {
+        "insidePanel": true,
+        "left": 21.829425811767575,
+        "right": 130.1627540588379,
+        "text": "Q\n子弹时间\n就绪",
+        "width": 108.33332824707033
+      },
+      {
+        "insidePanel": true,
+        "left": 21.829425811767575,
+        "right": 130.1627540588379,
+        "text": "C\n代码震荡\n剧情解锁",
+        "width": 108.33332824707033
+      }
+    ],
+    "vitals": {
+      "right": 139.99348640441897,
+      "width": 127.99478912353516,
+      "x": 11.998697280883787
+    },
+    "width": 480
+  },
+  {
+    "centralPlayerCorridorClear": true,
+    "height": 670,
+    "map": {
+      "right": 582.0051879882812,
+      "width": 150,
+      "x": 432.0051879882813
+    },
+    "skillButtons": [
+      {
+        "insidePanel": true,
+        "left": 31.82291603088379,
+        "right": 200.1627597808838,
+        "text": "Q\n子弹时间\n就绪",
+        "width": 168.33984375
+      },
+      {
+        "insidePanel": true,
+        "left": 31.82291603088379,
+        "right": 200.1627597808838,
+        "text": "C\n代码震荡\n剧情解锁",
+        "width": 168.33984375
+      }
+    ],
+    "vitals": {
+      "right": 213.9908847808838,
+      "width": 195.99609375,
+      "x": 17.99479103088379
+    },
+    "width": 600
+  },
+  {
+    "centralPlayerCorridorClear": true,
+    "height": 670,
+    "map": {
+      "right": 1034.66796875,
+      "width": 230,
+      "x": 804.66796875
+    },
+    "skillButtons": [
+      {
+        "insidePanel": true,
+        "left": 51.82942581176758,
+        "right": 269.1666603088379,
+        "text": "Q\n子弹时间\n4 秒内世界减速至四分之一，你保持正常行动速度。\n就绪",
+        "width": 217.3372344970703
+      },
+      {
+        "insidePanel": true,
+        "left": 51.82942581176758,
+        "right": 269.1666603088379,
+        "text": "C\n代码震荡\n震退 8 米内的敌人，造成 28 伤害并打断攻击。\n剧情解锁",
+        "width": 217.3372344970703
+      }
+    ],
+    "vitals": {
+      "right": 288.9973850250244,
+      "width": 256.9986877441406,
+      "x": 31.99869728088379
+    },
+    "width": 1066
+  }
+]

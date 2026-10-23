@@ -1,0 +1,12 @@
+{
+  "baseline": "237f32a5072b150a69fcf09a4bf280f6120c1f02",
+  "packageFiles": 720,
+  "changed": [
+    {
+      "path": "packages/client/src/player/player.css",
+      "before": "e8ccc0c80a5da0148ef28df896ee02aad631696fcca3df02f2db865c443e029a",
+      "after": "4b38e0ff3ef7b91ad9bec6eaad8b71c7744cca416183de59346d09e638280ce3"
+    }
+  ],
+  "new": []
+}

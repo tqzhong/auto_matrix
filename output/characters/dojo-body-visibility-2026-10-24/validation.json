@@ -1,0 +1,29 @@
+{
+  "baselineRelated": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0
+  },
+  "ui": {
+    "tests": 25,
+    "pass": 25,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "bundle": "index-CfGgNqoS.js",
+  "bundleSha256": "1bba3e2b6ed162bd6ab661da783ad242c28fed1615661f54debc34826f9c4537",
+  "css": "index-B0JUdutM.css",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "inputsUnchanged": true,
+  "inputs": 1203,
+  "allRequiredGatesPassed": true,
+  "fullSuiteRun": false,
+  "previousCharacterFailuresNotRetested": 7,
+  "newFrameRateBenchmark": false,
+  "codeScope": "one narrow-viewport CSS block",
+  "related": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0
+  }
+}
