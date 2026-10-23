@@ -199,6 +199,7 @@ export class CharacterModels {
   private cylinder = this.geometry(new THREE.CylinderGeometry(1, 1, 1, 12));
   private box = this.geometry(new THREE.BoxGeometry(1, 1, 1));
   private atlas: THREE.Texture;
+  private pendingAtlas: (() => void)[] = [];
   private fabric: THREE.CanvasTexture;
   private heroes: HeroModels;
   private epilogueHeads = new EpilogueHeads();
@@ -208,7 +209,9 @@ export class CharacterModels {
   private spoonBoyHands = new SpoonBoyHands();
 
   constructor() {
-    this.atlas = new THREE.TextureLoader().load('/assets/characters/matrix-faces.png');
+    this.atlas = new THREE.TextureLoader().load('/assets/characters/matrix-faces.png', () => {
+      this.pendingAtlas.splice(0).forEach(attach => attach());
+    });
     this.atlas.colorSpace = THREE.SRGBColorSpace;
     this.atlas.anisotropy = 8; this.textures.add(this.atlas);
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
@@ -227,6 +230,14 @@ export class CharacterModels {
 
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }
+
+  private atlasMaterial(material: THREE.MeshStandardMaterial, repeat: [number, number], offset: [number, number]): void {
+    const attach = () => {
+      const texture = this.atlas.clone(); texture.repeat.set(...repeat); texture.offset.set(...offset); this.textures.add(texture);
+      material.map = texture; material.color.set('#ffffff'); material.needsUpdate = true;
+    };
+    if (this.atlas.image) attach(); else this.pendingAtlas.push(attach);
+  }
   private mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[], position: number[], scale?: number[]): THREE.Mesh {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(position[0], position[1], position[2]);
@@ -409,10 +420,7 @@ export class CharacterModels {
       skin.map = texture; skin.color.set('#ffffff'); skin.roughness = .76; skin.bumpScale = .0006;
     }
     if (look.face !== undefined) {
-      const skinTexture = this.atlas.clone();
-      skinTexture.repeat.set(0.12, 0.025); skinTexture.offset.set((look.face % 2) * 0.5 + 0.19, (look.face < 2 ? 0.5 : 0) + 0.02);
-      skinTexture.needsUpdate = true; this.textures.add(skinTexture);
-      skin.color.set('#ffffff'); skin.map = skinTexture;
+      this.atlasMaterial(skin, [.12, .025], [(look.face % 2) * .5 + .19, (look.face < 2 ? .5 : 0) + .02]);
     }
     const cloth = this.material(new THREE.MeshPhysicalMaterial({ color: look.cloth, roughness: look.leather ? 0.43 : 0.88,
       metalness: 0, clearcoat: look.leather ? 0.22 : 0, clearcoatRoughness: 0.4, bumpMap: this.fabric, bumpScale: look.leather ? 0.003 : 0.002, side: THREE.DoubleSide }));
@@ -654,10 +662,8 @@ export class CharacterModels {
     if (state.id === 'sati') { head.name = 'sati-head'; head.position.y = 1.99; }
     let face = skin;
     if (look.face !== undefined) {
-      const texture = this.atlas.clone();
-      texture.repeat.set(0.5, 0.5); texture.offset.set((look.face % 2) * 0.5, look.face < 2 ? 0.5 : 0);
-      texture.needsUpdate = true; this.textures.add(texture);
-      face = this.material(new THREE.MeshStandardMaterial({ map: texture, roughness: 0.67, bumpMap: this.fabric, bumpScale: 0.0008 }));
+      face = this.material(new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.67, bumpMap: this.fabric, bumpScale: 0.0008 }));
+      this.atlasMaterial(face, [.5, .5], [(look.face % 2) * .5, look.face < 2 ? .5 : 0]);
     }
     this.mesh(head, this.headGeometry(look.width), [face, skin], [0, 0, 0]);
     for (const side of [-1, 1]) {
@@ -1414,6 +1420,7 @@ export class CharacterModels {
   }
 
   dispose(): void {
+    this.pendingAtlas.length = 0;
     this.freewayProps.forEach(props => props.dispose());
     this.truckProps.forEach(props => props.dispose());
     this.sourcePortalProps.forEach(props => props.dispose()); this.sourcePortalProps.clear();

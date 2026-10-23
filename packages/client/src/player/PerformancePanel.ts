@@ -69,6 +69,13 @@ export class PerformancePanel {
     const mode = document.createElement('select'); mode.setAttribute('aria-label', 'GPU计时范围');
     mode.innerHTML = '<option value="cpu">CPU / FPS（不插入GPU查询）</option><option value="cpu-no-occlusion">CPU对照：跳过接触阴影</option><option value="cpu-no-shadows">CPU对照：跳过动态阴影</option><option value="cpu-no-render">CPU对照：冻结3D画面</option><option value="frame">整段渲染</option><option value="passes">分阶段（不可相加）</option><option value="empty">空区间校准</option><option value="no-occlusion">对照：跳过接触阴影</option><option value="no-render">对照：冻结3D画面</option>';
     this.panel.appendChild(mode);
+    const lightLabel = document.createElement('label'); lightLabel.style.cssText = 'display:block;margin-top:6px';
+    lightLabel.innerHTML = '<input type="checkbox"> 对照：保留视野外有限灯光';
+    this.panel.insertBefore(lightLabel, this.panel.querySelector('pre'));
+    lightLabel.querySelector('input')!.onchange = event => {
+      this.engine.lightCulling.enabled = !(event.target as HTMLInputElement).checked;
+      this.status('可以测量当前场景。');
+    };
   }
 
   private status(text: string): void { this.panel.querySelector('[role="status"]')!.textContent = text; }
@@ -179,6 +186,7 @@ export class PerformancePanel {
       browserMainThread: { supported: PerformanceObserver.supportedEntryTypes.filter(type => ['longtask', 'long-animation-frame'].includes(type)),
         entries: this.browserEntries.filter(entry => entry.startTime >= this.startAt + 3000).map(entry => entry.toJSON()) },
       lights,
+      finiteLightCulling: { enabled: this.engine.lightCulling.enabled, ...this.engine.lightCulling.lastView },
       occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
       shipStaticBatching: this.engine.scene.getObjectByName('neb-interior-deck')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
       podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
