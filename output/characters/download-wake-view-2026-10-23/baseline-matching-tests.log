@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (580/600)
+not ok 1 - bedside choice preserves actual first-person gaze into Tank's greeting (580/600)
+  ---
+  duration_ms: 3359.343833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'the scene boundary reinterpreted the old world gaze as a head-relative angle'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:55:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"x":580,"y":600,"turn":1.5100472965898728,"fullTurn":2.0848319578078924,"before":[0.9900554528720101,0.13042370873812653,0.052724343878244095],"after":[0.13023916159010357,-0.1255755370202719,-0.9834981165667668],"beforeHits":[],"afterHits":[{"x":0.35,"y":-0.2,"mesh":"neo-logos-sweater","distance":0.48629777914181527},{"x":0.35,"y":0,"mesh":"neo-logos-sweater","distance":0.4868714179273394},{"x":0.35,"y":0.2,"mesh":"neo-logos-sweater","distance":0.504105925933006}]}
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (0/0)
+not ok 2 - bedside choice preserves actual first-person gaze into Tank's greeting (0/0)
+  ---
+  duration_ms: 2578.921709
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'the scene boundary reinterpreted the old world gaze as a head-relative angle'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:55:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"x":0,"y":0,"turn":0.11999999999958547,"fullTurn":0.11999999999958076,"before":[0,0.9713379748519311,-0.2377026264275376],"after":[4.314115122024271e-17,0.9358968236779349,-0.35227423327509],"beforeHits":[],"afterHits":[]}
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (300/400)
+not ok 3 - bedside choice preserves actual first-person gaze into Tank's greeting (300/400)
+  ---
+  duration_ms: 2829.720708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'the scene boundary reinterpreted the old world gaze as a head-relative angle'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:55:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"x":300,"y":400,"turn":0.5037947157102084,"fullTurn":1.1388865283266336,"before":[0.6421833744506245,0.5062202572327049,-0.5756227625332959],"after":[0.37695343173826706,0.2322130486176645,-0.8966511084878186],"beforeHits":[],"afterHits":[]}
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (-500/650)
+not ok 4 - bedside choice preserves actual first-person gaze into Tank's greeting (-500/650)
+  ---
+  duration_ms: 2807.529208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'the scene boundary reinterpreted the old world gaze as a head-relative angle'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:55:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"x":-500,"y":650,"turn":1.374483136405561,"fullTurn":1.832455708456991,"before":[-0.9849824598866981,0.030791459082460393,-0.16988654968278827],"after":[-0.030343435038767012,-0.11445954336358816,-0.9929643945696378],"beforeHits":[],"afterHits":[{"x":-0.35,"y":-0.2,"mesh":"neo-logos-sweater","distance":0.47939396859698574},{"x":-0.35,"y":0,"mesh":"neo-logos-sweater","distance":0.49634334026338284},{"x":-0.35,"y":0.2,"mesh":"neo-logos-sweater","distance":0.5130918081713852}]}
+# Subtest: the retained bedside gaze remains steerable while Tank speaks and Neo rises, then hands off continuously to walking
+not ok 5 - the retained bedside gaze remains steerable while Tank speaks and Neo rises, then hands off continuously to walking
+  ---
+  duration_ms: 2373.4875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:1:4155'
+  failureType: 'testCodeFailure'
+  error: 'the preserved gaze cannot lock mouse control'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/baseline-release/tests/download-wake-view.test.mts:71:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: cold possession and V toggles use the current waking eyes without replaying a previous bedside view
+ok 6 - cold possession and V toggles use the current waking eyes without replaying a previous bedside view
+  ---
+  duration_ms: 2456.713292
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 1
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17453.602708

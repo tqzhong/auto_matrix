@@ -1,0 +1,34 @@
+{
+  "related": {
+    "tests": 242,
+    "pass": 242,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "baselineRelated": {
+    "tests": 236,
+    "pass": 236,
+    "fail": 0
+  },
+  "baselineNew": {
+    "tests": 6,
+    "pass": 1,
+    "fail": 5
+  },
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "allRequiredGatesPassed": true,
+  "inputsUnchanged": true,
+  "inputFiles": 1189,
+  "bundle": "index-sQG1bG1d.js",
+  "bundleSha256": "2f48ce8c9baf9f6a6f688403252e4f6e297faa1e7f857ff18b08034dc238cc20",
+  "bundleBytes": 3768112,
+  "newDependencies": false,
+  "newModelOrTextureFiles": false,
+  "performanceClaim": null,
+  "limits": "Finite camera/model samples and selected related files; not a full repository test run or film-quality acceptance"
+}

@@ -1,0 +1,19 @@
+{
+  "oldPid": 20583,
+  "newPid": 23275,
+  "restartCompleted": true,
+  "auditRecoveredAfterScriptError": "agents is a dictionary, not an array; corrected verifier without restarting the live backend",
+  "initialWorldDifferences": [
+    ".agents.neo.controller"
+  ],
+  "tick": 7856,
+  "downloadSetup": {
+    "phase": "waking",
+    "elapsed": 1.0200000000000002,
+    "progress": 0
+  },
+  "memoryBeforeHashesNotPersisted": true,
+  "memoryEqualityNotClaimed": true,
+  "nativeReconnectCompleteWorldByteIdentical": true,
+  "worldSha256": "b00a8d5cc52c3661fd049ebf2466139d845131a07b474d8e561accb82417c0fe"
+}

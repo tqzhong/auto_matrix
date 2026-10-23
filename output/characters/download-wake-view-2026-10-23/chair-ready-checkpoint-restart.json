@@ -1,0 +1,26 @@
+{
+  "oldPid": 34812,
+  "newPid": 42125,
+  "reason": "chair-ready-checkpoint",
+  "byteIdenticalWorldBeforeReconnect": false,
+  "persistentWorldEqual": true,
+  "onlyPossibleDifferenceBeforeReconnect": "agents[].controller: transient socket ownership; compare the full response again after native reconnect",
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 8738,
+  "scene": "m1_download",
+  "step": 0,
+  "downloadSetup": {
+    "phase": "ready",
+    "elapsed": 0,
+    "progress": 49.17238672936492,
+    "approach": {
+      "x": 2.823794483203528,
+      "z": -5.836801362160259
+    }
+  },
+  "cloudDisabled": true,
+  "nativeReconnectCompleteWorldByteIdentical": true,
+  "memoryBytesEqualAfterReconnect": true,
+  "worldSha256": "6b6b97fa8257f192f55d03449dcc7bd152a8b905ad51935bab880e64f53d854c"
+}

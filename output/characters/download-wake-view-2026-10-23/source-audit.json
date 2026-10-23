@@ -1,0 +1,19 @@
+{
+  "baseline": "f909ccc577d7889e8a02b9860ffa96a498f6799f",
+  "changed": [
+    {
+      "path": "packages/client/src/player/PlayerControls.ts",
+      "before": "94b02a8863f4740b134e1fb83615b3ff11eff8399f3a5f1d2577b91742598d45",
+      "after": "760def2c8a810effba4da300939548d31c09f16bc5c162333e6e7252829c7c6e"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/download-wake-view.test.mts",
+      "sha256": "2d1da8471ec73cdf0d0451715c5db4678397d609a4f2878c91b2e639302391d5"
+    }
+  ],
+  "packageFiles": 712,
+  "inputFiles": 1189,
+  "onlyClientRuntimeChange": true
+}

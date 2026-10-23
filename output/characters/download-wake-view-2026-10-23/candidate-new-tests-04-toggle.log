@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (580/600)
+not ok 1 - bedside choice preserves actual first-person gaze into Tank's greeting (580/600)
+  ---
+  duration_ms: 10011.620583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/candidate-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'V must retain the transferred bedside horizon'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/candidate-release/tests/download-wake-view.test.mts:62:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"x":580,"y":600,"turn":0,"fullTurn":0,"before":[0.9900554528720101,0.13042370873812653,0.052724343878244095],"after":[0.9900554528720104,0.13042370873812623,0.05272434387824345],"beforeHits":[],"afterHits":[]}
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (0/0)
+ok 2 - bedside choice preserves actual first-person gaze into Tank's greeting (0/0)
+  ---
+  duration_ms: 7417.903791
+  type: 'test'
+  ...
+# {"x":0,"y":0,"turn":0,"fullTurn":0,"before":[0,0.9713379748519311,-0.2377026264275376],"after":[2.9110176060340304e-17,0.971337974851931,-0.23770262642753753],"beforeHits":[],"afterHits":[]}
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (300/400)
+not ok 3 - bedside choice preserves actual first-person gaze into Tank's greeting (300/400)
+  ---
+  duration_ms: 6690.419042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/candidate-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'V must retain the transferred bedside horizon'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/candidate-release/tests/download-wake-view.test.mts:62:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"x":300,"y":400,"turn":0,"fullTurn":0,"before":[0.6421833744506245,0.5062202572327049,-0.5756227625332959],"after":[0.6421833744506245,0.506220257232705,-0.5756227625332959],"beforeHits":[],"afterHits":[]}
+# Subtest: bedside choice preserves actual first-person gaze into Tank's greeting (-500/650)
+not ok 4 - bedside choice preserves actual first-person gaze into Tank's greeting (-500/650)
+  ---
+  duration_ms: 7677.41075
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/candidate-release/tests/download-wake-view.test.mts:1:2408'
+  failureType: 'testCodeFailure'
+  error: 'V must retain the transferred bedside horizon'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/download-wake-view-2026-10-23/candidate-release/tests/download-wake-view.test.mts:62:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"x":-500,"y":650,"turn":0,"fullTurn":0,"before":[-0.9849824598866981,0.030791459082460393,-0.16988654968278827],"after":[-0.9849824598866981,0.030791459082460414,-0.1698865496827879],"beforeHits":[],"afterHits":[]}
+# Subtest: the retained bedside gaze remains steerable while Tank speaks and Neo rises, then hands off continuously to walking
+ok 5 - the retained bedside gaze remains steerable while Tank speaks and Neo rises, then hands off continuously to walking
+  ---
+  duration_ms: 7842.769667
+  type: 'test'
+  ...
+# {"maximumTurn":0.1509064279611205,"releaseTurn":0.07349435271085097}
+# Subtest: cold possession and V toggles use the current waking eyes without replaying a previous bedside view
+ok 6 - cold possession and V toggles use the current waking eyes without replaying a previous bedside view
+  ---
+  duration_ms: 7868.8405
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 3
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 52771.295292

@@ -1,0 +1,15 @@
+{
+  "oldPid": 23275,
+  "newPid": 34812,
+  "source": "output/characters/truth-exit-hand-contact-2026-10-23/qa-attempt-01-data",
+  "dataDirectory": "output/characters/download-wake-view-2026-10-23/qa-production-data",
+  "reason": "Replay the same naturally reached bedside question to verify the warm camera handoff; preserve the first attempt",
+  "manualWorldEdits": false,
+  "seedSha256": "170998aa8b665405e0e8412a72701c3a5821c66a21d8057219e3fadc4c7ec14a",
+  "tick": 7802,
+  "scene": "m1_truth_return",
+  "truthRecovery": {
+    "phase": "question",
+    "elapsed": 0
+  }
+}
