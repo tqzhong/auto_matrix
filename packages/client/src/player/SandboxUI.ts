@@ -74,6 +74,7 @@ import { DEUS_PACT, deusPactDialogue, deusPactLocked } from '@auto_matrix/shared
 import { SMITH_FINALE, smithFinaleLocked, smithFinaleDialogue, smithOracleRestored } from '@auto_matrix/shared';
 import { trilogyEpilogueLocked, trilogyEpilogueProgress } from '@auto_matrix/shared';
 import { ambushApproachTarget } from '@auto_matrix/shared';
+import { MELEE_COMBO, meleeReach } from '@auto_matrix/shared';
 
 const escape = (value: unknown): string => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const WEATHER = { clear: '晴朗', rain: '雨', code_storm: '代码风暴' };
@@ -1473,17 +1474,24 @@ export class SandboxUI {
     if (!journey.visiting && scene.id === 'm1_dojo' && journey.dojo && journey.fighting) {
       const lesson = journey.dojo;
       const windup = state.threats.some(threat => threat.scene === scene.id && threat.character === 'morpheus' && threat.attackAt !== undefined && threat.attackAt > this.tick);
+      const opponent = state.threats.find(threat => threat.scene === scene.id && threat.character === 'morpheus' && threat.target === player.id);
+      const needsApproach = lesson.dodged && opponent && !meleeReach(player.position,
+        Math.atan2(opponent.position.x - player.position.x, opponent.position.z - player.position.z),
+        opponent.position, MELEE_COMBO[Math.min(lesson.combo, 2)].reach, player.isInMatrix, state.structures);
       const secondsLeft = lesson.counterUntil === undefined ? 0 : Math.max(0, Math.ceil((lesson.counterUntil - this.tick) / 2));
-      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
+      this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = needsApproach
+        ? '距离已经拉开。移动接近 Morpheus，进入拳脚范围后再反击；站在远处出拳不会命中。' : journey.lastText;
       this.el('film-sequence').classList.toggle('urgent', windup && !lesson.dodged);
       const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
       actions.classList.remove('hidden'); dodge.classList.toggle('hidden', lesson.dodged); dodge.disabled = !windup;
       attack.classList.toggle('hidden', !lesson.dodged); attack.querySelector('span')!.textContent = ['刺拳', '直拳', '正蹬'][lesson.combo] ?? '连击';
-      this.el('film-sequence-hint').textContent = !lesson.dodged ? windup ? '现在！按 X 闪避' : '观察 Morpheus 的红色起手提示 · X 闪避' : `F 连击 · ${lesson.combo}/3 · 反击窗口 ${secondsLeft} 秒；每次命中会重置 ${DOJO_COMBO_WINDOW} 秒`;
+      this.el('film-sequence-hint').textContent = !lesson.dodged ? windup ? '现在！按 X 闪避' : '观察 Morpheus 的红色起手提示 · X 闪避'
+        : `${needsApproach ? 'WASD 靠近 Morpheus，再按 F' : '距离合适 · F 连击'} · ${lesson.combo}/3 · 反击窗口 ${secondsLeft} 秒；命中重置 ${DOJO_COMBO_WINDOW} 秒`;
       this.el('sandbox-job').style.width = `${(lesson.dodged ? 25 : 0) + lesson.combo * 25}%`;
-      this.el('sandbox-waypoint').textContent = !lesson.dodged ? '先读懂起手，再离开攻击线' : '刺拳 → 直拳 → 正蹬';
+      this.el('sandbox-waypoint').textContent = !lesson.dodged ? '先读懂起手，再离开攻击线' : needsApproach ? '移动接近 → 刺拳 → 直拳 → 正蹬' : '刺拳 → 直拳 → 正蹬';
       this.el('sandbox-interact').classList.add('hidden');
-      document.getElementById('game-objective-copy')!.textContent = !lesson.dodged ? windup ? '现在闪避 · X' : '等待 Morpheus 出手 · 看见红色提示后按 X 闪避' : `完成有顺序的三段反击 · ${lesson.combo}/3 · 剩余 ${secondsLeft} 秒`;
+      document.getElementById('game-objective-copy')!.textContent = !lesson.dodged ? windup ? '现在闪避 · X' : '等待 Morpheus 出手 · 看见红色提示后按 X 闪避'
+        : `${needsApproach ? 'WASD 靠近 Morpheus' : '完成有顺序的三段反击'} · ${lesson.combo}/3 · 剩余 ${secondsLeft} 秒`;
       return;
     }
     if (!journey.visiting && scene.id === 'm2_seraph' && journey.seraph && journey.fighting) {

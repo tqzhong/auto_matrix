@@ -2240,6 +2240,54 @@ test('the dojo requires reading Morpheus attack, dodging it and landing an order
   assert.equal(neoSkillUnlocked(h.sandbox.state.neoLife, 0), true, 'the authored dojo unlocks Neo bullet time too');
 });
 
+test('the dojo can be completed through natural windups, a backstep and walking into counter range', t => {
+  let now = 100_000; t.mock.method(Date, 'now', () => now);
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const download = FILM_SCENE_BY_ID.m1_download;
+  Object.assign(state, { scene: download.id, actor: 'neo', step: download.steps.length, training: undefined });
+  h.command('next');
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m1_dojo, FILM_SCENE_BY_ID.m1_dojo.steps[0]);
+  h.command('act'); const threat = h.sandbox.state.threats[0];
+  let sequence = 0, frame = 0;
+  const frames = (count: number, approach = false) => {
+    for (let i = 0; i < count; i++) {
+      const dx = threat.position.x - h.actor().position.x, dz = threat.position.z - h.actor().position.z;
+      const length = Math.hypot(dx, dz); now += 50;
+      h.players.receiveInput('film-player', { x: approach ? dx / length : 0, z: approach ? dz / length : 0,
+        yaw: Math.atan2(dx, dz), sequence: ++sequence });
+      h.players.step(.05, true, h.tick(), now);
+      if (++frame % 10 === 0) h.advance();
+    }
+  };
+  const waitForWindup = () => {
+    for (let i = 0; i < 200 && threat.attackAt === undefined; i++) frames(1);
+    assert.ok(threat.attackAt! > h.tick(), 'Morpheus must generate his own readable windup');
+  };
+  waitForWindup();
+  h.players.act('film-player', 'dodge', h.tick()); frames(6);
+  assert.equal(state.dojo?.dodged, true);
+  assert.ok(distance(h.actor().position, threat.position) > 5, 'an idle X backstep leaves jab range');
+  h.players.act('film-player', 'attack', h.tick()); frames(10);
+  assert.equal(state.dojo?.hits, 0, 'pressing F from the backstep position must not deal remote damage');
+  frames(60);
+  assert.equal(state.dojo?.dodged, false, 'a missed counter expires and permits another attempt');
+
+  waitForWindup(); h.players.act('film-player', 'dodge', h.tick()); frames(6);
+  const health = h.actor().health;
+  for (let i = 0; i < 40 && distance(h.actor().position, threat.position) > 2.6; i++) frames(1, true);
+  frames(2);
+  assert.ok(distance(h.actor().position, threat.position) < 3, 'walking closes the gap without moving either actor in the fixture');
+  assert.equal(state.dojo?.dodged, true, 'normal walking reaches the opening before it expires');
+  for (let combo = 0; combo < 3; combo++) {
+    h.players.act('film-player', 'attack', h.tick()); frames(10);
+    assert.equal(state.dojo?.combo, combo + 1, 'each real contact advances the ordered counter');
+  }
+  frames(10);
+  assert.equal(state.dojo?.complete, true); assert.equal(state.step, 1);
+  assert.equal(h.sandbox.state.threats.length, 0);
+  assert.ok(h.actor().health >= health, 'Morpheus cannot hit during a successful counter');
+});
+
 test('the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const download = FILM_SCENE_BY_ID.m1_download;
