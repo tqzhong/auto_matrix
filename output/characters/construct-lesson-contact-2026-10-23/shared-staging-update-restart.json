@@ -1,0 +1,18 @@
+{
+  "oldPid": 74545,
+  "newPid": 84689,
+  "reason": "intentional runtime update for the shared chair stance",
+  "completeWorldEqual": false,
+  "byteIdenticalWorld": false,
+  "changedPaths": [
+    "sandbox.neoLife.journey.lastText"
+  ],
+  "change": "only the expected cue text changed from outside the chair to behind it; all remaining saved world fields match",
+  "allOtherWorldFieldsEqual": true,
+  "memoryFiles": 7,
+  "memoryBytesEqualToRealSeedBeforeWalking": true,
+  "tick": 7402,
+  "running": false,
+  "cloudDisabled": true,
+  "notClaimedAsSameVersionColdRestore": true
+}

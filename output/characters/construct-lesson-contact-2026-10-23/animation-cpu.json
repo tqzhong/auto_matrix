@@ -1,0 +1,72 @@
+{
+  "scope": "Offline Node CPU time for full HeroModel.animate plus current root matrices, one delivered actor at a frozen 3.456-second lesson pose; A/B/B/A after warmup. No rendering, browser, recording, simulation or GPU measurement. Not an FPS or memory-requirement certification.",
+  "baselineRevision": "f92a2eb0df1b7bd42841fc691b62fb7139021f9a",
+  "results": [
+    {
+      "role": "neo",
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.14286589999997926,
+      "medianMs": 0.13637500000004366,
+      "p95Ms": 0.15041599999995015
+    },
+    {
+      "role": "neo",
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.1359605958333153,
+      "medianMs": 0.13008300000001327,
+      "p95Ms": 0.14649999999983265
+    },
+    {
+      "role": "neo",
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.13498266666665965,
+      "medianMs": 0.12704200000007404,
+      "p95Ms": 0.15983299999970768
+    },
+    {
+      "role": "neo",
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.1364157958333351,
+      "medianMs": 0.1303749999997308,
+      "p95Ms": 0.14133399999991525
+    },
+    {
+      "role": "morpheus",
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.11140039166667369,
+      "medianMs": 0.1045830000002752,
+      "p95Ms": 0.11716599999999744
+    },
+    {
+      "role": "morpheus",
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.11626629583336884,
+      "medianMs": 0.10662499999943975,
+      "p95Ms": 0.12374999999974534
+    },
+    {
+      "role": "morpheus",
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.11691562083330306,
+      "medianMs": 0.1062500000007276,
+      "p95Ms": 0.12133300000004965
+    },
+    {
+      "role": "morpheus",
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.11502305833328895,
+      "medianMs": 0.10562500000014552,
+      "p95Ms": 0.11941599999954633
+    }
+  ],
+  "frozenInputsUnchanged": true,
+  "browser60FpsClaim": false
+}

@@ -1,0 +1,13 @@
+{
+  "js": {
+    "name": "index-BGtVPsBS.js",
+    "sha256": "f05f1c32a7b535e97dfc46df45ac02a1ea12375e905be26708c335458ff1d352",
+    "bytes": 3763874
+  },
+  "css": {
+    "name": "index-bH8XtZgl.css",
+    "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+  },
+  "developmentProbeExcluded": true,
+  "backendFilesUnchanged": 280
+}

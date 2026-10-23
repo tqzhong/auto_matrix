@@ -12,22 +12,32 @@ export async function constructInspection(t?: TestContext) {
   return {...h,at(elapsed:number,firstPerson=false){draw({speed:0,grounded:true,verticalVelocity:0,turn:0,clubClothes:true,glasses:false,performance:'construct',firstPerson,construct:{role:'neo',phase:'image',elapsed}});},idle(){draw({speed:0,grounded:true,verticalVelocity:0,turn:0});}};
 }
 
+const palmarPatches=new WeakMap<HeroRig,Map<string,number[]>>();
+const inspectionHands=new WeakMap<HeroRig,ReturnType<typeof handSurface>[]>();
+function surfacesFor(rig:HeroRig){let hands=inspectionHands.get(rig);if(!hands)inspectionHands.set(rig,hands=['R','L'].map(side=>handSurface(rig,side)));return hands;}
+
 export function inspectionPalm(rig:HeroRig,side:'R'|'L') {
   const skin=rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const index=skin.skeleton.bones.indexOf(rig.bones.get(`wrist_${side}`)!),toWrist=skin.skeleton.boneInverses[index].clone().multiply(skin.bindMatrix),p=skin.geometry.attributes.position;
-  const ids:number[]=[],point=new THREE.Vector3(),sign=side==='R'?1:-1,normalMatrix=new THREE.Matrix3().getNormalMatrix(toWrist);
-  for(const id of handSurface(rig,side).vertices){
+  const sign=side==='R'?1:-1;
+  let patches=palmarPatches.get(rig);if(!patches)palmarPatches.set(rig,patches=new Map());
+  let ids=patches.get(side);
+  if(!ids){
+  ids=[];const point=new THREE.Vector3(),normalMatrix=new THREE.Matrix3().getNormalMatrix(toWrist);
+  for(const id of surfacesFor(rig)[side==='R'?0:1].vertices){
     point.fromBufferAttribute(p,id).applyMatrix4(toWrist);
     const normal=new THREE.Vector3().fromBufferAttribute(skin.geometry.attributes.normal,id).applyNormalMatrix(normalMatrix);
     if(sign*normal.x>.7&&point.y>-.22&&point.y<-.15&&Math.abs(point.z)<.04)ids.push(id);
   }
   if(!ids.length)throw new Error('The anatomical palmar patch is missing');
+  patches.set(side,ids);
+  }
   skin.skeleton.update();const world=ids.reduce((sum,id)=>sum.add(skin.localToWorld(skin.getVertexPosition(id,new THREE.Vector3()))),new THREE.Vector3()).divideScalar(ids.length);
   return {world,vertices:ids.length,normal:new THREE.Vector3(sign,0,0).transformDirection(rig.bones.get(`wrist_${side}`)!.matrixWorld)};
 }
 
 export function inspectionBodyCrossings(rig:HeroRig) {
-  const surfaces=['R','L'].map(side=>handSurface(rig,side)),hands=new Set(surfaces.flatMap(s=>s.vertices)),failures:unknown[]=[];
+  const surfaces=surfacesFor(rig),hands=new Set(surfaces.flatMap(s=>s.vertices)),failures:unknown[]=[];
   for(const [which,surface] of surfaces.entries()){
     const inverse=rig.bones.get(`wrist_${['R','L'][which]}`)!.matrixWorld.clone().invert(),draw=surface.draw(),box=new THREE.Box3().setFromPoints([...draw.points.values()]);
     for(const name of ['Anatomical_head_and_hands','Anatomical_wrist_skin','Tailored_coat_upper','Black_crew_neck','Close-cut_scalp_undercoat','Swept_individual_hair_strands']){

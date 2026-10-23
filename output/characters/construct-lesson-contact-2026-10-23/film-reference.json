@@ -1,0 +1,18 @@
+{
+  "url": "https://www.youtube.com/watch?v=V9smIfYLX4Y",
+  "publisher": "Warner Bros. Entertainment, verified YouTube channel",
+  "method": "Native player seeking and screenshot observation after buffering; no movie download",
+  "observedSeconds": [
+    54,
+    60,
+    84,
+    87,
+    105
+  ],
+  "observations": [
+    "At60s Neo supports the domed chair crown with one palm and the outer wing with the other; fingers follow the upholstery rather than forming fists.",
+    "At54s Morpheus stands beside the chair in the dark suit and green tie.",
+    "At84s and87s Morpheus speaks seated against the red tufted back;105s shows the ruined environment."
+  ],
+  "limits": "Finite shot samples, no whole-film or frame-by-frame acceptance. Remote casing dimensions were not established from these samples; preserve existing geometry and fit actual hands."
+}

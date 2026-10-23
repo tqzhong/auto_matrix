@@ -1517,7 +1517,7 @@ export class SandboxUI {
       const arrival = journey.constructArrival, ready = arrival.phase === 'ready';
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = ready ? 'G 检查残余自我影像 · V 切换视角'
-        : arrival.phase === 'image' ? '观察身体变化 · V 切换视角 · 进度会保存' : 'WASD 走到右侧皮椅外侧 · G 触摸椅背';
+        : arrival.phase === 'image' ? '观察身体变化 · V 切换视角 · 进度会保存' : 'WASD 走到右侧皮椅后方 · G 触摸椅背';
       document.getElementById('game-objective-copy')!.textContent = ready ? '检查消失的接口与恢复的头发 · 按 G'
         : arrival.phase === 'image' ? '观察程序中的自己' : '亲自走到皮椅旁，检验触感';
       if (ready) { this.el('sandbox-interact').classList.remove('hidden'); this.el('sandbox-nearby').textContent = '检查残余自我影像'; }

@@ -1,0 +1,12 @@
+{
+  "pid": 9294,
+  "port": 5173,
+  "command": [
+    "node",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/server/dist/index.js"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix",
+  "dataDirectory": "/Users/tianqizhong/ai_project/auto_matrix/output/local-preview/data",
+  "cloudDisabled": true,
+  "intentionalRestart": true
+}

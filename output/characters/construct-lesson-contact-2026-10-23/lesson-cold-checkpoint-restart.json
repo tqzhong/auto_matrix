@@ -1,0 +1,24 @@
+{
+  "oldPid": 84689,
+  "newPid": 2793,
+  "reason": "lesson-cold-checkpoint",
+  "byteIdenticalWorld": true,
+  "completeWorldEqual": true,
+  "changedPaths": [],
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 7415,
+  "scene": "m1_construct",
+  "step": 0,
+  "constructArrival": null,
+  "awakening": {
+    "kind": "construct",
+    "elapsed": 3.456,
+    "started": true,
+    "approach": {
+      "x": 5.201875596981154,
+      "z": -3.7924517173423737
+    }
+  },
+  "cloudDisabled": true
+}

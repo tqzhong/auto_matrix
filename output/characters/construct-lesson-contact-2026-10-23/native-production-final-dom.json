@@ -1,0 +1,6 @@
+{
+  "scripts": [
+    "http://127.0.0.1:5200/assets/index-BGtVPsBS.js"
+  ],
+  "page": "Browser tab: 51, Title: \"MATRIX — 可游玩的自主开放世界\", URL: \"http://127.0.0.1:5200/\".\nThe following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.\nRemoved element IDs: 107, 136\n+\t\t\t\t\t166 text 1 ms 生命\n+\t\t\t\t167 text 世界已暂停，角色暂时不能移动。点击继续游玩。\nThe focused UI element is 80 button Description: 继续世界时间, ID: game-pause"
+}

@@ -1,0 +1,55 @@
+{
+  "baseline": "f92a2eb0df1b7bd42841fc691b62fb7139021f9a",
+  "packageFiles": 709,
+  "baselineGitSourceAndConfigFiles": 1177,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/ConstructPerformance.ts",
+      "before": "fb11b52ea1a63e7d373cadebfeb4bb5512d10f317c0a3cecbe32eee59b91663e",
+      "after": "9e04b330a1ea367efd8129d59cf139deabd82f4169a34d280f2dbbc1e82ddd71"
+    },
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "abd96030bb88fe4550926b2d3405a039596b4d280052ee73c37b05078a4287f8",
+      "after": "092643d5dea1f09099a98855d5d7a16a8bfa976030c120b6083925a696729f58"
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "a90322508294606172ef2e3ce3504d0490128e20ba4f71fd6d56272ac6d58b58",
+      "after": "979aef537ace9f30eb0ffc69151e855d5807971312d3c71c0d542931870c8794"
+    },
+    {
+      "path": "packages/client/src/player/SandboxUI.ts",
+      "before": "c37a19453eb8b34045180f5e56cb8738c549eec41859fa73e411f88fc37d9ee1",
+      "after": "9937999f6dc79a6d0ca065cbb4e6ac0ce1fc9f2b9a690dc0a268292bfe101115"
+    },
+    {
+      "path": "packages/shared/src/constants/construct.ts",
+      "before": "248df45bf0d745d25e66b2185e18247af3f65d6b7d0c388cda2d84fc67b04f31",
+      "after": "15f9a93bbbc07942755f0addc8b5b661dd38bd7ba7bbc79b62ba2f7fe0194024"
+    },
+    {
+      "path": "tests/helpers/construct-inspection.mts",
+      "before": "b10f1a7eaf18265b289cf1a0d1d6483cfe612ea48dc99be4c5f8837e8609a996",
+      "after": "3169a7c439c676ff91ad835841f51f0cb3b1fadacd6f61119550461af9a62dc2"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/ConstructChairContact.ts",
+      "after": "eed5758758def3366eb8140f2da22a02ce93f1117e80fad7667769e1e790ea11"
+    },
+    {
+      "path": "packages/client/src/agents/ConstructRemoteGrip.ts",
+      "after": "1cbe5fddf2df33a4775a48d57c9b6368e95d2d5a58854251731b93074517cb77"
+    },
+    {
+      "path": "tests/construct-lesson-contact.test.mts",
+      "after": "a8346f0c6327ba9c2e63c500b400badf71e9f5b8bcf15ae29a8beefaa01cb1f8"
+    },
+    {
+      "path": "tests/helpers/construct-lesson.mts",
+      "after": "24c3da3e5768aacc7373cdc86f737984e27bc7b1c3170dbe4b113f5144981afc"
+    }
+  ]
+}

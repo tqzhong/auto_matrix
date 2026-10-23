@@ -1,0 +1,6 @@
+{
+  "scripts": [
+    "http://127.0.0.1:5200/assets/index-BGtVPsBS.js"
+  ],
+  "heldPage": "Browser tab: 51, Title: \"MATRIX — 可游玩的自主开放世界\", URL: \"http://127.0.0.1:5200/\".\nThe following is a diff from the previous accessibility tree with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.\nRemoved element IDs: 23\n+\t\t\t\t43 text 世界已暂停，角色暂时不能移动。点击继续游玩。\nThe focused UI element is 0 AXWebArea MATRIX — 可游玩的自主开放世界, URL: 127.0.0.1:5200/"
+}

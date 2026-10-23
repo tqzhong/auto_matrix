@@ -1,0 +1,240 @@
+{
+  "scope": "Diagnostic scans, failed candidates and rejected source only; not shipped code. Raw worlds, memory files, databases and isolated releases are excluded.",
+  "files": [
+    {
+      "path": "baseline-contact.jsonl",
+      "sha256": "f70950d7d0c1d5a11070b9cf4f2d2bb8d945a71b767902b0b6d7c111b41791ce",
+      "bytes": 19071
+    },
+    {
+      "path": "candidate-cylinder-remote.jsonl",
+      "sha256": "c052ac9ea3f6bbeec043eb2a5127f84e125c6ef2c660cf90ddfa9957c5a6e95f",
+      "bytes": 1754
+    },
+    {
+      "path": "candidate-first-contact.jsonl",
+      "sha256": "c0796aca4fb307dd7dd768eca438188c5f08020d9d208efbcc9b7d13d340c97c",
+      "bytes": 19132
+    },
+    {
+      "path": "candidate-flipped-cylinder-remote.jsonl",
+      "sha256": "83cadd15e7a9ea9c8317389f0c3e15266b441ea3fe7ceefb680f0ef9010fd2ec",
+      "bytes": 1735
+    },
+    {
+      "path": "candidate-held-points.jsonl",
+      "sha256": "4eca47a564fb3554f8769705089ef71bfceec8e62b8702962f0fcb503bdd361c",
+      "bytes": 1585
+    },
+    {
+      "path": "candidate-lean-path.jsonl",
+      "sha256": "cb9a454a876b7acb4cb8597eb5b1c30bb0e7448e2d3cce5e257e83e82149d183",
+      "bytes": 5205
+    },
+    {
+      "path": "candidate-lean-reach.jsonl",
+      "sha256": "2a445a3a21bb476d61df69509fdf51f65893f1bdfad5a5782134b2cba8a6dbfe",
+      "bytes": 861
+    },
+    {
+      "path": "candidate-oriented-contact.jsonl",
+      "sha256": "6ace54e80e762f39b236bdad19c9b692e04f6d9672f022a2f43e4cef54a66641",
+      "bytes": 18953
+    },
+    {
+      "path": "candidate-pinched-remote.jsonl",
+      "sha256": "990fdf2b63d01fcf48a48a4a1fb8ae288016b71eb657fc9e29aaa1e03fa68ebb",
+      "bytes": 1388
+    },
+    {
+      "path": "candidate-shaped-remote.jsonl",
+      "sha256": "a394485b2adc7c2a82267577e55900d7e3bd24bc51f2798a0a918d73e93f4f87",
+      "bytes": 1736
+    },
+    {
+      "path": "chair-tilt-fit.jsonl",
+      "sha256": "49b5e638c3a2e05e5e377bd59b532d2e039454c2faccacd6c739da95205d183f",
+      "bytes": 3184
+    },
+    {
+      "path": "chair-tilt-variants/tilt-0.mts",
+      "sha256": "4acc29cd92405f8ee16a12ca423b8f63766d30a2576a7c53d2a62e61844b68a7",
+      "bytes": 5418
+    },
+    {
+      "path": "chair-tilt-variants/tilt-10.mts",
+      "sha256": "92504e0d5e285b08e72eca9bbda76009c78645ac3e610f5beef3de5bc035af9f",
+      "bytes": 5420
+    },
+    {
+      "path": "chair-tilt-variants/tilt-20.mts",
+      "sha256": "7ff28ee91003576809ed862c86661916113c66e3fb51777e477a9e4dfdf67d8b",
+      "bytes": 5420
+    },
+    {
+      "path": "chair-tilt-variants/tilt-30.mts",
+      "sha256": "3fc603c249ae4642b13c815da88bf03a9f297e15340de042b074b9dce6d75567",
+      "bytes": 5420
+    },
+    {
+      "path": "chair-tilt-variants/tilt-40.mts",
+      "sha256": "e9e25a2f37b7253a6e3feebb7559b80bd126a5e8f0624522c0301765466f7e54",
+      "bytes": 5420
+    },
+    {
+      "path": "fit-chair-tilt.mts",
+      "sha256": "a5e41b311595a57fcdc4e9ef98cd5ec2af28833b936df781cf76302f965f3757",
+      "bytes": 826
+    },
+    {
+      "path": "fit-remote-clearance.mts",
+      "sha256": "d5b7f2fad5767a636365ea833304c41b31c8526298b705a523d0ad00a8e1eb05",
+      "bytes": 409
+    },
+    {
+      "path": "fit-remote-contact.mts",
+      "sha256": "5beac02e55650596735191809f7f42e6351b733a1117f49f872b6ab0776a727b",
+      "bytes": 1985
+    },
+    {
+      "path": "fit-remote-middle.mts",
+      "sha256": "20307e421b749fa4a683d20230f509e05d9bb5a76fc6c4eaffba91578ea8bc47",
+      "bytes": 2208
+    },
+    {
+      "path": "fit-remote-pinch.mts",
+      "sha256": "590885fd8037761cea151e01e9abcbffd4279f62bf939f260b7558b2260db0f0",
+      "bytes": 1981
+    },
+    {
+      "path": "fit-remote-rolled.mts",
+      "sha256": "8f286187432793ffc967c3f2c609f5075bbc1aeb190eec5fdd12102fab6a8b7c",
+      "bytes": 2014
+    },
+    {
+      "path": "fit-remote.mts",
+      "sha256": "73ecf5ce3d0ddc314b9b24dfcb590510e6c325a5c2c3bb11b910f14397bb308b",
+      "bytes": 1790
+    },
+    {
+      "path": "inspect-held.mts",
+      "sha256": "d7724f8057e32747b3697d45ae6f66cbd0ebe1a9484ab22d7b3b1fc4f062567a",
+      "bytes": 1169
+    },
+    {
+      "path": "inspect-neo-path.mts",
+      "sha256": "99250c64dc373a4ca5f24c83d9c0a56503b0705030be5ab8c148f9049a4ae91a",
+      "bytes": 459
+    },
+    {
+      "path": "inspect-reach.mts",
+      "sha256": "edf5b76ba1282bb0a677dd6565fcb27e99660ac62a2966e34461b93bafa361ff",
+      "bytes": 1449
+    },
+    {
+      "path": "inspect-remote.mts",
+      "sha256": "201c0f9a3ddd9de8d12e0026a85e8725f7cc1ba12931a734d94b69d471d38a84",
+      "bytes": 1094
+    },
+    {
+      "path": "probe-lesson.mts",
+      "sha256": "fb05dea749e01e6e486da5882743354e7348a6a5d5d0c650fe4bddb9346755b8",
+      "bytes": 4163
+    },
+    {
+      "path": "probe-stance.mts",
+      "sha256": "f55f53965b577484746ab26bf597c899153499697ac93e02da7e4285ebda1a41",
+      "bytes": 1192
+    },
+    {
+      "path": "rejected-box-remote-grip.ts",
+      "sha256": "ed705616fd928f964a41022b037253a0b711f04ff5194993b927af559559d1b2",
+      "bytes": 2634
+    },
+    {
+      "path": "rejected-cylindrical-remote-grip.ts",
+      "sha256": "c076dc7031338ce1e4ea3f1d332f54c57982ef8e9134dcd85bfd6f4fddc1d444",
+      "bytes": 947
+    },
+    {
+      "path": "rejected-dynamic-palm-selector.mts",
+      "sha256": "b10f1a7eaf18265b289cf1a0d1d6483cfe612ea48dc99be4c5f8837e8609a996",
+      "bytes": 5044
+    },
+    {
+      "path": "rejected-flat-chair-hand.ts",
+      "sha256": "b53d2e37e65d5dc55f813458289135bf52ca28d8d1e303fe210fa07ffef87428",
+      "bytes": 4029
+    },
+    {
+      "path": "rejected-interpolated-arm-staging.ts",
+      "sha256": "c577ac414e4aa07b1f36f43f7d74398aa38d2a9db570a84d01bcbbee4ae094e4",
+      "bytes": 4447
+    },
+    {
+      "path": "rejected-mixed-grip-fit.mts",
+      "sha256": "7af48c91495f59e236e60b468fbd075051f6361e94d49c52c5531ad7d46e189d",
+      "bytes": 1662
+    },
+    {
+      "path": "rejected-per-frame-lesson-deformation.ts",
+      "sha256": "d793ec260c65254e486604a0d594115c5711ae234e88d2ba3f201e64cc069266",
+      "bytes": 28674
+    },
+    {
+      "path": "rejected-remote-console-radius.ts",
+      "sha256": "1d520f4d3c644e177e6c42194dbd8b85c9b2a4a8ac67fb46edf5a9f40b210684",
+      "bytes": 11180
+    },
+    {
+      "path": "rejected-virtual-chair-hand.ts",
+      "sha256": "452a88ee19946cd84951301962a079cd9600ea532ff05ef58a13d31e9506b3d2",
+      "bytes": 4625
+    },
+    {
+      "path": "remote-clean-fit-sweep.jsonl",
+      "sha256": "aed298377ca0a24f29e3377f459fd2c0d7f8586b3c04cf747038714894040ebc",
+      "bytes": 345
+    },
+    {
+      "path": "remote-clearance-sweep.jsonl",
+      "sha256": "60d81a82897b884e142e8522e1625ed4a762cce9d71f775e72271c76dfa508c9",
+      "bytes": 3658
+    },
+    {
+      "path": "remote-contact-fit-sweep.jsonl",
+      "sha256": "440366e78678995651e8cf13810793e38984315bf7316c215f52d5b27698ec22",
+      "bytes": 1165
+    },
+    {
+      "path": "remote-fit-sweep.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "remote-middle-fit-sweep.jsonl",
+      "sha256": "c193f327be2fafab31ee4f53b240b111c389d73c1cd0afbfd0a1074cc4c17ecf",
+      "bytes": 1906
+    },
+    {
+      "path": "remote-natural-fit-sweep.jsonl",
+      "sha256": "42efcda7216513f4d443bdc2af4a5092ad20e17aa18a8110f95af45472ddeeda",
+      "bytes": 1591
+    },
+    {
+      "path": "remote-pinch-fit-sweep.jsonl",
+      "sha256": "8676beaab94ab7bc031b71b2ca9c0d5de346f751504a48d8bc78cbe852a3160b",
+      "bytes": 1126
+    },
+    {
+      "path": "remote-rolled-fit-sweep.jsonl",
+      "sha256": "eec2c5b3c5959d3a42b188226801c26696d8ff36fc94f697aaab0ebb39d45fa1",
+      "bytes": 2235
+    },
+    {
+      "path": "stance-fit.jsonl",
+      "sha256": "8cbe1e537d3c33900ef1633cf4279633d43b1194ca08b670118910c71bebe3e8",
+      "bytes": 2762
+    }
+  ]
+}

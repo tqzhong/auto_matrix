@@ -1,0 +1,18 @@
+{
+  "constants/construct.d.ts": {
+    "before": "34d6af704c3d6b658dc146a72deb8fe5c080db5e6325ff27d299bf399d3698bb",
+    "after": "390ec9a696db67136052ddad8b97162ed4aba8dd1d3653dd4c3f2de1950efbd4"
+  },
+  "constants/awakening.d.ts": {
+    "before": "0f3ebfc93b9d6ba81ac728fc21a5c0c480b5e3569a94711c4652103e3a5c7689",
+    "after": "43b727c4d860966dacc945b0f5fe1302e4a946746d17ae121e6e7094cc36d576"
+  },
+  "constants/construct.js": {
+    "before": "c38ee4664dab89e0789a26df7dd9640382f2eba9a42eb1ee3b52be345a2dcdad",
+    "after": "2c7d135f131a1252596796d09edad041bcd71a8105630350a8839e4a7749aee3"
+  },
+  "constants/construct.js.map": {
+    "before": "4fa3c72bf6f6413ae94ebb9274499c2f224e5e85fbac74653cd3902fe36bfdc3",
+    "after": "66c2748a909d99c51bc9bc4699abcd89c36f27ad194f4cd76b6f4bfcd1ea1971"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "origin": "output/characters/construct-self-image-2026-10-23/qa-data",
+  "version": 1,
+  "tick": 7399,
+  "scene": "m1_construct",
+  "step": 0,
+  "constructArrival": {
+    "phase": "approach",
+    "elapsed": 11
+  },
+  "naturalCheckpoint": true,
+  "manualWorldEdits": false,
+  "worldSha256": "edb154f9880b38c654d7e1504443c1dd3e57fc299089d3230390c3af996bd647"
+}

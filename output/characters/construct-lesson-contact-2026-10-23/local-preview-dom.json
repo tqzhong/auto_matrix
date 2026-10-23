@@ -1,0 +1,6 @@
+{
+  "scripts": [
+    "http://localhost:5173/assets/index-BGtVPsBS.js"
+  ],
+  "observation": "Existing tab 39 returned the normal paused landing screen after the reload."
+}

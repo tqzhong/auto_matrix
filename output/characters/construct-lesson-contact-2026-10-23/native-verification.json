@@ -1,0 +1,111 @@
+{
+  "baselineRevision": "f92a2eb0df1b7bd42841fc691b62fb7139021f9a",
+  "naturalSeed": {
+    "origin": "output/characters/construct-self-image-2026-10-23/qa-data",
+    "version": 1,
+    "tick": 7399,
+    "scene": "m1_construct",
+    "step": 0,
+    "constructArrival": {
+      "phase": "approach",
+      "elapsed": 11
+    },
+    "naturalCheckpoint": true,
+    "manualWorldEdits": false,
+    "worldSha256": "edb154f9880b38c654d7e1504443c1dd3e57fc299089d3230390c3af996bd647"
+  },
+  "manualWorldEdits": false,
+  "productionBundle": "index-BGtVPsBS.js",
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "walkingToChairChecked": true,
+  "walk": {
+    "sampledHorizontalPathLowerBound": 7.3875209474958154,
+    "method": "Read-only API positions around two native W segments after a real horizontal mouse turn; excludes initial earlier W segment and scripted stance snap.",
+    "readyPosition": {
+      "x": 5701.201875596981,
+      "y": 1,
+      "z": 4412.207548282658
+    }
+  },
+  "heldLesson": {
+    "tick": 7415,
+    "kind": "construct",
+    "elapsed": 3.456
+  },
+  "realBackendRestart": {
+    "oldPid": 84689,
+    "newPid": 2793,
+    "reason": "lesson-cold-checkpoint",
+    "byteIdenticalWorld": true,
+    "completeWorldEqual": true,
+    "changedPaths": [],
+    "memoryFiles": 7,
+    "memoryBytesUnchanged": true,
+    "tick": 7415,
+    "scene": "m1_construct",
+    "step": 0,
+    "constructArrival": null,
+    "awakening": {
+      "kind": "construct",
+      "elapsed": 3.456,
+      "started": true,
+      "approach": {
+        "x": 5.201875596981154,
+        "z": -3.7924517173423737
+      }
+    },
+    "cloudDisabled": true
+  },
+  "earlierSharedCodeUpdateRestart": {
+    "oldPid": 74545,
+    "newPid": 84689,
+    "reason": "intentional runtime update for the shared chair stance",
+    "completeWorldEqual": false,
+    "byteIdenticalWorld": false,
+    "changedPaths": [
+      "sandbox.neoLife.journey.lastText"
+    ],
+    "change": "only the expected cue text changed from outside the chair to behind it; all remaining saved world fields match",
+    "allOtherWorldFieldsEqual": true,
+    "memoryFiles": 7,
+    "memoryBytesEqualToRealSeedBeforeWalking": true,
+    "tick": 7402,
+    "running": false,
+    "cloudDisabled": true,
+    "notClaimedAsSameVersionColdRestore": true
+  },
+  "leatherAndTelevisionLessonChecked": true,
+  "reflectionChoiceChecked": true,
+  "reflection": "care",
+  "selectedText": "即使城市是模拟，里面的人也会痛苦。",
+  "desertArrivalChecked": true,
+  "finalScene": "m1_desert",
+  "finalStep": 0,
+  "finalTick": 7477,
+  "paused": true,
+  "neoHealth": 100,
+  "consoleCounts": {
+    "native-development-console.json": 0,
+    "native-production-console.json": 0
+  },
+  "evidence": [
+    "native-chair-approach.png",
+    "native-held-leather.png",
+    "native-held-first-person-look.png",
+    "native-production-cold-held.png",
+    "native-production-cold-first-person.png",
+    "native-production-cold-look.png",
+    "native-production-reflection-choice.png",
+    "native-production-desert-arrival.png"
+  ],
+  "newVideoRecorded": false,
+  "browserFpsMeasured": false,
+  "movieQualityAccepted": false,
+  "limitations": [
+    "Native evidence follows one real Construct approach, held contact, cold restart and philosophy choice into the desert; not a full trilogy or complete failure-branch run.",
+    "The first walk moved diagonally along the genuinely saved heading; mouse turning then reached the new behind-chair cue normally.",
+    "Morpheus remote geometry is checked on actual skin and casing/button triangles; no claim of full-body clearance at every frame.",
+    "First-person preference is not saved across pages; V and mouse were exercised again after cold load."
+  ]
+}
