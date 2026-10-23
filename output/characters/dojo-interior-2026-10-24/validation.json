@@ -1,0 +1,40 @@
+{
+  "baselineRelated": {
+    "tests": 34,
+    "pass": 34,
+    "fail": 0
+  },
+  "redNewTests": {
+    "tests": 4,
+    "pass": 0,
+    "fail": 4
+  },
+  "finalRelated": {
+    "tests": 38,
+    "pass": 38,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "clientBuildVerified": true,
+  "bundle": "index-BwCaTXCa.js",
+  "bundleSha256": "99639837354ebf06136786a54e1d17d6047305e2ee87014ecc507e8eac70ec77",
+  "css": "index-B0JUdutM.css",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "inputsUnchanged": true,
+  "inputCount": 1209,
+  "noNewRuntimeDependencies": true,
+  "characterAssetsChanged": false,
+  "geometryOrTextureChanges": false,
+  "nativeDojoSuccess": true,
+  "nativeColdReloadMovement": true,
+  "realRestartFullWorldEqual": true,
+  "realRestartMemoriesEqual": true,
+  "browserWarningsAndErrors": [],
+  "scope": "Dojo full-vertex sole coordinate conversion only",
+  "filmQualityGroupsCompleted": 0,
+  "stable60fpsAccepted": false,
+  "allRequiredGatesPassed": true,
+  "localPublicationVerified": true,
+  "localNativeReloadVerified": true,
+  "mainSavePreserved": true
+}

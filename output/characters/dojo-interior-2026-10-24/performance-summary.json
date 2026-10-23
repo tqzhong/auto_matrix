@@ -1,0 +1,121 @@
+{
+  "samples": [
+    {
+      "sample": "baseline-1-profile",
+      "fps": 21.96003274013372,
+      "frameMs": {
+        "mean": 45.53727272785071,
+        "p95": 51.60000038146973
+      },
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "actorsMs": 25.647734163751053,
+      "effectsMs": 12.061027155181792,
+      "renderSubmissionMs": 6.462537785671269,
+      "calls": 1602,
+      "triangles": 1646081
+    },
+    {
+      "sample": "baseline-2-profile",
+      "fps": 21.588629987383104,
+      "frameMs": {
+        "mean": 46.32067901411174,
+        "p95": 53.30000019073486
+      },
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "actorsMs": 26.229846141521747,
+      "effectsMs": 12.160307725759653,
+      "renderSubmissionMs": 6.473538454495944,
+      "calls": 1602,
+      "triangles": 1646081
+    },
+    {
+      "sample": "optimized-1-profile",
+      "fps": 44.779401476459626,
+      "frameMs": {
+        "mean": 22.331696428003767,
+        "p95": 27.200000762939453
+      },
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "actorsMs": 7.522288275686097,
+      "effectsMs": 2.8368499126689395,
+      "renderSubmissionMs": 10.536106992440981,
+      "calls": 1602,
+      "triangles": 1646081
+    },
+    {
+      "sample": "optimized-2-profile",
+      "fps": 53.18404478656403,
+      "frameMs": {
+        "mean": 18.80263157894737,
+        "p95": 23.300000190734863
+      },
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "actorsMs": 6.414518148639473,
+      "effectsMs": 2.4780976327697983,
+      "renderSubmissionMs": 8.731414282873963,
+      "calls": 1602,
+      "triangles": 1646081
+    },
+    {
+      "sample": "control-old-profile",
+      "fps": 22.367045885160376,
+      "frameMs": {
+        "mean": 44.70863095351628,
+        "p95": 50.19999980926514
+      },
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "actorsMs": 25.27121658494989,
+      "effectsMs": 11.800296687230865,
+      "renderSubmissionMs": 6.302670645784554,
+      "calls": 1601.952522255193,
+      "triangles": 1646074.9228486647
+    }
+  ],
+  "sameCamera": true,
+  "sameViewportAndPixelRatio": true,
+  "sameDrawAndTriangleCounts": false,
+  "baselineMeanFps": 21.971902870892404,
+  "optimizedMeanFps": 48.98172313151183,
+  "relativeIncrease": 1.2292890797547207,
+  "conditions": {
+    "paused": true,
+    "durationSeconds": 15,
+    "warmupSeconds": 3,
+    "recording": false,
+    "gpuQueries": false,
+    "concurrentBuildOrTests": false,
+    "hardware": "Apple M3, 24 GB",
+    "inferredDrawingBufferFromViewport": [
+      799,
+      450
+    ]
+  },
+  "limits": [
+    "Static paused dojo only, not a continuous combat or trilogy benchmark",
+    "No independent GPU timing",
+    "All comparison samples use the existing smooth setting; not 1080p",
+    "P95 remains above 16.7 ms; stable 60 fps is not achieved",
+    "Repeated old-code control intermittently differs by 2 draw calls / 256 triangles; exact frame-by-frame image identity is not claimed."
+  ],
+  "primaryBeforeAfterDrawAndTriangleCountsEqual": true
+}

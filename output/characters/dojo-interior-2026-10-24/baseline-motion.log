@@ -1,0 +1,214 @@
+TAP version 13
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 1 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 3200.896334
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 2 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 5085.483334
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 3 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 13184.195375
+  type: 'test'
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 4 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 18077.582375
+  type: 'test'
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 5 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 6933.877375
+  type: 'test'
+  ...
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+ok 6 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 2708.272125
+  type: 'test'
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+ok 7 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 4683.743375
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 8 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 36.416083
+  type: 'test'
+  ...
+# Subtest: the first fall and real-body return reconstruct their saved poses after combat and while paused
+ok 9 - the first fall and real-body return reconstruct their saved poses after combat and while paused
+  ---
+  duration_ms: 9.598833
+  type: 'test'
+  ...
+# Subtest: Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+ok 10 - Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+  ---
+  duration_ms: 1.231709
+  type: 'test'
+  ...
+# Subtest: the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+ok 11 - the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+  ---
+  duration_ms: 4.037
+  type: 'test'
+  ...
+# Subtest: dojo sparring keeps a readable guard between strikes and releases it after the lesson
+ok 12 - dojo sparring keeps a readable guard between strikes and releases it after the lesson
+  ---
+  duration_ms: 1.186084
+  type: 'test'
+  ...
+# Subtest: a paused console encounter rebuilds seated crew and standing Neo from saved time
+ok 13 - a paused console encounter rebuilds seated crew and standing Neo from saved time
+  ---
+  duration_ms: 2.957041
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 14 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 10.525333
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 15 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 28.316459
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 16 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 5.706375
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 17 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 1.207542
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 18 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 3.077167
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 19 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 1.538292
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 20 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 1.075458
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 21 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 8.111416
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 22 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 2.271209
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 23 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 1.210125
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 24 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 0.764458
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 25 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 1.035459
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 26 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 1.790541
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 27 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 2.404625
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 28 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.955541
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 29 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 1.034875
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 30 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 0.700167
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 31 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 1.18625
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 32 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.276584
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 33 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 1.308541
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 34 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 1.149917
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 55350.627792

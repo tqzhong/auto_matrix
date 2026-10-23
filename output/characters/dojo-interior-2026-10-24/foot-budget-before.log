@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: neo: full sole contact does not recalculate the world hierarchy for every vertex
+not ok 1 - neo: full sole contact does not recalculate the world hierarchy for every vertex
+  ---
+  duration_ms: 4078.206959
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:1:431'
+  failureType: 'testCodeFailure'
+  error: 'unchanged ancestors updated 18034 times for 8988 sole vertices'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:21:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: neo: every bare-foot vertex keeps its ground support through movement and combat
+not ok 2 - neo: every bare-foot vertex keeps its ground support through movement and combat
+  ---
+  duration_ms: 3229.581166
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:1:1323'
+  failureType: 'testCodeFailure'
+  error: '0/0/0/10/10: foot floats or enters the floor by -0.9998328551468157'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: full sole contact does not recalculate the world hierarchy for every vertex
+not ok 3 - morpheus: full sole contact does not recalculate the world hierarchy for every vertex
+  ---
+  duration_ms: 6362.580417
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:1:431'
+  failureType: 'testCodeFailure'
+  error: 'unchanged ancestors updated 17930 times for 8936 sole vertices'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:21:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: every bare-foot vertex keeps its ground support through movement and combat
+not ok 4 - morpheus: every bare-foot vertex keeps its ground support through movement and combat
+  ---
+  duration_ms: 5673.290584
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:1:1323'
+  failureType: 'testCodeFailure'
+  error: '0/0/0/10/10: foot floats or enters the floor by -0.9998854061464293'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-interior-2026-10-24/candidate-release/tests/dojo-foot-budget.test.mts:46:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20890.322042

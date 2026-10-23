@@ -1,0 +1,51 @@
+{
+  "nativeDojoSuccess": true,
+  "result": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 3,
+    "resets": 1,
+    "complete": true
+  },
+  "nativeFailedCounterRetried": true,
+  "nativeMovementAfterReloadVerified": true,
+  "nativeColdReloadVerified": true,
+  "productionBundle": "index-BwCaTXCa.js",
+  "paused": true,
+  "movementDistance": 5.82424372984718,
+  "before": {
+    "x": 6336,
+    "y": 1,
+    "z": 4423.602174607567
+  },
+  "after": {
+    "x": 6341.7869316031765,
+    "y": 1,
+    "z": 4422.943966703618
+  },
+  "movementSamples": 421,
+  "heightRange": [
+    1,
+    2.657539999999999
+  ],
+  "rotationRange": [
+    0.5669880248283732,
+    3.141592653589793
+  ],
+  "firstPersonScreenshot": "cold-first-person.png",
+  "thirdPersonScreenshot": "cold-third-person.png",
+  "actualNativeInputs": [
+    "F before evade (blocked)",
+    "X at visible windup",
+    "W approach",
+    "F combo (first counter expired, retry completed)",
+    "V",
+    "W",
+    "D",
+    "Shift+W",
+    "Space"
+  ],
+  "tick": 10387,
+  "scene": "m1_dojo",
+  "step": 1
+}

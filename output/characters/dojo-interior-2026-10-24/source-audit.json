@@ -1,0 +1,17 @@
+{
+  "baseline": "489d0f3a057f37eabbbd23747ee4fe80b4b14711",
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "fae9ca1a7a10713d37fa85b080de3fdd0164b4df21ee1c617e09a30ec23d373f",
+      "after": "5beb3f163089e8c47b437438dd4d663f0605ee718671a3bf118e9cdad3d9358c"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/dojo-foot-budget.test.mts",
+      "after": "d72d6029defd717bb4a3d817cca0323044a0f21c38ba991e131716083790544c"
+    }
+  ],
+  "packageFiles": 721
+}
