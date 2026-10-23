@@ -1,0 +1,10 @@
+{"id":"neo","track":"combo-0","maxAngle":{"amount":0.48082053094887095,"name":"shoulder_R","at":0.425},"maxDistance":{"amount":0.2882211774977364,"name":"elbow_R","at":0.425}}
+{"id":"neo","track":"combo-1","maxAngle":{"amount":0.4810378793214957,"name":"shoulder_L","at":0.48333333333333334},"maxDistance":{"amount":0.28800948441833574,"name":"elbow_L","at":0.48333333333333334}}
+{"id":"neo","track":"combo-2","maxAngle":{"amount":0.16440328865191778,"name":"knee_R","at":0.06666666666666667},"maxDistance":{"amount":0.316834539522352,"name":"ankle_R","at":0.2}}
+{"id":"neo","track":"dodge","maxAngle":{"amount":0.3626416800158365,"name":"elbow_R","at":0.075},"maxDistance":{"amount":0.31707100696579715,"name":"wrist_L","at":0.058333333333333334}}
+{"id":"neo","track":"walk","maxAngle":{"amount":0.4199004478600159,"name":"shoulder_R","at":2.2},"maxDistance":{"amount":0.25967882453187313,"name":"elbow_R","at":2.2}}
+{"id":"morpheus","track":"combo-0","maxAngle":{"amount":0.4939147501363565,"name":"shoulder_R","at":0.425},"maxDistance":{"amount":0.30046769505227106,"name":"elbow_R","at":0.425}}
+{"id":"morpheus","track":"combo-1","maxAngle":{"amount":0.494139757811014,"name":"shoulder_L","at":0.48333333333333334},"maxDistance":{"amount":0.30025621281036174,"name":"elbow_L","at":0.48333333333333334}}
+{"id":"morpheus","track":"combo-2","maxAngle":{"amount":0.16354390671003968,"name":"knee_R","at":0.06666666666666667},"maxDistance":{"amount":0.33411154676309884,"name":"ankle_R","at":0.2}}
+{"id":"morpheus","track":"dodge","maxAngle":{"amount":0.36723228551873055,"name":"elbow_R","at":0.075},"maxDistance":{"amount":0.32962094966984373,"name":"wrist_L","at":0.058333333333333334}}
+{"id":"morpheus","track":"walk","maxAngle":{"amount":0.4299158567871486,"name":"shoulder_R","at":2.2},"maxDistance":{"amount":0.2697360278482056,"name":"elbow_R","at":2.2}}

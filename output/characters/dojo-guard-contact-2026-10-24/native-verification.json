@@ -1,0 +1,57 @@
+{
+  "productionBundle": "index-GEUD6zLK.js",
+  "realSaveSeed": "output/characters/skinned-bounds-budget-2026-10-24/qa-play-data",
+  "nativeDojoSuccess": true,
+  "inputs": [
+    "continue saved Neo",
+    "resume",
+    "wait for visible dodge cue",
+    "X",
+    "W held 1150ms",
+    "F held 460ms",
+    "F held 510ms",
+    "F held 400ms",
+    "HUD confirms 2/3",
+    "F held 500ms",
+    "pause"
+  ],
+  "result": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 3,
+    "complete": true
+  },
+  "restartVerified": true,
+  "restartDifference": "completed player idle action cleared on reconnect; other world fields and all 7 memories unchanged",
+  "nativeColdReloadVerified": true,
+  "nativeFirstAndThirdPersonSwitchVerified": true,
+  "nativeMovementAfterReloadVerified": true,
+  "postReloadInputs": [
+    "V",
+    "resume",
+    "W 300ms",
+    "D 300ms",
+    "V",
+    "pause"
+  ],
+  "final": {
+    "scene": "m1_dojo",
+    "step": 1,
+    "tick": 10274,
+    "running": false,
+    "position": {
+      "x": 6337.944857015509,
+      "y": 1,
+      "z": 4420.967330857157
+    },
+    "rotation": 1.706267189362827,
+    "health": 13.30000000000002
+  },
+  "paused": true,
+  "browserWarningErrorCount": 0,
+  "newBrowserFpsMeasurement": false,
+  "fullFilmChoreographyVerified": false,
+  "independentModelInspectorIsGameplay": false,
+  "viewportOverrideReset": true,
+  "noFabricatedQuestOrActorState": true
+}

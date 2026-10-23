@@ -45,6 +45,7 @@ import { MouseAppearance } from './MouseAppearance.js';
 import { crewMealAge } from '@auto_matrix/shared';
 import { SkinContinuity } from './SkinContinuity.js';
 import { patientNeckView } from './PatientNeckView.js';
+import { poseDojoStance } from './DojoStance.js';
 
 export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -1172,8 +1173,9 @@ export class HeroModels {
         finger.rotation.set(f === 1 ? grip * (s === 1 ? .8 : .65) : 0, 0,
           inward * grip * (f === 1 ? .2 : s === 1 ? .85 : 1.1));
       }
-      this.gripHand(rig, side, pose.arms[i].grip);
+      this.gripHand(rig, side, input.dojoSparring && !input.armed ? 1 : pose.arms[i].grip);
     }
+    poseDojoStance(rig, input, motion);
     if (input.recovery !== undefined) {
       const t = input.recovery;
       const body = recoveryBodyPose(t); const lie = 1 - body.sit, seated = body.sit * (1 - body.rise);

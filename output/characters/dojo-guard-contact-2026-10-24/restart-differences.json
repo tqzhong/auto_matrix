@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/agents/neo/currentAction",
+    "before": {
+      "type": "idle",
+      "parameters": {
+        "player": true,
+        "resolved": true,
+        "crouching": false
+      },
+      "startedAt": 10245,
+      "duration": 1,
+      "progress": 0
+    },
+    "after": null
+  }
+]

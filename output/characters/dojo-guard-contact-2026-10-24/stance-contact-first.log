@@ -1,0 +1,72 @@
+TAP version 13
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 1 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 2590.712458
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 2 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 2424.273917
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+not ok 3 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 1633.127958
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:1:2560'
+  failureType: 'testCodeFailure'
+  error: |-
+    neo 0/10: exposed hand enters the jacket: {"count":196,"examples":[{"first":51116,"second":14045,"line":0.005608685625316325},{"first":51015,"second":14044,"line":0.005212722137613368},{"first":51008,"second":14044,"line":0.0050665655335763865},{"first":46677,"second":14055,"line":0.004878782647151938}]}
+
+    196 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 196
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:69:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+not ok 4 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 2230.3445
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:1:2560'
+  failureType: 'testCodeFailure'
+  error: |-
+    morpheus 0/10: exposed hand enters the jacket: {"count":158,"examples":[{"first":50796,"second":13278,"line":0.005415084564913606},{"first":50792,"second":13265,"line":0.004877859921795417},{"first":46475,"second":13160,"line":0.004626303085024079},{"first":51045,"second":13763,"line":0.004489347757501473}]}
+
+    158 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 158
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:69:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 5 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 2386.349416
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11994.610084

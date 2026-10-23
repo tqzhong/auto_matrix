@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+not ok 1 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 1916.137625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:1:6592'
+  failureType: 'testCodeFailure'
+  error: 'attack 0/0.06: shoulder_R snaps as the stance weight crosses zero'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:113:16)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:112:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+not ok 2 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 2817.347584
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:1:6592'
+  failureType: 'testCodeFailure'
+  error: 'attack 0/0.06: shoulder_R snaps as the stance weight crosses zero'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:113:16)
+    Array.forEach (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:112:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5323.614917

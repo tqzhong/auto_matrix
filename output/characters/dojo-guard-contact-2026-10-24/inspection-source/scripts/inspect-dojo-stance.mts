@@ -1,0 +1,4 @@
+import * as THREE from 'three';
+import { actor } from '../tests/helpers/fighting-hand-fixture.mjs';
+import { advanceMotion,newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+for(const id of ['neo','morpheus'] as const){const h=await actor(id);const input={speed:0,grounded:true,verticalVelocity:0,turn:0,dojoOutfit:id,dojoSparring:true};const state=newMotion();h.models.animate(h.rig,advanceMotion(state,input,0),state,input,0);h.rig.root.updateMatrixWorld(true);console.log(id);for(const name of ['pelvis','chest','head','hip_R','knee_R','ankle_R','hip_L','knee_L','ankle_L','shoulder_R','elbow_R','wrist_R','finger3-1_R']){const b=h.rig.bones.get(name)!;console.log(name,'rest',h.rig.rest.get(name)?.toArray(),'posed',b.getWorldPosition(new THREE.Vector3()).toArray(),'quat',b.getWorldQuaternion(new THREE.Quaternion()).toArray());}h.models.dispose();}

@@ -1,0 +1,310 @@
+TAP version 13
+# Subtest: ordinary jump stays below half a character height with consistent airtime across frame rates
+ok 1 - ordinary jump stays below half a character height with consistent airtime across frame rates
+  ---
+  duration_ms: 19.367417
+  type: 'test'
+  ...
+# Subtest: melee cannot hit behind the player, outside reach, or through a barricade
+ok 2 - melee cannot hit behind the player, outside reach, or through a barricade
+  ---
+  duration_ms: 28.164917
+  type: 'test'
+  ...
+# Subtest: damage occurs on contact, once per swing; a target can escape during the windup
+ok 3 - damage occurs on contact, once per swing; a target can escape during the windup
+  ---
+  duration_ms: 109.577291
+  type: 'test'
+  ...
+# Subtest: enemy windup warns before damage and stepping out of reach avoids the strike
+ok 4 - enemy windup warns before damage and stepping out of reach avoids the strike
+  ---
+  duration_ms: 3.201792
+  type: 'test'
+  ...
+# Subtest: a paused or released character cannot complete a queued attack
+ok 5 - a paused or released character cannot complete a queued attack
+  ---
+  duration_ms: 42.631
+  type: 'test'
+  ...
+# Subtest: three connected attacks use distinct damage and the finisher pushes the target farther
+ok 6 - three connected attacks use distinct damage and the finisher pushes the target farther
+  ---
+  duration_ms: 61.150125
+  type: 'test'
+  ...
+# Subtest: Neo force push affects nearby enemies, respects walls, and has a cooldown that survives switching
+ok 7 - Neo force push affects nearby enemies, respects walls, and has a cooldown that survives switching
+  ---
+  duration_ms: 197.533208
+  type: 'test'
+  ...
+# Subtest: Trinity dash strikes at the end of the lunge and cannot cross barricades
+ok 8 - Trinity dash strikes at the end of the lunge and cannot cross barricades
+  ---
+  duration_ms: 237.957458
+  type: 'test'
+  ...
+# Subtest: Morpheus counters a telegraphed blow and Smith drains health through infection
+ok 9 - Morpheus counters a telegraphed blow and Smith drains health through infection
+  ---
+  duration_ms: 5.955875
+  type: 'test'
+  ...
+# Subtest: bullet time expires in game seconds, freezes on pause, and can overlap a second skill
+ok 10 - bullet time expires in game seconds, freezes on pause, and can overlap a second skill
+  ---
+  duration_ms: 60.477666
+  type: 'test'
+  ...
+# Subtest: dodge cancels a windup, briefly avoids damage and cannot be spammed or started in midair
+ok 11 - dodge cancels a windup, briefly avoids damage and cannot be spammed or started in midair
+  ---
+  duration_ms: 19.516917
+  type: 'test'
+  ...
+# Subtest: the dojo counter HUD asks the player to close the actual gap after a backstep
+ok 12 - the dojo counter HUD asks the player to close the actual gap after a backstep
+  ---
+  duration_ms: 19.917375
+  type: 'test'
+  ...
+# Subtest: neo: the complete fighting hands stay closed surfaces throughout a full grip
+ok 13 - neo: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 30813.345708
+  type: 'test'
+  ...
+# Subtest: trinity: the complete fighting hands stay closed surfaces throughout a full grip
+ok 14 - trinity: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 31074.268916
+  type: 'test'
+  ...
+# Subtest: smith: the complete fighting hands stay closed surfaces throughout a full grip
+ok 15 - smith: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 21791.757541
+  type: 'test'
+  ...
+# Subtest: morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+ok 16 - morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 22491.546458
+  type: 'test'
+  ...
+# Subtest: a saved combat hand restores the same skin after unrelated movement and a release
+ok 17 - a saved combat hand restores the same skin after unrelated movement and a release
+  ---
+  duration_ms: 2596.345333
+  type: 'test'
+  ...
+# Subtest: a phone gesture restores the original right-hand binding after a fighting grip
+ok 18 - a phone gesture restores the original right-hand binding after a fighting grip
+  ---
+  duration_ms: 1830.632583
+  type: 'test'
+  ...
+# Subtest: partially posed prop fingers match the original gesture without combat posing
+ok 19 - partially posed prop fingers match the original gesture without combat posing
+  ---
+  duration_ms: 2549.489083
+  type: 'test'
+  ...
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+ok 20 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+  ---
+  duration_ms: 6553.61925
+  type: 'test'
+  ...
+# Subtest: the zero mirror tint from player controls keeps ordinary fighting hands enabled
+ok 21 - the zero mirror tint from player controls keeps ordinary fighting hands enabled
+  ---
+  duration_ms: 1121.649625
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 22 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 43.989083
+  type: 'test'
+  ...
+# Subtest: the first fall and real-body return reconstruct their saved poses after combat and while paused
+ok 23 - the first fall and real-body return reconstruct their saved poses after combat and while paused
+  ---
+  duration_ms: 11.130542
+  type: 'test'
+  ...
+# Subtest: Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+ok 24 - Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+  ---
+  duration_ms: 0.882916
+  type: 'test'
+  ...
+# Subtest: the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+ok 25 - the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+  ---
+  duration_ms: 4.761292
+  type: 'test'
+  ...
+# Subtest: dojo sparring keeps a readable guard between strikes and releases it after the lesson
+ok 26 - dojo sparring keeps a readable guard between strikes and releases it after the lesson
+  ---
+  duration_ms: 0.773708
+  type: 'test'
+  ...
+# Subtest: a paused console encounter rebuilds seated crew and standing Neo from saved time
+ok 27 - a paused console encounter rebuilds seated crew and standing Neo from saved time
+  ---
+  duration_ms: 1.378083
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 28 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 11.016875
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 29 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 15.986083
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 30 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 4.912583
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 31 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 1.034
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 32 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 1.75125
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 33 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 0.49275
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 34 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 0.17
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 35 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 5.070125
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 36 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 2.052
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 37 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 0.701291
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 38 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 0.325959
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 39 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 0.36125
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 40 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 0.417375
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 41 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.315042
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 42 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.307583
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 43 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 0.56775
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 44 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 0.516
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 45 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 0.452834
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 46 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.179333
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 47 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 0.517333
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 48 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.16025
+  type: 'test'
+  ...
+# Subtest: a detached garment keeps its new skeleton bounds and restores the original owner on return
+ok 49 - a detached garment keeps its new skeleton bounds and restores the original owner on return
+  ---
+  duration_ms: 18.574542
+  type: 'test'
+  ...
+# Subtest: construction bounds include garment morph extrema through rotated and blended bones
+ok 50 - construction bounds include garment morph extrema through rotated and blended bones
+  ---
+  duration_ms: 21.770416
+  type: 'test'
+  ...
+1..50
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 122002.06675

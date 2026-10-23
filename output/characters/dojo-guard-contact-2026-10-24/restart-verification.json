@@ -1,0 +1,15 @@
+{
+  "fullResponseExactlyEqual": false,
+  "decodedWorldExactlyEqual": false,
+  "changedTopLevelKeys": [
+    "agents"
+  ],
+  "memoriesEqual": true,
+  "memoryCount": 7,
+  "oldPid": 70440,
+  "newPid": 96455,
+  "scene": "m1_dojo",
+  "step": 1,
+  "tick": 10245,
+  "running": false
+}

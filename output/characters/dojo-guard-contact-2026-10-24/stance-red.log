@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+not ok 1 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 1523.893542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:1:386'
+  failureType: 'testCodeFailure'
+  error: 'the lead foot must step ahead of the rear foot rather than stand with both ankles level'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:17:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+not ok 2 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 2593.868083
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:1:386'
+  failureType: 'testCodeFailure'
+  error: 'the lead foot must step ahead of the rear foot rather than stand with both ankles level'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-guard-contact-2026-10-24/candidate-release/tests/dojo-stance.test.mts:17:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4424.375209

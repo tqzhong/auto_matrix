@@ -1,0 +1,185 @@
+{
+  "scope": "Node CPU only: one full HeroModels.animate call, actual delivered geometry, stationary dojo guard; no renderer, scene, WebGL or browser FPS claim",
+  "warmup": 60,
+  "samplesPerVersion": 10,
+  "framesPerSample": 250,
+  "order": "B/A/A/B repeated five times",
+  "results": [
+    {
+      "id": "neo",
+      "beforeMedianMs": 3.3427418340000044,
+      "afterMedianMs": 3.4757538320000023,
+      "deltaMs": 0.13301199799999797,
+      "samples": [
+        {
+          "version": "before",
+          "msPerAnimation": 3.6347271679999977
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.962296331999998
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.5275116679999994
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.3588701680000015
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.3068431639999982
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.347583163999996
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.260204168000004
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.315806499999999
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.3266135000000068
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.4624568320000035
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.4890508320000007
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.535608668000001
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.5476531680000045
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.8607743319999934
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.678349999999991
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.502263500000001
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.261698332
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.3488671639999956
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.31020150000001
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.293332832
+        }
+      ]
+    },
+    {
+      "id": "morpheus",
+      "beforeMedianMs": 3.1876916679999994,
+      "afterMedianMs": 3.223093249999998,
+      "deltaMs": 0.035401581999998655,
+      "samples": [
+        {
+          "version": "before",
+          "msPerAnimation": 3.9967586680000093
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.578136332000009
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.348498000000007
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.2705458360000046
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.183094836000004
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.219813500000004
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.160492831999989
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.150667000000016
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.178970832000021
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.2129513319999967
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.226372999999992
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.3675908360000175
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.398299832000019
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.506195336000004
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.2667065
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.192288499999995
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.1431808320000125
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.170314332000009
+        },
+        {
+          "version": "after",
+          "msPerAnimation": 3.1605178359999844
+        },
+        {
+          "version": "before",
+          "msPerAnimation": 3.143958168000012
+        }
+      ]
+    }
+  ]
+}

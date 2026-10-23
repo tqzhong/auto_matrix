@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 1 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 2479.121958
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 2 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 2369.69325
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 3 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 6040.436667
+  type: 'test'
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 4 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 6617.208792
+  type: 'test'
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 5 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 2654.552583
+  type: 'test'
+  ...
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+ok 6 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 1419.123083
+  type: 'test'
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+ok 7 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 2100.246916
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24381.29325

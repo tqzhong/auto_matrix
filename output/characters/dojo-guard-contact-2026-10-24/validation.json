@@ -1,0 +1,41 @@
+{
+  "baselineDojoAssets": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "baselineExistingComparison": {
+    "tests": 50,
+    "pass": 50,
+    "fail": 0
+  },
+  "relatedBeforeTransitionFix": {
+    "tests": 55,
+    "pass": 55,
+    "fail": 0
+  },
+  "newStanceFinal": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0
+  },
+  "dojoAssetsFinal": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "bundle": "index-GEUD6zLK.js",
+  "bundleSha256": "d5172770caa9fff37b0902805b66328c1a58fd901dba110e0ce3777413b08c0b",
+  "css": "index-B0JUdutM.css",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "inputsUnchanged": true,
+  "allRequiredGatesPassed": true,
+  "wholeRepositorySuiteRerun": false,
+  "scope": "Final candidate: 57 related tests plus 2 delivered dojo asset tests; no whole-repository pass claim.",
+  "finalRelated": {
+    "tests": 57,
+    "pass": 57,
+    "fail": 0
+  }
+}

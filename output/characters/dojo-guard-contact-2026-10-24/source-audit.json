@@ -1,0 +1,23 @@
+{
+  "baseline": "b2903eb4430c53cfb7ff234acd2db5c4f123c4b7",
+  "packageFiles": 720,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "88723ee421e65c49a37e30600b5feffb5a715ec40f1e559293b599039f7b059d",
+      "after": "ce3a664ee06aa306db4bd359f736a3b5e65288b0dcaaedd9e5412c89bcecf672"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/DojoStance.ts",
+      "after": "ea4995e22ccda56a880b176aec661b6f05a66598ead1815ebf8d82464f4f6826"
+    },
+    {
+      "path": "tests/dojo-stance.test.mts",
+      "after": "0797fce62e9dcebf387176a5e12bd062e610a41417ecf6d989dd885460209bbd"
+    }
+  ],
+  "inputs": 1205,
+  "unchanged": 1202
+}
