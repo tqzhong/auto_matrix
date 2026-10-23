@@ -1,0 +1,54 @@
+{
+  "baseline": "5fd29ddea6d3570853711c4e3ec552a1a6ae3c04",
+  "inputFiles": 1202,
+  "packageFiles": 717,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/Engine.ts",
+      "before": "bbdc91fc83631f7485493e1442c6212767aff2cb9e585b9c5bac8de45c48ebb2",
+      "after": "210614fc6d6d613753f5244d249059c4455e3081a2b5ee63fd4cc3432499be86"
+    },
+    {
+      "path": "packages/client/src/engine/PostProcessing.ts",
+      "before": "f1e6deb3683884d4ef6a7e4b93b2abf8642c6a855854c63052c4cf3c275140d4",
+      "after": "cd7dbd6e01cf7197d546e5d1809e6c2fec47c9d1f65e2709853e94f503c63a46"
+    },
+    {
+      "path": "packages/client/src/main.ts",
+      "before": "bc2d8db70183d11be8cf6f9ed789c79e3802b3c7c28b339ee4fae518ee919a42",
+      "after": "42cc23003f6a36d4b64d68ca93ce0b89c80eb7d2ba1312cb8a7635a13fb4e65c"
+    },
+    {
+      "path": "packages/client/src/player/PlayerExperience.ts",
+      "before": "92a49238f52bc1833d5e6de275ee329bd9876d4780b963aab7b56fd56673592c",
+      "after": "4daad5f36a591491f51024bb3806ef6e728643173a5c03c60d28b982bfe77499"
+    },
+    {
+      "path": "tests/postprocessing.test.mts",
+      "before": "41be41fe53b9da165e7c970cc1d7d3bbee3eb7bc710899486d7d343a50dd9ff7",
+      "after": "6addae1b9046959205adcfe3a1035d2615ca6ded420abb1ed8f06633f5215caa"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/engine/GraphicsQuality.ts",
+      "after": "7268c095253eb9b099b1c4c96d67c0d558b5c3d82a8f53c9a6ffa0b8c37298eb"
+    },
+    {
+      "path": "packages/client/src/player/GraphicsPanel.ts",
+      "after": "a63db9fbaad7d1b722be7bbe6c673eb11254f9a25f3910de293ad1749db8f836"
+    },
+    {
+      "path": "packages/client/src/player/graphics.css",
+      "after": "fd0357451a63c119ea377621483ea0ea20d48f9f108891f0fdc1c86bc19e5a30"
+    },
+    {
+      "path": "tests/graphics-quality.test.mts",
+      "after": "adc761478a0314d735dc5417bed3f36e4c99076ea07b7011f3fe47defe311b6c"
+    }
+  ],
+  "compiledSharedRestoredAfterBuild": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ]
+}

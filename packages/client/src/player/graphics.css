@@ -1,0 +1,18 @@
+.graphics-panel { box-sizing: border-box; width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 28px; border: 1px solid #506349; border-radius: 3px; background: #0d1914; color: #dce5d4; box-shadow: 0 28px 100px #0008; font-family: inherit; }
+.graphics-panel::backdrop { background: #030b08b8; }
+.graphics-panel header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.graphics-panel .eyebrow { font-size: 9px; letter-spacing: .12em; color: #99b18a; }
+.graphics-panel h2 { margin: 8px 0; font-size: 28px; font-weight: 400; }
+.graphics-panel button { color: #bfd2ae; background: none; border: 0; padding: 3px 6px; cursor: pointer; font: inherit; font-size: 25px; line-height: 1; }
+.graphics-panel button:focus-visible, .graphics-panel select:focus-visible { outline: 2px solid #b9d497; outline-offset: 4px; }
+.graphics-panel p { font-size: 13px; line-height: 1.8; color: #a6b69a; }
+.graphics-panel label { display: block; margin: 24px 0 10px; font-size: 12px; }
+.graphics-panel select { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #506349; background: #15221b; color: #dce5d4; font: inherit; font-size: 13px; }
+.graphics-panel .graphics-hint { font-size: 11px; }
+.graphics-panel dl { padding: 16px 0; margin: 20px 0; border-top: 1px solid #35432e; border-bottom: 1px solid #35432e; }
+.graphics-panel dl > div { display: flex; justify-content: space-between; gap: 12px; margin: 8px 0; font-size: 12px; }
+.graphics-panel dt { color: #a6b69a; }
+.graphics-panel dd { margin: 0; font-variant-numeric: tabular-nums; }
+.graphics-panel footer { color: #a3b196; font-size: 11px; line-height: 1.9; }
+.graphics-panel footer span { display: block; }
+.landing-secondary { flex-wrap: wrap; }

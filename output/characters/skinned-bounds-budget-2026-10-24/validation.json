@@ -1,0 +1,39 @@
+{
+  "scope": "Optional render resolution settings; does not certify dojo completion or stable 60 fps",
+  "allRequiredGatesPassed": true,
+  "inputsUnchanged": true,
+  "related": {
+    "tests": 42,
+    "pass": 42,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "baselineRelated": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0
+  },
+  "baselinePlayerUI": {
+    "tests": 23,
+    "pass": 23,
+    "fail": 0
+  },
+  "postprocessingRed": {
+    "tests": 9,
+    "pass": 8,
+    "fail": 1
+  },
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "bundle": "index-Bc8QAiza.js",
+  "bundleSha256": "4dc3b0d772156cfd445649469dbc75fa7f5a83451dbff5ef0ef83213d88d0bd1",
+  "css": "index-szXzveLu.css",
+  "cssSha256": "b2c97c822f84c2f0fc02de1ef9be92da8970c7cad50d400e91636ff0e06ec3c0",
+  "typecheckNote": "The superseded pre-integration typecheck was stopped. The final typecheck succeeded and its &&-chained full build exited 0; the combined log also contains the old process termination line.",
+  "fullSuiteRun": false,
+  "knownPriorCharacterFailures": 7
+}

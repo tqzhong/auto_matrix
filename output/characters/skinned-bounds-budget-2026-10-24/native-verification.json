@@ -1,0 +1,44 @@
+{
+  "productionBundle": "index-Bc8QAiza.js",
+  "defaultHighVerified": true,
+  "qualitySelectionPersistsAcrossReload": true,
+  "largeViewportPixelCapVerified": {
+    "viewport": [
+      1920,
+      1080
+    ],
+    "smoothBuffer": [
+      1280,
+      720
+    ]
+  },
+  "graphicsMenuBlocksMovement": true,
+  "escapeClosesMenuAndMovementResumes": true,
+  "firstAndThirdPersonChecked": true,
+  "movementAfterMenuMetres": 7.2348833799160275,
+  "normalDojoStarted": true,
+  "dojoCompleted": false,
+  "dojoInvestigation": "Native X/button attempts did not enter counter window in candidate or baseline index-B4mvRwyb.js. Baseline F did produce a parry response. A fresh in-memory server controller accepted dodge. Root cause not established; do not claim combat pass.",
+  "realBackendRestart": true,
+  "fullWorldExactlyEqualAfterRestartBeforeClaim": true,
+  "reclaimDifferences": [
+    {
+      "path": "/agents/neo/controller",
+      "before": null,
+      "after": "player"
+    },
+    {
+      "path": "/agents/neo/mind/thought",
+      "before": "重新回到自己的生活，继续追寻尚未完成的目标。",
+      "after": "由玩家决定下一步行动。"
+    }
+  ],
+  "memoryFilesUnchanged": 7,
+  "paused": true,
+  "tick": 10102,
+  "reloadConsoleWarningsAndErrors": 0,
+  "movementEndpoints": [
+    "before-graphics-menu-world.json",
+    "dojo-input-investigation-world.json"
+  ]
+}

@@ -1,0 +1,83 @@
+TAP version 13
+# Subtest: changing render quality resizes both compositor buffers, occlusion and antialias sampling
+not ok 1 - changing render quality resizes both compositor buffers, occlusion and antialias sampling
+  ---
+  duration_ms: 62.611041
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/skinned-bounds-budget-2026-10-24/candidate-release/tests/postprocessing.test.mts:1:728'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    1920 !== 960
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 960
+  actual: 1920
+  operator: 'strictEqual'
+  stack: |-
+    check (/Users/tianqizhong/ai_project/auto_matrix/output/characters/skinned-bounds-budget-2026-10-24/candidate-release/tests/postprocessing.test.mts:20:14)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/skinned-bounds-budget-2026-10-24/candidate-release/tests/postprocessing.test.mts:25:34)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: default occlusion multiplies the existing color without copying or swapping it
+ok 2 - default occlusion multiplies the existing color without copying or swapping it
+  ---
+  duration_ms: 8.217209
+  type: 'test'
+  ...
+# Subtest: occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+ok 3 - occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+  ---
+  duration_ms: 5.6505
+  type: 'test'
+  ...
+# Subtest: occlusion clears the copy suppression after a render failure and can switch paths next frame
+ok 4 - occlusion clears the copy suppression after a render failure and can switch paths next frame
+  ---
+  duration_ms: 4.636542
+  type: 'test'
+  ...
+# Subtest: the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+ok 5 - the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+  ---
+  duration_ms: 11.954625
+  type: 'test'
+  ...
+# Subtest: the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+ok 6 - the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+  ---
+  duration_ms: 9.771042
+  type: 'test'
+  ...
+# Subtest: occlusion selects the current camera detail before hiding glass after a more distant mirror view
+ok 7 - occlusion selects the current camera detail before hiding glass after a more distant mirror view
+  ---
+  duration_ms: 5.973
+  type: 'test'
+  ...
+# Subtest: distant machine-city structures retain color-pass depth while foreground contact shadows still render
+ok 8 - distant machine-city structures retain color-pass depth while foreground contact shadows still render
+  ---
+  duration_ms: 173.406875
+  type: 'test'
+  ...
+# Subtest: remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+ok 9 - remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+  ---
+  duration_ms: 713.072875
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 8
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2766.144167

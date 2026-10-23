@@ -2,9 +2,31 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
-import { WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
+
+test('changing render quality resizes both compositor buffers, occlusion and antialias sampling', () => {
+  const renderer = { getPixelRatio: () => 1.5, getSize: (size: THREE.Vector2) => size.set(1280, 720) } as THREE.WebGLRenderer;
+  const composer = new EffectComposer(renderer);
+  const occlusion = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 1280, 720);
+  const antialias = new ShaderPass(FXAAShader); composer.addPass(occlusion); composer.addPass(antialias);
+  const post = Object.assign(Object.create(PostProcessing.prototype), { composer, antialias, pixelRatio: 1.5 }) as PostProcessing;
+  const check = (width: number, height: number) => {
+    for (const target of [composer.readBuffer, composer.writeBuffer, occlusion.normalRenderTarget, occlusion.gtaoRenderTarget]) {
+      assert.equal(target.width, width); assert.equal(target.height, height);
+    }
+    assert.deepEqual(antialias.uniforms.resolution.value.toArray(), [1 / width, 1 / height]);
+  };
+  try {
+    post.resize(1280, 720, .75); check(960, 540);
+    post.resize(800, 600); check(600, 450);
+    post.resize(1280, 720, 1.5); check(1920, 1080);
+  } finally { occlusion.dispose(); antialias.dispose(); composer.dispose(); }
+});
 
 test('default occlusion multiplies the existing color without copying or swapping it', t => {
   const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 64, 64);

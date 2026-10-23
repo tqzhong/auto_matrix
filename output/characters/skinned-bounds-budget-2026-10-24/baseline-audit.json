@@ -1,0 +1,8 @@
+{
+  "baseline": "5fd29ddea6d3570853711c4e3ec552a1a6ae3c04",
+  "inputsVerifiedAgainstGit": 1198,
+  "mainPid": 43571,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "previousTurn": "progress: furniture batching pushed and preview updated; small FPS effect directs next profiling to remaining transform and skinned-bound CPU cost",
+  "seed": "output/characters/truth-exit-hand-contact-2026-10-23/qa-attempt-01-data"
+}

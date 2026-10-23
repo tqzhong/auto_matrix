@@ -1,0 +1,5 @@
+
+> auto_matrix@0.1.0 typecheck
+> tsc --noEmit -p packages/shared && tsc --noEmit -p packages/server && tsc --noEmit -p packages/client
+
+sh: line 1: 90331 Terminated: 15          tsc --noEmit -p packages/client

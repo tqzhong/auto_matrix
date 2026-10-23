@@ -94,6 +94,9 @@ export class PostProcessing {
   render(occlusion = true): void { this.occlusion.enabled = occlusion; this.composer.render(); }
   get occlusionInPlace(): boolean { return this.occlusion.compositeInPlace; }
   set occlusionInPlace(value: boolean) { this.occlusion.compositeInPlace = value; }
-  resize(w: number, h: number): void { this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * this.pixelRatio), 1 / (h * this.pixelRatio)); }
+  resize(w: number, h: number, pixelRatio = this.pixelRatio): void {
+    if (this.pixelRatio !== pixelRatio) { this.pixelRatio = pixelRatio; this.composer.setPixelRatio(pixelRatio); }
+    this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
+  }
   dispose(): void { this.bloom.dispose(); this.output.dispose(); this.occlusion.dispose(); this.antialias.dispose(); this.composer.dispose(); }
 }

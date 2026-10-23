@@ -1,0 +1,13 @@
+{
+  "scene": "m1_dojo",
+  "result": "",
+  "trace": [
+    {
+      "method": "performing",
+      "result": false
+    }
+  ],
+  "cooldowns": {
+    "dodge": 0.8
+  }
+}

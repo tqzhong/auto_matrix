@@ -9,6 +9,7 @@ import { PlayerExperience } from './player/PlayerExperience.js';
 import { CharacterViewer } from './player/CharacterViewer.js';
 import { SandboxUI } from './player/SandboxUI.js';
 import { AudioPanel } from './player/AudioPanel.js';
+import { GraphicsPanel } from './player/GraphicsPanel.js';
 import './style.css';
 import './player/player.css';
 
@@ -109,7 +110,7 @@ const ui = new ObserverUI(overlay, {
     if (director) ui.toast('导演视角已开启，将关注新发生的重要事件。');
   },
   intervene: kind => socket.send('intervene', { kind }),
-  sound: () => audioPanel.open(),
+  sound: () => { graphicsPanel.close(); audioPanel.open(); },
 });
 
 function update(force = false): void {
@@ -233,8 +234,9 @@ const controls = new PlayerControls(engine.renderer.domElement, engine.camera,
 engine.playerControls = controls;
 const characterViewer = new CharacterViewer(() => agents, id => socket.send('play_as', { agentId: id, takeover: true }));
 const playerUI = new PlayerExperience({
+  graphics: () => { audioPanel.close(); graphicsPanel.open(); },
   skill: kind => socket.send('player_action', { kind }),
-  sound: () => audioPanel.open(),
+  sound: () => { graphicsPanel.close(); audioPanel.open(); },
   play: id => socket.send('play_as', { agentId: id, takeover: true }),
   observe: () => {
     socket.send('leave_character'); controls.release(); engine.agentRenderer.setPlayer(null);
@@ -261,8 +263,12 @@ const audioPanel = new AudioPanel(engine.audio, open => {
   if (open) sandboxUI.close();
   controls.setEnabled(!open && !playerUI.isChoosingCharacter);
 });
+const graphicsPanel = new GraphicsPanel(engine, open => {
+  if (open) sandboxUI.close();
+  controls.setEnabled(!open && !playerUI.isChoosingCharacter);
+});
 controls.onPanel = panel => { if (!engine.suspended && !playerUI.isChoosingCharacter) sandboxUI.toggle(panel); };
-controls.onClosePanel = () => audioPanel.close() || sandboxUI.close();
+controls.onClosePanel = () => graphicsPanel.close() || audioPanel.close() || sandboxUI.close();
 
 engine.cameraController.onManualControl = () => { following = false; director = false; ui.setCamera(''); };
 const raycaster = new THREE.Raycaster();
@@ -307,5 +313,5 @@ if (import.meta.env.DEV && new URLSearchParams(location.search).has('profile')) 
 }
 window.addEventListener('beforeunload', () => {
   window.clearInterval(uiTimer); window.clearTimeout(connectionTimer);
-  audioPanel.dispose(); sandboxUI.dispose(); characterViewer.dispose(); controls.dispose(); socket.dispose(); engine.dispose();
+  graphicsPanel.dispose(); audioPanel.dispose(); sandboxUI.dispose(); characterViewer.dispose(); controls.dispose(); socket.dispose(); engine.dispose();
 });

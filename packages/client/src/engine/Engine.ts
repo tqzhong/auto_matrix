@@ -29,6 +29,7 @@ import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
 import { FrameRate } from './FrameRate.js';
 import { LightCulling } from './LightCulling.js';
+import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
 
 export interface FrameProfile {
   at: number;
@@ -74,6 +75,8 @@ export class Engine {
   private eventAge = 10;
   private frameRate = new FrameRate();
   get fps(): number { return this.frameRate.fps; }
+  private quality = readGraphicsQuality();
+  get graphicsQuality(): GraphicsQuality { return this.quality; }
   private lastTelevisionPreviewImage?: string;
   get televisionPreviewImage(): string | undefined { return this.lastTelevisionPreviewImage; }
   playerControls?: PlayerControls;
@@ -92,7 +95,7 @@ export class Engine {
     this.scene.background = new THREE.Color(0x071410);
     this.scene.fog = new THREE.FogExp2(0x0b2018, 0.00125);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(graphicsPixelRatio(this.quality, window.innerWidth, window.innerHeight, window.devicePixelRatio));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.12;
@@ -145,11 +148,17 @@ export class Engine {
     window.addEventListener('resize', this.resize);
   }
 
+  setGraphicsQuality(quality: GraphicsQuality): boolean {
+    this.quality = quality; this.resize();
+    return saveGraphicsQuality(quality);
+  }
   private resize = (): void => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
+    const pixelRatio = graphicsPixelRatio(this.quality, window.innerWidth, window.innerHeight, window.devicePixelRatio);
+    if (this.renderer.getPixelRatio() !== pixelRatio) this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.postProcessing.resize(window.innerWidth, window.innerHeight);
+    this.postProcessing.resize(window.innerWidth, window.innerHeight, pixelRatio);
   };
   private animate = (): void => {
     this.animationId = requestAnimationFrame(this.animate);

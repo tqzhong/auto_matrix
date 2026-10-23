@@ -1,0 +1,262 @@
+TAP version 13
+# Subtest: distant characters do not traverse the hidden detailed body each frame
+ok 1 - distant characters do not traverse the hidden detailed body each frame
+  ---
+  duration_ms: 499.921459
+  type: 'test'
+  ...
+# Subtest: the first near frame restores current clothes after a distant scene change, including returning to the city
+ok 2 - the first near frame restores current clothes after a distant scene change, including returning to the city
+  ---
+  duration_ms: 462.753375
+  type: 'test'
+  ...
+# Subtest: the restored Oracle retains her full resting body beyond the normal detail distance
+ok 3 - the restored Oracle retains her full resting body beyond the normal detail distance
+  ---
+  duration_ms: 453.444792
+  type: 'test'
+  ...
+# Subtest: crowd limbs are culled per camera while their bounds contain walking, seated and airborne poses
+ok 4 - crowd limbs are culled per camera while their bounds contain walking, seated and airborne poses
+  ---
+  duration_ms: 577.193083
+  type: 'test'
+  ...
+# Subtest: reported FPS includes slow frames rather than using the capped physics delta
+ok 5 - reported FPS includes slow frames rather than using the capped physics delta
+  ---
+  duration_ms: 1.60025
+  type: 'test'
+  ...
+# Subtest: FPS counts frames over elapsed time instead of averaging reciprocal frame times
+ok 6 - FPS counts frames over elapsed time instead of averaging reciprocal frame times
+  ---
+  duration_ms: 0.233375
+  type: 'test'
+  ...
+# Subtest: quality presets preserve the original high quality and reduce actual 3D pixel work
+ok 7 - quality presets preserve the original high quality and reduce actual 3D pixel work
+  ---
+  duration_ms: 0.968875
+  type: 'test'
+  ...
+# Subtest: larger windows stay within the chosen pixel budget without changing the aspect ratio
+ok 8 - larger windows stay within the chosen pixel budget without changing the aspect ratio
+  ---
+  duration_ms: 0.2745
+  type: 'test'
+  ...
+# Subtest: quality reloads saved choices and falls back safely for missing, stale or blocked storage
+ok 9 - quality reloads saved choices and falls back safely for missing, stale or blocked storage
+  ---
+  duration_ms: 17.321125
+  type: 'test'
+  ...
+# Subtest: paused and offline play show distinct actionable notices, including during a slow connection
+ok 10 - paused and offline play show distinct actionable notices, including during a slow connection
+  ---
+  duration_ms: 3.304875
+  type: 'test'
+  ...
+# Subtest: landing resumes the saved story actor instead of an unrelated browser-local character
+ok 11 - landing resumes the saved story actor instead of an unrelated browser-local character
+  ---
+  duration_ms: 0.572958
+  type: 'test'
+  ...
+# Subtest: an explicit landing choice still overrides the saved story actor
+ok 12 - an explicit landing choice still overrides the saved story actor
+  ---
+  duration_ms: 0.243875
+  type: 'test'
+  ...
+# Subtest: red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+ok 13 - red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+  ---
+  duration_ms: 0.21725
+  type: 'test'
+  ...
+# Subtest: Construct and desert story beats keep ambient conversation prompts out of the reveal
+ok 14 - Construct and desert story beats keep ambient conversation prompts out of the reveal
+  ---
+  duration_ms: 0.307042
+  type: 'test'
+  ...
+# Subtest: wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+ok 15 - wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+  ---
+  duration_ms: 0.104333
+  type: 'test'
+  ...
+# Subtest: APU loading keeps ambient talk out of the handhold and kick controls
+ok 16 - APU loading keeps ambient talk out of the handhold and kick controls
+  ---
+  duration_ms: 0.2125
+  type: 'test'
+  ...
+# Subtest: Link’s EMP controls and exterior shot suppress nearby ambient conversation
+ok 17 - Link’s EMP controls and exterior shot suppress nearby ambient conversation
+  ---
+  duration_ms: 0.10475
+  type: 'test'
+  ...
+# Subtest: the midnight watch and explosion keep ambient conversation out of the observation view
+ok 18 - the midnight watch and explosion keep ambient conversation out of the observation view
+  ---
+  duration_ms: 0.519917
+  type: 'test'
+  ...
+# Subtest: the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+ok 19 - the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+  ---
+  duration_ms: 0.727416
+  type: 'test'
+  ...
+# Subtest: Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+ok 20 - Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+  ---
+  duration_ms: 0.182584
+  type: 'test'
+  ...
+# Subtest: Link’s descent and reunion use their own controls instead of ambient E conversation
+ok 21 - Link’s descent and reunion use their own controls instead of ambient E conversation
+  ---
+  duration_ms: 0.098709
+  type: 'test'
+  ...
+# Subtest: the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+ok 22 - the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+  ---
+  duration_ms: 0.134166
+  type: 'test'
+  ...
+# Subtest: temple artillery and the final city breach keep ambient talk out of their saved actions
+ok 23 - temple artillery and the final city breach keep ambient talk out of their saved actions
+  ---
+  duration_ms: 0.154791
+  type: 'test'
+  ...
+# Subtest: the last doors keep ambient E prompts out of the key handoff and source continuation
+ok 24 - the last doors keep ambient E prompts out of the key handoff and source continuation
+  ---
+  duration_ms: 0.096709
+  type: 'test'
+  ...
+# Subtest: Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+ok 25 - Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+  ---
+  duration_ms: 0.152542
+  type: 'test'
+  ...
+# Subtest: a paused save is presented as paused before entry and its landing status follows resume
+ok 26 - a paused save is presented as paused before entry and its landing status follows resume
+  ---
+  duration_ms: 23.400583
+  type: 'test'
+  ...
+# Subtest: the assimilated Oracle continues her saved scene without a rebuild prompt
+ok 27 - the assimilated Oracle continues her saved scene without a rebuild prompt
+  ---
+  duration_ms: 76.242458
+  type: 'test'
+  ...
+# Subtest: the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+ok 28 - the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+  ---
+  duration_ms: 0.230083
+  type: 'test'
+  ...
+# Subtest: the completed Neo transport is resumed from landing and roster without a rebuild prompt
+ok 29 - the completed Neo transport is resumed from landing and roster without a rebuild prompt
+  ---
+  duration_ms: 2.826125
+  type: 'test'
+  ...
+# Subtest: Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+ok 30 - Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+  ---
+  duration_ms: 0.337958
+  type: 'test'
+  ...
+# Subtest: changing render quality resizes both compositor buffers, occlusion and antialias sampling
+ok 31 - changing render quality resizes both compositor buffers, occlusion and antialias sampling
+  ---
+  duration_ms: 178.142875
+  type: 'test'
+  ...
+# Subtest: default occlusion multiplies the existing color without copying or swapping it
+ok 32 - default occlusion multiplies the existing color without copying or swapping it
+  ---
+  duration_ms: 5.359625
+  type: 'test'
+  ...
+# Subtest: occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+ok 33 - occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+  ---
+  duration_ms: 38.724125
+  type: 'test'
+  ...
+# Subtest: occlusion clears the copy suppression after a render failure and can switch paths next frame
+ok 34 - occlusion clears the copy suppression after a render failure and can switch paths next frame
+  ---
+  duration_ms: 8.882791
+  type: 'test'
+  ...
+# Subtest: the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+ok 35 - the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+  ---
+  duration_ms: 146.355125
+  type: 'test'
+  ...
+# Subtest: the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+ok 36 - the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+  ---
+  duration_ms: 53.309375
+  type: 'test'
+  ...
+# Subtest: occlusion selects the current camera detail before hiding glass after a more distant mirror view
+ok 37 - occlusion selects the current camera detail before hiding glass after a more distant mirror view
+  ---
+  duration_ms: 103.083125
+  type: 'test'
+  ...
+# Subtest: distant machine-city structures retain color-pass depth while foreground contact shadows still render
+ok 38 - distant machine-city structures retain color-pass depth while foreground contact shadows still render
+  ---
+  duration_ms: 623.86525
+  type: 'test'
+  ...
+# Subtest: remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+ok 39 - remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+  ---
+  duration_ms: 1162.877709
+  type: 'test'
+  ...
+# Subtest: a detached garment keeps its new skeleton bounds and restores the original owner on return
+ok 40 - a detached garment keeps its new skeleton bounds and restores the original owner on return
+  ---
+  duration_ms: 334.089792
+  type: 'test'
+  ...
+# Subtest: construction bounds include garment morph extrema through rotated and blended bones
+ok 41 - construction bounds include garment morph extrema through rotated and blended bones
+  ---
+  duration_ms: 14.776625
+  type: 'test'
+  ...
+# Subtest: hidden world and detail branches skip render transforms and catch up when shown
+ok 42 - hidden world and detail branches skip render transforms and catch up when shown
+  ---
+  duration_ms: 9.175041
+  type: 'test'
+  ...
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8004.259625

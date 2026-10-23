@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: distant characters do not traverse the hidden detailed body each frame
+ok 1 - distant characters do not traverse the hidden detailed body each frame
+  ---
+  duration_ms: 174.1115
+  type: 'test'
+  ...
+# Subtest: the first near frame restores current clothes after a distant scene change, including returning to the city
+ok 2 - the first near frame restores current clothes after a distant scene change, including returning to the city
+  ---
+  duration_ms: 183.469958
+  type: 'test'
+  ...
+# Subtest: the restored Oracle retains her full resting body beyond the normal detail distance
+ok 3 - the restored Oracle retains her full resting body beyond the normal detail distance
+  ---
+  duration_ms: 338.697792
+  type: 'test'
+  ...
+# Subtest: crowd limbs are culled per camera while their bounds contain walking, seated and airborne poses
+ok 4 - crowd limbs are culled per camera while their bounds contain walking, seated and airborne poses
+  ---
+  duration_ms: 275.355291
+  type: 'test'
+  ...
+# Subtest: default occlusion multiplies the existing color without copying or swapping it
+ok 5 - default occlusion multiplies the existing color without copying or swapping it
+  ---
+  duration_ms: 26.306875
+  type: 'test'
+  ...
+# Subtest: occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+ok 6 - occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+  ---
+  duration_ms: 6.282167
+  type: 'test'
+  ...
+# Subtest: occlusion clears the copy suppression after a render failure and can switch paths next frame
+ok 7 - occlusion clears the copy suppression after a render failure and can switch paths next frame
+  ---
+  duration_ms: 5.2435
+  type: 'test'
+  ...
+# Subtest: the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+ok 8 - the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+  ---
+  duration_ms: 6.4335
+  type: 'test'
+  ...
+# Subtest: the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+ok 9 - the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+  ---
+  duration_ms: 4.059167
+  type: 'test'
+  ...
+# Subtest: occlusion selects the current camera detail before hiding glass after a more distant mirror view
+ok 10 - occlusion selects the current camera detail before hiding glass after a more distant mirror view
+  ---
+  duration_ms: 13.764375
+  type: 'test'
+  ...
+# Subtest: distant machine-city structures retain color-pass depth while foreground contact shadows still render
+ok 11 - distant machine-city structures retain color-pass depth while foreground contact shadows still render
+  ---
+  duration_ms: 105.258084
+  type: 'test'
+  ...
+# Subtest: remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+ok 12 - remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+  ---
+  duration_ms: 765.292875
+  type: 'test'
+  ...
+# Subtest: a detached garment keeps its new skeleton bounds and restores the original owner on return
+ok 13 - a detached garment keeps its new skeleton bounds and restores the original owner on return
+  ---
+  duration_ms: 24.544292
+  type: 'test'
+  ...
+# Subtest: construction bounds include garment morph extrema through rotated and blended bones
+ok 14 - construction bounds include garment morph extrema through rotated and blended bones
+  ---
+  duration_ms: 17.732792
+  type: 'test'
+  ...
+# Subtest: hidden world and detail branches skip render transforms and catch up when shown
+ok 15 - hidden world and detail branches skip render transforms and catch up when shown
+  ---
+  duration_ms: 16.624542
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3528.835583
