@@ -1,0 +1,12 @@
+[
+  {
+    "pid": 62132,
+    "port": 5200,
+    "confirmedExited": true
+  },
+  {
+    "pid": 27228,
+    "port": 5201,
+    "confirmedExited": true
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "scope": "Same-model offline A/B/B/A; only the irrelevant left-hand deformation is toggled. No GPU or game FPS measurement.",
+  "rows": [
+    {
+      "originalBothHands": true,
+      "fullFixtureMs": {
+        "mean": 2.4272543850000035,
+        "p95": 3.8211660000001757
+      },
+      "handSurfaceUpdateMs": {
+        "mean": 1.8625987549999945,
+        "p95": 3.1166250000001128
+      }
+    },
+    {
+      "originalBothHands": false,
+      "fullFixtureMs": {
+        "mean": 1.5504789449999998,
+        "p95": 2.558708000000024
+      },
+      "handSurfaceUpdateMs": {
+        "mean": 1.026721435000004,
+        "p95": 2.0093329999999696
+      }
+    },
+    {
+      "originalBothHands": false,
+      "fullFixtureMs": {
+        "mean": 1.4941789099999847,
+        "p95": 2.4644170000001395
+      },
+      "handSurfaceUpdateMs": {
+        "mean": 1.0085595650000072,
+        "p95": 1.9270409999999174
+      }
+    },
+    {
+      "originalBothHands": true,
+      "fullFixtureMs": {
+        "mean": 2.3050768900000254,
+        "p95": 3.5340830000000096
+      },
+      "handSurfaceUpdateMs": {
+        "mean": 1.8269168250000372,
+        "p95": 2.980583999999908
+      }
+    }
+  ]
+}

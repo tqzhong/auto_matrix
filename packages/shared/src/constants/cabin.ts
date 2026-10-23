@@ -13,6 +13,7 @@ export const CABIN = {
   door: { x: 6, z: -29.5, width: 4.4 },
   locker: { x: 17.4, z: -38.4, width: .8, depth: 2.3, height: 4.1 },
 } as const;
+export const CORE_CONNECTOR = { shaft: { radius: .09, length: .5 }, grip: { x: .24, radius: .135, length: .23 } } as const;
 export const CABIN_WALLS = [
   { x: 12, z: -40, width: 12, depth: .8, height: 6.8 },
   { x: 12, z: -26, width: 12, depth: .8, height: 6.8 },

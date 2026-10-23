@@ -1,0 +1,15 @@
+{
+  "tick": 7156,
+  "scene": "m1_cabin",
+  "step": 2,
+  "awakening": {
+    "kind": "core",
+    "elapsed": 4.754999999999999,
+    "started": true,
+    "approach": {
+      "x": 2.826679632313244,
+      "z": -5.717170313326278
+    }
+  },
+  "neoHealth": 100
+}

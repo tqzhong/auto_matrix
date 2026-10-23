@@ -1,0 +1,10 @@
+{
+  "revision": "bb462f26eac3d174acbae7eb16e7dbf25041850f",
+  "sourceFiles": 1168,
+  "packageFiles": 707,
+  "mainPid": 82166,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "previousTurn": "progress: bb462f2 reduced idle CPU and verified ordinary cabin escort/connection through Construct. Current next action: quantify core hand/connector contact and improve natural grip.",
+  "renderReconnected": false,
+  "precedingGoalTurnClassification": "no progress: performance question clarified existing measurements and hardware; no implementation changed. This continuation reproduced the core grip and is testing a concrete correction."
+}

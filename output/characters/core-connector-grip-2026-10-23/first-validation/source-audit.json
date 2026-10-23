@@ -1,0 +1,45 @@
+{
+  "baseline": "bb462f26eac3d174acbae7eb16e7dbf25041850f",
+  "packageFiles": 707,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/CabinContact.ts",
+      "before": "0e7bd51977054deeee8fdfefad18577e8087799147603420e731964f7ff5f738",
+      "after": "b6c64f94b5cd2cc495f2092fa3911494e3081c3f8441b206e053380f93d17c8b"
+    },
+    {
+      "path": "packages/client/src/agents/ConsoleGrip.ts",
+      "before": "7a9da58a3f1dcf7da17e0512d39f7ae7b312be8142cb3d2140eb61e665766bd4",
+      "after": "4ec7c9c05b9458a975e1782fa99cc501085e2ae9bf33235087a283e384a29f34"
+    },
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "80224d73ab40f1562475d9f64ace2d144b1758888de88e4d6a5cf9651ab305a5",
+      "after": "abd96030bb88fe4550926b2d3405a039596b4d280052ee73c37b05078a4287f8"
+    },
+    {
+      "path": "packages/client/src/engine/NebDeckRenderer.ts",
+      "before": "6c90c0f84531adfaa406b05ee067c84e339276475dd13f97ca0812152981be39",
+      "after": "9bb75dea144cc4d20dbd19198930c26df00ddff8e93e7c6b77617166baf4f169"
+    },
+    {
+      "path": "packages/shared/src/constants/cabin.ts",
+      "before": "8aed4a83a71d0d1b18f735e5515f947419f1cc523268e208f9dcc3fefba27d78",
+      "after": "a0d48959a9c6db748fd2e0ad756d55fd08133b47b42cb6c2594fb6a53909c112"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/CoreConnectorContact.ts",
+      "after": "b900af098d348c091409dda7830452bb365bc49f17161cc8ae67420c0e2fbe24"
+    },
+    {
+      "path": "tests/core-connector-contact.test.mts",
+      "after": "11e6464a6cf54cbe9a6bccc5a392b08dbf9b7cfeef5a5cffdd0d9395abe387ea"
+    },
+    {
+      "path": "tests/helpers/core-connector.mts",
+      "after": "bb2df4a4714af36ed9732e0c22d9d59020973ff3755b7fee9cf93e4074b280da"
+    }
+  ]
+}

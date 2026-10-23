@@ -1,0 +1,14 @@
+{
+  "oldPid": 47666,
+  "newPid": 62132,
+  "reason": "core-cold-checkpoint",
+  "byteIdenticalWorld": true,
+  "completeWorldEqual": true,
+  "changedPaths": [],
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 7156,
+  "scene": "m1_cabin",
+  "step": 2,
+  "cloudDisabled": true
+}

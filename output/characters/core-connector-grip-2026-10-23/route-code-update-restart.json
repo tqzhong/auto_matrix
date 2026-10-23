@@ -1,0 +1,14 @@
+{
+  "oldPid": 27227,
+  "newPid": 47666,
+  "reason": "route-code-update",
+  "byteIdenticalWorld": true,
+  "completeWorldEqual": true,
+  "changedPaths": [],
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 6308,
+  "scene": "m1_cabin",
+  "step": 1,
+  "cloudDisabled": true
+}

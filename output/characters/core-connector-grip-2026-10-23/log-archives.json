@@ -1,0 +1,46 @@
+[
+  {
+    "original": "baseline-related-tests.log",
+    "archive": "baseline-related-tests.log.gz"
+  },
+  {
+    "original": "baseline-seven-tests.log",
+    "archive": "baseline-seven-tests.log.gz"
+  },
+  {
+    "original": "build-final.log",
+    "archive": "build-final.log.gz"
+  },
+  {
+    "original": "candidate-route-and-outfit-tests.log",
+    "archive": "candidate-route-and-outfit-tests.log.gz"
+  },
+  {
+    "original": "deploy-tests.log",
+    "archive": "deploy-tests.log.gz"
+  },
+  {
+    "original": "first-validation/baseline-related-tests.log",
+    "archive": "first-validation/baseline-related-tests.log.gz"
+  },
+  {
+    "original": "first-validation/related-tests.log",
+    "archive": "first-validation/related-tests.log.gz"
+  },
+  {
+    "original": "first-validation/shared-build.log",
+    "archive": "first-validation/shared-build.log.gz"
+  },
+  {
+    "original": "related-tests.log",
+    "archive": "related-tests.log.gz"
+  },
+  {
+    "original": "shared-build.log",
+    "archive": "shared-build.log.gz"
+  },
+  {
+    "original": "typecheck-final.log",
+    "archive": "typecheck-final.log.gz"
+  }
+]

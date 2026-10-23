@@ -1,0 +1,13 @@
+{
+  "js": {
+    "name": "index-DG2yss5V.js",
+    "bytes": 3754142,
+    "sha256": "6b6712264b00538a18da1b06b38f6f3f43ade08b07f0353ee9efcd3d49b80455"
+  },
+  "css": {
+    "name": "index-bH8XtZgl.css",
+    "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+  },
+  "developmentProbeExcluded": true,
+  "backendFilesUnchanged": 280
+}

@@ -3,7 +3,7 @@ import { truthUnplug, truthRest, TRUTH_BEDSIDE, DOWNLOAD_OPERATOR, downloadDiskP
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RECOVERY_BED, RECOVERY_CABINET, RECOVERY_FRAME, RESCUE, type FilmJourney } from '@auto_matrix/shared';
-import { CABIN, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
+import { CABIN, CORE_CONNECTOR, MEDICAL_OPERATOR, medicalControlBlend, cabinPlugProgress } from '@auto_matrix/shared';
 import { relayPlugContact } from '../agents/TrinityRelayPerformance.js';
 import { NEB_ESCAPE, nebHatchHeight } from '@auto_matrix/shared';
 import { NebEscapeRenderer } from './NebEscapeRenderer.js';
@@ -246,8 +246,8 @@ export class NebDeckRenderer {
     for (const dx of [-.45, .45]) for (const dz of [-.45, .45]) this.cylinder(this.truthSeat, this.steel, dx, .5, dz, .06, 1);
     this.truthSeat.visible = false;
     this.corePlug.name = 'neb-first-core-connector'; this.root.add(this.corePlug);
-    const plug = this.cylinder(this.corePlug, this.steel, 0, 0, 0, .09, .5); plug.rotation.z = Math.PI / 2;
-    const grip = this.cylinder(this.corePlug, this.rubber, .24, 0, 0, .135, .23); grip.rotation.z = Math.PI / 2;
+    const plug = this.cylinder(this.corePlug, this.steel, 0, 0, 0, CORE_CONNECTOR.shaft.radius, CORE_CONNECTOR.shaft.length); plug.rotation.z = Math.PI / 2;
+    const grip = this.cylinder(this.corePlug, this.rubber, CORE_CONNECTOR.grip.x, 0, 0, CORE_CONNECTOR.grip.radius, CORE_CONNECTOR.grip.length); grip.rotation.z = Math.PI / 2;
     this.coreCable = this.cylinder(this.root, this.rubber, 0, 0, 0, .035, 1, 'neb-first-core-cable');
   }
 

@@ -1,0 +1,92 @@
+{
+  "allGatesPassed": false,
+  "results": [
+    {
+      "log": "baseline-related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/fighting-hand-surface.test.mts",
+        "tests/pill-hand-surface.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 125.02643629163504,
+      "tests": 47,
+      "pass": 47,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "shared-build.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 4.7744180001318455
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/core-connector-contact.test.mts",
+        "tests/fighting-hand-surface.test.mts",
+        "tests/pill-hand-surface.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/hand-pose.test.mts",
+        "tests/hand-curve-cache.test.mts",
+        "tests/console-pour-model.test.mts",
+        "tests/steak-contact-model.test.mts",
+        "tests/crew-meal-model.test.mts",
+        "tests/pod-wrist-contact.test.mts",
+        "tests/camera.test.mts",
+        "tests/recovery-eye-view.test.mts",
+        "tests/pod-eye-view.test.mts",
+        "tests/tracking-eye.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/download-setup.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/lafayette-camera.test.mts",
+        "tests/neb-inactive-therapy.test.mts",
+        "tests/frame-rate.test.mts",
+        "tests/postprocessing.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/interlude-scenes.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 1,
+      "elapsedSeconds": 658.7790429592133,
+      "tests": 382,
+      "pass": 379,
+      "fail": 3,
+      "skipped": 0
+    }
+  ]
+}

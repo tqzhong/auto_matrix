@@ -1,0 +1,45 @@
+{
+  "running": "related-tests.log",
+  "completed": [
+    {
+      "log": "baseline-related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/fighting-hand-surface.test.mts",
+        "tests/pill-hand-surface.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 125.02643629163504,
+      "tests": 47,
+      "pass": 47,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "shared-build.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 4.7744180001318455
+    }
+  ]
+}

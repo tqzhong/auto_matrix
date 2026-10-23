@@ -1,0 +1,69 @@
+{
+  "productionColdLoadChecked": true,
+  "productionBundle": "index-DG2yss5V.js",
+  "bothViewsAndMouseLookChecked": true,
+  "fullOrdinaryEscortToCoreChecked": true,
+  "coreConsentAndConnectionChecked": true,
+  "constructArrivalChecked": true,
+  "finalScene": "m1_construct",
+  "finalStep": 0,
+  "neoHealth": 100,
+  "walk": {
+    "method": "Native W and mouse steering; V first-person switch; read-only API samples",
+    "sampledHorizontalPathLowerBound": 38.93418281055564,
+    "from": "cabin-start",
+    "to": "core-consent-ready",
+    "samples": 8,
+    "scriptedCoreSeatingAndConstructTeleportExcluded": true,
+    "firstWestAttemptBlockedByBedThenSteeredAround": true
+  },
+  "realBackendRestart": {
+    "oldPid": 47666,
+    "newPid": 62132,
+    "reason": "core-cold-checkpoint",
+    "byteIdenticalWorld": true,
+    "completeWorldEqual": true,
+    "changedPaths": [],
+    "memoryFiles": 7,
+    "memoryBytesUnchanged": true,
+    "tick": 7156,
+    "scene": "m1_cabin",
+    "step": 2,
+    "cloudDisabled": true
+  },
+  "coldHold": {
+    "tick": 7156,
+    "elapsed": 4.754999999999999,
+    "started": true,
+    "scene": "m1_cabin",
+    "step": 2
+  },
+  "routeCodeUpdateRestart": {
+    "oldPid": 27227,
+    "newPid": 47666,
+    "reason": "route-code-update",
+    "byteIdenticalWorld": true,
+    "completeWorldEqual": true,
+    "changedPaths": [],
+    "memoryFiles": 7,
+    "memoryBytesUnchanged": true,
+    "tick": 6308,
+    "scene": "m1_cabin",
+    "step": 1,
+    "cloudDisabled": true
+  },
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "mainServerNotRestarted": true,
+  "consoleCounts": {
+    "native-production-first-console": 0,
+    "native-walk-console": 0,
+    "native-production-cold-console": 0,
+    "native-dev-entry-console": 0
+  },
+  "manualWorldOrPositionEdits": false,
+  "videoRecorded": false,
+  "scope": "Native route, consent, held grip, cold restore and arrival verified; no film likeness or 60 FPS acceptance; finite mesh tests do not prove all frames free of clipping."
+}

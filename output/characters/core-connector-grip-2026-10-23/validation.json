@@ -1,0 +1,146 @@
+{
+  "allGatesPassed": true,
+  "results": [
+    {
+      "log": "baseline-related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/fighting-hand-surface.test.mts",
+        "tests/pill-hand-surface.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 0,
+      "elapsedSeconds": 125.02643629163504,
+      "tests": 47,
+      "pass": 47,
+      "fail": 0,
+      "skipped": 0,
+      "reusedFrom": "first-validation/validation.json",
+      "baselineBlobsReverified": 1171
+    },
+    {
+      "log": "shared-build.log",
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "-w",
+        "packages/shared"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.9904804173856974
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/core-connector-contact.test.mts",
+        "tests/fighting-hand-surface.test.mts",
+        "tests/pill-hand-surface.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/hand-pose.test.mts",
+        "tests/hand-curve-cache.test.mts",
+        "tests/console-pour-model.test.mts",
+        "tests/steak-contact-model.test.mts",
+        "tests/crew-meal-model.test.mts",
+        "tests/pod-wrist-contact.test.mts",
+        "tests/camera.test.mts",
+        "tests/recovery-eye-view.test.mts",
+        "tests/pod-eye-view.test.mts",
+        "tests/tracking-eye.test.mts",
+        "tests/neb-therapy-contact.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/download-setup.test.mts",
+        "tests/neb-deck-renderer.test.mts",
+        "tests/neb-cabin-space.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/lafayette-camera.test.mts",
+        "tests/neb-inactive-therapy.test.mts",
+        "tests/frame-rate.test.mts",
+        "tests/postprocessing.test.mts",
+        "tests/interlude-visibility.test.mts",
+        "tests/interlude-scenes.test.mts",
+        "tests/trinity-relay-renderer.test.mts",
+        "tests/betrayal-renderer.test.mts",
+        "tests/crew-meal-renderer.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 861.7318813754246,
+      "tests": 383,
+      "pass": 383,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.596345416270196,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 12.134629624895751
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 19.463150375522673
+    }
+  ],
+  "frozenInputs": 1174,
+  "inputsUnchanged": true,
+  "build": {
+    "js": {
+      "name": "index-DG2yss5V.js",
+      "bytes": 3754142,
+      "sha256": "6b6712264b00538a18da1b06b38f6f3f43ade08b07f0353ee9efcd3d49b80455"
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "developmentProbeExcluded": true,
+    "backendFilesUnchanged": 280
+  }
+}
