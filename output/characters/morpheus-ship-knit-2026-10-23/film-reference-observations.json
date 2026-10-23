@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-23",
+  "source": "https://clip.cafe/the-matrix-1999/i-cant-go-back-can-i-no-but-if-you-could-would-you-really-want-to-i-feel-i-owe-you-an-apology-we/",
+  "publisher": "Clip.Cafe, not the studio",
+  "decodedVideoSize": [3840, 2160],
+  "durationSeconds": 115.842333,
+  "observedTimesSeconds": [10, 20, 28.135174, 38.135174, 40, 78.135174],
+  "relevantFrame": {
+    "timeSeconds": 40,
+    "fullscreen": true,
+    "observations": "Morpheus in side profile wears grey/taupe mottled coarse knit. The shoulder has raised rows and a seam, the upper arm has vertical ribbing, and a loose fold runs into the chest. It is a fabric surface rather than a tan anatomical torso."
+  },
+  "secondarySource": "https://www.youtube.com/watch?v=O5b0ZxUWNf0&t=290s",
+  "secondaryLimit": "FlashbackFM, not the studio. The observed 290-second frame primarily shows Cypher; Morpheus is blurred in the background and it cannot establish his exact garment.",
+  "limits": "Only selected decoded frames were inspected. No complete film review, garment measurements, exact dye match or shot-for-shot recreation is claimed.",
+  "movieMediaDownloadedOrImported": false
+}

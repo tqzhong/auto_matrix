@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
+import { fitShipKnit } from './ShipKnit.js';
 
 /** Real-world knit costumes; the normal wardrobe restores Matrix appearances. */
 export class FarewellAppearance {
   private weave: THREE.DataTexture;
   private band?: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  private shipKnit?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; fitted: THREE.BufferGeometry };
+  private yarn?: THREE.DataTexture;
 
   constructor(private rig: HeroRig, private role: 'neo' | 'trinity' | 'morpheus', eye: THREE.Vector3) {
     const size = 128, pixels = new Uint8Array(size * size * 4);
@@ -19,6 +22,21 @@ export class FarewellAppearance {
     this.weave = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
     this.weave.name = `${role}-farewell-knit`; this.weave.wrapS = this.weave.wrapT = THREE.RepeatWrapping;
     this.weave.repeat.set(12, 12); this.weave.needsUpdate = true;
+    if (role === 'morpheus') {
+      const yarn = new Uint8Array(pixels.length);
+      for (let i = 0; i < yarn.length; i += 4) {
+        const thread = pixels[i] / 255, x = i / 4 % size, y = Math.floor(i / 4 / size);
+        const fleck = Math.sin(x * 13.7 + y * 7.1) * Math.sin(x * 3.3 - y * 11.9);
+        yarn[i] = yarn[i + 1] = yarn[i + 2] = Math.round(172 + thread * 65 + fleck * 17); yarn[i + 3] = 255;
+      }
+      this.yarn = new THREE.DataTexture(yarn, size, size, THREE.RGBAFormat);
+      this.yarn.name = 'morpheus-ship-yarn'; this.yarn.colorSpace = THREE.SRGBColorSpace;
+      for (const texture of [this.weave, this.yarn]) {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(12, 12);
+        texture.generateMipmaps = true; texture.minFilter = THREE.LinearMipmapLinearFilter; texture.magFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+      }
+    }
     if (role !== 'neo') return;
     const head = rig.bones.get('head')!;
     rig.root.updateMatrixWorld(true);
@@ -94,6 +112,11 @@ export class FarewellAppearance {
     const active = input.realWorld === true && !(input.performance && ['pod', 'fall', 'float', 'lift', 'recover'].includes(input.performance))
       && (this.role === 'morpheus' ? outfit === this.role && input.nebCrewEarly || Boolean(input.hammerBriefing || input.hammerPilot || input.dockBriefing) : outfit === this.role || this.role === 'trinity' && !outfit);
     if (this.band) this.band.visible = active && Boolean(input.farewellOutfit ?? input.farewell) && !input.firstPerson;
+    if (active && this.role === 'morpheus' && !this.shipKnit) {
+      const mesh = this.rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
+      this.shipKnit = { mesh, original: mesh.geometry, fitted: fitShipKnit(mesh) };
+    }
+    if (this.shipKnit) this.shipKnit.mesh.geometry = active ? this.shipKnit.fitted : this.shipKnit.original;
     if (!active) return;
     for (const part of this.rig.wardrobe) {
       if (part.hair) part.mesh.visible = !input.firstPerson && !(this.role === 'neo' && input.nebCrewEarly);
@@ -103,18 +126,21 @@ export class FarewellAppearance {
       if (!garment) continue;
       const upper = garment === 'upper';
       const material = part.mesh.material as THREE.MeshStandardMaterial;
-      if (material.map !== null || material.bumpMap !== this.weave) {
-        material.map = null; material.bumpMap = this.weave; material.needsUpdate = true;
-      }
       const collar = /-(hammer|logos)-collar$/.test(part.mesh.name);
-      material.bumpScale = upper ? collar ? .002 : .009 : .003;
+      const map = upper && !collar ? this.yarn ?? null : null;
+      if (material.map !== map || material.bumpMap !== this.weave) {
+        material.map = map; material.bumpMap = this.weave; material.needsUpdate = true;
+      }
+      material.bumpScale = upper ? collar ? .002 : this.role === 'morpheus' ? .004 : .009 : .003;
       material.roughness = .97; material.metalness = 0;
-      material.color.setHex(upper ? this.role === 'neo' ? collar ? 0x53565a : input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? input.nebCrewEarly ? collar ? 0x887d67 : 0x645846 : collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
+      material.color.setHex(upper ? this.role === 'neo' ? collar ? 0x53565a : input.logosBane ? 0x384250 : 0x393c3a : this.role === 'morpheus' ? input.nebCrewEarly ? collar ? 0x98988b : 0x73766c : collar ? 0xa7a295 : 0x55343d : 0xa6a59a : 0x333631);
       if (upper && this.role === 'morpheus' && input.training?.kind === 'download') material.color.setHex(collar ? 0x858477 : 0x747568);
     }
   }
 
   dispose(): void {
     this.band?.removeFromParent(); this.band?.geometry.dispose(); this.band?.material.dispose(); this.weave.dispose();
+    if (this.shipKnit) { this.shipKnit.mesh.geometry = this.shipKnit.original; this.shipKnit.fitted.dispose(); }
+    this.yarn?.dispose();
   }
 }

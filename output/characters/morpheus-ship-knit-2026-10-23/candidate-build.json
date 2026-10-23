@@ -1,0 +1,13 @@
+{
+  "js": {
+    "name": "index-G4_jO_n_.js",
+    "sha256": "915a4ebeeeccdc089cd39cad1863c961ee2b0918f6962f5ea3972b81808fce80",
+    "bytes": 3767142
+  },
+  "css": {
+    "name": "index-bH8XtZgl.css",
+    "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+  },
+  "developmentProbeExcluded": true,
+  "backendFilesUnchanged": 280
+}

@@ -1,0 +1,5 @@
+{
+  "emittedJavaScriptIdentical": true,
+  "sha256": "849411171150f69508b5c39fbd992ee9a42391e552cb93de49d036bf5dbb64ce",
+  "change": "Only BufferAttribute type assertions, erased before runtime. The shipped GLB has separate non-interleaved position/normal attributes."
+}

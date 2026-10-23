@@ -1,0 +1,22 @@
+{
+  "oldPid": 52751,
+  "newPid": 73630,
+  "reason": "knit-bedside-checkpoint",
+  "initialWorldBytesEqual": false,
+  "initialChangedPaths": [
+    "/agents/neo/controller"
+  ],
+  "automaticNativeReconnectWorldBytesEqual": true,
+  "byteIdenticalWorldAfterNativeReconnect": true,
+  "memoryFiles": 7,
+  "memoryBytesEqualToUnchangedSeed": true,
+  "seedComparisonReason": "All UI visits remained at the paused seed; no game time or choices advanced.",
+  "tick": 7802,
+  "scene": "m1_truth_return",
+  "step": 2,
+  "truthRecovery": {
+    "phase": "question",
+    "elapsed": 0
+  },
+  "cloudDisabled": true
+}

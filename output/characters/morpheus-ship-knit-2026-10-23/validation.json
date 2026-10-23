@@ -1,0 +1,198 @@
+{
+  "allRequiredGatesPassed": true,
+  "entireRelatedSuitePassed": false,
+  "baselineKnownFailures": {
+    "neo wears real-world crew-neck geometry and restores the original Matrix silhouette": {
+      "error": "|-\n    the new cloth must use the delivered articulated skeleton\n    \n    52 !== 46\n    ",
+      "code": "'ERR_ASSERTION'"
+    },
+    "trinity wears real-world crew-neck geometry and restores the original Matrix silhouette": {
+      "error": "|-\n    the new cloth must use the delivered articulated skeleton\n    \n    52 !== 46\n    ",
+      "code": "'ERR_ASSERTION'"
+    },
+    "both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses": {
+      "error": "'neo/reaching/R: the sleeve must overlap the real hand boundary'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving": {
+      "error": "|-\n    Expected values to be strictly equal:\n    \n    false !== true\n    ",
+      "code": "'ERR_ASSERTION'"
+    }
+  },
+  "baselineExisting": {
+    "tests": 30,
+    "pass": 26,
+    "fail": 4,
+    "skipped": 0
+  },
+  "relatedSummary": {
+    "tests": 30,
+    "pass": 26,
+    "fail": 4,
+    "newFailures": [],
+    "baselineFailureMessagesUnchanged": true,
+    "updatedExpectationRetestedSeparately": true,
+    "unchangedProductionInputsForReusedChecks": true
+  },
+  "baselineDonor": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "skipped": 0
+  },
+  "baselineNew": {
+    "tests": 5,
+    "pass": 3,
+    "fail": 2,
+    "skipped": 0
+  },
+  "baselineUpdatedExpectation": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "log": "new-tests.log",
+      "exitCode": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0,
+      "reusedCompletedRun": true
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/neb-crew-appearance.test.mts",
+        "tests/hammer-briefing-render.test.mts",
+        "tests/farewell-appearance.test.mts",
+        "tests/truth-ground-contact.test.mts"
+      ],
+      "exitCode": 1,
+      "elapsedSeconds": 513.5536595415324,
+      "tests": 30,
+      "pass": 25,
+      "fail": 5,
+      "skipped": 0,
+      "failureNames": [
+        "the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels",
+        "neo wears real-world crew-neck geometry and restores the original Matrix silhouette",
+        "trinity wears real-world crew-neck geometry and restores the original Matrix silhouette",
+        "both crew-neck costumes cover the delivered wrist edges through saved reaching and goodbye poses",
+        "Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving"
+      ],
+      "newFailures": [
+        "the early ship wake, escort and connection retain Neo and Morpheus knit clothing without Matrix lapels"
+      ],
+      "baselineFailureMessagesUnchanged": false
+    },
+    {
+      "log": "yarn-expectation-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-name-pattern=early ship wake",
+        "tests/farewell-appearance.test.mts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 15.36890858411789,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0,
+      "failureNames": [],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 146.70066925045103
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 176.34925050009042
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 27.78459145873785,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0,
+      "failureNames": [],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "donor-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/construct-lesson-contact.test.mts",
+        "tests/desert-guide-contact.test.mts",
+        "tests/ambush-wardrobe-flow.test.mts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1014.0904104998335,
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "skipped": 0,
+      "failureNames": [],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    }
+  ],
+  "frozenInputs": 1188,
+  "inputsUnchanged": true,
+  "typeOnlyCorrection": {
+    "emittedJavaScriptIdentical": true,
+    "sha256": "849411171150f69508b5c39fbd992ee9a42391e552cb93de49d036bf5dbb64ce",
+    "change": "Only BufferAttribute type assertions, erased before runtime. The shipped GLB has separate non-interleaved position/normal attributes."
+  },
+  "build": {
+    "js": {
+      "name": "index-G4_jO_n_.js",
+      "sha256": "915a4ebeeeccdc089cd39cad1863c961ee2b0918f6962f5ea3972b81808fce80",
+      "bytes": 3767142
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "developmentProbeExcluded": true,
+    "backendFilesUnchanged": 280
+  },
+  "compiledSharedChanges": {}
+}

@@ -1,0 +1,14 @@
+{
+  "origin": "output/characters/truth-exit-hand-contact-2026-10-23/qa-attempt-01-data",
+  "version": 1,
+  "tick": 7802,
+  "scene": "m1_truth_return",
+  "step": 2,
+  "truthRecovery": {
+    "phase": "question",
+    "elapsed": 0
+  },
+  "naturalCheckpoint": true,
+  "manualWorldEdits": false,
+  "worldSha256": "170998aa8b665405e0e8412a72701c3a5821c66a21d8057219e3fadc4c7ec14a"
+}

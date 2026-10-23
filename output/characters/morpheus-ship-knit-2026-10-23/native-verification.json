@@ -1,0 +1,94 @@
+{
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "knitVisuallyChecked": true,
+  "normalTruthChoiceCompleted": true,
+  "choice": "care",
+  "heldTruth": {
+    "tick": 7802,
+    "phase": "question",
+    "elapsed": 0
+  },
+  "realBackendRestart": {
+    "oldPid": 52751,
+    "newPid": 73630,
+    "reason": "knit-bedside-checkpoint",
+    "initialWorldBytesEqual": false,
+    "initialChangedPaths": [
+      "/agents/neo/controller"
+    ],
+    "automaticNativeReconnectWorldBytesEqual": true,
+    "byteIdenticalWorldAfterNativeReconnect": true,
+    "memoryFiles": 7,
+    "memoryBytesEqualToUnchangedSeed": true,
+    "seedComparisonReason": "All UI visits remained at the paused seed; no game time or choices advanced.",
+    "tick": 7802,
+    "scene": "m1_truth_return",
+    "step": 2,
+    "truthRecovery": {
+      "phase": "question",
+      "elapsed": 0
+    },
+    "cloudDisabled": true
+  },
+  "productionBundle": "index-G4_jO_n_.js",
+  "productionUrl": "http://127.0.0.1:5200/",
+  "consoleCounts": {
+    "production": 0,
+    "development": 0
+  },
+  "finalScene": "m1_download",
+  "finalStep": 0,
+  "finalTick": 8649,
+  "neoHealth": 100,
+  "paused": true,
+  "finalNeoPosition": {
+    "x": 5390.675145418006,
+    "y": -100,
+    "z": 4377.552380261377
+  },
+  "finalNeoRotation": -1.0107621651966974,
+  "finalObjective": "跟随 Tank 前往连接椅",
+  "downloadSetupPhase": "walk",
+  "trainingStarted": false,
+  "walkingSample": {
+    "tick": 8285,
+    "position": {
+      "x": 5390.709492440531,
+      "y": -100,
+      "z": 4385.596774848341
+    },
+    "standingStart": {
+      "x": 5391.4,
+      "y": -100,
+      "z": 4382
+    },
+    "straightDisplacement": 3.6624568255940617,
+    "means": "ordinary native W/D and mouse inputs; excludes any scene transition"
+  },
+  "nativeActions": [
+    "cold production load at real paused bedside checkpoint",
+    "V toggles and mouse look",
+    "resume world and choose care philosophy response",
+    "G get up after Tank introduction",
+    "ordinary W/D movement and mouse turns",
+    "pause world"
+  ],
+  "limitations": [
+    "No completed Tank route, connection-chair interaction, training download or dojo playthrough in this unit.",
+    "Existing first-person transition into the training scene is obstructed by the player collar/body.",
+    "Existing first-person neckline edge and awkward bedside route/turning remain.",
+    "Existing Morpheus garment self-intersections and hem/trouser intersections remain.",
+    "No new video, browser FPS benchmark or 60fps acceptance."
+  ],
+  "manualWorldOrDatabaseEdits": false,
+  "productionColdWorldSha256": "6419083b385b6adb260e986b9e2d7ae318a3bcdf20e868e0fd5bd1a04858a054",
+  "finalWorldSha256": "711f85148ca94ace4672b18bc3a543be49679bf4bbfa48eb1f47a2d3c704d35f",
+  "proof": [
+    "native-production-cold-held.png",
+    "native-production-cold-look.png",
+    "native-production-philosophy.png",
+    "native-production-training-camera.png",
+    "native-production-final-paused.png"
+  ]
+}

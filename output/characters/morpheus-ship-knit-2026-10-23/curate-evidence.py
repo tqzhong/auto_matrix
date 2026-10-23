@@ -1,0 +1,15 @@
+from pathlib import Path
+import gzip,hashlib,json,tarfile
+u=Path(__file__).resolve().parent;sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+required=['README.md','baseline-audit.json','source-audit.json','validation-inputs.json','validation.json','candidate-build.json','film-reference-observations.json','native-seed.json','knit-bedside-checkpoint-restart.json','knit-restart-differences.json','native-verification.json','native-production-dom.json','native-main-dom.json','native-development-console.json','native-production-console.json','native-main-console.json','local-update-verification.json','qa-stop.json','knit-resource-cost.json','type-only-correction.json','native-baseline-held.png','native-candidate-held.png','native-development-firstperson-edge.png','native-production-cold-held.png','native-production-cold-look.png','native-production-philosophy.png','native-production-training-camera.png','native-production-final-paused.png','native-main-current.png','start-owned-qa.py','restart-owned-qa.py','stop-owned-qa.py','publish-local-preview.py','run-validation.py','finish-validation.py','resume-validation.py','inspect-knit-resources.mts','curate-evidence.py']
+logs=['baseline-existing-tests.log','baseline-final-new-tests.log','baseline-donor-tests.log','baseline-yarn-expectation.log','new-tests.log','related-tests.log','yarn-expectation-tests.log','donor-tests.log','deploy-tests.log','typecheck-final.log','build-final.log']
+experiments=['baseline-new-tests.log','baseline-knit-profile.jsonl','baseline-contact-detail.jsonl','iteration-01-tests.log','iteration-02-contact-detail.jsonl','iteration-03-tests.log','iteration-03-new-contacts.json','iteration-04-contacts.log','iteration-05-contacts.log','iteration-06-tests.log','iteration-07-tests.log','yarn-surface-probe.jsonl','initial-acceptance-tests.mts','rejected-expanded-hem.ts','ship-knit-before-typefix.ts','typecheck-before-attribute-type.log','validation-before-yarn-expectation.json','probe-knit.mts','probe-contacts.mts','probe-new-contacts.mts','probe-yarn.mts']
+for name in required+logs+experiments:assert(u/name).is_file(),name
+compressed=[]
+for name in logs:
+ target=u/(name+'.gz');target.write_bytes(gzip.compress((u/name).read_bytes(),mtime=0));compressed.append({'source':name,'sourceSha256':sha(u/name),'file':target.name,'sha256':sha(target)})
+archive=u/'rejected-candidates-and-probes.tar.gz'
+with tarfile.open(archive,'w:gz')as out:
+ for name in experiments:out.add(u/name,arcname=name,recursive=False)
+report={'required':{n:sha(u/n)for n in required},'logs':compressed,'experiments':{n:sha(u/n)for n in experiments},'experimentArchive':{'file':archive.name,'sha256':sha(archive)},'privateRawWorldsMemoriesAndDatabasesExcluded':True,'releaseCopiesNodeModulesAndDistExcluded':True}
+(u/'evidence-manifest.json').write_text(json.dumps(report,indent=2)+'\n');files=required+[r['file']for r in compressed]+[archive.name,'evidence-manifest.json'];(u/'curated-files.json').write_text(json.dumps(files,indent=2)+'\n');print(json.dumps({'files':len(files),'bytes':sum((u/n).stat().st_size for n in files),'experiments':len(experiments)}))

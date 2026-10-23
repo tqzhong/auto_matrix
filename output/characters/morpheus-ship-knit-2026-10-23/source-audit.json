@@ -1,0 +1,30 @@
+{
+  "baseline": "80f2522bb84822ec65f3a6c5a3e0ca2fb9c46d31",
+  "packageFiles": 711,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/FarewellAppearance.ts",
+      "before": "7592b30c9afc3820d8285318289ebde0a2c0fd3a64e655c8bf52f7015b995817",
+      "after": "74bad7a2fed024c9f28497920d94e62d224853470d0ef105148ed6f7226f0d09"
+    },
+    {
+      "path": "tests/farewell-appearance.test.mts",
+      "before": "1993d5d24403b2b1b034d5afc8c6b7a6a12ed5e7fbbf7d4af77403ed0292dcfc",
+      "after": "eb6fbd74a878fefe52433f6da8124ea3e91cd3614f493f20ab4bd459433af79f"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/ShipKnit.ts",
+      "after": "9c3a9caf1c2ca4c9f5787cadd61a323ab189243d0bee9aafd3269cf37bbc526f"
+    },
+    {
+      "path": "tests/helpers/ship-knit.mts",
+      "after": "fbc84b6f994f3d22df8f8e5474aff3c7585b4cf4e4facf84a4fc6b30764c776a"
+    },
+    {
+      "path": "tests/ship-knit.test.mts",
+      "after": "cfe7d0b36dcc4881991bf7c5d356229d190efdd9188a922614e9440142c2ceaa"
+    }
+  ]
+}
