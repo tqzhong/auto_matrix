@@ -1,0 +1,35 @@
+{
+  "baseline": "0950500a3cffc26621b77bb4bc0473842a2291aa",
+  "packageFiles": 716,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/Engine.ts",
+      "before": "dd301eaa591adabfe82f86435b7303a9f2efd66cd69e85a59ffd54dd9ada1a00",
+      "after": "bbdc91fc83631f7485493e1442c6212767aff2cb9e585b9c5bac8de45c48ebb2"
+    },
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "bbeb8e2aa8f29d8158dc187a2dbe61db829907736966340442c21a0a0c151cb0",
+      "after": "40a108c72d1dceb272f4055540172394e2159c8d9c05ff89a4102a478565de61"
+    },
+    {
+      "path": "packages/client/src/agents/CharacterModel.ts",
+      "before": "27d0dc26d0f0e1446809ea03764f0c37cdd7085137cb277e58b3b7b39f67c5b2",
+      "after": "35f9de48d0270b12f38e144e15779f2a148cb423f7453156f6033d3eea4e9ae4"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/engine/LightCulling.ts",
+      "after": "fe03a78e84787be66d77d2412af3ebf79cb69ab5c0511d4858ca517e368ef32d"
+    },
+    {
+      "path": "tests/light-culling.test.mts",
+      "after": "4ecff75d629c7f7c0a87d6b9bee2220c59bfc28c97ee2d5a9d5dc3818930be27"
+    },
+    {
+      "path": "tests/character-atlas-loading.test.mts",
+      "after": "bc67f71fcd7a87884846ab5334a02b542ca69fe625ec9cb64cc507fb8d6483f4"
+    }
+  ]
+}

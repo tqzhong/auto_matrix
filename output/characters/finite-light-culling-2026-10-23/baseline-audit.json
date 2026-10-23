@@ -1,0 +1,9 @@
+{
+  "baseline": "0950500a3cffc26621b77bb4bc0473842a2291aa",
+  "inputCount": 1195,
+  "mainPid": 43571,
+  "mainTick": 3757,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "seed": "output/characters/truth-exit-hand-contact-2026-10-23/qa-attempt-01-data",
+  "previousGoalTurn": "progress:0950500 committed,pushed,native verified and local preview updated; 42 film-quality groups remain unaccepted"
+}

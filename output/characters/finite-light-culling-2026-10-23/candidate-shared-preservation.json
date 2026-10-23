@@ -1,0 +1,7 @@
+{
+  "restoredAfterBuild": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ],
+  "allCompiledSharedEqualMain": true
+}

@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><title>有限灯光 · 反射像素验收</title>
+<style>body{background:#14201b;color:#d6e3d9;font:16px/1.6 monospace;padding:24px}canvas{width:640px;height:360px}button{padding:12px}pre{white-space:pre-wrap}</style>
+<h1>有限灯光 · 反射像素验收</h1><button id="run">执行实际 GPU 对照</button><pre id="result">尚未执行</pre><div id="stage"></div>
+<script type="module">
+import * as THREE from 'three';
+import { Reflector } from 'three/addons/objects/Reflector.js';
+import { LightCulling } from '/src/engine/LightCulling.ts';
+document.querySelector('#run').onclick = () => {
+ const renderer = new THREE.WebGLRenderer({antialias:false});renderer.setSize(640,360);renderer.setPixelRatio(1);
+ document.querySelector('#stage').replaceChildren(renderer.domElement);
+ const scene=new THREE.Scene();scene.background=new THREE.Color('#10191e');scene.add(new THREE.HemisphereLight(0xffffff,0x444444,.15));
+ const camera=new THREE.PerspectiveCamera(55,640/360,.1,80);camera.position.set(0,2,6);camera.lookAt(0,2,0);
+ const mirror=new Reflector(new THREE.PlaneGeometry(7,5),{textureWidth:640,textureHeight:360,color:0xffffff});mirror.position.set(0,2,0);scene.add(mirror);
+ const object=new THREE.Mesh(new THREE.SphereGeometry(1.2,32,24),new THREE.MeshStandardMaterial({color:0xe0b7a5,roughness:.7}));object.position.set(0,2,12);scene.add(object);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,30),new THREE.MeshStandardMaterial({color:0x647986,roughness:.8}));floor.rotation.x=-Math.PI/2;floor.position.set(0,0,6);scene.add(floor);
+ const red=new THREE.PointLight(0xff5533,100,5);red.position.set(-1,3,12);red.name='behind-camera-reflection-light';scene.add(red);
+ const blue=new THREE.PointLight(0x4488ff,80,5);blue.position.set(2,2,3);scene.add(blue);
+ const far=new THREE.PointLight(0xffffff,50,3);far.position.set(90,2,90);scene.add(far);
+ const culling=new LightCulling(scene), target=new THREE.WebGLRenderTarget(640,360), a=new Uint8Array(640*360*4), b=new Uint8Array(a.length);
+ const samples=[];
+ const draw=(enabled,output)=>{culling.enabled=enabled;renderer.setRenderTarget(target);try{renderer.render(scene,camera);}finally{culling.restore();}renderer.readRenderTargetPixels(target,0,0,640,360,output);};
+ try {
+  for(const angle of [0,.15,-.2]) {
+   camera.rotation.y=angle;draw(false,a);draw(true,b);let max=0,changed=0;
+   for(let i=0;i<a.length;i++){const d=Math.abs(a[i]-b[i]);max=Math.max(max,d);if(d)changed++;}
+   samples.push({angle,maxChannelDifference:max,changedChannels:changed,...culling.lastView});
+  }
+  camera.rotation.y=0;draw(true,b);red.intensity=0;draw(true,a);let reflectedLightChannels=0;
+  for(let i=0;i<a.length;i++)if(a[i]!==b[i])reflectedLightChannels++;red.intensity=100;
+  renderer.setRenderTarget(null);renderer.render(scene,camera);
+  const report={samples,reflectionActuallyLit:reflectedLightChannels>1000,reflectedLightChannels,allPointLightsRestored:[red,blue,far].every(light=>light.visible),glError:renderer.getContext().getError(),passed:samples.every(row=>row.maxChannelDifference<=1)&&reflectedLightChannels>1000};
+  document.querySelector('#result').textContent=JSON.stringify(report,null,2);
+ }catch(error){document.querySelector('#result').textContent=String(error);}
+ finally{culling.dispose();target.dispose();mirror.dispose();mirror.geometry.dispose();object.geometry.dispose();object.material.dispose();floor.geometry.dispose();floor.material.dispose();renderer.dispose();document.querySelector('#run').disabled=true;}
+};
+</script></html>

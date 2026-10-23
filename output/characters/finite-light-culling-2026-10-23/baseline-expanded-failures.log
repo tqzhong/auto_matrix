@@ -1,0 +1,132 @@
+TAP version 13
+# Subtest: Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+not ok 1 - Neo’s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance
+  ---
+  duration_ms: 7432.409625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:31126'
+  failureType: 'testCodeFailure'
+  error: 'the R forearm at 2.75s must show anatomical skin instead of a hole or long sleeve; hit Anatomical_head_and_hands at 0.09920723431011552'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:506:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+not ok 2 - Neo floats chest-deep and the rescue pads support the shipped body throughout the lift
+  ---
+  duration_ms: 15598.131875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:54662'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'localToWorld')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:915:30)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+not ok 3 - Neo rests his shipped occiput on both ship pillows without sinking into their surfaces
+  ---
+  duration_ms: 6095.535041
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:69756'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'updateWorldMatrix')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    Box3.expandByObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4851:10)
+    Box3.setFromObject (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4771:15)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1073:42)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug
+not ok 4 - Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug
+  ---
+  duration_ms: 14108.587209
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:84494'
+  failureType: 'testCodeFailure'
+  error: 'Morpheus misses the connector grip by 0.1813835714721712'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1332:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo takes the apartment handset from its physical cradle and returns it after the call
+not ok 5 - Neo takes the apartment handset from its physical cradle and returns it after the call
+  ---
+  duration_ms: 151.712709
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:145727'
+  failureType: 'testCodeFailure'
+  error: 'the held handset must replace the cradle handset without a jump; gap 1.2462864120018804'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:2259:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: shipped neo mesh has valid skinning and usable anatomical bones
+not ok 6 - shipped neo mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 140.997542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:157503'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:2436:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: shipped morpheus mesh has valid skinning and usable anatomical bones
+not ok 7 - shipped morpheus mesh has valid skinning and usable anatomical bones
+  ---
+  duration_ms: 86.592417
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:1:157503'
+  failureType: 'testCodeFailure'
+  error: 'keep the original Matrix wardrobe within its geometry budget'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/finite-light-culling-2026-10-23/baseline-release/tests/character-asset.test.mts:2436:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 0
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48605.720625

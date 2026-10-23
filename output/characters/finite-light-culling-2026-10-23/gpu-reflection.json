@@ -1,0 +1,30 @@
+{
+  "samples": [
+    {
+      "angle": 0,
+      "maxChannelDifference": 0,
+      "changedChannels": 0,
+      "considered": 3,
+      "culled": 2
+    },
+    {
+      "angle": 0.15,
+      "maxChannelDifference": 0,
+      "changedChannels": 0,
+      "considered": 3,
+      "culled": 2
+    },
+    {
+      "angle": -0.2,
+      "maxChannelDifference": 1,
+      "changedChannels": 1,
+      "considered": 3,
+      "culled": 2
+    }
+  ],
+  "reflectionActuallyLit": true,
+  "reflectedLightChannels": 5373,
+  "allPointLightsRestored": true,
+  "glError": 0,
+  "passed": true
+}

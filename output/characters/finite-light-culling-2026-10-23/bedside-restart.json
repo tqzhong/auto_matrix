@@ -1,0 +1,10 @@
+{
+  "oldPid": 55230,
+  "newPid": 1521,
+  "tick": 8854,
+  "phase": "bedside-question",
+  "persistentWorldEqualExceptTransientController": true,
+  "onlyAllowedMigrationActors": [],
+  "memoryFilesUnchanged": 7,
+  "cloudDisabled": true
+}

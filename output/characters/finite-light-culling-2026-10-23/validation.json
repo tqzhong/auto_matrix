@@ -1,0 +1,28 @@
+{
+  "allRequiredGatesPassed": true,
+  "newTests": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0
+  },
+  "related": {
+    "tests": 115,
+    "pass": 108,
+    "fail": 7
+  },
+  "existingFailuresUnchanged": true,
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "inputsUnchanged": true,
+  "frozenInputs": 1198,
+  "bundle": "index-C4ze5DrU.js",
+  "bundleSha256": "4e46144c6e7ca0081bd135427862539e4d4aa45ded2d7d97bde72ea52dcf6056",
+  "productionProfilePanelAbsent": true,
+  "knownBuildWarning": "bundle larger than 500 kB",
+  "compiledSharedPreserved": true
+}

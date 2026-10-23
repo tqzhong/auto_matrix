@@ -1,0 +1,18 @@
+{
+  "productionBundle": "index-C4ze5DrU.js",
+  "productionColdLoadChecked": true,
+  "firstAndThirdPersonChecked": true,
+  "normalTruthChoiceCompleted": true,
+  "normalMovementDistance": 4.492686984149931,
+  "normalMovementSample": "production-before-walk-world.json to production-walk-sample-world.json; same room, ordinary W/D only",
+  "realRestartFullWorldEqualAfterReconnect": true,
+  "neoHealth": 100,
+  "paused": true,
+  "scene": "m1_download",
+  "step": 0,
+  "tick": 9425,
+  "consoleWarningsAndErrors": 0,
+  "followedTankThroughDoor": false,
+  "connectionChairReached": false,
+  "scope": "Chose care, rose from bed, switched V views, used mouse and W/D to walk around cabin. Did not finish chair/dojo route this unit. No video or whole-game 60-fps claim."
+}

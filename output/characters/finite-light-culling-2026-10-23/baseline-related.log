@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: film set walls use their base color until all three texture images are ready
+ok 1 - film set walls use their base color until all three texture images are ready
+  ---
+  duration_ms: 5.943292
+  type: 'test'
+  ...
+# Subtest: a previous film set cannot attach a late texture after disposal
+ok 2 - a previous film set cannot attach a late texture after disposal
+  ---
+  duration_ms: 2.577834
+  type: 'test'
+  ...
+# Subtest: a film set with its own sun must not redraw a zero-intensity global shadow, and leaving restores daylight shadows
+ok 3 - a film set with its own sun must not redraw a zero-intensity global shadow, and leaving restores daylight shadows
+  ---
+  duration_ms: 5.959375
+  type: 'test'
+  ...
+# Subtest: office luminaires illuminate desks without scorching the ceiling above them
+ok 4 - office luminaires illuminate desks without scorching the ceiling above them
+  ---
+  duration_ms: 1918.35425
+  type: 'test'
+  ...
+# Subtest: park water updates its live color reflection but never redraws the world for the normals pass
+ok 5 - park water updates its live color reflection but never redraws the world for the normals pass
+  ---
+  duration_ms: 698.812916
+  type: 'test'
+  ...
+# Subtest: the actual park shadow projection covers the seated cast and nearby stems throughout the saved sunrise
+ok 6 - the actual park shadow projection covers the seated cast and nearby stems throughout the saved sunrise
+  ---
+  duration_ms: 339.572542
+  type: 'test'
+  ...
+# Subtest: default occlusion multiplies the existing color without copying or swapping it
+ok 7 - default occlusion multiplies the existing color without copying or swapping it
+  ---
+  duration_ms: 38.48125
+  type: 'test'
+  ...
+# Subtest: occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+ok 8 - occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+  ---
+  duration_ms: 5.049125
+  type: 'test'
+  ...
+# Subtest: occlusion clears the copy suppression after a render failure and can switch paths next frame
+ok 9 - occlusion clears the copy suppression after a render failure and can switch paths next frame
+  ---
+  duration_ms: 4.147541
+  type: 'test'
+  ...
+# Subtest: the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+ok 10 - the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+  ---
+  duration_ms: 5.897542
+  type: 'test'
+  ...
+# Subtest: the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+ok 11 - the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+  ---
+  duration_ms: 1.910083
+  type: 'test'
+  ...
+# Subtest: occlusion selects the current camera detail before hiding glass after a more distant mirror view
+ok 12 - occlusion selects the current camera detail before hiding glass after a more distant mirror view
+  ---
+  duration_ms: 3.480958
+  type: 'test'
+  ...
+# Subtest: distant machine-city structures retain color-pass depth while foreground contact shadows still render
+ok 13 - distant machine-city structures retain color-pass depth while foreground contact shadows still render
+  ---
+  duration_ms: 144.175916
+  type: 'test'
+  ...
+# Subtest: remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+ok 14 - remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+  ---
+  duration_ms: 906.0645
+  type: 'test'
+  ...
+# Subtest: identical dock lamp housings share materials and draws without removing glowing fixtures
+ok 15 - identical dock lamp housings share materials and draws without removing glowing fixtures
+  ---
+  duration_ms: 1409.6595
+  type: 'test'
+  ...
+# Subtest: dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+ok 16 - dock lamps keep their fixtures but only nearby lights enter the forward lighting pass
+  ---
+  duration_ms: 473.316042
+  type: 'test'
+  ...
+# Subtest: dock lighting excludes only lights with no influence in the view and restores them when turning
+ok 17 - dock lighting excludes only lights with no influence in the view and restores them when turning
+  ---
+  duration_ms: 392.8255
+  type: 'test'
+  ...
+# Subtest: looking out of the temple excludes interior lamps, while turning back restores their illumination and all scenery stays present
+ok 18 - looking out of the temple excludes interior lamps, while turning back restores their illumination and all scenery stays present
+  ---
+  duration_ms: 518.502416
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4471.951209

@@ -28,6 +28,7 @@ import { ParticleSystem } from './ParticleSystem.js';
 import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
 import { FrameRate } from './FrameRate.js';
+import { LightCulling } from './LightCulling.js';
 
 export interface FrameProfile {
   at: number;
@@ -55,6 +56,7 @@ export class Engine {
   readonly agentRenderer: AgentRenderer;
   readonly cameraController: CameraController;
   readonly lightingSystem: LightingSystem;
+  readonly lightCulling: LightCulling;
   readonly particleSystem: ParticleSystem;
   readonly postProcessing: PostProcessing;
   readonly sandboxRenderer: SandboxRenderer;
@@ -115,6 +117,7 @@ export class Engine {
     this.renderer.domElement.setAttribute('aria-label', 'Matrix 三维开放世界，接入角色后使用 WASD 移动、鼠标转动视角');
     container.appendChild(this.renderer.domElement);
     this.lightingSystem = new LightingSystem(this.scene);
+    this.lightCulling = new LightCulling(this.scene);
     this.voxelRenderer = new VoxelRenderer(this.scene);
     this.voxelRenderer.init();
     this.filmSets = new FilmSetRenderer(this.scene);
@@ -241,7 +244,8 @@ export class Engine {
     (this.eventRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.7 - this.eventAge * 0.15);
     measure?.('effects');
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
-    this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
+    try { this.postProcessing.render(filmSet?.id !== 'film_extraction_car'); }
+    finally { this.lightCulling.restore(); }
     measure?.('render');
     this.onRendered?.();
     measure?.('capture');
@@ -636,7 +640,7 @@ export class Engine {
     this.sandboxRenderer.dispose();
     this.combatEffects.dispose();
     this.audio.dispose();
-    this.lightingSystem.dispose(); this.particleSystem.dispose(); this.postProcessing.dispose();
+    this.lightCulling.dispose(); this.lightingSystem.dispose(); this.particleSystem.dispose(); this.postProcessing.dispose();
     this.rain.geometry.dispose(); (this.rain.material as THREE.Material).dispose();
     this.eventRing.geometry.dispose(); (this.eventRing.material as THREE.Material).dispose();
     this.renderer.dispose();

@@ -1,0 +1,89 @@
+{
+  "coldReloads": [
+    {
+      "label": "rotation-cold-reload-A",
+      "fps": 27.814092472458352,
+      "p95": 49.90000057220459,
+      "maxLongTaskMs": 138,
+      "camera": {
+        "position": [
+          5388,
+          -99.19893203412961,
+          4383.765391006325
+        ],
+        "quaternion": [
+          -0.25321891748109543,
+          0.6844186336336574,
+          -0.6249354907490434,
+          -0.27732101645384183
+        ],
+        "projection": [
+          0.8339405447884163,
+          0,
+          0,
+          0,
+          0,
+          1.48256096851274,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "finiteLightCulling": {
+        "enabled": false,
+        "considered": 0,
+        "culled": 0
+      }
+    },
+    {
+      "label": "rotation-cold-reload-B",
+      "fps": 29.381391785202705,
+      "p95": 43.40000057220459,
+      "maxLongTaskMs": 234,
+      "camera": {
+        "position": [
+          5388,
+          -99.19893203412961,
+          4383.765391006325
+        ],
+        "quaternion": [
+          0.6590814032014559,
+          0.1559468537250922,
+          -0.1423934398834382,
+          0.721814651448283
+        ],
+        "projection": [
+          0.8339405447884163,
+          0,
+          0,
+          0,
+          0,
+          1.48256096851274,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "finiteLightCulling": {
+        "enabled": true,
+        "considered": 15,
+        "culled": 6
+      }
+    }
+  ],
+  "caveat": "Native drags cover the room but input timing and camera paths are not frame-identical. Earlier cold B was 19.7 fps / p95 93.4 ms; warm A/B were 24.1/25.3 fps. This is bounded smoke coverage, not a stable full-game FPS guarantee."
+}

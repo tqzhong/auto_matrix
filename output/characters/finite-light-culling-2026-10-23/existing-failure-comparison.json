@@ -1,0 +1,40 @@
+{
+  "sameErrorsAndCodes": true,
+  "failures": [
+    {
+      "test": "Neo\u2019s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance",
+      "error": "'the R forearm at 2.75s must show anatomical skin instead of a hole or long sleeve; hit Anatomical_head_and_hands at 0.09920723431011552'",
+      "code": "'ERR_ASSERTION'"
+    },
+    {
+      "test": "Neo floats chest-deep and the rescue pads support the shipped body throughout the lift",
+      "error": "\"Cannot read properties of undefined (reading 'localToWorld')\"",
+      "code": "'ERR_TEST_FAILURE'"
+    },
+    {
+      "test": "Neo rests his shipped occiput on both ship pillows without sinking into their surfaces",
+      "error": "\"Cannot read properties of undefined (reading 'updateWorldMatrix')\"",
+      "code": "'ERR_TEST_FAILURE'"
+    },
+    {
+      "test": "Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug",
+      "error": "'Morpheus misses the connector grip by 0.1813835714721712'",
+      "code": "'ERR_ASSERTION'"
+    },
+    {
+      "test": "Neo takes the apartment handset from its physical cradle and returns it after the call",
+      "error": "'the held handset must replace the cradle handset without a jump; gap 1.2462864120018804'",
+      "code": "'ERR_ASSERTION'"
+    },
+    {
+      "test": "shipped neo mesh has valid skinning and usable anatomical bones",
+      "error": "'keep the original Matrix wardrobe within its geometry budget'",
+      "code": "'ERR_ASSERTION'"
+    },
+    {
+      "test": "shipped morpheus mesh has valid skinning and usable anatomical bones",
+      "error": "'keep the original Matrix wardrobe within its geometry budget'",
+      "code": "'ERR_ASSERTION'"
+    }
+  ]
+}
