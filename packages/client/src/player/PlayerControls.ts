@@ -62,6 +62,8 @@ export class PlayerControls {
   custodyBodies?: Vector3[];
   private inOfficeLift = false;
   private recoveryYaw: number | undefined;
+  private recoveryLook?: THREE.Quaternion;
+  private recoveryRoll = 0;
   private truthYaw: number | undefined;
   private keys = new Set<string>();
   private yaw = 0;
@@ -186,6 +188,7 @@ export class PlayerControls {
 
   possess(state: AgentState): void {
     const changedActor = this.id !== state.id;
+    this.recoveryLook = undefined; this.recoveryRoll = 0;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.meetingYaw = undefined; this.arrestYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
     this.chairYaw = undefined;
@@ -238,6 +241,7 @@ export class PlayerControls {
     this.onViewChange?.(false);
   }
   release(): void {
+    this.recoveryLook = undefined; this.recoveryRoll = 0;
     this.hammerPreparation = undefined;
     this.motion.maggieDiscovery = undefined; this.discoveryAim = false;
     this.motion.logosBane = undefined; this.logosAim = false;
@@ -302,6 +306,7 @@ export class PlayerControls {
       if (event.code === 'Digit4') this.action('barricade');
       if (event.code === 'KeyV') {
         this.firstPerson = !this.firstPerson;
+        this.recoveryLook = undefined;
         this.podView = undefined;
         if (this.ambushCallTarget && !this.ambushCallCancelled) { this.watchingAmbushCall = false; this.cameraReady = false; }
         if (this.motion.freewayPickup) {
@@ -1024,9 +1029,16 @@ export class PlayerControls {
       const turn = Math.atan2(Math.sin(yaw - this.recoveryYaw), Math.cos(yaw - this.recoveryYaw));
       this.yaw += turn; this.movementYaw += turn; this.facing = yaw; this.cameraReady = false;
     }
+    const download = state.currentAction?.parameters.download as MotionInput['download'];
+    if (this.firstPerson && this.truthYaw !== undefined && this.motion.truth?.role === 'neo' && truthRest(this.motion.truth)
+      && download?.role === 'neo' && ['greeting', 'waking'].includes(download.phase)) {
+      // The bedside uses world angles; waking uses the posed head's frame.
+      // Retain the rendered gaze until that new frame is available below.
+      this.recoveryLook = this.camera.quaternion.clone();
+    }
     this.motion.recovery = state.currentAction?.parameters.recovery as number | undefined;
     this.motion.cabin = state.currentAction?.parameters.cabin as MotionInput['cabin'];
-    this.motion.download = state.currentAction?.parameters.download as MotionInput['download'];
+    this.motion.download = download;
     if (this.motion.recovery !== undefined) {
       const yaw = this.motion.download ? state.rotation : recoveryBodyPose(this.motion.recovery).yaw;
       if (this.recoveryYaw !== undefined) { this.yaw += yaw - this.recoveryYaw; this.movementYaw += yaw - this.recoveryYaw; }
@@ -3339,15 +3351,22 @@ export class PlayerControls {
 
   syncRecoveryCamera(group: THREE.Group): void {
     const state = this.authoritative;
-    if (!this.firstPerson || this.id !== 'neo' || state?.currentLocation !== 'film_neb_deck'
-      || this.motion.performance !== 'recover' && this.motion.cabin?.kind !== 'wake') return;
+    if (this.id !== 'neo' || state?.currentLocation !== 'film_neb_deck'
+      || this.motion.performance !== 'recover' && this.motion.cabin?.kind !== 'wake') { this.recoveryLook = undefined; this.recoveryRoll = 0; return; }
+    if (!this.firstPerson) return;
     const head = group.getObjectByName('head'); if (!head) return;
     // Sample after the current mattress/bed-exit pose. Both position and the
     // cranial frame follow the actor; mouse angles remain relative to that frame.
     head.updateWorldMatrix(true, false);
     const marker = (head.userData.patientEye ?? head.userData.cameraEye) as THREE.Vector3 | undefined;
     const eye = head.localToWorld(marker?.clone() ?? new THREE.Vector3(0, .1, .32));
-    const rotation = head.getWorldQuaternion(new THREE.Quaternion()), yaw = this.yaw - state.rotation;
+    const rotation = head.getWorldQuaternion(new THREE.Quaternion());
+    if (this.recoveryLook) {
+      const look = new THREE.Vector3(0, 0, -1).applyQuaternion(this.recoveryLook).applyQuaternion(rotation.clone().invert());
+      this.yaw = this.movementYaw = state.rotation + Math.atan2(look.x, look.z);
+      this.pitch = Math.atan2(-look.y, Math.hypot(look.x, look.z));
+    }
+    const yaw = this.yaw - state.rotation;
     const sit = recoveryBodyPose(this.motion.recovery ?? 0).sit;
     this.pitch = THREE.MathUtils.clamp(this.pitch, THREE.MathUtils.lerp(-1.45, -.4, sit), THREE.MathUtils.lerp(1.85, 1.1, sit));
     this.camera.up.set(0, 1, 0).applyQuaternion(rotation);
@@ -3357,6 +3376,13 @@ export class PlayerControls {
     this.camera.quaternion.copy(rotation)
       .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(this.pitch, yaw, 0, 'YXZ')))
       .multiply(new THREE.Quaternion(0, 1, 0, 0));
+    if (this.recoveryLook) {
+      const correction = this.camera.quaternion.clone().invert().multiply(this.recoveryLook);
+      const roll = 2 * Math.atan2(correction.z, correction.w);
+      this.recoveryRoll = Math.atan2(Math.sin(roll), Math.cos(roll)); this.recoveryLook = undefined;
+    }
+    // Retain the bedside horizon, then settle into the upright head frame as Neo sits up.
+    if (this.recoveryRoll) this.camera.rotateZ(this.recoveryRoll * (1 - sit));
     this.camera.near = .06; this.camera.updateProjectionMatrix();
   }
 
