@@ -20,20 +20,20 @@ test('batching only fixed siblings leaves independently animated child assemblie
 });
 
 test('the delivered ship batches fixed deck pieces while retaining every oriented triangle, UV and shading flag', t => {
-  const batches: THREE.Mesh[][] = [], remove = THREE.Object3D.prototype.remove;
+  const batches: { parent: THREE.Object3D; sources: THREE.Mesh[] }[] = [], remove = THREE.Object3D.prototype.remove;
   t.mock.method(THREE.Object3D.prototype, 'remove', function (this: THREE.Object3D, ...objects: THREE.Object3D[]) {
-    if (this.name === 'neb-interior-deck' && objects.length > 1 && objects.every(object => object instanceof THREE.Mesh)) batches.push(objects as THREE.Mesh[]);
+    if ((this.name === 'neb-interior-deck' || this.name === 'neb-core-monitor' || this.name.startsWith('neb-core-chair-'))
+      && objects.length > 1 && objects.every(object => object instanceof THREE.Mesh)) batches.push({ parent: this, sources: objects as THREE.Mesh[] });
     return remove.apply(this, objects);
   });
   const root = new THREE.Group(), renderer = new NebDeckRenderer(root);
   try {
-    const deck = root.getObjectByName('neb-interior-deck')!;
     assert.ok(batches.length >= 3, 'the ship must actually combine its repeated opaque fixed fixtures');
     let sourceMeshes = 0, vertices = 0, triangles = 0;
     const seen = new Set<THREE.Mesh>();
-    for (const sources of batches) {
+    for (const { parent, sources } of batches) {
       const count = sources.reduce((sum, mesh) => sum + mesh.geometry.attributes.position.count, 0), first = sources[0];
-      const result = deck.children.find(child => child instanceof THREE.Mesh && !seen.has(child) && child.material === first.material
+      const result = parent.children.find(child => child instanceof THREE.Mesh && !seen.has(child) && child.material === first.material
         && child.geometry.attributes.position.count === count && child.castShadow === first.castShadow && child.receiveShadow === first.receiveShadow) as THREE.Mesh;
       assert.ok(result, 'each original batch has one corresponding delivered draw'); seen.add(result);
       assert.equal(result.renderOrder, first.renderOrder); assert.equal(result.layers.mask, first.layers.mask);
@@ -61,5 +61,34 @@ test('the delivered ship batches fixed deck pieces while retaining every oriente
     }
     for (const name of ['neb-medical-control-knob', 'neb-cabin-door', 'neb-first-core-cable', 'neb-cargo-hatch', 'neb-medical-needle-0', 'neb-neo-metal-mug', 'neb-training-disk']) assert.ok(root.getObjectByName(name), `${name} must remain addressable`);
     t.diagnostic(JSON.stringify({ sourceMeshes, combinedDraws: batches.length, vertices, triangles }));
+  } finally { renderer.dispose(); }
+});
+
+
+test('ship monitors and fixed chair frames avoid separate draws while preserving named contact parts', () => {
+  const root = new THREE.Group(), renderer = new NebDeckRenderer(root);
+  try {
+    const monitors: THREE.Object3D[] = [], chairs: THREE.Object3D[] = [];
+    root.traverse(object => {
+      if (object.name === 'neb-core-monitor') monitors.push(object);
+      if (object instanceof THREE.Group && /^neb-core-chair-(neo|morpheus|trinity|four)$/.test(object.name)) chairs.push(object);
+    });
+    assert.ok(monitors.length > 6); assert.equal(chairs.length, 4);
+    for (const monitor of monitors) {
+      const meshes = monitor.children.filter(object => object instanceof THREE.Mesh) as THREE.Mesh[];
+      assert.equal(meshes.length, 2, 'the fixed case and five ribs share one opaque draw alongside the luminous screen');
+      assert.equal(meshes.reduce((sum, mesh) => sum + mesh.geometry.index!.count / 3, 0), 84, 'retain all seven complete boxes');
+      assert.ok(meshes.every(mesh => mesh.castShadow && mesh.receiveShadow));
+    }
+    for (const chair of chairs) {
+      const meshes = chair.children.filter(object => object instanceof THREE.Mesh) as THREE.Mesh[];
+      assert.equal(meshes.length, 4, 'the base and armrests share a draw; cushion, backrest and footrest remain');
+      for (const part of ['backrest', 'footrest']) assert.ok(chair.getObjectByName(`${chair.name}-${part}`), 'retain the exact contact object');
+      for (const side of [-1, 1]) assert.ok(root.getObjectByName(`${chair.name}-cable-${side}`), 'operator cables remain individually movable');
+    }
+    const headrest = root.getObjectByName('neb-core-chair-trinity-relay-headrest')!;
+    assert.equal(headrest.visible, false); assert.equal(headrest.children.length, 2);
+    headrest.visible = true; headrest.position.y += .2;
+    assert.equal(headrest.children.length, 2, 'relay head support remains a separate assembly');
   } finally { renderer.dispose(); }
 });
