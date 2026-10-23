@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { FILM_SETS, truthKneel, truthRest, type TruthGesture } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
+import { reach } from './SpoonPerformance.js';
 
 /** The aftermath of the first truth lesson, using the current character skeleton. */
 export class TruthPerformance {
   private battery = new THREE.Group();
   private soles?: { bone: THREE.Bone; points: THREE.Vector3[] }[];
+  private flatHands = new Map<string, THREE.Quaternion[]>();
   constructor(private rig: HeroRig) {
     this.battery.name = 'truth-held-battery'; this.battery.position.set(.08, -.18, .025);
     const shell = new THREE.MeshStandardMaterial({ color: 0x1b1c1a, roughness: .42, metalness: .7 });
@@ -92,34 +94,63 @@ export class TruthPerformance {
 
   contact(gesture: TruthGesture | undefined): void {
     if (gesture?.role !== 'neo' || gesture.phase !== 'unplug') return;
-    const blend = truthKneel(gesture.elapsed); if (!blend) return;
+    if (gesture.elapsed < 8) return;
+    // The general standing pose grounds the ankle, not the shipped boot sole.
+    const blend = truthKneel(gesture.elapsed);
+    if (!blend) { this.placeShoes(); return; }
     const bones = this.rig.bones; this.rig.root.updateWorldMatrix(true, true);
     for (const side of ['R', 'L']) {
       const shoulder = bones.get(`shoulder_${side}`)!, elbow = bones.get(`elbow_${side}`)!, wrist = bones.get(`wrist_${side}`)!;
-      const root = this.rig.root.getWorldQuaternion(new THREE.Quaternion());
-      const rotation = root.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)));
-      const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(rotation, blend);
-      const palm = new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02);
-      const ground = this.rig.root.localToWorld(new THREE.Vector3(side === 'R' ? -.48 : .48, 0, 1.02));
-      // The wrist-space proxy lies inside the hand; the shipped skin extends
-      // another .17 below it with both palms facing the deck.
-      ground.y = FILM_SETS.film_neb_deck.center.y - 1 + .18;
-      const target = wrist.localToWorld(palm.clone()).lerp(ground, blend).sub(palm.applyQuaternion(orientation));
-      const start = shoulder.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(start);
-      const a = elbow.position.length(), b = wrist.position.length(), reach = THREE.MathUtils.clamp(direction.length(), .02, a + b - .001);
-      direction.normalize(); target.copy(start).addScaledVector(direction, reach);
-      const along = (a * a - b * b + reach * reach) / (2 * reach);
-      const pole = new THREE.Vector3(side === 'R' ? -1 : 1, 0, .3).applyQuaternion(root);
-      pole.addScaledVector(direction, -pole.dot(direction)).normalize();
-      const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
-      const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {
-        joint.quaternion.setFromUnitVectors(child.position.clone().normalize(), joint.parent!.worldToLocal(point.clone()).sub(joint.position).normalize()); joint.updateWorldMatrix(false, true);
-      };
-      aim(shoulder, elbow, hinge); aim(elbow, wrist, target);
-      wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
-      for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) bones.get(`finger${finger}-${segment}_${side}`)!.rotation.z *= 1 - blend;
+      const root = this.rig.root.getWorldQuaternion(new THREE.Quaternion()), sign = side === 'R' ? 1 : -1;
+      const normal = new THREE.Vector3(0, -sign, 0), fingers = new THREE.Vector3(0, 0, -1);
+      const orientation = root.clone().multiply(new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(normal, fingers, normal.clone().cross(fingers))));
+      // This is the actual palmar skin centroid in the shipped wrist's bind space.
+      const palm = new THREE.Vector3(sign * .05575, -.19105, .00371);
+      const ground = this.rig.root.localToWorld(new THREE.Vector3(-sign * .63, 0, 1.45));
+      ground.y = FILM_SETS.film_neb_deck.center.y - 1 + .038;
+      const goal = ground.sub(palm.applyQuaternion(orientation)), start = wrist.getWorldPosition(new THREE.Vector3()), rest = wrist.quaternion.clone();
+      const origin = shoulder.getWorldPosition(new THREE.Vector3()), initialDirection = start.clone().sub(origin).normalize();
+      const target = start.clone().lerp(goal, blend), direction = target.clone().sub(origin).normalize(), finalDirection = goal.clone().sub(origin).normalize();
+      const initialPole = elbow.getWorldPosition(new THREE.Vector3()).sub(origin); initialPole.addScaledVector(initialDirection, -initialPole.dot(initialDirection)).normalize();
+      const pole = new THREE.Vector3(-sign * .3, 0, -1).applyQuaternion(root); pole.addScaledVector(finalDirection, -pole.dot(finalDirection)).normalize();
+      const transported = initialPole.clone().applyQuaternion(new THREE.Quaternion().setFromUnitVectors(initialDirection, finalDirection));
+      const roll = Math.atan2(finalDirection.dot(new THREE.Vector3().crossVectors(transported, pole)), transported.dot(pole));
+      const bend = initialPole.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(initialDirection, direction)).applyAxisAngle(direction, roll * blend);
+      reach(shoulder, elbow, wrist.position, target, bend);
+      wrist.quaternion.copy(rest.slerp(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation), blend));
+      const axis = wrist.position.clone().normalize(), q = wrist.quaternion, projection = q.x * axis.x + q.y * axis.y + q.z * axis.z;
+      const twist = new THREE.Quaternion(axis.x * projection, axis.y * projection, axis.z * projection, q.w).normalize();
+      const swing = q.clone().multiply(twist.clone().invert()), angle = swing.angleTo(new THREE.Quaternion()), limit = Math.PI / 3;
+      if (angle > limit) q.copy(new THREE.Quaternion().slerp(swing, limit / angle)).multiply(twist);
+      this.openHand(side, blend);
       wrist.updateWorldMatrix(false, true);
     }
+  }
+
+  private openHand(side: string, amount: number): void {
+    let targets = this.flatHands.get(side);
+    if (!targets) {
+      targets = [];
+      const skin = this.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, a = skin.geometry.attributes;
+      const tips = Array.from({ length: 5 }, () => new THREE.Vector3()), counts = [0, 0, 0, 0, 0], vertex = new THREE.Vector3();
+      const distal = new Map(tips.map((_, i) => [skin.skeleton.bones.indexOf(this.rig.bones.get(`finger${i + 1}-3_${side}`)!), i]));
+      for (let id = 0; id < a.position.count; id++) for (let k = 0; k < 4; k++) {
+        const joint = a.skinIndex.getComponent(id, k), digit = distal.get(joint);
+        if (digit === undefined || a.skinWeight.getComponent(id, k) <= .95) continue;
+        tips[digit].add(vertex.fromBufferAttribute(a.position, id).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[joint])); counts[digit]++; break;
+      }
+      const sign = side === 'R' ? 1 : -1;
+      for (let digit = 2; digit <= 5; digit++) {
+        const axes = [this.rig.rest.get(`finger${digit}-2_${side}`)!, this.rig.rest.get(`finger${digit}-3_${side}`)!, tips[digit - 1].divideScalar(counts[digit - 1])];
+        const direction = new THREE.Vector3(-sign * .12, -1, (3 - digit) * .06).normalize(), parent = new THREE.Quaternion();
+        for (const axis of axes) { const world = new THREE.Quaternion().setFromUnitVectors(axis.clone().normalize(), direction); targets.push(parent.clone().invert().multiply(world)); parent.copy(world); }
+      }
+      this.flatHands.set(side, targets);
+    }
+    for (let digit = 2; digit <= 5; digit++) for (let joint = 1; joint <= 3; joint++)
+      this.rig.bones.get(`finger${digit}-${joint}_${side}`)!.quaternion.slerp(targets[(digit - 2) * 3 + joint - 1], amount);
+    for (let joint = 1; joint <= 3; joint++) this.rig.bones.get(`finger1-${joint}_${side}`)!.quaternion.slerp(new THREE.Quaternion(), amount);
+    this.rig.bones.get(`finger1-1_${side}`)!.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), (side === 'R' ? -1 : 1) * 1.2 * amount));
   }
 
   dispose(): void {
