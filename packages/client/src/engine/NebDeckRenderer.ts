@@ -134,12 +134,14 @@ export class NebDeckRenderer {
       this.operatorCables.push(cable);
     }
     this.box(chair, this.steel, 0, .16, 1.45, 1.75, .1, 1, `${name}-footrest`);
+    batchStaticGeometry(chair, new Set(), false).forEach(geometry => this.geometries.add(geometry));
   }
   private crt(x: number, y: number, z: number, yaw = 0, amber = false): void {
     const group = new THREE.Group(); group.name = 'neb-core-monitor'; group.position.set(x, y, z); group.rotation.y = yaw; this.root.add(group);
     this.box(group, this.dark, 0, 0, 0, 2.7, 2.1, 1.8);
     const face = this.box(group, amber ? this.amber : this.screen, 0, .08, 1, 2.15, 1.45, .04); face.rotation.x = -.04;
     for (let row = -2; row <= 2; row++) this.box(group, this.dark, 0, row * .25, 1.035, 1.8 - Math.abs(row) * .12, .025, .02);
+    batchStaticGeometry(group, new Set(), false).forEach(geometry => this.geometries.add(geometry));
   }
 
   private hull(): void {

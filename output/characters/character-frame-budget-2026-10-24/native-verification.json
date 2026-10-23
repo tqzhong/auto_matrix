@@ -1,0 +1,22 @@
+{
+  "productionBundle": "index-B4mvRwyb.js",
+  "productionColdLoadChecked": true,
+  "firstAndThirdPersonChecked": true,
+  "normalTruthChoiceCompleted": true,
+  "normalWakeDoorWalkChairDownloadCompleted": true,
+  "finalScene": "m1_dojo",
+  "step": 0,
+  "tick": 9546,
+  "neoHealth": 100,
+  "paused": true,
+  "dojoCombatTested": false,
+  "consoleWarningsAndErrors": 0,
+  "realBackendRestart": true,
+  "fullWorldEqualAfterReconnect": false,
+  "fullWorldEqualExceptClearedResolvedPlayerIdle": true,
+  "resolvedPlayerIdleResetSource": "packages/server/src/player/PlayerController.ts:158,246",
+  "memoryFilesUnchanged": 7,
+  "restartDifferenceEvidence": "dojo-restart-differences.json",
+  "newPid": 62427,
+  "videoRecorded": false
+}

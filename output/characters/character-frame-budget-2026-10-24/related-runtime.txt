@@ -1,0 +1,249 @@
+TAP version 13
+# Subtest: the next morning clears the previous unplugging crew from Tank’s connection workspace, including old saves
+ok 1 - the next morning clears the previous unplugging crew from Tank’s connection workspace, including old saves
+  ---
+  duration_ms: 192.329709
+  type: 'test'
+  ...
+# Subtest: clearing the training workspace does not move a player, revive a dead crew member or disturb distant crew
+ok 2 - clearing the training workspace does not move a player, revive a dead crew member or disturb distant crew
+  ---
+  duration_ms: 17.81875
+  type: 'test'
+  ...
+# Subtest: training preparation restores its saved body action immediately on release and paused possession
+ok 3 - training preparation restores its saved body action immediately on release and paused possession
+  ---
+  duration_ms: 129.525584
+  type: 'test'
+  ...
+# Subtest: rehydrating training preserves free walking and does not revive a released dead player
+ok 4 - rehydrating training preserves free walking and does not revive a released dead player
+  ---
+  duration_ms: 7.671875
+  type: 'test'
+  ...
+# Subtest: training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+ok 5 - training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+  ---
+  duration_ms: 1498.364708
+  type: 'test'
+  ...
+# Subtest: Tank cannot be stolen and training preparation survives pause, disconnection and reload
+ok 6 - Tank cannot be stolen and training preparation survives pause, disconnection and reload
+  ---
+  duration_ms: 232.639292
+  type: 'test'
+  ...
+# Subtest: a saved upload already in progress does not replay the new cabin introduction
+ok 7 - a saved upload already in progress does not replay the new cabin introduction
+  ---
+  duration_ms: 14.144875
+  type: 'test'
+  ...
+# Subtest: a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+ok 8 - a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+  ---
+  duration_ms: 71.490584
+  type: 'test'
+  ...
+# Subtest: Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+ok 9 - Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+  ---
+  duration_ms: 86.246042
+  type: 'test'
+  ...
+# Subtest: a lost mentor stops the upload without silently reviving the character
+ok 10 - a lost mentor stops the upload without silently reviving the character
+  ---
+  duration_ms: 41.436708
+  type: 'test'
+  ...
+# Subtest: Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+ok 11 - Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+  ---
+  duration_ms: 728.227834
+  type: 'test'
+  ...
+# Subtest: the cabin grate is the visible walking surface rather than being buried underneath the older hull plates
+ok 12 - the cabin grate is the visible walking surface rather than being buried underneath the older hull plates
+  ---
+  duration_ms: 734.679083
+  type: 'test'
+  ...
+# Subtest: the worn cabin bulkheads retain real relief inside their shared collision envelope and leave the escort doorway open
+ok 13 - the worn cabin bulkheads retain real relief inside their shared collision envelope and leave the escort doorway open
+  ---
+  duration_ms: 373.79975
+  type: 'test'
+  ...
+# Subtest: cabin surfaces keep usable fallback colors until loaded, reject late images, and release shared image resources once
+ok 14 - cabin surfaces keep usable fallback colors until loaded, reject late images, and release shared image resources once
+  ---
+  duration_ms: 287.307333
+  type: 'test'
+  ...
+# Subtest: recovery and cabin shadows follow the current room rather than the whole deck
+ok 15 - recovery and cabin shadows follow the current room rather than the whole deck
+  ---
+  duration_ms: 614.032875
+  type: 'test'
+  ...
+# Subtest: local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+ok 16 - local interior shadows preserve fill light and restore outdoor sunlight after leaving the ship
+  ---
+  duration_ms: 6.178875
+  type: 'test'
+  ...
+# Subtest: room shadows cover the escort and chair approach continuously across both room boundaries
+ok 17 - room shadows cover the escort and chair approach continuously across both room boundaries
+  ---
+  duration_ms: 702.667959
+  type: 'test'
+  ...
+# Subtest: the recovery set has a solid medical bed, low bedside rails and an open route to the core
+ok 18 - the recovery set has a solid medical bed, low bedside rails and an open route to the core
+  ---
+  duration_ms: 293.604625
+  type: 'test'
+  ...
+# Subtest: the recovery needles and leads remain still when only the render clock advances
+ok 19 - the recovery needles and leads remain still when only the render clock advances
+  ---
+  duration_ms: 236.314125
+  type: 'test'
+  ...
+# Subtest: both recovery helpers go around the bed before supporting Neo from the aisle
+ok 20 - both recovery helpers go around the bed before supporting Neo from the aisle
+  ---
+  duration_ms: 7.999917
+  type: 'test'
+  ...
+# Subtest: the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+ok 21 - the recovery needle tips follow Neo’s posed body instead of stopping above the mattress
+  ---
+  duration_ms: 139.994042
+  type: 'test'
+  ...
+# Subtest: therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+ok 22 - therapy uses short skin-mounted needles, blue hubs and flexible bedside leads rather than suspended rods
+  ---
+  duration_ms: 140.617583
+  type: 'test'
+  ...
+# Subtest: inactive therapy skips patient bone work and recursive updates of unrelated deck geometry
+ok 23 - inactive therapy skips patient bone work and recursive updates of unrelated deck geometry
+  ---
+  duration_ms: 690.0265
+  type: 'test'
+  ...
+# Subtest: therapy reactivation and out-of-order restored clocks reproduce every visible needle and wire immediately
+ok 24 - therapy reactivation and out-of-order restored clocks reproduce every visible needle and wire immediately
+  ---
+  duration_ms: 1873.68725
+  type: 'test'
+  ...
+# Subtest: an inactive restored clock does not project hidden needles onto loaded patient skin
+ok 25 - an inactive restored clock does not project hidden needles onto loaded patient skin
+  ---
+  duration_ms: 113.731042
+  type: 'test'
+  ...
+# Subtest: batching only fixed siblings leaves independently animated child assemblies intact
+ok 26 - batching only fixed siblings leaves independently animated child assemblies intact
+  ---
+  duration_ms: 6.480209
+  type: 'test'
+  ...
+# Subtest: the delivered ship batches fixed deck pieces while retaining every oriented triangle, UV and shading flag
+ok 27 - the delivered ship batches fixed deck pieces while retaining every oriented triangle, UV and shading flag
+  ---
+  duration_ms: 651.3265
+  type: 'test'
+  ...
+# {"sourceMeshes":202,"combinedDraws":25,"vertices":6960,"triangles":5280}
+# Subtest: ship monitors and fixed chair frames avoid separate draws while preserving named contact parts
+ok 28 - ship monitors and fixed chair frames avoid separate draws while preserving named contact parts
+  ---
+  duration_ms: 321.834208
+  type: 'test'
+  ...
+# Subtest: revisiting the meal uses Neo’s live prop owner even when an old connected body remains cached
+ok 29 - revisiting the meal uses Neo’s live prop owner even when an old connected body remains cached
+  ---
+  duration_ms: 604.357125
+  type: 'test'
+  ...
+# Subtest: the console stream follows Cypher’s live jug rather than the connected-body provider
+ok 30 - the console stream follows Cypher’s live jug rather than the connected-body provider
+  ---
+  duration_ms: 311.386584
+  type: 'test'
+  ...
+# Subtest: m1_tv_exit keeps cervical jacks attached to the connected ship bodies
+ok 31 - m1_tv_exit keeps cervical jacks attached to the connected ship bodies
+  ---
+  duration_ms: 147.080333
+  type: 'test'
+  ...
+# Subtest: m1_unplugged keeps cervical jacks attached to the connected ship bodies
+ok 32 - m1_unplugged keeps cervical jacks attached to the connected ship bodies
+  ---
+  duration_ms: 136.944625
+  type: 'test'
+  ...
+# Subtest: the later Trinity relay still uses her live socket and Link’s live hand provider
+ok 33 - the later Trinity relay still uses her live socket and Link’s live hand provider
+  ---
+  duration_ms: 122.813375
+  type: 'test'
+  ...
+# Subtest: twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+ok 34 - twenty therapy needles meet the shipped cheek, torso and arm skin while their hubs and leads stay outside it
+  ---
+  duration_ms: 14828.684083
+  type: 'test'
+  ...
+# actual skin and lead clearance at 3.8s
+# actual skin and lead clearance at 4.073s
+# actual skin and lead clearance at 5.8s
+# Subtest: the first-person patient keeps a visible torso and hands while the head cannot mask the treatment
+ok 35 - the first-person patient keeps a visible torso and hands while the head cannot mask the treatment
+  ---
+  duration_ms: 2061.650208
+  type: 'test'
+  ...
+# retained 25728 actual exposed skin triangles
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 36 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 36.136
+  type: 'test'
+  ...
+# Subtest: truth is followed by a requested exit, physical unplugging and a bedside answer before training
+ok 37 - truth is followed by a requested exit, physical unplugging and a bedside answer before training
+  ---
+  duration_ms: 703.142042
+  type: 'test'
+  ...
+# Subtest: unplugging pauses for the player, world and occupied crew and resumes its physical checkpoint
+ok 38 - unplugging pauses for the player, world and occupied crew and resumes its physical checkpoint
+  ---
+  duration_ms: 350.6775
+  type: 'test'
+  ...
+# Subtest: existing training saves stay in training while completed desert saves include the new aftermath
+ok 39 - existing training saves stay in training while completed desert saves include the new aftermath
+  ---
+  duration_ms: 5.346
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18572.2975

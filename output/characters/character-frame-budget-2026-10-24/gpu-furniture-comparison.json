@@ -1,0 +1,61 @@
+{
+  "fixtureBatches": 19,
+  "textureErrors": [],
+  "postprocessing": "production GTAO, bloom, tone mapping and FXAA",
+  "shadowMap": "1024 PCFSoft",
+  "size": [
+    960,
+    540
+  ],
+  "views": [
+    {
+      "name": "medical-monitors",
+      "position": [
+        -6,
+        7,
+        -9
+      ],
+      "target": [
+        -14,
+        5,
+        -17
+      ],
+      "changedPixels": 0,
+      "maxChannel": 0,
+      "meanChannel": 0
+    },
+    {
+      "name": "core-chairs",
+      "position": [
+        14,
+        7,
+        4
+      ],
+      "target": [
+        0,
+        3,
+        0
+      ],
+      "changedPixels": 9,
+      "maxChannel": 2,
+      "meanChannel": 0.000008359053497942386
+    },
+    {
+      "name": "cargo-monitor",
+      "position": [
+        3,
+        10,
+        32
+      ],
+      "target": [
+        11,
+        10,
+        23.5
+      ],
+      "changedPixels": 0,
+      "maxChannel": 0,
+      "meanChannel": 0
+    }
+  ],
+  "glError": 0
+}

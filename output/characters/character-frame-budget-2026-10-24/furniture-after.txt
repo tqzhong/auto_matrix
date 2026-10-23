@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: batching only fixed siblings leaves independently animated child assemblies intact
+ok 1 - batching only fixed siblings leaves independently animated child assemblies intact
+  ---
+  duration_ms: 6.478458
+  type: 'test'
+  ...
+# Subtest: the delivered ship batches fixed deck pieces while retaining every oriented triangle, UV and shading flag
+ok 2 - the delivered ship batches fixed deck pieces while retaining every oriented triangle, UV and shading flag
+  ---
+  duration_ms: 477.3405
+  type: 'test'
+  ...
+# {"sourceMeshes":202,"combinedDraws":25,"vertices":6960,"triangles":5280}
+# Subtest: ship monitors and fixed chair frames avoid separate draws while preserving named contact parts
+ok 3 - ship monitors and fixed chair frames avoid separate draws while preserving named contact parts
+  ---
+  duration_ms: 163.332708
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2571.237708

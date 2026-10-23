@@ -1,0 +1,534 @@
+{
+  "height": 720,
+  "rects": [
+    {
+      "height": 30.579425811767575,
+      "id": "",
+      "tag": "SPAN",
+      "width": 74.57682037353516,
+      "x": 59.94791412353515,
+      "y": 25.78775978088379
+    },
+    {
+      "height": 8.333333015441895,
+      "id": "",
+      "tag": "SPAN",
+      "width": 74.57682037353516,
+      "x": 59.94791412353515,
+      "y": 48.03385162353515
+    },
+    {
+      "height": 9.583333015441896,
+      "id": "game-world",
+      "tag": "SPAN",
+      "width": 115.87890625,
+      "x": 582.0572509765625,
+      "y": 23.958332061767575
+    },
+    {
+      "height": 20.833332061767575,
+      "id": "game-location",
+      "tag": "H2",
+      "width": 237.1875,
+      "x": 521.40625,
+      "y": 42.36978912353515
+    },
+    {
+      "height": 15.7421875,
+      "id": "game-pause",
+      "tag": "BUTTON",
+      "width": 63.05338287353515,
+      "x": 866.2890625,
+      "y": 33.209632873535156
+    },
+    {
+      "height": 16.15885353088379,
+      "id": "game-sound",
+      "tag": "BUTTON",
+      "width": 44.16015625,
+      "x": 947.3372192382812,
+      "y": 33.00130081176758
+    },
+    {
+      "height": 15.7421875,
+      "id": "game-inspect",
+      "tag": "BUTTON",
+      "width": 51.9921875,
+      "x": 1009.4921875,
+      "y": 33.209632873535156
+    },
+    {
+      "height": 20.06510353088379,
+      "id": "game-characters",
+      "tag": "BUTTON",
+      "width": 89.84375,
+      "x": 1079.4791259765625,
+      "y": 31.048175811767575
+    },
+    {
+      "height": 15.7421875,
+      "id": "game-observe",
+      "tag": "BUTTON",
+      "width": 62.68228912353515,
+      "x": 1187.317626953125,
+      "y": 33.209632873535156
+    },
+    {
+      "height": 9.583333015441896,
+      "id": "",
+      "tag": "SPAN",
+      "width": 109.0625,
+      "x": 47.83203125,
+      "y": 130
+    },
+    {
+      "height": 19.583332061767575,
+      "id": "game-objective",
+      "tag": "H3",
+      "width": 150,
+      "x": 47.83203125,
+      "y": 151.54946899414062
+    },
+    {
+      "height": 17.99479103088379,
+      "id": "game-objective-copy",
+      "tag": "P",
+      "width": 150,
+      "x": 47.83203125,
+      "y": 181.1328125
+    },
+    {
+      "height": 0,
+      "id": "game-event",
+      "tag": "DIV",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "P",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "game-interaction",
+      "tag": "DIV",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "game-dialogue",
+      "tag": "DIV",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "P",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-initial",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-name",
+      "tag": "H2",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-identity",
+      "tag": "SMALL",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-health",
+      "tag": "I",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-health-value",
+      "tag": "B",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-energy",
+      "tag": "I",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "BUTTON",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-skill-0",
+      "tag": "B",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "skill-detail-0",
+      "tag": "EM",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "skill-status-0",
+      "tag": "SMALL",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "BUTTON",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-skill-1",
+      "tag": "B",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "skill-detail-1",
+      "tag": "EM",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "skill-status-1",
+      "tag": "SMALL",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "game-population",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "game-minimap",
+      "tag": "CANVAS",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "game-map-caption",
+      "tag": "P",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "attack-keys",
+      "tag": "KBD",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "attack-label",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "view-label",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "r-label",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "mouse-hint",
+      "tag": "DIV",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "player-death",
+      "tag": "DIV",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "SPAN",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "",
+      "tag": "P",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "death-rebuild",
+      "tag": "BUTTON",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 0,
+      "id": "death-choose",
+      "tag": "BUTTON",
+      "width": 0,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 106.08723449707033,
+      "id": "session-notice",
+      "tag": "DIV",
+      "width": 440,
+      "x": 420,
+      "y": 90
+    },
+    {
+      "height": 96.08072662353516,
+      "id": "film-truth-reflection",
+      "tag": "DIV",
+      "width": 850,
+      "x": 215,
+      "y": 589.921875
+    },
+    {
+      "height": 350.5729064941406,
+      "id": "performance-panel",
+      "tag": "DIV",
+      "width": 290,
+      "x": 974.00390625,
+      "y": 80
+    }
+  ],
+  "width": 1280
+}

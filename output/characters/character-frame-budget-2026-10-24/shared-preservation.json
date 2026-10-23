@@ -1,0 +1,10 @@
+{
+  "regeneratedDifferences": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ],
+  "restoredFromUnchangedBaseline": true,
+  "mainSharedEqualsBaseline": true,
+  "candidateServerUnchanged": true,
+  "frozenInputs": 1198
+}

@@ -1,0 +1,36 @@
+{
+  "baselineRelated": {
+    "tests": 38,
+    "pass": 38,
+    "fail": 0
+  },
+  "red": {
+    "tests": 3,
+    "pass": 2,
+    "fail": 1
+  },
+  "green": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0
+  },
+  "related": {
+    "tests": 39,
+    "pass": 39,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "inputsUnchanged": true,
+  "allRequiredGatesPassed": true,
+  "bundle": "index-B4mvRwyb.js",
+  "bundleSha256": "cd67e26a152a6559b395b1ffac92c4dde9c3619ea322df8fc16b2c128fbebe36",
+  "bundleBytes": 3774645,
+  "temporaryProfilingCodeRemoved": true,
+  "wholeRepositorySuiteRun": false
+}

@@ -1,0 +1,18 @@
+{
+  "baseline": "2ce80a4dc3da1e973d4bab726a1f9deb399d9fce",
+  "inputFiles": 1198,
+  "packageFiles": 717,
+  "changed": [
+    {
+      "path": "packages/client/src/engine/NebDeckRenderer.ts",
+      "before": "9bb75dea144cc4d20dbd19198930c26df00ddff8e93e7c6b77617166baf4f169",
+      "after": "b5c230ffd2922d3ee47328f93b42d74200a59870b392e88ccde9a2000aaeecc2"
+    },
+    {
+      "path": "tests/neb-static-batching.test.mts",
+      "before": "db86ee85da3acf67a5e67cca1aa44e27062c2a0b528db67c21e3aaafc5bdeb85",
+      "after": "d2828a9a06fa556ecada971d1a616cf0392c664f319205b3969f92d98316f04f"
+    }
+  ],
+  "new": []
+}

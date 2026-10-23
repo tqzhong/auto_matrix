@@ -1,0 +1,1251 @@
+{
+  "characterTiming": {
+    "character:cypher:hidden:far": {
+      "calls": 545,
+      "ms": 1.8000011444091797,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.003302754393411339
+    },
+    "hands:neo:visible:near": {
+      "calls": 545,
+      "ms": 0.19999980926513672,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.00036697212709199396
+    },
+    "skin:neo:visible:near": {
+      "calls": 2180,
+      "ms": 69.20000839233398,
+      "max": 2.59999942779541,
+      "msPerFrame": 0.12697249246299813
+    },
+    "hero:neo:visible:near": {
+      "calls": 545,
+      "ms": 288.29999446868896,
+      "max": 4.300000190734863,
+      "msPerFrame": 0.5289908155388788
+    },
+    "character:neo:visible:near": {
+      "calls": 545,
+      "ms": 437.5999946594238,
+      "max": 4.90000057220459,
+      "msPerFrame": 0.8029357700172914
+    },
+    "hands:morpheus:visible:near": {
+      "calls": 545,
+      "ms": 0.2999992370605469,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504573157074254
+    },
+    "skin:morpheus:visible:near": {
+      "calls": 545,
+      "ms": 56.29999828338623,
+      "max": 2.3999996185302734,
+      "msPerFrame": 0.10330274914382795
+    },
+    "hero:morpheus:visible:near": {
+      "calls": 545,
+      "ms": 211.4000015258789,
+      "max": 6.59999942779541,
+      "msPerFrame": 0.38788991105665854
+    },
+    "character:morpheus:visible:near": {
+      "calls": 545,
+      "ms": 361.39999866485596,
+      "max": 9.800000190734863,
+      "msPerFrame": 0.6631192636052403
+    },
+    "hands:trinity:visible:near": {
+      "calls": 545,
+      "ms": 23.600013732910156,
+      "max": 0.6999998092651367,
+      "msPerFrame": 0.04330277749157827
+    },
+    "skin:trinity:visible:near": {
+      "calls": 545,
+      "ms": 55.099992752075195,
+      "max": 2.59999942779541,
+      "msPerFrame": 0.10110090413224807
+    },
+    "hero:trinity:visible:near": {
+      "calls": 545,
+      "ms": 242.00000953674316,
+      "max": 3.5,
+      "msPerFrame": 0.44403671474631773
+    },
+    "character:trinity:visible:near": {
+      "calls": 545,
+      "ms": 354.10000133514404,
+      "max": 3.6999998092651367,
+      "msPerFrame": 0.6497247730920074
+    },
+    "character:smith:hidden:far": {
+      "calls": 545,
+      "ms": 0.8000011444091797,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.001467892008090238
+    },
+    "character:agent_jones:hidden:far": {
+      "calls": 545,
+      "ms": 0.5999965667724609,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.001100911131692589
+    },
+    "character:agent_brown:hidden:far": {
+      "calls": 545,
+      "ms": 0.3000011444091797,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504608154296875
+    },
+    "hero:tank:visible:near": {
+      "calls": 545,
+      "ms": 93.39999866485596,
+      "max": 5.199999809265137,
+      "msPerFrame": 0.17137614433918524
+    },
+    "character:tank:visible:near": {
+      "calls": 545,
+      "ms": 201.00000953674316,
+      "max": 5.699999809265137,
+      "msPerFrame": 0.3688073569481526
+    },
+    "hero:switch:visible:near": {
+      "calls": 545,
+      "ms": 83.60000324249268,
+      "max": 2.8000001907348633,
+      "msPerFrame": 0.15339450136237187
+    },
+    "character:switch:visible:near": {
+      "calls": 545,
+      "ms": 185.09999752044678,
+      "max": 5.600000381469727,
+      "msPerFrame": 0.33963302297329684
+    },
+    "hero:mouse:visible:near": {
+      "calls": 545,
+      "ms": 112.29999446868896,
+      "max": 2.40000057220459,
+      "msPerFrame": 0.20605503572236508
+    },
+    "character:mouse:visible:near": {
+      "calls": 545,
+      "ms": 221.3999948501587,
+      "max": 3.3000001907348633,
+      "msPerFrame": 0.40623852266084165
+    },
+    "hero:apoc:visible:near": {
+      "calls": 545,
+      "ms": 100.89999389648438,
+      "max": 2.8000001907348633,
+      "msPerFrame": 0.18513760347978783
+    },
+    "character:apoc:visible:near": {
+      "calls": 545,
+      "ms": 222.60000896453857,
+      "max": 6.699999809265137,
+      "msPerFrame": 0.40844038342117167
+    },
+    "character:oracle:hidden:far": {
+      "calls": 545,
+      "ms": 0.6999998092651367,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0012844033197525445
+    },
+    "character:merovingian:hidden:far": {
+      "calls": 545,
+      "ms": 0.5,
+      "max": 0.19999980926513672,
+      "msPerFrame": 0.0009174311926605505
+    },
+    "character:persephone:hidden:far": {
+      "calls": 545,
+      "ms": 0.6000003814697266,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0011009181311371129
+    },
+    "character:twin1:hidden:far": {
+      "calls": 545,
+      "ms": 0.09999942779541016,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00018348518861543148
+    },
+    "character:twin2:hidden:far": {
+      "calls": 545,
+      "ms": 0.7000007629394531,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0012844050696136755
+    },
+    "character:citizen_1:hidden:far": {
+      "calls": 545,
+      "ms": 0.1999988555908203,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00036697037723086297
+    },
+    "character:citizen_2:hidden:far": {
+      "calls": 545,
+      "ms": 0.19999980926513672,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.00036697212709199396
+    },
+    "character:citizen_3:hidden:far": {
+      "calls": 545,
+      "ms": 0.8000001907348633,
+      "max": 0.6000003814697266,
+      "msPerFrame": 0.0014678902582291068
+    },
+    "character:citizen_4:hidden:far": {
+      "calls": 545,
+      "ms": 0.5999994277954102,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0011009163812759819
+    },
+    "character:citizen_5:hidden:far": {
+      "calls": 545,
+      "ms": 0.10000038146972656,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0001834869384765625
+    },
+    "character:seraph:hidden:far": {
+      "calls": 545,
+      "ms": 0.09999942779541016,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00018348518861543148
+    },
+    "character:lock:visible:far": {
+      "calls": 545,
+      "ms": 0.40000057220458984,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000733946004045119
+    },
+    "character:zion_parent:visible:far": {
+      "calls": 545,
+      "ms": 0.5,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174311926605505
+    },
+    "character:zion_neighbor:visible:far": {
+      "calls": 545,
+      "ms": 0.5,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174311926605505
+    },
+    "character:niobe:visible:far": {
+      "calls": 545,
+      "ms": 0.19999980926513672,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.00036697212709199396
+    },
+    "character:ghost:visible:far": {
+      "calls": 545,
+      "ms": 0.6999988555908203,
+      "max": 0.3000001907348633,
+      "msPerFrame": 0.0012844015698914135
+    },
+    "hero:dozer:visible:near": {
+      "calls": 545,
+      "ms": 89.3999834060669,
+      "max": 3.3000001907348633,
+      "msPerFrame": 0.16403666680012274
+    },
+    "character:dozer:visible:near": {
+      "calls": 545,
+      "ms": 191.09999656677246,
+      "max": 3.5,
+      "msPerFrame": 0.3506421955353623
+    },
+    "character:link:visible:far": {
+      "calls": 545,
+      "ms": 1.0000019073486328,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.001834865885043363
+    },
+    "character:zee:visible:far": {
+      "calls": 545,
+      "ms": 0.5,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174311926605505
+    },
+    "character:cas:visible:far": {
+      "calls": 545,
+      "ms": 0.19999980926513672,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.00036697212709199396
+    },
+    "character:hamann:visible:far": {
+      "calls": 545,
+      "ms": 0.10000038146972656,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0001834869384765625
+    },
+    "character:west:visible:far": {
+      "calls": 545,
+      "ms": 0.09999942779541016,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00018348518861543148
+    },
+    "character:dillard:visible:far": {
+      "calls": 545,
+      "ms": 0.10000038146972656,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0001834869384765625
+    },
+    "character:mifune:visible:far": {
+      "calls": 545,
+      "ms": 0.10000038146972656,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0001834869384765625
+    },
+    "character:kid:visible:far": {
+      "calls": 545,
+      "ms": 0.7999992370605469,
+      "max": 0.19999980926513672,
+      "msPerFrame": 0.0014678885083679758
+    },
+    "character:ballard:visible:far": {
+      "calls": 545,
+      "ms": 2.1999998092651367,
+      "max": 1.8999996185302734,
+      "msPerFrame": 0.004036696897734196
+    },
+    "character:soren:visible:far": {
+      "calls": 545,
+      "ms": 0.09999942779541016,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00018348518861543148
+    },
+    "character:roland:visible:far": {
+      "calls": 545,
+      "ms": 0.10000038146972656,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0001834869384765625
+    },
+    "character:maggie:visible:far": {
+      "calls": 545,
+      "ms": 0.39999866485595703,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0007339425043228569
+    },
+    "character:bane:visible:far": {
+      "calls": 545,
+      "ms": 0.5000009536743164,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174329425216815
+    },
+    "character:axel:visible:far": {
+      "calls": 545,
+      "ms": 0.6000003814697266,
+      "max": 0.40000057220458984,
+      "msPerFrame": 0.0011009181311371129
+    },
+    "character:vector:visible:far": {
+      "calls": 545,
+      "ms": 0.5000019073486328,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174346923828125
+    },
+    "character:sparks:visible:far": {
+      "calls": 545,
+      "ms": 0.10000038146972656,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0001834869384765625
+    },
+    "character:charra:visible:far": {
+      "calls": 545,
+      "ms": 0.7999982833862305,
+      "max": 0.19999980926513672,
+      "msPerFrame": 0.0014678867585068449
+    },
+    "character:agent_johnson:hidden:far": {
+      "calls": 545,
+      "ms": 0.7000017166137695,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0012844068194748065
+    },
+    "character:agent_jackson:hidden:far": {
+      "calls": 545,
+      "ms": 0.39999961853027344,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0007339442541839879
+    },
+    "character:agent_thompson:hidden:far": {
+      "calls": 545,
+      "ms": 0.9000005722045898,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0016513771967056694
+    },
+    "character:architect:hidden:far": {
+      "calls": 545,
+      "ms": 0.6999998092651367,
+      "max": 0.19999980926513672,
+      "msPerFrame": 0.0012844033197525445
+    },
+    "character:keymaker:hidden:far": {
+      "calls": 545,
+      "ms": 0,
+      "max": 0,
+      "msPerFrame": 0
+    },
+    "character:cain:hidden:far": {
+      "calls": 545,
+      "ms": 0.4999990463256836,
+      "max": 0.19999980926513672,
+      "msPerFrame": 0.0009174294427994194
+    },
+    "character:abel_mero:hidden:far": {
+      "calls": 545,
+      "ms": 0.39999961853027344,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0007339442541839879
+    },
+    "character:rama_kandra:hidden:far": {
+      "calls": 545,
+      "ms": 0.40000057220458984,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000733946004045119
+    },
+    "character:kamala:hidden:far": {
+      "calls": 545,
+      "ms": 0.3000001907348633,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504590655685564
+    },
+    "character:sati:hidden:far": {
+      "calls": 545,
+      "ms": 1,
+      "max": 0.5,
+      "msPerFrame": 0.001834862385321101
+    },
+    "character:trainman:hidden:far": {
+      "calls": 545,
+      "ms": 0.20000076293945312,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000366973876953125
+    },
+    "character:deus_ex_machina:visible:far": {
+      "calls": 545,
+      "ms": 0.20000076293945312,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000366973876953125
+    },
+    "character:choi:hidden:far": {
+      "calls": 545,
+      "ms": 0.3000001907348633,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504590655685564
+    },
+    "character:dujour:hidden:far": {
+      "calls": 545,
+      "ms": 0.20000076293945312,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000366973876953125
+    },
+    "character:spoon_boy:hidden:far": {
+      "calls": 545,
+      "ms": 0.5000019073486328,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174346923828125
+    },
+    "character:oracle_priestess:hidden:far": {
+      "calls": 545,
+      "ms": 0.40000057220458984,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000733946004045119
+    },
+    "character:oracle_attendant:hidden:far": {
+      "calls": 545,
+      "ms": 0.09999942779541016,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00018348518861543148
+    },
+    "character:potential_blocks:hidden:far": {
+      "calls": 545,
+      "ms": 0.39999961853027344,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0007339442541839879
+    },
+    "character:potential_1:hidden:far": {
+      "calls": 545,
+      "ms": 0.19999980926513672,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.00036697212709199396
+    },
+    "character:potential_2:hidden:far": {
+      "calls": 545,
+      "ms": 0.39999961853027344,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0007339442541839879
+    },
+    "character:potential_3:hidden:far": {
+      "calls": 545,
+      "ms": 0.40000152587890625,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.00073394775390625
+    },
+    "character:potential_4:hidden:far": {
+      "calls": 545,
+      "ms": 0.3000001907348633,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504590655685564
+    },
+    "character:rhineheart:hidden:far": {
+      "calls": 545,
+      "ms": 0.2999992370605469,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504573157074254
+    },
+    "character:courier:hidden:far": {
+      "calls": 545,
+      "ms": 0.40000057220458984,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.000733946004045119
+    },
+    "character:binary:visible:far": {
+      "calls": 545,
+      "ms": 0.8000011444091797,
+      "max": 0.40000057220458984,
+      "msPerFrame": 0.001467892008090238
+    },
+    "character:malachi:visible:far": {
+      "calls": 545,
+      "ms": 0.5000019073486328,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174346923828125
+    },
+    "character:ak:visible:far": {
+      "calls": 545,
+      "ms": 0.5,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174311926605505
+    },
+    "character:mauser:visible:far": {
+      "calls": 545,
+      "ms": 0.6999998092651367,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0012844033197525445
+    },
+    "character:colt:visible:far": {
+      "calls": 545,
+      "ms": 1.1999988555908203,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0022018327625519638
+    },
+    "character:citizen_6:hidden:far": {
+      "calls": 545,
+      "ms": 0.09999942779541016,
+      "max": 0.09999942779541016,
+      "msPerFrame": 0.00018348518861543148
+    },
+    "character:citizen_7:hidden:far": {
+      "calls": 545,
+      "ms": 0.3000011444091797,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504608154296875
+    },
+    "character:citizen_8:visible:far": {
+      "calls": 545,
+      "ms": 0.5,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174311926605505
+    },
+    "character:citizen_9:hidden:far": {
+      "calls": 545,
+      "ms": 0.6999988555908203,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0012844015698914135
+    },
+    "character:citizen_10:hidden:far": {
+      "calls": 545,
+      "ms": 0.7999982833862305,
+      "max": 0.39999961853027344,
+      "msPerFrame": 0.0014678867585068449
+    },
+    "character:citizen_11:hidden:far": {
+      "calls": 545,
+      "ms": 0.5000019073486328,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174346923828125
+    },
+    "character:citizen_12:hidden:far": {
+      "calls": 545,
+      "ms": 0.6999998092651367,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0012844033197525445
+    },
+    "character:citizen_13:hidden:far": {
+      "calls": 545,
+      "ms": 0.39999961853027344,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0007339442541839879
+    },
+    "character:citizen_14:hidden:far": {
+      "calls": 545,
+      "ms": 0.4999990463256836,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0009174294427994194
+    },
+    "character:citizen_15:visible:far": {
+      "calls": 545,
+      "ms": 0.3000011444091797,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504608154296875
+    },
+    "character:citizen_16:visible:far": {
+      "calls": 545,
+      "ms": 0.2999992370605469,
+      "max": 0.10000038146972656,
+      "msPerFrame": 0.0005504573157074254
+    }
+  },
+  "browserMainThread": {
+    "supported": [
+      "long-animation-frame",
+      "longtask"
+    ],
+    "entries": [
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 144538.39999961853,
+        "duration": 58,
+        "navigationId": 4883,
+        "paintTime": 144596.39999961853,
+        "presentationTime": 144720,
+        "renderStart": 144555.89999961853,
+        "styleAndLayoutStart": 144596.29999923706,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 144556,
+            "duration": 40.29999923706055,
+            "navigationId": 4883,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 144556,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9408
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 148666.19999980927,
+        "duration": 54,
+        "navigationId": 4883,
+        "paintTime": 148720.19999980927,
+        "presentationTime": 148852,
+        "renderStart": 148683.29999923706,
+        "styleAndLayoutStart": 148720.19999980927,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 148685.19999980927,
+            "duration": 34.89999961853027,
+            "navigationId": 4883,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 148685.19999980927,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9408
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 154473.0999994278,
+        "duration": 55.10000038146973,
+        "navigationId": 4883,
+        "paintTime": 154528.19999980927,
+        "presentationTime": 154652,
+        "renderStart": 154489.69999980927,
+        "styleAndLayoutStart": 154528.19999980927,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 154489.69999980927,
+            "duration": 38.39999961853027,
+            "navigationId": 4883,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 154489.69999980927,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9408
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 154752.0999994278,
+        "duration": 54.90000057220459,
+        "navigationId": 4883,
+        "paintTime": 154807,
+        "presentationTime": 154920,
+        "renderStart": 154759.79999923706,
+        "styleAndLayoutStart": 154805.39999961853,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 154759.79999923706,
+            "duration": 45.60000038146973,
+            "navigationId": 4883,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 154759.79999923706,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9408
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 154870.19999980927,
+        "duration": 65.80000019073486,
+        "navigationId": 4883,
+        "paintTime": 154936,
+        "presentationTime": 155020,
+        "renderStart": 154891.5999994278,
+        "styleAndLayoutStart": 154933,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 154891.69999980927,
+            "duration": 41.30000019073486,
+            "navigationId": 4883,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 154891.69999980927,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 9408
+          }
+        ]
+      }
+    ]
+  },
+  "lights": [
+    {
+      "name": "neb-deck-light--39",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4377
+      ]
+    },
+    {
+      "name": "neb-deck-light--30",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4386
+      ]
+    },
+    {
+      "name": "neb-deck-light--21",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": true,
+      "position": [
+        5376,
+        -87.3,
+        4395
+      ]
+    },
+    {
+      "name": "neb-deck-light--12",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4404
+      ]
+    },
+    {
+      "name": "neb-deck-light--3",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4413
+      ]
+    },
+    {
+      "name": "neb-deck-light-6",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4422
+      ]
+    },
+    {
+      "name": "neb-deck-light-15",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4431
+      ]
+    },
+    {
+      "name": "neb-deck-light-24",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4440
+      ]
+    },
+    {
+      "name": "neb-deck-light-33",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4449
+      ]
+    },
+    {
+      "name": "neb-deck-light-42",
+      "type": "PointLight",
+      "intensity": 110,
+      "distance": 20,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -87.3,
+        4458
+      ]
+    },
+    {
+      "name": "neb-medical-task-light",
+      "type": "PointLight",
+      "intensity": 260,
+      "distance": 22,
+      "intersectsView": true,
+      "position": [
+        5370.5,
+        -91.8,
+        4395.5
+      ]
+    },
+    {
+      "name": "neb-cabin-light",
+      "type": "PointLight",
+      "intensity": 105,
+      "distance": 12,
+      "intersectsView": true,
+      "position": [
+        5389.2,
+        -95.4,
+        4384
+      ]
+    },
+    {
+      "name": "neb-cabin-bounce",
+      "type": "PointLight",
+      "intensity": 30,
+      "distance": 10,
+      "intersectsView": true,
+      "position": [
+        5384.4,
+        -96.2,
+        4386.5
+      ]
+    },
+    {
+      "name": "neb-core-task-light",
+      "type": "PointLight",
+      "intensity": 210,
+      "distance": 28,
+      "intersectsView": false,
+      "position": [
+        5376,
+        -91,
+        4416
+      ]
+    },
+    {
+      "name": "neb-mess-task-light",
+      "type": "PointLight",
+      "intensity": 100,
+      "distance": 23,
+      "intersectsView": false,
+      "position": [
+        5370,
+        -92,
+        4438
+      ]
+    }
+  ],
+  "finiteLightCulling": {
+    "enabled": true,
+    "considered": 15,
+    "culled": 9
+  },
+  "occlusionInPlace": true,
+  "shipStaticBatching": true,
+  "camera": {
+    "position": [
+      5384.7,
+      -96.4,
+      4385.6
+    ],
+    "quaternion": [
+      -0.22510545593083928,
+      -0.4938442900417296,
+      -0.13407551201761297,
+      0.8291375687909479
+    ],
+    "projection": [
+      1.0154114945242536,
+      0,
+      0,
+      0,
+      0,
+      1.8040477552714238,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-23T16:44:58.969Z",
+  "scenes": [
+    "film_neb_deck"
+  ],
+  "viewport": {
+    "width": 1066,
+    "height": 600,
+    "pixelRatio": 1.5
+  },
+  "frames": 545,
+  "fps": 36.33206438255527,
+  "frameTime": {
+    "mean": 27.52389705882353,
+    "p95": 42.5
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.31889909866752975,
+      "p95": 0.9000005722045898
+    },
+    "agents": {
+      "mean": 6.284220179286572,
+      "p95": 10.199999809265137
+    },
+    "city": {
+      "mean": 0.16256880453967174,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 0.35284404229680333,
+      "p95": 0.6999998092651367
+    },
+    "effects": {
+      "mean": 0.17908257300700617,
+      "p95": 0.40000057220458984
+    },
+    "render": {
+      "mean": 13.3075229347299,
+      "p95": 25
+    },
+    "capture": {
+      "mean": 0.0009174294427994194,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 2.9282568905331674,
+      "p95": 5.300000190734863
+    },
+    "scene": {
+      "mean": 10.87045870614708,
+      "p95": 19.800000190734863
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.4985320887434373,
+      "p95": 1.0999994277954102
+    },
+    "occlusion.normals": {
+      "mean": 1.4596330677697418,
+      "p95": 3.1000003814697266
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.0045871594630250145,
+      "p95": 0
+    },
+    "occlusion": {
+      "mean": 2.1253211135164314,
+      "p95": 4.800000190734863
+    },
+    "bloom": {
+      "mean": 0.22348623538236007,
+      "p95": 0.5
+    },
+    "output": {
+      "mean": 0.02293575881818019,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.033944948878856976,
+      "p95": 0.10000038146972656
+    }
+  },
+  "gpuPassMs": {},
+  "gpuTiming": {
+    "mode": "cpu",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 0,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 526,
+    "p95": 526
+  },
+  "triangles": {
+    "mean": 1367801,
+    "p95": 1367801
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 370,
+      "triangles": 926667
+    },
+    "scene": {
+      "calls": 70,
+      "triangles": 220560
+    },
+    "occlusion": {
+      "calls": 68,
+      "triangles": 220556
+    },
+    "postprocessing": {
+      "calls": 18,
+      "triangles": 18
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "morpheus-hammer-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 66930
+    },
+    {
+      "name": "neo-logos-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 66510
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 62256
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 62256
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 61632
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 61552
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 56882
+    },
+    {
+      "name": "Tank_face",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 37160
+    },
+    {
+      "name": "mouse-anatomical-head",
+      "parent": "mouse-detailed-head",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 34368
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 34300
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 30012
+    },
+    {
+      "name": "mouse_ship_shirt",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 23722
+    },
+    {
+      "name": "trinity-logos-sweater",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 22128
+    },
+    {
+      "name": "short04",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 16800
+    },
+    {
+      "name": "Fitted_leather_jacket",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 16736
+    },
+    {
+      "name": "Tank_ribbed_shirt",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 15364
+    },
+    {
+      "name": "Tank_curl_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 15120
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 11588
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 35.405192721756464,
+  "fpsBeforeSampling": 27.960854813926716,
+  "pageVisibility": "visible",
+  "contextAntialias": true,
+  "profilingDrawInstrumentation": true,
+  "objects": 10216,
+  "visibleObjects": 1030
+}

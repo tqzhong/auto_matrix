@@ -1,0 +1,11 @@
+{
+  "imageSize": [
+    1280,
+    720
+  ],
+  "comparedPixels": 729991,
+  "changedPixels": 734,
+  "maxChannelDifference": 5,
+  "maskSource": "DOM rectangles mapped to observed native screenshot scale 5/6, plus 3 CSS pixels",
+  "initialUnscaledMaskChangedPixels": 4463
+}

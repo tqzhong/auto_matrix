@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><title>飞船固定家具 GPU 对照</title>
+<style>body{margin:20px;background:#102019;color:#e4eadd;font:14px monospace}button{padding:10px}canvas{display:block;width:960px;max-width:100%;margin-top:12px}pre{white-space:pre-wrap}</style>
+<h1>飞船固定家具 GPU 对照</h1><button id="run">检查三组真实布景视角</button><pre id="result">准备检查；不连接玩家存档。</pre>
+<script type="module">
+import * as THREE from 'three';
+import { NebDeckRenderer } from '/src/engine/NebDeckRenderer.ts';
+import { PostProcessing } from '/src/engine/PostProcessing.ts';
+const button=document.getElementById('run'), output=document.getElementById('result');
+button.onclick=async()=>{
+ button.disabled=true; output.textContent='正在加载实际飞船材质并比较…';
+ const errors=[]; let loaded;
+ const ready=new Promise(resolve=>loaded=resolve);
+ THREE.DefaultLoadingManager.onLoad=()=>loaded();
+ THREE.DefaultLoadingManager.onError=url=>errors.push(url);
+ const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+ renderer.setPixelRatio(1);renderer.setSize(960,540);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.append(renderer.domElement);
+ const scene=new THREE.Scene(),root=new THREE.Group();scene.background=new THREE.Color('#0b120f');scene.add(root);
+ const deck=new NebDeckRenderer(root);const camera=new THREE.PerspectiveCamera(58,960/540,.5,1000);
+ scene.add(new THREE.HemisphereLight(0xc7d3d3,0x3e3830,.7));
+ const light=new THREE.SpotLight(0xe5eee9,2100,120,Math.PI/3,.7,2);light.position.set(-12.3,21,10);light.target.position.set(0,0,-5);light.castShadow=true;
+ light.shadow.mapSize.set(1024,1024);light.shadow.bias=-.0002;light.shadow.normalBias=.05;scene.add(light,light.target);
+ const post=new PostProcessing(renderer,scene,camera);post.resize(960,540);await ready;
+ const fixtures=[];root.traverse(parent=>{if(parent.name==='neb-core-monitor'||/^neb-core-chair-(neo|morpheus|trinity|four)$/.test(parent.name))
+   for(const batch of parent.children)if(batch.userData.unbatchedSiblings)fixtures.push({parent,batch,pieces:batch.userData.unbatchedSiblings});});
+ const setBatch=enabled=>{for(const {parent,batch,pieces}of fixtures){batch.visible=enabled;if(enabled)parent.remove(...pieces);else parent.add(...pieces);}};
+ const capture=enabled=>{
+   setBatch(enabled);post.render();post.render();
+   const gl=renderer.getContext(),pixels=new Uint8Array(960*540*4);gl.readPixels(0,0,960,540,gl.RGBA,gl.UNSIGNED_BYTE,pixels);return pixels;
+ };
+ const views=[{name:'medical-monitors',position:[-6,7,-9],target:[-14,5,-17]},
+   {name:'core-chairs',position:[14,7,4],target:[0,3,0]},
+   {name:'cargo-monitor',position:[3,10,32],target:[11,10,23.5]}];
+ const results=[];
+ for(const view of views){
+   camera.position.set(...view.position);camera.lookAt(...view.target);camera.updateMatrixWorld(true);
+   const a=capture(false),b=capture(true);let changedPixels=0,maxChannel=0,total=0;
+   for(let i=0;i<a.length;i+=4){let changed=false;for(let k=0;k<3;k++){const delta=Math.abs(a[i+k]-b[i+k]);maxChannel=Math.max(maxChannel,delta);total+=delta;changed||=delta!==0;}if(changed)changedPixels++;}
+   results.push({...view,changedPixels,maxChannel,meanChannel:total/(960*540*3)});
+ }
+ const report={fixtureBatches:fixtures.length,textureErrors:errors,postprocessing:'production GTAO, bloom, tone mapping and FXAA',shadowMap:'1024 PCFSoft',size:[960,540],views:results,glError:renderer.getContext().getError()};
+ output.textContent=JSON.stringify(report,null,2);
+ const name=`neo-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+ const saved=await fetch('/__recording/'+name,{method:'POST',body:JSON.stringify(report,null,2)});output.textContent+='\n'+(saved.ok?'已保存 '+name:'保存失败');
+ button.disabled=false;
+};
+</script></html>
