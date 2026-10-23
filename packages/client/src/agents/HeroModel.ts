@@ -355,6 +355,7 @@ export class HeroModels {
       if (object.userData.cypherNeckReference || object.userData.mouseNeckReference) { object.visible = false; return; }
       if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume || object.userData.cypherCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
+      if (material.userData.dojoSkinColorGain) material.color.multiply(new THREE.Color().fromArray(material.userData.dojoSkinColorGain));
       if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && !object.userData.dojoSkin && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
         // The existing head/hands mesh also contains shoulder caps. They sit
         // beneath the new sleeves; preserve the finished face and wrist rings.
