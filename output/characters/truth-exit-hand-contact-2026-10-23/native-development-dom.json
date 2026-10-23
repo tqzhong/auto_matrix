@@ -1,0 +1,23 @@
+{
+  "canvas": [
+    {
+      "height": 1080,
+      "width": 1920
+    },
+    {
+      "height": 260,
+      "width": 480
+    },
+    {
+      "height": 230,
+      "width": 360
+    }
+  ],
+  "scripts": [
+    "http://127.0.0.1:5201/@vite/client",
+    "http://127.0.0.1:5201/src/main.ts?t=1792745341489"
+  ],
+  "text": "Ⅲ\nMATRIX\nLIVE SESSION\nREAL WORLD / ZION\n尼布甲尼撒号 · 核心与医疗舱\n▶ 继续时间\n♫ 声音\n人物检视\n切换角色 Tab\n观察世界 ↗\nYOUR NEXT CHOICE\n知道以后，还能回去吗\n\n拔线与身体失衡\n\n世界已暂停，角色暂时不能移动。点击继续游玩。\n\n继续游玩 ▶\n\n眩晕让 Neo 跪倒，双手撑住甲板，身体干呕。Morpheus 让他慢慢呼吸。\n\n鼠标观察 · V 切换视角 · 暂停或重连会保留动作",
+  "title": "MATRIX — 可游玩的自主开放世界",
+  "url": "http://127.0.0.1:5201/"
+}

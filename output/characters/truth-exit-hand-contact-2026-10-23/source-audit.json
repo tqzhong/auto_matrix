@@ -1,0 +1,27 @@
+{
+  "baseline": "0a3f252f114560b80e8358ce46589981aa53f8da",
+  "packageFiles": 711,
+  "baselineGitSourceAndConfigFiles": 1183,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/ForearmTwist.ts",
+      "before": "6bbd22e8df2cc72dd9de5d8ac99bf274e9cf15d572dabd6ed7f4e0c8e12274cf",
+      "after": "917e5d4545a96aa96a6fdc426e1774b9ae6b56622bdf3b356aa6070544d56306"
+    },
+    {
+      "path": "packages/client/src/agents/TruthPerformance.ts",
+      "before": "2e446d657c2b2417747ba3c969afd110e83277e561583c4833155b42ebc6cc99",
+      "after": "dd6a57a3adac798525b39a6b61f02e04799877a874e62ff202f471d59f22dff9"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/truth-ground-contact.test.mts",
+      "after": "54fa53ec9325752351569e90534c6bca2c91e46794ae13f56b6634156e64eee2"
+    },
+    {
+      "path": "tests/helpers/truth-ground.mts",
+      "after": "e4b9a14f8ecbb96678e56b85171ad43bb4e6d3cb8d469f97498a5ab9987cc62f"
+    }
+  ]
+}

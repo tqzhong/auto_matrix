@@ -1,0 +1,111 @@
+{
+  "required": {
+    "README.md": "aa9d422b19634abeb966ca354b5f026500884dad3828d6fa38b8a3f80c7ced62",
+    "baseline-audit.json": "3af3ba7d92aaa20456ff09a7ad11187d25a8e258258213e8d2c5a78d50456987",
+    "source-audit.json": "33a5434c83d2137ca6df17cae803772633e0b12e6b9dacb884176121c8d719b3",
+    "validation-inputs.json": "3f60b1f2563e3fb1cdc88a776bb9617b283e5c17fc20a895222e8265200815b7",
+    "validation.json": "98ab7b060e03be9836b5e0cd5ade78d78f280300b33737c2aeb90867fc99c374",
+    "candidate-build.json": "119408f32c5b550d51053a7d8fbb1454069171ee227d59415ad1378e22884375",
+    "compiled-shared-changes.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "film-reference-observations.json": "3f89976c0ed50bdd47d6a6199f0f4da739ae1c3a162d2ebc9c0dbea1940c0425",
+    "native-seed.json": "7f4d0f489d2467f7e5546cc5170fbbec70204c43d9ceffb8367defb3904cd40b",
+    "native-attempt-reset.json": "fc7a6b1099ada352f8aa7933244befe9bcb8e95bb33223f4f71fafeeb70a4810",
+    "truth-kneel-checkpoint-restart.json": "bf20fbe30b48b3187e907913655753b35bf62693f948404155ea8d95df12a177",
+    "native-cold-state.json": "6dabb82de70d8d4a0270924e1e084da8009814f1813b2cf75a42d92f6cb7a7a6",
+    "native-verification.json": "e91b29d9e663b338df598135dc62e7309f9ca9d890cf1be8acd07fbeec331d88",
+    "native-development-dom.json": "66bd8b65047588851a09978b8e4574b4e6c57dec337d27eb03254179c7da1713",
+    "native-production-dom.json": "107954cc3a960947eb22412ee4216b014ebdfdc451fa637efc70312a90aa439f",
+    "native-main-dom.json": "6b99032f8612f96166a8c62c27ad35036588b115ade4550da5415137810cf968",
+    "native-development-console.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "native-production-console.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "native-main-console.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "local-update-verification.json": "d459590794d29c413d8cc4a124323deae33a0c801558e26478ef64ad6cbabed5",
+    "qa-stop.json": "fda43f448459e0e65817510f3afd1b71b81841debec6a05906edfef84d52178d",
+    "animation-cpu.json": "f1d07c23bc282b3c88f5b42bd39c242e7c5020e8a79ce2b1fb5a728f1f3920db",
+    "crew-costume-observation.json": "b22413a129e67cf77111792d65c6b6075e8b3144ebe248235ebb4377be71b71c",
+    "native-attempt-01-rest.png": "680c9f20ed6f28bfe9dc4b93f9abbde4fc138ca234d24c3643ef2dbf375779c9",
+    "native-kneel-development.png": "0c32f71881f293b58d803148d4c41aafd87202d53f3b1c4327d61b3a723cd1c9",
+    "native-kneel-first-person.png": "3477807b8ed69dd5f11df9059c3647f3199491c958c8846256e08ca3374c09f3",
+    "native-kneel-mouse-look.png": "05877e3a4cfe1b6f3c5f4904c1bfd97d9cb4e25598d310159e164cf73eea8b0d",
+    "native-production-cold-held.png": "ebf10a0fdd08f30d333bfe9de3b0a634c043ed322a48ec938b9da9b3b97b748c",
+    "native-production-cold-look.png": "e271ef4f2cf37ddbdf32662d9db7bd76e45d84720afc1f05714ba26270e90232",
+    "native-production-philosophy.png": "69f3a74690429b4f15ecbc2af9604f96adbdd684776626f37e37732b84a7ee90",
+    "native-production-final-paused.png": "8530142db876de62599e58e8a5ded6a6acba5adb4c8b2c630c799ef7bd512c8c",
+    "native-main-current.png": "efb0b6e72b1fcbcbe63f9740016783dab1fa9cf1935d469e09e6d70aefde5c76",
+    "run-validation.py": "bceba54d7cc90ec8fc71351ef19364a8862ab39a49fe0ff7519f2a7bff082273",
+    "start-owned-qa.py": "4e0192b98205b86c1099a84e2abaf54b641ee167aeaa2e7b90604da9e737d936",
+    "reset-native-attempt.py": "5532095134f1e2c6efc54ffe15e6ccec0e4bc715f0c257452d968eaf524fa6cb",
+    "restart-owned-qa.py": "2967f925ae361b14cfbf616b6cf467f28551e81c0b252ee979f8363ad89731f9",
+    "stop-owned-qa.py": "1c1b3a79a4ec27b8acdf869f329160cde250f28bb0e82776dc847a4c737a6f10",
+    "publish-local-preview.py": "60dc7d207a49a418ac4714acddcc8531b964d15053534b54b9c645cffde8540c",
+    "benchmark-truth.mts": "83cec89a59ae06f043648c1bcc1f7878c53e110db9fe053eacf66c81044af045",
+    "curate-evidence.py": "f9ce7d6111cc85ccb838bdfa5d83a631bc373e312add1a9ab59cfefa0b7af960"
+  },
+  "logs": [
+    {
+      "source": "baseline-related-tests.log",
+      "sourceSha256": "c6c9b7cbbd780c24c269a4066a8b8ff88adb44f9765d78d6ada9e425b0ec8302",
+      "file": "baseline-related-tests.log.gz",
+      "sha256": "c063d1f96c2ea17d7d8c5e859a4b42c7218910a9f8993f49a34e02fcdd8f33e7"
+    },
+    {
+      "source": "baseline-final-tests.log",
+      "sourceSha256": "490c750007d7040dd1191e731fd0d55325cd6acdb3bfe0ecdb3e30fca9f13a6a",
+      "file": "baseline-final-tests.log.gz",
+      "sha256": "fe2931982b6730e9ef0e897be2e84d5f0b37f0ccf66b36a3d85790558f0de56d"
+    },
+    {
+      "source": "new-tests.log",
+      "sourceSha256": "5d3c594190f30c037b9e26020506b68717e6a1dfdc60d294ca7175bec4cc8720",
+      "file": "new-tests.log.gz",
+      "sha256": "c6a7757cc1740d9a09098910fdd10636c3e6f45fa80e12df1ba6f7343a80ad84"
+    },
+    {
+      "source": "related-tests.log",
+      "sourceSha256": "75d07038fa3c4e2a02521a937caaaef9623f4ee10422f1abc245dd60298eee95",
+      "file": "related-tests.log.gz",
+      "sha256": "954c154bd813d9f9ebd51b1dc5811cbe3bc4e5a44b4335ce47cb4905d0fe9740"
+    },
+    {
+      "source": "deploy-tests.log",
+      "sourceSha256": "320160ace440e37880f6d30ce2d7ec4544f571ccf2d36d2ec60773aaef2237f3",
+      "file": "deploy-tests.log.gz",
+      "sha256": "25459a253f77a7d387a16ddc81013d79f6202cafba2f0c43d3f274c3e3665dc8"
+    },
+    {
+      "source": "typecheck-final.log",
+      "sourceSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5",
+      "file": "typecheck-final.log.gz",
+      "sha256": "791db621ddc21f139326fc67476b46927357e9e34d850876047ef07c0f6d423f"
+    },
+    {
+      "source": "build-final.log",
+      "sourceSha256": "c612de006d4618859ad6a75077a440915cce019d2622a413f4d24e303baa9546",
+      "file": "build-final.log.gz",
+      "sha256": "9dc171f233828e215c3daac6e1f4fdaff7f62db922defd51c3e57a4aff2f4d4b"
+    }
+  ],
+  "experiments": {
+    "baseline-cuff-test.log": "226307029d34a2e90f1be8b6d4cc8417ac28b2823fa7ddf9b59786df87770a35",
+    "baseline-new-tests.log": "be34e69562c59f361d8ce7a1b387aec4ce8d7df793f11913fd1d59c2c3c1acff",
+    "baseline-ground-surfaces.jsonl": "b9c2c94a438955842ec5d0fcab0f37a18073babb27495c419f31ee347001b1ff",
+    "baseline-neo-hand-probe.jsonl": "53189bf0aa555e73970237f72fda2444aec52c210663630e58f1148d95a36811",
+    "baseline-neo-hand-probe-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "probe-truth-neo.mts": "4b64fa585f7c1e6c0d572cf34a2a783672f03de91e37330c3a4b51be10ee0b2a",
+    "iteration-01-tests.log": "9f266d0007fcbfc654f239c49b6da26d7d48a35f249d5fb4c16a01a955918df1",
+    "iteration-01-finger-floor.json": "82f5a2d6aab34c86b29365aa6f2b43e230931c53b9a92839086c5462746a2d39",
+    "iteration-02-tests.log": "df843f99660456c84d0bc321d9ac9acd19b11ce3353796437df1ca4c1471f63b",
+    "iteration-02-hand-detail.json": "f3f878ea584ead973349ee0e7f0c53839e7f04fe65b91327f3d76a4d50270266",
+    "iteration-03-tests.log": "a67c1152097877f223942b52722035ee4a8b01b73aaff8a4ecce69c03e9dd0e7",
+    "iteration-04-tests.log": "e51682136f31984609073e0706f4f33c4ca96dd239f8687c4e9757b890fbb919",
+    "rejected-cold-field-check.json": "2b908eeba183a142742bd46c7b9f9ae9c23509f39c6a4a864bd8a3489ef4d19d",
+    "setup-path-error.log": "cf2309cec4091c1307d5c4806e0ca56271d9066955fde29c06655bba8e96084b",
+    "benchmark.log": "f1d07c23bc282b3c88f5b42bd39c242e7c5020e8a79ce2b1fb5a728f1f3920db"
+  },
+  "experimentArchive": {
+    "file": "rejected-candidates-and-probes.tar.gz",
+    "sha256": "2590ba5665ce48551848e82748ac97491b61f152f9905c241523db12e51a754b"
+  },
+  "privateRawWorldsMemoriesAndDatabasesExcluded": true,
+  "releaseCopiesNodeModulesAndDistExcluded": true
+}

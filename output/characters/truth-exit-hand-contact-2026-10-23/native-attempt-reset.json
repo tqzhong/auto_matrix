@@ -1,0 +1,20 @@
+{
+  "purpose": "First normal play reached the bedside question before the intended kneeling pause. Preserve that entire QA data branch, then deliberately replay from the preceding real checkpoint for a mid-fall restore test.",
+  "firstAttempt": {
+    "scene": "m1_truth_return",
+    "truthRecovery": {
+      "phase": "question",
+      "elapsed": 0
+    },
+    "tick": 7802
+  },
+  "oldPid": 9729,
+  "newPid": 21212,
+  "oldTerminalStateConfirmed": true,
+  "archivedData": "qa-attempt-01-data",
+  "newSeed": "desert-guide-contact-2026-10-23/qa-data",
+  "newScene": "m1_truth_exit",
+  "newTick": 7652,
+  "manualWorldFieldEdits": false,
+  "mainPreviewTouched": false
+}

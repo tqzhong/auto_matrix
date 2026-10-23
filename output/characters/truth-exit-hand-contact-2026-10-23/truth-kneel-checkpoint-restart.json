@@ -1,0 +1,18 @@
+{
+  "oldPid": 21212,
+  "newPid": 25456,
+  "reason": "truth-kneel-checkpoint",
+  "byteIdenticalWorld": true,
+  "completeWorldEqual": true,
+  "changedPaths": [],
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 7689,
+  "scene": "m1_truth_return",
+  "step": 0,
+  "truthRecovery": {
+    "phase": "unplug",
+    "elapsed": 11.815
+  },
+  "cloudDisabled": true
+}

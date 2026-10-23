@@ -1,0 +1,14 @@
+{
+  "origin": "output/characters/desert-guide-contact-2026-10-23/qa-data",
+  "version": 1,
+  "tick": 7652,
+  "scene": "m1_truth_exit",
+  "step": 0,
+  "truthRecovery": {
+    "phase": "ready",
+    "elapsed": 0
+  },
+  "naturalCheckpoint": true,
+  "manualWorldEdits": false,
+  "worldSha256": "b1edaa61f6526b3e2058017946938d4f50ab33f73f6b09c13a9dcb4ac1307410"
+}

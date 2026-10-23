@@ -50,12 +50,30 @@ export class ForearmTwist {
         const transforms = arms.map(arm => ({ ...arm, index: source.bones.indexOf(arm.elbow),
           inverse: source.boneInverses[source.bones.indexOf(arm.elbow)].clone().multiply(object.bindMatrix),
           indices: [source.bones.indexOf(arm.elbow), ...arm.twists.map(bone => skeleton!.bones.indexOf(bone))] }));
+        const knit = object.name === 'neo-logos-sweater';
+        const cuffs = knit ? transforms.map(arm => ({ ...arm, forward: arm.inverse.clone().invert(),
+          joints: new Set(source.bones.flatMap((bone, i) => /^(?:elbow|wrist|finger)/.test(bone.name) && bone.name.endsWith(arm.wrist.name.slice(-2)) ? [i] : [])) })) : [];
         const point = new THREE.Vector3();
         for (let i = 0; i < position.count; i++) {
+          // Pull the loose knit hem off the palm while retaining its original
+          // closed edge and overlap with the exposed wrist skin.
+          for (const cuff of cuffs) {
+            if ([0, 1, 2, 3].reduce((sum, k) => sum + (cuff.joints.has(skinIndex.getComponent(i, k)) ? skinWeight.getComponent(i, k) : 0), 0) <= .5) continue;
+            point.fromBufferAttribute(position, i).applyMatrix4(cuff.inverse);
+            const amount = .14 * THREE.MathUtils.smoothstep(point.dot(cuff.axis) / cuff.wrist.position.length(), .7, 1.1);
+            point.addScaledVector(cuff.axis, -amount).applyMatrix4(cuff.forward); position.setXYZ(i, point.x, point.y, point.z);
+          }
           const entries = new Map<number, number>(); let changed = false;
           for (let j = 0; j < 4; j++) {
             const index = skinIndex.getComponent(i, j), weight = skinWeight.getComponent(i, j);
             if (!weight) continue;
+            // Neo's knit cuff ends on the forearm. The donor incorrectly
+            // weights its hem to fingers and bends it with the palm.
+            const cuff = knit && /^(?:wrist|finger[1-5]-[1-3])_([RL])$/.exec(source.bones[index].name);
+            if (cuff) {
+              const joint = skeleton!.bones.indexOf(arms[cuff[1] === 'R' ? 0 : 1].twists[2]);
+              entries.set(joint, (entries.get(joint) ?? 0) + weight); changed = true; continue;
+            }
             const arm = transforms.find(arm => arm.index === index);
             if (!arm) { entries.set(index, (entries.get(index) ?? 0) + weight); continue; }
             point.fromBufferAttribute(position, i).applyMatrix4(arm.inverse);
@@ -73,6 +91,7 @@ export class ForearmTwist {
             skinWeight.setComponent(i, j, (strongest[j]?.[1] ?? 0) / total);
           }
         }
+        if (knit) prepared.computeVertexNormals();
         this.geometries.set(object.geometry, prepared); geometry = prepared;
       }
       object.geometry = geometry; object.skeleton = skeleton;

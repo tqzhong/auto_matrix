@@ -1,0 +1,18 @@
+{
+  "sameJourney": true,
+  "neoFields": {
+    "position": true,
+    "rotation": true,
+    "health": true,
+    "currentLocation": true,
+    "isInMatrix": true,
+    "isAwakened": true
+  },
+  "tick": 7689,
+  "truthRecovery": {
+    "phase": "unplug",
+    "elapsed": 11.815
+  },
+  "paused": true,
+  "correction": "Initial metadata compared an absent orientation key; replaced with the actual rotation field and asserted all compared fields exist. No replay or restart repeated."
+}

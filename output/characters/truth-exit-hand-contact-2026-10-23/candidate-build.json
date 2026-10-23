@@ -1,0 +1,13 @@
+{
+  "js": {
+    "name": "index-DvGgbrfa.js",
+    "sha256": "46fc9f0df2a478e43d11d73f3b222c80db2cb585380c64882798f030a11e7671",
+    "bytes": 3765045
+  },
+  "css": {
+    "name": "index-bH8XtZgl.css",
+    "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+  },
+  "developmentProbeExcluded": true,
+  "backendFilesUnchanged": 280
+}

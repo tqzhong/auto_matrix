@@ -1,0 +1,36 @@
+{
+  "scope": "Offline Node CPU time for full HeroModel.animate plus actual root matrices, one delivered Neo at a fixed 11.815-second truth-return kneeling pose; A/B/B/A after warmup. No rendering, GPU, browser, recording or simulation measurement. Not an FPS or memory-requirement certification.",
+  "baselineRevision": "0a3f252f114560b80e8358ce46589981aa53f8da",
+  "results": [
+    {
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.38712848750000906,
+      "medianMs": 0.37129200000026685,
+      "p95Ms": 0.4359999999996944
+    },
+    {
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.37982565416667363,
+      "medianMs": 0.36512500000026193,
+      "p95Ms": 0.41466700000000856
+    },
+    {
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.35970115833333693,
+      "medianMs": 0.3471669999998994,
+      "p95Ms": 0.3834999999999127
+    },
+    {
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.3464739291666698,
+      "medianMs": 0.33979200000067067,
+      "p95Ms": 0.4014999999999418
+    }
+  ],
+  "frozenInputsUnchanged": true,
+  "browser60FpsClaim": false
+}

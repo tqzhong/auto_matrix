@@ -1,0 +1,89 @@
+{
+  "seed": {
+    "origin": "output/characters/desert-guide-contact-2026-10-23/qa-data",
+    "version": 1,
+    "tick": 7652,
+    "scene": "m1_truth_exit",
+    "step": 0,
+    "truthRecovery": {
+      "phase": "ready",
+      "elapsed": 0
+    },
+    "naturalCheckpoint": true,
+    "manualWorldEdits": false,
+    "worldSha256": "b1edaa61f6526b3e2058017946938d4f50ab33f73f6b09c13a9dcb4ac1307410"
+  },
+  "productionColdLoadChecked": true,
+  "productionBundle": "index-DvGgbrfa.js",
+  "bothViewsAndMouseLookChecked": true,
+  "kneelingContactVisuallyChecked": true,
+  "heldTruth": {
+    "tick": 7689,
+    "phase": "unplug",
+    "elapsed": 11.815
+  },
+  "realBackendRestart": {
+    "oldPid": 21212,
+    "newPid": 25456,
+    "reason": "truth-kneel-checkpoint",
+    "byteIdenticalWorld": true,
+    "completeWorldEqual": true,
+    "changedPaths": [],
+    "memoryFiles": 7,
+    "memoryBytesUnchanged": true,
+    "tick": 7689,
+    "scene": "m1_truth_return",
+    "step": 0,
+    "truthRecovery": {
+      "phase": "unplug",
+      "elapsed": 11.815
+    },
+    "cloudDisabled": true
+  },
+  "coldState": {
+    "sameJourney": true,
+    "neoFields": {
+      "position": true,
+      "rotation": true,
+      "health": true,
+      "currentLocation": true,
+      "isInMatrix": true,
+      "isAwakened": true
+    },
+    "tick": 7689,
+    "truthRecovery": {
+      "phase": "unplug",
+      "elapsed": 11.815
+    },
+    "paused": true,
+    "correction": "Initial metadata compared an absent orientation key; replaced with the actual rotation field and asserted all compared fields exist. No replay or restart repeated."
+  },
+  "normalTruthSequenceCompleted": true,
+  "philosophicalChoice": "agency",
+  "finalScene": "m1_download",
+  "finalStep": 0,
+  "finalTick": 7799,
+  "finalDownloadSetup": {
+    "phase": "greeting",
+    "elapsed": 0,
+    "progress": 0
+  },
+  "neoHealth": 100,
+  "paused": true,
+  "consoleCounts": {
+    "development": 0,
+    "production": 0
+  },
+  "firstAttemptRetained": "native-attempt-reset.json",
+  "manualWorldEdits": false,
+  "httpGameMutations": false,
+  "engineInjection": false,
+  "newVideo": false,
+  "browserFpsMeasurement": false,
+  "fullTrilogyAccepted": false,
+  "movieQualityAccepted": false,
+  "visualLimitations": [
+    "Crew clothing, faces and the ship set remain coarse. Morpheus knit reads as a tight skin-colored torso; its visible flag is true in an offline model probe, so do not assert that the costume is missing.",
+    "This unit verifies Neo fall support; it does not finish the other actors plug-extraction gestures or the entire film scene."
+  ]
+}

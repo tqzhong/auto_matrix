@@ -1,0 +1,33 @@
+{
+  "scope": "Offline same HeroModel and ship input; not browser scene introspection.",
+  "parts": [
+    {
+      "name": "morpheus-hammer-sweater",
+      "exists": true,
+      "visible": true,
+      "material": "morpheus-hammer-sweater",
+      "color": "645846"
+    },
+    {
+      "name": "morpheus-hammer-collar",
+      "exists": true,
+      "visible": true,
+      "material": "morpheus-hammer-collar",
+      "color": "887d67"
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "exists": true,
+      "visible": false,
+      "material": "Coat leather",
+      "color": "706c62"
+    },
+    {
+      "name": "Black_crew_neck",
+      "exists": true,
+      "visible": false,
+      "material": "Trousers",
+      "color": "706c62"
+    }
+  ]
+}
