@@ -1,0 +1,35 @@
+{
+  "baseline": "498b2e751cec08263d85a3089413742db2ecbb73",
+  "packageFiles": 708,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/ConstructPerformance.ts",
+      "before": "d790361fb05c919e85d8c50176bfa362c4381998750e90e545f323aae684953e",
+      "after": "fb11b52ea1a63e7d373cadebfeb4bb5512d10f317c0a3cecbe32eee59b91663e"
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "ba5d4f51ee75e798150f1ada68d09e383ec410f5b81ca3e0ab4348b28c53779c",
+      "after": "a90322508294606172ef2e3ce3504d0490128e20ba4f71fd6d56272ac6d58b58"
+    },
+    {
+      "path": "tests/character-asset.test.mts",
+      "before": "7861c627128b9b3f58436df7601d720521f75f01848838b739688c1e0efd550c",
+      "after": "34c931ec8236481ffbe89f5928db178038997be8470d10ca7b618c9fb80d68ac"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/ConstructSelfImage.ts",
+      "after": "034fdc7edd48d9215738ecd31a785944f949ac242798f7e6bbbe5672c01fe490"
+    },
+    {
+      "path": "tests/construct-self-image.test.mts",
+      "after": "7d36a6c8f6977c267c76d646a976e4d738bd7e54faca7890ffdb5e7f8079fbd8"
+    },
+    {
+      "path": "tests/helpers/construct-inspection.mts",
+      "after": "b10f1a7eaf18265b289cf1a0d1d6483cfe612ea48dc99be4c5f8837e8609a996"
+    }
+  ]
+}

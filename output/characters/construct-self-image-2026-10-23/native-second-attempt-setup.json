@@ -1,0 +1,14 @@
+{
+  "purpose": "Repeat the native six-second gesture after the first pause missed its held pose; intentionally start a second isolated branch from the same real checkpoint.",
+  "oldPid": 87671,
+  "newPid": 22671,
+  "firstAttemptRetained": true,
+  "firstAttemptTick": 7399,
+  "firstAttemptPhase": "approach",
+  "source": "output/characters/core-connector-grip-2026-10-23/qa-data",
+  "sourceTick": 7193,
+  "newPhase": "ready",
+  "manualWorldFieldEdits": false,
+  "mainServerRestarted": false,
+  "worldSha256": "baa196b8f4726e88e3c0c6183338e05a308a066b8d18d0b937ca59566c19d9ec"
+}

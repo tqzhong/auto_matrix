@@ -1,0 +1,58 @@
+{
+  "productionBundle": "index-BWnN2prv.js",
+  "productionColdLoadChecked": true,
+  "bothViewsAndMouseLookChecked": true,
+  "heldImage": {
+    "tick": 7222,
+    "phase": "image",
+    "elapsed": 4.434
+  },
+  "realBackendRestart": {
+    "oldPid": 22671,
+    "newPid": 26128,
+    "reason": "image-cold-checkpoint",
+    "byteIdenticalWorld": true,
+    "completeWorldEqual": true,
+    "changedPaths": [],
+    "memoryFiles": 7,
+    "memoryBytesUnchanged": true,
+    "tick": 7222,
+    "scene": "m1_construct",
+    "step": 0,
+    "constructArrival": {
+      "phase": "image",
+      "elapsed": 4.434
+    },
+    "cloudDisabled": true
+  },
+  "walkingToChairChecked": true,
+  "walk": {
+    "sampledHorizontalPathLowerBound": 9.233432875100334,
+    "input": "Two ordinary W holds, no teleport or world edits; excludes scripted chair adjustment and cross-scene transition"
+  },
+  "leatherAndTelevisionLessonChecked": true,
+  "reflectionChoice": "If sensation can be generated, how can I test the world?",
+  "reflectionChoiceChecked": true,
+  "desertArrivalChecked": true,
+  "finalScene": "m1_desert",
+  "finalStep": 0,
+  "finalTick": 7260,
+  "neoHealth": 100,
+  "finalPaused": true,
+  "consoleCounts": {
+    "native-first-attempt-console.json": 0,
+    "native-second-attempt-console.json": 0,
+    "native-production-console.json": 0
+  },
+  "qaPortsStopped": [
+    5200,
+    5201
+  ],
+  "newVideoRecorded": false,
+  "frameRateMeasuredThisUnit": false,
+  "entireChapterPlayed": false,
+  "scope": "Actual held image, real cold backend restart, new production page, V and mouse, 9.23 world units of walking, G leather/TV lesson, philosophy response and desert entry. Not an entire trilogy playthrough, general collision proof, camera persistence or movie-quality acceptance.",
+  "missedFirstPausePreserved": true,
+  "secondAttemptWasExplicitFreshVerificationBranch": true,
+  "seedFieldsEdited": false
+}

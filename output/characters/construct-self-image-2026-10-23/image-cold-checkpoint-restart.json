@@ -1,0 +1,18 @@
+{
+  "oldPid": 22671,
+  "newPid": 26128,
+  "reason": "image-cold-checkpoint",
+  "byteIdenticalWorld": true,
+  "completeWorldEqual": true,
+  "changedPaths": [],
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 7222,
+  "scene": "m1_construct",
+  "step": 0,
+  "constructArrival": {
+    "phase": "image",
+    "elapsed": 4.434
+  },
+  "cloudDisabled": true
+}

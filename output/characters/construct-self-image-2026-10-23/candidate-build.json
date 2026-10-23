@@ -1,0 +1,13 @@
+{
+  "js": {
+    "name": "index-BWnN2prv.js",
+    "bytes": 3759763,
+    "sha256": "1e13631fc4a413519564cf3b1b272db3d5bd4851888b2fc162bc844e1fc4176b"
+  },
+  "css": {
+    "name": "index-bH8XtZgl.css",
+    "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+  },
+  "developmentProbeExcluded": true,
+  "backendFilesUnchanged": 280
+}

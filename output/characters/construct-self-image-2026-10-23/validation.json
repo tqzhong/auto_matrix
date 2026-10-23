@@ -1,0 +1,180 @@
+{
+  "allRequiredGatesPassed": true,
+  "entireRelatedSuitePassed": false,
+  "baselineKnownFailures": {
+    "Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving": {
+      "error": "|-\n    Expected values to be strictly equal:\n    \n    false !== true\n    ",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo\u2019s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance": {
+      "error": "'the R forearm at 2.75s must show anatomical skin instead of a hole or long sleeve; hit Anatomical_head_and_hands at 0.09920723431011552'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo floats chest-deep and the rescue pads support the shipped body throughout the lift": {
+      "error": "\"Cannot read properties of undefined (reading 'localToWorld')\"",
+      "code": "'ERR_TEST_FAILURE'"
+    },
+    "Neo rests his shipped occiput on both ship pillows without sinking into their surfaces": {
+      "error": "\"Cannot read properties of undefined (reading 'updateWorldMatrix')\"",
+      "code": "'ERR_TEST_FAILURE'"
+    },
+    "Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug": {
+      "error": "'Morpheus misses the connector grip by 0.1813835714721712'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo takes the apartment handset from its physical cradle and returns it after the call": {
+      "error": "'the held handset must replace the cradle handset without a jump; gap 1.2462864120018804'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "shipped neo mesh has valid skinning and usable anatomical bones": {
+      "error": "'keep the original Matrix wardrobe within its geometry budget'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "shipped morpheus mesh has valid skinning and usable anatomical bones": {
+      "error": "'keep the original Matrix wardrobe within its geometry budget'",
+      "code": "'ERR_ASSERTION'"
+    }
+  },
+  "baselineGitBlobsReverified": 1174,
+  "baselineOriginalRuns": [
+    {
+      "log": "baseline-related-tests.log",
+      "tests": 21,
+      "pass": 20,
+      "fail": 1
+    },
+    {
+      "log": "baseline-character-tests.log",
+      "tests": 87,
+      "pass": 80,
+      "fail": 7
+    }
+  ],
+  "results": [
+    {
+      "log": "baseline-final-seven-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/construct-self-image.test.mts"
+      ],
+      "cwd": "baseline-release",
+      "exitCode": 1,
+      "elapsedSeconds": 38.79015995748341,
+      "tests": 7,
+      "pass": 2,
+      "fail": 5,
+      "skipped": 0,
+      "failureNames": [
+        "Neo checks his residual image without folding either wrist backwards or jumping an arm joint",
+        "Neo uses his left hand to feel the missing rear interface while the right arm has lowered",
+        "the inspected hands do not cut the delivered head, wrist skin or jacket through the reach and release",
+        "the actual palmar skin reaches the other forearm and visible rear head surface without floating away",
+        "ordinary elapsed animation preserves both body clearances and skin contact rather than relying on frozen poses"
+      ],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": null
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/construct-self-image.test.mts",
+        "tests/character-asset.test.mts",
+        "tests/neb-crew-appearance.test.mts",
+        "tests/reveal-renderer.test.mts",
+        "tests/cabin.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/fighting-hand-surface.test.mts",
+        "tests/pill-hand-surface.test.mts",
+        "tests/mirror-hand-surface.test.mts",
+        "tests/core-connector-contact.test.mts",
+        "tests/hand-curve-cache.test.mts",
+        "tests/skinned-rebind-bounds.test.mts",
+        "tests/patient-skin-continuity.test.mts",
+        "tests/interlude-visibility.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 1,
+      "elapsedSeconds": 336.4398309579119,
+      "tests": 158,
+      "pass": 150,
+      "fail": 8,
+      "skipped": 0,
+      "failureNames": [
+        "Neo\u2019s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance",
+        "Neo floats chest-deep and the rescue pads support the shipped body throughout the lift",
+        "Neo rests his shipped occiput on both ship pillows without sinking into their surfaces",
+        "Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug",
+        "Neo takes the apartment handset from its physical cradle and returns it after the call",
+        "shipped neo mesh has valid skinning and usable anatomical bones",
+        "shipped morpheus mesh has valid skinning and usable anatomical bones",
+        "Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving"
+      ],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 12.974118209443986,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0,
+      "failureNames": [],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 12.312676707282662
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 21.876325624994934
+    }
+  ],
+  "frozenInputs": 1177,
+  "inputsUnchanged": true,
+  "build": {
+    "js": {
+      "name": "index-BWnN2prv.js",
+      "bytes": 3759763,
+      "sha256": "1e13631fc4a413519564cf3b1b272db3d5bd4851888b2fc162bc844e1fc4176b"
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "developmentProbeExcluded": true,
+    "backendFilesUnchanged": 280
+  }
+}

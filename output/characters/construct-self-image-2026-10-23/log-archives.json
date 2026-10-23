@@ -1,0 +1,42 @@
+[
+  {
+    "localOriginal": "baseline-related-tests.log",
+    "committedArchive": "baseline-related-tests.log.gz",
+    "uncompressedSha256": "982f2c8eab9a3ca4e2bc2c75a626687ddab04b5fa151d003942bef065a4ea0cd"
+  },
+  {
+    "localOriginal": "baseline-character-tests.log",
+    "committedArchive": "baseline-character-tests.log.gz",
+    "uncompressedSha256": "0b95a4e99ee9f279198ebb840f2e5415f9c9d945393b0a8eff1c07c1365c9a7d"
+  },
+  {
+    "localOriginal": "baseline-final-seven-tests.log",
+    "committedArchive": "baseline-final-seven-tests.log.gz",
+    "uncompressedSha256": "143d58c243496c0445f3a2cc7f0478615529e0033fe9f1fb432a0dc782beedc9"
+  },
+  {
+    "localOriginal": "related-tests.log",
+    "committedArchive": "related-tests.log.gz",
+    "uncompressedSha256": "c834353b98315633b80c5f80e93245ae6b100e6a6a93889e6dde542b90a290fc"
+  },
+  {
+    "localOriginal": "deploy-tests.log",
+    "committedArchive": "deploy-tests.log.gz",
+    "uncompressedSha256": "b53048be51bbaac9864c5c80a6022e161fceb37adc126b1c3b706e29611cefe5"
+  },
+  {
+    "localOriginal": "typecheck-final.log",
+    "committedArchive": "typecheck-final.log.gz",
+    "uncompressedSha256": "2b9ec44502ad0c41231a17f73a22553878970adfb87f8752528a59d6c53e58c5"
+  },
+  {
+    "localOriginal": "build-final.log",
+    "committedArchive": "build-final.log.gz",
+    "uncompressedSha256": "c21529b77602723693ac4e39e1cb2f3260037a531ab9bea249c922a290635103"
+  },
+  {
+    "localOriginal": "candidate-hair-and-contact-tests.log",
+    "committedArchive": "candidate-hair-and-contact-tests.log.gz",
+    "uncompressedSha256": "67d5ac7bf1849b3b7ab9d20ecd5252172f7ebb0aef3b520d5c89213390faebf8"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "tick": 7222,
+  "running": false,
+  "scene": "m1_construct",
+  "step": 0,
+  "constructArrival": {
+    "phase": "image",
+    "elapsed": 4.434
+  },
+  "neo": {
+    "position": {
+      "x": 5702.95,
+      "y": 1,
+      "z": 4421
+    },
+    "rotation": 3.141592653589793,
+    "health": 100,
+    "status": "alive"
+  }
+}

@@ -9,6 +9,7 @@ import { PhoneModel, PHONE_HAND } from '../packages/client/src/agents/PhoneModel
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { RedDressCrowd } from '../packages/client/src/engine/RedDressCrowd.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { inspectionPalm } from './helpers/construct-inspection.mjs';
 import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
 import { CONSTRUCT, DESERT_REVEAL, constructGuidePose } from '@auto_matrix/shared';
 import { CABIN, CABIN_WALLS, MEDICAL_OPERATOR, cabinBodyPose } from '@auto_matrix/shared';
@@ -1657,17 +1658,16 @@ test('Neo checks the back of his neck in the Construct instead of reaching into 
       const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, clubClothes: true,
         construct: { phase: 'image' as const, elapsed, role: 'neo' as const } };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
-      const head = rig.bones.get('head')!, wrist = rig.bones.get('wrist_R')!;
-      const palm = head.worldToLocal(wrist.localToWorld(new THREE.Vector3(.09, -.18, .02)));
+      const head = rig.bones.get('head')!, actual = inspectionPalm(rig, 'L');
+      const palm = head.worldToLocal(actual.world.clone());
       assert.ok(palm.z < -.15, `the palm remains in front of Neo's rear neck at ${elapsed}s: ${palm.toArray()}`);
-      const normal = new THREE.Vector3(1, 0, 0).transformDirection(wrist.matrixWorld)
+      const normal = actual.normal.clone()
         .applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()).invert());
       assert.ok(normal.z > .65, `the rear palm must face the neck, rather than turn the fingers through it at ${elapsed}s: ${normal.toArray()}`);
       const skin = rig.wardrobe.map(part => part.mesh).filter(mesh => mesh instanceof THREE.SkinnedMesh && mesh.visible
         && (mesh.material as THREE.Material).name === 'Skin') as THREE.SkinnedMesh[];
       skin.forEach(mesh => mesh.skeleton.update());
-      const ray = new THREE.Raycaster(head.localToWorld(new THREE.Vector3(0, -.2, -.8)),
-        new THREE.Vector3(0, 0, 1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion())), 0, 1.2);
+      const ray = new THREE.Raycaster(actual.world.clone().addScaledVector(actual.normal, -.4), actual.normal, 0, 1.2);
       const hit = ray.intersectObjects(skin).find(hit => {
         const mesh = hit.object as THREE.SkinnedMesh, index = mesh.geometry.attributes.skinIndex, weight = mesh.geometry.attributes.skinWeight;
         return [hit.face!.a, hit.face!.b, hit.face!.c].reduce((sum, vertex) => sum + [0, 1, 2, 3].reduce((total, component) =>
