@@ -1,0 +1,22 @@
+{
+  "oldPid": 24579,
+  "newPid": 68803,
+  "reason": "desert-cold-checkpoint",
+  "byteIdenticalWorld": true,
+  "completeWorldEqual": true,
+  "changedPaths": [],
+  "memoryFiles": 7,
+  "memoryBytesUnchanged": true,
+  "tick": 7521,
+  "scene": "m1_desert",
+  "step": 1,
+  "revelation": null,
+  "cloudDisabled": true,
+  "worldSha256": "fa414325f8911a4ab9de8bbf07abee4c1ee2b20157851a3e901cd9698844abe3",
+  "awakening": {
+    "kind": "desert",
+    "elapsed": 3.149000000000002,
+    "started": true
+  },
+  "metadataNote": "Awakening metadata read from the already recorded identical before/after world bytes; restart was not rerun."
+}

@@ -1,0 +1,33 @@
+{
+  "url": "https://www.youtube.com/watch?v=V9smIfYLX4Y",
+  "channel": "Warner Bros. Entertainment (verified)",
+  "nativePlayerDurationSeconds": 120.121,
+  "observations": [
+    {
+      "second": 55,
+      "visible": "Two red wingback chairs and cabinet TV, actors standing beside the chairs."
+    },
+    {
+      "second": 75,
+      "visible": "Cabinet TV shows a green-tinted living city; the final decoded frame was checked after a stale ruins frame during buffering."
+    },
+    {
+      "second": 91,
+      "visible": "Morpheus speaks seated against red tufted upholstery, dark suit, green tie and round glasses; frame does not expose hands or feet."
+    },
+    {
+      "second": 101,
+      "visible": "Cold blue, devastated city and overcast sky; a wide environmental shot."
+    },
+    {
+      "second": 108,
+      "visible": "High view over a dense destroyed city."
+    }
+  ],
+  "limitations": [
+    "No complete trilogy viewing or film download.",
+    "The 115-second frame is the studio end card, not a scene reference.",
+    "Remote dimensions and the exact desert hand/leg pose are not established by these frames; physical hand correction does not certify movie likeness.",
+    "The native AX slider did not accept setValue; keyboard/visible timeline interaction was used."
+  ]
+}

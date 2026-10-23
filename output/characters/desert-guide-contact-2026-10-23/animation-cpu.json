@@ -1,0 +1,36 @@
+{
+  "scope": "Offline Node CPU time for full HeroModel.animate plus actual root matrices, one delivered Morpheus at a fixed 3.149-second desert lesson pose; A/B/B/A after warmup. No rendering, GPU, browser, recording or simulation measurement. Not an FPS or memory-requirement certification.",
+  "baselineRevision": "bab847bcc6ed4534a3b4e4a5bedcad8ca00281a7",
+  "results": [
+    {
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.16538249999999077,
+      "medianMs": 0.15762499999982538,
+      "p95Ms": 0.19033400000080292
+    },
+    {
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.14753490416663528,
+      "medianMs": 0.13833400000021356,
+      "p95Ms": 0.15970799999922747
+    },
+    {
+      "mode": "candidate",
+      "samples": 240,
+      "meanMs": 0.14492880416664017,
+      "medianMs": 0.13429199999973207,
+      "p95Ms": 0.16308399999979883
+    },
+    {
+      "mode": "baseline",
+      "samples": 240,
+      "meanMs": 0.15232483333331856,
+      "medianMs": 0.1430000000000291,
+      "p95Ms": 0.16899999999986903
+    }
+  ],
+  "frozenInputsUnchanged": true,
+  "browser60FpsClaim": false
+}

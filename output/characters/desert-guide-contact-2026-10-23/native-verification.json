@@ -1,0 +1,75 @@
+{
+  "seed": {
+    "origin": "output/characters/construct-lesson-contact-2026-10-23/qa-data",
+    "version": 1,
+    "tick": 7477,
+    "scene": "m1_desert",
+    "step": 0,
+    "constructArrival": null,
+    "naturalCheckpoint": true,
+    "manualWorldEdits": false,
+    "worldSha256": "9e5e7e6ce9eae892ea6311eaee98d3372a2ad9c4d89007daa40be4dbc1124bd6"
+  },
+  "productionColdLoadChecked": true,
+  "productionBundle": "index-C4YiT0v1.js",
+  "bothViewsAndMouseLookChecked": true,
+  "walkingToGuideChecked": true,
+  "walk": {
+    "sampledHorizontalPathLowerBound": 16.819922809045238,
+    "includedTraceLabels": [
+      "desert-route-first-walk",
+      "desert-route-second-walk"
+    ],
+    "scriptedStagingAndEarlierUnrecordedWalkExcluded": true
+  },
+  "heldLesson": {
+    "tick": 7521,
+    "kind": "desert",
+    "elapsed": 3.149000000000002
+  },
+  "realBackendRestart": {
+    "oldPid": 24579,
+    "newPid": 68803,
+    "reason": "desert-cold-checkpoint",
+    "byteIdenticalWorld": true,
+    "completeWorldEqual": true,
+    "changedPaths": [],
+    "memoryFiles": 7,
+    "memoryBytesUnchanged": true,
+    "tick": 7521,
+    "scene": "m1_desert",
+    "step": 1,
+    "revelation": null,
+    "cloudDisabled": true,
+    "worldSha256": "fa414325f8911a4ab9de8bbf07abee4c1ee2b20157851a3e901cd9698844abe3",
+    "awakening": {
+      "kind": "desert",
+      "elapsed": 3.149000000000002,
+      "started": true
+    },
+    "metadataNote": "Awakening metadata read from the already recorded identical before/after world bytes; restart was not rerun."
+  },
+  "desertLessonCompleted": true,
+  "truthExitReadyChecked": true,
+  "finalScene": "m1_truth_exit",
+  "finalStep": 0,
+  "finalTick": 7652,
+  "finalTruthRecovery": {
+    "phase": "ready",
+    "elapsed": 0
+  },
+  "neoHealth": 100,
+  "paused": true,
+  "consoleCounts": {
+    "development": 0,
+    "production": 0
+  },
+  "observerLimitation": "Observer mode did not display this distant film set; it is not a close-view acceptance. Final shots use the actual Neo player, without selecting Morpheus.",
+  "manualWorldEdits": false,
+  "httpGameMutations": false,
+  "engineInjection": false,
+  "newVideo": false,
+  "browserFpsMeasurement": false,
+  "fullTrilogyAccepted": false,
+  "movieQualityAccepted": false
+}

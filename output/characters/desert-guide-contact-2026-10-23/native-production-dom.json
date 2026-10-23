@@ -1,0 +1,20 @@
+{
+  "canvas": [
+    {
+      "height": 1080,
+      "width": 1920
+    },
+    {
+      "height": 260,
+      "width": 480
+    },
+    {
+      "height": 230,
+      "width": 360
+    }
+  ],
+  "scripts": [
+    "http://127.0.0.1:5200/assets/index-C4YiT0v1.js"
+  ],
+  "url": "http://127.0.0.1:5200/"
+}

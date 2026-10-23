@@ -1,0 +1,32 @@
+{
+  "baseline": "bab847bcc6ed4534a3b4e4a5bedcad8ca00281a7",
+  "packageFiles": 711,
+  "baselineGitSourceAndConfigFiles": 1181,
+  "changed": [
+    {
+      "path": "packages/client/src/agents/ConstructChairContact.ts",
+      "before": "eed5758758def3366eb8140f2da22a02ce93f1117e80fad7667769e1e790ea11",
+      "after": "afcd0a8755f2bbcafe95258a081f210ea0a877f15e9469fc8e794fce351c9332"
+    },
+    {
+      "path": "packages/client/src/agents/ConstructPerformance.ts",
+      "before": "9e04b330a1ea367efd8129d59cf139deabd82f4169a34d280f2dbbc1e82ddd71",
+      "after": "5e720382831cec027ce58e3b4680d045dbf6656c2b9f1fb17b3dd0dedf7dd786"
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "979aef537ace9f30eb0ffc69151e855d5807971312d3c71c0d542931870c8794",
+      "after": "c95b0d4910f74c41010278779be93eb597c222cab8d85942f3f6d526e0df6d21"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/desert-guide-contact.test.mts",
+      "after": "85e5ddd072d87809503eb211452560b7361ef5cb1581b8a7eb64f50662827e92"
+    },
+    {
+      "path": "tests/helpers/desert-guide.mts",
+      "after": "23173ecada51dc0e953b45e8041383dd3b1e42da1c12b7ec4b0d89dd740e7a01"
+    }
+  ]
+}

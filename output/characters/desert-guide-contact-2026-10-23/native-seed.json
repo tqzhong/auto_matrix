@@ -1,0 +1,11 @@
+{
+  "origin": "output/characters/construct-lesson-contact-2026-10-23/qa-data",
+  "version": 1,
+  "tick": 7477,
+  "scene": "m1_desert",
+  "step": 0,
+  "constructArrival": null,
+  "naturalCheckpoint": true,
+  "manualWorldEdits": false,
+  "worldSha256": "9e5e7e6ce9eae892ea6311eaee98d3372a2ad9c4d89007daa40be4dbc1124bd6"
+}

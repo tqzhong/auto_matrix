@@ -1,0 +1,188 @@
+{
+  "allRequiredGatesPassed": true,
+  "entireRelatedSuitePassed": false,
+  "baselineKnownFailures": {
+    "Neo\u2019s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance": {
+      "error": "'the R forearm at 2.75s must show anatomical skin instead of a hole or long sleeve; hit Anatomical_head_and_hands at 0.09920723431011552'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo floats chest-deep and the rescue pads support the shipped body throughout the lift": {
+      "error": "\"Cannot read properties of undefined (reading 'localToWorld')\"",
+      "code": "'ERR_TEST_FAILURE'"
+    },
+    "Neo rests his shipped occiput on both ship pillows without sinking into their surfaces": {
+      "error": "\"Cannot read properties of undefined (reading 'updateWorldMatrix')\"",
+      "code": "'ERR_TEST_FAILURE'"
+    },
+    "Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug": {
+      "error": "'Morpheus misses the connector grip by 0.1813835714721712'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo takes the apartment handset from its physical cradle and returns it after the call": {
+      "error": "'the held handset must replace the cradle handset without a jump; gap 1.2462864120018804'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "shipped neo mesh has valid skinning and usable anatomical bones": {
+      "error": "'keep the original Matrix wardrobe within its geometry budget'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "shipped morpheus mesh has valid skinning and usable anatomical bones": {
+      "error": "'keep the original Matrix wardrobe within its geometry budget'",
+      "code": "'ERR_ASSERTION'"
+    },
+    "Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving": {
+      "error": "|-\n    Expected values to be strictly equal:\n    \n    false !== true\n    ",
+      "code": "'ERR_ASSERTION'"
+    },
+    "the repeated cat seals the old exit, leaves the service passage open and preserves the changed space after reconnect": {
+      "error": "|-\n    Expected values to be strictly equal:\n    \n    3 !== 2\n    ",
+      "code": "'ERR_ASSERTION'"
+    },
+    "ambush enemies can approach beside the sealed door without trying to dismantle the building": {
+      "error": "|-\n    Expected values to be strictly equal:\n    \n    3 !== 2\n    ",
+      "code": "'ERR_ASSERTION'"
+    },
+    "the entire film route completes through interactions, driving and real combat, then starts a recorded new life": {
+      "error": "|-\n    Expected values to be strictly equal:\n    \n    1 !== 2\n    ",
+      "code": "'ERR_ASSERTION'"
+    }
+  },
+  "baselineOriginalRuns": [
+    {
+      "log": "baseline-existing-tests.log",
+      "tests": 111,
+      "pass": 103,
+      "fail": 8
+    },
+    {
+      "log": "baseline-story-camera-tests.log",
+      "tests": 341,
+      "pass": 338,
+      "fail": 3
+    }
+  ],
+  "baselineNewRegression": {
+    "tests": 9,
+    "pass": 2,
+    "fail": 7
+  },
+  "baselineGitBlobsReverified": 1181,
+  "results": [
+    {
+      "log": "new-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/desert-guide-contact.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 58.706672584638,
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "skipped": 0,
+      "failureNames": [],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "related-tests.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "tests/reveal-renderer.test.mts",
+        "tests/construct-lesson-contact.test.mts",
+        "tests/truth-recovery.test.mts",
+        "tests/character-asset.test.mts",
+        "tests/neb-crew-appearance.test.mts",
+        "tests/film-story.test.mts",
+        "tests/camera.test.mts"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 1,
+      "elapsedSeconds": 273.38631645869464,
+      "tests": 452,
+      "pass": 441,
+      "fail": 11,
+      "skipped": 0,
+      "failureNames": [
+        "Neo\u2019s new forearms remain skinned, joined to the hands and exposed throughout the mirror performance",
+        "Neo floats chest-deep and the rescue pads support the shipped body throughout the lift",
+        "Neo rests his shipped occiput on both ship pillows without sinking into their surfaces",
+        "Dozer touches the treatment control, Neo feels the neck interface and Morpheus holds its core plug",
+        "Neo takes the apartment handset from its physical cradle and returns it after the call",
+        "shipped neo mesh has valid skinning and usable anatomical bones",
+        "shipped morpheus mesh has valid skinning and usable anatomical bones",
+        "the repeated cat seals the old exit, leaves the service passage open and preserves the changed space after reconnect",
+        "ambush enemies can approach beside the sealed door without trying to dismantle the building",
+        "the entire film route completes through interactions, driving and real combat, then starts a recorded new life",
+        "Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving"
+      ],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "deploy-tests.log",
+      "command": [
+        "npm",
+        "run",
+        "test:deploy"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 11.948143084533513,
+      "tests": 75,
+      "pass": 75,
+      "fail": 0,
+      "skipped": 0,
+      "failureNames": [],
+      "newFailures": [],
+      "baselineFailureMessagesUnchanged": true
+    },
+    {
+      "log": "typecheck-final.log",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 13.671120334416628
+    },
+    {
+      "log": "build-final.log",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "candidate-release",
+      "exitCode": 0,
+      "elapsedSeconds": 26.046853667125106
+    }
+  ],
+  "frozenInputs": 1183,
+  "inputsUnchanged": true,
+  "build": {
+    "js": {
+      "name": "index-C4YiT0v1.js",
+      "sha256": "d6c4cf3e85148e9aeb18d2bbfdbe9b13291a57d5e815ea5362de4c562897db1e",
+      "bytes": 3762777
+    },
+    "css": {
+      "name": "index-bH8XtZgl.css",
+      "sha256": "7a8beaf8a1d936b61eaf5121e315d8d755fd59bc9d325773616bbdd8e06f0e07"
+    },
+    "developmentProbeExcluded": true,
+    "backendFilesUnchanged": 280
+  },
+  "compiledSharedChanges": {}
+}
