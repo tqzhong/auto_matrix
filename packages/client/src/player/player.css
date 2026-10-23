@@ -167,7 +167,14 @@ body.bullet-time .game-hud::after { content: 'BULLET TIME'; position: absolute; 
   .character-viewer footer .enter-world { min-width: 175px; font-size: 10px; }
 }
 @media (max-width: 480px) {
-  .game-hud .game-vitals { width: 185px; left: 15px; }
+  .game-hud .game-vitals { width: min(128px, 30vw); left: 12px; padding: 9px; }
+  .game-vitals #player-initial { display: none; }
+  .game-vitals .player-name h2 { font-size: 12px; overflow-wrap: anywhere; }
+  .game-vitals .player-name small { font-size: 8px; }
+  .game-vitals .player-health, .game-vitals .player-energy { gap: 6px; margin-top: 10px; }
+  .game-vitals .player-ability { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 3px 5px; font-size: 9px; }
+  .game-vitals .player-ability kbd { grid-row: span 2; }
+  .game-vitals .player-ability small { grid-column: 2; margin-left: 0; letter-spacing: 0; }
   .game-hud .game-map { width: 100px; right: 15px; padding: 8px; }
   .game-hud #game-minimap { height: 70px; }
   .game-hud #game-population { display: none; }
