@@ -1,0 +1,227 @@
+{
+  "scope": "Common HeroModels/THREE runtime, old versus new GLB, full animate in stationary dojo guard. Node process CPU and wall time only; not a GPU or browser FPS test.",
+  "warmup": 100,
+  "samplesPerVersion": 10,
+  "framesPerSample": 100,
+  "order": "B/A/A/B repeated five times",
+  "results": [
+    {
+      "id": "neo",
+      "beforeWallMedianMs": 6.344911455000001,
+      "afterWallMedianMs": 7.291768964999992,
+      "beforeCpuMedianMs": 6.07207,
+      "afterCpuMedianMs": 6.298835,
+      "samples": [
+        {
+          "version": "before",
+          "wallMs": 7.788832500000008,
+          "cpuMs": 7.10191
+        },
+        {
+          "version": "after",
+          "wallMs": 7.637455829999999,
+          "cpuMs": 7.07092
+        },
+        {
+          "version": "after",
+          "wallMs": 7.62715583000001,
+          "cpuMs": 6.67501
+        },
+        {
+          "version": "before",
+          "wallMs": 5.867790420000001,
+          "cpuMs": 5.69532
+        },
+        {
+          "version": "before",
+          "wallMs": 7.738541249999998,
+          "cpuMs": 6.52639
+        },
+        {
+          "version": "after",
+          "wallMs": 7.96123458,
+          "cpuMs": 6.34796
+        },
+        {
+          "version": "after",
+          "wallMs": 7.3136445900000036,
+          "cpuMs": 6.68171
+        },
+        {
+          "version": "before",
+          "wallMs": 7.758977500000001,
+          "cpuMs": 6.98332
+        },
+        {
+          "version": "before",
+          "wallMs": 5.861825000000026,
+          "cpuMs": 5.96812
+        },
+        {
+          "version": "after",
+          "wallMs": 7.269893339999981,
+          "cpuMs": 5.97254
+        },
+        {
+          "version": "after",
+          "wallMs": 11.401514580000002,
+          "cpuMs": 7.20332
+        },
+        {
+          "version": "before",
+          "wallMs": 7.448188750000009,
+          "cpuMs": 6.74368
+        },
+        {
+          "version": "before",
+          "wallMs": 6.207219999999979,
+          "cpuMs": 6.17602
+        },
+        {
+          "version": "after",
+          "wallMs": 6.617793749999983,
+          "cpuMs": 6.24971
+        },
+        {
+          "version": "after",
+          "wallMs": 6.272868330000019,
+          "cpuMs": 5.88463
+        },
+        {
+          "version": "before",
+          "wallMs": 6.482602910000023,
+          "cpuMs": 5.96113
+        },
+        {
+          "version": "before",
+          "wallMs": 5.867530000000006,
+          "cpuMs": 5.60934
+        },
+        {
+          "version": "after",
+          "wallMs": 6.127967500000014,
+          "cpuMs": 5.74992
+        },
+        {
+          "version": "after",
+          "wallMs": 5.880947500000002,
+          "cpuMs": 5.5744
+        },
+        {
+          "version": "before",
+          "wallMs": 5.7164741700000015,
+          "cpuMs": 5.4445
+        }
+      ]
+    },
+    {
+      "id": "morpheus",
+      "beforeWallMedianMs": 6.314724170000009,
+      "afterWallMedianMs": 6.560243119999978,
+      "beforeCpuMedianMs": 6.172124999999999,
+      "afterCpuMedianMs": 5.94166,
+      "samples": [
+        {
+          "version": "before",
+          "wallMs": 6.2559991699999955,
+          "cpuMs": 6.32868
+        },
+        {
+          "version": "after",
+          "wallMs": 6.818349159999998,
+          "cpuMs": 6.61019
+        },
+        {
+          "version": "after",
+          "wallMs": 6.513734580000018,
+          "cpuMs": 5.91609
+        },
+        {
+          "version": "before",
+          "wallMs": 7.666727919999976,
+          "cpuMs": 6.60178
+        },
+        {
+          "version": "before",
+          "wallMs": 6.132255829999995,
+          "cpuMs": 5.82002
+        },
+        {
+          "version": "after",
+          "wallMs": 6.033666249999951,
+          "cpuMs": 5.75351
+        },
+        {
+          "version": "after",
+          "wallMs": 7.0817883299999815,
+          "cpuMs": 6.45048
+        },
+        {
+          "version": "before",
+          "wallMs": 7.376854579999999,
+          "cpuMs": 6.65596
+        },
+        {
+          "version": "before",
+          "wallMs": 9.585825830000031,
+          "cpuMs": 7.14427
+        },
+        {
+          "version": "after",
+          "wallMs": 8.657391659999995,
+          "cpuMs": 7.09114
+        },
+        {
+          "version": "after",
+          "wallMs": 6.959153750000041,
+          "cpuMs": 6.38697
+        },
+        {
+          "version": "before",
+          "wallMs": 6.373449170000022,
+          "cpuMs": 6.0058
+        },
+        {
+          "version": "before",
+          "wallMs": 6.185302919999958,
+          "cpuMs": 6.06245
+        },
+        {
+          "version": "after",
+          "wallMs": 5.997996669999993,
+          "cpuMs": 5.83147
+        },
+        {
+          "version": "after",
+          "wallMs": 5.827926250000019,
+          "cpuMs": 5.49652
+        },
+        {
+          "version": "before",
+          "wallMs": 5.812337909999988,
+          "cpuMs": 5.57531
+        },
+        {
+          "version": "before",
+          "wallMs": 6.205222500000018,
+          "cpuMs": 5.81453
+        },
+        {
+          "version": "after",
+          "wallMs": 6.0790812500000175,
+          "cpuMs": 5.77061
+        },
+        {
+          "version": "after",
+          "wallMs": 6.6067516599999365,
+          "cpuMs": 5.96723
+        },
+        {
+          "version": "before",
+          "wallMs": 6.7682645799999595,
+          "cpuMs": 6.2818
+        }
+      ]
+    }
+  ]
+}

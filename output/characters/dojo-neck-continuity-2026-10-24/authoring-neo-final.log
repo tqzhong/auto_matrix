@@ -1,0 +1,1 @@
+{"role": "neo", "vertices": 4489, "triangles": 8476, "joinedVertices": 121, "preservedFootVertices": 9810, "preservedFootTriangles": 18212, "removedDuplicateTriangles": 13880, "skinColorGain": [0.8865045119650564, 0.8605005022924405, 0.9254277324775494], "originalBinaryPreserved": true, "outputSha256": "283661b4500a45dd4ade7988b68c78c72f5da626884e32ef942ed4ac63f4633a"}

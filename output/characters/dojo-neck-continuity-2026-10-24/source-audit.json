@@ -1,0 +1,33 @@
+{
+  "baseline": "1c5591f0f95ce716949c7cf87a2aa30064ac8eea",
+  "packageFiles": 721,
+  "changed": [
+    {
+      "path": "packages/client/public/assets/characters/morpheus.glb",
+      "before": "23bb6e41f35682a00f6262e8c6efd1217611203fb1438cf08b2234b9719dbe94",
+      "after": "5ec07ba63e679f950dab8b5ff3fb5f5ed287d2ecb537daf26b7b4636f2643075"
+    },
+    {
+      "path": "packages/client/public/assets/characters/neo.glb",
+      "before": "0463a12fe71271a6959750895cd93d0b3759a8f477971605368dc05b6ed810df",
+      "after": "283661b4500a45dd4ade7988b68c78c72f5da626884e32ef942ed4ac63f4633a"
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "ce3a664ee06aa306db4bd359f736a3b5e65288b0dcaaedd9e5412c89bcecf672",
+      "after": "fae9ca1a7a10713d37fa85b080de3fdd0164b4df21ee1c617e09a30ec23d373f"
+    }
+  ],
+  "new": [
+    {
+      "path": "scripts/build-dojo-neck.py",
+      "after": "687f16a6e0df649530675639dbcdc7f4eb0585d3d3954f926bb43ea106692ebf"
+    },
+    {
+      "path": "tests/dojo-neck-continuity.test.mts",
+      "after": "5f685b1a188d3b80132993c4c9b6e1db6d892b2cb4b691fd5dcd6f694187af28"
+    }
+  ],
+  "inputs": 1207,
+  "unchanged": 1202
+}

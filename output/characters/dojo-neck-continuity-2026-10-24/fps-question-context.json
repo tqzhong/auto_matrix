@@ -1,0 +1,43 @@
+{
+  "hardwareChecked": "Apple M3 / 24 GiB",
+  "memoryPressureFreePercentAtCheck": 59,
+  "diskAvailableGiBAtCheck": 48,
+  "currentGameQualityChoices": [
+    "high",
+    "balanced",
+    "smooth"
+  ],
+  "qualityOnlyChangesRenderPixelBudget": true,
+  "historicalMeasurements": "output/characters/skinned-bounds-budget-2026-10-24/performance-summary.json",
+  "historicalScope": "paused bedside, same camera, no recording, 3 seconds warmup and 15 seconds sampling",
+  "renderSizesAndFps": [
+    {
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": 28.46
+    },
+    {
+      "size": [
+        1280,
+        720
+      ],
+      "fps": 47.77
+    },
+    {
+      "size": [
+        960,
+        540
+      ],
+      "fpsRange": [
+        58.07,
+        60.02
+      ]
+    }
+  ],
+  "stable60FpsProven": false,
+  "combatFpsMeasured": false,
+  "memoryCapacityBottleneckProven": false,
+  "minimumHardwareRequirementsEstablished": false
+}

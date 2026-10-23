@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 1 - neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 2005.556417
+  type: 'test'
+  ...
+# Subtest: neo: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 2 - neo: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 1460.19675
+  type: 'test'
+  ...
+# {"id":"neo","poses":33,"pairs":123,"maximumGap":0,"maximumAngle":0}
+# Subtest: neo: the actual two texture atlases meet with the same rendered skin tone
+ok 3 - neo: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 1434.353541
+  type: 'test'
+  ...
+# {"id":"neo","channels":369,"meanRelativeColorError":0.01063812646627848,"maximumRelativeColorError":0.06876068084359657}
+# Subtest: neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 4 - neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 1779.018792
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 5 - morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 2472.296542
+  type: 'test'
+  ...
+# Subtest: morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 6 - morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 3864.053416
+  type: 'test'
+  ...
+# {"id":"morpheus","poses":33,"pairs":127,"maximumGap":0,"maximumAngle":0}
+# Subtest: morpheus: the actual two texture atlases meet with the same rendered skin tone
+ok 7 - morpheus: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 2465.610625
+  type: 'test'
+  ...
+# {"id":"morpheus","channels":381,"meanRelativeColorError":0.014044675017366146,"maximumRelativeColorError":0.1098226581102538}
+# Subtest: morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 8 - morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 3134.272625
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19048.728625

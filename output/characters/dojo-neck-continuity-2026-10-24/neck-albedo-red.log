@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: neo: the actual two texture atlases meet with the same rendered skin tone
+not ok 1 - neo: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 1825.633166
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:1:5991'
+  failureType: 'testCodeFailure'
+  error: 'neo: the real texture pixels create a color seam (mean 0.12472993656264568, max 0.22191319948232655)'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:113:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"id":"neo","channels":369,"meanRelativeColorError":0.12472993656264568,"maximumRelativeColorError":0.22191319948232655}
+# Subtest: morpheus: the actual two texture atlases meet with the same rendered skin tone
+not ok 2 - morpheus: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 2515.021958
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:1:5991'
+  failureType: 'testCodeFailure'
+  error: 'morpheus: the real texture pixels create a color seam (mean 0.5070117373772904, max 0.6363251174867306)'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:113:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"id":"morpheus","channels":381,"meanRelativeColorError":0.5070117373772904,"maximumRelativeColorError":0.6363251174867306}
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4734.383875

@@ -1,0 +1,12 @@
+{
+  "fullWorldExactlyEqual": true,
+  "differences": [],
+  "memoriesEqual": true,
+  "memoryCount": 7,
+  "oldPid": 17383,
+  "newPid": 32403,
+  "scene": "m1_dojo",
+  "step": 1,
+  "tick": 10157,
+  "running": false
+}

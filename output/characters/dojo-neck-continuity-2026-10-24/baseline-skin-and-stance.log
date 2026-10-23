@@ -1,0 +1,105 @@
+TAP version 13
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 1 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 5605.799625
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 2 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 9490.6615
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 3 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 18149.763625
+  type: 'test'
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 4 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 13944.132416
+  type: 'test'
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 5 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 5009.121083
+  type: 'test'
+  ...
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+ok 6 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 3503.494625
+  type: 'test'
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+ok 7 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 3733.145958
+  type: 'test'
+  ...
+# Subtest: the exposed patient keeps continuous hand/body lighting through actual saved pod poses
+ok 8 - the exposed patient keeps continuous hand/body lighting through actual saved pod poses
+  ---
+  duration_ms: 7442.346166
+  type: 'test'
+  ...
+# [{"beat":{"kind":"emerge","elapsed":0},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":1.8},"pairs":225,"maximumAngleDegrees":0.0000012074182697257333,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":3.6},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":5.2},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":0,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":1.2,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":2.05,"emerged":true},"pairs":225,"maximumAngleDegrees":0.000002091309789151873,"maximumGap":0},{"beat":{"kind":"breather","elapsed":2.648,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":3.6,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":4.55,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":5.5,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":2.5,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":4.3,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":6.85,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":9,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":0},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":7},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":12},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0}]
+# Subtest: one patient has the same specular response on its hands and exposed body
+ok 9 - one patient has the same specular response on its hands and exposed body
+  ---
+  duration_ms: 5569.199208
+  type: 'test'
+  ...
+# Subtest: patient seam shading is actor-owned, stable while paused and restores outside the exposed costume
+ok 10 - patient seam shading is actor-owned, stable while paused and restores outside the exposed costume
+  ---
+  duration_ms: 6915.687
+  type: 'test'
+  ...
+# Subtest: neo: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 11 - neo: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 3782.245
+  type: 'test'
+  ...
+# {"id":"neo","pairs":102,"maximumAngleDegrees":0.0000017075472925031877}
+# Subtest: trinity: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 12 - trinity: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 2094.420583
+  type: 'test'
+  ...
+# {"id":"trinity","pairs":102,"maximumAngleDegrees":0}
+# Subtest: smith: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 13 - smith: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 1503.338958
+  type: 'test'
+  ...
+# {"id":"smith","pairs":102,"maximumAngleDegrees":0.0000017075472925031877}
+# Subtest: morpheus: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 14 - morpheus: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 5911.682334
+  type: 'test'
+  ...
+# {"id":"morpheus","pairs":102,"maximumAngleDegrees":0}
+# Subtest: skin shading preserves the live mirror liquid shader on every corrected Neo surface
+ok 15 - skin shading preserves the live mirror liquid shader on every corrected Neo surface
+  ---
+  duration_ms: 2844.957083
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61327.85175

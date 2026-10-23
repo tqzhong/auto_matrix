@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+not ok 1 - neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 4730.757625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:1:1086'
+  failureType: 'testCodeFailure'
+  error: |-
+    120/120 head boundary edges have no matching chest edge
+
+    120 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 120
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:28:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: neo: the neck keeps its join and lighting through head turns, strikes and dodge
+not ok 2 - neo: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 3030.20775
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:1:2097'
+  failureType: 'testCodeFailure'
+  error: 'a separate chest must complement the head; feet cannot share the duplicate neck surface'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:40:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+not ok 3 - morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 7095.449625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:1:1086'
+  failureType: 'testCodeFailure'
+  error: |-
+    124/124 head boundary edges have no matching chest edge
+
+    124 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 124
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:28:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+not ok 4 - morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 4469.899291
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:1:2097'
+  failureType: 'testCodeFailure'
+  error: 'a separate chest must complement the head; feet cannot share the duplicate neck surface'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-neck-continuity-2026-10-24/candidate-release/tests/dojo-neck-continuity.test.mts:40:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21256.760125

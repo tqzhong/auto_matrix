@@ -1,0 +1,222 @@
+TAP version 13
+# Subtest: neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 1 - neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 3757.40375
+  type: 'test'
+  ...
+# Subtest: neo: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 2 - neo: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 2616.9625
+  type: 'test'
+  ...
+# {"id":"neo","poses":33,"pairs":123,"maximumGap":0,"maximumAngle":0}
+# Subtest: neo: the actual two texture atlases meet with the same rendered skin tone
+ok 3 - neo: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 2668.1245
+  type: 'test'
+  ...
+# {"id":"neo","channels":369,"meanRelativeColorError":0.01063812646627848,"maximumRelativeColorError":0.06876068084359657}
+# Subtest: neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 4 - neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 3366.754958
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 5 - morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 4880.049709
+  type: 'test'
+  ...
+# Subtest: morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 6 - morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 3826.259375
+  type: 'test'
+  ...
+# {"id":"morpheus","poses":33,"pairs":127,"maximumGap":0,"maximumAngle":0}
+# Subtest: morpheus: the actual two texture atlases meet with the same rendered skin tone
+ok 7 - morpheus: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 7056.416333
+  type: 'test'
+  ...
+# {"id":"morpheus","channels":381,"meanRelativeColorError":0.014044675017366146,"maximumRelativeColorError":0.1098226581102538}
+# Subtest: morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 8 - morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 14635.82175
+  type: 'test'
+  ...
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 9 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 3020.033417
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 10 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 4107.909666
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 11 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 11093.41875
+  type: 'test'
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 12 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 22747.980708
+  type: 'test'
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 13 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 8334.3615
+  type: 'test'
+  ...
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+ok 14 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 3351.067
+  type: 'test'
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+ok 15 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 6397.819584
+  type: 'test'
+  ...
+# Subtest: the exposed patient keeps continuous hand/body lighting through actual saved pod poses
+ok 16 - the exposed patient keeps continuous hand/body lighting through actual saved pod poses
+  ---
+  duration_ms: 3999.722458
+  type: 'test'
+  ...
+# [{"beat":{"kind":"emerge","elapsed":0},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":1.8},"pairs":225,"maximumAngleDegrees":0.0000012074182697257333,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":3.6},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":5.2},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":0,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":1.2,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":2.05,"emerged":true},"pairs":225,"maximumAngleDegrees":0.000002091309789151873,"maximumGap":0},{"beat":{"kind":"breather","elapsed":2.648,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":3.6,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":4.55,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":5.5,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":2.5,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":4.3,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":6.85,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":9,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":0},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":7},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":12},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0}]
+# Subtest: one patient has the same specular response on its hands and exposed body
+ok 17 - one patient has the same specular response on its hands and exposed body
+  ---
+  duration_ms: 2219.165084
+  type: 'test'
+  ...
+# Subtest: patient seam shading is actor-owned, stable while paused and restores outside the exposed costume
+ok 18 - patient seam shading is actor-owned, stable while paused and restores outside the exposed costume
+  ---
+  duration_ms: 3340.922208
+  type: 'test'
+  ...
+# Subtest: neo: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 19 - neo: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 2208.826792
+  type: 'test'
+  ...
+# {"id":"neo","pairs":102,"maximumAngleDegrees":0.0000017075472925031877}
+# Subtest: trinity: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 20 - trinity: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 1370.418625
+  type: 'test'
+  ...
+# {"id":"trinity","pairs":102,"maximumAngleDegrees":0}
+# Subtest: smith: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 21 - smith: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 1140.951334
+  type: 'test'
+  ...
+# {"id":"smith","pairs":102,"maximumAngleDegrees":0.0000017075472925031877}
+# Subtest: morpheus: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 22 - morpheus: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 3971.266166
+  type: 'test'
+  ...
+# {"id":"morpheus","pairs":102,"maximumAngleDegrees":0}
+# Subtest: skin shading preserves the live mirror liquid shader on every corrected Neo surface
+ok 23 - skin shading preserves the live mirror liquid shader on every corrected Neo surface
+  ---
+  duration_ms: 2230.628959
+  type: 'test'
+  ...
+# Subtest: neo: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 24 - neo: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 1007.684
+  type: 'test'
+  ...
+# {"id":"neo","samples":109836,"minimumRelativeReflectance":0.7535183321910712}
+# Subtest: neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 25 - neo: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 4461.8775
+  type: 'test'
+  ...
+# Subtest: trinity: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 26 - trinity: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 815.685708
+  type: 'test'
+  ...
+# {"id":"trinity","samples":121500,"minimumRelativeReflectance":0.662224531658831}
+# Subtest: trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 27 - trinity: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 2778.464333
+  type: 'test'
+  ...
+# Subtest: smith: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 28 - smith: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 847.871959
+  type: 'test'
+  ...
+# {"id":"smith","samples":113238,"minimumRelativeReflectance":0.8592969374163782}
+# Subtest: smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 29 - smith: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 2586.297
+  type: 'test'
+  ...
+# Subtest: morpheus: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+ok 30 - morpheus: the whole wrist surface keeps skin reflectance beside the hand instead of a black baked border
+  ---
+  duration_ms: 843.910125
+  type: 'test'
+  ...
+# {"id":"morpheus","samples":104166,"minimumRelativeReflectance":0.6514127462303837}
+# Subtest: morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+ok 31 - morpheus: anatomical skin joins both cut hand boundaries through palm roll and wrist flexion
+  ---
+  duration_ms: 5657.427709
+  type: 'test'
+  ...
+# Subtest: wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+ok 32 - wrist skin is replaced by complete arms during home, patient and club costumes, then restored
+  ---
+  duration_ms: 11537.221708
+  type: 'test'
+  ...
+# Subtest: Trinity’s restored forearm stays inside the fitted leather sleeve
+ok 33 - Trinity’s restored forearm stays inside the fitted leather sleeve
+  ---
+  duration_ms: 28551.161667
+  type: 'test'
+  ...
+# {"checked":820,"palmRotations":4,"arms":2}
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 59837.521375

@@ -1,0 +1,101 @@
+{
+  "actors": [
+    {
+      "role": "neo",
+      "allOriginalBinaryBytesPreserved": 14057648,
+      "allExistingMeshesNodesMaterialsPreserved": true,
+      "allImagesTexturesSkeletonsPreserved": true,
+      "onlyFootAccessorCountsTrimmed": [
+        94,
+        95,
+        96,
+        97,
+        98,
+        99
+      ],
+      "feet": [
+        {
+          "attribute": "POSITION",
+          "valuesPreserved": 9810,
+          "sha256": "2aa1028022b796807de7112e36cffe0173adfb74c5f81a54e59bf8974470e132"
+        },
+        {
+          "attribute": "NORMAL",
+          "valuesPreserved": 9810,
+          "sha256": "91db7d0ee18cbcfc66fe0b4aab267760ef4e30c0a4fa859bfdbed6b217c79b33"
+        },
+        {
+          "attribute": "TEXCOORD_0",
+          "valuesPreserved": 9810,
+          "sha256": "64c3d30566791ec875aae3894896d99c89ff8647182f1d1ad4ff47f44c316f6d"
+        },
+        {
+          "attribute": "JOINTS_0",
+          "valuesPreserved": 9810,
+          "sha256": "facd24cd77828c1f1aed30985dd93b2d8a46280f272f5d0d28091c837b862d9b"
+        },
+        {
+          "attribute": "WEIGHTS_0",
+          "valuesPreserved": 9810,
+          "sha256": "8e8626d11527aedbb4e15775c7cd7f701ec6b0e8fb9a763a1d93755233ebce9f"
+        },
+        {
+          "attribute": "indices",
+          "valuesPreserved": 54636,
+          "sha256": "2061338e73b391f5485e2800b3198a597aa11322cea02650dabb8d768fadbfab"
+        }
+      ],
+      "assetGrowthBytes": 353096
+    },
+    {
+      "role": "morpheus",
+      "allOriginalBinaryBytesPreserved": 8479556,
+      "allExistingMeshesNodesMaterialsPreserved": true,
+      "allImagesTexturesSkeletonsPreserved": true,
+      "onlyFootAccessorCountsTrimmed": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
+      ],
+      "feet": [
+        {
+          "attribute": "POSITION",
+          "valuesPreserved": 9756,
+          "sha256": "699526cfd73cc94cd4fed05be5e96478065a2b9e1749e595e4e8a8e4c8cfde89"
+        },
+        {
+          "attribute": "NORMAL",
+          "valuesPreserved": 9756,
+          "sha256": "7cb71808590ac1318663838d4edd1269a659d3801fc7eee76e34facedf84ba08"
+        },
+        {
+          "attribute": "TEXCOORD_0",
+          "valuesPreserved": 9756,
+          "sha256": "9b2c3b12c5d00d4532ee6784c1a76c7fb404ed3790e9e03dfeebd5dd37879a6f"
+        },
+        {
+          "attribute": "JOINTS_0",
+          "valuesPreserved": 9756,
+          "sha256": "20f07209245c2b30a4bd3bac75c3087a53ccc546b531a8b2ec02c9659ee7e5cc"
+        },
+        {
+          "attribute": "WEIGHTS_0",
+          "valuesPreserved": 9756,
+          "sha256": "c532f9da80beea057c00dacda792d25461974b46f95db8cad5d5dfab0804f876"
+        },
+        {
+          "attribute": "indices",
+          "valuesPreserved": 54336,
+          "sha256": "a35a12f268002a59364d4006365f61321037396b9238805ebbe16dcadd1827d3"
+        }
+      ],
+      "assetGrowthBytes": 397768
+    }
+  ],
+  "newImages": 0,
+  "newRuntimeSolvers": 0,
+  "addedDrawCallsPerVisibleActorPerPass": 1
+}

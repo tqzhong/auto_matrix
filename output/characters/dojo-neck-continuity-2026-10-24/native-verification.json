@@ -1,0 +1,58 @@
+{
+  "productionBundle": "index-TukPf1bu.js",
+  "realSaveSeed": "output/characters/skinned-bounds-budget-2026-10-24/qa-play-data",
+  "nativeDojoSuccess": true,
+  "inputs": [
+    "continue saved Neo",
+    "resume",
+    "wait for visible dodge cue",
+    "X",
+    "W held 1150ms",
+    "F held 460ms",
+    "F held 510ms",
+    "F held 400ms",
+    "HUD confirms reflection step",
+    "pause"
+  ],
+  "result": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 3,
+    "complete": true
+  },
+  "restartVerified": true,
+  "fullWorldExactlyEqualAfterRestart": true,
+  "memoriesEqualAfterRestart": true,
+  "nativeColdReloadVerified": true,
+  "initialViewToggleBeforeModelReadyHadNoEffect": true,
+  "nativeFirstAndThirdPersonSwitchVerified": true,
+  "nativeMovementAfterReloadVerified": true,
+  "movementDistanceAfterReload": 1.5580669606728754,
+  "postReloadInputs": [
+    "after model load V",
+    "resume",
+    "W 300ms",
+    "D 300ms",
+    "V",
+    "pause"
+  ],
+  "paused": true,
+  "browserWarningErrorCount": 0,
+  "newBrowserFpsMeasurement": false,
+  "fullFilmChoreographyVerified": false,
+  "independentModelInspectorIsGameplay": false,
+  "noFabricatedQuestOrActorState": true,
+  "final": {
+    "scene": "m1_dojo",
+    "step": 1,
+    "tick": 10199,
+    "running": false,
+    "position": {
+      "x": 6337.092661019962,
+      "y": 1,
+      "z": 4420.966106916672
+    },
+    "rotation": 1.7544573296678962,
+    "health": 15.100000000000025
+  }
+}
