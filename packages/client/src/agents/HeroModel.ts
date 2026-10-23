@@ -157,6 +157,7 @@ export class HeroModels {
   private local = new THREE.Vector3();
   private segment = new THREE.Vector3();
   private closest = new THREE.Vector3();
+  private soleTransform = new THREE.Matrix4();
   private handRotation = new THREE.Quaternion();
   private patientSkin: THREE.DataTexture;
 
@@ -1400,9 +1401,13 @@ export class HeroModels {
       rig.root.updateWorldMatrix(true, true);
       if (input.dojoOutfit && rig.dojoSoles) {
         const { mesh, indices } = rig.dojoSoles; mesh.skeleton.update();
+        // Refresh the attached bind transform after movement, then share the
+        // same mesh-to-body transform across every sole vertex this frame.
+        mesh.updateMatrixWorld(true);
+        this.soleTransform.copy(rig.root.matrixWorld).invert().multiply(mesh.matrixWorld);
         let lowest = Infinity;
         for (const index of indices) {
-          mesh.getVertexPosition(index, this.point); mesh.localToWorld(this.point); rig.root.worldToLocal(this.point);
+          mesh.getVertexPosition(index, this.point).applyMatrix4(this.soleTransform);
           lowest = Math.min(lowest, this.point.y);
         }
         pelvis.position.y -= lowest; rig.root.updateWorldMatrix(true, true);
