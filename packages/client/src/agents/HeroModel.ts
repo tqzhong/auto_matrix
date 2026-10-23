@@ -1242,8 +1242,8 @@ export class HeroModels {
         const point = THREE.MathUtils.smoothstep(t, 1.3, 2.8) * (1 - THREE.MathUtils.smoothstep(t, 9.5, 11.2));
         const collapse = THREE.MathUtils.smoothstep(t, 10.2, 12.8);
         if (role === 'morpheus') {
-          bone('shoulder_R').rotation.x -= point * 1.12; bone('shoulder_R').rotation.z -= point * .35;
-          bone('elbow_R').rotation.x -= point * .34; bone('head').rotation.y += point * .13;
+          bone('pelvis').position.z += .15;
+          bone('head').rotation.y += point * .13;
         } else {
           bone('head').rotation.y -= point * .18; bone('spine').rotation.x += collapse * .34; bone('chest').rotation.x += collapse * .42;
           for (const side of ['R', 'L']) bone('shoulder_' + side).rotation.x -= collapse * .42;

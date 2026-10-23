@@ -5,7 +5,7 @@ import { reach } from './SpoonPerformance.js';
 
 const fingers = new WeakMap<HeroRig, Map<string, THREE.Quaternion[]>>();
 
-function supportedHand(rig: HeroRig, side: 'R' | 'L', point: THREE.Vector3, normal: THREE.Vector3, amount: number): void {
+export function supportedHand(rig: HeroRig, side: 'R' | 'L', point: THREE.Vector3, normal: THREE.Vector3, amount: number, elbowPole = new THREE.Vector3(0, -.5, 1)): void {
   const shoulder = rig.bones.get(`shoulder_${side}`)!, elbow = rig.bones.get(`elbow_${side}`)!, wrist = rig.bones.get(`wrist_${side}`)!;
   const sign = side === 'R' ? 1 : -1, start = wrist.getWorldPosition(new THREE.Vector3()), rest = wrist.quaternion.clone();
   const offset = new THREE.Vector3(sign * .05575, -.19105, .00371);
@@ -18,7 +18,7 @@ function supportedHand(rig: HeroRig, side: 'R' | 'L', point: THREE.Vector3, norm
   const origin = shoulder.getWorldPosition(new THREE.Vector3()), restDirection = start.sub(origin).normalize();
   const direction = target.clone().sub(origin).normalize(), finalDirection = goal.clone().sub(origin).normalize();
   const restPole = elbow.getWorldPosition(new THREE.Vector3()).sub(origin); restPole.addScaledVector(restDirection, -restPole.dot(restDirection)).normalize();
-  const pole = new THREE.Vector3(0, -.5, 1); pole.addScaledVector(finalDirection, -pole.dot(finalDirection)).normalize();
+  const pole = elbowPole.clone(); pole.addScaledVector(finalDirection, -pole.dot(finalDirection)).normalize();
   const transported = restPole.clone().applyQuaternion(new THREE.Quaternion().setFromUnitVectors(restDirection, finalDirection));
   const roll = Math.atan2(finalDirection.dot(new THREE.Vector3().crossVectors(transported, pole)), transported.dot(pole));
   const bend = restPole.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(restDirection, direction)).applyAxisAngle(direction, roll * amount);
