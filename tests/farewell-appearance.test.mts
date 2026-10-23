@@ -43,8 +43,12 @@ test('the early ship wake, escort and connection retain Neo and Morpheus knit cl
       assert.equal(sweater.visible, true, `${role}: the early ship must show the real knit mesh`);
       assert.ok(old.every(part => !part.mesh.visible), 'suit lapels and old sleeves must not overlap the knit');
       const cloth = sweater.material as THREE.MeshStandardMaterial;
-      assert.ok(cloth.bumpMap instanceof THREE.DataTexture && cloth.map === null, 'the visible sweater must retain its knit surface');
-      if (role === 'morpheus') assert.ok(cloth.color.r > cloth.color.b * 1.2, 'the cabin sweater has the warm brown tone seen in the film');
+      assert.ok(cloth.bumpMap instanceof THREE.DataTexture, 'the visible sweater must retain its knit relief');
+      if (role === 'morpheus') {
+        assert.ok(cloth.map instanceof THREE.DataTexture, 'the cabin knit needs its mottled yarn color as well as relief');
+        assert.ok(Math.max(cloth.color.r, cloth.color.g, cloth.color.b) - Math.min(cloth.color.r, cloth.color.g, cloth.color.b) < .06,
+          'the bedside knit should read as muted grey/taupe, not the old skin-colored torso');
+      } else assert.equal(cloth.map, null, 'retain Neo’s existing bump-only fabric');
       if (role === 'neo') assert.ok(h.rig.wardrobe.filter(part => part.hair).every(part => !part.mesh.visible), 'early Neo must retain his shaved recovery scalp');
     }
     h.update({ realWorld: true, nebCrew: role, performance: 'recover', recovery: 2 });
