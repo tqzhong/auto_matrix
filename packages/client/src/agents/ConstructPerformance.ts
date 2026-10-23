@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CONSTRUCT, FILM_SETS } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
+import { inspectConstructImage } from './ConstructSelfImage.js';
 
 /** The first loading-space lesson: self inspection, leather contact and a held remote. */
 export class ConstructPerformance {
@@ -36,12 +37,7 @@ export class ConstructPerformance {
       }
     }
     if (arrival?.role === 'neo' && arrival.phase === 'image') {
-      const t = arrival.elapsed, inspect = THREE.MathUtils.smoothstep(t, .3, 1) * (1 - THREE.MathUtils.smoothstep(t, 5, 6));
-      const bones = this.rig.bones; this.rig.root.updateWorldMatrix(true, true);
-      const forearm = bones.get('elbow_L')!.getWorldPosition(new THREE.Vector3()).lerp(bones.get('wrist_L')!.getWorldPosition(new THREE.Vector3()), .7);
-      const neck = bones.get('head')!.localToWorld(new THREE.Vector3(0, -.2, -.2));
-      const neckBlend = THREE.MathUtils.smoothstep(t, 2.3, 3.5);
-      this.palm('R', forearm.lerp(neck, neckBlend), inspect, 'inspect', neckBlend);
+      inspectConstructImage(this.rig, arrival.elapsed);
     }
     if (lesson?.kind !== 'construct' || lesson.role !== 'neo') return;
     const blend = THREE.MathUtils.smoothstep(lesson.elapsed, .65, 1.65) * (1 - THREE.MathUtils.smoothstep(lesson.elapsed, 6.5, 8));
@@ -82,13 +78,13 @@ export class ConstructPerformance {
     }
   }
 
-  private palm(side: 'L' | 'R', point: THREE.Vector3, blend: number, kind: 'inspect' | 'leather' | 'remote', neck = 0): void {
+  private palm(side: 'L' | 'R', point: THREE.Vector3, blend: number, kind: 'leather' | 'remote'): void {
     if (!blend) return;
     const bones = this.rig.bones, shoulder = bones.get(`shoulder_${side}`)!, elbow = bones.get(`elbow_${side}`)!, wrist = bones.get(`wrist_${side}`)!;
     this.rig.root.updateWorldMatrix(true, true);
     const root = this.rig.root.getWorldQuaternion(new THREE.Quaternion());
     const desired = root.clone().multiply(new THREE.Quaternion().setFromEuler(kind === 'remote'
-      ? new THREE.Euler(-Math.PI / 2, 0, 0) : new THREE.Euler(kind === 'inspect' ? Math.PI / 2 - neck * Math.PI : -.7, 0, side === 'R' ? -Math.PI / 2 : Math.PI / 2)));
+      ? new THREE.Euler(-Math.PI / 2, 0, 0) : new THREE.Euler(-.7, 0, side === 'R' ? -Math.PI / 2 : Math.PI / 2)));
     const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(desired, blend);
     const palm = new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02);
     const target = wrist.localToWorld(palm.clone()).lerp(point, blend).sub(palm.applyQuaternion(orientation));
@@ -96,9 +92,7 @@ export class ConstructPerformance {
     const a = elbow.position.length(), b = wrist.position.length(), reach = THREE.MathUtils.clamp(direction.length(), .02, a + b - .001);
     direction.normalize(); target.copy(start).addScaledVector(direction, reach);
     const along = (a * a - b * b + reach * reach) / (2 * reach);
-    // The elbow rises around the shoulder when inspecting the rear socket.
-    // The forearm and leather gestures retain their lower elbow path.
-    const pole = new THREE.Vector3(side === 'R' ? -.5 : .5, -.8 + neck * 1.5, -.4 - neck * .4).applyQuaternion(root);
+    const pole = new THREE.Vector3(side === 'R' ? -.5 : .5, -.8, -.4).applyQuaternion(root);
     pole.addScaledVector(direction, -pole.dot(direction)).normalize();
     const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
     const aim = (joint: THREE.Bone, child: THREE.Bone, end: THREE.Vector3) => {

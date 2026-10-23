@@ -26,6 +26,7 @@ import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor, ambushShotRecoil, mouseRoom
 import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
 import { ConstructPerformance } from './ConstructPerformance.js';
+import { prepareConstructSleeves, poseConstructSleeves } from './ConstructSelfImage.js';
 import { clubCloseness } from '@auto_matrix/shared';
 import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
@@ -509,6 +510,7 @@ export class HeroModels {
     if (id === 'morpheus' && !support) this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
     if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
     if (!support && !guard) this.fightingHands.set(rig, new FightingHands(rig));
+    if (id === 'neo' && !support) this.geometries.add(prepareConstructSleeves(rig));
     if (!support && !guard) this.skinContinuity.set(rig, wardrobe
       .filter(part => part.mesh instanceof THREE.SkinnedMesh && /^(Wrist skin|Office skin|Tracking skin)$/.test((part.mesh.material as THREE.Material).name))
       .map(part => new SkinContinuity(rig, part.mesh as THREE.SkinnedMesh)));
@@ -1066,6 +1068,7 @@ export class HeroModels {
     const completePatientBody = rig.wardrobe.some(part => part.mesh.userData.patientBody);
     const farewellAppearance = this.farewellAppearances.get(rig);
     const ambushWardrobe = this.ambushWardrobes.get(rig);
+    poseConstructSleeves(rig, input);
     for (const part of rig.wardrobe) {
       const material = part.mesh.material as THREE.MeshStandardMaterial;
       const patientLegs = Boolean(patient && !completePatientBody && material.name === 'Trousers' && /Tailored.trousers/i.test(part.mesh.name));
@@ -1249,8 +1252,10 @@ export class HeroModels {
     }
     if (input.construct?.role === 'neo' && input.construct.phase === 'image') {
       const t = input.construct.elapsed, inspect = THREE.MathUtils.smoothstep(t, .3, 1) * (1 - THREE.MathUtils.smoothstep(t, 5, 6));
-      bone('shoulder_L').rotation.x -= .65 * inspect; bone('elbow_L').rotation.x -= .65 * inspect;
-      bone('head').rotation.x += .25 * inspect * (1 - THREE.MathUtils.smoothstep(t, 2.5, 3.5));
+      const forearm = THREE.MathUtils.smoothstep(t, .3, 1) * (1 - THREE.MathUtils.smoothstep(t, 2.1, 2.8));
+      const neck = THREE.MathUtils.smoothstep(t, 2.4, 3.6) * (1 - THREE.MathUtils.smoothstep(t, 5, 6));
+      bone('shoulder_L').rotation.x -= .65 * forearm; bone('elbow_L').rotation.x -= .65 * forearm;
+      bone('head').rotation.x += .25 * inspect * (1 - THREE.MathUtils.smoothstep(t, 2.5, 3.5)) + .18 * neck;
     }
     if (input.training) {
       const { kind, elapsed: t, role } = input.training;
