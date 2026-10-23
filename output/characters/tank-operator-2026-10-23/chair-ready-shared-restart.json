@@ -1,0 +1,12 @@
+{
+  "oldPid": 38993,
+  "newPid": 39712,
+  "tick": 8847,
+  "phase": "ready",
+  "persistentWorldEqualExceptTransientController": true,
+  "onlyAllowedMigrationActors": [],
+  "memoryFilesUnchanged": 7,
+  "cloudDisabled": true,
+  "fullWorldEqualAfterNativeColdLoadAndReconnect": true,
+  "worldSha256": "bad5e87ff70283f705dc05e34011862c9686a4100a85688db2a5663611e46660"
+}

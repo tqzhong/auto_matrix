@@ -1,0 +1,18 @@
+{
+  "bytes": 5794496,
+  "sha256": "c8302d06c953ae99eac7bf80208bcda22a2988f4fcb600fda785606d56d78f4e",
+  "meshes": {
+    "Tailored trousers": 2626,
+    "shoes01": 3320,
+    "high-poly": 2040,
+    "Anatomical head and hands": 34300,
+    "Tank face": 37160,
+    "Tank ribbed shirt": 15364,
+    "Tank harness": 4062,
+    "Tank fingerless gloves": 6590,
+    "Tank curled hair": 3952,
+    "Tank curl strands": 15120,
+    "Tank headset": 552
+  },
+  "sourceRevision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482"
+}

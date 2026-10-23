@@ -1,0 +1,259 @@
+TAP version 13
+# Subtest: the six diners sit along a human-scale long metal table, with Neo beside its long edge
+ok 1 - the six diners sit along a human-scale long metal table, with Neo beside its long edge
+  ---
+  duration_ms: 4782.288125
+  type: 'test'
+  ...
+# Subtest: Neo owns the real bowl and spoon while eating, with no floating duplicate props
+ok 2 - Neo owns the real bowl and spoon while eating, with no floating duplicate props
+  ---
+  duration_ms: 3108.004125
+  type: 'test'
+  ...
+# Subtest: the first bite opens Neo’s actual face instead of pushing the spoon through a sealed mouth
+ok 3 - the first bite opens Neo’s actual face instead of pushing the spoon through a sealed mouth
+  ---
+  duration_ms: 3010.803625
+  type: 'test'
+  ...
+# Subtest: serving, lifting and setting down transfer one bowl or spoon without a position or orientation jump
+ok 4 - serving, lifting and setting down transfer one bowl or spoon without a position or orientation jump
+  ---
+  duration_ms: 2873.1775
+  type: 'test'
+  ...
+# Subtest: Neo pinches the thin spoon with three real fingers, without burying the handle or folding his wrist
+ok 5 - Neo pinches the thin spoon with three real fingers, without burying the handle or folding his wrist
+  ---
+  duration_ms: 4693.543709
+  type: 'test'
+  ...
+# {"spoonSamples":48,"worst":0,"largestGap":0.026506562844783067,"largestBend":2.1073424255447017e-8}
+# Subtest: the hands stay outside the bowl throughout serving, scooping and withdrawal, with contact while carrying
+ok 6 - the hands stay outside the bowl throughout serving, scooping and withdrawal, with contact while carrying
+  ---
+  duration_ms: 8769.540084
+  type: 'test'
+  ...
+# {"bowlSamples":237,"largestGap":0.022079394678564346,"deepest":-0.01019942621291925}
+# Subtest: saved eating instants do not snap the arms or fold back the actual distal finger skin
+ok 7 - saved eating instants do not snap the arms or fold back the actual distal finger skin
+  ---
+  duration_ms: 5196.413625
+  type: 'test'
+  ...
+# {"largest":0.12921663282547466,"maximumPIP":94.9807430864545,"maximumDIP":86.24796056030159}
+# Subtest: cold saves, unrelated gestures and first-person view preserve the same eating anatomy and prop owners
+ok 8 - cold saves, unrelated gestures and first-person view preserve the same eating anatomy and prop owners
+  ---
+  duration_ms: 9913.339458
+  type: 'test'
+  ...
+# Subtest: the full-sized spoonful enters between Neo’s actual lips and teeth without cutting through them
+ok 9 - the full-sized spoonful enters between Neo’s actual lips and teeth without cutting through them
+  ---
+  duration_ms: 4275.941459
+  type: 'test'
+  ...
+# Subtest: all six diners rest on their stools with shoes on the floor and no trouser-seat penetration
+ok 10 - all six diners rest on their stools with shoes on the floor and no trouser-seat penetration
+  ---
+  duration_ms: 6593.161375
+  type: 'test'
+  ...
+# Subtest: Neo turns off the stool before rising and finishes clear of the table collision radius
+ok 11 - Neo turns off the stool before rising and finishes clear of the table collision radius
+  ---
+  duration_ms: 5285.008917
+  type: 'test'
+  ...
+# Subtest: Tank approaches and lowers onto his stool without passing his legs through its seat
+ok 12 - Tank approaches and lowers onto his stool without passing his legs through its seat
+  ---
+  duration_ms: 5298.272917
+  type: 'test'
+  ...
+# Subtest: the table trestles reach from its underside to the floor without entering the diners or standing route
+ok 13 - the table trestles reach from its underside to the floor without entering the diners or standing route
+  ---
+  duration_ms: 6485.340042
+  type: 'test'
+  ...
+# Subtest: training preparation restores its saved body action immediately on release and paused possession
+ok 14 - training preparation restores its saved body action immediately on release and paused possession
+  ---
+  duration_ms: 141.996917
+  type: 'test'
+  ...
+# Subtest: rehydrating training preserves free walking and does not revive a released dead player
+ok 15 - rehydrating training preserves free walking and does not revive a released dead player
+  ---
+  duration_ms: 28.662708
+  type: 'test'
+  ...
+# Subtest: training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+ok 16 - training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+  ---
+  duration_ms: 1421.467958
+  type: 'test'
+  ...
+# Subtest: Tank cannot be stolen and training preparation survives pause, disconnection and reload
+ok 17 - Tank cannot be stolen and training preparation survives pause, disconnection and reload
+  ---
+  duration_ms: 249.561042
+  type: 'test'
+  ...
+# Subtest: a saved upload already in progress does not replay the new cabin introduction
+ok 18 - a saved upload already in progress does not replay the new cabin introduction
+  ---
+  duration_ms: 12.758333
+  type: 'test'
+  ...
+# Subtest: a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+ok 19 - a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+  ---
+  duration_ms: 101.526083
+  type: 'test'
+  ...
+# Subtest: Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+ok 20 - Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+  ---
+  duration_ms: 160.672417
+  type: 'test'
+  ...
+# Subtest: a lost mentor stops the upload without silently reviving the character
+ok 21 - a lost mentor stops the upload without silently reviving the character
+  ---
+  duration_ms: 46.705375
+  type: 'test'
+  ...
+# Subtest: Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+ok 22 - Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+  ---
+  duration_ms: 1282.164458
+  type: 'test'
+  ...
+# Subtest: Mouse uses his own anatomical body and costumes while retaining both complete five-finger chains and forearm twist
+ok 23 - Mouse uses his own anatomical body and costumes while retaining both complete five-finger chains and forearm twist
+  ---
+  duration_ms: 2138.780166
+  type: 'test'
+  ...
+# Subtest: Mouse changes ship and Matrix wardrobes without leaking cap, coat or borrowed face across V toggles
+ok 24 - Mouse changes ship and Matrix wardrobes without leaking cap, coat or borrowed face across V toggles
+  ---
+  duration_ms: 1370.413833
+  type: 'test'
+  ...
+# Subtest: a cold first-person load applies the most recent realm and visibility before showing Mouse
+ok 25 - a cold first-person load applies the most recent realm and visibility before showing Mouse
+  ---
+  duration_ms: 1386.444042
+  type: 'test'
+  ...
+# Subtest: a Mouse asset that finishes outside the visible LOD stays hidden until its current Matrix appearance is applied
+ok 26 - a Mouse asset that finishes outside the visible LOD stays hidden until its current Matrix appearance is applied
+  ---
+  duration_ms: 1004.358333
+  type: 'test'
+  ...
+# Subtest: the meal drives Mouse’s real head and arms deterministically and removes its pose on returning to training or hotel walking
+ok 27 - the meal drives Mouse’s real head and arms deterministically and removes its pose on returning to training or hotel walking
+  ---
+  duration_ms: 1323.311667
+  type: 'test'
+  ...
+# Subtest: the production renderer selects Mouse’s wardrobe in the meal, red-dress program and hotel across both views
+ok 28 - the production renderer selects Mouse’s wardrobe in the meal, red-dress program and hotel across both views
+  ---
+  duration_ms: 1900.453125
+  type: 'test'
+  ...
+# Subtest: Mouse releases his fitted head, eyes, masked skin and ship resources exactly once
+ok 29 - Mouse releases his fitted head, eyes, masked skin and ship resources exactly once
+  ---
+  duration_ms: 1118.750958
+  type: 'test'
+  ...
+# Subtest: registered Mouse eyelids preserve their named morph and the body-relative displacement scale
+ok 30 - registered Mouse eyelids preserve their named morph and the body-relative displacement scale
+  ---
+  duration_ms: 956.193417
+  type: 'test'
+  ...
+# Subtest: the fitted lower neck keeps the original body texture coordinates at its weighted attachment
+ok 31 - the fitted lower neck keeps the original body texture coordinates at its weighted attachment
+  ---
+  duration_ms: 2511.89975
+  type: 'test'
+  ...
+# Subtest: Mouse’s round glasses keep both temples outside his actual fitted skull as the head turns
+ok 32 - Mouse’s round glasses keep both temples outside his actual fitted skull as the head turns
+  ---
+  duration_ms: 35936.700042
+  type: 'test'
+  ...
+# Subtest: disposing while Mouse assets load never attaches a late orphan actor
+ok 33 - disposing while Mouse assets load never attaches a late orphan actor
+  ---
+  duration_ms: 33.209125
+  type: 'test'
+  ...
+# Subtest: Mouse seats each pistol in the palm with the index pad on its trigger and the other pads around the handle
+ok 34 - Mouse seats each pistol in the palm with the index pad on its trigger and the other pads around the handle
+  ---
+  duration_ms: 699.284042
+  type: 'test'
+  ...
+# Subtest: Mouse’s seated pistol grip leaves the palm and whole phalanges outside the metal handle
+ok 35 - Mouse’s seated pistol grip leaves the palm and whole phalanges outside the metal handle
+  ---
+  duration_ms: 516.690875
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 36 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 96.722167
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 37 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 523.473
+  type: 'test'
+  ...
+# Subtest: the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+ok 38 - the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+  ---
+  duration_ms: 20.866125
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 39 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 89.138209
+  type: 'test'
+  ...
+# Subtest: the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+ok 40 - the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+  ---
+  duration_ms: 64.245958
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 41 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 109.975792
+  type: 'test'
+  ...
+1..41
+# tests 41
+# suites 0
+# pass 41
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53019.2705

@@ -1,0 +1,26 @@
+[
+  {
+    "level": "warn",
+    "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+    "timestamp": "2026-10-23T14:00:59.122Z",
+    "url": "http://localhost:5173/assets/index-Cc1Cn1oL.js"
+  },
+  {
+    "level": "warn",
+    "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+    "timestamp": "2026-10-23T14:00:59.226Z",
+    "url": "http://localhost:5173/assets/index-Cc1Cn1oL.js"
+  },
+  {
+    "level": "warn",
+    "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+    "timestamp": "2026-10-23T14:00:59.354Z",
+    "url": "http://localhost:5173/assets/index-Cc1Cn1oL.js"
+  },
+  {
+    "level": "warn",
+    "message": "THREE.WebGLRenderer: Texture marked for update but no image data found.",
+    "timestamp": "2026-10-23T14:00:59.372Z",
+    "url": "http://localhost:5173/assets/index-Cc1Cn1oL.js"
+  }
+]

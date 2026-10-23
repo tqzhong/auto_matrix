@@ -1,0 +1,13 @@
+{
+  "backendFilesChanged": [
+    "story/FilmStorySystem.js",
+    "story/FilmStorySystem.js.map",
+    "story/FilmStorySystem.d.ts.map"
+  ],
+  "candidateSharedBuildDriftRestoredFromMain": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ],
+  "restoredBeforeChairSharedRestart": true,
+  "mainSharedUntouched": true
+}

@@ -1,0 +1,36 @@
+{
+  "productionBundle": "index-Cc1Cn1oL.js",
+  "normalTruthChoiceCompleted": true,
+  "followedTankThroughDoor": true,
+  "trainingUploadCompleted": true,
+  "dojoEntered": true,
+  "dojoCombatTested": false,
+  "crewOverlapFixedInActualScene": true,
+  "realRestartFullWorldEqualAfterReconnect": true,
+  "restartEvidence": "chair-ready-shared-restart.json",
+  "consoleWarningsAndErrors": 0,
+  "endingScene": "m1_dojo",
+  "endingStep": 0,
+  "endingTick": 8928,
+  "health": 100,
+  "running": false,
+  "normalControls": [
+    "bedside care choice",
+    "G stand from bed",
+    "WASD follow through door",
+    "V and mouse view",
+    "walk around chair",
+    "G sit and connect",
+    "pause and actual backend restart",
+    "native cold load and resume save",
+    "G upload",
+    "G enter dojo"
+  ],
+  "limits": [
+    "No dojo combat run",
+    "No new FPS measurement or long video",
+    "Generated likeness remains approximate",
+    "Crew migration first checker omitted transient player idle cleanup; first restart memory equality not verified",
+    "The final chair restart checked complete response after reconnect and all seven memories"
+  ]
+}

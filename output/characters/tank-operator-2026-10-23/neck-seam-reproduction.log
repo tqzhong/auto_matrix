@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: the face-to-neck skin keeps atlas seams on separate corners instead of stretching across the atlas
+not ok 1 - the face-to-neck skin keeps atlas seams on separate corners instead of stretching across the atlas
+  ---
+  duration_ms: 338.803708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/tank-operator-2026-10-23/candidate-release/tests/tank-operator.test.mts:1:3535'
+  failureType: 'testCodeFailure'
+  error: 'a face triangle crosses unrelated skin islands: 1.030850159955187'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/tank-operator-2026-10-23/candidate-release/tests/tank-operator.test.mts:74:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"maximumUvSpan":1.030850159955187}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1390.184125

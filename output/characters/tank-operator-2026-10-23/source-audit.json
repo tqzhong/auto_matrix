@@ -1,0 +1,54 @@
+{
+  "baseline": "7dbdf8b347ab579a057797b6b1d6da5053336b0a",
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "c95b0d4910f74c41010278779be93eb597c222cab8d85942f3f6d526e0df6d21",
+      "after": "88723ee421e65c49a37e30600b5feffb5a715ec40f1e559293b599039f7b059d"
+    },
+    {
+      "path": "packages/client/src/player/CharacterViewer.ts",
+      "before": "692bccdce611b59f3ec4384b87ea51abbe9dc626777b7bc5299e6fd37c170b97",
+      "after": "7b060067eb81bf8cba0b2f9ddade36a6a8eed83ffde491ca96ca208649390219"
+    },
+    {
+      "path": "packages/server/src/story/FilmStorySystem.ts",
+      "before": "770b0e48445aac57ac431e4372d90e982981c0c34d77b30ed7717a4f6d188eb2",
+      "after": "300ceb681d31efe9fa771c5045ab65bb7dab2d2d5352ee564a5dc56374d76e99"
+    },
+    {
+      "path": "tests/download-setup.test.mts",
+      "before": "b493b5a4ee4c8ed5e2f8b03c03ff570f925ccde69ffaaad3dd57c320371c4f50",
+      "after": "8b00eab7310eac05a52dd79ac13d298e859beb6bf0e38ff6802c6f71763d3d66"
+    }
+  ],
+  "new": [
+    {
+      "path": "packages/client/src/agents/TankMaterials.ts",
+      "after": "5f5bd6194d3b79eac5cb4a3da33ec574fd375b1afddad1b7f700659c748970b4"
+    },
+    {
+      "path": "scripts/build-tank-operator.py",
+      "after": "42a305183898d005ee53ba09c6d62ac8b07d190c81861d59f6f2277392441a2c"
+    },
+    {
+      "path": "tests/tank-operator.test.mts",
+      "after": "94e4530d1e4dc564db7ea253ff52de7e9e5f67da381b40584a4b9a3051145094"
+    },
+    {
+      "path": "packages/client/public/assets/characters/tank.glb",
+      "after": "c8302d06c953ae99eac7bf80208bcda22a2988f4fcb600fda785606d56d78f4e"
+    },
+    {
+      "path": "packages/client/public/assets/characters/tank-skin.png",
+      "after": "ced478cfdd2b86391f0f92a4408b287ad70adb0dd0e9271ba606d0b028b47c6b"
+    },
+    {
+      "path": "packages/client/public/assets/characters/tank-face-reference.png",
+      "after": "4faa3b7ca0adb465aef49f6fcaa1bb0600b97a80e9ad794bd5115aba1addbfcb"
+    }
+  ],
+  "unchangedTrackedInputs": 1184,
+  "trackedInputs": 1188,
+  "packageFiles": 712
+}

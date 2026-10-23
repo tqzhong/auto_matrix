@@ -9,7 +9,7 @@ import type { ConversationEngine } from '../packages/server/src/agents/Conversat
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 
-function setup() {
+function setup(beforeDownload?: (world: WorldState) => void) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
@@ -17,10 +17,50 @@ function setup() {
   const players = new PlayerController(world, conversations, {} as ActionExecutor, dynamics, sandbox);
   players.possess('test', 'neo', 0); sandbox.life.begin(world.agents.get('neo')!, 0); sandbox.state.neoLife!.chapter = 1;
   const act = (target = 'act') => players.sandboxAction('test', { kind: 'life', target: `film:${target}` }, 1);
-  act('continue'); Object.assign(sandbox.life.film.state!, { scene: 'm1_truth_return', actor: 'neo', step: 3, truthRecovery: undefined }); act('next');
+  act('continue'); Object.assign(sandbox.life.film.state!, { scene: 'm1_truth_return', actor: 'neo', step: 3, truthRecovery: undefined });
+  beforeDownload?.(world); act('next');
   const frames = (count: number) => { for (let i = 0; i < count; i++) players.step(.1, true, 1); };
   return { world, sandbox, players, act, frames, neo: world.agents.get('neo')!, state: () => sandbox.life.film.state! };
 }
+
+test('the next morning clears the previous unplugging crew from Tank’s connection workspace, including old saves', () => {
+  const h = setup(world => {
+    for (const id of ['trinity', 'dozer']) {
+      const actor = world.agents.get(id)!;
+      actor.currentLocation = 'film_neb_deck'; actor.position = filmPosition('film_neb_deck', 8.2, -4.45);
+    }
+  });
+  const operator = downloadRoot({ phase: 'connecting', elapsed: 0, progress: CABIN_ROUTE_LENGTH }, 'tank');
+  const workstation = filmPosition('film_neb_deck', operator.x, operator.z);
+  for (const id of ['trinity', 'dozer']) {
+    const actor = h.world.agents.get(id)!;
+    assert.ok(Math.hypot(actor.position.x - workstation.x, actor.position.z - workstation.z) > 5,
+      `${id} still occupies Tank’s connection workspace after the bedside scene`);
+    actor.position = { ...workstation };
+  }
+  const before = structuredClone(h.state()), neo = { ...h.neo.position };
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  for (const id of ['trinity', 'dozer']) {
+    const actor = h.world.agents.get(id)!;
+    assert.ok(Math.hypot(actor.position.x - workstation.x, actor.position.z - workstation.z) > 5);
+  }
+  assert.deepEqual(h.state(), before); assert.deepEqual(h.neo.position, neo);
+});
+
+test('clearing the training workspace does not move a player, revive a dead crew member or disturb distant crew', () => {
+  const h = setup(), trinity = h.world.agents.get('trinity')!, dozer = h.world.agents.get('dozer')!;
+  h.players.possess('other', 'trinity', 1);
+  for (const actor of [trinity, dozer]) {
+    actor.currentLocation = 'film_neb_deck'; actor.position = filmPosition('film_neb_deck', 8.2, -4.45);
+  }
+  dozer.health = 0; dozer.status = 'dead';
+  const occupied = structuredClone(trinity), dead = structuredClone(dozer);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(trinity, occupied); assert.deepEqual(dozer, dead);
+  h.players.release('other', 1);
+  trinity.position = filmPosition('film_neb_deck', -15, 16); const distant = structuredClone(trinity);
+  h.sandbox.life.film.restoreTrainingSpace(); assert.deepEqual(trinity, distant);
+});
 
 test('training preparation restores its saved body action immediately on release and paused possession', () => {
   for (const [phase, elapsed] of [['greeting', 0], ['waking', 4.5], ['connecting', 4.6], ['ready', 0]] as const) {

@@ -1,0 +1,24 @@
+{
+  "related": {
+    "tests": 49,
+    "pass": 49,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "inputsUnchanged": true,
+  "bundle": "index-Cc1Cn1oL.js",
+  "bundleSha256": "8667480664f425c423b393364d9f2e14e47336063b50247a7f4f5b9e8de0a8bd",
+  "allRequiredGatesPassed": true,
+  "sourceInputs": 1194,
+  "runtimeRelatedWithPreservedShared": {
+    "tests": 49,
+    "pass": 49,
+    "fail": 0
+  }
+}

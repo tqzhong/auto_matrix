@@ -22,6 +22,7 @@ import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { placeTrackingFeet, poseTrackingHand, wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
+import { prepareTankMaterials } from './TankMaterials.js';
 import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor, ambushShotRecoil, mouseRoomGuard } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
 import { cabinContact } from './CabinContact.js';
@@ -122,7 +123,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
@@ -172,7 +173,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -222,7 +223,7 @@ export class HeroModels {
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
     const pedestrian = support === 'pedestrian';
-    const [asset, office, tracking, club, cypherCostume, mouseShip, mouseHead] = await Promise.all([this.load(support === 'mouse' ? 'mouse' : pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' || support === 'cypher' ? 'choi' : apartmentRole ?? id),
+    const [asset, office, tracking, club, cypherCostume, mouseShip, mouseHead] = await Promise.all([this.load(support === 'mouse' ? 'mouse' : pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' ? 'tank' : support === 'cypher' ? 'choi' : apartmentRole ?? id),
       id === 'neo' && !pedestrian && !apartmentRole && support !== 'tank' && support !== 'cypher' && support !== 'mouse' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined,
@@ -231,6 +232,7 @@ export class HeroModels {
       support === 'mouse' ? this.load('mouse-head') : undefined]);
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
+    if (support === 'tank') prepareTankMaterials(root).forEach(texture => this.textures.add(texture));
     const bones = new Map<string, THREE.Bone>(); const rest = new Map<string, THREE.Vector3>();
     root.traverse(object => {
       if (object instanceof THREE.Bone) { bones.set(object.name, object); rest.set(object.name, object.position.clone()); }
@@ -1053,7 +1055,7 @@ export class HeroModels {
     rig.silver.value = input.mirror ?? 0;
     const finaleGlasses = !input.smithFinale || (input.smithFinale.role === 'smith' ? smithCraterAmount(input.smithFinale) === 0
       : ['approach', 'entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging', 'ready', 'ground_warning', 'ground_dodge', 'ground_counter', 'shockwave', 'air_warning', 'air_dodge', 'air_counter'].includes(input.smithFinale.phase));
-    rig.glasses.visible = !input.dojoOutfit && !interactionView && !(rig.support === 'cypher' && (input.firstPerson || input.interlude?.kind === 'steak')) && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    rig.glasses.visible = rig.support !== 'tank' && !input.dojoOutfit && !interactionView && !(rig.support === 'cypher' && (input.firstPerson || input.interlude?.kind === 'steak')) && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);
@@ -1094,9 +1096,10 @@ export class HeroModels {
       if (patientSurface) material.emissive.setHex(0x160708); else material.emissive.copy(part.emissive);
       material.emissiveIntensity = patientSurface ? .06 : part.emissiveIntensity;
       if (patientLegs) material.color.setHex(0xa97c70);
-      else if (part.cloth && input.realWorld && rig.support !== 'link' && !part.mesh.userData.cypherCostume) material.color.setHex(rig.support === 'ghost' ? 0x232725 : 0x706c62);
+      else if (part.cloth && input.realWorld && rig.support !== 'link' && rig.support !== 'tank' && !part.mesh.userData.cypherCostume) material.color.setHex(rig.support === 'ghost' ? 0x232725 : 0x706c62);
       else material.color.copy(part.color);
       if ((part.hair || material.name === 'Eyes') && interactionView) part.mesh.visible = false;
+      if (part.mesh.userData.tankHead) part.mesh.visible = !input.firstPerson;
       if (part.mesh.name.startsWith('neo-teeth') || part.mesh.name === 'neo-tongue') part.mesh.visible = !rig.support && !interactionView;
     }
     farewellAppearance?.update(input);
@@ -1152,9 +1155,12 @@ export class HeroModels {
       bone('spine').rotation.set(crossing.lean * .45, 0, 0); bone('chest').rotation.set(crossing.lean * .55, 0, 0); bone('head').rotation.set(-crossing.lean * .7, 0, 0);
     }
     const relaxedArms = ambushWardrobe?.relaxedArmOffset(input, motion) ?? 0;
+    // Tank's own longer thighs need a flatter seat angle. Counter-rotate the
+    // knees so grounding still keeps both shins and boot soles upright.
+    const operatorSeat = rig.support === 'tank' && input.interlude?.kind === 'meal' ? motion.seated * .045 : 0;
     for (const [i, side] of ['R', 'L'].entries()) {
-      bone('hip_' + side).rotation.set(pose.legs[i].hip, 0, 0);
-      bone('knee_' + side).rotation.set(pose.legs[i].knee, 0, 0);
+      bone('hip_' + side).rotation.set(pose.legs[i].hip - operatorSeat, 0, 0);
+      bone('knee_' + side).rotation.set(pose.legs[i].knee + operatorSeat, 0, 0);
       bone('ankle_' + side).rotation.set(pose.legs[i].ankle, 0, 0);
       bone('shoulder_' + side).rotation.set(pose.arms[i].shoulder, 0, pose.arms[i].outward * .6 + (i ? 1 : -1) * relaxedArms);
       bone('elbow_' + side).rotation.set(pose.arms[i].elbow, 0, 0);

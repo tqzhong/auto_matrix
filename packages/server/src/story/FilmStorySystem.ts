@@ -4429,6 +4429,18 @@ export class FilmStorySystem {
         velocity: { ...agent.velocity }, yaw: agent.rotation,
       } };
     }
+    if (state?.scene === 'm1_download' && this.controls(agent) && !state.visiting) {
+      const operator = downloadRoot({ phase: 'connecting', elapsed: 0, progress: 0 }, 'tank');
+      const workstation = filmPosition(this.scene!.set, operator.x, operator.z);
+      // The previous unplugging scene leaves these crew beside the same chair.
+      // Clear its work area on entry and when an older checkpoint is restored.
+      for (const [id, x] of [['trinity', -12], ['dozer', 12]] as const) {
+        const crew = this.world.agents.get(id);
+        if (!crew || crew.controller || crew.status !== 'alive' || crew.health <= 0 || crew.currentLocation !== this.scene!.set
+          || distance(crew.position, workstation) >= 5.2) continue;
+        this.place(crew, this.scene!, filmPosition(this.scene!.set, x, 2)); crew.rotation = x < 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+    }
     if (state?.scene === 'm1_download' && this.controls(agent) && !state.visiting && !this.sandbox().structures.some(item => item.id === 'film:download:desk')) {
       const desk = DOWNLOAD_OPERATOR.desk;
       this.sandbox().structures.push({ id: 'film:download:desk', kind: 'barricade', owner: 'matrix', matrix: false, health: 1,

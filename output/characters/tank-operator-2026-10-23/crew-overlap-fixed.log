@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: the next morning clears the previous unplugging crew from Tank’s connection workspace, including old saves
+ok 1 - the next morning clears the previous unplugging crew from Tank’s connection workspace, including old saves
+  ---
+  duration_ms: 69.3065
+  type: 'test'
+  ...
+# Subtest: clearing the training workspace does not move a player, revive a dead crew member or disturb distant crew
+ok 2 - clearing the training workspace does not move a player, revive a dead crew member or disturb distant crew
+  ---
+  duration_ms: 9.240541
+  type: 'test'
+  ...
+# Subtest: training preparation restores its saved body action immediately on release and paused possession
+ok 3 - training preparation restores its saved body action immediately on release and paused possession
+  ---
+  duration_ms: 55.762083
+  type: 'test'
+  ...
+# Subtest: rehydrating training preserves free walking and does not revive a released dead player
+ok 4 - rehydrating training preserves free walking and does not revive a released dead player
+  ---
+  duration_ms: 16.54975
+  type: 'test'
+  ...
+# Subtest: training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+ok 5 - training starts at the cabin, waits for Neo, and requires reaching the chair before uploading
+  ---
+  duration_ms: 1358.177916
+  type: 'test'
+  ...
+# Subtest: Tank cannot be stolen and training preparation survives pause, disconnection and reload
+ok 6 - Tank cannot be stolen and training preparation survives pause, disconnection and reload
+  ---
+  duration_ms: 331.221
+  type: 'test'
+  ...
+# Subtest: a saved upload already in progress does not replay the new cabin introduction
+ok 7 - a saved upload already in progress does not replay the new cabin introduction
+  ---
+  duration_ms: 11.47375
+  type: 'test'
+  ...
+# Subtest: a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+ok 8 - a completed upload holds Neo in the chair until he chooses the dojo, including after loading
+  ---
+  duration_ms: 115.633875
+  type: 'test'
+  ...
+# Subtest: Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+ok 9 - Morpheus joins the completed upload beside Neo and an occupied mentor is not moved
+  ---
+  duration_ms: 108.857708
+  type: 'test'
+  ...
+# Subtest: a lost mentor stops the upload without silently reviving the character
+ok 10 - a lost mentor stops the upload without silently reviving the character
+  ---
+  duration_ms: 62.351583
+  type: 'test'
+  ...
+# Subtest: Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+ok 11 - Neo can follow Tank through the physical cabin doorway and sit using ordinary movement
+  ---
+  duration_ms: 1035.283625
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5033.535167

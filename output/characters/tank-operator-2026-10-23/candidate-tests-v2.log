@@ -1,0 +1,128 @@
+TAP version 13
+# Subtest: the six diners sit along a human-scale long metal table, with Neo beside its long edge
+ok 1 - the six diners sit along a human-scale long metal table, with Neo beside its long edge
+  ---
+  duration_ms: 4875.755208
+  type: 'test'
+  ...
+# Subtest: Neo owns the real bowl and spoon while eating, with no floating duplicate props
+ok 2 - Neo owns the real bowl and spoon while eating, with no floating duplicate props
+  ---
+  duration_ms: 2977.553042
+  type: 'test'
+  ...
+# Subtest: the first bite opens Neo’s actual face instead of pushing the spoon through a sealed mouth
+ok 3 - the first bite opens Neo’s actual face instead of pushing the spoon through a sealed mouth
+  ---
+  duration_ms: 6742.396875
+  type: 'test'
+  ...
+# Subtest: serving, lifting and setting down transfer one bowl or spoon without a position or orientation jump
+ok 4 - serving, lifting and setting down transfer one bowl or spoon without a position or orientation jump
+  ---
+  duration_ms: 6458.05
+  type: 'test'
+  ...
+# Subtest: Neo pinches the thin spoon with three real fingers, without burying the handle or folding his wrist
+ok 5 - Neo pinches the thin spoon with three real fingers, without burying the handle or folding his wrist
+  ---
+  duration_ms: 4617.901041
+  type: 'test'
+  ...
+# {"spoonSamples":48,"worst":0,"largestGap":0.026506562844783067,"largestBend":2.1073424255447017e-8}
+# Subtest: the hands stay outside the bowl throughout serving, scooping and withdrawal, with contact while carrying
+ok 6 - the hands stay outside the bowl throughout serving, scooping and withdrawal, with contact while carrying
+  ---
+  duration_ms: 12221.71
+  type: 'test'
+  ...
+# {"bowlSamples":237,"largestGap":0.0217289688485795,"deepest":-0.006426141729967028}
+# Subtest: saved eating instants do not snap the arms or fold back the actual distal finger skin
+ok 7 - saved eating instants do not snap the arms or fold back the actual distal finger skin
+  ---
+  duration_ms: 8944.890417
+  type: 'test'
+  ...
+# {"largest":0.12921663282547466,"maximumPIP":94.9807430864545,"maximumDIP":82.27994337848486}
+# Subtest: cold saves, unrelated gestures and first-person view preserve the same eating anatomy and prop owners
+ok 8 - cold saves, unrelated gestures and first-person view preserve the same eating anatomy and prop owners
+  ---
+  duration_ms: 14644.211709
+  type: 'test'
+  ...
+# Subtest: the full-sized spoonful enters between Neo’s actual lips and teeth without cutting through them
+ok 9 - the full-sized spoonful enters between Neo’s actual lips and teeth without cutting through them
+  ---
+  duration_ms: 5745.898667
+  type: 'test'
+  ...
+# Subtest: all six diners rest on their stools with shoes on the floor and no trouser-seat penetration
+ok 10 - all six diners rest on their stools with shoes on the floor and no trouser-seat penetration
+  ---
+  duration_ms: 6521.378875
+  type: 'test'
+  ...
+# Subtest: Neo turns off the stool before rising and finishes clear of the table collision radius
+ok 11 - Neo turns off the stool before rising and finishes clear of the table collision radius
+  ---
+  duration_ms: 11304.794625
+  type: 'test'
+  ...
+# Subtest: Tank approaches and lowers onto his stool without passing his legs through its seat
+ok 12 - Tank approaches and lowers onto his stool without passing his legs through its seat
+  ---
+  duration_ms: 6770.461
+  type: 'test'
+  ...
+# Subtest: the table trestles reach from its underside to the floor without entering the diners or standing route
+ok 13 - the table trestles reach from its underside to the floor without entering the diners or standing route
+  ---
+  duration_ms: 9024.098666
+  type: 'test'
+  ...
+# Subtest: Tank loads his own operator anatomy and keeps shirt, straps and headset in the actual ship pose
+ok 14 - Tank loads his own operator anatomy and keeps shirt, straps and headset in the actual ship pose
+  ---
+  duration_ms: 323.705416
+  type: 'test'
+  ...
+# Subtest: operator clothing retains its authored colours and attached anatomy across real-world and player views
+ok 15 - operator clothing retains its authored colours and attached anatomy across real-world and player views
+  ---
+  duration_ms: 182.261167
+  type: 'test'
+  ...
+# Subtest: Tank keeps both articulated hands and gloves follow their own fingers without detached surfaces
+not ok 16 - Tank keeps both articulated hands and gloves follow their own fingers without detached surfaces
+  ---
+  duration_ms: 394.23425
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/tank-operator-2026-10-23/candidate-release/tests/tank-operator.test.mts:1:3535'
+  failureType: 'testCodeFailure'
+  error: 'mixed hand weights cannot tear the glove'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/tank-operator-2026-10-23/candidate-release/tests/tank-operator.test.mts:85:33)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the visible operator glove stays outside the bowl while Tank hands Neo his meal
+ok 17 - the visible operator glove stays outside the bowl while Tank hands Neo his meal
+  ---
+  duration_ms: 1071.176417
+  type: 'test'
+  ...
+# {"samples":5582,"deepest":0}
+1..17
+# tests 17
+# suites 0
+# pass 16
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70324.8165

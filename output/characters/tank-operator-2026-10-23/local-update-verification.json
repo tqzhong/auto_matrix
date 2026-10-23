@@ -1,0 +1,32 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-Cc1Cn1oL.js",
+  "servedBundleSha256": "8667480664f425c423b393364d9f2e14e47336063b50247a7f4f5b9e8de0a8bd",
+  "oldPid": 9294,
+  "serverPid": 43571,
+  "serverRestarted": true,
+  "backendFilesChanged": [
+    "story/FilmStorySystem.js",
+    "story/FilmStorySystem.js.map",
+    "story/FilmStorySystem.d.ts.map"
+  ],
+  "otherBackendFilesPreserved": 277,
+  "fullWorldPreserved": true,
+  "fullWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "memoryFilesPreserved": 85,
+  "tick": 3757,
+  "running": false,
+  "protectedFilesByteIdentical": 10,
+  "protectedFilmStoryExperimentalHunksPreserved": true,
+  "compiledSharedFilesCopied": 0,
+  "renderReconnected": false,
+  "nativeReloadPending": false,
+  "nativeLoadedBundle": "index-Cc1Cn1oL.js",
+  "fullWorldPreservedAfterNativeReload": true,
+  "memoryFilesPreservedAfterNativeReload": 85,
+  "nativeInspectorWarnings": 4,
+  "nativeInspectorErrors": 0,
+  "warningClassification": "Four texture image-data warnings during inspector use; source not isolated, not a zero-warning claim",
+  "nativeTankCombatPreview": true,
+  "nativeTankFacePreview": true
+}

@@ -12,6 +12,7 @@ const NOTES: Record<string, string> = {
   seraph: '后梳短发 · 立领外套 · 按所在场景换装',
   mifune: '短发与灰色鬓角 · 浅色袖衫 · 深色背心与酒红领边',
   kid: '短寸头 · 浅色针织上衣 · 深色工装裤',
+  tank: '短卷发 · 蓝灰罗纹短袖 · 操作员背带、露指手套与耳麦',
 };
 
 export class CharacterViewer {
@@ -56,9 +57,9 @@ export class CharacterViewer {
       if (button.id === 'preview-zoom') {
         if (this.motion === 'apartment-call') { this.zoom = !this.zoom; this.glasses = false; }
         else if (!this.zoom) { this.zoom = true; this.glasses = true; }
-        else if (this.glasses && this.current?.hero) this.glasses = false;
+        else if (this.glasses && this.current?.hero && this.id !== 'tank') this.glasses = false;
         else { this.zoom = false; this.glasses = true; }
-        button.textContent = this.zoom ? this.glasses && this.current?.hero ? '取下墨镜' : '查看全身' : '面部特写';
+        button.textContent = this.zoom ? this.glasses && this.current?.hero && this.id !== 'tank' ? '取下墨镜' : '查看全身' : '面部特写';
       }
     });
     this.root.querySelector('#preview-motion')!.addEventListener('change', event => {
@@ -123,7 +124,7 @@ export class CharacterViewer {
     let rig = this.rigs.get(id);
     if (!rig) { rig = this.models.create(state); this.rigs.set(id, rig); this.scene.add(rig.root); }
     this.current = rig; rig.root.visible = true;
-    this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? rig.hero ? '取下墨镜' : '查看全身' : '面部特写';
+    this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? rig.hero && id !== 'tank' ? '取下墨镜' : '查看全身' : '面部特写';
     this.root.querySelector('#preview-name')!.textContent = CHARACTERS[id].name.toUpperCase();
     this.root.querySelector('#preview-notes')!.textContent = this.motion === 'apartment-call' ? '公寓家居装 · 左手座机 · 拿起、接听与放回' : NOTES[id];
     this.root.querySelector('.character-viewer-info .eyebrow')!.textContent = ['architect', 'seraph', 'mifune', 'kid'].includes(id) ? 'THE MATRIX / 2003' : 'THE MATRIX / 1999';
@@ -158,7 +159,7 @@ export class CharacterViewer {
       parkOutfit: this.agents()[this.id]?.currentLocation === 'film_sunrise_garden',
       attack: this.motion === 'combat' || this.motion === 'ambush-combat' ? Math.floor(time / .72) : undefined }, 1);
     this.current.root.rotation.y = this.angle;
-    if (this.current.hero) this.current.hero.glasses.visible = this.glasses && !landline;
+    if (this.current.hero) this.current.hero.glasses.visible = this.glasses && !landline && this.id !== 'tank';
     const distance = this.zoom ? 1.95 : landline ? this.camera.aspect < .75 ? 6.8 : 5.6 : this.camera.aspect < 0.75 ? 12.8 : 10.8;
     const targetY = this.zoom ? (this.id === 'trinity' ? 3.91 : this.id === 'morpheus' ? 4.18 : 4.08) : landline ? 3.4 : 2.2 + height;
     this.camera.position.lerp(new THREE.Vector3(0, targetY + (this.zoom ? 0.03 : 0.4), distance), 0.18);

@@ -1,0 +1,15 @@
+{
+  "oldPid": 4825,
+  "newPid": 34363,
+  "tick": 8657,
+  "phase": "walk",
+  "persistentWorldEqualExcept": [
+    "Trinity and Dozer migration placement",
+    "transient controller and Neo player idle action cleared on restore"
+  ],
+  "memoryFilesUnchanged": null,
+  "memoryCheckNotCompletedBeforeFurtherPlay": true,
+  "initialVerifierOmittedPlayerIdleCleanup": true,
+  "nativeCrewSeparated": true,
+  "cloudDisabled": true
+}
