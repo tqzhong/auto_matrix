@@ -34,6 +34,7 @@ export interface PlayerExperienceActions {
   inspect: (id: string) => void;
   skill: (kind: string) => void;
   sound: () => void;
+  graphics: () => void;
 }
 
 export class PlayerExperience {
@@ -67,13 +68,13 @@ export class PlayerExperience {
         <div class="landing-copy"><div id="landing-status" class="eyebrow">THE SIMULATION IS ALREADY RUNNING</div><h1 id="landing-title">世界正在运行。<br><em>现在，进入其中。</em></h1><p>从 Neo 一个普通的早晨开始。<br>上班、回家、见朋友，也留意现实的裂缝。<br>你做的每一个选择，都会成为这个世界的记忆。</p>
           <div class="landing-roles" aria-label="选择角色">${[['neo', 'NEO', '尼奥', '寻找真相'], ['trinity', 'TRINITY', '崔妮蒂', '黑客入侵'], ['smith', 'SMITH', '史密斯', '特工协议']].map(([id, name, cn, ability]) => `<button data-choose="${id}" class="hero-role ${id === this.chosen ? 'active' : ''}"><span class="role-number">${id === 'neo' ? '01' : id === 'trinity' ? '02' : '03'}</span><strong>${name}</strong><span>${cn}</span><small>${ability}</small></button>`).join('')}</div>
           <div class="landing-actions"><button id="enter-world" class="enter-world" disabled>进入角色 <span>↗</span></button><button id="choose-any" class="choose-any">选择任意角色 <span id="roster-count">74</span> →</button></div>
-          <div class="landing-secondary"><button id="inspect-character" class="observe-link">检视三维人物 ↗</button><button id="observe-from-landing" class="observe-link">先观察这个世界 ↗</button><button id="landing-sound" class="observe-link" aria-label="音乐与音效设置">♫ 声音</button></div>
+          <div class="landing-secondary"><button id="inspect-character" class="observe-link">检视三维人物 ↗</button><button id="observe-from-landing" class="observe-link">先观察这个世界 ↗</button><button id="landing-sound" class="observe-link" aria-label="音乐与音效设置">♫ 声音</button><button id="landing-graphics" class="observe-link" aria-label="画质与性能设置">画质</button></div>
         </div>
         <div class="landing-world-label"><span class="live-square"></span><span>MEGACITY / MATRIX 01</span><p id="landing-world-state">一座从不为你停下的城市</p></div>
         <footer class="landing-footer"><span>WASD 移动 <b>·</b> 鼠标视角 <b>·</b> 任意角色接入</span><span>OPEN WORLD / LIVE SIMULATION</span></footer>
       </section>
       <section id="game-hud" class="game-hud hidden">
-        <header class="game-top"><div class="game-logo">Ⅲ <span>MATRIX<span class="game-session">LIVE SESSION</span></span></div><div class="game-location"><span id="game-world">MATRIX / 01</span><h2 id="game-location">中城</h2></div><div class="game-top-actions"><button id="game-pause" aria-label="暂停或继续世界">Ⅱ</button><button id="game-sound" aria-label="音乐与音效设置">♫ 声音</button><button id="game-inspect">人物检视</button><button id="game-characters">切换角色 <kbd>Tab</kbd></button><button id="game-observe">观察世界 ↗</button></div></header>
+        <header class="game-top"><div class="game-logo">Ⅲ <span>MATRIX<span class="game-session">LIVE SESSION</span></span></div><div class="game-location"><span id="game-world">MATRIX / 01</span><h2 id="game-location">中城</h2></div><div class="game-top-actions"><button id="game-pause" aria-label="暂停或继续世界">Ⅱ</button><button id="game-sound" aria-label="音乐与音效设置">♫ 声音</button><button id="game-graphics" aria-label="画质与性能设置">画质</button><button id="game-inspect">人物检视</button><button id="game-characters">切换角色 <kbd>Tab</kbd></button><button id="game-observe">观察世界 ↗</button></div></header>
         <div class="game-crosshair"><i></i><i></i><i></i><i></i></div>
         <div class="game-objective"><span class="eyebrow">YOUR NEXT CHOICE</span><h3 id="game-objective">自由探索这个世界</h3><p id="game-objective-copy">走近人物按 E 交谈，了解他们的经历。</p></div>
         <div id="game-event" class="game-event"><span class="eyebrow">SOMEWHERE IN THE CITY</span><p>你行动的时候，其他故事也在继续。</p></div>
@@ -105,6 +106,7 @@ export class PlayerExperience {
       if (button.id === 'observe-from-landing' || button.id === 'game-observe') this.observe();
       if (button.dataset.skill !== undefined) this.actions.skill(button.dataset.skill === '0' ? 'ability' : 'ability2');
       if (button.id === 'game-sound' || button.id === 'landing-sound') this.actions.sound();
+      if (button.id === 'game-graphics' || button.id === 'landing-graphics') this.actions.graphics();
       if (button.id === 'game-pause') this.actions.pause();
       if (button.id === 'session-reconnect') this.actions.reconnect();
       if (button.id === 'session-continue' && !this.worldRunning) this.actions.pause();
