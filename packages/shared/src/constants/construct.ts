@@ -3,8 +3,8 @@ export interface ConstructGesture extends ConstructArrival { role: 'neo' | 'morp
 
 export const CONSTRUCT = {
   arrival: { x: 6.95, z: 5, yaw: Math.PI },
-  approach: { x: 6.95, z: -4.75 },
-  neo: { x: 6.35, z: -4.75, yaw: -2.22 },
+  approach: { x: 5.1, z: -3.9 },
+  neo: { x: 5.1, z: -3.9, yaw: Math.PI },
   chair: { z: -6.2, width: 2.5, depth: 2.35, height: 3.48, scale: .65, backOffset: .13 },
   chairX: { neo: 4.4, morpheus: -4.4 },
   television: { x: 0, z: -13, width: 3.4, depth: 2.25, height: 2.8, screenY: 1.8, faceZ: 1.15 },
@@ -38,5 +38,5 @@ export function constructArrivalText(arrival: ConstructArrival): string {
   return arrival.phase === 'ready' ? '脚下只有白色。头发和衣服恢复了，身体上的插口却不见了。按 G 检查这副熟悉的形象。'
     : arrival.phase === 'image' ? arrival.elapsed < 3 ? 'Neo 检查手臂，又摸向后颈。这里没有现实身体的金属接口。'
       : 'Morpheus 解释：程序中的样子来自你对自己的认识。感到熟悉，并不能证明它存在于外部世界。'
-      : '走到右侧皮椅的外侧椅背旁，按 G 触摸皮革。它的触感能证明什么？';
+      : '走到右侧皮椅后方，按 G 触摸皮革。它的触感能证明什么？';
 }

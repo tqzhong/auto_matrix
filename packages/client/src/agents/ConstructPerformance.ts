@@ -1,15 +1,22 @@
 import * as THREE from 'three';
-import { CONSTRUCT, FILM_SETS } from '@auto_matrix/shared';
+import { CONSTRUCT } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { inspectConstructImage } from './ConstructSelfImage.js';
+import { touchConstructChair } from './ConstructChairContact.js';
+import type { FightingHands } from './FightingHands.js';
+import { ConstructRemoteGrip } from './ConstructRemoteGrip.js';
+import { reach } from './SpoonPerformance.js';
 
 /** The first loading-space lesson: self inspection, leather contact and a held remote. */
 export class ConstructPerformance {
   private remote = new THREE.Group();
-  constructor(private rig: HeroRig) {
+  private remoteGrip: ConstructRemoteGrip;
+  constructor(private rig: HeroRig, hands?: FightingHands) {
+    this.remoteGrip = new ConstructRemoteGrip(rig, hands);
+    this.remote.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0,-1,0),new THREE.Vector3(0,0,-1),new THREE.Vector3(1,0,0))).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),85*Math.PI/180));
     this.remote.name = 'construct-held-remote'; rig.bones.get('wrist_R')!.add(this.remote);
-    this.remote.position.set(.08, -.18, .025);
+    this.remote.position.set(.244, -.31, 0);
     const casing = new THREE.Mesh(new THREE.BoxGeometry(.19, .45, .09), new THREE.MeshStandardMaterial({ color: 0x25221c, roughness: .55 }));
     casing.castShadow = true; this.remote.add(casing);
     const buttonMaterial = new THREE.MeshStandardMaterial({ color: 0xafa18a, roughness: .6 });
@@ -24,32 +31,36 @@ export class ConstructPerformance {
     const arrival = input.construct, lesson = input.reveal;
     this.remote.visible = arrival?.role === 'morpheus' || lesson?.role === 'morpheus';
     if (this.remote.visible) {
-      for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
-        this.rig.bones.get(`finger${finger}-${segment}_R`)!.rotation.set(finger === 1 ? .35 : 0, 0, finger === 1 ? .2 : segment === 1 ? .4 : .7);
-      }
+      this.remoteGrip.update();
       if (lesson) {
         if (lesson.kind === 'desert') {
           this.seatedFeet();
-          this.palm('L', this.rig.root.localToWorld(new THREE.Vector3(1.6, 2.88, 1.2).multiplyScalar(CONSTRUCT.chair.scale)), 1, 'leather');
+          this.palm('L', this.rig.root.localToWorld(new THREE.Vector3(1.6, 2.88, 1.2).multiplyScalar(CONSTRUCT.chair.scale)), 1);
         }
         const pointing = THREE.MathUtils.smoothstep(lesson.elapsed, .2, 1) * (1 - THREE.MathUtils.smoothstep(lesson.elapsed, 7.5, 9));
-        this.palm('R', this.rig.root.localToWorld(new THREE.Vector3(-.4, 2.05, 1.05)), pointing, 'remote');
+        this.raiseRemote(pointing);
       }
     }
     if (arrival?.role === 'neo' && arrival.phase === 'image') {
       inspectConstructImage(this.rig, arrival.elapsed);
     }
     if (lesson?.kind !== 'construct' || lesson.role !== 'neo') return;
-    const blend = THREE.MathUtils.smoothstep(lesson.elapsed, .65, 1.65) * (1 - THREE.MathUtils.smoothstep(lesson.elapsed, 6.5, 8));
-    const center = FILM_SETS.film_white_construct.center;
-    for (const [side, u] of [['L', .4], ['R', .96]] as const) {
-      // Same domed crown as the shared Lafayette chair, rotated toward the CRT.
-      const scale = CONSTRUCT.chair.scale;
-      const x = CONSTRUCT.chairX.neo + u * (1.56 + .22 * Math.sin(Math.PI * .85)) * scale;
-      const y = (1.45 + 3.5 + .4 * (1 - u * u)) * scale;
-      const z = CONSTRUCT.chair.z + (.94 + .55 - .62 * u ** 4 * Math.sin(Math.PI * .9)) * scale;
-      this.palm(side, new THREE.Vector3(center.x + x, center.y - 1 + y + .025, center.z + z), blend, 'leather');
-    }
+    touchConstructChair(this.rig, lesson.elapsed);
+  }
+
+  private raiseRemote(amount: number): void {
+    if (!amount) return;
+    const bones = this.rig.bones, shoulder = bones.get('shoulder_R')!, elbow = bones.get('elbow_R')!, wrist = bones.get('wrist_R')!;
+    const before = [shoulder.quaternion.clone(), elbow.quaternion.clone(), wrist.quaternion.clone()];
+    this.rig.root.updateWorldMatrix(true, true);
+    const root = this.rig.root.getWorldQuaternion(new THREE.Quaternion());
+    const orientation = root.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2));
+    const point = this.rig.root.localToWorld(new THREE.Vector3(-.65, 2.05, .7));
+    reach(shoulder, elbow, wrist.position, point, new THREE.Vector3(-1, -.15, .8).applyQuaternion(root));
+    wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+    const target = [shoulder.quaternion.clone(), elbow.quaternion.clone(), wrist.quaternion.clone()];
+    for (const [i, joint] of [shoulder, elbow, wrist].entries()) joint.quaternion.copy(before[i]).slerp(target[i], amount);
+    shoulder.updateWorldMatrix(true, true);
   }
 
   private seatedFeet(): void {
@@ -78,13 +89,12 @@ export class ConstructPerformance {
     }
   }
 
-  private palm(side: 'L' | 'R', point: THREE.Vector3, blend: number, kind: 'leather' | 'remote'): void {
+  private palm(side: 'L' | 'R', point: THREE.Vector3, blend: number): void {
     if (!blend) return;
     const bones = this.rig.bones, shoulder = bones.get(`shoulder_${side}`)!, elbow = bones.get(`elbow_${side}`)!, wrist = bones.get(`wrist_${side}`)!;
     this.rig.root.updateWorldMatrix(true, true);
     const root = this.rig.root.getWorldQuaternion(new THREE.Quaternion());
-    const desired = root.clone().multiply(new THREE.Quaternion().setFromEuler(kind === 'remote'
-      ? new THREE.Euler(-Math.PI / 2, 0, 0) : new THREE.Euler(-.7, 0, side === 'R' ? -Math.PI / 2 : Math.PI / 2)));
+    const desired = root.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-.7, 0, side === 'R' ? -Math.PI / 2 : Math.PI / 2)));
     const orientation = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(desired, blend);
     const palm = new THREE.Vector3(side === 'R' ? .09 : -.09, -.18, .02);
     const target = wrist.localToWorld(palm.clone()).lerp(point, blend).sub(palm.applyQuaternion(orientation));
@@ -101,7 +111,7 @@ export class ConstructPerformance {
     };
     aim(shoulder, elbow, hinge); aim(elbow, wrist, target);
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
-    if (kind !== 'remote') for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
+    for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++) {
       const joint = bones.get(`finger${finger}-${segment}_${side}`)!;
       joint.rotation.z = THREE.MathUtils.lerp(joint.rotation.z, side === 'R' ? .1 : -.1, blend);
     }

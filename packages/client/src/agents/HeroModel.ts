@@ -1257,6 +1257,11 @@ export class HeroModels {
       bone('shoulder_L').rotation.x -= .65 * forearm; bone('elbow_L').rotation.x -= .65 * forearm;
       bone('head').rotation.x += .25 * inspect * (1 - THREE.MathUtils.smoothstep(t, 2.5, 3.5)) + .18 * neck;
     }
+    if (input.reveal?.kind === 'construct' && input.reveal.role === 'neo') {
+      const t = input.reveal.elapsed, lean = THREE.MathUtils.smoothstep(t, 0, 1) * (1 - THREE.MathUtils.smoothstep(t, 7, 9));
+      bone('spine').rotation.x += .26 * lean;
+    }
+
     if (input.training) {
       const { kind, elapsed: t, role } = input.training;
       if (kind === 'download' && role === 'neo') {
@@ -1409,7 +1414,7 @@ export class HeroModels {
     this.recoveries.get(rig)?.update(input.recovery, input.realWorld, patient, interactionView);
     if (input.medical !== undefined || input.cabin || input.truth || input.download || input.training?.kind === 'download') cabinContact(rig, input);
     this.truths.get(rig)?.contact(input.truth);
-    if ((input.construct || input.reveal) && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig));
+    if ((input.construct || input.reveal) && !this.constructs.has(rig)) this.constructs.set(rig, new ConstructPerformance(rig, fightingHands));
     this.constructs.get(rig)?.update(input);
     if (input.mirrorCrew !== undefined && input.mirrorContact) wireTrackingElectrode(rig, input.mirrorCrew, input.mirrorContact);
     if (input.performance === 'touch') poseTrackingHand(rig, input.mirrorBeat ?? 0);

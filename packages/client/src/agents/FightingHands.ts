@@ -226,8 +226,9 @@ export class FightingHands {
     for (const name of attributes) this.skin.geometry.setAttribute(name, this.base[name]);
   }
 
-  pose(side: string, grip: number): boolean {
-    if (!this.enabled || this.authored) return false;
+  // A story prop can reuse the anatomical articulation as a fixed bone pose.
+  pose(side: string, grip: number, storyGrip = false): boolean {
+    if ((!this.enabled || this.authored) && !storyGrip) return false;
     const which = side === 'R' ? 0 : 1, hand = this.binding.hands[which], amount = THREE.MathUtils.clamp(grip, 0, 1);
     if (amount > 0) {
       hand.bones.forEach((joints, d) => joints.forEach((joint, j) => this.skin.skeleton.bones[joint].quaternion.slerp(this.closed[which][d][j], d === 0 ? amount * amount : amount)));
