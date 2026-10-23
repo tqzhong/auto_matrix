@@ -1194,8 +1194,8 @@ export class HeroModels {
       bone('head').rotation.x += .1 * explain;
     }
     if (input.cabin?.role === 'morpheus' && input.cabin.kind === 'core') {
-      const reach = THREE.MathUtils.smoothstep(input.cabin.elapsed, 2.2, 3) * (1 - THREE.MathUtils.smoothstep(input.cabin.elapsed, 5.8, 6.8));
-      bone('spine').rotation.x += .18 * reach; bone('chest').rotation.x += .2 * reach; bone('head').rotation.x -= .2 * reach;
+      const reach = THREE.MathUtils.smoothstep(input.cabin.elapsed, 2, 3) * (1 - THREE.MathUtils.smoothstep(input.cabin.elapsed, 5.8, 6.8));
+      bone('spine').rotation.x += .29 * reach; bone('chest').rotation.x += .34 * reach; bone('head').rotation.x -= .32 * reach;
     }
     if (input.wakeCall?.phase === 'waking') {
       const t = input.wakeCall.elapsed; const smooth = THREE.MathUtils.smoothstep;

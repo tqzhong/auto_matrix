@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { FILM_SETS, MEDICAL_OPERATOR, cabinBodyPose, medicalControlBlend, downloadHandPoint } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
+import { coreConnectorContact } from './CoreConnectorContact.js';
 
 /** Palm contact with the medical control, Neo's neck socket, or the core plug. */
 export function cabinContact(rig: HeroRig, input: MotionInput): void {
@@ -13,7 +14,7 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
   const blend = invitation ? THREE.MathUtils.smoothstep(invitation.elapsed, 9.1, 9.7) : upload ? 1 : connecting ? THREE.MathUtils.smoothstep(download.elapsed, 2.2, 3) * (1 - THREE.MathUtils.smoothstep(download.elapsed, 5.8, 6.8))
     : unplug ? THREE.MathUtils.smoothstep(truth.elapsed, 0, .7) * (1 - THREE.MathUtils.smoothstep(truth.elapsed, 3.2, 4)) : input.medical !== undefined ? medicalControlBlend(input.medical)
     : cabin?.kind === 'wake' && cabin.role === 'neo' ? cabinBodyPose(cabin.elapsed).inspect
-      : cabin?.kind === 'core' && cabin.role === 'morpheus' ? THREE.MathUtils.smoothstep(cabin.elapsed, 2.2, 3)
+      : cabin?.kind === 'core' && cabin.role === 'morpheus' ? THREE.MathUtils.smoothstep(cabin.elapsed, 2, 3)
         * (1 - THREE.MathUtils.smoothstep(cabin.elapsed, 5.8, 6.8)) : 0;
   if (!blend) return;
   rig.root.updateWorldMatrix(true, true);
@@ -25,6 +26,7 @@ export function cabinContact(rig: HeroRig, input: MotionInput): void {
     : cabin?.role === 'neo' ? socket?.getWorldPosition(new THREE.Vector3())
       : cabin?.target ? new THREE.Vector3(cabin.target.x, cabin.target.y, cabin.target.z) : undefined;
   if (!contact && !upload) return;
+  if (cabin?.kind === 'core' && cabin.role === 'morpheus' && contact) { coreConnectorContact(rig, contact, blend); return; }
   for (const side of upload ? ['R', 'L'] : ['R']) {
     const point = upload ? downloadHandPoint(upload.elapsed, side as 'R' | 'L') : undefined;
     const targetPoint = point ? new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z) : contact!;
