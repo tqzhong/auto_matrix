@@ -1,0 +1,286 @@
+TAP version 13
+# Subtest: the dojo counter HUD asks the player to close the actual gap after a backstep
+ok 1 - the dojo counter HUD asks the player to close the actual gap after a backstep
+  ---
+  duration_ms: 63.304
+  type: 'test'
+  ...
+# Subtest: the console journal and live G button expose taking and tasting as separate player actions
+ok 2 - the console journal and live G button expose taking and tasting as separate player actions
+  ---
+  duration_ms: 637.481541
+  type: 'test'
+  ...
+# Subtest: the EMP briefing journal and live waypoint require the actual inspection position
+ok 3 - the EMP briefing journal and live waypoint require the actual inspection position
+  ---
+  duration_ms: 151.733542
+  type: 'test'
+  ...
+# Subtest: the Oracle departure journal requires the hostess, privacy, bite and physical exit in order
+ok 4 - the Oracle departure journal requires the hostess, privacy, bite and physical exit in order
+  ---
+  duration_ms: 98.442916
+  type: 'test'
+  ...
+# Subtest: Oracle departure navigation follows the returning hostess and only offers local interactions
+ok 5 - Oracle departure navigation follows the returning hostess and only offers local interactions
+  ---
+  duration_ms: 133.295167
+  type: 'test'
+  ...
+# Subtest: Oracle navigation points to the waiting hostess until she reaches the kitchen
+ok 6 - Oracle navigation points to the waiting hostess until she reaches the kitchen
+  ---
+  duration_ms: 176.3975
+  type: 'test'
+  ...
+# Subtest: the spoon journal waits for the hostess before offering Neo a standing action
+ok 7 - the spoon journal waits for the hostess before offering Neo a standing action
+  ---
+  duration_ms: 182.5645
+  type: 'test'
+  ...
+# Subtest: the Construct journal distinguishes self inspection from approaching the chair
+ok 8 - the Construct journal distinguishes self inspection from approaching the chair
+  ---
+  duration_ms: 153.54575
+  type: 'test'
+  ...
+# Subtest: the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute
+ok 9 - the morning journal requires a bedside action, accepts the alarm and offers the actual on-foot commute
+  ---
+  duration_ms: 157.016834
+  type: 'test'
+  ...
+# Subtest: the second call offers a visible door action after Neo reaches the apartment exit
+ok 10 - the second call offers a visible door action after Neo reaches the apartment exit
+  ---
+  duration_ms: 138.161916
+  type: 'test'
+  ...
+# Subtest: a clean escape presents the second call without naming a nightmare
+ok 11 - a clean escape presents the second call without naming a nightmare
+  ---
+  duration_ms: 167.67275
+  type: 'test'
+  ...
+# Subtest: the hotel journal names Trinity when Neo reaches 1313 before the guide
+ok 12 - the hotel journal names Trinity when Neo reaches 1313 before the guide
+  ---
+  duration_ms: 171.337083
+  type: 'test'
+  ...
+# Subtest: the negative scan journal does not claim Neo was interrogated or needed an extraction
+ok 13 - the negative scan journal does not claim Neo was interrogated or needed an extraction
+  ---
+  duration_ms: 93.316791
+  type: 'test'
+  ...
+# Subtest: the tracking journal keeps new entries locked beyond the legacy eight seconds
+ok 14 - the tracking journal keeps new entries locked beyond the legacy eight seconds
+  ---
+  duration_ms: 150.0185
+  type: 'test'
+  ...
+# Subtest: tracking progress follows the saved chair entry before wiring and mirror coverage
+ok 15 - tracking progress follows the saved chair entry before wiring and mirror coverage
+  ---
+  duration_ms: 206.975625
+  type: 'test'
+  ...
+# Subtest: the completed oral removal offers a new neck inspection in both the journal and the game HUD
+ok 16 - the completed oral removal offers a new neck inspection in both the journal and the game HUD
+  ---
+  duration_ms: 244.925458
+  type: 'test'
+  ...
+# Subtest: the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action
+ok 17 - the pill choice clears the central subtitle over Morpheus palms and restores it for the taking action
+  ---
+  duration_ms: 90.950666
+  type: 'test'
+  ...
+# Subtest: the pill journal offers the saved dialogue response without exposing the later pill decision
+ok 18 - the pill journal offers the saved dialogue response without exposing the later pill decision
+  ---
+  duration_ms: 77.3915
+  type: 'test'
+  ...
+# Subtest: the farewell HUD only offers kneeling within the actual interaction distance
+ok 19 - the farewell HUD only offers kneeling within the actual interaction distance
+  ---
+  duration_ms: 102.106625
+  type: 'test'
+  ...
+# Subtest: the completed farewell guides Neo to the machine city instead of asking for another reflection
+ok 20 - the completed farewell guides Neo to the machine city instead of asking for another reflection
+  ---
+  duration_ms: 357.661375
+  type: 'test'
+  ...
+# Subtest: the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors
+ok 21 - the park performance uses its dialogue HUD while paused and clears it on free walking, replay and other actors
+  ---
+  duration_ms: 249.431708
+  type: 'test'
+  ...
+# Subtest: confirming the sunrise replaces the final confirmation with saved completion and optional replay controls
+ok 22 - confirming the sunrise replaces the final confirmation with saved completion and optional replay controls
+  ---
+  duration_ms: 153.32725
+  type: 'test'
+  ...
+# Subtest: quality presets preserve the original high quality and reduce actual 3D pixel work
+ok 23 - quality presets preserve the original high quality and reduce actual 3D pixel work
+  ---
+  duration_ms: 1.3745
+  type: 'test'
+  ...
+# Subtest: larger windows stay within the chosen pixel budget without changing the aspect ratio
+ok 24 - larger windows stay within the chosen pixel budget without changing the aspect ratio
+  ---
+  duration_ms: 0.326167
+  type: 'test'
+  ...
+# Subtest: quality reloads saved choices and falls back safely for missing, stale or blocked storage
+ok 25 - quality reloads saved choices and falls back safely for missing, stale or blocked storage
+  ---
+  duration_ms: 1.370792
+  type: 'test'
+  ...
+# Subtest: paused and offline play show distinct actionable notices, including during a slow connection
+ok 26 - paused and offline play show distinct actionable notices, including during a slow connection
+  ---
+  duration_ms: 16.719625
+  type: 'test'
+  ...
+# Subtest: landing resumes the saved story actor instead of an unrelated browser-local character
+ok 27 - landing resumes the saved story actor instead of an unrelated browser-local character
+  ---
+  duration_ms: 0.392666
+  type: 'test'
+  ...
+# Subtest: an explicit landing choice still overrides the saved story actor
+ok 28 - an explicit landing choice still overrides the saved story actor
+  ---
+  duration_ms: 0.121709
+  type: 'test'
+  ...
+# Subtest: red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+ok 29 - red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+  ---
+  duration_ms: 0.178083
+  type: 'test'
+  ...
+# Subtest: Construct and desert story beats keep ambient conversation prompts out of the reveal
+ok 30 - Construct and desert story beats keep ambient conversation prompts out of the reveal
+  ---
+  duration_ms: 1.197
+  type: 'test'
+  ...
+# Subtest: wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+ok 31 - wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+  ---
+  duration_ms: 0.307416
+  type: 'test'
+  ...
+# Subtest: APU loading keeps ambient talk out of the handhold and kick controls
+ok 32 - APU loading keeps ambient talk out of the handhold and kick controls
+  ---
+  duration_ms: 0.284959
+  type: 'test'
+  ...
+# Subtest: Link’s EMP controls and exterior shot suppress nearby ambient conversation
+ok 33 - Link’s EMP controls and exterior shot suppress nearby ambient conversation
+  ---
+  duration_ms: 0.124333
+  type: 'test'
+  ...
+# Subtest: the midnight watch and explosion keep ambient conversation out of the observation view
+ok 34 - the midnight watch and explosion keep ambient conversation out of the observation view
+  ---
+  duration_ms: 0.498666
+  type: 'test'
+  ...
+# Subtest: the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+ok 35 - the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+  ---
+  duration_ms: 0.764625
+  type: 'test'
+  ...
+# Subtest: Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+ok 36 - Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+  ---
+  duration_ms: 0.262875
+  type: 'test'
+  ...
+# Subtest: Link’s descent and reunion use their own controls instead of ambient E conversation
+ok 37 - Link’s descent and reunion use their own controls instead of ambient E conversation
+  ---
+  duration_ms: 0.118834
+  type: 'test'
+  ...
+# Subtest: the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+ok 38 - the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+  ---
+  duration_ms: 0.095333
+  type: 'test'
+  ...
+# Subtest: temple artillery and the final city breach keep ambient talk out of their saved actions
+ok 39 - temple artillery and the final city breach keep ambient talk out of their saved actions
+  ---
+  duration_ms: 0.344667
+  type: 'test'
+  ...
+# Subtest: the last doors keep ambient E prompts out of the key handoff and source continuation
+ok 40 - the last doors keep ambient E prompts out of the key handoff and source continuation
+  ---
+  duration_ms: 0.162125
+  type: 'test'
+  ...
+# Subtest: Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+ok 41 - Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+  ---
+  duration_ms: 0.566542
+  type: 'test'
+  ...
+# Subtest: a paused save is presented as paused before entry and its landing status follows resume
+ok 42 - a paused save is presented as paused before entry and its landing status follows resume
+  ---
+  duration_ms: 20.430792
+  type: 'test'
+  ...
+# Subtest: the assimilated Oracle continues her saved scene without a rebuild prompt
+ok 43 - the assimilated Oracle continues her saved scene without a rebuild prompt
+  ---
+  duration_ms: 13.121542
+  type: 'test'
+  ...
+# Subtest: the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+ok 44 - the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+  ---
+  duration_ms: 0.136791
+  type: 'test'
+  ...
+# Subtest: the completed Neo transport is resumed from landing and roster without a rebuild prompt
+ok 45 - the completed Neo transport is resumed from landing and roster without a rebuild prompt
+  ---
+  duration_ms: 5.227834
+  type: 'test'
+  ...
+# Subtest: Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+ok 46 - Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+  ---
+  duration_ms: 0.120958
+  type: 'test'
+  ...
+1..46
+# tests 46
+# suites 0
+# pass 46
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6209.570709

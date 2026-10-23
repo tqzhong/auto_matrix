@@ -1,0 +1,508 @@
+TAP version 13
+# Subtest: a replacement waits for the final save and acquires that exact checkpoint
+ok 1 - a replacement waits for the final save and acquires that exact checkpoint
+  ---
+  duration_ms: 57.297083
+  type: 'test'
+  ...
+# Subtest: an expired writer cannot resume after another instance acquires its revision
+ok 2 - an expired writer cannot resume after another instance acquires its revision
+  ---
+  duration_ms: 12.012291
+  type: 'test'
+  ...
+# Subtest: paused checkpoints renew their lease without rewriting the compressed world
+ok 3 - paused checkpoints renew their lease without rewriting the compressed world
+  ---
+  duration_ms: 10.286083
+  type: 'test'
+  ...
+# Subtest: the first migration waits for a legacy server to finish saving
+ok 4 - the first migration waits for a legacy server to finish saving
+  ---
+  duration_ms: 12.589
+  type: 'test'
+  ...
+# Subtest: a lost save response is reconciled before saving newer progress
+ok 5 - a lost save response is reconciled before saving newer progress
+  ---
+  duration_ms: 8.048875
+  type: 'test'
+  ...
+# Subtest: reconciling a lost response still refuses another instance’s newer save
+ok 6 - reconciling a lost response still refuses another instance’s newer save
+  ---
+  duration_ms: 5.331291
+  type: 'test'
+  ...
+# Subtest: cloud checkpoints survive removal of the instance filesystem
+ok 7 - cloud checkpoints survive removal of the instance filesystem
+  ---
+  duration_ms: 2.518792
+  type: 'test'
+  ...
+# Subtest: a new cloud instance restores Neo, paused time and memories from one compressed save
+ok 8 - a new cloud instance restores Neo, paused time and memories from one compressed save
+  ---
+  duration_ms: 34.891583
+  type: 'test'
+  ...
+# Subtest: database errors cannot become a fresh world or overwrite a recoverable save
+ok 9 - database errors cannot become a fresh world or overwrite a recoverable save
+  ---
+  duration_ms: 8.107041
+  type: 'test'
+  ...
+# Subtest: an older process cannot overwrite the new instance and unchanged shutdown saves are skipped
+ok 10 - an older process cannot overwrite the new instance and unchanged shutdown saves are skipped
+  ---
+  duration_ms: 9.134167
+  type: 'test'
+  ...
+# Subtest: queued saves keep the latest snapshot after a failed request
+ok 11 - queued saves keep the latest snapshot after a failed request
+  ---
+  duration_ms: 16.033417
+  type: 'test'
+  ...
+# Subtest: incomplete cloud saves fail closed and explicit cloud configuration cannot fall back to disk
+ok 12 - incomplete cloud saves fail closed and explicit cloud configuration cannot fall back to disk
+  ---
+  duration_ms: 5.332083
+  type: 'test'
+  ...
+# Subtest: reported FPS includes slow frames rather than using the capped physics delta
+ok 13 - reported FPS includes slow frames rather than using the capped physics delta
+  ---
+  duration_ms: 0.651
+  type: 'test'
+  ...
+# Subtest: FPS counts frames over elapsed time instead of averaging reciprocal frame times
+ok 14 - FPS counts frames over elapsed time instead of averaging reciprocal frame times
+  ---
+  duration_ms: 0.102083
+  type: 'test'
+  ...
+# Subtest: recent context stays chronological when important memories are retained
+ok 15 - recent context stays chronological when important memories are retained
+  ---
+  duration_ms: 6.154333
+  type: 'test'
+  ...
+# Subtest: persisted memories retain their identity and original timestamps
+ok 16 - persisted memories retain their identity and original timestamps
+  ---
+  duration_ms: 11.583125
+  type: 'test'
+  ...
+# Subtest: paused and offline play show distinct actionable notices, including during a slow connection
+ok 17 - paused and offline play show distinct actionable notices, including during a slow connection
+  ---
+  duration_ms: 2.434167
+  type: 'test'
+  ...
+# Subtest: landing resumes the saved story actor instead of an unrelated browser-local character
+ok 18 - landing resumes the saved story actor instead of an unrelated browser-local character
+  ---
+  duration_ms: 0.357667
+  type: 'test'
+  ...
+# Subtest: an explicit landing choice still overrides the saved story actor
+ok 19 - an explicit landing choice still overrides the saved story actor
+  ---
+  duration_ms: 0.14375
+  type: 'test'
+  ...
+# Subtest: red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+ok 20 - red-dress observation keeps ambient E prompts off the gunman and restores them on a later visit
+  ---
+  duration_ms: 0.195375
+  type: 'test'
+  ...
+# Subtest: Construct and desert story beats keep ambient conversation prompts out of the reveal
+ok 21 - Construct and desert story beats keep ambient conversation prompts out of the reveal
+  ---
+  duration_ms: 0.306917
+  type: 'test'
+  ...
+# Subtest: wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+ok 22 - wall escape keeps ambient conversation out of breaking, climbing and rescue controls
+  ---
+  duration_ms: 0.125167
+  type: 'test'
+  ...
+# Subtest: APU loading keeps ambient talk out of the handhold and kick controls
+ok 23 - APU loading keeps ambient talk out of the handhold and kick controls
+  ---
+  duration_ms: 0.21125
+  type: 'test'
+  ...
+# Subtest: Link’s EMP controls and exterior shot suppress nearby ambient conversation
+ok 24 - Link’s EMP controls and exterior shot suppress nearby ambient conversation
+  ---
+  duration_ms: 0.110333
+  type: 'test'
+  ...
+# Subtest: the midnight watch and explosion keep ambient conversation out of the observation view
+ok 25 - the midnight watch and explosion keep ambient conversation out of the observation view
+  ---
+  duration_ms: 0.515625
+  type: 'test'
+  ...
+# Subtest: the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+ok 26 - the real-world signal and collapse suppress ambient E talk while a later visit keeps it
+  ---
+  duration_ms: 0.828542
+  type: 'test'
+  ...
+# Subtest: Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+ok 27 - Mobil conversations and the refusal use their story controls without overlapping ambient E talk
+  ---
+  duration_ms: 0.236917
+  type: 'test'
+  ...
+# Subtest: Link’s descent and reunion use their own controls instead of ambient E conversation
+ok 28 - Link’s descent and reunion use their own controls instead of ambient E conversation
+  ---
+  duration_ms: 0.111208
+  type: 'test'
+  ...
+# Subtest: the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+ok 29 - the captains’ lift and Lock briefing keep ambient E prompts out of the manual G responses
+  ---
+  duration_ms: 0.080667
+  type: 'test'
+  ...
+# Subtest: temple artillery and the final city breach keep ambient talk out of their saved actions
+ok 30 - temple artillery and the final city breach keep ambient talk out of their saved actions
+  ---
+  duration_ms: 0.09175
+  type: 'test'
+  ...
+# Subtest: the last doors keep ambient E prompts out of the key handoff and source continuation
+ok 31 - the last doors keep ambient E prompts out of the key handoff and source continuation
+  ---
+  duration_ms: 0.070791
+  type: 'test'
+  ...
+# Subtest: Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+ok 32 - Hel keeps ambient talk out of the elevator and coat-check actions, but restores it outside the active scene
+  ---
+  duration_ms: 0.0755
+  type: 'test'
+  ...
+# Subtest: a paused save is presented as paused before entry and its landing status follows resume
+ok 33 - a paused save is presented as paused before entry and its landing status follows resume
+  ---
+  duration_ms: 3.364
+  type: 'test'
+  ...
+# Subtest: the assimilated Oracle continues her saved scene without a rebuild prompt
+ok 34 - the assimilated Oracle continues her saved scene without a rebuild prompt
+  ---
+  duration_ms: 1.334041
+  type: 'test'
+  ...
+# Subtest: the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+ok 35 - the Hammer interview keeps ambient Neo chat out of the dedicated questions and report controls
+  ---
+  duration_ms: 0.113458
+  type: 'test'
+  ...
+# Subtest: the completed Neo transport is resumed from landing and roster without a rebuild prompt
+ok 36 - the completed Neo transport is resumed from landing and roster without a rebuild prompt
+  ---
+  duration_ms: 1.4235
+  type: 'test'
+  ...
+# Subtest: Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+ok 37 - Hammer crew exchange and boarding do not overlay ambient E talk on their G controls
+  ---
+  duration_ms: 0.155042
+  type: 'test'
+  ...
+# Subtest: every live character can be possessed; ownership is exclusive and disconnect releases AI
+ok 38 - every live character can be possessed; ownership is exclusive and disconnect releases AI
+  ---
+  duration_ms: 75.600333
+  type: 'test'
+  ...
+# Subtest: explicitly continuing in another page transfers control without resetting saved progress
+ok 39 - explicitly continuing in another page transfers control without resetting saved progress
+  ---
+  duration_ms: 35.71325
+  type: 'test'
+  ...
+# Subtest: continuing an invalid character cannot displace either active player
+ok 40 - continuing an invalid character cannot displace either active player
+  ---
+  duration_ms: 1.340583
+  type: 'test'
+  ...
+# Subtest: movement is server-integrated, input is bounded, and pauses stop the player
+ok 41 - movement is server-integrated, input is bounded, and pauses stop the player
+  ---
+  duration_ms: 24.187875
+  type: 'test'
+  ...
+# Subtest: choosing a fallen character reconstructs it without erasing its identity or history
+ok 42 - choosing a fallen character reconstructs it without erasing its identity or history
+  ---
+  duration_ms: 3.069042
+  type: 'test'
+  ...
+# Subtest: player cannot walk through rendered buildings and jumps land on the ground
+ok 43 - player cannot walk through rendered buildings and jumps land on the ground
+  ---
+  duration_ms: 20.499708
+  type: 'test'
+  ...
+# Subtest: locomotion accelerates, brakes and removes velocity into a wall
+ok 44 - locomotion accelerates, brakes and removes velocity into a wall
+  ---
+  duration_ms: 2.681375
+  type: 'test'
+  ...
+# Subtest: possessing a resident inside an old building footprint places them at a walkable entrance
+ok 45 - possessing a resident inside an old building footprint places them at a walkable entrance
+  ---
+  duration_ms: 8.395166
+  type: 'test'
+  ...
+# Subtest: daily cafe and bar furniture stop walking and sprinting while the entrance aisle stays clear
+ok 46 - daily cafe and bar furniture stop walking and sprinting while the entrance aisle stays clear
+  ---
+  duration_ms: 69.57075
+  type: 'test'
+  ...
+# Subtest: falling onto a cafe table lands above its visible surface and walking off returns to the floor
+ok 47 - falling onto a cafe table lands above its visible surface and walking off returns to the floor
+  ---
+  duration_ms: 30.96525
+  type: 'test'
+  ...
+# Subtest: continuing a cafe save inside a newly solid table preserves progress and recovers a clear position
+ok 48 - continuing a cafe save inside a newly solid table preserves progress and recovers a clear position
+  ---
+  duration_ms: 2.347459
+  type: 'test'
+  ...
+# Subtest: checkpoints restore agent state and causal history atomically
+ok 49 - checkpoints restore agent state and causal history atomically
+  ---
+  duration_ms: 18.320542
+  type: 'test'
+  ...
+# Subtest: a standby connection stays connecting until the handed-over world arrives
+ok 50 - a standby connection stays connecting until the handed-over world arrives
+  ---
+  duration_ms: 85.758791
+  type: 'test'
+  ...
+# Subtest: connected transport is not reported ready until a server round trip succeeds
+ok 51 - connected transport is not reported ready until a server round trip succeeds
+  ---
+  duration_ms: 31.586709
+  type: 'test'
+  ...
+# Subtest: the client acknowledges world state only after applying it
+ok 52 - the client acknowledges world state only after applying it
+  ---
+  duration_ms: 19.893
+  type: 'test'
+  ...
+# Subtest: a one-way connection is shown as slow instead of ready
+ok 53 - a one-way connection is shown as slow instead of ready
+  ---
+  duration_ms: 4216.833292
+  type: 'test'
+  ...
+# Subtest: a temporary disconnect resumes the last confirmed character after the new world snapshot
+ok 54 - a temporary disconnect resumes the last confirmed character after the new world snapshot
+  ---
+  duration_ms: 1396.312417
+  type: 'test'
+  ...
+# Subtest: a replaced page stops resuming its old character, including after a reconnect
+ok 55 - a replaced page stops resuming its old character, including after a reconnect
+  ---
+  duration_ms: 1444.549042
+  type: 'test'
+  ...
+# Subtest: explicitly leaving while offline cancels automatic character restoration
+ok 56 - explicitly leaving while offline cancels automatic character restoration
+  ---
+  duration_ms: 824.124042
+  type: 'test'
+  ...
+# Subtest: gzip state, role assignment and ordinary messages are applied in wire order before acknowledging
+ok 57 - gzip state, role assignment and ordinary messages are applied in wire order before acknowledging
+  ---
+  duration_ms: 30.626875
+  type: 'test'
+  ...
+# Subtest: a browser without DecompressionStream keeps the ordinary state protocol
+ok 58 - a browser without DecompressionStream keeps the ordinary state protocol
+  ---
+  duration_ms: 27.383333
+  type: 'test'
+  ...
+# [Socket] Could not read state; reconnecting without compression. TypeError
+#     at handleKnownInternalErrors (node:internal/webstreams/adapters:115:21)
+#     at Gunzip.<anonymous> (node:internal/webstreams/adapters:476:13)
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at Gunzip.<anonymous> (node:internal/streams/end-of-stream:61:21)
+#     at Gunzip.<anonymous> (node:internal/util:580:20)
+#     at Gunzip.onerror (node:internal/streams/end-of-stream:149:14)
+#     at Gunzip.emit (node:events:531:35)
+#     at emitErrorNT (node:internal/streams/destroy:170:8)
+#     at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+#   code: 'Z_DATA_ERROR',
+#   [cause]: Error: incorrect header check
+#       at genericNodeError (node:internal/errors:983:15)
+#       at wrappedFn (node:internal/errors:537:14)
+#       at Zlib.zlibOnError [as onerror] (node:zlib:191:17) {
+#     errno: -3,
+#     code: 'Z_DATA_ERROR'
+#   }
+# }
+# Subtest: corrupt compressed state reconnects using ordinary snapshots and restores the confirmed character
+ok 59 - corrupt compressed state reconnects using ordinary snapshots and restores the confirmed character
+  ---
+  duration_ms: 37.915208
+  type: 'test'
+  ...
+# Subtest: a disconnect discards an in-flight decompression without delaying the new connection
+ok 60 - a disconnect discards an in-flight decompression without delaying the new connection
+  ---
+  duration_ms: 49.290583
+  type: 'test'
+  ...
+# [Socket] Client connected: 4FSYwn62xfI5hm97AAAR
+# [Socket] Client disconnected: 4FSYwn62xfI5hm97AAAR
+# [Socket] Client connected: asNyCeTFXJEjuT25AAAS
+# [Socket] Client disconnected: asNyCeTFXJEjuT25AAAS
+# Subtest: the real compressed client and server resume a role and continue updates after reconnecting
+ok 61 - the real compressed client and server resume a role and continue updates after reconnecting
+  ---
+  duration_ms: 1341.858292
+  type: 'test'
+  ...
+# [SimulationLoop] Started (tick rate: 5ms)
+# Subtest: a stationary agent broadcasts changed health, awakening and goals
+ok 62 - a stationary agent broadcasts changed health, awakening and goals
+  ---
+  duration_ms: 13.832542
+  type: 'test'
+  ...
+# Subtest: serialized character switching clears the previous owner on merging clients
+ok 63 - serialized character switching clears the previous owner on merging clients
+  ---
+  duration_ms: 6.019792
+  type: 'test'
+  ...
+# Subtest: combat changes the actual target, survives the next tick and cannot cross worlds
+ok 64 - combat changes the actual target, survives the next tick and cannot cross worlds
+  ---
+  duration_ms: 10.040542
+  type: 'test'
+  ...
+# Subtest: real-world residents start outside the Matrix and pedestrians start at street level
+ok 65 - real-world residents start outside the Matrix and pedestrians start at street level
+  ---
+  duration_ms: 11.583833
+  type: 'test'
+  ...
+# Subtest: world NPC melee warns a player before contact and cannot hit from eight units away
+ok 66 - world NPC melee warns a player before contact and cannot hit from eight units away
+  ---
+  duration_ms: 7.38925
+  type: 'test'
+  ...
+# [SimulationLoop] Stopped at tick 3
+# Subtest: slow asynchronous simulation ticks never overlap
+ok 67 - slow asynchronous simulation ticks never overlap
+  ---
+  duration_ms: 82.350375
+  type: 'test'
+  ...
+# [Socket] Client connected: atBVk0BdB0lR4rvrAAAA
+# [Socket] Client disconnected: atBVk0BdB0lR4rvrAAAA
+# Subtest: world updates use compressed wire bytes and a command can complete a round trip
+ok 68 - world updates use compressed wire bytes and a command can complete a round trip
+  ---
+  duration_ms: 46.134625
+  type: 'test'
+  ...
+# [Socket] Client connected: uIUxf-aeMmR7m6lPAAAB
+# [Socket] Client disconnected: uIUxf-aeMmR7m6lPAAAB
+# Subtest: state compression reduces wire bytes when WebSocket compression is unavailable
+ok 69 - state compression reduces wire bytes when WebSocket compression is unavailable
+  ---
+  duration_ms: 18.403792
+  type: 'test'
+  ...
+# [Socket] Client connected: J1B5HKEUvMq1kw8iAAAC
+# [Socket] Client disconnected: J1B5HKEUvMq1kw8iAAAC
+# Subtest: a paused world does not repeatedly transmit unchanged characters, traffic or sandbox state
+ok 70 - a paused world does not repeatedly transmit unchanged characters, traffic or sandbox state
+  ---
+  duration_ms: 29.9665
+  type: 'test'
+  ...
+# [Socket] Client connected: G9vxe3M9XEMerVeDAAAD
+# [Socket] Client disconnected: G9vxe3M9XEMerVeDAAAD
+# Subtest: moving snapshots retain their complete cast, including stationary changes, nulls and replaced arrays
+ok 71 - moving snapshots retain their complete cast, including stationary changes, nulls and replaced arrays
+  ---
+  duration_ms: 27.287833
+  type: 'test'
+  ...
+# [Socket] Client connected: NL9JAEg5lcwwyNxzAAAE
+# [Socket] Client disconnected: NL9JAEg5lcwwyNxzAAAE
+# Subtest: sandbox and fast traffic updates stay coherent across resets and repeated story events
+ok 72 - sandbox and fast traffic updates stay coherent across resets and repeated story events
+  ---
+  duration_ms: 13.037375
+  type: 'test'
+  ...
+# [Socket] Client connected: _oNTBewWpmE76FvaAAAF
+# [Socket] Client connected: Ok-BoEOjlTst0Lz3AAAG
+# [Socket] Client disconnected: _oNTBewWpmE76FvaAAAF
+# [Socket] Client disconnected: Ok-BoEOjlTst0Lz3AAAG
+# Subtest: joining or resynchronizing a client cannot hide a pending update from another player
+ok 73 - joining or resynchronizing a client cannot hide a pending update from another player
+  ---
+  duration_ms: 10.274416
+  type: 'test'
+  ...
+# [Socket] Client connected: _9P9ZrRkszG1WhogAAAH
+# [Socket] Client connected: oLIsu_0cAF9vp4yBAAAI
+# [Socket] Client disconnected: _9P9ZrRkszG1WhogAAAH
+# [Socket] Client disconnected: oLIsu_0cAF9vp4yBAAAI
+# Subtest: a slow receiver gets the latest coherent state without queuing every simulation frame
+ok 74 - a slow receiver gets the latest coherent state without queuing every simulation frame
+  ---
+  duration_ms: 21.105333
+  type: 'test'
+  ...
+# [Socket] Client connected: ME0UVKy1XbQN9YAkAAAJ
+# [Socket] Client connected: o4LGdUexRPM0VhX4AAAK
+# [Socket] Client disconnected: ME0UVKy1XbQN9YAkAAAJ
+# [Socket] Client disconnected: o4LGdUexRPM0VhX4AAAK
+# Subtest: resynchronization replaces pending state and retains updates following the new snapshot
+ok 75 - resynchronization replaces pending state and retains updates following the new snapshot
+  ---
+  duration_ms: 10.050333
+  type: 'test'
+  ...
+1..75
+# tests 75
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10331.110334

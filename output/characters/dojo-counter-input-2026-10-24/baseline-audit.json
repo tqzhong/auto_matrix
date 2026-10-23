@@ -1,0 +1,8 @@
+{
+  "baseline": "3604a319ceec85c7aa512ce5b582bd71a32ccdba",
+  "previousTurn": "progress: graphics presets published; native dojo failure and old-client comparison identify input/response path as next investigation",
+  "inputsVerifiedAgainstGit": 1202,
+  "mainPid": 43571,
+  "mainWorldSha256": "05dbda2d482c19a340904a705d667f86335f0ca6d8ae91aa6bdc6b614cb13543",
+  "seed": "output/characters/skinned-bounds-budget-2026-10-24/qa-play-data"
+}

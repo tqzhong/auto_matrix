@@ -1,0 +1,43 @@
+{
+  "productionBundle": "index-CqeofKx_.js",
+  "renderSizeFirstTab": {
+    "width": 799,
+    "height": 450
+  },
+  "cssSizeFirstTab": {
+    "width": 1066,
+    "height": 600
+  },
+  "keyboardDodgeAccepted": true,
+  "outOfReachPromptVisible": true,
+  "inReachPromptVisible": true,
+  "nativeOrderedCounterCompleted": true,
+  "nativeInput": "X, W held 1150ms, F/F/F using visible combo labels",
+  "nativeReplayAfterRealRestart": true,
+  "realRestartWorldEqual": true,
+  "memoryFilesPreserved": 7,
+  "savedCounterUntil": 10335,
+  "savedTick": 10332,
+  "counterExpirationObservedAfterResume": true,
+  "finalScene": "m1_dojo",
+  "finalStep": 1,
+  "finalDojo": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 3,
+    "resets": 1,
+    "complete": true
+  },
+  "finalTick": 10502,
+  "finalHealth": 6.400000000000004,
+  "paused": true,
+  "consoleWarningsAndErrors": 0,
+  "screenDodgeClickVerified": false,
+  "screenDodgeLimitation": "Two production screen clicks did not open the one-second windup counter; native keyboard did. No claim that the screen-button timing is resolved. One native wait also timed out despite matching a visible enabled button; retained as automation limitation.",
+  "filmQualityAccepted": false,
+  "visualLimitations": [
+    "narrow viewport HUD overlaps",
+    "after training the third-person upper body looks clipped; needs separate reproduction"
+  ],
+  "newFpsBenchmark": false
+}

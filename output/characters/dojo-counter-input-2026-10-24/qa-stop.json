@@ -1,0 +1,18 @@
+[
+  {
+    "pid": 41172,
+    "port": 5201,
+    "commandVerified": true,
+    "cwdVerified": true,
+    "terminalStateConfirmed": true,
+    "portClosed": true
+  },
+  {
+    "pid": 41165,
+    "port": 5200,
+    "commandVerified": true,
+    "cwdVerified": true,
+    "terminalStateConfirmed": true,
+    "portClosed": true
+  }
+]

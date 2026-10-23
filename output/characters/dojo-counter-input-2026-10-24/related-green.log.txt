@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: melee cannot hit behind the player, outside reach, or through a barricade
+ok 1 - melee cannot hit behind the player, outside reach, or through a barricade
+  ---
+  duration_ms: 108.297709
+  type: 'test'
+  ...
+# Subtest: dodge cancels a windup, briefly avoids damage and cannot be spammed or started in midair
+ok 2 - dodge cancels a windup, briefly avoids damage and cannot be spammed or started in midair
+  ---
+  duration_ms: 432.225209
+  type: 'test'
+  ...
+# Subtest: melee outside a scripted fight cannot kill the film cast
+ok 3 - melee outside a scripted fight cannot kill the film cast
+  ---
+  duration_ms: 762.319375
+  type: 'test'
+  ...
+# Subtest: Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch the gun and confront Merovingian
+ok 4 - Club Hel bargain requires Trinity to disarm, refuse, dodge, counter, catch the gun and confront Merovingian
+  ---
+  duration_ms: 951.467958
+  type: 'test'
+  ...
+# Subtest: training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+ok 5 - training download waits for Neo, pauses with the world, survives reconnect and finishes in the core chair
+  ---
+  duration_ms: 446.209541
+  type: 'test'
+  ...
+# Subtest: the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+ok 6 - the dojo requires reading Morpheus attack, dodging it and landing an ordered three-hit counter
+  ---
+  duration_ms: 72.562542
+  type: 'test'
+  ...
+# Subtest: the dojo can be completed through natural windups, a backstep and walking into counter range
+ok 7 - the dojo can be completed through natural windups, a backstep and walking into counter range
+  ---
+  duration_ms: 909.950375
+  type: 'test'
+  ...
+# Subtest: the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+ok 8 - the dojo preserves a timed counter opening, then returns Morpheus to guard instead of freezing him forever
+  ---
+  duration_ms: 13.76475
+  type: 'test'
+  ...
+# Subtest: older dojo saves migrate a frozen counter into a finite counter window
+ok 9 - older dojo saves migrate a frozen counter into a finite counter window
+  ---
+  duration_ms: 8.160125
+  type: 'test'
+  ...
+# Subtest: Neo reaches the street before the training records failure and never loses health twice after reloading impact
+ok 10 - Neo reaches the street before the training records failure and never loses health twice after reloading impact
+  ---
+  duration_ms: 360.329834
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 11 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 1530.734125
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 12 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 234.686959
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 13 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 249.085542
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6378.574333

@@ -1,0 +1,23 @@
+{
+  "baseline": "3604a319ceec85c7aa512ce5b582bd71a32ccdba",
+  "changed": [
+    {
+      "path": "packages/client/src/player/SandboxUI.ts",
+      "before": "9937999f6dc79a6d0ca065cbb4e6ac0ce1fc9f2b9a690dc0a268292bfe101115",
+      "after": "be2e0105ac0bb3c38ab16a1fd70f583e44b7feb85ea5ad817e8472462a095e2e"
+    },
+    {
+      "path": "tests/film-story.test.mts",
+      "before": "d3415f7117fc9f413428969dd392e4fcee585dc84e1aea6cdd9d27df484cbda7",
+      "after": "e8a2de9db0681e27cb75e9f77fd70b452a800defa55dffb44742fd16ff2f6505"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/dojo-ui.test.mts",
+      "after": "c5940ee39920bf15a731a99252f8607d802521bc1e3a08fb2ee8e5aa99546536"
+    }
+  ],
+  "unchangedInputFiles": 1200,
+  "packageFiles": 720
+}

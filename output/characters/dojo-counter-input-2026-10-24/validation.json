@@ -1,0 +1,39 @@
+{
+  "baselineRelated": {
+    "tests": 12,
+    "pass": 12,
+    "fail": 0
+  },
+  "related": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0
+  },
+  "ui": {
+    "tests": 46,
+    "pass": 46,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "typecheckExit": 0,
+  "fullBuildExit": 0,
+  "runtimeClientBuildExit": 0,
+  "bundle": "index-CqeofKx_.js",
+  "bundleSha256": "1bba3e2b6ed162bd6ab661da783ad242c28fed1615661f54debc34826f9c4537",
+  "css": "index-szXzveLu.css",
+  "cssSha256": "b2c97c822f84c2f0fc02de1ef9be92da8970c7cad50d400e91636ff0e06ec3c0",
+  "inputsUnchanged": true,
+  "inputs": 1203,
+  "fullSuiteRun": false,
+  "previousCharacterFailuresNotRetested": 7,
+  "allRequiredGatesPassed": true,
+  "temporaryDiagnosticsRemoved": true,
+  "compiledSharedRestoredToLiveBaseline": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ]
+}

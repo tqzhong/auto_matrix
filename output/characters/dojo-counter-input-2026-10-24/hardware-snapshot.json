@@ -1,0 +1,7 @@
+{
+  "cpu": "Apple M3",
+  "memoryBytes": 25769803776,
+  "systemMemoryFreePercent": 51,
+  "source": "sysctl hw.memsize machdep.cpu.brand_string; memory_pressure -Q",
+  "scope": "single host snapshot, not a gameplay memory benchmark"
+}
