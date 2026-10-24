@@ -1,0 +1,64 @@
+{
+  "baseline": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0
+  },
+  "red": {
+    "tests": 4,
+    "pass": 2,
+    "fail": 2
+  },
+  "after": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0
+  },
+  "js": {
+    "name": "index-2Ja2MNVz.js",
+    "bytes": 3783631,
+    "sha256": "25cc59708738615538739e2a3ddeee3ed8962229e5c3171015d0e91b2e10cf7c"
+  },
+  "css": {
+    "name": "index-B0JUdutM.css",
+    "bytes": 88548,
+    "sha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938"
+  },
+  "clientBuildExit": 0,
+  "poseComparison": {
+    "poses": 72,
+    "identicalGeometry": 72,
+    "matrixComponents": 728640,
+    "maxTransformDelta": 8.881784197001252e-16
+  },
+  "cpuComparison": {
+    "note": "Offline CPU animation only; A/B/B/A, native QA tab closed, no concurrent build or tests. Not FPS or GPU.",
+    "samples": [
+      {
+        "sample": "before-a",
+        "iterations": 1252,
+        "averageCpuMs": 6.3903879225239555,
+        "p95CpuMs": 9.648291999999856
+      },
+      {
+        "sample": "after-a",
+        "iterations": 1590,
+        "averageCpuMs": 5.032058578616313,
+        "p95CpuMs": 6.777000000000044
+      },
+      {
+        "sample": "after-b",
+        "iterations": 1634,
+        "averageCpuMs": 4.8958442686658605,
+        "p95CpuMs": 7.372458000001643
+      },
+      {
+        "sample": "before-b",
+        "iterations": 1188,
+        "averageCpuMs": 6.732682760100976,
+        "p95CpuMs": 10.281708000000435
+      }
+    ]
+  },
+  "newDependencies": false
+}

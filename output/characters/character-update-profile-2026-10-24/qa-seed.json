@@ -1,0 +1,16 @@
+{
+  "source": "/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/qa-data",
+  "files": {
+    "world.json": "d91d1a031cdda542159f4db4d6a619793c755b52a9449a720669d56a10a70aaf",
+    "memories/sparks.json": "84a0937549f83397d788842a149c1e4e1a681f823b325ac20d290296d25528a1",
+    "memories/cas.json": "4cd545884115085de75e5f986a7924dee27d1f47f2ea77f30798438477634432",
+    "memories/citizen_8.json": "4d0fba4ce3d2bfc824559d7d91149e2dc375662a417154756b98aff583f860c2",
+    "memories/mauser.json": "121e78327ce76b52d4b2f6d49150b9e41b5db1cec23bc13bbfe760866c933ee3",
+    "memories/binary.json": "e08b3d4067a9ad6b6425e1dccbdfceb1536aeb015a9ac67179a97d12ae939b71",
+    "memories/vector.json": "4f82ba85b4528ce7163bb74f2fa4c55d77a8301f183ca9767a2e25c8e80f8100",
+    "memories/ak.json": "011d477ece3eb5025c9b3901364c579fd65bdfc643909bfd39c38200b0695d26"
+  },
+  "scene": "m1_dojo",
+  "step": 1,
+  "tick": 10702
+}

@@ -1,0 +1,26 @@
+{
+  "baseline": "b96faca02e71e5c4bf91b236b5bac1269c774aec",
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "a40fae1cf8cb33e5278b8ff5155f7ba2aa8396e73ae2dc467613b7421cab126c",
+      "after": "72856c8840ed901615f3fb4f771dd5d640a7c7334eceddcc7b26d8723a2cef9b"
+    },
+    {
+      "path": "packages/client/src/player/PerformancePanel.ts",
+      "before": "40a108c72d1dceb272f4055540172394e2159c8d9c05ff89a4102a478565de61",
+      "after": "321e62c786bc87a4e1a90bb13227b1b7249c134b82c3a6029963c11161a6cc6c"
+    },
+    {
+      "path": "tests/dojo-skinning-budget.test.mts",
+      "before": "e1bff6a019cbd19d9fc54e2147290e3e62197365798f56f01506203d9a91d6b0",
+      "after": "c399950eda99bd9fd24256639219dcb43f38e5fb2ac7fac4f85807128c4c8e08"
+    }
+  ],
+  "new": [],
+  "inputFiles": 1215,
+  "packageFiles": 721,
+  "compiledSharedChanges": [],
+  "serverArtifactsByteEqual": 280,
+  "characterAssetsChanged": false
+}

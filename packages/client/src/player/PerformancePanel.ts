@@ -1,6 +1,9 @@
 import type { Engine, FrameProfile } from '../engine/Engine.js';
 import { Frustum, Matrix4, PointLight, Sphere, Vector3, type Object3D } from 'three';
 import { GpuTimer } from './GpuTimer.js';
+import { CharacterModels } from '../agents/CharacterModel.js';
+import { HeroModels } from '../agents/HeroModel.js';
+import { FightingHands } from '../agents/FightingHands.js';
 
 // Opt-in development measurement. It observes actual frames without creating a
 // capture canvas, encoding video, changing the camera, or advancing the story.
@@ -19,6 +22,8 @@ export class PerformancePanel {
   private restorePost?: Engine['postProcessing']['render'];
   private browserObservers: PerformanceObserver[] = [];
   private browserEntries: PerformanceEntry[] = [];
+  private restoreAnimations?: () => void;
+  private animationTotals = new Map<string, { actor: string; layer: string; calls: number; ms: number; maxMs: number; distance: number; visible: boolean }>();
 
   constructor(private engine: Engine) {
     this.panel.id = 'performance-panel';
@@ -82,6 +87,35 @@ export class PerformancePanel {
   private start(): void {
     this.frames = []; this.passes = {}; this.drawTotals = {}; this.meshTotals.clear(); this.startAt = performance.now(); this.fpsBeforeSampling = this.engine.fps;
     this.browserEntries = [];
+    this.animationTotals.clear();
+    const actors = new Map(this.engine.agentRenderer.getAgentIds().map(id => [this.engine.agentRenderer.getAgentBody(id), id]));
+    const characterAnimate = CharacterModels.prototype.animate, heroAnimate = HeroModels.prototype.animate, handsUpdate = FightingHands.prototype.update;
+    let actor = 'unidentified', distance = 0, visible = false;
+    const recordAnimation = (layer: string, start: number) => {
+      if (start - this.startAt < 3000) return;
+      const ms = performance.now() - start, key = `${actor}/${layer}`;
+      const total = this.animationTotals.get(key) ?? { actor, layer, calls: 0, ms: 0, maxMs: 0, distance, visible };
+      total.calls++; total.ms += ms; total.maxMs = Math.max(total.maxMs, ms); this.animationTotals.set(key, total);
+    };
+    CharacterModels.prototype.animate = function (rig, delta, input, actorDistance) {
+      const previous = { actor, distance, visible };
+      actor = actors.get(rig.root) ?? rig.root.name ?? 'unidentified'; distance = actorDistance; visible = true;
+      for (let object: Object3D | null = rig.root; object; object = object.parent) visible &&= object.visible;
+      const start = performance.now();
+      try { return characterAnimate.call(this, rig, delta, input, actorDistance); }
+      finally { recordAnimation('character', start); ({ actor, distance, visible } = previous); }
+    };
+    HeroModels.prototype.animate = function (...args) {
+      const start = performance.now();
+      try { return heroAnimate.apply(this, args); } finally { recordAnimation('hero', start); }
+    };
+    FightingHands.prototype.update = function (...args) {
+      const start = performance.now();
+      try { return handsUpdate.apply(this, args); } finally { recordAnimation('hands', start); }
+    };
+    this.restoreAnimations = () => {
+      CharacterModels.prototype.animate = characterAnimate; HeroModels.prototype.animate = heroAnimate; FightingHands.prototype.update = handsUpdate;
+    };
     for (const type of ['longtask', 'long-animation-frame']) {
       if (!PerformanceObserver.supportedEntryTypes.includes(type)) continue;
       const observer = new PerformanceObserver(list => { this.browserEntries.push(...list.getEntries()); });
@@ -151,6 +185,7 @@ export class PerformancePanel {
   }
 
   private async finish(): Promise<void> {
+    this.restoreAnimations!(); this.restoreAnimations = undefined;
     for (const observer of this.browserObservers) { this.browserEntries.push(...observer.takeRecords()); observer.disconnect(); }
     this.browserObservers = [];
     this.engine.onProfile = undefined; this.engine.postProcessing.onMeasure = undefined;
@@ -183,6 +218,9 @@ export class PerformancePanel {
       }
     });
     const report = {
+      characterCpu: { layersAreNested: true, actors: [...this.animationTotals.values()].sort((a, b) => b.ms - a.ms).map(total => ({
+        ...total, msPerFrame: total.ms / this.frames.length, callsPerFrame: total.calls / this.frames.length,
+      })) },
       browserMainThread: { supported: PerformanceObserver.supportedEntryTypes.filter(type => ['longtask', 'long-animation-frame'].includes(type)),
         entries: this.browserEntries.filter(entry => entry.startTime >= this.startAt + 3000).map(entry => entry.toJSON()) },
       lights,
@@ -210,7 +248,7 @@ export class PerformancePanel {
       objects, visibleObjects,
     };
     this.meshTotals.clear();
-    this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\nGPU ms：${Object.entries(gpuPassMs).map(([name, time]) => `${name} ${time.mean.toFixed(2)}`).join(' · ') || (gpuTiming.mode.startsWith('cpu') ? '未采样' : '不可用')}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
+    this.status(`${report.fps.toFixed(1)} fps · p95 ${frameTime.p95.toFixed(1)} ms\n${Object.entries(sections).map(([name, time]) => `${name}: ${time.mean.toFixed(2)} ms`).join('\n')}\n人物分层（不可相加）：\n${report.characterCpu.actors.slice(0, 6).map(total => `${total.actor} ${total.layer}: ${total.msPerFrame.toFixed(2)} ms`).join('\n')}\nGPU ms：${Object.entries(gpuPassMs).map(([name, time]) => `${name} ${time.mean.toFixed(2)}`).join(' · ') || (gpuTiming.mode.startsWith('cpu') ? '未采样' : '不可用')}\n提交绘制 ${report.calls.mean.toFixed(0)} 次 / 帧\n保存报告中…`);
     try {
       const filename = `neo-${report.measuredAt.replace(/[:.]/g, '-')}.json`;
       const response = await fetch(`/__recording/${filename}`, { method: 'POST', body: JSON.stringify(report, null, 2) });

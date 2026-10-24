@@ -1,0 +1,29 @@
+{
+  "note": "Offline CPU animation only; A/B/B/A, native QA tab closed, no concurrent build or tests. Not FPS or GPU.",
+  "samples": [
+    {
+      "sample": "before-a",
+      "iterations": 1252,
+      "averageCpuMs": 6.3903879225239555,
+      "p95CpuMs": 9.648291999999856
+    },
+    {
+      "sample": "after-a",
+      "iterations": 1590,
+      "averageCpuMs": 5.032058578616313,
+      "p95CpuMs": 6.777000000000044
+    },
+    {
+      "sample": "after-b",
+      "iterations": 1634,
+      "averageCpuMs": 4.8958442686658605,
+      "p95CpuMs": 7.372458000001643
+    },
+    {
+      "sample": "before-b",
+      "iterations": 1188,
+      "averageCpuMs": 6.732682760100976,
+      "p95CpuMs": 10.281708000000435
+    }
+  ]
+}

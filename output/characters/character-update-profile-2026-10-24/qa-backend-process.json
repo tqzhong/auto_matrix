@@ -1,0 +1,9 @@
+{
+  "pid": 93129,
+  "port": 5200,
+  "command": [
+    "node",
+    "packages/server/dist/index.js"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release"
+}

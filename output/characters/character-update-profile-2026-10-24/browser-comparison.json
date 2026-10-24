@@ -1,0 +1,241 @@
+{
+  "sameViewport": true,
+  "sameCamera": true,
+  "sameDraws": true,
+  "viewport": {
+    "width": 431,
+    "height": 670,
+    "pixelRatio": 1
+  },
+  "samples": [
+    {
+      "variant": "before",
+      "fps": 59.998000066664446,
+      "frameTime": {
+        "mean": 16.66722222222222,
+        "p95": 18.600000381469727
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.5269700440926505,
+          "p95": 0.7999992370605469
+        },
+        "agents": {
+          "mean": 4.888901235260789,
+          "p95": 6
+        },
+        "city": {
+          "mean": 0.09034404267746124,
+          "p95": 0.19999980926513672
+        },
+        "film": {
+          "mean": 0.024306334348418206,
+          "p95": 0.10000038146972656
+        },
+        "effects": {
+          "mean": 0.059822424402776755,
+          "p95": 0.19999980926513672
+        },
+        "render": {
+          "mean": 2.935516109741753,
+          "p95": 3.8000001907348633
+        },
+        "capture": {
+          "mean": 0.0006659271714425378,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 143,
+        "p95": 143
+      },
+      "triangles": {
+        "mean": 794023,
+        "p95": 794023
+      },
+      "topActors": [
+        {
+          "actor": "neo",
+          "layer": "character",
+          "calls": 901,
+          "ms": 1844.7000007629395,
+          "maxMs": 3.3000001907348633,
+          "distance": 14.178025206698921,
+          "visible": true,
+          "msPerFrame": 2.04739178775021,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "morpheus",
+          "layer": "character",
+          "calls": 901,
+          "ms": 1656.5999956130981,
+          "maxMs": 3.1999998092651367,
+          "distance": 19.848133006931,
+          "visible": true,
+          "msPerFrame": 1.8386237465184219,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "neo",
+          "layer": "hero",
+          "calls": 901,
+          "ms": 1631.2999877929688,
+          "maxMs": 3,
+          "distance": 14.178025206698921,
+          "visible": true,
+          "msPerFrame": 1.8105438266292662,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "morpheus",
+          "layer": "hero",
+          "calls": 901,
+          "ms": 1495.0999851226807,
+          "maxMs": 3,
+          "distance": 19.848133006931,
+          "visible": true,
+          "msPerFrame": 1.6593784518564714,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "neo",
+          "layer": "hands",
+          "calls": 901,
+          "ms": 36.100006103515625,
+          "maxMs": 0.3000001907348633,
+          "distance": 14.178025206698921,
+          "visible": true,
+          "msPerFrame": 0.04006659944896296,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "morpheus",
+          "layer": "hands",
+          "calls": 901,
+          "ms": 24.600008964538574,
+          "maxMs": 0.20000076293945312,
+          "distance": 19.848133006931,
+          "visible": true,
+          "msPerFrame": 0.02730300661990963,
+          "callsPerFrame": 1
+        }
+      ]
+    },
+    {
+      "variant": "after",
+      "fps": 59.99040153346619,
+      "frameTime": {
+        "mean": 16.669333333969117,
+        "p95": 18.300000190734863
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.46093226061280107,
+          "p95": 0.6999998092651367
+        },
+        "agents": {
+          "mean": 3.485238627773543,
+          "p95": 4.200000762939453
+        },
+        "city": {
+          "mean": 0.0831298531755623,
+          "p95": 0.19999980926513672
+        },
+        "film": {
+          "mean": 0.02230854648331823,
+          "p95": 0.10000038146972656
+        },
+        "effects": {
+          "mean": 0.04905658345111335,
+          "p95": 0.10000038146972656
+        },
+        "render": {
+          "mean": 2.584017790647246,
+          "p95": 3.3000001907348633
+        },
+        "capture": {
+          "mean": 0.0006659271714425378,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 143,
+        "p95": 143
+      },
+      "triangles": {
+        "mean": 794023,
+        "p95": 794023
+      },
+      "topActors": [
+        {
+          "actor": "neo",
+          "layer": "character",
+          "calls": 901,
+          "ms": 1211.0999879837036,
+          "maxMs": 2.8000001907348633,
+          "distance": 14.178025206698921,
+          "visible": true,
+          "msPerFrame": 1.344173127617873,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "morpheus",
+          "layer": "character",
+          "calls": 901,
+          "ms": 1087.2000074386597,
+          "maxMs": 1.9000005722045898,
+          "distance": 19.848133006931,
+          "visible": true,
+          "msPerFrame": 1.2066592757365813,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "neo",
+          "layer": "hero",
+          "calls": 901,
+          "ms": 1009.9999885559082,
+          "maxMs": 2.6000003814697266,
+          "distance": 14.178025206698921,
+          "visible": true,
+          "msPerFrame": 1.1209766798622733,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "morpheus",
+          "layer": "hero",
+          "calls": 901,
+          "ms": 936.0999975204468,
+          "maxMs": 1.7000007629394531,
+          "distance": 19.848133006931,
+          "visible": true,
+          "msPerFrame": 1.0389567120093748,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "neo",
+          "layer": "hands",
+          "calls": 901,
+          "ms": 31.10000705718994,
+          "maxMs": 0.19999980926513672,
+          "distance": 14.178025206698921,
+          "visible": true,
+          "msPerFrame": 0.034517210940277404,
+          "callsPerFrame": 1
+        },
+        {
+          "actor": "morpheus",
+          "layer": "hands",
+          "calls": 901,
+          "ms": 21.9999942779541,
+          "maxMs": 0.19999980926513672,
+          "distance": 19.848133006931,
+          "visible": true,
+          "msPerFrame": 0.02441730774467714,
+          "callsPerFrame": 1
+        }
+      ]
+    }
+  ],
+  "note": "Two native 15-second sidebar measurements, no video, no concurrent build/tests. OS background workload uncontrolled. Not a 1080p, moving-combat or stable 60 FPS proof."
+}

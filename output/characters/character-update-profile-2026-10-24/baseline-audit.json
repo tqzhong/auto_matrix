@@ -1,0 +1,7 @@
+{
+  "baseline": "b96faca02e71e5c4bf91b236b5bac1269c774aec",
+  "inputsVerifiedAgainstGit": 1215,
+  "compiledOutputsCopiedWithoutHardlinks": true,
+  "previousGoalTurn": "progress: b96faca pushed, pod motion regression resolved, 128 checks, real restart/native play and local publication verified.",
+  "purpose": "Measure per-character CPU work before choosing a performance change; preserve visual/contact and save behavior."
+}

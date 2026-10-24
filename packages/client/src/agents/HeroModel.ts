@@ -1407,21 +1407,25 @@ export class HeroModels {
         // Refresh the attached bind transform after movement, then share the
         // same mesh-to-body transform across every sole vertex this frame.
         mesh.updateMatrixWorld(true);
-        this.soleTransform.copy(rig.root.matrixWorld).invert().multiply(mesh.matrixWorld);
+        this.soleTransform.copy(rig.root.matrixWorld).invert().multiply(mesh.matrixWorld).multiply(mesh.bindMatrixInverse);
         // Three's per-vertex skinning recomputes this same matrix for each
         // weighted vertex. Keep its full precision and share it within a frame.
-        matrices.forEach((matrix, i) => matrix.multiplyMatrices(mesh.skeleton.bones[i].matrixWorld, mesh.skeleton.boneInverses[i]));
+        matrices.forEach((matrix, i) => matrix.multiplyMatrices(mesh.skeleton.bones[i].matrixWorld, mesh.skeleton.boneInverses[i]).multiply(mesh.bindMatrix));
         const { skinIndex, skinWeight } = mesh.geometry.attributes;
+        const height = this.soleTransform.elements;
         let lowest = Infinity;
         for (const index of indices) {
-          THREE.Mesh.prototype.getVertexPosition.call(mesh, index, this.soleBase).applyMatrix4(mesh.bindMatrix);
+          THREE.Mesh.prototype.getVertexPosition.call(mesh, index, this.soleBase);
           this.point.set(0, 0, 0);
           for (let joint = 0; joint < 4; joint++) {
             const weight = skinWeight.getComponent(index, joint);
             if (weight !== 0) this.point.addScaledVector(this.soleVertex.copy(this.soleBase).applyMatrix4(matrices[skinIndex.getComponent(index, joint)]), weight);
           }
-          this.point.applyMatrix4(mesh.bindMatrixInverse).applyMatrix4(this.soleTransform);
-          lowest = Math.min(lowest, this.point.y);
+          // Bind/body transforms are common to the full sole. After blending,
+          // only height is needed; keep every vertex and its exact joint weights.
+          const { x, y, z } = this.point;
+          const w = 1 / (height[3] * x + height[7] * y + height[11] * z + height[15]);
+          lowest = Math.min(lowest, (height[1] * x + height[5] * y + height[9] * z + height[13]) * w);
         }
         pelvis.position.y -= lowest; rig.root.updateWorldMatrix(true, true);
       }

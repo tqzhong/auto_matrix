@@ -5,6 +5,29 @@ import { actor } from './helpers/fighting-hand-fixture.mjs';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 
 for (const id of ['neo', 'morpheus'] as const) {
+  test(`${id}: sole contact does not transform every vertex through three shared coordinate frames`, async t => {
+    const h = await actor(id); t.after(() => h.models.dispose());
+    const placement = new THREE.Group(); placement.add(h.rig.root);
+    placement.position.set(6336, 1, 4416); placement.rotation.y = .63;
+    const sole = h.rig.dojoSoles!, weights = sole.mesh.geometry.attributes.skinWeight;
+    const influences = sole.indices.reduce((sum, vertex) => sum + [0, 1, 2, 3].filter(joint => weights.getComponent(vertex, joint) !== 0).length, 0);
+    const draw = (speed: number) => {
+      const motion = Object.assign(newMotion(), { speed, phase: .3 });
+      const input = { speed, grounded: true, verticalVelocity: 0, turn: .2, dojoOutfit: id, dojoSparring: true };
+      h.models.animate(h.rig, advanceMotion(motion, input, 0), motion, input, 0);
+    };
+    draw(0);
+    const apply = THREE.Vector3.prototype.applyMatrix4; let count = 0;
+    t.mock.method(THREE.Vector3.prototype, 'applyMatrix4', function(matrix: THREE.Matrix4) {
+      count++; return apply.call(this, matrix);
+    });
+    for (const speed of [0, 3.4, 7.2]) {
+      count = 0; draw(speed);
+      assert.ok(count <= influences + 2048, `full feet need ${influences} weighted transforms, but the frame repeated ${count} vertex transforms`);
+      placement.rotation.y += .4;
+    }
+  });
+
   test(`${id}: complete sole contact reuses each bone transform within a frame`, async t => {
     const h = await actor(id); t.after(() => h.models.dispose());
     const placement = new THREE.Group(); placement.add(h.rig.root);

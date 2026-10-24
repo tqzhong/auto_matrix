@@ -1,0 +1,17 @@
+{
+  "productionBundle": "index-2Ja2MNVz.js",
+  "nativeColdReloadVerified": true,
+  "nativeWalkDistance": 2.1303942454946716,
+  "jumpObserved": true,
+  "attackInputChecked": true,
+  "dodgeInputChecked": true,
+  "firstPersonSwitchVerified": true,
+  "scene": "m1_dojo",
+  "step": 1,
+  "tick": 10797,
+  "paused": true,
+  "health": 48.39999999999972,
+  "consoleWarnings": 0,
+  "consoleErrors": 0,
+  "scope": "Existing completed-spar checkpoint, walking/jump/F/X/V only. No new full spar or story progression, no new video, no FPS sampling during these native inputs."
+}

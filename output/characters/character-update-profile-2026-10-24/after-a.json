@@ -1,0 +1,129 @@
+{
+  "iterations": 1590,
+  "actors": 2,
+  "averageCpuMs": 5.032058578616313,
+  "p95CpuMs": 6.777000000000044,
+  "note": "Offline CPU animation including full sole, hand and skin updates. No browser, rendering, GPU or FPS measurement.",
+  "top": [
+    {
+      "functionName": "animate file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:25",
+      "ms": 3205.177
+    },
+    {
+      "functionName": "getVertexPosition file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:11781",
+      "ms": 1365.781
+    },
+    {
+      "functionName": "frame file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/profile-animation.mts:1",
+      "ms": 548.871
+    },
+    {
+      "functionName": "updateWorldMatrix file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7851",
+      "ms": 479.923
+    },
+    {
+      "functionName": "blend file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 445.717
+    },
+    {
+      "functionName": "update file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 429.218
+    },
+    {
+      "functionName": "post node:inspector:118",
+      "ms": 222.042
+    },
+    {
+      "functionName": "multiplyMatrices file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:6301",
+      "ms": 192.289
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/FightingHands.ts:1",
+      "ms": 185.2
+    },
+    {
+      "functionName": "updateMatrix file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7803",
+      "ms": 97.124
+    },
+    {
+      "functionName": "toArray file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4635",
+      "ms": 87.419
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 86.917
+    },
+    {
+      "functionName": "advanceMotion file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/CharacterMotion.ts:1",
+      "ms": 76.374
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:25",
+      "ms": 61.829
+    },
+    {
+      "functionName": "invert file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:1269",
+      "ms": 49.209
+    },
+    {
+      "functionName": "(garbage collector) :0",
+      "ms": 48.334
+    },
+    {
+      "functionName": "setFromRotationMatrix file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:6967",
+      "ms": 47.96
+    },
+    {
+      "functionName": "getComponent file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:10170",
+      "ms": 33.083
+    },
+    {
+      "functionName": "fromArray file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4625",
+      "ms": 31.71
+    },
+    {
+      "functionName": "pose file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/FightingHands.ts:1",
+      "ms": 31.5
+    },
+    {
+      "functionName": "fromBufferAttribute file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4645",
+      "ms": 29.748
+    },
+    {
+      "functionName": "onQuaternionChange file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7287",
+      "ms": 28.669
+    },
+    {
+      "functionName": "bone.updateMatrix file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/ForearmTwist.ts:1",
+      "ms": 23.33
+    },
+    {
+      "functionName": "applyMatrix3 file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4188",
+      "ms": 21.125
+    },
+    {
+      "functionName": "setFromEuler file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:3489",
+      "ms": 20.958
+    },
+    {
+      "functionName": "normalize file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4413",
+      "ms": 18.415
+    },
+    {
+      "functionName": "update file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/FightingHands.ts:1",
+      "ms": 17.626
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/CharacterMotion.ts:1",
+      "ms": 17.416
+    },
+    {
+      "functionName": "set SubtleCrypto :0",
+      "ms": 16.166
+    },
+    {
+      "functionName": "begin file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/character-update-profile-2026-10-24/candidate-release/packages/client/src/agents/FightingHands.ts:1",
+      "ms": 14
+    }
+  ]
+}
