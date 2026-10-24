@@ -1,0 +1,44 @@
+TAP version 13
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 1 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 3700.54675
+  type: 'test'
+  ...
+# {"tips":[[-0.2590145829193075,0.16406968917571288,0.054980376914724204],[-0.26435356067790167,0.20192177962311583,0.1287826133896936]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 2 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 2922.226083
+  type: 'test'
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.0011037376665789665},{"joint":"wrist_R","distance":0.0014007564612995992},{"joint":"finger2-3_R","distance":0.0015804398458387975},{"joint":"head","distance":0.00023332584508709247}]
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+ok 3 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+  ---
+  duration_ms: 17817.933334
+  type: 'test'
+  ...
+# {"maximumSwing":52.6059790018205,"failures":[]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+ok 4 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+  ---
+  duration_ms: 6141.862667
+  type: 'test'
+  ...
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+ok 5 - the full guide arm motion is continuous at 10ms sampling intervals
+  ---
+  duration_ms: 4999.595208
+  type: 'test'
+  ...
+# {"maximumStep":0.05776878219434632,"largestAt":0.84,"largestJoint":"finger2-3_R","samples":531}
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36243.629916

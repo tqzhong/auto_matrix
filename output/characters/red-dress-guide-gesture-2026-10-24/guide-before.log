@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+not ok 1 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 3094.37775
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:1169'
+  failureType: 'testCodeFailure'
+  error: 'fingers must lie beside the right temple: -0.4485243070814877'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:29:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"tips":[[-0.4485243070814877,-2.2197960663087417,0.13788824964248508],[-0.46971961102096527,-2.2737071533736284,0.04336750052779679]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+not ok 2 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 2951.261417
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:1973'
+  failureType: 'testCodeFailure'
+  error: 'stopping must retain a continuous arm pose'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:41:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.4877332167345374},{"joint":"wrist_R","distance":1.423694333097158},{"joint":"finger2-3_R","distance":1.9176703513970264},{"joint":"head","distance":0.00023332584508709247}]
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6647.160292

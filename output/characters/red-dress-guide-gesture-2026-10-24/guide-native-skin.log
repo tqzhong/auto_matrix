@@ -1,0 +1,591 @@
+TAP version 13
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 1 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 3331.113208
+  type: 'test'
+  ...
+# {"tips":[[-0.259003789048369,0.16406955501724443,0.054991613617047984],[-0.264354011628691,0.2019798983164095,0.1288006892543111]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 2 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 2921.575666
+  type: 'test'
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.0011037376665789665},{"joint":"wrist_R","distance":0.0014007564612995992},{"joint":"finger2-3_R","distance":0.0015804398458387975},{"joint":"head","distance":0.00023332584508709247}]
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+not ok 3 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+  ---
+  duration_ms: 15970.378666
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:2689'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   {
+    +     count: 172,
+    +     examples: [
+    +       {
+    +         first: 15131,
+    +         line: 0.004215054996428698,
+    +         second: 15173
+    +       },
+    +       {
+    +         first: 15173,
+    +         line: 0.004215054996428698,
+    +         second: 15131
+    +       },
+    +       {
+    +         first: 12872,
+    +         line: 0.0034304987088944177,
+    +         second: 12857
+    +       },
+    +       {
+    +         first: 12857,
+    +         line: 0.0034304987088944173,
+    +         second: 12872
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 0.55
+    +   },
+    +   {
+    +     count: 424,
+    +     examples: [
+    +       {
+    +         first: 18366,
+    +         line: 0.005237385210796342,
+    +         second: 13562
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.005237385210796341,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 13635,
+    +         line: 0.0050156781304282454,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.0050156781304282454,
+    +         second: 13635
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 0.75
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.005257152810692569,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005257152810692569,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841649341865318,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841649341865318,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13637,
+    +         line: 0.0052575938159906185,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13635,
+    +         line: 0.005257593815990618,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.0048415759220878625,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841575922087861,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1.2
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13637,
+    +         line: 0.005258149181609885,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13635,
+    +         line: 0.005258149181609884,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841541033532997,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841541033532996,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1.35
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.005258577763451763,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005258577763451763,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841515890383275,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841515890383274,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1.9
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.005258583952837909,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005258583952837908,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841500518805477,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841500518805477,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 2.6
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.005258358518328743,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005258358518328743,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841502944854408,
+    +         second: 13562
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.0048415029448544075,
+    +         second: 18366
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 2.8
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.005257628227059009,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005257628227059009,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841531438735731,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.0048415314387357305,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 3
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.0052567204850080245,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005256720485008024,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841601397526698,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841601397526698,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 3.2
+    +   },
+    +   {
+    +     count: 492,
+    +     examples: [
+    +       {
+    +         first: 13635,
+    +         line: 0.005256552945749217,
+    +         second: 13637
+    +       },
+    +       {
+    +         first: 13637,
+    +         line: 0.005256552945749216,
+    +         second: 13635
+    +       },
+    +       {
+    +         first: 13562,
+    +         line: 0.004841684373636863,
+    +         second: 18366
+    +       },
+    +       {
+    +         first: 18366,
+    +         line: 0.004841684373636863,
+    +         second: 13562
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 3.4
+    +   }
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      time: 0.55
+      mesh: 'hand itself'
+      count: 172
+      examples:
+        0:
+          first: 15131
+          second: 15173
+          line: 0.004215054996428698
+        1:
+          first: 15173
+          second: 15131
+          line: 0.004215054996428698
+        2:
+          first: 12872
+          second: 12857
+          line: 0.0034304987088944177
+        3:
+          first: 12857
+          second: 12872
+          line: 0.0034304987088944173
+    1:
+      time: 0.75
+      mesh: 'hand itself'
+      count: 424
+      examples:
+        0:
+          first: 18366
+          second: 13562
+          line: 0.005237385210796342
+        1:
+          first: 13562
+          second: 18366
+          line: 0.005237385210796341
+        2:
+          first: 13635
+          second: 13637
+          line: 0.0050156781304282454
+        3:
+          first: 13637
+          second: 13635
+          line: 0.0050156781304282454
+    2:
+      time: 1
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.005257152810692569
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005257152810692569
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841649341865318
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841649341865318
+    3:
+      time: 1.2
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13637
+          second: 13635
+          line: 0.0052575938159906185
+        1:
+          first: 13635
+          second: 13637
+          line: 0.005257593815990618
+        2:
+          first: 13562
+          second: 18366
+          line: 0.0048415759220878625
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841575922087861
+    4:
+      time: 1.35
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13637
+          second: 13635
+          line: 0.005258149181609885
+        1:
+          first: 13635
+          second: 13637
+          line: 0.005258149181609884
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841541033532997
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841541033532996
+    5:
+      time: 1.9
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.005258577763451763
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005258577763451763
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841515890383275
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841515890383274
+    6:
+      time: 2.6
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.005258583952837909
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005258583952837908
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841500518805477
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841500518805477
+    7:
+      time: 2.8
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.005258358518328743
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005258358518328743
+        2:
+          first: 18366
+          second: 13562
+          line: 0.004841502944854408
+        3:
+          first: 13562
+          second: 18366
+          line: 0.0048415029448544075
+    8:
+      time: 3
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.005257628227059009
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005257628227059009
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841531438735731
+        3:
+          first: 18366
+          second: 13562
+          line: 0.0048415314387357305
+    9:
+      time: 3.2
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.0052567204850080245
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005256720485008024
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841601397526698
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841601397526698
+    10:
+      time: 3.4
+      mesh: 'hand itself'
+      count: 492
+      examples:
+        0:
+          first: 13635
+          second: 13637
+          line: 0.005256552945749217
+        1:
+          first: 13637
+          second: 13635
+          line: 0.005256552945749216
+        2:
+          first: 13562
+          second: 18366
+          line: 0.004841684373636863
+        3:
+          first: 18366
+          second: 13562
+          line: 0.004841684373636863
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:72:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumSwing":52.6059790018205,"failures":[{"time":0.55,"mesh":"hand itself","count":172,"examples":[{"first":15131,"second":15173,"line":0.004215054996428698},{"first":15173,"second":15131,"line":0.004215054996428698},{"first":12872,"second":12857,"line":0.0034304987088944177},{"first":12857,"second":12872,"line":0.0034304987088944173}]},{"time":0.75,"mesh":"hand itself","count":424,"examples":[{"first":18366,"second":13562,"line":0.005237385210796342},{"first":13562,"second":18366,"line":0.005237385210796341},{"first":13635,"second":13637,"line":0.0050156781304282454},{"first":13637,"second":13635,"line":0.0050156781304282454}]},{"time":1,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.005257152810692569},{"first":13637,"second":13635,"line":0.005257152810692569},{"first":13562,"second":18366,"line":0.004841649341865318},{"first":18366,"second":13562,"line":0.004841649341865318}]},{"time":1.2,"mesh":"hand itself","count":492,"examples":[{"first":13637,"second":13635,"line":0.0052575938159906185},{"first":13635,"second":13637,"line":0.005257593815990618},{"first":13562,"second":18366,"line":0.0048415759220878625},{"first":18366,"second":13562,"line":0.004841575922087861}]},{"time":1.35,"mesh":"hand itself","count":492,"examples":[{"first":13637,"second":13635,"line":0.005258149181609885},{"first":13635,"second":13637,"line":0.005258149181609884},{"first":13562,"second":18366,"line":0.004841541033532997},{"first":18366,"second":13562,"line":0.004841541033532996}]},{"time":1.9,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.005258577763451763},{"first":13637,"second":13635,"line":0.005258577763451763},{"first":13562,"second":18366,"line":0.004841515890383275},{"first":18366,"second":13562,"line":0.004841515890383274}]},{"time":2.6,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.005258583952837909},{"first":13637,"second":13635,"line":0.005258583952837908},{"first":13562,"second":18366,"line":0.004841500518805477},{"first":18366,"second":13562,"line":0.004841500518805477}]},{"time":2.8,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.005258358518328743},{"first":13637,"second":13635,"line":0.005258358518328743},{"first":18366,"second":13562,"line":0.004841502944854408},{"first":13562,"second":18366,"line":0.0048415029448544075}]},{"time":3,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.005257628227059009},{"first":13637,"second":13635,"line":0.005257628227059009},{"first":13562,"second":18366,"line":0.004841531438735731},{"first":18366,"second":13562,"line":0.0048415314387357305}]},{"time":3.2,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.0052567204850080245},{"first":13637,"second":13635,"line":0.005256720485008024},{"first":13562,"second":18366,"line":0.004841601397526698},{"first":18366,"second":13562,"line":0.004841601397526698}]},{"time":3.4,"mesh":"hand itself","count":492,"examples":[{"first":13635,"second":13637,"line":0.005256552945749217},{"first":13637,"second":13635,"line":0.005256552945749216},{"first":13562,"second":18366,"line":0.004841684373636863},{"first":18366,"second":13562,"line":0.004841684373636863}]}]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+ok 4 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+  ---
+  duration_ms: 5949.527958
+  type: 'test'
+  ...
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+ok 5 - the full guide arm motion is continuous at 10ms sampling intervals
+  ---
+  duration_ms: 3286.658667
+  type: 'test'
+  ...
+# {"maximumStep":0.05776878219434632,"largestAt":0.84,"largestJoint":"finger2-3_R","samples":531}
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32165.498083

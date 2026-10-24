@@ -1,0 +1,411 @@
+TAP version 13
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 1 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 6284.593917
+  type: 'test'
+  ...
+# {"tips":[[-0.2590081735181292,0.16406968917571446,0.054988015638534615],[-0.2926468190581491,0.20188483370906135,0.12089889812432505]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 2 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 7258.282333
+  type: 'test'
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.0011037376665789665},{"joint":"wrist_R","distance":0.0014007564612995992},{"joint":"finger2-3_R","distance":0.0015804398458387975},{"joint":"head","distance":0.00023332584508709247}]
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+not ok 3 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+  ---
+  duration_ms: 33910.054459
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:2689'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   {
+    +     count: 14,
+    +     examples: [
+    +       {
+    +         first: 19731,
+    +         line: 0.003057336309200038,
+    +         second: 19769
+    +       },
+    +       {
+    +         first: 19769,
+    +         line: 0.003057336309200038,
+    +         second: 19731
+    +       },
+    +       {
+    +         first: 19730,
+    +         line: 0.0010838978217932497,
+    +         second: 19774
+    +       },
+    +       {
+    +         first: 19774,
+    +         line: 0.0010838978217932497,
+    +         second: 19730
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1.2
+    +   },
+    +   {
+    +     count: 28,
+    +     examples: [
+    +       {
+    +         first: 19769,
+    +         line: 0.0037003264556712805,
+    +         second: 20732
+    +       },
+    +       {
+    +         first: 20732,
+    +         line: 0.0037003264556712805,
+    +         second: 19769
+    +       },
+    +       {
+    +         first: 12683,
+    +         line: 0.002674073051535719,
+    +         second: 20732
+    +       },
+    +       {
+    +         first: 20732,
+    +         line: 0.0026740730515357187,
+    +         second: 12683
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1.35
+    +   },
+    +   {
+    +     count: 6,
+    +     examples: [
+    +       {
+    +         first: 22580,
+    +         line: 0.011182643678979958,
+    +         second: 9954
+    +       },
+    +       {
+    +         first: 22583,
+    +         line: 0.009362356171975492,
+    +         second: 9945
+    +       },
+    +       {
+    +         first: 22582,
+    +         line: 0.00436821523647766,
+    +         second: 9884
+    +       },
+    +       {
+    +         first: 22582,
+    +         line: 0.003928613673201409,
+    +         second: 9945
+    +       }
+    +     ],
+    +     mesh: 'Tailored_coat_upper',
+    +     time: 1.35
+    +   },
+    +   {
+    +     count: 28,
+    +     examples: [
+    +       {
+    +         first: 19769,
+    +         line: 0.0036999341598125987,
+    +         second: 20732
+    +       },
+    +       {
+    +         first: 20732,
+    +         line: 0.0036999341598125987,
+    +         second: 19769
+    +       },
+    +       {
+    +         first: 12683,
+    +         line: 0.0026740380073799917,
+    +         second: 20732
+    +       },
+    +       {
+    +         first: 20732,
+    +         line: 0.0026740380073799917,
+    +         second: 12683
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 1.9
+    +   },
+    +   {
+    +     count: 7,
+    +     examples: [
+    +       {
+    +         first: 22580,
+    +         line: 0.011948017889334011,
+    +         second: 9954
+    +       },
+    +       {
+    +         first: 22583,
+    +         line: 0.009475546699532277,
+    +         second: 9945
+    +       },
+    +       {
+    +         first: 22582,
+    +         line: 0.0035495193047451867,
+    +         second: 9884
+    +       },
+    +       {
+    +         first: 22582,
+    +         line: 0.003143270286791476,
+    +         second: 9945
+    +       }
+    +     ],
+    +     mesh: 'Tailored_coat_upper',
+    +     time: 1.9
+    +   },
+    +   {
+    +     count: 28,
+    +     examples: [
+    +       {
+    +         first: 19769,
+    +         line: 0.003699385512987394,
+    +         second: 20732
+    +       },
+    +       {
+    +         first: 20732,
+    +         line: 0.003699385512987394,
+    +         second: 19769
+    +       },
+    +       {
+    +         first: 12683,
+    +         line: 0.002674013018857167,
+    +         second: 20732
+    +       },
+    +       {
+    +         first: 20732,
+    +         line: 0.002674013018857167,
+    +         second: 12683
+    +       }
+    +     ],
+    +     mesh: 'hand itself',
+    +     time: 2.6
+    +   },
+    +   {
+    +     count: 7,
+    +     examples: [
+    +       {
+    +         first: 22580,
+    +         line: 0.012227194596122239,
+    +         second: 9954
+    +       },
+    +       {
+    +         first: 22583,
+    +         line: 0.009697636981488886,
+    +         second: 9945
+    +       },
+    +       {
+    +         first: 22583,
+    +         line: 0.003360478772687388,
+    +         second: 9884
+    +       },
+    +       {
+    +         first: 22580,
+    +         line: 0.0021395140959997332,
+    +         second: 9819
+    +       }
+    +     ],
+    +     mesh: 'Tailored_coat_upper',
+    +     time: 2.6
+    +   }
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0:
+      time: 1.2
+      mesh: 'hand itself'
+      count: 14
+      examples:
+        0:
+          first: 19731
+          second: 19769
+          line: 0.003057336309200038
+        1:
+          first: 19769
+          second: 19731
+          line: 0.003057336309200038
+        2:
+          first: 19730
+          second: 19774
+          line: 0.0010838978217932497
+        3:
+          first: 19774
+          second: 19730
+          line: 0.0010838978217932497
+    1:
+      time: 1.35
+      mesh: 'hand itself'
+      count: 28
+      examples:
+        0:
+          first: 19769
+          second: 20732
+          line: 0.0037003264556712805
+        1:
+          first: 20732
+          second: 19769
+          line: 0.0037003264556712805
+        2:
+          first: 12683
+          second: 20732
+          line: 0.002674073051535719
+        3:
+          first: 20732
+          second: 12683
+          line: 0.0026740730515357187
+    2:
+      time: 1.35
+      mesh: 'Tailored_coat_upper'
+      count: 6
+      examples:
+        0:
+          first: 22580
+          second: 9954
+          line: 0.011182643678979958
+        1:
+          first: 22583
+          second: 9945
+          line: 0.009362356171975492
+        2:
+          first: 22582
+          second: 9884
+          line: 0.00436821523647766
+        3:
+          first: 22582
+          second: 9945
+          line: 0.003928613673201409
+    3:
+      time: 1.9
+      mesh: 'hand itself'
+      count: 28
+      examples:
+        0:
+          first: 19769
+          second: 20732
+          line: 0.0036999341598125987
+        1:
+          first: 20732
+          second: 19769
+          line: 0.0036999341598125987
+        2:
+          first: 12683
+          second: 20732
+          line: 0.0026740380073799917
+        3:
+          first: 20732
+          second: 12683
+          line: 0.0026740380073799917
+    4:
+      time: 1.9
+      mesh: 'Tailored_coat_upper'
+      count: 7
+      examples:
+        0:
+          first: 22580
+          second: 9954
+          line: 0.011948017889334011
+        1:
+          first: 22583
+          second: 9945
+          line: 0.009475546699532277
+        2:
+          first: 22582
+          second: 9884
+          line: 0.0035495193047451867
+        3:
+          first: 22582
+          second: 9945
+          line: 0.003143270286791476
+    5:
+      time: 2.6
+      mesh: 'hand itself'
+      count: 28
+      examples:
+        0:
+          first: 19769
+          second: 20732
+          line: 0.003699385512987394
+        1:
+          first: 20732
+          second: 19769
+          line: 0.003699385512987394
+        2:
+          first: 12683
+          second: 20732
+          line: 0.002674013018857167
+        3:
+          first: 20732
+          second: 12683
+          line: 0.002674013018857167
+    6:
+      time: 2.6
+      mesh: 'Tailored_coat_upper'
+      count: 7
+      examples:
+        0:
+          first: 22580
+          second: 9954
+          line: 0.012227194596122239
+        1:
+          first: 22583
+          second: 9945
+          line: 0.009697636981488886
+        2:
+          first: 22583
+          second: 9884
+          line: 0.003360478772687388
+        3:
+          first: 22580
+          second: 9819
+          line: 0.0021395140959997332
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:72:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumSwing":51.62458841058246,"failures":[{"time":1.2,"mesh":"hand itself","count":14,"examples":[{"first":19731,"second":19769,"line":0.003057336309200038},{"first":19769,"second":19731,"line":0.003057336309200038},{"first":19730,"second":19774,"line":0.0010838978217932497},{"first":19774,"second":19730,"line":0.0010838978217932497}]},{"time":1.35,"mesh":"hand itself","count":28,"examples":[{"first":19769,"second":20732,"line":0.0037003264556712805},{"first":20732,"second":19769,"line":0.0037003264556712805},{"first":12683,"second":20732,"line":0.002674073051535719},{"first":20732,"second":12683,"line":0.0026740730515357187}]},{"time":1.35,"mesh":"Tailored_coat_upper","count":6,"examples":[{"first":22580,"second":9954,"line":0.011182643678979958},{"first":22583,"second":9945,"line":0.009362356171975492},{"first":22582,"second":9884,"line":0.00436821523647766},{"first":22582,"second":9945,"line":0.003928613673201409}]},{"time":1.9,"mesh":"hand itself","count":28,"examples":[{"first":19769,"second":20732,"line":0.0036999341598125987},{"first":20732,"second":19769,"line":0.0036999341598125987},{"first":12683,"second":20732,"line":0.0026740380073799917},{"first":20732,"second":12683,"line":0.0026740380073799917}]},{"time":1.9,"mesh":"Tailored_coat_upper","count":7,"examples":[{"first":22580,"second":9954,"line":0.011948017889334011},{"first":22583,"second":9945,"line":0.009475546699532277},{"first":22582,"second":9884,"line":0.0035495193047451867},{"first":22582,"second":9945,"line":0.003143270286791476}]},{"time":2.6,"mesh":"hand itself","count":28,"examples":[{"first":19769,"second":20732,"line":0.003699385512987394},{"first":20732,"second":19769,"line":0.003699385512987394},{"first":12683,"second":20732,"line":0.002674013018857167},{"first":20732,"second":12683,"line":0.002674013018857167}]},{"time":2.6,"mesh":"Tailored_coat_upper","count":7,"examples":[{"first":22580,"second":9954,"line":0.012227194596122239},{"first":22583,"second":9945,"line":0.009697636981488886},{"first":22583,"second":9884,"line":0.003360478772687388},{"first":22580,"second":9819,"line":0.0021395140959997332}]}]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+ok 4 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+  ---
+  duration_ms: 12997.157916
+  type: 'test'
+  ...
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+not ok 5 - the full guide arm motion is continuous at 10ms sampling intervals
+  ---
+  duration_ms: 10129.798291
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:5670'
+  failureType: 'testCodeFailure'
+  error: 'arm displacement in 10ms: 0.08335994255256705'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:113:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumStep":0.08335994255256705,"largestAt":3,"largestJoint":"finger2-3_R","samples":531}
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 72733.931917

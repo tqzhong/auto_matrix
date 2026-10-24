@@ -1,0 +1,172 @@
+related-final.log
+Full local log: 2393486 bytes, SHA256 b65b6301ecc3a77eeda81058ed1172ec0459fb2eb2603fa086e28ed820070cdb
+Summary below omits large raw attribute arrays; the complete logs remain in this directory locally.
+# Subtest: neo: the complete fighting hands stay closed surfaces throughout a full grip
+ok 1 - neo: the complete fighting hands stay closed surfaces throughout a full grip
+# Subtest: trinity: the complete fighting hands stay closed surfaces throughout a full grip
+ok 2 - trinity: the complete fighting hands stay closed surfaces throughout a full grip
+# Subtest: smith: the complete fighting hands stay closed surfaces throughout a full grip
+ok 3 - smith: the complete fighting hands stay closed surfaces throughout a full grip
+# Subtest: morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+ok 4 - morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+# Subtest: a saved combat hand restores the same skin after unrelated movement and a release
+ok 5 - a saved combat hand restores the same skin after unrelated movement and a release
+# Subtest: a phone gesture restores the original right-hand binding after a fighting grip
+ok 6 - a phone gesture restores the original right-hand binding after a fighting grip
+# Subtest: partially posed prop fingers match the original gesture without combat posing
+ok 7 - partially posed prop fingers match the original gesture without combat posing
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+ok 8 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+# Subtest: the zero mirror tint from player controls keeps ordinary fighting hands enabled
+ok 9 - the zero mirror tint from player controls keeps ordinary fighting hands enabled
+# Subtest: neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 10 - neo/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+# {"id":"neo","choice":"red","probes":851,"maximumSkinStep":0.04310951836699213,"maximumTurn":0.07922023623989372}
+# Subtest: neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 11 - neo/blue: the saved pill gesture keeps forearm skin continuous through the palm turn
+# {"id":"neo","choice":"blue","probes":851,"maximumSkinStep":0.04310951836782589,"maximumTurn":0.07922023623965821}
+# Subtest: morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+ok 12 - morpheus/red: the saved pill gesture keeps forearm skin continuous through the palm turn
+# {"id":"morpheus","choice":"red","probes":1696,"maximumSkinStep":0.015731259527312476,"maximumTurn":0.03694082767215263}
+# Subtest: late wrist contact corrections update the forearm in the same frame
+ok 13 - late wrist contact corrections update the forearm in the same frame
+# Subtest: shared hero assets retain neutral geometry, hand targets and independent restored forearms
+not ok 14 - shared hero assets retain neutral geometry, hand targets and independent restored forearms
+# Subtest: neo: turning the palm preserves the actual forearm and cuff cross-section
+ok 15 - neo: turning the palm preserves the actual forearm and cuff cross-section
+# {"id":"neo","sampleCount":8775,"minimumRadius":0.8930729586403154}
+# Subtest: trinity: turning the palm preserves the actual forearm and cuff cross-section
+ok 16 - trinity: turning the palm preserves the actual forearm and cuff cross-section
+# {"id":"trinity","sampleCount":5386,"minimumRadius":0.8930729694064649}
+# Subtest: smith: turning the palm preserves the actual forearm and cuff cross-section
+ok 17 - smith: turning the palm preserves the actual forearm and cuff cross-section
+# {"id":"smith","sampleCount":2455,"minimumRadius":0.893072990680801}
+# Subtest: morpheus: turning the palm preserves the actual forearm and cuff cross-section
+ok 18 - morpheus: turning the palm preserves the actual forearm and cuff cross-section
+# {"id":"morpheus","sampleCount":4948,"minimumRadius":0.8930728137982399}
+# Subtest: Smith aims his real training pistol at Neo and keeps the actual hand outside its solid parts
+ok 19 - Smith aims his real training pistol at Neo and keeps the actual hand outside its solid parts
+# {"self":{"count":0,"examples":[]},"prop":{"count":0,"examples":[]},"fingers":[{"digit":1,"points":[[0.02948335861879059,-0.09494546603400522,0.07293350302257284],[0.07908396224388525,-0.04067908141132648,0.11554725890518647],[0.17499999999995453,-0.047002060538943624,0.08669080444629529],[0.17524241821731068,-0.10059920403844182,0.06062490915396985]],"PIP":68.0732716899976,"DIP":79.26357039710912,"curvature":0.8607979340993214},{"digit":2,"points":[[0.04034552804455416,-0.27212207206048333,0.09583861852251463],[0.07192249062268274,-0.3356895571350833,0.10235138837812041],[0.13246643854540707,-0.3534938554857945,0.11483861852251565],[0.1605633982424411,-0.3115854605325898,0.11481811082073505]],"PIP":47.03881257086719,"DIP":72.89478119790108,"curvature":0.6945488998990004},{"digit":3,"points":[[0.007250991661521766,-0.27869290309445205,0.03184773483423253],[0.06353577365621277,-0.3538996214128929,0.03363756326232714],[0.13303909763021693,-0.32766008141970815,0.03584773483423387],[0.1601372292428242,-0.28677961126065316,0.035846069179184994]],"PIP":73.84831588037653,"DIP":35.81334849002703,"curvature":0.5617959322810594},{"digit":4,"points":[[-0.008920460167018973,-0.26807054251366935,-0.020402037150021535],[0.04748029600955306,-0.32813158728004055,-0.020402037150021535],[0.11531374518312987,-0.32501510172824055,-0.020402037150020647],[0.14505934933997675,-0.2798428425813081,-0.020231410158987967]],"PIP":49.43066327597856,"DIP":54.00509231909895,"curvature":0.6145800748814164},{"digit":5,"points":[[-0.009380488425222211,-0.24821293256172794,-0.07606078945312866],[0.03742842032193039,-0.2825133210271815,-0.07606078945312866],[0.07770137304737545,-0.29708820856831153,-0.07606078945312866],[0.10086153720582573,-0.2624246357470552,-0.07619257354152173]],"PIP":16.337698308806463,"DIP":76.14687349761277,"curvature":0.2731145058701719}],"lineMiss":0.07974973996777011}
+# Subtest: the red-dress woman acknowledges Neo while passing and restores the same saved gaze
+ok 20 - the red-dress woman acknowledges Neo while passing and restores the same saved gaze
+# Subtest: the halter follows the actual neck and collar through the passing glance
+ok 21 - the halter follows the actual neck and collar through the passing glance
+# {"hits":19578,"total":19578,"minimum":0.0052367750728269935,"maximum":0.20318530340690139,"box":{"isBox3":true,"min":{"x":-0.5934092998504639,"y":0.002229697536677122,"z":-0.24240894615650177},"max":{"x":0.5936071276664734,"y":4.425199508666992,"z":0.4930374324321747}},"scale":[1,1,1]}
+# Subtest: the frozen Smith grip restores after leaving training and after a cold character load
+ok 22 - the frozen Smith grip restores after leaving training and after a cold character load
+# Subtest: all red-dress texture dependencies are present in the shipped public assets
+ok 23 - all red-dress texture dependencies are present in the shipped public assets
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+ok 24 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+ok 25 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+# Subtest: the actual satin covers the torso and both thighs during the saved training walk
+ok 26 - the actual satin covers the torso and both thighs during the saved training walk
+# Subtest: red pumps have real heels and their complete surfaces remain supported throughout the walk
+ok 27 - red pumps have real heels and their complete surfaces remain supported throughout the walk
+# Subtest: the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+ok 28 - the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+# Subtest: the walking hands keep continuous joints and relaxed anatomical fingertip directions
+ok 29 - the walking hands keep continuous joints and relaxed anatomical fingertip directions
+# {"sampledClocks":531,"largestStep":0.023115400499758364,"largestBend":0.4883888504949155}
+# Subtest: the halter straps lie on the collar and neck instead of floating in front of them
+ok 30 - the halter straps lie on the collar and neck instead of floating in front of them
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 31 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+# {"tips":[[-0.2590145829193075,0.16406968917571288,0.054980376914724204],[-0.26435356067790167,0.20192177962311583,0.1287826133896936]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 32 - the guide does not snap his arm when the player notices the woman and stops walking
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+ok 33 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+# {"maximumSwing":52.6059790018205,"failures":[]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+ok 34 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+ok 35 - the full guide arm motion is continuous at 10ms sampling intervals
+# {"maximumStep":0.057394037500890574,"largestAt":0.84,"largestJoint":"finger2-3_R","samples":531}
+# tests 35
+# pass 34
+# fail 1
+# duration_ms 364993.199958
+First 35 assertion lines (explicitly truncated):
+  error: |-
+    no asset reshaping or facial changes
+    + actual - expected
+    ... Skipped lines
+
+      Float32Array(34620) [
+        -0.21203945577144623,
+        3.787510395050049,
+        0.08515851944684982,
+        -0.20875109732151031,
+    ...
+        0.14178842306137085,
+    +   -0.4949554204940796,
+    +   2.4126803874969482,
+    +   -0.011476934887468815,
+    -   -0.494956374168396,
+    -   2.412656307220459,
+    -   -0.01147573534399271,
+        -0.4877868890762329,
+        2.452380657196045,
+        -0.014871934428811073,
+        -0.473404198884964,
+        2.4547669887542725,
+    ...
+        0.008827961049973965,
+    +   -0.5994846820831299,
+    +   2.414823055267334,
+    +   0.17346011102199554,
+    -   -0.5995328426361084,
+    -   2.413618326187134,
+    -   0.17352034151554108,
+        -0.5996198058128357,
+        2.4494712352752686,
+        0.17544367909431458,
+        -0.6140130758285522,
+
+forearm-baseline-failure.log
+Full local log: 2381891 bytes, SHA256 3433932e356180ac078976880cd0fd090528b081a528111308f357dcd367de23
+Summary below omits large raw attribute arrays; the complete logs remain in this directory locally.
+# Subtest: shared hero assets retain neutral geometry, hand targets and independent restored forearms
+not ok 1 - shared hero assets retain neutral geometry, hand targets and independent restored forearms
+# tests 1
+# pass 0
+# fail 1
+# duration_ms 10493.96975
+First 35 assertion lines (explicitly truncated):
+  error: |-
+    no asset reshaping or facial changes
+    + actual - expected
+    ... Skipped lines
+
+      Float32Array(34620) [
+        -0.21203945577144623,
+        3.787510395050049,
+        0.08515851944684982,
+        -0.20875109732151031,
+    ...
+        0.14178842306137085,
+    +   -0.4949554204940796,
+    +   2.4126803874969482,
+    +   -0.011476934887468815,
+    -   -0.494956374168396,
+    -   2.412656307220459,
+    -   -0.01147573534399271,
+        -0.4877868890762329,
+        2.452380657196045,
+        -0.014871934428811073,
+        -0.473404198884964,
+        2.4547669887542725,
+    ...
+        0.008827961049973965,
+    +   -0.5994846820831299,
+    +   2.414823055267334,
+    +   0.17346011102199554,
+    -   -0.5995328426361084,
+    -   2.413618326187134,
+    -   0.17352034151554108,
+        -0.5996198058128357,
+        2.4494712352752686,
+        0.17544367909431458,
+        -0.6140130758285522,

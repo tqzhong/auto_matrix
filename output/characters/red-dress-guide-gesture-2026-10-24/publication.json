@@ -1,0 +1,18 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-C3De-ski.js",
+  "sha256": "62b1dbd2d667f2f3253326526568be77b326d9fe08cc756d41c5976f6dd6a30d",
+  "bundleBytes": 3794042,
+  "javascriptDeltaBytes": 2979,
+  "newAssetBytes": 0,
+  "cssIdentical": true,
+  "backendAndSharedFilesUnchanged": 800,
+  "protectedFilesUnchanged": 11,
+  "mainMemories": 85,
+  "mainTickBefore": 48988,
+  "mainTickAfter": 48988,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

@@ -1,0 +1,81 @@
+TAP version 13
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 1 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 3993.557459
+  type: 'test'
+  ...
+# {"tips":[[-0.21900817350285903,0.1640696891757127,0.05498801563853117],[-0.2526468190682833,0.20188483370906024,0.12089889812432177]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 2 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 3058.636292
+  type: 'test'
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.001121636245977287},{"joint":"wrist_R","distance":0.0014309737101154032},{"joint":"finger2-3_R","distance":0.0015755406791213846},{"joint":"head","distance":0.00023332584508709247}]
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+not ok 3 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+  ---
+  duration_ms: 16755.535125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:2689'
+  failureType: 'testCodeFailure'
+  error: 'the wrist bends 118.07085230626983 degrees'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:71:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumSwing":118.07085230626983,"failures":[{"time":0,"mesh":"","count":168,"examples":[{"first":14014,"second":743,"line":0.006281121266179852},{"first":13967,"second":744,"line":0.005986081776903613},{"first":13554,"second":742,"line":0.004485818849328994},{"first":12966,"second":742,"line":0.004330825342245119}]},{"time":0.4,"mesh":"","count":289,"examples":[{"first":9966,"second":736,"line":0.010160110910179954},{"first":16789,"second":745,"line":0.006485327500011327},{"first":12849,"second":749,"line":0.005295455370696386},{"first":13566,"second":671,"line":0.005191931990294172}]},{"time":0.4,"mesh":"Tailored_trousers","count":231,"examples":[{"first":16155,"second":1493,"line":0.0069949865879128225},{"first":12061,"second":1556,"line":0.006474501868442787},{"first":15745,"second":1494,"line":0.006306110791091153},{"first":16016,"second":1493,"line":0.0061688902121513865}]},{"time":0.55,"mesh":"","count":256,"examples":[{"first":18010,"second":499,"line":0.007465099544110682},{"first":12527,"second":499,"line":0.0074532802354197805},{"first":18015,"second":499,"line":0.006461298001904836},{"first":18381,"second":505,"line":0.006271432336402485}]},{"time":0.55,"mesh":"Tailored_trousers","count":234,"examples":[{"first":10639,"second":1491,"line":0.006886171247293035},{"first":17682,"second":1491,"line":0.006639918443435174},{"first":10940,"second":1490,"line":0.006143062258717974},{"first":10000,"second":1493,"line":0.005798549891056295}]},{"time":0.55,"mesh":"Tailored_coat_upper","count":30,"examples":[{"first":22596,"second":9855,"line":0.0074297544810261},{"first":23036,"second":9957,"line":0.00506730437853465},{"first":23039,"second":9957,"line":0.0037751036561872106},{"first":23039,"second":9896,"line":0.003754532057622071}]},{"time":0.75,"mesh":"Tailored_coat_upper","count":85,"examples":[{"first":22128,"second":7056,"line":0.009068390244883415},{"first":22136,"second":7083,"line":0.008407963224497486},{"first":23032,"second":7193,"line":0.007236608254674333},{"first":21079,"second":7030,"line":0.006987800970193586}]},{"time":1,"mesh":"Anatomical_head_and_hands","count":122,"examples":[{"first":19187,"second":8629,"line":0.008055254122882296},{"first":16206,"second":9060,"line":0.0074158419103618495},{"first":16202,"second":9060,"line":0.007311122132807896},{"first":19894,"second":8639,"line":0.006817489980558414}]},{"time":1,"mesh":"Black_crew_neck","count":238,"examples":[{"first":18881,"second":267,"line":0.010855518929930572},{"first":18968,"second":262,"line":0.01052536935338763},{"first":18452,"second":316,"line":0.006332065647577895},{"first":16170,"second":852,"line":0.006267637329219045}]},{"time":1,"mesh":"Tailored_coat_upper","count":662,"examples":[{"first":22511,"second":7034,"line":0.011459690485834428},{"first":22510,"second":7034,"line":0.010620104491185976},{"first":13739,"second":1447,"line":0.010203652245945135},{"first":22581,"second":9834,"line":0.0101199228466561}]},{"time":1,"mesh":"Anatomical_wrist_skin","count":23,"examples":[{"first":21093,"second":682,"line":0.005901232890727633},{"first":21090,"second":682,"line":0.005103651942944184},{"first":21088,"second":664,"line":0.004861948572058937},{"first":22156,"second":575,"line":0.004159753438474611}]},{"time":1.2,"mesh":"hand itself","count":14,"examples":[{"first":19731,"second":19769,"line":0.0030573560303895474},{"first":19769,"second":19731,"line":0.0030573560303895474},{"first":19730,"second":19774,"line":0.0010838780133702883},{"first":19774,"second":19730,"line":0.0010838780133702879}]},{"time":1.2,"mesh":"Anatomical_head_and_hands","count":80,"examples":[{"first":16120,"second":4353,"line":0.006705564146255144},{"first":16254,"second":4383,"line":0.006243931089375205},{"first":16076,"second":4352,"line":0.006174837770360754},{"first":16300,"second":4395,"line":0.005182602875222537}]},{"time":1.2,"mesh":"Tailored_coat_upper","count":262,"examples":[{"first":20621,"second":688,"line":0.015040918966898473},{"first":22497,"second":675,"line":0.01371435729266239},{"first":22914,"second":688,"line":0.013483428638099312},{"first":22717,"second":682,"line":0.013420124880504215}]},{"time":1.35,"mesh":"hand itself","count":28,"examples":[{"first":19769,"second":20732,"line":0.0037003295095450113},{"first":20732,"second":19769,"line":0.0037003295095450113},{"first":12683,"second":20732,"line":0.002674072428497628},{"first":20732,"second":12683,"line":0.002674072428497628}]},{"time":1.35,"mesh":"Anatomical_head_and_hands","count":214,"examples":[{"first":20265,"second":3999,"line":0.006647494834069466},{"first":20196,"second":3997,"line":0.006565733437085699},{"first":15953,"second":4712,"line":0.006302157345729453},{"first":12728,"second":25686,"line":0.00595649228872969}]},{"time":1.35,"mesh":"Tailored_coat_upper","count":10,"examples":[{"first":22580,"second":9819,"line":0.009311404928228758},{"first":22589,"second":9884,"line":0.007962920382667707},{"first":22582,"second":9945,"line":0.006823183860219272},{"first":22583,"second":9945,"line":0.006571857172237516}]},{"time":1.9,"mesh":"hand itself","count":28,"examples":[{"first":19769,"second":20732,"line":0.0036999372125824945},{"first":20732,"second":19769,"line":0.0036999372125824945},{"first":20732,"second":12683,"line":0.002674037384335419},{"first":12683,"second":20732,"line":0.0026740373843354183}]},{"time":1.9,"mesh":"Anatomical_head_and_hands","count":214,"examples":[{"first":20265,"second":3999,"line":0.006680970414473892},{"first":20196,"second":3997,"line":0.006586321259921068},{"first":15953,"second":4712,"line":0.006361115618427598},{"first":12728,"second":25686,"line":0.005956492288731019}]},{"time":1.9,"mesh":"Tailored_coat_upper","count":10,"examples":[{"first":22580,"second":9819,"line":0.008417417689165181},{"first":22589,"second":9884,"line":0.007995624157302336},{"first":22582,"second":9945,"line":0.007751466582698313},{"first":22583,"second":9945,"line":0.0070144567805011816}]},{"time":2.6,"mesh":"hand itself","count":28,"examples":[{"first":19769,"second":20732,"line":0.0036993885641658664},{"first":20732,"second":19769,"line":0.0036993885641658664},{"first":12683,"second":20732,"line":0.0026740123958123338},{"first":20732,"second":12683,"line":0.0026740123958123333}]},{"time":2.6,"mesh":"Anatomical_head_and_hands","count":214,"examples":[{"first":20265,"second":3999,"line":0.006695620269775568},{"first":20196,"second":3997,"line":0.006594183739417963},{"first":15953,"second":4712,"line":0.006371472746361715},{"first":12728,"second":25686,"line":0.005956492288731458}]},{"time":2.6,"mesh":"Tailored_coat_upper","count":10,"examples":[{"first":22582,"second":9945,"line":0.009481526600129974},{"first":22580,"second":9819,"line":0.00850076299813846},{"first":22589,"second":9884,"line":0.007948933013434321},{"first":22583,"second":9945,"line":0.006944375107109843}]},{"time":2.8,"mesh":"Anatomical_head_and_hands","count":150,"examples":[{"first":22686,"second":22097,"line":0.012036093690810082},{"first":22455,"second":9100,"line":0.010502596875072087},{"first":22997,"second":8737,"line":0.010050582182566905},{"first":20722,"second":9033,"line":0.00988121125762712}]},{"time":2.8,"mesh":"Black_crew_neck","count":165,"examples":[{"first":22717,"second":2589,"line":0.01143246932538071},{"first":22721,"second":2596,"line":0.01120099389282383},{"first":22677,"second":2593,"line":0.009855638072933706},{"first":22684,"second":2596,"line":0.009522612964090352}]},{"time":2.8,"mesh":"Tailored_coat_upper","count":316,"examples":[{"first":20569,"second":691,"line":0.014770148952623862},{"first":22483,"second":5023,"line":0.010560761664952414},{"first":20598,"second":696,"line":0.010003518409179},{"first":22580,"second":1629,"line":0.009988848327398981}]},{"time":3,"mesh":"Tailored_coat_upper","count":162,"examples":[{"first":22865,"second":5370,"line":0.014854975980066392},{"first":20988,"second":5385,"line":0.013439298998359389},{"first":23042,"second":5358,"line":0.01261530435245297},{"first":22657,"second":5394,"line":0.012423977384094571}]},{"time":3,"mesh":"Anatomical_wrist_skin","count":12,"examples":[{"first":21080,"second":578,"line":0.006676408399050257},{"first":21091,"second":659,"line":0.0041203732086743435},{"first":21088,"second":659,"line":0.003985401100136083},{"first":21083,"second":584,"line":0.003749052073695887}]},{"time":3.2,"mesh":"","count":252,"examples":[{"first":18010,"second":179,"line":0.009073092928864254},{"first":18014,"second":179,"line":0.006869837027467939},{"first":12522,"second":181,"line":0.006569938361546752},{"first":12049,"second":260,"line":0.006011581643825477}]},{"time":3.2,"mesh":"Tailored_trousers","count":241,"examples":[{"first":11980,"second":2064,"line":0.008480843686309313},{"first":12940,"second":2067,"line":0.005805872826749046},{"first":18072,"second":2065,"line":0.00528467765058077},{"first":12079,"second":2065,"line":0.005192592538363508}]},{"time":3.2,"mesh":"Tailored_coat_upper","count":63,"examples":[{"first":20564,"second":11108,"line":0.010332719367771886},{"first":23036,"second":9623,"line":0.008351892701936085},{"first":21077,"second":9976,"line":0.007864044693936078},{"first":23030,"second":9815,"line":0.007851855706134168}]},{"time":3.4,"mesh":"","count":337,"examples":[{"first":22593,"second":356,"line":0.01733455762863178},{"first":20616,"second":355,"line":0.015500679696206963},{"first":22499,"second":434,"line":0.014395463104156406},{"first":22496,"second":434,"line":0.013071866475060801}]},{"time":3.4,"mesh":"Tailored_trousers","count":108,"examples":[{"first":15749,"second":1872,"line":0.007745333583022023},{"first":15745,"second":1871,"line":0.007267492059501098},{"first":15931,"second":1872,"line":0.006590784046966572},{"first":20151,"second":1873,"line":0.006083977907956439}]},{"time":5.3,"mesh":"","count":168,"examples":[{"first":14014,"second":743,"line":0.00628065937040001},{"first":13967,"second":744,"line":0.0059865224765184395},{"first":13554,"second":742,"line":0.004485801222410934},{"first":12966,"second":742,"line":0.004330755709400541}]}]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+not ok 4 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+  ---
+  duration_ms: 8455.268125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:4309'
+  failureType: 'testCodeFailure'
+  error: 'Maximum call stack size exceeded'
+  code: 'ERR_TEST_FAILURE'
+  name: 'RangeError'
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:84:83)
+    SkinnedMesh.traverseVisible (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7777:3)
+    Group.traverseVisible (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7783:18)
+    snapshots (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:79:16)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:90:37)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+not ok 5 - the full guide arm motion is continuous at 10ms sampling intervals
+  ---
+  duration_ms: 9698.380542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:1:5660'
+  failureType: 'testCodeFailure'
+  error: 'arm displacement in 10ms: 0.17593554184627558'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-guide-gesture-2026-10-24/candidate-release/tests/red-dress-guide.test.mts:113:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumStep":0.17593554184627558,"samples":531}
+1..5
+# tests 5
+# suites 0
+# pass 2
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 42587.825583

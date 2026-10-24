@@ -1,0 +1,6 @@
+{
+  "sameAssertionOutput": true,
+  "errorHash": "bafea35cc005d8315b50241c732a44c09e5ceddc763cdc26429fe74c26c10866",
+  "base": "85d93703df7c807c6214aa324135cbd1457cfdd0",
+  "test": "shared hero assets retain neutral geometry, hand targets and independent restored forearms"
+}

@@ -1,0 +1,26 @@
+{
+  "base": "85d93703df7c807c6214aa324135cbd1457cfdd0",
+  "inputs": 1243,
+  "changed": {
+    "packages/client/src/agents/FightingHands.ts": "fc1bec4931ba516fb92191f6aa22a233f6fb37c9308502efe453ee76d52d7376",
+    "packages/client/src/agents/HeroModel.ts": "a23efaf299ea7292df430b8584de68e0e7f4f2e479a629233461268c5b8a8653",
+    "packages/client/src/agents/RedDressPerformance.ts": "0615222e0bc1591df9c002d29a636d9e795c694325480dbe80fb619743272a8b",
+    "tests/red-dress-guide.test.mts": "b41ed1130b200607e38a43948cb5ef02777ff8f50eff8d7b05730f023159042b"
+  },
+  "protectedFiles": {
+    "packages/client/src/agents/AgentRenderer.ts": true,
+    "packages/client/src/agents/CharacterMotion.ts": true,
+    "packages/server/src/player/PlayerController.ts": true,
+    "packages/server/src/story/FilmStorySystem.ts": true,
+    "packages/shared/src/constants/ambush-escape.ts": true,
+    "tests/ambush-wardrobe-flow.test.mts": true,
+    "tests/ambush-coat-surface.test.mts": true,
+    "tests/ambush-doff-flow.test.mts": true,
+    "tests/ambush-doff-renderer.test.mts": true,
+    "tests/ambush-shirt-contact.test.mts": true,
+    "tests/ambush-waist-gait.test.mts": true
+  },
+  "unchangedCompiledFiles": 800,
+  "newDependencies": false,
+  "newAssets": false
+}

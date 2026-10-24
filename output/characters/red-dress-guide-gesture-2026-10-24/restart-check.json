@@ -1,0 +1,20 @@
+{
+  "equalWorld": true,
+  "memoriesEqual": true,
+  "memoryCount": 7,
+  "tick": 13185,
+  "training": {
+    "kind": "red_dress",
+    "elapsed": 2.0170000000000012,
+    "started": true,
+    "attention": {
+      "phase": "walking",
+      "noticed": false,
+      "look": 0,
+      "misses": 0,
+      "yaw": 1.574221181872377,
+      "clock": 2.0170000000000012
+    }
+  },
+  "differentFields": []
+}
