@@ -1,0 +1,24 @@
+{
+  "base": "7556630eaade13f5224498a31385ae3525968c1c",
+  "inputs": 1245,
+  "changed": {
+    "packages/client/src/agents/FightingHands.ts": "443434317781eff7d7a064baff1a2acebe9789442c7a09523737e1d77425bbed",
+    "tests/hand-skinning-budget.test.mts": "f947955b0d3632e273d016cef3de1bc6c000f1274a6abca5408609e104608831"
+  },
+  "protectedFiles": {
+    "packages/client/src/agents/AgentRenderer.ts": true,
+    "packages/client/src/agents/CharacterMotion.ts": true,
+    "packages/server/src/player/PlayerController.ts": true,
+    "packages/server/src/story/FilmStorySystem.ts": true,
+    "packages/shared/src/constants/ambush-escape.ts": true,
+    "tests/ambush-wardrobe-flow.test.mts": true,
+    "tests/ambush-coat-surface.test.mts": true,
+    "tests/ambush-doff-flow.test.mts": true,
+    "tests/ambush-doff-renderer.test.mts": true,
+    "tests/ambush-shirt-contact.test.mts": true,
+    "tests/ambush-waist-gait.test.mts": true
+  },
+  "unchangedCompiledFiles": 800,
+  "newDependencies": false,
+  "newAssets": false
+}

@@ -1,0 +1,267 @@
+TAP version 13
+# Subtest: Morpheus reaches, inserts and releases the core connector without folding his wrist backwards
+ok 1 - Morpheus reaches, inserts and releases the core connector without folding his wrist backwards
+  ---
+  duration_ms: 10522.732583
+  type: 'test'
+  ...
+# {"maximumWristSwing":60.000000000000085,"largestJointStepPer10ms":0.04855331637754394,"largestAt":{"elapsed":6.39,"joint":"wrist_R"}}
+# Subtest: the delivered hand surrounds the visible connector rather than passing through its grip or shaft
+ok 2 - the delivered hand surrounds the visible connector rather than passing through its grip or shaft
+  ---
+  duration_ms: 11087.906375
+  type: 'test'
+  ...
+# Subtest: a saved connection clock reconstructs the same arm and fingers after out-of-order viewing
+ok 3 - a saved connection clock reconstructs the same arm and fingers after out-of-order viewing
+  ---
+  duration_ms: 8741.339333
+  type: 'test'
+  ...
+# Subtest: the complete hand surface stays intact through the core grip and withdrawal
+ok 4 - the complete hand surface stays intact through the core grip and withdrawal
+  ---
+  duration_ms: 23123.265
+  type: 'test'
+  ...
+# Subtest: Morpheus’s connecting forearm does not pass through Neo’s physical chair
+ok 5 - Morpheus’s connecting forearm does not pass through Neo’s physical chair
+  ---
+  duration_ms: 5398.184542
+  type: 'test'
+  ...
+# Subtest: the core grip leaves the unrelated left-hand skin in its original binding
+ok 6 - the core grip leaves the unrelated left-hand skin in its original binding
+  ---
+  duration_ms: 5750.31525
+  type: 'test'
+  ...
+# Subtest: the delivered outfit clears the backrest during Morpheus’s added lean
+ok 7 - the delivered outfit clears the backrest during Morpheus’s added lean
+  ---
+  duration_ms: 6366.349875
+  type: 'test'
+  ...
+# Subtest: neo: the complete fighting hands stay closed surfaces throughout a full grip
+ok 8 - neo: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 41862.893583
+  type: 'test'
+  ...
+# Subtest: trinity: the complete fighting hands stay closed surfaces throughout a full grip
+ok 9 - trinity: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 47399.961208
+  type: 'test'
+  ...
+# Subtest: smith: the complete fighting hands stay closed surfaces throughout a full grip
+ok 10 - smith: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 34627.897125
+  type: 'test'
+  ...
+# Subtest: morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+ok 11 - morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 60230.269958
+  type: 'test'
+  ...
+# Subtest: a saved combat hand restores the same skin after unrelated movement and a release
+ok 12 - a saved combat hand restores the same skin after unrelated movement and a release
+  ---
+  duration_ms: 8339.788334
+  type: 'test'
+  ...
+# Subtest: a phone gesture restores the original right-hand binding after a fighting grip
+ok 13 - a phone gesture restores the original right-hand binding after a fighting grip
+  ---
+  duration_ms: 6732.57725
+  type: 'test'
+  ...
+# Subtest: partially posed prop fingers match the original gesture without combat posing
+ok 14 - partially posed prop fingers match the original gesture without combat posing
+  ---
+  duration_ms: 7726.696625
+  type: 'test'
+  ...
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+ok 15 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+  ---
+  duration_ms: 22449.727667
+  type: 'test'
+  ...
+# Subtest: the zero mirror tint from player controls keeps ordinary fighting hands enabled
+ok 16 - the zero mirror tint from player controls keeps ordinary fighting hands enabled
+  ---
+  duration_ms: 3512.727334
+  type: 'test'
+  ...
+# Subtest: Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+ok 17 - Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+  ---
+  duration_ms: 8141.493
+  type: 'test'
+  ...
+# Subtest: the complete wiping hand stays out of itself and the head through its reach and withdrawal
+ok 18 - the complete wiping hand stays out of itself and the head through its reach and withdrawal
+  ---
+  duration_ms: 27681.8305
+  type: 'test'
+  ...
+# Subtest: cold loading after the wipe preserves the same visible thumb stain
+ok 19 - cold loading after the wipe preserves the same visible thumb stain
+  ---
+  duration_ms: 4266.056041
+  type: 'test'
+  ...
+# Subtest: Neo keeps the bloodied thumb in front of his eyes briefly before lowering the hand
+ok 20 - Neo keeps the bloodied thumb in front of his eyes briefly before lowering the hand
+  ---
+  duration_ms: 2312.056333
+  type: 'test'
+  ...
+# Subtest: reaching and lowering preserve continuous skin, then release the authored hand for ordinary play
+ok 21 - reaching and lowering preserve continuous skin, then release the authored hand for ordinary play
+  ---
+  duration_ms: 4805.816209
+  type: 'test'
+  ...
+# Subtest: Neo mirror sitting, reaching and silver inspection preserve both complete hand surfaces
+ok 22 - Neo mirror sitting, reaching and silver inspection preserve both complete hand surfaces
+  ---
+  duration_ms: 29235.031541
+  type: 'test'
+  ...
+# Subtest: the actual mirror hand skin touches the glass without passing behind its surface
+ok 23 - the actual mirror hand skin touches the glass without passing behind its surface
+  ---
+  duration_ms: 3231.671041
+  type: 'test'
+  ...
+# Subtest: mirror skin remains continuous across finger curl, contact and inspection release
+ok 24 - mirror skin remains continuous across finger curl, contact and inspection release
+  ---
+  duration_ms: 5286.44275
+  type: 'test'
+  ...
+# Subtest: cold mirror saves restore the same hand skin and preserve the shipped arm lengths
+ok 25 - cold mirror saves restore the same hand skin and preserve the shipped arm lengths
+  ---
+  duration_ms: 17174.252833
+  type: 'test'
+  ...
+# Subtest: red: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+ok 26 - red: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+  ---
+  duration_ms: 15372.754208
+  type: 'test'
+  ...
+# Subtest: blue: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+ok 27 - blue: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+  ---
+  duration_ms: 14942.964292
+  type: 'test'
+  ...
+# Subtest: capsule ownership changes hands at a continuous world position
+ok 28 - capsule ownership changes hands at a continuous world position
+  ---
+  duration_ms: 11200.018542
+  type: 'test'
+  ...
+# Subtest: saved pill skin restores after phone, other colors and camera changes
+ok 29 - saved pill skin restores after phone, other colors and camera changes
+  ---
+  duration_ms: 24144.602209
+  type: 'test'
+  ...
+# Subtest: the actual skin stays continuous at pill grip and seat transition boundaries
+ok 30 - the actual skin stays continuous at pill grip and seat transition boundaries
+  ---
+  duration_ms: 4838.333875
+  type: 'test'
+  ...
+# Subtest: leaving a pill performance restores the ordinary hands without a cached prop pose
+ok 31 - leaving a pill performance restores the ordinary hands without a cached prop pose
+  ---
+  duration_ms: 18559.222625
+  type: 'test'
+  ...
+# Subtest: Morpheus keeps the original offering skin while the capsule and Neo use their own bindings
+ok 32 - Morpheus keeps the original offering skin while the capsule and Neo use their own bindings
+  ---
+  duration_ms: 6437.005125
+  type: 'test'
+  ...
+# Subtest: both offered capsules stay outside the complete palm surface while Morpheus opens his hands
+ok 33 - both offered capsules stay outside the complete palm surface while Morpheus opens his hands
+  ---
+  duration_ms: 7001.625334
+  type: 'test'
+  ...
+# Subtest: neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 34 - neo: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 14037.856916
+  type: 'test'
+  ...
+# Subtest: trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 35 - trinity: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 10687.424833
+  type: 'test'
+  ...
+# Subtest: smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 36 - smith: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 8550.714417
+  type: 'test'
+  ...
+# Subtest: morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+ok 37 - morpheus: the actual pistol hand wraps the handle and places its index finger on the trigger when firing
+  ---
+  duration_ms: 21941.450875
+  type: 'test'
+  ...
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 38 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 6995.453166
+  type: 'test'
+  ...
+# {"tips":[[-0.2590145829193075,0.16406968917571288,0.054980376914724204],[-0.26435356067790167,0.20192177962311583,0.1287826133896936]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 39 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 3567.404
+  type: 'test'
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.0011037376665789665},{"joint":"wrist_R","distance":0.0014007564612995992},{"joint":"finger2-3_R","distance":0.0015804398458387975},{"joint":"head","distance":0.00023332584508709247}]
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+ok 40 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+  ---
+  duration_ms: 21160.450333
+  type: 'test'
+  ...
+# {"maximumSwing":52.6059790018205,"failures":[]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+ok 41 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+  ---
+  duration_ms: 12506.554167
+  type: 'test'
+  ...
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+ok 42 - the full guide arm motion is continuous at 10ms sampling intervals
+  ---
+  duration_ms: 10052.938125
+  type: 'test'
+  ...
+# {"maximumStep":0.057394037500890574,"largestAt":0.84,"largestJoint":"finger2-3_R","samples":531}
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 336586.603709

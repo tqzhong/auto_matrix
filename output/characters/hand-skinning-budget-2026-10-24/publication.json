@@ -1,0 +1,18 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-DpIKSNa4.js",
+  "sha256": "2d0465dc847b2ebee8a35f86c31e62c98f161df70fbaa05ca82444d4ec04d135",
+  "bundleBytes": 3794187,
+  "javascriptDeltaBytes": 145,
+  "newAssetBytes": 0,
+  "cssIdentical": true,
+  "backendAndSharedFilesUnchanged": 800,
+  "protectedFilesUnchanged": 11,
+  "mainMemories": 85,
+  "mainTickBefore": 51835,
+  "mainTickAfter": 51835,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

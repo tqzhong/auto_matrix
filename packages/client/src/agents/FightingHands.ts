@@ -4,11 +4,11 @@ import type { MotionInput } from './CharacterMotion.js';
 import { HandCurve } from './HandCurve.js';
 
 type Attributes = Record<'position' | 'normal' | 'skinIndex' | 'skinWeight', THREE.BufferAttribute>;
-interface MaterialPoint { id: number; amount: number; s: number; n: number; b: number; t: number }
+interface MaterialPoint { id: number; amount: number; interval: number; u: number; n: number; b: number; t: number }
 interface Finger { joints: number[]; radius: number[]; rest: HandCurve; vertices: MaterialPoint[] }
 interface Hand {
   side: string; wrist: number; cacheable: boolean; pistolCacheable: boolean; bones: number[][]; caps: number[][]; axes: THREE.Vector3[][];
-  vertices: number[]; faces: number[][]; offsets: Map<number, number>; triangles: number[][]; fingers: Finger[];
+  vertices: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[];
 }
 interface Binding { attributes: Attributes; hands: Hand[]; groups: number[]; groupCount: number }
 const bindings = new WeakMap<THREE.BufferGeometry, Binding>();
@@ -144,7 +144,11 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
         const p = point(id), s = rest.closest(p), sample = rest.sample(s), { n, b } = basis(sample.t), delta = p.sub(sample.p);
         const proximal = points[0].distanceTo(points[1]);
         const blend = influence * (digit === 1 ? THREE.MathUtils.smoothstep(influence, .5, .95) : 1) * THREE.MathUtils.smoothstep(s, digit === 1 ? proximal * .65 : 0, proximal * (digit === 1 ? 1.05 : .25));
-        if (blend) mapped.push({ id, amount: blend, s, n: delta.dot(n), b: delta.dot(b), t: delta.dot(sample.t) });
+        if (blend) {
+          let interval = rest.anchors.findIndex(at => at >= s); if (interval <= 0) interval = 1;
+          const start = rest.anchors[interval - 1], end = rest.anchors[interval], u = (s - start) / (end - start);
+          mapped.push({ id, amount: blend, interval, u, n: delta.dot(n), b: delta.dot(b), t: delta.dot(sample.t) });
+        }
       }
       return { joints, radius, rest, vertices: mapped };
     });
@@ -154,7 +158,14 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
     const local = (ids: Iterable<number>, weights: Attributes) => [...ids].every(id => [0, 1, 2, 3].every(k => !weights.skinWeight.getComponent(id, k) || family.has(weights.skinIndex.getComponent(id, k))));
     const cacheable = local(shaped, a);
     const pistolCacheable = local(new Set([...shaped, ...fingers[0].vertices.map(v => v.id)]), skin.geometry.attributes as Attributes);
-    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, faces, offsets, triangles: faces.map(face => face.map(id => offsets.get(id)!)), fingers };
+    // Each corner keeps its posed-position offset and welded normal offset.
+    // Topology is fixed; retain the original face/corner accumulation order.
+    const triangles = new Uint32Array(faces.length * 6);
+    for (let face = 0; face < faces.length; face++) for (let corner = 0; corner < 3; corner++) {
+      const id = faces[face][corner], at = face * 6 + corner * 2;
+      triangles[at] = offsets.get(id)! * 15 + 3; triangles[at + 1] = normalGroups[id] * 3;
+    }
+    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, faces, offsets, triangles, fingers };
   });
   return { attributes: a, hands, groups: normalGroups, groupCount: normalKeys.size };
 }
@@ -314,9 +325,7 @@ export class FightingHands {
       }
       const curve = new HandCurve([...points, tip.divideScalar(caps.length)], finger.radius);
       for (const v of finger.vertices) {
-        let interval = finger.rest.anchors.findIndex(s => s >= v.s); if (interval <= 0) interval = 1;
-        const start = finger.rest.anchors[interval - 1], end = finger.rest.anchors[interval], u = (v.s - start) / (end - start);
-        curve.sample(THREE.MathUtils.lerp(curve.anchors[interval - 1], curve.anchors[interval], u), sample);
+        curve.sample(THREE.MathUtils.lerp(curve.anchors[v.interval - 1], curve.anchors[v.interval], v.u), sample);
         normal.set(0, 0, 1).addScaledVector(sample.t, -sample.t.z).normalize(); binormal.crossVectors(sample.t, normal);
         goal.copy(normal).multiplyScalar(v.n).addScaledVector(binormal, v.b).addScaledVector(sample.t, v.t);
         const inner = goal.dot(sample.n); goal.add(sample.p);
@@ -367,12 +376,15 @@ export class FightingHands {
     }
     this.shapeFingers(hand, inverse, transform);
     const normals = this.normals; normals.fill(0);
-    for (const face of hand.triangles) {
-      const p = face[0] * 15 + 3, q = face[1] * 15 + 3, r = face[2] * 15 + 3;
+    const triangles = hand.triangles;
+    for (let face = 0; face < triangles.length; face += 6) {
+      const p = triangles[face], q = triangles[face + 2], r = triangles[face + 4];
       const ux = data[q] - data[p], uy = data[q + 1] - data[p + 1], uz = data[q + 2] - data[p + 2];
       const vx = data[r] - data[p], vy = data[r + 1] - data[p + 1], vz = data[r + 2] - data[p + 2];
       const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-      for (const ordinal of face) { const group = this.binding.groups[hand.vertices[ordinal]] * 3; normals[group] += nx; normals[group + 1] += ny; normals[group + 2] += nz; }
+      for (let corner = face + 1; corner < face + 6; corner += 2) {
+        const group = triangles[corner]; normals[group] += nx; normals[group + 1] += ny; normals[group + 2] += nz;
+      }
     }
     for (const [ordinal, id] of hand.vertices.entries()) {
       const at = ordinal * 15, dx = data[at + 3] - data[at], dy = data[at + 4] - data[at + 1], dz = data[at + 5] - data[at + 2];

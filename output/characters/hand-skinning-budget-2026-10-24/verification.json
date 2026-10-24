@@ -1,0 +1,121 @@
+{
+  "base": "7556630eaade13f5224498a31385ae3525968c1c",
+  "baselineCache": {
+    "pass": 3,
+    "fail": 0
+  },
+  "newRegressionBefore": {
+    "pass": 0,
+    "fail": 2,
+    "normalGroupReads": 88178,
+    "materialSearches": 11898
+  },
+  "cacheAndBudgetAfter": {
+    "pass": 5,
+    "fail": 0,
+    "normalGroupReads": 13346,
+    "materialSearches": 0
+  },
+  "surfaceAndContactAfter": {
+    "pass": 42,
+    "fail": 0
+  },
+  "deployment": {
+    "pass": 75,
+    "fail": 0
+  },
+  "typecheck": true,
+  "productionBuild": true,
+  "fullRepositoryTested": false,
+  "equivalence": {
+    "poses": 256,
+    "identical": true,
+    "sha256": "e4e45cf1847e3f5c42f29ae6369c0c4c3d986bb5bc424144963359d7389f5846",
+    "compared": [
+      "position",
+      "normal",
+      "skinIndex",
+      "skinWeight",
+      "boneMatrices",
+      "meshWorldMatrix",
+      "allHandWorldPositions"
+    ]
+  },
+  "animationCpu": {
+    "beforeMeanMs": 4.158617048742129,
+    "afterMeanMs": 3.915392872327044,
+    "meanReductionPercent": 5.848679346145946,
+    "order": [
+      "before1",
+      "after1",
+      "after2",
+      "before2"
+    ],
+    "warmupFramesPerRun": 636,
+    "samplesPerRun": 1590,
+    "backgroundFullyIsolated": false,
+    "browserFpsMeasured": false,
+    "p95Improved": false
+  },
+  "native": {
+    "bundle": "index-DpIKSNa4.js",
+    "walkedIntoScene": true,
+    "pauseElapsed": 1.9270000000000003,
+    "backendPidBefore": 81574,
+    "backendPidAfter": 83933,
+    "completeWorldEqual": true,
+    "worldBeforeSha256": "54f8577f88f3d327cdc8e1096432e6e701901f4e5a69aaa449496c3ec9bd56b1",
+    "worldAfterSha256": "54f8577f88f3d327cdc8e1096432e6e701901f4e5a69aaa449496c3ec9bd56b1",
+    "memories": 7,
+    "coldReload": true,
+    "firstPerson": true,
+    "thirdPerson": true,
+    "misses": 1,
+    "retryAndTurnToFreeze": true,
+    "completionRequiredHeldGAfterShortPressDidNotAdvance": true,
+    "scene": "m1_red_dress",
+    "step": 2,
+    "tick": 12823,
+    "health": 100,
+    "movementAfterCompletion": 3.2447509069486,
+    "paused": true,
+    "warningsOrErrors": []
+  },
+  "localPublication": {
+    "entry": "http://localhost:5173/",
+    "pid": 83388,
+    "bundle": "assets/index-DpIKSNa4.js",
+    "sha256": "2d0465dc847b2ebee8a35f86c31e62c98f161df70fbaa05ca82444d4ec04d135",
+    "bundleBytes": 3794187,
+    "javascriptDeltaBytes": 145,
+    "newAssetBytes": 0,
+    "cssIdentical": true,
+    "backendAndSharedFilesUnchanged": 800,
+    "protectedFilesUnchanged": 11,
+    "mainMemories": 85,
+    "mainTickBefore": 51835,
+    "mainTickAfter": 51835,
+    "mainRunning": true,
+    "mainSaveWritten": false,
+    "renderReconnected": false
+  },
+  "mainWarningsOrErrors": [],
+  "qaStopped": [
+    {
+      "pid": 83944,
+      "port": 5201,
+      "commandVerified": true,
+      "cwdVerified": true,
+      "terminalStateConfirmed": true,
+      "portClosed": true
+    },
+    {
+      "pid": 83933,
+      "port": 5200,
+      "commandVerified": true,
+      "cwdVerified": true,
+      "terminalStateConfirmed": true,
+      "portClosed": true
+    }
+  ]
+}
