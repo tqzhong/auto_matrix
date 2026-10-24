@@ -1,0 +1,187 @@
+TAP version 13
+# Subtest: Morpheus reaches, inserts and releases the core connector without folding his wrist backwards
+ok 1 - Morpheus reaches, inserts and releases the core connector without folding his wrist backwards
+  ---
+  duration_ms: 6123.640375
+  type: 'test'
+  ...
+# {"maximumWristSwing":60.000000000000085,"largestJointStepPer10ms":0.04855331637754394,"largestAt":{"elapsed":6.39,"joint":"wrist_R"}}
+# Subtest: the delivered hand surrounds the visible connector rather than passing through its grip or shaft
+ok 2 - the delivered hand surrounds the visible connector rather than passing through its grip or shaft
+  ---
+  duration_ms: 6700.207584
+  type: 'test'
+  ...
+# Subtest: a saved connection clock reconstructs the same arm and fingers after out-of-order viewing
+ok 3 - a saved connection clock reconstructs the same arm and fingers after out-of-order viewing
+  ---
+  duration_ms: 6271.459833
+  type: 'test'
+  ...
+# Subtest: the complete hand surface stays intact through the core grip and withdrawal
+ok 4 - the complete hand surface stays intact through the core grip and withdrawal
+  ---
+  duration_ms: 29779.633792
+  type: 'test'
+  ...
+# Subtest: Morpheus’s connecting forearm does not pass through Neo’s physical chair
+ok 5 - Morpheus’s connecting forearm does not pass through Neo’s physical chair
+  ---
+  duration_ms: 8284.153583
+  type: 'test'
+  ...
+# Subtest: the core grip leaves the unrelated left-hand skin in its original binding
+ok 6 - the core grip leaves the unrelated left-hand skin in its original binding
+  ---
+  duration_ms: 11363.319459
+  type: 'test'
+  ...
+# Subtest: the delivered outfit clears the backrest during Morpheus’s added lean
+ok 7 - the delivered outfit clears the backrest during Morpheus’s added lean
+  ---
+  duration_ms: 12609.5655
+  type: 'test'
+  ...
+# Subtest: neo: the complete fighting hands stay closed surfaces throughout a full grip
+ok 8 - neo: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 70526.73825
+  type: 'test'
+  ...
+# Subtest: trinity: the complete fighting hands stay closed surfaces throughout a full grip
+ok 9 - trinity: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 76886.891584
+  type: 'test'
+  ...
+# Subtest: smith: the complete fighting hands stay closed surfaces throughout a full grip
+ok 10 - smith: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 60214.878625
+  type: 'test'
+  ...
+# Subtest: morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+ok 11 - morpheus: the complete fighting hands stay closed surfaces throughout a full grip
+  ---
+  duration_ms: 32336.844542
+  type: 'test'
+  ...
+# Subtest: a saved combat hand restores the same skin after unrelated movement and a release
+ok 12 - a saved combat hand restores the same skin after unrelated movement and a release
+  ---
+  duration_ms: 3597.938458
+  type: 'test'
+  ...
+# Subtest: a phone gesture restores the original right-hand binding after a fighting grip
+ok 13 - a phone gesture restores the original right-hand binding after a fighting grip
+  ---
+  duration_ms: 2305.25575
+  type: 'test'
+  ...
+# Subtest: partially posed prop fingers match the original gesture without combat posing
+ok 14 - partially posed prop fingers match the original gesture without combat posing
+  ---
+  duration_ms: 3234.110125
+  type: 'test'
+  ...
+# Subtest: actors sharing one loaded asset keep independent hands across outfit and prop changes
+ok 15 - actors sharing one loaded asset keep independent hands across outfit and prop changes
+  ---
+  duration_ms: 8590.472417
+  type: 'test'
+  ...
+# Subtest: the zero mirror tint from player controls keeps ordinary fighting hands enabled
+ok 16 - the zero mirror tint from player controls keeps ordinary fighting hands enabled
+  ---
+  duration_ms: 1286.287458
+  type: 'test'
+  ...
+# Subtest: red: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+ok 17 - red: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+  ---
+  duration_ms: 5274.105667
+  type: 'test'
+  ...
+# Subtest: blue: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+ok 18 - blue: taking and swallowing the capsule keeps the complete hand surface free of self intersections
+  ---
+  duration_ms: 4849.153208
+  type: 'test'
+  ...
+# Subtest: capsule ownership changes hands at a continuous world position
+ok 19 - capsule ownership changes hands at a continuous world position
+  ---
+  duration_ms: 3677.354209
+  type: 'test'
+  ...
+# Subtest: saved pill skin restores after phone, other colors and camera changes
+ok 20 - saved pill skin restores after phone, other colors and camera changes
+  ---
+  duration_ms: 8478.012916
+  type: 'test'
+  ...
+# Subtest: the actual skin stays continuous at pill grip and seat transition boundaries
+ok 21 - the actual skin stays continuous at pill grip and seat transition boundaries
+  ---
+  duration_ms: 1996.65225
+  type: 'test'
+  ...
+# Subtest: leaving a pill performance restores the ordinary hands without a cached prop pose
+ok 22 - leaving a pill performance restores the ordinary hands without a cached prop pose
+  ---
+  duration_ms: 7331.001625
+  type: 'test'
+  ...
+# Subtest: Morpheus keeps the original offering skin while the capsule and Neo use their own bindings
+ok 23 - Morpheus keeps the original offering skin while the capsule and Neo use their own bindings
+  ---
+  duration_ms: 2005.618625
+  type: 'test'
+  ...
+# Subtest: both offered capsules stay outside the complete palm surface while Morpheus opens his hands
+ok 24 - both offered capsules stay outside the complete palm surface while Morpheus opens his hands
+  ---
+  duration_ms: 2713.389083
+  type: 'test'
+  ...
+# Subtest: Neo grasps and pulls the breather without bending either wrist backwards beyond the grip limit
+ok 25 - Neo grasps and pulls the breather without bending either wrist backwards beyond the grip limit
+  ---
+  duration_ms: 2018.699
+  type: 'test'
+  ...
+# {"maximumWristSwing":57.18803212065085}
+# Subtest: Neo supports himself and presses the membrane without a hyperextended wrist
+ok 26 - Neo supports himself and presses the membrane without a hyperextended wrist
+  ---
+  duration_ms: 1583.138584
+  type: 'test'
+  ...
+# Subtest: the membrane and breather arm paths remain continuous through each reach and release
+not ok 27 - the membrane and breather arm paths remain continuous through each reach and release
+  ---
+  duration_ms: 5550.530167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/pod-wrist-contact.test.mts:1:1792'
+  failureType: 'testCodeFailure'
+  error: 'breather flips an arm joint by 0.08794247122591056 units between adjacent 10ms frames'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/pod-wrist-contact.test.mts:62:61)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumJointStepPer10ms":{"emerge":0.023407847747340175,"breather":0.08794247122591056},"locations":{"emerge":{"elapsed":4.27,"joint":"elbow_L"},"breather":{"elapsed":4.81,"joint":"elbow_L"}},"maximumSwing":{"emerge":{"angle":62.856802961506766,"elapsed":4.75,"side":"R"},"breather":{"angle":68.03614072780415,"elapsed":4.72,"side":"R"}}}
+1..27
+# tests 27
+# suites 0
+# pass 26
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 388837.720167

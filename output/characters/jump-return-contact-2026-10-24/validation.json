@@ -1,0 +1,49 @@
+{
+  "contact": {
+    "tests": 5,
+    "pass": 5,
+    "fail": 0
+  },
+  "baselineHands": {
+    "tests": 27,
+    "pass": 26,
+    "fail": 1
+  },
+  "relatedHands": {
+    "tests": 27,
+    "pass": 26,
+    "fail": 1
+  },
+  "relatedTraining": {
+    "tests": 35,
+    "pass": 35,
+    "fail": 0
+  },
+  "relatedAssets": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "knownBaselineFailureUnchanged": true,
+  "existingFailure": {
+    "test": [
+      "the membrane and breather arm paths remain continuous through each reach and release"
+    ],
+    "error": [
+      "'breather flips an arm joint by 0.08794247122591056 units between adjacent 10ms frames'"
+    ],
+    "code": [
+      "'ERR_ASSERTION'"
+    ],
+    "diagnostic": [
+      "# {\"maximumJointStepPer10ms\":{\"emerge\":0.023407847747340175,\"breather\":0.08794247122591056},\"locations\":{\"emerge\":{\"elapsed\":4.27,\"joint\":\"elbow_L\"},\"breather\":{\"elapsed\":4.81,\"joint\":\"elbow_L\"}},\"maximumSwing\":{\"emerge\":{\"angle\":62.856802961506766,\"elapsed\":4.75,\"side\":\"R\"},\"breather\":{\"angle\":68.03614072780415,\"elapsed\":4.72,\"side\":\"R\"}}}"
+    ]
+  },
+  "clientBuildExit": 0,
+  "bundle": "index-CQbwUmEL.js",
+  "bundleSha256": "1091dd51237b68a26c7dfb8b8f4e41025225f9b1c8d74a83ed992bca05c880d9",
+  "css": "index-B0JUdutM.css",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "frozenInputCount": 1214,
+  "completeRepositorySuiteRun": false
+}

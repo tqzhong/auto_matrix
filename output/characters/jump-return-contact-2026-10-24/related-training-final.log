@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: neo: complete sole contact reuses each bone transform within a frame
+ok 1 - neo: complete sole contact reuses each bone transform within a frame
+  ---
+  duration_ms: 2074.219875
+  type: 'test'
+  ...
+# Subtest: morpheus: complete sole contact reuses each bone transform within a frame
+ok 2 - morpheus: complete sole contact reuses each bone transform within a frame
+  ---
+  duration_ms: 2602.739084
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 3 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 23.841542
+  type: 'test'
+  ...
+# Subtest: the first fall and real-body return reconstruct their saved poses after combat and while paused
+ok 4 - the first fall and real-body return reconstruct their saved poses after combat and while paused
+  ---
+  duration_ms: 6.34175
+  type: 'test'
+  ...
+# Subtest: Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+ok 5 - Morpheus actually runs across the near roof, flies at steady horizontal speed and turns back to Neo
+  ---
+  duration_ms: 0.653125
+  type: 'test'
+  ...
+# Subtest: the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+ok 6 - the jump demonstration reconstructs its saved stance after unrelated combat and while paused
+  ---
+  duration_ms: 2.330209
+  type: 'test'
+  ...
+# Subtest: dojo sparring keeps a readable guard between strikes and releases it after the lesson
+ok 7 - dojo sparring keeps a readable guard between strikes and releases it after the lesson
+  ---
+  duration_ms: 0.700166
+  type: 'test'
+  ...
+# Subtest: a paused console encounter rebuilds seated crew and standing Neo from saved time
+ok 8 - a paused console encounter rebuilds seated crew and standing Neo from saved time
+  ---
+  duration_ms: 1.429875
+  type: 'test'
+  ...
+# Subtest: download preparation and upload reconstruct the saved pose independently of old movement or combat
+ok 9 - download preparation and upload reconstruct the saved pose independently of old movement or combat
+  ---
+  duration_ms: 6.535125
+  type: 'test'
+  ...
+# Subtest: the truth aftermath reconstructs the same pose from saved time after running and combat
+ok 10 - the truth aftermath reconstructs the same pose from saved time after running and combat
+  ---
+  duration_ms: 16.513
+  type: 'test'
+  ...
+# Subtest: truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+ok 11 - truck rescue reconstructs the airborne pose from saved time instead of prior running or browser time
+  ---
+  duration_ms: 3.228792
+  type: 'test'
+  ...
+# Subtest: stance keeps the sole planted and the return stroke lifts clear of the ground
+ok 12 - stance keeps the sole planted and the return stroke lifts clear of the ground
+  ---
+  duration_ms: 0.728333
+  type: 'test'
+  ...
+# Subtest: movement blends settle consistently at different frame rates and freeze when paused
+ok 13 - movement blends settle consistently at different frame rates and freeze when paused
+  ---
+  duration_ms: 1.665125
+  type: 'test'
+  ...
+# Subtest: jump, landing recovery and chained strikes are separate finite poses
+ok 14 - jump, landing recovery and chained strikes are separate finite poses
+  ---
+  duration_ms: 0.480083
+  type: 'test'
+  ...
+# Subtest: Brown has a distinct airborne roof-crossing silhouette
+ok 15 - Brown has a distinct airborne roof-crossing silhouette
+  ---
+  duration_ms: 0.159875
+  type: 'test'
+  ...
+# Subtest: each strike extends at its damage frame and the finisher is a kick
+ok 16 - each strike extends at its damage frame and the finisher is a kick
+  ---
+  duration_ms: 4.403209
+  type: 'test'
+  ...
+# Subtest: a confirmed hit adds a short recoil and then returns to locomotion
+ok 17 - a confirmed hit adds a short recoil and then returns to locomotion
+  ---
+  duration_ms: 1.304708
+  type: 'test'
+  ...
+# Subtest: gunfire adds a short arm recoil, recovers, and cannot restart while paused
+ok 18 - gunfire adds a short arm recoil, recovers, and cannot restart while paused
+  ---
+  duration_ms: 1.277875
+  type: 'test'
+  ...
+# Subtest: the Lafayette greeting walks from saved time and settles Morpheus into the chair
+ok 19 - the Lafayette greeting walks from saved time and settles Morpheus into the chair
+  ---
+  duration_ms: 1.826875
+  type: 'test'
+  ...
+# Subtest: the Oracle examines Neo and visibly passes the cookie into his hand
+ok 20 - the Oracle examines Neo and visibly passes the cookie into his hand
+  ---
+  duration_ms: 0.447542
+  type: 'test'
+  ...
+# Subtest: betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+ok 21 - betrayal performances visibly distinguish the charge, cable pull, collapse and counterattack
+  ---
+  duration_ms: 0.73075
+  type: 'test'
+  ...
+# Subtest: rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+ok 22 - rescue preparation points across the briefing and grips the chosen weapon with the correct hands
+  ---
+  duration_ms: 0.552709
+  type: 'test'
+  ...
+# Subtest: the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+ok 23 - the lobby entrance draws weapons after the alarm and leaves the checkpoint guard visibly down
+  ---
+  duration_ms: 0.47975
+  type: 'test'
+  ...
+# Subtest: government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+ok 24 - government rescue performances visibly restrain Morpheus and form Neo bullet-time bend
+  ---
+  duration_ms: 1.44625
+  type: 'test'
+  ...
+# Subtest: air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+ok 25 - air rescue performances distinguish the mounted gun, falling catch and roof rope shock
+  ---
+  duration_ms: 0.912792
+  type: 'test'
+  ...
+# Subtest: subway escape performances hold the phone, aim, grapple and leap as distinct poses
+ok 26 - subway escape performances hold the phone, aim, grapple and leap as distinct poses
+  ---
+  duration_ms: 1.19275
+  type: 'test'
+  ...
+# Subtest: city escape performances visibly roll through the truck gap and transform the next host
+ok 27 - city escape performances visibly roll through the truck gap and transform the next host
+  ---
+  duration_ms: 0.483708
+  type: 'test'
+  ...
+# Subtest: the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+ok 28 - the One performances distinguish death, Trinity revival, bullet stop, code dive, Smith burst and flight
+  ---
+  duration_ms: 0.747666
+  type: 'test'
+  ...
+# Subtest: armed shoulders follow vertical aim while recoil remains finite
+ok 29 - armed shoulders follow vertical aim while recoil remains finite
+  ---
+  duration_ms: 0.210292
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 30 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 57.509666
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 31 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 259.630875
+  type: 'test'
+  ...
+# Subtest: the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+ok 32 - the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+  ---
+  duration_ms: 8.62975
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 33 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 172.3145
+  type: 'test'
+  ...
+# Subtest: the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+ok 34 - the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+  ---
+  duration_ms: 7.002416
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 35 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 139.333542
+  type: 'test'
+  ...
+1..35
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5337.397917

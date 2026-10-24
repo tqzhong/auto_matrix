@@ -1,0 +1,46 @@
+{
+  "order": [
+    "before-a",
+    "after-a",
+    "after-b",
+    "before-b"
+  ],
+  "rows": [
+    {
+      "label": "before-a",
+      "frames": 2160,
+      "averageCpuMs": 0.18354123101851832,
+      "p95CpuMs": 0.4869579999999587,
+      "firstFrameMs": 87.806916,
+      "note": "Offline single Neo animation over three 12-second return sequences. No browser, GPU, draw calls or FPS. Includes initial JumpPerformance creation only in firstFrameMs."
+    },
+    {
+      "label": "after-a",
+      "frames": 2160,
+      "averageCpuMs": 1.228955799537043,
+      "p95CpuMs": 5.0469160000002375,
+      "firstFrameMs": 177.83483300000034,
+      "note": "Offline single Neo animation over three 12-second return sequences. No browser, GPU, draw calls or FPS. Includes initial JumpPerformance creation only in firstFrameMs."
+    },
+    {
+      "label": "after-b",
+      "frames": 2160,
+      "averageCpuMs": 0.968470773611106,
+      "p95CpuMs": 3.793500000000222,
+      "firstFrameMs": 140.90724999999998,
+      "note": "Offline single Neo animation over three 12-second return sequences. No browser, GPU, draw calls or FPS. Includes initial JumpPerformance creation only in firstFrameMs."
+    },
+    {
+      "label": "before-b",
+      "frames": 2160,
+      "averageCpuMs": 0.20636917175926098,
+      "p95CpuMs": 0.5521250000001601,
+      "firstFrameMs": 92.27154100000007,
+      "note": "Offline single Neo animation over three 12-second return sequences. No browser, GPU, draw calls or FPS. Includes initial JumpPerformance creation only in firstFrameMs."
+    }
+  ],
+  "singleActor": true,
+  "browserFpsMeasured": false,
+  "otherApplicationsIsolated": false,
+  "runtimeScope": "Neo jump_return only; ordinary controls and shaders unchanged"
+}

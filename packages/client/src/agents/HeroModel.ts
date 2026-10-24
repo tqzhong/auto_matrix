@@ -1388,7 +1388,7 @@ export class HeroModels {
     }
     if (input.truth && !this.truths.has(rig)) this.truths.set(rig, new TruthPerformance(rig));
     this.truths.get(rig)?.pose(input.truth);
-    if (input.training?.role === 'neo' && ['jump_fall', 'jump_return'].includes(input.training.kind) && !this.jumps.has(rig)) this.jumps.set(rig, new JumpPerformance(rig));
+    if (input.training?.role === 'neo' && ['jump_fall', 'jump_return'].includes(input.training.kind) && !this.jumps.has(rig)) this.jumps.set(rig, new JumpPerformance(rig, fightingHands));
     this.jumps.get(rig)?.pose(input.training);
     rig.root.updateWorldMatrix(true, true);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);

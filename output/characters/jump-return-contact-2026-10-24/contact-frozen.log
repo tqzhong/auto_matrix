@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+ok 1 - Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+  ---
+  duration_ms: 5551.082333
+  type: 'test'
+  ...
+# Subtest: the complete wiping hand stays out of itself and the head through its reach and withdrawal
+ok 2 - the complete wiping hand stays out of itself and the head through its reach and withdrawal
+  ---
+  duration_ms: 20802.900708
+  type: 'test'
+  ...
+# Subtest: cold loading after the wipe preserves the same visible thumb stain
+ok 3 - cold loading after the wipe preserves the same visible thumb stain
+  ---
+  duration_ms: 3866.288208
+  type: 'test'
+  ...
+# Subtest: Neo keeps the bloodied thumb in front of his eyes briefly before lowering the hand
+ok 4 - Neo keeps the bloodied thumb in front of his eyes briefly before lowering the hand
+  ---
+  duration_ms: 2048.10275
+  type: 'test'
+  ...
+# Subtest: reaching and lowering preserve continuous skin, then release the authored hand for ordinary play
+ok 5 - reaching and lowering preserve continuous skin, then release the authored hand for ordinary play
+  ---
+  duration_ms: 4443.771542
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 37715.508083

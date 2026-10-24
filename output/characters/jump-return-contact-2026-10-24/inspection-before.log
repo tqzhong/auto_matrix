@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: Neo keeps the bloodied thumb in front of his eyes briefly before lowering the hand
+not ok 1 - Neo keeps the bloodied thumb in front of his eyes briefly before lowering the hand
+  ---
+  duration_ms: 10148.5345
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:1:3570'
+  failureType: 'testCodeFailure'
+  error: 'the visible blood returns to the lap instead of being inspected at 6.2s: -0.3770557012457152,-1.0193647312188943,0.9694569825700685'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:63:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13858.979833

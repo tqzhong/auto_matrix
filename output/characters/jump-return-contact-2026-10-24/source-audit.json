@@ -1,0 +1,33 @@
+{
+  "baseline": "dcb9cded941305765fceec2efaf916fb078f527b",
+  "changed": [
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "092643d5dea1f09099a98855d5d7a16a8bfa976030c120b6083925a696729f58",
+      "after": "28535fe8be2c57ff7d250a256a221e14e2c810535b74cee87e5dc7779c32d46b"
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "c9a09849ed28932137ce9b929d07487c397ae792add9e82347eaa7426dc4f6ce",
+      "after": "a40fae1cf8cb33e5278b8ff5155f7ba2aa8396e73ae2dc467613b7421cab126c"
+    },
+    {
+      "path": "packages/client/src/agents/JumpPerformance.ts",
+      "before": "2a5b5633f21bb2c5198a81bce489c0c8fa7b630867574562693c4530e036fa54",
+      "after": "98587337b647cf1bc488f7338933fef02052cfae4649d90a1b44c2380da6f3a0"
+    },
+    {
+      "path": "tests/character-asset.test.mts",
+      "before": "34c931ec8236481ffbe89f5928db178038997be8470d10ca7b618c9fb80d68ac",
+      "after": "f84baa93a2fd800e66656aa2e6e8d68c3107c0f46fb45878b5092cbe1406dc05"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/jump-return-contact.test.mts",
+      "after": "e24420bb2e6ebed007ed80f07ce83eed92cbdbbaa58c18735f0d07470c65d3fb"
+    }
+  ],
+  "packageFiles": 721,
+  "temporaryInspectorRemoved": true
+}

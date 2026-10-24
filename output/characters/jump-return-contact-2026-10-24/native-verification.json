@@ -1,0 +1,24 @@
+{
+  "nativeColdReloadVerified": true,
+  "nativeContactAndInspectionVerified": true,
+  "nativeReflectionAndNextSceneVerified": true,
+  "inputs": [
+    "continue saved Neo",
+    "V",
+    "mouse drag down",
+    "continue/pause",
+    "J",
+    "care reflection",
+    "G"
+  ],
+  "firstPersonRequiresLookingDownForHand": true,
+  "newRedDressPlaythrough": false,
+  "productionBundle": "index-CQbwUmEL.js",
+  "scene": "m1_red_dress",
+  "step": 0,
+  "paused": true,
+  "tick": 12280,
+  "reflection": "care",
+  "mainSaveUsed": false,
+  "testAdvanceApiUsed": false
+}

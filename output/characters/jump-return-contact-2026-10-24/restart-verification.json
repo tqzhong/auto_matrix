@@ -1,0 +1,11 @@
+{
+  "oldPid": 10746,
+  "newPid": 30141,
+  "oldProcessTerminal": true,
+  "fullWorldEqual": true,
+  "memoriesEqual": true,
+  "memoryFiles": 7,
+  "beforeTick": 12201,
+  "afterTick": 12201,
+  "differences": []
+}

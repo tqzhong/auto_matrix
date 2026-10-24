@@ -1,0 +1,38 @@
+TAP version 13
+# Subtest: Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+ok 1 - Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+  ---
+  duration_ms: 8580.936708
+  type: 'test'
+  ...
+# Subtest: the complete wiping hand stays out of itself and the head through its reach and withdrawal
+not ok 2 - the complete wiping hand stays out of itself and the head through its reach and withdrawal
+  ---
+  duration_ms: 20100.420333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:1:2660'
+  failureType: 'testCodeFailure'
+  error: |-
+    the actual hand cuts into the head at 4.1s
+
+    225 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 225
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:46:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31208.355625

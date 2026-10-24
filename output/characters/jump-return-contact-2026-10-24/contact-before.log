@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+not ok 1 - Neo wipes with the actual thumb surface instead of an empty joint in front of his chin
+  ---
+  duration_ms: 12616.445375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:1:2076'
+  failureType: 'testCodeFailure'
+  error: 'the wiping thumb floats 0.18525163219920926 from the actual skin at 4.1s'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:35:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the complete wiping hand stays out of itself and the head through its reach and withdrawal
+not ok 2 - the complete wiping hand stays out of itself and the head through its reach and withdrawal
+  ---
+  duration_ms: 17669.956792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:1:2660'
+  failureType: 'testCodeFailure'
+  error: |-
+    fingers fold through one another at 3.8s
+
+    190 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 190
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/tests/jump-return-contact.test.mts:45:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33633.644709

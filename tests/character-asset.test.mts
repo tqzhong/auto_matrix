@@ -9,6 +9,7 @@ import { PhoneModel, PHONE_HAND } from '../packages/client/src/agents/PhoneModel
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { RedDressCrowd } from '../packages/client/src/engine/RedDressCrowd.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { fingerGroups } from './helpers/fighting-hand-fixture.mjs';
 import { inspectionPalm } from './helpers/construct-inspection.mjs';
 import { createLoungeChair } from '../packages/client/src/engine/LoungeChair.js';
 import { CONSTRUCT, DESERT_REVEAL, constructGuidePose } from '@auto_matrix/shared';
@@ -125,8 +126,9 @@ test('the shipped Neo lies face down on the impact surface and wipes his mouth i
     const returned: MotionInput = { ...input, grounded: true, seated: true, realWorld: true, nebCrew: 'neo', nebCrewEarly: true,
       training: { kind: 'jump_return', role: 'neo', elapsed: 4.5 } };
     models.animate(rig, advanceMotion(motion, returned, 0), motion, returned, 0); rig.root.updateMatrixWorld(true);
-    const mouth = rig.bones.get('head')!.localToWorld(new THREE.Vector3(.075, -.205, .38));
-    assert.ok(rig.bones.get('finger1-3_R')!.getWorldPosition(new THREE.Vector3()).distanceTo(mouth) < .025, 'the wiping thumb must actually reach the mouth');
+    const mouth = rig.root.getObjectByName('jump-mouth-blood')!.getWorldPosition(new THREE.Vector3()), thumb = fingerGroups(rig, 'R'); thumb.skin.skeleton.update();
+    assert.ok(Math.min(...thumb.tips[0].map(i => thumb.skin.localToWorld(thumb.skin.getVertexPosition(i, new THREE.Vector3())).distanceTo(mouth))) < .025,
+      'the actual thumb pad must reach the delivered mouth surface');
     assert.equal(rig.root.getObjectByName('jump-mouth-blood')!.visible, true);
     assert.equal(rig.root.getObjectByName('jump-thumb-blood')!.visible, true);
     returned.training!.elapsed = 7;
