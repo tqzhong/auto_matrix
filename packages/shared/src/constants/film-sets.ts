@@ -44,6 +44,7 @@ import { MOBIL_STATION } from './mobil-station.js';
 import { trainmanBlocked, trainmanFloor } from './trainman-chase.js';
 import { LOGOS_WRECK_WALLS } from './farewell.js';
 import { STEAK_DINING } from './steak.js';
+import { RED_DRESS_PLAZA, redDressFountainBlocked, redDressFountainFloor } from './red-dress-plaza.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -73,7 +74,7 @@ const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '真实世界的废墟', film: [1], architecture: 'desert', world: 'real', width: 88, depth: 108, height: 40, light: 'cold', detail: '焦黑城市、坍塌高楼、遮蔽的天空' },
   { name: '武术训练道场', film: [1], architecture: 'dojo', world: 'matrix', width: 50, depth: 62, height: 17, light: 'day', detail: '榻榻米、木柱、纸门、庭院和瓦檐' },
   { name: '跳跃程序 · 双子屋顶', film: [1], architecture: 'rooftop', world: 'matrix', width: 50, depth: 94, height: 28, light: 'day', detail: '对向屋顶、栏杆、断开的楼间距离' },
-  { name: '红衣女子 · 喷泉广场', film: [1], architecture: 'plaza', world: 'matrix', width: 62, depth: 82, height: 24, light: 'day', detail: '圆形喷泉、石阶、成排立柱与行人' },
+  { name: '红衣女子 · 喷泉广场', film: [1], architecture: 'plaza', world: 'matrix', width: 62, depth: 82, height: 24, light: 'day', detail: '弧形水幕、深色石池沿、银行立面与穿行人群' },
   { name: 'Cypher 与 Smith · 牛排餐厅', film: [1], architecture: 'restaurant', world: 'matrix', width: 40, depth: 50, height: 13, light: 'warm', detail: '夜景落地窗、白桌布、红酒与牛排' },
   { name: '先知公寓 · 候诊室与厨房', film: [1, 3], architecture: 'oracle', world: 'matrix', width: 42, depth: 60, height: 12, light: 'warm', detail: '绿色厨房、烤箱、饼干、花纹墙纸与勺子' },
   { name: '旧楼 · 黑猫与伏击', film: [1], architecture: 'tenement', world: 'matrix', width: 44, depth: 68, height: 18, light: 'day', detail: '封死的窗、楼梯、浴室、墙内通道' },
@@ -197,6 +198,7 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+  if (set.id === 'film_red_dress_plaza') return [...RED_DRESS_PLAZA.benches, ...RED_DRESS_PLAZA.planters];
   if (set.id === 'film_hammer_route') return [
     ...(['niobe', 'morpheus'] as const).map(role => ({ x: HAMMER_COCKPIT.roots[role].x, z: HAMMER_ROUTE.start + HAMMER_COCKPIT.roots[role].z, width: 1.55, depth: 1.45, height: 12 })),
     { x: 0, z: HAMMER_ROUTE.start + HAMMER_COCKPIT.roots.roland.z - .45, width: 3.4, depth: .14, height: 11 },
@@ -322,6 +324,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_red_dress_plaza' && redDressFountainBlocked(x, position.y - set.center.y, z, radius)) return true;
   if (set.id === 'film_jump_roofs' && position.y < set.center.y - .5
     && JUMP_TOWERS.some(tower => Math.abs(x) < 25 + radius && Math.abs(z - tower.z) < tower.depth / 2 + radius)) return true;
   if (set.id === 'film_hammer_route') {
@@ -359,6 +362,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 0): number {
+  if (set.id === 'film_red_dress_plaza') return set.center.y + redDressFountainFloor(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_real_desert') return set.center.y + desertGroundHeight(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_club_hel' && position.z - set.center.z > HEL_ELEVATOR.doorZ && position.y - set.center.y > HEL_ELEVATOR.upper - 2)
     return set.center.y + HEL_ELEVATOR.upper;
