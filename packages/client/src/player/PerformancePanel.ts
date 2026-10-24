@@ -5,8 +5,8 @@ import { CharacterModels } from '../agents/CharacterModel.js';
 import { HeroModels } from '../agents/HeroModel.js';
 import { FightingHands } from '../agents/FightingHands.js';
 
-// Opt-in development measurement. It observes actual frames without creating a
-// capture canvas, encoding video, changing the camera, or advancing the story.
+// Opt-in development measurement. Sampling does not capture or encode frames;
+// a separate button exports one lossless frame when sampling is idle.
 export class PerformancePanel {
   private panel = document.createElement('div');
   private frames: FrameProfile[] = [];
@@ -81,6 +81,35 @@ export class PerformancePanel {
       this.engine.lightCulling.enabled = !(event.target as HTMLInputElement).checked;
       this.status('可以测量当前场景。');
     };
+    const channelLabel = document.createElement('label'); channelLabel.style.cssText = 'display:block;margin-top:6px';
+    channelLabel.innerHTML = '<input type="checkbox"> 对照：接触阴影使用四通道';
+    this.panel.insertBefore(channelLabel, this.panel.querySelector('pre'));
+    channelLabel.querySelector('input')!.onchange = event => {
+      this.engine.postProcessing.occlusionSingleChannel = !(event.target as HTMLInputElement).checked;
+      this.status('可以测量当前场景。');
+    };
+    const snapshot = document.createElement('button'); snapshot.textContent = '保存无损渲染帧';
+    this.panel.appendChild(snapshot);
+    snapshot.onclick = () => {
+      if (engine.onProfile || engine.onRendered) { this.status('请先结束当前性能采样或录像。'); return; }
+      snapshot.disabled = true; this.panel.querySelector('button')!.disabled = true;
+      engine.onRendered = () => { engine.onRendered = undefined; void this.saveFrame(snapshot); };
+    };
+  }
+
+  private async saveFrame(button: HTMLButtonElement): Promise<void> {
+    try {
+      const canvas = this.engine.renderer.domElement;
+      const frame = { kind: 'render-frame', width: canvas.width, height: canvas.height,
+        occlusionSingleChannel: this.engine.postProcessing.occlusionSingleChannel,
+        camera: { position: this.engine.camera.position.toArray(), quaternion: this.engine.camera.quaternion.toArray() },
+        png: canvas.toDataURL('image/png') };
+      const filename = `neo-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      const response = await fetch(`/__recording/${filename}`, { method: 'POST', body: JSON.stringify(frame) });
+      if (!response.ok) throw new Error(await response.text());
+      this.status(`已保存无损渲染帧 ${filename}`);
+    } catch (error) { this.status(`画面未保存：${error instanceof Error ? error.message : String(error)}`); }
+    finally { button.disabled = false; this.panel.querySelector('button')!.disabled = false; }
   }
 
   private status(text: string): void { this.panel.querySelector('[role="status"]')!.textContent = text; }
@@ -226,6 +255,7 @@ export class PerformancePanel {
       lights,
       finiteLightCulling: { enabled: this.engine.lightCulling.enabled, ...this.engine.lightCulling.lastView },
       occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
+      occlusionSingleChannel: this.engine.postProcessing.occlusionSingleChannel,
       shipStaticBatching: this.engine.scene.getObjectByName('neb-interior-deck')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
       podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
       podInstanceCulling: podTowers?.frustumCulled,

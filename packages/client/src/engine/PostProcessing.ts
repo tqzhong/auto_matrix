@@ -11,6 +11,26 @@ export class WorldOcclusionPass extends GTAOPass {
   compositeInPlace = true;
   private inPlace = false;
   private suppressed: THREE.Object3D[] = [];
+  private scalar = false;
+  constructor(...args: ConstructorParameters<typeof GTAOPass>) {
+    super(...args);
+    // AO is grayscale. Keep every sample and its half-float precision while
+    // storing only red; normals and the scene color remain full RGB.
+    this.pdMaterial.fragmentShader = this.pdMaterial.fragmentShader.replaceAll('sampleTexel.rgb', 'sampleTexel.rrr').replaceAll('texel.rgb', 'texel.rrr');
+    this.blendMaterial.fragmentShader = this.blendMaterial.fragmentShader.replace('texel.rgb', 'texel.rrr');
+    this.copyMaterial.uniforms.singleChannel = { value: false };
+    this.copyMaterial.fragmentShader = 'uniform bool singleChannel;\n' + this.copyMaterial.fragmentShader.replace('gl_FragColor = opacity * texel;', 'if (singleChannel) texel.rgb = texel.rrr;\n gl_FragColor = opacity * texel;');
+    this.singleChannel = true;
+  }
+  get singleChannel(): boolean { return this.scalar; }
+  set singleChannel(value: boolean) {
+    if (this.scalar === value) return;
+    this.scalar = value;
+    for (const target of [this.gtaoRenderTarget, this.pdRenderTarget]) {
+      target.texture.format = value ? THREE.RedFormat : THREE.RGBAFormat;
+      target.dispose();
+    }
+  }
   render(...args: Parameters<GTAOPass['render']>): void {
     this.inPlace = this.compositeInPlace && this.output === GTAOPass.OUTPUT.Default && !this.renderToScreen && !args[4];
     this.needsSwap = !this.inPlace;
@@ -21,6 +41,10 @@ export class WorldOcclusionPass extends GTAOPass {
   }
   renderPass(...args: Parameters<GTAOPass['renderPass']>): void {
     if (this.inPlace && args[1] === this.copyMaterial) return;
+    if (args[1] === this.copyMaterial) {
+      const source = this.copyMaterial.uniforms.tDiffuse.value;
+      this.copyMaterial.uniforms.singleChannel.value = this.scalar && (source === this.gtaoRenderTarget.texture || source === this.pdRenderTarget.texture);
+    }
     super.renderPass(...args);
   }
   overrideVisibility(): void {
@@ -94,6 +118,8 @@ export class PostProcessing {
   render(occlusion = true): void { this.occlusion.enabled = occlusion; this.composer.render(); }
   get occlusionInPlace(): boolean { return this.occlusion.compositeInPlace; }
   set occlusionInPlace(value: boolean) { this.occlusion.compositeInPlace = value; }
+  get occlusionSingleChannel(): boolean { return this.occlusion.singleChannel; }
+  set occlusionSingleChannel(value: boolean) { this.occlusion.singleChannel = value; }
   resize(w: number, h: number, pixelRatio = this.pixelRatio): void {
     if (this.pixelRatio !== pixelRatio) { this.pixelRatio = pixelRatio; this.composer.setPixelRatio(pixelRatio); }
     this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
