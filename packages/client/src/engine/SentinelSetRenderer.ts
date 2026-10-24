@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { sentinelMachinePose, sentinelPowerPose, SENTINEL_POWER, type FilmJourney } from '@auto_matrix/shared';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** The Nebuchadnezzar cockpit and the service pipe outside it share one space.
  * The player approaches through the central deck while the Sentinel remains
@@ -23,6 +24,7 @@ export class SentinelSetRenderer {
   private armedLight!: THREE.MeshBasicMaterial;
 
   constructor(parent: THREE.Group) {
+    this.root.name = 'sentinel-cockpit';
     parent.add(this.root);
     const hull = this.material(new THREE.MeshStandardMaterial({ color: 0x26302f, metalness: .75, roughness: .5 }));
     const steel = this.material(new THREE.MeshStandardMaterial({ color: 0x596460, metalness: .86, roughness: .3 }));
@@ -107,6 +109,19 @@ export class SentinelSetRenderer {
     }
 
     this.buildMachine(hull, steel, rubber, red);
+    this.batch();
+  }
+
+  private batch(): void {
+    // Merge fixed siblings inside each animated parent. Named controls and
+    // transparent surfaces stay independent for contact, sorting and updates.
+    const movable = new Set(this.noiseBars);
+    this.root.traverse(parent => batchStaticGeometry(parent, movable, false).forEach(geometry => this.geometries.add(geometry)));
+    if (!import.meta.env?.DEV) {
+      const used = new Set<THREE.BufferGeometry>();
+      this.root.traverse(object => { if (object instanceof THREE.Mesh) used.add(object.geometry); });
+      for (const geometry of this.geometries) if (!used.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
+    }
   }
 
   private material<T extends THREE.Material>(material: T): T { this.materials.add(material); return material; }

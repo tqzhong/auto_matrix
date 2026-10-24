@@ -1,0 +1,109 @@
+{
+  "bundle": "assets/index-mxn8UiMy.js",
+  "productionPanelAbsent": true,
+  "consoleWarningsAndErrors": [],
+  "running": false,
+  "tick": 16777,
+  "health": 100,
+  "position": {
+    "x": 6016,
+    "y": -100,
+    "z": 5653
+  },
+  "journey": {
+    "version": 1,
+    "scene": "m1_sentinels",
+    "step": 2,
+    "actor": "neo",
+    "completed": [
+      "m1_wake_up",
+      "m1_club",
+      "m1_morning",
+      "m1_commute",
+      "m1_boss",
+      "m1_office_escape",
+      "m1_ledge",
+      "m1_wake_again",
+      "m1_bridge",
+      "m1_bug",
+      "m1_pills",
+      "m1_mirror",
+      "m1_pod",
+      "m1_recovery",
+      "m1_cabin",
+      "m1_construct",
+      "m1_desert",
+      "m1_truth_exit",
+      "m1_truth_return",
+      "m1_download",
+      "m1_dojo",
+      "m1_jump",
+      "m1_jump_return",
+      "m1_red_dress",
+      "m1_sentinels"
+    ],
+    "enteredAt": 16750,
+    "reflections": {
+      "m1_club:2": "care",
+      "m1_bug:1": "trust",
+      "m1_pills:fate": "agency",
+      "m1_construct:1": "care",
+      "m1_truth_return:2": "care",
+      "m1_dojo:1": "agency",
+      "m1_jump_return:1": "care"
+    },
+    "lastText": "航道恢复安静。飞船重新接通必要系统，继续驶向先知的接入点。",
+    "checkpoint": {
+      "x": 6016,
+      "y": -100,
+      "z": 5653
+    },
+    "phone": {
+      "phase": "connected",
+      "elapsed": 11
+    },
+    "office": {
+      "alert": 0,
+      "waypoints": [
+        0,
+        1,
+        0
+      ],
+      "suspicion": [
+        0,
+        0,
+        0
+      ],
+      "searches": [
+        null,
+        null,
+        null
+      ],
+      "patrolWait": [
+        0,
+        0,
+        14
+      ],
+      "lastTick": 3508,
+      "arrival": 11,
+      "searchAt": 3332,
+      "guide": "MORPHEUS · 窗口已经打开了。别停在里面，回到窗旁，按 G 前往窄台。",
+      "spotted": false,
+      "window": 3.2,
+      "outcome": "escaped",
+      "bugged": false
+    },
+    "skipped": [
+      "m1_interrogation"
+    ],
+    "sentinel": {
+      "phase": "done",
+      "elapsed": 3.5,
+      "noise": 0,
+      "attempt": 0,
+      "empBriefed": true,
+      "startHealth": 100
+    }
+  },
+  "failureAttempt": "Jump/run inputs did not produce a failed phase in this live run; the sweep completed before the follow-up observation. Failure/retry is covered by the automated regression only."
+}

@@ -1,0 +1,18 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "sameCamera": true,
+  "changedPixels": 115,
+  "changedPercent": 0.005545910493827161,
+  "over8Pixels": 0,
+  "meanRGB": [
+    1.6396604938271605e-05,
+    2.4112654320987653e-05,
+    1.9772376543209878e-05
+  ],
+  "maxRGB": [
+    1,
+    2,
+    1
+  ]
+}

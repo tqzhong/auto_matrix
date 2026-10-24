@@ -1,0 +1,10 @@
+{
+  "dom": {
+    "landing": true,
+    "profilePanel": false,
+    "scripts": [
+      "http://localhost:5173/assets/index-mxn8UiMy.js"
+    ]
+  },
+  "logs": []
+}

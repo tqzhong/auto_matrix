@@ -1,0 +1,18 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-mxn8UiMy.js",
+  "sha256": "07b22381d3ecd6832c6969f5d4c59024ee4c2cfc9188164bc8b7dc57824fb746",
+  "bundleBytes": 3795802,
+  "javascriptDeltaBytes": 315,
+  "newGameAssetBytes": 0,
+  "cssIdentical": true,
+  "backendAndSharedFilesUnchanged": 800,
+  "protectedFilesUnchanged": 11,
+  "mainMemories": 85,
+  "mainTickBefore": 81746,
+  "mainTickAfter": 81746,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

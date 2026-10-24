@@ -1,0 +1,450 @@
+[
+  {
+    "report": "original-1",
+    "fps": 9.68672850937713,
+    "frameTime": {
+      "mean": 103.23402777645323,
+      "p95": 245.69999980926514
+    },
+    "cpuMs": {
+      "controls": {
+        "mean": 1.3786207133326036,
+        "p95": 4
+      },
+      "agents": {
+        "mean": 28.759310347458413,
+        "p95": 62.60000038146973
+      },
+      "city": {
+        "mean": 0.35586203213395745,
+        "p95": 1.1000003814697266
+      },
+      "film": {
+        "mean": 0.2944827967676623,
+        "p95": 1.3999996185302734
+      },
+      "effects": {
+        "mean": 0.5386206528236126,
+        "p95": 1.3000001907348633
+      },
+      "render": {
+        "mean": 55.96275862989754,
+        "p95": 125.5
+      },
+      "capture": {
+        "mean": 0.0006896578032394936,
+        "p95": 0
+      }
+    },
+    "calls": {
+      "mean": 1077.2137931034483,
+      "p95": 1082
+    },
+    "triangles": {
+      "mean": 1810901.9310344828,
+      "p95": 1811572
+    },
+    "drawsPerFrame": {
+      "shadows": {
+        "calls": 262.21379310344827,
+        "triangles": 445277.9310344828
+      },
+      "scene": {
+        "calls": 544,
+        "triangles": 910852
+      },
+      "occlusion": {
+        "calls": 253,
+        "triangles": 454754
+      },
+      "postprocessing": {
+        "calls": 18,
+        "triangles": 18
+      }
+    },
+    "sentinelStaticBatching": false,
+    "camera": {
+      "position": [
+        6017.432938559791,
+        -97.01,
+        5711.821987319396
+      ],
+      "quaternion": [
+        -0.11971001988283297,
+        0.006001696808694424,
+        0.0007236806233357761,
+        0.9927904950498991
+      ],
+      "projection": [
+        0.8339405447884163,
+        0,
+        0,
+        0,
+        0,
+        1.48256096851274,
+        0,
+        0,
+        0,
+        0,
+        -1.0002000200020003,
+        -1,
+        0,
+        0,
+        -1.000100010001,
+        0
+      ]
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "pixelRatio": 1
+    },
+    "recordingActive": false,
+    "pageVisibility": "visible",
+    "gpuTiming": {
+      "mode": "cpu",
+      "supported": true,
+      "counterBits": 64,
+      "discarded": 0,
+      "pendingAtStop": 0,
+      "intervalsAreNotAdditive": true,
+      "glErrorAtStop": 0
+    }
+  },
+  {
+    "report": "batched-1",
+    "fps": 10.718898550088845,
+    "frameTime": {
+      "mean": 93.29316770067867,
+      "p95": 156.80000019073486
+    },
+    "cpuMs": {
+      "controls": {
+        "mean": 1.3111111087563596,
+        "p95": 5.299999237060547
+      },
+      "agents": {
+        "mean": 29.78888886651875,
+        "p95": 60.80000019073486
+      },
+      "city": {
+        "mean": 0.8425926338007421,
+        "p95": 3.1000003814697266
+      },
+      "film": {
+        "mean": 0.10432094409142012,
+        "p95": 0.3000001907348633
+      },
+      "effects": {
+        "mean": 0.43950617166213046,
+        "p95": 1.1000003814697266
+      },
+      "render": {
+        "mean": 45.124074076428826,
+        "p95": 88.60000038146973
+      },
+      "capture": {
+        "mean": 0.009876545564627942,
+        "p95": 0
+      }
+    },
+    "calls": {
+      "mean": 609.2469135802469,
+      "p95": 609
+    },
+    "triangles": {
+      "mean": 1815657.7530864198,
+      "p95": 1815548
+    },
+    "drawsPerFrame": {
+      "shadows": {
+        "calls": 142,
+        "triangles": 447068
+      },
+      "scene": {
+        "calls": 312.18518518518516,
+        "triangles": 912829.2098765433
+      },
+      "occlusion": {
+        "calls": 137.06172839506172,
+        "triangles": 455742.5432098765
+      },
+      "postprocessing": {
+        "calls": 18,
+        "triangles": 18
+      }
+    },
+    "sentinelStaticBatching": true,
+    "camera": {
+      "position": [
+        6017.432938559791,
+        -97.01,
+        5711.821987319396
+      ],
+      "quaternion": [
+        -0.11971001988283297,
+        0.006001696808694424,
+        0.0007236806233357761,
+        0.9927904950498991
+      ],
+      "projection": [
+        0.8339405447884163,
+        0,
+        0,
+        0,
+        0,
+        1.48256096851274,
+        0,
+        0,
+        0,
+        0,
+        -1.0002000200020003,
+        -1,
+        0,
+        0,
+        -1.000100010001,
+        0
+      ]
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "pixelRatio": 1
+    },
+    "recordingActive": false,
+    "pageVisibility": "visible",
+    "gpuTiming": {
+      "mode": "cpu",
+      "supported": true,
+      "counterBits": 64,
+      "discarded": 0,
+      "pendingAtStop": 0,
+      "intervalsAreNotAdditive": true,
+      "glErrorAtStop": 0
+    }
+  },
+  {
+    "report": "batched-2",
+    "fps": 12.14312879086678,
+    "frameTime": {
+      "mean": 82.35109889900292,
+      "p95": 162.10000038146973
+    },
+    "cpuMs": {
+      "controls": {
+        "mean": 1.577049198046408,
+        "p95": 4.399999618530273
+      },
+      "agents": {
+        "mean": 23.814754063965843,
+        "p95": 50.30000019073486
+      },
+      "city": {
+        "mean": 0.605464487127919,
+        "p95": 1.6000003814697266
+      },
+      "film": {
+        "mean": 0.16229509134761622,
+        "p95": 0.6000003814697266
+      },
+      "effects": {
+        "mean": 0.3704917886869504,
+        "p95": 1.3999996185302734
+      },
+      "render": {
+        "mean": 37.490710399189936,
+        "p95": 83.5
+      },
+      "capture": {
+        "mean": 0,
+        "p95": 0
+      }
+    },
+    "calls": {
+      "mean": 625,
+      "p95": 625
+    },
+    "triangles": {
+      "mean": 1822660,
+      "p95": 1822660
+    },
+    "drawsPerFrame": {
+      "shadows": {
+        "calls": 142,
+        "triangles": 447068
+      },
+      "scene": {
+        "calls": 324,
+        "triangles": 917500
+      },
+      "occlusion": {
+        "calls": 141,
+        "triangles": 458074
+      },
+      "postprocessing": {
+        "calls": 18,
+        "triangles": 18
+      }
+    },
+    "sentinelStaticBatching": true,
+    "camera": {
+      "position": [
+        6017.432938559791,
+        -97.01,
+        5711.821987319396
+      ],
+      "quaternion": [
+        -0.11971001988283297,
+        0.006001696808694424,
+        0.0007236806233357761,
+        0.9927904950498991
+      ],
+      "projection": [
+        0.8339405447884163,
+        0,
+        0,
+        0,
+        0,
+        1.48256096851274,
+        0,
+        0,
+        0,
+        0,
+        -1.0002000200020003,
+        -1,
+        0,
+        0,
+        -1.000100010001,
+        0
+      ]
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "pixelRatio": 1
+    },
+    "recordingActive": false,
+    "pageVisibility": "visible",
+    "gpuTiming": {
+      "mode": "cpu",
+      "supported": true,
+      "counterBits": 64,
+      "discarded": 0,
+      "pendingAtStop": 0,
+      "intervalsAreNotAdditive": true,
+      "glErrorAtStop": 0
+    }
+  },
+  {
+    "report": "original-2",
+    "fps": 7.697368421052632,
+    "frameTime": {
+      "mean": 129.9145299145299,
+      "p95": 364
+    },
+    "cpuMs": {
+      "controls": {
+        "mean": 1.1822034221584514,
+        "p95": 5.199999809265137
+      },
+      "agents": {
+        "mean": 30.29322035029783,
+        "p95": 94.19999980926514
+      },
+      "city": {
+        "mean": 1.212711867639574,
+        "p95": 5.800000190734863
+      },
+      "film": {
+        "mean": 0.48559318962743725,
+        "p95": 3.3000001907348633
+      },
+      "effects": {
+        "mean": 0.35593223571777344,
+        "p95": 1.4000005722045898
+      },
+      "render": {
+        "mean": 71.01186436313694,
+        "p95": 249.4000005722046
+      },
+      "capture": {
+        "mean": 0.0008474527779272047,
+        "p95": 0
+      }
+    },
+    "calls": {
+      "mean": 1093.2966101694915,
+      "p95": 1098
+    },
+    "triangles": {
+      "mean": 1818025.5254237289,
+      "p95": 1818684
+    },
+    "drawsPerFrame": {
+      "shadows": {
+        "calls": 262.29661016949154,
+        "triangles": 445289.5254237288
+      },
+      "scene": {
+        "calls": 556,
+        "triangles": 915596
+      },
+      "occlusion": {
+        "calls": 257,
+        "triangles": 457122
+      },
+      "postprocessing": {
+        "calls": 18,
+        "triangles": 18
+      }
+    },
+    "sentinelStaticBatching": false,
+    "camera": {
+      "position": [
+        6017.432938559791,
+        -97.01,
+        5711.821987319396
+      ],
+      "quaternion": [
+        -0.11971001988283297,
+        0.006001696808694424,
+        0.0007236806233357761,
+        0.9927904950498991
+      ],
+      "projection": [
+        0.8339405447884163,
+        0,
+        0,
+        0,
+        0,
+        1.48256096851274,
+        0,
+        0,
+        0,
+        0,
+        -1.0002000200020003,
+        -1,
+        0,
+        0,
+        -1.000100010001,
+        0
+      ]
+    },
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "pixelRatio": 1
+    },
+    "recordingActive": false,
+    "pageVisibility": "visible",
+    "gpuTiming": {
+      "mode": "cpu",
+      "supported": true,
+      "counterBits": 64,
+      "discarded": 0,
+      "pendingAtStop": 0,
+      "intervalsAreNotAdditive": true,
+      "glErrorAtStop": 0
+    }
+  }
+]

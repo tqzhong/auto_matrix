@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+ok 1 - the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+  ---
+  duration_ms: 3.193834
+  type: 'test'
+  ...
+# Subtest: a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+ok 2 - a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+  ---
+  duration_ms: 1511.41325
+  type: 'test'
+  ...
+# Subtest: an already-started legacy shutdown continues its scan without a new briefing or progress reset
+ok 3 - an already-started legacy shutdown continues its scan without a new briefing or progress reset
+  ---
+  duration_ms: 138.213667
+  type: 'test'
+  ...
+# Subtest: EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+ok 4 - EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+  ---
+  duration_ms: 265.274333
+  type: 'test'
+  ...
+# Subtest: cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+ok 5 - cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+  ---
+  duration_ms: 121.707208
+  type: 'test'
+  ...
+# Subtest: physical control collisions share the visible footprint, leave the inspection path open and release on departure
+ok 6 - physical control collisions share the visible footprint, leave the inspection path open and release on departure
+  ---
+  duration_ms: 811.075625
+  type: 'test'
+  ...
+# Subtest: shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+ok 7 - shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+  ---
+  duration_ms: 2193.064875
+  type: 'test'
+  ...
+# Subtest: the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+ok 8 - the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+  ---
+  duration_ms: 637.151084
+  type: 'test'
+  ...
+# Subtest: running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+ok 9 - running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+  ---
+  duration_ms: 758.950208
+  type: 'test'
+  ...
+# Subtest: a stealth retry keeps Neo’s previous injury instead of healing him to full health
+ok 10 - a stealth retry keeps Neo’s previous injury instead of healing him to full health
+  ---
+  duration_ms: 257.937333
+  type: 'test'
+  ...
+# Subtest: the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+ok 11 - the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+  ---
+  duration_ms: 220.921417
+  type: 'test'
+  ...
+# Subtest: occupied crew blocks shutdown and the active encounter reserves every required role
+ok 12 - occupied crew blocks shutdown and the active encounter reserves every required role
+  ---
+  duration_ms: 4.5715
+  type: 'test'
+  ...
+# Subtest: Neo enters the service tunnel through a continuous playable aisle
+ok 13 - Neo enters the service tunnel through a continuous playable aisle
+  ---
+  duration_ms: 3.167042
+  type: 'test'
+  ...
+# Subtest: the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+ok 14 - the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+  ---
+  duration_ms: 80.40825
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 15 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 33.683708
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8673.193375

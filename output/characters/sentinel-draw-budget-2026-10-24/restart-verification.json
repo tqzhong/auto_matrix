@@ -1,0 +1,15 @@
+{
+  "worldIdentical": true,
+  "memoriesIdentical": true,
+  "memoryCount": 7,
+  "tick": 16672,
+  "journey": {
+    "phase": "verify",
+    "elapsed": 0,
+    "noise": 0,
+    "attempt": 0,
+    "empBriefed": true,
+    "startHealth": 100
+  },
+  "running": false
+}

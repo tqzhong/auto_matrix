@@ -68,6 +68,21 @@ export class PerformancePanel {
       }
       this.status('可以测量当前场景。');
     };
+    const sentinelLabel = document.createElement('label'); sentinelLabel.style.cssText = 'display:block;margin-top:6px';
+    sentinelLabel.innerHTML = '<input type="checkbox"> 对照：哨兵舱室固定部件逐件绘制';
+    this.panel.insertBefore(sentinelLabel, this.panel.querySelector('pre'));
+    sentinelLabel.querySelector('input')!.onchange = event => {
+      const cockpit = this.engine.scene.getObjectByName('sentinel-cockpit'), batches: Object3D[] = [];
+      cockpit?.traverse(object => { if (object.userData.unbatchedSiblings) batches.push(object); });
+      const checkbox = event.target as HTMLInputElement;
+      if (!batches.length) { checkbox.checked = false; this.status('请在哨兵静默潜伏场景使用此对照项。'); return; }
+      for (const batch of batches) {
+        batch.visible = !checkbox.checked;
+        const pieces = batch.userData.unbatchedSiblings as Object3D[];
+        if (checkbox.checked) batch.parent!.add(...pieces); else batch.parent!.remove(...pieces);
+      }
+      this.status('可以测量当前场景。');
+    };
     this.gpuTimer = new GpuTimer(engine.renderer.getContext() as WebGL2RenderingContext);
     const support = document.createElement('p'); support.textContent = this.gpuTimer.supported ? `GPU计时：可用，${this.gpuTimer.counterBits}位计数器` : 'GPU计时：此浏览器未提供扩展';
     this.panel.appendChild(support);
@@ -102,6 +117,7 @@ export class PerformancePanel {
       const canvas = this.engine.renderer.domElement;
       const frame = { kind: 'render-frame', width: canvas.width, height: canvas.height,
         occlusionSingleChannel: this.engine.postProcessing.occlusionSingleChannel,
+        sentinelStaticBatching: this.engine.scene.getObjectByName('sentinel-cockpit')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
         camera: { position: this.engine.camera.position.toArray(), quaternion: this.engine.camera.quaternion.toArray() },
         png: canvas.toDataURL('image/png') };
       const filename = `neo-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
@@ -257,6 +273,7 @@ export class PerformancePanel {
       occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
       occlusionSingleChannel: this.engine.postProcessing.occlusionSingleChannel,
       shipStaticBatching: this.engine.scene.getObjectByName('neb-interior-deck')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
+      sentinelStaticBatching: this.engine.scene.getObjectByName('sentinel-cockpit')?.children.find(object => object.userData.unbatchedSiblings)?.visible,
       podDistantNormals: podTowers ? podTowers.userData.distantBackdrop === false : undefined,
       podInstanceCulling: podTowers?.frustumCulled,
       camera: { position: this.engine.camera.position.toArray(), quaternion: this.engine.camera.quaternion.toArray(), projection: this.engine.camera.projectionMatrix.toArray() },

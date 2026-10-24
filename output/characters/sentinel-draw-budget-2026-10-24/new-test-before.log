@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+not ok 1 - the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+  ---
+  duration_ms: 83.991791
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/sentinel-draw-budget-2026-10-24/candidate-release/tests/sentinel-batching.test.mts:1:182'
+  failureType: 'testCodeFailure'
+  error: 'the unchanged cockpit still needs 254 individual surfaces per pass'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/sentinel-draw-budget-2026-10-24/candidate-release/tests/sentinel-batching.test.mts:11:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 899.913833

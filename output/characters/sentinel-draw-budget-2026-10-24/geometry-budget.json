@@ -1,0 +1,15 @@
+{
+  "before": {
+    "meshes": 254,
+    "triangles": 39774,
+    "vertices": 29520,
+    "geometryBytes": 1182204
+  },
+  "after": {
+    "meshes": 121,
+    "triangles": 39774,
+    "vertices": 29520,
+    "geometryBytes": 1182204
+  },
+  "geometryPreserved": true
+}

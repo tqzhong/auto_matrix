@@ -1,0 +1,21 @@
+{
+  "kind": "render-frame",
+  "width": 1920,
+  "height": 1080,
+  "occlusionSingleChannel": true,
+  "sentinelStaticBatching": false,
+  "camera": {
+    "position": [
+      6017.432938559791,
+      -97.01,
+      5711.821987319396
+    ],
+    "quaternion": [
+      -0.11971001988283297,
+      0.006001696808694424,
+      0.0007236806233357761,
+      0.9927904950498991
+    ]
+  },
+  "sha256": "0dc5878b73ed811d19b3c886114dfd9286f23fc0e9ef7090858a9e553a286541"
+}
