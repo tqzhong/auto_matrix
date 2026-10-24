@@ -1,0 +1,50 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-CCOTDEXi.js",
+  "javascriptUnchanged": true,
+  "sha256": "589fa46f26ecd034ac07152eb37bbccf376c80e2576391f154ebf398c2c97092",
+  "servedAssets": [
+    {
+      "name": "plaza-crowd-male.glb",
+      "bytes": 6660996,
+      "sha256": "6e8d17124a7c7b8dd98c3022b7c2fda5bd84778b34a29dca4d3275f7e4dc5c34",
+      "cacheControl": "public, max-age=0"
+    },
+    {
+      "name": "plaza-crowd-female.glb",
+      "bytes": 6696300,
+      "sha256": "7d37bfea9a05c4fb89e7f3124945ae21ab3af370baf4303a8afc388e623001f9",
+      "cacheControl": "public, max-age=0"
+    }
+  ],
+  "assetDeltaBytes": -259124,
+  "publishedFiles": [
+    "packages/client/public/assets/characters/plaza-crowd-male.glb",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/client/public/assets/characters/plaza-crowd-male.glb",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/client/dist/assets/characters/plaza-crowd-male.glb",
+    "packages/client/public/assets/characters/plaza-crowd-female.glb",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/client/public/assets/characters/plaza-crowd-female.glb",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/client/dist/assets/characters/plaza-crowd-female.glb",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/client/public/assets/characters/PLAZA-CROWD.md",
+    "output/deployment/matrixai-bandwidth-2026-10-20/release/packages/client/dist/assets/characters/PLAZA-CROWD.md"
+  ],
+  "candidateInputs": 1249,
+  "candidateChangedInputs": [
+    "package-lock.json",
+    "package.json",
+    "packages/client/public/assets/characters/PLAZA-CROWD.md",
+    "packages/client/public/assets/characters/plaza-crowd-female.glb",
+    "packages/client/public/assets/characters/plaza-crowd-male.glb",
+    "scripts/build-plaza-crowd.mts",
+    "tests/red-dress-crowd.test.mts"
+  ],
+  "protectedFilesUnchanged": 11,
+  "backendAndSharedFilesUnchanged": 800,
+  "mainMemories": 85,
+  "mainTickBefore": 77214,
+  "mainTickAfter": 77214,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

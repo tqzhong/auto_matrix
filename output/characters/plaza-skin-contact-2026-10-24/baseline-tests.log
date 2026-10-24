@@ -1,0 +1,84 @@
+TAP version 13
+# Subtest: crowd limbs are culled per camera while their bounds contain walking, seated and airborne poses
+ok 1 - crowd limbs are culled per camera while their bounds contain walking, seated and airborne poses
+  ---
+  duration_ms: 360.653416
+  type: 'test'
+  ...
+# Subtest: every exported pedestrian texture resolves to a shipped asset
+ok 2 - every exported pedestrian texture resolves to a shipped asset
+  ---
+  duration_ms: 281.665417
+  type: 'test'
+  ...
+# Subtest: twenty plaza pedestrians share at most twelve surfaces without removing people or their shadows
+ok 3 - twenty plaza pedestrians share at most twelve surfaces without removing people or their shadows
+  ---
+  duration_ms: 170.76275
+  type: 'test'
+  ...
+# Subtest: walking, cold loading, freezing and rewinding retain the same instance poses
+ok 4 - walking, cold loading, freezing and rewinding retain the same instance poses
+  ---
+  duration_ms: 340.883458
+  type: 'test'
+  ...
+# Subtest: exported walks keep separate grounded feet, covered waists and complete hand topology
+ok 5 - exported walks keep separate grounded feet, covered waists and complete hand topology
+  ---
+  duration_ms: 690.427583
+  type: 'test'
+  ...
+# Subtest: the actual plaza atmosphere uses one daylight shadow and restores the outside world when leaving
+ok 6 - the actual plaza atmosphere uses one daylight shadow and restores the outside world when leaving
+  ---
+  duration_ms: 430.899291
+  type: 'test'
+  ...
+# Subtest: the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+ok 7 - the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+  ---
+  duration_ms: 302.940708
+  type: 'test'
+  ...
+# Subtest: visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+ok 8 - visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+  ---
+  duration_ms: 510.821167
+  type: 'test'
+  ...
+# Subtest: the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+ok 9 - the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+  ---
+  duration_ms: 214.502292
+  type: 'test'
+  ...
+# Subtest: falling water and the pool use the saved frozen clock, including a cold renderer
+ok 10 - falling water and the pool use the saved frozen clock, including a cold renderer
+  ---
+  duration_ms: 367.911666
+  type: 'test'
+  ...
+# Subtest: curved pool walls, the recessed basin floor and the raised spillway agree with actual rendered surfaces
+ok 11 - curved pool walls, the recessed basin floor and the raised spillway agree with actual rendered surfaces
+  ---
+  duration_ms: 792.959792
+  type: 'test'
+  ...
+# {"floorSamples":1869}
+# Subtest: physical bank facades enclose the plaza while static detail stays within its draw budget
+ok 12 - physical bank facades enclose the plaza while static detail stays within its draw budget
+  ---
+  duration_ms: 467.5735
+  type: 'test'
+  ...
+# {"meshes":43,"triangles":44108}
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7458.319333

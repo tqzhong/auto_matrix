@@ -1,0 +1,54 @@
+TAP version 13
+# Subtest: male pedestrian skin does not pierce the suit during idle or interpolated walking
+not ok 1 - male pedestrian skin does not pierce the suit during idle or interpolated walking
+  ---
+  duration_ms: 434.324
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/plaza-skin-contact-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:1:7026'
+  failureType: 'testCodeFailure'
+  error: |-
+    male phase -1: 127 skin/cloth crossings; [{"first":2353,"second":838,"line":0.061372560003311746},{"first":10039,"second":714,"line":0.05933669064175763},{"first":9996,"second":720,"line":0.057247032801903575},{"first":2343,"second":838,"line":0.05260183932500118}]
+
+    127 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 127
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/plaza-skin-contact-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:139:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: female pedestrian skin does not pierce the suit during idle or interpolated walking
+not ok 2 - female pedestrian skin does not pierce the suit during idle or interpolated walking
+  ---
+  duration_ms: 198.796708
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/plaza-skin-contact-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:1:7026'
+  failureType: 'testCodeFailure'
+  error: |-
+    female phase -1: 354 skin/cloth crossings; [{"first":5315,"second":791,"line":0.021844460367485653},{"first":1130,"second":2436,"line":0.02114720729617134},{"first":8898,"second":2201,"line":0.021056470433235372},{"first":5319,"second":1210,"line":0.020927748050038077}]
+
+    354 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 354
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/plaza-skin-contact-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:139:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2166.709625

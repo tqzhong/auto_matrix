@@ -1,0 +1,164 @@
+[
+  {
+    "sex": "male",
+    "before": {
+      "sha256": "6a0c39ffbe8d1cc24bcf5e7cf26474548a6f8e21fea1ba81ebc924588ab72fdc",
+      "bytes": 6785916,
+      "triangles": 21560,
+      "surfaces": [
+        {
+          "name": "Plaza skin",
+          "vertices": 8372,
+          "triangles": 15408
+        },
+        {
+          "name": "Plaza suit",
+          "vertices": 1800,
+          "triangles": 2421
+        },
+        {
+          "name": "Plaza trousers",
+          "vertices": 900,
+          "triangles": 1558
+        },
+        {
+          "name": "Plaza soles",
+          "vertices": 650,
+          "triangles": 928
+        },
+        {
+          "name": "Plaza eyes",
+          "vertices": 150,
+          "triangles": 195
+        },
+        {
+          "name": "Plaza hair",
+          "vertices": 983,
+          "triangles": 1050
+        }
+      ],
+      "sourceSha256": "418c2adc8e7e6d58beab2cf8c0008ccce1d3bddfc4d487b5c9dc0f175d7e3f94",
+      "phases": 20
+    },
+    "after": {
+      "sha256": "6e8d17124a7c7b8dd98c3022b7c2fda5bd84778b34a29dca4d3275f7e4dc5c34",
+      "bytes": 6660996,
+      "triangles": 20975,
+      "surfaces": [
+        {
+          "name": "Plaza skin",
+          "vertices": 8372,
+          "triangles": 14844
+        },
+        {
+          "name": "Plaza suit",
+          "vertices": 1563,
+          "triangles": 2400
+        },
+        {
+          "name": "Plaza trousers",
+          "vertices": 900,
+          "triangles": 1558
+        },
+        {
+          "name": "Plaza soles",
+          "vertices": 650,
+          "triangles": 928
+        },
+        {
+          "name": "Plaza eyes",
+          "vertices": 150,
+          "triangles": 195
+        },
+        {
+          "name": "Plaza hair",
+          "vertices": 983,
+          "triangles": 1050
+        }
+      ],
+      "sourceSha256": "418c2adc8e7e6d58beab2cf8c0008ccce1d3bddfc4d487b5c9dc0f175d7e3f94",
+      "phases": 20
+    }
+  },
+  {
+    "sex": "female",
+    "before": {
+      "sha256": "ae3bff01baafd4475dc2b86eece75f6364e28e57a380f20a25da871765e169e7",
+      "bytes": 6830504,
+      "triangles": 21734,
+      "surfaces": [
+        {
+          "name": "Plaza skin",
+          "vertices": 8457,
+          "triangles": 15564
+        },
+        {
+          "name": "Plaza suit",
+          "vertices": 1800,
+          "triangles": 2440
+        },
+        {
+          "name": "Plaza trousers",
+          "vertices": 900,
+          "triangles": 1558
+        },
+        {
+          "name": "Plaza soles",
+          "vertices": 650,
+          "triangles": 928
+        },
+        {
+          "name": "Plaza eyes",
+          "vertices": 150,
+          "triangles": 194
+        },
+        {
+          "name": "Plaza hair",
+          "vertices": 983,
+          "triangles": 1050
+        }
+      ],
+      "sourceSha256": "6cffdcdf777f9afbde9e7ca72169a5614f809a05e1d90b91c4f0e3737d2c3992",
+      "phases": 20
+    },
+    "after": {
+      "sha256": "7d37bfea9a05c4fb89e7f3124945ae21ab3af370baf4303a8afc388e623001f9",
+      "bytes": 6696300,
+      "triangles": 20972,
+      "surfaces": [
+        {
+          "name": "Plaza skin",
+          "vertices": 8457,
+          "triangles": 14842
+        },
+        {
+          "name": "Plaza suit",
+          "vertices": 1547,
+          "triangles": 2400
+        },
+        {
+          "name": "Plaza trousers",
+          "vertices": 900,
+          "triangles": 1558
+        },
+        {
+          "name": "Plaza soles",
+          "vertices": 650,
+          "triangles": 928
+        },
+        {
+          "name": "Plaza eyes",
+          "vertices": 150,
+          "triangles": 194
+        },
+        {
+          "name": "Plaza hair",
+          "vertices": 983,
+          "triangles": 1050
+        }
+      ],
+      "sourceSha256": "6cffdcdf777f9afbde9e7ca72169a5614f809a05e1d90b91c4f0e3737d2c3992",
+      "phases": 20
+    }
+  }
+]

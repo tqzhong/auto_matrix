@@ -1,0 +1,10 @@
+{
+  "oldPid": 85188,
+  "newPid": 90196,
+  "tick": 12625,
+  "worldIdentical": true,
+  "worldSha256": "5859e076a83534086b98c61d3fb4e706c01b2e68ed9f0d9f00ae9c3c32e0597f",
+  "memoryFilesUnchanged": 7,
+  "nativeColdReloadAndResume": true,
+  "runtimeBundle": "index-CCOTDEXi.js"
+}

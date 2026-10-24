@@ -1,0 +1,76 @@
+{
+  "entry": "http://127.0.0.1:5200/",
+  "simulation": {
+    "running": false,
+    "speed": 1,
+    "timeScale": 1,
+    "tick": 13346,
+    "mode": "rules",
+    "llmStatus": "offline",
+    "population": 84,
+    "awakened": 62,
+    "tension": 0,
+    "anomaly": 65,
+    "conversations": 1,
+    "day": 4,
+    "chapter": "红衣女子",
+    "chapterDescription": "人群中的一个身影分散了注意力，身后出现的却是特工。"
+  },
+  "neo": {
+    "health": 100,
+    "position": {
+      "x": 4423,
+      "y": 1,
+      "z": 4716
+    },
+    "rotation": 0.5782585942000329,
+    "currentLocation": "film_red_dress_plaza"
+  },
+  "journey": {
+    "scene": "m1_red_dress",
+    "step": 2,
+    "completed": [
+      "m1_wake_up",
+      "m1_club",
+      "m1_morning",
+      "m1_commute",
+      "m1_boss",
+      "m1_office_escape",
+      "m1_ledge",
+      "m1_wake_again",
+      "m1_bridge",
+      "m1_bug",
+      "m1_pills",
+      "m1_mirror",
+      "m1_pod",
+      "m1_recovery",
+      "m1_cabin",
+      "m1_construct",
+      "m1_desert",
+      "m1_truth_exit",
+      "m1_truth_return",
+      "m1_download",
+      "m1_dojo",
+      "m1_jump",
+      "m1_jump_return",
+      "m1_red_dress"
+    ],
+    "training": {
+      "kind": "red_dress",
+      "elapsed": 12,
+      "started": true,
+      "attention": {
+        "phase": "done",
+        "noticed": true,
+        "look": 0,
+        "misses": 0,
+        "yaw": 0.5782585942000329,
+        "clock": 180.8529999999986
+      }
+    },
+    "lastText": "Morpheus 暂停训练：仍被系统控制的任何人都可能成为特工的入口。"
+  },
+  "actions": "Native W/Shift+W/D to approach; G to start; mouse drag and V to observe Smith; G held 500 ms to finish; pause via UI. A short G tap showed the in-progress message before the held input completed it.",
+  "consoleWarningsAndErrors": 0,
+  "newFPSMeasurement": false
+}

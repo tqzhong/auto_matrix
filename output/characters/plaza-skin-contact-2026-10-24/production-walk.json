@@ -1,0 +1,15 @@
+{
+  "before": {
+    "x": 4432.746249258355,
+    "y": 1,
+    "z": 4730.4868601554645
+  },
+  "after": {
+    "x": 4435.026314469149,
+    "y": 1,
+    "z": 4733.733410102625
+  },
+  "distance": 3.9672136222897656,
+  "nativeInput": "W held 1100 ms; V switched to first person; mouse drag changed view",
+  "hp": 100
+}

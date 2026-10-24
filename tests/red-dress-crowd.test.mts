@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RedDressCrowd } from '../packages/client/src/engine/RedDressCrowd.js';
+import { crossings } from './helpers/hand-self-contact.mjs';
 
 async function asset(name: string) {
   const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
@@ -112,5 +114,60 @@ test('exported walks keep separate grounded feet, covered waists and complete ha
     }
     for (const contact of contacts) assert.ok(Math.max(...contact) - Math.min(...contact) < .07,
       `${sex}: planted foot slips ${Math.max(...contact) - Math.min(...contact)} world units`);
+  }
+});
+
+for (const sex of ['male', 'female']) test(`${sex} pedestrian skin does not pierce the suit during idle or interpolated walking`, async () => {
+  const loaded = await asset(`plaza-crowd-${sex}`), surfaces = meshes(loaded.scene);
+  const skin = surfaces.find(mesh => /skin/i.test(mesh.name))!, jacket = surfaces.find(mesh => /suit/i.test(mesh.name))!;
+  const trousers = surfaces.find(mesh => /trousers/i.test(mesh.name))!;
+  const faces = (mesh: THREE.Mesh) => {
+    const index = mesh.geometry.index!, vertices = Array.from({ length: mesh.geometry.attributes.position.count }, (_, i) => mesh.getVertexPosition(i, new THREE.Vector3()));
+    return Array.from({ length: index.count / 3 }, (_, face) => {
+      const ids = [0, 1, 2].map(k => index.getX(face * 3 + k)), points = ids.map(i => vertices[i]);
+      return { face, ids, points, box: new THREE.Box3().setFromPoints(points) };
+    });
+  };
+  const hands = faces(skin).filter(face => face.box.max.y < 2.7).map(face => face.ids);
+  const topology = { male: '04afe7f9b87c79d2796afb258b4dbd09db75927dc173bbfa1e39b8626f37910f', female: '67190406a070391e9c5f8b2b496d765c1979078016ab522232973236a4fad693' };
+  assert.equal(createHash('sha256').update(JSON.stringify(hands)).digest('hex'), topology[sex as keyof typeof topology], 'keep all 6,236 hand triangles from the original asset');
+  for (const phase of [-1, ...Array.from({ length: 40 }, (_, i) => i / 40)]) {
+    for (const mesh of [skin, jacket, trousers]) {
+      mesh.morphTargetInfluences!.fill(0);
+      if (phase >= 0) {
+        const frame = phase * 20;
+        mesh.morphTargetInfluences![Math.floor(frame)] = 1 - frame % 1;
+        mesh.morphTargetInfluences![(Math.floor(frame) + 1) % 20] = frame % 1;
+      }
+    }
+    const skinFaces = faces(skin), handFaces = skinFaces.filter(face => face.box.max.y < 2.7);
+    assert.equal(crossings(handFaces, handFaces).count, 0, `${sex} phase ${phase}: fingers must not fold through one another`);
+    for (const garment of [jacket, trousers]) {
+      const contact = crossings(skinFaces, faces(garment), false);
+      assert.equal(contact.count, 0, `${sex} phase ${phase}: ${contact.count} skin/${garment.name} crossings; ${JSON.stringify(contact.examples)}`);
+    }
+  }
+});
+
+
+test('reduced business jackets keep upper-arm and shoulder seams sewn', async () => {
+  for (const sex of ['male', 'female']) {
+    const loaded = await asset(`plaza-crowd-${sex}`), jacket = meshes(loaded.scene).find(mesh => /suit/i.test(mesh.name))!;
+    const geometry = jacket.geometry, index = geometry.index!, point = new THREE.Vector3();
+    for (let pose = -1; pose < 20; pose++) {
+      jacket.morphTargetInfluences!.fill(0);
+      if (pose >= 0) jacket.morphTargetInfluences![pose] = 1;
+      const positions = Array.from({ length: geometry.attributes.position.count }, (_, i) =>
+        jacket.getVertexPosition(i, point).toArray().map(value => Math.round(value * 1e5) / 1e5));
+      const edges = new Map<string, { count: number; middle: number[] }>();
+      for (let face = 0; face < index.count; face += 3) for (let side = 0; side < 3; side++) {
+        const a = positions[index.getX(face + side)], b = positions[index.getX(face + (side + 1) % 3)];
+        const key = [a.join(','), b.join(',')].sort().join('/');
+        const edge = edges.get(key) ?? { count: 0, middle: a.map((value, axis) => (value + b[axis]) / 2) };
+        edge.count++; edges.set(key, edge);
+      }
+      const open = [...edges.values()].filter(edge => edge.count === 1 && edge.middle[1] > 3.1 && Math.abs(edge.middle[0]) > .26);
+      assert.equal(open.length, 0, `${sex} pose ${pose}: ${open.length} open shoulder/upper-arm edges after reduction`);
+    }
   }
 });
