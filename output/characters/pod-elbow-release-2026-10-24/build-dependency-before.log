@@ -1,0 +1,49 @@
+TAP version 13
+# Subtest: a standalone client build bundles current shared source after stale, changed and missing outputs
+not ok 1 - a standalone client build bundles current shared source after stale, changed and missing outputs
+  ---
+  duration_ms: 2552.207333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/client-build-dependencies.test.mts:1:2979'
+  failureType: 'testCodeFailure'
+  error: |-
+    the delivered browser bundle cannot keep the stale .55-second release
+
+    '0.55' !== '0.95'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '0.95'
+  actual: '0.55'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/client-build-dependencies.test.mts:48:27)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: a shared compile failure stops the client build before replacing its last usable output
+not ok 2 - a shared compile failure stops the client build before replacing its last usable output
+  ---
+  duration_ms: 2150.226416
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/client-build-dependencies.test.mts:1:3646'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection: shared source errors cannot silently publish an older compiled value'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'rejects'
+  stack: |-
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/client-build-dependencies.test.mts:59:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5212.8655

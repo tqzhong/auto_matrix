@@ -1,0 +1,24 @@
+{
+  "baseline": "9ac18ff42db94b41310cccbe3637ce6fe8bd766a",
+  "changed": [
+    {
+      "path": "packages/client/package.json",
+      "before": "cb35d501ff66babf71728ba6c05c3031a0b33b3b1bcdd081b7c67b1db0a4d572",
+      "after": "6071ebe42e25f10b98264aa419558d3999be875ed01e40fe708ce393647eba5b"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/client-build-dependencies.test.mts",
+      "after": "f97e4820e0d65cbda91eedff472e408d675d95f83ed6d2b9ad5cddb1c6346ea3"
+    }
+  ],
+  "inputFiles": 1215,
+  "packageFiles": 721,
+  "compiledSharedChanges": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ],
+  "serverArtifactsByteEqual": 280,
+  "characterAssetsChanged": false
+}

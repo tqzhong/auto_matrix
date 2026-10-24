@@ -1,0 +1,17 @@
+{
+  "runtimeDrift": "Only constants/awakening.js differs from a fresh clean source compilation; its map also changes.",
+  "sourceAlreadyFixed": true,
+  "staleReleaseSeconds": 0.55,
+  "currentReleaseSeconds": 0.95,
+  "staleBackwardRetraction": 0.23,
+  "currentBackwardRetraction": 0,
+  "clientEntryPoints": [
+    "PodWakePerformance.ts",
+    "PodSetRenderer.ts"
+  ],
+  "serverUsesPodBreatherPose": false,
+  "assetsChanged": false,
+  "runtimeSourceEditedThisUnit": false,
+  "oldCompiledSha256": "07166544ec57562a50ae2d748241a1a40bec1ac5338e03da788b0fa36a27db22",
+  "newCompiledSha256": "7b332d913e66919c5dbeb7a2bf6630c54fa00844fb74777776eadbee40b48356"
+}

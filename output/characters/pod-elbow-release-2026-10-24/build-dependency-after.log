@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a standalone client build bundles current shared source after stale, changed and missing outputs
+ok 1 - a standalone client build bundles current shared source after stale, changed and missing outputs
+  ---
+  duration_ms: 9861.180167
+  type: 'test'
+  ...
+# Subtest: a shared compile failure stops the client build before replacing its last usable output
+ok 2 - a shared compile failure stops the client build before replacing its last usable output
+  ---
+  duration_ms: 1759.976292
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12266.382834

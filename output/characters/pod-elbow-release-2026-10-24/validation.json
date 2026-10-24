@@ -1,0 +1,98 @@
+{
+  "buildRegressionBefore": {
+    "tests": 2,
+    "pass": 0,
+    "fail": 2
+  },
+  "buildRegressionAfter": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0
+  },
+  "relatedBefore": {
+    "tests": 51,
+    "pass": 47,
+    "fail": 4
+  },
+  "relatedAfter": {
+    "tests": 51,
+    "pass": 51,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "serverBuildExit": 0,
+  "bundle": "index-rjDK4MJ-.js",
+  "bundleSha256": "f7065f3b3fb54905fd5baf8ae5d80c332e9ea5cf7ea7cf62dd03da247b39b95e",
+  "bundleBytes": 3783551,
+  "css": "index-B0JUdutM.css",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "cssBytes": 88548,
+  "priorFailures": [
+    "the chest feed surfaces avoid the moving arms during emergence, oral removal and release",
+    "the complete chest feed surfaces clear the actual patient throughout both saved oral-removal paths",
+    "Neo reaches for and lowers the pipe without crossing the implanted chest hardware",
+    "the membrane and breather arm paths remain continuous through each reach and release"
+  ],
+  "wristBefore": {
+    "maximumJointStepPer10ms": {
+      "emerge": 0.023407847747340175,
+      "breather": 0.08794247122591056
+    },
+    "locations": {
+      "emerge": {
+        "elapsed": 4.27,
+        "joint": "elbow_L"
+      },
+      "breather": {
+        "elapsed": 4.81,
+        "joint": "elbow_L"
+      }
+    },
+    "maximumSwing": {
+      "emerge": {
+        "angle": 62.856802961506766,
+        "elapsed": 4.75,
+        "side": "R"
+      },
+      "breather": {
+        "angle": 68.03614072780415,
+        "elapsed": 4.72,
+        "side": "R"
+      }
+    }
+  },
+  "wristAfter": {
+    "maximumJointStepPer10ms": {
+      "emerge": 0.023407847747340175,
+      "breather": 0.04921360800357055
+    },
+    "locations": {
+      "emerge": {
+        "elapsed": 4.27,
+        "joint": "elbow_L"
+      },
+      "breather": {
+        "elapsed": 5.02,
+        "joint": "elbow_L"
+      }
+    },
+    "maximumSwing": {
+      "emerge": {
+        "angle": 62.856802961506766,
+        "elapsed": 4.75,
+        "side": "R"
+      },
+      "breather": {
+        "angle": 67.99358638764748,
+        "elapsed": 4.75,
+        "side": "R"
+      }
+    }
+  },
+  "validatedInputsUnchanged": 1215
+}

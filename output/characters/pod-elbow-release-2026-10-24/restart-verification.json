@@ -1,0 +1,21 @@
+{
+  "fullWorldEqual": true,
+  "differences": [],
+  "memoriesEqual": true,
+  "memoryFiles": 6,
+  "beforeTick": 5943,
+  "afterTick": 5943,
+  "beforeAwakening": {
+    "kind": "breather",
+    "elapsed": 4.139000000000001,
+    "emerged": true
+  },
+  "afterAwakening": {
+    "kind": "breather",
+    "elapsed": 4.139000000000001,
+    "emerged": true
+  },
+  "paused": true,
+  "oldBackendPid": 50398,
+  "newBackendPid": 61063
+}

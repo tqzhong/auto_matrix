@@ -1,0 +1,375 @@
+TAP version 13
+# Subtest: the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+    # Subtest: a new scene loaded mid-tear has exactly the same surface
+    ok 1 - a new scene loaded mid-tear has exactly the same surface
+      ---
+      duration_ms: 3169.484959
+      type: 'test'
+      ...
+    1..1
+ok 1 - the pod membrane stretches above the real body, opens around the head and reconstructs a paused tear
+  ---
+  duration_ms: 7512.952291
+  type: 'test'
+  ...
+# Subtest: the pod neck hose seats against the shipped cervical socket before it is unlocked
+ok 2 - the pod neck hose seats against the shipped cervical socket before it is unlocked
+  ---
+  duration_ms: 3007.629792
+  type: 'test'
+  ...
+# Subtest: both real palms remain beneath or against the stretching membrane without cutting through it
+ok 3 - both real palms remain beneath or against the stretching membrane without cutting through it
+  ---
+  duration_ms: 2533.874958
+  type: 'test'
+  ...
+# Subtest: pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body
+ok 4 - pod entry and the first held input share the same submerged pose, and breathing starts from the emerged body
+  ---
+  duration_ms: 3488.771917
+  type: 'test'
+  ...
+# Subtest: the pressing hand skin stays below the intact pod membrane
+ok 5 - the pressing hand skin stays below the intact pod membrane
+  ---
+  duration_ms: 18906.896417
+  type: 'test'
+  ...
+# Subtest: a paused pod disconnection keeps its maintenance mechanism at the saved action clock
+ok 6 - a paused pod disconnection keeps its maintenance mechanism at the saved action clock
+  ---
+  duration_ms: 2633.873667
+  type: 'test'
+  ...
+# Subtest: the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera
+ok 7 - the inspecting machine brings its real sensor lenses into Neo’s eye view without swallowing the camera
+  ---
+  duration_ms: 2656.668916
+  type: 'test'
+  ...
+# Subtest: maintenance clamps hold the neck locking collar without routing their links through Neo
+ok 8 - maintenance clamps hold the neck locking collar without routing their links through Neo
+  ---
+  duration_ms: 5369.623334
+  type: 'test'
+  ...
+# Subtest: the maintenance arm surfaces clear the actual skin throughout approach, holding and withdrawal
+ok 9 - the maintenance arm surfaces clear the actual skin throughout approach, holding and withdrawal
+  ---
+  duration_ms: 4045.0445
+  type: 'test'
+  ...
+# Subtest: body feeds seat in the four real chest ports and retract separately before the drain opens
+ok 10 - body feeds seat in the four real chest ports and retract separately before the drain opens
+  ---
+  duration_ms: 2649.64425
+  type: 'test'
+  ...
+# Subtest: the clear neck needle withdraws along the real socket axis without drawing inside the head
+ok 11 - the clear neck needle withdraws along the real socket axis without drawing inside the head
+  ---
+  duration_ms: 2782.964
+  type: 'test'
+  ...
+# Subtest: a restored mid-unplug scene reconstructs the same contacts and keeps its hose buffers
+    # Subtest: a newly loaded scene has the same saved connector pose
+    ok 1 - a newly loaded scene has the same saved connector pose
+      ---
+      duration_ms: 2709.382208
+      type: 'test'
+      ...
+    1..1
+ok 12 - a restored mid-unplug scene reconstructs the same contacts and keeps its hose buffers
+  ---
+  duration_ms: 5200.535209
+  type: 'test'
+  ...
+# Subtest: the pod disconnection camera keeps the real head and chest above the subtitle region in both aspect ratios
+ok 13 - the pod disconnection camera keeps the real head and chest above the subtitle region in both aspect ratios
+  ---
+  duration_ms: 3864.311542
+  type: 'test'
+  ...
+# Subtest: Neo sits up inside the pod while his hips and lower body remain supported in the basin
+ok 14 - Neo sits up inside the pod while his hips and lower body remain supported in the basin
+  ---
+  duration_ms: 3581.215792
+  type: 'test'
+  ...
+# Subtest: Neo braces both palms on the real pod rim during the sit-up
+ok 15 - Neo braces both palms on the real pod rim during the sit-up
+  ---
+  duration_ms: 3383.87725
+  type: 'test'
+  ...
+# Subtest: the connected hose routes remain outside the shipped skin as Neo rises
+ok 16 - the connected hose routes remain outside the shipped skin as Neo rises
+  ---
+  duration_ms: 17363.736584
+  type: 'test'
+  ...
+# Subtest: the saved pod body pose is independent of wall time, earlier frames and a newly loaded model
+    # Subtest: cold loading restores the same supported pose
+    ok 1 - cold loading restores the same supported pose
+      ---
+      duration_ms: 3149.749167
+      type: 'test'
+      ...
+    1..1
+ok 17 - the saved pod body pose is independent of wall time, earlier frames and a newly loaded model
+  ---
+  duration_ms: 6233.293417
+  type: 'test'
+  ...
+# Subtest: the shipped support-hand surfaces do not sit inside the solid pod rim
+ok 18 - the shipped support-hand surfaces do not sit inside the solid pod rim
+  ---
+  duration_ms: 41782.944375
+  type: 'test'
+  ...
+# Subtest: the pod first-person eye follows the shipped head and keeps the support hands visible
+ok 19 - the pod first-person eye follows the shipped head and keeps the support hands visible
+  ---
+  duration_ms: 3904.672583
+  type: 'test'
+  ...
+# Subtest: the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+ok 20 - the rescue ship does not cover the awakening view and reaches the water before hoisting Neo
+  ---
+  duration_ms: 4336.945375
+  type: 'test'
+  ...
+# Subtest: the breathing tube follows the actual lips, both grasping palms and the saved release clock
+    # Subtest: cold loading recreates the saved grasp and the same pipe surface
+    ok 1 - cold loading recreates the saved grasp and the same pipe surface
+      ---
+      duration_ms: 2573.766083
+      type: 'test'
+      ...
+    1..1
+ok 21 - the breathing tube follows the actual lips, both grasping palms and the saved release clock
+  ---
+  duration_ms: 5987.333541
+  type: 'test'
+  ...
+# Subtest: the grasping hand skin stays outside the breathing tube wall
+ok 22 - the grasping hand skin stays outside the breathing tube wall
+  ---
+  duration_ms: 3735.432458
+  type: 'test'
+  ...
+# Subtest: the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw
+ok 23 - the attached breathing nozzle touches the shipped mouth surface instead of floating below the jaw
+  ---
+  duration_ms: 2832.255916
+  type: 'test'
+  ...
+# Subtest: the chest feed surfaces avoid the moving arms during emergence, oral removal and release
+not ok 24 - the chest feed surfaces avoid the moving arms during emergence, oral removal and release
+  ---
+  duration_ms: 56471.199458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-connection-contact.test.mts:1:37225'
+  failureType: 'testCodeFailure'
+  error: 'feed 0 crosses the actual skin during breather at 4s, side 2, segment 20: -0.28929756703655585,2.9448757460620527,-12.982902747824483'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-connection-contact.test.mts:616:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance
+    # Subtest: first-person patient shoulders retain the same skin surface as third person
+    ok 1 - first-person patient shoulders retain the same skin surface as third person
+      ---
+      duration_ms: 3202.006917
+      type: 'test'
+      ...
+    1..1
+ok 25 - the eye camera retains the near mouthpiece during the grasp and restores its ordinary clipping distance
+  ---
+  duration_ms: 7641.547708
+  type: 'test'
+  ...
+# Subtest: the actual pod body stays continuous when support gives way, floating begins and the winch arrives
+ok 26 - the actual pod body stays continuous when support gives way, floating begins and the winch arrives
+  ---
+  duration_ms: 4320.135708
+  type: 'test'
+  ...
+# Subtest: the floating body restores the saved bones instead of continuing a generic idle animation
+    # Subtest: a cold model restores the same floating body
+    ok 1 - a cold model restores the same floating body
+      ---
+      duration_ms: 3357.703083
+      type: 'test'
+      ...
+    1..1
+ok 27 - the floating body restores the saved bones instead of continuing a generic idle animation
+  ---
+  duration_ms: 7521.792458
+  type: 'test'
+  ...
+# Subtest: the falling and floating eye camera uses the actual head and preserves free observation
+ok 28 - the falling and floating eye camera uses the actual head and preserves free observation
+  ---
+  duration_ms: 4264.215959
+  type: 'test'
+  ...
+# Subtest: the falling skin meets the real runoff channel without sinking through its rendered surface
+ok 29 - the falling skin meets the real runoff channel without sinking through its rendered surface
+  ---
+  duration_ms: 5731.821333
+  type: 'test'
+  ...
+# Subtest: the entire patient clears the inlet, pipe ceiling and round wall opening throughout the saved fall
+ok 30 - the entire patient clears the inlet, pipe ceiling and round wall opening throughout the saved fall
+  ---
+  duration_ms: 13140.668167
+  type: 'test'
+  ...
+# Subtest: Neo recoils with the real cervical needle withdrawal and settles before losing support
+ok 31 - Neo recoils with the real cervical needle withdrawal and settles before losing support
+  ---
+  duration_ms: 2912.3805
+  type: 'test'
+  ...
+# Subtest: pod breathing and membrane gestures preserve both complete hand surfaces
+    # Subtest: a cold hand uses the same skin pad and restores the complete saved grip
+    ok 1 - a cold hand uses the same skin pad and restores the complete saved grip
+      ---
+      duration_ms: 3268.881709
+      type: 'test'
+      ...
+    1..1
+ok 32 - pod breathing and membrane gestures preserve both complete hand surfaces
+  ---
+  duration_ms: 43426.654417
+  type: 'test'
+  ...
+# Subtest: moving the held breathing tube reuses the unchanged finger material shape
+ok 33 - moving the held breathing tube reuses the unchanged finger material shape
+  ---
+  duration_ms: 1853.876167
+  type: 'test'
+  ...
+# Subtest: the current posed anatomical eye drives the pod view rather than the preceding animation frame
+ok 34 - the current posed anatomical eye drives the pod view rather than the preceding animation frame
+  ---
+  duration_ms: 3317.153583
+  type: 'test'
+  ...
+# Subtest: first-person oral removal frames both actual hands throughout the established grip and lowering
+ok 35 - first-person oral removal frames both actual hands throughout the established grip and lowering
+  ---
+  duration_ms: 2149.546625
+  type: 'test'
+  ...
+# [{"elapsed":2.05,"side":"R","shown":6673,"total":6673},{"elapsed":2.05,"side":"L","shown":6673,"total":6673},{"elapsed":2.4,"side":"R","shown":6673,"total":6673},{"elapsed":2.4,"side":"L","shown":6673,"total":6673},{"elapsed":2.648,"side":"R","shown":6673,"total":6673},{"elapsed":2.648,"side":"L","shown":6673,"total":6673},{"elapsed":2.943,"side":"R","shown":6673,"total":6673},{"elapsed":2.943,"side":"L","shown":6673,"total":6673},{"elapsed":3.2,"side":"R","shown":6673,"total":6673},{"elapsed":3.2,"side":"L","shown":6673,"total":6673},{"elapsed":3.6,"side":"R","shown":6673,"total":6673},{"elapsed":3.6,"side":"L","shown":6673,"total":6673},{"elapsed":4,"side":"R","shown":6673,"total":6673},{"elapsed":4,"side":"L","shown":6673,"total":6673},{"elapsed":4.4,"side":"R","shown":6673,"total":6673},{"elapsed":4.4,"side":"L","shown":6673,"total":6673},{"elapsed":4.55,"side":"R","shown":6673,"total":6673},{"elapsed":4.55,"side":"L","shown":6673,"total":6673}]
+# Subtest: paused grip framing is stable and a small mouse input takes over without a camera jump
+ok 36 - paused grip framing is stable and a small mouse input takes over without a camera jump
+  ---
+  duration_ms: 2005.555083
+  type: 'test'
+  ...
+# Subtest: pod observation can survey the towers above and the supported body below without rotating the patient
+ok 37 - pod observation can survey the towers above and the supported body below without rotating the patient
+  ---
+  duration_ms: 2148.316875
+  type: 'test'
+  ...
+# Subtest: the saved oral-removal clock produces a continuous view through approach and release
+ok 38 - the saved oral-removal clock produces a continuous view through approach and release
+  ---
+  duration_ms: 6796.093792
+  type: 'test'
+  ...
+# {"frames":551,"maximumStepPer10ms":0.03812742972687568,"minimumPitch":0.24000000000003205,"maximumPitch":1.0651838063436032,"maximumPitchAt":4.55}
+# Subtest: the delivered oral coupling has an open airway at both ends and a solid surrounding wall
+ok 39 - the delivered oral coupling has an open airway at both ends and a solid surrounding wall
+  ---
+  duration_ms: 1989.317834
+  type: 'test'
+  ...
+# Subtest: the complete chest feed surfaces clear the actual patient throughout both saved oral-removal paths
+not ok 40 - the complete chest feed surfaces clear the actual patient throughout both saved oral-removal paths
+  ---
+  duration_ms: 9480.069834
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-feed-surface.test.mts:1:234'
+  failureType: 'testCodeFailure'
+  error: 'hose crosses actual skin: {"beat":{"kind":"breather","elapsed":4},"feed":0,"hit":{"triangle":321,"line":0.0014240584262788167,"points":[[-0.254972368478775,2.978228807449341,-13.036481857299805],[-0.25449758768081665,2.965550661087036,-13.002004623413086],[-0.31273648142814636,2.864548921585083,-13.047013282775879]],"skin":{"mesh":"Anatomical_head_and_hands","bones":["finger5-1_R","finger5-2_R"],"points":[[-0.25619077682495117,2.968318009376532,-13.009084272384825],[-0.25261813402175903,2.968037748336798,-13.010363626480284],[-0.25192371010780334,2.9628429651260437,-13.008914756775084]]}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-feed-surface.test.mts:31:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Neo reaches for and lowers the pipe without crossing the implanted chest hardware
+not ok 41 - Neo reaches for and lowers the pipe without crossing the implanted chest hardware
+  ---
+  duration_ms: 24374.262042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-feed-surface.test.mts:1:2348'
+  failureType: 'testCodeFailure'
+  error: 'hand crosses chest hardware: {"beat":{"kind":"breather","elapsed":4.8,"emerged":true},"port":11,"hit":{"triangle":2,"line":0.007540117122155153,"points":[[0.27400000020861626,2.6048172014856252,-12.955093737294936],[0.27999999932944775,2.5615433866144692,-13.067500926992894],[0.29156921803951263,2.6216968477995697,-12.959967642864973]],"skin":{"mesh":"Anatomical_head_and_hands","bones":["wrist_L","finger3-1_L","finger4-1_L"],"points":[[0.29699382185935974,2.611402475833899,-12.974936056137267],[0.28521332144737244,2.6135903239250244,-12.964677858352843],[0.2848917245864868,2.6210685014724793,-12.971532392502013]]}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-feed-surface.test.mts:52:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Neo grasps and pulls the breather without bending either wrist backwards beyond the grip limit
+ok 42 - Neo grasps and pulls the breather without bending either wrist backwards beyond the grip limit
+  ---
+  duration_ms: 3443.216875
+  type: 'test'
+  ...
+# {"maximumWristSwing":57.18803212065085}
+# Subtest: Neo supports himself and presses the membrane without a hyperextended wrist
+ok 43 - Neo supports himself and presses the membrane without a hyperextended wrist
+  ---
+  duration_ms: 2683.213875
+  type: 'test'
+  ...
+# Subtest: the membrane and breather arm paths remain continuous through each reach and release
+not ok 44 - the membrane and breather arm paths remain continuous through each reach and release
+  ---
+  duration_ms: 10560.035375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-wrist-contact.test.mts:1:1792'
+  failureType: 'testCodeFailure'
+  error: 'breather flips an arm joint by 0.08794247122591056 units between adjacent 10ms frames'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/pod-elbow-release-2026-10-24/candidate-release/tests/pod-wrist-contact.test.mts:62:61)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"maximumJointStepPer10ms":{"emerge":0.023407847747340175,"breather":0.08794247122591056},"locations":{"emerge":{"elapsed":4.27,"joint":"elbow_L"},"breather":{"elapsed":4.81,"joint":"elbow_L"}},"maximumSwing":{"emerge":{"angle":62.856802961506766,"elapsed":4.75,"side":"R"},"breather":{"angle":68.03614072780415,"elapsed":4.72,"side":"R"}}}
+1..44
+# tests 51
+# suites 0
+# pass 47
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 379174.883333

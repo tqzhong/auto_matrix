@@ -1,0 +1,14 @@
+{
+  "initialPreparationError": "Isolation script was invoked from candidate cwd while expecting unit cwd. Its assertion failed before any detach, but the separate following shell command still ran the client build.",
+  "effect": "Two historical candidate directories shared compiled output inodes; only awakening.js and its map bytes changed. Main live and root compiled files were not linked and were unchanged.",
+  "historicalCandidatesRestoredFromUnchangedLiveArtifacts": [
+    "/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/candidate-release/packages/shared/dist",
+    "/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/shared/dist"
+  ],
+  "candidateSharedAndServerNowDetached": true,
+  "rootAndLiveUnchanged": true,
+  "compiledSharedChanges": [
+    "constants/awakening.js",
+    "constants/awakening.js.map"
+  ]
+}

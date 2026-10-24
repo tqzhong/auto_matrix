@@ -1,0 +1,21 @@
+{
+  "source": "output/characters/pod-wrist-continuity-2026-10-22/runtime-state",
+  "files": {
+    "world.json": "585d684daa74338019d557fac2c08e46da50f937566c2010649759444bc46c1a",
+    "memories/sparks.json": "157f599e0d556a6c6beb52b82f06f22c6af712ebb6633fe8550cb06046aade20",
+    "memories/cas.json": "3a9a9ae3c3327a04736fab04f4eeda3667d14bfc75dcdc43a8fb8729e9bd9de8",
+    "memories/mauser.json": "2bc620df2887f726147b5f9911f15ef7a1f499830fa60dc5f5fbd18a8d8599ba",
+    "memories/binary.json": "924240d3bef18327a12ec3b09baa42b27e5d79e78de8ffac70ca21a4a94e4197",
+    "memories/vector.json": "425fa8a126c9feb6d0c5bfb8313ccc93172fbc141a7844baa6a570e1c092a0c4",
+    "memories/ak.json": "84bcb33c3e44890f26476f7cfa580c0c276a334d0a836fdfd151ad7f07a152ac"
+  },
+  "tick": 5941,
+  "scene": "m1_pod",
+  "awakening": {
+    "kind": "breather",
+    "elapsed": 2.9430000000000014,
+    "emerged": true
+  },
+  "copiedWithoutStoryOrPositionEdits": true,
+  "mainSaveUsed": false
+}

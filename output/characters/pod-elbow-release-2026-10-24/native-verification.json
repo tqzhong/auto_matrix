@@ -1,0 +1,29 @@
+{
+  "productionBundle": "index-rjDK4MJ-.js",
+  "nativeColdReloadVerified": true,
+  "nativeViews": [
+    "third-person pod",
+    "first-person breather",
+    "first-person medical look"
+  ],
+  "nativeMouseVerifiedWhileRunning": true,
+  "nativeContinuation": [
+    "breather release at 4.835s",
+    "breather finished",
+    "disconnect",
+    "rescue lift",
+    "m1_recovery"
+  ],
+  "scene": "m1_recovery",
+  "step": 0,
+  "tick": 6090,
+  "paused": true,
+  "health": 100,
+  "startedFromHistoricalCheckpoint": true,
+  "wholePodFromMembranePlayedThisTurn": false,
+  "notes": [
+    "One DOM click timed out; fresh native UI showed still paused, so a native button click was used.",
+    "Mouse drag while paused did not turn the view; the later unpaused first-person before/after images verify actual turning.",
+    "No new video or FPS measurement; narrow native viewport and overlay hide parts of the body."
+  ]
+}
