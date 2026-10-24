@@ -1,0 +1,101 @@
+TAP version 13
+# Subtest: the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+not ok 1 - the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+  ---
+  duration_ms: 154.748375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:816'
+  failureType: 'testCodeFailure'
+  error: 'the central jet fountain must be replaced by the film waterfall'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:17:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+not ok 2 - visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+  ---
+  duration_ms: 74.801167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:1933'
+  failureType: 'testCodeFailure'
+  error: 'solid visible prop has no collision: 0, -38'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:34:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+ok 3 - the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+  ---
+  duration_ms: 54.010958
+  type: 'test'
+  ...
+# Subtest: falling water and the pool use the saved frozen clock, including a cold renderer
+not ok 4 - falling water and the pool use the saved frozen clock, including a cold renderer
+  ---
+  duration_ms: 71.909333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:3457'
+  failureType: 'testCodeFailure'
+  error: 'missing actual water surface red-dress-water-veil'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    shader (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:62:12)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:67:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: physical bank facades enclose the plaza while static detail stays within its draw budget
+not ok 5 - physical bank facades enclose the plaza while static detail stays within its draw budget
+  ---
+  duration_ms: 46.191542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:4990'
+  failureType: 'testCodeFailure'
+  error: 'the street needs nearby three-dimensional facades'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:91:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3573.303166

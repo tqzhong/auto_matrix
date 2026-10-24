@@ -1,0 +1,20 @@
+{
+  "productionBundle": "index-7Ae-Hj1c.js",
+  "productionColdLoad": true,
+  "missedPassObserved": true,
+  "nativeRetry": true,
+  "frozenObserved": true,
+  "restoredFrozenFirstPerson": true,
+  "completedByPlayer": true,
+  "poolContinuedForwardSeconds": 1.6,
+  "poolPositionUnchanged": true,
+  "nativeBenchCollisionTested": false,
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "paused": true,
+  "tick": 12843,
+  "scene": "m1_red_dress",
+  "step": 2,
+  "health": 100,
+  "wholeTrilogyPlaythrough": false
+}

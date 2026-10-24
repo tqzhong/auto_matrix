@@ -934,7 +934,7 @@ export class FilmSetRenderer {
         this.scene.environmentIntensity = .7; return { color: 0xf2dfbf, ambient: .78, sun: 1.05 };
       }
       (this.scene.background as THREE.Color).setHex(0xb8c3bd); fog.color.setHex(0xb8c3bd); fog.density = .0025;
-      this.scene.environmentIntensity = .74; return { color: 0xffead0, ambient: .9, sun: .9 };
+      this.scene.environmentIntensity = .74; return { color: 0xffead0, ambient: .9, sun: 0 };
     }
     if (this.sentinel) {
       (this.scene.background as THREE.Color).setHex(0x07100f); fog.color.setHex(0x07100f); fog.density = .008;

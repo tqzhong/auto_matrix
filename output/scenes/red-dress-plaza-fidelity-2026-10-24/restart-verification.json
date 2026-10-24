@@ -1,0 +1,19 @@
+{
+  "fullWorldEqual": true,
+  "memoriesEqual": true,
+  "memoryFiles": 7,
+  "tick": 12520,
+  "training": {
+    "kind": "red_dress",
+    "elapsed": 12,
+    "started": true,
+    "attention": {
+      "phase": "frozen",
+      "noticed": true,
+      "look": 0,
+      "misses": 1,
+      "yaw": 0.5779392352270614,
+      "clock": 18.630999999999986
+    }
+  }
+}

@@ -1,0 +1,137 @@
+TAP version 13
+# Subtest: film sets admit walking in both worlds and use their own floor
+ok 1 - film sets admit walking in both worlds and use their own floor
+  ---
+  duration_ms: 39.346083
+  type: 'test'
+  ...
+# Subtest: the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid
+ok 2 - the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid
+  ---
+  duration_ms: 0.407208
+  type: 'test'
+  ...
+# Subtest: the interrogation table and chairs are solid while both side aisles admit walking
+ok 3 - the interrogation table and chairs are solid while both side aisles admit walking
+  ---
+  duration_ms: 0.260041
+  type: 'test'
+  ...
+# Subtest: freeway central and edge barriers match the lanes and its long route does not overlap other sets
+ok 4 - freeway central and edge barriers match the lanes and its long route does not overlap other sets
+  ---
+  duration_ms: 0.577625
+  type: 'test'
+  ...
+# Subtest: the chateau staircase supports the player and its upper landing blocks entry from below
+ok 5 - the chateau staircase supports the player and its upper landing blocks entry from below
+  ---
+  duration_ms: 0.165625
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the château floor up either staircase and reach the actual upper door
+ok 6 - Neo can walk from the château floor up either staircase and reach the actual upper door
+  ---
+  duration_ms: 64.540292
+  type: 'test'
+  ...
+# Subtest: the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open
+ok 7 - the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open
+  ---
+  duration_ms: 0.424584
+  type: 'test'
+  ...
+# Subtest: Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route
+ok 8 - Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route
+  ---
+  duration_ms: 9.640375
+  type: 'test'
+  ...
+# Subtest: both visible kitchen chairs stop a walking player while the aisle stays open
+ok 9 - both visible kitchen chairs stop a walking player while the aisle stays open
+  ---
+  duration_ms: 11.005667
+  type: 'test'
+  ...
+# Subtest: Metacortex cubicles block movement but leave the escape aisles open
+ok 10 - Metacortex cubicles block movement but leave the escape aisles open
+  ---
+  duration_ms: 6.791666
+  type: 'test'
+  ...
+# Subtest: the office ledge has a real drop beyond its narrow supporting surface
+ok 11 - the office ledge has a real drop beyond its narrow supporting surface
+  ---
+  duration_ms: 1.185584
+  type: 'test'
+  ...
+# Subtest: the Lafayette chairs and equipment are solid, with room to reach the pills and mirror
+ok 12 - the Lafayette chairs and equipment are solid, with room to reach the pills and mirror
+  ---
+  duration_ms: 5.559459
+  type: 'test'
+  ...
+# Subtest: all red-dress texture dependencies are present in the shipped public assets
+ok 13 - all red-dress texture dependencies are present in the shipped public assets
+  ---
+  duration_ms: 192.859333
+  type: 'test'
+  ...
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+ok 14 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+  ---
+  duration_ms: 2842.086958
+  type: 'test'
+  ...
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+ok 15 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+  ---
+  duration_ms: 2699.437375
+  type: 'test'
+  ...
+# Subtest: the actual satin covers the torso and both thighs during the saved training walk
+ok 16 - the actual satin covers the torso and both thighs during the saved training walk
+  ---
+  duration_ms: 19671.675333
+  type: 'test'
+  ...
+# Subtest: red pumps have real heels and their complete surfaces remain supported throughout the walk
+ok 17 - red pumps have real heels and their complete surfaces remain supported throughout the walk
+  ---
+  duration_ms: 2417.296292
+  type: 'test'
+  ...
+# Subtest: the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+ok 18 - the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+  ---
+  duration_ms: 13212.434542
+  type: 'test'
+  ...
+# Subtest: the walking hands keep continuous joints and relaxed anatomical fingertip directions
+ok 19 - the walking hands keep continuous joints and relaxed anatomical fingertip directions
+  ---
+  duration_ms: 2666.870708
+  type: 'test'
+  ...
+# {"sampledClocks":531,"largestStep":0.023115400499758364,"largestBend":0.4883888504949155}
+# Subtest: the halter straps lie on the collar and neck instead of floating in front of them
+ok 20 - the halter straps lie on the collar and neck instead of floating in front of them
+  ---
+  duration_ms: 7332.741791
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 21 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 171.933333
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 54499.639917

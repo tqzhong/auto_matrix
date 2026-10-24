@@ -1,0 +1,41 @@
+TAP version 13
+# Subtest: the actual plaza atmosphere uses one daylight shadow and restores the outside world when leaving
+not ok 1 - the actual plaza atmosphere uses one daylight shadow and restores the outside world when leaving
+  ---
+  duration_ms: 317.98125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:1109'
+  failureType: 'testCodeFailure'
+  error: |-
+    two suns redraw every pedestrian and produce inconsistent shadow directions
+    + actual - expected
+    
+      [
+        'red-dress-sun',
+    +   ''
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'red-dress-sun'
+  actual:
+    0: 'red-dress-sun'
+    1: ''
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:31:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2512.031084

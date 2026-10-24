@@ -1,0 +1,37 @@
+{
+  "film": {
+    "url": "https://www.youtube.com/watch?v=YgJ5ZEn67tk",
+    "reviewedSeconds": [
+      20,
+      40,
+      50
+    ],
+    "source": "Flashback FM clip of The Matrix (1999), not a claim to have reviewed the entire film",
+    "observations": [
+      "broad curved falling water curtain behind the woman",
+      "dark stone low receiving pool",
+      "crowd in normal daylight, bank stonework and recessed windows"
+    ]
+  },
+  "architecture": [
+    {
+      "url": "https://archives.cityofsydney.nsw.gov.au/nodes/view/1983377",
+      "title": "Lloyd Rees Fountain, Martin Place, 1997",
+      "credit": "City of Sydney Archives, A-01216381, Emily Ladi",
+      "observations": [
+        "dark stone curved basin edge",
+        "unbroken water veil rather than central jets",
+        "Commonwealth Bank behind the fountain"
+      ]
+    },
+    {
+      "url": "https://archives.cityofsydney.nsw.gov.au/nodes/view/1983376",
+      "title": "Lloyd Rees Fountain from above, Martin Place, 1997",
+      "credit": "City of Sydney Archives, A-01216380, Emily Ladi",
+      "observations": [
+        "curved spillway lip and shallow upper water channel"
+      ]
+    }
+  ],
+  "scope": "Source images are local reference captures only, not shipped game textures. Fountain overall outline and playable scale are interpreted; not measured reconstruction. Earlier rectangular-water-wall plan wording corrected."
+}

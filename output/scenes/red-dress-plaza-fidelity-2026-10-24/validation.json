@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "tests": 18,
+    "pass": 18,
+    "fail": 0
+  },
+  "plazaGeometryAndLighting": {
+    "tests": 14,
+    "pass": 14,
+    "fail": 0
+  },
+  "expanded": {
+    "tests": 162,
+    "pass": 159,
+    "fail": 3
+  },
+  "expandedFailuresReproducedAtHead": {
+    "tests": 3,
+    "pass": 0,
+    "fail": 3
+  },
+  "actorAndRelated": {
+    "tests": 21,
+    "pass": 21,
+    "fail": 0
+  },
+  "deployment": {
+    "tests": 75,
+    "pass": 75,
+    "fail": 0
+  },
+  "typecheckExit": 0,
+  "buildExit": 0,
+  "js": {
+    "name": "index-7Ae-Hj1c.js",
+    "sha256": "d0e0e28a46ed97021a336669a4da10615674b1b1426c156497c09717757e6008",
+    "bytes": 3789618
+  },
+  "css": {
+    "name": "index-B0JUdutM.css",
+    "sha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938"
+  },
+  "frozenInputs": 1237
+}

@@ -1,0 +1,121 @@
+TAP version 13
+# Subtest: Smith aims his real training pistol at Neo and keeps the actual hand outside its solid parts
+ok 1 - Smith aims his real training pistol at Neo and keeps the actual hand outside its solid parts
+  ---
+  duration_ms: 14691.505375
+  type: 'test'
+  ...
+# {"self":{"count":0,"examples":[]},"prop":{"count":0,"examples":[]},"fingers":[{"digit":1,"points":[[0.02948335861879059,-0.09494546603400522,0.07293350302257284],[0.07908396224388525,-0.04067908141132648,0.11554725890518647],[0.17499999999995453,-0.047002060538943624,0.08669080444629529],[0.17524241821731068,-0.10059920403844182,0.06062490915396985]],"PIP":68.0732716899976,"DIP":79.26357039710912,"curvature":0.8607979340993214},{"digit":2,"points":[[0.04034552804455416,-0.27212207206048333,0.09583861852251463],[0.07192249062268274,-0.3356895571350833,0.10235138837812041],[0.13246643854540707,-0.3534938554857945,0.11483861852251565],[0.1605633982424411,-0.3115854605325898,0.11481811082073505]],"PIP":47.03881257086719,"DIP":72.89478119790108,"curvature":0.6945488998990004},{"digit":3,"points":[[0.007250991661521766,-0.27869290309445205,0.03184773483423253],[0.06353577365621277,-0.3538996214128929,0.03363756326232714],[0.13303909763021693,-0.32766008141970815,0.03584773483423387],[0.1601372292428242,-0.28677961126065316,0.035846069179184994]],"PIP":73.84831588037653,"DIP":35.81334849002703,"curvature":0.5617959322810594},{"digit":4,"points":[[-0.008920460167018973,-0.26807054251366935,-0.020402037150021535],[0.04748029600955306,-0.32813158728004055,-0.020402037150021535],[0.11531374518312987,-0.32501510172824055,-0.020402037150020647],[0.14505934933997675,-0.2798428425813081,-0.020231410158987967]],"PIP":49.43066327597856,"DIP":54.00509231909895,"curvature":0.6145800748814164},{"digit":5,"points":[[-0.009380488425222211,-0.24821293256172794,-0.07606078945312866],[0.03742842032193039,-0.2825133210271815,-0.07606078945312866],[0.07770137304737545,-0.29708820856831153,-0.07606078945312866],[0.10086153720582573,-0.2624246357470552,-0.07619257354152173]],"PIP":16.337698308806463,"DIP":76.14687349761277,"curvature":0.2731145058701719}],"lineMiss":0.07974973996777011}
+# Subtest: the red-dress woman acknowledges Neo while passing and restores the same saved gaze
+ok 2 - the red-dress woman acknowledges Neo while passing and restores the same saved gaze
+  ---
+  duration_ms: 5173.359833
+  type: 'test'
+  ...
+# Subtest: the halter follows the actual neck and collar through the passing glance
+ok 3 - the halter follows the actual neck and collar through the passing glance
+  ---
+  duration_ms: 60165.71475
+  type: 'test'
+  ...
+# {"hits":19578,"total":19578,"minimum":0.0052367750728269935,"maximum":0.20318530340690139,"box":{"isBox3":true,"min":{"x":-0.5934092998504639,"y":0.002229697536677122,"z":-0.24240894615650177},"max":{"x":0.5936071276664734,"y":4.425199508666992,"z":0.4930374324321747}},"scale":[1,1,1]}
+# Subtest: the frozen Smith grip restores after leaving training and after a cold character load
+ok 4 - the frozen Smith grip restores after leaving training and after a cold character load
+  ---
+  duration_ms: 9154.933917
+  type: 'test'
+  ...
+# Subtest: all red-dress texture dependencies are present in the shipped public assets
+ok 5 - all red-dress texture dependencies are present in the shipped public assets
+  ---
+  duration_ms: 63.171791
+  type: 'test'
+  ...
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+ok 6 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+  ---
+  duration_ms: 5345.628542
+  type: 'test'
+  ...
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+ok 7 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+  ---
+  duration_ms: 5598.727959
+  type: 'test'
+  ...
+# Subtest: the actual satin covers the torso and both thighs during the saved training walk
+ok 8 - the actual satin covers the torso and both thighs during the saved training walk
+  ---
+  duration_ms: 26529.698625
+  type: 'test'
+  ...
+# Subtest: red pumps have real heels and their complete surfaces remain supported throughout the walk
+ok 9 - red pumps have real heels and their complete surfaces remain supported throughout the walk
+  ---
+  duration_ms: 3291.372916
+  type: 'test'
+  ...
+# Subtest: the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+ok 10 - the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+  ---
+  duration_ms: 11468.330292
+  type: 'test'
+  ...
+# Subtest: the walking hands keep continuous joints and relaxed anatomical fingertip directions
+ok 11 - the walking hands keep continuous joints and relaxed anatomical fingertip directions
+  ---
+  duration_ms: 1632.278958
+  type: 'test'
+  ...
+# {"sampledClocks":531,"largestStep":0.023115400499758364,"largestBend":0.4883888504949155}
+# Subtest: the halter straps lie on the collar and neck instead of floating in front of them
+ok 12 - the halter straps lie on the collar and neck instead of floating in front of them
+  ---
+  duration_ms: 7454.907542
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 13 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 294.023834
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 14 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 874.757958
+  type: 'test'
+  ...
+# Subtest: the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+ok 15 - the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+  ---
+  duration_ms: 30.715292
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 16 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 719.003709
+  type: 'test'
+  ...
+# Subtest: the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+ok 17 - the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+  ---
+  duration_ms: 18.617
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 18 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 621.948
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 93621.378459

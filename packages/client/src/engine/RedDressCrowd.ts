@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { HeroModels, type HeroRig } from '../agents/HeroModel.js';
 import { advanceMotion, newMotion } from '../agents/CharacterMotion.js';
+import { RED_DRESS_PLAZA } from '@auto_matrix/shared';
 
 /** Pedestrians reuse the delivered CC0 anatomy and saved program clock. */
 export class RedDressCrowd {
@@ -43,7 +44,8 @@ export class RedDressCrowd {
     if (clock === this.posedClock && started === this.posedStarted) return;
     for (const actor of this.actors) {
       const travel = started ? clock * 2 : 0;
-      actor.group.position.z = ((actor.base + actor.direction * travel + 40) % 80 + 80) % 80 - 40;
+      const { near, far } = RED_DRESS_PLAZA.crowd, length = far - near;
+      actor.group.position.z = ((actor.base + actor.direction * travel - near) % length + length) % length + near;
       actor.group.rotation.set(0, actor.direction > 0 ? 0 : Math.PI, 0);
       const motion = newMotion(); motion.time = clock; motion.phase = travel / 2.8 + actor.phase; motion.speed = started ? 2 : 0;
       const input = { speed: motion.speed, grounded: true, verticalVelocity: 0, turn: 0 };

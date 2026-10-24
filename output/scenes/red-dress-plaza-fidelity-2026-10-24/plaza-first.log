@@ -1,0 +1,72 @@
+TAP version 13
+# Subtest: the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+ok 1 - the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+  ---
+  duration_ms: 538.449833
+  type: 'test'
+  ...
+# Subtest: visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+not ok 2 - visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+  ---
+  duration_ms: 364.398875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:1933'
+  failureType: 'testCodeFailure'
+  error: 'collision needs an actual raised surface'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:36:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+ok 3 - the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+  ---
+  duration_ms: 232.164542
+  type: 'test'
+  ...
+# Subtest: falling water and the pool use the saved frozen clock, including a cold renderer
+ok 4 - falling water and the pool use the saved frozen clock, including a cold renderer
+  ---
+  duration_ms: 327.934167
+  type: 'test'
+  ...
+# Subtest: physical bank facades enclose the plaza while static detail stays within its draw budget
+not ok 5 - physical bank facades enclose the plaza while static detail stays within its draw budget
+  ---
+  duration_ms: 266.865208
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:4990'
+  failureType: 'testCodeFailure'
+  error: 'the street needs nearby three-dimensional facades'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:91:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3053.354708

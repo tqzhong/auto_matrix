@@ -1,0 +1,53 @@
+{
+  "baseline": "c1bb477cf65a27060982740dbb1d0ba399fac0a8",
+  "changed": [
+    {
+      "path": "packages/shared/src/constants/red-dress-plaza.ts",
+      "before": null,
+      "after": "9dc482f63e957e032989a0b8d7cfb023fad4002babd5f448b963d4925da22dec",
+      "bytes": 3148
+    },
+    {
+      "path": "packages/shared/src/index.ts",
+      "before": "368fe04bc93c41700a7c9ad66c2d433483c305ac541392ef32c621768cf1d4f0",
+      "after": "cab46e7f28e378bb69fd02e00db070bc00f4544089585fb14ca187ee4882e7b9",
+      "bytes": 5328
+    },
+    {
+      "path": "packages/shared/src/constants/film-sets.ts",
+      "before": "7378aac0d0a3cfd21060e0ad57d9e41d91dffcd5b3a8480575ae02482359abc4",
+      "after": "2bf7fbc4b3a7a85528568de5e82383b8e63c4fbdd04955342807f0f618995b61",
+      "bytes": 42688
+    },
+    {
+      "path": "packages/client/src/engine/RedDressCrowd.ts",
+      "before": "e2fcfc8572e56feb62a7154bf06027d47e6242e114789f210228777400f7b19b",
+      "after": "c2557e99949c65db0c9a086e8a6422baf637167a7e41c664682515ae8ef2ff36",
+      "bytes": 3137
+    },
+    {
+      "path": "packages/client/src/engine/TrainingSetRenderer.ts",
+      "before": "6558ffc4b47e7db2a44a278d71e94697e66e8346c204fa7ead4966ad91279338",
+      "after": "69b61c4c3b11e7150fe101bc3082bdaab29bdea9cb709a1d873557448f9f606f",
+      "bytes": 39942
+    },
+    {
+      "path": "packages/client/src/engine/FilmSetRenderer.ts",
+      "before": "9c71f70c95a0985d156d6a2c75a73f9816aba935ca60651e6ef0446e031e5686",
+      "after": "413f2b7a8e47a7cc70063b9f53db48c58532ffad969e15b48c7e5eadb7fc7c4c",
+      "bytes": 212137
+    },
+    {
+      "path": "tests/red-dress-plaza.test.mts",
+      "before": null,
+      "after": "60738e6d20740d61a61ff548b40d451aaa0251345f9fdd1efb2ac1855a516b3d",
+      "bytes": 9992
+    },
+    {
+      "path": "tests/training-renderer.test.mts",
+      "before": "8ad865d102181aa5873cecaca58697e6b92a77d18568ac8148d3cd2f87bd8fd6",
+      "after": "b767f0bf14f763212ebbd44ea18d350edbf66d99ab6f5c6d60ccbba62de09f10",
+      "bytes": 14513
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+TAP version 13
+# Subtest: the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+ok 1 - the plaza has a broad curved waterfall behind the passing woman, with a continuous receiving pool
+  ---
+  duration_ms: 587.630125
+  type: 'test'
+  ...
+# Subtest: visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+ok 2 - visible fountain walls, benches and planters stop the player instead of being decorative pass-through meshes
+  ---
+  duration_ms: 867.272625
+  type: 'test'
+  ...
+# Subtest: the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+ok 3 - the full player attention route and moving crowd lanes stay clear of the new fountain and furniture
+  ---
+  duration_ms: 554.028167
+  type: 'test'
+  ...
+# Subtest: falling water and the pool use the saved frozen clock, including a cold renderer
+ok 4 - falling water and the pool use the saved frozen clock, including a cold renderer
+  ---
+  duration_ms: 728.23725
+  type: 'test'
+  ...
+# Subtest: curved pool walls, the recessed basin floor and the raised spillway agree with actual rendered surfaces
+not ok 5 - curved pool walls, the recessed basin floor and the raised spillway agree with actual rendered surfaces
+  ---
+  duration_ms: 431.73
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:1:5072'
+  failureType: 'testCodeFailure'
+  error: 'render/physics floor mismatch at -21,-36.25: 1.14999997615815'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/red-dress-plaza-fidelity-2026-10-24/candidate-release/tests/red-dress-plaza.test.mts:92:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: physical bank facades enclose the plaza while static detail stays within its draw budget
+ok 6 - physical bank facades enclose the plaza while static detail stays within its draw budget
+  ---
+  duration_ms: 340.9475
+  type: 'test'
+  ...
+# {"meshes":43,"triangles":44108}
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 7 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 650.260667
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 8 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 676.568542
+  type: 'test'
+  ...
+# Subtest: the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+ok 9 - the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+  ---
+  duration_ms: 86.612666
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 10 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 978.184166
+  type: 'test'
+  ...
+# Subtest: the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+ok 11 - the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+  ---
+  duration_ms: 21.929084
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 12 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 764.850875
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 11
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6589.471208

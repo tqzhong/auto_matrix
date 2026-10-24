@@ -17,7 +17,7 @@ test('red-dress pedestrian lanes leave body clearance beside the actual benches 
   try {
     root.updateMatrixWorld(true); const obstacles: THREE.Mesh[] = [], walkers: THREE.Object3D[] = [];
     root.traverse(object => {
-      if (object instanceof THREE.Mesh && /red-dress-(bench-seat|bench-back|fountain-apron|planter-base|arcade-column)$/.test(object.name)) obstacles.push(object);
+      if (object instanceof THREE.Mesh && (/red-dress-(planter-base|arcade-column)$/.test(object.name) || object.parent?.name === 'red-dress-bench')) obstacles.push(object);
       if (/^red-dress-crowd-\d+$/.test(object.name)) walkers.push(object);
     });
     assert.equal(walkers.length, 20);
@@ -152,7 +152,7 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
   try {
     assert.ok(plazaRoot.getObjectByName('red-dress-fountain'));
     assert.ok(plazaRoot.getObjectByName('red-dress-crowd-0'));
-    const fountainApron = plazaRoot.getObjectByName('red-dress-fountain-apron')!;
+    const fountainRim = plazaRoot.getObjectByName('red-dress-fountain-rim')!;
     const cityEdges = plazaRoot.getObjectByName('red-dress-city-edges')!;
     const planters = plazaRoot.getObjectByName('red-dress-planters')!;
     const attentionAxis = plazaRoot.getObjectByName('red-dress-attention-axis')!;
@@ -160,8 +160,9 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
     const reversePlazaMatte = plazaRoot.getObjectByName('red-dress-city-reverse-matte') as THREE.Mesh;
     const westPlazaMatte = plazaRoot.getObjectByName('red-dress-city-west-matte') as THREE.Mesh;
     const eastPlazaMatte = plazaRoot.getObjectByName('red-dress-city-east-matte') as THREE.Mesh;
-    assert.ok(fountainApron.position.y > 0, 'the fountain has a raised outer apron instead of a flat disk');
-    assert.ok(plazaRoot.getObjectByName('red-dress-fountain-jet-0'), 'water motion has a physical origin at the fountain');
+    plazaRoot.updateMatrixWorld(true);
+    assert.ok(new THREE.Box3().setFromObject(fountainRim).max.y > 1, 'the receiving pool has a raised physical rim');
+    assert.ok(plazaRoot.getObjectByName('red-dress-water-veil'), 'water falls from the curved spillway');
     assert.ok(cityEdges.getObjectByName('red-dress-city-west-wing') && cityEdges.getObjectByName('red-dress-city-east-wing'), 'the plaza is framed by physical city wings without sealing the central route');
     assert.ok(planters.children.length >= 4, 'near planting gives the otherwise open program a real pedestrian scale');
     assert.ok(attentionAxis.position.x > 4 && attentionAxis.position.x < 10, 'the route toward the red-dress encounter remains visibly readable');
@@ -171,11 +172,11 @@ test('the dojo, roof gap and red-dress plaza are dedicated physical training set
     assert.ok(westPlazaMatte.position.x < -120 && eastPlazaMatte.position.x > 120, 'looking sideways at the arcade never exposes an empty program edge');
     const state = journey('m1_red_dress', { kind: 'red_dress', elapsed: 5, started: true });
     plaza.update(state, 5); const figure = plazaRoot.getObjectByName('red-dress-crowd-0')!; const frozen = figure.position.z;
-    const jet = plazaRoot.getObjectByName('red-dress-fountain-jet-0')!; const jetHeight = jet.position.y;
+    const veil = plazaRoot.getObjectByName('red-dress-water-veil')!; const veilPose = veil.matrixWorld.toArray();
     plaza.update(state, 5.6); assert.equal(figure.position.z, frozen, 'the crowd holds the exact frozen program frame');
-    assert.equal(jet.position.y, jetHeight, 'water freezes on the same program frame as the crowd');
-    const reveal = plazaRoot.getObjectByName('red-dress-agent-reveal') as THREE.PointLight;
-    assert.equal(reveal.intensity, 0); state.training!.elapsed = 7; plaza.update(state, 7);
-    assert.ok(reveal.intensity > 0, 'Smith replacement gets a readable reveal light');
+    assert.deepEqual(veil.matrixWorld.toArray(), veilPose, 'the curved lip stays attached while the saved shader clock freezes the water');
+    const daylight = plazaRoot.getObjectByName('red-dress-sun') as THREE.DirectionalLight;
+    const intensity = daylight.intensity; state.training!.elapsed = 7; plaza.update(state, 7);
+    assert.equal(daylight.intensity, intensity, 'the same daylight illuminates Smith and the frozen crowd');
   } finally { plaza.dispose(); }
 });

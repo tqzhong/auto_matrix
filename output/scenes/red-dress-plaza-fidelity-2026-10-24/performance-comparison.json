@@ -1,0 +1,197 @@
+{
+  "sameCamera": true,
+  "sameViewport": true,
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "pixelRatio": 1.5
+  },
+  "recording": false,
+  "gpuQueries": false,
+  "backgroundFullyIsolated": false,
+  "gameplayPaused": true,
+  "staticSceneSamplesOnly": true,
+  "samples": [
+    {
+      "fps": 19.472248711544914,
+      "frameTime": {
+        "mean": 51.355136985648166,
+        "p95": 73.19999980926514
+      },
+      "calls": {
+        "mean": 1613,
+        "p95": 1613
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 742,
+          "triangles": 2621208
+        },
+        "scene": {
+          "calls": 452,
+          "triangles": 1308060
+        },
+        "occlusion": {
+          "calls": 401,
+          "triangles": 1306940
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "cpuMs": {
+        "controls": {
+          "mean": 0.5791808737015969,
+          "p95": 1.5
+        },
+        "agents": {
+          "mean": 5.1047781596004755,
+          "p95": 8
+        },
+        "city": {
+          "mean": 0.144027325887322,
+          "p95": 0.3000001907348633
+        },
+        "film": {
+          "mean": 0.06040956542760439,
+          "p95": 0.19999980926513672
+        },
+        "effects": {
+          "mean": 0.12559724098179528,
+          "p95": 0.2999992370605469
+        },
+        "render": {
+          "mean": 41.98634814890578,
+          "p95": 61.80000019073486
+        },
+        "capture": {
+          "mean": 0.001365189666227269,
+          "p95": 0
+        }
+      }
+    },
+    {
+      "fps": 22.287569525042183,
+      "frameTime": {
+        "mean": 44.86805969921511,
+        "p95": 59.30000019073486
+      },
+      "calls": {
+        "mean": 1239,
+        "p95": 1239
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 550,
+          "triangles": 2690784
+        },
+        "scene": {
+          "calls": 361,
+          "triangles": 1342698
+        },
+        "occlusion": {
+          "calls": 310,
+          "triangles": 1341578
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "cpuMs": {
+        "controls": {
+          "mean": 0.8193452386629014,
+          "p95": 1.8999996185302734
+        },
+        "agents": {
+          "mean": 5.867857143992469,
+          "p95": 8.59999942779541
+        },
+        "city": {
+          "mean": 0.18422617798759824,
+          "p95": 0.39999961853027344
+        },
+        "film": {
+          "mean": 0.06904763267153785,
+          "p95": 0.19999980926513672
+        },
+        "effects": {
+          "mean": 0.17410714569545926,
+          "p95": 0.3000001907348633
+        },
+        "render": {
+          "mean": 24.800297609397344,
+          "p95": 39.39999961853027
+        },
+        "capture": {
+          "mean": 0.001488098076411656,
+          "p95": 0
+        }
+      }
+    },
+    {
+      "fps": 23.06374525805417,
+      "frameTime": {
+        "mean": 43.3580924872029,
+        "p95": 59.60000038146973
+      },
+      "calls": {
+        "mean": 964,
+        "p95": 964
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 275,
+          "triangles": 1345392
+        },
+        "scene": {
+          "calls": 361,
+          "triangles": 1342698
+        },
+        "occlusion": {
+          "calls": 310,
+          "triangles": 1341578
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "cpuMs": {
+        "controls": {
+          "mean": 0.7564841553525897,
+          "p95": 1.9000005722045898
+        },
+        "agents": {
+          "mean": 6.61354466748856,
+          "p95": 10.5
+        },
+        "city": {
+          "mean": 0.1945244709421647,
+          "p95": 0.3000001907348633
+        },
+        "film": {
+          "mean": 0.10662825031995087,
+          "p95": 0.20000076293945312
+        },
+        "effects": {
+          "mean": 0.15446686263730272,
+          "p95": 0.3000001907348633
+        },
+        "render": {
+          "mean": 25.92651299028644,
+          "p95": 40.60000038146973
+        },
+        "capture": {
+          "mean": 0.0011527394011659649,
+          "p95": 0
+        }
+      }
+    }
+  ],
+  "stable60Achieved": false
+}

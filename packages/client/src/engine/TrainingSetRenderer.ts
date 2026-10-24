@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { FilmJourney } from '@auto_matrix/shared';
-import { FILM_SETS, JUMP_STREET, JUMP_TOWERS, jumpImpactPose } from '@auto_matrix/shared';
+import { FILM_SETS, JUMP_STREET, JUMP_TOWERS, jumpImpactPose, RED_DRESS_PLAZA, RED_DRESS_SPILLWAY, RED_DRESS_POOL_OUTLINE, RED_DRESS_POOL_INSIDE, RED_DRESS_SPILLWAY_BODY, type PlazaPoint } from '@auto_matrix/shared';
 import { RedDressCrowd } from './RedDressCrowd.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
@@ -16,10 +16,9 @@ export class TrainingSetRenderer {
   private disposed = false;
   private crowd: THREE.Group[] = [];
   private pedestrians?: RedDressCrowd;
-  private fountainJets: THREE.Mesh[] = [];
+  private waterClock = { value: 0 };
   private skylineLights: THREE.Mesh[] = [];
   private programLight?: THREE.PointLight;
-  private revealLight?: THREE.PointLight;
   private wind?: THREE.Group;
   private wood = this.material(new THREE.MeshStandardMaterial({ color: 0x4c3425, roughness: .72 }));
   private darkWood = this.material(new THREE.MeshStandardMaterial({ color: 0x211b17, roughness: .8 }));
@@ -28,7 +27,6 @@ export class TrainingSetRenderer {
   private dark = this.material(new THREE.MeshStandardMaterial({ color: 0x252c2d, roughness: .75, metalness: .16 }));
   private metal = this.material(new THREE.MeshStandardMaterial({ color: 0x596463, roughness: .35, metalness: .78 }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x839b9b, roughness: .16, metalness: .28, transparent: true, opacity: .5, depthWrite: false }));
-  private water = this.material(new THREE.MeshPhysicalMaterial({ color: 0x609394, roughness: .08, metalness: .28, clearcoat: 1, transparent: true, opacity: .82 }));
   private glow = this.material(new THREE.MeshBasicMaterial({ color: 0xc9e7d5, toneMapped: false }));
 
   constructor(private root: THREE.Group, readonly sceneId: string) {
@@ -319,78 +317,150 @@ export class TrainingSetRenderer {
     figure.userData.baseZ = z; figure.userData.phase = index * .77;
   }
 
+  private plazaSolid(parent: THREE.Object3D, outline: readonly PlazaPoint[], bottom: number, top: number, material: THREE.Material, name: string, holes: readonly PlazaPoint[][] = []): THREE.Mesh {
+    const path = (points: readonly PlazaPoint[]) => points.map(point => new THREE.Vector2(point.x, -point.z));
+    const shape = new THREE.Shape(path(outline)); holes.forEach(hole => shape.holes.push(new THREE.Path(path(hole))));
+    const mesh = this.mesh(parent, new THREE.ExtrudeGeometry(shape, { depth: top - bottom, bevelEnabled: false, steps: 1, curveSegments: 1 }), material, name);
+    mesh.rotation.x = -Math.PI / 2; mesh.position.y = bottom; return mesh;
+  }
+
+  private plazaWater(falling: boolean): THREE.MeshStandardMaterial {
+    const material = this.material(new THREE.MeshStandardMaterial({ color: 0x253a35, roughness: falling ? .28 : .12, metalness: .42, side: THREE.DoubleSide }));
+    material.onBeforeCompile = shader => {
+      shader.uniforms.trainingWaterTime = this.waterClock;
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vTrainingWaterUv;')
+        .replace('#include <uv_vertex>', '#include <uv_vertex>\nvTrainingWaterUv = uv;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float trainingWaterTime; varying vec2 vTrainingWaterUv;')
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          vec2 waterUv = vTrainingWaterUv;
+          ${falling ? `
+          float channel = floor(waterUv.x * 900.0);
+          float seed = fract(sin(channel * 31.17) * 4375.87);
+          float streak = pow(max(0.0, sin(waterUv.x * 3100.0 + sin(waterUv.y * 19.0 + seed * 10.0))), 8.0);
+          float bead = pow(max(0.0, sin(waterUv.y * (85.0 + seed * 90.0) - trainingWaterTime * (15.0 + seed * 8.0) + seed * 50.0)), 5.0);
+          float foam = smoothstep(.8, 1.0, waterUv.y) * (.3 + .7 * bead);
+          diffuseColor.rgb = mix(vec3(.018, .034, .03), vec3(.7, .77, .72), clamp(streak * (.16 + .84 * bead) + foam * .6, 0.0, 1.0));`
+          : `
+          float ripple = sin(waterUv.x * 13.0 + waterUv.y * 21.0 - trainingWaterTime * 3.0) * sin(waterUv.y * 31.0 + trainingWaterTime * 2.0);
+          diffuseColor.rgb *= .8 + .4 * ripple;`}
+        `);
+    };
+    material.customProgramCacheKey = () => falling ? 'red-dress-falling-water-v1' : 'red-dress-pool-water-v1';
+    return material;
+  }
+
   private plaza(): void {
     const set = new THREE.Group(); set.name = 'training-red-dress-set'; this.root.add(set);
-    const paving = this.material(new THREE.MeshStandardMaterial({ color: 0xc2c2b8, roughness: .9 }));
-    const joint = this.material(new THREE.MeshStandardMaterial({ color: 0xa7aaa2, roughness: .95 }));
-    const limestone = this.material(new THREE.MeshStandardMaterial({ color: 0xc5b79d, roughness: .76, metalness: .04 }));
-    const facade = this.material(new THREE.MeshStandardMaterial({ color: 0xb2a894, roughness: .86, metalness: .03 }));
-    const window = this.material(new THREE.MeshStandardMaterial({ color: 0x627274, roughness: .4, metalness: .18 }));
-    const foliage = this.material(new THREE.MeshStandardMaterial({ color: 0x45634a, roughness: .92 }));
-    const benchWood = this.material(new THREE.MeshStandardMaterial({ color: 0x604633, roughness: .72 }));
-    const attentionInlay = this.material(new THREE.MeshStandardMaterial({ color: 0xaeb4a9, roughness: .9 }));
-    this.surface(limestone, 'marble_01', 5); this.surface(benchWood, 'old_wood_floor', 3);
-    this.box(set, paving, 0, -.08, 0, 62, .16, 82, 'red-dress-paving');
-    for (let x = -30; x <= 30; x += 4.1) this.box(set, joint, x, .012, 0, .024, .02, 81, 'red-dress-paving-joint');
-    for (let z = -40; z <= 40; z += 4.1) this.box(set, joint, 0, .014, z, 61, .02, .024, 'red-dress-paving-joint');
-    this.box(set, attentionInlay, 7, .021, -12, 2.7, .026, 17.5, 'red-dress-attention-axis');
-
-    const fountain = new THREE.Group(); fountain.name = 'red-dress-fountain'; fountain.position.set(-15.5, 0, 3); set.add(fountain);
-    this.cylinder(fountain, limestone, 0, .26, 0, 8.05, .52, 48, 'red-dress-fountain-apron');
-    this.cylinder(fountain, facade, 0, .58, 0, 7.35, .26, 48, 'red-dress-fountain-rim'); this.cylinder(fountain, this.water, 0, .75, 0, 6.72, .08, 48);
-    this.cylinder(fountain, limestone, 0, 1.65, 0, 1.5, 2.35, 24, 'red-dress-fountain-pedestal');
-    this.cylinder(fountain, limestone, 0, 3.04, 0, 2.45, .3, 28, 'red-dress-fountain-upper-bowl'); this.cylinder(fountain, this.water, 0, 3.24, 0, 2.1, .05, 28);
-    for (let index = 0; index < 8; index++) {
-      const angle = index / 8 * Math.PI * 2; const jet = this.cylinder(fountain, this.water, Math.cos(angle) * .72, 4.15, Math.sin(angle) * .72, .075, 2.05, 8, `red-dress-fountain-jet-${index}`);
-      jet.userData.phase = index * .77; this.fountainJets.push(jet);
+    const paving = this.material(new THREE.MeshStandardMaterial({ color: 0xb7b6a6, roughness: .91 }));
+    const limestone = this.material(new THREE.MeshStandardMaterial({ color: 0x847d68, roughness: .85 }));
+    const bankStone = this.material(new THREE.MeshStandardMaterial({ color: 0x665c4d, roughness: .83 }));
+    const darkGranite = this.material(new THREE.MeshStandardMaterial({ color: 0x242b2b, roughness: .32, metalness: .12 }));
+    const window = this.material(new THREE.MeshStandardMaterial({ color: 0x182728, roughness: .3, metalness: .48 }));
+    const foliage = this.material(new THREE.MeshStandardMaterial({ color: 0x354937, roughness: .95 }));
+    const benchWood = this.material(new THREE.MeshStandardMaterial({ color: 0x514635, roughness: .82 }));
+    this.surface(bankStone, 'damaged_plaster', 3); this.surface(darkGranite, 'marble_01', 3); this.surface(benchWood, 'old_wood_floor', 3);
+    bankStone.normalScale.set(.1, .1); darkGranite.normalScale.set(.05, .05);
+    const size = 128, pixels = new Uint8Array(size * size * 4);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const joint = x < 1 || y < 1, value = joint ? 112 : 221 + ((x * 19 + y * 7) % 23);
+      const i = (y * size + x) * 4; pixels.set([value, value, value, 255], i);
     }
+    const slabs = new THREE.DataTexture(pixels, size, size); slabs.colorSpace = THREE.SRGBColorSpace;
+    slabs.wrapS = slabs.wrapT = THREE.RepeatWrapping; slabs.repeat.set(1 / 2.6, 1 / 1.8); slabs.generateMipmaps = true;
+    slabs.minFilter = THREE.LinearMipmapLinearFilter; slabs.anisotropy = 8; slabs.needsUpdate = true; this.textures.add(slabs); paving.map = slabs;
+    this.plazaSolid(set, [{ x: -31, z: -41 }, { x: 31, z: -41 }, { x: 31, z: 41 }, { x: -31, z: 41 }], -.24, 0, paving, 'red-dress-paving', [RED_DRESS_POOL_OUTLINE]);
+    const route = new THREE.Group(); route.name = 'red-dress-attention-axis'; route.position.set(7, 0, -12); set.add(route);
 
-    const planters = new THREE.Group(); planters.name = 'red-dress-planters'; set.add(planters);
-    for (const [x, z, size] of [[-26, -28, .82], [-26, 28, .76], [26, -25, .8], [26, 29, .88]] as const) {
-      const planter = new THREE.Group(); planter.name = 'red-dress-planter'; planter.position.set(x, 0, z); planters.add(planter);
-      this.box(planter, limestone, 0, .54, 0, 3.9, 1.08, 3.9, 'red-dress-planter-base');
-      for (const [offsetX, offsetZ, scale] of [[-.7, -.25, .82], [.65, -.35, .76], [0, .72, 1]] as const) {
-        const shrub = this.mesh(planter, new THREE.DodecahedronGeometry(.92 * size * scale, 1), foliage, 'red-dress-planter-shrub'); shrub.position.set(offsetX, 1.7 + scale * .35, offsetZ); shrub.scale.y = 1.35;
+    const fountain = new THREE.Group(); fountain.name = 'red-dress-fountain'; set.add(fountain);
+    const f = RED_DRESS_PLAZA.fountain;
+    this.plazaSolid(fountain, RED_DRESS_POOL_OUTLINE, f.floor - .2, f.floor, darkGranite, 'red-dress-fountain-bed');
+    this.plazaSolid(fountain, RED_DRESS_POOL_OUTLINE, f.floor, f.rim, darkGranite, 'red-dress-fountain-rim', [RED_DRESS_POOL_INSIDE]);
+    this.plazaSolid(fountain, RED_DRESS_SPILLWAY_BODY, f.floor, f.lip, darkGranite, 'red-dress-fountain-spillway');
+    this.plazaSolid(fountain, RED_DRESS_POOL_INSIDE, f.pool - .025, f.pool, this.plazaWater(false), 'red-dress-pool-water', [RED_DRESS_SPILLWAY_BODY]);
+    const positions: number[] = [], uvs: number[] = [], indices: number[] = [];
+    const rows = 12, columns = RED_DRESS_SPILLWAY.length;
+    for (let row = 0; row <= rows; row++) for (let col = 0; col < columns; col++) {
+      const t = row / rows, p = RED_DRESS_SPILLWAY[col];
+      positions.push(p.x, f.lip + .025 - t * (f.lip + .025 - f.pool), p.z + .045 + .32 * t * t);
+      uvs.push(col / (columns - 1), t);
+      if (row < rows && col < columns - 1) {
+        const i = row * columns + col; indices.push(i, i + 1, i + columns, i + 1, i + columns + 1, i + columns);
       }
     }
+    const curtain = new THREE.BufferGeometry(); curtain.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    curtain.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); curtain.setIndex(indices); curtain.computeVertexNormals();
+    const veil = this.mesh(fountain, curtain, this.plazaWater(true), 'red-dress-water-veil'); veil.castShadow = false;
+    const froth = this.material(new THREE.MeshStandardMaterial({ color: 0xc1cec4, roughness: .7, emissive: 0x1a251f, emissiveIntensity: .18 }));
+    const foamOutline = [...RED_DRESS_SPILLWAY.map(p => ({ x: p.x, z: p.z + .2 })), ...[...RED_DRESS_SPILLWAY].reverse().map(p => ({ x: p.x, z: p.z + .85 }))];
+    const foam = this.plazaSolid(fountain, foamOutline, f.pool + .003, f.pool + .018, froth, 'red-dress-water-foam'); foam.castShadow = false;
 
     const furniture = new THREE.Group(); furniture.name = 'red-dress-street-furniture'; set.add(furniture);
-    for (const [x, z, rotation] of [[-10, -28, 0], [12, -30, Math.PI], [-10, 29, 0], [12, 27, Math.PI]] as const) {
-      const bench = new THREE.Group(); bench.name = 'red-dress-bench'; bench.position.set(x, 0, z); bench.rotation.y = rotation; furniture.add(bench);
-      this.box(bench, benchWood, 0, .98, 0, 4.2, .16, .75, 'red-dress-bench-seat'); this.box(bench, benchWood, 0, 1.7, .27, 4.2, 1.35, .16, 'red-dress-bench-back');
-      for (const side of [-1, 1]) this.box(bench, this.metal, side * 1.55, .48, 0, .12, .96, .55, 'red-dress-bench-leg');
+    for (const p of RED_DRESS_PLAZA.benches) {
+      const bench = new THREE.Group(); bench.name = 'red-dress-bench'; bench.position.set(p.x, 0, p.z); furniture.add(bench);
+      for (let slat = 0; slat < 4; slat++) this.box(bench, benchWood, -.45 + slat * .3, .98, 0, .25, .16, p.depth);
+      for (let slat = 0; slat < 4; slat++) this.box(bench, benchWood, p.side * .52, 1.45 + slat * .25, 0, .16, .2, p.depth);
+      for (const z of [-1.5, 1.5]) for (const x of [-.4, .4]) this.box(bench, this.metal, x, .48, z, .12, .96, .16);
     }
-
-    for (const side of [-1, 1]) {
-      const arcade = new THREE.Group(); arcade.name = `red-dress-${side < 0 ? 'west' : 'east'}-arcade`; arcade.position.x = side * 29.6; set.add(arcade);
-      for (let z = -36; z <= 36; z += 9) {
-        this.cylinder(arcade, limestone, 0, 5.2, z, .62, 10.4, 20, 'red-dress-arcade-column');
-        this.box(arcade, limestone, 0, 10.6, z, 4.6, .65, 8.4, 'red-dress-arcade-beam');
+    const planters = new THREE.Group(); planters.name = 'red-dress-planters'; set.add(planters);
+    for (const p of RED_DRESS_PLAZA.planters) {
+      const planter = new THREE.Group(); planter.name = 'red-dress-planter'; planter.position.set(p.x, 0, p.z); planters.add(planter);
+      this.box(planter, limestone, 0, p.height / 2, 0, p.width, p.height, p.depth, 'red-dress-planter-base');
+      for (const [x, z, scale] of [[-.8, -.5, .8], [.65, -.4, .75], [0, .7, 1]]) {
+        const shrub = this.mesh(planter, new THREE.SphereGeometry(.86 * scale, 10, 8), foliage); shrub.position.set(x, 1.45, z); shrub.scale.y = 1.25;
       }
-      this.box(arcade, facade, side * 4.25, 8.4, 0, .8, 16.8, 82, 'red-dress-arcade-facade');
-      for (let z = -34; z < 36; z += 12) {
-        const lamp = this.mesh(arcade, new THREE.SphereGeometry(.22, 12, 8), this.glow); lamp.position.set(-side * .85, 7.4, z);
-      }
-      const arcadeLight = new THREE.PointLight(0xffddb2, 11, 16, 2); arcadeLight.position.set(side * 28.6, 7.3, 0); this.light(arcadeLight, `red-dress-${side < 0 ? 'west' : 'east'}-arcade-light`);
     }
-
-    const cityEdges = new THREE.Group(); cityEdges.name = 'red-dress-city-edges'; cityEdges.position.z = -78; set.add(cityEdges);
+    const facades = new THREE.Group(); facades.name = 'red-dress-bank-frontages'; set.add(facades);
+    const frontage = (x: number, z: number, yaw: number, width: number, heritage: boolean, name: string) => {
+      const wall = new THREE.Group(); wall.name = name; wall.position.set(x, 0, z); wall.rotation.y = yaw; facades.add(wall);
+      const stone = heritage ? bankStone : limestone, height = heritage ? 32 : 43, count = Math.round(width / 7), bay = width / count;
+      this.box(wall, stone, 0, height / 2, -1, width, height, 4);
+      for (const y of [1, 11.8, 13, 23.7, 31.6]) this.box(wall, stone, 0, y, 1.35, width + .6, y === 13 ? .8 : .4, 1.3);
+      for (let i = 0; i < count; i++) {
+        const at = -width / 2 + (i + .5) * bay;
+        for (let row = 0; row < (heritage ? 3 : 5); row++) {
+          const y = row === 0 ? 5.8 : 16.8 + (row - 1) * 7;
+          this.box(wall, window, at, y, 1.04, bay - 1.8, row === 0 ? 9 : 4.9, .08);
+          for (const dx of [-1, 0, 1]) this.box(wall, this.metal, at + dx * (bay - 1.8) / 3, y, 1.13, .07, row === 0 ? 8.8 : 4.8, .12);
+          this.box(wall, stone, at, y - (row === 0 ? 4.6 : 2.5), 1.28, bay - 1.3, .22, .6);
+          this.box(wall, this.metal, at, y, 1.13, bay - 1.8, .08, .12);
+        }
+        for (const side of [-1, 1]) {
+          const px = at + side * bay / 2;
+          this.box(wall, stone, px, 6.2, 1.35, 1.2, 12.4, 1.3);
+          for (let y = 1; y < 12; y += .85) this.box(wall, this.dark, px, y, 2.015, 1.2, .035, .03);
+          if (heritage) {
+            this.cylinder(wall, stone, px, 6.8, 2, .52, 9.6, 20);
+            this.cylinder(wall, stone, px, 1.8, 2, .72, .45, 20);
+            this.cylinder(wall, stone, px, 11.65, 2, .72, .4, 20);
+          }
+        }
+        if (heritage) for (let dx = -bay / 2 + .9; dx < bay / 2 - .5; dx += .34) this.box(wall, this.metal, at + dx, 2.4, 1.25, .06, 3.2, .1);
+      }
+      if (heritage) for (let x = -width / 2 + .6; x < width / 2; x += .9) this.box(wall, stone, x, 31.2, 1.8, .3, .65, .65);
+      batchStaticGeometry(wall, new Set()).forEach(geometry => this.geometries.add(geometry));
+    };
+    frontage(0, -43.2, 0, 68, true, 'red-dress-north-bank');
+    frontage(-33.12, 0, Math.PI / 2, 86, true, 'red-dress-west-bank');
+    frontage(32.415, 0, -Math.PI / 2, 86, false, 'red-dress-east-offices');
+    const city = new THREE.Group(); city.name = 'red-dress-city-edges'; set.add(city);
     for (const side of [-1, 1]) {
-      const wing = new THREE.Group(); wing.name = `red-dress-city-${side < 0 ? 'west' : 'east'}-wing`; wing.position.set(side * 42, 0, 0); cityEdges.add(wing);
-      this.box(wing, facade, 0, 7.5, 0, 18, 15, 3.6, 'red-dress-city-facade');
-      for (let y = 3; y < 13.5; y += 3.4) this.box(wing, window, 0, y, 1.85, 14.2, 1.08, .06, 'red-dress-city-window-band');
-      this.box(wing, limestone, 0, 15.25, 0, 20.5, .48, 4.5, 'red-dress-city-cornice');
+      const wing = new THREE.Group(); wing.name = `red-dress-city-${side < 0 ? 'west' : 'east'}-wing`; wing.position.set(side * 25, 0, 56); city.add(wing);
+      this.box(wing, limestone, 0, 20, 0, 29, 40, 12);
+      for (let y = 4; y < 40; y += 5.5) this.box(wing, window, 0, y, -6.06, 27, 2.9, .08);
+      batchStaticGeometry(wing, new Set()).forEach(geometry => this.geometries.add(geometry));
     }
     for (let i = 0; i < 20; i++) {
-      const x = [0, 16, -6, 22][i % 4]; const z = -35 + Math.floor(i / 2) * 7.2;
+      const x = [0, 16, -6, 22][i % 4], z = -25 + Math.floor(i / 2) * 6;
       this.mannequin(set, x, z, [0x364947, 0x585a52, 0x31363b, 0x706757][i % 4], i);
     }
     this.pedestrians = new RedDressCrowd(this.crowd);
     this.plazaMatte(set);
-    this.programLight = new THREE.PointLight(0xf2e3c8, 160, 40, 2); this.programLight.position.set(7, 9, -10); this.light(this.programLight, 'red-dress-program-light');
-    this.revealLight = new THREE.PointLight(0xf2e3c8, 0, 16, 2); this.revealLight.position.set(14, 8, -12); this.light(this.revealLight, 'red-dress-agent-reveal');
-    const sun = new THREE.DirectionalLight(0xffe6bc, 2.3); sun.position.set(-20, 38, 26); sun.castShadow = true; this.light(sun, 'red-dress-sun');
-    this.light(new THREE.HemisphereLight(0xd4e0e2, 0x4a5147, .84), 'red-dress-daylight');
+    // Architectural batches keep depth and local perspective without hundreds of draw submissions.
+    batchStaticGeometry(furniture, new Set()).forEach(geometry => this.geometries.add(geometry));
+    batchStaticGeometry(planters, new Set()).forEach(geometry => this.geometries.add(geometry));
+    const sun = new THREE.DirectionalLight(0xe6e5d6, 2.7); sun.position.set(-24, 48, 18); sun.castShadow = true; this.light(sun, 'red-dress-sun');
+    sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00005; sun.shadow.normalBias = .035;
+    this.light(new THREE.HemisphereLight(0xc8d2ce, 0x42473d, .78), 'red-dress-daylight');
   }
 
   update(journey: FilmJourney | undefined, elapsed: number): void {
@@ -412,10 +482,7 @@ export class TrainingSetRenderer {
     const training = journey?.scene === 'm1_red_dress' && !journey.visiting ? journey.training : undefined;
     const t = training?.elapsed ?? 0; const frozen = training?.attention ? training.attention.phase === 'frozen' : Boolean(training?.started && t >= 4.8 && t < 9.2);
     const clock = training?.attention?.clock ?? (frozen ? 4.8 : training?.elapsed ?? elapsed);
-    this.fountainJets.forEach(jet => {
-      const phase = Number(jet.userData.phase ?? 0); jet.scale.y = .82 + Math.sin(clock * 3.4 + phase) * .16;
-      jet.position.y = 4.15 + Math.sin(clock * 3.4 + phase) * .12;
-    });
+    this.waterClock.value = clock;
     this.crowd.forEach((figure, index) => {
       if (figure.userData.detailed) return;
       const phase = Number(figure.userData.phase); const base = Number(figure.userData.baseZ);
@@ -424,12 +491,10 @@ export class TrainingSetRenderer {
       figure.children.forEach((child, childIndex) => { if (child.userData.crowdLimb) child.rotation.x = Math.sin(clock * 3.2 + phase + childIndex) * .08; });
     });
     this.pedestrians?.update(clock, Boolean(training?.started));
-    if (this.revealLight) this.revealLight.intensity = training?.attention ? training.attention.phase !== 'walking' ? 45 : 0 : t >= 6.2 && t < 9.2 ? 45 : 0;
-    if (this.programLight) this.programLight.intensity = 145;
   }
 
   dispose(): void {
     this.disposed = true; this.pedestrians?.dispose(); this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose()); this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
-    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.crowd = []; this.fountainJets = []; this.skylineLights = [];
+    this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear(); this.crowd = []; this.skylineLights = [];
   }
 }
