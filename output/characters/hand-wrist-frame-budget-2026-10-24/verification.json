@@ -1,0 +1,33 @@
+{
+  "head": "1835b2b7fe370289225143088e591f4d1f59d8d7",
+  "protectedUnchanged": 11,
+  "compiledUnchanged": 800,
+  "candidateInputsRestored": 1247,
+  "changes": {
+    "protected": [],
+    "compiled": [],
+    "candidateInputs": []
+  },
+  "main": {
+    "status": 200,
+    "pid": "83388",
+    "asset": "assets/index-BbnkcfNs.js",
+    "assetBytes": 3794395,
+    "sha256": "3c87f11a8c307a1182a86e92d1a1ffb8b3ecb6406dbc54c0db8657dcd26d9722",
+    "worldKeys": [
+      "agents",
+      "chunks",
+      "locations",
+      "phase",
+      "timeOfDay",
+      "events",
+      "simulation",
+      "sandbox"
+    ]
+  },
+  "qaListeners": {
+    "5200": "",
+    "5201": ""
+  },
+  "note": "No main save writes or server restart; no runtime deployment. Browser landing remains available."
+}
