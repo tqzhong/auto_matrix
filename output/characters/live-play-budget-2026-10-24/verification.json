@@ -1,0 +1,258 @@
+{
+  "sourceHead": "942d8efe348f849144d66eed9e9249f1bbce71fb",
+  "runtimeChanges": [],
+  "unchangedCandidateInputs": 1247,
+  "unchangedProtectedWorktreeFiles": 11,
+  "unchangedCompiledFiles": 800,
+  "main": {
+    "url": "http://localhost:5173/",
+    "pid": 83388,
+    "js": "index-DTIDupUE.js",
+    "sha256": "0956244b859f5a7d25f4c90a47dfd69e1abe67ae3fe80b0b67859464b4db51f9",
+    "bytes": 3794402,
+    "tick": 66563,
+    "running": true
+  },
+  "sameStaticCamera720And1080MaxDifference": {
+    "position": 0.0,
+    "quaternion": 0.0,
+    "projection": 0.0
+  },
+  "reports": [
+    {
+      "report": "attack-input-1080-cpu.json",
+      "frames": 402,
+      "fps": 26.782971106791816,
+      "frameMs": {
+        "mean": 37.33715710675627,
+        "p95": 49.80000019073486
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 15.311194018938055,
+      "renderCpuMs": 11.346268682337518,
+      "draws": 330,
+      "triangles": 2487084,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "movement-1080-cpu.json",
+      "frames": 361,
+      "fps": 25.195968645016798,
+      "frameMs": {
+        "mean": 39.68888888888889,
+        "p95": 57.30000019073486
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 17.0102493175179,
+      "renderCpuMs": 16.446537382384747,
+      "draws": 463.13573407202216,
+      "triangles": 2767132.808864266,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "single-attack-input-1080-cpu.json",
+      "frames": 406,
+      "fps": 26.950411242628178,
+      "frameMs": {
+        "mean": 37.10518518612709,
+        "p95": 50.89999961853027
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 16.64433497396009,
+      "renderCpuMs": 11.367734007060234,
+      "draws": 334,
+      "triangles": 2490676,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "single-movement-1080-cpu.json",
+      "frames": 383,
+      "fps": 25.514804598333296,
+      "frameMs": {
+        "mean": 39.19293193667347,
+        "p95": 49.90000057220459
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 15.775195804028225,
+      "renderCpuMs": 12.66449082426863,
+      "draws": 433.2819843342036,
+      "triangles": 2697245.127937337,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "single-standing-1080-cpu.json",
+      "frames": 402,
+      "fps": 26.697914101304566,
+      "frameMs": {
+        "mean": 37.45610972473449,
+        "p95": 49.90000057220459
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 12.062935328602197,
+      "renderCpuMs": 10.519651768812492,
+      "draws": 330,
+      "triangles": 2487084,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "single-standing-1080-no-occlusion.json",
+      "frames": 568,
+      "fps": 37.79974800312193,
+      "frameMs": {
+        "mean": 26.455202820860308,
+        "p95": 39.39999961853027
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 11.89154929678205,
+      "renderCpuMs": 9.50316901945732,
+      "draws": 245,
+      "triangles": 1727022,
+      "gpuTimingMode": "cpu-no-occlusion"
+    },
+    {
+      "report": "single-standing-1080-passes.json",
+      "frames": 420,
+      "fps": 27.971000947587083,
+      "frameMs": {
+        "mean": 35.75131264961989,
+        "p95": 46.90000057220459
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 11.818809541066488,
+      "renderCpuMs": 10.845476200467065,
+      "draws": 330,
+      "triangles": 2487084,
+      "gpuTimingMode": "passes"
+    },
+    {
+      "report": "single-standing-720-cpu.json",
+      "frames": 616,
+      "fps": 40.97377678181762,
+      "frameMs": {
+        "mean": 24.40585365915686,
+        "p95": 36.30000019073486
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "agentsMs": 9.992857141928239,
+      "renderCpuMs": 9.709577935082573,
+      "draws": 330,
+      "triangles": 2487084,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "standing-1080-cpu.json",
+      "frames": 398,
+      "fps": 26.434768711748884,
+      "frameMs": {
+        "mean": 37.828967255368944,
+        "p95": 49.89999961853027
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 13.36130656189655,
+      "renderCpuMs": 11.747487461147596,
+      "draws": 364.50251256281405,
+      "triangles": 2669980.32160804,
+      "gpuTimingMode": "cpu"
+    },
+    {
+      "report": "standing-1080-gpu.json",
+      "frames": 400,
+      "fps": 26.597872168873653,
+      "frameMs": {
+        "mean": 37.59699248311514,
+        "p95": 50.30000019073486
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 12.61599997997284,
+      "renderCpuMs": 10.949499981403351,
+      "draws": 330,
+      "triangles": 2487084,
+      "gpuTimingMode": "frame"
+    },
+    {
+      "report": "standing-1080-no-render.json",
+      "frames": 901,
+      "fps": 60.000800009903855,
+      "frameMs": {
+        "mean": 16.66644444465637,
+        "p95": 19.200000762939453
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 3.674583802344929,
+      "renderCpuMs": 0.0015538286554165077,
+      "draws": 0,
+      "triangles": 0,
+      "gpuTimingMode": "cpu-no-render"
+    },
+    {
+      "report": "standing-1080-no-shadows.json",
+      "frames": 435,
+      "fps": 28.893075648664315,
+      "frameMs": {
+        "mean": 34.61036866271551,
+        "p95": 48
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "agentsMs": 11.818850563312399,
+      "renderCpuMs": 8.404827595853257,
+      "draws": 186,
+      "triangles": 1520396,
+      "gpuTimingMode": "cpu-no-shadows"
+    }
+  ],
+  "formal60fpsAcceptance": false,
+  "remaining": [
+    "release-build measurement without profile overhead",
+    "actual hostile combat and scene transitions",
+    "multi-scene sustained 60 FPS",
+    "actor and clothing fidelity"
+  ]
+}
