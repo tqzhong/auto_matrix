@@ -3,7 +3,7 @@ import { JumpPerformance } from './JumpPerformance.js';
 import { poseSpoonBody } from './SpoonPerformance.js';
 import { poseMorningBody } from './MorningPerformance.js';
 import { posePodWake } from './PodWakePerformance.js';
-import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterAmount, steakJawOpen } from '@auto_matrix/shared';
+import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterAmount, steakJawOpen, redDressFrame, trainingRoot } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -1297,6 +1297,13 @@ export class HeroModels {
       } else if (kind === 'download' && role === 'tank') {
         bone('spine').rotation.x += .12; bone('chest').rotation.x += .08; bone('head').rotation.x += .2;
       } else if (kind === 'red_dress' && input.training.attention) {
+        if (role === 'citizen_2') {
+          const training = { ...input.training, started: true }, time = redDressFrame(training);
+          const neo = trainingRoot(training, 'neo'), woman = trainingRoot(training, 'citizen_2');
+          const glance = THREE.MathUtils.smoothstep(time, 1.4, 2.8) * (1 - THREE.MathUtils.smoothstep(time, 4.4, 5.3));
+          const yaw = THREE.MathUtils.clamp(Math.atan2(neo.x - woman.x, neo.z - woman.z) - woman.yaw, -1.05, 1.05) * glance;
+          bone('chest').rotation.y += yaw * .18; bone('head').rotation.y += yaw * .82;
+        }
         if (role === 'morpheus' && input.training.attention.phase !== 'walking') {
           bone('shoulder_R').rotation.x -= .72; bone('shoulder_R').rotation.z -= .35;
           bone('elbow_R').rotation.x -= .76; bone('head').rotation.y += .16;
@@ -1550,6 +1557,8 @@ export class HeroModels {
       }
     }
   }
+
+  trainingPistolHands(rig: HeroRig): void { this.fightingHands.get(rig)?.posePistol(); }
 
   private release(): void {
     this.pills.forEach(p => p.dispose()); this.pills.clear();

@@ -1,0 +1,26 @@
+{
+  "productionColdLoad": true,
+  "productionBundle": "index-D0-NKgwh.js",
+  "missedPassObserved": true,
+  "nativeRetry": true,
+  "retryCount": 2,
+  "frozenObserved": true,
+  "completedByPlayer": true,
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "paused": true,
+  "finalTick": 13648,
+  "finalScene": "m1_red_dress",
+  "finalStep": 2,
+  "firstAndThirdPersonAfterRestart": true,
+  "input": "W, D, W+D, G, V, mouse drag, pause/resume buttons",
+  "mainSaveUsed": false,
+  "wholeTrilogyOr60FpsVerified": false,
+  "viewerOnlyGlanceCloseup": "gaze-strap-after.png",
+  "liveGameplayScreenshots": [
+    "native-missed.png",
+    "native-smith-first-person.png",
+    "native-frozen-after-restart.png",
+    "native-completed.png"
+  ]
+}

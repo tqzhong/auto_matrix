@@ -1,0 +1,12 @@
+{
+  "changedMeshes": [
+    "Red dress halter -1",
+    "Red dress halter 1"
+  ],
+  "unchangedMeshes": 8,
+  "beforeBytes": 5402804,
+  "afterBytes": 5402932,
+  "beforeSha256": "e9dd84e22131a26ed790b1cebe8ac2be907dca12c7927af11eb0502d96a3441b",
+  "afterSha256": "bcbc942feb843098421fe0fdee62b9f67856ede2afbc9d2b7fb6eae264c3fefd",
+  "texturesUnchanged": true
+}

@@ -1,0 +1,49 @@
+{
+  "baseline": "75f356f8e26e3f45e4022b99d6a6b81fdce8ed77",
+  "changed": [
+    {
+      "path": "packages/client/public/assets/characters/red-dress.glb",
+      "before": "e9dd84e22131a26ed790b1cebe8ac2be907dca12c7927af11eb0502d96a3441b",
+      "after": "bcbc942feb843098421fe0fdee62b9f67856ede2afbc9d2b7fb6eae264c3fefd",
+      "bytes": 5402932
+    },
+    {
+      "path": "packages/client/src/agents/CharacterModel.ts",
+      "before": "ab698df45f57c7d8d5cddc2878e6935b746b28638f3948b35d34ec73316e089b",
+      "after": "a78bd6246c91662b8e6482f4e5eea49a2b6224f6fc2bd6c9e9ea4d0d59257438",
+      "bytes": 107356
+    },
+    {
+      "path": "packages/client/src/agents/FightingHands.ts",
+      "before": "28535fe8be2c57ff7d250a256a221e14e2c810535b74cee87e5dc7779c32d46b",
+      "after": "1387c2ba4fabeafc522f126c67ee5e6bd267b3a837b9256c93521f0561b7a6dc",
+      "bytes": 29529
+    },
+    {
+      "path": "packages/client/src/agents/HelCoatcheckPerformance.ts",
+      "before": "683b2eaf86c072c707808caeb339d27fe0b9d8c09abea6b2019894f3bcf1d09e",
+      "after": "0e55ee540e738d55b0979858560c751bfec308400cc79df733af042e581e4275",
+      "bytes": 11092
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "e720cfb83967a4f8aa04ce848579731a44e16913077edddf5f26651770e344a4",
+      "after": "91d190a4564de8f586f1c9517b3b99867643b3d8ecac4ad17e02ed7ae2e21c32",
+      "bytes": 121012
+    },
+    {
+      "path": "scripts/red_dress_costume.py",
+      "before": "0eb35ddfcea5c4425e55beee7293794297086b7ca190585766127d3a1a702f8f",
+      "after": "ca035ac4903915f4f22ccfaf821e6727a3d8dd4dd50695a444688cba8d48f8d3",
+      "bytes": 12524
+    },
+    {
+      "path": "tests/red-dress-acting.test.mts",
+      "before": null,
+      "after": "1272e96369c5e10766f7502bf8819dc09283cec7b5c8019af15567594f838ccc",
+      "bytes": 10429
+    }
+  ],
+  "codeAssetTestInputCount": 1207,
+  "validationInputExcludes": "Documentation and ephemeral calibration/preview fixtures; production code/config/assets/tests are included"
+}

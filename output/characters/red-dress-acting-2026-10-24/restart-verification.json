@@ -1,0 +1,11 @@
+{
+  "fullWorldEqual": true,
+  "memoriesEqual": true,
+  "memoryFiles": 7,
+  "oldPid": 90955,
+  "newPid": 30447,
+  "oldProcessTerminated": true,
+  "tick": 13606,
+  "paused": true,
+  "phase": "frozen"
+}

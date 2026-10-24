@@ -1,0 +1,36 @@
+{
+  "actingAndActorAndCache": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0
+  },
+  "related": {
+    "tests": 16,
+    "pass": 16,
+    "fail": 0
+  },
+  "genericPistol": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0
+  },
+  "broaderHandDraft": {
+    "tests": 29,
+    "pass": 26,
+    "fail": 3
+  },
+  "clientBuildExit": 0,
+  "typecheckExit": 0,
+  "compiledSharedAndServerUnchanged": true,
+  "testInputCount": 1207,
+  "js": {
+    "name": "index-D0-NKgwh.js",
+    "bytes": 3785367,
+    "sha256": "5d454c45a544c78d8d2b160a0c9da8e7239aa5605f7c02be103a67b499c99b7f"
+  },
+  "css": {
+    "name": "index-B0JUdutM.css",
+    "bytes": 88548,
+    "sha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938"
+  }
+}

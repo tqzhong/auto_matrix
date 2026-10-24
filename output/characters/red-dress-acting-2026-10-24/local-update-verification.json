@@ -1,0 +1,42 @@
+{
+  "url": "http://localhost:5173/",
+  "bundle": "index-D0-NKgwh.js",
+  "bundleBytes": 3785367,
+  "bundleBytesDelta": 1138,
+  "servedBundleSha256": "5d454c45a544c78d8d2b160a0c9da8e7239aa5605f7c02be103a67b499c99b7f",
+  "serverPid": 43571,
+  "serverRestarted": false,
+  "mainSaveWrittenOrRestored": false,
+  "beforeTick": 34466,
+  "afterTick": 34470,
+  "beforeRunning": true,
+  "afterRunning": true,
+  "memoryFiles": 85,
+  "memoriesEqual": true,
+  "protectedWipFilesUnchanged": 11,
+  "backendFilesUnchanged": 280,
+  "rootAndLiveSharedOutputsUnchanged": true,
+  "liveExistingPackageFilesMatchCandidate": 725,
+  "cssUnchanged": true,
+  "oldBundleRetained": "index-clOxxm33.js",
+  "changedPublicFiles": [
+    "packages/client/public/assets/characters/red-dress.glb"
+  ],
+  "runtimeAssetBytesDelta": 128,
+  "textureDependenciesHttpVerified": [
+    "assets/characters/dujour-skin.png",
+    "assets/characters/long01-hair.png",
+    "assets/characters/bluegreen_eye.png"
+  ],
+  "renderReconnected": false,
+  "nativeReloadPending": false,
+  "nativeLandingReady": true,
+  "nativeScripts": [
+    "/assets/index-D0-NKgwh.js"
+  ],
+  "nativeConsoleWarnings": 0,
+  "nativeConsoleErrors": 0,
+  "afterNativeTick": 34815,
+  "afterNativeRunning": true,
+  "afterNativeMemoryFiles": 85
+}
