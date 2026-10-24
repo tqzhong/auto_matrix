@@ -46,6 +46,7 @@ import { crewMealAge } from '@auto_matrix/shared';
 import { SkinContinuity } from './SkinContinuity.js';
 import { patientNeckView } from './PatientNeckView.js';
 import { poseDojoStance } from './DojoStance.js';
+import { RedDressPerformance } from './RedDressPerformance.js';
 
 export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_2' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
@@ -138,6 +139,7 @@ export class HeroModels {
   private recoveries = new Map<HeroRig, RecoveryPerformance>();
   private truths = new Map<HeroRig, TruthPerformance>();
   private jumps = new Map<HeroRig, JumpPerformance>();
+  private redDressGuides = new Map<HeroRig, RedDressPerformance>();
   private constructs = new Map<HeroRig, ConstructPerformance>();
   private forearms = new ForearmTwist();
   private fightingHands = new Map<HeroRig, FightingHands>();
@@ -1304,10 +1306,6 @@ export class HeroModels {
           const yaw = THREE.MathUtils.clamp(Math.atan2(neo.x - woman.x, neo.z - woman.z) - woman.yaw, -1.05, 1.05) * glance;
           bone('chest').rotation.y += yaw * .18; bone('head').rotation.y += yaw * .82;
         }
-        if (role === 'morpheus' && input.training.attention.phase !== 'walking') {
-          bone('shoulder_R').rotation.x -= .72; bone('shoulder_R').rotation.z -= .35;
-          bone('elbow_R').rotation.x -= .76; bone('head').rotation.y += .16;
-        }
       } else if (kind === 'red_dress') {
         const freeze = THREE.MathUtils.smoothstep(t, 4.7, 5.35); const reveal = THREE.MathUtils.smoothstep(t, 6.1, 6.9);
         if (role === 'neo') {
@@ -1450,6 +1448,9 @@ export class HeroModels {
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
     poseSpoonBody(rig, input.spoonLesson);
+    if (input.training?.kind === 'red_dress' && input.training.role === 'morpheus' && input.training.attention && !this.redDressGuides.has(rig))
+      this.redDressGuides.set(rig, new RedDressPerformance(rig, fightingHands));
+    this.redDressGuides.get(rig)?.update(input.training);
     if (input.phone) {
       this.holdPhone(rig, input.phone);
     }
@@ -1572,6 +1573,7 @@ export class HeroModels {
     this.recoveries.forEach(p => p.dispose()); this.recoveries.clear();
     this.truths.forEach(p => p.dispose()); this.truths.clear();
     this.jumps.forEach(p => p.dispose()); this.jumps.clear();
+    this.redDressGuides.clear();
     this.constructs.forEach(p => p.dispose()); this.constructs.clear();
     this.workdays.forEach(p => p.dispose()); this.workdays.clear();
     this.apartments.forEach(p => p.dispose()); this.apartments.clear();

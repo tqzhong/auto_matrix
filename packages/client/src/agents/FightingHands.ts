@@ -173,6 +173,7 @@ export class FightingHands {
   private authored = false;
   private connector = false;
   private mouthCheck = false;
+  private guide = false;
   private pistol = false;
   private amounts = [0, 0];
   private previous: (string | undefined)[] = [];
@@ -225,11 +226,12 @@ export class FightingHands {
     this.pistol = false;
     this.connector = input?.cabin?.kind === 'core' && input.cabin.role === 'morpheus' && input.cabin.elapsed > 2 && input.cabin.elapsed < 6.8;
     this.mouthCheck = input?.training?.kind === 'jump_return' && input.training.role === 'neo';
-    this.authored = input?.pills?.role === 'neo' || tracking || pod || this.connector || this.mouthCheck;
+    this.guide = input?.training?.kind === 'red_dress' && input.training.role === 'morpheus' && Boolean(input.training.attention);
+    this.authored = input?.pills?.role === 'neo' || tracking || pod || this.connector || this.mouthCheck || this.guide;
     this.enabled = Boolean(input && !input.armed && (!input.seated || this.authored) && !input.floorSeated && !input.riding && !(input.climbing ?? 0)
       && Object.entries(input).every(([key, value]) => value === undefined || value === false || (key === 'mirror' && value === 0)
         || (key === 'pills' && this.authored) || tracking && ['performance', 'mirror', 'mirrorBeat', 'mirrorEntry'].includes(key)
-        || pod && ['performance', 'podWake', 'podBreather'].includes(key) || this.connector && key === 'cabin' || this.mouthCheck && key === 'training' || ordinaryInputs.has(key as keyof MotionInput)));
+        || pod && ['performance', 'podWake', 'podBreather'].includes(key) || this.connector && key === 'cabin' || (this.mouthCheck || this.guide) && key === 'training' || ordinaryInputs.has(key as keyof MotionInput)));
     for (const name of attributes) this.skin.geometry.setAttribute(name, this.base[name]);
   }
 
@@ -251,7 +253,7 @@ export class FightingHands {
   update(): void {
     if (!this.enabled) return;
     const keys = this.binding.hands.map((hand, which) => {
-      if ((this.connector || this.mouthCheck || this.pistol) && which === 1) return undefined;
+      if ((this.connector || this.mouthCheck || this.guide || this.pistol) && which === 1) return undefined;
       const current = hand.bones.flatMap(joints => joints.flatMap(joint => this.skin.skeleton.bones[joint].quaternion.toArray()));
       const wrist = this.skin.skeleton.bones[hand.wrist];
       const pose = this.authored ? ['authored', this.pistol, ...current] : [this.amounts[which]];
