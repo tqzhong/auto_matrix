@@ -1,0 +1,48 @@
+{
+  "poses": 256,
+  "failures": 0,
+  "maximumDifferences": {
+    "position": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 1e-06,
+      "pose": "neo/grip/0"
+    },
+    "normal": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 1e-05,
+      "pose": "neo/grip/0"
+    },
+    "skinIndex": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 0,
+      "pose": "neo/grip/0"
+    },
+    "skinWeight": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 0,
+      "pose": "neo/grip/0"
+    },
+    "bones": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 0,
+      "pose": "neo/grip/0"
+    },
+    "world": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 0,
+      "pose": "neo/grip/0"
+    },
+    "points": {
+      "max": 0,
+      "index": -1,
+      "tolerance": 2e-06,
+      "pose": "neo/grip/0"
+    }
+  }
+}

@@ -1,0 +1,101 @@
+TAP version 13
+# Subtest: moving a held pill to the mouth reuses the same finger shape while retaining the full hand skin
+ok 1 - moving a held pill to the mouth reuses the same finger shape while retaining the full hand skin
+  ---
+  duration_ms: 7644.334125
+  type: 'test'
+  ...
+# Subtest: wrist turns keep the cached fingers and refresh the complete wrist skin and normals
+ok 2 - wrist turns keep the cached fingers and refresh the complete wrist skin and normals
+  ---
+  duration_ms: 18493.724791
+  type: 'test'
+  ...
+# Subtest: wrist translation and nonuniform scale update cached skin like a fresh evaluation
+ok 3 - wrist translation and nonuniform scale update cached skin like a fresh evaluation
+  ---
+  duration_ms: 3351.519125
+  type: 'test'
+  ...
+# Subtest: a wrist turn does not look up immutable normal groups again for every face corner
+ok 4 - a wrist turn does not look up immutable normal groups again for every face corner
+  ---
+  duration_ms: 5732.294083
+  type: 'test'
+  ...
+# {"reads":13346,"vertices":13346}
+# Subtest: changing a grip reuses the bound material intervals instead of searching them for every vertex
+ok 5 - changing a grip reuses the bound material intervals instead of searching them for every vertex
+  ---
+  duration_ms: 4549.331875
+  type: 'test'
+  ...
+# {"searches":0}
+# Subtest: the exposed patient keeps continuous hand/body lighting through actual saved pod poses
+ok 6 - the exposed patient keeps continuous hand/body lighting through actual saved pod poses
+  ---
+  duration_ms: 4956.775209
+  type: 'test'
+  ...
+# [{"beat":{"kind":"emerge","elapsed":0},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":1.8},"pairs":225,"maximumAngleDegrees":0.0000012074182697257333,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":3.6},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"emerge","elapsed":5.2},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":0,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"breather","elapsed":1.2,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":2.05,"emerged":true},"pairs":225,"maximumAngleDegrees":0.000002091309789151873,"maximumGap":0},{"beat":{"kind":"breather","elapsed":2.648,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":3.6,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"breather","elapsed":4.55,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000019090959104164224,"maximumGap":0},{"beat":{"kind":"breather","elapsed":5.5,"emerged":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":2.5,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":4.3,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":6.85,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0},{"beat":{"kind":"disconnect","elapsed":9,"emerged":true,"breatherRemoved":true},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":0},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":7},"pairs":225,"maximumAngleDegrees":0.0000017075472925031877,"maximumGap":0},{"beat":{"kind":"rescue","elapsed":12},"pairs":225,"maximumAngleDegrees":0.0000014787793334710982,"maximumGap":0}]
+# Subtest: one patient has the same specular response on its hands and exposed body
+ok 7 - one patient has the same specular response on its hands and exposed body
+  ---
+  duration_ms: 2795.532041
+  type: 'test'
+  ...
+# Subtest: patient seam shading is actor-owned, stable while paused and restores outside the exposed costume
+ok 8 - patient seam shading is actor-owned, stable while paused and restores outside the exposed costume
+  ---
+  duration_ms: 3664.669791
+  type: 'test'
+  ...
+# Subtest: neo: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 9 - neo: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 2354.516959
+  type: 'test'
+  ...
+# {"id":"neo","pairs":102,"maximumAngleDegrees":0.0000017075472925031877}
+# Subtest: trinity: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 10 - trinity: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 1144.304083
+  type: 'test'
+  ...
+# {"id":"trinity","pairs":102,"maximumAngleDegrees":0}
+# Subtest: smith: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 11 - smith: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 1081.728875
+  type: 'test'
+  ...
+# {"id":"smith","pairs":102,"maximumAngleDegrees":0.0000017075472925031877}
+# Subtest: morpheus: the actual wrist skin shares the rendered hand normal through open and closed grips
+ok 12 - morpheus: the actual wrist skin shares the rendered hand normal through open and closed grips
+  ---
+  duration_ms: 3505.480666
+  type: 'test'
+  ...
+# {"id":"morpheus","pairs":102,"maximumAngleDegrees":0}
+# Subtest: skin shading preserves the live mirror liquid shader on every corrected Neo surface
+ok 13 - skin shading preserves the live mirror liquid shader on every corrected Neo surface
+  ---
+  duration_ms: 1914.314834
+  type: 'test'
+  ...
+# Subtest: a skin extension interpolates its neighbouring boundary normals instead of creating nearest-point lighting plateaus
+ok 14 - a skin extension interpolates its neighbouring boundary normals instead of creating nearest-point lighting plateaus
+  ---
+  duration_ms: 5.356292
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30228.496542

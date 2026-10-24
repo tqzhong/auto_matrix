@@ -1,0 +1,77 @@
+{
+  "samples": 4926,
+  "functions": [
+    {
+      "function": "deform",
+      "file": "FightingHands.ts",
+      "samples": 1318,
+      "percent": 26.76
+    },
+    {
+      "function": "shapeFingers",
+      "file": "FightingHands.ts",
+      "samples": 800,
+      "percent": 16.24
+    },
+    {
+      "function": "animate",
+      "file": "HeroModel.ts",
+      "samples": 623,
+      "percent": 12.65
+    },
+    {
+      "function": "fromBufferAttribute",
+      "file": "three.module.js",
+      "samples": 411,
+      "percent": 8.34
+    },
+    {
+      "function": "sample",
+      "file": "HandCurve.ts",
+      "samples": 314,
+      "percent": 6.37
+    },
+    {
+      "function": "computeVertexNormals",
+      "file": "three.module.js",
+      "samples": 264,
+      "percent": 5.36
+    },
+    {
+      "function": "(garbage collector)",
+      "file": "",
+      "samples": 225,
+      "percent": 4.57
+    },
+    {
+      "function": "blend",
+      "file": "SkinContinuity.ts",
+      "samples": 129,
+      "percent": 2.62
+    },
+    {
+      "function": "getX",
+      "file": "three.module.js",
+      "samples": 110,
+      "percent": 2.23
+    },
+    {
+      "function": "arc",
+      "file": "HandCurve.ts",
+      "samples": 88,
+      "percent": 1.79
+    },
+    {
+      "function": "update",
+      "file": "SkinContinuity.ts",
+      "samples": 60,
+      "percent": 1.22
+    },
+    {
+      "function": "normalizeNormals",
+      "file": "three.module.js",
+      "samples": 59,
+      "percent": 1.2
+    }
+  ]
+}

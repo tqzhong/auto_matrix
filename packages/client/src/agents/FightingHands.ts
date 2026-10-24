@@ -395,7 +395,7 @@ export class FightingHands {
       const group = this.binding.groups[id] * 3, nx = normals[group], ny = normals[group + 1], nz = normals[group + 2];
       const tx = back[0] * nx + back[4] * ny + back[8] * nz, ty = back[1] * nx + back[5] * ny + back[9] * nz, tz = back[2] * nx + back[6] * ny + back[10] * nz;
       const x = data[at + 6] * tx + data[at + 7] * ty + data[at + 8] * tz, y = data[at + 9] * tx + data[at + 10] * ty + data[at + 11] * tz, z = data[at + 12] * tx + data[at + 13] * ty + data[at + 14] * tz;
-      const length = Math.hypot(x, y, z) || 1;
+      const length = Math.sqrt(x * x + y * y + z * z) || 1;
       outputNormal[id * 3] = x / length; outputNormal[id * 3 + 1] = y / length; outputNormal[id * 3 + 2] = z / length;
     }
   }

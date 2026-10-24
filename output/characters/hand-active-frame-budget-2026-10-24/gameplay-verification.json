@@ -1,0 +1,28 @@
+{
+  "missed": {
+    "phase": "walking",
+    "noticed": false,
+    "look": 0,
+    "misses": 0,
+    "yaw": 1.571742758335538,
+    "clock": 31.730999999999863
+  },
+  "frozen": {
+    "phase": "frozen",
+    "noticed": true,
+    "look": 0,
+    "misses": 1,
+    "yaw": 0.5917427583355371,
+    "clock": 29.7249999999999
+  },
+  "completed": {
+    "phase": "done",
+    "noticed": true,
+    "look": 0,
+    "misses": 1,
+    "yaw": 0.5917427583355371,
+    "clock": 29.7249999999999
+  },
+  "walkDistance": 2.6453782498985463,
+  "sprintDistance": 9.586046705316914
+}

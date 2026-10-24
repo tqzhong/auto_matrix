@@ -1,0 +1,18 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-DTIDupUE.js",
+  "sha256": "0956244b859f5a7d25f4c90a47dfd69e1abe67ae3fe80b0b67859464b4db51f9",
+  "bundleBytes": 3794402,
+  "javascriptDeltaBytes": 7,
+  "newAssetBytes": 0,
+  "cssIdentical": true,
+  "backendAndSharedFilesUnchanged": 800,
+  "protectedFilesUnchanged": 11,
+  "mainMemories": 85,
+  "mainTickBefore": 63634,
+  "mainTickAfter": 63634,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

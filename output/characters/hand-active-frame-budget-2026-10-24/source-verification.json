@@ -1,0 +1,12 @@
+{
+  "protectedUnchanged": 11,
+  "compiledUnchanged": 800,
+  "candidateInputCount": 1247,
+  "changes": {
+    "protected": [],
+    "compiled": [],
+    "candidateInputs": [
+      "packages/client/src/agents/FightingHands.ts"
+    ]
+  }
+}
