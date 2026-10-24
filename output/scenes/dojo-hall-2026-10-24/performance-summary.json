@@ -1,0 +1,384 @@
+{
+  "samples": [
+    {
+      "file": "before-profile.json",
+      "measuredAt": "2026-10-23T23:19:12.314Z",
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "frames": 779,
+      "fps": 51.831421300841164,
+      "frameTime": {
+        "mean": 19.29331619512759,
+        "p95": 24.899999618530273
+      },
+      "calls": {
+        "mean": 1602,
+        "p95": 1602
+      },
+      "triangles": {
+        "mean": 1646081,
+        "p95": 1646081
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.35070600987092826,
+          "p95": 0.6000003814697266
+        },
+        "agents": {
+          "mean": 6.309756121066171,
+          "p95": 7.699999809265137
+        },
+        "city": {
+          "mean": 0.08202824451804008,
+          "p95": 0.19999980926513672
+        },
+        "film": {
+          "mean": 0.02220794447579341,
+          "p95": 0.10000038146972656
+        },
+        "effects": {
+          "mean": 2.5689345483449366,
+          "p95": 3.1000003814697266
+        },
+        "render": {
+          "mean": 9.227471104329297,
+          "p95": 12.100000381469727
+        },
+        "capture": {
+          "mean": 0.0010269591070721177,
+          "p95": 0
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "recordingActive": false,
+      "actualDrawingBuffer": {
+        "width": 799,
+        "height": 450
+      }
+    },
+    {
+      "file": "after-profile.json",
+      "measuredAt": "2026-10-23T23:27:52.949Z",
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "frames": 901,
+      "fps": 59.98880208951383,
+      "frameTime": {
+        "mean": 16.669777777989705,
+        "p95": 19.199999809265137
+      },
+      "calls": {
+        "mean": 193,
+        "p95": 193
+      },
+      "triangles": {
+        "mean": 1057829,
+        "p95": 1057829
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.3079910966320652,
+          "p95": 0.5
+        },
+        "agents": {
+          "mean": 5.569589353428035,
+          "p95": 7.100000381469727
+        },
+        "city": {
+          "mean": 0.0749167559811066,
+          "p95": 0.19999980926513672
+        },
+        "film": {
+          "mean": 0.021198674920661072,
+          "p95": 0.10000038146972656
+        },
+        "effects": {
+          "mean": 2.01609322551088,
+          "p95": 2.5
+        },
+        "render": {
+          "mean": 2.7751387216142493,
+          "p95": 3.40000057220459
+        },
+        "capture": {
+          "mean": 0.0006659261129804775,
+          "p95": 0
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "recordingActive": false,
+      "actualDrawingBuffer": {
+        "width": 799,
+        "height": 450
+      }
+    },
+    {
+      "file": "final-low-profile.json",
+      "measuredAt": "2026-10-23T23:37:12.582Z",
+      "viewport": {
+        "width": 1066,
+        "height": 600,
+        "pixelRatio": 0.75
+      },
+      "frames": 900,
+      "fps": 59.99612928121811,
+      "frameTime": {
+        "mean": 16.667741935696036,
+        "p95": 19.200000762939453
+      },
+      "calls": {
+        "mean": 193,
+        "p95": 193
+      },
+      "triangles": {
+        "mean": 1056173,
+        "p95": 1056173
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.2995555432637533,
+          "p95": 0.5
+        },
+        "agents": {
+          "mean": 5.285666666030884,
+          "p95": 6.899999618530273
+        },
+        "city": {
+          "mean": 0.07255556636386447,
+          "p95": 0.19999980926513672
+        },
+        "film": {
+          "mean": 0.02133332782321506,
+          "p95": 0.10000038146972656
+        },
+        "effects": {
+          "mean": 1.9327777777777777,
+          "p95": 2.40000057220459
+        },
+        "render": {
+          "mean": 2.561555551952786,
+          "p95": 3.3000001907348633
+        },
+        "capture": {
+          "mean": 0.0006666681501600477,
+          "p95": 0
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "recordingActive": false,
+      "actualDrawingBuffer": {
+        "width": 799,
+        "height": 450
+      }
+    },
+    {
+      "file": "1080p-profile.json",
+      "measuredAt": "2026-10-23T23:38:31.485Z",
+      "viewport": {
+        "width": 1600,
+        "height": 900,
+        "pixelRatio": 1.2000000476837158
+      },
+      "frames": 499,
+      "fps": 33.1363781556266,
+      "frameTime": {
+        "mean": 30.17831325148004,
+        "p95": 41.39999961853027
+      },
+      "calls": {
+        "mean": 193,
+        "p95": 193
+      },
+      "triangles": {
+        "mean": 1056173,
+        "p95": 1056173
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.6332665407108161,
+          "p95": 2.8999996185302734
+        },
+        "agents": {
+          "mean": 11.925050078030818,
+          "p95": 17.699999809265137
+        },
+        "city": {
+          "mean": 0.3619238465486882,
+          "p95": 0.6999998092651367
+        },
+        "film": {
+          "mean": 0.05751503541139897,
+          "p95": 0.19999980926513672
+        },
+        "effects": {
+          "mean": 4.637274566298736,
+          "p95": 7.300000190734863
+        },
+        "render": {
+          "mean": 9.52945892127578,
+          "p95": 14.300000190734863
+        },
+        "capture": {
+          "mean": 0.0028056142803184496,
+          "p95": 0
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "recordingActive": false,
+      "actualDrawingBuffer": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "file": "camera-final-720p.json",
+      "measuredAt": "2026-10-24T02:18:14.957Z",
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1
+      },
+      "frames": 439,
+      "fps": 29.233521103827332,
+      "frameTime": {
+        "mean": 34.207305936508526,
+        "p95": 56.20000076293945
+      },
+      "calls": {
+        "mean": 174,
+        "p95": 174
+      },
+      "triangles": {
+        "mean": 1055503,
+        "p95": 1055503
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 1.1539863117191949,
+          "p95": 2.90000057220459
+        },
+        "agents": {
+          "mean": 15.703416878650291,
+          "p95": 26.100000381469727
+        },
+        "city": {
+          "mean": 0.25489748040201454,
+          "p95": 0.6000003814697266
+        },
+        "film": {
+          "mean": 0.10842826208927094,
+          "p95": 0.20000076293945312
+        },
+        "effects": {
+          "mean": 0.22505693718078196,
+          "p95": 0.5
+        },
+        "render": {
+          "mean": 11.05193621911329,
+          "p95": 19.600000381469727
+        },
+        "capture": {
+          "mean": 0.0015945304227581328,
+          "p95": 0
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "recordingActive": false,
+      "actualDrawingBuffer": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "file": "camera-final-1080p.json",
+      "measuredAt": "2026-10-24T02:20:00.806Z",
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "frames": 364,
+      "fps": 24.19580605966766,
+      "frameTime": {
+        "mean": 41.32947658507292,
+        "p95": 55.79999923706055
+      },
+      "calls": {
+        "mean": 174,
+        "p95": 174
+      },
+      "triangles": {
+        "mean": 1055503,
+        "p95": 1055503
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 1.0802197744558146,
+          "p95": 2.6999998092651367
+        },
+        "agents": {
+          "mean": 14.325824216171936,
+          "p95": 20.199999809265137
+        },
+        "city": {
+          "mean": 0.30879118678333994,
+          "p95": 0.5
+        },
+        "film": {
+          "mean": 0.05000002043587821,
+          "p95": 0.10000038146972656
+        },
+        "effects": {
+          "mean": 0.11401100211091093,
+          "p95": 0.20000076293945312
+        },
+        "render": {
+          "mean": 7.94697800049415,
+          "p95": 10.800000190734863
+        },
+        "capture": {
+          "mean": 0.0013736289936107594,
+          "p95": 0
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+      "recordingActive": false,
+      "actualDrawingBuffer": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  ],
+  "conditions": {
+    "scene": "film_kungfu_dojo",
+    "worldPaused": true,
+    "activeSampleSeconds": 15,
+    "warmupSeconds": 3,
+    "deviceMemoryGiB": 24,
+    "mode": "local development profiler; production gameplay checked separately",
+    "gpuTimingMeasured": false,
+    "recordingDuringSampling": false,
+    "concurrentBuildOrTests": false,
+    "systemBackgroundLoadControlled": false,
+    "lowResolutionBeforeAndHallCameraMatched": true,
+    "final720pAnd1080pCameraMatched": true,
+    "earlierAndFinalCameraMatched": false
+  },
+  "interpretation": {
+    "stable60fpsAchieved": false,
+    "combatFpsMeasured": false,
+    "laterVersusEarlierChangeIsVersionEffect": false,
+    "note": "Room architecture, materials, lighting and batching changed together. Later final-camera samples use a different position, direction and session. Background load was not isolated. The final 720p/1080p readings are lower and remain visible; no causal performance claim follows from comparing stages. CPU render timings do not measure GPU execution."
+  },
+  "publication": {
+    "fixedLocalPreviewUpdated": true,
+    "productionBundle": "index-CncHqNS0.js",
+    "renderReconnected": false
+  }
+}

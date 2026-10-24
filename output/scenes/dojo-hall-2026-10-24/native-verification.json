@@ -1,0 +1,33 @@
+{
+  "productionBundle": "index-CncHqNS0.js",
+  "nativeDojoSuccess": true,
+  "result": {
+    "dodged": true,
+    "combo": 3,
+    "hits": 4,
+    "resets": 2,
+    "complete": true
+  },
+  "nativeColdReloadVerified": true,
+  "nativeMovementAfterReloadVerified": true,
+  "jumpObserved": true,
+  "movementSamples": 687,
+  "maximumHorizontalDisplacement": 39.25969925609693,
+  "maximumY": 2.6577849999999996,
+  "bothViewModesUsed": true,
+  "paused": true,
+  "finalTick": 10702,
+  "wallCameraClear": true,
+  "blockingVisualFinding": null,
+  "allRequiredGatesPassed": true,
+  "publishedToFixedLocalPreview": true,
+  "cameraCorrectionNativeEvidence": "camera-native-verification.json",
+  "finalColdReload": {
+    "samples": 117,
+    "maximumHorizontalDisplacement": 4.3299998550460135,
+    "maximumY": 2.6638649999999995,
+    "bothViewModesUsed": true
+  },
+  "combatBuild": "index-CREXBPnQ.js",
+  "combatNote": "Native sparring succeeded before the camera-only correction; the final build preserves completion and was tested for wall/cold-load movement and both view modes."
+}

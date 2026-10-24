@@ -926,8 +926,8 @@ export class FilmSetRenderer {
     }
     if (this.training) {
       if (this.training.sceneId === 'm1_dojo') {
-        (this.scene.background as THREE.Color).setHex(0x8da2a4); fog.color.setHex(0x8da2a4); fog.density = .0028;
-        this.scene.environmentIntensity = .66; return { color: 0xffe0b4, ambient: .72, sun: 1.02 };
+        (this.scene.background as THREE.Color).setHex(0x3f4036); fog.color.setHex(0x777766); fog.density = .0018;
+        this.scene.environmentIntensity = .55; return { color: 0xffefd8, ambient: .48, sun: 0 };
       }
       if (this.training.sceneId === 'm1_jump') {
         (this.scene.background as THREE.Color).setHex(0x9db2b5); fog.color.setHex(0x9db2b5); fog.density = .0042;

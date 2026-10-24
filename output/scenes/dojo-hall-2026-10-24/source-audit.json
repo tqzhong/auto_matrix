@@ -1,0 +1,36 @@
+{
+  "baseline": "1b01b1b06b43768f49f7936f994b6cbf20dc7725",
+  "changed": [
+    {
+      "path": "packages/client/src/engine/FilmSetRenderer.ts",
+      "before": "e8e7b9cc7d2b52be59d9c0464c7698583419589d35948455b8f91a001625ec97",
+      "after": "9c71f70c95a0985d156d6a2c75a73f9816aba935ca60651e6ef0446e031e5686"
+    },
+    {
+      "path": "packages/client/src/engine/TrainingSetRenderer.ts",
+      "before": "b71d3b528e333af2c8e32ecd3939338ee19d5a8d66bb205493d2d22eb1cd3fb4",
+      "after": "6558ffc4b47e7db2a44a278d71e94697e66e8346c204fa7ead4966ad91279338"
+    },
+    {
+      "path": "packages/client/src/player/PlayerControls.ts",
+      "before": "760def2c8a810effba4da300939548d31c09f16bc5c162333e6e7252829c7c6e",
+      "after": "15f4bc0ab136971590564f4d0ea6f846e1504fb3732125b1ebcf1fc59dc62e00"
+    },
+    {
+      "path": "tests/training-renderer.test.mts",
+      "before": "0ef3f964fa92d15d6169089eea64f625042e4985d86423b027137290f95b4b9a",
+      "after": "8ad865d102181aa5873cecaca58697e6b92a77d18568ac8148d3cd2f87bd8fd6"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/dojo-camera.test.mts",
+      "after": "de6a12793f16279e67066d8ad1cf79deb5b07b22cdca3372c038e033c5e99eda"
+    },
+    {
+      "path": "tests/dojo-room.test.mts",
+      "after": "d1be15e9fa92073eca6b901e670d7ad65cf617116aae3094f0a837182c35abed"
+    }
+  ],
+  "packageFiles": 721
+}

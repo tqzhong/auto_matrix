@@ -1,0 +1,129 @@
+TAP version 13
+# Subtest: dojo mats, seams and surrounding walkway all support the feet at the shared floor height
+not ok 1 - dojo mats, seams and surrounding walkway all support the feet at the shared floor height
+  ---
+  duration_ms: 63.346292
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:1:834'
+  failureType: 'testCodeFailure'
+  error: '-23, -29: visual floor 0.06500000178813935, physical feet 0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:22:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: dojo eye-level views and upward views terminate inside an enclosed two-storey hall
+not ok 2 - dojo eye-level views and upward views terminate inside an enclosed two-storey hall
+  ---
+  duration_ms: 25.796167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:1:1404'
+  failureType: 'testCodeFailure'
+  error: 'open exterior at height 3.2, yaw 0'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: 0
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:31:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the visible lower walls coincide with the shared player boundary
+not ok 3 - the visible lower walls coincide with the shared player boundary
+  ---
+  duration_ms: 44.877416
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:1:2149'
+  failureType: 'testCodeFailure'
+  error: |-
+    the rendered wall must stop the player before the body enters it
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:47:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: dojo daylight stays fixed through pause, counterattack and completion and uses one shadow sun
+not ok 4 - dojo daylight stays fixed through pause, counterattack and completion and uses one shadow sun
+  ---
+  duration_ms: 21.168042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:1:2945'
+  failureType: 'testCodeFailure'
+  error: |-
+    one authored window sun, without a second world sun
+
+    2 !== 1
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:57:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: fixed dojo joinery is batched and paper screens do not require a scene transmission pass
+not ok 5 - fixed dojo joinery is batched and paper screens do not require a scene transmission pass
+  ---
+  duration_ms: 19.306333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:1:4192'
+  failureType: 'testCodeFailure'
+  error: 'opaque paper must not trigger scene refraction'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:73:14)
+    Mesh.traverse (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7761:3)
+    Group.traverse (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7767:18)
+    Group.traverse (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7767:18)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:69:8)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2639.008792

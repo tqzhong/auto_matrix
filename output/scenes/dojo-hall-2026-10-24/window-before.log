@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: paper is recessed behind its wooden lattice instead of sharing a flickering front surface
+not ok 1 - paper is recessed behind its wooden lattice instead of sharing a flickering front surface
+  ---
+  duration_ms: 518.593041
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:1:3133'
+  failureType: 'testCodeFailure'
+  error: 'paper and lattice need separate depth'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-room.test.mts:58:28)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3258.314875

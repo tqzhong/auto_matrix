@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: film sets admit walking in both worlds and use their own floor
+ok 1 - film sets admit walking in both worlds and use their own floor
+  ---
+  duration_ms: 25.246041
+  type: 'test'
+  ...
+# Subtest: the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid
+ok 2 - the mountain door, Link lookout and launch point stay walkable while the terrace rail is solid
+  ---
+  duration_ms: 0.535875
+  type: 'test'
+  ...
+# Subtest: the interrogation table and chairs are solid while both side aisles admit walking
+ok 3 - the interrogation table and chairs are solid while both side aisles admit walking
+  ---
+  duration_ms: 0.417542
+  type: 'test'
+  ...
+# Subtest: freeway central and edge barriers match the lanes and its long route does not overlap other sets
+ok 4 - freeway central and edge barriers match the lanes and its long route does not overlap other sets
+  ---
+  duration_ms: 0.753333
+  type: 'test'
+  ...
+# Subtest: the chateau staircase supports the player and its upper landing blocks entry from below
+ok 5 - the chateau staircase supports the player and its upper landing blocks entry from below
+  ---
+  duration_ms: 0.254791
+  type: 'test'
+  ...
+# Subtest: Neo can walk from the château floor up either staircase and reach the actual upper door
+ok 6 - Neo can walk from the château floor up either staircase and reach the actual upper door
+  ---
+  duration_ms: 42.743209
+  type: 'test'
+  ...
+# Subtest: the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open
+ok 7 - the Oracle apartment separates the waiting room from the kitchen while keeping its doorway open
+  ---
+  duration_ms: 0.437875
+  type: 'test'
+  ...
+# Subtest: Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route
+ok 8 - Oracle waiting-room furniture is solid without cutting across the child-to-kitchen route
+  ---
+  duration_ms: 13.529375
+  type: 'test'
+  ...
+# Subtest: both visible kitchen chairs stop a walking player while the aisle stays open
+ok 9 - both visible kitchen chairs stop a walking player while the aisle stays open
+  ---
+  duration_ms: 8.402
+  type: 'test'
+  ...
+# Subtest: Metacortex cubicles block movement but leave the escape aisles open
+ok 10 - Metacortex cubicles block movement but leave the escape aisles open
+  ---
+  duration_ms: 3.656625
+  type: 'test'
+  ...
+# Subtest: the office ledge has a real drop beyond its narrow supporting surface
+ok 11 - the office ledge has a real drop beyond its narrow supporting surface
+  ---
+  duration_ms: 0.464083
+  type: 'test'
+  ...
+# Subtest: the Lafayette chairs and equipment are solid, with room to reach the pills and mirror
+ok 12 - the Lafayette chairs and equipment are solid, with room to reach the pills and mirror
+  ---
+  duration_ms: 4.695875
+  type: 'test'
+  ...
+# Subtest: a film set with its own sun must not redraw a zero-intensity global shadow, and leaving restores daylight shadows
+ok 13 - a film set with its own sun must not redraw a zero-intensity global shadow, and leaving restores daylight shadows
+  ---
+  duration_ms: 11.215625
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 14 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 50.877875
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 15 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 304.626375
+  type: 'test'
+  ...
+# Subtest: training uses the actual neck socket, a carried disk and a paused upload display
+ok 16 - training uses the actual neck socket, a carried disk and a paused upload display
+  ---
+  duration_ms: 830.633333
+  type: 'test'
+  ...
+# Subtest: the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+ok 17 - the roof canyon shares its visible street height and tower boundaries with player physics, including impact deformation
+  ---
+  duration_ms: 22.787625
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 18 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 92.845917
+  type: 'test'
+  ...
+# Subtest: the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+ok 19 - the roof city backdrops blend without casting solid shadows or hiding nearer skyline geometry
+  ---
+  duration_ms: 19.872292
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 20 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 112.639917
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4398.865584

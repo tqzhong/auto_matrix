@@ -1,0 +1,13 @@
+{
+  "samples": 747,
+  "readErrorsDuringQaRestart": 19,
+  "maximumHorizontalDisplacement": 22.298453791162782,
+  "maximumY": 2.6589600000000004,
+  "wallCameraBefore": "wall-camera-before.png",
+  "wallCameraAfter": "wall-camera-after.png",
+  "wallColdLoadVerified": true,
+  "nativeWideAndNarrowViewsVerified": true,
+  "bothViewModesUsed": true,
+  "jumpAndMovementVerified": true,
+  "productionBundle": "index-CncHqNS0.js"
+}

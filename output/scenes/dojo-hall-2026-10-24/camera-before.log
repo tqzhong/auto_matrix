@@ -1,0 +1,77 @@
+TAP version 13
+# Subtest: dojo third person stays outside the player and inside the visible walls on a cold perimeter load
+not ok 1 - dojo third person stays outside the player and inside the visible walls on a cold perimeter load
+  ---
+  duration_ms: 456.387167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:1:3578'
+  failureType: 'testCodeFailure'
+  error: '1.7777777777777777/9.821236878284/-29.240513462204/0: lens clips the body at 6345.021236878284,3.218851313213567,4386.27381755037'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    clearLens (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:49:10)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:68:7)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: dojo wall turning and V preserve a clear third-person lens and steerable first-person eyes
+not ok 2 - dojo wall turning and V preserve a clear third-person lens and steerable first-person eyes
+  ---
+  duration_ms: 345.490792
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:1:4137'
+  failureType: 'testCodeFailure'
+  error: '1.7777777777777777/turn/0: lens clips the body at 6345.927794219847,3.93358853952587,4386.547800914398'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    clearLens (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:49:10)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:86:7)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: dojo wall sliding keeps the lens clear while the player moves and jumps
+not ok 3 - dojo wall sliding keeps the lens clear while the player moves and jumps
+  ---
+  duration_ms: 189.717666
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:1:5134'
+  failureType: 'testCodeFailure'
+  error: '0.03333333333333333/walk/0: lens clips the body at 6346.055947410238,3.17049249003938,4385.959486537796'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    clearLens (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:49:10)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/dojo-camera.test.mts:97:32)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2798.227459

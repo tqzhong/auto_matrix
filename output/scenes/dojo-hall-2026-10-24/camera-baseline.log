@@ -1,0 +1,1357 @@
+TAP version 13
+# Dock withdrawal crew could not load; retaining the articulated fallback. TypeError: Failed to parse URL from /assets/characters/dock-male.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at DockEvacuationCrew.load (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/engine/DockEvacuationCrew.ts:28:57)
+#     at new DockEvacuationCrew (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/engine/DockEvacuationCrew.ts:24:91) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/engine/DockEvacuationCrew.ts:28:85)
+#       at Array.map (<anonymous>)
+#       at DockEvacuationCrew.load (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/engine/DockEvacuationCrew.ts:28:57) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/dock-male.glb'
+#   }
+# }
+# Subtest: observer camera releases drag and ignores pointer capture while a character controls the view
+ok 1 - observer camera releases drag and ignores pointer capture while a character controls the view
+  ---
+  duration_ms: 11.229
+  type: 'test'
+  ...
+# Subtest: mouse pitch is included in authoritative player input
+ok 2 - mouse pitch is included in authoritative player input
+  ---
+  duration_ms: 110.327959
+  type: 'test'
+  ...
+# Subtest: the cold Oracle return camera cannot put the apartment lintel between Neo and the lens
+ok 3 - the cold Oracle return camera cannot put the apartment lintel between Neo and the lens
+  ---
+  duration_ms: 562.357375
+  type: 'test'
+  ...
+# Subtest: Mobil reunion keeps both saved partners in the third-person frame and V preserves free first-person look
+ok 4 - Mobil reunion keeps both saved partners in the third-person frame and V preserves free first-person look
+  ---
+  duration_ms: 76.601333
+  type: 'test'
+  ...
+# Subtest: Trainman chase locks only the saved vault and V follows its posed eye while keeping mouse look
+ok 5 - Trainman chase locks only the saved vault and V follows its posed eye while keeping mouse look
+  ---
+  duration_ms: 89.132875
+  type: 'test'
+  ...
+# Subtest: first-person chase keeps the bracing arm visible and restores the head when V leaves
+ok 6 - first-person chase keeps the bracing arm visible and restores the head when V leaves
+  ---
+  duration_ms: 165.224958
+  type: 'test'
+  ...
+# Subtest: first-person Construct and truth aftermath retain the body and restore the ordinary view
+ok 7 - first-person Construct and truth aftermath retain the body and restore the ordinary view
+  ---
+  duration_ms: 164.96275
+  type: 'test'
+  ...
+# Subtest: first-person Hel pistol keeps the weapon visible, hides the own head and restores both view modes
+ok 8 - first-person Hel pistol keeps the weapon visible, hides the own head and restores both view modes
+  ---
+  duration_ms: 64.499667
+  type: 'test'
+  ...
+# Subtest: Hel V frames the actual button and moving handle from the posed eye, then preserves mouse look
+ok 9 - Hel V frames the actual button and moving handle from the posed eye, then preserves mouse look
+  ---
+  duration_ms: 79.122917
+  type: 'test'
+  ...
+# Subtest: the chase third-person view stays below the ticket-hall roof and has a clear view of the player
+ok 10 - the chase third-person view stays below the ticket-hall roof and has a clear view of the player
+  ---
+  duration_ms: 236.091208
+  type: 'test'
+  ...
+# Subtest: Hel door V shows both physical palm targets in the narrow sidebar and keeps the paused eye and mouse look
+ok 11 - Hel door V shows both physical palm targets in the narrow sidebar and keeps the paused eye and mouse look
+  ---
+  duration_ms: 52.312875
+  type: 'test'
+  ...
+# Subtest: Hel surrender keeps first person looking into the room instead of forcing it down into its own arms
+ok 12 - Hel surrender keeps first person looking into the room instead of forcing it down into its own arms
+  ---
+  duration_ms: 37.424959
+  type: 'test'
+  ...
+# Subtest: the descending evacuation camera remains inside the cage and sees Kid through the roof and gate in wide and portrait windows
+ok 13 - the descending evacuation camera remains inside the cage and sees Kid through the roof and gate in wide and portrait windows
+  ---
+  duration_ms: 113.318166
+  type: 'test'
+  ...
+# Subtest: shaft operation keeps the actual handbar in view and V follows the animated eye without advancing a paused lever
+ok 14 - shaft operation keeps the actual handbar in view and V follows the animated eye without advancing a paused lever
+  ---
+  duration_ms: 32.663833
+  type: 'test'
+  ...
+# Subtest: shaft report and blast shots remain on their own side of the opaque bunker wall in wide and narrow views
+ok 15 - shaft report and blast shots remain on their own side of the opaque bunker wall in wide and narrow views
+  ---
+  duration_ms: 66.035667
+  type: 'test'
+  ...
+# Subtest: V initially frames both actual operator hands and the half-thrown lever from the delivered rig eye, then permits free look
+ok 16 - V initially frames both actual operator hands and the half-thrown lever from the delivered rig eye, then permits free look
+  ---
+  duration_ms: 56.803125
+  type: 'test'
+  ...
+# Subtest: EMP exterior view frames the ship and V returns to the operator without moving his saved body
+ok 17 - EMP exterior view frames the ship and V returns to the operator without moving his saved body
+  ---
+  duration_ms: 30.912292
+  type: 'test'
+  ...
+# Subtest: the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes (legacy)
+ok 18 - the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes (legacy)
+  ---
+  duration_ms: 745.587292
+  type: 'test'
+  ...
+# Subtest: the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes (forward)
+ok 19 - the dock reunion camera frames the descent and couple through the actual crashed hull in both window shapes (forward)
+  ---
+  duration_ms: 724.126875
+  type: 'test'
+  ...
+# Subtest: V in the reunion samples the current head and permits looking around without moving its saved progress
+ok 20 - V in the reunion samples the current head and permits looking around without moving its saved progress
+  ---
+  duration_ms: 59.070417
+  type: 'test'
+  ...
+# Subtest: free walking after the reunion retains the ordinary camera easing through a turn
+ok 21 - free walking after the reunion retains the ordinary camera easing through a turn
+  ---
+  duration_ms: 142.300208
+  type: 'test'
+  ...
+# Subtest: the personnel camera stays in the cage and sees Niobe and Lock through the actual pipework in both window shapes
+ok 22 - the personnel camera stays in the cage and sees Niobe and Lock through the actual pipework in both window shapes
+  ---
+  duration_ms: 282.111042
+  type: 'test'
+  ...
+# Subtest: the personnel V view samples the animated eye and preserves live mouse look while the saved lift is paused
+ok 23 - the personnel V view samples the animated eye and preserves live mouse look while the saved lift is paused
+  ---
+  duration_ms: 57.511167
+  type: 'test'
+  ...
+# Subtest: free personnel walking retains ordinary camera easing and V follows a new turn
+ok 24 - free personnel walking retains ordinary camera easing and V follows a new turn
+  ---
+  duration_ms: 158.983083
+  type: 'test'
+  ...
+# Subtest: EMP camera sees the Hammer through the retained upper pipework in both window shapes
+ok 25 - EMP camera sees the Hammer through the retained upper pipework in both window shapes
+  ---
+  duration_ms: 1076.446208
+  type: 'test'
+  ...
+# Subtest: the operator camera shows the crank above the console and permits first-person inspection
+ok 26 - the operator camera shows the crank above the console and permits first-person inspection
+  ---
+  duration_ms: 71.083333
+  type: 'test'
+  ...
+# Subtest: an unlocked browser can drag the first-person view without attacking (pointer lock API false)
+ok 27 - an unlocked browser can drag the first-person view without attacking (pointer lock API false)
+  ---
+  duration_ms: 44.403333
+  type: 'test'
+  ...
+# Subtest: an unlocked browser can drag the first-person view without attacking (pointer lock API true)
+ok 28 - an unlocked browser can drag the first-person view without attacking (pointer lock API true)
+  ---
+  duration_ms: 42.948584
+  type: 'test'
+  ...
+# Subtest: APU driving frames the moving feet and cockpit while V retains the pilot eye and free look
+ok 29 - APU driving frames the moving feet and cockpit while V retains the pilot eye and free look
+  ---
+  duration_ms: 251.850375
+  type: 'test'
+  ...
+# Subtest: APU third-person crosshair and server hit ray agree
+ok 30 - APU third-person crosshair and server hit ray agree
+  ---
+  duration_ms: 59.005208
+  type: 'test'
+  ...
+# Subtest: APU first-person crosshair and server hit ray agree
+ok 31 - APU first-person crosshair and server hit ray agree
+  ---
+  duration_ms: 65.047916
+  type: 'test'
+  ...
+# Subtest: upper pipe shot camera returns to both fighters before they withdraw their hands, including a cold load
+ok 32 - upper pipe shot camera returns to both fighters before they withdraw their hands, including a cold load
+  ---
+  duration_ms: 579.4555
+  type: 'test'
+  ...
+# Subtest: upper pipe attack camera has an unobstructed view of Charra in wide and narrow windows
+ok 33 - upper pipe attack camera has an unobstructed view of Charra in wide and narrow windows
+  ---
+  duration_ms: 788.897833
+  type: 'test'
+  ...
+# Subtest: Zee first-person view follows the saved hatch turn while retaining her mouse look offset
+ok 34 - Zee first-person view follows the saved hatch turn while retaining her mouse look offset
+  ---
+  duration_ms: 56.384291
+  type: 'test'
+  ...
+# zee detailed head could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/zee-head.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1002:60)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/camera.test.mts:821:12) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at EpilogueHeads.load (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/EpilogueHeads.ts:119:42)
+#       at EpilogueHeads.update (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/EpilogueHeads.ts:82:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1002:60) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zee-head.glb'
+#   }
+# }
+# zee detailed body could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/zee-body.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1412:23)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/camera.test.mts:821:12) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at DiggerBodies.load (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/DiggerBodies.ts:81:42)
+#       at DiggerBodies.update (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/DiggerBodies.ts:57:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1412:23) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/zee-body.glb'
+#   }
+# }
+# Subtest: first-person descending at 19.844 follows Zee's actual eye
+ok 35 - first-person descending at 19.844 follows Zee's actual eye
+  ---
+  duration_ms: 134.223834
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 0 follows Zee's actual eye
+ok 36 - first-person mounting at 0 follows Zee's actual eye
+  ---
+  duration_ms: 715.734875
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 0.9 follows Zee's actual eye
+ok 37 - first-person mounting at 0.9 follows Zee's actual eye
+  ---
+  duration_ms: 898.805583
+  type: 'test'
+  ...
+# Subtest: first-person dismounting at 0.6 follows Zee's actual eye
+ok 38 - first-person dismounting at 0.6 follows Zee's actual eye
+  ---
+  duration_ms: 860.534292
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 1.522 follows Zee's actual eye
+ok 39 - first-person mounting at 1.522 follows Zee's actual eye
+  ---
+  duration_ms: 525.4415
+  type: 'test'
+  ...
+# Subtest: first-person mounting at 3.15 follows Zee's actual eye
+ok 40 - first-person mounting at 3.15 follows Zee's actual eye
+  ---
+  duration_ms: 701.795708
+  type: 'test'
+  ...
+# Subtest: first-person dismounting at 1.2 follows Zee's actual eye
+ok 41 - first-person dismounting at 1.2 follows Zee's actual eye
+  ---
+  duration_ms: 754.853125
+  type: 'test'
+  ...
+# Subtest: first-person dismounting at 3.18 follows Zee's actual eye
+ok 42 - first-person dismounting at 3.18 follows Zee's actual eye
+  ---
+  duration_ms: 616.957042
+  type: 'test'
+  ...
+# charra detailed head could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/charra-head.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1002:60)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/camera.test.mts:829:14) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at EpilogueHeads.load (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/EpilogueHeads.ts:119:42)
+#       at EpilogueHeads.update (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/EpilogueHeads.ts:82:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1002:60) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/charra-head.glb'
+#   }
+# }
+# charra detailed body could not load; retaining its fallback. TypeError: Failed to parse URL from /assets/characters/charra-body.glb
+#     at new Request (node:internal/deps/undici/undici:9929:19)
+#     at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#     ... 6 lines matching cause stack trace ...
+#     at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1412:23)
+#     at TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/tests/camera.test.mts:829:14) {
+#   [cause]: TypeError: Invalid URL
+#       at new URL (node:internal/url:818:25)
+#       at new Request (node:internal/deps/undici/undici:9927:25)
+#       at FileLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44831:15)
+#       at GLTFLoader.load (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/examples/jsm/loaders/GLTFLoader.js:241:10)
+#       at file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44711:10
+#       at new Promise (<anonymous>)
+#       at GLTFLoader.loadAsync (file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:44709:10)
+#       at DiggerBodies.load (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/DiggerBodies.ts:81:42)
+#       at DiggerBodies.update (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/DiggerBodies.ts:57:12)
+#       at CharacterModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/dojo-hall-2026-10-24/candidate-release/packages/client/src/agents/CharacterModel.ts:1412:23) {
+#     code: 'ERR_INVALID_URL',
+#     input: '/assets/characters/charra-body.glb'
+#   }
+# }
+# Subtest: first-person attack at 1.8 follows Zee's actual eye
+ok 43 - first-person attack at 1.8 follows Zee's actual eye
+  ---
+  duration_ms: 73.017708
+  type: 'test'
+  ...
+# Subtest: first-person attack at 2.05 follows Zee's actual eye
+ok 44 - first-person attack at 2.05 follows Zee's actual eye
+  ---
+  duration_ms: 72.81075
+  type: 'test'
+  ...
+# Subtest: Charra aperture 1 third person mouse aims at the actual drill joint
+ok 45 - Charra aperture 1 third person mouse aims at the actual drill joint
+  ---
+  duration_ms: 523.610792
+  type: 'test'
+  ...
+# Subtest: Charra aperture 1 first person mouse aims at the actual drill joint
+ok 46 - Charra aperture 1 first person mouse aims at the actual drill joint
+  ---
+  duration_ms: 658.986375
+  type: 'test'
+  ...
+# Subtest: Charra aperture 2 third person mouse aims at the actual drill joint
+ok 47 - Charra aperture 2 third person mouse aims at the actual drill joint
+  ---
+  duration_ms: 620.979666
+  type: 'test'
+  ...
+# Subtest: Charra aperture 2 first person mouse aims at the actual drill joint
+ok 48 - Charra aperture 2 first person mouse aims at the actual drill joint
+  ---
+  duration_ms: 522.805834
+  type: 'test'
+  ...
+# Subtest: Charra approach reconnect keeps the walking direction instead of the old firing angle
+ok 49 - Charra approach reconnect keeps the walking direction instead of the old firing angle
+  ---
+  duration_ms: 39.679042
+  type: 'test'
+  ...
+# Subtest: Charra relocate reconnect keeps the walking direction instead of the old firing angle
+ok 50 - Charra relocate reconnect keeps the walking direction instead of the old firing angle
+  ---
+  duration_ms: 38.18725
+  type: 'test'
+  ...
+# Subtest: Charra done reconnect keeps the walking direction instead of the old firing angle
+ok 51 - Charra done reconnect keeps the walking direction instead of the old firing angle
+  ---
+  duration_ms: 37.1505
+  type: 'test'
+  ...
+# Subtest: the collapsing drill stays in frame without the firing aperture blocking its crown
+ok 52 - the collapsing drill stays in frame without the firing aperture blocking its crown
+  ---
+  duration_ms: 759.168042
+  type: 'test'
+  ...
+# Subtest: Gate Three upright third person can aim and fire at the actual high cable
+ok 53 - Gate Three upright third person can aim and fire at the actual high cable
+  ---
+  duration_ms: 716.036208
+  type: 'test'
+  ...
+# Subtest: Gate Three upright first person can aim and fire at the actual high cable
+ok 54 - Gate Three upright first person can aim and fire at the actual high cable
+  ---
+  duration_ms: 454.451542
+  type: 'test'
+  ...
+# Subtest: Gate Three fallen third person can aim and fire at the actual high cable
+ok 55 - Gate Three fallen third person can aim and fire at the actual high cable
+  ---
+  duration_ms: 732.971209
+  type: 'test'
+  ...
+# Subtest: Gate Three fallen first person can aim and fire at the actual high cable
+ok 56 - Gate Three fallen first person can aim and fire at the actual high cable
+  ---
+  duration_ms: 731.129917
+  type: 'test'
+  ...
+# Subtest: handing the completed gate to Link clears Kid’s elevated cannon aim and keeps both walking views steerable
+ok 57 - handing the completed gate to Link clears Kid’s elevated cannon aim and keeps both walking views steerable
+  ---
+  duration_ms: 79.383209
+  type: 'test'
+  ...
+# Subtest: the fallen pilot can see the cable through the actual APU from his first person eye
+ok 58 - the fallen pilot can see the cable through the actual APU from his first person eye
+  ---
+  duration_ms: 888.819958
+  type: 'test'
+  ...
+# Subtest: the gate rescue frames the fallen pilot, Zee and her target without hiding them behind the APU frame
+ok 59 - the gate rescue frames the fallen pilot, Zee and her target without hiding them behind the APU frame
+  ---
+  duration_ms: 1132.825625
+  type: 'test'
+  ...
+# Subtest: cuffed movement predicts a slow walk, preserves body space and keeps both views steerable
+ok 60 - cuffed movement predicts a slow walk, preserves body space and keeps both views steerable
+  ---
+  duration_ms: 197.842
+  type: 'test'
+  ...
+# Subtest: elevator cameras stay inside the car, support V and looking around, then release movement at the landing
+ok 61 - elevator cameras stay inside the car, support V and looking around, then release movement at the landing
+  ---
+  duration_ms: 149.115541
+  type: 'test'
+  ...
+# Subtest: the riding camera frames Neo from head to shoes instead of filling the view with his back
+ok 62 - the riding camera frames Neo from head to shoes instead of filling the view with his back
+  ---
+  duration_ms: 502.035833
+  type: 'test'
+  ...
+# Subtest: the last stand camera sees Mifune past the APU armour and preserves a freely turning first-person eye
+ok 63 - the last stand camera sees Mifune past the APU armour and preserves a freely turning first-person eye
+  ---
+  duration_ms: 329.666125
+  type: 'test'
+  ...
+# Subtest: the dock APU gunner sees past the frame, can turn the aim and fire from both views
+ok 64 - the dock APU gunner sees past the frame, can turn the aim and fire from both views
+  ---
+  duration_ms: 45.76875
+  type: 'test'
+  ...
+# Subtest: the lobby checkpoint has a readable authored camera and V returns to Neo eye height
+ok 65 - the lobby checkpoint has a readable authored camera and V returns to Neo eye height
+  ---
+  duration_ms: 43.648
+  type: 'test'
+  ...
+# Subtest: the office ladder camera looks along the city canyon while Neo descends
+ok 66 - the office ladder camera looks along the city canyon while Neo descends
+  ---
+  duration_ms: 120.953042
+  type: 'test'
+  ...
+# Subtest: the interrogation entrance keeps Smith visible beside Neo in a narrow third-person view
+ok 67 - the interrogation entrance keeps Smith visible beside Neo in a narrow third-person view
+  ---
+  duration_ms: 48.396959
+  type: 'test'
+  ...
+# Subtest: Smith questioning keeps both faces readable and V uses Morpheus seated eye line
+ok 68 - Smith questioning keeps both faces readable and V uses Morpheus seated eye line
+  ---
+  duration_ms: 40.930875
+  type: 'test'
+  ...
+# Subtest: rooftop bullet time keeps Jones and bent Neo in frame while V follows the lowered body
+ok 69 - rooftop bullet time keeps Jones and bent Neo in frame while V follows the lowered body
+  ---
+  duration_ms: 39.933417
+  type: 'test'
+  ...
+# Subtest: the portrait Trinity finish keeps the shooter, Jones and fallen Neo inside the action frame
+ok 70 - the portrait Trinity finish keeps the shooter, Jones and fallen Neo inside the action frame
+  ---
+  duration_ms: 58.104708
+  type: 'test'
+  ...
+# Subtest: the B-212 download uses a wide portrait establishing shot instead of filling the view with its hull
+ok 71 - the B-212 download uses a wide portrait establishing shot instead of filling the view with its hull
+  ---
+  duration_ms: 38.334041
+  type: 'test'
+  ...
+# Subtest: office air rescue keeps the B-212, broken-window target and both falling men readable in portrait
+ok 72 - office air rescue keeps the B-212, broken-window target and both falling men readable in portrait
+  ---
+  duration_ms: 92.430125
+  type: 'test'
+  ...
+# Subtest: roof rope camera holds Neo and dangling Trinity through shocks, impact and pull-up
+ok 73 - roof rope camera holds Neo and dangling Trinity through shocks, impact and pull-up
+  ---
+  duration_ms: 88.22
+  type: 'test'
+  ...
+# Subtest: the subway train window owns a readable camera and V looks from Neo toward Smith on the rails
+ok 74 - the subway train window owns a readable camera and V looks from Neo toward Smith on the rails
+  ---
+  duration_ms: 48.009375
+  type: 'test'
+  ...
+# Subtest: the subway body-swap camera keeps its subject clear of the platform columns
+ok 75 - the subway body-swap camera keeps its subject clear of the platform columns
+  ---
+  duration_ms: 39.097541
+  type: 'test'
+  ...
+# Subtest: the garbage-truck dodge camera stays on the open lane and keeps Neo readable
+ok 76 - the garbage-truck dodge camera stays on the open lane and keeps Neo readable
+  ---
+  duration_ms: 38.000958
+  type: 'test'
+  ...
+# Subtest: the truck-roof camera clears the passenger and rotates behind Morpheus when he turns
+ok 77 - the truck-roof camera clears the passenger and rotates behind Morpheus when he turns
+  ---
+  duration_ms: 61.119
+  type: 'test'
+  ...
+# Subtest: the truck rescue camera keeps the landed crew clear of the wrecked trailer
+ok 78 - the truck rescue camera keeps the landed crew clear of the wrecked trailer
+  ---
+  duration_ms: 44.901334
+  type: 'test'
+  ...
+# Subtest: V during truck rescue follows the prone head and still permits free looking
+ok 79 - V during truck rescue follows the prone head and still permits free looking
+  ---
+  duration_ms: 36.768958
+  type: 'test'
+  ...
+# Subtest: the room 303 entry frames Neo and the pursuing possession in depth
+ok 80 - the room 303 entry frames Neo and the pursuing possession in depth
+  ---
+  duration_ms: 37.717625
+  type: 'test'
+  ...
+# Subtest: matrix duel keeps V first person tied to the player's live turn
+ok 81 - matrix duel keeps V first person tied to the player's live turn
+  ---
+  duration_ms: 52.379042
+  type: 'test'
+  ...
+# Subtest: matrix running keeps V first person tied to the player's live turn
+ok 82 - matrix running keeps V first person tied to the player's live turn
+  ---
+  duration_ms: 52.181625
+  type: 'test'
+  ...
+# Subtest: both red-dress views follow actual mouse attention instead of a timed camera turn
+ok 83 - both red-dress views follow actual mouse attention instead of a timed camera turn
+  ---
+  duration_ms: 52.301833
+  type: 'test'
+  ...
+# Subtest: the final Oracle reply locks predicted movement, uses Neo actual eyes and releases walking afterwards
+ok 84 - the final Oracle reply locks predicted movement, uses Neo actual eyes and releases walking afterwards
+  ---
+  duration_ms: 61.506541
+  type: 'test'
+  ...
+# Subtest: the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye
+ok 85 - the seated Oracle camera shows Smith and the doorway copies and keeps the actual first-person eye
+  ---
+  duration_ms: 61.610167
+  type: 'test'
+  ...
+# Subtest: wetwall third person stays inside the actual shaft and frames Neo head and shoes in both aspect ratios
+ok 86 - wetwall third person stays inside the actual shaft and frames Neo head and shoes in both aspect ratios
+  ---
+  duration_ms: 297.8475
+  type: 'test'
+  ...
+# Subtest: wetwall V uses the animated eye, sends W/S climb and keeps free look after the normal follow delay
+ok 87 - wetwall V uses the animated eye, sends W/S climb and keeps free look after the normal follow delay
+  ---
+  duration_ms: 115.0705
+  type: 'test'
+  ...
+# Subtest: the street-exit shaft frames the current climber in both views and sends W as ladder input
+ok 88 - the street-exit shaft frames the current climber in both views and sends W as ladder input
+  ---
+  duration_ms: 68.345583
+  type: 'test'
+  ...
+# Subtest: both player views predict solid companions on the eighth floor and allow retreat away from them
+ok 89 - both player views predict solid companions on the eighth floor and allow retreat away from them
+  ---
+  duration_ms: 173.608417
+  type: 'test'
+  ...
+# Subtest: the Sentinel sweep camera keeps the machine and forward viewport readable together
+ok 90 - the Sentinel sweep camera keeps the machine and forward viewport readable together
+  ---
+  duration_ms: 56.708
+  type: 'test'
+  ...
+# Subtest: the connected phone shot holds the local player at the exit until the next scene
+ok 91 - the connected phone shot holds the local player at the exit until the next scene
+  ---
+  duration_ms: 67.303792
+  type: 'test'
+  ...
+# Subtest: the club whisper keeps Trinity visible beside Neo and first person can still look around
+ok 92 - the club whisper keeps Trinity visible beside Neo and first person can still look around
+  ---
+  duration_ms: 139.2515
+  type: 'test'
+  ...
+# Subtest: the first-person computer view lowers with the seated body and stays steerable while paused
+ok 93 - the first-person computer view lowers with the seated body and stays steerable while paused
+  ---
+  duration_ms: 84.192
+  type: 'test'
+  ...
+# Subtest: the chair step turns first person with the saved body, preserves free look and freezes the body while paused
+ok 94 - the chair step turns first person with the saved body, preserves free look and freezes the body while paused
+  ---
+  duration_ms: 59.97425
+  type: 'test'
+  ...
+# Subtest: the wider chair approach camera includes Neo’s head and planted feet before closing on the CRT
+ok 95 - the wider chair approach camera includes Neo’s head and planted feet before closing on the CRT
+  ---
+  duration_ms: 614.983834
+  type: 'test'
+  ...
+# Subtest: the white-rabbit close-up clears the visitor beside the door and releases control afterwards
+ok 96 - the white-rabbit close-up clears the visitor beside the door and releases control afterwards
+  ---
+  duration_ms: 82.367333
+  type: 'test'
+  ...
+# Subtest: carrying the apartment disc keeps ordinary movement and the player camera available
+ok 97 - carrying the apartment disc keeps ordinary movement and the player camera available
+  ---
+  duration_ms: 37.128209
+  type: 'test'
+  ...
+# Subtest: the floor-book camera shows the cartridge beside the bed in both aspect ratios and V lowers with the crouch
+ok 98 - the floor-book camera shows the cartridge beside the bed in both aspect ratios and V lowers with the crouch
+  ---
+  duration_ms: 79.385083
+  type: 'test'
+  ...
+# Subtest: the morning camera shows the bedside clock in portrait and landscape and V follows the reclining eyes
+ok 99 - the morning camera shows the bedside clock in portrait and landscape and V follows the reclining eyes
+  ---
+  duration_ms: 64.962792
+  type: 'test'
+  ...
+# Subtest: the apartment wake call frames the bed and the front of Neo at the physical telephone
+ok 100 - the apartment wake call frames the bed and the front of Neo at the physical telephone
+  ---
+  duration_ms: 63.370792
+  type: 'test'
+  ...
+# Subtest: leaving apartment 101 keeps Neo and the doorway readable before V returns to his eyes
+ok 101 - leaving apartment 101 keeps Neo and the doorway readable before V returns to his eyes
+  ---
+  duration_ms: 76.41425
+  type: 'test'
+  ...
+# Subtest: office conversation and signing frame the performers and restore walking after the response
+ok 102 - office conversation and signing frame the performers and restore walking after the response
+  ---
+  duration_ms: 73.675167
+  type: 'test'
+  ...
+# Subtest: passenger first-person look follows a car turn while preserving the chosen look offset
+ok 103 - passenger first-person look follows a car turn while preserving the chosen look offset
+  ---
+  duration_ms: 51.513042
+  type: 'test'
+  ...
+# Subtest: first-person boarding ducks under the cabin light before settling into the rear seat
+ok 104 - first-person boarding ducks under the cabin light before settling into the rear seat
+  ---
+  duration_ms: 47.0105
+  type: 'test'
+  ...
+# Subtest: opening the meeting car door frames Neo and the rainy exit in portrait view
+ok 105 - opening the meeting car door frames Neo and the rainy exit in portrait view
+  ---
+  duration_ms: 40.194875
+  type: 'test'
+  ...
+# Subtest: the bridge capture frames Neo and his pursuer separately in both views
+ok 106 - the bridge capture frames Neo and his pursuer separately in both views
+  ---
+  duration_ms: 52.172458
+  type: 'test'
+  ...
+# Subtest: the meeting camera cuts outside as Neo opens the door instead of crossing the car body
+ok 107 - the meeting camera cuts outside as Neo opens the door instead of crossing the car body
+  ---
+  duration_ms: 45.726125
+  type: 'test'
+  ...
+# Subtest: the meeting camera cuts inside when boarding changes to rolling
+ok 108 - the meeting camera cuts inside when boarding changes to rolling
+  ---
+  duration_ms: 34.260292
+  type: 'test'
+  ...
+# Subtest: switching to first person during extraction frames Trinity’s scanner and still permits free look
+ok 109 - switching to first person during extraction frames Trinity’s scanner and still permits free look
+  ---
+  duration_ms: 42.691708
+  type: 'test'
+  ...
+# Subtest: the passenger eye does not jump when either scan result returns control to the car
+ok 110 - the passenger eye does not jump when either scan result returns control to the car
+  ---
+  duration_ms: 43.313167
+  type: 'test'
+  ...
+# Subtest: the portrait driving shot keeps the moving car large enough to read
+ok 111 - the portrait driving shot keeps the moving car large enough to read
+  ---
+  duration_ms: 41.820625
+  type: 'test'
+  ...
+# Subtest: Cypher interludes use directed scene cameras while V keeps a freely steerable player view
+ok 112 - Cypher interludes use directed scene cameras while V keeps a freely steerable player view
+  ---
+  duration_ms: 79.833209
+  type: 'test'
+  ...
+# Subtest: the crew meal camera frames the long-table handoff and Neo’s tasting space in wide and portrait views
+ok 113 - the crew meal camera frames the long-table handoff and Neo’s tasting space in wide and portrait views
+  ---
+  duration_ms: 585.881459
+  type: 'test'
+  ...
+# Subtest: the Oracle consultation frames both speakers and V keeps a freely steerable player view
+ok 114 - the Oracle consultation frames both speakers and V keeps a freely steerable player view
+  ---
+  duration_ms: 69.033625
+  type: 'test'
+  ...
+# Subtest: the Oracle farewell frames both speakers, supports V and returns to freely steered walking
+ok 115 - the Oracle farewell frames both speakers, supports V and returns to freely steered walking
+  ---
+  duration_ms: 160.040042
+  type: 'test'
+  ...
+# Subtest: V during the Oracle vase incident uses Neo eyes and preserves mouse looking
+ok 116 - V during the Oracle vase incident uses Neo eyes and preserves mouse looking
+  ---
+  duration_ms: 45.857166
+  type: 'test'
+  ...
+# Subtest: arrival hands back a clear third-person view toward the alley entrance
+ok 117 - arrival hands back a clear third-person view toward the alley entrance
+  ---
+  duration_ms: 61.262584
+  type: 'test'
+  ...
+# Subtest: crossing a window synchronizes the exit heading and does not fall back to the phone camera between updates
+ok 118 - crossing a window synchronizes the exit heading and does not fall back to the phone camera between updates
+  ---
+  duration_ms: 250.879292
+  type: 'test'
+  ...
+# Subtest: motorcycle throttle and steering are independent of the view, and opening a panel brakes
+ok 119 - motorcycle throttle and steering are independent of the view, and opening a panel brakes
+  ---
+  duration_ms: 107.650125
+  type: 'test'
+  ...
+# Subtest: spoon focus is a held input and is released when a panel opens or the window loses focus
+ok 120 - spoon focus is a held input and is released when a panel opens or the window loses focus
+  ---
+  duration_ms: 107.862958
+  type: 'test'
+  ...
+# Subtest: sitting with Spoon Boy frames both faces and the handoff, and V follows seated eye height with free look
+ok 121 - sitting with Spoon Boy frames both faces and the handoff, and V follows seated eye height with free look
+  ---
+  duration_ms: 389.521
+  type: 'test'
+  ...
+# Subtest: spoon inspection keeps a front-side view of the hand, while V returns to steerable eyes
+ok 122 - spoon inspection keeps a front-side view of the hand, while V returns to steerable eyes
+  ---
+  duration_ms: 187.56
+  type: 'test'
+  ...
+# Subtest: the guided dojo attack turns toward a nearby sparring partner behind the current camera
+ok 123 - the guided dojo attack turns toward a nearby sparring partner behind the current camera
+  ---
+  duration_ms: 289.245083
+  type: 'test'
+  ...
+# Subtest: the pod descent camera stays outside the drain instead of collapsing against an obsolete floor
+ok 124 - the pod descent camera stays outside the drain instead of collapsing against an obsolete floor
+  ---
+  duration_ms: 48.332125
+  type: 'test'
+  ...
+# Subtest: the recovery camera frames the medical bed and first person moves to Neo eyes instead of standing height
+ok 125 - the recovery camera frames the medical bed and first person moves to Neo eyes instead of standing height
+  ---
+  duration_ms: 45.822375
+  type: 'test'
+  ...
+# Subtest: lying recovery first person can look down at treatment without moving the patient or saved clock
+ok 126 - lying recovery first person can look down at treatment without moving the patient or saved clock
+  ---
+  duration_ms: 34.9
+  type: 'test'
+  ...
+# Subtest: the recovery opening keeps Neo above subtitles and visible past the medical frame in both aspect ratios
+ok 127 - the recovery opening keeps Neo above subtitles and visible past the medical frame in both aspect ratios
+  ---
+  duration_ms: 248.923459
+  type: 'test'
+  ...
+# Subtest: first person follows the cabin sit and turn, keeps free look and restores the same direction after reconnecting
+ok 128 - first person follows the cabin sit and turn, keeps free look and restores the same direction after reconnecting
+  ---
+  duration_ms: 90.440709
+  type: 'test'
+  ...
+# Subtest: the ordinary follow view stays below the real cabin roof while Neo walks through its pressure hatch
+ok 129 - the ordinary follow view stays below the real cabin roof while Neo walks through its pressure hatch
+  ---
+  duration_ms: 482.853709
+  type: 'test'
+  ...
+# Subtest: after recovery the ordinary follow camera cannot enter the medical equipment cabinet
+ok 130 - after recovery the ordinary follow camera cannot enter the medical equipment cabinet
+  ---
+  duration_ms: 218.308042
+  type: 'test'
+  ...
+# Subtest: the cabin camera stays inside the room and frames Neo during the sit, turn and rise
+ok 131 - the cabin camera stays inside the room and frames Neo during the sit, turn and rise
+  ---
+  duration_ms: 874.370417
+  type: 'test'
+  ...
+# Subtest: the Construct keeps movement locked when inspection hands off directly to the television
+ok 132 - the Construct keeps movement locked when inspection hands off directly to the television
+  ---
+  duration_ms: 32.8915
+  type: 'test'
+  ...
+# Subtest: training frames Neo, Tank and the console in wide and narrow views throughout connection and upload
+ok 133 - training frames Neo, Tank and the console in wide and narrow views throughout connection and upload
+  ---
+  duration_ms: 944.033
+  type: 'test'
+  ...
+# Subtest: the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline
+ok 134 - the truth aftermath frames the unplugging and bedside conversation without cabin walls in the sightline
+  ---
+  duration_ms: 607.34975
+  type: 'test'
+  ...
+# Subtest: leaving the training bed carries the authored turn into third-person walking
+ok 135 - leaving the training bed carries the authored turn into third-person walking
+  ---
+  duration_ms: 47.338625
+  type: 'test'
+  ...
+# Subtest: leaving the training bed carries the authored turn into first-person walking
+ok 136 - leaving the training bed carries the authored turn into first-person walking
+  ---
+  duration_ms: 44.409583
+  type: 'test'
+  ...
+# Subtest: first-person rest follows the cabin head end, retains free look and releases movement for training
+ok 137 - first-person rest follows the cabin head end, retains free look and releases movement for training
+  ---
+  duration_ms: 56.261167
+  type: 'test'
+  ...
+# Subtest: first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset
+ok 138 - first person turns with Neo through unplugging and uses the animated head while retaining the mouse offset
+  ---
+  duration_ms: 50.647208
+  type: 'test'
+  ...
+# Subtest: the Construct and truth aftermath use the registered body eye while keeping free look
+ok 139 - the Construct and truth aftermath use the registered body eye while keeping free look
+  ---
+  duration_ms: 48.15625
+  type: 'test'
+  ...
+# Subtest: the ruined lesson frames its seated guide above the subtitle area before surveying the skyline
+ok 140 - the ruined lesson frames its seated guide above the subtitle area before surveying the skyline
+  ---
+  duration_ms: 96.780208
+  type: 'test'
+  ...
+# Subtest: the Construct and desert reveals use authored wide shots while first person remains at Neo eyes
+ok 141 - the Construct and desert reveals use authored wide shots while first person remains at Neo eyes
+  ---
+  duration_ms: 92.437625
+  type: 'test'
+  ...
+# Subtest: Lafayette close follow keeps the lens in the room and the route visible beside Neo
+ok 142 - Lafayette close follow keeps the lens in the room and the route visible beside Neo
+  ---
+  duration_ms: 3712.550833
+  type: 'test'
+  ...
+# Subtest: third-person wall sliding keeps the intended walking view at 30 fps
+ok 143 - third-person wall sliding keeps the intended walking view at 30 fps
+  ---
+  duration_ms: 129.1345
+  type: 'test'
+  ...
+# Subtest: third-person wall sliding keeps the intended walking view at 60 fps
+ok 144 - third-person wall sliding keeps the intended walking view at 60 fps
+  ---
+  duration_ms: 202.5535
+  type: 'test'
+  ...
+# Subtest: first-person wall sliding keeps the intended walking view at 30 fps
+ok 145 - first-person wall sliding keeps the intended walking view at 30 fps
+  ---
+  duration_ms: 85.708958
+  type: 'test'
+  ...
+# Subtest: first-person wall sliding keeps the intended walking view at 60 fps
+ok 146 - first-person wall sliding keeps the intended walking view at 60 fps
+  ---
+  duration_ms: 118.304791
+  type: 'test'
+  ...
+# Subtest: Lafayette follow keeps the eased lens clear while turning inside the actual tracking doorway
+ok 147 - Lafayette follow keeps the eased lens clear while turning inside the actual tracking doorway
+  ---
+  duration_ms: 107849.568041
+  type: 'test'
+  ...
+# Subtest: third-person camera follows KeyD without steering a held direction into circles
+ok 148 - third-person camera follows KeyD without steering a held direction into circles
+  ---
+  duration_ms: 501.047958
+  type: 'test'
+  ...
+# Subtest: third-person camera follows KeyA without steering a held direction into circles
+ok 149 - third-person camera follows KeyA without steering a held direction into circles
+  ---
+  duration_ms: 511.656875
+  type: 'test'
+  ...
+# Subtest: third-person camera follows KeyS without steering a held direction into circles
+ok 150 - third-person camera follows KeyS without steering a held direction into circles
+  ---
+  duration_ms: 415.035542
+  type: 'test'
+  ...
+# Subtest: first-person camera follows KeyD without steering a held direction into circles
+ok 151 - first-person camera follows KeyD without steering a held direction into circles
+  ---
+  duration_ms: 290.44025
+  type: 'test'
+  ...
+# Subtest: first-person camera follows KeyA without steering a held direction into circles
+ok 152 - first-person camera follows KeyA without steering a held direction into circles
+  ---
+  duration_ms: 283.909334
+  type: 'test'
+  ...
+# Subtest: first-person camera follows KeyS without steering a held direction into circles
+ok 153 - first-person camera follows KeyS without steering a held direction into circles
+  ---
+  duration_ms: 368.7465
+  type: 'test'
+  ...
+# Subtest: third-person diagonal follow crosses the angle seam by the short route at 30 fps
+ok 154 - third-person diagonal follow crosses the angle seam by the short route at 30 fps
+  ---
+  duration_ms: 147.299083
+  type: 'test'
+  ...
+# Subtest: third-person diagonal follow crosses the angle seam by the short route at 60 fps
+ok 155 - third-person diagonal follow crosses the angle seam by the short route at 60 fps
+  ---
+  duration_ms: 288.340167
+  type: 'test'
+  ...
+# Subtest: first-person diagonal follow crosses the angle seam by the short route at 30 fps
+ok 156 - first-person diagonal follow crosses the angle seam by the short route at 30 fps
+  ---
+  duration_ms: 137.927875
+  type: 'test'
+  ...
+# Subtest: first-person diagonal follow crosses the angle seam by the short route at 60 fps
+ok 157 - first-person diagonal follow crosses the angle seam by the short route at 60 fps
+  ---
+  duration_ms: 167.21025
+  type: 'test'
+  ...
+# Subtest: third-person manual look has priority, then follow resumes while walking and leaves an idle view alone
+ok 158 - third-person manual look has priority, then follow resumes while walking and leaves an idle view alone
+  ---
+  duration_ms: 695.034125
+  type: 'test'
+  ...
+# Subtest: first-person manual look has priority, then follow resumes while walking and leaves an idle view alone
+ok 159 - first-person manual look has priority, then follow resumes while walking and leaves an idle view alone
+  ---
+  duration_ms: 321.523833
+  type: 'test'
+  ...
+# Subtest: V switches perspective mid-turn without redirecting a held movement key
+ok 160 - V switches perspective mid-turn without redirecting a held movement key
+  ---
+  duration_ms: 217.264666
+  type: 'test'
+  ...
+# Subtest: film scene entry aligns the third-person view with the new entrance
+ok 161 - film scene entry aligns the third-person view with the new entrance
+  ---
+  duration_ms: 25.090584
+  type: 'test'
+  ...
+# Subtest: film scene entry aligns the first-person view with the new entrance
+ok 162 - film scene entry aligns the first-person view with the new entrance
+  ---
+  duration_ms: 24.192292
+  type: 'test'
+  ...
+# Subtest: first-person mouse steering turns the view and movement together after keyboard follow
+ok 163 - first-person mouse steering turns the view and movement together after keyboard follow
+  ---
+  duration_ms: 192.566875
+  type: 'test'
+  ...
+# Subtest: a late attack press buffers one follow-up, while pauses cannot queue attacks or jumps
+ok 164 - a late attack press buffers one follow-up, while pauses cannot queue attacks or jumps
+  ---
+  duration_ms: 94.520708
+  type: 'test'
+  ...
+# Subtest: awakening and speed abilities do not turn an ordinary space press into a super jump
+ok 165 - awakening and speed abilities do not turn an ordinary space press into a super jump
+  ---
+  duration_ms: 71.277541
+  type: 'test'
+  ...
+# Subtest: the bathroom sacrifice owns a readable two-shot and still supports Morpheus first person
+ok 166 - the bathroom sacrifice owns a readable two-shot and still supports Morpheus first person
+  ---
+  duration_ms: 37.445042
+  type: 'test'
+  ...
+# Subtest: Neo third-person view sees the repeated cat without the bathroom partition filling the camera
+ok 167 - Neo third-person view sees the repeated cat without the bathroom partition filling the camera
+  ---
+  duration_ms: 201.386458
+  type: 'test'
+  ...
+# Subtest: the stair-cat observation initially points Neo toward the cat, preserves V and releases looking and movement
+ok 168 - the stair-cat observation initially points Neo toward the cat, preserves V and releases looking and movement
+  ---
+  duration_ms: 707.786375
+  type: 'test'
+  ...
+# Subtest: Tank sees the short Cypher counter window from the deck and from his saved prone viewpoint
+ok 169 - Tank sees the short Cypher counter window from the deck and from his saved prone viewpoint
+  ---
+  duration_ms: 67.41625
+  type: 'test'
+  ...
+# Subtest: the rescue briefing, arriving racks and selected weapon each own a readable camera while V remains playable
+ok 170 - the rescue briefing, arriving racks and selected weapon each own a readable camera while V remains playable
+  ---
+  duration_ms: 69.113
+  type: 'test'
+  ...
+# Subtest: armed third-person movement strafes without pulling the aim away
+ok 171 - armed third-person movement strafes without pulling the aim away
+  ---
+  duration_ms: 309.80725
+  type: 'test'
+  ...
+# Subtest: armed first-person movement strafes without pulling the aim away
+ok 172 - armed first-person movement strafes without pulling the aim away
+  ---
+  duration_ms: 208.939834
+  type: 'test'
+  ...
+# Subtest: the pill choice frames both complete chairs above the choice overlay
+ok 173 - the pill choice frames both complete chairs above the choice overlay
+  ---
+  duration_ms: 56.221625
+  type: 'test'
+  ...
+# Subtest: the pill camera supports seated first person and releases movement when the actor finishes before the journey snapshot
+ok 174 - the pill camera supports seated first person and releases movement when the actor finishes before the journey snapshot
+  ---
+  duration_ms: 78.218209
+  type: 'test'
+  ...
+# Subtest: the red pill hands the first-person camera to the tracking-room doorway when the performance ends
+ok 175 - the red pill hands the first-person camera to the tracking-room doorway when the performance ends
+  ---
+  duration_ms: 75.943291
+  type: 'test'
+  ...
+# Subtest: the tracking-chair entry carries first-person free look through the saved body turn
+ok 176 - the tracking-chair entry carries first-person free look through the saved body turn
+  ---
+  duration_ms: 48.981167
+  type: 'test'
+  ...
+# Subtest: the tracking-chair entry frames the head and planted feet in narrow and wide views
+ok 177 - the tracking-chair entry frames the head and planted feet in narrow and wide views
+  ---
+  duration_ms: 187.869584
+  type: 'test'
+  ...
+# Subtest: the paused tracking-chair body uses the saved position on the first rendered frame
+ok 178 - the paused tracking-chair body uses the saved position on the first rendered frame
+  ---
+  duration_ms: 34.143208
+  type: 'test'
+  ...
+# Subtest: first-person entry finds the mirror once Neo sits and leaves later free look alone
+ok 179 - first-person entry finds the mirror once Neo sits and leaves later free look alone
+  ---
+  duration_ms: 94.025083
+  type: 'test'
+  ...
+# Subtest: the tracking-chair shot contains Neo and the mirror while V lowers to seated eye height
+ok 180 - the tracking-chair shot contains Neo and the mirror while V lowers to seated eye height
+  ---
+  duration_ms: 66.578292
+  type: 'test'
+  ...
+# Subtest: starting the mirror performance while already in first person finds the glass once
+ok 181 - starting the mirror performance while already in first person finds the glass once
+  ---
+  duration_ms: 77.223375
+  type: 'test'
+  ...
+# Subtest: the pod reveal frames Neo in the tank and V opens at the immersed eye line
+ok 182 - the pod reveal frames Neo in the tank and V opens at the immersed eye line
+  ---
+  duration_ms: 67.172583
+  type: 'test'
+  ...
+# Subtest: the rescue camera stays clear of the cultivation towers throughout the lift
+ok 183 - the rescue camera stays clear of the cultivation towers throughout the lift
+  ---
+  duration_ms: 3967.304334
+  type: 'test'
+  ...
+# Subtest: the floating first-person view finds the descending rescue claw above the water
+ok 184 - the floating first-person view finds the descending rescue claw above the water
+  ---
+  duration_ms: 236.010084
+  type: 'test'
+  ...
+# Subtest: first person faces the receiving crew as Neo loses strength instead of looking at the ceiling
+ok 185 - first person faces the receiving crew as Neo loses strength instead of looking at the ceiling
+  ---
+  duration_ms: 55.385042
+  type: 'test'
+  ...
+# Subtest: the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff
+ok 186 - the red-pill departure keeps Neo in the third-person frame and reveals the mirror before handoff
+  ---
+  duration_ms: 76.550083
+  type: 'test'
+  ...
+# Subtest: room 303 gunfire frames Neo and Smith while V follows Neo toward the shooter
+ok 187 - room 303 gunfire frames Neo and Smith while V follows Neo toward the shooter
+  ---
+  duration_ms: 46.431667
+  type: 'test'
+  ...
+# Subtest: Trinity revival and the EMP each keep the ship crew readable
+ok 188 - Trinity revival and the EMP each keep the ship crew readable
+  ---
+  duration_ms: 48.530583
+  type: 'test'
+  ...
+# Subtest: stopped bullets and Smith destruction hold every body in the hotel composition
+ok 189 - stopped bullets and Smith destruction hold every body in the hotel composition
+  ---
+  duration_ms: 66.267916
+  type: 'test'
+  ...
+# Subtest: the final takeoff camera follows Neo above the skyline and V enters the airborne eye line
+ok 190 - the final takeoff camera follows Neo above the skyline and V enters the airborne eye line
+  ---
+  duration_ms: 41.428708
+  type: 'test'
+  ...
+# Subtest: the machine funeral camera keeps carried Neo readable inside the central aisle
+ok 191 - the machine funeral camera keeps carried Neo readable inside the central aisle
+  ---
+  duration_ms: 167.705791
+  type: 'test'
+  ...
+# Subtest: the park establishing shot frames both speakers and V follows the seated Oracle’s actual eye line
+ok 192 - the park establishing shot frames both speakers and V follows the seated Oracle’s actual eye line
+  ---
+  duration_ms: 60.597958
+  type: 'test'
+  ...
+# Subtest: mountain return flight keeps Neo and the southern route in frame in both views
+ok 193 - mountain return flight keeps Neo and the southern route in frame in both views
+  ---
+  duration_ms: 42.622
+  type: 'test'
+  ...
+# Subtest: Smith courtyard flight is framed from beyond the wall with the courtyard behind Neo
+ok 194 - Smith courtyard flight is framed from beyond the wall with the courtyard behind Neo
+  ---
+  duration_ms: 42.529458
+  type: 'test'
+  ...
+# Subtest: the One counter phase keeps V turning and locomotion live
+ok 195 - the One counter phase keeps V turning and locomotion live
+  ---
+  duration_ms: 56.585792
+  type: 'test'
+  ...
+# Subtest: the One exit_run phase keeps V turning and locomotion live
+ok 196 - the One exit_run phase keeps V turning and locomotion live
+  ---
+  duration_ms: 53.061334
+  type: 'test'
+  ...
+# Subtest: the keyboard attack reaches the dream encounter while its camera owns movement
+ok 197 - the keyboard attack reaches the dream encounter while its camera owns movement
+  ---
+  duration_ms: 77.935334
+  type: 'test'
+  ...
+# Subtest: the keyboard attack reaches Trinity revival while the rooftop camera owns movement
+ok 198 - the keyboard attack reaches Trinity revival while the rooftop camera owns movement
+  ---
+  duration_ms: 34.428291
+  type: 'test'
+  ...
+# Subtest: V enters the pickup rider view looking along the road and keeps mouse pitch available
+ok 199 - V enters the pickup rider view looking along the road and keeps mouse pitch available
+  ---
+  duration_ms: 34.299416
+  type: 'test'
+  ...
+# Subtest: pickup turns carry the first-person view with the body while preserving the player mouse offset
+ok 200 - pickup turns carry the first-person view with the body while preserving the player mouse offset
+  ---
+  duration_ms: 39.820125
+  type: 'test'
+  ...
+# Subtest: V frames the pickup chain shot once and leaves mouse look and the paused shot clock intact
+ok 201 - V frames the pickup chain shot once and leaves mouse look and the paused shot clock intact
+  ---
+  duration_ms: 35.457042
+  type: 'test'
+  ...
+# Subtest: Trinity rescue first-person view responds to mouse yaw and pitch during flight and revival
+ok 202 - Trinity rescue first-person view responds to mouse yaw and pitch during flight and revival
+  ---
+  duration_ms: 37.561
+  type: 'test'
+  ...
+# Subtest: the paused rescue first-person view uses the posed rig eye without erasing mouse direction
+ok 203 - the paused rescue first-person view uses the posed rig eye without erasing mouse direction
+  ---
+  duration_ms: 30.355708
+  type: 'test'
+  ...
+# Subtest: the rooftop rescue camera keeps the patient above the bottom subtitle panel
+ok 204 - the rooftop rescue camera keeps the patient above the bottom subtitle panel
+  ---
+  duration_ms: 32.085917
+  type: 'test'
+  ...
+# Subtest: switching V beside the rooftop patient initially aims from the posed eye at the wound, then permits free look
+ok 205 - switching V beside the rooftop patient initially aims from the posed eye at the wound, then permits free look
+  ---
+  duration_ms: 30.623958
+  type: 'test'
+  ...
+# Subtest: the rescue first-person camera preserves nearby sleeves and restores its regular clipping plane on exit
+ok 206 - the rescue first-person camera preserves nearby sleeves and restores its regular clipping plane on exit
+  ---
+  duration_ms: 33.543083
+  type: 'test'
+  ...
+# Subtest: Roland’s table camera shows the interview across window shapes and V retains the actual seated eye and free mouse look
+ok 207 - Roland’s table camera shows the interview across window shapes and V retains the actual seated eye and free mouse look
+  ---
+  duration_ms: 73.943125
+  type: 'test'
+  ...
+1..207
+# tests 207
+# suites 0
+# pass 207
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 159366.876125

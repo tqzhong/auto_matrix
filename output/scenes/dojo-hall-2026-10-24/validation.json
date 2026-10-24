@@ -1,0 +1,45 @@
+{
+  "baselineGeometry": {
+    "tests": 20,
+    "pass": 20,
+    "fail": 0
+  },
+  "baselineCamera": {
+    "tests": 207,
+    "pass": 207,
+    "fail": 0
+  },
+  "redGeometry": {
+    "tests": 5,
+    "pass": 0,
+    "fail": 5
+  },
+  "redCamera": {
+    "tests": 3,
+    "pass": 0,
+    "fail": 3
+  },
+  "candidateCornerRegression": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1
+  },
+  "candidatePaperRegression": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1
+  },
+  "finalRelated": {
+    "tests": 241,
+    "pass": 241,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "bundle": "index-CncHqNS0.js",
+  "bundleSha256": "2443e9c607e7b12d17387cd2395f5ef23973ab9cfb196e16793a8797651a646e",
+  "bundleBytes": 3780869,
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "frozenInputs": 1212,
+  "allRequiredGatesPassed": true,
+  "scope": "Dojo room geometry and camera unit; not full-trilogy quality or stable 60fps"
+}
