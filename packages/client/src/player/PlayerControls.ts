@@ -1307,7 +1307,7 @@ export class PlayerControls {
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
     const welcomeWide = !this.firstPerson && this.motion.welcome && ['approach', 'departing'].includes(this.motion.welcome.phase);
     const revealWide = !this.firstPerson && Boolean(this.motion.truth || this.motion.construct || this.motion.reveal && (this.motion.reveal.kind === 'desert' ? this.motion.reveal.elapsed < 10.2 : this.motion.reveal.elapsed < 7.8));
-    const trainingWide = !this.firstPerson && Boolean(this.motion.download?.phase === 'connecting' || this.motion.training && (this.motion.training.kind !== 'red_dress' || this.motion.training.elapsed < 4.8));
+    const trainingWide = !this.firstPerson && Boolean(this.motion.download?.phase === 'connecting' || this.motion.training);
     const officeWide = !this.firstPerson && this.motion.workday && this.motion.workday.phase !== 'signing';
     const wakeWide = !this.firstPerson && Boolean(this.motion.wakeCall && ['waking', 'leaving'].includes(this.motion.wakeCall.phase));
     const sentinelWide = !this.firstPerson && Boolean(this.motion.sentinel && ['shutdown', 'detected', 'clear'].includes(this.motion.sentinel.phase));
@@ -1333,6 +1333,8 @@ export class PlayerControls {
     const streetShaftWide = !this.firstPerson && tvExit?.phase === 'emerging';
     this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, inOfficeLift && !this.firstPerson ? 80 : basementWide ? this.camera.aspect < .85 ? 82 : 78 : bathroomWide ? this.camera.aspect < .85 ? 78 : 58 : streetShaftWide ? this.camera.aspect < .85 ? 68 : 60 : podWide ? 65 : this.motion.truth && !this.firstPerson && this.camera.aspect < .85 ? 68 : cabinWide ? this.camera.aspect < .85 ? 68 : 58 : smithFinaleWide || epilogueWide ? 64 : ladderWide ? 62 : interviewApproach ? 70 : interviewWide || welcomeWide || revealWide || trainingWide || officeWide || wakeWide || sentinelWide || interludeWide || oracleWide || betrayalWide || rescueWide || governmentWide || airRescueWide || escapeWide || oneWide || catchWide || lobbyWide || pillDepartureWide ? 58 : this.motion.inspecting && !this.firstPerson ? 42 : this.firstPerson ? this.motion.mirrorBeat !== undefined || this.motion.performance === 'pod' && state.currentLocation === 'film_power_plant_pods' ? 78 : sprint ? 74 : 68 : sprint ? 64 : 57, 1 - Math.exp(-4 * delta));
     if (drainWide) this.camera.fov = this.camera.aspect < .85 ? 80 : 70;
+    if (this.motion.training?.kind === 'red_dress' && !this.firstPerson)
+      this.camera.fov = Math.max(58, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(21)) / this.camera.aspect)));
     this.camera.near = basement?.crawling || Boolean(dropRoot) || this.firstPerson && (this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance) && state.currentLocation === 'film_power_plant_pods' || this.motion.morning || this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' || this.motion.computerCheck || this.motion.contact?.propMotion === 'minidisc' && ['retrieving', 'disk', 'handover'].includes(this.motion.contact.phase) || this.motion.pills || this.motion.farewell || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.catch || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGate || this.motion.dockLastStand || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || this.motion.bathroom || this.motion.sixth || this.motion.wetwall?.hanging || tvExit?.phase === 'emerging') ? .06 : this.firstPerson && this.motion.club ? .08 : this.defaultNear;
     const arrest = this.motion.officeCustody?.street;
     if (this.motion.epilogue?.kind === 'neo_carried') this.camera.fov = this.firstPerson ? 68 : 58;
@@ -1936,6 +1938,9 @@ export class PlayerControls {
           const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
           focus = new THREE.Vector3(root.x, root.y + 3, root.z).addScaledVector(forward, 7);
           ideal = new THREE.Vector3(root.x, root.y + 3.6, root.z).addScaledVector(forward, -5.2);
+          // A parallel shoulder offset exposes the threat without changing the player's look direction.
+          const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(1.8);
+          ideal.add(shoulder); focus.add(shoulder);
           const mentor = trainingRoot({ ...this.motion.training!, started: true }, 'morpheus');
           if (Math.hypot(ideal.x - mentor.x, ideal.z - mentor.z) < 2.8) ideal.y = root.y + 6.5;
         }

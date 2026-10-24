@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: the third-person red-dress reveal exposes Smith and his actual muzzle beside Neo in wide and narrow windows
+not ok 1 - the third-person red-dress reveal exposes Smith and his actual muzzle beside Neo in wide and narrow windows
+  ---
+  duration_ms: 9977.300833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-threat-2026-10-24/candidate-release/tests/red-dress-threat-camera.test.mts:1:4637'
+  failureType: 'testCodeFailure'
+  error: 'Smith face is hidden by Close-cut_scalp_undercoat at 1.7777777777777777'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-threat-2026-10-24/candidate-release/tests/red-dress-threat-camera.test.mts:84:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"aspect":1.7777777777777777,"subject":"Smith face","ndc":[-2.099971760037696e-13,0.35166321754452606,0.8951303544978788],"hit":"Close-cut_scalp_undercoat","neo":true}
+# Subtest: the red-dress shoulder view preserves real mouse attention and V keeps Neo actual eye
+ok 2 - the red-dress shoulder view preserves real mouse attention and V keeps Neo actual eye
+  ---
+  duration_ms: 8108.063625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18887.708834

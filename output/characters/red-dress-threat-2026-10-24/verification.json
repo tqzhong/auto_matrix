@@ -1,0 +1,186 @@
+{
+  "protected": {
+    "count": 11,
+    "changed": []
+  },
+  "compiled": {
+    "count": 800,
+    "changed": []
+  },
+  "mainMemories": {
+    "count": 85,
+    "fileSetEqual": true,
+    "hashesEqual": false,
+    "naturallyUpdated": [
+      "memories/ak.json",
+      "memories/apoc.json",
+      "memories/axel.json",
+      "memories/ballard.json",
+      "memories/bane.json",
+      "memories/binary.json",
+      "memories/cas.json",
+      "memories/charra.json",
+      "memories/choi.json",
+      "memories/citizen_15.json",
+      "memories/citizen_16.json",
+      "memories/citizen_8.json",
+      "memories/colt.json",
+      "memories/cypher.json",
+      "memories/dillard.json",
+      "memories/dozer.json",
+      "memories/ghost.json",
+      "memories/hamann.json",
+      "memories/kid.json",
+      "memories/link.json",
+      "memories/lock.json",
+      "memories/maggie.json",
+      "memories/malachi.json",
+      "memories/mauser.json",
+      "memories/mifune.json",
+      "memories/mouse.json",
+      "memories/oracle_attendant.json",
+      "memories/potential_blocks.json",
+      "memories/roland.json",
+      "memories/smith.json",
+      "memories/soren.json",
+      "memories/sparks.json",
+      "memories/switch.json",
+      "memories/tank.json",
+      "memories/twin1.json",
+      "memories/vector.json",
+      "memories/west.json",
+      "memories/zee.json",
+      "memories/zion_neighbor.json",
+      "memories/zion_parent.json"
+    ],
+    "interpretation": "The main world continues running; NPC conversations/arrivals update memory files. No main save or memory file was written by this task."
+  },
+  "headBefore": "59d9ce95866b1183293ac8807d630a019568fc0a",
+  "candidateSourceEqualsRoot": true,
+  "checks": {
+    "threat-baseline.log": {
+      "sha256": "79de18c1d1b725fdff9094f79d0a586e7217a59a591a4d3332160b1ff10389d7",
+      "pass": [
+        "1"
+      ],
+      "fail": [
+        "1"
+      ]
+    },
+    "final-camera-tests.log": {
+      "sha256": "0c8ad37b56bd387abb650d5f3449992ab32189bbb031a3d3a46e88d76fbda0fe",
+      "pass": [
+        "218"
+      ],
+      "fail": [
+        "0"
+      ]
+    },
+    "deployment-tests.log": {
+      "sha256": "f166ccbdf9ddf66553e97f575067135a52632a6068b4fc88f65d776c39dd1463",
+      "pass": [
+        "75"
+      ],
+      "fail": [
+        "0"
+      ]
+    },
+    "client-build.log": {
+      "sha256": "65179c3de8580d82902b1a941f44fabcfb73ae8f14d3e8e12e98925d7c22a1c1",
+      "pass": [],
+      "fail": []
+    },
+    "shared-build.log": {
+      "sha256": "a7896e12a54e39e70f548fcb0f5d57f2184351264322febd233ca359a2863c3c",
+      "pass": [],
+      "fail": []
+    },
+    "server-build.log": {
+      "sha256": "7ec02cb1a8d65d485ee4835c4ef6e42ac0dda373c17cf7969af121a8a0760327",
+      "pass": [],
+      "fail": []
+    },
+    "camera-baseline.log": {
+      "sha256": "1325dba4bd3bac44c381dadbd7c850bbaf9bdc1f414c206e5d040aa96c904c47",
+      "pass": [
+        "1"
+      ],
+      "fail": [
+        "0"
+      ]
+    },
+    "baseline-actors.log": {
+      "sha256": "13c489e39884f9b598343fefc44b32673ecf628681fc173b509b2e87672938ca",
+      "pass": [
+        "9"
+      ],
+      "fail": [
+        "0"
+      ]
+    }
+  },
+  "native": {
+    "step": 2,
+    "tick": 12552,
+    "movement": 3.241647028622642,
+    "health": 100,
+    "running": false,
+    "training": {
+      "kind": "red_dress",
+      "elapsed": 12,
+      "started": true,
+      "attention": {
+        "phase": "done",
+        "noticed": true,
+        "look": 0,
+        "misses": 1,
+        "yaw": 0.5917316373979494,
+        "clock": 36.512999999999806
+      }
+    }
+  },
+  "coldRestore": {
+    "entireWorldEqualAfterReconnect": true,
+    "memoryHashesEqual": true,
+    "memoryCount": 7,
+    "tick": 12703,
+    "bootDifference": "Neo session controller released before rejoining; gameplay fields identical",
+    "backendPid": 15770
+  },
+  "publication": {
+    "entry": "http://localhost:5173/",
+    "pid": 83388,
+    "bundle": "assets/index-BbnkcfNs.js",
+    "sha256": "3c87f11a8c307a1182a86e92d1a1ffb8b3ecb6406dbc54c0db8657dcd26d9722",
+    "bundleBytes": 3794395,
+    "javascriptDeltaBytes": 208,
+    "newAssetBytes": 0,
+    "cssIdentical": true,
+    "backendAndSharedFilesUnchanged": 800,
+    "protectedFilesUnchanged": 11,
+    "mainMemories": 85,
+    "mainTickBefore": 55923,
+    "mainTickAfter": 55923,
+    "mainRunning": true,
+    "mainSaveWritten": false,
+    "renderReconnected": false
+  },
+  "qaStopped": [
+    {
+      "pid": 20350,
+      "port": 5201,
+      "commandVerified": true,
+      "cwdVerified": true,
+      "terminalStateConfirmed": true,
+      "portClosed": true
+    },
+    {
+      "pid": 20326,
+      "port": 5200,
+      "commandVerified": true,
+      "cwdVerified": true,
+      "terminalStateConfirmed": true,
+      "portClosed": true
+    }
+  ]
+}

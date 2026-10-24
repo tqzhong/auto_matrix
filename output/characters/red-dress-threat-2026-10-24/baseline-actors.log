@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: Smith aims his real training pistol at Neo and keeps the actual hand outside its solid parts
+ok 1 - Smith aims his real training pistol at Neo and keeps the actual hand outside its solid parts
+  ---
+  duration_ms: 4137.37725
+  type: 'test'
+  ...
+# {"self":{"count":0,"examples":[]},"prop":{"count":0,"examples":[]},"fingers":[{"digit":1,"points":[[0.02948335861879059,-0.09494546603400522,0.07293350302257284],[0.07908396224388525,-0.04067908141132648,0.11554725890518647],[0.17499999999995453,-0.047002060538943624,0.08669080444629529],[0.17524241821731068,-0.10059920403844182,0.06062490915396985]],"PIP":68.0732716899976,"DIP":79.26357039710912,"curvature":0.8607979340993214},{"digit":2,"points":[[0.04034552804455416,-0.27212207206048333,0.09583861852251463],[0.07192249062268274,-0.3356895571350833,0.10235138837812041],[0.13246643854540707,-0.3534938554857945,0.11483861852251565],[0.1605633982424411,-0.3115854605325898,0.11481811082073505]],"PIP":47.03881257086719,"DIP":72.89478119790108,"curvature":0.6945488998990004},{"digit":3,"points":[[0.007250991661521766,-0.27869290309445205,0.03184773483423253],[0.06353577365621277,-0.3538996214128929,0.03363756326232714],[0.13303909763021693,-0.32766008141970815,0.03584773483423387],[0.1601372292428242,-0.28677961126065316,0.035846069179184994]],"PIP":73.84831588037653,"DIP":35.81334849002703,"curvature":0.5617959322810594},{"digit":4,"points":[[-0.008920460167018973,-0.26807054251366935,-0.020402037150021535],[0.04748029600955306,-0.32813158728004055,-0.020402037150021535],[0.11531374518312987,-0.32501510172824055,-0.020402037150020647],[0.14505934933997675,-0.2798428425813081,-0.020231410158987967]],"PIP":49.43066327597856,"DIP":54.00509231909895,"curvature":0.6145800748814164},{"digit":5,"points":[[-0.009380488425222211,-0.24821293256172794,-0.07606078945312866],[0.03742842032193039,-0.2825133210271815,-0.07606078945312866],[0.07770137304737545,-0.29708820856831153,-0.07606078945312866],[0.10086153720582573,-0.2624246357470552,-0.07619257354152173]],"PIP":16.337698308806463,"DIP":76.14687349761277,"curvature":0.2731145058701719}],"lineMiss":0.07974973996777011}
+# Subtest: the red-dress woman acknowledges Neo while passing and restores the same saved gaze
+ok 2 - the red-dress woman acknowledges Neo while passing and restores the same saved gaze
+  ---
+  duration_ms: 1140.719
+  type: 'test'
+  ...
+# Subtest: the halter follows the actual neck and collar through the passing glance
+ok 3 - the halter follows the actual neck and collar through the passing glance
+  ---
+  duration_ms: 29975.134875
+  type: 'test'
+  ...
+# {"hits":19578,"total":19578,"minimum":0.0052367750728269935,"maximum":0.20318530340690139,"box":{"isBox3":true,"min":{"x":-0.5934092998504639,"y":0.002229697536677122,"z":-0.24240894615650177},"max":{"x":0.5936071276664734,"y":4.425199508666992,"z":0.4930374324321747}},"scale":[1,1,1]}
+# Subtest: the frozen Smith grip restores after leaving training and after a cold character load
+ok 4 - the frozen Smith grip restores after leaving training and after a cold character load
+  ---
+  duration_ms: 2934.667708
+  type: 'test'
+  ...
+# Subtest: Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+ok 5 - Morpheus brings the two extended fingers beside his actual temple during the minds explanation
+  ---
+  duration_ms: 4525.105667
+  type: 'test'
+  ...
+# {"tips":[[-0.2590145829193075,0.16406968917571288,0.054980376914724204],[-0.26435356067790167,0.20192177962311583,0.1287826133896936]]}
+# Subtest: the guide does not snap his arm when the player notices the woman and stops walking
+ok 6 - the guide does not snap his arm when the player notices the woman and stops walking
+  ---
+  duration_ms: 3494.93625
+  type: 'test'
+  ...
+# [{"joint":"shoulder_R","distance":0.0000775873951795518},{"joint":"elbow_R","distance":0.0011037376665789665},{"joint":"wrist_R","distance":0.0014007564612995992},{"joint":"finger2-3_R","distance":0.0015804398458387975},{"joint":"head","distance":0.00023332584508709247}]
+# Subtest: the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+ok 7 - the complete teaching hand clears itself, the real face and every visible garment through lifting and lowering
+  ---
+  duration_ms: 17243.848042
+  type: 'test'
+  ...
+# {"maximumSwing":52.6059790018205,"failures":[]}
+# Subtest: saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+ok 8 - saved walking, freezing, retrying and leaving training reconstruct the same guide and preserve his bone lengths
+  ---
+  duration_ms: 6313.510417
+  type: 'test'
+  ...
+# Subtest: the full guide arm motion is continuous at 10ms sampling intervals
+ok 9 - the full guide arm motion is continuous at 10ms sampling intervals
+  ---
+  duration_ms: 4928.440917
+  type: 'test'
+  ...
+# {"maximumStep":0.057394037500890574,"largestAt":0.84,"largestJoint":"finger2-3_R","samples":531}
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 39386.865084
