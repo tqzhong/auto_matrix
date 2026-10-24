@@ -3068,13 +3068,25 @@ export class PlayerControls {
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : doorwayView ? -2.5 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
       const pivot = this.cameraTarget.clone().add(shoulder);
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
-      if (lafayetteWalking) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
+      const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
+      const closeFollow = lafayetteWalking || dojoWalking;
+      if (closeFollow) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
       const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
-      const cabinCeiling = (point: THREE.Vector3) => cabinCenter
+      const cameraCeiling = (point: THREE.Vector3) => {
+        if (dojoWalking) {
+          const room = FILM_SETS.film_kungfu_dojo, tangent = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+          const lens = this.camera.near * Math.hypot(1, tangent, tangent * this.camera.aspect);
+          // The gallery underside is 7.3 high and extends 3.5 into the hall.
+          if (Math.abs(point.x - room.center.x) > room.width / 2 - 3.5 - lens
+            || Math.abs(point.z - room.center.z) > room.depth / 2 - 3.5 - lens)
+            return room.center.y - 1 + 7.3 - lens - .05;
+        }
+        return cabinCenter
         && Math.abs(point.x - cabinCenter.x - CABIN.deck.x) < CABIN.deck.width / 2 + .5
         && Math.abs(point.z - cabinCenter.z - CABIN.deck.z) < CABIN.deck.depth / 2 + .5
         ? cabinCenter.y - 1 + CABIN.ceiling.headroom - this.camera.near - .12 : Infinity;
+      };
       let cameraDistance = followDistance;
       for (let distance = .5; !(this.performing && state.currentLocation === 'film_power_plant_pods') && distance <= followDistance; distance += .5) {
         const point = pivot.clone().addScaledVector(offset, distance);
@@ -3083,11 +3095,11 @@ export class PlayerControls {
           ? primaryCameraBlocked(point.x - center.x, point.y - center.y + 1, point.z - center.z, .5)
           // Hotel floor support is checked at a standing body's foot height.
           : playerBlocked(lafayetteWalking ? { ...point, y: Math.min(point.y, this.position.y + 2) } : point, state.isInMatrix, 0.5, this.structures);
-        if (blocked || point.y > cabinCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
+        if (blocked || point.y > cameraCeiling(point)) { cameraDistance = Math.max(.25, distance - .5); break; }
       }
       // A tight shoulder view in the tracking passage must look over Neo,
       // rather than putting the lens inside the wall or the back of his head.
-      if (lafayetteWalking) pivot.y += 2.1 * (1 - THREE.MathUtils.smoothstep(cameraDistance, 1.5, 4.5));
+      if (closeFollow) pivot.y += 2.1 * (1 - THREE.MathUtils.smoothstep(cameraDistance, 1.5, 4.5));
       const ideal = pivot.clone().addScaledVector(offset, cameraDistance);
       if (wreckCabin) {
         const center = FILM_SETS.film_logos_wreck.center;
@@ -3099,7 +3111,7 @@ export class PlayerControls {
       }
       if (resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-20 * delta));
-      if (lafayetteWalking) {
+      if (closeFollow) {
         // Easing between two clear positions can still cut through a door jamb.
         const sweep = this.camera.position.clone().sub(pivot), length = sweep.length(); sweep.normalize();
         for (let distance = .25; distance <= length; distance += .25) {
@@ -3109,8 +3121,12 @@ export class PlayerControls {
           }
         }
         if (cameraDistance < 4.5 || this.camera.position.distanceTo(pivot) < 4.5) { this.camera.near = .1; this.camera.updateProjectionMatrix(); }
+        // A compressed dojo view must also clear the body during V transitions
+        // and jumps, before the follow interpolation has reached its new height.
+        if (dojoWalking && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 1.5)
+          this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 4.15);
       }
-      this.camera.position.y = Math.min(this.camera.position.y, cabinCeiling(this.camera.position));
+      this.camera.position.y = Math.min(this.camera.position.y, cameraCeiling(this.camera.position));
       this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
     }
     this.impactAge += delta;

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { FilmJourney } from '@auto_matrix/shared';
-import { JUMP_STREET, JUMP_TOWERS, jumpImpactPose } from '@auto_matrix/shared';
+import { FILM_SETS, JUMP_STREET, JUMP_TOWERS, jumpImpactPose } from '@auto_matrix/shared';
 import { RedDressCrowd } from './RedDressCrowd.js';
+import { batchStaticGeometry } from './StaticGeometry.js';
 
 /** Film-one training programs share a clean simulation language, but each
  * space has its own physical set and lighting rather than the generic atlas. */
@@ -49,14 +50,6 @@ export class TrainingSetRenderer {
     }
     material.normalScale.set(.32, .32); material.needsUpdate = true;
   }
-  private gardenMatte(parent: THREE.Object3D, x: number, y: number, z: number, reverse: boolean, name: string): void {
-    const material = this.material(new THREE.MeshBasicMaterial({ color: 0xc8d2cf, fog: false }));
-    if (typeof document !== 'undefined') {
-      const texture = new THREE.TextureLoader().load('/assets/dojo/training-garden-matte-v1.png', loaded => { if (this.disposed || !this.materials.has(material)) loaded.dispose(); });
-      texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; material.map = texture; material.needsUpdate = true; this.textures.add(texture);
-    }
-    const matte = this.mesh(parent, new THREE.PlaneGeometry(160, 90), material, name); matte.position.set(x, y, z); matte.rotation.y = reverse ? Math.PI : 0;
-  }
   private cityMatte(parent: THREE.Object3D): void {
     const material = this.material(new THREE.MeshBasicMaterial({ color: 0xb6c5cc, fog: false, side: THREE.DoubleSide, transparent: true, depthWrite: false }));
     material.onBeforeCompile = shader => {
@@ -102,128 +95,122 @@ export class TrainingSetRenderer {
   }
 
   private dojo(): void {
+    const { width, depth, height } = FILM_SETS.film_kungfu_dojo;
     const set = new THREE.Group(); set.name = 'training-dojo-set'; this.root.add(set);
-    const tatami = this.material(new THREE.MeshStandardMaterial({ color: 0x98936c, roughness: .94 }));
-    const border = this.material(new THREE.MeshStandardMaterial({ color: 0x283127, roughness: .84 }));
-    const cedar = this.material(new THREE.MeshStandardMaterial({ color: 0x3d281d, roughness: .72 }));
-    const shoji = this.material(new THREE.MeshPhysicalMaterial({ color: 0xd7ceb8, roughness: .76, transmission: .025 }));
-    const roof = this.material(new THREE.MeshStandardMaterial({ color: 0x222729, roughness: .92, metalness: .08 }));
-    const gravel = this.material(new THREE.MeshStandardMaterial({ color: 0x8b9187, roughness: .98 }));
-    const moss = this.material(new THREE.MeshStandardMaterial({ color: 0x4c6246, roughness: .95 }));
-    const leaf = this.material(new THREE.MeshStandardMaterial({ color: 0x38553f, roughness: .9 }));
-    const pond = this.material(new THREE.MeshPhysicalMaterial({ color: 0x527e7a, roughness: .12, metalness: .22, clearcoat: .85 }));
-    this.surface(cedar, 'old_wood_floor', 3);
-    this.surface(gravel, 'damaged_plaster', 6);
+    const cedar = this.material(new THREE.MeshStandardMaterial({ color: 0xe2d4c0, roughness: .78 }));
+    const border = this.material(new THREE.MeshStandardMaterial({ color: 0x34372a, roughness: .92, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    const plaster = this.material(new THREE.MeshStandardMaterial({ color: 0xa99a72, roughness: .94 }));
+    const shoji = this.material(new THREE.MeshStandardMaterial({ color: 0xe1dfcb, roughness: .9, emissive: 0xc9c8b5, emissiveIntensity: .22 }));
+    this.surface(cedar, 'old_wood_floor', 1); this.surface(plaster, 'white_plaster_02', 2);
+    shoji.map = plaster.map; shoji.normalMap = plaster.normalMap; shoji.roughnessMap = plaster.roughnessMap; shoji.normalScale.set(.06, .06);
 
-    for (let x = -20; x <= 20; x += 8) for (let z = -25; z <= 25; z += 10) {
-      this.box(set, tatami, x, .02, z, 7.72, .09, 9.72, `dojo-tatami-${x}-${z}`);
-      this.box(set, border, x - 3.82, .075, z, .12, .04, 9.75);
-      this.box(set, border, x, .075, z - 4.82, 7.82, .04, .12);
+    // Fine woven fibres share one mipmapped texture; geometry stays flat at
+    // the shared feet plane, including every cloth border and timber aisle.
+    const size = 256, fibres = new Uint8Array(size * size * 4);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const value = 227 + Math.sin(y * Math.PI / 2) * 12 + Math.sin(x * .19 + y * .04) * 5 + ((x * 13 + y * 7) % 11);
+      const at = (y * size + x) * 4; fibres[at] = fibres[at + 1] = fibres[at + 2] = value; fibres[at + 3] = 255;
     }
-
-    for (const side of [-1, 1]) {
-      for (let z = -25; z <= 25; z += 10) {
-        this.box(set, shoji, side * 23.5, 6.1, z, .16, 9.9, 8.9, `dojo-shoji-${side}-${z}`);
-        for (let y = 1.35; y < 11; y += 2.15) this.box(set, cedar, side * 23.35, y, z, .28, .1, 9.15);
-        for (let offset = -4.3; offset <= 4.3; offset += 2.15) this.box(set, cedar, side * 23.35, 6.1, z + offset, .28, 10, .1);
-      }
-      for (let z = -30; z <= 30; z += 10) this.cylinder(set, this.darkWood, side * 24.7, 7.3, z, .56, 14.6, 16, `dojo-post-${side}-${z}`);
-      this.box(set, cedar, side * 25.2, 11.2, 0, .52, .72, 65, `dojo-side-eave-${side}`);
-    }
-
-    const entry = new THREE.Group(); entry.name = 'dojo-entry-porch'; entry.position.z = -31; set.add(entry);
-    this.box(entry, cedar, 0, .1, 0, 18, .2, 4.5);
-    for (const x of [-9.5, 9.5]) this.cylinder(entry, this.darkWood, x, 5.8, 0, .38, 11.6, 14);
-    this.box(entry, shoji, -16.5, 5.7, 0, 14, 10.8, .15);
-    this.box(entry, shoji, 16.5, 5.7, 0, 14, 10.8, .15);
-    this.box(entry, cedar, 0, 11.2, 0, 49, .55, .62);
-    for (const x of [-16.5, 16.5]) for (let y = 1.5; y < 10.5; y += 2.2) this.box(entry, cedar, x, y, 0, 13.8, .1, .25);
-
-    const entryGarden = new THREE.Group(); entryGarden.name = 'dojo-entry-garden'; entryGarden.position.z = -57; set.add(entryGarden);
-    this.box(entryGarden, gravel, 0, -.16, 0, 64, .28, 48, 'dojo-entry-gravel');
-    this.box(entryGarden, moss, -21, -.02, -2, 18, .1, 42, 'dojo-entry-moss-west');
-    this.box(entryGarden, moss, 22, -.02, 8, 16, .1, 29, 'dojo-entry-moss-east');
-    for (let z = 18; z >= -14; z -= 5.4) {
-      const step = this.cylinder(entryGarden, this.stone, Math.sin(z) * .8, .17, z, 1.2, .2, 14, 'dojo-entry-step');
-      step.scale.z = .72;
-    }
-    for (const [x, z] of [[-25, 14], [-26, -7], [25, 11], [22, -12]] as const) {
-      this.cylinder(entryGarden, cedar, x, 3.5, z, .27, 7, 10, 'dojo-entry-bamboo-trunk');
-      for (let level = 0; level < 3; level++) {
-        const branch = this.box(entryGarden, leaf, x + (level % 2 ? .9 : -.9), 5 + level * 1.2, z, 3, .09, .22, 'dojo-entry-bamboo-leaf');
-        branch.rotation.z = level % 2 ? -.35 : .35;
+    const weave = new THREE.DataTexture(fibres, size, size); weave.colorSpace = THREE.SRGBColorSpace;
+    weave.wrapS = weave.wrapT = THREE.RepeatWrapping; weave.repeat.set(10, 18); weave.anisotropy = 8;
+    weave.generateMipmaps = true; weave.minFilter = THREE.LinearMipmapLinearFilter; weave.magFilter = THREE.LinearFilter; weave.needsUpdate = true; this.textures.add(weave);
+    const mats = [0xbdb58c, 0xb8b186, 0xc1b98f].map(color => this.material(new THREE.MeshStandardMaterial({ color, roughness: .96, map: weave, bumpMap: weave, bumpScale: .025, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
+    const floor = new THREE.Group(); floor.name = 'dojo-floor'; set.add(floor);
+    const matWidth = (width - 6.8) / 6, matDepth = (depth - 8.4) / 4, edge = .14;
+    const halfX = matWidth * 3, halfZ = matDepth * 2;
+    this.box(floor, cedar, 0, -.12, 0, width, .24, depth);
+    for (let column = 0; column < 6; column++) for (let row = 0; row < 4; row++) {
+      const x = -halfX + (column + .5) * matWidth, z = -halfZ + (row + .5) * matDepth;
+      this.box(floor, mats[(column + row * 2) % mats.length], x, -.06, z, matWidth - edge * 2, .12, matDepth - edge * 2);
+      for (const side of [-1, 1]) {
+        this.box(floor, border, x + side * (matWidth - edge) / 2, -.06, z, edge, .12, matDepth);
+        this.box(floor, border, x, -.06, z + side * (matDepth - edge) / 2, matWidth - edge * 2, .12, edge);
       }
     }
-    for (const [x, z] of [[-12, 6], [13, -4]] as const) {
-      const lantern = new THREE.Group(); lantern.position.set(x, 0, z); entryGarden.add(lantern);
-      this.cylinder(lantern, this.stone, 0, .32, 0, .9, .64, 10);
-      this.cylinder(lantern, this.stone, 0, 1.28, 0, .32, 1.3, 10);
-      this.box(lantern, this.stone, 0, 2.02, 0, 1.45, .32, 1.45);
-    }
-    const entryGate = new THREE.Group(); entryGate.name = 'dojo-entry-gate'; entryGate.position.set(0, 0, -89); set.add(entryGate);
-    for (const x of [-8.6, 8.6]) this.cylinder(entryGate, this.darkWood, x, 5, 0, .48, 10, 14);
-    this.box(entryGate, cedar, 0, 9.4, 0, 21, .56, .7);
-    this.box(entryGate, roof, 0, 10.5, 0, 25, .58, 5.2, 'dojo-entry-gate-roof');
-    this.box(entryGate, cedar, 0, 11, 0, .55, .36, 5.6);
-    this.gardenMatte(set, 0, 15, -118, false, 'dojo-entry-matte');
 
-    const eaves = new THREE.Group(); eaves.name = 'dojo-main-eaves'; eaves.position.y = 13.1; set.add(eaves);
-    const leftRoof = this.box(eaves, roof, -12.4, 1.75, 0, 25.5, .48, 65.8, 'dojo-roof-west'); leftRoof.rotation.z = -.245;
-    const rightRoof = this.box(eaves, roof, 12.4, 1.75, 0, 25.5, .48, 65.8, 'dojo-roof-east'); rightRoof.rotation.z = .245;
-    this.box(eaves, this.darkWood, 0, 4.66, 0, .72, .62, 66.4, 'dojo-roof-ridge');
-    for (let z = -29; z <= 29; z += 7.25) {
-      const leftRafter = this.box(eaves, cedar, -11.5, 1.85, z, 25.2, .34, .3); leftRafter.rotation.z = -.245;
-      const rightRafter = this.box(eaves, cedar, 11.5, 1.85, z, 25.2, .34, .3); rightRafter.rotation.z = .245;
-    }
-    for (const z of [-31.6, 31.6]) this.box(eaves, cedar, 0, 1.1, z, 51.5, .65, .68, `dojo-end-eave-${z}`);
-
-    const veranda = new THREE.Group(); veranda.name = 'dojo-garden-veranda'; veranda.position.z = 31.2; set.add(veranda);
-    this.box(veranda, cedar, 0, .13, 0, 50.5, .26, 5.5, 'dojo-veranda-floor');
-    this.box(veranda, border, 0, .3, 2.45, 50.5, .12, .18);
-    for (let x = -22; x <= 22; x += 5.5) this.box(veranda, cedar, x, -.35, .2, .28, .86, 5.15);
-    for (const x of [-22.5, 22.5]) this.cylinder(veranda, this.darkWood, x, 4.8, -.4, .42, 9.6, 16);
-    for (const x of [-10, 0, 10]) this.box(veranda, cedar, x, -.17, 3.35, 7.4, .28, 2.1, 'dojo-veranda-step');
-
-    const garden = new THREE.Group(); garden.name = 'dojo-garden'; garden.position.z = 55; set.add(garden);
-    const courtyard = this.box(garden, gravel, 0, -.16, 0, 66, .28, 42, 'dojo-courtyard'); courtyard.receiveShadow = true;
-    this.box(garden, moss, -22, -.03, 2, 17, .1, 38, 'dojo-garden-moss-west');
-    this.box(garden, moss, 22, -.03, -6, 17, .1, 25, 'dojo-garden-moss-east');
-    const water = this.box(garden, pond, 16, .025, 10, 12.4, .08, 18, 'dojo-garden-pond'); water.receiveShadow = true;
-    for (let x = -11; x <= 5; x += 4) {
-      const stone = this.cylinder(garden, this.stone, x, .18, -2 + Math.sin(x) * 2, 1.15, .22, 14, 'dojo-garden-step');
-      stone.scale.z = .72;
-    }
-    for (const [x, z] of [[-26, -13], [-25, 8], [-18, 16], [25, -13], [26, 7]] as const) {
-      this.cylinder(garden, cedar, x, 3.7, z, .24, 7.4, 10, 'dojo-bamboo-trunk');
-      for (let level = 0; level < 3; level++) {
-        const branch = this.box(garden, leaf, x + (level % 2 ? .85 : -.85), 5.1 + level * 1.25, z, 2.8, .09, .22, 'dojo-bamboo-leaf');
-        branch.rotation.z = level % 2 ? -.38 : .38;
+    const gallery = new THREE.Group(); gallery.name = 'dojo-upper-gallery'; set.add(gallery);
+    const wall = (span: number, x: number, z: number, yaw: number, name: string, alcove = false) => {
+      const face = new THREE.Group(); face.name = name; face.position.set(x, 0, z); face.rotation.y = yaw; set.add(face);
+      const bays = Math.round(span / 8), bay = span / bays;
+      // The room boundary is the same 0.6-unit inset used by filmBlocked.
+      for (let index = 0; index <= bays; index++) {
+        const at = -span / 2 + index * bay;
+        this.box(face, cedar, at, alcove && index === bays / 2 ? 12.3 : 8.5, 0, 1.2, alcove && index === bays / 2 ? 9.4 : height, 1.2);
       }
-    }
-    const lantern = new THREE.Group(); lantern.name = 'dojo-garden-lantern'; lantern.position.set(-13, 0, 12); garden.add(lantern);
-    this.cylinder(lantern, this.stone, 0, .35, 0, 1, .7, 10);
-    this.cylinder(lantern, this.stone, 0, 1.35, 0, .38, 1.4, 10);
-    this.box(lantern, this.stone, 0, 2.15, 0, 1.65, .35, 1.65);
-    const lanternGlow = new THREE.PointLight(0xffd9a1, 6, 8, 2); lanternGlow.position.set(-13, 2.1, 67); this.light(lanternGlow, 'dojo-garden-lantern-light');
+      for (let index = 0; index < bays; index++) {
+        const at = -span / 2 + (index + .5) * bay, clear = bay - 1.2;
+        if (!alcove || Math.abs(at) > bay) {
+          this.box(face, cedar, at, .45, .24, clear, .9, .72);
+          this.box(face, shoji, at, 3.75, .48, clear, 5.7, .08);
+          for (let y = 1.55; y < 6.6; y += .72) this.box(face, cedar, at, y, .5, clear, .065, .2);
+          for (let offset = -clear / 2 + .47; offset < clear / 2; offset += .47) this.box(face, cedar, at + offset, 3.75, .5, .055, 5.7, .2);
+          this.box(face, cedar, at, 5.5, .46, clear, .22, .28);
+        }
+        this.box(face, cedar, at, 10.05, .24, clear, 5.1, .72);
+        for (let offset = -clear / 2 + .25; offset < clear / 2; offset += .5) this.box(face, this.darkWood, at + offset, 10.15, .56, .025, 4.6, .06);
+        this.box(face, shoji, at, 14.5, .48, clear, 3.7, .08);
+        for (let y = 13; y < 16.4; y += .65) this.box(face, cedar, at, y, .5, clear, .075, .2);
+        for (let offset = -clear / 2 + .65; offset < clear / 2; offset += .65) this.box(face, cedar, at + offset, 14.5, .5, .075, 3.7, .2);
+      }
+      for (const [y, h] of [[6.95, .7], [7.65, .65], [12.6, .4], [16.65, .7]]) this.box(face, cedar, 0, y, .12, span, h, .96);
+      const rail = new THREE.Group(); rail.name = name + '-gallery'; rail.position.copy(face.position); rail.rotation.y = yaw; gallery.add(rail);
+      const railSpan = span - 6.7;
+      this.box(rail, cedar, 0, 7.45, 2.05, span === width ? span - 7 : span - 1.2, .3, 2.9);
+      for (const y of [7.85, 9.8]) this.box(rail, cedar, 0, y, 3.35, railSpan, .19, .22);
+      for (let offset = -railSpan / 2 + .2; offset < railSpan / 2; offset += .42) this.box(rail, cedar, offset, 8.85, 3.35, .075, 1.9, .13);
+      for (let offset = -railSpan / 2; offset <= railSpan / 2; offset += railSpan / bays) this.box(rail, cedar, offset, 8.7, 3.35, .22, 2.55, .24);
+      if (!alcove) return;
+      const niche = new THREE.Group(); niche.name = 'dojo-shrine-alcove'; face.add(niche);
+      this.box(niche, plaster, 0, 3.3, -2.25, bay * 2 - 1.2, 6.6, .5);
+      for (const side of [-1, 1]) this.box(niche, plaster, side * (bay - .65), 3.3, -.65, .1, 6.6, 3.2);
+      this.box(niche, cedar, 0, .4, -.8, bay * 2 - 1.2, .8, 2.8);
+      this.box(niche, cedar, 0, 2.1, -1.1, 4.1, .25, 1.6);
+      for (const side of [-1, 1]) {
+        this.box(niche, cedar, side * 1.45, 3.35, -1.1, .18, 2.3, .22);
+        this.box(niche, cedar, side * 1.65, 1.4, -1.1, .2, 1.2, .25);
+        this.cylinder(niche, shoji, side * .95, 2.55, -.8, .23, .6, 16);
+        this.cylinder(niche, this.darkWood, side * .95, 2.9, -.8, .12, .15, 16);
+      }
+      this.box(niche, cedar, 0, 4.5, -1.15, 4.8, .35, 1.9);
+      this.box(niche, this.darkWood, 0, 4.75, -1.15, 5.2, .15, 2.1);
+      const scrollPaper = this.material(new THREE.MeshStandardMaterial({ color: 0xc8bb94, roughness: .96, side: THREE.DoubleSide }));
+      for (const side of [-1, 1]) {
+        const scroll = this.mesh(niche, new THREE.PlaneGeometry(1.7, 4.5, 1, 12), scrollPaper, `dojo-alcove-scroll-${side}`); scroll.position.set(side * 5.2, 3.45, -1.93);
+        for (const y of [1.15, 5.75]) { const roller = this.cylinder(niche, cedar, side * 5.2, y, -1.9, .07, 2, 12); roller.rotation.z = Math.PI / 2; }
+      }
+      // Wall-mounted training weapons remain behind the collision boundary.
+      for (const side of [-1, 1]) {
+        const rack = new THREE.Group(); rack.name = `dojo-weapon-rack-${side}`; rack.position.set(side * (bay * 2), 0, .1); face.add(rack);
+        for (const x of [-1.9, 1.9]) this.box(rack, this.darkWood, x, 2.1, .1, .18, 4.2, .45);
+        for (let y = 1.5; y <= 3.8; y += .85) { const staff = this.cylinder(rack, cedar, 0, y, .28, .065, 5.2, 10); staff.rotation.z = Math.PI / 2; }
+      }
+    };
+    wall(width, 0, -depth / 2, 0, 'dojo-north-wall', true);
+    wall(width, 0, depth / 2, Math.PI, 'dojo-south-wall');
+    wall(depth, -width / 2, 0, Math.PI / 2, 'dojo-west-wall');
+    wall(depth, width / 2, 0, -Math.PI / 2, 'dojo-east-wall');
+    const ceiling = new THREE.Group(); ceiling.name = 'dojo-coffered-ceiling'; set.add(ceiling);
+    this.box(ceiling, this.darkWood, 0, height + .15, 0, width + 1.2, .3, depth + 1.2);
+    for (let z = -depth / 2; z <= depth / 2; z += depth / 8) this.box(ceiling, cedar, 0, height - .25, z, width, .5, .38);
+    for (let x = -width / 2; x <= width / 2; x += width / 6) this.box(ceiling, cedar, x, height - .1, 0, .25, .35, depth);
+    set.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || object.material !== cedar || !(object.geometry instanceof THREE.BoxGeometry)) return;
+      const { width, height, depth } = object.geometry.parameters, position = object.geometry.attributes.position, normal = object.geometry.attributes.normal, uv = object.geometry.attributes.uv;
+      const lengths = [width, height, depth], long = lengths.indexOf(Math.max(...lengths));
+      for (let index = 0; index < position.count; index++) {
+        const face = [Math.abs(normal.getX(index)), Math.abs(normal.getY(index)), Math.abs(normal.getZ(index))].indexOf(1);
+        const axes = [0, 1, 2].filter(axis => axis !== face), along = axes.includes(long) ? long : axes[0], across = axes.find(axis => axis !== along)!;
+        uv.setXY(index, position.getComponent(index, along) / 6, position.getComponent(index, across) / 2);
+      }
+      uv.needsUpdate = true;
+    });
+    batchStaticGeometry(set, new Set()).forEach(geometry => this.geometries.add(geometry));
 
-    const pavilion = new THREE.Group(); pavilion.name = 'dojo-garden-pavilion'; pavilion.position.set(-17, 0, 83); set.add(pavilion);
-    this.box(pavilion, cedar, 0, .12, 0, 15, .24, 10);
-    for (const x of [-6, 6]) for (const z of [-3.5, 3.5]) this.cylinder(pavilion, this.darkWood, x, 4.1, z, .33, 8.2, 12);
-    const pavilionRoof = this.box(pavilion, roof, 0, 8.2, 0, 18, .55, 13, 'dojo-pavilion-roof'); pavilionRoof.rotation.z = .01;
-    this.box(pavilion, cedar, 0, 8.62, 0, .55, .44, 13.4);
-
-    const ridge = new THREE.Group(); ridge.name = 'dojo-mountain-ridge'; ridge.position.z = 111; set.add(ridge);
-    for (let index = -4; index <= 4; index++) {
-      const peak = this.mesh(ridge, new THREE.ConeGeometry(12 + Math.abs(index % 3) * 5, 20 + (index + 4) % 3 * 8, 4), this.stone, 'dojo-distant-peak');
-      peak.position.set(index * 17, 8 + Math.abs(index % 2) * 3, (index % 3) * 5); peak.rotation.y = Math.PI / 4;
-      const slope = this.mesh(ridge, new THREE.ConeGeometry(10 + Math.abs(index % 2) * 4, 14, 4), moss, 'dojo-distant-slope');
-      slope.position.set(index * 17 + 3, 5, (index % 3) * 5 - 2); slope.rotation.y = Math.PI / 4;
-    }
-    this.gardenMatte(set, 0, 15, 150, true, 'dojo-garden-matte');
-
-    this.programLight = new THREE.PointLight(0xf2c987, 132, 34, 2); this.programLight.position.set(0, 10.8, 5); this.light(this.programLight, 'dojo-training-light');
-    const sun = new THREE.DirectionalLight(0xffe4b8, 1.35); sun.position.set(-21, 30, 51); sun.castShadow = true; this.light(sun, 'dojo-garden-sun');
-    const fill = new THREE.HemisphereLight(0xd8e2d4, 0x29342d, .8); this.light(fill, 'dojo-daylight');
+    const sun = new THREE.DirectionalLight(0xffefd8, 1.65); sun.position.set(-width / 2 + 2, height - 2, 7); sun.castShadow = true;
+    this.light(sun, 'dojo-training-light'); sun.target.position.set(5, 0, -8);
+    sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00008; sun.shadow.normalBias = .025;
+    Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, near: .5, far: 100 }); sun.shadow.camera.updateProjectionMatrix();
+    this.light(new THREE.HemisphereLight(0xdce1d5, 0x383325, .35), 'dojo-window-fill');
   }
 
   private rooftopUnit(parent: THREE.Object3D, x: number, z: number, index: number): void {
@@ -407,11 +394,7 @@ export class TrainingSetRenderer {
   }
 
   update(journey: FilmJourney | undefined, elapsed: number): void {
-    if (this.sceneId === 'm1_dojo') {
-      const lesson = journey?.scene === 'm1_dojo' && !journey.visiting ? journey.dojo : undefined;
-      if (this.programLight) this.programLight.intensity = lesson?.complete ? 95 : 170 + (lesson?.dodged ? 95 : 0) + Math.sin(elapsed * 2.4) * 8;
-      return;
-    }
+    if (this.sceneId === 'm1_dojo') return;
     if (this.sceneId === 'm1_jump') {
       const training = journey?.scene === 'm1_jump' && !journey.visiting ? journey.training : undefined;
       const impact = training?.kind === 'jump_fall' && jumpImpactPose(training.fall!, training.elapsed);
