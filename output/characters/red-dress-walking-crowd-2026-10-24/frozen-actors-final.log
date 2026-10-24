@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+ok 1 - red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+  ---
+  duration_ms: 13052.651542
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15247.950708

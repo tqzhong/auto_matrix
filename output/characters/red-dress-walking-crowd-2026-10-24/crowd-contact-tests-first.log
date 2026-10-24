@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: twenty plaza pedestrians share at most twelve surfaces without removing people or their shadows
+ok 1 - twenty plaza pedestrians share at most twelve surfaces without removing people or their shadows
+  ---
+  duration_ms: 179.299583
+  type: 'test'
+  ...
+# Subtest: walking, cold loading, freezing and rewinding retain the same instance poses
+ok 2 - walking, cold loading, freezing and rewinding retain the same instance poses
+  ---
+  duration_ms: 396.018542
+  type: 'test'
+  ...
+# Subtest: exported walks keep separate grounded feet, covered waists and complete hand topology
+not ok 3 - exported walks keep separate grounded feet, covered waists and complete hand topology
+  ---
+  duration_ms: 222.673166
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-walking-crowd-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:1:3941'
+  failureType: 'testCodeFailure'
+  error: 'male: planted foot slips 0.1854028666596258 world units'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-walking-crowd-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:105:44)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2236.111708

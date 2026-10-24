@@ -1,0 +1,70 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/3dobjs/base.obj",
+    "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/rigs/default.mhskel",
+    "sha256": "99f179bce0aa850b45d4191a1d0d234c5851f881c057439470ded3bddf729a24"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/rigs/default_weights.mhw",
+    "sha256": "0f3641d651ae3d00ad6b4ccee43142edb109d3bd909d27d9e4139ef1beed8625"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/l-cheek-bones-incr.target",
+    "sha256": "244ffa39d2d2db94ff15130719346b4cae2236bf2a309c5682eac352da06be50"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-bones-incr.target",
+    "sha256": "a393f67acce21568ab832091daadab267685d464492647cb0c4e8cb5af58c4c9"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-prominent-incr.target",
+    "sha256": "d2493ca5f69aabeb8557d77a56c49cfcf2062ff90c0cad03073d87990d11448b"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyebrows/eyebrows-trans-down.target",
+    "sha256": "38f7de378d535d51f2e50dc2568121a8769445f9a62423bd0a5e688c47ea3225"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/forehead/forehead-scale-vert-decr.target",
+    "sha256": "d7b825f28c93766a0ee8e60002b8a0e9c2d8cd2c9b64e7bbd3a278e7103eae1c"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-rectangular.target",
+    "sha256": "bbfcbd4d6334df18515e73abb707b8a948adb74e0aba88a728c8e146dd5f4e4b"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/caucasian-female-young.target",
+    "sha256": "118379f6e8ba9266247fdb8788a20e1df40a239f97ced0b9905bcbcc74f6e820"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-female-young-averagemuscle-averageweight.target",
+    "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-female-young-maxmuscle-minweight.target",
+    "sha256": "05351f0063429f4e1e484501b73997a6fb129b93939db355d108f98d5479fb10"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-lowerlip-volume-decr.target",
+    "sha256": "45f1fe355546cdaa86581512810ee1cd2c6971ac67ffb46d3391ac438e539d15"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-scale-horiz-decr.target",
+    "sha256": "07a9ef160755467a470bd0a1df035143d83ebddbc12e4612e69e93a64644405c"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-upperlip-volume-decr.target",
+    "sha256": "20b285d94ecb62cf605907d65659ab11ff760dbb938ba9ae7fc13429b1e3ba16"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-curve-convex.target",
+    "sha256": "3426e9a53c65962bc75b25aae04759a03e818d708bc5445ffc4dfb812497a7ca"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-width2-decr.target",
+    "sha256": "d3301686c7dfd94b0a39fd0693ff26ea66d24b08037488f814e7a8bb340109d9"
+  }
+]

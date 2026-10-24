@@ -1,0 +1,73 @@
+{
+  "baseline": "af24a8df1da39f44de5fa58c6abd3e45c73be052",
+  "unchangedBaselineInputsVerified": 1233,
+  "changes": [
+    {
+      "path": "packages/client/src/engine/RedDressCrowd.ts",
+      "before": "c2557e99949c65db0c9a086e8a6422baf637167a7e41c664682515ae8ef2ff36",
+      "after": "efe7b157b646d5ba36300dcd1defd40496b213252ff6d7aced6f3cfe1a695cc7",
+      "bytes": 5720
+    },
+    {
+      "path": "tests/character-asset.test.mts",
+      "before": "f84baa93a2fd800e66656aa2e6e8d68c3107c0f46fb45878b5092cbe1406dc05",
+      "after": "c268ad0bce01f2b95a279729aaaf352c8342a13c51111fbae9a9d2d149b216b3",
+      "bytes": 206844
+    },
+    {
+      "path": "tests/red-dress-crowd.test.mts",
+      "before": null,
+      "after": "6e07d8784bf21ed80926fd69141f3cd32aeaefc0522fc81463dee82c6c33be24",
+      "bytes": 7923
+    },
+    {
+      "path": "scripts/build-plaza-bodies.py",
+      "before": null,
+      "after": "e7f874609906912eaede5033d433ffc4b659cf457d1ac6c7fbba915df813dded",
+      "bytes": 2396
+    },
+    {
+      "path": "scripts/build-plaza-crowd.mts",
+      "before": null,
+      "after": "39a6250e34a9a462f833c412241f6c506ccf61b04cd301231089463167e1f4a8",
+      "bytes": 13623
+    },
+    {
+      "path": "packages/client/public/assets/characters/plaza-crowd-male.glb",
+      "before": null,
+      "after": "6a0c39ffbe8d1cc24bcf5e7cf26474548a6f8e21fea1ba81ebc924588ab72fdc",
+      "bytes": 6785916
+    },
+    {
+      "path": "packages/client/public/assets/characters/plaza-crowd-female.glb",
+      "before": null,
+      "after": "ae3bff01baafd4475dc2b86eece75f6364e28e57a380f20a25da871765e169e7",
+      "bytes": 6830504
+    },
+    {
+      "path": "packages/client/public/assets/characters/plaza-business-suit.png",
+      "before": null,
+      "after": "eba3c9b662a35f145f28c8932fe96c01db258080daf1a1c09807def5497e3420",
+      "bytes": 1945326
+    },
+    {
+      "path": "packages/client/public/assets/characters/PLAZA-CROWD.md",
+      "before": null,
+      "after": "220e5a6c64acf31cf6acc1e6a943334afe35251a61964129de0cf5947f2ef16c",
+      "bytes": 2853
+    },
+    {
+      "path": "docs/trilogy-production-plan.md",
+      "before": "f34dd422ed2903cdec41d0a7e048ed7e1fdb5886fdacd1922f81aff16c8fb133",
+      "after": "1f3517d80aa84a202f8beff13f702dfbe84fc1be61a52bbc73d737c9a4885256",
+      "bytes": 644857
+    },
+    {
+      "path": "deploy/README.md",
+      "before": "05e7c4069f32bd6aab4905ea782190fcf5d17f5f813d27020891a3a5eab5f7fb",
+      "after": "e00f0ecf6244915fe8bb0a1eb9a274046a41a4df35161e17ee21762003949fa7",
+      "bytes": 59752
+    }
+  ],
+  "protectedCount": 11
+}

@@ -1,0 +1,37 @@
+{
+  "baselineExisting": "2/2",
+  "drawingBudgetBefore": "0/1, 133 surfaces > 12",
+  "firstContact": "2/3, stance slipping 0.1854028666596258",
+  "textureBefore": "0/1, grey_eye.png missing",
+  "finalRelated": "18/18",
+  "actors": "8/8",
+  "finalCrowd": "4/4",
+  "finalFrozenActors": "1/1",
+  "deployment": "75/75",
+  "typecheck": "pass",
+  "clientBuild": "pass, existing large chunk warning",
+  "mainNativeWarningsErrors": 0,
+  "productionNativeWarningsErrors": 0,
+  "qaStopped": [
+    {
+      "pid": 16684,
+      "port": 5201,
+      "commandVerified": true,
+      "cwdVerified": true,
+      "terminalStateConfirmed": true,
+      "portClosed": true
+    },
+    {
+      "pid": 16681,
+      "port": 5200,
+      "commandVerified": true,
+      "cwdVerified": true,
+      "terminalStateConfirmed": true,
+      "portClosed": true
+    }
+  ],
+  "mainEntry": "http://localhost:5173/",
+  "newAssetBytes": 15561746,
+  "javascriptDeltaBytes": 1445,
+  "fullSuiteRun": false
+}

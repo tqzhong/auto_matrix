@@ -1,0 +1,299 @@
+{
+  "sameViewport": true,
+  "sameCamera": true,
+  "paused": true,
+  "resolutionScope": "Current sidebar viewport; not 1080p or active gameplay",
+  "gpuQueries": false,
+  "backgroundFullyIsolated": false,
+  "sequence": "old/new/old/new (first old sample precedes build/test work)",
+  "samples": [
+    {
+      "file": "performance-before-narrow.json",
+      "fps": 39.928275750215164,
+      "frameTime": {
+        "mean": 25.044908181255767,
+        "p95": 37.80000019073486
+      },
+      "calls": {
+        "mean": 689,
+        "p95": 689
+      },
+      "triangles": {
+        "mean": 3239968,
+        "p95": 3239968
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 275,
+          "triangles": 1345392
+        },
+        "scene": {
+          "calls": 201,
+          "triangles": 947668
+        },
+        "occlusion": {
+          "calls": 195,
+          "triangles": 946890
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "viewport": {
+        "width": 431,
+        "height": 670,
+        "pixelRatio": 1.5
+      },
+      "camera": {
+        "position": [
+          4416.3,
+          7.440134143552749,
+          4774.867393673077
+        ],
+        "quaternion": [
+          -0.14775039127972228,
+          0,
+          0,
+          0.9890246821372504
+        ],
+        "projection": [
+          2.8630777114673243,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "recordingActive": false,
+      "pageVisibility": "visible"
+    },
+    {
+      "file": "performance-new-1.json",
+      "fps": 43.980062371165836,
+      "frameTime": {
+        "mean": 22.73757575786475,
+        "p95": 34.10000038146973
+      },
+      "calls": {
+        "mean": 446,
+        "p95": 446
+      },
+      "triangles": {
+        "mean": 3095296,
+        "p95": 3095296
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 154,
+          "triangles": 1089732
+        },
+        "scene": {
+          "calls": 140,
+          "triangles": 1003162
+        },
+        "occlusion": {
+          "calls": 134,
+          "triangles": 1002384
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "viewport": {
+        "width": 431,
+        "height": 670,
+        "pixelRatio": 1.5
+      },
+      "camera": {
+        "position": [
+          4416.3,
+          7.440134143552749,
+          4774.867393673077
+        ],
+        "quaternion": [
+          -0.14775039127972228,
+          0,
+          0,
+          0.9890246821372504
+        ],
+        "projection": [
+          2.8630777114673243,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "recordingActive": false,
+      "pageVisibility": "visible"
+    },
+    {
+      "file": "performance-old-2.json",
+      "fps": 39.02315373689147,
+      "frameTime": {
+        "mean": 25.625811966464052,
+        "p95": 37.30000019073486
+      },
+      "calls": {
+        "mean": 689,
+        "p95": 689
+      },
+      "triangles": {
+        "mean": 3239968,
+        "p95": 3239968
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 275,
+          "triangles": 1345392
+        },
+        "scene": {
+          "calls": 201,
+          "triangles": 947668
+        },
+        "occlusion": {
+          "calls": 195,
+          "triangles": 946890
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "viewport": {
+        "width": 431,
+        "height": 670,
+        "pixelRatio": 1.5
+      },
+      "camera": {
+        "position": [
+          4416.3,
+          7.440134143552749,
+          4774.867393673077
+        ],
+        "quaternion": [
+          -0.14775039127972228,
+          0,
+          0,
+          0.9890246821372504
+        ],
+        "projection": [
+          2.8630777114673243,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "recordingActive": false,
+      "pageVisibility": "visible"
+    },
+    {
+      "file": "performance-new-2.json",
+      "fps": 44.309406255645555,
+      "frameTime": {
+        "mean": 22.56857142771097,
+        "p95": 32.19999980926514
+      },
+      "calls": {
+        "mean": 446,
+        "p95": 446
+      },
+      "triangles": {
+        "mean": 3095296,
+        "p95": 3095296
+      },
+      "drawsPerFrame": {
+        "shadows": {
+          "calls": 154,
+          "triangles": 1089732
+        },
+        "scene": {
+          "calls": 140,
+          "triangles": 1003162
+        },
+        "occlusion": {
+          "calls": 134,
+          "triangles": 1002384
+        },
+        "postprocessing": {
+          "calls": 18,
+          "triangles": 18
+        }
+      },
+      "viewport": {
+        "width": 431,
+        "height": 670,
+        "pixelRatio": 1.5
+      },
+      "camera": {
+        "position": [
+          4416.3,
+          7.440134143552749,
+          4774.867393673077
+        ],
+        "quaternion": [
+          -0.14775039127972228,
+          0,
+          0,
+          0.9890246821372504
+        ],
+        "projection": [
+          2.8630777114673243,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "recordingActive": false,
+      "pageVisibility": "visible"
+    }
+  ]
+}
