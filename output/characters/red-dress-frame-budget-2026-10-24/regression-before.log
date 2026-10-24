@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: every exported pedestrian texture resolves to a shipped asset
+ok 1 - every exported pedestrian texture resolves to a shipped asset
+  ---
+  duration_ms: 37.867958
+  type: 'test'
+  ...
+# Subtest: twenty plaza pedestrians share at most twelve surfaces without removing people or their shadows
+ok 2 - twenty plaza pedestrians share at most twelve surfaces without removing people or their shadows
+  ---
+  duration_ms: 125.389458
+  type: 'test'
+  ...
+# Subtest: walking, cold loading, freezing and rewinding retain the same instance poses
+ok 3 - walking, cold loading, freezing and rewinding retain the same instance poses
+  ---
+  duration_ms: 178.251709
+  type: 'test'
+  ...
+# Subtest: compact walk poses reproduce every dense morph weight through idle, walking, wrap and rewind
+not ok 4 - compact walk poses reproduce every dense morph weight through idle, walking, wrap and rewind
+  ---
+  duration_ms: 95.439375
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-frame-budget-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:1:4420'
+  failureType: 'testCodeFailure'
+  error: 'walk shaders still fetch every unused pose per vertex'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-frame-budget-2026-10-24/candidate-release/tests/red-dress-crowd.test.mts:79:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: exported walks keep separate grounded feet, covered waists and complete hand topology
+ok 5 - exported walks keep separate grounded feet, covered waists and complete hand topology
+  ---
+  duration_ms: 499.254667
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2429.48725

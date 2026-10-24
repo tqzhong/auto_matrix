@@ -1,0 +1,233 @@
+{
+  "viewport": {
+    "width": 431,
+    "height": 670,
+    "pixelRatio": 1.5
+  },
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "method": "paused real checkpoint, 3 s warm-up + 15 s per sample; draw instrumentation on; background load not isolated",
+  "reports": [
+    {
+      "report": "baseline-frame",
+      "fps": 46.46629191156639,
+      "frameTimeMs": {
+        "mean": 21.52097701067212,
+        "p95": 34.80000019073486
+      },
+      "renderCpuMs": {
+        "mean": 11.228263980860005,
+        "p95": 20.300000190734863
+      },
+      "agentsCpuMs": {
+        "mean": 5.4918221113842565,
+        "p95": 9.299999237060547
+      },
+      "gpuMs": {},
+      "drawCalls": 279,
+      "triangles": 2456054,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "report": "candidate-frame-1",
+      "fps": 49.64813136302852,
+      "frameTimeMs": {
+        "mean": 20.14174496695499,
+        "p95": 30.800000190734863
+      },
+      "renderCpuMs": {
+        "mean": 9.932975895602965,
+        "p95": 17.800000190734863
+      },
+      "agentsCpuMs": {
+        "mean": 5.779624687123235,
+        "p95": 9.399999618530273
+      },
+      "gpuMs": {},
+      "drawCalls": 279,
+      "triangles": 2456054,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "report": "candidate-frame-2",
+      "fps": 53.0226229878308,
+      "frameTimeMs": {
+        "mean": 18.859874213116722,
+        "p95": 27.5
+      },
+      "renderCpuMs": {
+        "mean": 9.77248744149903,
+        "p95": 15.40000057220459
+      },
+      "agentsCpuMs": {
+        "mean": 5.412562798016036,
+        "p95": 8.699999809265137
+      },
+      "gpuMs": {},
+      "drawCalls": 279,
+      "triangles": 2456054,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "report": "baseline-frame-2",
+      "fps": 52.34730371625586,
+      "frameTimeMs": {
+        "mean": 19.103180660849613,
+        "p95": 27.799999237060547
+      },
+      "renderCpuMs": {
+        "mean": 9.500127077405606,
+        "p95": 16.100000381469727
+      },
+      "agentsCpuMs": {
+        "mean": 5.350444730688383,
+        "p95": 8.699999809265137
+      },
+      "gpuMs": {},
+      "drawCalls": 279,
+      "triangles": 2456054,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "report": "baseline-no-shadows",
+      "fps": 56.67497899619879,
+      "frameTimeMs": {
+        "mean": 17.644470588459686,
+        "p95": 24.699999809265137
+      },
+      "renderCpuMs": {
+        "mean": 6.899764994476713,
+        "p95": 13.399999618530273
+      },
+      "agentsCpuMs": {
+        "mean": 4.777555814220818,
+        "p95": 8.100000381469727
+      },
+      "gpuMs": {},
+      "drawCalls": 139,
+      "triangles": 1457578,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "cpu-no-shadows",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "report": "baseline-gpu-frame",
+      "fps": 51.060879764362944,
+      "frameTimeMs": {
+        "mean": 19.58446475295423,
+        "p95": 29.59999942779541
+      },
+      "renderCpuMs": {
+        "mean": 9.824119943372585,
+        "p95": 16.699999809265137
+      },
+      "agentsCpuMs": {
+        "mean": 5.418383307376151,
+        "p95": 9.399999618530273
+      },
+      "gpuMs": {
+        "frame": {
+          "mean": 14.239444315858462,
+          "p95": 19.938624,
+          "samples": 763
+        }
+      },
+      "drawCalls": 279,
+      "triangles": 2456054,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "frame",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 3,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "report": "candidate-gpu-frame",
+      "fps": 52.05972536995067,
+      "frameTimeMs": {
+        "mean": 19.208706786171575,
+        "p95": 28.399999618530273
+      },
+      "renderCpuMs": {
+        "mean": 9.906010225300898,
+        "p95": 16.300000190734863
+      },
+      "agentsCpuMs": {
+        "mean": 5.489769823410931,
+        "p95": 8.800000190734863
+      },
+      "gpuMs": {
+        "frame": {
+          "mean": 13.945971658536587,
+          "p95": 19.583082,
+          "samples": 779
+        }
+      },
+      "drawCalls": 279,
+      "triangles": 2456054,
+      "sameCamera": true,
+      "sameViewport": true,
+      "gpuTiming": {
+        "mode": "frame",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 2,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    }
+  ]
+}

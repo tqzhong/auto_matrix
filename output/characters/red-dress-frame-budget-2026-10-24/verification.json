@@ -1,0 +1,15 @@
+{
+  "runtimeChangeAdopted": false,
+  "candidateInputsRestored": 1247,
+  "protectedFilesUnchanged": 11,
+  "compiledFilesUnchanged": 800,
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-BbnkcfNs.js",
+  "bundleSha256": "3c87f11a8c307a1182a86e92d1a1ffb8b3ecb6406dbc54c0db8657dcd26d9722",
+  "mainTick": 58679,
+  "mainRunning": true,
+  "mainMemories": 85,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

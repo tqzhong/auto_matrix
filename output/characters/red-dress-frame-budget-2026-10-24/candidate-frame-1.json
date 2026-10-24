@@ -1,0 +1,1785 @@
+{
+  "characterCpu": {
+    "layersAreNested": true,
+    "actors": [
+      {
+        "actor": "morpheus",
+        "layer": "character",
+        "calls": 745,
+        "ms": 727.3999977111816,
+        "maxMs": 55.80000019073486,
+        "distance": 6.07675578910368,
+        "visible": true,
+        "msPerFrame": 0.9750670210605652,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "neo",
+        "layer": "character",
+        "calls": 745,
+        "ms": 585.9999961853027,
+        "maxMs": 7.300000190734863,
+        "distance": 7.681287089803298,
+        "visible": true,
+        "msPerFrame": 0.7855227830902182,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "morpheus",
+        "layer": "hero",
+        "calls": 745,
+        "ms": 540.6000022888184,
+        "maxMs": 55.40000057220459,
+        "distance": 6.07675578910368,
+        "visible": true,
+        "msPerFrame": 0.7246648824246895,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "neo",
+        "layer": "hero",
+        "calls": 745,
+        "ms": 369.10000228881836,
+        "maxMs": 2.3000001907348633,
+        "distance": 7.681287089803298,
+        "visible": true,
+        "msPerFrame": 0.4947721210305876,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "smith",
+        "layer": "character",
+        "calls": 745,
+        "ms": 350.49999237060547,
+        "maxMs": 4.299999237060547,
+        "distance": 10.016427976848687,
+        "visible": false,
+        "msPerFrame": 0.4698391318640824,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "mouse",
+        "layer": "character",
+        "calls": 745,
+        "ms": 331.8000020980835,
+        "maxMs": 6,
+        "distance": 11.772228141984016,
+        "visible": true,
+        "msPerFrame": 0.44477212077491085,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_2",
+        "layer": "character",
+        "calls": 745,
+        "ms": 284.9999942779541,
+        "maxMs": 17.300000190734863,
+        "distance": 15.649024326847131,
+        "visible": true,
+        "msPerFrame": 0.38203752584176154,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "smith",
+        "layer": "hero",
+        "calls": 745,
+        "ms": 213.19998264312744,
+        "maxMs": 2.200000762939453,
+        "distance": 10.016427976848687,
+        "visible": false,
+        "msPerFrame": 0.28579086145191346,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "mouse",
+        "layer": "hero",
+        "calls": 745,
+        "ms": 144.19999504089355,
+        "maxMs": 5.699999809265137,
+        "distance": 11.772228141984016,
+        "visible": true,
+        "msPerFrame": 0.19329758048377152,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_1",
+        "layer": "character",
+        "calls": 745,
+        "ms": 137.1000156402588,
+        "maxMs": 5.800000190734863,
+        "distance": 12.920696845713625,
+        "visible": true,
+        "msPerFrame": 0.1837801818234032,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_2",
+        "layer": "hero",
+        "calls": 745,
+        "ms": 132.899995803833,
+        "maxMs": 3.6999998092651367,
+        "distance": 15.649024326847131,
+        "visible": true,
+        "msPerFrame": 0.17815012842336864,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "morpheus",
+        "layer": "hands",
+        "calls": 745,
+        "ms": 26.199993133544922,
+        "maxMs": 0.39999961853027344,
+        "distance": 6.07675578910368,
+        "visible": true,
+        "msPerFrame": 0.03512063422727201,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_7",
+        "layer": "character",
+        "calls": 746,
+        "ms": 11.799999237060547,
+        "maxMs": 11.5,
+        "distance": 5210.383410814011,
+        "visible": true,
+        "msPerFrame": 0.015817693347266147,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "potential_1",
+        "layer": "character",
+        "calls": 745,
+        "ms": 5.199999809265137,
+        "maxMs": 4.199999809265137,
+        "distance": 5450.5297576936255,
+        "visible": true,
+        "msPerFrame": 0.0069705091277012556,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "cypher",
+        "layer": "character",
+        "calls": 745,
+        "ms": 3.59999942779541,
+        "maxMs": 0.10000038146972656,
+        "distance": 468.33216684230945,
+        "visible": true,
+        "msPerFrame": 0.0048257364983852686,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_3",
+        "layer": "character",
+        "calls": 745,
+        "ms": 2.100001335144043,
+        "maxMs": 1.5,
+        "distance": 5215.534672454921,
+        "visible": true,
+        "msPerFrame": 0.0028150151945630602,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "neo",
+        "layer": "hands",
+        "calls": 745,
+        "ms": 1.6000003814697266,
+        "maxMs": 0.10000038146972656,
+        "distance": 7.681287089803298,
+        "visible": true,
+        "msPerFrame": 0.0021447726293159874,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "link",
+        "layer": "character",
+        "calls": 745,
+        "ms": 1.4000015258789062,
+        "maxMs": 0.5999994277954102,
+        "distance": 3329.493713964132,
+        "visible": false,
+        "msPerFrame": 0.0018766776486312416,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "oracle",
+        "layer": "character",
+        "calls": 745,
+        "ms": 1.1000003814697266,
+        "maxMs": 0.2999992370605469,
+        "distance": 5467.390183597608,
+        "visible": true,
+        "msPerFrame": 0.0014745313424527166,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "trinity",
+        "layer": "character",
+        "calls": 745,
+        "ms": 1.0999994277954102,
+        "maxMs": 0.19999980926513672,
+        "distance": 999.8106296311786,
+        "visible": false,
+        "msPerFrame": 0.0014745300640689144,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "axel",
+        "layer": "character",
+        "calls": 745,
+        "ms": 1.0999984741210938,
+        "maxMs": 0.5,
+        "distance": 3205.178193440558,
+        "visible": false,
+        "msPerFrame": 0.0014745287856851124,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "agent_brown",
+        "layer": "character",
+        "calls": 745,
+        "ms": 1.0000009536743164,
+        "maxMs": 0.3000001907348633,
+        "distance": 5035.827793917795,
+        "visible": true,
+        "msPerFrame": 0.0013404838521103436,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "spoon_boy",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.9000024795532227,
+        "maxMs": 0.10000038146972656,
+        "distance": 5457.566169069843,
+        "visible": true,
+        "msPerFrame": 0.001206437640151773,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "cas",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.9000005722045898,
+        "maxMs": 0.5,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0012064350833841688,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "sparks",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.9000005722045898,
+        "maxMs": 0.20000076293945312,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0012064350833841688,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "charra",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.9000005722045898,
+        "maxMs": 0.3000001907348633,
+        "distance": 3207.662053130037,
+        "visible": false,
+        "msPerFrame": 0.0012064350833841688,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "persephone",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8999996185302734,
+        "maxMs": 0.10000038146972656,
+        "distance": 4804.5379024225995,
+        "visible": true,
+        "msPerFrame": 0.0012064338050003665,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "soren",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.899998664855957,
+        "maxMs": 0.19999980926513672,
+        "distance": 3266.5971838780347,
+        "visible": false,
+        "msPerFrame": 0.0012064325266165643,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "bane",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8999967575073242,
+        "maxMs": 0.10000038146972656,
+        "distance": 3236.6470065572767,
+        "visible": false,
+        "msPerFrame": 0.00120642996984896,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "seraph",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8000020980834961,
+        "maxMs": 0.10000038146972656,
+        "distance": 5467.390183597608,
+        "visible": true,
+        "msPerFrame": 0.001072388871425598,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "agent_jones",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8000011444091797,
+        "maxMs": 0.10000038146972656,
+        "distance": 5026.5439471691625,
+        "visible": true,
+        "msPerFrame": 0.0010723875930417957,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "roland",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8000011444091797,
+        "maxMs": 0.10000038146972656,
+        "distance": 3233.6814494154187,
+        "visible": false,
+        "msPerFrame": 0.0010723875930417957,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "potential_blocks",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8000011444091797,
+        "maxMs": 0.10000038146972656,
+        "distance": 5452.360813284181,
+        "visible": true,
+        "msPerFrame": 0.0010723875930417957,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "mauser",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.8000001907348633,
+        "maxMs": 0.20000076293945312,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0010723863146579937,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "kid",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.8000001907348633,
+        "maxMs": 0.5,
+        "distance": 3210.8439450902597,
+        "visible": false,
+        "msPerFrame": 0.0010723863146579937,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "apoc",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.7999992370605469,
+        "maxMs": 0.10000038146972656,
+        "distance": 997.3960481289563,
+        "visible": false,
+        "msPerFrame": 0.0010723850362741915,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_5",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.7000026702880859,
+        "maxMs": 0.10000038146972656,
+        "distance": 5215.534672454921,
+        "visible": true,
+        "msPerFrame": 0.0009383413810832251,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_11",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.7000017166137695,
+        "maxMs": 0.19999980926513672,
+        "distance": 5029.768819239311,
+        "visible": true,
+        "msPerFrame": 0.0009383401026994229,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "niobe",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.7000007629394531,
+        "maxMs": 0.10000038146972656,
+        "distance": 3269.035060791764,
+        "visible": false,
+        "msPerFrame": 0.0009383388243156208,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "zion_parent",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.6999998092651367,
+        "maxMs": 0.10000038146972656,
+        "distance": 3141.4994689729547,
+        "visible": false,
+        "msPerFrame": 0.0009383375459318187,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "hamann",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.6999998092651367,
+        "maxMs": 0.10000038146972656,
+        "distance": 3261.2066563458993,
+        "visible": false,
+        "msPerFrame": 0.0009383375459318187,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "west",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.6999998092651367,
+        "maxMs": 0.40000057220458984,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0009383375459318187,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_14",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.6999988555908203,
+        "maxMs": 0.10000038146972656,
+        "distance": 5029.051566458057,
+        "visible": true,
+        "msPerFrame": 0.0009383362675480165,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "citizen_15",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.6000022888183594,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.9968757738984,
+        "visible": false,
+        "msPerFrame": 0.0008042926123570501,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "mifune",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.6000003814697266,
+        "maxMs": 0.20000076293945312,
+        "distance": 3207.490216433865,
+        "visible": false,
+        "msPerFrame": 0.0008042900555894458,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "colt",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.5999994277954102,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0008042887772056436,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "rama_kandra",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5999994277954102,
+        "maxMs": 0.10000038146972656,
+        "distance": 3099.002923938814,
+        "visible": true,
+        "msPerFrame": 0.0008042887772056436,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_8",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.5000009536743164,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0006702425652470729,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "citizen_9",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.5000009536743164,
+        "maxMs": 0.10000038146972656,
+        "distance": 5215.534672454921,
+        "visible": true,
+        "msPerFrame": 0.0006702425652470729,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "citizen_10",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.5000009536743164,
+        "maxMs": 0.10000038146972656,
+        "distance": 5215.534672454921,
+        "visible": true,
+        "msPerFrame": 0.0006702425652470729,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "citizen_16",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.5000009536743164,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.9968757738984,
+        "visible": false,
+        "msPerFrame": 0.0006702425652470729,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "oracle_attendant",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5000009536743164,
+        "maxMs": 0.10000038146972656,
+        "distance": 5448.227000523142,
+        "visible": true,
+        "msPerFrame": 0.0006702425652470729,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "ak",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.5,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0006702412868632708,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "dozer",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5,
+        "maxMs": 0.10000038146972656,
+        "distance": 1022.5495876493035,
+        "visible": false,
+        "msPerFrame": 0.0006702412868632708,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "ballard",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5,
+        "maxMs": 0.10000038146972656,
+        "distance": 3271.8612896431196,
+        "visible": false,
+        "msPerFrame": 0.0006702412868632708,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "maggie",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5,
+        "maxMs": 0.10000038146972656,
+        "distance": 3222.9750722033095,
+        "visible": false,
+        "msPerFrame": 0.0006702412868632708,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "trainman",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5,
+        "maxMs": 0.10000038146972656,
+        "distance": 3100.759713065079,
+        "visible": true,
+        "msPerFrame": 0.0006702412868632708,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "potential_4",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.5,
+        "maxMs": 0.19999980926513672,
+        "distance": 5450.755013175885,
+        "visible": true,
+        "msPerFrame": 0.0006702412868632708,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "merovingian",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.4999990463256836,
+        "maxMs": 0.10000038146972656,
+        "distance": 4810.519094178455,
+        "visible": true,
+        "msPerFrame": 0.0006702400084794687,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_4",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.4999990463256836,
+        "maxMs": 0.10000038146972656,
+        "distance": 5032.928120681423,
+        "visible": true,
+        "msPerFrame": 0.0006702400084794687,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "kamala",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.4999990463256836,
+        "maxMs": 0.10000038146972656,
+        "distance": 3109.8779978084117,
+        "visible": true,
+        "msPerFrame": 0.0006702400084794687,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "rhineheart",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.4999980926513672,
+        "maxMs": 0.10000038146972656,
+        "distance": 5086.351010701281,
+        "visible": true,
+        "msPerFrame": 0.0006702387300956665,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "citizen_13",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.40000152587890625,
+        "maxMs": 0.10000038146972656,
+        "distance": 5005.747711547987,
+        "visible": true,
+        "msPerFrame": 0.0005361950749047001,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "citizen_6",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.40000057220458984,
+        "maxMs": 0.10000038146972656,
+        "distance": 5215.534672454921,
+        "visible": true,
+        "msPerFrame": 0.0005361937965208979,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "citizen_12",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.40000057220458984,
+        "maxMs": 0.10000038146972656,
+        "distance": 5062.291300240337,
+        "visible": true,
+        "msPerFrame": 0.0005361937965208979,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "twin1",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.40000057220458984,
+        "maxMs": 0.10000038146972656,
+        "distance": 4815.622684740699,
+        "visible": true,
+        "msPerFrame": 0.0005361937965208979,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "tank",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.39999961853027344,
+        "maxMs": 0.10000038146972656,
+        "distance": 1025.3914873727017,
+        "visible": false,
+        "msPerFrame": 0.0005361925181370957,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "zee",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.39999961853027344,
+        "maxMs": 0.10000038146972656,
+        "distance": 3208.0039169251168,
+        "visible": false,
+        "msPerFrame": 0.0005361925181370957,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "binary",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.39999961853027344,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0005361925181370957,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "smith",
+        "layer": "hands",
+        "calls": 745,
+        "ms": 0.3999977111816406,
+        "maxMs": 0.09999942779541016,
+        "distance": 10.016427976848687,
+        "visible": false,
+        "msPerFrame": 0.0005361899613694915,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "vector",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.3000011444091797,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.00040214630617852506,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "agent_thompson",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.3000011444091797,
+        "maxMs": 0.10000038146972656,
+        "distance": 5035.484453172903,
+        "visible": true,
+        "msPerFrame": 0.00040214630617852506,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "dillard",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.3000001907348633,
+        "maxMs": 0.10000038146972656,
+        "distance": 3270.3786607794946,
+        "visible": false,
+        "msPerFrame": 0.0004021450277947229,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "agent_jackson",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.3000001907348633,
+        "maxMs": 0.10000038146972656,
+        "distance": 5029.903365198684,
+        "visible": true,
+        "msPerFrame": 0.0004021450277947229,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "sati",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.3000001907348633,
+        "maxMs": 0.10000038146972656,
+        "distance": 3103.691866461752,
+        "visible": true,
+        "msPerFrame": 0.0004021450277947229,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "switch",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.2999992370605469,
+        "maxMs": 0.10000038146972656,
+        "distance": 1020.188826101093,
+        "visible": false,
+        "msPerFrame": 0.00040214374941092073,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "ghost",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.2999992370605469,
+        "maxMs": 0.10000038146972656,
+        "distance": 3280.8746083283904,
+        "visible": false,
+        "msPerFrame": 0.00040214374941092073,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "oracle_priestess",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.2999992370605469,
+        "maxMs": 0.10000038146972656,
+        "distance": 5455.8197353518835,
+        "visible": true,
+        "msPerFrame": 0.00040214374941092073,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "potential_3",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.2999992370605469,
+        "maxMs": 0.10000038146972656,
+        "distance": 5450.157991487937,
+        "visible": true,
+        "msPerFrame": 0.00040214374941092073,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "courier",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.2999992370605469,
+        "maxMs": 0.10000038146972656,
+        "distance": 5114.4183929557985,
+        "visible": true,
+        "msPerFrame": 0.00040214374941092073,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "twin2",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.20000076293945312,
+        "maxMs": 0.10000038146972656,
+        "distance": 4813.998827114124,
+        "visible": true,
+        "msPerFrame": 0.00026809753745235006,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "potential_2",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.19999980926513672,
+        "maxMs": 0.19999980926513672,
+        "distance": 5448.657007447881,
+        "visible": true,
+        "msPerFrame": 0.00026809625906854787,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "zion_neighbor",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.1999988555908203,
+        "maxMs": 0.09999942779541016,
+        "distance": 3136.871641165467,
+        "visible": false,
+        "msPerFrame": 0.00026809498068474573,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "agent_johnson",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.1999988555908203,
+        "maxMs": 0.09999942779541016,
+        "distance": 5034.526147406497,
+        "visible": true,
+        "msPerFrame": 0.00026809498068474573,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "architect",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.1999988555908203,
+        "maxMs": 0.09999942779541016,
+        "distance": 4534.3965384434505,
+        "visible": true,
+        "msPerFrame": 0.00026809498068474573,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "cain",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.1999988555908203,
+        "maxMs": 0.09999942779541016,
+        "distance": 4814.127641804738,
+        "visible": true,
+        "msPerFrame": 0.00026809498068474573,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "deus_ex_machina",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.1999988555908203,
+        "maxMs": 0.09999942779541016,
+        "distance": 2898.3059951219943,
+        "visible": false,
+        "msPerFrame": 0.00026809498068474573,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "malachi",
+        "layer": "character",
+        "calls": 746,
+        "ms": 0.10000038146972656,
+        "maxMs": 0.10000038146972656,
+        "distance": 3202.4657652460887,
+        "visible": false,
+        "msPerFrame": 0.00013404876872617503,
+        "callsPerFrame": 1
+      },
+      {
+        "actor": "lock",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.10000038146972656,
+        "maxMs": 0.10000038146972656,
+        "distance": 3276.312481940704,
+        "visible": false,
+        "msPerFrame": 0.00013404876872617503,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "abel_mero",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.10000038146972656,
+        "maxMs": 0.10000038146972656,
+        "distance": 4811.211848435694,
+        "visible": true,
+        "msPerFrame": 0.00013404876872617503,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "choi",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.10000038146972656,
+        "maxMs": 0.10000038146972656,
+        "distance": 5143.40389341029,
+        "visible": true,
+        "msPerFrame": 0.00013404876872617503,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "dujour",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0.10000038146972656,
+        "maxMs": 0.10000038146972656,
+        "distance": 5142.9177865257825,
+        "visible": true,
+        "msPerFrame": 0.00013404876872617503,
+        "callsPerFrame": 0.9986595174262735
+      },
+      {
+        "actor": "keymaker",
+        "layer": "character",
+        "calls": 745,
+        "ms": 0,
+        "maxMs": 0,
+        "distance": 4810.519094178455,
+        "visible": true,
+        "msPerFrame": 0,
+        "callsPerFrame": 0.9986595174262735
+      }
+    ]
+  },
+  "browserMainThread": {
+    "supported": [
+      "long-animation-frame",
+      "longtask"
+    ],
+    "entries": [
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 56387,
+        "duration": 60,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56333.300000190735,
+        "duration": 51.09999942779541,
+        "navigationId": 1747,
+        "paintTime": 56384.39999961853,
+        "presentationTime": 56452,
+        "renderStart": 56335.199999809265,
+        "styleAndLayoutStart": 56383.5,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56339.199999809265,
+            "duration": 44.30000019073486,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56339.199999809265,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56384.5,
+        "duration": 60.39999961853027,
+        "navigationId": 1747,
+        "paintTime": 56444.89999961853,
+        "presentationTime": 56484,
+        "renderStart": 56387,
+        "styleAndLayoutStart": 56438.699999809265,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 8.5,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56387,
+            "duration": 51.69999980926514,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56387,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 56520.89999961853,
+        "duration": 82,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 56603.800000190735,
+        "duration": 197,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 56801.800000190735,
+        "duration": 85,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56516.300000190735,
+        "duration": 81.80000019073486,
+        "navigationId": 1747,
+        "paintTime": 56598.10000038147,
+        "presentationTime": 56636,
+        "renderStart": 56520.89999961853,
+        "styleAndLayoutStart": 56595.699999809265,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 30.9,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56520.89999961853,
+            "duration": 74.80000019073486,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56520.89999961853,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 56887.699999809265,
+        "duration": 82,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56603.10000038147,
+        "duration": 195.19999980926514,
+        "navigationId": 1747,
+        "paintTime": 56798.300000190735,
+        "presentationTime": 56836,
+        "renderStart": 56603.800000190735,
+        "styleAndLayoutStart": 56796.199999809265,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 144.5,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56603.800000190735,
+            "duration": 192.39999961853027,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56603.800000190735,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 56970.10000038147,
+        "duration": 79,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56801.5,
+        "duration": 85.19999980926514,
+        "navigationId": 1747,
+        "paintTime": 56886.699999809265,
+        "presentationTime": 56920,
+        "renderStart": 56801.800000190735,
+        "styleAndLayoutStart": 56886.60000038147,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 35,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56802,
+            "duration": 84.60000038146973,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56802,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56887.10000038147,
+        "duration": 79,
+        "navigationId": 1747,
+        "paintTime": 56966.10000038147,
+        "presentationTime": 57020,
+        "renderStart": 56887.800000190735,
+        "styleAndLayoutStart": 56964,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 28.5,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56887.800000190735,
+            "duration": 76.19999980926514,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56887.800000190735,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 56970,
+        "duration": 78.80000019073486,
+        "navigationId": 1747,
+        "paintTime": 57048.800000190735,
+        "presentationTime": 57100,
+        "renderStart": 56970.199999809265,
+        "styleAndLayoutStart": 57048.699999809265,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 28.7,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 56993.800000190735,
+            "duration": 54.89999961853027,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 56993.800000190735,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 57175,
+        "duration": 69,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "self",
+        "entryType": "longtask",
+        "startTime": 57248.699999809265,
+        "duration": 52,
+        "navigationId": 1747,
+        "attribution": [
+          {
+            "name": "unknown",
+            "entryType": "taskattribution",
+            "startTime": 0,
+            "duration": 0,
+            "navigationId": 1747,
+            "containerType": "window",
+            "containerSrc": "",
+            "containerId": "",
+            "containerName": ""
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 57175,
+        "duration": 69.5,
+        "navigationId": 1747,
+        "paintTime": 57244.5,
+        "presentationTime": 57284,
+        "renderStart": 57175,
+        "styleAndLayoutStart": 57244.39999961853,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 19.5,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 57175,
+            "duration": 69.39999961853027,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 57175,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      },
+      {
+        "name": "long-animation-frame",
+        "entryType": "long-animation-frame",
+        "startTime": 57244.800000190735,
+        "duration": 52.59999942779541,
+        "navigationId": 1747,
+        "paintTime": 57297.39999961853,
+        "presentationTime": 57336,
+        "renderStart": 57248.699999809265,
+        "styleAndLayoutStart": 57297.199999809265,
+        "firstUIEventTimestamp": 0,
+        "blockingDuration": 0,
+        "scripts": [
+          {
+            "name": "script",
+            "entryType": "script",
+            "startTime": 57248.699999809265,
+            "duration": 48.5,
+            "navigationId": 1747,
+            "invoker": "FrameRequestCallback",
+            "invokerType": "user-callback",
+            "windowAttribution": "self",
+            "executionStart": 57248.699999809265,
+            "forcedStyleAndLayoutDuration": 0,
+            "pauseDuration": 0,
+            "sourceURL": "http://127.0.0.1:5201/src/engine/Engine.ts?t=1792836400966",
+            "sourceFunctionName": "animate",
+            "sourceCharPosition": 10035
+          }
+        ]
+      }
+    ]
+  },
+  "lights": [],
+  "finiteLightCulling": {
+    "enabled": true,
+    "considered": 0,
+    "culled": 0
+  },
+  "occlusionInPlace": true,
+  "camera": {
+    "position": [
+      4417.9507483694415,
+      6.5,
+      4723.401143764646
+    ],
+    "quaternion": [
+      -0.1443410007934725,
+      -0.6919045158252759,
+      -0.14420445652242778,
+      0.6925596661585199
+    ],
+    "projection": [
+      2.605089064693802,
+      0,
+      0,
+      0,
+      0,
+      1.6758110251985503,
+      0,
+      0,
+      0,
+      0,
+      -1.0002000200020003,
+      -1,
+      0,
+      0,
+      -1.000100010001,
+      0
+    ]
+  },
+  "measuredAt": "2026-10-24T10:07:40.354Z",
+  "scenes": [
+    "film_red_dress_plaza"
+  ],
+  "viewport": {
+    "width": 431,
+    "height": 670,
+    "pixelRatio": 1.5
+  },
+  "frames": 746,
+  "fps": 49.64813136302852,
+  "frameTime": {
+    "mean": 20.14174496695499,
+    "p95": 30.800000190734863
+  },
+  "cpuMs": {
+    "controls": {
+      "mean": 0.513002711390682,
+      "p95": 1.3000001907348633
+    },
+    "agents": {
+      "mean": 5.779624687123235,
+      "p95": 9.399999618530273
+    },
+    "city": {
+      "mean": 0.14222518496475015,
+      "p95": 0.3000001907348633
+    },
+    "film": {
+      "mean": 0.05804288035743038,
+      "p95": 0.19999980926513672
+    },
+    "effects": {
+      "mean": 0.10495978577846496,
+      "p95": 0.20000076293945312
+    },
+    "render": {
+      "mean": 9.932975895602965,
+      "p95": 17.800000190734863
+    },
+    "capture": {
+      "mean": 0.0014745313424527166,
+      "p95": 0
+    }
+  },
+  "passCpuMs": {
+    "worldMatrices": {
+      "mean": 1.6813672681915857,
+      "p95": 3.09999942779541
+    },
+    "scene": {
+      "mean": 7.758310975082439,
+      "p95": 13.300000190734863
+    },
+    "occlusion.overrideVisibility": {
+      "mean": 0.41970511991280973,
+      "p95": 0.8000001907348633
+    },
+    "occlusion.normals": {
+      "mean": 1.25978551281681,
+      "p95": 2.6999998092651367
+    },
+    "occlusion.restoreVisibility": {
+      "mean": 0.011260055664717033,
+      "p95": 0.09999942779541016
+    },
+    "occlusion": {
+      "mean": 1.8458445257539724,
+      "p95": 3.8999996185302734
+    },
+    "bloom": {
+      "mean": 0.24142092865849307,
+      "p95": 0.5
+    },
+    "output": {
+      "mean": 0.02506702642977717,
+      "p95": 0.10000038146972656
+    },
+    "antialias": {
+      "mean": 0.030428947775996723,
+      "p95": 0.10000038146972656
+    }
+  },
+  "gpuPassMs": {},
+  "gpuTiming": {
+    "mode": "cpu",
+    "supported": true,
+    "counterBits": 64,
+    "discarded": 0,
+    "pendingAtStop": 0,
+    "intervalsAreNotAdditive": true,
+    "glErrorAtStop": 0
+  },
+  "calls": {
+    "mean": 279,
+    "p95": 279
+  },
+  "triangles": {
+    "mean": 2456054,
+    "p95": 2456054
+  },
+  "drawsPerFrame": {
+    "shadows": {
+      "calls": 140,
+      "triangles": 998476
+    },
+    "scene": {
+      "calls": 61,
+      "triangles": 728781
+    },
+    "occlusion": {
+      "calls": 60,
+      "triangles": 728779
+    },
+    "postprocessing": {
+      "calls": 18,
+      "triangles": 18
+    }
+  },
+  "heaviestMeshes": [
+    {
+      "name": "red-dress-crowd-male-Plaza_skin",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 600912
+    },
+    {
+      "name": "red-dress-crowd-female-Plaza_skin",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 326844
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184896
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 184656
+    },
+    {
+      "name": "Swept_individual_hair_strands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 170646
+    },
+    {
+      "name": "Red_dress_anatomy",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 107024
+    },
+    {
+      "name": "red-dress-crowd-male-Plaza_suit",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 94419
+    },
+    {
+      "name": "red-dress-crowd-male-Plaza_trousers",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 60762
+    },
+    {
+      "name": "red-dress-crowd-female-Plaza_suit",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 51240
+    },
+    {
+      "name": "red-dress-crowd-male-Plaza_hair",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 40950
+    },
+    {
+      "name": "red-dress-crowd-male-Plaza_soles",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 36192
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34764
+    },
+    {
+      "name": "Tailored_coat_upper",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 34599
+    },
+    {
+      "name": "mouse-anatomical-head",
+      "parent": "mouse-detailed-head",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 34368
+    },
+    {
+      "name": "red-dress-crowd-female-Plaza_trousers",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 32718
+    },
+    {
+      "name": "Anatomical_head_and_hands",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 1,
+      "triangles": 30012
+    },
+    {
+      "name": "",
+      "parent": "red-dress-west-bank",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 23076
+    },
+    {
+      "name": "Close-cut_scalp_undercoat",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 23040
+    },
+    {
+      "name": "Black_crew_neck",
+      "parent": "",
+      "type": "SkinnedMesh",
+      "calls": 3,
+      "triangles": 22992
+    },
+    {
+      "name": "red-dress-crowd-female-Plaza_hair",
+      "parent": "red-dress-crowd-batches",
+      "type": "Mesh",
+      "calls": 3,
+      "triangles": 22050
+    }
+  ],
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M3, Unspecified Version)",
+  "recordingActive": false,
+  "engineFpsDisplay": 60.00774289026108,
+  "fpsBeforeSampling": 46.911649778817555,
+  "pageVisibility": "visible",
+  "contextAntialias": true,
+  "profilingDrawInstrumentation": true,
+  "objects": 9371,
+  "visibleObjects": 637
+}
