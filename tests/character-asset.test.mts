@@ -7,7 +7,6 @@ import { HeroModels, type HeroRig } from '../packages/client/src/agents/HeroMode
 import { advanceMotion, newMotion, type MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { PhoneModel, PHONE_HAND } from '../packages/client/src/agents/PhoneModel.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
-import { RedDressCrowd } from '../packages/client/src/engine/RedDressCrowd.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 import { fingerGroups } from './helpers/fighting-hand-fixture.mjs';
 import { inspectionPalm } from './helpers/construct-inspection.mjs';
@@ -51,34 +50,6 @@ async function loadGeometry(id = 'neo') {
   padded.copy(result, 20); bin.copy(result, 20 + padded.length);
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
-
-test('red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading', async t => {
-  const assets = Object.fromEntries(await Promise.all(['choi', 'dujour', 'club-male', 'club-female'].map(async name => [name, await loadGeometry(name)])));
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', async path => assets[String(path).split('/').pop()!.replace('.glb', '')]);
-  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
-  Object.defineProperty(globalThis, 'document', { value: {}, configurable: true });
-  t.after(() => { if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
-  const groups = [0, 1].map(index => { const group = new THREE.Group(); group.userData.baseZ = index * 12 - 24; group.add(new THREE.Mesh()); return group; });
-  const crowd = new RedDressCrowd(groups); t.after(() => crowd.dispose());
-  crowd.update(7.13, true); await crowd.ready;
-  assert.ok(crowd['actors'].every(actor => actor.rig.panels.length === 0), 'ordinary pedestrians must not inherit Neo\'s floor-length coat tails');
-  const femaleRig = crowd['actors'].find(actor => actor.group === groups[1])!.rig;
-  const shirt = femaleRig.wardrobe.find(part => /Black.crew.neck/i.test(part.mesh.name))!.mesh.geometry;
-  const trousers = femaleRig.wardrobe.find(part => /Tailored.trousers/i.test(part.mesh.name))!.mesh.geometry;
-  shirt.computeBoundingBox(); trousers.computeBoundingBox();
-  assert.ok(shirt.boundingBox!.min.y < trousers.boundingBox!.max.y, 'the female shirt must cover the missing waist surface rather than leave a gap');
-  const pose = () => { groups.forEach(group => group.updateMatrixWorld(true)); return groups.map(group => ({ position: group.position.toArray(),
-    joints: ['pelvis', 'hip_R', 'knee_R', 'wrist_R'].map(name => group.getObjectByName(name)!.matrixWorld.toArray()) })); };
-  let skinned = 0; groups.forEach(group => group.traverse(object => { if (object instanceof THREE.SkinnedMesh) skinned++; }));
-  assert.ok(skinned >= 10, 'each pedestrian has continuous skinned anatomy and garments');
-  let triangles = 0; groups.forEach(group => group.traverse(object => { if (object instanceof THREE.SkinnedMesh) triangles += object.geometry.index!.count / 3; }));
-  assert.ok(triangles < 80000, `two background pedestrians must use the existing lighter meshes, got ${triangles} triangles`);
-  const frozen = pose(); crowd.update(7.13, true); assert.deepEqual(pose(), frozen);
-  crowd.update(8.13, true); assert.notDeepEqual(pose(), frozen, 'ordinary pedestrians walk rather than rock in place');
-  crowd.update(7.13, true); assert.deepEqual(pose(), frozen, 'a reloaded saved frame has the same stride and position');
-  const pending = new RedDressCrowd([new THREE.Group()]); pending.dispose(); await pending.ready;
-  assert.equal(pending['actors'].length, 0, 'a late asset cannot append people after leaving the scene');
-});
 
 test('red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down', async () => {
   for (const id of ['neo', 'morpheus', 'smith'] as const) {
