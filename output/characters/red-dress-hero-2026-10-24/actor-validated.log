@@ -1,0 +1,53 @@
+TAP version 13
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+ok 1 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+  ---
+  duration_ms: 2045.605833
+  type: 'test'
+  ...
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+ok 2 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+  ---
+  duration_ms: 1993.67375
+  type: 'test'
+  ...
+# Subtest: the actual satin covers the torso and both thighs during the saved training walk
+ok 3 - the actual satin covers the torso and both thighs during the saved training walk
+  ---
+  duration_ms: 14486.870666
+  type: 'test'
+  ...
+# Subtest: red pumps have real heels and their complete surfaces remain supported throughout the walk
+ok 4 - red pumps have real heels and their complete surfaces remain supported throughout the walk
+  ---
+  duration_ms: 1836.504792
+  type: 'test'
+  ...
+# Subtest: the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+ok 5 - the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+  ---
+  duration_ms: 9145.171083
+  type: 'test'
+  ...
+# Subtest: the walking hands keep continuous joints and relaxed anatomical fingertip directions
+ok 6 - the walking hands keep continuous joints and relaxed anatomical fingertip directions
+  ---
+  duration_ms: 2350.061458
+  type: 'test'
+  ...
+# {"sampledClocks":531,"largestStep":0.0231005258006689,"largestBend":0.48838885049491504}
+# Subtest: the halter straps lie on the collar and neck instead of floating in front of them
+ok 7 - the halter straps lie on the collar and neck instead of floating in front of them
+  ---
+  duration_ms: 5253.394166
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38376.665417

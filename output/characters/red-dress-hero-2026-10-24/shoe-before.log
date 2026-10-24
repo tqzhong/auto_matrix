@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: red pumps have real heels and their complete surfaces remain supported throughout the walk
+not ok 1 - red pumps have real heels and their complete surfaces remain supported throughout the walk
+  ---
+  duration_ms: 2904.64225
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:5517'
+  failureType: 'testCodeFailure'
+  error: 'Red_dress_outsoles'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:93:57)
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:92:79)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5542.00275

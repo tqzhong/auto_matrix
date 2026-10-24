@@ -1,0 +1,357 @@
+TAP version 13
+# Subtest: the actual satin covers the torso and both thighs during the saved training walk
+not ok 1 - the actual satin covers the torso and both thighs during the saved training walk
+  ---
+  duration_ms: 22399.292041
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:2688'
+  failureType: 'testCodeFailure'
+  error: |-
+    skin crosses the dress: t=0, y=1.55, angle=2: skin=0.461, cloth=0.387; t=0, y=1.55, angle=3: skin=0.489, cloth=0.446; t=0, y=1.55, angle=4: skin=0.461, cloth=0.331; t=0, y=1.55, angle=20: skin=0.461, cloth=0.299; t=0, y=1.55, angle=21: skin=0.489, cloth=0.459; t=0, y=1.55, angle=22: skin=0.461, cloth=0.430; t=0, y=1.8, angle=5: skin=0.469, cloth=0.322; t=0, y=1.8, angle=19: skin=0.469, cloth=0.319; t=0, y=2.3, angle=12: skin=0.178, cloth=missing; t=0, y=2.9, angle=10: skin=0.059, cloth=missing; t=0, y=2.9, angle=11: skin=0.052, cloth=missing; t=0, y=2.9, angle=12: skin=0.050, cloth=missing
+    + actual - expected
+
+    + [
+    +   't=0, y=1.55, angle=2: skin=0.461, cloth=0.387',
+    +   't=0, y=1.55, angle=3: skin=0.489, cloth=0.446',
+    +   't=0, y=1.55, angle=4: skin=0.461, cloth=0.331',
+    +   't=0, y=1.55, angle=20: skin=0.461, cloth=0.299',
+    +   't=0, y=1.55, angle=21: skin=0.489, cloth=0.459',
+    +   't=0, y=1.55, angle=22: skin=0.461, cloth=0.430',
+    +   't=0, y=1.8, angle=5: skin=0.469, cloth=0.322',
+    +   't=0, y=1.8, angle=19: skin=0.469, cloth=0.319',
+    +   't=0, y=2.3, angle=12: skin=0.178, cloth=missing',
+    +   't=0, y=2.9, angle=10: skin=0.059, cloth=missing',
+    +   't=0, y=2.9, angle=11: skin=0.052, cloth=missing',
+    +   't=0, y=2.9, angle=12: skin=0.050, cloth=missing',
+    +   't=0, y=2.9, angle=13: skin=0.052, cloth=missing',
+    +   't=0, y=2.9, angle=14: skin=0.059, cloth=missing',
+    +   't=0, y=3.12, angle=0: skin=0.365, cloth=missing',
+    +   't=0, y=3.12, angle=1: skin=0.403, cloth=missing',
+    +   't=0, y=3.12, angle=2: skin=0.475, cloth=missing',
+    +   't=0, y=3.12, angle=3: skin=0.464, cloth=missing',
+    +   't=0, y=3.12, angle=4: skin=0.396, cloth=missing',
+    +   't=0, y=3.12, angle=5: skin=0.376, cloth=missing',
+    +   't=0, y=3.12, angle=6: skin=0.352, cloth=missing',
+    +   't=0, y=3.12, angle=7: skin=0.304, cloth=missing',
+    +   't=0, y=3.12, angle=8: skin=0.245, cloth=missing',
+    +   't=0, y=3.12, angle=9: skin=0.187, cloth=missing',
+    +   't=0, y=3.12, angle=10: skin=0.141, cloth=missing',
+    +   't=0, y=3.12, angle=11: skin=0.118, cloth=missing',
+    +   't=0, y=3.12, angle=12: skin=0.110, cloth=missing',
+    +   't=0, y=3.12, angle=13: skin=0.118, cloth=missing',
+    +   't=0, y=3.12, angle=14: skin=0.141, cloth=missing',
+    +   't=0, y=3.12, angle=15: skin=0.187, cloth=missing',
+    +   't=0, y=3.12, angle=16: skin=0.245, cloth=missing',
+    +   't=0, y=3.12, angle=17: skin=0.304, cloth=missing',
+    +   't=0, y=3.12, angle=18: skin=0.352, cloth=missing',
+    +   't=0, y=3.12, angle=19: skin=0.376, cloth=missing',
+    +   't=0, y=3.12, angle=20: skin=0.396, cloth=missing',
+    +   't=0, y=3.12, angle=21: skin=0.464, cloth=missing',
+    +   't=0, y=3.12, angle=22: skin=0.475, cloth=missing',
+    +   't=0, y=3.12, angle=23: skin=0.403, cloth=missing',
+    +   't=1.3, y=1.32, angle=2: skin=0.494, cloth=0.419',
+    +   't=1.3, y=1.32, angle=4: skin=0.427, cloth=0.364',
+    +   't=1.3, y=1.32, angle=19: skin=0.383, cloth=0.247',
+    +   't=1.3, y=1.32, angle=20: skin=0.417, cloth=0.389',
+    +   't=1.3, y=1.32, angle=22: skin=0.353, cloth=0.312',
+    +   't=1.3, y=1.55, angle=4: skin=0.466, cloth=0.330',
+    +   't=1.3, y=1.55, angle=5: skin=0.367, cloth=0.248',
+    +   't=1.3, y=1.55, angle=18: skin=0.339, cloth=0.207',
+    +   't=1.3, y=1.55, angle=19: skin=0.421, cloth=0.396',
+    +   't=1.3, y=1.55, angle=21: skin=0.454, cloth=0.377',
+    +   't=1.3, y=1.55, angle=22: skin=0.402, cloth=0.371',
+    +   't=1.3, y=1.8, angle=5: skin=0.462, cloth=0.427',
+    +   't=1.3, y=1.8, angle=19: skin=0.470, cloth=0.340',
+    +   't=1.3, y=1.8, angle=21: skin=0.470, cloth=0.433',
+    +   't=1.3, y=2.9, angle=10: skin=0.059, cloth=missing',
+    +   't=1.3, y=2.9, angle=11: skin=0.052, cloth=missing',
+    +   't=1.3, y=2.9, angle=12: skin=0.051, cloth=missing',
+    +   't=1.3, y=2.9, angle=13: skin=0.053, cloth=missing',
+    +   't=1.3, y=2.9, angle=14: skin=0.061, cloth=missing',
+    +   't=1.3, y=3.12, angle=0: skin=0.370, cloth=missing',
+    +   't=1.3, y=3.12, angle=1: skin=0.418, cloth=missing',
+    +   't=1.3, y=3.12, angle=2: skin=0.481, cloth=missing',
+    +   't=1.3, y=3.12, angle=3: skin=0.454, cloth=missing',
+    +   't=1.3, y=3.12, angle=4: skin=0.395, cloth=missing',
+    +   't=1.3, y=3.12, angle=5: skin=0.375, cloth=missing',
+    +   't=1.3, y=3.12, angle=6: skin=0.346, cloth=missing',
+    +   't=1.3, y=3.12, angle=7: skin=0.293, cloth=missing',
+    +   't=1.3, y=3.12, angle=8: skin=0.227, cloth=missing',
+    +   't=1.3, y=3.12, angle=9: skin=0.168, cloth=missing',
+    +   't=1.3, y=3.12, angle=10: skin=0.127, cloth=missing',
+    +   't=1.3, y=3.12, angle=11: skin=0.107, cloth=missing',
+    +   't=1.3, y=3.12, angle=12: skin=0.102, cloth=missing',
+    +   't=1.3, y=3.12, angle=13: skin=0.110, cloth=missing',
+    +   't=1.3, y=3.12, angle=14: skin=0.133, cloth=missing',
+    +   't=1.3, y=3.12, angle=15: skin=0.179, cloth=missing',
+    +   't=1.3, y=3.12, angle=16: skin=0.239, cloth=missing',
+    +   't=1.3, y=3.12, angle=17: skin=0.300, cloth=missing',
+    +   't=1.3, y=3.12, angle=18: skin=0.351, cloth=missing',
+    +   't=1.3, y=3.12, angle=19: skin=0.378, cloth=missing',
+    +   't=1.3, y=3.12, angle=20: skin=0.400, cloth=missing',
+    +   't=1.3, y=3.12, angle=21: skin=0.472, cloth=missing',
+    +   't=1.3, y=3.12, angle=22: skin=0.469, cloth=missing',
+    +   't=1.3, y=3.12, angle=23: skin=0.398, cloth=missing',
+    +   't=2.73, y=1.32, angle=1: skin=0.728, cloth=0.178',
+    +   't=2.73, y=1.32, angle=19: skin=0.357, cloth=0.285',
+    +   't=2.73, y=1.55, angle=1: skin=0.690, cloth=0.676',
+    +   't=2.73, y=1.55, angle=2: skin=0.693, cloth=0.674',
+    +   't=2.73, y=1.55, angle=20: skin=0.398, cloth=0.365',
+    +   't=2.73, y=1.55, angle=21: skin=0.356, cloth=0.290',
+    +   't=2.73, y=1.8, angle=1: skin=0.589, cloth=0.540',
+    +   't=2.73, y=1.8, angle=2: skin=0.643, cloth=0.600',
+    +   't=2.73, y=1.8, angle=18: skin=0.446, cloth=0.289',
+    +   't=2.73, y=2.05, angle=3: skin=0.534, cloth=0.472',
+    +   't=2.73, y=2.9, angle=10: skin=0.062, cloth=missing',
+    +   't=2.73, y=2.9, angle=11: skin=0.054, cloth=missing',
+    +   't=2.73, y=2.9, angle=12: skin=0.051, cloth=missing',
+    +   't=2.73, y=2.9, angle=13: skin=0.053, cloth=missing',
+    +   't=2.73, y=2.9, angle=14: skin=0.061, cloth=missing',
+    +   't=2.73, y=3.12, angle=0: skin=0.368, cloth=missing',
+    +   't=2.73, y=3.12, angle=1: skin=0.402, cloth=missing',
+    +   't=2.73, y=3.12, angle=2: skin=0.469, cloth=missing',
+    +   't=2.73, y=3.12, angle=3: skin=0.465, cloth=missing',
+    +   't=2.73, y=3.12, angle=4: skin=0.397, cloth=missing',
+    +   't=2.73, y=3.12, angle=5: skin=0.376, cloth=missing',
+    +   't=2.73, y=3.12, angle=6: skin=0.352, cloth=missing',
+    +   't=2.73, y=3.12, angle=7: skin=0.301, cloth=missing',
+    +   't=2.73, y=3.12, angle=8: skin=0.239, cloth=missing',
+    +   't=2.73, y=3.12, angle=9: skin=0.179, cloth=missing',
+    +   't=2.73, y=3.12, angle=10: skin=0.134, cloth=missing',
+    +   't=2.73, y=3.12, angle=11: skin=0.111, cloth=missing',
+    +   't=2.73, y=3.12, angle=12: skin=0.103, cloth=missing',
+    +   't=2.73, y=3.12, angle=13: skin=0.109, cloth=missing',
+    +   't=2.73, y=3.12, angle=14: skin=0.129, cloth=missing',
+    +   't=2.73, y=3.12, angle=15: skin=0.172, cloth=missing',
+    +   't=2.73, y=3.12, angle=16: skin=0.230, cloth=missing',
+    +   't=2.73, y=3.12, angle=17: skin=0.295, cloth=missing',
+    +   't=2.73, y=3.12, angle=18: skin=0.346, cloth=missing',
+    +   't=2.73, y=3.12, angle=19: skin=0.376, cloth=missing',
+    +   't=2.73, y=3.12, angle=20: skin=0.398, cloth=missing',
+    +   't=2.73, y=3.12, angle=21: skin=0.459, cloth=missing',
+    +   't=2.73, y=3.12, angle=22: skin=0.475, cloth=missing',
+    +   't=2.73, y=3.12, angle=23: skin=0.411, cloth=missing',
+    +   't=4.1, y=1.32, angle=7: skin=0.395, cloth=0.373',
+    +   't=4.1, y=1.55, angle=8: skin=0.380, cloth=0.325',
+    +   't=4.1, y=1.8, angle=2: skin=0.299, cloth=0.239',
+    +   't=4.1, y=1.8, angle=4: skin=0.430, cloth=0.228',
+    +   't=4.1, y=1.8, angle=6: skin=0.462, cloth=0.341',
+    +   't=4.1, y=1.8, angle=18: skin=0.330, cloth=0.273',
+    +   't=4.1, y=1.8, angle=19: skin=0.457, cloth=0.346',
+    +   't=4.1, y=2.9, angle=0: skin=0.384, cloth=missing',
+    +   't=4.1, y=2.9, angle=1: skin=0.394, cloth=missing',
+    +   't=4.1, y=2.9, angle=2: skin=0.400, cloth=missing',
+    +   't=4.1, y=2.9, angle=9: skin=0.104, cloth=missing',
+    +   't=4.1, y=2.9, angle=10: skin=0.074, cloth=missing',
+    +   't=4.1, y=2.9, angle=11: skin=0.063, cloth=missing',
+    +   't=4.1, y=2.9, angle=12: skin=0.060, cloth=missing',
+    +   't=4.1, y=2.9, angle=13: skin=0.062, cloth=missing',
+    +   't=4.1, y=2.9, angle=14: skin=0.073, cloth=missing',
+    +   't=4.1, y=2.9, angle=15: skin=0.102, cloth=missing',
+    +   't=4.1, y=2.9, angle=22: skin=0.400, cloth=missing',
+    +   't=4.1, y=2.9, angle=23: skin=0.395, cloth=missing',
+    +   't=4.1, y=3.12, angle=0: skin=0.355, cloth=missing',
+    +   't=4.1, y=3.12, angle=1: skin=0.380, cloth=missing',
+    +   't=4.1, y=3.12, angle=2: skin=0.434, cloth=missing',
+    +   't=4.1, y=3.12, angle=3: skin=0.450, cloth=missing',
+    +   't=4.1, y=3.12, angle=4: skin=0.395, cloth=missing',
+    +   't=4.1, y=3.12, angle=6: skin=0.349, cloth=missing',
+    +   't=4.1, y=3.12, angle=7: skin=0.311, cloth=missing',
+    +   't=4.1, y=3.12, angle=8: skin=0.256, cloth=missing',
+    +   't=4.1, y=3.12, angle=9: skin=0.197, cloth=missing',
+    +   't=4.1, y=3.12, angle=10: skin=0.149, cloth=missing',
+    +   't=4.1, y=3.12, angle=11: skin=0.122, cloth=missing',
+    +   't=4.1, y=3.12, angle=12: skin=0.114, cloth=missing',
+    +   't=4.1, y=3.12, angle=13: skin=0.122, cloth=missing',
+    +   't=4.1, y=3.12, angle=14: skin=0.148, cloth=missing',
+    +   't=4.1, y=3.12, angle=15: skin=0.197, cloth=missing',
+    +   't=4.1, y=3.12, angle=16: skin=0.255, cloth=missing',
+    +   't=4.1, y=3.12, angle=17: skin=0.313, cloth=missing',
+    +   't=4.1, y=3.12, angle=18: skin=0.354, cloth=missing',
+    +   't=4.1, y=3.12, angle=20: skin=0.389, cloth=missing',
+    +   't=4.1, y=3.12, angle=21: skin=0.440, cloth=missing',
+    +   't=4.1, y=3.12, angle=22: skin=0.437, cloth=missing',
+    +   't=4.1, y=3.12, angle=23: skin=0.383, cloth=missing'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 't=0, y=1.55, angle=2: skin=0.461, cloth=0.387'
+    1: 't=0, y=1.55, angle=3: skin=0.489, cloth=0.446'
+    2: 't=0, y=1.55, angle=4: skin=0.461, cloth=0.331'
+    3: 't=0, y=1.55, angle=20: skin=0.461, cloth=0.299'
+    4: 't=0, y=1.55, angle=21: skin=0.489, cloth=0.459'
+    5: 't=0, y=1.55, angle=22: skin=0.461, cloth=0.430'
+    6: 't=0, y=1.8, angle=5: skin=0.469, cloth=0.322'
+    7: 't=0, y=1.8, angle=19: skin=0.469, cloth=0.319'
+    8: 't=0, y=2.3, angle=12: skin=0.178, cloth=missing'
+    9: 't=0, y=2.9, angle=10: skin=0.059, cloth=missing'
+    10: 't=0, y=2.9, angle=11: skin=0.052, cloth=missing'
+    11: 't=0, y=2.9, angle=12: skin=0.050, cloth=missing'
+    12: 't=0, y=2.9, angle=13: skin=0.052, cloth=missing'
+    13: 't=0, y=2.9, angle=14: skin=0.059, cloth=missing'
+    14: 't=0, y=3.12, angle=0: skin=0.365, cloth=missing'
+    15: 't=0, y=3.12, angle=1: skin=0.403, cloth=missing'
+    16: 't=0, y=3.12, angle=2: skin=0.475, cloth=missing'
+    17: 't=0, y=3.12, angle=3: skin=0.464, cloth=missing'
+    18: 't=0, y=3.12, angle=4: skin=0.396, cloth=missing'
+    19: 't=0, y=3.12, angle=5: skin=0.376, cloth=missing'
+    20: 't=0, y=3.12, angle=6: skin=0.352, cloth=missing'
+    21: 't=0, y=3.12, angle=7: skin=0.304, cloth=missing'
+    22: 't=0, y=3.12, angle=8: skin=0.245, cloth=missing'
+    23: 't=0, y=3.12, angle=9: skin=0.187, cloth=missing'
+    24: 't=0, y=3.12, angle=10: skin=0.141, cloth=missing'
+    25: 't=0, y=3.12, angle=11: skin=0.118, cloth=missing'
+    26: 't=0, y=3.12, angle=12: skin=0.110, cloth=missing'
+    27: 't=0, y=3.12, angle=13: skin=0.118, cloth=missing'
+    28: 't=0, y=3.12, angle=14: skin=0.141, cloth=missing'
+    29: 't=0, y=3.12, angle=15: skin=0.187, cloth=missing'
+    30: 't=0, y=3.12, angle=16: skin=0.245, cloth=missing'
+    31: 't=0, y=3.12, angle=17: skin=0.304, cloth=missing'
+    32: 't=0, y=3.12, angle=18: skin=0.352, cloth=missing'
+    33: 't=0, y=3.12, angle=19: skin=0.376, cloth=missing'
+    34: 't=0, y=3.12, angle=20: skin=0.396, cloth=missing'
+    35: 't=0, y=3.12, angle=21: skin=0.464, cloth=missing'
+    36: 't=0, y=3.12, angle=22: skin=0.475, cloth=missing'
+    37: 't=0, y=3.12, angle=23: skin=0.403, cloth=missing'
+    38: 't=1.3, y=1.32, angle=2: skin=0.494, cloth=0.419'
+    39: 't=1.3, y=1.32, angle=4: skin=0.427, cloth=0.364'
+    40: 't=1.3, y=1.32, angle=19: skin=0.383, cloth=0.247'
+    41: 't=1.3, y=1.32, angle=20: skin=0.417, cloth=0.389'
+    42: 't=1.3, y=1.32, angle=22: skin=0.353, cloth=0.312'
+    43: 't=1.3, y=1.55, angle=4: skin=0.466, cloth=0.330'
+    44: 't=1.3, y=1.55, angle=5: skin=0.367, cloth=0.248'
+    45: 't=1.3, y=1.55, angle=18: skin=0.339, cloth=0.207'
+    46: 't=1.3, y=1.55, angle=19: skin=0.421, cloth=0.396'
+    47: 't=1.3, y=1.55, angle=21: skin=0.454, cloth=0.377'
+    48: 't=1.3, y=1.55, angle=22: skin=0.402, cloth=0.371'
+    49: 't=1.3, y=1.8, angle=5: skin=0.462, cloth=0.427'
+    50: 't=1.3, y=1.8, angle=19: skin=0.470, cloth=0.340'
+    51: 't=1.3, y=1.8, angle=21: skin=0.470, cloth=0.433'
+    52: 't=1.3, y=2.9, angle=10: skin=0.059, cloth=missing'
+    53: 't=1.3, y=2.9, angle=11: skin=0.052, cloth=missing'
+    54: 't=1.3, y=2.9, angle=12: skin=0.051, cloth=missing'
+    55: 't=1.3, y=2.9, angle=13: skin=0.053, cloth=missing'
+    56: 't=1.3, y=2.9, angle=14: skin=0.061, cloth=missing'
+    57: 't=1.3, y=3.12, angle=0: skin=0.370, cloth=missing'
+    58: 't=1.3, y=3.12, angle=1: skin=0.418, cloth=missing'
+    59: 't=1.3, y=3.12, angle=2: skin=0.481, cloth=missing'
+    60: 't=1.3, y=3.12, angle=3: skin=0.454, cloth=missing'
+    61: 't=1.3, y=3.12, angle=4: skin=0.395, cloth=missing'
+    62: 't=1.3, y=3.12, angle=5: skin=0.375, cloth=missing'
+    63: 't=1.3, y=3.12, angle=6: skin=0.346, cloth=missing'
+    64: 't=1.3, y=3.12, angle=7: skin=0.293, cloth=missing'
+    65: 't=1.3, y=3.12, angle=8: skin=0.227, cloth=missing'
+    66: 't=1.3, y=3.12, angle=9: skin=0.168, cloth=missing'
+    67: 't=1.3, y=3.12, angle=10: skin=0.127, cloth=missing'
+    68: 't=1.3, y=3.12, angle=11: skin=0.107, cloth=missing'
+    69: 't=1.3, y=3.12, angle=12: skin=0.102, cloth=missing'
+    70: 't=1.3, y=3.12, angle=13: skin=0.110, cloth=missing'
+    71: 't=1.3, y=3.12, angle=14: skin=0.133, cloth=missing'
+    72: 't=1.3, y=3.12, angle=15: skin=0.179, cloth=missing'
+    73: 't=1.3, y=3.12, angle=16: skin=0.239, cloth=missing'
+    74: 't=1.3, y=3.12, angle=17: skin=0.300, cloth=missing'
+    75: 't=1.3, y=3.12, angle=18: skin=0.351, cloth=missing'
+    76: 't=1.3, y=3.12, angle=19: skin=0.378, cloth=missing'
+    77: 't=1.3, y=3.12, angle=20: skin=0.400, cloth=missing'
+    78: 't=1.3, y=3.12, angle=21: skin=0.472, cloth=missing'
+    79: 't=1.3, y=3.12, angle=22: skin=0.469, cloth=missing'
+    80: 't=1.3, y=3.12, angle=23: skin=0.398, cloth=missing'
+    81: 't=2.73, y=1.32, angle=1: skin=0.728, cloth=0.178'
+    82: 't=2.73, y=1.32, angle=19: skin=0.357, cloth=0.285'
+    83: 't=2.73, y=1.55, angle=1: skin=0.690, cloth=0.676'
+    84: 't=2.73, y=1.55, angle=2: skin=0.693, cloth=0.674'
+    85: 't=2.73, y=1.55, angle=20: skin=0.398, cloth=0.365'
+    86: 't=2.73, y=1.55, angle=21: skin=0.356, cloth=0.290'
+    87: 't=2.73, y=1.8, angle=1: skin=0.589, cloth=0.540'
+    88: 't=2.73, y=1.8, angle=2: skin=0.643, cloth=0.600'
+    89: 't=2.73, y=1.8, angle=18: skin=0.446, cloth=0.289'
+    90: 't=2.73, y=2.05, angle=3: skin=0.534, cloth=0.472'
+    91: 't=2.73, y=2.9, angle=10: skin=0.062, cloth=missing'
+    92: 't=2.73, y=2.9, angle=11: skin=0.054, cloth=missing'
+    93: 't=2.73, y=2.9, angle=12: skin=0.051, cloth=missing'
+    94: 't=2.73, y=2.9, angle=13: skin=0.053, cloth=missing'
+    95: 't=2.73, y=2.9, angle=14: skin=0.061, cloth=missing'
+    96: 't=2.73, y=3.12, angle=0: skin=0.368, cloth=missing'
+    97: 't=2.73, y=3.12, angle=1: skin=0.402, cloth=missing'
+    98: 't=2.73, y=3.12, angle=2: skin=0.469, cloth=missing'
+    99: 't=2.73, y=3.12, angle=3: skin=0.465, cloth=missing'
+    100: 't=2.73, y=3.12, angle=4: skin=0.397, cloth=missing'
+    101: 't=2.73, y=3.12, angle=5: skin=0.376, cloth=missing'
+    102: 't=2.73, y=3.12, angle=6: skin=0.352, cloth=missing'
+    103: 't=2.73, y=3.12, angle=7: skin=0.301, cloth=missing'
+    104: 't=2.73, y=3.12, angle=8: skin=0.239, cloth=missing'
+    105: 't=2.73, y=3.12, angle=9: skin=0.179, cloth=missing'
+    106: 't=2.73, y=3.12, angle=10: skin=0.134, cloth=missing'
+    107: 't=2.73, y=3.12, angle=11: skin=0.111, cloth=missing'
+    108: 't=2.73, y=3.12, angle=12: skin=0.103, cloth=missing'
+    109: 't=2.73, y=3.12, angle=13: skin=0.109, cloth=missing'
+    110: 't=2.73, y=3.12, angle=14: skin=0.129, cloth=missing'
+    111: 't=2.73, y=3.12, angle=15: skin=0.172, cloth=missing'
+    112: 't=2.73, y=3.12, angle=16: skin=0.230, cloth=missing'
+    113: 't=2.73, y=3.12, angle=17: skin=0.295, cloth=missing'
+    114: 't=2.73, y=3.12, angle=18: skin=0.346, cloth=missing'
+    115: 't=2.73, y=3.12, angle=19: skin=0.376, cloth=missing'
+    116: 't=2.73, y=3.12, angle=20: skin=0.398, cloth=missing'
+    117: 't=2.73, y=3.12, angle=21: skin=0.459, cloth=missing'
+    118: 't=2.73, y=3.12, angle=22: skin=0.475, cloth=missing'
+    119: 't=2.73, y=3.12, angle=23: skin=0.411, cloth=missing'
+    120: 't=4.1, y=1.32, angle=7: skin=0.395, cloth=0.373'
+    121: 't=4.1, y=1.55, angle=8: skin=0.380, cloth=0.325'
+    122: 't=4.1, y=1.8, angle=2: skin=0.299, cloth=0.239'
+    123: 't=4.1, y=1.8, angle=4: skin=0.430, cloth=0.228'
+    124: 't=4.1, y=1.8, angle=6: skin=0.462, cloth=0.341'
+    125: 't=4.1, y=1.8, angle=18: skin=0.330, cloth=0.273'
+    126: 't=4.1, y=1.8, angle=19: skin=0.457, cloth=0.346'
+    127: 't=4.1, y=2.9, angle=0: skin=0.384, cloth=missing'
+    128: 't=4.1, y=2.9, angle=1: skin=0.394, cloth=missing'
+    129: 't=4.1, y=2.9, angle=2: skin=0.400, cloth=missing'
+    130: 't=4.1, y=2.9, angle=9: skin=0.104, cloth=missing'
+    131: 't=4.1, y=2.9, angle=10: skin=0.074, cloth=missing'
+    132: 't=4.1, y=2.9, angle=11: skin=0.063, cloth=missing'
+    133: 't=4.1, y=2.9, angle=12: skin=0.060, cloth=missing'
+    134: 't=4.1, y=2.9, angle=13: skin=0.062, cloth=missing'
+    135: 't=4.1, y=2.9, angle=14: skin=0.073, cloth=missing'
+    136: 't=4.1, y=2.9, angle=15: skin=0.102, cloth=missing'
+    137: 't=4.1, y=2.9, angle=22: skin=0.400, cloth=missing'
+    138: 't=4.1, y=2.9, angle=23: skin=0.395, cloth=missing'
+    139: 't=4.1, y=3.12, angle=0: skin=0.355, cloth=missing'
+    140: 't=4.1, y=3.12, angle=1: skin=0.380, cloth=missing'
+    141: 't=4.1, y=3.12, angle=2: skin=0.434, cloth=missing'
+    142: 't=4.1, y=3.12, angle=3: skin=0.450, cloth=missing'
+    143: 't=4.1, y=3.12, angle=4: skin=0.395, cloth=missing'
+    144: 't=4.1, y=3.12, angle=6: skin=0.349, cloth=missing'
+    145: 't=4.1, y=3.12, angle=7: skin=0.311, cloth=missing'
+    146: 't=4.1, y=3.12, angle=8: skin=0.256, cloth=missing'
+    147: 't=4.1, y=3.12, angle=9: skin=0.197, cloth=missing'
+    148: 't=4.1, y=3.12, angle=10: skin=0.149, cloth=missing'
+    149: 't=4.1, y=3.12, angle=11: skin=0.122, cloth=missing'
+    150: 't=4.1, y=3.12, angle=12: skin=0.114, cloth=missing'
+    151: 't=4.1, y=3.12, angle=13: skin=0.122, cloth=missing'
+    152: 't=4.1, y=3.12, angle=14: skin=0.148, cloth=missing'
+    153: 't=4.1, y=3.12, angle=15: skin=0.197, cloth=missing'
+    154: 't=4.1, y=3.12, angle=16: skin=0.255, cloth=missing'
+    155: 't=4.1, y=3.12, angle=17: skin=0.313, cloth=missing'
+    156: 't=4.1, y=3.12, angle=18: skin=0.354, cloth=missing'
+    157: 't=4.1, y=3.12, angle=20: skin=0.389, cloth=missing'
+    158: 't=4.1, y=3.12, angle=21: skin=0.440, cloth=missing'
+    159: 't=4.1, y=3.12, angle=22: skin=0.437, cloth=missing'
+    160: 't=4.1, y=3.12, angle=23: skin=0.383, cloth=missing'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:77:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24113.739083

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading
+ok 1 - red-dress pedestrians use actual skinned bodies and reconstruct the same frozen stride after loading
+  ---
+  duration_ms: 2111.240125
+  type: 'test'
+  ...
+# Subtest: red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+ok 2 - red-dress frozen actors keep their actual saved pose and Smith keeps the unarmed hand down
+  ---
+  duration_ms: 15758.272042
+  type: 'test'
+  ...
+# Subtest: red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+ok 3 - red-dress walking and the exact frozen gun pose rebuild from the saved program frame
+  ---
+  duration_ms: 64.249
+  type: 'test'
+  ...
+# Subtest: red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+ok 4 - red-dress pedestrian lanes leave body clearance beside the actual benches and fountain
+  ---
+  duration_ms: 659.178
+  type: 'test'
+  ...
+# Subtest: training sunlight keeps its downward direction when the film set is placed far from the world origin
+ok 5 - training sunlight keeps its downward direction when the film set is placed far from the world origin
+  ---
+  duration_ms: 2952.139334
+  type: 'test'
+  ...
+# Subtest: the dojo, roof gap and red-dress plaza are dedicated physical training sets
+ok 6 - the dojo, roof gap and red-dress plaza are dedicated physical training sets
+  ---
+  duration_ms: 2304.475
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31004.155292

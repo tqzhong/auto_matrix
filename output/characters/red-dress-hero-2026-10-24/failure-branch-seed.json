@@ -1,0 +1,18 @@
+{
+  "purpose": "Separate missed-attention branch from the genuine previously played entry checkpoint; no save fields edited.",
+  "source": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/jump-return-contact-2026-10-24/qa-data",
+  "sourceTick": 12280,
+  "scene": "m1_red_dress",
+  "step": 0,
+  "files": {
+    "world.json": "c7b021b61ae4727f5cc91122ac03369c0160c0eda906dfc27cfca6c5135555dd",
+    "memories/sparks.json": "1e06e7eda15fc3b7fd9122cb8f88c17b7873a307a1ca4e5ba403d54aba80c942",
+    "memories/cas.json": "7031471b46d67e9ebe48527f10fe1ba1a9fb39336fe7977afcf5b3e1728dae77",
+    "memories/citizen_8.json": "40abdf96bc836957ac76bf538d5d39653582e834f9e557d54ae91f250dfad7a9",
+    "memories/mauser.json": "b2f01095e3162d4960f2cfb57fdb6fd4d940bd56d3eb8b44700c1c74d554ccd7",
+    "memories/binary.json": "cbef1b4cf9599b8d04a4cdbe42a4e8b7fcc4fc8a5cdc85650f6b94d6ad3b387e",
+    "memories/vector.json": "f571bff534234f8b8959a47a9e2efdebf3740c0ca8a94a97cc225d4b5d4e9dc0",
+    "memories/ak.json": "4fef723eea5ba6476ae65eea247e6c6f141d634ac5ec661bea83054ea80e290e"
+  },
+  "firstCompletedBranchPreserved": "qa-completed-first"
+}

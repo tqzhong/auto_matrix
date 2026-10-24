@@ -1,0 +1,9 @@
+{
+  "pid": 55671,
+  "port": 5200,
+  "command": [
+    "node",
+    "packages/server/dist/index.js"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release"
+}

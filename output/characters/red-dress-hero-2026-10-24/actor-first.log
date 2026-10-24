@@ -1,0 +1,47 @@
+TAP version 13
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+not ok 1 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+  ---
+  duration_ms: 6653.182542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:402'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/packages/client/public/assets/characters/red-dress.glb'"
+  code: 'ENOENT'
+  stack: |-
+    async open (node:internal/fs/promises:639:25)
+    async readFile (node:internal/fs/promises:1252:14)
+    async <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/helpers/fighting-hand-fixture.mts:13:17)
+    async Promise.all (index 0)
+    async HeroModels.create (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:237:82)
+    async TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:12:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+not ok 2 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+  ---
+  duration_ms: 8905.008125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:1767'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'geometry')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    HeroModels.gripHand (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:1014:56)
+    HeroModels.animate (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:1188:12)
+    draw (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:37:14)
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:40:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23199.913583

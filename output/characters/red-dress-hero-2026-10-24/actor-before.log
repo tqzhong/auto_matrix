@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+not ok 1 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+  ---
+  duration_ms: 4745.372333
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:402'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+      [
+    +   'trinity'
+    -   'red-dress'
+      ]
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'red-dress'
+  actual:
+    0: 'trinity'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:13:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+not ok 2 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+  ---
+  duration_ms: 5978.315084
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:1767'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(rig.root.getObjectByName('Red_dress_satin'))
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:32:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14340.365792

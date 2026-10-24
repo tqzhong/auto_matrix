@@ -1,0 +1,10 @@
+{
+  "fullWorldEqual": true,
+  "memoriesEqual": true,
+  "memoryFiles": 7,
+  "tick": 12632,
+  "paused": true,
+  "phase": "frozen",
+  "worldBeforeSha256": "96c7e6e23a2c5bc1962279241c8489e29a4687a402a0b660c362f53de4dcd360",
+  "worldAfterSha256": "96c7e6e23a2c5bc1962279241c8489e29a4687a402a0b660c362f53de4dcd360"
+}

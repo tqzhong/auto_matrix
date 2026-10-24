@@ -1,0 +1,93 @@
+TAP version 13
+# Subtest: the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+not ok 1 - the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+  ---
+  duration_ms: 1730.264042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:1:6683'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + [
+    +   'L x=-0.06 z=0.3: skin=0.13203362982916633, shoe=missing',
+    +   'L x=-0.06 z=0.34: skin=0.10929603691244794, shoe=missing',
+    +   'L x=-0.06 z=0.38: skin=0.07921219988291561, shoe=0.009577063844286693',
+    +   'L x=-0.06 z=0.42: skin=0.06167108862952542, shoe=0.004724856391911891',
+    +   'L x=-0.06 z=0.46: skin=0.05076905932004527, shoe=0.02037633752898127',
+    +   'L x=0 z=0.3: skin=0.1466765656502702, shoe=missing',
+    +   'L x=0 z=0.34: skin=0.11032224807278757, shoe=missing',
+    +   'L x=0 z=0.38: skin=0.07775195195232854, shoe=missing',
+    +   'L x=0 z=0.42: skin=0.06424904282196908, shoe=missing',
+    +   'L x=0 z=0.46: skin=0.05303415473390949, shoe=missing',
+    +   'L x=0.06 z=0.3: skin=0.1293406510672266, shoe=missing',
+    +   'L x=0.06 z=0.34: skin=0.09783149791104018, shoe=missing',
+    +   'L x=0.06 z=0.38: skin=0.050921329760138745, shoe=0.009549844885936576',
+    +   'L x=0.06 z=0.42: skin=0.038550982727866834, shoe=0.004847267692594359',
+    +   'L x=0.06 z=0.46: skin=0.03234437705111093, shoe=0.020133348083102298',
+    +   'R x=-0.06 z=0.3: skin=0.1293406510672266, shoe=missing',
+    +   'R x=-0.06 z=0.34: skin=0.09783149791104018, shoe=missing',
+    +   'R x=-0.06 z=0.38: skin=0.050921329760138745, shoe=0.009577056426905872',
+    +   'R x=-0.06 z=0.42: skin=0.038550982727866834, shoe=0.004724858607549121',
+    +   'R x=0 z=0.3: skin=0.1466765656502702, shoe=missing',
+    +   'R x=0 z=0.34: skin=0.11032224807278757, shoe=missing',
+    +   'R x=0 z=0.38: skin=0.07775195195232854, shoe=missing',
+    +   'R x=0 z=0.42: skin=0.06424904282196908, shoe=missing',
+    +   'R x=0 z=0.46: skin=0.05303415473390949, shoe=missing',
+    +   'R x=0.06 z=0.3: skin=0.13203362982916633, shoe=missing',
+    +   'R x=0.06 z=0.34: skin=0.10929603691244794, shoe=missing',
+    +   'R x=0.06 z=0.38: skin=0.07921219988291561, shoe=0.009549851792733044',
+    +   'R x=0.06 z=0.42: skin=0.06167108862952542, shoe=0.004847268449094999',
+    +   'R x=0.06 z=0.46: skin=0.05076905932004527, shoe=0.020133333291923128'
+    + ]
+    - []
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual:
+    0: 'L x=-0.06 z=0.3: skin=0.13203362982916633, shoe=missing'
+    1: 'L x=-0.06 z=0.34: skin=0.10929603691244794, shoe=missing'
+    2: 'L x=-0.06 z=0.38: skin=0.07921219988291561, shoe=0.009577063844286693'
+    3: 'L x=-0.06 z=0.42: skin=0.06167108862952542, shoe=0.004724856391911891'
+    4: 'L x=-0.06 z=0.46: skin=0.05076905932004527, shoe=0.02037633752898127'
+    5: 'L x=0 z=0.3: skin=0.1466765656502702, shoe=missing'
+    6: 'L x=0 z=0.34: skin=0.11032224807278757, shoe=missing'
+    7: 'L x=0 z=0.38: skin=0.07775195195232854, shoe=missing'
+    8: 'L x=0 z=0.42: skin=0.06424904282196908, shoe=missing'
+    9: 'L x=0 z=0.46: skin=0.05303415473390949, shoe=missing'
+    10: 'L x=0.06 z=0.3: skin=0.1293406510672266, shoe=missing'
+    11: 'L x=0.06 z=0.34: skin=0.09783149791104018, shoe=missing'
+    12: 'L x=0.06 z=0.38: skin=0.050921329760138745, shoe=0.009549844885936576'
+    13: 'L x=0.06 z=0.42: skin=0.038550982727866834, shoe=0.004847267692594359'
+    14: 'L x=0.06 z=0.46: skin=0.03234437705111093, shoe=0.020133348083102298'
+    15: 'R x=-0.06 z=0.3: skin=0.1293406510672266, shoe=missing'
+    16: 'R x=-0.06 z=0.34: skin=0.09783149791104018, shoe=missing'
+    17: 'R x=-0.06 z=0.38: skin=0.050921329760138745, shoe=0.009577056426905872'
+    18: 'R x=-0.06 z=0.42: skin=0.038550982727866834, shoe=0.004724858607549121'
+    19: 'R x=0 z=0.3: skin=0.1466765656502702, shoe=missing'
+    20: 'R x=0 z=0.34: skin=0.11032224807278757, shoe=missing'
+    21: 'R x=0 z=0.38: skin=0.07775195195232854, shoe=missing'
+    22: 'R x=0 z=0.42: skin=0.06424904282196908, shoe=missing'
+    23: 'R x=0 z=0.46: skin=0.05303415473390949, shoe=missing'
+    24: 'R x=0.06 z=0.3: skin=0.13203362982916633, shoe=missing'
+    25: 'R x=0.06 z=0.34: skin=0.10929603691244794, shoe=missing'
+    26: 'R x=0.06 z=0.38: skin=0.07921219988291561, shoe=0.009549851792733044'
+    27: 'R x=0.06 z=0.42: skin=0.06167108862952542, shoe=0.004847268449094999'
+    28: 'R x=0.06 z=0.46: skin=0.05076905932004527, shoe=0.020133333291923128'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/tests/red-dress-actor.test.mts:130:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2367.690125

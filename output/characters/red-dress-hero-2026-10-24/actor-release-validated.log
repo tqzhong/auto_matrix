@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: all red-dress texture dependencies are present in the shipped public assets
+ok 1 - all red-dress texture dependencies are present in the shipped public assets
+  ---
+  duration_ms: 36.554459
+  type: 'test'
+  ...
+# Subtest: the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+ok 2 - the red-dress actor loads her own continuous anatomy and costume instead of Trinity
+  ---
+  duration_ms: 2220.917541
+  type: 'test'
+  ...
+# Subtest: red-dress walking and a frozen saved frame restore the actual costume and finger pose
+ok 3 - red-dress walking and a frozen saved frame restore the actual costume and finger pose
+  ---
+  duration_ms: 1610.77625
+  type: 'test'
+  ...
+# Subtest: the actual satin covers the torso and both thighs during the saved training walk
+ok 4 - the actual satin covers the torso and both thighs during the saved training walk
+  ---
+  duration_ms: 11756.627375
+  type: 'test'
+  ...
+# Subtest: red pumps have real heels and their complete surfaces remain supported throughout the walk
+ok 5 - red pumps have real heels and their complete surfaces remain supported throughout the walk
+  ---
+  duration_ms: 1043.697125
+  type: 'test'
+  ...
+# Subtest: the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+ok 6 - the visible fronts of the pumps cover the forefoot instead of revealing bare toes
+  ---
+  duration_ms: 8507.264042
+  type: 'test'
+  ...
+# Subtest: the walking hands keep continuous joints and relaxed anatomical fingertip directions
+ok 7 - the walking hands keep continuous joints and relaxed anatomical fingertip directions
+  ---
+  duration_ms: 2475.421792
+  type: 'test'
+  ...
+# {"sampledClocks":531,"largestStep":0.0231005258006689,"largestBend":0.48838885049491504}
+# Subtest: the halter straps lie on the collar and neck instead of floating in front of them
+ok 8 - the halter straps lie on the collar and neck instead of floating in front of them
+  ---
+  duration_ms: 5069.007875
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 34164.554875

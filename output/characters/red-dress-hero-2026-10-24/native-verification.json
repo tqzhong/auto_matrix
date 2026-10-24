@@ -1,0 +1,21 @@
+{
+  "productionColdLoad": true,
+  "productionBundle": "index-clOxxm33.js",
+  "missedPassObserved": true,
+  "nativeRetry": true,
+  "frozenObserved": true,
+  "completedByPlayer": true,
+  "consoleErrors": 0,
+  "consoleWarnings": 0,
+  "paused": true,
+  "finalTick": 12515,
+  "finalScene": "m1_red_dress",
+  "finalStep": 2,
+  "firstPassCheckpoint": "qa-completed-first",
+  "retryCheckpoint": "qa-data",
+  "input": "W, mouse drag, V, G, pause/resume buttons",
+  "mainSaveUsed": false,
+  "sourceCheckpoint": "jump-return-contact-2026-10-24/qa-data",
+  "worldSupportProof": "world-support.json",
+  "wholeTrilogyOr60FpsVerified": false
+}

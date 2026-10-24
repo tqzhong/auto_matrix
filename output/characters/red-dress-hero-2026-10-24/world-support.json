@@ -1,0 +1,47 @@
+{
+  "state": {
+    "position": {
+      "x": 4425.6,
+      "y": 1,
+      "z": 4714.172231602854
+    },
+    "rotation": 0,
+    "training": {
+      "kind": "red_dress",
+      "elapsed": 2.833000000000001,
+      "started": true,
+      "attention": {
+        "phase": "walking",
+        "noticed": true,
+        "look": 0.5,
+        "misses": 1,
+        "yaw": 2.9595926535897927,
+        "clock": 2.833000000000001
+      },
+      "role": "citizen_2"
+    }
+  },
+  "grounded": true,
+  "center": {
+    "x": 4416,
+    "y": 1,
+    "z": 4736
+  },
+  "nominalFloor": 1,
+  "actorRootY": 0,
+  "shoes": [
+    {
+      "name": "Red_dress_pumps",
+      "minY": -0.012000013414854085
+    },
+    {
+      "name": "Red_dress_outsoles",
+      "minY": -0.012000013414854085
+    },
+    {
+      "name": "Red_dress_heels",
+      "minY": -1.3310545803529861e-8
+    }
+  ],
+  "minimum": -0.012000013414854085
+}

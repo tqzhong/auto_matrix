@@ -1,0 +1,14 @@
+{
+  "pid": 55672,
+  "port": 5201,
+  "command": [
+    "node",
+    "/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/node_modules/vite/bin/vite.js",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "5201",
+    "--strictPort"
+  ],
+  "cwd": "/Users/tianqizhong/ai_project/auto_matrix/output/characters/red-dress-hero-2026-10-24/candidate-release/packages/client"
+}

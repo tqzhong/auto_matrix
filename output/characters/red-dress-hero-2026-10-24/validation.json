@@ -1,0 +1,42 @@
+{
+  "actor": {
+    "tests": 8,
+    "pass": 8,
+    "fail": 0
+  },
+  "related": {
+    "tests": 10,
+    "pass": 10,
+    "fail": 0
+  },
+  "baselineRelated": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0
+  },
+  "js": {
+    "name": "index-clOxxm33.js",
+    "bytes": 3784229,
+    "sha256": "ce377d3058b4a2919687b373b9180c1c85adcc7a38f2e214a23864d975d34f47"
+  },
+  "css": {
+    "name": "index-B0JUdutM.css",
+    "bytes": 88548,
+    "sha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938"
+  },
+  "clientBuildExit": 0,
+  "typecheckExit": 0,
+  "validatedInputs": 1221,
+  "actorTriangles": 123044,
+  "skinAndEyeMapsReused": false,
+  "newRuntimeAssetBytes": 9015936,
+  "newRuntimeDependencies": false,
+  "fullGameFpsMeasured": false,
+  "skinMapReused": true,
+  "textureDependencyRegression": {
+    "beforePass": 0,
+    "beforeFail": 1,
+    "afterPass": 1,
+    "afterFail": 0
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "baseline": "3e344ad31c7a76f1e3631dd8407d8a20754271e9",
+  "baselineInputs": 1215,
+  "validatedInputs": 1221,
+  "changed": [
+    {
+      "path": "packages/client/public/assets/characters/RED-DRESS.md",
+      "before": null,
+      "after": "603b6eb299f89f801becb2bdaf8e36e2967ef5d4ec80d9a9681b86bf603e83b2",
+      "bytes": 2338
+    },
+    {
+      "path": "packages/client/public/assets/characters/bluegreen_eye.png",
+      "before": null,
+      "after": "653b3154e67f67e118c22acd19c472aa7543e0c229209f687c3f7f669f191fd9",
+      "bytes": 697879
+    },
+    {
+      "path": "packages/client/public/assets/characters/long01-hair.png",
+      "before": null,
+      "after": "e8dc25d90f8f62467e8630420e1240a400d070054fb7c3f1d3f7bf3e457d6c2c",
+      "bytes": 2915253
+    },
+    {
+      "path": "packages/client/public/assets/characters/red-dress.glb",
+      "before": null,
+      "after": "e9dd84e22131a26ed790b1cebe8ac2be907dca12c7927af11eb0502d96a3441b",
+      "bytes": 5402804
+    },
+    {
+      "path": "packages/client/src/agents/CharacterModel.ts",
+      "before": "35f9de48d0270b12f38e144e15779f2a148cb423f7453156f6033d3eea4e9ae4",
+      "after": "ab698df45f57c7d8d5cddc2878e6935b746b28638f3948b35d34ec73316e089b",
+      "bytes": 107135
+    },
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "72856c8840ed901615f3fb4f771dd5d640a7c7334eceddcc7b26d8723a2cef9b",
+      "after": "e720cfb83967a4f8aa04ce848579731a44e16913077edddf5f26651770e344a4",
+      "bytes": 120320
+    },
+    {
+      "path": "scripts/build-characters.py",
+      "before": "53932740f03c6ea19d810733f566909b588b9e0b9d0620e39a77aacbe1fd79b6",
+      "after": "4361bd1e1bf850a400675efc0137b37ce283db558bdda74a00cc7a94ab3e9e84",
+      "bytes": 54540
+    },
+    {
+      "path": "scripts/red_dress_costume.py",
+      "before": null,
+      "after": "0eb35ddfcea5c4425e55beee7293794297086b7ca190585766127d3a1a702f8f",
+      "bytes": 11299
+    },
+    {
+      "path": "tests/red-dress-actor.test.mts",
+      "before": null,
+      "after": "bcb26e8d569e40c9b2f3692e282f37c1b871419110ddc13388f9ccbc8f725f53",
+      "bytes": 13800
+    }
+  ],
+  "protectedWorktreeFiles": 11,
+  "newRuntimeDependencies": false
+}
