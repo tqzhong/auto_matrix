@@ -1,0 +1,22 @@
+{
+  "capture": "canvas.toDataURL image/png inside Engine.onRendered",
+  "dimensions": [
+    2880,
+    1620
+  ],
+  "sameScalarRepeatPixels": true,
+  "meanAbsRgb8": [
+    0.006311514060356653,
+    0.006174768518518519,
+    0.00708397633744856
+  ],
+  "maxAbsChannel8": 17,
+  "unchangedPixels": 4589127,
+  "changedPixels": 76473,
+  "percentChanged": 1.639081790123457,
+  "pixelsDeltaAbove1": 1272,
+  "pixelsDeltaAbove4": 319,
+  "pixelsDeltaAbove8": 54,
+  "bitwiseIdentical": false,
+  "interpretation": "Small output differences remain; identical half-float precision and AO sample count do not imply bitwise-identical output across attachment formats. No geometry or color-channel downgrade is introduced."
+}

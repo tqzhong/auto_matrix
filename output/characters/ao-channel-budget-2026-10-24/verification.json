@@ -1,0 +1,40 @@
+{
+  "baseline": "8d2dec6adf6bef1a03807f71912cad434526e9ac",
+  "candidateInputs": 1248,
+  "changedCandidateInputs": [
+    "packages/client/src/engine/PostProcessing.ts",
+    "packages/client/src/player/PerformancePanel.ts"
+  ],
+  "protectedUnchanged": 11,
+  "compiledUnchanged": 800,
+  "rgbaFpsMean": 27.415812726706378,
+  "scalarFpsMean": 28.93009772076534,
+  "fpsGainPercent": 5.523399977794052,
+  "relatedTestsBefore": "16/16",
+  "newRegressionBefore": "0/3",
+  "relatedTestsAfter": "19/19",
+  "deploymentTests": "75/75",
+  "typesAndBuild": "passed",
+  "finalPanelTypecheck": "passed",
+  "productionBrowser": {
+    "scripts": [
+      "http://127.0.0.1:5200/assets/index-CCOTDEXi.js"
+    ],
+    "profilePanel": false,
+    "warnings": 0,
+    "errors": 0,
+    "checkpointReconnected": true,
+    "nativeMovementAndViewSwitch": true
+  },
+  "mainBrowser": {
+    "url": "http://localhost:5173/",
+    "bundle": "assets/index-CCOTDEXi.js",
+    "profilePanel": false,
+    "warnings": 0,
+    "errors": 0,
+    "mainCharacterPossessedByQA": false
+  },
+  "temporaryViewportReset": true,
+  "stable60fps": false,
+  "filmGroupsCompleted": 0
+}

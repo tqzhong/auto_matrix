@@ -1,0 +1,19 @@
+{
+  "capture": "lossless canvas PNG",
+  "dimensions": [
+    1920,
+    1080
+  ],
+  "sameCamera": true,
+  "meanAbsRgb8": [
+    5.9799382716049385e-05,
+    0.00015480324074074075,
+    0.00010609567901234568
+  ],
+  "maxAbsChannel8": 6,
+  "changedPixels": 589,
+  "pixelsDeltaAbove1": 9,
+  "pixelsDeltaAbove4": 2,
+  "pixelsDeltaAbove8": 0,
+  "bitwiseIdentical": false
+}

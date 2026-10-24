@@ -1,0 +1,18 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-CCOTDEXi.js",
+  "sha256": "589fa46f26ecd034ac07152eb37bbccf376c80e2576391f154ebf398c2c97092",
+  "bundleBytes": 3795487,
+  "javascriptDeltaBytes": 1085,
+  "newGameAssetBytes": 0,
+  "cssIdentical": true,
+  "backendAndSharedFilesUnchanged": 800,
+  "protectedFilesUnchanged": 11,
+  "mainMemories": 85,
+  "mainTickBefore": 70575,
+  "mainTickAfter": 70575,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

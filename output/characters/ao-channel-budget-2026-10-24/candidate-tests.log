@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: quality presets preserve the original high quality and reduce actual 3D pixel work
+ok 1 - quality presets preserve the original high quality and reduce actual 3D pixel work
+  ---
+  duration_ms: 1.73575
+  type: 'test'
+  ...
+# Subtest: larger windows stay within the chosen pixel budget without changing the aspect ratio
+ok 2 - larger windows stay within the chosen pixel budget without changing the aspect ratio
+  ---
+  duration_ms: 0.720042
+  type: 'test'
+  ...
+# Subtest: quality reloads saved choices and falls back safely for missing, stale or blocked storage
+ok 3 - quality reloads saved choices and falls back safely for missing, stale or blocked storage
+  ---
+  duration_ms: 0.505209
+  type: 'test'
+  ...
+# Subtest: the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces
+ok 4 - the fractured glass fills the straight-sided mirror without overlapping pieces, holes or flipped faces
+  ---
+  duration_ms: 74.797542
+  type: 'test'
+  ...
+# Subtest: the first-person body appears only in the mirror render
+ok 5 - the first-person body appears only in the mirror render
+  ---
+  duration_ms: 7.369208
+  type: 'test'
+  ...
+# Subtest: the mirror reuses its color reflection while the room normals are rendered for occlusion
+ok 6 - the mirror reuses its color reflection while the room normals are rendered for occlusion
+  ---
+  duration_ms: 1.391083
+  type: 'test'
+  ...
+# Subtest: transmission and color passes share one mirror reflection per view, then refresh on the next frame
+ok 7 - transmission and color passes share one mirror reflection per view, then refresh on the next frame
+  ---
+  duration_ms: 1.254333
+  type: 'test'
+  ...
+# Subtest: occlusion stores one half-float channel without reducing normal precision or image dimensions
+ok 8 - occlusion stores one half-float channel without reducing normal precision or image dimensions
+  ---
+  duration_ms: 25.864042
+  type: 'test'
+  ...
+# Subtest: switching the diagnostic channel layout reallocates only the AO buffers and only when it changes
+ok 9 - switching the diagnostic channel layout reallocates only the AO buffers and only when it changes
+  ---
+  duration_ms: 6.628291
+  type: 'test'
+  ...
+# Subtest: AO debug outputs expand grayscale while diffuse and normal debug outputs preserve their colors
+ok 10 - AO debug outputs expand grayscale while diffuse and normal debug outputs preserve their colors
+  ---
+  duration_ms: 13.713625
+  type: 'test'
+  ...
+# Subtest: changing render quality resizes both compositor buffers, occlusion and antialias sampling
+ok 11 - changing render quality resizes both compositor buffers, occlusion and antialias sampling
+  ---
+  duration_ms: 49.116625
+  type: 'test'
+  ...
+# Subtest: default occlusion multiplies the existing color without copying or swapping it
+ok 12 - default occlusion multiplies the existing color without copying or swapping it
+  ---
+  duration_ms: 12.3285
+  type: 'test'
+  ...
+# Subtest: occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+ok 13 - occlusion retains the original output buffers for debug, screen, stencil and comparison paths
+  ---
+  duration_ms: 17.535625
+  type: 'test'
+  ...
+# Subtest: occlusion clears the copy suppression after a render failure and can switch paths next frame
+ok 14 - occlusion clears the copy suppression after a render failure and can switch paths next frame
+  ---
+  duration_ms: 6.2915
+  type: 'test'
+  ...
+# Subtest: the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+ok 15 - the occlusion pass skips hidden worlds and restores only the overlays it suppressed
+  ---
+  duration_ms: 38.827458
+  type: 'test'
+  ...
+# Subtest: the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+ok 16 - the normals pass reuses this frame's matrices and shadows, then restores renderer settings
+  ---
+  duration_ms: 9.987083
+  type: 'test'
+  ...
+# Subtest: occlusion selects the current camera detail before hiding glass after a more distant mirror view
+ok 17 - occlusion selects the current camera detail before hiding glass after a more distant mirror view
+  ---
+  duration_ms: 8.299375
+  type: 'test'
+  ...
+# Subtest: distant machine-city structures retain color-pass depth while foreground contact shadows still render
+ok 18 - distant machine-city structures retain color-pass depth while foreground contact shadows still render
+  ---
+  duration_ms: 129.45475
+  type: 'test'
+  ...
+# Subtest: remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+ok 19 - remote cultivation pods keep their color depth without repeating their geometry in local occlusion
+  ---
+  duration_ms: 782.173542
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4267.228208
