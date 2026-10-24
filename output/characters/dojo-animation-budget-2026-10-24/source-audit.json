@@ -1,0 +1,18 @@
+{
+  "baseline": "59a21b5f232112e56767e3e35154c0f6371fa398",
+  "changed": [
+    {
+      "path": "packages/client/src/agents/HeroModel.ts",
+      "before": "5beb3f163089e8c47b437438dd4d663f0605ee718671a3bf118e9cdad3d9358c",
+      "after": "c9a09849ed28932137ce9b929d07487c397ae792add9e82347eaa7426dc4f6ce"
+    }
+  ],
+  "new": [
+    {
+      "path": "tests/dojo-skinning-budget.test.mts",
+      "after": "e1bff6a019cbd19d9fc54e2147290e3e62197365798f56f01506203d9a91d6b0"
+    }
+  ],
+  "packageFiles": 721,
+  "temporaryProfilerRemoved": true
+}

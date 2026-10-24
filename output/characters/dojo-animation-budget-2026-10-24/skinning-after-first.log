@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: neo: full sole contact does not recalculate the world hierarchy for every vertex
+ok 1 - neo: full sole contact does not recalculate the world hierarchy for every vertex
+  ---
+  duration_ms: 2574.116667
+  type: 'test'
+  ...
+# Subtest: neo: every bare-foot vertex keeps its ground support through movement and combat
+ok 2 - neo: every bare-foot vertex keeps its ground support through movement and combat
+  ---
+  duration_ms: 2827.815041
+  type: 'test'
+  ...
+# Subtest: morpheus: full sole contact does not recalculate the world hierarchy for every vertex
+ok 3 - morpheus: full sole contact does not recalculate the world hierarchy for every vertex
+  ---
+  duration_ms: 3595.045042
+  type: 'test'
+  ...
+# Subtest: morpheus: every bare-foot vertex keeps its ground support through movement and combat
+ok 4 - morpheus: every bare-foot vertex keeps its ground support through movement and combat
+  ---
+  duration_ms: 3294.07325
+  type: 'test'
+  ...
+# Subtest: neo: complete sole contact reuses each bone transform within a frame
+not ok 5 - neo: complete sole contact reuses each bone transform within a frame
+  ---
+  duration_ms: 2687.128458
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:1:272'
+  failureType: 'testCodeFailure'
+  error: '8988 sole vertices recomputed the same bone matrices 196 times'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:25:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: morpheus: complete sole contact reuses each bone transform within a frame
+not ok 6 - morpheus: complete sole contact reuses each bone transform within a frame
+  ---
+  duration_ms: 3980.945
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:1:272'
+  failureType: 'testCodeFailure'
+  error: '8936 sole vertices recomputed the same bone matrices 196 times'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:25:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 4
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13022.309125

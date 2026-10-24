@@ -1,0 +1,34 @@
+{
+  "baselineRelated": {
+    "tests": 31,
+    "pass": 31,
+    "fail": 0
+  },
+  "redSkinning": {
+    "tests": 2,
+    "pass": 0,
+    "fail": 2
+  },
+  "firstAttempt": {
+    "tests": 6,
+    "pass": 4,
+    "fail": 2
+  },
+  "finalRelated": {
+    "tests": 33,
+    "pass": 33,
+    "fail": 0
+  },
+  "clientBuildExit": 0,
+  "bundle": "index-D5QCoRp5.js",
+  "bundleBytes": 3781406,
+  "bundleSha256": "3cc63c099997af7eb378da2ef42fd78197f56ccb6d5009ddcf8d1b379b278d80",
+  "css": "index-B0JUdutM.css",
+  "cssSha256": "46b70f5a4bae3f3bb0a9ad4de944ee7b32139714e08b99e4ba8e7b36d6dca938",
+  "frozenInputsVerified": 1213,
+  "identicalPoseFingerprints": 72,
+  "allRequiredGatesPassed": true,
+  "stable60fpsAchieved": false,
+  "browserFpsImprovementEstablished": false,
+  "fullRepositoryTestsRun": false
+}

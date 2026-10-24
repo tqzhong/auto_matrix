@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: neo: complete sole contact reuses each bone transform within a frame
+not ok 1 - neo: complete sole contact reuses each bone transform within a frame
+  ---
+  duration_ms: 3033.637584
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:1:272'
+  failureType: 'testCodeFailure'
+  error: '8988 sole vertices recomputed the same bone matrices 10586 times'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:25:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: morpheus: complete sole contact reuses each bone transform within a frame
+not ok 2 - morpheus: complete sole contact reuses each bone transform within a frame
+  ---
+  duration_ms: 3423.042042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:1:272'
+  failureType: 'testCodeFailure'
+  error: '8936 sole vertices recomputed the same bone matrices 10482 times'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/tests/dojo-skinning-budget.test.mts:25:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6968.9035

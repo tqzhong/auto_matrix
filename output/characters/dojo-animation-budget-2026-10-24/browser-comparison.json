@@ -1,0 +1,383 @@
+{
+  "samples": [
+    {
+      "measuredAt": "2026-10-24T02:49:10.139Z",
+      "dojoBoneTransforms": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "camera": {
+        "position": [
+          6340.885554362921,
+          6.933580203912047,
+          4399.675529348303
+        ],
+        "quaternion": [
+          0.03837350663492352,
+          0.9543796280405386,
+          0.14049634343616088,
+          -0.26066794404147786
+        ],
+        "projection": [
+          1.03599612339382,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "fps": 32.715448886278175,
+      "frameTime": {
+        "mean": 30.56659877955792,
+        "p95": 48.10000038146973
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 1.365447118030331,
+          "p95": 4.300000190734863
+        },
+        "agents": {
+          "mean": 14.551219523437624,
+          "p95": 22.5
+        },
+        "city": {
+          "mean": 0.21219513862113643,
+          "p95": 0.40000057220458984
+        },
+        "film": {
+          "mean": 0.1319105741454334,
+          "p95": 0.20000076293945312
+        },
+        "effects": {
+          "mean": 0.1560975458563828,
+          "p95": 0.3000001907348633
+        },
+        "render": {
+          "mean": 11.056707314359464,
+          "p95": 18.90000057220459
+        },
+        "capture": {
+          "mean": 0.0020325222635656837,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 149,
+        "p95": 149
+      },
+      "triangles": {
+        "mean": 800359,
+        "p95": 800359
+      },
+      "recordingActive": false,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "measuredAt": "2026-10-24T02:50:34.653Z",
+      "dojoBoneTransforms": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "camera": {
+        "position": [
+          6340.885554362921,
+          6.933580203912047,
+          4399.675529348303
+        ],
+        "quaternion": [
+          0.03837350663492352,
+          0.9543796280405386,
+          0.14049634343616088,
+          -0.26066794404147786
+        ],
+        "projection": [
+          1.03599612339382,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "fps": 28.59980933387711,
+      "frameTime": {
+        "mean": 34.96526806615727,
+        "p95": 83.5
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 1.5581395104874012,
+          "p95": 5.199999809265137
+        },
+        "agents": {
+          "mean": 14.296511623471282,
+          "p95": 33.60000038146973
+        },
+        "city": {
+          "mean": 0.3051163118939067,
+          "p95": 0.6000003814697266
+        },
+        "film": {
+          "mean": 0.09162789721821629,
+          "p95": 0.19999980926513672
+        },
+        "effects": {
+          "mean": 0.20093024054238962,
+          "p95": 0.40000057220458984
+        },
+        "render": {
+          "mean": 13.85418602034103,
+          "p95": 36.19999980926514
+        },
+        "capture": {
+          "mean": 0.003255813066349473,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 149,
+        "p95": 149
+      },
+      "triangles": {
+        "mean": 800359,
+        "p95": 800359
+      },
+      "recordingActive": false,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "measuredAt": "2026-10-24T02:53:17.048Z",
+      "dojoBoneTransforms": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "camera": {
+        "position": [
+          6340.885554362921,
+          6.933580203912047,
+          4399.675529348303
+        ],
+        "quaternion": [
+          0.03837350663492352,
+          0.9543796280405386,
+          0.14049634343616088,
+          -0.26066794404147786
+        ],
+        "projection": [
+          1.03599612339382,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "fps": 33.63684199966591,
+      "frameTime": {
+        "mean": 29.729306931070763,
+        "p95": 49.19999980926514
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.9826086877363002,
+          "p95": 3.1000003814697266
+        },
+        "agents": {
+          "mean": 12.364031618291682,
+          "p95": 20
+        },
+        "city": {
+          "mean": 0.2205533792850057,
+          "p95": 0.39999961853027344
+        },
+        "film": {
+          "mean": 0.05988142518657941,
+          "p95": 0.19999980926513672
+        },
+        "effects": {
+          "mean": 0.13616601657490485,
+          "p95": 0.2999992370605469
+        },
+        "render": {
+          "mean": 10.99624503931038,
+          "p95": 23
+        },
+        "capture": {
+          "mean": 0.0033596853022518835,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 151,
+        "p95": 151
+      },
+      "triangles": {
+        "mean": 800615,
+        "p95": 800615
+      },
+      "recordingActive": false,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    },
+    {
+      "measuredAt": "2026-10-24T02:54:27.032Z",
+      "dojoBoneTransforms": false,
+      "viewport": {
+        "width": 1920,
+        "height": 1080,
+        "pixelRatio": 1
+      },
+      "camera": {
+        "position": [
+          6340.885554362921,
+          6.933580203912047,
+          4399.675529348303
+        ],
+        "quaternion": [
+          0.03837350663492352,
+          0.9543796280405386,
+          0.14049634343616088,
+          -0.26066794404147786
+        ],
+        "projection": [
+          1.03599612339382,
+          0,
+          0,
+          0,
+          0,
+          1.8417708860334578,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "fps": 33.559509750512,
+      "frameTime": {
+        "mean": 29.79781312165156,
+        "p95": 46.10000038146973
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 1.0371031685480996,
+          "p95": 3.299999237060547
+        },
+        "agents": {
+          "mean": 13.207738077829754,
+          "p95": 21.199999809265137
+        },
+        "city": {
+          "mean": 0.19424601774367076,
+          "p95": 0.3000001907348633
+        },
+        "film": {
+          "mean": 0.06488097092461964,
+          "p95": 0.19999980926513672
+        },
+        "effects": {
+          "mean": 0.1442460332598005,
+          "p95": 0.2999992370605469
+        },
+        "render": {
+          "mean": 10.927579351833888,
+          "p95": 19.800000190734863
+        },
+        "capture": {
+          "mean": 0.0021825404394240607,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 151,
+        "p95": 151
+      },
+      "triangles": {
+        "mean": 800615,
+        "p95": 800615
+      },
+      "recordingActive": false,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      }
+    }
+  ],
+  "order": "original, optimized, optimized, original",
+  "sameCamera": true,
+  "sameViewport": true,
+  "recording": false,
+  "gpuTimingMeasured": false,
+  "cpuBenchmark": "baseline.json / candidate.json",
+  "note": "Same-page 1080p paused comparison. Background load was not isolated, drawing counts differ by two across samples, and browser FPS improvement is not established. Offline CPU work is reduced; stable 60fps is not achieved."
+}

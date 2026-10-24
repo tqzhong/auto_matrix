@@ -1,0 +1,13 @@
+{
+  "packages/client/src/agents/AgentRenderer.ts": "49b2351f8ec13086732b69155ea891439984ae24dff8e551fa1cb0baaa626c18",
+  "packages/client/src/agents/CharacterMotion.ts": "b9056e4a18518c7772876e6f7ae0cad40c300b18db4e3666525b90d7bdf95998",
+  "packages/server/src/player/PlayerController.ts": "57fbe6a63289bdb06555b8a8fce5b88907ff35c3a9e56ab13db23d2ff447bfa9",
+  "packages/server/src/story/FilmStorySystem.ts": "978407d0884271a642cab81b62c8f83e6b3b4fb0140abaf97ae89279e4e144eb",
+  "packages/shared/src/constants/ambush-escape.ts": "3061c630a5afc23e8374735b981c0fd536c3b72d73c20ee9e4d491bb5d4a64d0",
+  "tests/ambush-wardrobe-flow.test.mts": "425a3ec444b52d36bb8fb73c250635f09619e3e0b9c7a700d9e8dd91cfc14f4d",
+  "tests/ambush-coat-surface.test.mts": "8234a4d56e926a55a7b1e816c7bf4582bcd539ed88abbef6bdaaf6de96edf9b1",
+  "tests/ambush-doff-flow.test.mts": "cd6d47175452623ed08b1ceccf6a2a66bc4a12af813906949faba158a2c41ebf",
+  "tests/ambush-doff-renderer.test.mts": "2889fad36533af9be65a6a7b87fbd168e246cf766ab9fa3076cdded8832fbee2",
+  "tests/ambush-shirt-contact.test.mts": "a978865ea265bdf62ce916468d9a004bf5399fc18dacffa15f08f73239513afa",
+  "tests/ambush-waist-gait.test.mts": "6d5c74281a412216d284a16a3858c9ef33445eeb13efacb95936f292ed26e630"
+}

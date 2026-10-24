@@ -1,0 +1,40 @@
+{
+  "productionBundle": "index-D5QCoRp5.js",
+  "nativeColdReloadVerified": true,
+  "nativeMovementAfterReloadVerified": true,
+  "dojoMaximumDistanceFromSampleStart": 9.599878808148143,
+  "nativeCameraModesChecked": [
+    "third-person",
+    "first-person"
+  ],
+  "dojoReflectChoice": "先观察重心和距离，再尝试突破。",
+  "freshDojoCombatPlayedThisUnit": false,
+  "nativeSceneSequence": [
+    "m1_dojo",
+    "m1_jump",
+    "m1_jump_return"
+  ],
+  "nativeTrainingKinds": [
+    "jump",
+    "jump_fall",
+    "jump_return"
+  ],
+  "nativeJumpFailureAndReturnVerified": true,
+  "finalScene": "m1_jump_return",
+  "finalStep": 0,
+  "finalTraining": {
+    "kind": "jump_return",
+    "elapsed": 0,
+    "started": false
+  },
+  "paused": true,
+  "tick": 12193,
+  "health": 100,
+  "consoleWarningsAndErrors": 0,
+  "limits": [
+    "Continues a previously completed dojo sparring save; no fresh fight this unit.",
+    "Returned to the ship ready for the mouth-check interaction; that interaction has not been played in this unit.",
+    "One short duplicate read-only sampler overlapped before both were stopped; samples are not a frame-rate measurement.",
+    "Screenshots and 72 finite pose fingerprints do not prove all-animation, all-view clipping freedom."
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "iterations": 3418,
+  "actors": 2,
+  "averageCpuMs": 2.340884220304278,
+  "p95CpuMs": 2.8069159999995463,
+  "note": "Offline CPU animation including full sole, hand and skin updates. No browser, rendering, GPU or FPS measurement.",
+  "top": [
+    {
+      "functionName": "animate file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:25",
+      "ms": 3404.127
+    },
+    {
+      "functionName": "applyMatrix4 file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4207",
+      "ms": 1340.004
+    },
+    {
+      "functionName": "getVertexPosition file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:11781",
+      "ms": 1056.783
+    },
+    {
+      "functionName": "blend file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 451.958
+    },
+    {
+      "functionName": "frame file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/profile-animation.mts:1",
+      "ms": 379.416
+    },
+    {
+      "functionName": "update file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 299.797
+    },
+    {
+      "functionName": "updateWorldMatrix file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7851",
+      "ms": 298.463
+    },
+    {
+      "functionName": "post node:inspector:118",
+      "ms": 118.75
+    },
+    {
+      "functionName": "multiplyMatrices file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:6301",
+      "ms": 95.617
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/FightingHands.ts:1",
+      "ms": 79.751
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 59.127
+    },
+    {
+      "functionName": "toArray file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4635",
+      "ms": 56.792
+    },
+    {
+      "functionName": "(anonymous) file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/HeroModel.ts:25",
+      "ms": 52.542
+    },
+    {
+      "functionName": "(garbage collector) :0",
+      "ms": 51.918
+    },
+    {
+      "functionName": "updateMatrix file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7803",
+      "ms": 41.75
+    },
+    {
+      "functionName": "applyMatrix3 file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4188",
+      "ms": 29.998
+    },
+    {
+      "functionName": "setFromRotationMatrix file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:6967",
+      "ms": 25.29
+    },
+    {
+      "functionName": "advanceMotion file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/CharacterMotion.ts:1",
+      "ms": 21.751
+    },
+    {
+      "functionName": "frames file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/SkinContinuity.ts:1",
+      "ms": 21.249
+    },
+    {
+      "functionName": "pose file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/FightingHands.ts:1",
+      "ms": 19.041
+    },
+    {
+      "functionName": "normalize file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4413",
+      "ms": 17.542
+    },
+    {
+      "functionName": "onQuaternionChange file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:7287",
+      "ms": 15
+    },
+    {
+      "functionName": "getComponent file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:10170",
+      "ms": 14.458
+    },
+    {
+      "functionName": "invert file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:1269",
+      "ms": 13.709
+    },
+    {
+      "functionName": "fromArray file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:4625",
+      "ms": 11.292
+    },
+    {
+      "functionName": "bone.updateMatrix file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/ForearmTwist.ts:1",
+      "ms": 8.792
+    },
+    {
+      "functionName": "toArray file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:3923",
+      "ms": 8.625
+    },
+    {
+      "functionName": "setFromAxisAngle file:///Users/tianqizhong/ai_project/auto_matrix/node_modules/three/build/three.module.js:3563",
+      "ms": 7.457
+    },
+    {
+      "functionName": "poseDojoStance file:///Users/tianqizhong/ai_project/auto_matrix/output/characters/dojo-animation-budget-2026-10-24/candidate-release/packages/client/src/agents/DojoStance.ts:1",
+      "ms": 6.542
+    },
+    {
+      "functionName": "set filename :0",
+      "ms": 6.334
+    }
+  ]
+}

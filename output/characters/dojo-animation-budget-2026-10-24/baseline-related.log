@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: neo: full sole contact does not recalculate the world hierarchy for every vertex
+ok 1 - neo: full sole contact does not recalculate the world hierarchy for every vertex
+  ---
+  duration_ms: 2387.755708
+  type: 'test'
+  ...
+# Subtest: neo: every bare-foot vertex keeps its ground support through movement and combat
+ok 2 - neo: every bare-foot vertex keeps its ground support through movement and combat
+  ---
+  duration_ms: 2864.467291
+  type: 'test'
+  ...
+# Subtest: morpheus: full sole contact does not recalculate the world hierarchy for every vertex
+ok 3 - morpheus: full sole contact does not recalculate the world hierarchy for every vertex
+  ---
+  duration_ms: 3901.250709
+  type: 'test'
+  ...
+# Subtest: morpheus: every bare-foot vertex keeps its ground support through movement and combat
+ok 4 - morpheus: every bare-foot vertex keeps its ground support through movement and combat
+  ---
+  duration_ms: 4018.234291
+  type: 'test'
+  ...
+# Subtest: neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 5 - neo: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 3143.675125
+  type: 'test'
+  ...
+# Subtest: neo: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 6 - neo: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 2543.514041
+  type: 'test'
+  ...
+# {"id":"neo","poses":33,"pairs":123,"maximumGap":0,"maximumAngle":0}
+# Subtest: neo: the actual two texture atlases meet with the same rendered skin tone
+ok 7 - neo: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 2547.042
+  type: 'test'
+  ...
+# {"id":"neo","channels":369,"meanRelativeColorError":0.01063812646627848,"maximumRelativeColorError":0.06876068084359657}
+# Subtest: neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 8 - neo: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 3147.458375
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+ok 9 - morpheus: dojo chest joins the whole delivered neck boundary without a second overlapping neck
+  ---
+  duration_ms: 3926.934667
+  type: 'test'
+  ...
+# Subtest: morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+ok 10 - morpheus: the neck keeps its join and lighting through head turns, strikes and dodge
+  ---
+  duration_ms: 3361.204792
+  type: 'test'
+  ...
+# {"id":"morpheus","poses":33,"pairs":127,"maximumGap":0,"maximumAngle":0}
+# Subtest: morpheus: the actual two texture atlases meet with the same rendered skin tone
+ok 11 - morpheus: the actual two texture atlases meet with the same rendered skin tone
+  ---
+  duration_ms: 3282.783958
+  type: 'test'
+  ...
+# {"id":"morpheus","channels":381,"meanRelativeColorError":0.014044675017366146,"maximumRelativeColorError":0.1098226581102538}
+# Subtest: morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+ok 12 - morpheus: cached actors do not accumulate skin gain or rebuild the chest every frame
+  ---
+  duration_ms: 4854.498167
+  type: 'test'
+  ...
+# Subtest: neo: dojo guard has a planted staggered base and a closed lead fist
+ok 13 - neo: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 2449.424333
+  type: 'test'
+  ...
+# Subtest: morpheus: dojo guard has a planted staggered base and a closed lead fist
+ok 14 - morpheus: dojo guard has a planted staggered base and a closed lead fist
+  ---
+  duration_ms: 3907.455042
+  type: 'test'
+  ...
+# Subtest: neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 15 - neo: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 9313.96375
+  type: 'test'
+  ...
+# Subtest: morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+ok 16 - morpheus: guarded hands stay outside the gi through jab, cross, kick and recovery
+  ---
+  duration_ms: 9672.521167
+  type: 'test'
+  ...
+# Subtest: dojo movement and a cold paused guard keep independent bone poses
+ok 17 - dojo movement and a cold paused guard keep independent bone poses
+  ---
+  duration_ms: 3670.411042
+  type: 'test'
+  ...
+# Subtest: neo: entering and leaving stance IK does not snap the arm or leg joints
+ok 18 - neo: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 1476.885667
+  type: 'test'
+  ...
+# Subtest: morpheus: entering and leaving stance IK does not snap the arm or leg joints
+ok 19 - morpheus: entering and leaving stance IK does not snap the arm or leg joints
+  ---
+  duration_ms: 2454.234833
+  type: 'test'
+  ...
+# Subtest: neo: the gi collar follows the shoulders instead of being pulled around by the head
+ok 20 - neo: the gi collar follows the shoulders instead of being pulled around by the head
+  ---
+  duration_ms: 2465.29225
+  type: 'test'
+  ...
+# Subtest: neo: the collar has a continuous sewn surface without conflicting normals at each strip edge
+ok 21 - neo: the collar has a continuous sewn surface without conflicting normals at each strip edge
+  ---
+  duration_ms: 2047.663125
+  type: 'test'
+  ...
+# Subtest: morpheus: the gi collar follows the shoulders instead of being pulled around by the head
+ok 22 - morpheus: the gi collar follows the shoulders instead of being pulled around by the head
+  ---
+  duration_ms: 3855.419625
+  type: 'test'
+  ...
+# Subtest: morpheus: the collar has a continuous sewn surface without conflicting normals at each strip edge
+ok 23 - morpheus: the collar has a continuous sewn surface without conflicting normals at each strip edge
+  ---
+  duration_ms: 3240.467875
+  type: 'test'
+  ...
+# Subtest: Neo wears a cloth-colored sash with a contrasting collar, as in the film training scene
+ok 24 - Neo wears a cloth-colored sash with a contrasting collar, as in the film training scene
+  ---
+  duration_ms: 1956.275041
+  type: 'test'
+  ...
+# Subtest: neo: sewn collar stays joined and clear of the neck through actual combat and head turns
+ok 25 - neo: sewn collar stays joined and clear of the neck through actual combat and head turns
+  ---
+  duration_ms: 4251.67975
+  type: 'test'
+  ...
+# {"id":"neo","checked":33,"seamPairs":373,"maximumGap":0,"maximumAngle":0}
+# Subtest: morpheus: sewn collar stays joined and clear of the neck through actual combat and head turns
+ok 26 - morpheus: sewn collar stays joined and clear of the neck through actual combat and head turns
+  ---
+  duration_ms: 5375.941708
+  type: 'test'
+  ...
+# {"id":"morpheus","checked":33,"seamPairs":379,"maximumGap":0,"maximumAngle":0}
+# Subtest: neo: the complete exposed hands stay outside the new collar during strikes
+ok 27 - neo: the complete exposed hands stay outside the new collar during strikes
+  ---
+  duration_ms: 4951.518208
+  type: 'test'
+  ...
+# Subtest: morpheus: the complete exposed hands stay outside the new collar during strikes
+ok 28 - morpheus: the complete exposed hands stay outside the new collar during strikes
+  ---
+  duration_ms: 4933.978083
+  type: 'test'
+  ...
+# Subtest: a skin extension interpolates its neighbouring boundary normals instead of creating nearest-point lighting plateaus
+ok 29 - a skin extension interpolates its neighbouring boundary normals instead of creating nearest-point lighting plateaus
+  ---
+  duration_ms: 7.882917
+  type: 'test'
+  ...
+# Subtest: a detached garment keeps its new skeleton bounds and restores the original owner on return
+ok 30 - a detached garment keeps its new skeleton bounds and restores the original owner on return
+  ---
+  duration_ms: 5.678542
+  type: 'test'
+  ...
+# Subtest: construction bounds include garment morph extrema through rotated and blended bones
+ok 31 - construction bounds include garment morph extrema through rotated and blended bones
+  ---
+  duration_ms: 2.0215
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33951.540792
