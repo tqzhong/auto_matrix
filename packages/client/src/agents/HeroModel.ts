@@ -56,7 +56,7 @@ export interface HeroRig {
   rest: Map<string, THREE.Vector3>;
   panels: CoatPanel[];
   footHeight: number;
-  dojoSoles?: { mesh: THREE.SkinnedMesh; indices: number[] };
+  dojoSoles?: { mesh: THREE.SkinnedMesh; indices: number[]; matrices: THREE.Matrix4[] };
   glasses: THREE.Group;
   silver: { value: number };
   trackingSkin?: { mesh: THREE.SkinnedMesh; original: THREE.BufferGeometry; covered: THREE.BufferGeometry; firstPerson: THREE.BufferGeometry; patientFirstPerson: THREE.BufferGeometry };
@@ -158,6 +158,8 @@ export class HeroModels {
   private segment = new THREE.Vector3();
   private closest = new THREE.Vector3();
   private soleTransform = new THREE.Matrix4();
+  private soleBase = new THREE.Vector3();
+  private soleVertex = new THREE.Vector3();
   private handRotation = new THREE.Quaternion();
   private patientSkin: THREE.DataTexture;
 
@@ -506,7 +508,8 @@ export class HeroModels {
     const dojoSkin = root.getObjectByName(`${id}-dojo-skin`);
     if (dojoSkin instanceof THREE.SkinnedMesh && !support) {
       const position = dojoSkin.geometry.attributes.position, index = dojoSkin.geometry.index!;
-      rig.dojoSoles = { mesh: dojoSkin, indices: [...new Set(Array.from({ length: index.count }, (_, i) => index.getX(i)))].filter(i => position.getY(i) < .2) };
+      rig.dojoSoles = { mesh: dojoSkin, indices: [...new Set(Array.from({ length: index.count }, (_, i) => index.getX(i)))].filter(i => position.getY(i) < .2),
+        matrices: dojoSkin.skeleton.bones.map(() => new THREE.Matrix4()) };
     }
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
@@ -1400,14 +1403,24 @@ export class HeroModels {
       if (input.deusPact) pelvis.position.y += .03;
       rig.root.updateWorldMatrix(true, true);
       if (input.dojoOutfit && rig.dojoSoles) {
-        const { mesh, indices } = rig.dojoSoles; mesh.skeleton.update();
+        const { mesh, indices, matrices } = rig.dojoSoles;
         // Refresh the attached bind transform after movement, then share the
         // same mesh-to-body transform across every sole vertex this frame.
         mesh.updateMatrixWorld(true);
         this.soleTransform.copy(rig.root.matrixWorld).invert().multiply(mesh.matrixWorld);
+        // Three's per-vertex skinning recomputes this same matrix for each
+        // weighted vertex. Keep its full precision and share it within a frame.
+        matrices.forEach((matrix, i) => matrix.multiplyMatrices(mesh.skeleton.bones[i].matrixWorld, mesh.skeleton.boneInverses[i]));
+        const { skinIndex, skinWeight } = mesh.geometry.attributes;
         let lowest = Infinity;
         for (const index of indices) {
-          mesh.getVertexPosition(index, this.point).applyMatrix4(this.soleTransform);
+          THREE.Mesh.prototype.getVertexPosition.call(mesh, index, this.soleBase).applyMatrix4(mesh.bindMatrix);
+          this.point.set(0, 0, 0);
+          for (let joint = 0; joint < 4; joint++) {
+            const weight = skinWeight.getComponent(index, joint);
+            if (weight !== 0) this.point.addScaledVector(this.soleVertex.copy(this.soleBase).applyMatrix4(matrices[skinIndex.getComponent(index, joint)]), weight);
+          }
+          this.point.applyMatrix4(mesh.bindMatrixInverse).applyMatrix4(this.soleTransform);
           lowest = Math.min(lowest, this.point.y);
         }
         pelvis.position.y -= lowest; rig.root.updateWorldMatrix(true, true);
