@@ -18,6 +18,8 @@ export class SentinelSetRenderer {
   private scanLight!: THREE.PointLight;
   private powerLights: THREE.PointLight[] = [];
   private powerPanels: THREE.MeshBasicMaterial[] = [];
+  private powerLens!: THREE.MeshBasicMaterial;
+  private cabinFill!: THREE.HemisphereLight;
   private frost!: THREE.MeshPhysicalMaterial;
   private noiseBars: THREE.Mesh[] = [];
   private switches: THREE.Group[] = [];
@@ -26,9 +28,9 @@ export class SentinelSetRenderer {
   constructor(parent: THREE.Group) {
     this.root.name = 'sentinel-cockpit';
     parent.add(this.root);
-    const hull = this.material(new THREE.MeshStandardMaterial({ color: 0x26302f, metalness: .75, roughness: .5 }));
-    const steel = this.material(new THREE.MeshStandardMaterial({ color: 0x596460, metalness: .86, roughness: .3 }));
-    const worn = this.material(new THREE.MeshStandardMaterial({ color: 0x394541, metalness: .55, roughness: .72 }));
+    const hull = this.material(new THREE.MeshStandardMaterial({ color: 0x586873, metalness: .42, roughness: .68 }));
+    const steel = this.material(new THREE.MeshStandardMaterial({ color: 0x687781, metalness: .7, roughness: .4 }));
+    const worn = this.material(new THREE.MeshStandardMaterial({ color: 0x45545d, metalness: .25, roughness: .82 }));
     const rubber = this.material(new THREE.MeshStandardMaterial({ color: 0x0e1414, roughness: .92 }));
     const wet = this.material(new THREE.MeshStandardMaterial({ color: 0x17201f, roughness: .25, metalness: .48 }));
     const red = this.material(new THREE.MeshStandardMaterial({ color: 0x702323, emissive: 0x3b0707, emissiveIntensity: 1.2, metalness: .45, roughness: .28 }));
@@ -49,10 +51,14 @@ export class SentinelSetRenderer {
     }
 
     this.box(this.root, hull, 0, -.45, -18, 29, .9, 56, 'sentinel-cockpit-deck');
+    const ceiling = new THREE.Group(); ceiling.name = 'sentinel-cabin-roof'; this.root.add(ceiling);
     for (const z of [-12, -20, -28, -36, -44]) {
-      this.tube(this.root, [new THREE.Vector3(-14.5, .2, z), new THREE.Vector3(-13, 9, z), new THREE.Vector3(-8, 13.5, z), new THREE.Vector3(8, 13.5, z), new THREE.Vector3(13, 9, z), new THREE.Vector3(14.5, .2, z)], .28, steel);
-      this.box(this.root, worn, -13.8, 5.3, z - 3.8, .5, 10.2, 7.2);
-      this.box(this.root, worn, 13.8, 5.3, z - 3.8, .5, 10.2, 7.2);
+      this.tube(this.root, [new THREE.Vector3(-14.5, .2, z), new THREE.Vector3(-13, 8, z), new THREE.Vector3(-8, 9.5, z), new THREE.Vector3(8, 9.5, z), new THREE.Vector3(13, 8, z), new THREE.Vector3(14.5, .2, z)], .28, steel);
+      this.box(ceiling, hull, 0, 9.8, z, 16.8, .26, 8.3);
+      for (const side of [-1, 1]) {
+        const slope = this.box(ceiling, hull, side * 11.1, 9, z, 5.9, .26, 8.3); slope.rotation.z = -side * .28;
+        this.box(this.root, worn, side * 13.8, 4.1, z - 3.8, .5, 8.2, 7.2);
+      }
     }
     for (const x of [-11, 11]) for (const z of [-15, -25, -35]) {
       this.box(this.root, rubber, x, 1.18, z, 3.4, 1.65, 4.8);
@@ -61,10 +67,16 @@ export class SentinelSetRenderer {
       const screen = this.box(this.root, panel, x, 2.73, z - 1.88, 2.8, .06, .8); screen.rotation.x = -.3;
       for (let i = 0; i < 4; i++) this.cylinder(this.root, i === 3 ? red : steel, x - 1.1 + i * .72, 2.75, z - 1.45, .075, .12).rotation.x = Math.PI / 2;
     }
-    for (const [x, z] of [[-8, -34.5], [8, -35.2], [0, -42]] as const) {
-      const light = new THREE.PointLight(0xa5d5bd, 185, 15, 2); light.position.set(x, 4.7, z); light.name = 'sentinel-power-light'; this.root.add(light); this.lights.add(light); this.powerLights.push(light);
+    this.powerLens = this.material(new THREE.MeshBasicMaterial({ color: 0xc7d8e6, toneMapped: false }));
+    for (const [x, z] of [[-8, -34.5], [8, -35.2], [0, -22]] as const) {
+      this.box(this.root, hull, x, 8.25, z, 3.7, .24, 1.2);
+      for (const side of [-1, 1]) {
+        this.cylinder(this.root, steel, x + side * 1.3, 8.9, z, .035, 1.2);
+        this.cylinder(this.root, this.powerLens, x, 8.05, z + side * .28, .075, 3).rotation.z = Math.PI / 2;
+      }
+      const light = new THREE.PointLight(0xb1c8dd, 28, 24, 2); light.position.set(x, 7.8, z); light.name = 'sentinel-power-light'; this.root.add(light); this.lights.add(light); this.powerLights.push(light);
     }
-    const fill = new THREE.HemisphereLight(0x4e7670, 0x05100d, .46); fill.name = 'sentinel-cockpit-fill'; this.root.add(fill); this.lights.add(fill);
+    this.cabinFill = new THREE.HemisphereLight(0xb1c6d5, 0x182633, 1.1); this.cabinFill.name = 'sentinel-cockpit-fill'; this.root.add(this.cabinFill); this.lights.add(this.cabinFill);
 
     const window = new THREE.Group(); window.name = 'sentinel-cockpit-window'; window.position.set(0, 0, -49.4); this.root.add(window);
     this.box(window, hull, 0, 8.4, 0, 28, 1.2, 1.5);
@@ -203,7 +215,9 @@ export class SentinelSetRenderer {
     this.switches[0].rotation.z = -posePower.main * Math.PI / 2;
     this.switches[1].rotation.z = -posePower.arm * Math.PI / 2;
     this.armedLight.color.setHex(posePower.arm > .99 ? 0xff714d : 0x2b1916);
-    this.powerLights.forEach((light, index) => { light.intensity = 12 + power * (150 + index * 24); light.color.setHex(power > .4 ? 0xa5d5bd : 0x7b1815); });
+    this.powerLights.forEach((light, index) => { light.intensity = 2 + power * (24 + index * 4); light.color.setHex(power > .4 ? 0xb1c8dd : 0x7b1815); });
+    this.powerLens.color.setHex(power > .4 ? 0xc7d8e6 : 0x2b1110);
+    this.cabinFill.intensity = .3 + power * .8;
     this.powerPanels.forEach((panel, index) => panel.color.setHex(power > .5 ? index % 2 ? 0x86b7a1 : 0x719d8c : index % 3 ? 0x101817 : 0x5d1715));
     const close = encounter && ['sweep', 'detected', 'failed', 'clear'].includes(encounter.phase);
     this.frost.opacity = close ? .055 + pose.scan * .09 : .035;

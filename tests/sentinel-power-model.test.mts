@@ -48,6 +48,7 @@ async function fixture(t: TestContext) {
     const encounter = { phase, elapsed, noise: 0, attempt: 0 };
     for (const [role, rig] of rigs) {
       models.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true, glasses: false,
+        nebCrewEarly: true, nebCrew: ['neo', 'morpheus', 'trinity'].includes(role) ? role : undefined,
         sentinel: role === 'neo' && ['ready', 'briefing', 'sweep', 'verify', 'done'].includes(phase) ? undefined : { ...encounter, role } }, 4);
       rig.root.updateMatrixWorld(true);
     }
