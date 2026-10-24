@@ -1213,7 +1213,8 @@ export class CharacterModels {
     if (rig.hero) {
       this.heroes.animate(rig.hero, pose, rig.motion, input, delta);
       if (rig.hero.support === 'mouse' && armed && weaponStyle === 'pistol') this.heroes.mousePistols(rig.hero, rig.weapons!, rig.motion.shotAge, input.mouseRoomTime);
-      if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch);
+      if (armed && helPistol && input.helDanceDoor === undefined && !input.helDisarm) poseHelPistol(rig, input.aimPitch, input.training?.kind === 'red_dress' && input.training.role === 'smith');
+      if (armed && helPistol && input.training?.kind === 'red_dress' && input.training.role === 'smith') this.heroes.trainingPistolHands(rig.hero);
       poseHelDisarm(rig, input.helDisarm);
       poseHelBreakout(rig, input.helBreakout);
       poseFreewayRide(rig, input.freewayRide);

@@ -10,6 +10,10 @@ def dress_costume(points, faces, weights, names, pivots, from_game, export, clot
     arm_ids = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow', 'wrist', 'finger'))]
     trunk = weights[:, arm_ids].sum(axis=1) < .2
     triangles = np.array([[face[0][0], face[i][0], face[i + 1][0]] for face in faces for i in range(1, len(face) - 1)])
+    skin_triangles = triangles.copy()
+    skin_origin = points[skin_triangles[:, 0]]
+    skin_e1 = points[skin_triangles[:, 1]] - skin_origin
+    skin_e2 = points[skin_triangles[:, 2]] - skin_origin
     skin_edges = np.unique(np.sort(np.concatenate([triangles[:, [0, 1]], triangles[:, [1, 2]], triangles[:, [2, 0]]]), axis=1), axis=0)
     skin_a, skin_b = points[skin_edges[:, 0]], points[skin_edges[:, 1]]
     triangles = triangles[trunk[triangles].all(axis=1)]
@@ -58,6 +62,25 @@ def dress_costume(points, faces, weights, names, pivots, from_game, export, clot
             w[0], w[1], w[2] = lower, (1 - lower) * (1 - chest), (1 - lower) * chest
         return w
 
+    def collar_weights(y, theta):
+        # The cloth must inherit the same neck/chest transition as the skin
+        # underneath it. A linear blend along the strap cuts into a turned neck.
+        direction = np.array([np.sin(theta), 0, np.cos(theta)])
+        p = np.cross(direction, skin_e2)
+        determinant = np.einsum('ij,ij->i', skin_e1, p)
+        inverse = np.divide(1, determinant, out=np.zeros_like(determinant), where=np.abs(determinant)>1e-10)
+        offset = np.array([0, y, 0]) - skin_origin
+        u = np.einsum('ij,ij->i', offset, p) * inverse
+        q = np.cross(offset, skin_e1)
+        v = q @ direction * inverse
+        distance = np.einsum('ij,ij->i', skin_e2, q) * inverse
+        valid = (np.abs(determinant)>1e-10) & (u>=-1e-8) & (v>=-1e-8) & (u+v<=1+1e-8) & (distance>0) & (distance<1)
+        assert valid.any(), (y, theta)
+        face = np.argmax(np.where(valid, distance, -1))
+        barycentric = np.maximum([1-u[face]-v[face], u[face], v[face]], 0)
+        influence = barycentric @ weights[skin_triangles[face]]
+        return influence / influence.sum()
+
     p, uv, w, polygons = [], [], [], []
     for row in range(49):
         v = row / 48
@@ -100,7 +123,7 @@ def dress_costume(points, faces, weights, names, pivots, from_game, export, clot
     export('Red dress cowl', from_game(cp, cw), cu, cf, cw, satin)
 
     # The two straps lead around the neck, leaving the shoulders and upper
-    # back bare. Samples have actual torso/head weights, never arm weights.
+    # back bare. Samples follow the weights of the actual collar surface.
     for sign in [-1, 1]:
         theta = sign * .83
         start = np.array([np.interp(theta, angles, p[-65:, axis]) for axis in range(3)])
@@ -116,7 +139,7 @@ def dress_costume(points, faces, weights, names, pivots, from_game, export, clot
                 theta = angle + (col/2-.5)*.09/radius
                 distance = np.interp(theta, angles, radii, period=2*np.pi) + .025
                 sp.append([np.sin(theta)*distance,y,np.cos(theta)*distance]); su.append([col/2, v])
-                influence = np.zeros(len(names)); influence[2], influence[3] = 1 - v * .65, v * .65; sw.append(influence)
+                sw.append(collar_weights(y, theta))
                 if row and col:
                     i = row * 3 + col; sf.append([(j,j) for j in [i-4,i-3,i,i-1]])
         sp, su, sw = np.array(sp), np.array(su), np.array(sw)
