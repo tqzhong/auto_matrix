@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+ok 1 - the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+  ---
+  duration_ms: 1115.627875
+  type: 'test'
+  ...
+# Subtest: batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+ok 2 - batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+  ---
+  duration_ms: 30632.218459
+  type: 'test'
+  ...
+# Subtest: cockpit lamps illuminate crew from above without a point-light hotspot at face height
+ok 3 - cockpit lamps illuminate crew from above without a point-light hotspot at face height
+  ---
+  duration_ms: 1163.787209
+  type: 'test'
+  ...
+# Subtest: the central cockpit has an opaque ceiling with clear headroom over the walking and control positions
+ok 4 - the central cockpit has an opaque ceiling with clear headroom over the walking and control positions
+  ---
+  duration_ms: 966.22275
+  type: 'test'
+  ...
+# Subtest: power loss and restoration reconstruct the same fixture lighting from the saved phase
+ok 5 - power loss and restoration reconstruct the same fixture lighting from the saved phase
+  ---
+  duration_ms: 150.562375
+  type: 'test'
+  ...
+# Subtest: the cockpit ambient fill dims with ship power and restores on a cold completed checkpoint
+ok 6 - the cockpit ambient fill dims with ship power and restores on a cold completed checkpoint
+  ---
+  duration_ms: 199.013875
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 39702.865792

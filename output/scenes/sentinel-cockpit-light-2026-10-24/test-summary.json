@@ -1,0 +1,25 @@
+{
+  "baselineWardrobe": {
+    "passed": 3,
+    "failed": 1,
+    "failure": "obsolete assertion that the generic Black_crew_neck stays visible in the dojo"
+  },
+  "relatedBeforeFinalAmbientAdjustment": {
+    "passed": 31,
+    "failed": 1,
+    "failure": "not ok 2 - Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving"
+  },
+  "finalLightingAndBatching": {
+    "passed": 6,
+    "failed": 0
+  },
+  "deployment": {
+    "passed": 75,
+    "failed": 0
+  },
+  "fullRepositorySuiteRun": false,
+  "newSourceScope": [
+    "first-film ship wardrobe selection",
+    "Sentinel cockpit roof, light fixtures, materials and power-driven ambience"
+  ]
+}

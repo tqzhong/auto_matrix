@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+ok 1 - the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+  ---
+  duration_ms: 450.7435
+  type: 'test'
+  ...
+# Subtest: batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+ok 2 - batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+  ---
+  duration_ms: 9382.5815
+  type: 'test'
+  ...
+# Subtest: the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+ok 3 - the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+  ---
+  duration_ms: 3.043459
+  type: 'test'
+  ...
+# Subtest: a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+ok 4 - a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+  ---
+  duration_ms: 1406.024959
+  type: 'test'
+  ...
+# Subtest: an already-started legacy shutdown continues its scan without a new briefing or progress reset
+ok 5 - an already-started legacy shutdown continues its scan without a new briefing or progress reset
+  ---
+  duration_ms: 230.553333
+  type: 'test'
+  ...
+# Subtest: EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+ok 6 - EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+  ---
+  duration_ms: 285.674958
+  type: 'test'
+  ...
+# Subtest: cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+ok 7 - cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+  ---
+  duration_ms: 97.887042
+  type: 'test'
+  ...
+# Subtest: physical control collisions share the visible footprint, leave the inspection path open and release on departure
+ok 8 - physical control collisions share the visible footprint, leave the inspection path open and release on departure
+  ---
+  duration_ms: 1505.64325
+  type: 'test'
+  ...
+# Subtest: shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+ok 9 - shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+  ---
+  duration_ms: 2419.398583
+  type: 'test'
+  ...
+# Subtest: the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+ok 10 - the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+  ---
+  duration_ms: 1352.463292
+  type: 'test'
+  ...
+# Subtest: running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+ok 11 - running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+  ---
+  duration_ms: 2215.950833
+  type: 'test'
+  ...
+# Subtest: a stealth retry keeps Neo’s previous injury instead of healing him to full health
+ok 12 - a stealth retry keeps Neo’s previous injury instead of healing him to full health
+  ---
+  duration_ms: 476.974292
+  type: 'test'
+  ...
+# Subtest: the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+ok 13 - the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+  ---
+  duration_ms: 456.764791
+  type: 'test'
+  ...
+# Subtest: occupied crew blocks shutdown and the active encounter reserves every required role
+ok 14 - occupied crew blocks shutdown and the active encounter reserves every required role
+  ---
+  duration_ms: 15.441917
+  type: 'test'
+  ...
+# Subtest: Neo enters the service tunnel through a continuous playable aisle
+ok 15 - Neo enters the service tunnel through a continuous playable aisle
+  ---
+  duration_ms: 2.856667
+  type: 'test'
+  ...
+# Subtest: the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+ok 16 - the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+  ---
+  duration_ms: 286.475125
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 17 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 38.546209
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14136.699625

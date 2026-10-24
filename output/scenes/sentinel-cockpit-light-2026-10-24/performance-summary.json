@@ -1,0 +1,204 @@
+{
+  "hardware": "Apple M3 / 24 GiB",
+  "worldRunning": true,
+  "action": "first-person stationary at completed Sentinel checkpoint",
+  "backgroundLoadIsolated": false,
+  "oldVersionComparison": false,
+  "stable60FpsAccepted": false,
+  "reports": [
+    {
+      "fps": 17.070991318017633,
+      "frameTime": {
+        "mean": 58.57890624925494,
+        "p95": 99.5
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 1.1385214505028631,
+          "p95": 3.8999996185302734
+        },
+        "agents": {
+          "mean": 18.133463020918434,
+          "p95": 40.60000038146973
+        },
+        "city": {
+          "mean": 0.3050583271664868,
+          "p95": 0.5
+        },
+        "film": {
+          "mean": 0.1961090110155395,
+          "p95": 0.39999961853027344
+        },
+        "effects": {
+          "mean": 0.2937742782474028,
+          "p95": 0.5999994277954102
+        },
+        "render": {
+          "mean": 17.052918267157292,
+          "p95": 40.89999961853027
+        },
+        "capture": {
+          "mean": 0.0027237346664013102,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 473,
+        "p95": 473
+      },
+      "triangles": {
+        "mean": 1758856,
+        "p95": 1758856
+      },
+      "camera": {
+        "position": [
+          6016,
+          -97.01,
+          5653
+        ],
+        "quaternion": [
+          0.0004316966456300542,
+          0.9880076679265617,
+          0.15437949570831833,
+          -0.0027627995165013836
+        ],
+        "projection": [
+          0.8339405447884163,
+          0,
+          0,
+          0,
+          0,
+          1.48256096851274,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "pageVisibility": "visible",
+      "recordingActive": false,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "report": "performance-1.json",
+      "actualPixels": [
+        1920.0,
+        1080.0
+      ]
+    },
+    {
+      "fps": 15.235447809150477,
+      "frameTime": {
+        "mean": 65.63640350626225,
+        "p95": 149.30000019073486
+      },
+      "cpuMs": {
+        "controls": {
+          "mean": 0.9751091461514801,
+          "p95": 3.59999942779541
+        },
+        "agents": {
+          "mean": 20.408296951560473,
+          "p95": 55.10000038146973
+        },
+        "city": {
+          "mean": 0.6825327644181564,
+          "p95": 1.3000001907348633
+        },
+        "film": {
+          "mean": 0.2292576627439807,
+          "p95": 0.20000076293945312
+        },
+        "effects": {
+          "mean": 0.322707388598846,
+          "p95": 0.5
+        },
+        "render": {
+          "mean": 21.965938917934633,
+          "p95": 52.39999961853027
+        },
+        "capture": {
+          "mean": 0.0013100361719922727,
+          "p95": 0
+        }
+      },
+      "calls": {
+        "mean": 473,
+        "p95": 473
+      },
+      "triangles": {
+        "mean": 1758856,
+        "p95": 1758856
+      },
+      "camera": {
+        "position": [
+          6016,
+          -97.01,
+          5653
+        ],
+        "quaternion": [
+          0.0004316966456300542,
+          0.9880076679265617,
+          0.15437949570831833,
+          -0.0027627995165013836
+        ],
+        "projection": [
+          0.8339405447884163,
+          0,
+          0,
+          0,
+          0,
+          1.48256096851274,
+          0,
+          0,
+          0,
+          0,
+          -1.0002000200020003,
+          -1,
+          0,
+          0,
+          -1.000100010001,
+          0
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 720,
+        "pixelRatio": 1.5
+      },
+      "pageVisibility": "visible",
+      "recordingActive": false,
+      "gpuTiming": {
+        "mode": "cpu",
+        "supported": true,
+        "counterBits": 64,
+        "discarded": 0,
+        "pendingAtStop": 0,
+        "intervalsAreNotAdditive": true,
+        "glErrorAtStop": 0
+      },
+      "report": "performance-2.json",
+      "actualPixels": [
+        1920.0,
+        1080.0
+      ]
+    }
+  ]
+}

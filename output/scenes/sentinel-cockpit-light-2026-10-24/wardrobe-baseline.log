@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+not ok 1 - Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+  ---
+  duration_ms: 9830.396042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/sentinel-cockpit-light-2026-10-24/candidate-release/tests/neb-crew-appearance.test.mts:1:1685'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/sentinel-cockpit-light-2026-10-24/candidate-release/tests/neb-crew-appearance.test.mts:73:46)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+ok 2 - the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+  ---
+  duration_ms: 21171.071625
+  type: 'test'
+  ...
+# Subtest: Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits
+ok 3 - Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits
+  ---
+  duration_ms: 12827.139417
+  type: 'test'
+  ...
+# Subtest: the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons
+ok 4 - the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons
+  ---
+  duration_ms: 21229.117834
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 3
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 70759.971333

@@ -1,0 +1,12 @@
+{
+  "head": "63bf26ce960f387d7610643fd9109052de6d7635",
+  "candidateInputs": 1243,
+  "changedInputs": [
+    "packages/client/src/agents/AgentRenderer.ts",
+    "packages/client/src/engine/SentinelSetRenderer.ts",
+    "tests/neb-crew-appearance.test.mts",
+    "tests/sentinel-power-model.test.mts"
+  ],
+  "priorWorkPreserved": 11,
+  "compiledFilesUnchanged": 800
+}

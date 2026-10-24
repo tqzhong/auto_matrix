@@ -649,7 +649,8 @@ export class AgentRenderer {
         input.ambushWardrobe = called || afterAmbush ? 'shirt' : 'coat';
       }
       const shipScene = journey?.visiting ?? journey?.scene;
-      input.nebCrewEarly = input.realWorld && state.currentLocation === 'film_neb_deck' && shipScene?.startsWith('m1_') === true
+      input.nebCrewEarly = input.realWorld && (state.currentLocation === 'film_neb_deck'
+        || state.currentLocation === 'film_service_tunnels' && shipScene === 'm1_sentinels') && shipScene?.startsWith('m1_') === true
         && shipScene !== 'm1_pod' && shipScene !== 'm1_recovery';
       input.nebCrew = input.realWorld && (input.nebCrewEarly || shipScene?.startsWith('m2_') || journey?.scene === 'm3_logos_plan')
         && ['film_neb_deck', 'film_service_tunnels', 'film_hammer_deck'].includes(state.currentLocation)

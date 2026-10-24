@@ -1,0 +1,37 @@
+{
+  "scene": "m1_sentinels",
+  "step": 2,
+  "sentinel": {
+    "phase": "done",
+    "elapsed": 3.5,
+    "noise": 0,
+    "attempt": 1,
+    "empBriefed": true,
+    "startHealth": 100
+  },
+  "position": {
+    "x": 6016,
+    "y": -100,
+    "z": 5653
+  },
+  "rotation": 3.141592653589793,
+  "health": 100,
+  "worldPaused": true,
+  "previousStoryChoicesPreserved": true,
+  "newCompletedScenes": [
+    "m1_sentinels"
+  ],
+  "nativeInput": [
+    "continue saved Neo",
+    "resume world",
+    "G retry",
+    "remain still during scan",
+    "W 900ms to window",
+    "G confirm departure",
+    "pause world",
+    "mouse drag"
+  ],
+  "realFailureBeforeRestart": true,
+  "finalProductionBundle": "index-pguiwPR9.js",
+  "consoleWarningsAndErrors": []
+}

@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+ok 1 - the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+  ---
+  duration_ms: 562.053083
+  type: 'test'
+  ...
+# Subtest: batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+ok 2 - batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+  ---
+  duration_ms: 13354.889375
+  type: 'test'
+  ...
+# Subtest: cockpit lamps illuminate crew from above without a point-light hotspot at face height
+ok 3 - cockpit lamps illuminate crew from above without a point-light hotspot at face height
+  ---
+  duration_ms: 526.009291
+  type: 'test'
+  ...
+# Subtest: the central cockpit has an opaque ceiling with clear headroom over the walking and control positions
+ok 4 - the central cockpit has an opaque ceiling with clear headroom over the walking and control positions
+  ---
+  duration_ms: 1039.086
+  type: 'test'
+  ...
+# Subtest: power loss and restoration reconstruct the same fixture lighting from the saved phase
+ok 5 - power loss and restoration reconstruct the same fixture lighting from the saved phase
+  ---
+  duration_ms: 147.79025
+  type: 'test'
+  ...
+# Subtest: the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+ok 6 - the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+  ---
+  duration_ms: 2.445292
+  type: 'test'
+  ...
+# Subtest: a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+ok 7 - a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+  ---
+  duration_ms: 4432.839583
+  type: 'test'
+  ...
+# Subtest: an already-started legacy shutdown continues its scan without a new briefing or progress reset
+ok 8 - an already-started legacy shutdown continues its scan without a new briefing or progress reset
+  ---
+  duration_ms: 486.156709
+  type: 'test'
+  ...
+# Subtest: EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+ok 9 - EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+  ---
+  duration_ms: 650.924083
+  type: 'test'
+  ...
+# Subtest: cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+ok 10 - cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+  ---
+  duration_ms: 167.717333
+  type: 'test'
+  ...
+# Subtest: physical control collisions share the visible footprint, leave the inspection path open and release on departure
+ok 11 - physical control collisions share the visible footprint, leave the inspection path open and release on departure
+  ---
+  duration_ms: 1630.2055
+  type: 'test'
+  ...
+# Subtest: shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+ok 12 - shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+  ---
+  duration_ms: 2162.217084
+  type: 'test'
+  ...
+# Subtest: the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+ok 13 - the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+  ---
+  duration_ms: 1798.515417
+  type: 'test'
+  ...
+# Subtest: running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+ok 14 - running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+  ---
+  duration_ms: 2023.853625
+  type: 'test'
+  ...
+# Subtest: a stealth retry keeps Neo’s previous injury instead of healing him to full health
+ok 15 - a stealth retry keeps Neo’s previous injury instead of healing him to full health
+  ---
+  duration_ms: 404.821875
+  type: 'test'
+  ...
+# Subtest: the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+ok 16 - the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+  ---
+  duration_ms: 358.953125
+  type: 'test'
+  ...
+# Subtest: occupied crew blocks shutdown and the active encounter reserves every required role
+ok 17 - occupied crew blocks shutdown and the active encounter reserves every required role
+  ---
+  duration_ms: 8.507208
+  type: 'test'
+  ...
+# Subtest: Neo enters the service tunnel through a continuous playable aisle
+ok 18 - Neo enters the service tunnel through a continuous playable aisle
+  ---
+  duration_ms: 9.070875
+  type: 'test'
+  ...
+# Subtest: the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+ok 19 - the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+  ---
+  duration_ms: 245.334417
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 20 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 50.73975
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18903.437375

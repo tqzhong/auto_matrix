@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: the first-film Sentinel crew retain their ship clothes in free play, saved phases and both player views
+ok 1 - the first-film Sentinel crew retain their ship clothes in free play, saved phases and both player views
+  ---
+  duration_ms: 34954.965583
+  type: 'test'
+  ...
+# Subtest: Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+not ok 2 - Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving
+  ---
+  duration_ms: 9817.329167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/scenes/sentinel-cockpit-light-2026-10-24/candidate-release/tests/neb-crew-appearance.test.mts:1:5453'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/scenes/sentinel-cockpit-light-2026-10-24/candidate-release/tests/neb-crew-appearance.test.mts:132:46)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+ok 3 - the saved first-film cabin and its escort select the actual knit outfits for Neo and Morpheus
+  ---
+  duration_ms: 24738.705833
+  type: 'test'
+  ...
+# Subtest: Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits
+ok 4 - Morpheus wears his short suit and olive tie in both lesson spaces, including free possession, and restores ship and Matrix outfits
+  ---
+  duration_ms: 13203.325292
+  type: 'test'
+  ...
+# Subtest: the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons
+ok 5 - the delivered Morpheus suit keeps its tie and collar outside the torso through both seated lessons
+  ---
+  duration_ms: 39051.468292
+  type: 'test'
+  ...
+# Subtest: the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+ok 6 - the cockpit and Sentinel share fixed surfaces instead of submitting every rib, console and tentacle joint separately
+  ---
+  duration_ms: 751.318333
+  type: 'test'
+  ...
+# Subtest: batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+ok 7 - batching preserves every textured triangle, shadow flag and animated control through shutdown, scan and restoration
+  ---
+  duration_ms: 20608.960666
+  type: 'test'
+  ...
+# Subtest: cockpit lamps illuminate crew from above without a point-light hotspot at face height
+ok 8 - cockpit lamps illuminate crew from above without a point-light hotspot at face height
+  ---
+  duration_ms: 499.583416
+  type: 'test'
+  ...
+# Subtest: the central cockpit has an opaque ceiling with clear headroom over the walking and control positions
+ok 9 - the central cockpit has an opaque ceiling with clear headroom over the walking and control positions
+  ---
+  duration_ms: 377.7105
+  type: 'test'
+  ...
+# Subtest: power loss and restoration reconstruct the same fixture lighting from the saved phase
+ok 10 - power loss and restoration reconstruct the same fixture lighting from the saved phase
+  ---
+  duration_ms: 146.688333
+  type: 'test'
+  ...
+# Subtest: the physical cockpit deck stays below all five crew members’ actual soles
+ok 11 - the physical cockpit deck stays below all five crew members’ actual soles
+  ---
+  duration_ms: 32105.397542
+  type: 'test'
+  ...
+# Subtest: Morpheus keeps his actual hand over the EMP control rather than gesturing across the cockpit
+ok 12 - Morpheus keeps his actual hand over the EMP control rather than gesturing across the cockpit
+  ---
+  duration_ms: 101590.419375
+  type: 'test'
+  ...
+# {"actualPalm":[3,3.2150000000000745,-40.64999999999873],"shoulder":[3.570984993467391,3.5944166493153062,-39.51210471780087],"armLength":1.3692447603724993,"elbowBend":[-0.48967324788685535,0.0316523582534847,0.24130856676020834,0.8372505085869255]}
+# Subtest: Tank’s actual index skin contacts each moving switch while turning power off, arming and restoring
+ok 13 - Tank’s actual index skin contacts each moving switch while turning power off, arming and restoring
+  ---
+  duration_ms: 11873.892709
+  type: 'test'
+  ...
+# Subtest: all crew hand skin clears the switch caps and EMP guard during approaches, contact and withdrawal
+ok 14 - all crew hand skin clears the switch caps and EMP guard during approaches, contact and withdrawal
+  ---
+  duration_ms: 21268.217917
+  type: 'test'
+  ...
+# Subtest: crew hand surfaces enter and leave the controls continuously without stretched bones or residue from another pose
+ok 15 - crew hand surfaces enter and leave the controls continuously without stretched bones or residue from another pose
+  ---
+  duration_ms: 29815.983875
+  type: 'test'
+  ...
+# {"maximumSkinStep":0.033527085164501355,"worst":"morpheus/confirming/2.33/vertex 6750"}
+# Subtest: crew skin stays continuous when saved encounter phases change
+ok 16 - crew skin stays continuous when saved encounter phases change
+  ---
+  duration_ms: 12424.318375
+  type: 'test'
+  ...
+# Subtest: cold models reconstruct a saved switch and EMP contact without a preceding animation frame
+ok 17 - cold models reconstruct a saved switch and EMP contact without a preceding animation frame
+  ---
+  duration_ms: 331588.407291
+  type: 'test'
+  ...
+# Subtest: the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+ok 18 - the first Sentinel encounter stays in Neo viewpoint instead of forcing control into Morpheus
+  ---
+  duration_ms: 11.260584
+  type: 'test'
+  ...
+# Subtest: a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+ok 19 - a new shutdown waits for Neo to inspect the armed EMP before beginning the scan
+  ---
+  duration_ms: 5769.947625
+  type: 'test'
+  ...
+# Subtest: an already-started legacy shutdown continues its scan without a new briefing or progress reset
+ok 20 - an already-started legacy shutdown continues its scan without a new briefing or progress reset
+  ---
+  duration_ms: 433.609291
+  type: 'test'
+  ...
+# Subtest: EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+ok 21 - EMP inspection and crew poses survive pause, disconnect and restore, then wait for a local deliberate action
+  ---
+  duration_ms: 511.666083
+  type: 'test'
+  ...
+# Subtest: cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+ok 22 - cold shutdown restoration reconstructs Neo’s frozen gesture before a player reconnects
+  ---
+  duration_ms: 747.633541
+  type: 'test'
+  ...
+# Subtest: physical control collisions share the visible footprint, leave the inspection path open and release on departure
+ok 23 - physical control collisions share the visible footprint, leave the inspection path open and release on departure
+  ---
+  duration_ms: 2211.597542
+  type: 'test'
+  ...
+# Subtest: shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+ok 24 - shutdown waits for Neo, then staying still survives the complete Sentinel sweep
+  ---
+  duration_ms: 5702.300459
+  type: 'test'
+  ...
+# Subtest: the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+ok 25 - the departing scanner leaves Neo at his actual inspection position rather than moving him back to the entrance
+  ---
+  duration_ms: 1645.984417
+  type: 'test'
+  ...
+# Subtest: running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+ok 26 - running or jumping during the scan makes noise, fails explicitly and retries from the saved shutdown checkpoint
+  ---
+  duration_ms: 3903.424583
+  type: 'test'
+  ...
+# Subtest: a stealth retry keeps Neo’s previous injury instead of healing him to full health
+ok 27 - a stealth retry keeps Neo’s previous injury instead of healing him to full health
+  ---
+  duration_ms: 1779.002
+  type: 'test'
+  ...
+# Subtest: the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+ok 28 - the exact scan clock, noise and five crew poses survive pause, disconnect, save restore and retry
+  ---
+  duration_ms: 1009.828
+  type: 'test'
+  ...
+# Subtest: occupied crew blocks shutdown and the active encounter reserves every required role
+ok 29 - occupied crew blocks shutdown and the active encounter reserves every required role
+  ---
+  duration_ms: 11.330667
+  type: 'test'
+  ...
+# Subtest: Neo enters the service tunnel through a continuous playable aisle
+ok 30 - Neo enters the service tunnel through a continuous playable aisle
+  ---
+  duration_ms: 3.3185
+  type: 'test'
+  ...
+# Subtest: the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+ok 31 - the service pipe owns a physical cockpit, EMP key, frosted viewport and animated Sentinel scan
+  ---
+  duration_ms: 1154.144208
+  type: 'test'
+  ...
+# Subtest: fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+ok 32 - fixed siblings share draws without changing textured surfaces, animated parents, or moving parts
+  ---
+  duration_ms: 102.291791
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 31
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 743389.425916

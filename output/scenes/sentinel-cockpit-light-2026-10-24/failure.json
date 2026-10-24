@@ -1,0 +1,26 @@
+{
+  "scene": "m1_sentinels",
+  "step": 0,
+  "sentinel": {
+    "phase": "failed",
+    "elapsed": 0,
+    "noise": 1,
+    "attempt": 0,
+    "empBriefed": true,
+    "startHealth": 100,
+    "caughtAt": {
+      "x": 0,
+      "z": -33.73161721404904,
+      "yaw": 0.07068424869393691
+    }
+  },
+  "neo": {
+    "position": {
+      "x": 6016,
+      "y": -100,
+      "z": 5662.268382785951
+    },
+    "rotation": 0.07068424869393691,
+    "health": 100
+  }
+}

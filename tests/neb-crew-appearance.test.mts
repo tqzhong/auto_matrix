@@ -22,6 +22,65 @@ async function geometry(id: string) {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+test('the first-film Sentinel crew retain their ship clothes in free play, saved phases and both player views', async t => {
+  const roles = ['neo', 'morpheus', 'trinity'] as const, ids = [...roles, 'neo-office', 'neo-tracking', 'trinity-club'];
+  const assets = await Promise.all(ids.map(geometry));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets[ids.indexOf(url.split('/').at(-1)!.replace('.glb', ''))]);
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
+  for (const role of roles) {
+    const actor = world.agents.get(role)!; actor.currentLocation = 'film_service_tunnels'; actor.isInMatrix = false;
+    actor.position = { ...FILM_SETS.film_service_tunnels.center }; actor.currentAction = null;
+    renderer.updateAgent(role, actor);
+  }
+  renderer.setWorld(false); await new Promise(resolve => setImmediate(resolve));
+  const journey: FilmJourney = { version: 1, scene: 'm1_sentinels', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: { ...world.agents.get('neo')!.position } };
+  for (const phase of ['ready', 'shutdown', 'sweep', 'done'] as const) {
+    journey.sentinel = { phase, elapsed: phase === 'shutdown' ? 1.4 : 0, noise: 0, attempt: 0 };
+    for (const player of [null, ...roles]) for (const firstPerson of [false, true]) {
+      renderer.setPlayer(player, firstPerson); renderer.update(0, undefined, 0, 0, structuredClone(journey));
+      for (const role of roles) {
+        const body = renderer.getAgentBody(role)!, knit: THREE.Mesh[] = [], matrix: THREE.Mesh[] = [], hair: THREE.Mesh[] = [];
+        assert.ok(body.getObjectByName('pelvis'), `${role}: inspect the delivered rig rather than the temporary fallback`);
+        body.traverse(object => {
+          if (!(object instanceof THREE.Mesh)) return;
+          if (role === 'morpheus' ? object.userData.hammerBriefingCostume : object.userData.logosCostume) knit.push(object);
+          if (/Tailored.coat.upper|Black.crew.neck|Fitted.leather.jacket/i.test(object.name)) matrix.push(object);
+          if (/Hair|hair|Groom|groom/.test((object.material as THREE.Material).name)) hair.push(object);
+        });
+        assert.ok(knit.length && knit.every(part => part.visible), `${phase}/${player}/${firstPerson}: ${role} must wear the real ship knit`);
+        assert.ok(matrix.length && matrix.every(part => !part.visible), `${role}: no recolored Matrix coat under the knit`);
+        if (role === 'neo') {
+          assert.ok(hair.length && hair.every(part => !part.visible), 'the first-film real body is shaved');
+          assert.equal(body.getObjectByName('neo-farewell-eye-band')!.visible, false, 'the later injury cannot leak into the first film');
+        }
+      }
+    }
+  }
+  renderer.setPlayer(null); journey.scene = 'm2_stop_sentinels'; renderer.update(0, undefined, 0, 0, journey);
+  const hair: THREE.Mesh[] = []; renderer.getAgentBody('neo')!.traverse(object => {
+    if (object instanceof THREE.Mesh && /Hair|hair|Groom|groom/.test((object.material as THREE.Material).name)) hair.push(object);
+  });
+  assert.ok(hair.every(part => part.visible), 'the later tunnel scene keeps Neo’s grown hair');
+  journey.scene = 'm1_pill_choice'; renderer.setWorld(true);
+  for (const role of roles) {
+    const actor = world.agents.get(role)!; actor.currentLocation = 'film_lafayette'; actor.isInMatrix = true;
+    renderer.updateAgent(role, actor);
+  }
+  renderer.update(0, undefined, 0, 0, journey);
+  for (const role of roles) renderer.getAgentBody(role)!.traverse(object => {
+    if (object instanceof THREE.Mesh && (object.userData.hammerBriefingCostume || object.userData.logosCostume))
+      assert.equal(object.visible, false, 'leaving the ship restores the Matrix wardrobe');
+  });
+});
+
 test('Neo has his grown hair and unbandaged knit costume at the ship loss, with recovery and Matrix clothing restored on leaving', async t => {
   const ids = ['neo', 'neo-office', 'neo-tracking'], assets = await Promise.all(ids.map(geometry));
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

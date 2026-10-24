@@ -1,0 +1,18 @@
+{
+  "entry": "http://localhost:5173/",
+  "pid": 83388,
+  "bundle": "assets/index-pguiwPR9.js",
+  "sha256": "5f10df56c6c7efc54d2e0adcd508cdc5fb99dc3065701a60ec11b8e6e5bcbe41",
+  "bundleBytes": 3796437,
+  "javascriptDeltaBytes": 635,
+  "newGameAssetBytes": 0,
+  "cssIdentical": true,
+  "backendAndSharedFilesUnchanged": 800,
+  "priorExperimentsPreserved": 11,
+  "mainMemories": 85,
+  "mainTickBefore": 87665,
+  "mainTickAfter": 87665,
+  "mainRunning": true,
+  "mainSaveWritten": false,
+  "renderReconnected": false
+}

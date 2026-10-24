@@ -1,0 +1,136 @@
+{
+  "meshes": 123,
+  "triangles": 40662,
+  "vertices": 31008,
+  "geometryBytes": 1235148,
+  "lights": [
+    {
+      "name": "sentinel-power-light",
+      "type": "PointLight",
+      "intensity": 26
+    },
+    {
+      "name": "sentinel-power-light",
+      "type": "PointLight",
+      "intensity": 30
+    },
+    {
+      "name": "sentinel-power-light",
+      "type": "PointLight",
+      "intensity": 34
+    },
+    {
+      "name": "sentinel-cockpit-fill",
+      "type": "HemisphereLight",
+      "intensity": 1.1
+    },
+    {
+      "name": "",
+      "type": "PointLight",
+      "intensity": 38
+    },
+    {
+      "name": "",
+      "type": "PointLight",
+      "intensity": 38
+    },
+    {
+      "name": "sentinel-scan-light",
+      "type": "PointLight",
+      "intensity": 0
+    }
+  ],
+  "maximumCrewDirectBound": 2.976397475198721,
+  "bounds": [
+    {
+      "role": "approach",
+      "y": 3.5,
+      "direct": 0.7350675129675465
+    },
+    {
+      "role": "approach",
+      "y": 4,
+      "direct": 0.7694191826849806
+    },
+    {
+      "role": "approach",
+      "y": 4.5,
+      "direct": 0.8012227849753941
+    },
+    {
+      "role": "window",
+      "y": 3.5,
+      "direct": 0.6701341532833045
+    },
+    {
+      "role": "window",
+      "y": 4,
+      "direct": 0.6896103850353352
+    },
+    {
+      "role": "window",
+      "y": 4.5,
+      "direct": 0.7058268850092185
+    },
+    {
+      "role": "morpheus",
+      "y": 3.5,
+      "direct": 0.8638117146680837
+    },
+    {
+      "role": "morpheus",
+      "y": 4,
+      "direct": 0.9142893496303429
+    },
+    {
+      "role": "morpheus",
+      "y": 4.5,
+      "direct": 0.9632096867465508
+    },
+    {
+      "role": "trinity",
+      "y": 3.5,
+      "direct": 0.7453712709836693
+    },
+    {
+      "role": "trinity",
+      "y": 4,
+      "direct": 0.7774599148550783
+    },
+    {
+      "role": "trinity",
+      "y": 4.5,
+      "direct": 0.806750653555873
+    },
+    {
+      "role": "tank",
+      "y": 3.5,
+      "direct": 1.6181595229062353
+    },
+    {
+      "role": "tank",
+      "y": 4,
+      "direct": 2.0179881898669887
+    },
+    {
+      "role": "tank",
+      "y": 4.5,
+      "direct": 2.6074252570252665
+    },
+    {
+      "role": "dozer",
+      "y": 3.5,
+      "direct": 1.837374667809908
+    },
+    {
+      "role": "dozer",
+      "y": 4,
+      "direct": 2.297451056848394
+    },
+    {
+      "role": "dozer",
+      "y": 4.5,
+      "direct": 2.976397475198721
+    }
+  ]
+}
