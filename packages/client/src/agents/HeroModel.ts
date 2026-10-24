@@ -47,7 +47,7 @@ import { SkinContinuity } from './SkinContinuity.js';
 import { patientNeckView } from './PatientNeckView.js';
 import { poseDojoStance } from './DojoStance.js';
 
-export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_4' | 'citizen_14' | 'pedestrian';
+export type HeroSupport = 'cypher' | 'mouse' | 'switch' | 'apoc' | 'rhineheart' | 'courier' | 'choi' | 'dujour' | 'niobe' | 'ballard' | 'ghost' | 'soren' | 'link' | 'dozer' | 'tank' | 'oracle_priestess' | 'oracle_attendant' | 'citizen_2' | 'citizen_4' | 'citizen_14' | 'pedestrian';
 type Pose = ReturnType<typeof advanceMotion>;
 interface CoatPanel { mesh: THREE.Mesh; rest: Float32Array; velocity: Float32Array }
 export interface HeroRig {
@@ -124,7 +124,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank', Promise<GLTF>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress', Promise<GLTF>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
@@ -177,7 +177,7 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress'): Promise<GLTF> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(asset => {
       asset.scene.traverse(object => {
@@ -211,6 +211,13 @@ export class HeroModels {
         if (material.name === 'Hair cards') {
           material.depthWrite = true; material.alphaToCoverage = true;
           material.bumpMap = material.map; material.bumpScale = .003;
+          if (id === 'red-dress') {
+            material.color.setHex(0xffffff);
+            material.onBeforeCompile = shader => {
+              shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\nfloat fiber = sqrt(dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722)));\ndiffuseColor.rgb = vec3(0.72, 0.48, 0.22) * (0.24 + fiber * 1.2);');
+            };
+            material.customProgramCacheKey = () => 'red-dress-blonde-fibers';
+          }
         }
         if (material.name === 'Coat wool' || material.name === 'Coat leather' || material.name === 'Trousers' || material.name === 'Tracking cotton' || object.userData.mouseCostume) {
           material.bumpMap = this.fabric; material.bumpScale = .001;
@@ -227,7 +234,7 @@ export class HeroModels {
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
     const pedestrian = support === 'pedestrian';
-    const [asset, office, tracking, club, cypherCostume, mouseShip, mouseHead] = await Promise.all([this.load(support === 'mouse' ? 'mouse' : pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' ? 'tank' : support === 'cypher' ? 'choi' : apartmentRole ?? id),
+    const [asset, office, tracking, club, cypherCostume, mouseShip, mouseHead] = await Promise.all([this.load(support === 'citizen_2' ? 'red-dress' : support === 'mouse' ? 'mouse' : pedestrian ? id === 'trinity' ? 'club-female' : 'club-male' : oracleStaff ? 'dujour' : support === 'tank' ? 'tank' : support === 'cypher' ? 'choi' : apartmentRole ?? id),
       id === 'neo' && !pedestrian && !apartmentRole && support !== 'tank' && support !== 'cypher' && support !== 'mouse' ? this.load('neo-office') : undefined,
       id === 'neo' && !support ? this.load('neo-tracking') : undefined,
       id === 'trinity' && !support ? this.load('trinity-club') : undefined,
@@ -358,6 +365,9 @@ export class HeroModels {
       if (object.userData.cypherNeckReference || object.userData.mouseNeckReference) { object.visible = false; return; }
       if (object.userData.hammerBriefingCostume || object.userData.logosCostume || object.userData.dojoCostume || object.userData.cypherCostume) { object.visible = false; object.userData.reloadedHidden = true; }
       const source = object.material; const material = source.clone(); this.materials.add(material); object.material = material;
+      if (support === 'citizen_2' && material.name === 'Hair cards') {
+        material.onBeforeCompile = source.onBeforeCompile; material.customProgramCacheKey = source.customProgramCacheKey;
+      }
       if (material.userData.dojoSkinColorGain) material.color.multiply(new THREE.Color().fromArray(material.userData.dojoSkinColorGain));
       if ((tracking || support === 'link' || id === 'trinity' || id === 'morpheus') && !object.userData.office && !object.userData.dojoSkin && object instanceof THREE.SkinnedMesh && material.name === 'Skin') {
         // The existing head/hands mesh also contains shoulder caps. They sit
@@ -1003,7 +1013,7 @@ export class HeroModels {
       closed = [];
       const inward = side === 'R' ? 1 : -1;
       const tips = Array.from({ length: 5 }, () => new THREE.Vector3());
-      const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      const skin = rig.root.getObjectByName(rig.support === 'citizen_2' ? 'Red_dress_anatomy' : 'Anatomical_head_and_hands') as THREE.SkinnedMesh;
       const { position, skinIndex, skinWeight } = skin.geometry.attributes;
       const distal = skin.skeleton.bones.map(bone => new RegExp(`^finger([1-5])-3_${side}$`).exec(bone.name));
       // Distal bones have no child joint. Infer their actual axis from the
@@ -1061,7 +1071,7 @@ export class HeroModels {
     rig.silver.value = input.mirror ?? 0;
     const finaleGlasses = !input.smithFinale || (input.smithFinale.role === 'smith' ? smithCraterAmount(input.smithFinale) === 0
       : ['approach', 'entrance', 'greeting', 'reply', 'prediction', 'charge_ready', 'charging', 'ready', 'ground_warning', 'ground_dodge', 'ground_counter', 'shockwave', 'air_warning', 'air_dodge', 'air_counter'].includes(input.smithFinale.phase));
-    rig.glasses.visible = rig.support !== 'tank' && !input.dojoOutfit && !interactionView && !(rig.support === 'cypher' && (input.firstPerson || input.interlude?.kind === 'steak')) && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
+    rig.glasses.visible = rig.support !== 'citizen_2' && rig.support !== 'tank' && !input.dojoOutfit && !interactionView && !(rig.support === 'cypher' && (input.firstPerson || input.interlude?.kind === 'steak')) && (!input.catch || ['launch', 'departing', 'flight', 'catching', 'ascent'].includes(input.catch.phase) && input.catch.role === 'neo') && !rig.officeRole && !rig.apartmentRole && input.glasses !== false && !input.realWorld && finaleGlasses && !(input.bathroom?.role === 'smith' && input.bathroom.headbutt);
     const officeShirt = input.officeShirt || rig.officeRole === 'courier' || rig.officeRole === 'police';
     const trackingShirt = input.performance === 'touch' || input.homeClothes === true;
     const clubClothes = Boolean(input.clubClothes && !input.realWorld);

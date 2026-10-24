@@ -829,7 +829,7 @@ export class CharacterModels {
     if (state.id === 'niobe' || state.id === 'link') rig.zionVariant = { fallback: [...detail.children], realWorld: !state.isInMatrix && (!rig.medicalCrew || Boolean(state.currentAction?.parameters.maggieDiscovery)) };
     if (state.id === 'oracle') rig.oracleClothing = { blouse: cloth, trousers, dry: [cloth.color.clone(), trousers.color.clone()] };
     const guard = ['agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson'].includes(state.id) ? state.id as 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson' : undefined;
-    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', mouse: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
+    const reloadedBase: Record<string, HeroId> = { niobe: 'trinity', ballard: 'morpheus', ghost: 'neo', soren: 'smith', link: 'morpheus', dozer: 'morpheus', tank: 'neo', cypher: 'neo', mouse: 'neo', oracle_priestess: 'trinity', oracle_attendant: 'trinity', citizen_2: 'trinity', citizen_4: 'neo', citizen_14: 'neo' };
     if (state.id === 'mouse') rig.mouseFrame = { input: { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: !state.isInMatrix }, distance: 4 };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {

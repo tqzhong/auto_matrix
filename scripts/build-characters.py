@@ -82,6 +82,15 @@ CHARACTERS['choi'] = {**CHARACTERS['neo'], 'height': 4.35, 'support': True,
     'targets': {**CHARACTERS['neo']['targets'], 'head/head-rectangular': .08, 'chin/chin-width-incr': .1}}
 CHARACTERS['dujour'] = {**CHARACTERS['trinity'], 'height': 4.2, 'support': True,
     'targets': {**CHARACTERS['trinity']['targets'], 'head/head-rectangular': .08, 'chin/chin-width-incr': .08}}
+CHARACTERS['red-dress'] = {
+    'height': 4.28, 'support': True, 'hair': 'long01', 'skin': 'young_caucasian_female',
+    'targets': {
+        'macrodetails/caucasian-female-young': 1,
+        'macrodetails/universal-female-young-averagemuscle-averageweight': 1,
+        'head/head-fat-decr': .16, 'chin/chin-width-incr': .08,
+        'nose/nose-scale-depth-incr': .04,
+    },
+}
 CHARACTERS['mouse'] = {
     'height': 4.22, 'support': True, 'hair': 'short04', 'skin': 'young_caucasian_male',
     'targets': {
@@ -114,7 +123,7 @@ def fetch_source(source):
     download('https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip', archive)
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == 'b542127a8e25547c7c29c19f2d1d2adb9a664c80396ecd694095dbc8028a0107', 'System asset archive changed; review it before rebuilding.'
     folders = ['clothes/male_elegantsuit01/', 'clothes/shoes01/', 'clothes/female_casualsuit01/',
-               'hair/short04/', 'eyes/high-poly/', 'eyes/materials/']
+               'hair/short04/', 'hair/long01/', 'eyes/high-poly/', 'eyes/materials/']
     folders += ['skins/' + character['skin'] + '/' for character in CHARACTERS.values()]
     with zipfile.ZipFile(archive) as assets:
         for name in assets.namelist():
@@ -415,6 +424,7 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
         return (vertices - np.array([0, floor, 0])) * scale
 
     posed = game_space(posed)
+    if character == 'red-dress': posed[:, 1] += .18
     binaries = bytearray()
     doc = {'asset': {'version': '2.0', 'generator': 'auto_matrix CC0 character authoring'},
            'scene': 0, 'scenes': [{'nodes': []}], 'nodes': [], 'meshes': [], 'materials': [],
@@ -459,7 +469,7 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
                     dest = system / name; dest.parent.mkdir(parents=True, exist_ok=True); dest.write_bytes(assets.read(name))
     skin_folder = system / 'skins' / spec['skin']
     skin_map = next(skin_folder.glob('*diffuse.png'))
-    skin = material('Skin', [.94, .9, .87, 1], .63, skin_map, character + '-skin.png')
+    skin = material('Skin', [.94, .9, .87, 1], .63, skin_map, 'dujour-skin.png' if character == 'red-dress' else character + '-skin.png')
     leather = character in ('trinity', 'morpheus')
     suit = material('Coat leather' if leather else 'Coat wool', [.012, .009, .008, 1] if character == 'morpheus' else [.007, .009, .011, 1], .36 if leather else .72)
     pants = material('Trousers', [.006, .007, .009, 1], .86)
@@ -468,7 +478,7 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
                         system / 'hair' / spec['hair'] / (spec['hair'] + '_diffuse.png'), spec['hair'] + '-hair.png', True)
     shoes = material('Boot leather', [.022, .024, .023, 1], .32)
     if dock: doc['materials'][shoes]['pbrMetallicRoughness']['roughnessFactor'] = .85
-    eye_map = 'bluegreen_eye.png' if character == 'trinity' else 'grey_eye.png' if character == 'smith' else 'brown_eye.png'
+    eye_map = 'bluegreen_eye.png' if character in ('trinity', 'red-dress') else 'grey_eye.png' if character == 'smith' else 'brown_eye.png'
     sclera = material('Eyes', [1, 1, 1, 1], .23, system / 'eyes/materials' / eye_map, eye_map, True)
     if character == 'smith':
         formal = material('Charcoal suit and shirt', [.9, .91, .9, 1], .75,
@@ -494,6 +504,11 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
         if not faces:
             return
         points = game_space(bake(vertices, influence))
+        if character == 'red-dress':
+            heel = np.zeros(len(points))
+            if name in ('Red dress anatomy', 'Red dress pumps', 'Red dress outsoles'):
+                heel = np.clip((points[:, 2] + .08) / .48, 0, 1) * np.clip((.43 - points[:, 1]) / .18, 0, 1)
+            points[:, 1] += .18 * (1 - heel)
         triangles = [(f[0], f[i], f[i + 1]) for f in faces for i in range(1, len(f) - 1)]
         normals = np.zeros_like(points)
         for t in triangles:
@@ -561,6 +576,7 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
     waistline = pivot('spine03')[1] + .9
     exposed = [f for f in body_faces if character == 'dujour' and np.mean(base[[i for i, _ in f], 1]) > waistline or np.mean(base[[i for i, _ in f], 1]) > neckline - .85 or
                np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .85]
+    if character == 'red-dress': exposed = body_faces
     if dock:
         exposed = [f for f in body_faces if np.mean(base[[i for i, _ in f], 1]) > neckline - .12 or
                    np.mean(weights[[i for i, _ in f]][:, hand_bones].sum(axis=1)) > .7]
@@ -645,7 +661,7 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
         export_mesh('Tracking arms', v, uv, [f for f, keep in zip(faces, visible) if keep], w, skin)
         export_mesh('Patient body', v, uv, faces, w, skin)
     elif not office:
-        export_mesh('Anatomical head and hands', v, uv, faces, w, skin, not spec.get('support'))
+        export_mesh('Red dress anatomy' if character == 'red-dress' else 'Anatomical head and hands', v, uv, faces, w, skin, not spec.get('support'))
     else:
         torso = [f for f in body_faces if waistline - 1.8 < np.mean(base[[i for i, _ in f], 1]) < neckline - .8 and np.mean(weights[[i for i, _ in f]][:, :3].sum(axis=1)) > .9]
         v, uv, faces, w = subdivide(base, skin_uv, torso, weights)
@@ -661,7 +677,7 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
         v, uv, faces, w = subdivide(v, uv, faces, w)
         knit = material('Dock knit', [.28, .24, .18, 1], .98)
         export_mesh('Dock crew neck top', v, uv, faces, w, knit)
-    elif character != 'smith' and not office and not tracking:
+    elif character not in ('smith', 'red-dress') and not office and not tracking:
         arm_bones = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow'))]
         undershirt = [f for f in body_faces if (np.mean(base[[i for i, _ in f], 1]) > waistline - .3
                      or character == 'trinity' and np.mean(weights[[i for i, _ in f]][:, arm_bones].sum(axis=1)) > .5)
@@ -707,6 +723,23 @@ def main(source, character, office=False, tracking=False, club=False, dock=False
         influence = np.maximum((weights[refs] * bary[:, :, None]).sum(axis=1), 0)
         influence /= np.maximum(influence.sum(axis=1, keepdims=True), 1e-8)
         return vertices, uv, faces, influence
+
+    if character == 'red-dress':
+        from red_dress_costume import dress_costume
+        def from_game(points, influence):
+            matrices = np.einsum('vi,ijk->vjk', influence, rotation)
+            offsets = influence @ translations
+            return np.linalg.solve(matrices, (points / scale + np.array([0, floor, 0]) - offsets)[..., None])[..., 0]
+        dress_costume(game_space(baked), body_faces, weights, names, posed - np.array([0, .18, 0]), from_game,
+                      export_mesh, clothing, material, hair, sclera)
+        doc['extras'] = {'character': character, 'height': spec['height'] + .18, 'eye': (game_space(eye) + [0,.18,0]).tolist(),
+                         'head': posed[3].tolist(), 'waist': [0, spec['height'] * .55, 0],
+                         'targets': spec['targets'], 'sourceRevision': REVISION, 'skinBaked': True,
+                         'fitting': 'Independent CC0 anatomy and film-reference tailoring; approximate likeness, not a scan.'}
+        for mat in doc['materials']:
+            if mat['name'] == 'Red satin': mat['doubleSided'] = True
+        write_glb(doc, binaries, 'red-dress.glb')
+        return
 
     if tracking:
         v, uv, faces, w = clothing('clothes/male_casualsuit06', 'male_casualsuit06')
