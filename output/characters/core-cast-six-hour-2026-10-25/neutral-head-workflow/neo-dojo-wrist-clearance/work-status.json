@@ -1,0 +1,28 @@
+{
+  "source": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-dojo-wrist-clearance/neo.glb",
+    "sha256": "650521c0473b60be91f855ffdb79653445463d79cbafb9ac251d3ee931a5657a",
+    "bytes": 54842516
+  },
+  "adopted": false,
+  "qualityPassed": false,
+  "sourceDeletionReady": false,
+  "reason": "52 selected hand / jacket samples have no crossings, but lower jacket / trouser contacts remain in 24 of 26 samples. The combined all-surface no-new-failed-samples test masks changed contact regions and cannot approve this candidate. Visible failing 56fe binding trial retained separately.",
+  "nextAction": "Do not continue local sculpt expansion: user requested character-stage closeout. Retain the prior Neo 21fcba8d model and its complete editable master; list dojo contacts as later in-game clothing work.",
+  "accepted": false,
+  "likenessPercentage": null,
+  "rejectedPayloadRemoved": {
+    "record": {
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-dojo-wrist-clearance/neo.glb",
+      "sha256": "650521c0473b60be91f855ffdb79653445463d79cbafb9ac251d3ee931a5657a",
+      "bytes": 54842516
+    },
+    "removedUtc": "2026-10-30T15:30:07.850427+00:00",
+    "reason": "Unadopted derived trial; exact source, author-tailor.py, sculpt data, runtime changes and failing contact receipts retained. No retained character model or native master removed."
+  }
+}

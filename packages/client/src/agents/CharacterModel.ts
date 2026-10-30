@@ -1416,6 +1416,10 @@ export class CharacterModels {
     if (rig.parkHands && (input.oracleKitchen || input.oracleVisit?.role === 'oracle')) connectGardenWrists(rig);
   }
 
+  refreshFace(rig: CharacterRig): void {
+    if (rig.hero) this.heroes.poseFace(rig.hero);
+  }
+
   refreshFarewellContact(rig: CharacterRig, gesture: NonNullable<MotionInput['farewell']>, normal?: THREE.Vector3, up?: THREE.Vector3): void {
     if (rig.hero) this.heroes.farewellContact(rig.hero, gesture, normal, up);
   }

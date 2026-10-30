@@ -1,0 +1,618 @@
+{
+  "updatedUtc": "2026-10-30T15:27:06.697Z",
+  "objective": "按用户最新要求，以整体人物形象接近为尺度结束本轮持续精修；冻结四人当前模型与母版，保留真实问题用于后续实机修复。",
+  "methodology": "本轮按用户最新收尾标准关闭持续精修。4/4 表示模型及母版已保留，8 张为实际游戏截图；这些不换算成演员相似度。95% 及用户最终确认仍独立保留。",
+  "integratedCandidates": {
+    "completed": 4,
+    "total": 4,
+    "percent": 100,
+    "label": "完整可动候选已接入（制作基础）"
+  },
+  "currentRound": {
+    "label": "主角团 · 本轮人物建模收尾",
+    "displayStatus": "4 人模型与母版已锁定；持续局部精修结束",
+    "completed": 3,
+    "total": 3,
+    "previewUrl": "http://127.0.0.1:5273/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-cast-closeout-2026-10-30/index.html",
+    "steps": [
+      {
+        "label": "四人模型与母版版本锁定",
+        "done": true,
+        "status": "4 组文件及运行时代码已核对",
+        "evidence": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-cast-closeout-2026-10-30/manifest.json"
+      },
+      {
+        "label": "面部与全身多视角画面",
+        "done": true,
+        "status": "8 张原始游戏截图已保留",
+        "evidence": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-cast-closeout-2026-10-30/index.html"
+      },
+      {
+        "label": "淘汰引入新穿模的道服试修",
+        "done": true,
+        "status": "Neo 保留此前稳定版本；问题如实列出",
+        "evidence": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-dojo-wrist-clearance/work-status.json"
+      }
+    ],
+    "recentChanges": [
+      "按用户最新要求结束本轮持续人物精修，停止追逐局部参数。",
+      "四人当前模型与母版均保留；未重复复制大型资产。",
+      "Trinity 查看端口修正为 5250；Morpheus 的 5248 检视服务恢复。"
+    ],
+    "remainingQuality": "仍有眼睑、口型及服装局部接触问题；95% 相似度未确认。正式游戏替换、全场景成功/失败/读档与完整母版等价验证另行保留。"
+  },
+  "actors": [
+    {
+      "actor": "neo",
+      "sharedIdentitySource": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-facebuilder-v1/neo-neutral-master.blend",
+        "sha256": "52d6e316e1768d34760ba80d6529c288e5797e8f78184786a9f6c304b747a775",
+        "bytes": 3670193
+      },
+      "integratedModel": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-lid-wrap/neo.glb",
+        "sha256": "d90c3c111a049bc2ec0a93e35a871e4ede686120b717311385d46a8b1be12af3",
+        "bytes": 52052536
+      },
+      "completedFoundationStages": 2,
+      "stageCount": 4,
+      "currentStage": 3,
+      "stages": [
+        {
+          "label": "共享身份源建立",
+          "status": "已完成"
+        },
+        {
+          "label": "完整可动候选接入",
+          "status": "已完成"
+        },
+        {
+          "label": "逐人高质量精修与动作验证",
+          "status": "进行中"
+        },
+        {
+          "label": "用户多视角实机 95% 确认",
+          "status": "待确认"
+        }
+      ],
+      "note": "口腔新增真实曲面和随张口展开，内壁／舌体接入实际局部遮蔽；239个指定接触对比无新增失败，完整母版同步重开。半张口后壁分面、舌根、整脸身份和神态、原有穿模与原生法线仍未通过，四人95%仍0/4。",
+      "likenessPercentage": null,
+      "userAccepted": false,
+      "latestWorkingCandidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+        "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+        "bytes": 54842516
+      },
+      "latestWorkingReviewUrl": "http://127.0.0.1:5273/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "productionPromoted": false,
+      "latestEditableMaster": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo-oral-vault-authoring.blend",
+        "sha256": "7122aa3ee167710608182ccaedca13308999ba6f42904c9403846c37e595917a",
+        "bytes": 39926070
+      },
+      "latestNativeRenderGaps": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/native-render-gaps.json",
+      "modelingPhaseStatus": "frozen-for-closeout"
+    },
+    {
+      "actor": "trinity",
+      "sharedIdentitySource": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-facebuilder-v1/trinity-neutral-master.blend",
+        "sha256": "dcb17beec68d55414e39495947e32ac24e9ccf02d0b14718bc62c4cf9c9602a2",
+        "bytes": 3238184
+      },
+      "integratedModel": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-eye-surface/trinity/trinity.glb",
+        "sha256": "a77590ab935ad587000a2b368a7ce77d392877b2212bd98e3f275abd7edc776e",
+        "bytes": 47342780
+      },
+      "completedFoundationStages": 2,
+      "stageCount": 4,
+      "currentStage": 3,
+      "stages": [
+        {
+          "label": "共享身份源建立",
+          "status": "已完成"
+        },
+        {
+          "label": "完整可动候选接入",
+          "status": "已完成"
+        },
+        {
+          "label": "逐人高质量精修与动作验证",
+          "status": "进行中"
+        },
+        {
+          "label": "用户多视角实机 95% 确认",
+          "status": "待确认"
+        }
+      ],
+      "note": "同一完整人物保留此前眉眼／照片表情和握拳修复，新增拳背关节与手部细纹／粗糙度候选，当前独立预览65cfd63e。9档原生手势、2个材质字段、资产重新生成和真实渲染已核对；手部、肤质、衣袖和整体演员效果仍未验收。主游戏接入版本保持原记录。",
+      "likenessPercentage": null,
+      "userAccepted": false,
+      "latestWorkingCandidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity.glb",
+        "sha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9",
+        "bytes": 70119092
+      },
+      "latestWorkingReviewUrl": "http://127.0.0.1:5250/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "productionPromoted": false,
+      "latestEditableMaster": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity-knuckle-skin-authoring.blend",
+        "sha256": "329a16cf9e0249ab93189e0d7c9529facb56402e736bad903ffb58f1debdeff0",
+        "bytes": 40364967
+      },
+      "modelingPhaseStatus": "frozen-for-closeout"
+    },
+    {
+      "actor": "morpheus",
+      "sharedIdentitySource": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-facebuilder-v1/morpheus-neutral-master.blend",
+        "sha256": "644cf7b542098c6c48d86541de21eff20e76234251a172630d3a745dc9453392",
+        "bytes": 3713789
+      },
+      "integratedModel": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-medial-lid-tissue/morpheus.glb",
+        "sha256": "11001390e4cdd1ebc3c80d4e6424e9d62970626c845ad474317796e63e51225a",
+        "bytes": 54301752
+      },
+      "completedFoundationStages": 2,
+      "stageCount": 4,
+      "currentStage": 3,
+      "stages": [
+        {
+          "label": "共享身份源建立",
+          "status": "已完成"
+        },
+        {
+          "label": "完整可动候选接入",
+          "status": "已完成"
+        },
+        {
+          "label": "逐人高质量精修与动作验证",
+          "status": "进行中"
+        },
+        {
+          "label": "用户多视角实机 95% 确认",
+          "status": "待确认"
+        }
+      ],
+      "note": "在同一完整可动人物上完成唇周颜色／覆盖、上睑与眨眼联动，以及颧颊／下颌体积候选；当前独立预览使用b7696219。已保留可编辑完整母版并进行针对性接触与实机预览检查。整体年龄感、肤质、口型／手部自然度及服装仍需精修；主游戏已接入版本与本轮候选分开记录。",
+      "likenessPercentage": null,
+      "userAccepted": false,
+      "latestWorkingCandidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus.glb",
+        "sha256": "b7696219c307d51691e1d7ee848d906a84bc4fad428e0103c8a69eb0727a0a6d",
+        "bytes": 56833960
+      },
+      "latestWorkingReviewUrl": "http://127.0.0.1:5248/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "latestEditableMaster": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus-cheek-authoring.blend",
+        "sha256": "2e1100131e197f2d5f60c73ded225e1c99bb94200ee012179845c1285fbcadc1",
+        "bytes": 37203247
+      },
+      "modelingPhaseStatus": "frozen-for-closeout"
+    },
+    {
+      "actor": "smith",
+      "sharedIdentitySource": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-facebuilder-v1/smith-neutral-master.blend",
+        "sha256": "c700b0885a390975f3a780ebef949e65a65c471b66d203216b06f2cf72b407da",
+        "bytes": 3454862
+      },
+      "integratedModel": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-eye-surface/smith/smith.glb",
+        "sha256": "38e8adc6be62a2badba21d3b1688ac8fe88c5b2b498efba280243b56cab6c6a2",
+        "bytes": 41266268
+      },
+      "completedFoundationStages": 2,
+      "stageCount": 4,
+      "currentStage": 3,
+      "stages": [
+        {
+          "label": "共享身份源建立",
+          "status": "已完成"
+        },
+        {
+          "label": "完整可动候选接入",
+          "status": "已完成"
+        },
+        {
+          "label": "逐人高质量精修与动作验证",
+          "status": "进行中"
+        },
+        {
+          "label": "用户多视角实机 95% 确认",
+          "status": "整体未达标，尚未进入最终确认"
+        }
+      ],
+      "note": "已在同一完整人物上局部压低眉上亮边、缓和眼下底色色斑，保留上一轮收紧发型和抬眉余量；原图片及全部几何／表情／UV／手部／绑定／动作保持。完整工程独立重开，新增颜色字段映射一致；五实机姿态位置与源模型相同。三完整视角、三原片估计机位及连续表情已实看；粗糙眉纹、整体肤质及额头／眼眶／唇颌身份差异仍需精修，原四闭眼和后封片失败保留。",
+      "likenessPercentage": null,
+      "userAccepted": false,
+      "latestWorkingCandidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+        "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+        "bytes": 54975976
+      },
+      "latestWorkingReviewUrl": "http://127.0.0.1:5263/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "latestEditableMaster": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith-brow-albedo-authoring.blend",
+        "sha256": "ec11c91e4dc693f957b202010fef306275b323d95018951fa7e10bf0ea00f612",
+        "bytes": 28681591
+      },
+      "productionPromoted": false,
+      "modelingPhaseStatus": "frozen-for-closeout"
+    }
+  ],
+  "finalAcceptance": {
+    "completed": 0,
+    "total": 4,
+    "label": "95% 用户最终确认，独立于制作进度"
+  },
+  "overallGoalComplete": true,
+  "sourceDeletionReady": false,
+  "recentCompletedModelMilestones": [
+    {
+      "actor": "morpheus",
+      "label": "局部唇周颜色与覆盖修复",
+      "evidence": "morpheus-lip-identity/work-status.json",
+      "candidateSha256": "85e57c1d8d4f5b50dc3b1f5e421f2c46218660c8c6949fc53704d0d2aefdf726"
+    },
+    {
+      "actor": "morpheus",
+      "label": "中性上睑与眨眼联动修复",
+      "evidence": "morpheus-eye-aperture/work-status.json",
+      "candidateSha256": "9fe282c7246849842d8c611c3f185b0d9b6a00c29090267b465a803fded2efd4"
+    },
+    {
+      "actor": "morpheus",
+      "label": "颧颊、鼻唇沟与下颌体积精修",
+      "evidence": "morpheus-cheek-form/work-status.json",
+      "candidateSha256": "b7696219c307d51691e1d7ee848d906a84bc4fad428e0103c8a69eb0727a0a6d"
+    },
+    {
+      "actor": "trinity",
+      "label": "眼球光学、闭眼联动与四个原片照片表情候选",
+      "evidence": "trinity-reference-performance/work-status.json",
+      "candidateSha256": "6814195bd738b4b457eeaebd5dbe7d7a80e2c90ae25e128d1caf4f462a7a2921"
+    },
+    {
+      "actor": "trinity",
+      "label": "普通握拳拇指弯曲与局部软组织修形候选",
+      "evidence": "trinity-combat-hand-form/work-status.json",
+      "candidateSha256": "9ea8a921dbd99a36f869ea7868438c1bc3b14c179c44250b0fffe0b967c35d39"
+    },
+    {
+      "actor": "trinity",
+      "label": "四指握拳、掌部接触与刚性指甲修复候选",
+      "evidence": "trinity-fist-anatomy/work-status.json",
+      "candidateSha256": "5b4c47a10b37dc4e75979b34f1ed1f4b8affff1956a0bbe7f043d954797f8e8e"
+    },
+    {
+      "actor": "trinity",
+      "label": "拳背关节起伏与手部皮肤细节候选",
+      "evidence": "trinity-knuckle-skin/work-status.json",
+      "candidateSha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9"
+    },
+    {
+      "actor": "neo",
+      "label": "上睑弧度候选及接合验证（视觉未通过）",
+      "evidence": "neo-upper-lid-arc/work-status.json",
+      "candidateSha256": "3b761433c5524000c9870fbcbbcc4a5b58e6b2fdc09c29c19c393c7392244463",
+      "visualQualityPassed": false
+    },
+    {
+      "actor": "neo",
+      "label": "动态睑缘遮蔽与眼角颜色候选及验证（视觉未通过）",
+      "evidence": "neo-socket-visibility/work-status.json",
+      "candidateSha256": "5c0796284fbe18c8a722631076f46b50623fd6aea09dcee5e215a38f694250de",
+      "visualQualityPassed": false
+    },
+    {
+      "actor": "neo",
+      "label": "上睑闭合形变重新分配候选及验证（视觉未通过）",
+      "evidence": "neo-closed-lid-form/work-status.json",
+      "candidateSha256": "e6f6f5e9b6d8a47660fb121a7f3c5db4a6ef117a6cec03dc6a89e3d83162ebfd",
+      "visualQualityPassed": false
+    },
+    {
+      "actor": "neo",
+      "label": "上睑开合与组织跟随制作候选（人物未达标）",
+      "evidence": "neo-iris-visibility/work-status.json",
+      "candidateSha256": "fe10981aa015919fca0ee4eb70b88bb0c11b0f34e6b507bc589063d158d4aa95",
+      "visualQualityPassed": false
+    },
+    {
+      "actor": "smith",
+      "label": "整脸审讯表情、额部形变及所测嘴角／下颈接缝修复",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-reference-performance/smith.glb",
+        "sha256": "ba7729a920a3ceecdd09319dcf37a9168a58a6924613cf660daf21344baf1270",
+        "bytes": 43466560
+      },
+      "previewUrl": "http://127.0.0.1:5252/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-reference-performance/review.html?variant=after&frame=face&view=photo:interrogation-front&faceClip=film&faceTime=1&poseTime=0",
+      "accepted": false,
+      "evidence": "smith-reference-performance/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "肤质噪点清理、发际软化与发丝方向反光候选",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-skin-surface/smith.glb",
+        "sha256": "4202695669c9fb67a34eea1670c191338f4ee064403ec40780cfa90ac9ed6393",
+        "bytes": 45387404
+      },
+      "previewUrl": "http://127.0.0.1:5253/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-skin-surface/review.html?variant=after&frame=face&view=photo:interrogation-front&faceClip=film&faceTime=1&poseTime=0",
+      "accepted": false,
+      "evidence": "smith-skin-surface/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "握拳、指关节与腕袖局部修复候选",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-form/smith.glb",
+        "sha256": "86f5566be01f09c0cb932f30f4b07f7cf824251a595d4b98665b6cb67189fcc5",
+        "bytes": 48026648
+      },
+      "previewUrl": "http://127.0.0.1:5254/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-form/review.html?variant=after&frame=hands&motion=grip&handGrip=0.5&wristFlex=20&side=R&view=cuff-dorsal&faceClip=gaze&faceTime=0&poseTime=0",
+      "accepted": false,
+      "evidence": "smith-hand-form/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "掌心肌肉、指腹与指形实际几何精修候选",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-palmar-form/smith.glb",
+        "sha256": "31672a3bf2e12dd0b8495007ad921d9f8e75300625bcfd803ab96c13827b5247",
+        "bytes": 49182968
+      },
+      "previewUrl": "http://127.0.0.1:5255/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-palmar-form/review.html?variant=after&frame=hands&motion=grip&handGrip=0.5&wristFlex=0&side=R&view=hand-palm&faceClip=gaze&faceTime=0&poseTime=0",
+      "accepted": false,
+      "evidence": "smith-palmar-form/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "手部材质调整候选（手部质量仍未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-material/smith.glb",
+        "sha256": "31eaaf9e603fd60e8f237ccb1f187312aa40baa9cebb4ff16076f3f50c9f17f4",
+        "bytes": 49709008
+      },
+      "previewUrl": "http://127.0.0.1:5256/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-material/review.html?variant=after&frame=hands&view=hand-palm&motion=grip&handGrip=0.5&side=R&faceClip=film&faceTime=1&poseTime=0",
+      "accepted": false,
+      "evidence": "smith-hand-material/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "眼神／眼睑与闭眼微修候选（整体未达标）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-film-gaze/smith.glb",
+        "sha256": "7512239556ac457214b80e2ae804a4304867f36cf2a7794bd329b998021cc4a0",
+        "bytes": 51557964
+      },
+      "previewUrl": "http://127.0.0.1:5257/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-film-gaze/review.html?variant=after&frame=face&view=photo%3Ainterrogation-front&motion=idle&faceClip=film&faceTime=1&poseTime=0&eyeCrop=1",
+      "accepted": false,
+      "evidence": "smith-film-gaze/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "上眼睑厚度／褶皱与闭眼收平候选（整体未达标）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-lid-volume/smith.glb",
+        "sha256": "00752c053bf3d43e65928a0aa6713e5b1522793af504e0b28d236d8ccecb2c57",
+        "bytes": 48192152
+      },
+      "previewUrl": "http://127.0.0.1:5258/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-lid-volume/review.html?variant=after&frame=face&view=photo%3Ainterrogation-front&motion=idle&faceClip=film&faceTime=1&poseTime=0&eyeCrop=1",
+      "accepted": false,
+      "evidence": "smith-lid-volume/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "眼角组织／材质与表情接缝候选（接触和整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-canthus-tissue/smith.glb",
+        "sha256": "1ef047ec01d27c81e1d3250244d948cfd9ee3973d97038481746861a0bd77c7f",
+        "bytes": 49063616
+      },
+      "previewUrl": "http://127.0.0.1:5259/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-canthus-tissue/review.html?variant=after&frame=face&view=photo%3Ainterrogation-front&motion=idle&faceClip=film&faceTime=1&poseTime=0&eyeCrop=1",
+      "accepted": false,
+      "evidence": "smith-canthus-tissue/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "闭眼折叠／UV接缝修正与六条电影额纹候选（接触和整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-closed-tissue/smith.glb",
+        "sha256": "b9f38fc8eecaafc57627e6fb79413be8c8e99e933aa05d5a609460d15255f0ed",
+        "bytes": 51460624
+      },
+      "previewUrl": "http://127.0.0.1:5260/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-closed-tissue/review.html?variant=after&frame=face&view=photo%3Ainterrogation-front&faceClip=film&faceTime=1&poseTime=0&lighting=interrogation&eyeCrop=0",
+      "accepted": false,
+      "evidence": "smith-closed-tissue/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "整脸三维体积与完整工程候选（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-facial-form/smith.glb",
+        "sha256": "036857b3d8fdd63c5c59c283bbede3d402689b8dd8b41eb18ebd0b110a6f2b7e",
+        "bytes": 52250752
+      },
+      "previewUrl": "http://127.0.0.1:5261/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-facial-form/review.html?variant=after&frame=face&view=photo%3Ainterrogation-front&faceClip=film&faceTime=1&poseTime=0&lighting=interrogation&eyeCrop=0",
+      "accepted": false,
+      "evidence": "smith-facial-form/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "三维发型收紧与抬眉发际线接触修复（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-film-groom/smith.glb",
+        "sha256": "811c53dd0599491191c5224d5a4a843b298bf5398a731d8eab0ae9e9b77b5cd8",
+        "bytes": 53923632
+      },
+      "previewUrl": "http://127.0.0.1:5262/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-film-groom/review.html?variant=after&frame=face&view=solo-oblique&faceClip=gaze&faceTime=0&poseTime=0&lighting=standard&channel=0",
+      "accepted": false,
+      "evidence": "smith-film-groom/work-status.json"
+    },
+    {
+      "actor": "smith",
+      "label": "同一三维人物眉眼局部底色修正（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+        "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+        "bytes": 54975976
+      },
+      "previewUrl": "http://127.0.0.1:5263/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/review.html?variant=after&frame=face&view=solo-oblique&faceClip=gaze&faceTime=0&poseTime=0&lighting=standard&channel=0",
+      "accepted": false,
+      "evidence": "smith-brow-albedo/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "下巴／颧颊与两段式口腔实际建模（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-jaw-cheek-form/neo.glb",
+        "sha256": "c5e43f4495253ef96dd1ff32c33049f469d938a220e790607a8dd1776f766cc9",
+        "bytes": 56807856
+      },
+      "previewUrl": "http://127.0.0.1:5264/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-jaw-cheek-form/review.html?variant=after&frame=face&faceClip=film&view=photo:finale-front&faceTime=0.9&poseTime=0",
+      "accepted": false,
+      "evidence": "neo-jaw-cheek-form/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "拇指末节弯曲与指甲绑定修正（手部整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-hand-articulation/neo.glb",
+        "sha256": "3563fa69b39e1e999e48d1c94d4f7637dfdd161d9f59445261eeb4a1a8297773",
+        "bytes": 56810888
+      },
+      "previewUrl": "http://127.0.0.1:5265/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-hand-articulation/review.html?variant=after&frame=hands&view=hand&motion=grip&handGrip=1&side=R&faceTime=0&poseTime=0",
+      "accepted": false,
+      "evidence": "neo-hand-articulation/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "拇指对掌／虎口体积与左袖口实际修正（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-hand-articulation/neo.glb",
+        "sha256": "ff914da8a4ef8614d58429d211f7a9d0ec1bd21d307b606b9582fd3b358e0c52",
+        "bytes": 57641400
+      },
+      "previewUrl": "http://127.0.0.1:5265/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-hand-articulation/review.html?variant=after&frame=hands&view=hand&motion=grip&handGrip=1&side=R&faceTime=0&poseTime=0",
+      "accepted": false,
+      "evidence": "neo-hand-articulation/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "口腔环境字段与实际网格局部阴影接入（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-light/neo.glb",
+        "sha256": "cf68c9b651951946c327310289f420144755094610021b912d9659fcc7d3431e",
+        "bytes": 57705292
+      },
+      "previewUrl": "http://127.0.0.1:5266/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-light/review.html?variant=after&frame=face&motion=idle&view=photo:finale-front&faceClip=film&faceTime=0.9&poseTime=0",
+      "accepted": false,
+      "evidence": "neo-oral-light/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "三处电影口型校准／新动作与完整母版同步（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-film-mouth-pose/neo.glb",
+        "sha256": "88b8d7225198085d428d42bffef0936a9dfad0c05ae26e1e87b0de7429470a93",
+        "bytes": 57710632
+      },
+      "previewUrl": "http://127.0.0.1:5267/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-film-mouth-pose/review.html?variant=after&frame=face&motion=idle&view=photo:finale-front&faceClip=film&faceTime=0.9&poseTime=0",
+      "accepted": false,
+      "evidence": "neo-film-mouth-pose/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "眼白接合局部材质调校（完整模型／95%未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-occlusion/neo.glb",
+        "sha256": "4b14141c1fe8bfc7806f8d37dfc710aef43175c64a527f77beaa75eacc5ed4c5",
+        "bytes": 57711272
+      },
+      "previewUrl": "http://127.0.0.1:5268/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-occlusion/review.html?variant=after&frame=face&motion=idle&view=photo:finale-front&faceClip=film&faceTime=0.9&poseTime=0",
+      "accepted": false,
+      "evidence": "neo-eye-occlusion/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "716束前额发丝细化及指定头皮接触验证（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-front-groom/neo.glb",
+        "sha256": "aa7c0f83ebe5a763249e93e98d5d180b091fe5b0f8844e7f00a4315cdff6aaf7",
+        "bytes": 59221608
+      },
+      "previewUrl": "http://127.0.0.1:5269/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-front-groom/review.html?variant=after&frame=face&motion=idle&view=photo:finale-front&faceClip=film&faceTime=0.9&poseTime=0",
+      "accepted": false,
+      "visualQualityPassed": false,
+      "evidence": "neo-front-groom/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "下睑曲面贴合／叠加表情接触修正与母版同步（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-lid-contour/neo.glb",
+        "sha256": "3f6df781bcb9b24175cc1b4053e3ec9c5b486600cc26840269c046249ebdecdc",
+        "bytes": 86054616
+      },
+      "previewUrl": "http://127.0.0.1:5270/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-lid-contour/review.html?variant=after&frame=face&motion=idle&view=photo:finale-front&faceClip=film&faceTime=0.9&poseTime=0",
+      "accepted": false,
+      "visualQualityPassed": false,
+      "evidence": "neo-lid-contour/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "四个眨眼形态重塑与母版同步（外观未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-closed-lid-wrap/neo.glb",
+        "sha256": "70d82ab9d4c7097bed46e35a88e6aea5fe2fb1add344927e9e1a8c6dbec99f30",
+        "bytes": 86817124
+      },
+      "previewUrl": "http://127.0.0.1:5271/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-closed-lid-wrap/review.html?variant=after&frame=face&view=photo:finale-front&faceClip=film&faceTime=0.9&expressionControl=none&poseTime=0",
+      "accepted": false,
+      "visualQualityPassed": false,
+      "evidence": "neo-closed-lid-wrap/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "眼球静态遮蔽条带修正（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-ao-mask/neo.glb",
+        "sha256": "4493f96285e5c3910f401f1fe09ff9a28a123433a97c1a021ece902174b88359",
+        "bytes": 86817608
+      },
+      "previewUrl": "http://127.0.0.1:5272/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-ao-mask/review.html?variant=after&frame=face&view=photo:finale-front&faceClip=film&faceTime=0.9&expressionControl=none&poseTime=0",
+      "accepted": false,
+      "visualQualityPassed": false,
+      "evidence": "neo-eye-ao-mask/work-status.json"
+    },
+    {
+      "actor": "neo",
+      "label": "口腔真实曲面、组织遮蔽与完整母版（整体未通过）",
+      "candidate": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+        "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+        "bytes": 54842516
+      },
+      "previewUrl": "http://127.0.0.1:5273/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/review.html?variant=after&frame=mouth&view=front&expressionControl=jawOpen&expressionAmount=0.65&faceClip=gaze",
+      "accepted": false,
+      "visualQualityPassed": false,
+      "evidence": "neo-oral-vault/work-status.json"
+    }
+  ],
+  "priorObjective": "四位核心主角逐个精修，达到用户确认的真实演员多视角实机 95% 视觉匹配；必须看到有证据的制作进度变化。",
+  "modelingCloseout": {
+    "status": "closed",
+    "verifiedModels": 4,
+    "verifiedNativeMasters": 4,
+    "rawCaptures": 8,
+    "manifest": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-cast-closeout-2026-10-30/manifest.json",
+    "reviewUrl": "http://127.0.0.1:5273/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-cast-closeout-2026-10-30/index.html",
+    "prior95PercentObjectiveMet": false
+  },
+  "prior95PercentObjectiveComplete": false,
+  "fullTrilogyGoalComplete": false
+}

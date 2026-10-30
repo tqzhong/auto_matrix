@@ -8,6 +8,8 @@ export const AMBUSH_ESCAPE = {
   staging: { x: -5.4, y: -AMBUSH_STAIRS.rise * AMBUSH_STOREYS, z: -13.2 },
 } as const;
 export const AMBUSH_CALL = { approach: 1.6, handoff: 1.1, exchange: 1.55, connected: 2.2, lower: 7, duration: 8.5, advance: 1.65 } as const;
+export const AMBUSH_DOFF = { duration: 8 } as const;
+export interface AmbushDoffGesture { elapsed: number; progress: number; yaw: number }
 export type AmbushEscapePhase = 'alarm' | 'descending' | 'window' | 'phone' | 'call' | 'forming' | 'wetwall' | 'failed' | 'done';
 export interface AmbushPursuer { progress: number; health: number; spawned?: true }
 export interface AmbushEscape {
@@ -16,7 +18,9 @@ export interface AmbushEscape {
   roomGuards?: { health: number; spawned?: true }[];
   callPerformance?: true;
   callStart?: { trinityProgress: number; trinityYaw: number; morpheusYaw: number };
-  checkpoint: { floor: number; phase: 'descending' | 'phone' | 'forming' | 'wetwall'; progress: Record<AmbushCompanion, number>; pursuers: AmbushPursuer[]; traced: boolean };
+  doffPerformance?: true;
+  doff?: AmbushDoffGesture;
+  checkpoint: { floor: number; phase: 'descending' | 'phone' | 'forming' | 'wetwall'; progress: Record<AmbushCompanion, number>; pursuers: AmbushPursuer[]; traced: boolean; doff?: AmbushDoffGesture };
 }
 export const MOUSE_ROOM_SHOTS = [2.8, 3.2, 3.6, 4] as const;
 export const MOUSE_ROOM_RETURN = [3, 3.4, 3.8, 4.2, 4.4] as const;
@@ -138,6 +142,7 @@ export function ambushEscapeText(escape: AmbushEscape): string {
       : 'Mouse 的信号消失了。Morpheus 示意退下楼梯；跟着队伍撤到八楼。';
   if (escape.phase === 'descending') return '硬线无法接出。沿右侧楼梯下行，在半层平台转向左侧楼梯；与五名同伴撤到八楼。追兵正在逼近。';
   if (escape.phase === 'window') return '八楼的窗户也被砖墙封死。走到窗前按 G 检查，再与 Morpheus 商量退路。';
+  if (escape.phase === 'phone' && escape.doff && escape.doff.elapsed < AMBUSH_DOFF.duration) return 'Morpheus 正在脱下长外套。留出双臂和衣摆的空间；追兵仍在逼近，放好外套后才会联系 Tank。';
   if (escape.phase === 'phone') return 'TRINITY · 手机会暴露我们的位置。没有硬线可用，靠近 Morpheus 按 G，决定冒险联系 Tank。';
   if (escape.phase === 'call' && escape.callPerformance && escape.elapsed < AMBUSH_CALL.approach) return 'Trinity 靠近 Morpheus，准备递出手机。留出两人之间的空间；追兵仍在逼近。';
   if (escape.phase === 'call' && escape.callPerformance && escape.elapsed < AMBUSH_CALL.approach + AMBUSH_CALL.connected) return 'Trinity 递出手机，Morpheus 接过后换到左手，举向耳边。';

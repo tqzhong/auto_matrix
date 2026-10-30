@@ -1,0 +1,375 @@
+{
+  "sourceIdentityMasterSha256": "050b15f0be1245764206d781a5f98ee3361f516f20d675778c9642178e37e327",
+  "sourceMasterFileUnchanged": true,
+  "camerasRefitted": false,
+  "views": [
+    {
+      "id": "interrogation-front",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        701.0,
+        386.0,
+        1506.0,
+        1507.0
+      ],
+      "referencePath": "output/characters/smith-likeness-2026-10-25/references/smith-interrogation-4k-1544.jpg",
+      "referenceSha256": "48c053c7d8ad2dcdd36f3c6b7c8c1fb9d78626b08dbeb5888dbf36f4659fb164",
+      "matrixWorld": [
+        [
+          0.950213611125946,
+          0.22597959637641907,
+          -0.2145398110151291,
+          -1.6380484104156494
+        ],
+        [
+          -0.22667856514453888,
+          0.028895335271954536,
+          -0.9735408425331116,
+          -13.522976875305176
+        ],
+        [
+          -0.21380119025707245,
+          0.9737033843994141,
+          0.07868146151304245,
+          0.536808431148529
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          4.270866870880127,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          10.250080108642578,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 76.8756103515625,
+      "role": "current-candidate-fit-estimate",
+      "limits": "Near frontal with roll, strongly raised brows, slight mouth tension. Preserve expression separately from identity."
+    },
+    {
+      "id": "interrogation-opposite",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2151.0,
+        468.0,
+        3022.0,
+        1513.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-interrogation-10157.jpg",
+      "referenceSha256": "c2df15b9126013d0b4fdf0eb698aa4c0c7e3cab9a16ea446db8daebc1bc9d2b7",
+      "matrixWorld": [
+        [
+          0.9385669231414795,
+          0.08390109241008759,
+          0.3347426652908325,
+          14.89977741241455
+        ],
+        [
+          0.2925640344619751,
+          0.3209950029850006,
+          -0.9007599353790283,
+          -43.60442352294922
+        ],
+        [
+          -0.18302546441555023,
+          0.9433572292327881,
+          0.27672886848449707,
+          13.035079956054688
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          16.964698791503906,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          40.715274810791016,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 305.3645935058594,
+      "role": "current-candidate-fit-estimate",
+      "limits": "Mild opposite oblique, lowered pitch, tense brow and slightly parted lips. Top of crown cropped."
+    },
+    {
+      "id": "interrogation-oblique",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2113.0,
+        344.0,
+        3105.0,
+        1537.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-interrogation-10176.jpg",
+      "referenceSha256": "a524856aca618ee9c22610e6d2646eef52c9e8504c1c56e81c1cc459862f4222",
+      "matrixWorld": [
+        [
+          0.6892936825752258,
+          0.3437284827232361,
+          0.6377497911453247,
+          3.194819927215576
+        ],
+        [
+          0.5501723885536194,
+          0.32438310980796814,
+          -0.7694711089134216,
+          -5.824827194213867
+        ],
+        [
+          -0.47136443853378296,
+          0.8812639713287354,
+          0.03448530659079552,
+          0.4362224042415619
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          2.5300726890563965,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          6.072175025939941,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 45.54130935668945,
+      "role": "current-candidate-fit-estimate",
+      "limits": "Oblique with lowered head, tense mouth and brows. Morpheus foreground; target Smith on right. Not a true 90-degree profile."
+    },
+    {
+      "id": "reloaded-left-profile",
+      "year": 2003,
+      "size": [
+        1974,
+        1500
+      ],
+      "rectangle": [
+        390,
+        800,
+        755,
+        1230
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-reloaded-profile-research.jpg",
+      "referenceSha256": "44896d3c5f6fc7a76fd68f71a80feb27333bd70ca163f8379a943409ea940f5b",
+      "matrixWorld": [
+        [
+          -0.04653708636760712,
+          0.20982271432876587,
+          -0.9766313433647156,
+          -7.15817928314209
+        ],
+        [
+          -0.9834615588188171,
+          0.16169260442256927,
+          0.08160113543272018,
+          -2.171346664428711
+        ],
+        [
+          0.17503581941127777,
+          0.964276909828186,
+          0.19882787764072418,
+          0.5621365904808044
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          1.3726770877838135,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.8064429759979248,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 24.708189010620117,
+      "role": "current-candidate-fit-estimate",
+      "limits": "The Matrix Reloaded (2003) publicity still, not 1999. Use the left Smith only, almost neutral closed mouth. Sunglasses occlude eyes and nose root; exclude those points. Supplementary structural candidate only, not yet adopted into the 1999 master or texture bake."
+    },
+    {
+      "id": "subway-holdout",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        1227.0,
+        500.0,
+        2030.0,
+        1567.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-subway-11904.jpg",
+      "referenceSha256": "388a28ebdd9a9ceb3010b167e27fa07d09c3c7e17c8642e0a8b40c77b40d73d0",
+      "matrixWorld": [
+        [
+          0.9641500115394592,
+          0.1482447236776352,
+          -0.22008690237998962,
+          -2.6772584915161133
+        ],
+        [
+          -0.22856007516384125,
+          0.04256414622068405,
+          -0.9725988507270813,
+          -14.061059951782227
+        ],
+        [
+          -0.13481484353542328,
+          0.9880343079566956,
+          0.07492104172706604,
+          0.7614509463310242
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          4.938143253326416,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          11.851542472839355,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 88.88658142089844,
+      "role": "holdout-camera-only",
+      "pinsAdded": 0,
+      "discardedDetectorIdentityDelta": 0.03485703468322754,
+      "savedIdentityDelta": 0,
+      "limits": "Independent subway scene after sunglasses removal. Mild oblique, furrowed brow and parted lips; one side deeply shadowed. Camera-only neutral-geometry check, not a profile constraint or matched expression."
+    }
+  ],
+  "identityToBody": {
+    "scale": 0.2569081337006651,
+    "offset": [
+      0.0009016782099463412,
+      4.049572451772425,
+      0.14451124521708697
+    ]
+  },
+  "accepted": false,
+  "scope": "Current full-body candidate uses the supplemental 2003 profile identity. Original 1999 master remains separate. Four current fit camera estimates retained; added independent 1999 subway detector camera discards its identity changes. Not known film lens data; lighting, gaze and expressions differ. Early supplemental-result label says not adopted; subsequent candidate assembly hashes show actual use. No formal or actor acceptance follows."
+}

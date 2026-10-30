@@ -1,0 +1,60 @@
+{
+  "source": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-fist-anatomy/trinity.glb",
+    "sha256": "5b4c47a10b37dc4e75979b34f1ed1f4b8affff1956a0bbe7f043d954797f8e8e",
+    "bytes": 68046888
+  },
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity.glb",
+    "sha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9",
+    "bytes": 70119092
+  },
+  "completeMeshes": 17,
+  "originalFacialEndpoints": 651,
+  "allOriginalBinaryBytesRetainedAsExactPrefix": true,
+  "allOtherDocumentFieldsExact": true,
+  "neutralGeometryWeightsUvsMorphsAnimationAndImagesExact": true,
+  "materialFieldsFiniteAndExactZeroOutsideHands": true,
+  "coveredMaterialRows": 13342,
+  "poseRelief": [
+    {
+      "side": "R",
+      "curveRows": 1700,
+      "gripKnots": [
+        0,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        1
+      ],
+      "maximumAddedDorsalRelief": 0.002999818319242374,
+      "nailsAndTerminalCapAdditionalOffsetsExactZero": true
+    },
+    {
+      "side": "L",
+      "curveRows": 1700,
+      "gripKnots": [
+        0,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9,
+        1
+      ],
+      "maximumAddedDorsalRelief": 0.002999818319242374,
+      "nailsAndTerminalCapAdditionalOffsetsExactZero": true
+    }
+  ],
+  "passed": true,
+  "accepted": false,
+  "likenessPercentage": null,
+  "sourceDeletionReady": false,
+  "scope": "Complete actor/data preservation, nine-knot hand-only dorsal additions and two local material charts. Actual poses, GPU skin appearance, native source, world contacts, movie performance and actor95 acceptance are separate."
+}

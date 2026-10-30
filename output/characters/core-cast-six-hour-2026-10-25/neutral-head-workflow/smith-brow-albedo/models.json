@@ -1,0 +1,12 @@
+{
+  "before": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-film-groom/smith.glb",
+    "sha256": "811c53dd0599491191c5224d5a4a843b298bf5398a731d8eab0ae9e9b77b5cd8",
+    "bytes": 53923632
+  },
+  "after": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+    "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+    "bytes": 54975976
+  }
+}

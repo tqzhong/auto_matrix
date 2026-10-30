@@ -1,0 +1,15 @@
+{
+  "before": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-fist-anatomy/trinity.glb",
+    "sha256": "5b4c47a10b37dc4e75979b34f1ed1f4b8affff1956a0bbe7f043d954797f8e8e",
+    "bytes": 68046888
+  },
+  "after": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity.glb",
+    "sha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9",
+    "bytes": 70119092
+  },
+  "accepted": false,
+  "likenessPercentage": null,
+  "phase": "knuckle-volume-and-skin-material-working-candidate"
+}

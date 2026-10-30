@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>四人造型 · 收尾版本</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111917;color:#e5ece7;font:15px/1.6 system-ui,sans-serif}main{max-width:1280px;padding:24px;margin:auto}h1{font-size:28px;margin:0 0 6px}h2{font-size:20px;margin:0}p{margin:6px 0 16px}.muted{color:#acbeb2}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0}button,a{color:inherit}button,.link{border:1px solid #536e5d;border-radius:5px;background:#20382a;padding:7px 13px;font:inherit;text-decoration:none;cursor:pointer}button[aria-pressed=true]{background:#c6e5ad;color:#14201a}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{border:1px solid #3b5042;border-radius:8px;overflow:hidden;background:#19231d}.card header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px}.card img{display:block;width:100%;height:auto;background:#141b17}.card footer{padding:12px 16px}details{margin-top:9px;color:#b9c8bd}summary{cursor:pointer}.hash{font:12px ui-monospace,monospace;color:#acc39b}aside{margin:18px 0;padding:14px 16px;border-left:3px solid #87a776;background:#1a261e}small{font-size:12px}@media(max-width:800px){.grid{grid-template-columns:1fr}main{padding:16px}h1{font-size:24px}}
+</style>
+<main><h1>四人造型 · 收尾版本</h1>
+<p class="muted">本轮人物精修到此收尾。四人的当前模型与可编辑母版已锁定，后续集中修复影响实机体验的明显问题。</p>
+<div class="toolbar"><button id="face" aria-pressed="true">面部三视图</button><button id="body" aria-pressed="false">全身三视图</button><span id="count">正在核对收尾记录</span><a class="link" href="manifest.json">版本与母版清单</a></div>
+<div class="grid" id="actors"></div>
+<aside>这些是实际游戏角色的原始画面。此前要求的 95% 相似度未作用户确认；局部眼睑、口型及服装接触问题保留在清单中。本次收尾不代表三部曲场景、全部动作与读档验证已经完成。</aside>
+<p class="muted"><small>母版、模型和当前运行时代码均按哈希核对。这里只建立版本索引，未重复复制大型模型；原来源文件暂保留。</small></p>
+</main>
+<script type="module">
+const data=await fetch('manifest.json').then(r=>r.json()),names={neo:'Neo',trinity:'Trinity',morpheus:'Morpheus',smith:'Smith'};
+const profiles=await fetch('/__core_cast_profiles').then(r=>r.ok&&r.headers.get('content-type')?.includes('application/json')?r.json():{}).catch(()=>({}));
+let mode='face';
+function render(){
+ document.querySelector('#actors').replaceChildren(...data.actors.map(actor=>{
+  const card=document.createElement('article');card.className='card';
+  const header=document.createElement('header'),title=document.createElement('h2'),hash=document.createElement('span');title.textContent=names[actor.id];hash.className='hash';hash.textContent=actor.model.sha256.slice(0,12);header.append(title,hash);
+  const image=document.createElement('img');image.src=actor.id+'-'+mode+'.jpg';image.alt=names[actor.id]+' · 实际游戏角色'+(mode==='face'?'面部':'全身')+'三视图';
+  const footer=document.createElement('footer'),link=document.createElement('a');link.className='link';const url=new URL(profiles[actor.id]??actor.reviewUrl);url.searchParams.set('frame',mode);if(mode==='body'&&actor.id==='morpheus')url.searchParams.set('outfit','leather');link.href=url.href;link.textContent='打开多视角检视';
+  const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='保留的局部问题与母版';details.append(summary);
+  for(const note of actor.notes){const p=document.createElement('p');p.textContent=note;details.append(p);}
+  const native=document.createElement('a');native.href='/'+actor.native.path;native.textContent='保留的 Blender 母版';details.append(native);footer.append(link,details);card.append(header,image,footer);return card;
+ }));
+ for(const id of ['face','body'])document.querySelector('#'+id).setAttribute('aria-pressed',String(id===mode));
+}
+document.querySelector('#face').onclick=()=>{mode='face';render();};document.querySelector('#body').onclick=()=>{mode='body';render();};
+document.querySelector('#count').textContent=data.verifiedModelCount+' 组模型＋母版 · 8 张原始游戏画面';render();
+</script></html>

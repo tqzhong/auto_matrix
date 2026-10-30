@@ -1,0 +1,400 @@
+{
+  "updatedUtc": "2026-10-30T15:23:11.620Z",
+  "scope": "按用户最新要求结束本轮持续人物精修，冻结四人当前模型与母版，整理可复查入口；保留明显问题用于后续实机修复。",
+  "status": "modeling-phase-closed-under-revised-scope",
+  "actors": [
+    {
+      "actor": "neo",
+      "id": "neo",
+      "model": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+        "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+        "bytes": 54842516
+      },
+      "native": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo-oral-vault-authoring.blend",
+        "sha256": "7122aa3ee167710608182ccaedca13308999ba6f42904c9403846c37e595917a",
+        "bytes": 39926070
+      },
+      "reviewUrl": "http://127.0.0.1:5273/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "runtime": {
+        "endpoint": "http://127.0.0.1:5273/__aperture-runtime?variant=after",
+        "sources": [
+          {
+            "name": "FightingHands",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/runtime/FightingHands-production-paths.ts",
+            "sha256": "063feb9a9eb08fd955f1cadf1f9ed38f124ac8c727a60ea27bf7b7c45bb8c8c7"
+          },
+          {
+            "name": "HeroModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-light/runtime/HeroModel-production-paths.ts",
+            "sha256": "5f0f1ca4025d7f77afc855e7dd9736f21556060a81f1bef55b9c8d238d96d390"
+          },
+          {
+            "name": "CharacterModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/CharacterModel-production-paths.ts",
+            "sha256": "a4dba089142752da273b1c209989fa03f757a8a8958a82d09c2327dcfca4e46e"
+          },
+          {
+            "name": "WetwallPerformance",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/WetwallPerformance-production-paths.ts",
+            "sha256": "d6674d167a5020c804295fc7638479a9c7de4fd2056e680cbe40fbd37ed07857"
+          },
+          {
+            "name": "SkinContinuity",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-hand-articulation/runtime/SkinContinuity-production-paths.ts",
+            "sha256": "ceffb54dc89f35ed2ce40a88e8f517f744a866d24723bbcffc44d7ac7ac08955"
+          },
+          {
+            "name": "ArticulatedJaw",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-mouth-close/runtime/ArticulatedJaw-production-paths.ts",
+            "sha256": "7e6c34d35489811d83a96537cd2f4a1e3fbc430dc4a572dd950ce4283179f22e"
+          },
+          {
+            "name": "SkinAlbedo",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinAlbedo-production-paths.ts",
+            "sha256": "c32d1004a557528dd287e783ca56af26757667bfb71528c2e136d5041e1c3b09"
+          },
+          {
+            "name": "EyelidCorrectives",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-reference-performance/runtime/EyelidCorrectives-production-paths.ts",
+            "sha256": "8f9c0ba485ba3362e4b5f512629714312dba7c27501da67659c19f4db9a23599"
+          },
+          {
+            "name": "NailSurface",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/runtime/NailSurface-production-paths.ts",
+            "sha256": "372635fa1597ad8b9c6ab72144414b1d85a9301144cfff884a53e5cd774a8708"
+          },
+          {
+            "name": "EyeSocketVisibility",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-socket-visibility/EyeSocketVisibility.ts",
+            "sha256": "ca220a589fc6f077c8bf58df39f4e6c5946874798f373b357370b8aa6a304618"
+          },
+          {
+            "name": "OralAmbientOcclusion",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/runtime/OralAmbientOcclusion.ts",
+            "sha256": "b5ccad2e78bed84259deb1e1d4497a2f9cd6bc171eb3dadc4d09f4b9078c10c2"
+          },
+          {
+            "name": "MouthContactShadows",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/runtime/MouthContactShadows.ts",
+            "sha256": "14f16dfc99c14da458e01dc9d01435bcbdc36b2467da68977a5561f2bc3bd220"
+          }
+        ]
+      },
+      "notes": [
+        "眼部与口腔的自然度仍有差距。",
+        "道服走跑接触未完成；新试修引入裤腿问题，未采用。"
+      ],
+      "appearanceFrozenForCloseout": true,
+      "userLikenessAccepted": false,
+      "likenessPercentage": null,
+      "productionPromoted": false,
+      "nativeFullShaderAndPosedNormalEquivalenceProven": false,
+      "losslessNativeExportProven": false,
+      "sourceDeletionReady": false
+    },
+    {
+      "actor": "trinity",
+      "id": "trinity",
+      "model": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity.glb",
+        "sha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9",
+        "bytes": 70119092
+      },
+      "native": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity-knuckle-skin-authoring.blend",
+        "sha256": "329a16cf9e0249ab93189e0d7c9529facb56402e736bad903ffb58f1debdeff0",
+        "bytes": 40364967
+      },
+      "reviewUrl": "http://127.0.0.1:5250/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "runtime": {
+        "endpoint": "http://127.0.0.1:5250/__knuckle-runtime?variant=after",
+        "sources": [
+          {
+            "name": "FightingHands",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/runtime/FightingHands-production-paths.ts",
+            "sha256": "063feb9a9eb08fd955f1cadf1f9ed38f124ac8c727a60ea27bf7b7c45bb8c8c7"
+          },
+          {
+            "name": "HeroModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/HeroModel-production-paths.ts",
+            "sha256": "d3526cdcc2a74d2b3ba64a8d8eca0f40a7f6eb8312ae96a4308b5b9c01cac365"
+          },
+          {
+            "name": "CharacterModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/CharacterModel-production-paths.ts",
+            "sha256": "a4dba089142752da273b1c209989fa03f757a8a8958a82d09c2327dcfca4e46e"
+          },
+          {
+            "name": "WetwallPerformance",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/WetwallPerformance-production-paths.ts",
+            "sha256": "d6674d167a5020c804295fc7638479a9c7de4fd2056e680cbe40fbd37ed07857"
+          },
+          {
+            "name": "SkinContinuity",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinContinuity-production-paths.ts",
+            "sha256": "a0154bb006c78e43b9b3819ef2b6233ca88ae177b5afb0d8461976655caea41f"
+          },
+          {
+            "name": "ArticulatedJaw",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-mouth-close/runtime/ArticulatedJaw-production-paths.ts",
+            "sha256": "7e6c34d35489811d83a96537cd2f4a1e3fbc430dc4a572dd950ce4283179f22e"
+          },
+          {
+            "name": "SkinAlbedo",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinAlbedo-production-paths.ts",
+            "sha256": "c32d1004a557528dd287e783ca56af26757667bfb71528c2e136d5041e1c3b09"
+          },
+          {
+            "name": "EyelidCorrectives",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-reference-performance/runtime/EyelidCorrectives-production-paths.ts",
+            "sha256": "8f9c0ba485ba3362e4b5f512629714312dba7c27501da67659c19f4db9a23599"
+          },
+          {
+            "name": "NailSurface",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/runtime/NailSurface-production-paths.ts",
+            "sha256": "372635fa1597ad8b9c6ab72144414b1d85a9301144cfff884a53e5cd774a8708"
+          }
+        ]
+      },
+      "notes": [
+        "部分极端口型和袖口接触仍待实机修复。"
+      ],
+      "appearanceFrozenForCloseout": true,
+      "userLikenessAccepted": false,
+      "likenessPercentage": null,
+      "productionPromoted": false,
+      "nativeFullShaderAndPosedNormalEquivalenceProven": false,
+      "losslessNativeExportProven": false,
+      "sourceDeletionReady": false
+    },
+    {
+      "actor": "morpheus",
+      "id": "morpheus",
+      "model": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus.glb",
+        "sha256": "b7696219c307d51691e1d7ee848d906a84bc4fad428e0103c8a69eb0727a0a6d",
+        "bytes": 56833960
+      },
+      "native": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus-cheek-authoring.blend",
+        "sha256": "2e1100131e197f2d5f60c73ded225e1c99bb94200ee012179845c1285fbcadc1",
+        "bytes": 37203247
+      },
+      "reviewUrl": "http://127.0.0.1:5248/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "runtime": {
+        "endpoint": "http://127.0.0.1:5248/__eye-runtime?variant=after",
+        "sources": [
+          {
+            "name": "FightingHands",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/FightingHands-production-paths.ts",
+            "sha256": "17d4ef642ad1de895da356c0780b7c3f13cb071742929882740d627681b27071"
+          },
+          {
+            "name": "HeroModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/HeroModel-production-paths.ts",
+            "sha256": "d3526cdcc2a74d2b3ba64a8d8eca0f40a7f6eb8312ae96a4308b5b9c01cac365"
+          },
+          {
+            "name": "CharacterModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/CharacterModel-production-paths.ts",
+            "sha256": "a4dba089142752da273b1c209989fa03f757a8a8958a82d09c2327dcfca4e46e"
+          },
+          {
+            "name": "WetwallPerformance",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/WetwallPerformance-production-paths.ts",
+            "sha256": "d6674d167a5020c804295fc7638479a9c7de4fd2056e680cbe40fbd37ed07857"
+          },
+          {
+            "name": "SkinContinuity",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinContinuity-production-paths.ts",
+            "sha256": "a0154bb006c78e43b9b3819ef2b6233ca88ae177b5afb0d8461976655caea41f"
+          },
+          {
+            "name": "ArticulatedJaw",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-mouth-close/runtime/ArticulatedJaw-production-paths.ts",
+            "sha256": "7e6c34d35489811d83a96537cd2f4a1e3fbc430dc4a572dd950ce4283179f22e"
+          },
+          {
+            "name": "SkinAlbedo",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinAlbedo-production-paths.ts",
+            "sha256": "c32d1004a557528dd287e783ca56af26757667bfb71528c2e136d5041e1c3b09"
+          },
+          {
+            "name": "EyelidCorrectives",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-eye-aperture/runtime/EyelidCorrectives-production-paths.ts",
+            "sha256": "1e4b108d32123a80393c6407c8fe702f69d79e2f1acb204307defd5f62cbc47e"
+          }
+        ]
+      },
+      "notes": [
+        "压力表情检查仍有原有失败项，不能视为全表情通过。"
+      ],
+      "appearanceFrozenForCloseout": true,
+      "userLikenessAccepted": false,
+      "likenessPercentage": null,
+      "productionPromoted": false,
+      "nativeFullShaderAndPosedNormalEquivalenceProven": false,
+      "losslessNativeExportProven": false,
+      "sourceDeletionReady": false
+    },
+    {
+      "actor": "smith",
+      "id": "smith",
+      "model": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+        "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+        "bytes": 54975976
+      },
+      "native": {
+        "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith-brow-albedo-authoring.blend",
+        "sha256": "ec11c91e4dc693f957b202010fef306275b323d95018951fa7e10bf0ea00f612",
+        "bytes": 28681591
+      },
+      "reviewUrl": "http://127.0.0.1:5263/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+      "runtime": {
+        "endpoint": "http://127.0.0.1:5263/__smith-runtime?variant=after",
+        "sources": [
+          {
+            "name": "FightingHands",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-material/runtime/FightingHands-production-paths.ts",
+            "sha256": "6e213ebfcf4daabf9aee43fc53e4f78c382af3d2e0bc5ff77d8a1d2d1befc496"
+          },
+          {
+            "name": "HeroModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-socket-visibility/runtime/HeroModel-production-paths.ts",
+            "sha256": "380b11fc7f90704db8024de39011b00fce6ab6d85f84b4cf27ecfd39bf1a816d"
+          },
+          {
+            "name": "CharacterModel",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/CharacterModel-production-paths.ts",
+            "sha256": "a4dba089142752da273b1c209989fa03f757a8a8958a82d09c2327dcfca4e46e"
+          },
+          {
+            "name": "WetwallPerformance",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/WetwallPerformance-production-paths.ts",
+            "sha256": "d6674d167a5020c804295fc7638479a9c7de4fd2056e680cbe40fbd37ed07857"
+          },
+          {
+            "name": "SkinContinuity",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinContinuity-production-paths.ts",
+            "sha256": "a0154bb006c78e43b9b3819ef2b6233ca88ae177b5afb0d8461976655caea41f"
+          },
+          {
+            "name": "ArticulatedJaw",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-mouth-close/runtime/ArticulatedJaw-production-paths.ts",
+            "sha256": "7e6c34d35489811d83a96537cd2f4a1e3fbc430dc4a572dd950ce4283179f22e"
+          },
+          {
+            "name": "SkinAlbedo",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinAlbedo-production-paths.ts",
+            "sha256": "c32d1004a557528dd287e783ca56af26757667bfb71528c2e136d5041e1c3b09"
+          },
+          {
+            "name": "EyelidCorrectives",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-reference-performance/runtime/EyelidCorrectives-production-paths.ts",
+            "sha256": "8f9c0ba485ba3362e4b5f512629714312dba7c27501da67659c19f4db9a23599"
+          },
+          {
+            "name": "NailSurface",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-material/runtime/NailSurface-production-paths.ts",
+            "sha256": "5f21b6cef7a6cb48211c58c6bd33405ce4116f7efc876f69e97c45f01c3e28d6"
+          },
+          {
+            "name": "EyeSocketVisibility",
+            "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-socket-visibility/EyeSocketVisibility.ts",
+            "sha256": "ca220a589fc6f077c8bf58df39f4e6c5946874798f373b357370b8aa6a304618"
+          }
+        ]
+      },
+      "notes": [
+        "强闭眼端点及后侧眼部组织接合仍待修复。"
+      ],
+      "appearanceFrozenForCloseout": true,
+      "userLikenessAccepted": false,
+      "likenessPercentage": null,
+      "productionPromoted": false,
+      "nativeFullShaderAndPosedNormalEquivalenceProven": false,
+      "losslessNativeExportProven": false,
+      "sourceDeletionReady": false
+    }
+  ],
+  "verifiedModelCount": 4,
+  "verifiedNativeMasterCount": 4,
+  "prior95PercentClaimed": false,
+  "prior95PercentUserAccepted": 0,
+  "likenessPercentage": null,
+  "fullTrilogyOrWholeGameAccepted": false,
+  "allClippingResolved": false,
+  "sourceDeletionReady": false,
+  "rejectedNeoTrial": "../neo-dojo-wrist-clearance/work-status.json",
+  "sourceRetentionReason": "当前母版与游戏中的材质、法线、完整动作和无损导出仍非完全等价；本轮收尾不等于旧来源已可删除。",
+  "captures": [
+    {
+      "actor": "neo",
+      "frame": "face",
+      "file": "neo-face.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 68826
+    },
+    {
+      "actor": "neo",
+      "frame": "body",
+      "file": "neo-body.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 43359
+    },
+    {
+      "actor": "trinity",
+      "frame": "face",
+      "file": "trinity-face.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 84538
+    },
+    {
+      "actor": "trinity",
+      "frame": "body",
+      "file": "trinity-body.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 55891
+    },
+    {
+      "actor": "morpheus",
+      "frame": "face",
+      "file": "morpheus-face.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 69997
+    },
+    {
+      "actor": "morpheus",
+      "frame": "body",
+      "file": "morpheus-body.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 51527
+    },
+    {
+      "actor": "smith",
+      "frame": "face",
+      "file": "smith-face.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 65887
+    },
+    {
+      "actor": "smith",
+      "frame": "body",
+      "file": "smith-body.jpg",
+      "width": 1280,
+      "height": 720,
+      "bytes": 40572
+    }
+  ],
+  "closedUtc": "2026-10-30T15:27:06.697Z"
+}

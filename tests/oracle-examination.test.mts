@@ -11,7 +11,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { FilmStorySystem } from '../packages/server/src/story/FilmStorySystem.js';
 
-async function fixture(t: TestContext, delayed = false) {
+async function fixture(t: TestContext, delayed = false, headWidth = 1) {
   const pending: Promise<unknown>[] = [], assets = new Map<string, Promise<any>>();
   let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; }); if (!delayed) release();
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
@@ -26,7 +26,12 @@ async function fixture(t: TestContext, delayed = false) {
       const bin = raw.subarray(20 + size), data = Buffer.alloc(20 + padded.length + bin.length);
       data.writeUInt32LE(0x46546c67); data.writeUInt32LE(2, 4); data.writeUInt32LE(data.length, 8);
       data.writeUInt32LE(padded.length, 12); data.writeUInt32LE(0x4e4f534a, 16); padded.copy(data, 20); bin.copy(data, 20 + padded.length);
-      return new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
+      const asset = await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
+      if (name === 'neo.glb' && headWidth !== 1) {
+        const skin = asset.scene.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, position = skin.geometry.attributes.position;
+        for (let v = 0; v < position.count; v++) if (position.getY(v) > 3.7) position.setX(v, position.getX(v) * headWidth);
+      }
+      return asset;
     })());
     const promise = assets.get(name)!; pending.push(promise); const asset = await promise; return { ...asset, scene: clone(asset.scene) };
   });
@@ -120,8 +125,8 @@ test('Neo opens his actual jaw before the cookie bite and restores it after the 
   assert.equal(skin.morphTargetInfluences![index], 0, 'leaving the action must not leave an open mouth');
 });
 
-test('the examination hands remain outside Neo’s actual head surface', async t => {
-  const h = await fixture(t); h.snapshot(3.5); await h.settle();
+async function checkExaminationSkin(t: TestContext, headWidth = 1) {
+  const h = await fixture(t, false, headWidth); h.snapshot(3.5); await h.settle();
   for (const elapsed of [2, 2.4, 2.7, 3.5, 4.2, 4.9, 5.4]) {
     h.snapshot(elapsed);
     const triangles = headTriangles(h.rig('neo')), bounds = new THREE.Box3();
@@ -145,7 +150,10 @@ test('the examination hands remain outside Neo’s actual head surface', async t
       assert.ok(worst > -.003, `${hand.wrist.name} penetrates the face at ${elapsed}: ${worst}, vertex ${worstVertex} ${driver}`);
     }
   }
-});
+}
+
+test('the examination hands remain outside Neo’s actual head surface', t => checkExaminationSkin(t));
+test('the examination fits the finger skin when a likeness sculpt changes head width', t => checkExaminationSkin(t, 1.08));
 
 test('the authored approach is continuous, avoids furniture and plants each foot while the other steps', async t => {
   const h = await fixture(t); h.snapshot(0); await h.settle();

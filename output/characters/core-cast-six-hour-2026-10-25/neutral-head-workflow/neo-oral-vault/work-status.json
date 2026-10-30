@@ -1,0 +1,136 @@
+{
+  "updatedUtc": "2026-10-30T14:45:09.663757+00:00",
+  "thisGoalTurnClassification": "progress",
+  "goalActive": true,
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "source": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-ao-mask/neo.glb",
+    "sha256": "4493f96285e5c3910f401f1fe09ff9a28a123433a97c1a021ece902174b88359",
+    "bytes": 86817608
+  },
+  "native": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo-oral-vault-authoring.blend",
+    "sha256": "7122aa3ee167710608182ccaedca13308999ba6f42904c9403846c37e595917a",
+    "bytes": 39926070
+  },
+  "nativeRenderGaps": "native-render-gaps.json",
+  "nativeFullySynchronized": false,
+  "runtimeSources": [
+    {
+      "name": "FightingHands",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/runtime/FightingHands-production-paths.ts",
+      "sha256": "063feb9a9eb08fd955f1cadf1f9ed38f124ac8c727a60ea27bf7b7c45bb8c8c7"
+    },
+    {
+      "name": "HeroModel",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-light/runtime/HeroModel-production-paths.ts",
+      "sha256": "5f0f1ca4025d7f77afc855e7dd9736f21556060a81f1bef55b9c8d238d96d390"
+    },
+    {
+      "name": "CharacterModel",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/CharacterModel-production-paths.ts",
+      "sha256": "a4dba089142752da273b1c209989fa03f757a8a8958a82d09c2327dcfca4e46e"
+    },
+    {
+      "name": "WetwallPerformance",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/WetwallPerformance-production-paths.ts",
+      "sha256": "d6674d167a5020c804295fc7638479a9c7de4fd2056e680cbe40fbd37ed07857"
+    },
+    {
+      "name": "SkinContinuity",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-hand-articulation/runtime/SkinContinuity-production-paths.ts",
+      "sha256": "ceffb54dc89f35ed2ce40a88e8f517f744a866d24723bbcffc44d7ac7ac08955"
+    },
+    {
+      "name": "ArticulatedJaw",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-mouth-close/runtime/ArticulatedJaw-production-paths.ts",
+      "sha256": "7e6c34d35489811d83a96537cd2f4a1e3fbc430dc4a572dd950ce4283179f22e"
+    },
+    {
+      "name": "SkinAlbedo",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinAlbedo-production-paths.ts",
+      "sha256": "c32d1004a557528dd287e783ca56af26757667bfb71528c2e136d5041e1c3b09"
+    },
+    {
+      "name": "EyelidCorrectives",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-reference-performance/runtime/EyelidCorrectives-production-paths.ts",
+      "sha256": "8f9c0ba485ba3362e4b5f512629714312dba7c27501da67659c19f4db9a23599"
+    },
+    {
+      "name": "NailSurface",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/runtime/NailSurface-production-paths.ts",
+      "sha256": "372635fa1597ad8b9c6ab72144414b1d85a9301144cfff884a53e5cd774a8708"
+    },
+    {
+      "name": "EyeSocketVisibility",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-socket-visibility/EyeSocketVisibility.ts",
+      "sha256": "ca220a589fc6f077c8bf58df39f4e6c5946874798f373b357370b8aa6a304618"
+    },
+    {
+      "name": "OralAmbientOcclusion",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/runtime/OralAmbientOcclusion.ts",
+      "sha256": "b5ccad2e78bed84259deb1e1d4497a2f9cd6bc171eb3dadc4d09f4b9078c10c2"
+    },
+    {
+      "name": "MouthContactShadows",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/runtime/MouthContactShadows.ts",
+      "sha256": "14f16dfc99c14da458e01dc9d01435bcbdc36b2467da68977a5561f2bc3bd220"
+    }
+  ],
+  "workingCandidateFrozen": false,
+  "productionPromoted": false,
+  "userAccepted": false,
+  "likenessPercentage": null,
+  "wholeActorQualityPassed": false,
+  "overallActorAcceptance": {
+    "completed": 0,
+    "total": 4
+  },
+  "sourceDeletionReady": false,
+  "actualChanges": [
+    "同一完整Neo增加705个内部口腔顶点和1410个三角面，侧壁随张口展开、后腔形成真实凹曲面；全部原33189个头身手顶点及其原表情位置保持，原唇缘／外表拓扑保留。",
+    "初版6个指定姿态改变接触补丁，已改为按原三角面分区细分并随张口展开；最终239个指定姿态对比无新增失败，原接触失败完整保留。",
+    "按实际头部、牙齿和舌体重算0／0.18／0.5／1四档张口环境遮蔽，并给内部组织和舌体接入实际姿态深度阴影；外表遮蔽字段为1、直接阴影组织遮罩为0，避免改变外脸和手部。",
+    "修复头部新增动态遮蔽状态导致颈部材质克隆循环序列化的问题；9项实际运行时检查通过，其中864组眼部跟随检查保持零坐标误差。",
+    "完整可编辑母版保存并独立重开，25网格／54骨／12图／186形态端点／7动作保留；局部显示法线精度和完整原生材质等价仍单独失败。",
+    "清除新候选内不可达的工作数据，117500968字节减为54842516字节；533个活动访问器和13张图逐项一致，所需旧来源与母版未删除。",
+    "最大／中等张口及三处原片估计机位原始实机画面已保留。舌面发亮平板感减轻，但后壁、舌根和整体演员效果仍未通过。"
+  ],
+  "verification": {
+    "addedHeadVertices": 705,
+    "addedTriangles": 1410,
+    "allOriginalPositionsAndMorphPositionsExact": true,
+    "originalFiveGameClipsExact": true,
+    "contactSamples": 239,
+    "introducedContactFailures": 0,
+    "inheritedDentalTongueFailedInThisSweep": 7,
+    "inheritedOralSelfFailedInThisSweep": 8,
+    "inheritedFullHeadSelfFailed": 51,
+    "inheritedDojoFailed": 6,
+    "nativeReopened": true,
+    "nativeEndpoints": 186,
+    "nativeActions": 7,
+    "nativeDisplayNormalPrecisionPassed": false,
+    "nativeFullMaterialAndPosedNormalsEquivalent": false,
+    "existingRuntimeTestsPassed": 9,
+    "eyeFieldSamples": 864,
+    "maximumEyeFieldWorldError": 0,
+    "bytesReducedInsideWorkingGlb": 62658452
+  },
+  "remaining": [
+    "整脸身份形体与神态仍未达到原片演员效果；眼眶／鼻唇颌、皮肤、发型和颈部仍需精修，四人95%须由用户多视角实机确认，目前0/4。",
+    "口腔曲面与舌体深度已局部改善，但半张口可见后壁分面和不自然边缘；软腭／后腔细节、舌根过渡和整体口腔形体仍未通过。舌体原有226顶点未重塑，本轮改变其受光，不能宣称舌根几何已修好。",
+    "本轮239个指定姿态无新增口腔接触补丁失败，原7组牙齿／舌体接触失败及本次局部范围内8组口腔自交失败保留；它们与既有完整检查51组头面／口腔自交的范围不同，未将后者清零。",
+    "眨眼仍有上睑鼓包／下缘厚折叠和角部接缝，左斜面下睑黑点、虹膜／眼白灰黑与斜面亮带仍未解决。本轮亮带分层诊断没有产生可靠修复，未改虹膜比例。",
+    "新母版精确保存新增705顶点、原186形态端点及可编辑遮蔽数据，已独立重开；新口腔显示法线最大误差约0.002187，高于0.0001目标。全头映射对照误差0.417297亦在未改父母版中复现，原33189行映射只有31064个独立源行，完整原生法线／导出对应仍需修复。",
+    "实际游戏的局部阴影／虹膜与皮肤材质、完整连续姿态法线和无损原生导出仍未证明等价。眼球静态遮蔽补丁保存为数据，未宣称原生节点实现一致；原发丝0.245712和袖口法线精度失败保留。",
+    "四档张口的环境遮蔽和实际姿态深度阴影是有限近似，尚未覆盖任意表情组合、完整辐射传输或全部场景光照；本轮没有验收全场景性能与所有手部／世界接触。",
+    "原6组道服走跑穿模以及旧腕缝／道服运行时到原生同步未通过项保留。Trinity／Morpheus／Smith既有身份、表情、手部、衣服和穿模失败均未被本轮刷新。",
+    "六小时目标已超时；42组关键情节／102节点的整体高质量场景、逐段成功／失败／读档及剩余来源文件可清理条件仍未完成。"
+  ],
+  "nextAction": "回到原片演员的整脸身份形体与神态：复核共享中性头模接回身体后眼眶、鼻唇和下颌的偏差，优先修能在正面／斜面／侧面同时看见的问题；保留本轮口腔、原有穿模和母版渲染未通过项，逐人推进四人验收。"
+}

@@ -1,0 +1,49 @@
+{
+  "updatedUtc": "2026-10-30T04:15:49.827847+00:00",
+  "previousGoalTurnClassification": "progress",
+  "thisGoalTurnClassification": "progress",
+  "goalActive": true,
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+    "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+    "bytes": 54975976
+  },
+  "productionPromoted": false,
+  "userAccepted": false,
+  "wholeActorQualityPassed": false,
+  "overallActorAcceptance": {
+    "completed": 0,
+    "total": 4
+  },
+  "likenessPercentage": null,
+  "sourceDeletionReady": false,
+  "actualChanges": [
+    "Native3D brow tint on224rows and partial under-eye pigment on765rows; sampled the actual retained layered skin palette",
+    "No bitmap generated or edited; all geometry, relative expressions, groom, UVs, images and animation payloads retained",
+    "Complete editable actor now contains both local colour fields and their material nodes; original native fields and shader nodes retained"
+  ],
+  "verification": {
+    "fiveActualGameHeadPosePositionChecks": true,
+    "nativeReopenedFromDisk": true,
+    "nativeColourFieldErrors": {
+      "smith_periocular_pigment": 0.0,
+      "smith_brow_tint": 0.0
+    },
+    "shaderPigmentHookAttachedOnce": true,
+    "bodyHandsAndEyeRimFieldsExact": true,
+    "actualRendererPreviewInspected": true,
+    "inheritedGroomSamples": 138,
+    "groomContactSweepRerun": false,
+    "inheritedFailedClosedSamples": 4,
+    "strictPosteriorEyeSealPassed": false,
+    "nativeFullMaterialAndPosedNormalsEquivalent": false
+  },
+  "remaining": [
+    "All four actors still need whole-actor naturalness/identity refinement and user multiview game acceptance",
+    "Smith coarse brow/forehead expression, skin response, orbital/lip/jaw match, hands/clothes and whole identity remain unaccepted",
+    "Four closed Smith poses retain two lining/skin pairs each; strict posterior seal/eye contact remains failed",
+    "Other three actors unchanged; Trinity sleeve2/mouth12 and Morpheus13of102stress failures retained",
+    "Native full shader/posed-normal/continuous equivalence, lossless export, world contacts, trilogy42groups/102nodes/story save-load/performance and cleanup readiness incomplete"
+  ],
+  "nextAction": "Move to the latest Neo complete actor: inspect current front/oblique/profile and movie references before choosing the next concrete form/material improvement. Keep this Smith material/groom work, retained closed/seal failures and all actor quality gates pending; return to its forehead/orbital/lip/jaw differences. Do not use vertex/sample counts as likeness."
+}

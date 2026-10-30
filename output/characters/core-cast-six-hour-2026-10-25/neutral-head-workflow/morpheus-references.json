@@ -1,0 +1,85 @@
+{
+  "character": "morpheus",
+  "filmYear": 1999,
+  "status": "Real-photo neutral identity draft exists; manual multiview refinement and independent visual review remain incomplete.",
+  "images": [
+    {
+      "id": "dojo-front",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-dojo-5082.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-5082.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/29",
+      "sha256": "12f064a6e770f269cc334a8a085ea6ac114768c850ea0638ec48007b2fa60f84",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Mild oblique, closed lips, relaxed face. Very top of scalp touches image border; warm side illumination."
+    },
+    {
+      "id": "dojo-stance",
+      "path": "output/characters/morpheus-likeness-2026-10-25/references/morpheus-dojo-oblique.jpg",
+      "role": "fit",
+      "sourceUrl": "https://kor.ill.in.ua/m/1260x900/2535840.jpg",
+      "sourcePage": "https://korrespondent.net/showbiz/cinema/4264897-lourens-fyshbern-poiasnyl-svoe-otsutstvye-v-novoi-matrytse",
+      "sha256": "0c5fccfb53ccd87459763c25301099c0dbd6c86a4140e08476bcd90cac8c4cc4",
+      "size": [
+        1260,
+        900
+      ],
+      "limits": "1999 dojo, turned shoulders but only mild face yaw; furrowed brow and sideways gaze. Keep expression separate. Crown touches/crops at the upper image edge; do not constrain the scalp apex from it."
+    },
+    {
+      "id": "ship-side",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-ship-4692.jpg",
+      "role": "manual-fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-4692.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/27",
+      "sha256": "823172fb77a99d62ddfb3ddf66d92ac81125ac3d7756f7dd2df0de06c7e2c4f7",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Strong side view, closed lips, lowered pitch; far eye hidden and crown cropped. Eight anatomy correspondences were re-observed using the actual keyframe expression mesh, replacing the early neutral-preview pins. Profile remains unaccepted."
+    },
+    {
+      "id": "ship-holdout",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-ship-3694.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-3694.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/21",
+      "sha256": "413c69659401bf9844810b397f59637573e8d5fa1031f2a74ec9a6549eb0b382",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Low-angle near frontal with strong side shadows. Speaking with rounded/open lips: never transfer this mouth shape into the neutral identity."
+    },
+    {
+      "id": "dojo-distance-check",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-dojo-5089.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-5089.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/29",
+      "sha256": "1747763c2ecb2768358717968e479891e47b2ad992710309afc35e41fc6dde47",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Same scene and very similar angle to 5082; use for a camera-distance check, not independent identity evidence."
+    },
+    {
+      "id": "interrogation-full-profile",
+      "path": "output/characters/smith-likeness-2026-10-25/references/smith-1999-standing-film.jpg",
+      "role": "manual-fit",
+      "sourceUrl": "https://clip.cafe/clipimg/which-is-why-the-matrix-was-redesigned-to-this.jpg",
+      "sourcePage": "https://clip.cafe/the-matrix-1999/which-is-why-the-matrix-was-redesigned-to-this/t/2",
+      "sha256": "17b73444f408d8492093ccb2eb5a0d5477970d2d1709363a0ecbf52f972674ce",
+      "size": [
+        3840,
+        2160
+      ],
+      "limits": "1999 interrogation, Morpheus is the large foreground face on the right. Full scalp and ear visible, raised pitch, closed lips and strong shadows. Nine anatomy correspondences plus two approximate scalp-contour constraints contribute to the same identity. Excluded from the current skin bake; the four-source texture experiment was rejected for highlights, background contamination and seams."
+    }
+  ]
+}

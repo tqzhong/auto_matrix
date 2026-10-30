@@ -1,0 +1,143 @@
+{
+  "actor": "trinity",
+  "frame": "face",
+  "model": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity.glb",
+    "sha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9",
+    "bytes": 70119092
+  },
+  "url": "http://127.0.0.1:5250/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+  "status": "已载入游戏角色 · 0.00 s · 脸部 0.00 s",
+  "heading": "Trinity · 手背关节与皮肤细节 当前候选 · 整体未验收 · 65cfd63e",
+  "controls": [
+    {
+      "id": "hairLayer",
+      "value": "all"
+    },
+    {
+      "id": "frame",
+      "value": "face"
+    },
+    {
+      "id": "motion",
+      "value": "idle"
+    },
+    {
+      "id": "handGrip",
+      "value": "1"
+    },
+    {
+      "id": "combo",
+      "value": "0"
+    },
+    {
+      "id": "side",
+      "value": "R"
+    },
+    {
+      "checked": false,
+      "id": "glasses",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "clay",
+      "value": "on"
+    },
+    {
+      "id": "outfit",
+      "value": "leather"
+    },
+    {
+      "id": "yaw",
+      "value": "0"
+    },
+    {
+      "id": "pitch",
+      "value": "0"
+    },
+    {
+      "id": "faceClip",
+      "value": "reference"
+    },
+    {
+      "id": "faceTime",
+      "value": "0"
+    },
+    {
+      "checked": true,
+      "id": "skinNormal",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "skinColourOnly",
+      "value": "on"
+    },
+    {
+      "id": "blinkCheck",
+      "value": "0"
+    },
+    {
+      "id": "jawCheck",
+      "value": "0"
+    },
+    {
+      "id": "closeCheck",
+      "value": "0"
+    },
+    {
+      "id": "mouthShape",
+      "value": "none"
+    },
+    {
+      "id": "mouthAmount",
+      "value": "0"
+    },
+    {
+      "id": "upCheck",
+      "value": "0"
+    },
+    {
+      "id": "wide",
+      "value": "0"
+    },
+    {
+      "id": "irisDepth",
+      "value": "asset"
+    },
+    {
+      "id": "cameraFit",
+      "value": "calibrated"
+    },
+    {
+      "id": "lighting",
+      "value": "studio"
+    },
+    {
+      "id": "shadowQuality",
+      "value": "legacy"
+    },
+    {
+      "id": "eyeLayer",
+      "value": "all"
+    },
+    {
+      "id": "view",
+      "value": "front"
+    },
+    {
+      "id": "poseTime",
+      "value": "0"
+    },
+    {
+      "checked": false,
+      "id": "anchors",
+      "value": "on"
+    },
+    {
+      "id": "anchorGroup",
+      "value": "cheek"
+    }
+  ]
+}

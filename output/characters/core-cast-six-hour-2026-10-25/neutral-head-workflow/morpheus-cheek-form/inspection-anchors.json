@@ -1,0 +1,71 @@
+{
+  "mesh": "Anatomical_head_and_hands",
+  "anchors": [
+    {
+      "id": "16151",
+      "row": 16151,
+      "group": "cheek"
+    },
+    {
+      "id": "18450",
+      "row": 18450,
+      "group": "cheek"
+    },
+    {
+      "id": "16430",
+      "row": 16430,
+      "group": "cheek"
+    },
+    {
+      "id": "18722",
+      "row": 18722,
+      "group": "cheek"
+    },
+    {
+      "id": "15148",
+      "row": 15148,
+      "group": "fold"
+    },
+    {
+      "id": "17454",
+      "row": 17454,
+      "group": "fold"
+    },
+    {
+      "id": "21685",
+      "row": 21685,
+      "group": "fold"
+    },
+    {
+      "id": "24008",
+      "row": 24008,
+      "group": "fold"
+    },
+    {
+      "id": "21220",
+      "row": 21220,
+      "group": "jaw"
+    },
+    {
+      "id": "23259",
+      "row": 23259,
+      "group": "jaw"
+    },
+    {
+      "id": "20768",
+      "row": 20768,
+      "group": "jaw"
+    },
+    {
+      "id": "22827",
+      "row": 22827,
+      "group": "jaw"
+    },
+    {
+      "id": "21353",
+      "row": 21353,
+      "group": "jaw"
+    }
+  ],
+  "scope": "Artist inspection rows, not photo landmark measurements."
+}

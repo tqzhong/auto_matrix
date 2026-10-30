@@ -1,0 +1,72 @@
+{
+  "character": "trinity",
+  "filmYear": 1999,
+  "status": "Real-photo neutral identity draft exists; manual multiview refinement and independent visual review remain incomplete.",
+  "images": [
+    {
+      "id": "hotel-front",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-hotel-107.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-107.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/1",
+      "sha256": "dd15670150fe13b93d0c8ad2d5d33cd1b4285ac06c18b7fd1c2bb8021f0a9daf",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near frontal, closed lips; slight low camera, down gaze, crown cropped. Strong green and back lighting."
+    },
+    {
+      "id": "hotel-oblique",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-hotel-256.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-256.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/2",
+      "sha256": "56df859867909eecd1e3378ac2d95fcd56dbdec76e3f77bb9c453cf3b0965771",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Oblique, closed lips; phone overlaps the far mouth corner, do not constrain hidden features. Crown cropped."
+    },
+    {
+      "id": "hotel-profile",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-hotel-254.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-254.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/2",
+      "sha256": "725d8c3dd3cf3436fcc35a2e7154dc5f88ee26f186faf1ca7630acc53b128cb3",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near profile, speaking; phone behind mouth and opposite cheek; visible nose/chin/ear outline usable. Crown cropped."
+    },
+    {
+      "id": "car-holdout",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-car-2033.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-2033.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/12",
+      "sha256": "923c6e302bbece40e7f1718fe9e8da74185bc763dfd6a725ae39e865b4021c1c",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Mild oblique with slight upward pitch; closed lips, side gaze; strong film lighting, not a flat albedo."
+    },
+    {
+      "id": "promo-1999",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-promo-1999-gq-8.jpg",
+      "role": "fit",
+      "sourceUrl": "https://media.gqitalia.it/photos/5d5d61d36c5b6d0008ffbed5/master/w_1024%2Cc_limit/h_24.226671.jpg",
+      "sourcePage": "https://www.gqitalia.it/show/gallery/carrie-anne-moss-trinity-matrix-foto-belle",
+      "sha256": "8a716b9005ed30cbbef67ff6a8b913a455f63ec110a85c0dec2ff58785c63116",
+      "size": [
+        1024,
+        1433
+      ],
+      "limits": "1999 Warner Bros. publicity portrait credited by GQ. Closed lips, slight oblique; low face resolution and strong red side light. Geometry fit only; excluded from skin texture baking."
+    }
+  ]
+}

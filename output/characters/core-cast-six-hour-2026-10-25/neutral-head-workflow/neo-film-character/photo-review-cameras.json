@@ -1,0 +1,403 @@
+{
+  "sourceIdentityMasterSha256": "52d6e316e1768d34760ba80d6529c288e5797e8f78184786a9f6c304b747a775",
+  "sourceMasterFileUnchanged": true,
+  "originalFourCamerasRefitted": false,
+  "views": [
+    {
+      "id": "finale-front",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        1699.0,
+        335.0,
+        2747.0,
+        1565.0
+      ],
+      "cropCoordinates": "bottom-left",
+      "originalCropSource": [
+        1699.0,
+        335.0,
+        2747.0,
+        1565.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-finale-13363.jpg",
+      "referenceSha256": "95fefe8c436b3b883bb4c25098d2b718fca1ac547a7ce3e6b1e6023c04b550ca",
+      "matrixWorld": [
+        [
+          0.9970508813858032,
+          -0.07673098146915436,
+          -0.0013974636094644666,
+          -0.3402363061904907
+        ],
+        [
+          0.005569921340793371,
+          0.09051361680030823,
+          -0.9958796501159668,
+          -6.73665189743042
+        ],
+        [
+          0.07654131948947906,
+          0.9929348230361938,
+          0.09067407250404358,
+          0.30305376648902893
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          2.701958179473877,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          6.484699726104736,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 48.63524627685547,
+      "role": "retained-fit-estimate",
+      "limits": "Near frontal during the same street turn. Mild brow tension and slightly parted lips; upper forehead/crown cropped."
+    },
+    {
+      "id": "finale-left-oblique",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        1007.0,
+        447.0,
+        1710.0,
+        1470.0
+      ],
+      "cropCoordinates": "bottom-left",
+      "originalCropSource": [
+        1007.0,
+        447.0,
+        1710.0,
+        1470.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-finale-13358.jpg",
+      "referenceSha256": "c296f76464309191f989e0bd8c190697e960e7bd0a3edb458cf57157b2fe1776",
+      "matrixWorld": [
+        [
+          0.5755629539489746,
+          -0.061848804354667664,
+          0.8154152631759644,
+          33.65451431274414
+        ],
+        [
+          0.8172656893730164,
+          0.07808182388544083,
+          -0.5709465742111206,
+          -23.07247543334961
+        ],
+        [
+          -0.028356747701764107,
+          0.9950265884399414,
+          0.09548790752887726,
+          3.71272873878479
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          13.347326278686523,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          32.03358459472656,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 240.25189208984375,
+      "role": "retained-fit-estimate",
+      "limits": "Face toward image left; both eyes still partly visible, so not a true 90-degree profile. Mouth slightly parted; crown partly cropped."
+    },
+    {
+      "id": "finale-right-oblique",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        1418.0,
+        222.0,
+        2538.0,
+        1579.0
+      ],
+      "cropCoordinates": "bottom-left",
+      "originalCropSource": [
+        1418.0,
+        222.0,
+        2538.0,
+        1579.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-finale-13367.jpg",
+      "referenceSha256": "2cd586a4d86543827a6bd4c1065747d6abbc89b3407067c1d36f08124f3f11bd",
+      "matrixWorld": [
+        [
+          0.6657477021217346,
+          0.036544639617204666,
+          -0.745281457901001,
+          -6.87836217880249
+        ],
+        [
+          -0.7461585998535156,
+          0.039578571915626526,
+          -0.6645906567573547,
+          -6.527720928192139
+        ],
+        [
+          0.005209947004914284,
+          0.9985479712486267,
+          0.0536174476146698,
+          0.39259812235832214
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          4.1815948486328125,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          10.035826683044434,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 75.26870727539062,
+      "role": "retained-fit-estimate",
+      "limits": "Opposite oblique in the same street turn; nose, cheek, jaw and ear are clear. Lips slightly parted; upper crown cropped."
+    },
+    {
+      "id": "chair-profile-check",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2160,
+        770,
+        2710,
+        1420
+      ],
+      "cropCoordinates": "bottom-left",
+      "originalCropSource": [
+        2160,
+        180,
+        2710,
+        830
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-chair-turn-2992.jpg",
+      "referenceSha256": "17f25bc72c9684cf14f212d953b6bff904011d15cdb3643a79ddbb3446a5417b",
+      "matrixWorld": [
+        [
+          0.41537371277809143,
+          -0.0065376111306250095,
+          -0.9096273183822632,
+          -9.952935218811035
+        ],
+        [
+          -0.9090303778648376,
+          0.03394229710102081,
+          -0.41534513235092163,
+          -3.3690428733825684
+        ],
+        [
+          0.033590205013751984,
+          0.9994024038314819,
+          0.008155851624906063,
+          -0.6677764058113098
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          1.8688679933547974,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.485283374786377,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 33.639625549316406,
+      "role": "retained-fit-estimate",
+      "limits": "Near 90-degree profile, camera below face, deep facial shadow. Nine manually observed ear/nose/lip/chin correspondences now constrain the shared identity. Excluded from texture baking; no longer a held-out view."
+    },
+    {
+      "id": "interrogation-front",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2176.0,
+        424.0,
+        2886.0,
+        1489.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-interrogation-1459.jpg",
+      "referenceSha256": "3239ea132b936c88fc650973bd076b66965a7050486b8f67bb40f09d13c08a32",
+      "matrixWorld": [
+        [
+          0.9889662265777588,
+          0.08220557868480682,
+          0.12323952466249466,
+          -0.1830662488937378
+        ],
+        [
+          0.09469002485275269,
+          0.28899654746055603,
+          -0.9526357054710388,
+          -7.366020202636719
+        ],
+        [
+          -0.11392775923013687,
+          0.9537941217422485,
+          0.27802377939224243,
+          1.8593018054962158
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          2.1332857608795166,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.119885444641113,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 38.39914321899414,
+      "role": "independent-scene-camera-only",
+      "pinsAdded": 0,
+      "discardedDetectorIdentityDelta": 0.021560251712799072,
+      "savedIdentityDelta": 0,
+      "limits": "Near frontal with raised brows and slight head tilt; mouth not perfectly closed; separate expression from neutral identity. Reserved as an independent scene after fitting the street turn."
+    }
+  ],
+  "identityToBody": {
+    "scale": 0.26072001376657516,
+    "offset": [
+      0.0008730091901645194,
+      4.0519504755268825,
+      0.1272948997223963
+    ]
+  },
+  "accepted": false,
+  "scope": "Four existing photo-fit estimates plus a camera-only independent interrogation scene. Detector identity changes discarded; expressions, gaze and lighting unmatched. Not known film camera metadata or actor likeness acceptance."
+}

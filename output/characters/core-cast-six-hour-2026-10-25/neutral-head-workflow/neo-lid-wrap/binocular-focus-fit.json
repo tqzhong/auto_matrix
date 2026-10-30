@@ -1,0 +1,310 @@
+{
+  "sourceSha256": "ad31f8abc9e862361bbb8e757f5244079c06a66247d327741f2902df2fd61e62",
+  "views": [
+    {
+      "view": "finale-front",
+      "yawPitchDegrees": [
+        15.114372649879401,
+        1.4633097803480668
+      ],
+      "focusDistance": 1.9372682118653581,
+      "focusPoint": [
+        0.5044802331960249,
+        4.18254125511546,
+        2.206544817716507
+      ],
+      "distanceAtSearchBoundary": false,
+      "eyeQuaternions": {
+        "Right": [
+          -0.020624038141120873,
+          0.1482859161234411,
+          0.0026653713483235602,
+          0.9887258628789685
+        ],
+        "Left": [
+          -0.004699823285374695,
+          0.11640785464534477,
+          -0.001958214587226842,
+          0.993188445579984
+        ]
+      },
+      "observations": [
+        {
+          "eye": "Right",
+          "reference": [
+            2032.0,
+            317.0
+          ],
+          "opticalProjection": [
+            2032.1676825489774,
+            315.35397042307926
+          ],
+          "residualPixels": 1.6545485200892174,
+          "manualUncertaintyPixels": 4
+        },
+        {
+          "eye": "Left",
+          "reference": [
+            2511.0,
+            359.0
+          ],
+          "opticalProjection": [
+            2510.844015419475,
+            360.55385101496563
+          ],
+          "residualPixels": 1.5616607077311255,
+          "manualUncertaintyPixels": 4
+        }
+      ],
+      "unobservedFarEyeInferred": false,
+      "trace": [
+        {
+          "seedDistance": 1.5,
+          "objective": 0.3238259831711952,
+          "params": [
+            15.11437269307239,
+            1.4633098935692526,
+            0.6612788095989304
+          ],
+          "iterations": 5
+        },
+        {
+          "seedDistance": 3,
+          "objective": 0.3238259831606189,
+          "params": [
+            15.114372649879401,
+            1.4633097803480668,
+            0.6612788425031949
+          ],
+          "iterations": 6
+        },
+        {
+          "seedDistance": 12,
+          "objective": 0.32382598316688704,
+          "params": [
+            15.114372646849453,
+            1.4633097967345656,
+            0.6612788414727361
+          ],
+          "iterations": 11
+        },
+        {
+          "seedDistance": 30,
+          "objective": 0.3238259831643988,
+          "params": [
+            15.114372629020618,
+            1.4633097854566373,
+            0.6612788435049286
+          ],
+          "iterations": 13
+        }
+      ]
+    },
+    {
+      "view": "finale-left-oblique",
+      "yawPitchDegrees": [
+        -24.87655544358592,
+        -2.799040448674528
+      ],
+      "focusDistance": 3.0641309425285352,
+      "focusPoint": [
+        -1.2882079344881932,
+        3.999003757412827,
+        3.113959349978415
+      ],
+      "distanceAtSearchBoundary": false,
+      "eyeQuaternions": {
+        "Right": [
+          0.014755092930544483,
+          -0.2054987393992731,
+          -0.003675726051609217,
+          0.9785392400797804
+        ],
+        "Left": [
+          0.029939184220723742,
+          -0.2226188670687937,
+          0.003860819993346356,
+          0.9744380838935758
+        ]
+      },
+      "observations": [
+        {
+          "eye": "Left",
+          "reference": [
+            1265.0,
+            538.0
+          ],
+          "opticalProjection": [
+            1264.9956189498655,
+            538.000475643326
+          ],
+          "residualPixels": 0.004406794396674762,
+          "manualUncertaintyPixels": 8
+        }
+      ],
+      "unobservedFarEyeInferred": true,
+      "trace": [
+        {
+          "seedDistance": 1.5,
+          "objective": 0.0003741626516240249,
+          "params": [
+            -24.876555203240525,
+            -2.799040438893421,
+            1.1197638649539925
+          ],
+          "iterations": 15
+        },
+        {
+          "seedDistance": 3,
+          "objective": 0.00037416265170659487,
+          "params": [
+            -24.87655521759017,
+            -2.7990404422586765,
+            1.1197638716785268
+          ],
+          "iterations": 15
+        },
+        {
+          "seedDistance": 12,
+          "objective": 0.0003741626515319183,
+          "params": [
+            -24.87655544358592,
+            -2.799040448674528,
+            1.1197639867773812
+          ],
+          "iterations": 15
+        },
+        {
+          "seedDistance": 30,
+          "objective": 0.00037416265161992836,
+          "params": [
+            -24.87655551792885,
+            -2.7990404532888484,
+            1.1197640144894836
+          ],
+          "iterations": 14
+        }
+      ]
+    },
+    {
+      "view": "finale-right-oblique",
+      "yawPitchDegrees": [
+        -1.2703764850919501,
+        1.2580161423022667
+      ],
+      "focusDistance": 3.087684697829476,
+      "focusPoint": [
+        -0.0689413239509164,
+        4.202552651169812,
+        3.423042579309745
+      ],
+      "distanceAtSearchBoundary": false,
+      "eyeQuaternions": {
+        "Right": [
+          -0.019677428077782336,
+          -0.00023635931672275689,
+          2.143967386474422e-05,
+          0.9998063524997516
+        ],
+        "Left": [
+          -0.002872366869673377,
+          -0.019790492946010624,
+          0.0003126023412133935,
+          0.9997999740834644
+        ]
+      },
+      "observations": [
+        {
+          "eye": "Right",
+          "reference": [
+            2108.0,
+            433.0
+          ],
+          "opticalProjection": [
+            2108.0019090595233,
+            432.99999480601156
+          ],
+          "residualPixels": 0.0019090665889567476,
+          "manualUncertaintyPixels": 8
+        }
+      ],
+      "unobservedFarEyeInferred": true,
+      "trace": [
+        {
+          "seedDistance": 1.5,
+          "objective": 0.0005447056753663136,
+          "params": [
+            -1.270376558798617,
+            1.258016143661012,
+            1.1274214537358571
+          ],
+          "iterations": 15
+        },
+        {
+          "seedDistance": 3,
+          "objective": 0.0005447056753706089,
+          "params": [
+            -1.2703765221742271,
+            1.2580161430229642,
+            1.1274214870929375
+          ],
+          "iterations": 15
+        },
+        {
+          "seedDistance": 12,
+          "objective": 0.0005447056753608611,
+          "params": [
+            -1.2703764850919501,
+            1.2580161423022667,
+            1.1274215213242258
+          ],
+          "iterations": 15
+        },
+        {
+          "seedDistance": 30,
+          "objective": 0.0005447056753692543,
+          "params": [
+            -1.2703764335331895,
+            1.258016141253777,
+            1.1274215680227861
+          ],
+          "iterations": 15
+        }
+      ]
+    }
+  ],
+  "camerasUnchanged": true,
+  "sharedPhysicalFocusAtReferencePresets": true,
+  "focusDistanceBounds": [
+    0.75,
+    30
+  ],
+  "actorFocusDistanceMeasured": false,
+  "accepted": false,
+  "likenessPercentage": null,
+  "scope": "CPU mirror of current exported corneal triangles, interpolated normals and local shader/iris lookup source plane. A single finite target gives each eye a different convergent quaternion. Manual pupil points are fitted observations with 4/8 px uncertainty, not held-out evidence or actor likeness. Distance in single-eye observations is underdetermined. Native raster/filtering, expression and complete actor checks remain required.",
+  "sourceEyeCenters": {
+    "Right": [
+      -0.07150319963693619,
+      4.136014461517334,
+      0.3381987512111664
+    ],
+    "Left": [
+      0.07049819827079773,
+      4.133545398712158,
+      0.33552226424217224
+    ]
+  },
+  "sourceEyeAxes": {
+    "Right": [
+      0.0013030768081424844,
+      -0.0177904457812438,
+      0.9998408883566108
+    ],
+    "Left": [
+      -0.0055321117460730845,
+      0.016596087799046904,
+      0.9998469710957748
+    ]
+  }
+}

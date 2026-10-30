@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { FILM_SETS, newAmbushEscape, type AgentState, type FilmJourney } from '@auto_matrix/shared';
+import { AMBUSH_DOFF, FILM_SETS, newAmbushEscape, type AgentState, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import type { MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
@@ -96,6 +96,17 @@ test('the persistent old-building phase selects coat before the call and shirt a
     assert.equal(h.actor.currentAction, null, 'the fixture must not rely on the transient phone gesture');
     assert.equal(h.frame(), 'shirt', phase); assertClothes(h.rig(), 'shirt');
   }
+});
+
+test('a completed removal checkpoint keeps the shirt before the retried phone call starts', async t => {
+  const h = await fixture(t), escape = h.journey.ambushEscape = newAmbushEscape();
+  escape.phase = 'phone'; escape.doffPerformance = true;
+  escape.doff = { elapsed: AMBUSH_DOFF.duration - .1, progress: 400, yaw: .6 };
+  assert.equal(h.frame(), 'coat');
+  escape.doff.elapsed = AMBUSH_DOFF.duration;
+  assert.equal(h.frame(), 'shirt', 'retry can stop at phone with the coat already removed');
+  assertClothes(h.rig(), 'shirt');
+  await h.cold(); assert.equal(h.frame(), 'shirt'); assertClothes(h.rig(), 'shirt');
 });
 
 test('independent cold saves retain the shirt through the pipe, sixth floor, sacrifice and the crew leaving Morpheus behind', async t => {

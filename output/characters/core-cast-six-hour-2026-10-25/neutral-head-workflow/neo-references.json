@@ -1,0 +1,98 @@
+{
+  "character": "neo",
+  "filmYear": 1999,
+  "status": "Real-photo neutral identity draft exists; manual multiview refinement and independent visual review remain incomplete.",
+  "images": [
+    {
+      "id": "finale-front",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-finale-13363.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-13363.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/75",
+      "sha256": "95fefe8c436b3b883bb4c25098d2b718fca1ac547a7ce3e6b1e6023c04b550ca",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near frontal during the same street turn. Mild brow tension and slightly parted lips; upper forehead/crown cropped."
+    },
+    {
+      "id": "finale-left-oblique",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-finale-13358.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-13358.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/75",
+      "sha256": "c296f76464309191f989e0bd8c190697e960e7bd0a3edb458cf57157b2fe1776",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Face toward image left; both eyes still partly visible, so not a true 90-degree profile. Mouth slightly parted; crown partly cropped."
+    },
+    {
+      "id": "finale-right-oblique",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-finale-13367.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-13367.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/75",
+      "sha256": "2cd586a4d86543827a6bd4c1065747d6abbc89b3407067c1d36f08124f3f11bd",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Opposite oblique in the same street turn; nose, cheek, jaw and ear are clear. Lips slightly parted; upper crown cropped."
+    },
+    {
+      "id": "interrogation-front",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-interrogation-1459.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-1459.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/9",
+      "sha256": "3239ea132b936c88fc650973bd076b66965a7050486b8f67bb40f09d13c08a32",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near frontal with raised brows and slight head tilt; mouth not perfectly closed; separate expression from neutral identity. Reserved as an independent scene after fitting the street turn."
+    },
+    {
+      "id": "dojo-holdout",
+      "path": "output/characters/neo-likeness-2026-10-25/references/neo-dojo-front.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://www.looper.com/img/gallery/15-movies-about-hackers-you-should-try-next/l-intro-1650898036.jpg",
+      "sourcePage": "https://www.looper.com/843107/15-movies-about-hackers-you-should-try-next/",
+      "sha256": "1f50b69965ad63ef47bbddd1a7821960efd8f37f76926b892e72312ee61e0377",
+      "size": [
+        1600,
+        899
+      ],
+      "limits": "Downward head tilt and intense expression; do not fit this image; use to inspect whether identity generalizes."
+    },
+    {
+      "id": "chair-side-check",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-chair-side-2902.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-2902.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/17",
+      "sha256": "47664ca90a9067d66858794d4d951d41f41b1ed3c49bdfac264629626bf8925b",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near profile before the mirror scene; slight parted lips, dark frontal skin, upper crown cropped. Reserved for geometry diagnosis, not skin colour. Same scene as the manually fitted chair-profile-check, so this is not independent scene evidence."
+    },
+    {
+      "id": "chair-profile-check",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/neo-chair-turn-2992.jpg",
+      "role": "manual-fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-2992.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/17",
+      "sha256": "17f25bc72c9684cf14f212d953b6bff904011d15cdb3643a79ddbb3446a5417b",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near 90-degree profile, camera below face, deep facial shadow. Nine manually observed ear/nose/lip/chin correspondences now constrain the shared identity. Excluded from texture baking; no longer a held-out view."
+    }
+  ]
+}

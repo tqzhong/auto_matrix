@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--assets', type=Path, default=ROOT / 'packages/client/public/assets/characters')
 parser.add_argument('--output', type=Path, default=ROOT / 'output/characters/calibration')
 parser.add_argument('--character', choices=['neo', 'trinity', 'smith', 'morpheus'])
+parser.add_argument('--skin-albedo', action='store_true', help='Inspect baked skin color without lighting or specular reflections')
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
 args.output.mkdir(parents=True, exist_ok=True)
 for character in [args.character] if args.character else ['neo', 'trinity', 'smith', 'morpheus']:
@@ -20,6 +21,14 @@ for character in [args.character] if args.character else ['neo', 'trinity', 'smi
     path = args.assets / (character + '.glb'); data = path.read_bytes()
     metadata = json.loads(data[20:20 + struct.unpack_from('<I', data, 12)[0]])['extras']
     bpy.ops.import_scene.gltf(filepath=str(path.resolve()))
+    if args.skin_albedo:
+        material = bpy.data.materials.get('Skin'); nodes = material.node_tree.nodes; links = material.node_tree.links
+        shader = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
+        emission = nodes.new('ShaderNodeEmission')
+        color = shader.inputs['Base Color']
+        if color.is_linked: links.new(color.links[0].from_socket, emission.inputs['Color'])
+        else: emission.inputs['Color'].default_value = color.default_value
+        links.new(emission.outputs[0], next(n for n in nodes if n.type == 'OUTPUT_MATERIAL').inputs['Surface'])
     center = metadata['eye'][1] - .025
     scene = bpy.context.scene; scene.render.engine = 'BLENDER_EEVEE_NEXT'
     scene.render.resolution_x = 768; scene.render.resolution_y = 1024; scene.render.resolution_percentage = 100

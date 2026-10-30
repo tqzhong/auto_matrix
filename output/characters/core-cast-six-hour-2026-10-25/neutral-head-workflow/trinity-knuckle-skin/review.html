@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>Trinity · 手背关节与皮肤细节</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#161c1b;color:#e3e7e3;font:14px system-ui,sans-serif}header{padding:20px 28px}h1{font-size:20px;margin:0 0 12px}nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}button,select,a{font:inherit;padding:7px 12px;color:inherit;background:#26312e;border:1px solid #52635c;border-radius:4px}a{text-decoration:none}canvas{display:block;width:100%;height:calc(100vh - 245px);min-height:360px}.labels{display:flex;text-align:center}.labels span{width:33.333%}footer{padding:16px 28px;font-size:12px;color:#b3bdb7}#status{color:#c7dfad}details{margin:8px 28px}details img{max-width:48%;max-height:460px;object-fit:contain}
+#comparison{display:flex;position:relative}#anchorOverlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}#comparison canvas{min-width:0}#photoReference{width:50%;flex:none;height:calc(100vh - 245px);min-height:360px;position:relative;overflow:hidden}#photoReference img{position:absolute;max-width:none}#comparison.photo canvas{width:50%}.labels.photo span{width:50%}.labels.photo span:nth-child(3){display:none}body{height:100vh;display:flex;flex-direction:column}#comparison{flex:1;min-height:0}#comparison canvas,#photoReference{height:100%;min-height:0}header{padding:16px}#filmReferences{display:none}nav>a:not(#afterLink):not(#beforeLink){display:none}nav label:has(#hairLayer),#pause{display:none}footer{padding:10px 16px}#pause{display:inline-block;position:absolute;right:16px;top:14px;padding:5px 10px}footer{height:60px;overflow:hidden;flex:none}body:not(.advanced) nav label:not(:has(#frame)):not(:has(#view)):not(:has(#outfit)):not(:has(#motion)):not(:has(#side)):not(:has(#handGrip)){display:none}body:not(.advanced) #matchPhoto{display:none}</style>
+<header><h1>Trinity · 手背关节与皮肤细节 <small id="variant"></small></h1>
+<nav><button id="advanced">动作／网格检查</button><a id="afterLink">当前候选</a><a id="beforeLink">修改前</a><a href="review.html">中性头模</a><a href="core-hand-surface-review.html?actor=neo">Neo 当前版</a><a href="core-hand-surface-review.html?actor=smith">Smith 当前版</a>
+<label>发型检查层 <select id="hairLayer"><option value="all">完整发型</option><option value="strands">仅发丝</option><option value="undercoat">仅底层</option></select></label><label>检查范围 <select id="frame"><option value="body">全身</option><option value="neck">肩颈</option><option value="armhole">腋下</option><option value="shoulder">肩缝</option><option value="elbow">肘部</option><option value="face">面部</option><option value="eyes">眼周近景</option><option value="mouth">嘴部近景</option><option value="groom">头顶发丝</option><option value="hands" selected>手部</option></select></label>
+<label>动作 <select id="motion"><option value="idle">待机</option><option value="grip" selected>开合手检查</option><option value="walk">行走</option><option value="run">奔跑</option><option value="combat">出拳</option><option value="climb">攀爬</option></select></label>
+<label>握拳强度 <input id="handGrip" type="number" min="0" max="1" step="0.025" value="1" style="width:65px"></label><label>连击 <select id="combo"><option value="0">第一段</option><option value="1">第二段</option><option value="2">第三段</option></select></label><label>左右 <select id="side"><option value="L">左侧</option><option value="R" selected>右侧</option></select></label><button id="pause">播放动作</button><label><input id="glasses" type="checkbox">墨镜</label><label><input id="clay" type="checkbox">检查网格轮廓</label><label>服装 <select id="outfit"><option value="leather" selected>皮衣</option><option value="club">俱乐部</option><option value="ship">飞船针织衫</option></select></label><label>转头 <input id="yaw" type="range" min="-60" max="60" step="5" value="0"></label><label>低头/抬头 <input id="pitch" type="range" min="-30" max="30" step="5" value="0"></label><label>脸部片段 <select id="faceClip"><option value="reference">照片表情</option><option value="diagnostic">原有诊断</option></select></label><button id="matchPhoto">应用照片表情</button><label>表情时间 <input id="faceTime" type="number" min="0" max="5" step="0.005" value="0" style="width:75px"></label><label><input id="skinNormal" type="checkbox" checked>皮肤法线</label><label><input id="skinColourOnly" type="checkbox">仅看肤色</label><label>眨眼检查 <input id="blinkCheck" type="number" min="0" max="1" step="0.05" value="0" style="width:65px"></label><label>张嘴检查 <input id="jawCheck" type="number" min="0" max="1" step="0.05" value="0" style="width:65px"></label><label>闭嘴检查 <input id="closeCheck" type="number" min="0" max="1" step="0.05" value="0" style="width:65px"></label><label>唇形 <select id="mouthShape"><option value="none">中性</option><option value="mouthFunnel">mouthFunnel</option><option value="mouthPucker">mouthPucker</option><option value="mouthRollUpper">mouthRollUpper</option><option value="mouthRollLower">mouthRollLower</option><option value="mouthSmileLeft">mouthSmileLeft</option><option value="mouthSmileRight">mouthSmileRight</option><option value="mouthPressLeft">mouthPressLeft</option><option value="mouthPressRight">mouthPressRight</option><option value="mouthFrownLeft">mouthFrownLeft</option><option value="mouthFrownRight">mouthFrownRight</option></select></label><label>唇形强度 <input id="mouthAmount" type="number" min="0" max="1" step="0.05" value="0" style="width:65px"></label><label>上看眼睑 <input id="upCheck" type="number" min="0" max="1" step="0.05" value="0" style="width:65px"></label><label>额外睁眼 <input id="wide" type="range" min="0" max="1" step="0.025" value="0"></label><label>虹膜深度诊断 <select id="irisDepth"><option value="asset">当前模型</option><option value="0">原始虹膜平面</option><option value="0.0025">后移 0.0025</option><option value="0.005">后移 0.005</option></select></label><label>机位 <select id="cameraFit"><option value="calibrated">保留照片机位（估计）</option><option value="original">原拟合机位</option></select></label><label>灯光 <select id="lighting"><option value="studio">原检查灯光</option><option value="directional">单侧主光诊断（估计）</option></select></label><label>阴影 <select id="shadowQuality"><option value="legacy">原检查阴影</option><option value="fine">精细面部阴影</option></select></label><label>眼层 <select id="eyeLayer"><option value="all">完整眼睛</option><option value="opaque">仅不透明虹膜（诊断）</option></select></label><label>视角 <select id="view"><option value="front">正面／斜面／侧面</option><option value="hand">手部隔离三视图</option><option value="back">后面／后斜面／侧面</option><option value="photo:hotel-front">1999：酒店正面</option><option value="photo:hotel-oblique">1999：酒店斜面</option><option value="photo:hotel-profile">1999：酒店侧面</option><option value="photo:promo-1999">1999：宣传照</option><option value="photo:car-holdout">独立检查：车内镜头</option></select></label><label>动作时间 <input id="poseTime" type="number" min="0" max="5" step="0.01" value="0"></label><label><input id="anchors" type="checkbox">网格观察点</label><label>观察层 <select id="anchorGroup"><option value="cheek">颧颊</option><option value="fold">鼻唇沟</option><option value="jaw">下颌</option></select></label><span id="status">模型加载中</span></nav></header>
+<div class="labels"><span>正面 · 0°</span><span>四分之三 · 45°</span><span>侧面 · 90°</span></div><div id="comparison"><canvas></canvas><svg id="anchorOverlay"></svg><div id="photoReference" hidden><img alt="真实电影时期参考，原始图片"></div></div>
+<details id="filmReferences"><summary>原片人物与发型局部参考</summary><img src="references/trinity-hotel-256.jpg" alt="原片酒店电话：领口与袖口"><img src="references/trinity-promo-1999-gq-8.jpg" alt="1999 宣传照：皮衣翻领、门襟与内搭"></details><footer>同一完整可动人物的拳背关节、指节褶皱与皮肤制作候选。可调左右手、动作和握拳强度；播放开合手会循环展开与握拳。原片表情沿用。隔离检查只显示实际受驱动的手部连通网格，用于观察掌侧细节；全身接触需另查。手部自然度和整体演员相似度待验收。<span id="picked">点击模型可检查表面名称。</span></footer>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { HandInspection } from './hand-inspection.mjs';
+import { CharacterModels } from '/packages/client/src/agents/CharacterModel.ts';
+import { advanceMotion, newMotion } from '/packages/client/src/agents/CharacterMotion.ts';
+import { poseReviewHead } from '../trinity-body-pose.mjs';
+import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED } from '@auto_matrix/shared';
+const params = new URLSearchParams(location.search), actorId='trinity', variant=params.get('variant')||'after';
+const modelsManifest=await fetch('models.json').then(r=>r.json()),assetRecord=modelsManifest[variant];
+const runtimeManifest=await fetch('/__knuckle-runtime?variant='+variant).then(async r=>{if(!r.ok)throw Error(await r.text());return r.json();});
+if(runtimeManifest.candidate.sha256!==assetRecord.sha256||runtimeManifest.sources.length!==9)throw Error('模型或运行时代码与检查版本不一致');
+const anchorData=await fetch('inspection-anchors.json').then(r=>r.json());
+const folder='/'+assetRecord.path.slice(0,assetRecord.path.lastIndexOf('/')+1);
+const photoCameraManifest=await fetch('photo-review-cameras.json').then(r=>r.json()),photoManifests={original:photoCameraManifest,calibrated:photoCameraManifest};let photoManifest=photoCameraManifest,photoViews=photoManifest.views;document.querySelector('#cameraFit').closest('label').hidden=true;
+const currentSha=assetRecord.sha256;document.querySelector('#cameraFit').value=params.get('camera')==='original'?'original':'calibrated';
+if(actorId==='neo'&&variant!=='before')document.querySelector('footer').append(document.createTextNode(' Neo 另修复后脑发帽接缝，原头脸、手及其他网格不变。'));
+document.querySelector('#variant').textContent=(variant==='before'?'修改前':'当前候选')+' · 整体未验收 · '+currentSha.slice(0,8);
+document.querySelector('#outfit option[value=leather]').textContent=actorId==='trinity'?'皮衣':'Matrix 服装';
+if(actorId!=='trinity')document.querySelector('#outfit option[value=club]').disabled=true;
+if(actorId==='smith')document.querySelector('#outfit option[value=ship]').disabled=true;
+const referenceIds={morpheus:['dojo-front','ship-side'],trinity:['hotel-profile','promo-1999'],neo:['finale-right-oblique','chair-profile-check'],smith:['interrogation-front','reloaded-left-profile']}[actorId];
+const references=await fetch('../'+actorId+'-references.json').then(response=>response.json());
+document.querySelectorAll('#filmReferences img').forEach((img,i)=>{const ref=references.images.find(x=>x.id===referenceIds[i]);img.src='/'+ref.path;img.alt=ref.id+' · '+ref.limits;});
+document.querySelector('#filmReferences summary').textContent='原片局部人物／发型参考'+(actorId==='smith'?'（第二张为 2003 年，非 1999 年）':'（头顶有裁切，机位与光照不同）');
+
+for(const id of ['clay','glasses','anchors','skinNormal','skinColourOnly'])if(params.has(id))document.querySelector('#'+id).checked=params.get(id)==='1';
+for(const id of ['faceClip','frame','outfit','yaw','pitch','poseTime','motion','combo','side','anchorGroup','blinkCheck','jawCheck','closeCheck','mouthShape','mouthAmount','upCheck','wide','irisDepth','lighting','shadowQuality','eyeLayer','handGrip'])if(params.has(id))document.querySelector('#'+id).value=params.get(id);
+if(params.has('view'))document.querySelector('#view').value=params.get('view');
+if(params.has('faceTime'))document.querySelector('#faceTime').value=params.get('faceTime');
+
+function updateComparisonLinks(){for(const v of ['before','after']){const q=new URLSearchParams();q.set('variant',v);for(const id of ['clay','glasses','anchors','skinNormal','skinColourOnly'])q.set(id,document.querySelector('#'+id).checked?'1':'0');for(const id of ['faceClip','frame','outfit','yaw','pitch','poseTime','motion','combo','side','anchorGroup','blinkCheck','jawCheck','closeCheck','mouthShape','mouthAmount','upCheck','wide','irisDepth','lighting','shadowQuality','eyeLayer','handGrip'])q.set(id,document.querySelector('#'+id).value);q.set('view',document.querySelector('#view').value);q.set('camera',document.querySelector('#cameraFit').value);q.set('faceTime',document.querySelector('#faceTime').value);document.querySelector('#'+v+'Link').href='?'+q;}}
+updateComparisonLinks();
+THREE.DefaultLoadingManager.setURLModifier(url=>url==='/assets/characters/'+actorId+'.glb'?folder+actorId+'.glb?v='+currentSha:url);
+const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector('canvas'), antialias:true, preserveDrawingBuffer:true });
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
+const originalLights=[];let diagnosticLight;const skinViews=[],skinColourUniform={value:false};
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#161c1b');
+const room = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(room, .04).texture;
+scene.environmentIntensity = .65; room.dispose(); pmrem.dispose(); const hemisphere=new THREE.HemisphereLight(0xe9eee5,0x343e34,.6);scene.add(hemisphere);
+for (const [color,intensity,position] of [[0xffe5cf,1.5,[3,7,5]],[0x9fd0c0,3,[-3,5,-3]],[0xe6eeff,.5,[-4,3,5]]]) {
+  const light = new THREE.DirectionalLight(color,intensity); light.position.set(...position);
+  if (color === 0xffe5cf) {light.castShadow=true; light.shadow.mapSize.set(1024,1024); Object.assign(light.shadow.camera,{left:-4,right:4,top:7,bottom:-3}); light.shadow.bias=-.0004;}
+  scene.add(light);originalLights.push(light);
+}
+scene.add(originalLights[0].target);
+diagnosticLight=new THREE.DirectionalLight(0xffe2bd,4);diagnosticLight.visible=false;diagnosticLight.castShadow=true;diagnosticLight.shadow.mapSize.set(2048,2048);Object.assign(diagnosticLight.shadow.camera,{left:-1,right:1,top:1,bottom:-1,near:.1,far:12});diagnosticLight.shadow.bias=-.00001;scene.add(diagnosticLight,diagnosticLight.target);
+const handInspection=new HandInspection();let handTopology;
+const models = new CharacterModels();
+const rig = models.create({id:actorId,name:actorId,faction:'zion',isInMatrix:true,appearance:{headColor:'#d7af94',clothing:'#151918'}}); scene.add(rig.root);
+const camera = new THREE.PerspectiveCamera(30,1,.01,100), viewCameras = [camera.clone(),camera.clone(),camera.clone()];
+renderer.domElement.onclick = event => {
+  const box=renderer.domElement.getBoundingClientRect(), width=document.querySelector('#view').value.startsWith('photo:')?box.width:box.width/3, index=Math.floor((event.clientX-box.left)/width);
+  const pointer=new THREE.Vector2((event.clientX-box.left-index*width)/width*2-1,1-(event.clientY-box.top)/box.height*2), ray=new THREE.Raycaster();
+  ray.setFromCamera(pointer,viewCameras[index]);
+  const hit=ray.intersectObjects(scene.children,true).find(hit=>{for(let o=hit.object;o;o=o.parent)if(!o.visible)return false;return true;});
+  document.querySelector('#picked').textContent=hit?`表面：${hit.object.name} · 面片 ${hit.faceIndex}`:'未命中表面';
+};
+const clay = new THREE.MeshStandardMaterial({color:'#b5aaa0',roughness:.72});
+let last=performance.now(), time=0, playing=false, ready=false, facialReady=false, dirty=true, initialDraws=2, mixer, seekRequested=true;
+const manualRestores=[];const depthUniforms=[];let facialAnimations=[],referencePresets={};
+function selectFacialClip(){if(!mixer)return;mixer.stopAllAction();const name=document.querySelector('#faceClip').value==='reference'?'TrinityReferencePose':'Scene',clip=facialAnimations.find(c=>c.name===name);if(!clip)throw Error('Requested facial clip is unavailable: '+name);mixer.clipAction(clip).play();dirty=true;}
+document.querySelector('#faceClip').addEventListener('change',selectFacialClip);
+document.querySelector('#matchPhoto').onclick=()=>{const id=document.querySelector('#view').value.slice(6);if(referencePresets[id]===undefined)return;document.querySelector('#faceClip').value='reference';document.querySelector('#faceTime').value=String(referencePresets[id]);selectFacialClip();updateComparisonLinks();};
+const startup = setInterval(async () => {
+  if (!rig.hero) return; clearInterval(startup);
+  const asset = await models.heroes.load(actorId);handTopology=asset.scene.getObjectByName('Anatomical_head_and_hands').geometry;
+  rig.hero.root.traverse(mesh=>{if(!mesh.isMesh)return;const material=mesh.material;if(material.name!=='Skin')return;const compile=material.onBeforeCompile,key=material.customProgramCacheKey();material.onBeforeCompile=function(shader,renderer){compile.call(this,shader,renderer);shader.uniforms.skinColourOnly=skinColourUniform;shader.fragmentShader='uniform bool skinColourOnly;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>','if (skinColourOnly) outgoingLight = diffuseColor.rgb;\n#include <opaque_fragment>');};material.customProgramCacheKey=()=>key+'-skin-inspection';material.needsUpdate=true;skinViews.push({material,normalScale:material.normalScale.clone()});});
+  for(const data of asset.parser.json.extras.irisRefraction?.eyes??[]){const material=rig.hero.root.getObjectByName(data.mesh).material,compile=material.onBeforeCompile,key=material.customProgramCacheKey();material.onBeforeCompile=function(shader,renderer){compile.call(this,shader,renderer);depthUniforms.push([shader.uniforms.eyePlanePoint,data]);};material.customProgramCacheKey=()=>key+'-depth-inspection-v1';material.needsUpdate=true;}
+  const served=await(await fetch('/'+assetRecord.path)).arrayBuffer(),hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',served))).map(x=>x.toString(16).padStart(2,'0')).join('');if(hash!==currentSha)throw Error('Film-review candidate hash mismatch');
+  if (asset.animations.length) {facialAnimations=asset.animations;referencePresets=asset.parser.json.extras.referencePerformance?.presetsSeconds??{};mixer = new THREE.AnimationMixer(rig.hero.root);selectFacialClip();}
+  facialReady=true;dirty=true;
+},100);
+THREE.DefaultLoadingManager.onLoad = () => {dirty=true;};
+document.querySelector('#advanced').onclick=()=>{document.body.classList.toggle('advanced');dirty=true;};
+document.querySelector('#pause').onclick = event => {playing=!playing; dirty=true; event.target.textContent=playing?'暂停动作':'播放动作';};
+document.querySelector('#motion').onchange = () => {time=0;document.querySelector('#poseTime').value='0'; rig.motion=newMotion(); seekRequested=true; dirty=true;};
+document.querySelectorAll('select,input').forEach(control => control.addEventListener('input', () => {updateComparisonLinks();dirty=true;}));
+document.querySelector('#poseTime').addEventListener('input',()=>{seekRequested=true;});
+document.querySelector('#combo').addEventListener('change',()=>{rig.motion=newMotion();seekRequested=true;dirty=true;});
+addEventListener('resize', () => {dirty=true;});
+function drawAnchors(camera,width,height){
+  const svg=document.querySelector('#anchorOverlay');svg.replaceChildren();svg.setAttribute('viewBox','0 0 '+(width*2)+' '+height);
+  if(!document.querySelector('#anchors').checked)return;
+  const skin=rig.hero.root.getObjectByName(anchorData.mesh),rows=anchorData.anchors.filter(row=>row.group===document.querySelector('#anchorGroup').value);
+  for(const row of rows){const point=skin.localToWorld(skin.getVertexPosition(row.row,new THREE.Vector3())).project(camera),x=(point.x+1)*width/2,y=(1-point.y)*height/2;
+    if(point.z<0||point.z>1)continue;const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');for(const[k,v]of Object.entries({cx:x,cy:y,r:2,fill:'#ffff00',stroke:'#111','stroke-width':.5}))dot.setAttribute(k,v);svg.append(dot);
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');for(const[k,v]of Object.entries({x:x+3,y:y-5,fill:'#ffff77',stroke:'#111','stroke-width':1.5,'paint-order':'stroke','font-size':10}))text.setAttribute(k,v);text.textContent=row.id;svg.append(text);
+  }
+}
+
+function update(now) {
+  requestAnimationFrame(update);
+  const dt=playing?Math.min((now-last)/1000,.05):0; last=now; time+=dt;
+  if (!rig.hero || !facialReady) return;
+  if (ready && !playing && !dirty && initialDraws===0) return;
+  dirty=false;handInspection.restore();
+  skinColourUniform.value=document.querySelector('#skinColourOnly').checked;for(const row of skinViews)row.material.normalScale.copy(row.normalScale).multiplyScalar(document.querySelector('#skinNormal').checked?1:0);
+  for(const [uniform,data] of depthUniforms){const depth=document.querySelector('#irisDepth').value;if(depth==='asset')uniform.value.fromArray(data.planePoint);else uniform.value.fromArray(data.sourcePlanePoint).addScaledVector(new THREE.Vector3().fromArray(data.planeNormal),-Number(depth));}
+  if (!ready) ready=true;
+  const motion=document.querySelector('#motion').value;
+  if(!playing)time=Number(document.querySelector('#poseTime').value);
+  const outfit=document.querySelector('#outfit').value;photoManifest=photoManifests[document.querySelector('#cameraFit').value];photoViews=photoManifest.views;
+  const input={dojoOutfit:outfit==='dojo'?'morpheus':undefined,clubClothes:outfit==='club',realWorld:outfit==='ship',nebCrew:outfit==='ship'?actorId:undefined,speed:motion==='walk'?PLAYER_WALK_SPEED:motion==='run'?PLAYER_RUN_SPEED:0,grounded:true,verticalVelocity:0,turn:0,attack:motion==='combat'?1:undefined,combo:motion==='combat'?Number(document.querySelector('#combo').value):undefined,climbing:motion==='climb'?.5:undefined};
+  if(!playing&&seekRequested){
+    rig.motion=newMotion();
+    for(let step=0;step<=Math.round(time*60);step++)models.animate(rig,step?1/60:0,input,1);
+    seekRequested=false;
+  }else models.animate(rig,dt,input,1);
+  if(motion==='grip'){const grip=playing?.5-.5*Math.cos(time*Math.PI/2):Number(document.querySelector('#handGrip').value),state=newMotion(),pose=advanceMotion(state,input,0);pose.arms.forEach(arm=>{arm.grip=grip;});models.heroes.animate(rig.hero,pose,state,input,0);if(playing)document.querySelector('#handGrip').value=String(grip);}
+  document.querySelectorAll('.labels span').forEach((label,i)=>{label.textContent=(document.querySelector('#view').value==='back'?['后面 · 180°','后斜面 · 135°','侧面 · 90°']:['正面 · 0°','四分之三 · 45°','侧面 · 90°'])[i];});
+  poseReviewHead(rig.hero.bones.get('head'),Number(document.querySelector('#yaw').value),Number(document.querySelector('#pitch').value));
+  if (playing) {document.querySelector('#faceTime').value=String(time%5);document.querySelector('#poseTime').value=String(time);}
+  for(const [mesh,index,value]of manualRestores)mesh.morphTargetInfluences[index]=value;manualRestores.length=0;
+  if (mixer) mixer.setTime(Number(document.querySelector('#faceTime').value));
+  const extraWide=Number(document.querySelector('#wide').value);if(extraWide>0)rig.hero.root.traverse(mesh=>{if(mesh.isMesh&&mesh.morphTargetDictionary)for(const side of ['Left','Right']){const index=mesh.morphTargetDictionary['eyeWide'+side];if(index!==undefined){const prior=mesh.morphTargetInfluences[index];manualRestores.push([mesh,index,prior]);mesh.morphTargetInfluences[index]=1-(1-prior)*(1-extraWide);}}});
+  const blink=Number(document.querySelector('#blinkCheck').value),jaw=Number(document.querySelector('#jawCheck').value),up=Number(document.querySelector('#upCheck').value),close=Number(document.querySelector('#closeCheck').value),mouthShape=document.querySelector('#mouthShape').value,mouthAmount=Number(document.querySelector('#mouthAmount').value);
+  rig.hero.root.traverse(mesh=>{if(!mesh.isMesh||!mesh.morphTargetDictionary)return;const set=(name,value)=>{const index=mesh.morphTargetDictionary[name];if(index!==undefined){manualRestores.push([mesh,index,mesh.morphTargetInfluences[index]]);mesh.morphTargetInfluences[index]=value;}};if(blink>0)for(const side of ['Left','Right'])set('eyeBlink'+side,blink);if(up>0)for(const side of ['Left','Right'])set('eyeLookUp'+side,up);if(jaw>0){set('jawOpen',jaw);set('mouthClose',0);}if(close>0)set('mouthClose',close);if(mouthShape!=='none')set(mouthShape,mouthAmount);});
+  models.heroes.poseFace(rig.hero);
+  const hairLayer=document.querySelector('#hairLayer').value;
+  rig.hero.wardrobe.forEach(part=>{const name=part.mesh.material.name;if((name==='Groom undercoat'&&hairLayer==='strands')||(name==='Groomed hair'&&hairLayer==='undercoat'))part.mesh.visible=false;});
+  rig.hero.root.traverse(mesh=>{if(mesh.isMesh&&mesh.material.name==='Eyes cornea')mesh.visible=document.querySelector('#eyeLayer').value==='all';});
+  rig.root.updateMatrixWorld(true);
+  const shadowKey=originalLights[0],fineShadow=document.querySelector('#shadowQuality').value==='fine';
+  const shadowFocus=fineShadow?rig.hero.bones.get('head').getWorldPosition(new THREE.Vector3()):new THREE.Vector3();shadowKey.position.copy(shadowFocus).add(new THREE.Vector3(3,7,5));shadowKey.target.position.copy(shadowFocus);shadowKey.target.updateMatrixWorld();
+  Object.assign(shadowKey.shadow.camera,fineShadow?{left:-.7,right:.7,top:.7,bottom:-.7,near:.1,far:20}:{left:-4,right:4,top:7,bottom:-3,near:.5,far:500});shadowKey.shadow.bias=fineShadow?-.00002:-.0004;shadowKey.shadow.camera.updateProjectionMatrix();
+  rig.hero.glasses.visible=document.querySelector('#glasses').checked;
+  const handView=document.querySelector('#view').value==='hand';if(handView)document.querySelector('#frame').value='hands';
+  const frame=document.querySelector('#frame').value, head=rig.hero.bones.get('head');
+  const target=head.localToWorld(head.userData.cameraEye.clone().add(new THREE.Vector3(0,-.065,-.139)));
+  let distance=1.62;
+  if (frame==='eyes') {target.y+=.055;target.z+=.035;distance=.88;}
+  if (frame==='mouth') {target.y-=.13;target.z+=.04;distance=.84;}
+  if (frame==='body') {target.set(0,motion==='climb'?2.5:2.15,0); distance=motion==='climb'?10.5:9.8;}
+  if (frame==='neck') {target.set(0,3.72,.08);distance=2.5;}
+  if(frame==='groom'){target.y+=.22;distance=1.8;}
+  if(['armhole','shoulder','elbow'].includes(frame)){
+    const side=document.querySelector('#side').value;
+    rig.hero.bones.get('shoulder_'+side).getWorldPosition(target);
+    target.lerp(rig.hero.bones.get('elbow_'+side).getWorldPosition(new THREE.Vector3()),frame==='elbow'?1:frame==='armhole'?.50:.08);target.z+=.065;distance=frame==='elbow'?1.1:frame==='armhole'?1.25:1.65;
+  }
+  if (frame==='hands') {const handSide=document.querySelector('#side').value;rig.hero.bones.get('wrist_'+handSide).getWorldPosition(target); target.lerp(rig.hero.bones.get('finger3-3_'+handSide).getWorldPosition(new THREE.Vector3()),.6); distance=1.55;}
+  if(['armhole','shoulder','elbow'].includes(frame))document.querySelectorAll('.labels span').forEach((label,i)=>label.textContent=['前斜 · 45°','侧面 · 90°','后斜 · 135°'][i]);
+  const photoId=document.querySelector('#view').value.startsWith('photo:')?document.querySelector('#view').value.slice(6):null;
+  const comparison=document.querySelector('#comparison'),photoHolder=document.querySelector('#photoReference'),labels=document.querySelector('.labels');
+  comparison.classList.toggle('photo',Boolean(photoId));labels.classList.toggle('photo',Boolean(photoId));photoHolder.hidden=!photoId;
+  for(const id of ['frame','yaw','pitch'])document.querySelector('#'+id).disabled=Boolean(photoId)||(id==='frame'&&handView);
+  const width=renderer.domElement.clientWidth, height=renderer.domElement.clientHeight;
+  if (renderer.domElement.width!==Math.round(width*renderer.getPixelRatio()) || renderer.domElement.height!==Math.round(height*renderer.getPixelRatio())) renderer.setSize(width,height,false);
+  camera.clearViewOffset();camera.fov=30;camera.aspect=width/3/height; camera.updateProjectionMatrix();
+  if(photoId){
+    const photo=photoViews.find(v=>v.id===photoId),[left,bottom,right,top]=photo.rectangle;
+    const crop=[left-(right-left)*.18,(photo.rectangleOrigin==='top-left'?bottom:photo.size[1]-top)-(top-bottom)*.08,(right-left)*1.36,(top-bottom)*1.3];
+    const box=photoHolder.getBoundingClientRect(),scale=Math.min(box.width/crop[2],box.height/crop[3]);
+    const x=(box.width-crop[2]*scale)/2-crop[0]*scale,y=(box.height-crop[3]*scale)/2-crop[1]*scale;
+    const image=photoHolder.querySelector('img');image.src='/'+photo.referencePath;image.style.width=photo.size[0]*scale+'px';image.style.height=photo.size[1]*scale+'px';image.style.left=x+'px';image.style.top=y+'px';
+    const skin=rig.hero.root.getObjectByName('Anatomical_head_and_hands'),index=skin.skeleton.bones.findIndex(b=>b.name==='head');
+    const bindToWorld=skin.matrixWorld.clone().multiply(skin.bindMatrixInverse).multiply(head.matrixWorld).multiply(skin.skeleton.boneInverses[index]).multiply(skin.bindMatrix);
+    const transform=bindToWorld.multiply(new THREE.Matrix4().makeTranslation(...photoManifest.identityToBody.offset)).multiply(new THREE.Matrix4().makeScale(...Array(3).fill(photoManifest.identityToBody.scale))).multiply(new THREE.Matrix4().set(1,0,0,0,0,0,1,0,0,-1,0,0,0,0,0,1)).multiply(new THREE.Matrix4().set(...photo.matrixWorld.flat()));
+    transform.decompose(camera.position,camera.quaternion,new THREE.Vector3());camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(1/photo.projectionMatrix[1][1]));camera.setViewOffset(...photo.size,-x/scale,-y/scale,width/scale,height/scale);camera.updateProjectionMatrix();camera.updateMatrixWorld();
+    const diagnostic=document.querySelector('#lighting').value==='directional';originalLights.forEach(light=>light.visible=!diagnostic);hemisphere.intensity=diagnostic?.08:.6;scene.environmentIntensity=diagnostic?.08:.65;diagnosticLight.visible=diagnostic;if(diagnostic){const center=head.getWorldPosition(new THREE.Vector3());const direction=new THREE.Vector3(1,.8,.8).applyQuaternion(camera.quaternion).normalize();diagnosticLight.position.copy(center).addScaledVector(direction,5);diagnosticLight.target.position.copy(center);diagnosticLight.target.updateMatrixWorld();}
+    scene.overrideMaterial=document.querySelector('#clay').checked?clay:null;renderer.setScissorTest(false);renderer.setViewport(0,0,width,height);renderer.render(scene,camera);viewCameras[0].copy(camera);drawAnchors(camera,width,height);
+    document.querySelectorAll('.labels span').forEach((label,i)=>label.textContent=i===0?'游戏角色 · 固定拟合机位':'真实照片 · '+photo.id);
+    document.querySelector('#status').textContent='已载入游戏角色 · '+currentSha.slice(0,12)+' · '+photo.id+' · 脸部片段 '+Number(document.querySelector('#faceTime').value).toFixed(2)+' s · '+(document.querySelector('#cameraFit').value==='original'?'原拟合机位':'保留照片机位（估计）')+' · '+(document.querySelector('#faceClip').value==='reference'?'照片表情候选，光照未匹配':'原有诊断，光照与表情未匹配');return;
+  }
+  originalLights.forEach(light=>light.visible=true);hemisphere.intensity=.6;scene.environmentIntensity=.65;diagnosticLight.visible=false;
+  scene.overrideMaterial=document.querySelector('#clay').checked?clay:null;
+  document.querySelector('#anchorOverlay').replaceChildren();
+  renderer.setScissorTest(true);
+  if(handView){const inspected=handInspection.apply(rig.hero.root,rig.hero.root.getObjectByName('Anatomical_head_and_hands'),document.querySelector('#side').value,handTopology);renderer.domElement.dataset.handTriangles=String(inspected.triangles);renderer.domElement.dataset.handAttributesShared=String(inspected.attributesShared&&inspected.morphsShared);distance=1.25-.55*Number(document.querySelector('#handGrip').value);document.querySelectorAll('.labels span').forEach((label,i)=>label.textContent=['掌心（隔离）','手背（隔离）','指尖方向（隔离）'][i]);}
+  const side=frame==='hands'?Math.sign(target.x):['armhole','shoulder','elbow'].includes(frame)?(document.querySelector('#side').value==='L'?1:-1):1;
+  for (const [index,angle] of (['armhole','shoulder','elbow'].includes(frame)?[side*Math.PI/4,side*Math.PI/2,side*3*Math.PI/4]:document.querySelector('#view').value==='back'?[Math.PI,3*Math.PI/4,Math.PI/2]:[0,side*Math.PI/4,side*Math.PI/2]).entries()) {
+    camera.position.set(target.x+Math.sin(angle)*distance,target.y+(frame==='groom'?.65:0),target.z+Math.cos(angle)*distance); if(handView){const handSide=document.querySelector('#side').value,wrist=rig.hero.bones.get('wrist_'+handSide),orientation=wrist.getWorldQuaternion(new THREE.Quaternion()),sign=handSide==='R'?1:-1,direction=[new THREE.Vector3(sign,0,.05),new THREE.Vector3(-sign,0,-.05),new THREE.Vector3(0,-1,0)][index].normalize().applyQuaternion(orientation);camera.position.copy(target).addScaledVector(direction,distance);camera.up.copy((index===2?new THREE.Vector3(0,0,1):new THREE.Vector3(0,-1,0)).applyQuaternion(orientation));}else camera.up.set(0,1,0);camera.lookAt(target); camera.updateMatrixWorld(); viewCameras[index].copy(camera);
+    renderer.setViewport(index*width/3,0,width/3,height); renderer.setScissor(index*width/3,0,width/3,height); renderer.render(scene,camera);
+  }
+  // Let the initial transmission target settle before exposing a paused frame.
+  if(initialDraws>0) initialDraws--;
+  if(initialDraws===0) document.querySelector('#status').textContent=`已载入游戏角色 · ${time.toFixed(2)} s · 脸部 ${Number(document.querySelector('#faceTime').value).toFixed(2)} s`;
+}
+requestAnimationFrame(update);
+</script></html>

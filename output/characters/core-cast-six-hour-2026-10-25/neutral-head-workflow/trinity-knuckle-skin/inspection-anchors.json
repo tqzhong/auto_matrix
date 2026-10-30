@@ -1,0 +1,5 @@
+{
+  "mesh": "Anatomical_head_and_hands",
+  "anchors": [],
+  "scope": "Baseline inspection; anatomical correspondences will be registered separately."
+}

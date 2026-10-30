@@ -1,0 +1,125 @@
+{
+  "source": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-ao-mask/neo.glb",
+    "sha256": "4493f96285e5c3910f401f1fe09ff9a28a123433a97c1a021ece902174b88359",
+    "bytes": 86817608
+  },
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "meshes": [
+    {
+      "mesh": "Anatomical head and hands",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Black crew neck",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Tailored trousers",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Tailored coat upper",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "shoes01",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-logos-sweater",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-logos-collar",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-dojo-jacket",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-dojo-lapel",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-dojo-belt",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-dojo-trousers",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-dojo-skin",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Anatomical wrist skin",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-teeth-upper",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-teeth-lower",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-tongue",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "neo-dojo-neck",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Close-cut scalp undercoat",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Swept individual hair strands",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Expression driven inner eyelid margins",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "NeoCorneaRight",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "NeoEyeRight",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "NeoCorneaLeft",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "NeoEyeLeft",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    },
+    {
+      "mesh": "Anatomical eye socket seal",
+      "originalPositionsUvWeightsAndMorphPositionsExact": true
+    }
+  ],
+  "originalHeadRowsRetained": 33189,
+  "addedHeadRows": 705,
+  "allOriginalPositionsAndMorphPositionsExact": true,
+  "normalChangesRestrictedToOralRows": true,
+  "allExteriorHeadBodyHandsNeckTopologyExact": true,
+  "allFiveAnimationsRigMaterialsAndImagesExact": true,
+  "ambientAndDirectTissueMaskExactlyNeutralOutsideOralRows": true,
+  "passed": true,
+  "accepted": false,
+  "sourceDeletionReady": false,
+  "scope": "Decoded whole-actor comparison after packing. Oral mesh refinement, oral normal updates and explicit tissue-light fields are the only allowed changes. Visual naturalness, contact scope, native shading and likeness are separate."
+}

@@ -1,0 +1,32 @@
+{
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+    "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+    "bytes": 54975976
+  },
+  "source": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-film-groom/smith.glb",
+    "sha256": "811c53dd0599491191c5224d5a4a843b298bf5398a731d8eab0ae9e9b77b5cd8",
+    "bytes": 53923632
+  },
+  "browTintRows": 224,
+  "underEyePaintRows": 765,
+  "allThirteenGeometryMorphUvBindingImageMaterialAndAnimationPayloadsExact": true,
+  "originalBinaryPrefixExact": true,
+  "onlyHeadColour0AndNewFacePigmentFieldChanged": true,
+  "bodyHandsEyeRimFieldsUnchanged": true,
+  "maximumAliasTintError": 0.0,
+  "maximumAliasPigmentError": 0.0,
+  "inheritedChecks": {
+    "parent": "smith-film-groom/groom-check.json",
+    "groomContactSamples": 138,
+    "passed": true,
+    "rerun": false,
+    "reason": "Exact geometry, relative facial fields, joints, weights and animation payloads retained; only local vertex colour fields added."
+  },
+  "passed": true,
+  "accepted": false,
+  "likenessPercentage": null,
+  "sourceDeletionReady": false,
+  "scope": "Exact retained geometric/runtime fields make the parent contact samples applicable, not newly rerun. Colour alias consistency and fixed eye seam/body/hand material fields checked. Does not accept lighting, naturalness, full shader equivalence or actor likeness."
+}

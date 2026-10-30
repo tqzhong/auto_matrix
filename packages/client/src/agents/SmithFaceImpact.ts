@@ -24,6 +24,7 @@ export class SmithFaceImpact {
   private geometry: THREE.BufferGeometry;
   private influences?: number[];
   private dictionary?: { [key: string]: number };
+  private impactIndex: number;
 
   constructor(rig: HeroRig) {
     this.mesh = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
@@ -56,13 +57,21 @@ export class SmithFaceImpact {
       point.add(change).normalize(); normals.setXYZ(i, point.x, point.y, point.z);
     }
     target.name = 'smith-cheek-impact';
-    this.geometry.morphAttributes.position = [target]; this.geometry.morphAttributes.normal = [normals];
-    this.geometry.morphTargetsRelative = false; surface.dispose();
+    if (this.original.morphTargetsRelative) for (let i = 0; i < position.count; i++) {
+      target.setXYZ(i, target.getX(i) - position.getX(i), target.getY(i) - position.getY(i), target.getZ(i) - position.getZ(i));
+      normals.setXYZ(i, normals.getX(i) - this.original.attributes.normal.getX(i), normals.getY(i) - this.original.attributes.normal.getY(i), normals.getZ(i) - this.original.attributes.normal.getZ(i));
+    }
+    this.impactIndex = this.original.morphAttributes.position?.length ?? 0;
+    this.geometry.morphAttributes.position = [...(this.original.morphAttributes.position ?? []), target];
+    this.geometry.morphAttributes.normal = [...(this.original.morphAttributes.normal ?? []), normals];
+    this.geometry.morphTargetsRelative = this.original.morphTargetsRelative; surface.dispose();
     this.mesh.geometry = this.geometry; this.mesh.updateMorphTargets();
+    this.mesh.morphTargetDictionary = { ...this.dictionary, [target.name]: this.impactIndex };
+    this.influences?.forEach((weight, i) => { this.mesh.morphTargetInfluences![i] = weight; });
   }
 
   update(encounter: SmithFinaleEncounter): void {
-    this.mesh.morphTargetInfluences![0] = smithFaceImpact(encounter);
+    this.mesh.morphTargetInfluences![this.impactIndex] = smithFaceImpact(encounter);
   }
 
   dispose(): void {

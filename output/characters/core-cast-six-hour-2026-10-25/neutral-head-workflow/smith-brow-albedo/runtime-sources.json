@@ -1,0 +1,52 @@
+[
+  {
+    "name": "FightingHands",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-material/runtime/FightingHands-production-paths.ts",
+    "sha256": "6e213ebfcf4daabf9aee43fc53e4f78c382af3d2e0bc5ff77d8a1d2d1befc496"
+  },
+  {
+    "name": "HeroModel",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-socket-visibility/runtime/HeroModel-production-paths.ts",
+    "sha256": "380b11fc7f90704db8024de39011b00fce6ab6d85f84b4cf27ecfd39bf1a816d"
+  },
+  {
+    "name": "CharacterModel",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/CharacterModel-production-paths.ts",
+    "sha256": "a4dba089142752da273b1c209989fa03f757a8a8958a82d09c2327dcfca4e46e"
+  },
+  {
+    "name": "WetwallPerformance",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/WetwallPerformance-production-paths.ts",
+    "sha256": "d6674d167a5020c804295fc7638479a9c7de4fd2056e680cbe40fbd37ed07857"
+  },
+  {
+    "name": "SkinContinuity",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinContinuity-production-paths.ts",
+    "sha256": "a0154bb006c78e43b9b3819ef2b6233ca88ae177b5afb0d8461976655caea41f"
+  },
+  {
+    "name": "ArticulatedJaw",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-mouth-close/runtime/ArticulatedJaw-production-paths.ts",
+    "sha256": "7e6c34d35489811d83a96537cd2f4a1e3fbc430dc4a572dd950ce4283179f22e"
+  },
+  {
+    "name": "SkinAlbedo",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-lip-identity/runtime/SkinAlbedo-production-paths.ts",
+    "sha256": "c32d1004a557528dd287e783ca56af26757667bfb71528c2e136d5041e1c3b09"
+  },
+  {
+    "name": "EyelidCorrectives",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-reference-performance/runtime/EyelidCorrectives-production-paths.ts",
+    "sha256": "8f9c0ba485ba3362e4b5f512629714312dba7c27501da67659c19f4db9a23599"
+  },
+  {
+    "name": "NailSurface",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-hand-material/runtime/NailSurface-production-paths.ts",
+    "sha256": "5f21b6cef7a6cb48211c58c6bd33405ce4116f7efc876f69e97c45f01c3e28d6"
+  },
+  {
+    "name": "EyeSocketVisibility",
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-socket-visibility/EyeSocketVisibility.ts",
+    "sha256": "ca220a589fc6f077c8bf58df39f4e6c5946874798f373b357370b8aa6a304618"
+  }
+]

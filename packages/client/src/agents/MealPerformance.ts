@@ -27,6 +27,9 @@ export class MealPerformance {
 
   private lip(): THREE.Vector3 {
     const skin = this.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    // Authored landmarks retain vertex identity when a likeness sculpt moves
+    // the mouth beyond the original rest-coordinate selection window.
+    this.lips ??= skin.userData.mealLipVertices as number[] | undefined;
     if (!this.lips) {
       this.lips = []; const a = skin.geometry.attributes;
       for (let v = 0; v < a.position.count; v++) {

@@ -1,0 +1,42 @@
+{
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+    "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+    "bytes": 54975976
+  },
+  "blendSha256": "ec11c91e4dc693f957b202010fef306275b323d95018951fa7e10bf0ea00f612",
+  "bytes": 28681591,
+  "parentNativeSha256": "75b1781dac5855d24966d7e6f1d9490770bc1ad522166a2543154ffc223ba8db",
+  "retainedGeometryFingerprint": "21a7fd3bff955ffb0c500720289a7f79157275d614f977839e43797f0b30e192",
+  "protectedAppearanceFingerprint": "a2bdb4d69fbd9a81b8ea6ebf864f77623e4c840aa6bfafb0db546aa890c241b6",
+  "fullBodyMeshObjects": 13,
+  "editableBones": 54,
+  "packedImages": 8,
+  "actions": [
+    "Scene",
+    "Smith calibrated film eyes bones",
+    "Smith calibrated film eyes lining",
+    "Smith calibrated film eyes skin",
+    "Smith knuckle skin study bones",
+    "Smith knuckle skin study surface",
+    "Smith_Interrogation_ReferencePose"
+  ],
+  "originalActionCurvesRetained": 7,
+  "allGeometryMorphUvBindingNormalsAndOriginalColoursExact": true,
+  "allOriginalShaderNodesAndProtectedLinksAndImageBytesRetained": true,
+  "newLocalColourLayersConnected": true,
+  "nativeColourFieldErrors": {
+    "smith_periocular_pigment": 0.0,
+    "smith_brow_tint": 0.0
+  },
+  "reopenedFromDisk": false,
+  "passed": true,
+  "inheritedSourceGameGroomPoseChecks": 13,
+  "poseChecksRerun": false,
+  "nativeFullMaterialAndPosedNormalsEquivalent": false,
+  "losslessNativeExportProven": false,
+  "accepted": false,
+  "likenessPercentage": null,
+  "sourceDeletionReady": false,
+  "scope": "Complete editable actor with two local vertex colour fields and four material nodes. Original geometry, all keys/UVs/bindings/normals, original colour fields/images/shader nodes and seven action curves retained. Native fields exactly mapped; source pose checks inherited through unchanged geometry, not rerun. Full shader equivalence, lossless export, naturalness and actor likeness remain unproved."
+}

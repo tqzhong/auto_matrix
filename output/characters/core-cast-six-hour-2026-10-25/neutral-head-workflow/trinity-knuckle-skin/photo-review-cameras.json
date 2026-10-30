@@ -1,0 +1,369 @@
+{
+  "originalFourCameraSourceSha256": "414b8f7e9e07fac072d716919a3e2324d34c39c44b6726faa3d06956c6cc699a",
+  "originalFourCamerasUnchanged": true,
+  "sourceIdentityMasterSha256": "e2c22025b695f3c59ca823b992be0457ec12f4d4159bc372e8233f38d25fe30f",
+  "views": [
+    {
+      "id": "hotel-front",
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        1509.0,
+        685.0,
+        2367.0,
+        1580.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-hotel-107.jpg",
+      "referenceSha256": "dd15670150fe13b93d0c8ad2d5d33cd1b4285ac06c18b7fd1c2bb8021f0a9daf",
+      "limits": "Near frontal, closed lips; slight low camera, down gaze, crown cropped. Strong green and back lighting.",
+      "matrixWorld": [
+        [
+          0.9946407675743103,
+          -0.03735142573714256,
+          0.09640861302614212,
+          0.6969540119171143
+        ],
+        [
+          0.09998169541358948,
+          0.10998831689357758,
+          -0.9888914227485657,
+          -7.721761226654053
+        ],
+        [
+          0.026332683861255646,
+          0.9932308197021484,
+          0.11313331872224808,
+          0.28298792243003845
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          2.4657278060913086,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.9177470207214355,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 44.38310241699219
+    },
+    {
+      "id": "hotel-oblique",
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2312.0,
+        703.0,
+        2904.0,
+        1681.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-hotel-256.jpg",
+      "referenceSha256": "56df859867909eecd1e3378ac2d95fcd56dbdec76e3f77bb9c453cf3b0965771",
+      "limits": "Oblique, closed lips; phone overlaps the far mouth corner, do not constrain hidden features. Crown cropped.",
+      "matrixWorld": [
+        [
+          0.15859979391098022,
+          -0.06815771758556366,
+          0.9849876165390015,
+          81.36711883544922
+        ],
+        [
+          0.983742356300354,
+          0.09602797031402588,
+          -0.15175451338291168,
+          -14.404951095581055
+        ],
+        [
+          -0.08424311131238937,
+          0.9930423498153687,
+          0.08227965235710144,
+          6.442288875579834
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          27.77779769897461,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          66.66671752929688,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 500.0003967285156
+    },
+    {
+      "id": "hotel-profile",
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2367.0,
+        779.0,
+        2808.0,
+        1643.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-hotel-254.jpg",
+      "referenceSha256": "725d8c3dd3cf3436fcc35a2e7154dc5f88ee26f186faf1ca7630acc53b128cb3",
+      "limits": "Near profile, speaking; phone behind mouth and opposite cheek; visible nose/chin/ear outline usable. Crown cropped.",
+      "matrixWorld": [
+        [
+          -0.2425273209810257,
+          0.01398867554962635,
+          0.9700437188148499,
+          55.98358917236328
+        ],
+        [
+          0.9698737263679504,
+          0.02711874432861805,
+          0.2420937865972519,
+          12.087368965148926
+        ],
+        [
+          -0.02291979268193245,
+          0.9995343089103699,
+          -0.02014428749680519,
+          -1.7208502292633057
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          18.913007736206055,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          45.39121627807617,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 340.43414306640625
+    },
+    {
+      "id": "promo-1999",
+      "size": [
+        1024,
+        1433
+      ],
+      "rectangle": [
+        366.0,
+        804.0,
+        572.0,
+        1132.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-promo-1999-gq-8.jpg",
+      "referenceSha256": "8a716b9005ed30cbbef67ff6a8b913a455f63ec110a85c0dec2ff58785c63116",
+      "limits": "1999 Warner Bros. publicity portrait credited by GQ. Closed lips, slight oblique; low face resolution and strong red side light. Geometry fit only; excluded from skin texture baking.",
+      "matrixWorld": [
+        [
+          0.8809614777565002,
+          -0.2713882327079773,
+          0.38762784004211426,
+          4.996805667877197
+        ],
+        [
+          0.46395739912986755,
+          0.33438780903816223,
+          -0.8203220963478088,
+          -10.094889640808105
+        ],
+        [
+          0.09300774335861206,
+          0.9025149345397949,
+          0.4204953610897064,
+          3.4999964237213135
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          3.8497049808502197,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.7509405612945557,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 49.516929626464844
+    },
+    {
+      "id": "car-holdout",
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        2100.0,
+        506.0,
+        2777.0,
+        1415.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/trinity-car-2033.jpg",
+      "referenceSha256": "923c6e302bbece40e7f1718fe9e8da74185bc763dfd6a725ae39e865b4021c1c",
+      "limits": "Mild oblique with slight upward pitch; closed lips, side gaze; strong film lighting, not a flat albedo.",
+      "matrixWorld": [
+        [
+          0.9832061529159546,
+          -0.03922097757458687,
+          -0.17823384702205658,
+          -2.035367250442505
+        ],
+        [
+          -0.18013998866081238,
+          -0.052077360451221466,
+          -0.9822614192962646,
+          -6.319521903991699
+        ],
+        [
+          0.029243307188153267,
+          0.997872531414032,
+          -0.05826805531978607,
+          -0.5606333613395691
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          1.7685520648956299,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.244524955749512,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 31.83393669128418,
+      "role": "holdout-camera-only",
+      "pinsAdded": 0,
+      "discardedDetectorIdentityDelta": 0.027341723442077637,
+      "savedIdentityDelta": 0
+    }
+  ],
+  "savedIdentityUnchanged": true,
+  "sourceMasterFileUnchanged": true,
+  "accepted": false,
+  "scope": "Original four fitted camera estimates retained exactly; added unused car scene uses a detector camera only. Detector identity discarded; no model/head updates or known movie lens metadata. Game lighting and neutral expression differ from the film.",
+  "identityToBody": {
+    "scale": 0.26,
+    "offset": [
+      0,
+      3.89,
+      0.08
+    ]
+  },
+  "cameraMatricesChangedThisStage": false
+}

@@ -1,0 +1,14 @@
+{
+  "before": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-eye-aperture/morpheus.glb",
+    "sha256": "9fe282c7246849842d8c611c3f185b0d9b6a00c29090267b465a803fded2efd4",
+    "bytes": 56832984
+  },
+  "after": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus.glb",
+    "sha256": "b7696219c307d51691e1d7ee848d906a84bc4fad428e0103c8a69eb0727a0a6d",
+    "bytes": 56833960
+  },
+  "accepted": false,
+  "likenessPercentage": null
+}

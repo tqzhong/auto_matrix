@@ -20,7 +20,7 @@ import { INTERROGATION_ROOM, interrogationRoot } from '@auto_matrix/shared';
 import { MEETING_CAR, meetingRoot, meetingCarPose } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, officeRecipientRoot, officeCourierRoot, officeClipboardPoint, officePenPoint } from '@auto_matrix/shared';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
-import { LAFAYETTE, hotelFloor } from '@auto_matrix/shared';
+import { LAFAYETTE, MIRROR_SEAT, hotelFloor } from '@auto_matrix/shared';
 import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { poseHardline } from '../packages/client/src/agents/BasementPerformance.js';
@@ -437,6 +437,10 @@ test('Neo’s new forearms remain skinned, joined to the hands and exposed throu
   (models as unknown as { load: (id: string) => Promise<typeof asset> }).load = async id => id === 'neo-office' ? office : id === 'neo-tracking' ? tracking : asset;
   try {
     const rig = (await models.create('neo'))!; const motion = newMotion();
+    // The contact solver targets the scene's glass, so the body must use
+    // the actual chair position and heading rather than the world origin.
+    rig.root.position.set(MIRROR_SEAT.x, 0, MIRROR_SEAT.z); rig.root.rotation.y = Math.PI;
+    const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     const arms = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Tracking skin')!.mesh as THREE.SkinnedMesh;
     const hands = rig.wardrobe.find(part => (part.mesh.material as THREE.Material).name === 'Skin')!.mesh as THREE.SkinnedMesh;
     const point = new THREE.Vector3(); const key = (v: THREE.Vector3) => v.toArray().map(value => value.toFixed(4)).join(',');
@@ -449,7 +453,7 @@ test('Neo’s new forearms remain skinned, joined to the hands and exposed throu
     const silver = arms.geometry.attributes._mirrorArrival;
     assert.ok([...silver.array].some(time => time > .4 && time < .6), 'silver climbs the new anatomical forearm before reaching the face');
     for (const time of [2.75, 3.45, 4.15, 6.3]) {
-      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, performance: 'touch', mirrorBeat: time, mirror: Math.max(0, (time - 3.45) / 4.55) };
+      const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, seated: true, performance: 'touch', mirrorBeat: time, mirror: Math.max(0, (time - 3.45) / 4.55) };
       models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
       const visible = rig.wardrobe.filter(part => part.mesh.visible).map(part => part.mesh);
       for (const side of ['L', 'R']) {
@@ -459,7 +463,7 @@ test('Neo’s new forearms remain skinned, joined to the hands and exposed throu
         // Follow the anatomical front as the arm rises; projecting world Z
         // onto a nearly horizontal arm can point inward through the armpit.
         const sign = side === 'L' ? 1 : -1;
-        const outside = new THREE.Vector3(sign, 0, 0); outside.addScaledVector(axis, -outside.dot(axis)).normalize();
+        const outside = new THREE.Vector3(sign, 0, 0).applyQuaternion(orientation); outside.addScaledVector(axis, -outside.dot(axis)).normalize();
         const front = axis.clone().cross(outside).multiplyScalar(sign);
         for (const view of [front, outside]) {
           const direction = view.clone();
@@ -471,7 +475,7 @@ test('Neo’s new forearms remain skinned, joined to the hands and exposed throu
         const forearm = rig.bones.get(`wrist_${side}`)!.getWorldPosition(new THREE.Vector3()).sub(elbow).normalize();
         // In the seated pose a world-Z ray runs along the forearm into the
         // hand. Probe its front and outside cross-section as for the sleeve.
-        const forearmOutside = new THREE.Vector3(sign, 0, 0); forearmOutside.addScaledVector(forearm, -forearmOutside.dot(forearm)).normalize();
+        const forearmOutside = new THREE.Vector3(sign, 0, 0).applyQuaternion(orientation); forearmOutside.addScaledVector(forearm, -forearmOutside.dot(forearm)).normalize();
         const forearmFront = forearm.clone().cross(forearmOutside).multiplyScalar(sign);
         for (const view of [forearmFront, forearmOutside]) {
           const direction = view.clone();
@@ -1444,6 +1448,25 @@ test('Tank reaches the actual neck connector and both hands follow the training 
       }
       assert.ok(penetration < .04, `Tank penetrates the console at ${elapsed}s by ${penetration}`);
       assert.ok(floor > -.04, `Tank penetrates the floor at ${elapsed}s by ${-floor}`);
+    }
+  } finally { models.dispose(); }
+});
+
+test('Morpheus keeps his elbow below the shoulder while supporting his chin', async () => {
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: typeof loadGeometry }).load = loadGeometry;
+  try {
+    const rig = (await models.create('morpheus'))!;
+    for (const elapsed of [9.7, 10]) {
+      const root = trainingRoot({ kind: 'download', elapsed, started: true }, 'morpheus');
+      rig.root.position.set(root.x, 0, root.z); rig.root.rotation.y = root.yaw;
+      const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: true,
+        nebCrew: 'morpheus' as const, nebCrewEarly: true, training: { kind: 'download' as const, elapsed, role: 'morpheus' as const } };
+      models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+      const shoulder = rig.root.worldToLocal(rig.bones.get('shoulder_R')!.getWorldPosition(new THREE.Vector3()));
+      const elbow = rig.root.worldToLocal(rig.bones.get('elbow_R')!.getWorldPosition(new THREE.Vector3()));
+      assert.ok(elbow.y < shoulder.y - .15, `chin support must bend the elbow down, not across the face: ${elbow.y - shoulder.y}`);
+      assert.ok(elbow.z > shoulder.z + .08, `the supporting forearm must stay in front of the torso: ${elbow.z - shoulder.z}`);
     }
   } finally { models.dispose(); }
 });

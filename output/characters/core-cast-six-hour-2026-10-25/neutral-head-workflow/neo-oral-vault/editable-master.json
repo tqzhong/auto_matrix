@@ -1,0 +1,40 @@
+{
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "parentNative": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-closed-lid-wrap/neo-blink-wrap-authoring.blend",
+    "sha256": "61221d710bc8aa464feb934424e0be5dfccb926a6a3b517b6f08d8c76567f8f6",
+    "bytes": 38697136
+  },
+  "blendSha256": "7122aa3ee167710608182ccaedca13308999ba6f42904c9403846c37e595917a",
+  "bytes": 39926070,
+  "completeMeshes": 25,
+  "bones": 54,
+  "packedImages": 12,
+  "originalShapeEndpoints": 186,
+  "originalActionsRetainedExact": 7,
+  "topology": {
+    "addedVertices": 705,
+    "addedTriangles": 1410,
+    "protectedSha256": "6732516bd421a209d50017baebfb060e75bb225172b8807ed4a36bf9d3e6e7bd",
+    "allOriginalNativeVerticesShapesWeightsAndExteriorFieldsExact": true
+  },
+  "maximumHeadEndpointError": 2.384185791015625e-07,
+  "ambientVisibilityCorners": 212376,
+  "maximumVisibilityError": 0,
+  "maximumStoredNormalError": 0.0,
+  "maximumDisplayNormalError": 0.4172970652580261,
+  "nativeDisplayNormalPrecisionPassed": false,
+  "allOtherNativeGeometryAttributesActionsDriversMaterialsAndImagesExact": true,
+  "reopenedFromDisk": false,
+  "passed": true,
+  "accepted": false,
+  "likenessPercentage": null,
+  "sourceDeletionReady": false,
+  "nativeFullMaterialAndPosedNormalsEquivalent": false,
+  "losslessNativeExportProven": false,
+  "inheritedHairAndCuffNormalFailuresRetained": true
+}

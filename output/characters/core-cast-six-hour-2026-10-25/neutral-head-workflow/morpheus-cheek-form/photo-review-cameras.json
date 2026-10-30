@@ -1,0 +1,394 @@
+{
+  "sourceIdentityMasterSha256": "644cf7b542098c6c48d86541de21eff20e76234251a172630d3a745dc9453392",
+  "sourceMasterUnchanged": true,
+  "camerasRefitted": true,
+  "views": [
+    {
+      "id": "dojo-front",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        979.0,
+        757.0,
+        1556.0,
+        1505.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-dojo-5082.jpg",
+      "referenceSha256": "12f064a6e770f269cc334a8a085ea6ac114768c850ea0638ec48007b2fa60f84",
+      "matrixWorld": [
+        [
+          0.9226133227348328,
+          -0.06504452228546143,
+          -0.38020241260528564,
+          -1.8813399076461792
+        ],
+        [
+          -0.38408562541007996,
+          -0.06410485506057739,
+          -0.921069324016571,
+          -8.574071884155273
+        ],
+        [
+          0.03553770110011101,
+          0.9958211183547974,
+          -0.08412665873765945,
+          -1.2119920253753662
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          2.1563212871551514,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          5.175171375274658,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 38.813785552978516,
+      "role": "current-fit-camera-estimate",
+      "limits": "Mild oblique, closed lips, relaxed face. Very top of scalp touches image border; warm side illumination.",
+      "renderPath": "morpheus-film-character/before-dojo-front.png",
+      "renderSha256": "a76d95678f2f04d36be02194f6a0c99385e25b817618c6b75319749f6609ad25",
+      "rectangleOrigin": "bottom-left"
+    },
+    {
+      "id": "dojo-stance",
+      "year": 1999,
+      "size": [
+        1260,
+        900
+      ],
+      "rectangle": [
+        806.0,
+        335.0,
+        1137.0,
+        789.0
+      ],
+      "referencePath": "output/characters/morpheus-likeness-2026-10-25/references/morpheus-dojo-oblique.jpg",
+      "referenceSha256": "0c5fccfb53ccd87459763c25301099c0dbd6c86a4140e08476bcd90cac8c4cc4",
+      "matrixWorld": [
+        [
+          0.9684367179870605,
+          -0.07350217550992966,
+          -0.23817552626132965,
+          -2.636227607727051
+        ],
+        [
+          -0.22459852695465088,
+          0.15707972645759583,
+          -0.961707592010498,
+          -6.713791847229004
+        ],
+        [
+          0.10810015350580215,
+          0.984846830368042,
+          0.1356133222579956,
+          0.48101571202278137
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          3.1536853313446045,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.415159702301025,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 56.76634216308594,
+      "role": "current-fit-camera-estimate",
+      "limits": "1999 dojo, turned shoulders but only mild face yaw; furrowed brow and sideways gaze. Keep expression separate. Crown touches/crops at the upper image edge; do not constrain the scalp apex from it.",
+      "renderPath": "morpheus-film-character/before-dojo-stance.png",
+      "renderSha256": "a9fb9d438bad9785d0e1be605fc0f6588fdf4e92baf9e6f34d7d911815f2b169",
+      "rectangleOrigin": "bottom-left"
+    },
+    {
+      "id": "ship-side",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        600,
+        0,
+        1800,
+        1300
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-ship-4692.jpg",
+      "referenceSha256": "823172fb77a99d62ddfb3ddf66d92ac81125ac3d7756f7dd2df0de06c7e2c4f7",
+      "matrixWorld": [
+        [
+          0.1294904351234436,
+          0.14172758162021637,
+          0.9813998937606812,
+          31.06820297241211
+        ],
+        [
+          0.9671807289123535,
+          0.2001579850912094,
+          -0.1565198451280594,
+          -4.505548477172852
+        ],
+        [
+          -0.2186182141304016,
+          0.9694586396217346,
+          -0.11115764081478119,
+          -4.048167705535889
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          12.364246368408203,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          29.674190521240234,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 222.55645751953125,
+      "role": "current-fit-camera-estimate",
+      "limits": "Strong side view, closed lips, lowered pitch; far eye hidden and crown cropped. Eight anatomy correspondences were re-observed using the actual keyframe expression mesh, replacing the early neutral-preview pins. Profile remains unaccepted.",
+      "renderPath": "morpheus-film-character/before-ship-side.png",
+      "renderSha256": "bd27a9859718a92ffc564c229a3762ebef9b8734980f0161dc7356cd50794fee",
+      "rectangleOrigin": "top-left"
+    },
+    {
+      "id": "interrogation-full-profile",
+      "year": 1999,
+      "size": [
+        3840,
+        2160
+      ],
+      "rectangle": [
+        2740,
+        550,
+        3460,
+        1160
+      ],
+      "referencePath": "output/characters/smith-likeness-2026-10-25/references/smith-1999-standing-film.jpg",
+      "referenceSha256": "17b73444f408d8492093ccb2eb5a0d5477970d2d1709363a0ecbf52f972674ce",
+      "matrixWorld": [
+        [
+          -0.45139638828838363,
+          -0.02646122243646507,
+          0.8919308169103177,
+          8.890990780664985
+        ],
+        [
+          0.8503170181701115,
+          -0.31582885477466943,
+          0.4209663861716901,
+          0.2251562704518955
+        ],
+        [
+          0.2705581999315611,
+          0.9484471294051962,
+          0.1650644230276142,
+          -0.01872786846068329
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          1.376357843770098,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.446858237771426,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 24.774440216162667,
+      "role": "unaccepted camera-only neutral-pose diagnostic; original identity unchanged",
+      "limits": "1999 interrogation, Morpheus is the large foreground face on the right. Full scalp and ear visible, raised pitch, closed lips and strong shadows. Nine anatomy correspondences plus two approximate scalp-contour constraints contribute to the same identity. Excluded from the current skin bake; the four-source texture experiment was rejected for highlights, background contamination and seams.",
+      "renderPath": "morpheus-film-character/before-interrogation-full-profile.png",
+      "renderSha256": "e5d3e7a6c4fe6a103de511cdc48589b3869e1b5ca2038a43ce7a80292ee6c633",
+      "rectangleOrigin": "top-left"
+    },
+    {
+      "id": "ship-holdout",
+      "year": 1999,
+      "size": [
+        3840,
+        1600
+      ],
+      "rectangle": [
+        1936.0,
+        572.0,
+        2588.0,
+        1499.0
+      ],
+      "referencePath": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/morpheus-ship-3694.jpg",
+      "referenceSha256": "413c69659401bf9844810b397f59637573e8d5fa1031f2a74ec9a6549eb0b382",
+      "matrixWorld": [
+        [
+          0.9284074902534485,
+          0.14540770649909973,
+          0.34193000197410583,
+          1.4588192701339722
+        ],
+        [
+          0.35091686248779297,
+          -0.040644872933626175,
+          -0.9355241060256958,
+          -6.151517868041992
+        ],
+        [
+          -0.12213471531867981,
+          0.9885365962982178,
+          -0.08876102417707443,
+          -0.7228783369064331
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "projectionMatrix": [
+        [
+          2.037503719329834,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.890008926391602,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0001999139785767,
+          -0.20002000033855438
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0,
+          0.0
+        ]
+      ],
+      "focalMm": 36.67506790161133,
+      "role": "holdout-camera-only",
+      "limits": "Low-angle near frontal with strong side shadows. Speaking with rounded/open lips: never transfer this mouth shape into the neutral identity.",
+      "discardedDetectorIdentityDelta": 0.016828835010528564,
+      "savedIdentityDelta": 0,
+      "pinsAdded": 0,
+      "rectangleOrigin": "bottom-left"
+    }
+  ],
+  "identityToBody": {
+    "scale": 0.3140649245273426,
+    "offset": [
+      -0.0007875998071354638,
+      4.146104651846661,
+      0.09485224070902079
+    ]
+  },
+  "accepted": false,
+  "scope": "One camera-only neutral-pose diagnostic from nine retained anatomical pins. The original identity and other four camera estimates remain unchanged; lighting, expressions and film lens metadata remain uncertain. Not an actor likeness score.",
+  "sourceCameraManifestSha256": "971af0c5b58933a66ce23f904598fae5307b35cf16710b4f7f05b40d19ae8365",
+  "cameraAndProjectionMatricesChanged": false,
+  "reviewCropCorrection": "Manual reference rectangles are already top-left pixel coordinates; detector rectangles use bottom-left coordinates.",
+  "calibratedViews": [
+    "interrogation-full-profile"
+  ]
+}

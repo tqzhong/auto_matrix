@@ -1,0 +1,59 @@
+{
+  "before": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-ao-mask/neo.glb",
+    "sha256": "4493f96285e5c3910f401f1fe09ff9a28a123433a97c1a021ece902174b88359",
+    "bytes": 86817608
+  },
+  "after": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "otherActors": {
+    "trinity": {
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-eye-surface/trinity/trinity.glb",
+      "sha256": "a77590ab935ad587000a2b368a7ce77d392877b2212bd98e3f275abd7edc776e",
+      "bytes": 47342780
+    },
+    "morpheus": {
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-eye-surface/morpheus/morpheus.glb",
+      "sha256": "5c777696a2e88079d238c76933d083495ae39c3acc6c9a8864ff12a6c218df0e",
+      "bytes": 52756920
+    },
+    "smith": {
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/core-eye-surface/smith/smith.glb",
+      "sha256": "38e8adc6be62a2badba21d3b1688ac8fe88c5b2b498efba280243b56cab6c6a2",
+      "bytes": 41266268
+    }
+  },
+  "beforeClip": "Neo_FinalStreet_MouthPose",
+  "clip": "Neo_FinalStreet_MouthPose",
+  "photoPresets": {
+    "finale-front": 0.9,
+    "finale-left-oblique": 2.2,
+    "finale-right-oblique": 3.6
+  },
+  "accepted": false,
+  "likenessPercentage": null,
+  "geometryBeforeFocus": {
+    "reconstruction": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-lid-wrap/pre-focus-reconstruction.json",
+    "sha256": "ad31f8abc9e862361bbb8e757f5244079c06a66247d327741f2902df2fd61e62",
+    "bytes": 150553460
+  },
+  "opaqueBackfaceRepair": {
+    "sourceSha256": "ca8d767913e1f8286dfed7c9f8bd9e80680bb9d131b873350fd7dc132f40cc69",
+    "materialIndex": 20,
+    "opaqueEyeInteriorFacesCulled": true,
+    "positionsIndicesNormalsUvsWeightsAnimationsExact": true,
+    "posteriorGlobeCompleted": false,
+    "scope": "One opaque material doubleSided flag fixes the reproduced interior-face wedge. Existing posterior opening and full ocular/actor quality remain unaccepted."
+  },
+  "unpackedAuthoringLayout": {
+    "reconstruction": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-lid-wrap/unpacked-layout/reconstruction.json",
+    "sha256": "35ccb8844dfac2c1225a166f1c93e5c17882f39e905f57529d9905527977a532",
+    "bytes": 150576100
+  },
+  "normalAttachmentRepair": "normal-attachment-repair.json",
+  "phase": "oral-vault-and-tissue-light-working-candidate",
+  "productionPromoted": false
+}

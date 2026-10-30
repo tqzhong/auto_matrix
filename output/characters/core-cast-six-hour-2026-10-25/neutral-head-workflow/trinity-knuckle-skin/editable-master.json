@@ -1,0 +1,86 @@
+{
+  "exactHandMaterialFieldErrors": {
+    "hand_surface": 0.0,
+    "hand_fold": 0.0
+  },
+  "nativeEditableHandBumpConnected": true,
+  "nativeMaterialPreviewMatchesGameExactly": false,
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/trinity.glb",
+    "sha256": "65cfd63e8436182da546111bbfa0987627fcd5d712070fe50853c04ea3243ef9",
+    "bytes": 70119092
+  },
+  "parentNativeSha256": "62b1b667bb6e28552587877d5068aaeaa72deff0e8528032f538e96b0c34dfb2",
+  "blendSha256": "329a16cf9e0249ab93189e0d7c9529facb56402e736bad903ffb58f1debdeff0",
+  "bytes": 40364967,
+  "fullBodyMeshObjects": 17,
+  "sourceArmatureBones": 48,
+  "editableRuntimeArmatureBones": 68,
+  "packedImages": 9,
+  "originalFacialEndpointsRetained": 651,
+  "originalFacialEndpointFingerprintExact": true,
+  "newHandStudySurfaceKeys": 18,
+  "nativeHandPoseChecks": [
+    {
+      "grip": 0,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 7.235481425330139e-07
+    },
+    {
+      "grip": 0.3,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 7.44398850877378e-07
+    },
+    {
+      "grip": 0.4,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 7.018998623654291e-07
+    },
+    {
+      "grip": 0.5,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 6.740003624125313e-07
+    },
+    {
+      "grip": 0.6,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 6.904253913352788e-07
+    },
+    {
+      "grip": 0.7,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 6.636757222832726e-07
+    },
+    {
+      "grip": 0.8,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 7.108994869988343e-07
+    },
+    {
+      "grip": 0.9,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 9.296133128439022e-07
+    },
+    {
+      "grip": 1,
+      "nativeHandVertices": 13346,
+      "maximumWorldPointError": 8.16891441637315e-07
+    }
+  ],
+  "actions": [
+    "Scene",
+    "Trinity knuckle skin study bones",
+    "Trinity knuckle skin study surface",
+    "TrinityReferencePose"
+  ],
+  "reopenedFromDisk": false,
+  "nativeHandWeightsMatchActualOrdinaryRuntime": true,
+  "continuousNativeRuntimeEquivalence": false,
+  "losslessNativeExportProven": false,
+  "qualityPassed": false,
+  "accepted": false,
+  "likenessPercentage": null,
+  "sourceDeletionReady": false,
+  "passed": true,
+  "scope": "Discrete ordinary grip samples at every authored tissue knot; native hand weights and paired pose-surface keys reproduce the measured runtime samples, including the rigid nail cores. Hand material fields are exact; the editable native bump is a preview without full GPU material equivalence. Whole continuous game curves, eye/material/body equivalence and lossless export remain unproven. Original651facial endpoints, whole actor, packed images and original actions retained."
+}

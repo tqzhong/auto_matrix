@@ -1,0 +1,83 @@
+{
+  "recordedUtc": "2026-10-29T04:31:58.415731+00:00",
+  "status": "working_cheek_nasolabial_and_mandibular_volume_candidate",
+  "source": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-eye-aperture/morpheus.glb",
+    "sha256": "9fe282c7246849842d8c611c3f185b0d9b6a00c29090267b465a803fded2efd4",
+    "bytes": 56832984
+  },
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus.glb",
+    "sha256": "b7696219c307d51691e1d7ee848d906a84bc4fad428e0103c8a69eb0727a0a6d",
+    "bytes": 56833960
+  },
+  "nativeMaster": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus-cheek-authoring.blend",
+    "sha256": "2e1100131e197f2d5f60c73ded225e1c99bb94200ee012179845c1285fbcadc1",
+    "bytes": 37203247
+  },
+  "acceptedActors": 0,
+  "totalCoreActors": 4,
+  "likenessPercentage": null,
+  "qualityPassed": false,
+  "productionPromoted": false,
+  "sourceDeletionReady": false,
+  "originalSixHourDeadlineMissed": true,
+  "actualChanges": {
+    "sculptedHeadVertices": 3760,
+    "maximumArtistDisplacementGameUnits": 0.00800849138806798,
+    "sculptRegions": [
+      "malar prominence",
+      "submalar plane",
+      "nasolabial transition",
+      "mandibular angle",
+      "mental plane/lateral volume"
+    ],
+    "all372OriginalMorphPayloadsRetained": true,
+    "other23MeshesAndOriginalRigUvsColoursImagesMaterialsClipsRetained": true,
+    "oralRimAndEyelidRowsExact": true,
+    "sameEightRuntimeSourcesForBothVariants": true,
+    "existingMotionAndPoseTimeControlsExposedInExpandedReviewPanel": true
+  },
+  "validated": {
+    "singleExpressionSamples": 102,
+    "singleExpressionSourceFailures": 0,
+    "singleExpressionCandidateFailures": 0,
+    "independentJawClosureSamples": 441,
+    "failedIndependentJawClosureSamples": 0,
+    "headNeckSelfContactSamples": 418,
+    "failedEditedHeadSelfSamples": 0,
+    "headNeckTrianglesConsidered": 35044,
+    "editedSupportTriangles": 7925,
+    "eyeCorneaContactSamples": 1058,
+    "failedEyeCorneaSamples": 0,
+    "completeNativeMeshesReopened": 24,
+    "nativeHeadEndpointsChecked": 126,
+    "nativeTotalShapeEndpoints": 372,
+    "nativeEyeDriverFixturesMatched": 8,
+    "completeGlbByteExactAuthoringReplay": true,
+    "actualBrowserCaptures": 14,
+    "liveWalkingAndFacialPlaybackObserved": true,
+    "sameFullInputStateReloadScreenshotByteExact": true,
+    "browserErrorsOrWarnings": 0
+  },
+  "visualObservations": [
+    "Fixed front/45/profile studio views and same-material clay before/after were actually inspected. The submalar and mandibular transitions are more defined; no actor-likeness score was inferred.",
+    "The retained dojo oblique camera was viewed at2.8seconds; ship-side and held-out ship photographs were compared to the same complete actor.",
+    "Full jaw opening/independent closure, first-punch right-hand close-up at0.24seconds, live walking with facial animation and actual preview-page reload were inspected."
+  ],
+  "unfinished": [
+    "Morpheus overall actor identity, facial age and skin response remain visibly different from movie-period references; estimated cameras, lighting, pose and gaze are not fully matched.",
+    "Extreme jaw opening/closure still needs natural lip and dental/gum appearance refinement. Passing contacts do not accept that appearance.",
+    "The retained punch-hand pose, grip/thumb/nail naturalness and cuff/wardrobe quality remain unaccepted. No hand anatomy was changed in this stage.",
+    "Morpheus ship/dojowear appearance remains unlike the original film.",
+    "Neo, Trinity and Smith were not sculpted in this stage; all four final95percent multi-view actual-game confirmations remain uncompleted.",
+    "Trinity sleeve-fit retains its two failed profile targets and bulky upper-sleeve observation.",
+    "Full native oral/body driver equivalence, game/native material and optical matching, and lossless native reexport remain unproven.",
+    "Arbitrary facial combinations, whole-world/body contacts, movie-exact animation, story success/failure/save-load, frame-rate and memory acceptance remain incomplete.",
+    "The trilogy42groups/102nodes goal remains unfinished. The original six-hour deadline was missed; this stage does not reset it."
+  ],
+  "scope": "Actual complete shared-actor rest-space 3D sculpt, editable native master, targeted decoded/contact checks and real game-render-preview evidence. No full story, actor95, arbitrary-contact or native/material-equivalence acceptance.",
+  "progressDashboardInspected": true,
+  "progressDashboardEvidence": "progress-dashboard-capture.json"
+}

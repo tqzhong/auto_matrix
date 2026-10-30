@@ -1,0 +1,85 @@
+{
+  "character": "smith",
+  "filmYear": 1999,
+  "status": "Real-photo neutral identity draft exists; manual multiview refinement and independent visual review remain incomplete.",
+  "images": [
+    {
+      "id": "interrogation-front",
+      "path": "output/characters/smith-likeness-2026-10-25/references/smith-interrogation-4k-1544.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-1544.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/9",
+      "sha256": "48c053c7d8ad2dcdd36f3c6b7c8c1fb9d78626b08dbeb5888dbf36f4659fb164",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Near frontal with roll, strongly raised brows, slight mouth tension. Preserve expression separately from identity."
+    },
+    {
+      "id": "interrogation-opposite",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-interrogation-10157.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-10157.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/57",
+      "sha256": "c2df15b9126013d0b4fdf0eb698aa4c0c7e3cab9a16ea446db8daebc1bc9d2b7",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Mild opposite oblique, lowered pitch, tense brow and slightly parted lips. Top of crown cropped."
+    },
+    {
+      "id": "interrogation-oblique",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-interrogation-10176.jpg",
+      "role": "fit",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-10176.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/57",
+      "sha256": "a524856aca618ee9c22610e6d2646eef52c9e8504c1c56e81c1cc459862f4222",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Oblique with lowered head, tense mouth and brows. Morpheus foreground; target Smith on right. Not a true 90-degree profile."
+    },
+    {
+      "id": "interrogation-speech-check",
+      "path": "output/characters/smith-likeness-2026-10-25/references/smith-interrogation-4k-1552.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-1552.jpg?ssl=1",
+      "sourcePage": "https://movie-screencaps.com/the-matrix-1999-4k/page/9",
+      "sha256": "6843b4ce302a1f9c5050644c01fc72ced23dde76ddd56eeb0d1271c6bbf2f4f7",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Same camera as first fitting image, different speech expression. A speech check only, not an independent scene."
+    },
+    {
+      "id": "subway-holdout",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-subway-11904.jpg",
+      "role": "holdout",
+      "sourceUrl": "https://i0.wp.com/imgs.screencaps.us/199/4k-9-matrix/full/matrix4k-movie-screencaps.com-11904.jpg?ssl=1",
+      "sha256": "388a28ebdd9a9ceb3010b167e27fa07d09c3c7e17c8642e0a8b40c77b40d73d0",
+      "size": [
+        3840,
+        1600
+      ],
+      "limits": "Independent subway scene after sunglasses removal. Mild oblique, furrowed brow and parted lips; one side deeply shadowed. Camera-only neutral-geometry check, not a profile constraint or matched expression."
+    },
+    {
+      "id": "reloaded-left-profile",
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/references/smith-reloaded-profile-research.jpg",
+      "role": "supplemental-candidate",
+      "filmYear": 2003,
+      "sourceUrl": "https://m.media-amazon.com/images/M/MV5BMTUyMzIwNTcwN15BMl5BanBnXkFtZTcwOTA5OTEzMw@@._V1_.jpg",
+      "sourcePage": "https://www.imdb.com/title/tt0234215/mediaviewer/rm3289614080/",
+      "sha256": "44896d3c5f6fc7a76fd68f71a80feb27333bd70ca163f8379a943409ea940f5b",
+      "size": [
+        1974,
+        1500
+      ],
+      "limits": "The Matrix Reloaded (2003) publicity still, not 1999. Use the left Smith only, almost neutral closed mouth. Sunglasses occlude eyes and nose root; exclude those points. Supplementary structural candidate only, not yet adopted into the 1999 master or texture bake."
+    }
+  ]
+}

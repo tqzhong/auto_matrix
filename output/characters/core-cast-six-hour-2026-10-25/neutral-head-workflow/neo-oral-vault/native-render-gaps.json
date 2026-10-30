@@ -1,0 +1,37 @@
+{
+  "candidate": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "completeNative": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo-oral-vault-authoring.blend",
+    "sha256": "7122aa3ee167710608182ccaedca13308999ba6f42904c9403846c37e595917a",
+    "bytes": 39926070
+  },
+  "exactGeometryAndVisibilityFieldsStored": true,
+  "sourceCoordinateMapAliases": {
+    "native": {
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-closed-lid-wrap/neo-blink-wrap-authoring.blend",
+      "sha256": "61221d710bc8aa464feb934424e0be5dfccb926a6a3b517b6f08d8c76567f8f6",
+      "bytes": 38697136
+    },
+    "sourceGameModel": {
+      "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-eye-ao-mask/neo.glb",
+      "sha256": "4493f96285e5c3910f401f1fe09ff9a28a123433a97c1a021ece902174b88359",
+      "bytes": 86817608
+    },
+    "sourceRows": 33189,
+    "uniqueSourceRows": 31064,
+    "fullHeadDisplayNormalErrorAgainstRetainedSourceMapping": 0.4172970652580261,
+    "passed": false,
+    "scope": "Independent observation of the unmodified parent master. Coordinate lookup aliases exist outside this oral edit; full native normal/export fidelity remains unproved."
+  },
+  "nativeFullMaterialAndPosedNormalsEquivalent": false,
+  "losslessNativeExportProven": false,
+  "nativeEyeStaticAoNodeEquivalenceProven": false,
+  "newOralDisplayNormalError": 0.0021865665912628174,
+  "fullHeadDisplayNormalErrorAgainstSourceMap": 0.4172970652580261,
+  "sourceDeletionReady": false,
+  "accepted": false
+}

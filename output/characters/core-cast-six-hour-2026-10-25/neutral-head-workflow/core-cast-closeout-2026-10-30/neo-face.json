@@ -1,0 +1,172 @@
+{
+  "actor": "neo",
+  "frame": "face",
+  "model": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/neo.glb",
+    "sha256": "21fcba8dbe127c94a688ad3c911c7c6cdf5a1e0c1106026b53c17bd37fb057c2",
+    "bytes": 54842516
+  },
+  "url": "http://127.0.0.1:5273/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/review.html?variant=after&eyeCullProbe=0&hideCorneaProbe=0&eyeLayerProbe=0&eyeShadowProbe=0&eyeAoProbe=0&eyeNormalProbe=0&skinNormalProbe=0&socketShadow=1&sealAoProbe=0&sealPigment=1&lighting=studio&shadowQuality=legacy&referenceLift=0&eyeCrop=0&mouthCrop=0&hairLayer=all&frame=face&motion=idle&handGrip=1&combo=0&side=R&glasses=0&clay=0&tissueDebug=original&outfit=leather&yaw=0&pitch=0&faceClip=gaze&expressionControl=none&expressionAmount=1&comboJaw=0&faceTime=0&mirror=0&wide=0&view=front&poseTime=0",
+  "status": "已载入游戏角色 · 21fcba8dbe12 · idle · 0.00 s · 脸部 0.00 s",
+  "heading": "Neo · 口腔曲面重塑 neo · 本轮模型候选 · 制作候选，待多视角验收 · 21fcba8d",
+  "controls": [
+    {
+      "checked": false,
+      "id": "eyeCullProbe",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "hideCorneaProbe",
+      "value": "on"
+    },
+    {
+      "id": "eyeLayerProbe",
+      "value": "0"
+    },
+    {
+      "checked": false,
+      "id": "eyeShadowProbe",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "eyeAoProbe",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "eyeNormalProbe",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "skinNormalProbe",
+      "value": "on"
+    },
+    {
+      "checked": true,
+      "id": "socketShadow",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "sealAoProbe",
+      "value": "on"
+    },
+    {
+      "checked": true,
+      "id": "sealPigment",
+      "value": "on"
+    },
+    {
+      "id": "lighting",
+      "value": "studio"
+    },
+    {
+      "id": "shadowQuality",
+      "value": "legacy"
+    },
+    {
+      "checked": false,
+      "id": "referenceLift",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "eyeCrop",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "mouthCrop",
+      "value": "on"
+    },
+    {
+      "id": "hairLayer",
+      "value": "all"
+    },
+    {
+      "id": "frame",
+      "value": "face"
+    },
+    {
+      "id": "motion",
+      "value": "idle"
+    },
+    {
+      "id": "handGrip",
+      "value": "1"
+    },
+    {
+      "id": "combo",
+      "value": "0"
+    },
+    {
+      "id": "side",
+      "value": "R"
+    },
+    {
+      "checked": false,
+      "id": "glasses",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "clay",
+      "value": "on"
+    },
+    {
+      "id": "tissueDebug",
+      "value": "original"
+    },
+    {
+      "id": "outfit",
+      "value": "leather"
+    },
+    {
+      "id": "yaw",
+      "value": "0"
+    },
+    {
+      "id": "pitch",
+      "value": "0"
+    },
+    {
+      "id": "faceClip",
+      "value": "gaze"
+    },
+    {
+      "id": "expressionControl",
+      "value": "none"
+    },
+    {
+      "id": "expressionAmount",
+      "value": "1"
+    },
+    {
+      "id": "comboJaw",
+      "value": "0"
+    },
+    {
+      "id": "faceTime",
+      "value": "0"
+    },
+    {
+      "id": "mirror",
+      "value": "0"
+    },
+    {
+      "id": "wide",
+      "value": "0"
+    },
+    {
+      "id": "view",
+      "value": "front"
+    },
+    {
+      "id": "poseTime",
+      "value": "0"
+    }
+  ]
+}

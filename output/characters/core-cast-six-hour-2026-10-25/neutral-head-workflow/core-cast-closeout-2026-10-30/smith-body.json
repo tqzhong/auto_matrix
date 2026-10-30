@@ -1,0 +1,106 @@
+{
+  "actor": "smith",
+  "frame": "body",
+  "model": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/smith.glb",
+    "sha256": "e03c830e3059f44e6b36ecc5df0b6335f7ca132ea1bbaad16a54736613f894e7",
+    "bytes": 54975976
+  },
+  "url": "http://127.0.0.1:5263/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/review.html?variant=after&frame=face&view=front&faceClip=gaze&faceTime=0&poseTime=0",
+  "status": "已载入游戏角色 · 0.00 s · 握拳 0.00 · 腕 0°",
+  "heading": "Smith · 眉眼底色修正候选 smith · 眉眼底色修正候选 · 未验收 · 0/4 · e03c830e",
+  "controls": [
+    {
+      "checked": false,
+      "id": "eyeCrop",
+      "value": "on"
+    },
+    {
+      "id": "surfaceChannel",
+      "value": "0"
+    },
+    {
+      "id": "hairLayer",
+      "value": "all"
+    },
+    {
+      "id": "combo",
+      "value": "0"
+    },
+    {
+      "checked": false,
+      "id": "glasses",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "clay",
+      "value": "on"
+    },
+    {
+      "id": "yaw",
+      "value": "0"
+    },
+    {
+      "id": "pitch",
+      "value": "0"
+    },
+    {
+      "id": "wide",
+      "value": "0"
+    },
+    {
+      "id": "poseTime",
+      "value": "0"
+    },
+    {
+      "checked": true,
+      "id": "foreheadRelief",
+      "value": "on"
+    },
+    {
+      "id": "faceClip",
+      "value": "gaze"
+    },
+    {
+      "id": "faceTime",
+      "value": "0"
+    },
+    {
+      "id": "frame",
+      "value": "body"
+    },
+    {
+      "id": "motion",
+      "value": "idle"
+    },
+    {
+      "id": "handGrip",
+      "value": "0"
+    },
+    {
+      "id": "wristFlex",
+      "value": "0"
+    },
+    {
+      "id": "side",
+      "value": "L"
+    },
+    {
+      "id": "outfit",
+      "value": "leather"
+    },
+    {
+      "id": "view",
+      "value": "front"
+    },
+    {
+      "id": "lighting",
+      "value": "standard"
+    },
+    {
+      "id": "pointName",
+      "value": "brow-inner-right"
+    }
+  ]
+}

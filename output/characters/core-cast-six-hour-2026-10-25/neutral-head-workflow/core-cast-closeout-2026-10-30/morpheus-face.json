@@ -1,0 +1,135 @@
+{
+  "actor": "morpheus",
+  "frame": "face",
+  "model": {
+    "path": "output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/morpheus.glb",
+    "sha256": "b7696219c307d51691e1d7ee848d906a84bc4fad428e0103c8a69eb0727a0a6d",
+    "bytes": 56833960
+  },
+  "url": "http://127.0.0.1:5248/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/review.html?variant=after&frame=face&view=front&faceTime=0&poseTime=0",
+  "status": "已载入游戏角色 · 0.00 s · 脸部 0.00 s",
+  "heading": "Morpheus · 颧颊与下颌原片对照 颧颊候选 · 整体未验收 · b7696219",
+  "controls": [
+    {
+      "id": "hairLayer",
+      "value": "all"
+    },
+    {
+      "id": "frame",
+      "value": "face"
+    },
+    {
+      "id": "motion",
+      "value": "idle"
+    },
+    {
+      "id": "combo",
+      "value": "0"
+    },
+    {
+      "id": "side",
+      "value": "L"
+    },
+    {
+      "checked": false,
+      "id": "glasses",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "clay",
+      "value": "on"
+    },
+    {
+      "id": "outfit",
+      "value": "dojo"
+    },
+    {
+      "id": "yaw",
+      "value": "0"
+    },
+    {
+      "id": "pitch",
+      "value": "0"
+    },
+    {
+      "id": "faceTime",
+      "value": "0"
+    },
+    {
+      "checked": true,
+      "id": "skinNormal",
+      "value": "on"
+    },
+    {
+      "checked": false,
+      "id": "skinColourOnly",
+      "value": "on"
+    },
+    {
+      "id": "blinkCheck",
+      "value": "0"
+    },
+    {
+      "id": "jawCheck",
+      "value": "0"
+    },
+    {
+      "id": "closeCheck",
+      "value": "0"
+    },
+    {
+      "id": "mouthShape",
+      "value": "none"
+    },
+    {
+      "id": "mouthAmount",
+      "value": "0"
+    },
+    {
+      "id": "upCheck",
+      "value": "0"
+    },
+    {
+      "id": "wide",
+      "value": "0"
+    },
+    {
+      "id": "irisDepth",
+      "value": "asset"
+    },
+    {
+      "id": "cameraFit",
+      "value": "calibrated"
+    },
+    {
+      "id": "lighting",
+      "value": "studio"
+    },
+    {
+      "id": "shadowQuality",
+      "value": "legacy"
+    },
+    {
+      "id": "eyeLayer",
+      "value": "all"
+    },
+    {
+      "id": "view",
+      "value": "front"
+    },
+    {
+      "id": "poseTime",
+      "value": "0"
+    },
+    {
+      "checked": false,
+      "id": "anchors",
+      "value": "on"
+    },
+    {
+      "id": "anchorGroup",
+      "value": "cheek"
+    }
+  ]
+}
