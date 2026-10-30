@@ -13,7 +13,8 @@
     "test": "npm run build -w packages/shared && node --import tsx --test tests/*.test.mts",
     "test:deploy": "npm run build -w packages/shared && node --import tsx --test tests/cloud-checkpoint.test.mts tests/frame-rate.test.mts tests/memory.test.mts tests/player-experience.test.mts tests/player.test.mts tests/session.test.mts tests/simulation.test.mts tests/socket-transport.test.mts",
     "music:originals": "node --import tsx scripts/fetch-film-score.mts",
-    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p packages/server && tsc --noEmit -p packages/client"
+    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p packages/server && tsc --noEmit -p packages/client",
+    "review:core-cast": "node scripts/serve-core-cast-review.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

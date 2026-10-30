@@ -1,0 +1,112 @@
+{
+  "verifiedUtc": "2026-10-30T15:54:54.938174+00:00",
+  "scope": "Push current work and frozen character assets; no actor95 or whole-trilogy acceptance.",
+  "typecheck": {
+    "command": "npm run typecheck",
+    "passed": true
+  },
+  "stagedCheckoutBuild": {
+    "command": "npm run build",
+    "passed": true,
+    "clientBundle": "index-BTLnEgj4.js"
+  },
+  "targetedChecks": {
+    "command": "node --import tsx --test --test-concurrency=2 tests/core-cast-delivery.test.mts tests/articulated-jaw.test.mts tests/eyelid-correctives.test.mts tests/iris-refraction.test.mts tests/nail-surface.test.mts tests/reference-skin-pigment.test.mts tests/skin-albedo.test.mts tests/skin-continuity-material.test.mts",
+    "tests": 28,
+    "passed": 28,
+    "failed": 0
+  },
+  "stagedCheckoutDeliveryIntegrity": {
+    "passed": true,
+    "files": 118
+  },
+  "browser": {
+    "actors": [
+      {
+        "id": "neo",
+        "heading": "Neo · 口腔曲面重塑 neo · 本轮模型候选 · 制作候选，待多视角验收 · 21fcba8d",
+        "status": "已载入游戏角色 · 21fcba8dbe12 · idle · 0.00 s · 脸部 0.00 s",
+        "url": "http://127.0.0.1:5390/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/neo-oral-vault/review.html?variant=after&eyeCullProbe=0&hideCorneaProbe=0&eyeLayerProbe=0&eyeShadowProbe=0&eyeAoProbe=0&eyeNormalProbe=0&skinNormalProbe=0&socketShadow=1&sealAoProbe=0&sealPigment=1&lighting=studio&shadowQuality=legacy&referenceLift=0&eyeCrop=0&mouthCrop=0&hairLayer=all&frame=face&motion=idle&handGrip=1&combo=0&side=R&glasses=0&clay=0&tissueDebug=original&outfit=leather&yaw=0&pitch=0&faceClip=gaze&expressionControl=none&expressionAmount=1&comboJaw=0&faceTime=0&mirror=0&wide=0&view=front&poseTime=0",
+        "errors": [],
+        "screenshot": {
+          "path": "docs/character-delivery-proof/neo.jpg",
+          "bytes": 68206,
+          "sha256": "bfa821c9240c36fc8f8ec7fb9d487cf1782acb28cc4da9134d2a28c59276bb7f"
+        }
+      },
+      {
+        "id": "trinity",
+        "heading": "Trinity · 手背关节与皮肤细节 当前候选 · 整体未验收 · 65cfd63e",
+        "status": "已载入游戏角色 · 0.00 s · 脸部 0.00 s",
+        "url": "http://127.0.0.1:5391/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/trinity-knuckle-skin/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+        "errors": [],
+        "screenshot": {
+          "path": "docs/character-delivery-proof/trinity.jpg",
+          "bytes": 78757,
+          "sha256": "99fa141d75ac4715f84d4b871ead700fd859de87f533f8f70d20cbbd54dbc6e3"
+        }
+      },
+      {
+        "id": "morpheus",
+        "heading": "Morpheus · 颧颊与下颌原片对照 颧颊候选 · 整体未验收 · b7696219",
+        "status": "已载入游戏角色 · 0.00 s · 脸部 0.00 s",
+        "url": "http://127.0.0.1:5392/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/morpheus-cheek-form/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+        "errors": [],
+        "screenshot": {
+          "path": "docs/character-delivery-proof/morpheus.jpg",
+          "bytes": 67837,
+          "sha256": "50e6efab9de14029e672c987fcd92ca9d0528cfb1dcac58b14d51bbac9490ffa"
+        }
+      },
+      {
+        "id": "smith",
+        "heading": "Smith · 眉眼底色修正候选 smith · 眉眼底色修正候选 · 未验收 · 0/4 · e03c830e",
+        "status": "已载入游戏角色 · 0.00 s · 握拳 1.00 · 腕 0°",
+        "url": "http://127.0.0.1:5393/output/characters/core-cast-six-hour-2026-10-25/neutral-head-workflow/smith-brow-albedo/review.html?variant=after&frame=face&view=front&motion=idle&faceTime=0&poseTime=0",
+        "errors": [],
+        "screenshot": {
+          "path": "docs/character-delivery-proof/smith.jpg",
+          "bytes": 66182,
+          "sha256": "d48d2b376cf88541f7d9dd8c165b0310f42ee9810fe088bbeffe5532d0b6ca34"
+        }
+      }
+    ],
+    "allLoaded": true,
+    "source": "Git index checkout; original ignored work files are outside the server filesystem allowlist."
+  },
+  "fullSuite": {
+    "capturedUtc": "2026-10-30T15:51:25.351642+00:00",
+    "command": "node --import tsx --test --test-concurrency=2 tests/*.test.mts",
+    "status": "incomplete-with-observed-failures",
+    "observedPassingSubtests": 166,
+    "observedFailures": [
+      {
+        "number": 11,
+        "name": "a paused or cold ordinary pose restores the same complete cloth without deforming the ship knit"
+      },
+      {
+        "number": 90,
+        "name": "nonzero saved removals rebuild the same actual body, hands and single detached garment after cold load"
+      },
+      {
+        "number": 91,
+        "name": "the completed coat stays in the eighth-floor world while Morpheus leaves for the pipe and is controlled elsewhere"
+      },
+      {
+        "number": 92,
+        "name": "clearing a removed coat restores borrowed binding and material while releasing its own garment resources"
+      },
+      {
+        "number": 93,
+        "name": "world changes and visits hide the placed coat and returning reconstructs its saved location without changing the story"
+      },
+      {
+        "number": 154,
+        "name": "the complete shirt clears every visible inner layer through free locomotion and speed transitions"
+      }
+    ],
+    "scope": "Observed before this publication change. The full 463-file geometry/game suite is not certified; the publication is limited to preserving the current work and frozen assets. Further geometry refinement was ended by the user."
+  },
+  "recheck": "npm run build -w packages/shared && npm run review:core-cast",
+  "defaultGameAssetsPromoted": false
+}

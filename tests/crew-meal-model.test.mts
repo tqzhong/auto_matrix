@@ -10,7 +10,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
 
-async function fixture(t: TestContext) {
+async function fixture(t: TestContext, mouthOffset = 0) {
   const pending: Promise<unknown>[] = [], assets = new Map<string, Promise<any>>();
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
     const name = String(url).split('/').pop()!;
@@ -23,7 +23,17 @@ async function fixture(t: TestContext) {
       const bin = raw.subarray(20 + length), data = Buffer.alloc(20 + padded.length + bin.length);
       data.writeUInt32LE(0x46546c67); data.writeUInt32LE(2, 4); data.writeUInt32LE(data.length, 8);
       data.writeUInt32LE(padded.length, 12); data.writeUInt32LE(0x4e4f534a, 16); padded.copy(data, 20); bin.copy(data, 20 + padded.length);
-      return new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
+      const asset = await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength), '');
+      if (name === 'neo.glb' && mouthOffset) {
+        const skin = asset.scene.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+        const position = skin.geometry.attributes.position, lips: number[] = [];
+        for (let v = 0; v < position.count; v++) {
+          if (Math.abs(position.getX(v)) < .018 && position.getY(v) > 3.93 && position.getY(v) < 3.96 && position.getZ(v) > .28) lips.push(v);
+          if (position.getY(v) > 3.68 && position.getY(v) < 4 && position.getZ(v) > .2) position.setY(v, position.getY(v) + mouthOffset);
+        }
+        skin.userData.mealLipVertices = lips;
+      }
+      return asset;
     })());
     const promise = assets.get(name)!; pending.push(promise); const asset = await promise; return { ...asset, scene: clone(asset.scene) };
   });
@@ -79,6 +89,22 @@ test('the first bite opens Neo’s actual face instead of pushing the spoon thro
   assert.notEqual(jaw, undefined, 'Neo needs an actual jaw shape on his delivered skin');
   assert.ok(skin.morphTargetInfluences![jaw!] > .5, 'the saved bite clock must open the lips before the food reaches them');
   h.draw('done', 10.9); assert.equal(skin.morphTargetInfluences![jaw!], 0);
+});
+
+test('the feeding spoon follows the same lip surface after a face sculpt moves the mouth', async t => {
+  let baseline: THREE.Vector3;
+  for (const offset of [0, -.025]) await t.test(`mouth offset ${offset}`, async t => {
+    const h = await fixture(t, offset); h.draw('accepting', 3.1);
+    const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh, position = skin.geometry.attributes.position;
+    const lips = skin.userData.mealLipVertices as number[] | undefined;
+    const selected = lips ?? Array.from({ length: position.count }, (_, v) => v).filter(v =>
+      Math.abs(position.getX(v)) < .018 && position.getY(v) > 3.93 && position.getY(v) < 3.96 && position.getZ(v) > .28);
+    const center = selected.reduce((sum, v) => sum.add(skin.localToWorld(skin.getVertexPosition(v, new THREE.Vector3()))), new THREE.Vector3()).divideScalar(selected.length);
+    const food = h.rig.root.getObjectByName('meal-spoon-food')!;
+    const relative = food.getWorldPosition(new THREE.Vector3()).sub(center);
+    if (!offset) baseline = relative;
+    else assert.ok(relative.distanceTo(baseline) < .001, `the spoon still targets the old mouth position: ${relative.distanceTo(baseline)}`);
+  });
 });
 
 test('serving, lifting and setting down transfer one bowl or spoon without a position or orientation jump', async t => {

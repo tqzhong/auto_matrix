@@ -1,4 +1,4 @@
-import { metacortexLiftLocked } from '@auto_matrix/shared';
+import { AMBUSH_DOFF, metacortexLiftLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
@@ -58,6 +58,8 @@ export class PlayerController {
     if (MEETING_CAST.includes(id as typeof MEETING_CAST[number]) && this.sandbox?.life.film.state && meetingLocked(this.sandbox.life.film.state)) return { error: '这个角色正在参与接头检查，结束后可以接入。' };
     if (SENTINEL_CAST.includes(id as typeof SENTINEL_CAST[number]) && this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && this.sandbox.life.film.state.sentinel?.phase !== 'ready') return { error: '这个角色正在参与静默潜航，哨兵离开后可以接入。' };
     const interlude = this.sandbox?.life.film.state;
+    if (id === 'morpheus' && interlude?.scene === 'm1_dejavu' && !interlude.visiting && interlude.ambushEscape?.doff
+      && interlude.ambushEscape.doff.elapsed < AMBUSH_DOFF.duration) return { error: 'Morpheus 正在脱下外套，双袖退出后可以接入。' };
     if (interlude?.tvExit?.crosscut && !interlude.visiting && ['m1_tv_exit', 'm1_unplugged'].includes(interlude.scene) && id !== interlude.actor && ['neo', 'trinity', 'apoc', 'switch', 'cypher', 'tank', 'dozer'].includes(id)) return { error: '这个角色正在参与两世界的背叛与撤离，当前片段结束后可以接入。' };
     const interludeScene = interlude && interludeKind(interlude.scene);
     if (interlude && !interlude.visiting && ['m1_basement', 'm1_tv_exit'].includes(interlude.scene) && id !== interlude.actor && ['trinity', 'apoc', 'switch', 'cypher'].includes(id)) return { error: '这个角色正在参与旧楼撤离，抵达出口后可以接入。' };

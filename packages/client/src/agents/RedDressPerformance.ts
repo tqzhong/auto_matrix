@@ -9,9 +9,11 @@ export class RedDressPerformance {
   private temple = new THREE.Vector3();
   private tip = new THREE.Vector3();
   private fingers: THREE.Quaternion[][];
+  private templeGap = .09;
 
   constructor(private rig: HeroRig, private hands?: FightingHands) {
     const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    if (skin.userData.thumbOpposition?.version === 1) this.templeGap = .12;
     const a = skin.geometry.attributes, index = skin.geometry.index!, head = rig.bones.get('head')!;
     const headIndex = skin.skeleton.bones.indexOf(head), space = skin.skeleton.boneInverses[headIndex].clone().multiply(skin.bindMatrix);
     const eye = head.userData.cameraEye as THREE.Vector3;
@@ -36,7 +38,9 @@ export class RedDressPerformance {
       return [rig.rest.get(`finger${digit}-2_R`)!, rig.rest.get(`finger${digit}-3_R`)!, tip].map((axis, joint) => {
         // Keep adjacent knuckles aligned; fold only the ring/little phalanges
         // so the shared web does not buckle between a straight and curled MCP.
-        const bend = digit < 4 ? 0 : [0, Math.PI / 2, 2.8][joint];
+        // Keep the padded palm clear of the curled little finger. The extra
+        // temple gap also leaves room for that less tightly folded tip.
+        const bend = digit < 4 ? 0 : [0, Math.PI / 2, skin.userData.thumbOpposition?.version === 1 ? 2.5 : 2.8][joint];
         const rotation = new THREE.Quaternion().setFromUnitVectors(axis.clone().normalize(), new THREE.Vector3(Math.sin(bend), -Math.cos(bend), 0));
         const result = parent.clone().invert().multiply(rotation); parent.copy(rotation); return result;
       });
@@ -63,7 +67,7 @@ export class RedDressPerformance {
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -.4));
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation)); wrist.updateWorldMatrix(false, true);
     const offset = finger.localToWorld(this.tip.clone()).sub(wrist.getWorldPosition(new THREE.Vector3()));
-    const target = bone('head').localToWorld(this.temple.clone().add(new THREE.Vector3(-.09, 0, 0))).sub(offset);
+    const target = bone('head').localToWorld(this.temple.clone().add(new THREE.Vector3(-this.templeGap, 0, 0))).sub(offset);
     const pole = new THREE.Vector3(-1, -1, .4).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
     reach(shoulder, elbow, wrist.position, target, pole);
     wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));

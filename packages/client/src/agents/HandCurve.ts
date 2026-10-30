@@ -17,16 +17,18 @@ export class HandCurve {
   constructor(points: THREE.Vector3[], radii: number[]) {
     const lengths = points.slice(1).map((p, i) => p.distanceTo(points[i]));
     const axes = points.slice(1).map((p, i) => p.clone().sub(points[i]).normalize());
-    const angles = [0, axes[0].angleTo(axes[1]), axes[1].angleTo(axes[2]), 0];
-    const cuts = angles.map((angle, i) => i === 0 || i === 3 ? 0 : radii[i - 1] * Math.tan(angle / 2));
-    for (let i = 0; i < 3; i++) {
+    const angles = [0, ...axes.slice(1).map((axis, i) => axes[i].angleTo(axis)), 0];
+    // A shallow bend still spans the soft tissue around the joint. Shrinking
+    // that span with the angle retains fist-level curvature on a relaxed hand.
+    const cuts = angles.map((angle, i) => i === 0 || i === axes.length || angle < 1e-6 ? 0 : radii[i - 1] * Math.max(.5, Math.tan(angle / 2)));
+    for (let i = 0; i < lengths.length; i++) {
       const total = cuts[i] + cuts[i + 1], limit = .98 * lengths[i];
       if (total > limit) { cuts[i] *= limit / total; cuts[i + 1] *= limit / total; }
     }
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < lengths.length; i++) {
       const start = points[i].clone().addScaledVector(axes[i], cuts[i]), length = lengths[i] - cuts[i] - cuts[i + 1];
       this.spans.push({ length, start, direction: axes[i] }); this.length += length;
-      if (i === 2 || angles[i + 1] < 1e-6) { this.anchors.push(this.length); continue; }
+      if (i === lengths.length - 1 || angles[i + 1] < 1e-6) { this.anchors.push(this.length); continue; }
       const angle = angles[i + 1], axis = new THREE.Vector3().crossVectors(axes[i], axes[i + 1]).normalize();
       const normal = new THREE.Vector3().crossVectors(axis, axes[i]), integral = [new THREE.Vector2()], rotations = [new THREE.Vector2(1, 0)];
       for (let j = 0; j < 64; j++) {

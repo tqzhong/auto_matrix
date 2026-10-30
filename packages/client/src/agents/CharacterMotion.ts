@@ -22,6 +22,7 @@ export interface MotionInput {
   armed?: boolean;
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
   ambushCall?: { role: 'morpheus' | 'trinity'; elapsed: number; ready?: true };
+  ambushDoff?: import('@auto_matrix/shared').AmbushDoffGesture;
   ambushWardrobe?: 'coat' | 'shirt';
   mouseRoomTime?: number;
   wetwall?: import('@auto_matrix/shared').WetwallGesture;

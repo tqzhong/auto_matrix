@@ -10,7 +10,7 @@ import { truckRoadRoot, freewayHandoffRoot, truckWeaponPairRoot, truckHoodRoot }
 import { freewayPickupRoot, freewayDriverRoot, freewayRideRoot } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose, logosFlightSet } from '@auto_matrix/shared';
-import { CONNECTED_ROLES, BETRAYAL, AMBUSH_ESCAPE, MOUSE_ROOM_SHOTS, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
+import { CONNECTED_ROLES, BETRAYAL, AMBUSH_ESCAPE, AMBUSH_DOFF, MOUSE_ROOM_SHOTS, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import { newMotion, type MotionInput } from './CharacterMotion.js';
@@ -639,10 +639,12 @@ export class AgentRenderer {
       input.constructSuit = id === 'morpheus' && ['film_white_construct', 'film_real_desert'].includes(state.currentLocation)
         && !state.currentAction?.parameters.rescue;
       input.ambushWardrobe = undefined;
+      input.ambushDoff = undefined;
       if (id === 'morpheus' && state.isInMatrix && state.currentLocation === 'film_ambush_house') {
         const visiting = journey?.actor === id ? journey.visiting : undefined, scene = visiting ?? journey?.scene;
         const escape = visiting ? undefined : journey?.ambushEscape;
-        const called = escape && (['call', 'forming', 'wetwall', 'done'].includes(escape.phase)
+        input.ambushDoff = escape?.doff;
+        const called = escape && (escape.doff && escape.doff.elapsed >= AMBUSH_DOFF.duration || ['call', 'forming', 'wetwall', 'done'].includes(escape.phase)
           || escape.phase === 'failed' && (escape.callStart || escape.traced || ['forming', 'wetwall'].includes(escape.checkpoint.phase)));
         const afterAmbush = ['m1_wetwall', 'm1_wall_exposed', 'm1_bathroom', 'm1_basement', 'm1_tv_exit', 'm1_unplugged', 'm1_rescue_decision', 'm1_guns', 'm1_lobby'].includes(scene ?? '')
           || !visiting && journey?.completed.includes('m1_dejavu');

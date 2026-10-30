@@ -31,12 +31,10 @@ export class SkinContinuity {
     this.normal = this.body.geometry.getAttribute('normal') as THREE.BufferAttribute;
     this.rest = new Float32Array(this.normal.array);
     const source = this.body.material as THREE.MeshStandardMaterial;
-    const material = (this.hand.material as THREE.MeshPhysicalMaterial).clone();
-    material.name = source.name; material.map = source.map; material.normalMap = source.normalMap; material.normalScale.copy(source.normalScale);
-    material.bumpMap = source.bumpMap; material.bumpScale = source.bumpScale;
+    // The extension has its own UV atlas and may have no vertex colors.
+    // Copy its authored material rather than the differently attributed hand.
+    const material = source.clone();
     material.onBeforeCompile = source.onBeforeCompile; material.customProgramCacheKey = source.customProgramCacheKey;
-    material.color.copy(source.color); material.emissive.copy(source.emissive); material.emissiveIntensity = source.emissiveIntensity;
-    material.roughness = source.roughness; material.metalness = source.metalness; material.side = source.side;
     this.body.material = material;
     const hp = this.hand.geometry.attributes.position, bp = this.body.geometry.attributes.position, groups = new Map<string, number[]>();
     const key = (a: THREE.BufferAttribute | THREE.InterleavedBufferAttribute, i: number) => [a.getX(i), a.getY(i), a.getZ(i)].map(v => v.toFixed(5)).join(',');

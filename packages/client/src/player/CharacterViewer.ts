@@ -23,6 +23,7 @@ export class CharacterViewer {
   private models?: CharacterModels;
   private environment?: THREE.WebGLRenderTarget;
   private rigs = new Map<string, CharacterRig>();
+  private referenceMixers = new Map<CharacterRig, THREE.AnimationMixer>();
   private current?: CharacterRig;
   private id = 'neo';
   private angle = 0.28;
@@ -48,6 +49,8 @@ export class CharacterViewer {
       <div class="character-viewer-info"><span class="eyebrow">THE MATRIX / 1999</span><h3 id="preview-name">NEO</h3><p id="preview-notes"></p><p class="model-note">拖动旋转 · 实际游戏内模型<br>电影造型近似还原，非演员扫描资产</p></div>
       <footer><div><button id="preview-zoom">面部特写</button><select id="preview-motion" aria-label="动作预览"><option value="idle">待机 · 呼吸</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃与落地</option><option value="combat">刺拳 · 直拳 · 正蹬</option><option value="apartment-call">公寓 · 接听与放回座机</option><option value="ambush-walk" disabled>旧楼 · 行走</option><option value="ambush-run" disabled>旧楼 · 奔跑</option><option value="ambush-combat" disabled>旧楼 · 连招</option><option value="ambush-crouch" disabled>旧楼 · 蹲下与起身</option><option value="ambush-crouch-walk" disabled>旧楼 · 蹲行</option></select></div><button id="preview-play" class="enter-world">以此角色进入 ↗</button></footer>`;
     document.body.appendChild(this.root);
+    const referenceOption = document.createElement('option'); referenceOption.value = 'film-reference'; referenceOption.textContent = '原片表情对照 · 制作中'; referenceOption.hidden = referenceOption.disabled = true;
+    this.root.querySelector('#preview-motion')!.appendChild(referenceOption);
     this.root.addEventListener('click', event => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
       if (!button) return;
@@ -55,7 +58,7 @@ export class CharacterViewer {
       if (button.id === 'close-viewer') this.close();
       if (button.id === 'preview-play') { const id = this.id; this.close(); this.play(id); }
       if (button.id === 'preview-zoom') {
-        if (this.motion === 'apartment-call') { this.zoom = !this.zoom; this.glasses = false; }
+        if (this.motion === 'apartment-call' || this.motion === 'film-reference') { this.zoom = !this.zoom; this.glasses = false; }
         else if (!this.zoom) { this.zoom = true; this.glasses = true; }
         else if (this.glasses && this.current?.hero && this.id !== 'tank') this.glasses = false;
         else { this.zoom = false; this.glasses = true; }
@@ -63,9 +66,10 @@ export class CharacterViewer {
       }
     });
     this.root.querySelector('#preview-motion')!.addEventListener('change', event => {
-      this.motion = (event.target as HTMLSelectElement).value; this.started = performance.now(); this.zoom = false; this.glasses = this.motion !== 'apartment-call';
-      this.root.querySelector('#preview-zoom')!.textContent = '面部特写';
-      this.root.querySelector('#preview-notes')!.textContent = this.motion === 'apartment-call' ? '公寓家居装 · 左手座机 · 拿起、接听与放回' : NOTES[this.id];
+      if (this.current) this.referenceMixers.get(this.current)?.stopAllAction();
+      this.motion = (event.target as HTMLSelectElement).value; this.started = performance.now(); this.zoom = this.motion === 'film-reference'; this.glasses = this.motion !== 'apartment-call' && this.motion !== 'film-reference';
+      this.root.querySelector('#preview-zoom')!.textContent = this.zoom ? '查看全身' : '面部特写';
+      this.root.querySelector('#preview-notes')!.textContent = this.motion === 'apartment-call' ? '公寓家居装 · 左手座机 · 拿起、接听与放回' : this.motion === 'film-reference' ? '同一头模 · 原片表情估计 · 检查用过渡，电影表演仍在制作' : NOTES[this.id];
     });
     const stage = this.root.querySelector<HTMLElement>('.character-stage')!;
     stage.addEventListener('pointerdown', event => { this.dragging = true; this.lastX = event.clientX; stage.setPointerCapture(event.pointerId); });
@@ -113,10 +117,12 @@ export class CharacterViewer {
 
   private select(id: string): void {
     const state = this.agents()[id]; if (!state || !this.models) return;
+    if (this.current) this.referenceMixers.get(this.current)?.stopAllAction();
+    if (this.motion === 'film-reference') this.zoom = false;
     this.id = id; this.angle = 0.22;
     this.root.querySelectorAll<HTMLOptionElement>('option[value^="ambush-"]').forEach(option => { option.disabled = id !== 'morpheus'; });
     this.root.querySelector<HTMLOptionElement>('option[value="apartment-call"]')!.disabled = id !== 'neo';
-    if (id !== 'morpheus' && this.motion.startsWith('ambush-') || id !== 'neo' && this.motion === 'apartment-call') {
+    if (id !== 'morpheus' && this.motion.startsWith('ambush-') || id !== 'neo' && this.motion === 'apartment-call' || this.motion === 'film-reference') {
       this.motion = 'idle'; this.root.querySelector<HTMLSelectElement>('#preview-motion')!.value = this.motion;
     }
     this.glasses = this.motion !== 'apartment-call';
@@ -158,8 +164,17 @@ export class CharacterViewer {
       wakeCall: landline ? { phase, elapsed: callElapsed, nightmare: true } : undefined, homeClothes: landline, glasses: landline ? false : undefined,
       parkOutfit: this.agents()[this.id]?.currentLocation === 'film_sunrise_garden',
       attack: this.motion === 'combat' || this.motion === 'ambush-combat' ? Math.floor(time / .72) : undefined }, 1);
+    const referenceClip = this.current.hero?.referenceFaceClip;
+    const referenceOption = this.root.querySelector<HTMLOptionElement>('option[value="film-reference"]')!;
+    referenceOption.hidden = referenceOption.disabled = !referenceClip;
+    if (this.motion === 'film-reference' && referenceClip && this.current.hero) {
+      let mixer = this.referenceMixers.get(this.current);
+      if (!mixer) { mixer = new THREE.AnimationMixer(this.current.hero.root); this.referenceMixers.set(this.current, mixer); }
+      const action = mixer.clipAction(referenceClip); if (!action.isRunning()) action.play();
+      mixer.setTime(time % referenceClip.duration); this.models.refreshFace(this.current);
+    }
     this.current.root.rotation.y = this.angle;
-    if (this.current.hero) this.current.hero.glasses.visible = this.glasses && !landline && this.id !== 'tank';
+    if (this.current.hero) this.current.hero.glasses.visible = this.glasses && !landline && this.motion !== 'film-reference' && this.id !== 'tank';
     const distance = this.zoom ? 1.95 : landline ? this.camera.aspect < .75 ? 6.8 : 5.6 : this.camera.aspect < 0.75 ? 12.8 : 10.8;
     const targetY = this.zoom ? (this.id === 'trinity' ? 3.91 : this.id === 'morpheus' ? 4.18 : 4.08) : landline ? 3.4 : 2.2 + height;
     this.camera.position.lerp(new THREE.Vector3(0, targetY + (this.zoom ? 0.03 : 0.4), distance), 0.18);
@@ -168,11 +183,13 @@ export class CharacterViewer {
 
   close(): void {
     cancelAnimationFrame(this.frame); this.root.classList.add('hidden');
+    for (const [rig, mixer] of this.referenceMixers) { mixer.stopAllAction(); if (rig.hero) this.models?.refreshFace(rig); }
     document.querySelectorAll<HTMLElement>('#app, #ui-overlay, #play-overlay, #sandbox-overlay').forEach(element => { element.inert = false; });
     this.onClose?.(); this.onClose = undefined;
   }
   dispose(): void {
     this.close(); this.resizeObserver.disconnect(); this.models?.dispose(); this.environment?.dispose();
+    for (const mixer of this.referenceMixers.values()) mixer.uncacheRoot(mixer.getRoot()); this.referenceMixers.clear();
     this.scene.traverse(object => { if (object instanceof THREE.Mesh && object.parent === this.scene) { object.geometry.dispose(); (object.material as THREE.Material).dispose(); } });
     this.renderer?.dispose(); this.root.remove();
   }

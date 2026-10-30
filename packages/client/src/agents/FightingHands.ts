@@ -2,13 +2,15 @@ import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { HandCurve } from './HandCurve.js';
+import { applyNailSurface } from './NailSurface.js';
 
 type Attributes = Record<'position' | 'normal' | 'skinIndex' | 'skinWeight', THREE.BufferAttribute>;
 interface MaterialPoint { id: number; amount: number; interval: number; u: number; n: number; b: number; t: number }
-interface Finger { joints: number[]; radius: number[]; rest: HandCurve; vertices: MaterialPoint[] }
+interface Finger { joints: number[]; radius: number[]; rest: HandCurve; vertices: MaterialPoint[]; metacarpal?: THREE.Vector3 }
 interface Hand {
   side: string; wrist: number; cacheable: boolean; pistolCacheable: boolean; bones: number[][]; caps: number[][]; axes: THREE.Vector3[][];
-  vertices: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[];
+  vertices: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[]; palm: number[];
+  opposition?: { nail: THREE.Vector3; pad: THREE.Vector3; radial: THREE.Vector3; clearance: number };
 }
 interface Binding { attributes: Attributes; hands: Hand[]; groups: number[]; groupCount: number }
 const bindings = new WeakMap<THREE.BufferGeometry, Binding>();
@@ -33,13 +35,15 @@ function frame(direction: THREE.Vector3) {
 
 /** A continuous weight field follows the phalanges and the upper palm. The
  * thumb retains its original articulation; palm influence fades around it. */
-function support(skin: THREE.SkinnedMesh): Attributes {
+function support(skin: THREE.SkinnedMesh, boundary: number[]): Attributes {
   const a = Object.fromEntries(attributes.map(name => [name, skin.geometry.attributes[name].clone()])) as Attributes;
   const points = Array.from({ length: a.position.count }, (_, id) => new THREE.Vector3().fromBufferAttribute(a.position, id));
   const names = skin.skeleton.bones.map(b => b.name), positions = skin.skeleton.boneInverses.map(m => new THREE.Vector3().setFromMatrixPosition(m.clone().invert()));
   for (const side of ['R', 'L']) {
     const wrist = names.indexOf(`wrist_${side}`), digits = Array.from({ length: 5 }, (_, d) => [1, 2, 3].map(j => names.indexOf(`finger${d + 1}-${j}_${side}`)));
     const sideBones = new Set([wrist, ...digits.flat()]);
+    const rim = boundary.filter(id => [0, 1, 2, 3].some(k => sideBones.has(a.skinIndex.getComponent(id, k)) && a.skinWeight.getComponent(id, k) > 0)).map(id => points[id]);
+    const feather = positions[wrist].distanceTo(positions[digits[2][0]]) * .25;
     const chains = digits.map(joints => {
       const caps = points.filter((_, id) => [0, 1, 2, 3].some(k => a.skinIndex.getComponent(id, k) === joints[2] && a.skinWeight.getComponent(id, k) > .95));
       const end = caps.reduce((sum, p) => sum.add(p), new THREE.Vector3()).divideScalar(caps.length), axis = end.clone().sub(positions[joints[2]]).normalize();
@@ -59,7 +63,19 @@ function support(skin: THREE.SkinnedMesh): Attributes {
         const joint = a.skinIndex.getComponent(id, k), weight = a.skinWeight.getComponent(id, k);
         original.set(joint, (original.get(joint) ?? 0) + weight); if (sideBones.has(joint)) total += weight;
       }
-      if (total < .999999) continue;
+      // A near-pure wrist vertex still belongs to the palm. Skipping it
+      // while reshaping its fully weighted neighbour creates a hard spike.
+      // Fade the hand field through the mixed forearm band and retain the
+      // original contribution from bones outside this hand.
+      if (total <= .75) continue;
+      const distance = Math.sqrt(rim.reduce((nearest, point) => Math.min(nearest, point.distanceToSquared(points[id])), Infinity));
+      // An authored thumb heat field already includes its metacarpal. Fade
+      // the generic repartition there so it does not bind that joint twice.
+      const strength = THREE.MathUtils.smoothstep(total, .75, 1) * THREE.MathUtils.smoothstep(distance, 0, feather)
+        * (1 - (skin.geometry.getAttribute('_thumb_volume')?.getX(id) ?? 0));
+      if (!strength) continue;
+      const retained = new Map(original);
+      for (const joint of sideBones) original.set(joint, (original.get(joint) ?? 0) / total);
       const member = digits.map(joints => joints.reduce((sum, j) => sum + (original.get(j) ?? 0), 0));
       const fields = chains.map(chain => {
         const closest = chain.lines.map((line, i) => {
@@ -91,6 +107,8 @@ function support(skin: THREE.SkinnedMesh): Attributes {
         result.set(digits[0][1], (result.get(digits[0][1]) ?? 0) - middle);
         result.set(digits[0][0], (result.get(digits[0][0]) ?? 0) + 2 * middle);
       }
+      for (const [joint, weight] of result) result.set(joint, weight * total * strength);
+      for (const [joint, weight] of retained) result.set(joint, (result.get(joint) ?? 0) + weight * (sideBones.has(joint) ? 1 - strength : 1));
       const top = [...result].sort((a, b) => b[1] - a[1]).slice(0, 4), normal = top.reduce((s, p) => s + p[1], 0);
       while (top.length < 4) top.push([0, 0]);
       top.forEach(([joint, w], k) => { a.skinIndex.setComponent(id, k, joint); a.skinWeight.setComponent(id, k, w / normal); });
@@ -100,17 +118,27 @@ function support(skin: THREE.SkinnedMesh): Attributes {
 }
 
 function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
-  const a = support(skin), index = skin.geometry.index!, keys = new Map<string, number>(), groups: number[] = [], normalKeys = new Map<string, number>(), normalGroups: number[] = [];
-  for (let id = 0; id < a.position.count; id++) {
-    const point = new THREE.Vector3().fromBufferAttribute(a.position, id), key = point.toArray().map(n => n.toFixed(6)).join(',');
+  const source = skin.geometry.attributes as Attributes, index = skin.geometry.index!, keys = new Map<string, number>(), groups: number[] = [], normalKeys = new Map<string, number>(), normalGroups: number[] = [];
+  for (let id = 0; id < source.position.count; id++) {
+    const point = new THREE.Vector3().fromBufferAttribute(source.position, id), key = point.toArray().map(n => n.toFixed(6)).join(',');
     if (!keys.has(key)) keys.set(key, keys.size); groups[id] = keys.get(key)!;
-    const normal = [key, ...[0, 1, 2].map(k => a.normal.getComponent(id, k).toFixed(6))].join(',');
+    const normal = [key, ...[0, 1, 2].map(k => source.normal.getComponent(id, k).toFixed(6))].join(',');
     if (!normalKeys.has(normal)) normalKeys.set(normal, normalKeys.size); normalGroups[id] = normalKeys.get(normal)!;
   }
   const neighbours = Array.from({ length: keys.size }, () => new Set<number>());
+  const edges = new Map<number, { count: number; vertices: number[] }>();
   for (let f = 0; f < index.count; f += 3) {
     const ids = [0, 1, 2].map(k => groups[index.getX(f + k)]); for (const x of ids) for (const y of ids) neighbours[x].add(y);
+    for (let k = 0; k < 3; k++) {
+      const x = ids[k], y = ids[(k + 1) % 3]; if (x === y) continue;
+      const key = Math.min(x, y) * keys.size + Math.max(x, y), edge = edges.get(key);
+      if (edge) edge.count++; else edges.set(key, { count: 1, vertices: [index.getX(f + k), index.getX(f + (k + 1) % 3)] });
+    }
   }
+  // Weld UV duplicates before finding the physical open hand rims. Keeping
+  // their original binding also keeps the separate forearm skin attached.
+  const boundary = [...new Set([...edges.values()].filter(edge => edge.count === 1).flatMap(edge => edge.vertices))];
+  const a = support(skin, boundary);
   const names = skin.skeleton.bones.map(b => b.name);
   const hands = ['R', 'L'].map(side => {
     const wrist = names.indexOf(`wrist_${side}`), inverse = skin.skeleton.boneInverses[wrist];
@@ -138,10 +166,19 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
         const tangent = points[j + 1].clone().sub(points[j - 1]).normalize(), { b } = basis(tangent), width = Math.min(points[j].distanceTo(points[j - 1]), points[j].distanceTo(points[j + 1])) * .35;
         return 1.2 * Math.max(...owned.map(p => p.clone().sub(points[j])).filter(p => Math.abs(p.dot(tangent)) < width).map(p => Math.abs(p.dot(b))));
       });
-      const rest = new HandCurve(points, radius), mapped: MaterialPoint[] = [];
+      // Refined hands include the palm-to-finger transition in their curve.
+      // Keep that proximal anchor attached to the wrist as the MCP curls.
+      const metacarpal = digit > 1 && skin.userData.articulatedMcp ? points[0].clone().multiplyScalar(.78) : undefined;
+      if (metacarpal) radius.unshift(radius[0] * 1.05);
+      const rest = new HandCurve(metacarpal ? [metacarpal, ...points] : points, radius), mapped: MaterialPoint[] = [];
       for (const id of vertices) {
         const influence = amount(id); if (!influence) continue;
         const p = point(id), s = rest.closest(p), sample = rest.sample(s), { n, b } = basis(sample.t), delta = p.sub(sample.p);
+        // The donor skin already follows the curved rest finger. Undo the
+        // inner-radius compression before storing material coordinates, so
+        // applying it in shapeFingers does not dent an unchanged joint twice.
+        const inner = delta.dot(sample.n);
+        if (inner > 0 && sample.k > 1e-8) delta.addScaledVector(sample.n, -Math.log1p(-sample.k * inner) / sample.k - inner);
         const proximal = points[0].distanceTo(points[1]);
         const blend = influence * (digit === 1 ? THREE.MathUtils.smoothstep(influence, .5, .95) : 1) * THREE.MathUtils.smoothstep(s, digit === 1 ? proximal * .65 : 0, proximal * (digit === 1 ? 1.05 : .25));
         if (blend) {
@@ -150,9 +187,39 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
           mapped.push({ id, amount: blend, interval, u, n: delta.dot(n), b: delta.dot(b), t: delta.dot(sample.t) });
         }
       }
-      return { joints, radius, rest, vertices: mapped };
+      return { joints, radius, rest, vertices: mapped, metacarpal };
     });
+    let opposition: Hand['opposition'];
+    if (skin.userData.thumbOpposition?.version === 1) {
+      const detail = skin.geometry.getAttribute('_nail_detail'), nail = new THREE.Vector3(), indexNail = new THREE.Vector3();
+      const normalSpace = new THREE.Matrix3().getNormalMatrix(inverse.clone().multiply(skin.bindMatrix));
+      for (const id of caps[0]) if (detail.getX(id) > .7) nail.add(new THREE.Vector3().fromBufferAttribute(a.normal, id));
+      for (const id of caps[1]) if (detail.getX(id) > .7) indexNail.add(new THREE.Vector3().fromBufferAttribute(a.normal, id));
+      nail.applyMatrix3(normalSpace).normalize(); indexNail.applyMatrix3(normalSpace).normalize();
+      const center = caps[0].reduce((sum, id) => sum.add(point(id)), new THREE.Vector3()).divideScalar(caps[0].length);
+      const tip = new THREE.Vector3().setFromMatrixPosition(skin.skeleton.boneInverses[bones[0][2]].clone().invert()).applyMatrix4(inverse);
+      const indexAxis = axes[1][2].clone().normalize(), radial = new THREE.Vector3().crossVectors(indexNail, indexAxis).normalize();
+      if (radial.dot(rig.rest.get(`finger2-1_${side}`)!.clone().sub(rig.rest.get(`finger5-1_${side}`)!)) < 0) radial.negate();
+      const indexTip = new THREE.Vector3().setFromMatrixPosition(skin.skeleton.boneInverses[bones[1][2]].clone().invert()).applyMatrix4(inverse);
+      const section = vertices.filter(id => [0, 1, 2, 3].reduce((sum, k) => sum + (bones[1].includes(a.skinIndex.getComponent(id, k)) ? a.skinWeight.getComponent(id, k) : 0), 0) > .9
+        && Math.abs(point(id).sub(indexTip).dot(indexAxis)) < axes[1][1].length() * .4);
+      const indexRadius = Math.max(...section.map(id => point(id).sub(indexTip).dot(radial)));
+      const radius = Math.max(...caps[0].map(id => Math.abs(point(id).sub(center).dot(nail))));
+      opposition = { nail, pad: center.sub(tip), radial, clearance: indexRadius + radius + .002 };
+    }
     const offsets = new Map(vertices.map((id, i) => [id, i]));
+    const roots = bones.slice(1).map(joints => {
+      const points = joints.slice(0, 2).map(j => new THREE.Vector3().setFromMatrixPosition(skin.skeleton.boneInverses[j].clone().invert()).applyMatrix4(inverse));
+      return { start: points[0], axis: points[1].clone().sub(points[0]), length: points[0].distanceToSquared(points[1]) };
+    });
+    const palm = vertices.map(id => {
+      const p = point(id), member = bones.map(joints => [0, 1, 2, 3].reduce((sum, k) => sum + (joints.includes(a.skinIndex.getComponent(id, k)) ? a.skinWeight.getComponent(id, k) : 0), 0));
+      const total = member.slice(1).reduce((sum, value) => sum + value, 0);
+      const thumb = skin.geometry.getAttribute('_thumb_volume')?.getX(id) ?? 0;
+      if (!total) return thumb;
+      return Math.max(thumb, roots.reduce((sum, root, d) => sum + member[d + 1] * (1 - THREE.MathUtils.smoothstep(p.clone().sub(root.start).dot(root.axis) / root.length, .25, .75)), 0) / total
+        * (1 - THREE.MathUtils.smoothstep(member[0], .05, .3)));
+    });
     const family = new Set([wrist, ...bones.flat()]);
     const shaped = new Set([...caps.flat(), ...fingers.slice(1).flatMap(finger => finger.vertices.map(v => v.id))]);
     const local = (ids: Iterable<number>, weights: Attributes) => [...ids].every(id => [0, 1, 2, 3].every(k => !weights.skinWeight.getComponent(id, k) || family.has(weights.skinIndex.getComponent(id, k))));
@@ -165,7 +232,7 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
       const id = faces[face][corner], at = face * 6 + corner * 2;
       triangles[at] = offsets.get(id)! * 15 + 3; triangles[at + 1] = normalGroups[id] * 3;
     }
-    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, faces, offsets, triangles, fingers };
+    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, faces, offsets, triangles, fingers, palm, opposition };
   });
   return { attributes: a, hands, groups: normalGroups, groupCount: normalKeys.size };
 }
@@ -179,12 +246,16 @@ export class FightingHands {
   private binding: Binding;
   private geometries: THREE.BufferGeometry[];
   private closed: THREE.Quaternion[][][];
+  private storyClosed: THREE.Quaternion[][][];
+  private storyGrips = [false, false];
   private snapshots: number[][] = [[], []];
   private enabled = false;
   private authored = false;
   private connector = false;
   private mouthCheck = false;
+  private chinSupport = false;
   private guide = false;
+  private tracker = false;
   private pistol = false;
   private amounts = [0, 0];
   private previous: (string | undefined)[] = [];
@@ -194,6 +265,7 @@ export class FightingHands {
 
   constructor(private rig: HeroRig) {
     this.skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    if (this.skin.geometry.hasAttribute('_nail_detail')) applyNailSurface(this.skin.material as THREE.MeshStandardMaterial);
     const source = this.skin.geometry;
     this.base = Object.fromEntries(attributes.map(name => [name, source.attributes[name]])) as Attributes;
     let binding = bindings.get(source); if (!binding) { binding = bind(this.skin, rig); bindings.set(source, binding); } this.binding = binding;
@@ -211,16 +283,25 @@ export class FightingHands {
         views[name] = owned; this.geometries.push(owned);
       }
     }
-    this.closed = binding.hands.map(hand => hand.axes.map((axes, d) => {
+    const closed = (ordinary: boolean) => binding.hands.map(hand => hand.axes.map((axes, d) => {
       const sign = hand.side === 'R' ? 1 : -1, parent = new THREE.Quaternion(), rotations: THREE.Quaternion[] = [];
       let directions = [[.83, -.5, .23], [.65, -.73, -.21], [-.1, -.45, -.88]].map(p => new THREE.Vector3(sign * p[0], p[1], p[2]).normalize());
-      if (d > 0) {
+      if (d > 0 && (!ordinary || d === 1)) {
         const [a, b, c] = axes.map(p => p.length()), old = [[.985, -.173], [.5, .866], [-.9, .436]].map(p => new THREE.Vector2(...p as [number, number]).normalize());
         const end = old[0].clone().multiplyScalar(a).addScaledVector(old[1], b).addScaledVector(old[2], c), dip = 70 * Math.PI / 180;
         const length = Math.sqrt(b * b + c * c + 2 * b * c * Math.cos(dip)), angle = Math.atan2(c * Math.sin(dip), b + c * Math.cos(dip));
         const bend = Math.acos(THREE.MathUtils.clamp((end.lengthSq() - a * a - length * length) / (2 * a * length), -1, 1)), pip = bend - angle;
         const start = end.angle() - Math.atan2(length * Math.sin(bend), a + length * Math.cos(bend));
         directions = [start, start + pip, start + pip + dip].map((t, j) => new THREE.Vector3(sign * Math.cos(t), Math.sin(t), j === 0 ? axes[0].z / a * .5 : 0).normalize());
+      } else if (d > 1) {
+        // Close the proximal phalanx across the palm, then curl the two
+        // remaining joints. Preserving the old fingertip target left an air
+        // gap between the distal pads and palm even at a full fighting grip.
+        const pip = [95, 93, 86][d - 2];
+        directions = [-10, -10 + pip, 60 + pip].map((angle, j) => {
+          const t = angle * Math.PI / 180;
+          return new THREE.Vector3(sign * Math.cos(t), Math.sin(t), j === 0 ? axes[0].z / axes[0].length() * .5 : 0).normalize();
+        });
       }
       directions.forEach((target, j) => {
         const world = d === 0 ? new THREE.Quaternion().setFromUnitVectors(axes[j].clone().normalize(), target) : frame(target).multiply(frame(axes[j]).invert());
@@ -228,6 +309,7 @@ export class FightingHands {
       });
       return rotations;
     }));
+    this.closed = closed(true); this.storyClosed = closed(false);
   }
 
   begin(input?: MotionInput): void {
@@ -235,14 +317,19 @@ export class FightingHands {
     // story gesture at zero still opts out; only this inactive tint is neutral.
     const tracking = input?.performance === 'touch', pod = input?.podBreather !== undefined;
     this.pistol = false;
+    this.storyGrips.fill(false);
     this.connector = input?.cabin?.kind === 'core' && input.cabin.role === 'morpheus' && input.cabin.elapsed > 2 && input.cabin.elapsed < 6.8;
     this.mouthCheck = input?.training?.kind === 'jump_return' && input.training.role === 'neo';
+    this.chinSupport = input?.training?.kind === 'download' && input.training.role === 'morpheus';
     this.guide = input?.training?.kind === 'red_dress' && input.training.role === 'morpheus' && Boolean(input.training.attention);
-    this.authored = input?.pills?.role === 'neo' || tracking || pod || this.connector || this.mouthCheck || this.guide;
+    this.tracker = input?.interrogation?.role === 'smith' && (input.interrogation.phase === 'done'
+      || input.interrogation.phase === 'coercion' && input.interrogation.elapsed > 13.8);
+    this.authored = input?.pills?.role === 'neo' || tracking || pod || this.connector || this.mouthCheck || this.chinSupport || this.guide || this.tracker;
     this.enabled = Boolean(input && !input.armed && (!input.seated || this.authored) && !input.floorSeated && !input.riding && !(input.climbing ?? 0)
       && Object.entries(input).every(([key, value]) => value === undefined || value === false || (key === 'mirror' && value === 0)
         || (key === 'pills' && this.authored) || tracking && ['performance', 'mirror', 'mirrorBeat', 'mirrorEntry'].includes(key)
-        || pod && ['performance', 'podWake', 'podBreather'].includes(key) || this.connector && key === 'cabin' || (this.mouthCheck || this.guide) && key === 'training' || ordinaryInputs.has(key as keyof MotionInput)));
+        || pod && ['performance', 'podWake', 'podBreather'].includes(key) || this.connector && key === 'cabin' || (this.mouthCheck || this.chinSupport || this.guide) && key === 'training'
+        || this.tracker && key === 'interrogation' || ordinaryInputs.has(key as keyof MotionInput)));
     for (const name of attributes) this.skin.geometry.setAttribute(name, this.base[name]);
   }
 
@@ -250,24 +337,69 @@ export class FightingHands {
   pose(side: string, grip: number, storyGrip = false): boolean {
     if ((!this.enabled || this.authored) && !storyGrip) return false;
     const which = side === 'R' ? 0 : 1, hand = this.binding.hands[which], amount = THREE.MathUtils.clamp(grip, 0, 1);
+    const closed = storyGrip ? this.storyClosed : this.closed;
+    const chin = this.chinSupport && storyGrip && side === 'R';
+    const closure = chin ? THREE.MathUtils.smoothstep(amount, 0, .8) : amount;
+    this.storyGrips[which] = storyGrip;
     if (amount > 0) {
-      hand.bones.forEach((joints, d) => joints.forEach((joint, j) => this.skin.skeleton.bones[joint].quaternion.slerp(this.closed[which][d][j], d === 0 ? amount * amount : amount)));
+      hand.bones.forEach((joints, d) => joints.forEach((joint, j) => this.skin.skeleton.bones[joint].quaternion.slerp(closed[which][d][j], d === 0 ? closure * closure : closure)));
       const thumb = this.skin.skeleton.bones[hand.bones[0][0]], sign = side === 'R' ? 1 : -1;
-      thumb.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -sign * .55 * Math.sin(Math.PI * amount)));
-      thumb.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), sign * .14 * amount));
+      thumb.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -sign * .55 * Math.sin(Math.PI * closure)));
+      thumb.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), sign * .14 * closure));
+      if (chin) {
+        const [base, middle, tip] = hand.bones[0].map(joint => this.skin.skeleton.bones[joint]);
+        const parent = base.quaternion.clone().multiply(middle.quaternion);
+        const direction = new THREE.Vector3(-.4, -1, 0).normalize();
+        const opposed = new THREE.Quaternion().setFromUnitVectors(hand.axes[0][2].clone().normalize(), direction);
+        tip.quaternion.slerp(parent.invert().multiply(opposed), THREE.MathUtils.smoothstep(amount, .8, 1));
+      }
+      if (hand.opposition && (!storyGrip || chin)) this.opposeThumb(hand, amount, closed[which][1]);
     }
     this.amounts[which] = amount;
     this.snapshots[which] = hand.bones.flatMap(joints => joints.flatMap(joint => this.skin.skeleton.bones[joint].quaternion.toArray()));
     return true;
   }
 
+  private opposeThumb(hand: Hand, amount: number, indexPose: THREE.Quaternion[]): void {
+    const data = hand.opposition!, bones = this.skin.skeleton.bones;
+    const index = hand.bones[1].map(joint => bones[joint]);
+    const radial = data.radial.clone().applyQuaternion(indexPose[0].clone().multiply(indexPose[1]).multiply(indexPose[2]));
+    const target = index[0].position.clone().add(hand.axes[1][0].clone().applyQuaternion(indexPose[0]))
+      .add(hand.axes[1][1].clone().applyQuaternion(indexPose[0].clone().multiply(indexPose[1])))
+      .addScaledVector(radial, data.clearance);
+    const thumb = hand.bones[0].map(joint => bones[joint]), rest = [hand.axes[0][0], hand.axes[0][1], data.pad];
+    const lengths = rest.map(axis => axis.length()), along = target.sub(thumb[0].position), distance = along.length(); along.normalize();
+    const outward = radial.clone().addScaledVector(along, -radial.dot(along)).normalize();
+    const hinge = new THREE.Vector3().crossVectors(along, outward).normalize();
+    // Couple MCP/IP flexion in the thumb's opposition plane. The endpoint
+    // follows the curled index surface; the nail frame supplies the roll.
+    // This avoids treating the thumb as three ordinary finger hinges.
+    const end = (bend: number) => new THREE.Vector2(lengths[0] + lengths[1] * Math.cos(bend) + lengths[2] * Math.cos(bend * 1.65),
+      lengths[1] * Math.sin(bend) + lengths[2] * Math.sin(bend * 1.65));
+    let low = 0, high = THREE.MathUtils.degToRad(70);
+    for (let i = 0; i < 24; i++) { const mid = (low + high) / 2; if (end(mid).length() > distance) low = mid; else high = mid; }
+    const bend = (low + high) / 2, endpoint = end(bend), offset = endpoint.angle();
+    const orientation = (axis: THREE.Vector3, nail: THREE.Vector3) => {
+      const y = axis.clone().normalize(), z = nail.clone().addScaledVector(y, -nail.dot(y)).normalize();
+      return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(y, z), y, z));
+    };
+    let parent = new THREE.Quaternion();
+    for (const [j, angle] of [0, bend, bend * 1.65].entries()) {
+      const direction = along.clone().multiplyScalar(Math.cos(angle - offset)).addScaledVector(outward, -Math.sin(angle - offset));
+      const nail = new THREE.Vector3().crossVectors(hinge, direction).normalize();
+      const world = orientation(direction, nail).multiply(orientation(rest[j], data.nail).invert());
+      thumb[j].quaternion.identity().slerp(parent.clone().invert().multiply(world), amount * amount);
+      parent = world;
+    }
+  }
+
   update(): void {
     if (!this.enabled) return;
     const keys = this.binding.hands.map((hand, which) => {
-      if ((this.connector || this.mouthCheck || this.guide || this.pistol) && which === 1) return undefined;
+      if ((this.connector || this.mouthCheck || this.chinSupport || this.guide || this.tracker || this.pistol) && which === 1) return undefined;
       const current = hand.bones.flatMap(joints => joints.flatMap(joint => this.skin.skeleton.bones[joint].quaternion.toArray()));
       const wrist = this.skin.skeleton.bones[hand.wrist];
-      const pose = this.authored ? ['authored', this.pistol, ...current] : [this.amounts[which]];
+      const pose = this.authored ? ['authored', this.pistol, this.tracker, ...current] : [this.amounts[which], this.storyGrips[which]];
       return this.authored || current.every((v, i) => v === this.snapshots[which][i])
         ? [...pose, ...wrist.quaternion.toArray(), ...wrist.position.toArray(), ...wrist.scale.toArray()].join(',') : undefined;
     });
@@ -288,7 +420,8 @@ export class FightingHands {
 
   private shapeFingers(hand: Hand, inverse: THREE.Matrix4, transform: number[]): void {
     const skin = this.skin, data = this.scratch;
-    const key = (this.pistol ? hand.pistolCacheable : hand.cacheable) ? [this.pistol, ...hand.bones.flatMap(joints => joints.flatMap(joint => skin.skeleton.bones[joint].quaternion.toArray()))].join(',') : undefined;
+    const includeThumb = this.pistol || this.tracker;
+    const key = (includeThumb ? hand.pistolCacheable : hand.cacheable) ? [this.pistol, this.tracker, ...hand.bones.flatMap(joints => joints.flatMap(joint => skin.skeleton.bones[joint].quaternion.toArray()))].join(',') : undefined;
     const cached = this.shapes.get(hand);
     // These material offsets live in wrist space. Reuse the articulation,
     // while deform still updates skinning and every face normal this frame.
@@ -316,14 +449,14 @@ export class FightingHands {
     const sample = { p: new THREE.Vector3(), t: new THREE.Vector3(), n: new THREE.Vector3(), k: 0 };
     const normal = new THREE.Vector3(), binormal = new THREE.Vector3(), goal = new THREE.Vector3();
     for (const [digit, finger] of hand.fingers.entries()) {
-      if (digit === 0 && !this.pistol) continue;
+      if (digit === 0 && !includeThumb) continue;
       const points = finger.joints.map(j => new THREE.Vector3().setFromMatrixPosition(skin.skeleton.bones[j].matrixWorld).applyMatrix4(inverse));
       const caps = hand.caps[digit], tip = new THREE.Vector3();
       for (const id of caps) {
         const ordinal = hand.offsets.get(id)!, at = ordinal * (delta ? 3 : 15), base = delta ?? data;
         tip.x += base[at]; tip.y += base[at + 1]; tip.z += base[at + 2];
       }
-      const curve = new HandCurve([...points, tip.divideScalar(caps.length)], finger.radius);
+      const curve = new HandCurve([...(finger.metacarpal ? [finger.metacarpal] : []), ...points, tip.divideScalar(caps.length)], finger.radius);
       for (const v of finger.vertices) {
         curve.sample(THREE.MathUtils.lerp(curve.anchors[v.interval - 1], curve.anchors[v.interval], v.u), sample);
         normal.set(0, 0, 1).addScaledVector(sample.t, -sample.t.z).normalize(); binormal.crossVectors(sample.t, normal);
@@ -343,6 +476,49 @@ export class FightingHands {
         data[at + 3] = data[at] + delta[offset]; data[at + 4] = data[at + 1] + delta[offset + 1]; data[at + 5] = data[at + 2] + delta[offset + 2];
       }
       this.shapes.set(hand, { key: key!, delta });
+    }
+  }
+
+  private shapePalm(hand: Hand, frames: number[][], toWrist: THREE.Matrix4): void {
+    if ((this.authored || this.storyGrips[hand.side === 'R' ? 0 : 1]) && !hand.fingers[1].metacarpal) return;
+    // Linear skinning collapses the webs when the finger roots close across
+    // the wrist. Blend rigid transforms there; the curved finger surfaces
+    // still own the phalanges. Refined MCP spans also need that volume in
+    // authored gestures; the blend fades before the distal prop-contact pads.
+    const transforms = frames.map(elements => {
+      const matrix = new THREE.Matrix4().multiplyMatrices(toWrist, new THREE.Matrix4().fromArray(elements)), rotation = new THREE.Quaternion().setFromRotationMatrix(matrix);
+      const translation = new THREE.Vector3().setFromMatrixPosition(matrix);
+      const dual = new THREE.Quaternion(translation.x, translation.y, translation.z, 0).multiply(rotation);
+      return { rotation, dual };
+    });
+    const a = this.binding.attributes, point = new THREE.Vector3(), rotation = new THREE.Quaternion();
+    for (const [ordinal, id] of hand.vertices.entries()) {
+      const amount = hand.palm[ordinal];
+      if (amount < 1e-6) continue;
+      let reference = 0, maximum = 0;
+      for (let k = 0; k < 4; k++) {
+        const bone = a.skinIndex.getComponent(id, k), weight = a.skinWeight.getComponent(id, k);
+        if (weight > maximum) { maximum = weight; reference = bone; }
+      }
+      let x = 0, y = 0, z = 0, w = 0, dx = 0, dy = 0, dz = 0, dw = 0;
+      for (let k = 0; k < 4; k++) {
+        const transform = transforms[a.skinIndex.getComponent(id, k)], q = transform.rotation, d = transform.dual;
+        const weight = a.skinWeight.getComponent(id, k) * (q.dot(transforms[reference].rotation) < 0 ? -1 : 1);
+        x += q.x * weight; y += q.y * weight; z += q.z * weight; w += q.w * weight;
+        dx += d.x * weight; dy += d.y * weight; dz += d.z * weight; dw += d.w * weight;
+      }
+      const length = Math.hypot(x, y, z, w);
+      x /= length; y /= length; z /= length; w /= length;
+      dx /= length; dy /= length; dz /= length; dw /= length;
+      rotation.set(x, y, z, w);
+      point.fromBufferAttribute(a.position, id).applyQuaternion(rotation);
+      point.x += dx * w - dw * x - dy * z + dz * y;
+      point.y += dy * w - dw * y + dx * z - dz * x;
+      point.z += dz * w - dw * z - dx * y + dy * x;
+      const at = ordinal * 15;
+      this.scratch[at + 3] += (point.x - this.scratch[at + 3]) * amount;
+      this.scratch[at + 4] += (point.y - this.scratch[at + 4]) * amount;
+      this.scratch[at + 5] += (point.z - this.scratch[at + 5]) * amount;
     }
   }
 
@@ -375,6 +551,7 @@ export class FightingHands {
       data[at + 12] = (d * h - e * g) / det; data[at + 13] = (b * g - aa * h) / det; data[at + 14] = (aa * e - b * d) / det;
     }
     this.shapeFingers(hand, inverse, transform);
+    this.shapePalm(hand, frames, toWrist);
     const normals = this.normals; normals.fill(0);
     const triangles = hand.triangles;
     for (let face = 0; face < triangles.length; face += 6) {
