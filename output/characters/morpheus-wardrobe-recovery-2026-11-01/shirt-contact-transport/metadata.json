@@ -1,0 +1,33 @@
+{
+  "sourceHashes": {
+    "construct-shirt-contact-transport.py": "23561252699d6e76303368c2f47bbe051a13eaf8a4fdfa3a846466efbf48cdff",
+    "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3",
+    "shirt_targets.py": "b81173545db0f8846002466811463333a3b82d17c0a23257f1d8da13aace2591",
+    "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021"
+  },
+  "inputGeometrySha256": "728c93fe328ca9d05e811a3322de312b5046f0d831d251dbd28169efc7be2802",
+  "sourceShirtVertices": 11977,
+  "weldedShirtVertices": 11675,
+  "shirtFaces": 23046,
+  "otherLayers": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Anatomical_head_and_hands",
+    "Tailored_trousers",
+    "shoes01",
+    "high-poly",
+    "Anatomical_wrist_skin",
+    "morpheus-ambush-collar",
+    "morpheus-ambush-tie"
+  ],
+  "allFaces": 97646,
+  "torsoAnchors": 3950,
+  "frames": 481,
+  "acceptedForProduction": false,
+  "energyEquilibriumProven": false,
+  "targetMotion": "Transport the preceding contact correction with authored motion; quintic recovery from 3.2 seconds to exact zero at 8 seconds.",
+  "scope": "Complete shirt and twelve unchanged visible inner layers. CCD applies to the linear cache segments, not arbitrary runtime bone curves or the outer coat."
+}

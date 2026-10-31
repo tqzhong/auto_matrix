@@ -1,0 +1,23 @@
+{
+  "sourceHashes": {
+    "construct-preparation-contact.py": "3b475ec623780fa3213d1c949ad7883b48f7c3ad50bf48e1503832b3026bcc90",
+    "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "preparation-input/manifest.json": "fa7760815e2cac2188b736c96bac7e56aeb70b1105ef653f792ba030c20110ae",
+    "preparation-full-physics/metadata.json": "17b556ab21e96d2f160ce82f4e23c8d95aae555b579b8cba831ffb7898faf0ff",
+    "preparation-full-physics/summary.json": "a6cd70bb8c0183ca5b6148a049d0fc7e3e93e8056451eacd7be5537bb35ec627"
+  },
+  "guideGeometrySha256": "806cd12dc8c6454c3ea59e040e6645e74093889ea3a71c1a2791907ff5f1a661",
+  "nativeGuide": "preparation-full-physics",
+  "nativeGuideConverged": false,
+  "displayVertices": 13960,
+  "displayFaces": 26916,
+  "allFaces": 124562,
+  "innerLayers": 13,
+  "boundaryAnchors": 189,
+  "frames": 49,
+  "coordinateType": "float64",
+  "acceptedForProduction": false,
+  "energyEquilibriumProven": false,
+  "scope": "All original visible garment faces, including vertex-neighbour intersections omitted by the native cloth guide. CCD covers linear keys; actual bone curves, appearance and full removal require independent checks."
+}

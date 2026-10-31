@@ -1,0 +1,442 @@
+[
+  {
+    "frame": 1,
+    "time": 0,
+    "seconds": 0.05840316694229841,
+    "solverStatus": [],
+    "boundaryErrorMetres": 5.736385824916889e-08
+  },
+  {
+    "frame": 2,
+    "time": 0.016666666666666666,
+    "seconds": 1.1845264174044132,
+    "solverStatus": [
+      "NO_CONVERGENCE",
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1029919640896458e-07
+  },
+  {
+    "frame": 3,
+    "time": 0.03333333333333333,
+    "seconds": 2.1717064576223493,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0523047692589818e-07
+  },
+  {
+    "frame": 4,
+    "time": 0.05,
+    "seconds": 3.004912666976452,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0527773202649142e-07
+  },
+  {
+    "frame": 5,
+    "time": 0.06666666666666667,
+    "seconds": 3.8266214169561863,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1573473950627749e-07
+  },
+  {
+    "frame": 6,
+    "time": 0.08333333333333333,
+    "seconds": 4.657392833381891,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.215715598509401e-07
+  },
+  {
+    "frame": 7,
+    "time": 0.1,
+    "seconds": 5.595524958334863,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1008802009324412e-07
+  },
+  {
+    "frame": 8,
+    "time": 0.11666666666666667,
+    "seconds": 6.632907583378255,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0404041544202615e-07
+  },
+  {
+    "frame": 9,
+    "time": 0.13333333333333333,
+    "seconds": 7.843887625262141,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.7494369401075876e-07
+  },
+  {
+    "frame": 10,
+    "time": 0.15,
+    "seconds": 9.121502333320677,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.2646899145503583e-07
+  },
+  {
+    "frame": 11,
+    "time": 0.16666666666666666,
+    "seconds": 10.59136504214257,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0693844050445015e-07
+  },
+  {
+    "frame": 12,
+    "time": 0.18333333333333332,
+    "seconds": 12.176313458010554,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1026416265039788e-07
+  },
+  {
+    "frame": 13,
+    "time": 0.2,
+    "seconds": 13.872037082910538,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.862156326505817e-07
+  },
+  {
+    "frame": 14,
+    "time": 0.21666666666666667,
+    "seconds": 15.586684457957745,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.8752742820486924e-07
+  },
+  {
+    "frame": 15,
+    "time": 0.23333333333333334,
+    "seconds": 17.320206833072007,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1624624973160995e-07
+  },
+  {
+    "frame": 16,
+    "time": 0.25,
+    "seconds": 19.05217708274722,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0480634035295386e-07
+  },
+  {
+    "frame": 17,
+    "time": 0.26666666666666666,
+    "seconds": 20.792181291617453,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0724199139430005e-07
+  },
+  {
+    "frame": 18,
+    "time": 0.2833333333333333,
+    "seconds": 22.6600835416466,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.3904739858986348e-07
+  },
+  {
+    "frame": 19,
+    "time": 0.3,
+    "seconds": 24.77189845778048,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1982201527486778e-07
+  },
+  {
+    "frame": 20,
+    "time": 0.31666666666666665,
+    "seconds": 26.864626082591712,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.336342219434687e-07
+  },
+  {
+    "frame": 21,
+    "time": 0.3333333333333333,
+    "seconds": 28.920954207889736,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0947152039002541e-07
+  },
+  {
+    "frame": 22,
+    "time": 0.35,
+    "seconds": 31.032183875329792,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.880154714310026e-07
+  },
+  {
+    "frame": 23,
+    "time": 0.36666666666666664,
+    "seconds": 33.2629389166832,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1485985265262017e-07
+  },
+  {
+    "frame": 24,
+    "time": 0.38333333333333336,
+    "seconds": 35.474306125193834,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1133377061621498e-07
+  },
+  {
+    "frame": 25,
+    "time": 0.4,
+    "seconds": 37.667587749660015,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1225668904007337e-07
+  },
+  {
+    "frame": 26,
+    "time": 0.4166666666666667,
+    "seconds": 39.90745612513274,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.105079849582838e-07
+  },
+  {
+    "frame": 27,
+    "time": 0.43333333333333335,
+    "seconds": 42.12256900034845,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1397518213742903e-07
+  },
+  {
+    "frame": 28,
+    "time": 0.45,
+    "seconds": 44.72968487534672,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0440345227370028e-07
+  },
+  {
+    "frame": 29,
+    "time": 0.4666666666666667,
+    "seconds": 46.92202091682702,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1586972778794879e-07
+  },
+  {
+    "frame": 30,
+    "time": 0.48333333333333334,
+    "seconds": 49.18334725033492,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1379961296942244e-07
+  },
+  {
+    "frame": 31,
+    "time": 0.5,
+    "seconds": 51.39241720829159,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0895266046884757e-07
+  },
+  {
+    "frame": 32,
+    "time": 0.5166666666666667,
+    "seconds": 53.79975683335215,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1760707839863834e-07
+  },
+  {
+    "frame": 33,
+    "time": 0.5333333333333333,
+    "seconds": 56.08087091706693,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1273474460440774e-07
+  },
+  {
+    "frame": 34,
+    "time": 0.55,
+    "seconds": 58.461961874738336,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 6.084638793939148e-08
+  },
+  {
+    "frame": 35,
+    "time": 0.5666666666666667,
+    "seconds": 60.860162291675806,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.405052289602627e-07
+  },
+  {
+    "frame": 36,
+    "time": 0.5833333333333334,
+    "seconds": 64.02836087532341,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1058388558563021e-07
+  },
+  {
+    "frame": 37,
+    "time": 0.6,
+    "seconds": 67.63767787534744,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 2.1262155651219231e-07
+  },
+  {
+    "frame": 38,
+    "time": 0.6166666666666667,
+    "seconds": 70.7033410416916,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 2.1761899868087418e-07
+  },
+  {
+    "frame": 39,
+    "time": 0.6333333333333333,
+    "seconds": 73.72068000026047,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1668056434346792e-07
+  },
+  {
+    "frame": 40,
+    "time": 0.65,
+    "seconds": 76.86976066697389,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.5289608002655816e-07
+  },
+  {
+    "frame": 41,
+    "time": 0.6666666666666666,
+    "seconds": 79.89686979167163,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.244481608377726e-07
+  },
+  {
+    "frame": 42,
+    "time": 0.6833333333333333,
+    "seconds": 82.96744741685688,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 2.0231189725547984e-07
+  },
+  {
+    "frame": 43,
+    "time": 0.7,
+    "seconds": 86.02828420791775,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1612967374008977e-07
+  },
+  {
+    "frame": 44,
+    "time": 0.7166666666666667,
+    "seconds": 89.0431342497468,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.9548233577827664e-07
+  },
+  {
+    "frame": 45,
+    "time": 0.7333333333333333,
+    "seconds": 91.48281283304095,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0850173879841694e-07
+  },
+  {
+    "frame": 46,
+    "time": 0.75,
+    "seconds": 93.92062104213983,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.205665098441491e-07
+  },
+  {
+    "frame": 47,
+    "time": 0.7666666666666667,
+    "seconds": 96.57433949969709,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.226408114793818e-07
+  },
+  {
+    "frame": 48,
+    "time": 0.7833333333333333,
+    "seconds": 99.08980162534863,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.581669644231337e-07
+  },
+  {
+    "frame": 49,
+    "time": 0.8,
+    "seconds": 101.85880674980581,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.3115730875093136e-07
+  }
+]

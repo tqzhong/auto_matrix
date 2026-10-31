@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: nonzero saved removals rebuild the same actual body, hands and single detached garment after cold load
+not ok 1 - nonzero saved removals rebuild the same actual body, hands and single detached garment after cold load
+  ---
+  duration_ms: 5138.926042
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:1:6420'
+  failureType: 'testCodeFailure'
+  error: |-
+    the independent garment must leave the body hierarchy
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:110:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the completed coat stays in the eighth-floor world while Morpheus leaves for the pipe and is controlled elsewhere
+not ok 2 - the completed coat stays in the eighth-floor world while Morpheus leaves for the pipe and is controlled elsewhere
+  ---
+  duration_ms: 3084.740125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:1:7297'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:125:32)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: clearing a removed coat restores borrowed binding and material while releasing its own garment resources
+not ok 3 - clearing a removed coat restores borrowed binding and material while releasing its own garment resources
+  ---
+  duration_ms: 3205.615167
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:1:8143'
+  failureType: 'testCodeFailure'
+  error: 'removed cloth needs its own skeleton'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:141:39)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: world changes and visits hide the placed coat and returning reconstructs its saved location without changing the story
+not ok 4 - world changes and visits hide the placed coat and returning reconstructs its saved location without changing the story
+  ---
+  duration_ms: 3201.56525
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:1:9567'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/tests/ambush-doff-renderer.test.mts:157:32)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15222.988291

@@ -1,0 +1,67 @@
+{
+  "recordedAtUtc": "2026-10-31T21:00:37.892987+00:00",
+  "runtimeHead": "fca717f84058fe9ad6344c65f0250cb04527e463",
+  "runtimeSourceSha256": "5987e83c9f62c5c1b9965d28ca54c3f92784a6a38b879352a3e88edf331709ed",
+  "runtimeSourceFiles": 496,
+  "runtimeTrackedMatchesHead": true,
+  "shirt": {
+    "wholeEightSecondsPresent": true,
+    "frames": 481,
+    "subsegments": 586,
+    "independentDisplaySamples": 1173,
+    "vertices": 11977,
+    "faces": 23046,
+    "otherLayers": 12,
+    "geometryPassed": true
+  },
+  "body": {
+    "frameCount": 587,
+    "vertices": 51490,
+    "innerLayers": 13,
+    "endTime": 8,
+    "minimumDeltaSeconds": 0.002083333333333215,
+    "standingBoundaryErrorMetres": 0,
+    "testsPassed": 2
+  },
+  "preparation": {
+    "wholePreparationPresent": true,
+    "endSeconds": 0.8,
+    "frames": 49,
+    "subsegments": 120,
+    "independentDisplaySamples": 241,
+    "displayVertices": 14600,
+    "displayFaces": 26916,
+    "innerLayers": 13,
+    "protectedBoundaries": 189,
+    "geometryPassed": true,
+    "maximumGuideCorrectionMetres": 0.00999016133325749,
+    "nativeGuideConverged": false,
+    "energyEquilibriumProven": false
+  },
+  "baseline": {
+    "typecheck": true,
+    "productionBuild": true,
+    "regressionPassed": 359,
+    "worldGarmentRendererPassed": 0,
+    "worldGarmentRendererFailed": 4,
+    "fullTestSuiteRun": false
+  },
+  "sourceHashes": {
+    "shirt-contact-transport-display-verification.json": "570a9786bbb85a76b81fe2b99bbce9124268dc1bfe6c2290140d930513384191",
+    "shirt-contact-transport/report.json": "5e300a17dc2e906cc950ace82b0936c11497d939fecd44186f88653fa1322fd2",
+    "shirt-contact-transport/metadata.json": "42b04d33083b4e5ddad5f00110fcab100caa25495c0d4acde6be44668b62630c",
+    "preparation-contact-display-verification.json": "bbd45731150ac2c7dea0dfd304a70df493de5780cd301819feb2efea8e889cc9",
+    "preparation-full-physics-contact/report.json": "0531a8ac02e4d3646620791528f736f53e25a98621a1e6f29ab37bae36386e7d",
+    "preparation-full-physics-contact/metadata.json": "a010aacdc227ae911f168cb08bb1bab82533cfff2c258b06f7334b134308207b",
+    "corrected-body-input-verification.json": "76ec0bca2b214ea372fa955d7a4832bc62bd16c42f17ae8c280f2d95d218ec2c",
+    "corrected-body-input/manifest.json": "95ecd6424e348717d57619d201c544d22785b697db8fc830d0301133afd524eb",
+    "preparation-contact-render-receipt.json": "29430537ce0f3ec3f85a81b1a92af0bb46643a333e7a22302b348803f27737f0",
+    "shirt-transport-render-receipt-136.json": "f6c99d0436237c273fac4c26b1806835dd06155551058c0e9198fd70619d504f"
+  },
+  "wholeRemovalAccepted": false,
+  "highQualityTrilogyGroups": 0,
+  "totalTrilogyGroups": 42,
+  "actorFinalConfirmations": 0,
+  "totalCoreActors": 4,
+  "acceptedForProduction": false
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "frame": 1
+  },
+  {
+    "frame": 2,
+    "status": [
+      "NO_CONVERGENCE",
+      "SUCCESS"
+    ],
+    "max_error": 0.009987273253500462,
+    "min_error": 0.0,
+    "avg_error": 0.00926458090543747,
+    "max_iterations": 100,
+    "min_iterations": 14,
+    "avg_iterations": 25.850004196166992
+  },
+  {
+    "frame": 3,
+    "status": [
+      "SUCCESS"
+    ],
+    "max_error": 0.009989098645746708,
+    "min_error": 0.009246175177395344,
+    "avg_error": 0.009669924154877663,
+    "max_iterations": 15,
+    "min_iterations": 14,
+    "avg_iterations": 14.399998664855957
+  },
+  {
+    "frame": 4,
+    "status": [
+      "SUCCESS"
+    ],
+    "max_error": 0.009985088370740414,
+    "min_error": 0.009334624744951725,
+    "avg_error": 0.009680569171905518,
+    "max_iterations": 18,
+    "min_iterations": 14,
+    "avg_iterations": 14.899998664855957
+  }
+]

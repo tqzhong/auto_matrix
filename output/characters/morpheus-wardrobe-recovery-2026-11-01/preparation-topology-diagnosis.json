@@ -1,0 +1,30 @@
+[
+  {
+    "name": "preparation-physics",
+    "vertices": 3206,
+    "faces": 5918,
+    "smallestAreaMetresSquared": 6.232445044905051e-09,
+    "degenerateFaces": 0,
+    "stitches": 222,
+    "shortestStitchMetres": 0.001200127527583401,
+    "medianStitchMetres": 0.012736029161424094,
+    "longestStitchMetres": 0.041418896504526584,
+    "fixedPoints": 189,
+    "minimumPinnedBodyGapMetres": 0.005447239279747009,
+    "pinsInsideCollisionMargin": 0
+  },
+  {
+    "name": "preparation-full-probe",
+    "vertices": 13960,
+    "faces": 26916,
+    "smallestAreaMetresSquared": 1.2708565438916496e-08,
+    "degenerateFaces": 0,
+    "stitches": 648,
+    "shortestStitchMetres": 0.0012001079331066182,
+    "medianStitchMetres": 0.008324423833156819,
+    "longestStitchMetres": 0.03193006486254494,
+    "fixedPoints": 189,
+    "minimumPinnedBodyGapMetres": 0.005447239279747009,
+    "pinsInsideCollisionMargin": 0
+  }
+]

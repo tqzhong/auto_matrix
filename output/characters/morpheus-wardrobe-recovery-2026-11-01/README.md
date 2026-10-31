@@ -1,6 +1,6 @@
 # 当前墨菲斯外套的物理校准
 
-2026-11-01，离线衣物制作。**完整脱外套仍未通过，未接入正常剧情，三部曲综合高质量验收仍为 0/42。** 本目录交付起始物理网格、完整显示绑定、自由下落控制，以及覆盖至八秒的身体输入和袖口释放检查；整件衣物的结束状态与连续接触仍失败。
+2026-11-01，离线衣物制作。**完整脱外套仍未通过，未接入正常剧情，三部曲综合高质量验收仍为 0/42。** 最新完成完整八秒衬衫与 0–0.8 秒外套准备段的独立显示面检查；整件衣物的退袖、真实抓放、结束状态和游戏恢复仍未通过。下方保留此前真实失败，最新范围见“完整衬衫与准备段检查”。
 
 ## 已完成的控制
 
@@ -66,7 +66,37 @@
 
 本轮运行时代码和正式人物资产未改动，前一轮刚执行的类型检查、构建和 359 项集成回归结果不变；四项世界衣物渲染失败仍保留。完整抓衣／退袖／松手／落地、成功／失败／读档、电影画面及实机性能继续制作，综合验收仍为 **0/42**。
 
-## 动态制作仍失败
+## 完整衬衫与准备段检查
+
+`shirt-contact-transport` 已完成 **481 帧、586 个连续子段**。独立检查使用全部 **11,977 个原显示顶点、23,046 面**，重新求值另外十二个实际内层与骨骼中间姿态；**1,173 个关键点／中间点全部为自身、内层零交叉**。最大制作校正约 **45.807 mm**，求解坐标在八秒末帧精确回到原始站姿；显示 Float32 的末帧坐标差约 0.049 μm。见 `shirt-contact-transport-display-verification.json`。它只接受这一有限接触检查，不证明任意非线性帧间路径、材质、电影动作或游戏运行。
+
+![2.25 秒的完整衬衫及十二个内层，原始与修正的正反面](shirt-transport-frame-136-inspection.png)
+
+该帧原始衣面为 364 组自交和 16 组层间交叉；修正帧通过独立检查。已实看肩袖、肘弯和背面，袖形保持，但褶皱仍偏圆，诊断图没有外套，也不是游戏画面或人物相似度验收。另在旧楼真实根位置与朝向检查该帧，CPU 读取内层顶点的最大坐标偏差约 0.320 mm，未检出新交叉；没有据此声称 GPU 大坐标蒙皮已验证。
+
+`export-corrected-body-input.mts` 将已检查的衬衫与其他十二层导出为 **587 个真实自适应时刻**，保留全部子段，不压回固定 60 Hz。全部十三层共 51,490 点，最后一个身体文件与第一个 Float32 文件逐字节相同，最短间隔约 1/480 秒。新增两项回归先 **0/2**，定位到摘要中的 `frames` 计数覆盖同名帧数组；计数改为 `frameCount` 并重新完整导出后为 **2/2**。原错误导出和源码快照保留为 `corrected-body-input-count-collision/` 与 `export-corrected-body-input-count-collision.mts`，没有修补缓存假装旧输入有效。
+
+外套准备段使用真实站姿开始，0–0.8 秒共 49 帧。以下三份原生对照均保留全部 26,916 个显示面和十三个实际内层，且第 2 帧仍含 `NO_CONVERGENCE`，不能作为合格模拟：
+
+| 原生对照 | 0.8 秒自身交叉 | 0.8 秒内层交叉 |
+| --- | ---: | ---: |
+| 3,206 点物理网格与完整显示绑定 | 88 | 146 |
+| 完整 13,960 点直接模拟 | 3 | 4 |
+| 完整密度、碰撞迭代 5→20 | 11 | 1 |
+
+把质量步数 20→80、初始支持矩阵改为精确单位矩阵，都没有清除早期不收敛；精确矩阵对照的四帧输出与原输出逐字节相同。退化三角面、零长连接和固定点落入碰撞厚度的诊断均未发现对应问题，未将这些假设写成根因。
+
+原生[相邻面候选过滤](https://github.com/blender/blender/blob/v4.5.3/source/blender/blenkernel/intern/collision.cc#L1031)会忽略共享任意顶点的两面。完整密度 0.8 秒的三组真实自交中，两组共享一个顶点，仍必须由完整显示面门槛拒绝。新 `construct-preparation-contact.py` 直接处理所有原衣面，自接触、与十三层接触、189 个袖口／领口控制及连续子段扫掠均保留，不使用删面或放宽阈值。
+
+修正后的准备段共有 **120 个连续子段**。独立检查展开回全部 **14,600 个原 UV 显示顶点与 26,916 面**，重新求值真实骨骼中间姿态，**241 个关键点／中间点全部为自身、内层零交叉**；189 个边界控制保持各自施加的路径。见 `preparation-contact-display-verification.json`。这项几何制作没有接受原生引导的未收敛状态，也没有证明布料能量平衡。
+
+![准备段 0、0.4、0.8 秒，完整外套及十三个内层的正反面](preparation-contact-inspection.png)
+
+六个视图已实看，衣面完整，肩背仍有偏硬褶皱和不自然的鼓起，未达到电影衣料质量。图像是完整网格的中性诊断材质，不能替代原片或游戏验收。
+
+完整八秒外套仍需制作；新内层的非均匀时刻还要正确接到原生模拟时间，不能把 587 帧都当成 1/60 秒。正在独立核查的时间控制与完整密度自由落体仍有数值误差或不收敛，未借它们宣布整衣通过。上轮对同一运行时代码实际执行的类型检查、生产构建和 **359/359** 集成回归通过；四项 `ambush-doff-renderer` 仍 **0/4**。正式人物资产、运行代码、5173 发布包和主存档未修改，三部曲综合验收保持 **0/42**。
+
+## 更早的动态失败控制
 
 0.8–1.6 秒的完整退袖烘焙仍有一个早期模拟帧未收敛。完整显示面与实际可见内层的检查如下，数字是相交三角面对数，不能当作穿入深度或画质评分：
 
@@ -140,6 +170,22 @@ node --import tsx "$MATRIX_CLOTH_WORK/verify-shirt-contact.mts" --cache=shirt-co
 ```
 
 第一条仍应有三项衣物失败；最后一条必须等完整 481 帧才可通过，不可用 `--prefix` 代替。`--prefix` 只生成明确标记为不完整、未生产验收的独立检查记录。
+
+完整衬衫检查通过后，在新制作副本中导出全部内层并检查：
+
+```sh
+node --import tsx "$MATRIX_CLOTH_WORK/export-corrected-body-input.mts"
+node --import tsx --test "$MATRIX_CLOTH_WORK/corrected-body-input.test.mts"
+node --import tsx "$MATRIX_CLOTH_WORK/export-preparation-input.mts"
+# 当前原生引导仍应退出 1；保留完整输出和未收敛状态。
+"$MATRIX_CLOTH_BLENDER" --background --factory-startup --threads 2 --python-exit-code 1 --python "$MATRIX_CLOTH_WORK/bake-preparation-full.py"
+node --import tsx "$MATRIX_CLOTH_WORK/audit-preparation.mts" --cache=preparation-full-physics
+output/tools/cloth-ipc-venv/bin/python "$MATRIX_CLOTH_WORK/construct-preparation-contact.py"
+node --import tsx "$MATRIX_CLOTH_WORK/verify-preparation-contact.mts"
+"$MATRIX_CLOTH_BLENDER" --background --factory-startup --threads 2 --python-exit-code 1 --python "$MATRIX_CLOTH_WORK/render-preparation-contact.py"
+```
+
+原生与其审计两条命令当前均应明确失败；后续几何制作通过并不改写前两条的拒绝。全时段和准备段的大缓存只保存在本机；提交的原生元数据、摘要、独立报告与源码哈希保留各自准确范围。
 
 站姿起点的独立制作控制：
 

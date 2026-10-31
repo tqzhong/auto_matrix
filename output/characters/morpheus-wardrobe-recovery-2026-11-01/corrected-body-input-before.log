@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: the complete body input retains every adaptive shirt key at its real timestamp
+not ok 1 - the complete body input retains every adaptive shirt key at its real timestamp
+  ---
+  duration_ms: 40.359583
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/corrected-body-input.test.mts:1:390'
+  failureType: 'testCodeFailure'
+  error: 'The body frame sequence must survive summary serialization.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/corrected-body-input.test.mts:12:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the thirteen full layers restore exactly and all body files match the recorded geometry
+not ok 2 - the thirteen full layers restore exactly and all body files match the recorded geometry
+  ---
+  duration_ms: 29.87625
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/corrected-body-input.test.mts:1:1623'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(Array.isArray(input.frames))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/corrected-body-input.test.mts:36:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 202.842375

@@ -1,0 +1,21 @@
+{
+  "frames": 587,
+  "vertices": 51490,
+  "innerLayers": 13,
+  "minimumDeltaSeconds": 0.002083333333333215,
+  "endTime": 8,
+  "standingBoundaryErrorMetres": 0,
+  "bodyGeometrySha256": "d80d6c8d5e4da732b834570c00cf11a072d78637f0dce13b741578381a92fc70",
+  "sourceHashes": {
+    "export-corrected-body-input.mts": "6371390e5af6a9a5aa0ce9d3e7948901c001637293b5451ce1d158af1f991f36",
+    "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+    "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021",
+    "shirt-contact-transport/metadata.json": "42b04d33083b4e5ddad5f00110fcab100caa25495c0d4acde6be44668b62630c",
+    "shirt-contact-transport/report.json": "5e300a17dc2e906cc950ace82b0936c11497d939fecd44186f88653fa1322fd2",
+    "shirt-contact-transport-display-verification.json": "570a9786bbb85a76b81fe2b99bbce9124268dc1bfe6c2290140d930513384191",
+    "front-standing-work/current-input/manifest.json": "0dc25fd3b0559872f760c5b1d22d7fa28f694713bbf9ad177e64116e6d75dcff",
+    "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+    "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+  },
+  "acceptedForProduction": false
+}

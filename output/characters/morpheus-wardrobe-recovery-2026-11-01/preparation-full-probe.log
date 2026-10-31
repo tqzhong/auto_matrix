@@ -1,0 +1,17 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+Info: Saved as "preparation.blend"
+Info: Saved as "preparation.blend"
+{"frame": 1, "time": 0, "seconds": 0.05521795805543661, "solverStatus": [], "boundaryErrorMetres": 5.736385824916889e-08}
+{"frame": 2, "time": 0.016666666666666666, "seconds": 1.312806375324726, "solverStatus": ["NO_CONVERGENCE", "SUCCESS"], "boundaryErrorMetres": 1.1029919640896458e-07}
+{"frame": 3, "time": 0.03333333333333333, "seconds": 2.2457412499934435, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.0523047692589818e-07}
+{"frame": 4, "time": 0.05, "seconds": 3.126880290918052, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.0527773202649142e-07}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-preparation-full.py", line 143, in <module>
+    assert all(row['solverStatus'] == ['SUCCESS'] for row in rows[1:]), 'Some preparation cloth steps did not converge.'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Some preparation cloth steps did not converge.
+
+Error: script failed, file: 'output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-preparation-full.py', exiting.
+
+Blender quit

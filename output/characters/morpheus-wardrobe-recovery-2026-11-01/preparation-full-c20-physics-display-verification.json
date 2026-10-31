@@ -1,0 +1,3839 @@
+{
+  "allFramesPresent": true,
+  "inspectedThroughFrame": 49,
+  "geometryPassed": false,
+  "nativeConverged": false,
+  "boundariesRetained": true,
+  "acceptedForProduction": false,
+  "sourceHashes": {
+    "bake-preparation-full-collisions.py": "a295c83b901db361df618d26c19fdede1b9248f1113898881562bde13c6375de",
+    "full_garment.py": "eee1adcdb50e7c16591f055658e947c3cd3415a158adde6ff840bec6172a3302",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "front-standing-work/boundary-cage-fit-4.json": "1617d5bd5c518dba5718c0296228f27d208c964ff5a634738661f84dcc0c8da5",
+    "preparation-input/manifest.json": "fa7760815e2cac2188b736c96bac7e56aeb70b1105ef653f792ba030c20110ae",
+    "../../../scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44",
+    "../../../scripts/cloth_display.py": "2a198ffb3439376847b0f62a4e8d431fe9c9bb207b67cbf916c6f8bef54eb62f"
+  },
+  "inputHashes": {
+    "export-preparation-input.mts": "9340e1324de52901f1b0051b48dab1cc01683d9cf5d128e10ee88330584dd569",
+    "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+    "front-standing-work/current-input/manifest.json": "0dc25fd3b0559872f760c5b1d22d7fa28f694713bbf9ad177e64116e6d75dcff",
+    "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+    "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+  },
+  "cacheDirectory": "preparation-full-c20-physics",
+  "verifierSha256": "0edc91aec42eb225b46daf6ec1e453fdf7ad6b906ffa6f5c7583ab38521e9b4b",
+  "scope": "Every original visible garment face, expanded through original part/UV indices, checked at native keys and actual bone-curve midpoints. This finite preparation prefix does not prove all intervals or the eight-second removal.",
+  "rows": [
+    {
+      "frame": 1,
+      "time": 0,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 2,
+      "time": 0.008333333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 2,
+      "time": 0.016666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 3,
+      "time": 0.025,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 3,
+      "time": 0.03333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 4,
+      "time": 0.04166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 4,
+      "time": 0.05,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 5,
+      "time": 0.058333333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 5,
+      "time": 0.06666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 6,
+      "time": 0.075,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 6,
+      "time": 0.08333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 7,
+      "time": 0.09166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 7,
+      "time": 0.1,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 8,
+      "time": 0.10833333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 8,
+      "time": 0.11666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 9,
+      "time": 0.125,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0021732489178039986
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.0000674478278233086
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.01069889998832559
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00004865726310926757
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0009368678201879498
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 9,
+      "time": 0.13333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0024676926815553786
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00014952671968894047
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00001567011288474557
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008536244751507754
+        },
+        {
+          "face": 19951,
+          "other": 19949,
+          "line": 0.002555486862740588
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 10,
+      "time": 0.14166666666666666,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.002451939651328493
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00015685656496907709
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00001238360596959344
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008444075233285595
+        },
+        {
+          "face": 19951,
+          "other": 19949,
+          "line": 0.002528694068580483
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 10,
+      "time": 0.15,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 4,
+      "body": 10,
+      "selfPairs": [
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.002434342001081462
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00016472424370931032
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.000835061841825132
+        },
+        {
+          "face": 19951,
+          "other": 19949,
+          "line": 0.002500004560449416
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.0019385524665553912
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.004440737130146706
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 87,
+          "envelope": 20400,
+          "line": 0.0014918050136577092
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 88,
+          "envelope": 20388,
+          "line": 0.0011938454355030605
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 88,
+          "envelope": 20389,
+          "line": 0.011960398545266992
+        }
+      ]
+    },
+    {
+      "frame": 11,
+      "time": 0.15833333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 21,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01715158794892664
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.012993785566080966
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0023984142713657786
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00016015831159020815
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.000010379735699237239
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.007198208137637746
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.004687575342124516
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.003269962594438532
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 88,
+          "envelope": 20389,
+          "line": 0.01637904984789465
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 88,
+          "envelope": 20400,
+          "line": 0.0025778324357510155
+        }
+      ]
+    },
+    {
+      "frame": 11,
+      "time": 0.16666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 24,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.0164219629630398
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013188716622140658
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0023645087223125687
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00015558275184637945
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00001175959539988225
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.012543979489228411
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.003931245302768039
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.007887381511463728
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 88,
+          "envelope": 20389,
+          "line": 0.013675241434311983
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 89,
+          "envelope": 20389,
+          "line": 0.006287119200802688
+        }
+      ]
+    },
+    {
+      "frame": 12,
+      "time": 0.175,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 24,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01627033358227998
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013199628288030717
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0022853691756187424
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00015537751809102966
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.010895655286460035
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.013527827202273145
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.003987662083479638
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.009107293218038773
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 88,
+          "envelope": 20389,
+          "line": 0.0110120601194711
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 89,
+          "envelope": 20389,
+          "line": 0.011751653471014468
+        }
+      ]
+    },
+    {
+      "frame": 12,
+      "time": 0.18333333333333332,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 27,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.016130214998437385
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013221124123810222
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0020453905880695403
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00015518825208274628
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011153379460818354
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 57,
+          "envelope": 20388,
+          "line": 0.0020955002042530708
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.012566716847633025
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.0039997886126351325
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.010447145514870994
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 967,
+          "line": 0.00011478643085937332
+        }
+      ]
+    },
+    {
+      "frame": 13,
+      "time": 0.19166666666666668,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 24,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01602022175496068
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013250581740127465
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.002032912247279318
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00014714120585711428
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011150447532369968
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 57,
+          "envelope": 20388,
+          "line": 0.005146890699701721
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.010512995110427071
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.004652576530706665
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.011682401762464725
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 967,
+          "line": 0.003144282880355489
+        }
+      ]
+    },
+    {
+      "frame": 13,
+      "time": 0.2,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 33,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.015914065479965912
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013286748774963978
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.002019416086202871
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00013890455920224226
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.01114903266400892
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 57,
+          "envelope": 20388,
+          "line": 0.008595078651096313
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.008358423803580806
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.0052642654031583545
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.01313246347124593
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 967,
+          "line": 0.002452418079643802
+        }
+      ]
+    },
+    {
+      "frame": 14,
+      "time": 0.20833333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 33,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01583868781942078
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013289095897366985
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0017183113811244446
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00011753940825781021
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011403265235712058
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 56,
+          "envelope": 20388,
+          "line": 0.004435731936006967
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 57,
+          "envelope": 20388,
+          "line": 0.017263288811498134
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 72,
+          "envelope": 20388,
+          "line": 0.003919854775362266
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.005763408603392979
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20389,
+          "line": 0.008420292090706532
+        }
+      ]
+    },
+    {
+      "frame": 14,
+      "time": 0.21666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 35,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01576270449370222
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013306601119259416
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0014021032760557547
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00009639327185094774
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011680685327229101
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 41,
+          "envelope": 20388,
+          "line": 0.0006589846006202949
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 56,
+          "envelope": 20388,
+          "line": 0.0006386224976810215
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 57,
+          "envelope": 20388,
+          "line": 0.004762720436990199
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 58,
+          "envelope": 20388,
+          "line": 0.018622422014442835
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20388,
+          "line": 0.0019584415767770823
+        }
+      ]
+    },
+    {
+      "frame": 15,
+      "time": 0.225,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 24,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01574225210221701
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.01359508673055213
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.001146948435709158
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.00007107335051344948
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011868346723095835
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 58,
+          "envelope": 20388,
+          "line": 0.018247194850218848
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20388,
+          "line": 0.006500064987096896
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 61,
+          "envelope": 20390,
+          "line": 0.009402723664444761
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 62,
+          "envelope": 20392,
+          "line": 0.001012380466008711
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 63,
+          "envelope": 20392,
+          "line": 0.0011733503256836624
+        }
+      ]
+    },
+    {
+      "frame": 15,
+      "time": 0.23333333333333334,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 22,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.015733982858876214
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.014518463415753781
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.0008049497922625395
+        },
+        {
+          "face": 19949,
+          "other": 19947,
+          "line": 0.000044928566946073056
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.012148189733934845
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 58,
+          "envelope": 20388,
+          "line": 0.01219381343891909
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20389,
+          "line": 0.0043465969843325784
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20388,
+          "line": 0.0065828865757571525
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 61,
+          "envelope": 20390,
+          "line": 0.016784504450966586
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 63,
+          "envelope": 20392,
+          "line": 0.001458558085926428
+        }
+      ]
+    },
+    {
+      "frame": 16,
+      "time": 0.24166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 6,
+      "body": 21,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.0156287864095183
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.014465557733974488
+        },
+        {
+          "face": 19949,
+          "other": 19946,
+          "line": 0.00011951526073989034
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.012821358259376634
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.000058924938849836545
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 58,
+          "envelope": 20388,
+          "line": 0.00994215209628464
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20389,
+          "line": 0.00801471169460746
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20390,
+          "line": 0.005788725313013079
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20388,
+          "line": 0.0045595129871899166
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 60,
+          "envelope": 20390,
+          "line": 0.012599195659768306
+        }
+      ]
+    },
+    {
+      "frame": 16,
+      "time": 0.25,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 19,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.015545213797993344
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.01442949736222443
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 58,
+          "envelope": 20388,
+          "line": 0.006914094132283088
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20389,
+          "line": 0.010596230222795955
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20390,
+          "line": 0.011734364702182858
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 59,
+          "envelope": 20388,
+          "line": 0.0025592135368751774
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 60,
+          "envelope": 20390,
+          "line": 0.006426431387386683
+        }
+      ]
+    },
+    {
+      "frame": 17,
+      "time": 0.2583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 14,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.015490107054721607
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.014159229425055667
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.01959956133135167
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.0036138511525922157
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 93,
+          "envelope": 20393,
+          "line": 0.006468666386954057
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.004134418690917761
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.014561668528701884
+        }
+      ]
+    },
+    {
+      "frame": 17,
+      "time": 0.26666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 13,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.015465500662683464
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013954783243556217
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.017080603926178304
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.00556712754764442
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 93,
+          "envelope": 20393,
+          "line": 0.00526507342296318
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.00657290820833926
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.013645453448721166
+        }
+      ]
+    },
+    {
+      "frame": 18,
+      "time": 0.27499999999999997,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 4,
+      "body": 12,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.01570112344801495
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013454728741122881
+        },
+        {
+          "face": 20394,
+          "other": 5791,
+          "line": 0.008482613493958185
+        },
+        {
+          "face": 20394,
+          "other": 5790,
+          "line": 0.005499138652197973
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.016082998505701298
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.00598624719753693
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 93,
+          "envelope": 20393,
+          "line": 0.001167101828970377
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.011326749676731501
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.012875798449491434
+        }
+      ]
+    },
+    {
+      "frame": 18,
+      "time": 0.2833333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 4,
+      "body": 12,
+      "selfPairs": [
+        {
+          "face": 19937,
+          "other": 5584,
+          "line": 0.016029550558499566
+        },
+        {
+          "face": 19943,
+          "other": 5590,
+          "line": 0.013035256925172899
+        },
+        {
+          "face": 20394,
+          "other": 5791,
+          "line": 0.014829494338902892
+        },
+        {
+          "face": 20394,
+          "other": 5790,
+          "line": 0.006047051598894847
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.01514449882316202
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 5784,
+          "line": 0.0034803002813331273
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.006214693795874046
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.012556903681357794
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.011829284509971793
+        }
+      ]
+    },
+    {
+      "frame": 19,
+      "time": 0.29166666666666663,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 11,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5791,
+          "line": 0.015186973584162454
+        },
+        {
+          "face": 20394,
+          "other": 5790,
+          "line": 0.0017721378707774016
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.015493311942096941
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.006194874328211764
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.012862142520547133
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.010101835954823092
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.001872758342976922
+        }
+      ]
+    },
+    {
+      "frame": 19,
+      "time": 0.3,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 11,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5791,
+          "line": 0.0062701078396205385
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.015586268937051569
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.006314150311653235
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.01302591618126776
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.008399689113655281
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.0030486436361335527
+        }
+      ]
+    },
+    {
+      "frame": 20,
+      "time": 0.3083333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 13,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5787,
+          "line": 0.012184556062611478
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.012339225406842836
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.009126423248078561
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.013454108392804542
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20392,
+          "line": 0.004486096457995586
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.006151963978215129
+        }
+      ]
+    },
+    {
+      "frame": 20,
+      "time": 0.31666666666666665,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 12,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5787,
+          "line": 0.010295591186411872
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.007796431375451602
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20393,
+          "line": 0.00038604239999444605
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.012638312527760763
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.013190024879985973
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.010308025626486564
+        }
+      ]
+    },
+    {
+      "frame": 21,
+      "time": 0.32499999999999996,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 13,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5787,
+          "line": 0.005288502997965783
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 9881,
+          "envelope": 20055,
+          "line": 0.0011203150420594308
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 9882,
+          "envelope": 20055,
+          "line": 0.0013062390478304035
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 9884,
+          "envelope": 20055,
+          "line": 0.003190343788266839
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.00613587269239646
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20393,
+          "line": 0.0025785652095014072
+        }
+      ]
+    },
+    {
+      "frame": 21,
+      "time": 0.3333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 10,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5788,
+          "line": 0.0022476471528383134
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.0045315737867538675
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20393,
+          "line": 0.0051582093500409714
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.010082968082384831
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.01027989911304746
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.013065712844430075
+        }
+      ]
+    },
+    {
+      "frame": 22,
+      "time": 0.3416666666666666,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 12,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5788,
+          "line": 0.009607394307783897
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.003088487531741951
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20393,
+          "line": 0.006748146868761286
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.009344618548805013
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.00823793843291617
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.012386852643587817
+        }
+      ]
+    },
+    {
+      "frame": 22,
+      "time": 0.35,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 12,
+      "selfPairs": [],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 78,
+          "envelope": 20392,
+          "line": 0.0014182072097044113
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20393,
+          "line": 0.00948261340918844
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20392,
+          "line": 0.00784051257531243
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20393,
+          "line": 0.005697477498520998
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20393,
+          "line": 0.0024352282514080587
+        }
+      ]
+    },
+    {
+      "frame": 23,
+      "time": 0.3583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 21,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5784,
+          "line": 0.010605648142437182
+        },
+        {
+          "face": 20394,
+          "other": 5785,
+          "line": 0.011662622856726548
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 20890,
+          "envelope": 23810,
+          "line": 0.0006998222088888256
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 20891,
+          "envelope": 23810,
+          "line": 0.011828716617267906
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 20891,
+          "envelope": 23811,
+          "line": 0.002139323648225097
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 20893,
+          "envelope": 23808,
+          "line": 0.01631030994540531
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 20893,
+          "envelope": 23810,
+          "line": 0.0005596210116033049
+        }
+      ]
+    },
+    {
+      "frame": 23,
+      "time": 0.36666666666666664,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 9,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5784,
+          "line": 0.017789884844890247
+        },
+        {
+          "face": 20394,
+          "other": 5785,
+          "line": 0.00923964745934778
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20394,
+          "line": 0.012542912753428838
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20394,
+          "line": 0.002970784423559823
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20394,
+          "line": 0.02039112464094276
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 110,
+          "envelope": 20394,
+          "line": 0.007784751443022533
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 111,
+          "envelope": 20394,
+          "line": 0.015381577322183287
+        }
+      ]
+    },
+    {
+      "frame": 24,
+      "time": 0.375,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 9,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5784,
+          "line": 0.01816290990979069
+        },
+        {
+          "face": 20394,
+          "other": 5785,
+          "line": 0.009008251139798923
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 79,
+          "envelope": 20394,
+          "line": 0.0032395186780495074
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 94,
+          "envelope": 20394,
+          "line": 0.0008733164032585332
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20394,
+          "line": 0.022567849578130236
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 110,
+          "envelope": 20394,
+          "line": 0.00624093094465711
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 111,
+          "envelope": 20394,
+          "line": 0.017072503899900903
+        }
+      ]
+    },
+    {
+      "frame": 24,
+      "time": 0.38333333333333336,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 8,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5784,
+          "line": 0.019723785980901617
+        },
+        {
+          "face": 20394,
+          "other": 5785,
+          "line": 0.008059289437152718
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20394,
+          "line": 0.018382299742374007
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 110,
+          "envelope": 20394,
+          "line": 0.004749007250266333
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 111,
+          "envelope": 20394,
+          "line": 0.018690287447582617
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 126,
+          "envelope": 20394,
+          "line": 0.01818630171799404
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 126,
+          "envelope": 20395,
+          "line": 0.0024048445777981146
+        }
+      ]
+    },
+    {
+      "frame": 25,
+      "time": 0.39166666666666666,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 2,
+      "body": 6,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5784,
+          "line": 0.02233890559914728
+        },
+        {
+          "face": 20394,
+          "other": 5785,
+          "line": 0.0017528963730268406
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 20394,
+          "line": 0.00251753128774174
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 110,
+          "envelope": 20394,
+          "line": 0.0006548853025393452
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 111,
+          "envelope": 20394,
+          "line": 0.022436860281551695
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 126,
+          "envelope": 20394,
+          "line": 0.003649954074973737
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 126,
+          "envelope": 20395,
+          "line": 0.006422224363383524
+        }
+      ]
+    },
+    {
+      "frame": 25,
+      "time": 0.4,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 4,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 5784,
+          "line": 0.020525046946441455
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 111,
+          "envelope": 20394,
+          "line": 0.014599877965110676
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 111,
+          "envelope": 20395,
+          "line": 0.0020339977047922125
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 126,
+          "envelope": 20395,
+          "line": 0.0040761708073531015
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 127,
+          "envelope": 20395,
+          "line": 0.01595176961484854
+        }
+      ]
+    },
+    {
+      "frame": 26,
+      "time": 0.4083333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 4,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 968,
+          "line": 0.018703870865871244
+        },
+        {
+          "face": 20396,
+          "other": 5792,
+          "line": 0.01845537506848334
+        },
+        {
+          "face": 20396,
+          "other": 5793,
+          "line": 0.0006928472229215388
+        },
+        {
+          "face": 20396,
+          "other": 5786,
+          "line": 0.004200229958648613
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 127,
+          "envelope": 20395,
+          "line": 0.005470146683888974
+        }
+      ]
+    },
+    {
+      "frame": 26,
+      "time": 0.4166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 967,
+          "line": 0.014310625567674654
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 27,
+      "time": 0.425,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 967,
+          "line": 0.011844853501290898
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 27,
+      "time": 0.43333333333333335,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 1,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 20394,
+          "other": 967,
+          "line": 0.0025237474295255816
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 28,
+      "time": 0.44166666666666665,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 28,
+      "time": 0.45,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 29,
+      "time": 0.4583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011089534897051272
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00005851399775099603
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.001041476284792139
+        },
+        {
+          "face": 20393,
+          "other": 1009,
+          "line": 0.0063139805750116705
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.004952930650590836
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 29,
+      "time": 0.4666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011215551714900327
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0001749277380483586
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0009180788663999753
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.006867373918222383
+        },
+        {
+          "face": 20393,
+          "other": 1011,
+          "line": 0.006368891028499399
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 30,
+      "time": 0.475,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011245698819218972
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002118807669054118
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008874551747150173
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.006395758813140838
+        },
+        {
+          "face": 20393,
+          "other": 1011,
+          "line": 0.00563262563118333
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 30,
+      "time": 0.48333333333333334,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 1012,
+          "other": 1009,
+          "line": 0.012868726918632126
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011281992789203929
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002482843100903142
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008595718592552849
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.006265436110241973
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 31,
+      "time": 0.49166666666666664,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 13,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011316500297526545
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00026624920824842337
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008434526344648918
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.006972946229693957
+        },
+        {
+          "face": 20393,
+          "other": 1011,
+          "line": 0.0019556160217200046
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 31,
+      "time": 0.5,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.01135224268399471
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.000283741076970722
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008284131497851939
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.008669191233651018
+        },
+        {
+          "face": 20393,
+          "other": 1011,
+          "line": 0.00039260065260898064
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 32,
+      "time": 0.5083333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011378185604116662
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00029168030317489567
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008214817191018828
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.0042456516929744205
+        },
+        {
+          "face": 20394,
+          "other": 1009,
+          "line": 0.002457303815783435
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 32,
+      "time": 0.5166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011405532619476631
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00029921613530550784
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.000814965507682756
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.0008265372211608349
+        },
+        {
+          "face": 20394,
+          "other": 1009,
+          "line": 0.0039084902179994385
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 33,
+      "time": 0.525,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011400396867074525
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002974616487143346
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008191802729804153
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.003262389246205505
+        },
+        {
+          "face": 20394,
+          "other": 1009,
+          "line": 0.002656535812885906
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 33,
+      "time": 0.5333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 2,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011398875774257458
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00029545146470258063
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008237849860565603
+        },
+        {
+          "face": 20393,
+          "other": 1010,
+          "line": 0.005016802144491614
+        },
+        {
+          "face": 20394,
+          "other": 1009,
+          "line": 0.0019078687278659898
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 967,
+          "line": 0.0018013174040514036
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 1015,
+          "line": 0.0029017664950856488
+        }
+      ]
+    },
+    {
+      "frame": 34,
+      "time": 0.5416666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 13,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011413122306946235
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002926739133883773
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008258820241277276
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.01177780876594409
+        },
+        {
+          "face": 20220,
+          "other": 20217,
+          "line": 0.000020107351206187507
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 967,
+          "line": 0.00034675178520696126
+        }
+      ]
+    },
+    {
+      "frame": 34,
+      "time": 0.55,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 12,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011429352247733783
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002899673117923926
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.000828183131077815
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.00036366831402550454
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011525509320054077
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 967,
+          "line": 0.0003285575214571068
+        }
+      ]
+    },
+    {
+      "frame": 35,
+      "time": 0.5583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 16,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011441862495553984
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002868001263142475
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008301733693583798
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.0004357984259867817
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011361158189072044
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 967,
+          "line": 0.00012263811830563742
+        }
+      ]
+    },
+    {
+      "frame": 35,
+      "time": 0.5666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 14,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.0114563791754798
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002838898682397048
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008322340440663524
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.0004969823129105638
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.01120995521000183
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 36,
+      "time": 0.5750000000000001,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 14,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011481860190498707
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00028956775031844725
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008306983877140366
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.00035598898601057333
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.01136616965023927
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 36,
+      "time": 0.5833333333333334,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 14,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011509024434684354
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00029538075426997594
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008291848745310901
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.0002086719757912886
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011534304746667681
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 37,
+      "time": 0.5916666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 15,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011513800628682649
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00030158957877994205
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008284863813832538
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.00017893197128071234
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011543151606867023
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 37,
+      "time": 0.6,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 13,
+      "body": 2,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011520796212539793
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003077778411708209
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008278651855255269
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.00013586060516788956
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011553474385000208
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 967,
+          "line": 0.000012139349007653927
+        },
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 968,
+          "line": 0.00004055389459081682
+        }
+      ]
+    },
+    {
+      "frame": 38,
+      "time": 0.6083333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 16,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 1012,
+          "other": 1009,
+          "line": 0.019305117407181237
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011520407613176254
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003085870443400862
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008274679914175706
+        },
+        {
+          "face": 20219,
+          "other": 20216,
+          "line": 0.00005484698583632999
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 38,
+      "time": 0.6166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 14,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 1012,
+          "other": 1009,
+          "line": 0.018288892226208518
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011521336587423579
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00030921026763463394
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.000827105041673536
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011628886661696269
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 39,
+      "time": 0.625,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 14,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 1012,
+          "other": 1009,
+          "line": 0.018784518797686438
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.01152370435928479
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00031092937430891
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008262512551855186
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011644803874961997
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 968,
+          "line": 0.00019726132882292788
+        }
+      ]
+    },
+    {
+      "frame": 39,
+      "time": 0.6333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 13,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 1012,
+          "other": 1009,
+          "line": 0.01886846461406594
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011527404210129363
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00031213508667692763
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.000825708627884082
+        },
+        {
+          "face": 20219,
+          "other": 20217,
+          "line": 0.011662532770286647
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 968,
+          "line": 0.0005493820319993625
+        }
+      ]
+    },
+    {
+      "frame": 40,
+      "time": 0.6416666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011534532715087817
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00031384197507472976
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008246731681980438
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.003142239238934535
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.012286500792010184
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 968,
+          "line": 0.00025240552962849105
+        }
+      ]
+    },
+    {
+      "frame": 40,
+      "time": 0.65,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 12,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011542785736987308
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00031565484213503907
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008234733095562044
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.003182414798599399
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.012270193810627168
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 41,
+      "time": 0.6583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 12,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 1012,
+          "other": 1009,
+          "line": 0.018280442212420957
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011549851426743925
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003182407925285749
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008226176951763664
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.002680902236030621
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 41,
+      "time": 0.6666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011558183056151798
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00032076112886017354
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008218546524452197
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.00309438828031907
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04074807364903554
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 42,
+      "time": 0.675,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011560601852236776
+        },
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00031867655641505503
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008227406032148832
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0029861579623949655
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04113936197209778
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 42,
+      "time": 0.6833333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 10,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003166675966379748
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011563732820310556
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008236139042715734
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0029577622871360676
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04166827169203907
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 43,
+      "time": 0.6916666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003182595358473955
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011569182427152824
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008234054010572804
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0029434301541621244
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04245682795024027
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 43,
+      "time": 0.7,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00031946396220234284
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011575564285304018
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008232917380421364
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0029390642158273056
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.0432759663889875
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 44,
+      "time": 0.7083333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003141555345005584
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.01162105309956766
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008270783917523946
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0028082138163057005
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04441970319998433
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 95,
+          "envelope": 968,
+          "line": 0.000571924845176007
+        }
+      ]
+    },
+    {
+      "frame": 44,
+      "time": 0.7166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003087099029484251
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011666608990122004
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008309695134565073
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0027236516226727334
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04551569080225146
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 45,
+      "time": 0.725,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0003035235310910444
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011674030213801534
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008328401363821361
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0027446667859787194
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04508847318689013
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 45,
+      "time": 0.7333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002985767445852286
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011681679533858591
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008344597741763039
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0027306943535971018
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04470922347599163
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 46,
+      "time": 0.7416666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00029491822159250294
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011701416894130342
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008353716055983429
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0026807725464700963
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04447392858726351
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 46,
+      "time": 0.75,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00029114366242921283
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011721471430374941
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.000836318517825751
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.00264144698576535
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.044232038220270865
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 47,
+      "time": 0.7583333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00028937319579948155
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011739983911095169
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008362508863313089
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.002545626496323068
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04507058709561861
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 47,
+      "time": 0.7666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00028693687330310844
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011758350698493415
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008366642531354935
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0025132036957881826
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04590775063877156
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 48,
+      "time": 0.775,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002866832847132385
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011759393848622119
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008365959090956008
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0024506795642119453
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.045137557666741865
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 48,
+      "time": 0.7833333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002863932099540882
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011760502133912457
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008363920180229261
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.00249338976428002
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.044327294602071785
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 49,
+      "time": 0.7916666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.0002839159506494923
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.011762152641798886
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008372700618726392
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0026131607416842242
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04608856781017594
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 49,
+      "time": 0.8,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 1,
+      "selfPairs": [
+        {
+          "face": 19950,
+          "other": 19947,
+          "line": 0.00028143525624099025
+        },
+        {
+          "face": 19950,
+          "other": 19946,
+          "line": 0.01176345790702083
+        },
+        {
+          "face": 19951,
+          "other": 19947,
+          "line": 0.0008383749937472254
+        },
+        {
+          "face": 20394,
+          "other": 1017,
+          "line": 0.0027546029787921394
+        },
+        {
+          "face": 20394,
+          "other": 1018,
+          "line": 0.04782379255860306
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-collar",
+          "bodyFace": 73,
+          "envelope": 20388,
+          "line": 0.0011063378563699114
+        }
+      ]
+    }
+  ]
+}

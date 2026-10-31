@@ -1,13 +1,7 @@
 {
-  "recordedAtUtc": "2026-10-31T19:59:14.041669+00:00",
-  "status": "transported_shirt_contact_authoring",
-  "activeNativeWorker": {
-    "pid": 66344,
-    "execSession": 6738,
-    "command": "output/tools/cloth-ipc-venv/bin/python output/characters/morpheus-wardrobe-recovery-2026-11-01/construct-shirt-contact-transport.py",
-    "lastCompleteFrame": 87,
-    "lastCompleteTime": 1.4333333333333333
-  },
+  "recordedAtUtc": "2026-10-31T21:00:37.892987+00:00",
+  "status": "complete-shirt-and-preparation-display-geometry-checked",
+  "activeNativeWorker": null,
   "stoppedWorkers": [
     {
       "pid": 36566,
@@ -43,8 +37,34 @@
     "full-removal-physics",
     "shoulder-release-physics"
   ],
-  "nextAction": "Poll the confirmed transported-shirt worker; do not restart on an observation timeout. On completion, verify all 481 frames and every adaptive key/midpoint against complete Float32 shirt and twelve actual inner layers. On failure, diagnose the actual rejected interval. The new standing coat cage and display binding are ready; do not start full coat dynamics until the complete shirt path passes. Whole garment rendering, grip/release/ground contact and actual gameplay verification remain required.",
+  "nextAction": "Use the complete corrected-body input (587 adaptive keys at their real times) for the full outer-coat path. First derive and independently check cuff controls for the hinged front-exit body. Native clock candidates and full-density dynamics remain rejected; do not silently treat every key as 1/60 second or waive NO_CONVERGENCE. Complete grip, withdrawal, release, floor contact, detached world rendering and actual gameplay/restore/performance checks remain required.",
   "wholeRemovalAccepted": false,
   "highQualityTrilogyGroups": 0,
-  "totalTrilogyGroups": 42
+  "totalTrilogyGroups": 42,
+  "completedWorkers": [
+    {
+      "pid": 66344,
+      "execSession": 6738,
+      "exitCode": 0,
+      "artifact": "shirt-contact-transport/report.json"
+    },
+    {
+      "pid": 94251,
+      "execSession": 62603,
+      "exitCode": 0,
+      "artifact": "shirt-contact-transport-display-verification.json"
+    },
+    {
+      "pid": 90806,
+      "execSession": 14999,
+      "exitCode": 0,
+      "artifact": "preparation-full-physics-contact/report.json"
+    },
+    {
+      "execSession": 95039,
+      "exitCode": 0,
+      "artifact": "preparation-contact-display-verification.json"
+    }
+  ],
+  "latestContactCheckpoint": "completed-contact-checkpoint.json"
 }

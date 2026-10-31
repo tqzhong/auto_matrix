@@ -1,0 +1,106 @@
+{
+  "allFramesPresent": false,
+  "inspectedThroughFrame": 4,
+  "geometryPassed": true,
+  "nativeConverged": false,
+  "boundariesRetained": true,
+  "acceptedForProduction": false,
+  "sourceHashes": {
+    "bake-preparation-full-quality.py": "32285934ca400a84649a1ff3be1a8eb9c772ae64c76cb0b1d1e642aff8a9ca82",
+    "full_garment.py": "eee1adcdb50e7c16591f055658e947c3cd3415a158adde6ff840bec6172a3302",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "front-standing-work/boundary-cage-fit-4.json": "1617d5bd5c518dba5718c0296228f27d208c964ff5a634738661f84dcc0c8da5",
+    "preparation-input/manifest.json": "fa7760815e2cac2188b736c96bac7e56aeb70b1105ef653f792ba030c20110ae",
+    "../../../scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44",
+    "../../../scripts/cloth_display.py": "2a198ffb3439376847b0f62a4e8d431fe9c9bb207b67cbf916c6f8bef54eb62f"
+  },
+  "inputHashes": {
+    "export-preparation-input.mts": "9340e1324de52901f1b0051b48dab1cc01683d9cf5d128e10ee88330584dd569",
+    "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+    "front-standing-work/current-input/manifest.json": "0dc25fd3b0559872f760c5b1d22d7fa28f694713bbf9ad177e64116e6d75dcff",
+    "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+    "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+  },
+  "cacheDirectory": "preparation-full-q80-probe",
+  "verifierSha256": "0edc91aec42eb225b46daf6ec1e453fdf7ad6b906ffa6f5c7583ab38521e9b4b",
+  "scope": "Every original visible garment face, expanded through original part/UV indices, checked at native keys and actual bone-curve midpoints. This finite preparation prefix does not prove all intervals or the eight-second removal.",
+  "rows": [
+    {
+      "frame": 1,
+      "time": 0,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 2,
+      "time": 0.008333333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 2,
+      "time": 0.016666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 3,
+      "time": 0.025,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 3,
+      "time": 0.03333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 4,
+      "time": 0.04166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 4,
+      "time": 0.05,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    }
+  ]
+}

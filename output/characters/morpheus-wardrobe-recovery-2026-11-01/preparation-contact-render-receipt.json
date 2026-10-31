@@ -1,0 +1,23 @@
+{
+  "sourceHashes": {
+    "render-preparation-contact.py": "639d30b013c9b91b3b8ea30afcdccb4fd426c09d17c16fb14c89350ab4807bc9",
+    "preparation-input/manifest.json": "fa7760815e2cac2188b736c96bac7e56aeb70b1105ef653f792ba030c20110ae",
+    "preparation-contact-display-verification.json": "bbd45731150ac2c7dea0dfd304a70df493de5780cd301819feb2efea8e889cc9",
+    "preparation-full-physics-contact/cloth-1.bin": "b82a501a0203171d16bd56c017af7560be96c3e6fa073e6313b96ed5085c69e7",
+    "preparation-input/body-1.bin": "6da6def456bca46b81a0e2a9dd3655166904624b7403f4daf1fce208aaf1ad2a",
+    "preparation-full-physics-contact/cloth-25.bin": "da7353a8133ba1a94d078d48753afcec74f54171ef7daf8d52c9e4f7b63d2035",
+    "preparation-input/body-25.bin": "1d919b9dad4a4c2abbf39f4b46a842f463ae34fe5e6cffceab750cff4c7b1c74",
+    "preparation-full-physics-contact/cloth-49.bin": "2739b10d606179c4cddf4c30bcfaef492f7a62513cfad154f423d981b5b31e58",
+    "preparation-input/body-49.bin": "9137914289cdff7a2aa5dc14a8f419604a25a9c3e60fdb54e190a5e0257dc31b"
+  },
+  "imageSha256": "98c69ded5144f7f541838dd5f91c206db8450661c6dbc9cad0ee36e803739475",
+  "frames": [
+    1,
+    25,
+    49
+  ],
+  "displayFaces": 26916,
+  "actualInnerLayers": 13,
+  "gameplay": false,
+  "acceptedForProduction": false
+}

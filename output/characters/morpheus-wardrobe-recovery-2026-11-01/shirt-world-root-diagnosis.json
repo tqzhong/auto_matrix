@@ -1,0 +1,26 @@
+{
+  "scope": "CPU skinning at the actual set translation, normalized back to canonical model coordinates with the unchanged contact tolerance. GPU skinning and live gameplay are not measured.",
+  "acceptedForProduction": false,
+  "rows": [
+    {
+      "placedAtActualSet": false,
+      "frame": 136,
+      "time": 2.25,
+      "innerLayers": 12,
+      "maximumSkinDriftMetres": 0,
+      "self": 0,
+      "body": 0,
+      "bodyPairs": []
+    },
+    {
+      "placedAtActualSet": true,
+      "frame": 136,
+      "time": 2.25,
+      "innerLayers": 12,
+      "maximumSkinDriftMetres": 0.00032028126903267196,
+      "self": 0,
+      "body": 0,
+      "bodyPairs": []
+    }
+  ]
+}

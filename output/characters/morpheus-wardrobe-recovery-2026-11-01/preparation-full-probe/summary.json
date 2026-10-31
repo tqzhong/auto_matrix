@@ -1,0 +1,37 @@
+[
+  {
+    "frame": 1,
+    "time": 0,
+    "seconds": 0.05521795805543661,
+    "solverStatus": [],
+    "boundaryErrorMetres": 5.736385824916889e-08
+  },
+  {
+    "frame": 2,
+    "time": 0.016666666666666666,
+    "seconds": 1.312806375324726,
+    "solverStatus": [
+      "NO_CONVERGENCE",
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.1029919640896458e-07
+  },
+  {
+    "frame": 3,
+    "time": 0.03333333333333333,
+    "seconds": 2.2457412499934435,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0523047692589818e-07
+  },
+  {
+    "frame": 4,
+    "time": 0.05,
+    "seconds": 3.126880290918052,
+    "solverStatus": [
+      "SUCCESS"
+    ],
+    "boundaryErrorMetres": 1.0527773202649142e-07
+  }
+]

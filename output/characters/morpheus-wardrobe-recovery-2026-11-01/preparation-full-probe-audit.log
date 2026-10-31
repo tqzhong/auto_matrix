@@ -1,0 +1,22 @@
+{"frame":1,"time":0,"kind":"key","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+{"frame":2,"time":0.008333333333333333,"kind":"midpoint","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+{"frame":2,"time":0.016666666666666666,"kind":"key","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+{"frame":3,"time":0.025,"kind":"midpoint","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+{"frame":3,"time":0.03333333333333333,"kind":"key","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+{"frame":4,"time":0.04166666666666667,"kind":"midpoint","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+{"frame":4,"time":0.05,"kind":"key","vertices":14600,"faces":26916,"self":0,"body":0,"selfPairs":[],"bodyPairs":[]}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The preparation garment is rejected.
+    at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/audit-preparation.mts:65:10) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.2

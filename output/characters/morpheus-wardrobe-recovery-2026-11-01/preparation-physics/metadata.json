@@ -1,0 +1,22 @@
+{
+  "frames": 49,
+  "start": 0,
+  "end": 0.8,
+  "displayVertices": 13960,
+  "displayFaces": 26916,
+  "innerLayers": 13,
+  "physicalVertices": 3206,
+  "physicalFaces": 5918,
+  "fixedBoundaryPoints": 189,
+  "sourceHashes": {
+    "bake-preparation.py": "4b6f5b920a9747c554db3211593d989793e84284ba78afe3f376a4cd6eee9824",
+    "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "front-standing-work/boundary-cage-fit-4.json": "1617d5bd5c518dba5718c0296228f27d208c964ff5a634738661f84dcc0c8da5",
+    "preparation-input/manifest.json": "fa7760815e2cac2188b736c96bac7e56aeb70b1105ef653f792ba030c20110ae",
+    "../../../scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44",
+    "../../../scripts/cloth_display.py": "2a198ffb3439376847b0f62a4e8d431fe9c9bb207b67cbf916c6f8bef54eb62f"
+  },
+  "acceptedForProduction": false,
+  "scope": "Worn-coat preparation only. Collar and complete cuffs follow actual bones throughout this prefix; release, full removal and gameplay remain unaccepted."
+}

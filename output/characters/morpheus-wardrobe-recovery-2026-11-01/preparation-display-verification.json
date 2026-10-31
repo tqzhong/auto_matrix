@@ -1,0 +1,6359 @@
+{
+  "allFramesPresent": true,
+  "inspectedThroughFrame": 49,
+  "geometryPassed": false,
+  "nativeConverged": false,
+  "boundariesRetained": true,
+  "acceptedForProduction": false,
+  "sourceHashes": {
+    "bake-preparation.py": "4b6f5b920a9747c554db3211593d989793e84284ba78afe3f376a4cd6eee9824",
+    "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "front-standing-work/boundary-cage-fit-4.json": "1617d5bd5c518dba5718c0296228f27d208c964ff5a634738661f84dcc0c8da5",
+    "preparation-input/manifest.json": "fa7760815e2cac2188b736c96bac7e56aeb70b1105ef653f792ba030c20110ae",
+    "../../../scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44",
+    "../../../scripts/cloth_display.py": "2a198ffb3439376847b0f62a4e8d431fe9c9bb207b67cbf916c6f8bef54eb62f"
+  },
+  "inputHashes": {
+    "export-preparation-input.mts": "9340e1324de52901f1b0051b48dab1cc01683d9cf5d128e10ee88330584dd569",
+    "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+    "front-standing-work/current-input/manifest.json": "0dc25fd3b0559872f760c5b1d22d7fa28f694713bbf9ad177e64116e6d75dcff",
+    "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+    "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+  },
+  "scope": "Every original visible garment face, expanded through original part/UV indices, checked at native keys and actual bone-curve midpoints. This finite preparation prefix does not prove all intervals or the eight-second removal.",
+  "rows": [
+    {
+      "frame": 1,
+      "time": 0,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 2,
+      "time": 0.008333333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 2,
+      "time": 0.016666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 6,
+      "body": 0,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.009554905098725766
+        },
+        {
+          "face": 11282,
+          "other": 11202,
+          "line": 0.005716805488482118
+        },
+        {
+          "face": 11282,
+          "other": 11207,
+          "line": 0.005975886723330923
+        },
+        {
+          "face": 11287,
+          "other": 11207,
+          "line": 0.005142307734587587
+        },
+        {
+          "face": 11287,
+          "other": 11208,
+          "line": 0.012999289050426263
+        }
+      ],
+      "bodyPairs": []
+    },
+    {
+      "frame": 3,
+      "time": 0.025,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 0,
+      "selfPairs": [],
+      "bodyPairs": []
+    },
+    {
+      "frame": 3,
+      "time": 0.03333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 14,
+      "selfPairs": [],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10185,
+          "envelope": 9326,
+          "line": 0.004884926417595651
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10185,
+          "envelope": 9310,
+          "line": 0.0056274841692357785
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10208,
+          "envelope": 9310,
+          "line": 0.004525456739293228
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10208,
+          "envelope": 9313,
+          "line": 0.00501221196248613
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10213,
+          "envelope": 9323,
+          "line": 0.0010236800220156106
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "time": 0.04166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 0,
+      "body": 12,
+      "selfPairs": [],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10185,
+          "envelope": 9326,
+          "line": 0.007850470546834819
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10185,
+          "envelope": 9310,
+          "line": 0.009313192062259976
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10208,
+          "envelope": 9310,
+          "line": 0.014030947931771813
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10213,
+          "envelope": 9326,
+          "line": 0.006255909474533507
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 10213,
+          "envelope": 9310,
+          "line": 0.00002419591439479455
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "time": 0.05,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 83,
+      "selfPairs": [
+        {
+          "face": 1614,
+          "other": 1596,
+          "line": 0.002055434598143599
+        },
+        {
+          "face": 1619,
+          "other": 1593,
+          "line": 0.011377931485068868
+        },
+        {
+          "face": 1619,
+          "other": 1596,
+          "line": 0.0042590971801790035
+        },
+        {
+          "face": 1669,
+          "other": 1614,
+          "line": 0.0025154329760782267
+        },
+        {
+          "face": 1669,
+          "other": 1619,
+          "line": 0.006854895021905425
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.0040889725838819495
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5751,
+          "envelope": 5195,
+          "line": 0.002877391256743615
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5751,
+          "envelope": 5196,
+          "line": 0.0008719685303099599
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0018060891715864949
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.0047929381427559035
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "time": 0.058333333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 87,
+      "selfPairs": [
+        {
+          "face": 1614,
+          "other": 1593,
+          "line": 0.001049463497954116
+        },
+        {
+          "face": 1614,
+          "other": 1596,
+          "line": 0.0012050713639350438
+        },
+        {
+          "face": 1619,
+          "other": 1593,
+          "line": 0.0007774006283926445
+        },
+        {
+          "face": 1669,
+          "other": 1614,
+          "line": 0.0017839409008541668
+        },
+        {
+          "face": 1672,
+          "other": 1614,
+          "line": 0.00039016643772268184
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5195,
+          "line": 0.0022815237662751164
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.003835080658697804
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5751,
+          "envelope": 5195,
+          "line": 0.00010510797217956548
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5751,
+          "envelope": 5196,
+          "line": 0.000015801561540618875
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0016594960192882614
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "time": 0.06666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 7,
+      "body": 80,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.015436803140697303
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.01536137152707226
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.00856155843137267
+        },
+        {
+          "face": 11228,
+          "other": 11203,
+          "line": 0.0005698317665240107
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.007083387296969227
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5195,
+          "line": 0.002976493608251784
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.005078354738917998
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5751,
+          "envelope": 5195,
+          "line": 0.00008306453416436215
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5751,
+          "envelope": 5196,
+          "line": 0.000012111873685018842
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0012852070299284525
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "time": 0.075,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 4,
+      "body": 77,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.015873230777311304
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.015768418725979345
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.010564621785934574
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.008606611653374369
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5195,
+          "line": 0.002335746167827657
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.003891426599172604
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0014489690407997473
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.0019070219941701248
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.004780241069733007
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "time": 0.08333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 68,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.0163430076374185
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.01621799357532732
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.011958065730059364
+        },
+        {
+          "face": 11225,
+          "other": 11206,
+          "line": 0.0003816536746331922
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.009773600672461216
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5195,
+          "line": 0.003925375609353458
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.006563867047479702
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.001294884275516759
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.0019535672752935534
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.004880133842865552
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "time": 0.09166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 64,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.016168898848905683
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.016179682050129842
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.01162397671298656
+        },
+        {
+          "face": 11225,
+          "other": 11206,
+          "line": 0.0001959704513828861
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.009806900961392986
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5195,
+          "line": 0.002072305525085279
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.0034414424873642005
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0018884111565297655
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.003055716690631821
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.005060147220784266
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "time": 0.1,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 4,
+      "body": 49,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.016008209089907632
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.01614259768095359
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.011299312378756914
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.009837074317954796
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5195,
+          "line": 0.003091153017570649
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5748,
+          "envelope": 5196,
+          "line": 0.005089517244223567
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.002070346695020145
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.0029202839252311374
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.005357996197051509
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "time": 0.10833333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 55,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.016140827926178856
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.01628771081926413
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.011562443231621373
+        },
+        {
+          "face": 11228,
+          "other": 11203,
+          "line": 0.000012181317318237656
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.010126676677253876
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.0012361888816662635
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0033836428441584602
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.004811246866027647
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.004804197168942446
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6179,
+          "line": 0.0015017210788731616
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "time": 0.11666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 98,
+      "selfPairs": [
+        {
+          "face": 1614,
+          "other": 1596,
+          "line": 0.001337975236394881
+        },
+        {
+          "face": 1619,
+          "other": 1593,
+          "line": 0.003212713540386103
+        },
+        {
+          "face": 1619,
+          "other": 1596,
+          "line": 0.0008600330445664196
+        },
+        {
+          "face": 1669,
+          "other": 1614,
+          "line": 0.001590801264689034
+        },
+        {
+          "face": 1669,
+          "other": 1619,
+          "line": 0.0014226712960266792
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.0030666945207225745
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0042751377067596725
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.005349855177398713
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.0040142251836691265
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6179,
+          "line": 0.0011701299540562752
+        }
+      ]
+    },
+    {
+      "frame": 9,
+      "time": 0.125,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 85,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.016846796506181462
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.017094933623442277
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.013844645021166994
+        },
+        {
+          "face": 11225,
+          "other": 11206,
+          "line": 0.00007532808876018621
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.012053899961098326
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.0047770874798112786
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.00342874339224959
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.0025647400957824256
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.004615343517634918
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6179,
+          "line": 0.0012427408285214363
+        }
+      ]
+    },
+    {
+      "frame": 9,
+      "time": 0.13333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 5,
+      "body": 58,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11202,
+          "line": 0.017674151863424095
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.01798543337457783
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.016469940731627917
+        },
+        {
+          "face": 11225,
+          "other": 11206,
+          "line": 0.00023268665300031632
+        },
+        {
+          "face": 11228,
+          "other": 11206,
+          "line": 0.014140304159122012
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.0052772013068555675
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.005199468019153003
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.004097416631908796
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.003054709857441373
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6179,
+          "line": 0.0010351104628680326
+        }
+      ]
+    },
+    {
+      "frame": 10,
+      "time": 0.14166666666666666,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 11,
+      "body": 49,
+      "selfPairs": [
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.004518625324870814
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.004072968300213791
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.005122095269920613
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.00813590561875768
+        },
+        {
+          "face": 1802,
+          "other": 1669,
+          "line": 0.002642299290092827
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.0033392945367954428
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0032022511669475657
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.0024915867565452818
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.0018210237345350194
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6179,
+          "line": 0.0011528837177389919
+        }
+      ]
+    },
+    {
+      "frame": 10,
+      "time": 0.15,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 13,
+      "body": 51,
+      "selfPairs": [
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.0026170318260437357
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.006720831425882801
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0040473307553994045
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.009322409940882263
+        },
+        {
+          "face": 1802,
+          "other": 1669,
+          "line": 0.007741155872256574
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.004805082550991166
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.004577409116016865
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.0036816179546491166
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.0026367038563843304
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6190,
+          "line": 0.0018617231077153532
+        }
+      ]
+    },
+    {
+      "frame": 11,
+      "time": 0.15833333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 15,
+      "body": 44,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.005782890791362108
+        },
+        {
+          "face": 1799,
+          "other": 1672,
+          "line": 0.002113996168690398
+        },
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.001133049225156447
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.00906732591012548
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0034935130208980925
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5195,
+          "line": 0.00209982977861917
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5196,
+          "line": 0.0019720619906311437
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 6179,
+          "line": 0.001074706819648586
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5305,
+          "line": 0.001687270710936807
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5858,
+          "envelope": 5306,
+          "line": 0.0011667882801094723
+        }
+      ]
+    },
+    {
+      "frame": 11,
+      "time": 0.16666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 18,
+      "body": 65,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.010769344720195962
+        },
+        {
+          "face": 1799,
+          "other": 1672,
+          "line": 0.00030529029038689395
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.009944221791840742
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0026070946238709973
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.010719702349026673
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1593,
+          "line": 0.0009964773398851625
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1596,
+          "line": 0.00143455585603618
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1669,
+          "line": 0.001436296899140984
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1672,
+          "line": 0.0008179082027018666
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 4354,
+          "envelope": 3803,
+          "line": 0.005487836585026943
+        }
+      ]
+    },
+    {
+      "frame": 12,
+      "time": 0.175,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 19,
+      "body": 54,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.014180883327214504
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.008049759483915973
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0014028754763682101
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.0105374918469445
+        },
+        {
+          "face": 1802,
+          "other": 1596,
+          "line": 0.0018876443961457455
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1596,
+          "line": 0.0074002038129601325
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1669,
+          "line": 0.0074802572100738825
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1593,
+          "line": 0.0027316419834520385
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2240,
+          "envelope": 1672,
+          "line": 0.0025108917101608983
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2241,
+          "envelope": 1593,
+          "line": 0.0026544221529692345
+        }
+      ]
+    },
+    {
+      "frame": 12,
+      "time": 0.18333333333333332,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 21,
+      "body": 63,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.016757829953098605
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.006295823125742197
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.00046156881971970085
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.01022656357276051
+        },
+        {
+          "face": 1802,
+          "other": 1596,
+          "line": 0.0038066242839579316
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1669,
+          "line": 0.00019723572735104444
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1672,
+          "line": 0.0014841085044724096
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1596,
+          "line": 0.003718671920724833
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1669,
+          "line": 0.011286967752593326
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1672,
+          "line": 0.00018129291872886165
+        }
+      ]
+    },
+    {
+      "frame": 13,
+      "time": 0.19166666666666668,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 23,
+      "body": 37,
+      "selfPairs": [
+        {
+          "face": 1797,
+          "other": 1669,
+          "line": 0.0017187674977484496
+        },
+        {
+          "face": 1798,
+          "other": 1669,
+          "line": 0.001311175848717247
+        },
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.013360399308839631
+        },
+        {
+          "face": 1799,
+          "other": 1593,
+          "line": 0.0011336062558420868
+        },
+        {
+          "face": 1800,
+          "other": 1669,
+          "line": 0.004677898017865719
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1669,
+          "line": 0.0058668189324218994
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1596,
+          "line": 0.009928041873862807
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1669,
+          "line": 0.0057964864440843734
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1672,
+          "line": 0.005131208092434537
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2237,
+          "envelope": 1669,
+          "line": 0.0023232677932546984
+        }
+      ]
+    },
+    {
+      "frame": 13,
+      "time": 0.2,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 24,
+      "body": 43,
+      "selfPairs": [
+        {
+          "face": 1797,
+          "other": 1596,
+          "line": 0.003762934887170645
+        },
+        {
+          "face": 1797,
+          "other": 1669,
+          "line": 0.001859679250849726
+        },
+        {
+          "face": 1799,
+          "other": 1596,
+          "line": 0.0019768086984553943
+        },
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.007473264621376187
+        },
+        {
+          "face": 1799,
+          "other": 1593,
+          "line": 0.002775428818342432
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1669,
+          "line": 0.009427901852475865
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1593,
+          "line": 0.0003071282532375319
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1596,
+          "line": 0.015019768641654016
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1669,
+          "line": 0.001354366814396997
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1593,
+          "line": 0.0003572288630197193
+        }
+      ]
+    },
+    {
+      "frame": 14,
+      "time": 0.20833333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 23,
+      "body": 36,
+      "selfPairs": [
+        {
+          "face": 1740,
+          "other": 1669,
+          "line": 0.0009512515552267163
+        },
+        {
+          "face": 1740,
+          "other": 1672,
+          "line": 0.002369612921568929
+        },
+        {
+          "face": 1797,
+          "other": 1596,
+          "line": 0.0031918305238640907
+        },
+        {
+          "face": 1797,
+          "other": 1669,
+          "line": 0.0015497159742670526
+        },
+        {
+          "face": 1799,
+          "other": 1596,
+          "line": 0.0021649278377140818
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1596,
+          "line": 0.013968586458945826
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1669,
+          "line": 0.009445378693116943
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1593,
+          "line": 0.0073007602835124365
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1596,
+          "line": 0.0006388325013481997
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1672,
+          "line": 0.010291594880079625
+        }
+      ]
+    },
+    {
+      "frame": 14,
+      "time": 0.21666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 27,
+      "body": 58,
+      "selfPairs": [
+        {
+          "face": 1740,
+          "other": 1669,
+          "line": 0.0030258902383707327
+        },
+        {
+          "face": 1740,
+          "other": 1672,
+          "line": 0.0058807049199808125
+        },
+        {
+          "face": 1797,
+          "other": 1596,
+          "line": 0.0025147200030342896
+        },
+        {
+          "face": 1797,
+          "other": 1669,
+          "line": 0.0012043649984369992
+        },
+        {
+          "face": 1799,
+          "other": 1593,
+          "line": 0.001034479309049958
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1596,
+          "line": 0.011985198281036055
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1669,
+          "line": 0.00813520810303357
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1596,
+          "line": 0.001622667048491717
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1672,
+          "line": 0.012419068119891498
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2237,
+          "envelope": 1596,
+          "line": 0.002023529585703546
+        }
+      ]
+    },
+    {
+      "frame": 15,
+      "time": 0.225,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 18,
+      "body": 60,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.01665212215773157
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.005863862227095541
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0007306553479403018
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.008536842899289935
+        },
+        {
+          "face": 1802,
+          "other": 1596,
+          "line": 0.0063655338236362595
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2234,
+          "envelope": 1669,
+          "line": 0.004211137222062232
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1596,
+          "line": 0.005869059020293641
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2235,
+          "envelope": 1669,
+          "line": 0.0027644483245928345
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1669,
+          "line": 0.0014159449091118385
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2236,
+          "envelope": 1672,
+          "line": 0.005983786009207135
+        }
+      ]
+    },
+    {
+      "frame": 15,
+      "time": 0.23333333333333334,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 17,
+      "body": 64,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.010164462543359506
+        },
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.0028029618912231483
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.00884763675197358
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0041752305021458954
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.008434762622714188
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2238,
+          "envelope": 1593,
+          "line": 0.003249526988518013
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2238,
+          "envelope": 1669,
+          "line": 0.001975762805174301
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2238,
+          "envelope": 1672,
+          "line": 0.00609791390152116
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2241,
+          "envelope": 1593,
+          "line": 0.0006319865973710911
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2241,
+          "envelope": 1596,
+          "line": 0.008036744995081824
+        }
+      ]
+    },
+    {
+      "frame": 16,
+      "time": 0.24166666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 27,
+      "body": 70,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.0018304311423993757
+        },
+        {
+          "face": 1799,
+          "other": 1672,
+          "line": 0.0025349456698883447
+        },
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.007105013284144571
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.0056032963195698955
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.008468900939063231
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5599,
+          "envelope": 4943,
+          "line": 0.005736473921874234
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5599,
+          "envelope": 4944,
+          "line": 0.0026772525327620027
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5599,
+          "envelope": 4953,
+          "line": 0.003111266497026406
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5599,
+          "envelope": 4954,
+          "line": 0.0051549309664722254
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5599,
+          "envelope": 5045,
+          "line": 0.0035800939285381035
+        }
+      ]
+    },
+    {
+      "frame": 16,
+      "time": 0.25,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 31,
+      "body": 88,
+      "selfPairs": [
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.0028493960375728716
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.007295425026859719
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.0017407583618797972
+        },
+        {
+          "face": 1802,
+          "other": 1669,
+          "line": 0.0007228573295799843
+        },
+        {
+          "face": 1802,
+          "other": 1672,
+          "line": 0.008207494089378183
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5596,
+          "envelope": 4938,
+          "line": 0.005069218645530026
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5596,
+          "envelope": 4943,
+          "line": 0.007715713647514383
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5596,
+          "envelope": 5046,
+          "line": 0.0038023020698098736
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5597,
+          "envelope": 4938,
+          "line": 0.0007662845513109959
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5597,
+          "envelope": 5043,
+          "line": 0.011000543932310187
+        }
+      ]
+    },
+    {
+      "frame": 17,
+      "time": 0.2583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 22,
+      "body": 94,
+      "selfPairs": [
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.0001653288532783839
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.0023127253609812313
+        },
+        {
+          "face": 1801,
+          "other": 1672,
+          "line": 0.006547300023920476
+        },
+        {
+          "face": 1880,
+          "other": 1593,
+          "line": 0.011390479838668477
+        },
+        {
+          "face": 1880,
+          "other": 1596,
+          "line": 0.004497062472092552
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 2231,
+          "line": 0.004433812440051808
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 2234,
+          "line": 0.0009032549929419535
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 1894,
+          "line": 0.004688260983113443
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 1899,
+          "line": 0.0010838823680024388
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 5596,
+          "envelope": 4938,
+          "line": 0.004883739054666242
+        }
+      ]
+    },
+    {
+      "frame": 17,
+      "time": 0.26666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 12,
+      "body": 94,
+      "selfPairs": [
+        {
+          "face": 1880,
+          "other": 1593,
+          "line": 0.010001681209236727
+        },
+        {
+          "face": 1880,
+          "other": 1596,
+          "line": 0.003830693948912719
+        },
+        {
+          "face": 1880,
+          "other": 1669,
+          "line": 0.008673125054877677
+        },
+        {
+          "face": 1880,
+          "other": 1672,
+          "line": 0.005581278210324404
+        },
+        {
+          "face": 20170,
+          "other": 9690,
+          "line": 0.007805974603312224
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1894,
+          "line": 0.0016592732964207683
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1899,
+          "line": 0.002292630088295937
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 1894,
+          "line": 0.00956343727512729
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 1899,
+          "line": 0.0016715292419620734
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 2231,
+          "line": 0.010209780723016608
+        }
+      ]
+    },
+    {
+      "frame": 18,
+      "time": 0.27499999999999997,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 13,
+      "body": 92,
+      "selfPairs": [
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.00360458244420066
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.00852958858795468
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.0034882365773949296
+        },
+        {
+          "face": 1802,
+          "other": 1669,
+          "line": 0.0058889344604158254
+        },
+        {
+          "face": 1802,
+          "other": 1672,
+          "line": 0.005529616673774674
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1894,
+          "line": 0.004471595331974654
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1899,
+          "line": 0.005288472740643422
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 2234,
+          "line": 0.0006819129256411443
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 1894,
+          "line": 0.007511969476008751
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 2231,
+          "line": 0.010454904289130864
+        }
+      ]
+    },
+    {
+      "frame": 18,
+      "time": 0.2833333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 20,
+      "body": 104,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.005598963853966554
+        },
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.006445654217271932
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.00738902141620759
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.009452170205099211
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.006007894025289942
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1894,
+          "line": 0.006788997138560464
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1899,
+          "line": 0.006191752062785046
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 2234,
+          "line": 0.002377619875959652
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 1894,
+          "line": 0.0052491297158681035
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2613,
+          "envelope": 2231,
+          "line": 0.010077386737532527
+        }
+      ]
+    },
+    {
+      "frame": 19,
+      "time": 0.29166666666666663,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 22,
+      "body": 109,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.00643386849096852
+        },
+        {
+          "face": 1799,
+          "other": 1672,
+          "line": 0.00019214598549598116
+        },
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.006670447945064181
+        },
+        {
+          "face": 1801,
+          "other": 1596,
+          "line": 0.002765876138911747
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.009931216511946419
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 257,
+          "envelope": 5806,
+          "line": 0.00032094205703345636
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 257,
+          "envelope": 5807,
+          "line": 0.00010851315458083681
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1899,
+          "line": 0.007354392961738078
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 2234,
+          "line": 0.0040333536590622795
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 2612,
+          "envelope": 1894,
+          "line": 0.00920297599966988
+        }
+      ]
+    },
+    {
+      "frame": 19,
+      "time": 0.3,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 28,
+      "body": 118,
+      "selfPairs": [
+        {
+          "face": 1799,
+          "other": 1669,
+          "line": 0.0069700985839609006
+        },
+        {
+          "face": 1799,
+          "other": 1672,
+          "line": 0.0025853380458901853
+        },
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.006831698709746438
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.010819325456587392
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.00658501160999343
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 256,
+          "envelope": 5806,
+          "line": 0.004310027628132117
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 256,
+          "envelope": 5807,
+          "line": 0.004551800623675309
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 256,
+          "envelope": 5809,
+          "line": 0.0021230803125314186
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 257,
+          "envelope": 5808,
+          "line": 0.004510784028171478
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 257,
+          "envelope": 5804,
+          "line": 0.0005173585805697693
+        }
+      ]
+    },
+    {
+      "frame": 20,
+      "time": 0.3083333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 32,
+      "body": 134,
+      "selfPairs": [
+        {
+          "face": 1801,
+          "other": 1593,
+          "line": 0.005264910547584368
+        },
+        {
+          "face": 1801,
+          "other": 1669,
+          "line": 0.01019441428103202
+        },
+        {
+          "face": 1802,
+          "other": 1593,
+          "line": 0.004569631839617705
+        },
+        {
+          "face": 1802,
+          "other": 1669,
+          "line": 0.008392097556807478
+        },
+        {
+          "face": 1802,
+          "other": 1672,
+          "line": 0.010991720829384245
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.0008273175089749886
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.005186659753694548
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 254,
+          "envelope": 5654,
+          "line": 0.007102623360161195
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 254,
+          "envelope": 5657,
+          "line": 0.0034663013109380576
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 254,
+          "envelope": 5817,
+          "line": 0.004566500757762975
+        }
+      ]
+    },
+    {
+      "frame": 20,
+      "time": 0.31666666666666665,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 29,
+      "body": 138,
+      "selfPairs": [
+        {
+          "face": 1877,
+          "other": 1596,
+          "line": 0.00029832469394335676
+        },
+        {
+          "face": 1877,
+          "other": 1669,
+          "line": 0.0003060007089050881
+        },
+        {
+          "face": 1880,
+          "other": 1593,
+          "line": 0.006132681534729834
+        },
+        {
+          "face": 1880,
+          "other": 1596,
+          "line": 0.0019184519649197169
+        },
+        {
+          "face": 1880,
+          "other": 1669,
+          "line": 0.005850178285141982
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5807,
+          "line": 0.0005554205010897
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.002554373401499853
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.0077381539414255705
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 251,
+          "envelope": 5654,
+          "line": 0.00002006963636175252
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 251,
+          "envelope": 5657,
+          "line": 0.00001628336499117939
+        }
+      ]
+    },
+    {
+      "frame": 21,
+      "time": 0.32499999999999996,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 31,
+      "body": 136,
+      "selfPairs": [
+        {
+          "face": 11203,
+          "other": 11201,
+          "line": 0.01766062658148642
+        },
+        {
+          "face": 11207,
+          "other": 11206,
+          "line": 0.014537913036657872
+        },
+        {
+          "face": 11225,
+          "other": 11203,
+          "line": 0.008099248966278873
+        },
+        {
+          "face": 11226,
+          "other": 11203,
+          "line": 0.00826546981899845
+        },
+        {
+          "face": 11226,
+          "other": 11206,
+          "line": 0.000375886899986598
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5807,
+          "line": 0.0012664351538645502
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.004094505628971444
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.007709034103823334
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 250,
+          "envelope": 5654,
+          "line": 0.0028498065938223002
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 250,
+          "envelope": 5657,
+          "line": 0.0006023306041435376
+        }
+      ]
+    },
+    {
+      "frame": 21,
+      "time": 0.3333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 37,
+      "body": 130,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.0012214782886978727
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.000523020968774086
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.000543070348337657
+        },
+        {
+          "face": 10030,
+          "other": 9970,
+          "line": 0.0002594525094414407
+        },
+        {
+          "face": 11203,
+          "other": 11201,
+          "line": 0.017266546392022922
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5807,
+          "line": 0.0019460464279007724
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.0056711607049358395
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.007686245397136341
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 250,
+          "envelope": 5654,
+          "line": 0.004785029580626841
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 250,
+          "envelope": 5657,
+          "line": 0.002296939293411072
+        }
+      ]
+    },
+    {
+      "frame": 22,
+      "time": 0.3416666666666666,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 38,
+      "body": 108,
+      "selfPairs": [
+        {
+          "face": 9677,
+          "other": 9675,
+          "line": 0.019959302800161206
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.006487140923431143
+        },
+        {
+          "face": 10029,
+          "other": 9966,
+          "line": 0.000646488200192849
+        },
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.0008950045005079732
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0018106973652300719
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.002547090181681576
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5804,
+          "line": 0.0002415639393450774
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.0071738122858815406
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.009345928639821397
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5809,
+          "line": 0.00023723560032625716
+        }
+      ]
+    },
+    {
+      "frame": 22,
+      "time": 0.35,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 38,
+      "body": 108,
+      "selfPairs": [
+        {
+          "face": 9676,
+          "other": 9675,
+          "line": 0.0071067782137898446
+        },
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.002185343538327859
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0023971777881893717
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.009227099905334588
+        },
+        {
+          "face": 10029,
+          "other": 9966,
+          "line": 0.0028866284498212623
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.003160266670987885
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5804,
+          "line": 0.0024578955466751417
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.0069437642299545604
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.009022409673752204
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5809,
+          "line": 0.0021302601036853014
+        }
+      ]
+    },
+    {
+      "frame": 23,
+      "time": 0.3583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 39,
+      "body": 88,
+      "selfPairs": [
+        {
+          "face": 9676,
+          "other": 9675,
+          "line": 0.005534846517808091
+        },
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.0025401357608596103
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0025428362142678428
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.01023387368915141
+        },
+        {
+          "face": 10029,
+          "other": 9966,
+          "line": 0.003073994867537063
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.0036890368115776043
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5804,
+          "line": 0.00427747726638441
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.00669194555314128
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.008760999733516912
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5809,
+          "line": 0.0038482909363585474
+        }
+      ]
+    },
+    {
+      "frame": 23,
+      "time": 0.36666666666666664,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 53,
+      "body": 64,
+      "selfPairs": [
+        {
+          "face": 9677,
+          "other": 9675,
+          "line": 0.020683888114547466
+        },
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.0029054524782996674
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0026200080139019543
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.010973813195525855
+        },
+        {
+          "face": 10029,
+          "other": 9966,
+          "line": 0.0032769162424646156
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.004205405684987382
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5804,
+          "line": 0.006070394694076894
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5806,
+          "line": 0.006464327446823133
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5807,
+          "line": 0.008517680387174613
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 247,
+          "envelope": 5809,
+          "line": 0.005542634554178524
+        }
+      ]
+    },
+    {
+      "frame": 24,
+      "time": 0.375,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 50,
+      "body": 52,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.002744943189632455
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.002809466026895876
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.012451553576615119
+        },
+        {
+          "face": 10029,
+          "other": 9966,
+          "line": 0.0021218378829725194
+        },
+        {
+          "face": 10030,
+          "other": 9967,
+          "line": 0.005289743223507389
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.005862820164631596
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.001198506062701516
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.006968160374905126
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.003168243470842095
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5805,
+          "line": 0.0014974599527970605
+        }
+      ]
+    },
+    {
+      "frame": 24,
+      "time": 0.38333333333333336,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 53,
+      "body": 52,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.0026385544869624382
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0030025010730760117
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.014103519478921939
+        },
+        {
+          "face": 10029,
+          "other": 9966,
+          "line": 0.0009052454306975391
+        },
+        {
+          "face": 10030,
+          "other": 9967,
+          "line": 0.00576640624658379
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.005211059465220054
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0027018540718746764
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.00014729933200036474
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008277768853958216
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5805,
+          "line": 0.0050256674659273455
+        }
+      ]
+    },
+    {
+      "frame": 25,
+      "time": 0.39166666666666666,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 62,
+      "body": 50,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.0012437121919289186
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0038969305201664393
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.015372270331793085
+        },
+        {
+          "face": 10030,
+          "other": 9967,
+          "line": 0.0062212641328455946
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.0025851025845164376
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.005185785837816689
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.004114503868505367
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.001875658154642976
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008144696245957303
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5805,
+          "line": 0.004670746613361332
+        }
+      ]
+    },
+    {
+      "frame": 25,
+      "time": 0.4,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 74,
+      "body": 52,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9967,
+          "line": 0.00034189989879312424
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0001618081176199878
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0031330988461021653
+        },
+        {
+          "face": 10029,
+          "other": 9963,
+          "line": 0.001808531063366793
+        },
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.003352933891214053
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.005188926411166309
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005494106521397823
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.0035406412894440145
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008057410729281476
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5802,
+          "line": 0.0000821407651789099
+        }
+      ]
+    },
+    {
+      "frame": 26,
+      "time": 0.4083333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 73,
+      "body": 54,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0041086613777201395
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.00021349361979706733
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.002672151278311705
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.005952042579406042
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.0030698008858865734
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0003302071276839527
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.004907446033765649
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0063507206342909225
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.00562160921705764
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.007424340526506371
+        }
+      ]
+    },
+    {
+      "frame": 26,
+      "time": 0.4166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 73,
+      "body": 64,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.003615107093590822
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0002730436768362361
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.001991213733762187
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.004996214001290956
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.006703228420378536
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0020275557149920485
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.004631725328610593
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005862359444057219
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007012295169373349
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.006824069141735936
+        }
+      ]
+    },
+    {
+      "frame": 27,
+      "time": 0.425,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 73,
+      "body": 56,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0035104446821638546
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.00030458338893447033
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0017813577154221435
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.00450827725408692
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.008046969029244695
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.005493652513778643
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.006227993481317778
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.005464246108318511
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.007742713979653221
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5802,
+          "line": 0.0020158971536994932
+        }
+      ]
+    },
+    {
+      "frame": 27,
+      "time": 0.43333333333333335,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 71,
+      "body": 66,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.003450874881940569
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0003375057218030549
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.001599285253984022
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.004060714812596185
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.009251244071015598
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.006262754237496299
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.004843376629556575
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.004147160104147795
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008537942204296482
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.003955862988518368
+        }
+      ]
+    },
+    {
+      "frame": 28,
+      "time": 0.44166666666666665,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 73,
+      "body": 66,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.002660142808347029
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0003619306415451294
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0010822073422040006
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.0032152208816924877
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.011686823103939412
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.00657287540244959
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005526658098901868
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.004868011525341583
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008917565957908135
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.004923028855073749
+        }
+      ]
+    },
+    {
+      "frame": 28,
+      "time": 0.45,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 78,
+      "body": 78,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0018491215801429255
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.00039489391422061013
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0006362250774779583
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.0021067882127152188
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.014330710479871472
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0062675214847746075
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005938530882781878
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.005573880401452363
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.009325701769716825
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.0006292532217940065
+        }
+      ]
+    },
+    {
+      "frame": 29,
+      "time": 0.4583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 71,
+      "body": 78,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.001814965638953274
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0004257606608458024
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0004703001654608402
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.0014523588643767793
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.015391807840282195
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.004055081271082891
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.00589081679661181
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.006323378711436631
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.00874819174479037
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.002479947913843348
+        }
+      ]
+    },
+    {
+      "frame": 29,
+      "time": 0.4666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 66,
+      "body": 72,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0018243011804114709
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0004639360855004798
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0003278285169263117
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.0008686986360952297
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.01631222599888193
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.001921395338667399
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005863786637787343
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007100863681829635
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008177158877262076
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.00424551124280155
+        }
+      ]
+    },
+    {
+      "frame": 30,
+      "time": 0.475,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 68,
+      "body": 78,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0016379520437818512
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0005697950596908379
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0001517778852369641
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.000019801596628387166
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.017634549963540684
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0010654196579805153
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.00480773590801593
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.008418179628863863
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.00688257967051357
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.006079577213315979
+        }
+      ]
+    },
+    {
+      "frame": 30,
+      "time": 0.48333333333333334,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 68,
+      "body": 85,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0015121086252307056
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0006679577872354707
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.017517342838736162
+        },
+        {
+          "face": 10030,
+          "other": 9969,
+          "line": 0.00026889653770319384
+        },
+        {
+          "face": 10030,
+          "other": 9970,
+          "line": 0.0038541707261233356
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.002519414985203923
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.003386707872424446
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.00972625079966885
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.003936968011641912
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.005991409922025476
+        }
+      ]
+    },
+    {
+      "frame": 31,
+      "time": 0.49166666666666664,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 72,
+      "body": 83,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0013242602827489916
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0004451262399407501
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.017667671065061185
+        },
+        {
+          "face": 10030,
+          "other": 9969,
+          "line": 0.0025682823609324097
+        },
+        {
+          "face": 10030,
+          "other": 9970,
+          "line": 0.0013027538062559529
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0032571334455830277
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0027150839912362425
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010304356161061557
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.002594402954091149
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.0058803459448511786
+        }
+      ]
+    },
+    {
+      "frame": 31,
+      "time": 0.5,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 75,
+      "body": 77,
+      "selfPairs": [
+        {
+          "face": 6425,
+          "other": 1662,
+          "line": 0.00002746906129744847
+        },
+        {
+          "face": 6425,
+          "other": 6423,
+          "line": 0.023443355999599333
+        },
+        {
+          "face": 6426,
+          "other": 1662,
+          "line": 0.0018369263853743774
+        },
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0011886857655362335
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.00023211897795672766
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.003956757066689572
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0020903209525581466
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010865704398341534
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.001352412796442777
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.005789081083527103
+        }
+      ]
+    },
+    {
+      "frame": 32,
+      "time": 0.5083333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 94,
+      "body": 81,
+      "selfPairs": [
+        {
+          "face": 6425,
+          "other": 1662,
+          "line": 0.00395174981421533
+        },
+        {
+          "face": 6425,
+          "other": 6423,
+          "line": 0.024889859199223888
+        },
+        {
+          "face": 6426,
+          "other": 1662,
+          "line": 0.003837365422288193
+        },
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.002174564457018413
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0006565369076992665
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.004060833374809732
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0019925605844322257
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010579783255363571
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0013282403582046617
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.00549143900953853
+        }
+      ]
+    },
+    {
+      "frame": 32,
+      "time": 0.5166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 98,
+      "body": 77,
+      "selfPairs": [
+        {
+          "face": 1668,
+          "other": 1661,
+          "line": 0.014364409665233982
+        },
+        {
+          "face": 1725,
+          "other": 1661,
+          "line": 0.000058723122819931505
+        },
+        {
+          "face": 1726,
+          "other": 1661,
+          "line": 0.00003845334255351949
+        },
+        {
+          "face": 6425,
+          "other": 1662,
+          "line": 0.0041752088180286705
+        },
+        {
+          "face": 6425,
+          "other": 1667,
+          "line": 0.0067258807348036
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.004122858430146717
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0019411318074678292
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010255636133904827
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0014111038655205549
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.005200670978536635
+        }
+      ]
+    },
+    {
+      "frame": 33,
+      "time": 0.525,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 90,
+      "body": 73,
+      "selfPairs": [
+        {
+          "face": 6425,
+          "other": 1662,
+          "line": 0.006169656592168032
+        },
+        {
+          "face": 6425,
+          "other": 1667,
+          "line": 0.010000167825849839
+        },
+        {
+          "face": 6426,
+          "other": 1662,
+          "line": 0.006674482291886287
+        },
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.004890936421619196
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0005874322834513238
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0035774406777819116
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0023202537239559173
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010096576584638386
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.001901754451852717
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.005581507602189086
+        }
+      ]
+    },
+    {
+      "frame": 33,
+      "time": 0.5333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 95,
+      "body": 83,
+      "selfPairs": [
+        {
+          "face": 6425,
+          "other": 1662,
+          "line": 0.002986780166725555
+        },
+        {
+          "face": 6425,
+          "other": 6423,
+          "line": 0.024143464649677475
+        },
+        {
+          "face": 6426,
+          "other": 1662,
+          "line": 0.002268351695062642
+        },
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.003812437828385584
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0005951209736572466
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0030254003565770085
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.002714301281207695
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.009945664202792033
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0024270937403359574
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.005970061847728761
+        }
+      ]
+    },
+    {
+      "frame": 34,
+      "time": 0.5416666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 103,
+      "body": 78,
+      "selfPairs": [
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.0028811640544654585
+        },
+        {
+          "face": 10029,
+          "other": 9969,
+          "line": 0.0005627259642253593
+        },
+        {
+          "face": 10029,
+          "other": 9970,
+          "line": 0.0016889793688467283
+        },
+        {
+          "face": 10030,
+          "other": 9963,
+          "line": 0.00312131250583449
+        },
+        {
+          "face": 10030,
+          "other": 9964,
+          "line": 0.012646262127019511
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0027342821694852915
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.002741074318553296
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010395574093265615
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.001943917309933249
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.006579349750801988
+        }
+      ]
+    },
+    {
+      "frame": 34,
+      "time": 0.55,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 108,
+      "body": 82,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1572,
+          "line": 0.0001507855062964497
+        },
+        {
+          "face": 1596,
+          "other": 1553,
+          "line": 0.002067888392548553
+        },
+        {
+          "face": 1596,
+          "other": 1554,
+          "line": 0.00043575724445495123
+        },
+        {
+          "face": 1596,
+          "other": 1571,
+          "line": 0.00040096997095902254
+        },
+        {
+          "face": 1596,
+          "other": 1572,
+          "line": 0.002734150515015403
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.002435014865888808
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.002794696344225982
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.01082804000516632
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.001502856389157297
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.007161933811034395
+        }
+      ]
+    },
+    {
+      "frame": 35,
+      "time": 0.5583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 100,
+      "body": 78,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1572,
+          "line": 0.002923678361956939
+        },
+        {
+          "face": 1596,
+          "other": 1553,
+          "line": 0.0031986824818351633
+        },
+        {
+          "face": 1596,
+          "other": 1554,
+          "line": 0.002136071949106852
+        },
+        {
+          "face": 1596,
+          "other": 1571,
+          "line": 0.002012868480906392
+        },
+        {
+          "face": 1596,
+          "other": 1572,
+          "line": 0.000719010203313622
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.002277090699269197
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.002815185207357516
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010971251990647763
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0012799517451021238
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.007346111984983618
+        }
+      ]
+    },
+    {
+      "frame": 35,
+      "time": 0.5666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 99,
+      "body": 90,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1571,
+          "line": 0.0012167156843846255
+        },
+        {
+          "face": 1596,
+          "other": 1554,
+          "line": 0.0011455129363132366
+        },
+        {
+          "face": 1596,
+          "other": 1571,
+          "line": 0.0015299515564339838
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.007265478444946417
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.007278228767924469
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0021061823182271094
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.00286114197369341
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.011110069746386269
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0011084615732761816
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.007527613241597467
+        }
+      ]
+    },
+    {
+      "frame": 36,
+      "time": 0.5750000000000001,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 90,
+      "body": 90,
+      "selfPairs": [
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.006422346574703187
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.007907063350235003
+        },
+        {
+          "face": 1669,
+          "other": 1616,
+          "line": 0.01139533835683186
+        },
+        {
+          "face": 1672,
+          "other": 1616,
+          "line": 0.002671332994869798
+        },
+        {
+          "face": 10029,
+          "other": 9964,
+          "line": 0.004109213903847542
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 185,
+          "envelope": 5654,
+          "line": 0.0019015282828872358
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 185,
+          "envelope": 5657,
+          "line": 0.0017764463466747407
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0021727706543684527
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0027699149636441264
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.01144925428009178
+        }
+      ]
+    },
+    {
+      "frame": 36,
+      "time": 0.5833333333333334,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 93,
+      "body": 90,
+      "selfPairs": [
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.0064307552175590435
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.005603344523421195
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.00046634045646162803
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.004597649446952984
+        },
+        {
+          "face": 1669,
+          "other": 1616,
+          "line": 0.004574206224801439
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 185,
+          "envelope": 5654,
+          "line": 0.003965923022460126
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 185,
+          "envelope": 5657,
+          "line": 0.003708508170335568
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0022174005814882894
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0027037320861092746
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.01177055677029677
+        }
+      ]
+    },
+    {
+      "frame": 37,
+      "time": 0.5916666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 92,
+      "body": 74,
+      "selfPairs": [
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.004560152975802621
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.006393187342052704
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.0035768951212444364
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.003312383639210867
+        },
+        {
+          "face": 1669,
+          "other": 1616,
+          "line": 0.007753478094467352
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0019504901934917426
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0028960239662054518
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.011752345395115042
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0004704213731845895
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008014595106969759
+        }
+      ]
+    },
+    {
+      "frame": 37,
+      "time": 0.6,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 104,
+      "body": 75,
+      "selfPairs": [
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.0031152998713537654
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.007237526001482628
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.006323396397922631
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.0023002106814999645
+        },
+        {
+          "face": 1669,
+          "other": 1616,
+          "line": 0.01072015475850472
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.001677531219794668
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0031011717342292744
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.011729923124452967
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0006510009149901692
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008110890785960934
+        }
+      ]
+    },
+    {
+      "frame": 38,
+      "time": 0.6083333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 107,
+      "body": 84,
+      "selfPairs": [
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.005190509601038555
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.007780681002308578
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.004479113745644863
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.003849812445995471
+        },
+        {
+          "face": 1669,
+          "other": 1616,
+          "line": 0.00944387493557082
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.001442020131557982
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.003316683845446901
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.01168640597511533
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0009062246301577807
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008228847729320872
+        }
+      ]
+    },
+    {
+      "frame": 38,
+      "time": 0.6166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 104,
+      "body": 94,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.023902692243060752
+        },
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.00711704610359274
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.008260163545542272
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.0027619614916370473
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.005314714960948735
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 185,
+          "envelope": 5654,
+          "line": 0.0007363437071763223
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 185,
+          "envelope": 5657,
+          "line": 0.0006920473163004133
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0012034939132325034
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0035396511198085845
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.011650624895525475
+        }
+      ]
+    },
+    {
+      "frame": 39,
+      "time": 0.625,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 107,
+      "body": 90,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.023551137933651045
+        },
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.006107201552300517
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.007136323872545529
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.00278011355097396
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.004623198667901417
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.0008242398409003225
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.003893874494062033
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.011463466447304548
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0018178920698741618
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.00849941712853404
+        }
+      ]
+    },
+    {
+      "frame": 39,
+      "time": 0.6333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 106,
+      "body": 96,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.023187858834394445
+        },
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.004825112469519596
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.00590153952576338
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.0028998495571865446
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.003708825699829943
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.00045108966641094553
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.004249117204235528
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.01127529390603701
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0024710982490780773
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008643706027799701
+        }
+      ]
+    },
+    {
+      "frame": 40,
+      "time": 0.6416666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 107,
+      "body": 92,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.02288250606960683
+        },
+        {
+          "face": 1613,
+          "other": 1596,
+          "line": 0.0000338583482026103
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.003584221810364314
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.0060839247856136775
+        },
+        {
+          "face": 1669,
+          "other": 1613,
+          "line": 0.000026415490774429895
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5804,
+          "line": 0.000033378416609313594
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0047646634788353764
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010847131386288036
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.003711820858775923
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008606385810799925
+        }
+      ]
+    },
+    {
+      "frame": 40,
+      "time": 0.65,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 108,
+      "body": 128,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.022576362983910428
+        },
+        {
+          "face": 1616,
+          "other": 1593,
+          "line": 0.0005295278100103367
+        },
+        {
+          "face": 1616,
+          "other": 1596,
+          "line": 0.0009994025170778093
+        },
+        {
+          "face": 1669,
+          "other": 1616,
+          "line": 0.0012886508405435884
+        },
+        {
+          "face": 1672,
+          "other": 1591,
+          "line": 0.002536431271122834
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.004906210376533533
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010414871785257553
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.004982818753133141
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.00856260202942528
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.006593407214889595
+        }
+      ]
+    },
+    {
+      "frame": 41,
+      "time": 0.6583333333333333,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 102,
+      "body": 128,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.021864717828273462
+        },
+        {
+          "face": 1672,
+          "other": 1591,
+          "line": 0.0028999543494261926
+        },
+        {
+          "face": 1672,
+          "other": 1594,
+          "line": 0.012935182673845512
+        },
+        {
+          "face": 1949,
+          "other": 360,
+          "line": 0.0013936436883181067
+        },
+        {
+          "face": 1952,
+          "other": 359,
+          "line": 0.000555134063483973
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.004932485549770924
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.010058311872931571
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.005984626094326472
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008566093789949391
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.006310971283490488
+        }
+      ]
+    },
+    {
+      "frame": 41,
+      "time": 0.6666666666666666,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 102,
+      "body": 132,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.02083670527092764
+        },
+        {
+          "face": 1672,
+          "other": 1591,
+          "line": 0.002638508703223225
+        },
+        {
+          "face": 1672,
+          "other": 1594,
+          "line": 0.013585203192372861
+        },
+        {
+          "face": 1927,
+          "other": 1830,
+          "line": 0.0022714369563409933
+        },
+        {
+          "face": 1927,
+          "other": 1835,
+          "line": 0.026014434733365253
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.004965279862735213
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.009702496359752967
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.006992991442036163
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008559947168087882
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.00602176881950056
+        }
+      ]
+    },
+    {
+      "frame": 42,
+      "time": 0.675,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 106,
+      "body": 132,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.022165150361837287
+        },
+        {
+          "face": 1672,
+          "other": 1591,
+          "line": 0.0007783490031147726
+        },
+        {
+          "face": 1672,
+          "other": 1594,
+          "line": 0.01153211336282989
+        },
+        {
+          "face": 1846,
+          "other": 1830,
+          "line": 0.0011878174815765693
+        },
+        {
+          "face": 1846,
+          "other": 1835,
+          "line": 0.026673259190985184
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005004447264147595
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.00959031470279327
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.007536875835361815
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008639358626468877
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.005880409667324168
+        }
+      ]
+    },
+    {
+      "frame": 42,
+      "time": 0.6833333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 91,
+      "body": 126,
+      "selfPairs": [
+        {
+          "face": 1846,
+          "other": 1830,
+          "line": 0.003046830920800373
+        },
+        {
+          "face": 1846,
+          "other": 1835,
+          "line": 0.027407340335263854
+        },
+        {
+          "face": 1927,
+          "other": 1830,
+          "line": 0.001736487799559516
+        },
+        {
+          "face": 1927,
+          "other": 1911,
+          "line": 0.0030254225232062915
+        },
+        {
+          "face": 1927,
+          "other": 1914,
+          "line": 0.029166498011500064
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0050477223018503044
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.009478454985994228
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.008073964553299333
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008708824105528184
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.005731944573032444
+        }
+      ]
+    },
+    {
+      "frame": 43,
+      "time": 0.6916666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 82,
+      "body": 116,
+      "selfPairs": [
+        {
+          "face": 1846,
+          "other": 1830,
+          "line": 0.0034085657029860987
+        },
+        {
+          "face": 1846,
+          "other": 1835,
+          "line": 0.027600864707155965
+        },
+        {
+          "face": 1927,
+          "other": 1830,
+          "line": 0.0012782704763338038
+        },
+        {
+          "face": 1927,
+          "other": 1911,
+          "line": 0.0029139457821368963
+        },
+        {
+          "face": 1927,
+          "other": 1914,
+          "line": 0.02924658884014915
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005144792453585791
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.008989646579571835
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.0095878215191425
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008724330210435144
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.005183568154389884
+        }
+      ]
+    },
+    {
+      "frame": 43,
+      "time": 0.7,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 67,
+      "body": 141,
+      "selfPairs": [
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.023689454647761874
+        },
+        {
+          "face": 1672,
+          "other": 1591,
+          "line": 0.00038771464069765936
+        },
+        {
+          "face": 1672,
+          "other": 1594,
+          "line": 0.010104004832753855
+        },
+        {
+          "face": 1846,
+          "other": 1830,
+          "line": 0.003770726986696368
+        },
+        {
+          "face": 1846,
+          "other": 1835,
+          "line": 0.027798608261166632
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005245675170631065
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.008501879913931386
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.011148820158086567
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.00873003370525606
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.004628326300341082
+        }
+      ]
+    },
+    {
+      "frame": 44,
+      "time": 0.7083333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 62,
+      "body": 146,
+      "selfPairs": [
+        {
+          "face": 1846,
+          "other": 1830,
+          "line": 0.003943727316975631
+        },
+        {
+          "face": 1846,
+          "other": 1835,
+          "line": 0.028066920183248127
+        },
+        {
+          "face": 1927,
+          "other": 1830,
+          "line": 0.0003970615132866586
+        },
+        {
+          "face": 1927,
+          "other": 1911,
+          "line": 0.0026076754087463435
+        },
+        {
+          "face": 1927,
+          "other": 1914,
+          "line": 0.029436930505225365
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005208146702169847
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.008609040046167606
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.011904011749095255
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.00939709281741537
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.0048747722465711674
+        }
+      ]
+    },
+    {
+      "frame": 44,
+      "time": 0.7166666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 63,
+      "body": 156,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.0009269474508417329
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.0010457070095312403
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.0012113299865989281
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.0008577080094679182
+        },
+        {
+          "face": 1846,
+          "other": 1830,
+          "line": 0.004086383079729514
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005159937198738463
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007535337352415132
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.012544880965019836
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.010061194126156713
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5807,
+          "line": 0.005147756728802116
+        }
+      ]
+    },
+    {
+      "frame": 45,
+      "time": 0.725,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 80,
+      "body": 142,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.0015810769088683008
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.0018179960159586568
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.002101555104284298
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.0014590233388841432
+        },
+        {
+          "face": 1667,
+          "other": 1599,
+          "line": 0.0016068211309984248
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.00041148817529445755
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005316919461468457
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.00745620800844122
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.012882883138415815
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.009475170905347025
+        }
+      ]
+    },
+    {
+      "frame": 45,
+      "time": 0.7333333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 79,
+      "body": 146,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.00222166519998946
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.0026035509644654307
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.0030039305400487194
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.0020444628054975406
+        },
+        {
+          "face": 1667,
+          "other": 1601,
+          "line": 0.007921447189639986
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0014388778356046392
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005481590620331253
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007364156219875326
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.01239416081517685
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008261151053234772
+        }
+      ]
+    },
+    {
+      "frame": 46,
+      "time": 0.7416666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 76,
+      "body": 147,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.003064377721837524
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.003767190746024371
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.004324808436028109
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.002822578520011953
+        },
+        {
+          "face": 1667,
+          "other": 1599,
+          "line": 0.004486525656001219
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0014579064025657291
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005398768904462628
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007693325918380869
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.01233710972971077
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.008126960496075846
+        }
+      ]
+    },
+    {
+      "frame": 46,
+      "time": 0.75,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 72,
+      "body": 146,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.003862814152548081
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.004979036140834357
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.005687392780241177
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.0035622048824245217
+        },
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.021385568779619023
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0014682802459006217
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005317173477094778
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007801498265313688
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.012265825770051158
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.007992884195898366
+        }
+      ]
+    },
+    {
+      "frame": 47,
+      "time": 0.7583333333333334,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 76,
+      "body": 151,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.0051277237512644715
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.00701427589373187
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.007960091635410907
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.004766879938178297
+        },
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.020088237535607376
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0017618916658782742
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005400937929518115
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007612763385550942
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.01218902474560581
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.007563812069737372
+        }
+      ]
+    },
+    {
+      "frame": 47,
+      "time": 0.7666666666666667,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 80,
+      "body": 145,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.006259086487141449
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.009065146575669897
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.010221479654436275
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.005866977336985626
+        },
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.018482890110997574
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0020490725119796938
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005488583221381026
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.007430644538179916
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.012096220120549598
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.007127527453504836
+        }
+      ]
+    },
+    {
+      "frame": 48,
+      "time": 0.775,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 72,
+      "body": 154,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.006227128254530159
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.009894459059092954
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.010986392323009353
+        },
+        {
+          "face": 538,
+          "other": 349,
+          "line": 0.005898599244029367
+        },
+        {
+          "face": 1593,
+          "other": 1591,
+          "line": 0.01786359662365845
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0027470250310706566
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0055271017344078206
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.00722071233406931
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.01257986450300966
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.006260008410827057
+        }
+      ]
+    },
+    {
+      "frame": 48,
+      "time": 0.7833333333333333,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 75,
+      "body": 158,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.006474890907167345
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.008147454835805926
+        },
+        {
+          "face": 478,
+          "other": 352,
+          "line": 0.0037590606815535565
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.012004532146500806
+        },
+        {
+          "face": 535,
+          "other": 352,
+          "line": 0.0009553207762083016
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.0035384325814338466
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005582036239115875
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.006626802745530972
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.013057771936794672
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.0053223250848541785
+        }
+      ]
+    },
+    {
+      "frame": 49,
+      "time": 0.7916666666666667,
+      "kind": "midpoint",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 87,
+      "body": 150,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.006455303152176323
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.006965681869840295
+        },
+        {
+          "face": 478,
+          "other": 352,
+          "line": 0.005743239567902583
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.011772558331647611
+        },
+        {
+          "face": 535,
+          "other": 352,
+          "line": 0.001987238340943307
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.006048352139997763
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.0057242307588932905
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.005994110242574869
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.012436800372461285
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 245,
+          "envelope": 5806,
+          "line": 0.0023476803260476346
+        }
+      ]
+    },
+    {
+      "frame": 49,
+      "time": 0.8,
+      "kind": "key",
+      "vertices": 14600,
+      "faces": 26916,
+      "self": 88,
+      "body": 146,
+      "selfPairs": [
+        {
+          "face": 475,
+          "other": 349,
+          "line": 0.0064543147236161835
+        },
+        {
+          "face": 478,
+          "other": 349,
+          "line": 0.006469101208653915
+        },
+        {
+          "face": 478,
+          "other": 352,
+          "line": 0.00721913705235974
+        },
+        {
+          "face": 535,
+          "other": 349,
+          "line": 0.011558026207130735
+        },
+        {
+          "face": 535,
+          "other": 352,
+          "line": 0.0031790690069550213
+        }
+      ],
+      "bodyPairs": [
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5806,
+          "line": 0.007932203634531815
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5807,
+          "line": 0.005591232738264257
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5808,
+          "line": 0.004820349686000107
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 244,
+          "envelope": 5809,
+          "line": 0.011817540581535857
+        },
+        {
+          "mesh": "morpheus-ambush-shirt",
+          "bodyFace": 246,
+          "envelope": 5804,
+          "line": 0.009112356698886614
+        }
+      ]
+    }
+  ]
+}

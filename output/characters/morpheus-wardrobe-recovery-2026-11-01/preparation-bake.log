@@ -1,0 +1,62 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+Info: Saved as "preparation.blend"
+Info: Saved as "preparation.blend"
+{"frame": 1, "time": 0, "seconds": 0.030118665657937527, "solverStatus": [], "boundaryErrorMetres": 3.5332013825159024e-07}
+{"frame": 2, "time": 0.016666666666666666, "seconds": 0.8074102494865656, "solverStatus": ["NO_CONVERGENCE", "SUCCESS"], "boundaryErrorMetres": 3.557189645887445e-07}
+{"frame": 3, "time": 0.03333333333333333, "seconds": 1.522401874884963, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.712408025515244e-07}
+{"frame": 4, "time": 0.05, "seconds": 2.366562250070274, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.734554455115499e-07}
+{"frame": 5, "time": 0.06666666666666667, "seconds": 3.25254787504673, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.712408025515244e-07}
+{"frame": 6, "time": 0.08333333333333333, "seconds": 4.083125915378332, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.6873898164624047e-07}
+{"frame": 7, "time": 0.1, "seconds": 4.9067243328318, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.67304525549388e-07}
+{"frame": 8, "time": 0.11666666666666667, "seconds": 5.785932249389589, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.655502376234173e-07}
+{"frame": 9, "time": 0.13333333333333333, "seconds": 6.67467266600579, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.6346766876894416e-07}
+{"frame": 10, "time": 0.15, "seconds": 7.57403904106468, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.6200159196159864e-07}
+{"frame": 11, "time": 0.16666666666666666, "seconds": 8.48384749982506, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.604872089158144e-07}
+{"frame": 12, "time": 0.18333333333333332, "seconds": 9.43882495816797, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 3.967632775127485e-07}
+{"frame": 13, "time": 0.2, "seconds": 10.333695790730417, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 5.875181490128842e-07}
+{"frame": 14, "time": 0.21666666666666667, "seconds": 11.25523370783776, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 5.967708745175933e-07}
+{"frame": 15, "time": 0.23333333333333334, "seconds": 12.148321290500462, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 6.185043915999037e-07}
+{"frame": 16, "time": 0.25, "seconds": 13.07551325019449, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 7.320158998756511e-07}
+{"frame": 17, "time": 0.26666666666666666, "seconds": 14.064112832769752, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 7.506165583054258e-07}
+{"frame": 18, "time": 0.2833333333333333, "seconds": 14.97119537461549, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 7.549363576358904e-07}
+{"frame": 19, "time": 0.3, "seconds": 15.892480582930148, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 8.613143924074586e-07}
+{"frame": 20, "time": 0.31666666666666665, "seconds": 16.760185250081122, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 8.741905121927429e-07}
+{"frame": 21, "time": 0.3333333333333333, "seconds": 17.641294665634632, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.084179201846867e-06}
+{"frame": 22, "time": 0.35, "seconds": 18.492599708028138, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.0891680218293266e-06}
+{"frame": 23, "time": 0.36666666666666664, "seconds": 19.353256165981293, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.0959843666193401e-06}
+{"frame": 24, "time": 0.38333333333333336, "seconds": 20.218032999895513, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.099452427973527e-06}
+{"frame": 25, "time": 0.4, "seconds": 21.120527832768857, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.10384233673443e-06}
+{"frame": 26, "time": 0.4166666666666667, "seconds": 22.00165724940598, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.1155120739309405e-06}
+{"frame": 27, "time": 0.43333333333333335, "seconds": 22.890239874832332, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.2232720363908807e-06}
+{"frame": 28, "time": 0.45, "seconds": 23.80068499967456, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.259507954557394e-06}
+{"frame": 29, "time": 0.4666666666666667, "seconds": 24.758133333176374, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.2613612115808758e-06}
+{"frame": 30, "time": 0.48333333333333334, "seconds": 25.664477000012994, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.2613612115808758e-06}
+{"frame": 31, "time": 0.5, "seconds": 26.58042512461543, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.2726099056722078e-06}
+{"frame": 32, "time": 0.5166666666666667, "seconds": 27.52931779064238, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.273592719322952e-06}
+{"frame": 33, "time": 0.5333333333333333, "seconds": 28.450601999647915, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.2851231386014515e-06}
+{"frame": 34, "time": 0.55, "seconds": 29.41766058281064, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.29794345552774e-06}
+{"frame": 35, "time": 0.5666666666666667, "seconds": 30.35309554077685, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3100223974604515e-06}
+{"frame": 36, "time": 0.5833333333333334, "seconds": 31.31616629101336, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.318224097827895e-06}
+{"frame": 37, "time": 0.6, "seconds": 32.25158299971372, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3286364997459917e-06}
+{"frame": 38, "time": 0.6166666666666667, "seconds": 33.22415779065341, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.332832161841456e-06}
+{"frame": 39, "time": 0.6333333333333333, "seconds": 34.1732352077961, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.332832161841456e-06}
+{"frame": 40, "time": 0.65, "seconds": 35.19285229034722, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3370561757544519e-06}
+{"frame": 41, "time": 0.6666666666666666, "seconds": 36.22685470804572, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3455881892313147e-06}
+{"frame": 42, "time": 0.6833333333333333, "seconds": 37.19177708309144, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3542304169100423e-06}
+{"frame": 43, "time": 0.7, "seconds": 38.192483582533896, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3542304169100423e-06}
+{"frame": 44, "time": 0.7166666666666667, "seconds": 39.164779832586646, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3542304169100423e-06}
+{"frame": 45, "time": 0.7333333333333333, "seconds": 40.13360008317977, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3542304169100423e-06}
+{"frame": 46, "time": 0.75, "seconds": 41.14833912439644, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3542304169100423e-06}
+{"frame": 47, "time": 0.7666666666666667, "seconds": 42.12444279063493, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.3542304169100423e-06}
+{"frame": 48, "time": 0.7833333333333333, "seconds": 43.101505583152175, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.349895657964106e-06}
+{"frame": 49, "time": 0.8, "seconds": 44.074309665709734, "solverStatus": ["SUCCESS"], "boundaryErrorMetres": 1.349895657964106e-06}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-preparation.py", line 141, in <module>
+    assert all(row['solverStatus'] == ['SUCCESS'] for row in rows[1:]), 'Some preparation cloth steps did not converge.'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Some preparation cloth steps did not converge.
+
+Error: script failed, file: 'output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-preparation.py', exiting.
+
+Blender quit

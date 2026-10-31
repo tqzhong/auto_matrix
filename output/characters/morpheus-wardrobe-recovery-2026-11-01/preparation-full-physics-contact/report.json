@@ -1,0 +1,3611 @@
+[
+  {
+    "frame": 2,
+    "time": 0.016666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-2-1.0000000000.bin",
+        "report": {
+          "context": "preparation-2-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 156667.27044772214,
+              "residual": 755861.4015579224,
+              "contacts": 125,
+              "step": 0.90234375,
+              "maximumStep": 0.002462327944543852,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 7.558614015579224e-05
+            },
+            {
+              "iteration": 1,
+              "energy": 1494.095580115719,
+              "residual": 73814.58999589086,
+              "contacts": 35,
+              "step": 1.0,
+              "maximumStep": 0.0009716991904126952,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 7.381458999589086e-06
+            }
+          ],
+          "seconds": 6.539216750301421,
+          "maximumCorrection": 0.00025083027015927495,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015927495
+      }
+    ]
+  },
+  {
+    "frame": 3,
+    "time": 0.03333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-3-1.0000000000.bin",
+        "report": {
+          "context": "preparation-3-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 1.165894334204495,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      }
+    ]
+  },
+  {
+    "frame": 4,
+    "time": 0.05,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-4-1.0000000000.bin",
+        "report": {
+          "context": "preparation-4-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9254463752731681,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      }
+    ]
+  },
+  {
+    "frame": 5,
+    "time": 0.06666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-5-1.0000000000.bin",
+        "report": {
+          "context": "preparation-5-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 1.011996790766716,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      }
+    ]
+  },
+  {
+    "frame": 6,
+    "time": 0.08333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-6-1.0000000000.bin",
+        "report": {
+          "context": "preparation-6-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 1.0373339597135782,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      }
+    ]
+  },
+  {
+    "frame": 7,
+    "time": 0.1,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-7-1.0000000000.bin",
+        "report": {
+          "context": "preparation-7-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 1.0669257072731853,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      }
+    ]
+  },
+  {
+    "frame": 8,
+    "time": 0.11666666666666667,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-8-0.5000000000.bin",
+        "report": {
+          "context": "preparation-8-0.0000000000-0.5000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9019137918949127,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-8-0.7500000000.bin",
+        "report": {
+          "context": "preparation-8-0.5000000000-0.7500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.8871828345581889,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00025083027015937524
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-8-0.8750000000.bin",
+        "report": {
+          "context": "preparation-8-0.7500000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 20417090.393192396,
+              "residual": 6893540.266901255,
+              "contacts": 30,
+              "step": 1.0,
+              "maximumStep": 0.0007549088913954847,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0006893540266901255
+            }
+          ],
+          "seconds": 3.445911791175604,
+          "maximumCorrection": 5.562483045175565e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0002476321993743096
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-8-1.0000000000.bin",
+        "report": {
+          "context": "preparation-8-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 20417090.393192276,
+              "residual": 6893540.266901255,
+              "contacts": 31,
+              "step": 1.0,
+              "maximumStep": 0.0007549088913975518,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0006893540266901255
+            }
+          ],
+          "seconds": 3.5629785414785147,
+          "maximumCorrection": 7.159736158918614e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0002476584451016056
+      }
+    ]
+  },
+  {
+    "frame": 9,
+    "time": 0.13333333333333333,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-9-0.2500000000.bin",
+        "report": {
+          "context": "preparation-9-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 128816909.44627956,
+              "residual": 15931916.423141956,
+              "contacts": 32,
+              "step": 1.0,
+              "maximumStep": 0.0019246917198028216,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0015931916423141956
+            }
+          ],
+          "seconds": 3.0525158336386085,
+          "maximumCorrection": 0.00010936704967728418,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0002476835672005757
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-9-0.5000000000.bin",
+        "report": {
+          "context": "preparation-9-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 128816909.44627967,
+              "residual": 15931916.423141956,
+              "contacts": 32,
+              "step": 1.0,
+              "maximumStep": 0.0019246917198425233,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0015931916423141956
+            }
+          ],
+          "seconds": 3.056651166640222,
+          "maximumCorrection": 0.0001733385682707032,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0003681397894774947
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-9-0.7500000000.bin",
+        "report": {
+          "context": "preparation-9-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 128816909.44627975,
+              "residual": 15931916.423141956,
+              "contacts": 32,
+              "step": 1.0,
+              "maximumStep": 0.0019246917198809414,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0015931916423141956
+            }
+          ],
+          "seconds": 3.039079625159502,
+          "maximumCorrection": 0.00021258133269995468,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0005794972941411672
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-9-1.0000000000.bin",
+        "report": {
+          "context": "preparation-9-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 128816909.44627978,
+              "residual": 15931916.423141956,
+              "contacts": 28,
+              "step": 1.0,
+              "maximumStep": 0.0019246917199179654,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0015931916423141956
+            }
+          ],
+          "seconds": 3.3223924580961466,
+          "maximumCorrection": 0.00022826301233894593,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0008074394037487389
+      }
+    ]
+  },
+  {
+    "frame": 10,
+    "time": 0.15,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-10-0.2500000000.bin",
+        "report": {
+          "context": "preparation-10-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 190238723.38665423,
+              "residual": 17729979.008436203,
+              "contacts": 27,
+              "step": 1.0,
+              "maximumStep": 0.002886792644870506,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0017729979008436203
+            }
+          ],
+          "seconds": 3.055178708396852,
+          "maximumCorrection": 7.821075307087424e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0008850213680795664
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-10-0.5000000000.bin",
+        "report": {
+          "context": "preparation-10-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 190238723.38665417,
+              "residual": 17729979.008436203,
+              "contacts": 29,
+              "step": 1.0,
+              "maximumStep": 0.002886792644282387,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0017729979008436203
+            }
+          ],
+          "seconds": 3.113015916198492,
+          "maximumCorrection": 0.00017072194037581512,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0009667655468500907
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-10-0.7500000000.bin",
+        "report": {
+          "context": "preparation-10-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 190238723.3866542,
+              "residual": 17729979.008436203,
+              "contacts": 28,
+              "step": 1.0,
+              "maximumStep": 0.002886792642738611,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0017729979008436203
+            }
+          ],
+          "seconds": 3.350742875598371,
+          "maximumCorrection": 0.00022585173245513897,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0010482095258721735
+      },
+      {
+        "fraction": 0.78125,
+        "file": "cloth-10-0.7812500000.bin",
+        "report": {
+          "context": "preparation-10-0.7500000000-0.7812500000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2972480.052917669,
+              "residual": 2216247.3760545254,
+              "contacts": 27,
+              "step": 0.91015625,
+              "maximumStep": 0.0003284290463014993,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00022162473760545254
+            },
+            {
+              "iteration": 1,
+              "energy": 23993.5599986411,
+              "residual": 199115.97519239876,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 3.592151020904751e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 1.9911597519239876e-05
+            }
+          ],
+          "seconds": 5.3089926252141595,
+          "maximumCorrection": 7.697346720856328e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.001110844271485464
+      },
+      {
+        "fraction": 0.8125,
+        "file": "cloth-10-0.8125000000.bin",
+        "report": {
+          "context": "preparation-10-0.7812500000-0.8125000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2972480.052917528,
+              "residual": 2216247.3760545254,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 0.00036084908138468653,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00022162473760545254
+            }
+          ],
+          "seconds": 3.190128665417433,
+          "maximumCorrection": 0.00016114199628485635,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0011583301640094848
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-10-0.8750000000.bin",
+        "report": {
+          "context": "preparation-10-0.8125000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 11889920.211666854,
+              "residual": 4432494.752109051,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 0.0007216981618744716,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0004432494752109051
+            }
+          ],
+          "seconds": 2.9985974999144673,
+          "maximumCorrection": 0.00032964714101825824,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0012041872766869527
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-10-1.0000000000.bin",
+        "report": {
+          "context": "preparation-10-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 47559680.846664354,
+              "residual": 8864989.504218102,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 0.0014433963228309213,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0008864989504218102
+            }
+          ],
+          "seconds": 3.038813166320324,
+          "maximumCorrection": 0.0007646290380459393,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0013214478542127562
+      }
+    ]
+  },
+  {
+    "frame": 11,
+    "time": 0.16666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-11-1.0000000000.bin",
+        "report": {
+          "context": "preparation-11-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4266061044.205656,
+              "residual": 76801944.52404976,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 0.013996392488546495,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.007680194452404976
+            }
+          ],
+          "seconds": 3.6978156669065356,
+          "maximumCorrection": 0.0008017907140963942,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.002122889968131669
+      }
+    ]
+  },
+  {
+    "frame": 12,
+    "time": 0.18333333333333332,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-12-0.5000000000.bin",
+        "report": {
+          "context": "preparation-12-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1430318023.7285697,
+              "residual": 40745888.83668184,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.006863422691811479,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004074588883668184
+            }
+          ],
+          "seconds": 3.2575830426067114,
+          "maximumCorrection": 0.00018062687351092912,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.002302542823236568
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-12-0.7500000000.bin",
+        "report": {
+          "context": "preparation-12-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 357579505.9321433,
+              "residual": 20372944.41834092,
+              "contacts": 27,
+              "step": 0.8779296875,
+              "maximumStep": 0.003012801269497068,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002037294441834092
+            },
+            {
+              "iteration": 1,
+              "energy": 5328349.8575123865,
+              "residual": 2486931.691692007,
+              "contacts": 32,
+              "step": 1.0,
+              "maximumStep": 0.0004189100763976825,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0002486931691692007
+            }
+          ],
+          "seconds": 5.131631208583713,
+          "maximumCorrection": 0.0001402787368489567,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.002442733662163011
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-12-1.0000000000.bin",
+        "report": {
+          "context": "preparation-12-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 357579505.93214315,
+              "residual": 20372944.41834092,
+              "contacts": 31,
+              "step": 1.0,
+              "maximumStep": 0.003431711345871501,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002037294441834092
+            }
+          ],
+          "seconds": 3.1905493335798383,
+          "maximumCorrection": 0.00024831886146927984,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0025510577324810275
+      }
+    ]
+  },
+  {
+    "frame": 13,
+    "time": 0.2,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-13-0.5000000000.bin",
+        "report": {
+          "context": "preparation-13-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1845300222.202214,
+              "residual": 42557027.19092369,
+              "contacts": 29,
+              "step": 0.30224609375,
+              "maximumStep": 0.002104293439565781,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004255702719092369
+            },
+            {
+              "iteration": 1,
+              "energy": 898403814.0883529,
+              "residual": 29694331.96085447,
+              "contacts": 36,
+              "step": 1.0,
+              "maximumStep": 0.004857892286172998,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002969433196085447
+            }
+          ],
+          "seconds": 6.88767575006932,
+          "maximumCorrection": 0.00053835451152281,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.002798260067508455
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-13-0.7500000000.bin",
+        "report": {
+          "context": "preparation-13-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 461325055.5505544,
+              "residual": 21278513.595461845,
+              "contacts": 37,
+              "step": 0.67578125,
+              "maximumStep": 0.0023524572862684886,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0021278513595461845
+            },
+            {
+              "iteration": 1,
+              "energy": 48493473.933225594,
+              "residual": 6898893.079778645,
+              "contacts": 37,
+              "step": 1.0,
+              "maximumStep": 0.0011286355766489526,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0006898893079778645
+            }
+          ],
+          "seconds": 6.832153500057757,
+          "maximumCorrection": 0.00036704091006700137,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0029887210029771864
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-13-1.0000000000.bin",
+        "report": {
+          "context": "preparation-13-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 461325055.55055416,
+              "residual": 21278513.595461845,
+              "contacts": 37,
+              "step": 1.0,
+              "maximumStep": 0.0034810928628938517,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0021278513595461845
+            }
+          ],
+          "seconds": 4.122738167643547,
+          "maximumCorrection": 0.0003589244208289798,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0031560686298939948
+      }
+    ]
+  },
+  {
+    "frame": 14,
+    "time": 0.21666666666666667,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-14-0.2500000000.bin",
+        "report": {
+          "context": "preparation-14-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 574651186.7154785,
+              "residual": 21924888.715147972,
+              "contacts": 41,
+              "step": 0.822265625,
+              "maximumStep": 0.0022846208850461195,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002192488871514797
+            },
+            {
+              "iteration": 1,
+              "energy": 18152948.29250848,
+              "residual": 3896806.392731378,
+              "contacts": 41,
+              "step": 1.0,
+              "maximumStep": 0.0004938254169652615,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0003896806392731378
+            }
+          ],
+          "seconds": 6.787491541355848,
+          "maximumCorrection": 0.0004136321874588749,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.003333266260959987
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-14-0.5000000000.bin",
+        "report": {
+          "context": "preparation-14-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 574651186.7154784,
+              "residual": 21924888.715147972,
+              "contacts": 39,
+              "step": 1.0,
+              "maximumStep": 0.0027784463020009914,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002192488871514797
+            }
+          ],
+          "seconds": 3.9131815005093813,
+          "maximumCorrection": 0.0004830499784694991,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.003527298650783194
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-14-0.7500000000.bin",
+        "report": {
+          "context": "preparation-14-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 574651186.7154784,
+              "residual": 21924888.715147972,
+              "contacts": 33,
+              "step": 1.0,
+              "maximumStep": 0.0027784463020206177,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002192488871514797
+            }
+          ],
+          "seconds": 3.2566445413976908,
+          "maximumCorrection": 0.0005058955161920547,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.003724219197423003
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-14-1.0000000000.bin",
+        "report": {
+          "context": "preparation-14-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 574651186.7154784,
+              "residual": 21924888.715147972,
+              "contacts": 29,
+              "step": 1.0,
+              "maximumStep": 0.0027784463020452607,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002192488871514797
+            }
+          ],
+          "seconds": 3.338313667103648,
+          "maximumCorrection": 0.0005093853799909562,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00380384387084162
+      }
+    ]
+  },
+  {
+    "frame": 15,
+    "time": 0.23333333333333334,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-15-0.5000000000.bin",
+        "report": {
+          "context": "preparation-15-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2772020130.8939857,
+              "residual": 44667299.37121272,
+              "contacts": 28,
+              "step": 1.0,
+              "maximumStep": 0.006762111559512492,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004466729937121272
+            }
+          ],
+          "seconds": 3.6129882084205747,
+          "maximumCorrection": 0.0006742740290347734,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0041862927808745815
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-15-1.0000000000.bin",
+        "report": {
+          "context": "preparation-15-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2772020130.8939857,
+              "residual": 44667299.37121272,
+              "contacts": 27,
+              "step": 1.0,
+              "maximumStep": 0.006762111559512363,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004466729937121272
+            }
+          ],
+          "seconds": 3.420568125322461,
+          "maximumCorrection": 0.0006952434317283587,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.004634081726394168
+      }
+    ]
+  },
+  {
+    "frame": 16,
+    "time": 0.25,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-16-0.5000000000.bin",
+        "report": {
+          "context": "preparation-16-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 3243328973.0954137,
+              "residual": 47654435.03856659,
+              "contacts": 28,
+              "step": 1.0,
+              "maximumStep": 0.008038235828272448,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004765443503856659
+            }
+          ],
+          "seconds": 3.4241477493196726,
+          "maximumCorrection": 0.00040246629502291005,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.004691320537077655
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-16-1.0000000000.bin",
+        "report": {
+          "context": "preparation-16-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 3243328973.0954137,
+              "residual": 47654435.03856659,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.00803823582826942,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004765443503856659
+            }
+          ],
+          "seconds": 3.549748584628105,
+          "maximumCorrection": 0.00027582059659466253,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.004738416272593197
+      }
+    ]
+  },
+  {
+    "frame": 17,
+    "time": 0.26666666666666666,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-17-0.2500000000.bin",
+        "report": {
+          "context": "preparation-17-0.0000000000-0.2500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9512751251459122,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.004738416272593069
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-17-0.5000000000.bin",
+        "report": {
+          "context": "preparation-17-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 922144881.3359952,
+              "residual": 26671234.518289566,
+              "contacts": 20,
+              "step": 0.6796875,
+              "maximumStep": 0.0022004069941076007,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0026671234518289566
+            },
+            {
+              "iteration": 1,
+              "energy": 94612154.87828442,
+              "residual": 8543129.806639627,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.0010369734570863719,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0008543129806639627
+            }
+          ],
+          "seconds": 5.30420845746994,
+          "maximumCorrection": 0.0001330668545621011,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0048709894492055174
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-17-0.7500000000.bin",
+        "report": {
+          "context": "preparation-17-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 922144881.3359951,
+              "residual": 26671234.518289566,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0032373803752629646,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0026671234518289566
+            }
+          ],
+          "seconds": 3.9409307073801756,
+          "maximumCorrection": 0.0002940789438832765,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0049790309768207915
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-17-1.0000000000.bin",
+        "report": {
+          "context": "preparation-17-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 922144881.3359952,
+              "residual": 26671234.518289566,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0032373803411994946,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0026671234518289566
+            }
+          ],
+          "seconds": 4.422495749779046,
+          "maximumCorrection": 0.00035796307665446916,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.005070360295069272
+      }
+    ]
+  },
+  {
+    "frame": 18,
+    "time": 0.2833333333333333,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-18-0.2500000000.bin",
+        "report": {
+          "context": "preparation-18-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1021274673.9653152,
+              "residual": 29447618.87192726,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0033108950227276022,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002944761887192726
+            }
+          ],
+          "seconds": 3.2417929163202643,
+          "maximumCorrection": 0.00013464304806188741,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.005204211963508347
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-18-0.5000000000.bin",
+        "report": {
+          "context": "preparation-18-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1021274673.9653151,
+              "residual": 29447618.87192726,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.003310893682637112,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002944761887192726
+            }
+          ],
+          "seconds": 2.7655141670256853,
+          "maximumCorrection": 0.0001515043670470322,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.005354786480276358
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-18-1.0000000000.bin",
+        "report": {
+          "context": "preparation-18-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4085098695.8612595,
+              "residual": 58895237.74385452,
+              "contacts": 22,
+              "step": 0.52197265625,
+              "maximumStep": 0.0034563962069941983,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.005889523774385452
+            },
+            {
+              "iteration": 1,
+              "energy": 933486480.5126102,
+              "residual": 28153534.058219522,
+              "contacts": 22,
+              "step": 1.0,
+              "maximumStep": 0.0031653935027575707,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002815353405821952
+            }
+          ],
+          "seconds": 4.7801523339003325,
+          "maximumCorrection": 0.0003661742860148846,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.005624250065296059
+      }
+    ]
+  },
+  {
+    "frame": 19,
+    "time": 0.3,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-19-0.2500000000.bin",
+        "report": {
+          "context": "preparation-19-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1103708355.8978412,
+              "residual": 32095136.120915413,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.003240190174145926,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0032095136120915413
+            }
+          ],
+          "seconds": 3.019403916783631,
+          "maximumCorrection": 0.0004122913900404544,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.006033872495869281
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-19-0.5000000000.bin",
+        "report": {
+          "context": "preparation-19-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1103708355.8978412,
+              "residual": 32095136.120915413,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.003240190142942667,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0032095136120915413
+            }
+          ],
+          "seconds": 3.7315339166671038,
+          "maximumCorrection": 0.00044717969080579963,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0064786229799970755
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-19-0.7500000000.bin",
+        "report": {
+          "context": "preparation-19-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1103708355.8978412,
+              "residual": 32095136.120915413,
+              "contacts": 22,
+              "step": 1.0,
+              "maximumStep": 0.003240190101164593,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0032095136120915413
+            }
+          ],
+          "seconds": 3.640062333084643,
+          "maximumCorrection": 0.00044449015704412734,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.006920704948640537
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-19-0.8750000000.bin",
+        "report": {
+          "context": "preparation-19-0.7500000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 275927088.9744604,
+              "residual": 16047568.060457706,
+              "contacts": 22,
+              "step": 0.857421875,
+              "maximumStep": 0.001389104831741479,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0016047568060457706
+            },
+            {
+              "iteration": 1,
+              "energy": 5609189.823703715,
+              "residual": 2288032.1648699464,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.00023098999814492562,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00022880321648699464
+            }
+          ],
+          "seconds": 5.650943375192583,
+          "maximumCorrection": 0.0002623396964364414,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007180984609065277
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-19-1.0000000000.bin",
+        "report": {
+          "context": "preparation-19-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 275927088.97446036,
+              "residual": 16047568.060457706,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.001620094930764872,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0016047568060457706
+            }
+          ],
+          "seconds": 3.6072248332202435,
+          "maximumCorrection": 0.0002361699246829541,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007415722422683653
+      }
+    ]
+  },
+  {
+    "frame": 20,
+    "time": 0.31666666666666665,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-20-0.2500000000.bin",
+        "report": {
+          "context": "preparation-20-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1166891545.1906288,
+              "residual": 34556174.65078831,
+              "contacts": 25,
+              "step": 1.0,
+              "maximumStep": 0.0038204314188825185,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0034556174650788307
+            }
+          ],
+          "seconds": 3.6106691248714924,
+          "maximumCorrection": 0.0002371902844295833,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007441409321873982
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-20-0.5000000000.bin",
+        "report": {
+          "context": "preparation-20-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1166891545.1906285,
+              "residual": 34556174.65078831,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.003820431418780524,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0034556174650788307
+            }
+          ],
+          "seconds": 3.618949042633176,
+          "maximumCorrection": 0.00015272646675881804,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007454779633864422
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-20-1.0000000000.bin",
+        "report": {
+          "context": "preparation-20-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4667566180.762514,
+              "residual": 69112349.30157661,
+              "contacts": 23,
+              "step": 0.68701171875,
+              "maximumStep": 0.0052493623092194925,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0069112349301576614
+            },
+            {
+              "iteration": 1,
+              "energy": 457242550.8303371,
+              "residual": 21631355.4210501,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.0023915005287609265,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0021631355421050102
+            }
+          ],
+          "seconds": 6.225392208434641,
+          "maximumCorrection": 0.0003722134674463067,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007457972883818293
+      }
+    ]
+  },
+  {
+    "frame": 21,
+    "time": 0.3333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-21-1.0000000000.bin",
+        "report": {
+          "context": "preparation-21-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 19372750462.322014,
+              "residual": 147113204.00238037,
+              "contacts": 24,
+              "step": 0.676513671875,
+              "maximumStep": 0.010320879159600536,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.014711320400238037
+            },
+            {
+              "iteration": 1,
+              "energy": 2027230562.592393,
+              "residual": 47589110.18143408,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.004935101038401614,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004758911018143408
+            }
+          ],
+          "seconds": 7.08694383315742,
+          "maximumCorrection": 0.0001992495103190084,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007656611232773187
+      }
+    ]
+  },
+  {
+    "frame": 22,
+    "time": 0.35,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-22-0.5000000000.bin",
+        "report": {
+          "context": "preparation-22-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4950364981.7275305,
+              "residual": 77431169.33852434,
+              "contacts": 19,
+              "step": 0.36865234375,
+              "maximumStep": 0.0028545182055950136,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.007743116933852434
+            },
+            {
+              "iteration": 1,
+              "energy": 1973214803.7758322,
+              "residual": 48885987.28257421,
+              "contacts": 20,
+              "step": 0.0875244140625,
+              "maximumStep": 0.0004278717392774134,
+              "feasibilityRejections": 1,
+              "energyRejections": 0,
+              "anchorError": 0.004888598728257421
+            },
+            {
+              "iteration": 2,
+              "energy": 1642921722.2366788,
+              "residual": 44607269.88980007,
+              "contacts": 23,
+              "step": 0.33544921875,
+              "maximumStep": 0.0014963473835103833,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004460726988980007
+            },
+            {
+              "iteration": 3,
+              "energy": 725559808.6011862,
+              "residual": 29643796.054696254,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 0.0029643796054696255,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0029643796054696255
+            }
+          ],
+          "seconds": 11.88543791603297,
+          "maximumCorrection": 0.0014270107631498483,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007615654974875673
+      },
+      {
+        "fraction": 0.625,
+        "file": "cloth-22-0.6250000000.bin",
+        "report": {
+          "context": "preparation-22-0.5000000000-0.6250000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9510719161480665,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007615654974875549
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-22-0.7500000000.bin",
+        "report": {
+          "context": "preparation-22-0.6250000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 309397811.3579708,
+              "residual": 19357792.334631085,
+              "contacts": 22,
+              "step": 0.779296875,
+              "maximumStep": 0.001508546707327696,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0019357792334631085
+            },
+            {
+              "iteration": 1,
+              "energy": 15070726.979179416,
+              "residual": 4272325.261354126,
+              "contacts": 22,
+              "step": 1.0,
+              "maximumStep": 0.0004272325261354126,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0004272325261354126
+            }
+          ],
+          "seconds": 6.253315665759146,
+          "maximumCorrection": 0.00014018510465872488,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007615654974875549
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-22-0.8750000000.bin",
+        "report": {
+          "context": "preparation-22-0.7500000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 309397811.3579707,
+              "residual": 19357792.334631085,
+              "contacts": 22,
+              "step": 1.0,
+              "maximumStep": 0.0019357792334631085,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0019357792334631085
+            }
+          ],
+          "seconds": 3.4859693748876452,
+          "maximumCorrection": 0.00010240144437911808,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007615654974875549
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-22-1.0000000000.bin",
+        "report": {
+          "context": "preparation-22-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 309397811.35797083,
+              "residual": 19357792.334631085,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.0019357792334631085,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0019357792334631085
+            }
+          ],
+          "seconds": 3.5739776669070125,
+          "maximumCorrection": 0.00012524438946693038,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007615654974875549
+      }
+    ]
+  },
+  {
+    "frame": 23,
+    "time": 0.36666666666666664,
+    "keys": [
+      {
+        "fraction": 0.125,
+        "file": "cloth-23-0.1250000000.bin",
+        "report": {
+          "context": "preparation-23-0.0000000000-0.1250000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 312812053.1819461,
+              "residual": 20165657.04252571,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.002016565704252571,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002016565704252571
+            }
+          ],
+          "seconds": 3.7301324578002095,
+          "maximumCorrection": 7.248509918116608e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00755994475486565
+      },
+      {
+        "fraction": 0.1875,
+        "file": "cloth-23-0.1875000000.bin",
+        "report": {
+          "context": "preparation-23-0.1250000000-0.1875000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 78203013.29548661,
+              "residual": 10082828.521262854,
+              "contacts": 21,
+              "step": 0.5107421875,
+              "maximumStep": 0.000514972589513718,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0010082828521262854
+            },
+            {
+              "iteration": 1,
+              "energy": 18719706.096821528,
+              "residual": 4933102.626125674,
+              "contacts": 27,
+              "step": 1.0,
+              "maximumStep": 0.0004933102626125674,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0004933102626125674
+            }
+          ],
+          "seconds": 5.698081542737782,
+          "maximumCorrection": 0.0002268563917687756,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007559730205332561
+      },
+      {
+        "fraction": 0.25,
+        "file": "cloth-23-0.2500000000.bin",
+        "report": {
+          "context": "preparation-23-0.1875000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 78203013.29548666,
+              "residual": 10082828.521262854,
+              "contacts": 28,
+              "step": 0.7080078125,
+              "maximumStep": 0.0007138721365151923,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0010082828521262854
+            },
+            {
+              "iteration": 1,
+              "energy": 6667544.929152522,
+              "residual": 2944107.156110931,
+              "contacts": 38,
+              "step": 1.0,
+              "maximumStep": 0.0002944107156110931,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0002944107156110931
+            }
+          ],
+          "seconds": 5.904160708189011,
+          "maximumCorrection": 0.00039698322426463405,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007559730205332558
+      },
+      {
+        "fraction": 0.375,
+        "file": "cloth-23-0.3750000000.bin",
+        "report": {
+          "context": "preparation-23-0.2500000000-0.3750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 312812053.1819462,
+              "residual": 20165657.04252571,
+              "contacts": 33,
+              "step": 1.0,
+              "maximumStep": 0.002016565704252571,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002016565704252571
+            }
+          ],
+          "seconds": 3.4713225420564413,
+          "maximumCorrection": 0.0006939322359222503,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007559730205332558
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-23-0.5000000000.bin",
+        "report": {
+          "context": "preparation-23-0.3750000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 312812053.1819463,
+              "residual": 20165657.04252571,
+              "contacts": 38,
+              "step": 1.0,
+              "maximumStep": 0.002016565704252571,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002016565704252571
+            }
+          ],
+          "seconds": 3.491993583738804,
+          "maximumCorrection": 0.0005026846407691883,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0075873621061258575
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-23-0.7500000000.bin",
+        "report": {
+          "context": "preparation-23-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1251248212.727784,
+              "residual": 40331314.08505142,
+              "contacts": 26,
+              "step": 0.42041015625,
+              "maximumStep": 0.0016955694056264292,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004033131408505142
+            },
+            {
+              "iteration": 1,
+              "energy": 420324788.818088,
+              "residual": 23375620.028787125,
+              "contacts": 32,
+              "step": 1.0,
+              "maximumStep": 0.0023375620028787125,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0023375620028787125
+            }
+          ],
+          "seconds": 6.018741209059954,
+          "maximumCorrection": 0.00037610527568063734,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007649892570815625
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-23-1.0000000000.bin",
+        "report": {
+          "context": "preparation-23-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1251248212.727784,
+              "residual": 40331314.08505142,
+              "contacts": 32,
+              "step": 1.0,
+              "maximumStep": 0.004033131408505142,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004033131408505142
+            }
+          ],
+          "seconds": 3.6863786661997437,
+          "maximumCorrection": 0.000633444949958667,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007730587595330712
+      }
+    ]
+  },
+  {
+    "frame": 24,
+    "time": 0.38333333333333336,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-24-0.2500000000.bin",
+        "report": {
+          "context": "preparation-24-0.0000000000-0.2500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9678873335942626,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007730587595330721
+      },
+      {
+        "fraction": 0.375,
+        "file": "cloth-24-0.3750000000.bin",
+        "report": {
+          "context": "preparation-24-0.2500000000-0.3750000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9870026670396328,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007730587595330721
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-24-0.5000000000.bin",
+        "report": {
+          "context": "preparation-24-0.3750000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 314160307.88053566,
+              "residual": 20800303.31853777,
+              "contacts": 16,
+              "step": 0.8115234375,
+              "maximumStep": 0.001687993365010243,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002080030331853777
+            },
+            {
+              "iteration": 1,
+              "energy": 11160046.871416273,
+              "residual": 3920369.6684353417,
+              "contacts": 18,
+              "step": 1.0,
+              "maximumStep": 0.0003920369668435342,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0003920369668435342
+            }
+          ],
+          "seconds": 6.120164207182825,
+          "maximumCorrection": 4.0286154102035386e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.007730587595330721
+      },
+      {
+        "fraction": 0.625,
+        "file": "cloth-24-0.6250000000.bin",
+        "report": {
+          "context": "preparation-24-0.5000000000-0.6250000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 314160307.8805357,
+              "residual": 20800303.31853777,
+              "contacts": 18,
+              "step": 0.9677734375,
+              "maximumStep": 0.0020129981043623957,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002080030331853777
+            },
+            {
+              "iteration": 1,
+              "energy": 326271.60576086846,
+              "residual": 670322.2749138149,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 6.703222749138149e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 6.703222749138149e-05
+            }
+          ],
+          "seconds": 5.819160499610007,
+          "maximumCorrection": 0.00013433264701676073,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.0077382954255036445
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-24-0.7500000000.bin",
+        "report": {
+          "context": "preparation-24-0.6250000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 314160307.8805358,
+              "residual": 20800303.31853777,
+              "contacts": 19,
+              "step": 0.7021484375,
+              "maximumStep": 0.0014604900474637361,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002080030331853777
+            },
+            {
+              "iteration": 1,
+              "energy": 27870905.533397283,
+              "residual": 6195402.84390041,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 0.000619540284390041,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.000619540284390041
+            }
+          ],
+          "seconds": 5.953775750473142,
+          "maximumCorrection": 0.00020897319330779994,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00782764870334181
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-24-0.8750000000.bin",
+        "report": {
+          "context": "preparation-24-0.7500000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 314160307.8805359,
+              "residual": 20800303.31853777,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 0.002080030331853777,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002080030331853777
+            }
+          ],
+          "seconds": 2.6571373343467712,
+          "maximumCorrection": 0.00029343945137106145,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00795369549439477
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-24-1.0000000000.bin",
+        "report": {
+          "context": "preparation-24-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 314160307.88053596,
+              "residual": 20800303.31853777,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 0.002080030331853777,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002080030331853777
+            }
+          ],
+          "seconds": 2.6608809577301145,
+          "maximumCorrection": 0.00032198720264744367,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.008092849453477055
+      }
+    ]
+  },
+  {
+    "frame": 25,
+    "time": 0.4,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-25-0.5000000000.bin",
+        "report": {
+          "context": "preparation-25-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 5033304733.71664,
+              "residual": 85016423.83635044,
+              "contacts": 21,
+              "step": 0.0980224609375,
+              "maximumStep": 0.0008333519084544605,
+              "feasibilityRejections": 1,
+              "energyRejections": 0,
+              "anchorError": 0.008501642383635044
+            },
+            {
+              "iteration": 1,
+              "energy": 4094912919.961618,
+              "residual": 76682904.75180584,
+              "contacts": 21,
+              "step": 0.48828125,
+              "maximumStep": 0.0037442824585842698,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.007668290475180584
+            },
+            {
+              "iteration": 2,
+              "energy": 1072277841.4834877,
+              "residual": 39240080.16596314,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.003924008016596314,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003924008016596314
+            }
+          ],
+          "seconds": 6.6973754577338696,
+          "maximumCorrection": 0.0008308691647091727,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.008351312511996986
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-25-1.0000000000.bin",
+        "report": {
+          "context": "preparation-25-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 5033304733.71664,
+              "residual": 85016423.83635044,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 0.008501642383635044,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.008501642383635044
+            }
+          ],
+          "seconds": 2.849685125052929,
+          "maximumCorrection": 0.0007447655715675994,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.008611439736513656
+      }
+    ]
+  },
+  {
+    "frame": 26,
+    "time": 0.4166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-26-1.0000000000.bin",
+        "report": {
+          "context": "preparation-26-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 20150026017.37918,
+              "residual": 172202922.4038124,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.01722029224038124,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.01722029224038124
+            }
+          ],
+          "seconds": 3.0397897083312273,
+          "maximumCorrection": 0.0004068901377281653,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00878775457905154
+      }
+    ]
+  },
+  {
+    "frame": 27,
+    "time": 0.43333333333333335,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-27-1.0000000000.bin",
+        "report": {
+          "context": "preparation-27-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 20169439553.99711,
+              "residual": 172935165.46487808,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.017293516546487808,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.017293516546487808
+            }
+          ],
+          "seconds": 3.150832832790911,
+          "maximumCorrection": 0.00018943781936918124,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.008872859530796329
+      }
+    ]
+  },
+  {
+    "frame": 28,
+    "time": 0.45,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-28-1.0000000000.bin",
+        "report": {
+          "context": "preparation-28-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.8860256252810359,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.008872859530796208
+      }
+    ]
+  },
+  {
+    "frame": 29,
+    "time": 0.4666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-29-1.0000000000.bin",
+        "report": {
+          "context": "preparation-29-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 20076097223.691063,
+              "residual": 170292928.814888,
+              "contacts": 18,
+              "step": 0.56219482421875,
+              "maximumStep": 0.009573780318078207,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0170292928814888
+            },
+            {
+              "iteration": 1,
+              "energy": 3848053250.2772274,
+              "residual": 74555125.63410594,
+              "contacts": 25,
+              "step": 1.0,
+              "maximumStep": 0.007455512563410593,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.007455512563410593
+            }
+          ],
+          "seconds": 5.313889374956489,
+          "maximumCorrection": 0.0016733740282304445,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009034064462333825
+      }
+    ]
+  },
+  {
+    "frame": 30,
+    "time": 0.48333333333333334,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-30-0.5000000000.bin",
+        "report": {
+          "context": "preparation-30-0.0000000000-0.5000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7759906658902764,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009034064462333704
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-30-0.7500000000.bin",
+        "report": {
+          "context": "preparation-30-0.5000000000-0.7500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7440166659653187,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009034064462333704
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-30-0.8750000000.bin",
+        "report": {
+          "context": "preparation-30-0.7500000000-0.8750000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7182103749364614,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009034064462333704
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-30-1.0000000000.bin",
+        "report": {
+          "context": "preparation-30-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 309801504.57458,
+              "residual": 20881295.204162598,
+              "contacts": 18,
+              "step": 0.7822265625,
+              "maximumStep": 0.0016333903768099844,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0020881295204162598
+            },
+            {
+              "iteration": 1,
+              "energy": 14692420.025815908,
+              "residual": 4547391.436062753,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.0004547391436062753,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0004547391436062753
+            }
+          ],
+          "seconds": 4.656066750176251,
+          "maximumCorrection": 5.29832323571648e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009039636267528064
+      }
+    ]
+  },
+  {
+    "frame": 31,
+    "time": 0.5,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-31-0.2500000000.bin",
+        "report": {
+          "context": "preparation-31-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1208953062.0839732,
+              "residual": 40654055.77421188,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.004065405577421188,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004065405577421188
+            }
+          ],
+          "seconds": 3.047353000380099,
+          "maximumCorrection": 4.830974354560865e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009045715550328202
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-31-0.5000000000.bin",
+        "report": {
+          "context": "preparation-31-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1208953062.0839732,
+              "residual": 40654055.77421188,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.004065405577421188,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004065405577421188
+            }
+          ],
+          "seconds": 2.7135660825297236,
+          "maximumCorrection": 0.00010335720335616973,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00906124044775699
+      },
+      {
+        "fraction": 0.5625,
+        "file": "cloth-31-0.5625000000.bin",
+        "report": {
+          "context": "preparation-31-0.5000000000-0.5625000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7856758339330554,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00906124044775698
+      },
+      {
+        "fraction": 0.59375,
+        "file": "cloth-31-0.5937500000.bin",
+        "report": {
+          "context": "preparation-31-0.5625000000-0.5937500000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 18889891.595062926,
+              "residual": 5081756.971776485,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.0005081756971776485,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0005081756971776485
+            }
+          ],
+          "seconds": 3.2462431248277426,
+          "maximumCorrection": 3.157857887456676e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009066117384889072
+      },
+      {
+        "fraction": 0.625,
+        "file": "cloth-31-0.6250000000.bin",
+        "report": {
+          "context": "preparation-31-0.5937500000-0.6250000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 18889891.59506285,
+              "residual": 5081756.971776485,
+              "contacts": 22,
+              "step": 1.0,
+              "maximumStep": 0.0005081756971776485,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0005081756971776485
+            }
+          ],
+          "seconds": 3.2083730418235064,
+          "maximumCorrection": 0.00011928610850440394,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009082879785024442
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-31-0.7500000000.bin",
+        "report": {
+          "context": "preparation-31-0.6250000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 302238265.5209938,
+              "residual": 20327027.88710594,
+              "contacts": 21,
+              "step": 0.51708984375,
+              "maximumStep": 0.0010510899674045504,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002032702788710594
+            },
+            {
+              "iteration": 1,
+              "energy": 70482634.18904942,
+              "residual": 9816128.213060439,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.0009816128213060438,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0009816128213060438
+            }
+          ],
+          "seconds": 5.021942624822259,
+          "maximumCorrection": 0.00041973820092276287,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009134360266858115
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-31-1.0000000000.bin",
+        "report": {
+          "context": "preparation-31-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1208953062.0839732,
+              "residual": 40654055.77421188,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.004065405577421188,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004065405577421188
+            }
+          ],
+          "seconds": 3.257337083108723,
+          "maximumCorrection": 0.0008390829365143613,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009233092644815045
+      }
+    ]
+  },
+  {
+    "frame": 32,
+    "time": 0.5166666666666667,
+    "keys": [
+      {
+        "fraction": 0.125,
+        "file": "cloth-32-0.1250000000.bin",
+        "report": {
+          "context": "preparation-32-0.0000000000-0.1250000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 290132067.67452025,
+              "residual": 19630994.647741318,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0020358655601739883,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0019630994647741318
+            }
+          ],
+          "seconds": 5.24690508376807,
+          "maximumCorrection": 6.227395752136247e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009227722110641112
+      },
+      {
+        "fraction": 0.25,
+        "file": "cloth-32-0.2500000000.bin",
+        "report": {
+          "context": "preparation-32-0.1250000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 290132067.6745202,
+              "residual": 19630994.647741318,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.0020358655601739883,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0019630994647741318
+            }
+          ],
+          "seconds": 7.200268791988492,
+          "maximumCorrection": 8.203970032350447e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009227722110641124
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-32-0.5000000000.bin",
+        "report": {
+          "context": "preparation-32-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1160528270.6980784,
+              "residual": 39261989.295482635,
+              "contacts": 19,
+              "step": 0.8046875,
+              "maximumStep": 0.0032764711359050125,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0039261989295482635
+            },
+            {
+              "iteration": 1,
+              "energy": 44270640.20912597,
+              "residual": 7668357.284273952,
+              "contacts": 17,
+              "step": 1.0,
+              "maximumStep": 0.0007952599844429638,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0007668357284273952
+            }
+          ],
+          "seconds": 10.3208670001477,
+          "maximumCorrection": 0.00016071245257864817,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009227722110641124
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-32-1.0000000000.bin",
+        "report": {
+          "context": "preparation-32-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4642113082.792312,
+              "residual": 78523978.59096527,
+              "contacts": 18,
+              "step": 0.62109375,
+              "maximumStep": 0.005057853501057252,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.007852397859096527
+            },
+            {
+              "iteration": 1,
+              "energy": 666467925.9642494,
+              "residual": 29753226.262982935,
+              "contacts": 18,
+              "step": 1.0,
+              "maximumStep": 0.003085608739638698,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0029753226262982935
+            }
+          ],
+          "seconds": 9.173913500271738,
+          "maximumCorrection": 0.00036308079918372137,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00923617115296091
+      }
+    ]
+  },
+  {
+    "frame": 33,
+    "time": 0.5333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-33-1.0000000000.bin",
+        "report": {
+          "context": "preparation-33-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 17479144855.73526,
+              "residual": 150402784.34753418,
+              "contacts": 18,
+              "step": 1.0,
+              "maximumStep": 0.01739528775215148,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.015040278434753418
+            }
+          ],
+          "seconds": 7.4991450840607285,
+          "maximumCorrection": 0.00012127051600404743,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009244649974324563
+      }
+    ]
+  },
+  {
+    "frame": 34,
+    "time": 0.55,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-34-1.0000000000.bin",
+        "report": {
+          "context": "preparation-34-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 16088131645.533422,
+              "residual": 142739117.14553833,
+              "contacts": 18,
+              "step": 1.0,
+              "maximumStep": 0.018027245998382558,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.014273911714553833
+            }
+          ],
+          "seconds": 7.019643625244498,
+          "maximumCorrection": 8.412316741870652e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009256891364029178
+      }
+    ]
+  },
+  {
+    "frame": 35,
+    "time": 0.5666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-35-1.0000000000.bin",
+        "report": {
+          "context": "preparation-35-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 1.5804517921060324,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009256891364029178
+      }
+    ]
+  },
+  {
+    "frame": 36,
+    "time": 0.5833333333333334,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-36-0.5000000000.bin",
+        "report": {
+          "context": "preparation-36-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 3153583497.054455,
+              "residual": 62311738.72947693,
+              "contacts": 18,
+              "step": 0.3912353515625,
+              "maximumStep": 0.0034323306863370782,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.006231173872947693
+            },
+            {
+              "iteration": 1,
+              "energy": 1168700375.070502,
+              "residual": 37933183.72117937,
+              "contacts": 20,
+              "step": 0.0750732421875,
+              "maximumStep": 0.0004009457640896661,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0037933183721179375
+            },
+            {
+              "iteration": 2,
+              "energy": 999810908.0708935,
+              "residual": 35085416.63273634,
+              "contacts": 22,
+              "step": 0.07110595703125,
+              "maximumStep": 0.00035124794103121834,
+              "feasibilityRejections": 1,
+              "energyRejections": 0,
+              "anchorError": 0.0035085416632736344
+            },
+            {
+              "iteration": 3,
+              "energy": 862680986.1993022,
+              "residual": 32590634.505225424,
+              "contacts": 23,
+              "step": 0.1505126953125,
+              "maximumStep": 0.0006906326592200547,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0032590634505225424
+            },
+            {
+              "iteration": 4,
+              "energy": 622535342.0440199,
+              "residual": 27685330.263899356,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.003897901602199826,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0027685330263899355
+            }
+          ],
+          "seconds": 16.30684837512672,
+          "maximumCorrection": 0.0018963557540985021,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545439
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-36-1.0000000000.bin",
+        "report": {
+          "context": "preparation-36-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 3153583497.054455,
+              "residual": 62311738.72947693,
+              "contacts": 19,
+              "step": 0.853515625,
+              "maximumStep": 0.007487942639272652,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.006231173872947693
+            },
+            {
+              "iteration": 1,
+              "energy": 67668560.68012811,
+              "residual": 9127696.102950722,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0012851160136051474,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0009127696102950722
+            }
+          ],
+          "seconds": 6.010911291465163,
+          "maximumCorrection": 6.473188891541598e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      }
+    ]
+  },
+  {
+    "frame": 37,
+    "time": 0.6,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-37-1.0000000000.bin",
+        "report": {
+          "context": "preparation-37-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.8555711656808853,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      }
+    ]
+  },
+  {
+    "frame": 38,
+    "time": 0.6166666666666667,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-38-0.2500000000.bin",
+        "report": {
+          "context": "preparation-38-0.0000000000-0.2500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.9179378328844905,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-38-0.5000000000.bin",
+        "report": {
+          "context": "preparation-38-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 553552521.6171757,
+              "residual": 26051662.862300873,
+              "contacts": 19,
+              "step": 0.8291015625,
+              "maximumStep": 0.0030684689845656985,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0026051662862300873
+            },
+            {
+              "iteration": 1,
+              "energy": 16167207.693602372,
+              "residual": 4452188.477443997,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.0006324877176666628,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0004452188477443997
+            }
+          ],
+          "seconds": 5.347924583591521,
+          "maximumCorrection": 7.248221708151284e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-38-1.0000000000.bin",
+        "report": {
+          "context": "preparation-38-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2214210086.468701,
+              "residual": 52103325.724601746,
+              "contacts": 20,
+              "step": 0.7021484375,
+              "maximumStep": 0.005197241931455211,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0052103325724601746
+            },
+            {
+              "iteration": 1,
+              "energy": 196434872.907402,
+              "residual": 15519056.978519075,
+              "contacts": 20,
+              "step": 1.0,
+              "maximumStep": 0.0022046714730095127,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0015519056978519075
+            }
+          ],
+          "seconds": 4.541474333032966,
+          "maximumCorrection": 0.0003540547619600674,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      }
+    ]
+  },
+  {
+    "frame": 39,
+    "time": 0.6333333333333333,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-39-0.5000000000.bin",
+        "report": {
+          "context": "preparation-39-0.0000000000-0.5000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7588023329153657,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-39-0.7500000000.bin",
+        "report": {
+          "context": "preparation-39-0.5000000000-0.7500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.884273000061512,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      },
+      {
+        "fraction": 0.8125,
+        "file": "cloth-39-0.8125000000.bin",
+        "report": {
+          "context": "preparation-39-0.7500000000-0.8125000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.70737100020051,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009264441376545437
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-39-0.8750000000.bin",
+        "report": {
+          "context": "preparation-39-0.8125000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 28472360.676709294,
+              "residual": 5973931.401968002,
+              "contacts": 22,
+              "step": 0.599609375,
+              "maximumStep": 0.0005282432684907663,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0005973931401968002
+            },
+            {
+              "iteration": 1,
+              "energy": 4564479.665523233,
+              "residual": 2391906.1277410947,
+              "contacts": 26,
+              "step": 1.0,
+              "maximumStep": 0.00035273573303129334,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00023919061277410947
+            }
+          ],
+          "seconds": 4.362952916882932,
+          "maximumCorrection": 0.00016441003549830143,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009365118217256503
+      },
+      {
+        "fraction": 0.9375,
+        "file": "cloth-39-0.9375000000.bin",
+        "report": {
+          "context": "preparation-39-0.8750000000-0.9375000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 28472360.67670921,
+              "residual": 5973931.401968002,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0008809790015220601,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0005973931401968002
+            }
+          ],
+          "seconds": 2.664258540607989,
+          "maximumCorrection": 0.0002983698925992721,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009544177257408817
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-39-1.0000000000.bin",
+        "report": {
+          "context": "preparation-39-0.9375000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 28472360.67670922,
+              "residual": 5973931.401968002,
+              "contacts": 24,
+              "step": 1.0,
+              "maximumStep": 0.0008809790015220601,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0005973931401968002
+            }
+          ],
+          "seconds": 2.6076189996674657,
+          "maximumCorrection": 0.0003243594174892811,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00973149468893911
+      }
+    ]
+  },
+  {
+    "frame": 40,
+    "time": 0.65,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-40-1.0000000000.bin",
+        "report": {
+          "context": "preparation-40-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 5725504301.040093,
+              "residual": 85564851.76086426,
+              "contacts": 23,
+              "step": 0.6044921875,
+              "maximumStep": 0.009077444701688378,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.008556485176086426
+            },
+            {
+              "iteration": 1,
+              "energy": 895620196.3215871,
+              "residual": 33841567.346826196,
+              "contacts": 22,
+              "step": 1.0,
+              "maximumStep": 0.005939200491411616,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0033841567346826196
+            }
+          ],
+          "seconds": 4.6957115000113845,
+          "maximumCorrection": 0.00044845189139434304,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.00999016133325749
+      }
+    ]
+  },
+  {
+    "frame": 41,
+    "time": 0.6666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-41-1.0000000000.bin",
+        "report": {
+          "context": "preparation-41-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4142771760.22923,
+              "residual": 72927623.98719788,
+              "contacts": 21,
+              "step": 0.62109375,
+              "maximumStep": 0.008752174442633967,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.007292762398719788
+            },
+            {
+              "iteration": 1,
+              "energy": 594777519.1039562,
+              "residual": 27632732.526399195,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.005339376861229529,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0027632732526399195
+            }
+          ],
+          "seconds": 5.070186249911785,
+          "maximumCorrection": 0.00023647977043999066,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631546
+      }
+    ]
+  },
+  {
+    "frame": 42,
+    "time": 0.6833333333333333,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-42-0.2500000000.bin",
+        "report": {
+          "context": "preparation-42-0.0000000000-0.2500000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.733436374925077,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-42-0.5000000000.bin",
+        "report": {
+          "context": "preparation-42-0.2500000000-0.5000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7251874580979347,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-42-1.0000000000.bin",
+        "report": {
+          "context": "preparation-42-0.5000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7408911250531673,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 43,
+    "time": 0.7,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-43-1.0000000000.bin",
+        "report": {
+          "context": "preparation-43-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1567780183.6420066,
+              "residual": 43641328.81164551,
+              "contacts": 19,
+              "step": 0.2386474609375,
+              "maximumStep": 0.004554797778837383,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004364132881164551
+            },
+            {
+              "iteration": 1,
+              "energy": 908775837.6974635,
+              "residual": 33226436.498807743,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 0.014531086315400892,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0033226436498807743
+            }
+          ],
+          "seconds": 4.931536334566772,
+          "maximumCorrection": 0.00036444019632508407,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 44,
+    "time": 0.7166666666666667,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-44-0.5000000000.bin",
+        "report": {
+          "context": "preparation-44-0.0000000000-0.5000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7289997497573495,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-44-1.0000000000.bin",
+        "report": {
+          "context": "preparation-44-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 199387801.4755622,
+              "residual": 15182867.646217346,
+              "contacts": 19,
+              "step": 1.0,
+              "maximumStep": 0.009171396493911724,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0015182867646217346
+            }
+          ],
+          "seconds": 3.041120707988739,
+          "maximumCorrection": 5.718843818996583e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 45,
+    "time": 0.7333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-45-1.0000000000.bin",
+        "report": {
+          "context": "preparation-45-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7472016243264079,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 46,
+    "time": 0.75,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-46-1.0000000000.bin",
+        "report": {
+          "context": "preparation-46-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 124910928.0761884,
+              "residual": 11329054.832458496,
+              "contacts": 23,
+              "step": 1.0,
+              "maximumStep": 0.018578529357910295,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0011329054832458496
+            }
+          ],
+          "seconds": 2.749680208042264,
+          "maximumCorrection": 0.00025600181898494676,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 47,
+    "time": 0.7666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-47-1.0000000000.bin",
+        "report": {
+          "context": "preparation-47-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.7504171244800091,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 48,
+    "time": 0.7833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-48-1.0000000000.bin",
+        "report": {
+          "context": "preparation-48-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 4580459.763581906,
+              "residual": 2208054.0657043457,
+              "contacts": 21,
+              "step": 1.0,
+              "maximumStep": 0.016474455595016483,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00022080540657043457
+            }
+          ],
+          "seconds": 2.7465714998543262,
+          "maximumCorrection": 0.00016292461245114292,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  },
+  {
+    "frame": 49,
+    "time": 0.8,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-49-1.0000000000.bin",
+        "report": {
+          "context": "preparation-49-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.8624331243336201,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromGuideMetres": 0.009850023403631558
+      }
+    ]
+  }
+]

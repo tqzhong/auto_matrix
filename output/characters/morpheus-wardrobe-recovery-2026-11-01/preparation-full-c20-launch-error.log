@@ -1,0 +1,7 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+OSError: Python file "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-preparation-full-collisions.py" could not be opened: No such file or directory
+
+Error: script failed, file: 'output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-preparation-full-collisions.py', exiting.
+
+Blender quit
