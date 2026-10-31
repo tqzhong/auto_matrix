@@ -6,11 +6,14 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 
 export class WorldOcclusionPass extends GTAOPass {
   compositeInPlace = true;
   private inPlace = false;
   private suppressed: THREE.Object3D[] = [];
+  private reflections = new Map<THREE.Object3D, THREE.Object3D['onBeforeRender']>();
+  private skipReflection = (): void => {};
   private scalar = false;
   constructor(...args: ConstructorParameters<typeof GTAOPass>) {
     super(...args);
@@ -37,7 +40,7 @@ export class WorldOcclusionPass extends GTAOPass {
     // Default AO only multiplies by its separate denoise texture. The scene
     // color can stay in the read buffer, without a full-screen copy or swap.
     try { super.render(args[0], this.inPlace ? args[2] : args[1], args[2], args[3], args[4]); }
-    finally { this.inPlace = false; }
+    finally { this.restoreVisibility(); this.inPlace = false; }
   }
   renderPass(...args: Parameters<GTAOPass['renderPass']>): void {
     if (this.inPlace && args[1] === this.copyMaterial) return;
@@ -53,12 +56,19 @@ export class WorldOcclusionPass extends GTAOPass {
     this.scene.traverseVisible(object => {
       // A mirror may have selected another detail level in the color pass.
       if (object instanceof THREE.LOD && object.autoUpdate) object.update(this.camera);
+      // Keep the reflecting plane in the normal/depth image. Its reflected
+      // world was already drawn for color and contributes no normals here.
+      if (object instanceof Reflector) {
+        this.reflections.set(object, object.onBeforeRender); object.onBeforeRender = this.skipReflection;
+      }
       if (object.userData.distantBackdrop || object instanceof THREE.Points || object instanceof THREE.Line || object instanceof THREE.Sprite || (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.depthWrite)) {
         object.visible = false; this.suppressed.push(object);
       }
     });
   }
   restoreVisibility(): void {
+    for (const [mirror, callback] of this.reflections) mirror.onBeforeRender = callback;
+    this.reflections.clear();
     for (const object of this.suppressed) object.visible = true;
     this.suppressed.length = 0;
   }

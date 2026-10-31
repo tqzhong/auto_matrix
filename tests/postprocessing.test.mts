@@ -5,6 +5,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
@@ -139,6 +140,51 @@ test('the normals pass reuses this frame\'s matrices and shadows, then restores 
     assert.throws(() => pass.renderOverride(renderer, pass.normalMaterial, null), /render failure/);
     assert.equal(scene.matrixWorldAutoUpdate, true); assert.equal(renderer.shadowMap.autoUpdate, false); assert.equal(renderer.shadowMap.needsUpdate, false);
   } finally { pass.dispose(); }
+});
+
+test('the normals pass draws mirror planes without rendering their reflected world and restores color reflections', t => {
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+  const mirror = new Reflector(new THREE.PlaneGeometry());
+  const solid = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  scene.add(mirror, solid);
+  const pass = new WorldOcclusionPass(scene, camera, 64, 64);
+  const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
+  const read = new THREE.WebGLRenderTarget(64, 64), write = read.clone();
+  let reflectedWorlds = 0, solidCallbacks = 0, normalPlanes = 0;
+  const reflect = mirror.onBeforeRender = () => { reflectedWorlds++; };
+  solid.onBeforeRender = () => { solidCallbacks++; };
+  t.mock.method(GTAOPass.prototype, 'renderOverride', () => {
+    scene.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.onBeforeRender(renderer, scene, camera, object.geometry, pass.normalMaterial, null);
+      if (object === mirror) normalPlanes++;
+    });
+  });
+  t.mock.method(GTAOPass.prototype, 'renderPass', () => {});
+  try {
+    pass.render(renderer, write, read, 0, false);
+    assert.equal(normalPlanes, 1, 'the reflecting surface still occludes nearby geometry');
+    assert.equal(solidCallbacks, 1, 'ordinary geometry retains its normal-pass callbacks');
+    assert.equal(reflectedWorlds, 0, 'normal/depth rendering must not repeat the full reflected scene');
+    assert.equal(mirror.onBeforeRender, reflect);
+    mirror.onBeforeRender(renderer, scene, camera, mirror.geometry, mirror.material, null);
+    assert.equal(reflectedWorlds, 1, 'the next color pass must still refresh the actual reflection');
+  } finally { pass.dispose(); read.dispose(); write.dispose(); mirror.dispose(); mirror.geometry.dispose(); solid.geometry.dispose(); solid.material.dispose(); }
+});
+
+test('a failed normals render restores mirror callbacks and the visible overlays for the next color frame', t => {
+  const scene = new THREE.Scene(), mirror = new Reflector(new THREE.PlaneGeometry()), overlay = new THREE.Sprite();
+  scene.add(mirror, overlay);
+  const reflect = mirror.onBeforeRender;
+  const pass = new WorldOcclusionPass(scene, new THREE.PerspectiveCamera(), 64, 64);
+  const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
+  const read = new THREE.WebGLRenderTarget(64, 64), write = read.clone();
+  t.mock.method(GTAOPass.prototype, 'renderOverride', () => { throw new Error('normal draw failed'); });
+  try {
+    assert.throws(() => pass.render(renderer, write, read, 0, false), /normal draw failed/);
+    assert.equal(mirror.onBeforeRender, reflect, 'a failed frame cannot permanently freeze reflections');
+    assert.equal(overlay.visible, true, 'the pass must release the overlay suppression even after failure');
+  } finally { pass.dispose(); read.dispose(); write.dispose(); mirror.dispose(); mirror.geometry.dispose(); overlay.material.dispose(); }
 });
 
 test('occlusion selects the current camera detail before hiding glass after a more distant mirror view', () => {
