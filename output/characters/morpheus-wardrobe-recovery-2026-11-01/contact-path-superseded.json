@@ -1,0 +1,8 @@
+{
+  "recordedAtUtc": "2026-10-31T18:30:53.712998+00:00",
+  "pid": 36566,
+  "reason": "The complete released 8-second garment remains suspended on the actor; the source prediction fails the required removal/floor-placement end state. Preserve accepted local contact work as a benchmark, and repair the actual physical removal before extending this cache.",
+  "fullRemovalFinalLowestMetres": 0.12805013358592987,
+  "fullRemovalFinalHighestMetres": 1.5200523138046265,
+  "productionAccepted": false
+}

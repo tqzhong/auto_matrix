@@ -1,0 +1,31 @@
+{
+  "recordedAtUtc": "2026-10-31T19:04:01.898729+00:00",
+  "status": "previous_workers_terminal",
+  "activeNativeWorker": null,
+  "stoppedWorkers": [
+    {
+      "pid": 36566,
+      "execSession": 78341,
+      "status": "superseded"
+    },
+    {
+      "pid": 94288,
+      "execSession": 23251,
+      "exitCode": 143,
+      "reason": "Forward-exit body/shirt contacts failed; do not continue this input."
+    }
+  ],
+  "requiresLiveProcessRevalidation": true,
+  "latestVerifiedBodyProfiles": [
+    "full-removal",
+    "shoulder-release"
+  ],
+  "rejectedCompleteGarments": [
+    "full-removal-physics",
+    "shoulder-release-physics"
+  ],
+  "nextAction": "Fix the FrontExitBody shoulder/shirt self-intersections first. Current neutral-wrist samples have no skin crossings, but rounding alone leaves 192/132 shoulder pairs at 2.0/2.4 seconds. Do not rerun cloth until the body gate passes; preserve the older invalid front-exit input/cache before creating new input.",
+  "wholeRemovalAccepted": false,
+  "highQualityTrilogyGroups": 0,
+  "totalTrilogyGroups": 42
+}

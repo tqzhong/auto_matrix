@@ -1,0 +1,517 @@
+{
+  "recordedAtUtc": "2026-10-31T19:04:01.898729+00:00",
+  "scope": "Full-duration authoring controls and explicit rejected complete garments. No actual gameplay, actor likeness, complete contact path or frame-rate acceptance.",
+  "acceptedForProduction": false,
+  "highQualityTrilogyGroups": 0,
+  "totalTrilogyGroups": 42,
+  "checks": {
+    "body-path-final.log": {
+      "passed": 5,
+      "failed": 0,
+      "sha256": "edf96e57072a0eaf1143296656820be81c7ecc43666f57f20efeadf470973b22"
+    },
+    "shoulder-release-body-final.log": {
+      "passed": 5,
+      "failed": 0,
+      "sha256": "874a206194b6d57d7fb14f375650b102b0d68d8cbf086903668cdad651449ec3"
+    },
+    "full-authoring-controls-final.log": {
+      "passed": 8,
+      "failed": 0,
+      "sha256": "011ce2a0ff012cce5bf456cf47fead11253e49f147012dc588a8f118a59cd569"
+    },
+    "full-release-final.log": {
+      "passed": 2,
+      "failed": 0,
+      "sha256": "dbab0d515e6311bfadea4ab41c4ac9cef9ccc0c6edada31bfad882b33bf04867"
+    },
+    "shoulder-release-controls-final.log": {
+      "passed": 2,
+      "failed": 0,
+      "sha256": "3e72cd7144babc15bd6a3797a35f728df66dad5da7df1cecb54bd40466efe469"
+    },
+    "full-removal-finish-final.log": {
+      "passed": 0,
+      "failed": 2,
+      "sha256": "4bddd125c5070150db6783edbc619ea44531935594362734bc6013cc41b1afb5"
+    },
+    "shoulder-release-finish-final.log": {
+      "passed": 0,
+      "failed": 2,
+      "sha256": "55b18b01e1239b4dda4680b413f5f7699ea81384eab2421cb723cbb56af0f73b"
+    },
+    "front-exit-fixture-final.log": {
+      "passed": 0,
+      "failed": 2,
+      "sha256": "501a303613e825dbab4191a2cffc60d55333c94609cd12e9029b14ef7659bb6b"
+    }
+  },
+  "profiles": [
+    {
+      "name": "full-removal",
+      "frames": 217,
+      "timeRange": [
+        0.8,
+        8
+      ],
+      "inputManifestSha256": "1f7fee356c2984759cd8ee9785a54c03562e787ea9c10481d526da242ebd67b0",
+      "nativeScriptSnapshot": "bake-full-control-snapshot.py",
+      "nativeScriptSha256": "956ed28b3e8b8de6be858faca190ed54d85fbc53c96ad9142d94c8a02f05ea87",
+      "metadataSha256": "f67258d7273a12cce9e3f72e45432757a3eeb3386e5f8b0871774b661abf7b7b",
+      "summarySha256": "2b66e533743f71826e563288b4ce5be32f18a3015b82289b426caf75e0f260f8",
+      "inputBodyFiles": {
+        "files": 217,
+        "bytes": 134079960,
+        "sha256": "7994f5f24f77818e3391c67e893e3cb229067a3d77468fd25c404506045330a1"
+      },
+      "nativeGeometryFiles": {
+        "files": 651,
+        "bytes": 178444308,
+        "sha256": "277e6ff66a43cf4966878b36b56ca528cfe05da9208854df57057ab594e34aec"
+      },
+      "innerBodyAudit": {
+        "file": "inner-body-audit.json",
+        "sha256": "93c23b051144edcbc81728b99a6a9e025fc57585ae719cda0428597a9283c221",
+        "sampledFrames": 217,
+        "allSampledCrossingsZero": true
+      },
+      "nativeUnconvergedFrames": [
+        {
+          "frame": 2,
+          "time": 0.8333333333333334,
+          "status": [
+            "NO_CONVERGENCE",
+            "SUCCESS"
+          ]
+        }
+      ],
+      "end": {
+        "floorZ": -0.0017056860029697417,
+        "lowest": 0.12805013358592987,
+        "floorClearance": 0.12975581958889962,
+        "highest": 1.5200523138046265
+      },
+      "acceptedForProduction": false
+    },
+    {
+      "name": "shoulder-release",
+      "frames": 217,
+      "timeRange": [
+        0.8,
+        8
+      ],
+      "inputManifestSha256": "5bfa348595a37e2fa89dbec39cded2f94ef43672ab8289a0f867b789a3e83641",
+      "nativeScriptSnapshot": "bake-shoulder-control-snapshot.py",
+      "nativeScriptSha256": "4157ab6dbb301f76324ba3be5296dc4b2ae5a3fbfa0967f48992528da5486633",
+      "metadataSha256": "ac134684df4f83a9b37968510a5c4574d7996861f8dc3e9cb3fd8ddc35787dfb",
+      "summarySha256": "85974f44d2805aaf1a6ed0dca39bfba9583711ddf0a19706abe5f5e70aca8fdf",
+      "inputBodyFiles": {
+        "files": 217,
+        "bytes": 134079960,
+        "sha256": "732682bd4385133379b3e63c87696d752b23cf39c2b9586be39a3c23be58f997"
+      },
+      "nativeGeometryFiles": {
+        "files": 651,
+        "bytes": 178444308,
+        "sha256": "faf8faa5c45fd14a2ac5f2914eee8a4f05459b6822aac165c11f8acff9c1c37d"
+      },
+      "innerBodyAudit": {
+        "file": "shoulder-release-input-inner-body-audit.json",
+        "sha256": "93c23b051144edcbc81728b99a6a9e025fc57585ae719cda0428597a9283c221",
+        "sampledFrames": 217,
+        "allSampledCrossingsZero": true
+      },
+      "nativeUnconvergedFrames": [
+        {
+          "frame": 2,
+          "time": 0.8333333333333334,
+          "status": [
+            "NO_CONVERGENCE",
+            "SUCCESS"
+          ]
+        }
+      ],
+      "end": {
+        "floorZ": -0.0017056860029697417,
+        "lowest": 0.033292923122644424,
+        "floorClearance": 0.034998609125614165,
+        "highest": 1.258784532546997
+      },
+      "acceptedForProduction": false
+    }
+  ],
+  "bodyExportEquivalence": {
+    "results": [
+      {
+        "profile": "full-removal",
+        "files": 218,
+        "frames": 217,
+        "allBytesIdentical": true,
+        "aggregateSha256": "bdec026c10a664f9e0db46c317e91d7589e802395a7a2c0cba5144983f70b501",
+        "export": {
+          "vertices": 13960,
+          "faces": 26916,
+          "bodies": 13,
+          "maximumReachError": 1.1322097734007351e-15
+        }
+      },
+      {
+        "profile": "shoulder-release",
+        "files": 218,
+        "frames": 217,
+        "allBytesIdentical": true,
+        "aggregateSha256": "bed15523bebe469fa3ac16cb5b36a228aa3d362b89825410da958994f427a2b2",
+        "export": {
+          "vertices": 13960,
+          "faces": 26916,
+          "bodies": 13,
+          "maximumReachError": 1.1322097734007351e-15
+        }
+      }
+    ],
+    "sourceHashes": {
+      "WithdrawalBody.mts": "aea77fa87e9ad1ade92ee26cd1c4a0bef642a62be9bfc44ef3d1111f8dfaa1f1",
+      "WithdrawalCuffs.mts": "3a4bf2bf5abf17abb7fbd5e9985ab0c7787a8a8d79d3b0ab14142a57ef19f3f6",
+      "export-clearance-input.mts": "e97a77aefe7fe94eb2a6cf89b66b5f01445ea68d7e3c31e352e54a794bbca5ce"
+    },
+    "scope": "Fresh execution of the final authoring sources matches every retained body binary and manifest; no garment or gameplay acceptance."
+  },
+  "sources": {
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-sewn-cage.py": "ccfd7edfe26914de72cafe74405940689fb96039d32e50e3ec08b0fe0801e766",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/full-body-input.test.mts": "31b38b562cab206debe32b00c86a5c342fae5e858e234850291265bc9d541ef5",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/full-release.test.mts": "0b315bdef4a9c8f3a9bb22a0b12d3b4da5a7c7c37accadd207bbbf12810859b0",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/full-removal-finish.test.mts": "32e1fb61187f02141b86e6ade9a9058aa64d78cff1930bf4e31742c6202f26ee",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/audit-inner-body.mts": "667142373c17912a84522419c470b15a1d798e2a72f102fe1d457fd36995630e",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/audit-hand-rim.mts": "0cc4494c91ee33dd3189d524389b8b73744c96ea62b8f599c0ba1da43d45a9eb",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/audit-attachments.py": "2e03cfc602ace866eb19e1f9b6521b347264cfe1d966b5354391c1eceeff04e8",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/export-attachment-semantics.mts": "07b5ad1b0c08e0fdd85dcd69f8034fb1c061ef50b00bf87e8a40a748dfa58776",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/audit-coat-opening.py": "7389181c5b7b3900a9de30a2a1b0f66f10311eb77fd3ab9b1576c30c5f7125ca",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/FrontExitBody.mts": "54d5b02d3047104994c25b9ee7a09f18bec32575cd3321c9ce14dc1273892a3d",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/front-exit-path.test.mts": "7d5579fd2ec24006bc07208e51be11ef3574686ddea60fe0f74b9151f74aa0fa",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/export-front-exit-input.mts": "c8e61c51c7a2db6e9893d84c8bee807ccf421672af5e863253dabb34660910f8",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/diagnose-front-sleeves.mts": "705564f615db67d8265534c9c317a47a7b055635a5c24ab5fd62d5ae08896d43",
+    "output/characters/morpheus-wardrobe-recovery-2026-11-01/render-full-removal.py": "b6e01ab649ad7fc256458b3c6dbcf9b30ab88fd4a479212932d0820d8f10d1f0",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/WithdrawalBody.mts": "aea77fa87e9ad1ade92ee26cd1c4a0bef642a62be9bfc44ef3d1111f8dfaa1f1",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/WithdrawalCuffs.mts": "3a4bf2bf5abf17abb7fbd5e9985ab0c7787a8a8d79d3b0ab14142a57ef19f3f6",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/export-clearance-input.mts": "e97a77aefe7fe94eb2a6cf89b66b5f01445ea68d7e3c31e352e54a794bbca5ce",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/withdrawal-path.test.mts": "c1fdfd3cc052b345189a67b83a82b503e42101bd6e440fe00c753c8afd01f41c",
+    "packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc",
+    "packages/client/src/agents/CharacterMotion.ts": "b9056e4a18518c7772876e6f7ae0cad40c300b18db4e3666525b90d7bdf95998",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "7807706bc19bdc4ecf5a58a7ef53a10c8fbe27abbd3aa8301fc7e085cce545ba",
+    "packages/shared/src/constants/ambush-escape.ts": "3061c630a5afc23e8374735b981c0fd536c3b72d73c20ee9e4d491bb5d4a64d0",
+    "packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed"
+  },
+  "attachmentAudit": {
+    "structuralEdges": 231,
+    "armAnchors": 0,
+    "tailArmAnchors": 0,
+    "bad": [],
+    "nonzeroArmAnchors": 53,
+    "maximumArmWeight": 0.11301340162754059,
+    "perPartMaximumArmWeight": {
+      "1": 0.11301340162754059,
+      "2": 0,
+      "3": 0
+    },
+    "sourceHashes": {
+      "attachment-semantics.json": "841e459ea34b7bafd04d975e4dd3c65457e88604b170af16b073ece52385644b",
+      "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+      "full-removal-physics/withdrawal.blend": "ec0e725f893d04b42210aac75430cd532b137391397a7d0a179acf74796e3f0d"
+    },
+    "scope": "Nearest delivered source-vertex weight classification of each actual structural edge anchor; not a dynamic garment acceptance."
+  },
+  "openingTopology": {
+    "part": "morpheus-ambush-coat",
+    "faces": 20388,
+    "nonmanifoldEdges": 0,
+    "boundaryComponents": [
+      {
+        "vertices": 488,
+        "minimum": [
+          -0.5277946024578423,
+          2.349434660682358,
+          -0.33578309445086973
+        ],
+        "maximum": [
+          0.5179408221882289,
+          3.8866072651543333,
+          0.44366422272355016
+        ],
+        "neck": 67,
+        "cuffs": [
+          0,
+          0
+        ],
+        "degrees": [
+          2
+        ]
+      },
+      {
+        "vertices": 61,
+        "minimum": [
+          -0.8441420033393872,
+          2.3060756085193046,
+          -0.7019412611451888
+        ],
+        "maximum": [
+          -0.6135321455231388,
+          2.4308803804898895,
+          -0.42787055904778715
+        ],
+        "neck": 0,
+        "cuffs": [
+          61,
+          0
+        ],
+        "degrees": [
+          2
+        ]
+      },
+      {
+        "vertices": 61,
+        "minimum": [
+          0.6135451978162793,
+          2.306202475572034,
+          -0.7022997830633941
+        ],
+        "maximum": [
+          0.8441417602167471,
+          2.4308156310871345,
+          -0.4278704827532436
+        ],
+        "neck": 0,
+        "cuffs": [
+          0,
+          61
+        ],
+        "degrees": [
+          2
+        ]
+      }
+    ],
+    "sourceSha256": "1f7fee356c2984759cd8ee9785a54c03562e787ea9c10481d526da242ebd67b0"
+  },
+  "frontSleeveDiagnosis": [
+    {
+      "time": 1.6,
+      "before": {
+        "self": 124,
+        "skin": 0,
+        "joints": [
+          [
+            "elbow_R",
+            340
+          ],
+          [
+            "elbow_L",
+            340
+          ],
+          [
+            "shoulder_R",
+            316
+          ],
+          [
+            "shoulder_L",
+            316
+          ]
+        ]
+      },
+      "after": {
+        "self": 0,
+        "skin": 0,
+        "joints": []
+      }
+    },
+    {
+      "time": 2,
+      "before": {
+        "self": 400,
+        "skin": 0,
+        "joints": [
+          [
+            "shoulder_R",
+            828
+          ],
+          [
+            "shoulder_L",
+            828
+          ],
+          [
+            "elbow_R",
+            586
+          ],
+          [
+            "elbow_L",
+            586
+          ],
+          [
+            "chest",
+            504
+          ],
+          [
+            "forearm_twist_R_1",
+            257
+          ],
+          [
+            "forearm_twist_L_1",
+            257
+          ],
+          [
+            "forearm_twist_R_2",
+            50
+          ],
+          [
+            "forearm_twist_L_2",
+            50
+          ]
+        ]
+      },
+      "after": {
+        "self": 192,
+        "skin": 0,
+        "joints": [
+          [
+            "shoulder_R",
+            576
+          ],
+          [
+            "shoulder_L",
+            576
+          ],
+          [
+            "chest",
+            504
+          ]
+        ]
+      }
+    },
+    {
+      "time": 2.4,
+      "before": {
+        "self": 260,
+        "skin": 0,
+        "joints": [
+          [
+            "shoulder_R",
+            491
+          ],
+          [
+            "shoulder_L",
+            491
+          ],
+          [
+            "elbow_R",
+            475
+          ],
+          [
+            "elbow_L",
+            475
+          ],
+          [
+            "forearm_twist_R_1",
+            222
+          ],
+          [
+            "forearm_twist_L_1",
+            222
+          ],
+          [
+            "forearm_twist_R_2",
+            12
+          ],
+          [
+            "forearm_twist_L_2",
+            12
+          ]
+        ]
+      },
+      "after": {
+        "self": 132,
+        "skin": 0,
+        "joints": [
+          [
+            "shoulder_R",
+            396
+          ],
+          [
+            "shoulder_L",
+            396
+          ]
+        ]
+      }
+    },
+    {
+      "time": 3.2,
+      "before": {
+        "self": 6,
+        "skin": 0,
+        "joints": [
+          [
+            "shoulder_R",
+            18
+          ],
+          [
+            "elbow_R",
+            18
+          ],
+          [
+            "shoulder_L",
+            18
+          ],
+          [
+            "elbow_L",
+            18
+          ]
+        ]
+      },
+      "after": {
+        "self": 0,
+        "skin": 0,
+        "joints": []
+      }
+    },
+    {
+      "time": 3.5,
+      "before": {
+        "self": 66,
+        "skin": 0,
+        "joints": [
+          [
+            "elbow_R",
+            246
+          ],
+          [
+            "shoulder_R",
+            244
+          ],
+          [
+            "elbow_L",
+            150
+          ],
+          [
+            "shoulder_L",
+            150
+          ]
+        ]
+      },
+      "after": {
+        "self": 0,
+        "skin": 0,
+        "joints": []
+      }
+    }
+  ],
+  "remaining": [
+    "Forearm exit and real garment grip",
+    "Shoulder/shirt self-contact along the forward-exit body path",
+    "All displayed triangles and body layers across the complete continuous garment trajectory",
+    "Native early-step convergence",
+    "Independent world garment, success/failure/retry, save/load and real browser visual/performance acceptance"
+  ],
+  "notes": [
+    "The shoulder native process exited zero because --python-exit-code 1 was omitted; its Python assertion and solver status explicitly failed.",
+    "Earlier partial contact worker PID 36566 is terminal and superseded.",
+    "The invalid first forward-exit native worker PID 94288 was explicitly stopped and its exec session returned 143.",
+    "Current published gameplay sources and assets have no tracked diff."
+  ]
+}

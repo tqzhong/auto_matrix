@@ -5,9 +5,11 @@ import { makeModel, meshSurface, worldPoints } from '../morpheus-ambush-doff-202
 import { auditCage } from '../morpheus-ambush-doff-2026-10-17/cloth-rebuild/cage-contact.mjs';
 import { WithdrawalBody } from './WithdrawalBody.mjs';
 
+const shoulderRelease = process.env.MORPHEUS_SHOULDER_RELEASE === '1';
+
 test('hands move around the full leather tails while preparing to withdraw the sleeves', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
-  const body = new WithdrawalBody(h.rig);
+  const body = new WithdrawalBody(h.rig, shoulderRelease);
   const clothes = ['morpheus-ambush-coat', 'morpheus-ambush-lapels'].map(name => h.rig.root.getObjectByName(name) as THREE.Mesh);
   clothes.push(...h.rig.panels.map(panel => panel.mesh));
   const bodies: THREE.Mesh[] = [];
@@ -20,7 +22,7 @@ test('hands move around the full leather tails while preparing to withdraw the s
       const surface = meshSurface(mesh);
       indices.push(...surface.indices.map(id => id + vertices.length)); vertices.push(...surface.vertices);
     }
-    assert.equal(indices.length / 3, 25796, 'keep the complete delivered coat, lapels and both tails');
+    assert.equal(indices.length / 3, 26916, 'keep the complete current coat, lapels and both tails');
     const result = auditCage({ vertices, indices }, bodies.map(mesh => meshSurface(mesh)));
     rows.push({ time, self: result.selfCount, body: result.bodyCount });
   }
@@ -30,7 +32,7 @@ test('hands move around the full leather tails while preparing to withdraw the s
 
 test('withdrawing the arms does not introduce shirt folds through the torso or hands', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
-  const body = new WithdrawalBody(h.rig);
+  const body = new WithdrawalBody(h.rig, shoulderRelease);
   const shirt = h.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const initial = auditCage(meshSurface(shirt), [meshSurface(skin)]);
@@ -49,7 +51,7 @@ test('withdrawing the arms does not introduce shirt folds through the torso or h
 
 test('the withdrawal keeps planted feet and restores identical saved body surfaces', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
-  const body = new WithdrawalBody(h.rig);
+  const body = new WithdrawalBody(h.rig, shoulderRelease);
   const feet = ['R', 'L'].map(side => h.rig.bones.get(`ankle_${side}`)!.getWorldPosition(new THREE.Vector3()));
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   let previous = worldPoints(skin), maximumStep = 0, maximumFootDrift = 0, maximumReachError = 0;
@@ -73,7 +75,7 @@ test('the withdrawal keeps planted feet and restores identical saved body surfac
 
 test('after exiting the sleeves the hands clear the body and return continuously to the original standing pose', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
-  const body = new WithdrawalBody(h.rig);
+  const body = new WithdrawalBody(h.rig, shoulderRelease);
   const shirt = h.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const initialSkin = worldPoints(skin), initialShirt = worldPoints(shirt);
@@ -95,7 +97,7 @@ test('a fresh transformed body restores the same saved withdrawal surfaces', asy
   t.after(() => { h.models.dispose(); cold.models.dispose(); });
   cold.rig.root.position.set(12, 5, -3); cold.rig.root.rotation.y = 1.14; cold.rig.root.scale.setScalar(.4);
   cold.rig.root.updateMatrixWorld(true);
-  const warmBody = new WithdrawalBody(h.rig), coldBody = new WithdrawalBody(cold.rig);
+  const warmBody = new WithdrawalBody(h.rig, shoulderRelease), coldBody = new WithdrawalBody(cold.rig, shoulderRelease);
   let maximum = 0, maximumJointDifference = 0;
   const position = cold.rig.root.position.clone(), rotation = cold.rig.root.quaternion.clone(), scale = cold.rig.root.scale.clone();
   for (const time of [.4, 2.9, 3.8, 6.4, 8]) {

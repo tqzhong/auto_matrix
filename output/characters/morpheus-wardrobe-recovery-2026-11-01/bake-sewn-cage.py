@@ -14,17 +14,20 @@ sys.path.insert(0, str(base.parents[2] / 'scripts'))
 from cage_garment import build
 from cloth_collision import cache_collider_vertices
 
-folder = base / 'current-input'
+full = '--full-removal' in sys.argv
+variant = 'front-exit' if '--front-exit' in sys.argv else 'shoulder-release' if '--shoulder-release' in sys.argv else None
+assert not variant or full
+folder = base / (f'{variant}-input' if variant else 'full-removal-input' if full else 'current-input')
 data = json.loads((folder / 'manifest.json').read_text())
 cage = json.loads((base / 'boundary-cage-fit-4.json').read_text())
 controls = json.loads((base / 'boundary-controls.json').read_text())
-out = base / 'sewn-cage-verified-physics'
+out = base / (f'{variant}-physics' if variant else 'full-removal-physics' if full else 'sewn-cage-verified-physics')
 out.mkdir(exist_ok=True)
 scale = 100
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 scene.render.fps = 30
-scene.frame_start, scene.frame_end = 1, 25
+scene.frame_start, scene.frame_end = 1, len(data['frames']) if full else 25
 scene.gravity = (0, 0, -9.81 * scale)
 cloth, display, stitches = build(data, cage)
 pin = cloth.vertex_groups.new(name='validated complete cuff constraints')
@@ -53,6 +56,22 @@ for cuff in controls['cuffs']:
     hook.object, hook.vertex_group = owner, group.name
     hook.matrix_inverse = owner.matrix_world.inverted() @ cloth.matrix_world
     hook.falloff_type = 'NONE'
+
+all_cuffs = [cage['mappedControls'][str(vertex)] for cuff in controls['cuffs'] for vertex in cuff['ring']]
+release_frame = 29 if full else None
+if release_frame:
+    released = cloth.vertex_groups.new(name='cuffs after measured hand passage')
+    released.add(all_cuffs, 1, 'REPLACE')
+    release = cloth.modifiers.new('release complete cuffs after 1.7 seconds', 'VERTEX_WEIGHT_MIX')
+    release.vertex_group_a, release.vertex_group_b = pin.name, released.name
+    release.default_weight_a = release.default_weight_b = 0
+    release.mix_mode, release.mix_set = 'SUB', 'A'
+    for frame, weight in [(1, 0), (release_frame - 1, 0), (release_frame, 1)]:
+        release.mask_constant = weight
+        release.keyframe_insert('mask_constant', frame=frame)
+    for curve in cloth.animation_data.action.fcurves:
+        for key in curve.keyframe_points:
+            key.interpolation = 'LINEAR'
 
 faces, offset = [], 0
 for part in data['bodies']:
@@ -91,22 +110,22 @@ simulation.collision_settings.collision_quality = 5
 simulation.collision_settings.use_self_collision = True
 simulation.collision_settings.self_distance_min = .05
 simulation.collision_settings.self_friction = 8
-simulation.point_cache.frame_start, simulation.point_cache.frame_end = 1, 25
+simulation.point_cache.frame_start, simulation.point_cache.frame_end = 1, scene.frame_end
 scene.frame_set(1)
 bpy.context.view_layer.update()
 metadata = dict(displayVertices=len(data['points']), displayFaces=len(data['indices']) // 3,
     physicalVertices=len(cage['points']), physicalFaces=len(cage['indices']) // 3, stitches=len(stitches),
     massTotal=settings.mass * len(cage['points']), airDamping=settings.air_damping, tension=settings.tension_stiffness,
-    frames=25, bodyParts=[part['name'] for part in data['bodies']], floorZ=floor_z / scale,
+    frames=scene.frame_end, cuffReleaseFrame=release_frame, bodyParts=[part['name'] for part in data['bodies']], floorZ=floor_z / scale,
     sourceHashes={name:hashlib.sha256((base / name).read_bytes()).hexdigest()
-        for name in ['bake-sewn-cage.py', 'cage_garment.py', 'boundary-cage-fit-4.json', 'current-input/manifest.json']},
-    acceptedForProduction=False, scope='Only 0.8–1.6 seconds; complete garment contact and full 0–8 second removal remain separate gates.')
+        for name in ['bake-sewn-cage.py', 'cage_garment.py', 'boundary-cage-fit-4.json', 'boundary-controls.json', f'{folder.name}/manifest.json']},
+    acceptedForProduction=False, scope='Body/cuff authoring only; complete displayed-garment contact and actual gameplay remain separate gates.')
 (out / 'metadata.json').write_text(json.dumps(metadata, indent=2))
 bpy.ops.wm.save_as_mainfile(filepath=str(out / 'withdrawal.blend'))
 cache.filepath = bpy.path.relpath(cache.filepath)
 bpy.ops.wm.save_as_mainfile(filepath=str(out / 'withdrawal.blend'))
 rows, started = [], time.perf_counter()
-for frame in range(1, 26):
+for frame in range(1, scene.frame_end + 1):
     scene.frame_set(frame)
     graph = bpy.context.evaluated_depsgraph_get()
     values = {}
@@ -119,6 +138,11 @@ for frame in range(1, 26):
         assert len(actual.vertices) == count
         if expected_faces is not None:
             assert [int(i) for face in actual.polygons for i in face.vertices] == expected_faces
+        if name == 'cage':
+            weights = [next((group.weight for group in actual.vertices[i].groups if group.group == pin.index), 0) for i in all_cuffs]
+            pin_weights = [min(weights), max(weights)]
+            expected_weight = 0 if release_frame and frame >= release_frame else 1
+            assert all(abs(weight - expected_weight) < 1e-6 for weight in weights), (frame, pin_weights)
         coordinates = np.empty(count * 3, dtype=np.float32)
         actual.vertices.foreach_get('co', coordinates)
         owner.to_mesh_clear()
@@ -141,9 +165,14 @@ for frame in range(1, 26):
     row = dict(frame=frame, time=data['frames'][frame - 1]['time'], seconds=time.perf_counter() - started,
         solverStatus=sorted(solved.status) if frame > 1 else [],
         maximumSolverIterations=solved.max_iterations if frame > 1 else 0,
-        cuffErrorMetres=cuff_error, lowest=float(values['cloth'].reshape(-1, 3)[:, 2].min()))
+        cuffErrorMetres=cuff_error if not release_frame or frame < release_frame else None,
+        freedCuffMotionMetres=cuff_error if release_frame and frame >= release_frame else 0,
+        pinWeights={'cuffs': pin_weights}, lowest=float(values['cloth'].reshape(-1, 3)[:, 2].min()),
+        highest=float(values['cloth'].reshape(-1, 3)[:, 2].max()))
     rows.append(row)
     (out / 'summary.json').write_text(json.dumps(rows, indent=2))
     print(json.dumps(row), flush=True)
+assert max(row['cuffErrorMetres'] for row in rows if row['cuffErrorMetres'] is not None) < .0001, 'The displayed cuff left its authored path before release.'
+if release_frame:
+    assert max(row['freedCuffMotionMetres'] for row in rows) > .001, 'The released display still follows the imposed cuff path.'
 assert all(row['solverStatus'] == ['SUCCESS'] for row in rows[1:]), 'Some dynamic cloth steps did not converge.'
-assert max(row['cuffErrorMetres'] for row in rows) < .0001, 'The displayed cuff left its authored path.'

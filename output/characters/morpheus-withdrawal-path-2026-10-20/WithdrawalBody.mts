@@ -31,7 +31,7 @@ export class WithdrawalBody {
   private elbowPoles = new Map<string, THREE.Vector3>();
   private thumbTips = new Map<string, THREE.Vector3>();
   readonly errors: { side: string; distance: number }[] = [];
-  constructor(private rig: HeroRig) {
+  constructor(private rig: HeroRig, private shoulderRelease = false) {
     for (const [name, bone] of rig.bones) this.initial.set(name, { p: bone.position.clone(), q: bone.quaternion.clone() });
     for (const side of ['R', 'L']) {
       const skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
@@ -69,6 +69,12 @@ export class WithdrawalBody {
     const rotation = this.rig.root.getWorldQuaternion(new THREE.Quaternion());
     const lower = .18 * smooth(time, .8, 1.8) * (1 - smooth(time, 2.7, 3.2));
     this.rig.bones.get('pelvis')!.position.y -= lower;
+    if (this.shoulderRelease) {
+      // Move the shoulders forward out of the open coat while the wrists
+      // remain behind the hips. Arm IK below retains the reachable hand path.
+      const lean = .32 * smooth(time, .8, 1.4) * (1 - smooth(time, 2.6, 3.2));
+      this.rig.bones.get('spine')!.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), lean));
+    }
     this.rig.root.updateMatrixWorld(true);
     if (lower) for (const side of ['R', 'L']) {
       const hip = this.rig.bones.get(`hip_${side}`)!, knee = this.rig.bones.get(`knee_${side}`)!, ankle = this.rig.bones.get(`ankle_${side}`)!;

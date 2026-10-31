@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: the complete displayed coat reaches the floor by the end of removal
+not ok 1 - the complete displayed coat reaches the floor by the end of removal
+  ---
+  duration_ms: 1.015166
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-removal-finish.test.mts:1:1188'
+  failureType: 'testCodeFailure'
+  error: 'the complete coat still hangs 0.12975581958889962 metres above the floor'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-removal-finish.test.mts:28:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the placed coat clears both recovered hands and the upper body
+not ok 2 - the placed coat clears both recovered hands and the upper body
+  ---
+  duration_ms: 1621.026875
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-removal-finish.test.mts:1:1508'
+  failureType: 'testCodeFailure'
+  error: 'the coat still reaches 1.5200523138046265 metres while the recovered hands begin at 0.7188581824302673'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-removal-finish.test.mts:46:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1890.887292

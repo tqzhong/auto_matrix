@@ -1,0 +1,210 @@
+[
+  {
+    "time": 1.6,
+    "before": {
+      "self": 124,
+      "skin": 0,
+      "joints": [
+        [
+          "elbow_R",
+          340
+        ],
+        [
+          "elbow_L",
+          340
+        ],
+        [
+          "shoulder_R",
+          316
+        ],
+        [
+          "shoulder_L",
+          316
+        ]
+      ]
+    },
+    "after": {
+      "self": 0,
+      "skin": 0,
+      "joints": []
+    }
+  },
+  {
+    "time": 2,
+    "before": {
+      "self": 400,
+      "skin": 0,
+      "joints": [
+        [
+          "shoulder_R",
+          828
+        ],
+        [
+          "shoulder_L",
+          828
+        ],
+        [
+          "elbow_R",
+          586
+        ],
+        [
+          "elbow_L",
+          586
+        ],
+        [
+          "chest",
+          504
+        ],
+        [
+          "forearm_twist_R_1",
+          257
+        ],
+        [
+          "forearm_twist_L_1",
+          257
+        ],
+        [
+          "forearm_twist_R_2",
+          50
+        ],
+        [
+          "forearm_twist_L_2",
+          50
+        ]
+      ]
+    },
+    "after": {
+      "self": 192,
+      "skin": 0,
+      "joints": [
+        [
+          "shoulder_R",
+          576
+        ],
+        [
+          "shoulder_L",
+          576
+        ],
+        [
+          "chest",
+          504
+        ]
+      ]
+    }
+  },
+  {
+    "time": 2.4,
+    "before": {
+      "self": 260,
+      "skin": 0,
+      "joints": [
+        [
+          "shoulder_R",
+          491
+        ],
+        [
+          "shoulder_L",
+          491
+        ],
+        [
+          "elbow_R",
+          475
+        ],
+        [
+          "elbow_L",
+          475
+        ],
+        [
+          "forearm_twist_R_1",
+          222
+        ],
+        [
+          "forearm_twist_L_1",
+          222
+        ],
+        [
+          "forearm_twist_R_2",
+          12
+        ],
+        [
+          "forearm_twist_L_2",
+          12
+        ]
+      ]
+    },
+    "after": {
+      "self": 132,
+      "skin": 0,
+      "joints": [
+        [
+          "shoulder_R",
+          396
+        ],
+        [
+          "shoulder_L",
+          396
+        ]
+      ]
+    }
+  },
+  {
+    "time": 3.2,
+    "before": {
+      "self": 6,
+      "skin": 0,
+      "joints": [
+        [
+          "shoulder_R",
+          18
+        ],
+        [
+          "elbow_R",
+          18
+        ],
+        [
+          "shoulder_L",
+          18
+        ],
+        [
+          "elbow_L",
+          18
+        ]
+      ]
+    },
+    "after": {
+      "self": 0,
+      "skin": 0,
+      "joints": []
+    }
+  },
+  {
+    "time": 3.5,
+    "before": {
+      "self": 66,
+      "skin": 0,
+      "joints": [
+        [
+          "elbow_R",
+          246
+        ],
+        [
+          "shoulder_R",
+          244
+        ],
+        [
+          "elbow_L",
+          150
+        ],
+        [
+          "shoulder_L",
+          150
+        ]
+      ]
+    },
+    "after": {
+      "self": 0,
+      "skin": 0,
+      "joints": []
+    }
+  }
+]

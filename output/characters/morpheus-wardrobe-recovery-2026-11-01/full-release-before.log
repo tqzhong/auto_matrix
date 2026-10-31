@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: the complete cuffs release only after the measured hand passage and remain released through recovery
+not ok 1 - the complete cuffs release only after the measured hand passage and remain released through recovery
+  ---
+  duration_ms: 1.095917
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-release.test.mts:1:711'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    25 !== 217
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 217
+  actual: 25
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-release.test.mts:16:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: the actual displayed cuff leaves the imposed hand path after release
+not ok 2 - the actual displayed cuff leaves the imposed hand path after release
+  ---
+  duration_ms: 3.091542
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-release.test.mts:1:1144'
+  failureType: 'testCodeFailure'
+  error: 'the displayed cuff still follows the imposed path within 2.584840417387551e-7 metres'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/full-release.test.mts:38:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 322.165083

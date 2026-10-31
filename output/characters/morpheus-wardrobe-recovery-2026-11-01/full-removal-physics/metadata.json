@@ -1,0 +1,37 @@
+{
+  "displayVertices": 13960,
+  "displayFaces": 26916,
+  "physicalVertices": 3077,
+  "physicalFaces": 5657,
+  "stitches": 231,
+  "massTotal": 3.000000052736141,
+  "airDamping": 0.00649983761832118,
+  "tension": 35.0,
+  "frames": 217,
+  "cuffReleaseFrame": 29,
+  "bodyParts": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "Anatomical_head_and_hands",
+    "Tailored_trousers",
+    "shoes01",
+    "high-poly",
+    "Anatomical_wrist_skin",
+    "morpheus-ambush-shirt",
+    "morpheus-ambush-collar",
+    "morpheus-ambush-tie"
+  ],
+  "floorZ": -0.0017056860029697417,
+  "sourceHashes": {
+    "bake-sewn-cage.py": "956ed28b3e8b8de6be858faca190ed54d85fbc53c96ad9142d94c8a02f05ea87",
+    "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+    "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "full-removal-input/manifest.json": "1f7fee356c2984759cd8ee9785a54c03562e787ea9c10481d526da242ebd67b0"
+  },
+  "acceptedForProduction": false,
+  "scope": "Body/cuff authoring only; complete displayed-garment contact and actual gameplay remain separate gates."
+}

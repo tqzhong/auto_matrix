@@ -8,7 +8,7 @@ export class WithdrawalCuffs {
   private local = new Map<string, THREE.Matrix4>();
   private released = new Map<string, THREE.Matrix4>();
   private velocity = new Map<string, THREE.Vector3>();
-  constructor(private rig: HeroRig, body: WithdrawalBody) {
+  constructor(private rig: HeroRig, body: Pick<WithdrawalBody, 'pose'>) {
     for (const side of ['R', 'L']) {
       const wrist = rig.bones.get(`wrist_${side}`)!.matrixWorld.clone();
       this.initial.set(side, wrist);

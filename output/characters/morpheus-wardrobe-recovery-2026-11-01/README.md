@@ -1,6 +1,6 @@
 # 当前墨菲斯外套的物理校准
 
-2026-11-01，离线衣物制作。**完整脱外套仍未通过，未接入正常剧情，三部曲综合高质量验收仍为 0/42。** 本目录交付的是可复现的起始物理网格、完整显示绑定和自由下落控制；不是八秒动画或游戏验收。
+2026-11-01，离线衣物制作。**完整脱外套仍未通过，未接入正常剧情，三部曲综合高质量验收仍为 0/42。** 本目录交付起始物理网格、完整显示绑定、自由下落控制，以及覆盖至八秒的身体输入和袖口释放检查；整件衣物的结束状态与连续接触仍失败。
 
 ## 已完成的控制
 
@@ -13,6 +13,36 @@
 - 实际制作工程重开后，51,490 个内层顶点在四个指定整数帧与输入逐字节相同，一个子帧检查通过；PC2 使用相对侧文件。该检查范围为制作碰撞体恢复，游戏读档仍未验收。
 
 参数是本衣物的工作标定，不是实测皮革常数，也不是通用单位换算公式。原生完整报告及输入摘要见 `verification.json`、`full-sewn-fall-original.json` 和 `sewn-cage-fall-normalized-material.json`。
+
+## 完整时段与退肩控制
+
+`export-clearance-input.mts --full-removal` 将原 0.8–3.2 秒的 73 帧输入延长到 `AMBUSH_DOFF.duration` 的八秒，共 217 个 30 Hz 样本。原 73 帧的身体二进制和袖口数据保持，最后恢复原站姿；`full-body-input.test.mts` 的三项检查通过。最终源码另在临时目录重新执行两条完整导出，各 217 个身体文件和清单与保留输入逐字节相同，见 `body-export-equivalence.json`。旧身体准备测试的面数预期已从过时的 25,796 更新为当前实际的 26,916，没有减少显示面。
+
+新增可选的 `--shoulder-release` 身体控制，在收臂时向前俯身退肩，结束时恢复原站姿。原路线和退肩路线的身体检查各五项通过，包含完整准备衣物、指定退袖／恢复姿态、481 个 60 Hz 身体连续性样本、固定脚底、手腕可达和变换后的冷恢复。两份输入各 217 帧的完整衬衫自身及与其他十二个可见内层的检查均为零交叉。这些是有限身体检查，不代表外套或任意帧间路径通过。
+
+原生完整烘焙在 1.7 秒之后解除全部 122 个袖口点的固定；每帧读取实际求值后的顶点组权重，并检查完整显示袖口确实离开引导路径。原路线和退肩路线各两项释放检查通过。手与衣口距离审计确认，原路线 1.7 秒时右拇指距袖口约 121 mm、右食指约 67 mm，不能据此称为真实抓衣。
+
+两条路线都没有完成整件脱衣。新增 `full-removal-finish.test.mts` 检查完整显示外套接地，并在结束时低于恢复后的双手；两条路线各自仍为 **0/2**。这只是必要的结束条件，通过后仍须检查全时段接触、抓衣／松手、自然形变与游戏恢复。
+
+| 八秒结束状态 | 原路线 | 俯身退肩控制 |
+| --- | ---: | ---: |
+| 最低显示点离地 | 129.756 mm | 34.999 mm |
+| 最高显示点 | 1.520 m | 1.259 m |
+| 原生模拟拒绝 | 第 2 帧含 `NO_CONVERGENCE` | 第 2 帧含 `NO_CONVERGENCE` |
+
+![完整八秒原路线仍穿在身体上的诊断](full-removal-end-diagnostic.png)
+
+![退肩控制的 3.2 秒与八秒诊断，仍卡在手臂](shoulder-release-end-diagnostic.png)
+
+以上均是完整显示面和全部可见内层的离线灰模，不是游戏画面或演员验收。精确落点和八秒编排属于游戏动作设计；现有成片片段遮挡了退袖和落点，不能称为电影已确认的时刻或位置。
+
+231 条连接边按最近源顶点权重分类，未发现手臂权重超过 50% 的锚点；两片衣摆的该权重为零，53 条翻领连接存在不超过 11.302% 的混合手臂影响，不能写成全部零影响。上衣前开口与颈口属于同一个 488 点边界，另有两个完整袖口，未发现被闭合的前襟。Blender 4.5.3 源码的[结构弹簧构造](https://github.com/blender/blender/blob/v4.5.3/source/blender/blenkernel/intern/cloth.cc#L1479)也确认，未开启零长度收缝时，这些边仍以原长结构弹簧工作；没有将它们误改成收缩到零的连接。
+
+向身前退袖的本地候选曾产生衬衫／手腕交叉，已停止对应烘焙（退出 143），未替换上述两份控制输入或游戏模型。解除旧手腕固定朝向后，指定姿态的皮肤交叉降至零，但衬衫自身交叉仍在；现有圆弧袖管修正可清除部分肘部交叉，2.0／2.4 秒仍有肩部交叉。后续需先修正这一条身体／衬衫路径，再烘焙整衣；失败日志和本地候选保留。
+
+两份完整烘焙的原始脚本快照为 `bake-full-control-snapshot.py` 与 `bake-shoulder-control-snapshot.py`，SHA-256 与各自原生元数据一致。退肩烘焙当时漏加 `--python-exit-code 1`，虽然进程退出零，日志中的 Python 断言与第 2 帧仍明确失败，不能记作通过；下列复现命令均带该参数。逐帧大缓存仍只保存在本机，摘要、哈希与准确范围见 `full-duration-verification.json`。
+
+本轮未替换固定 5173 运行包或手工改写主存档，没有新增浏览器成功／失败／读档、电影画面或性能验收。
 
 ## 动态制作仍失败
 
@@ -53,3 +83,26 @@ node --import tsx --test "$MATRIX_CLOTH_WORK/cage-rest.test.mts"
 `bake-sewn-cage.py` 保留动态制作及其失败门槛。它写入新的 `sewn-cage-verified-physics/`，使用原生 PC2 精确驱动全部内层，并将侧文件相对绑定到保存的工程；已有 PC2 不会覆盖。当前输入下该动态命令应失败，不能把完成导出或局部下落控制称为脱衣通过。大体积逐帧缓存、工程和原始日志保留在本地，不随这些制作源码提交。
 
 动态缓存导出后，`node --import tsx "$MATRIX_CLOTH_WORK/audit-dynamic.mts"` 检查上述四个指定时刻的全部显示面和源输入内层，当前同样应以退出码 1 拒绝。`verify-body-cache.py` 可单独检查保存工程中的完整内层缓存；它通过也不能接受衣物动态。
+
+完整时段控制在新的制作工作副本中生成，避免覆盖已有失败缓存：
+
+```sh
+node --import tsx output/characters/morpheus-withdrawal-path-2026-10-20/export-clearance-input.mts ../morpheus-wardrobe-recovery-2026-11-01/full-removal-input/ --full-removal
+node --import tsx output/characters/morpheus-withdrawal-path-2026-10-20/export-clearance-input.mts ../morpheus-wardrobe-recovery-2026-11-01/shoulder-release-input/ --full-removal --shoulder-release
+node --import tsx --test "$MATRIX_CLOTH_WORK/full-body-input.test.mts"
+MORPHEUS_SHOULDER_RELEASE=1 node --import tsx --test output/characters/morpheus-withdrawal-path-2026-10-20/withdrawal-path.test.mts
+MORPHEUS_BODY_INPUT=shoulder-release-input node --import tsx "$MATRIX_CLOTH_WORK/audit-inner-body.mts" --all-frames
+"$MATRIX_CLOTH_BLENDER" --background --factory-startup --python-exit-code 1 --python "$MATRIX_CLOTH_WORK/bake-sewn-cage.py" -- --full-removal
+"$MATRIX_CLOTH_BLENDER" --background --factory-startup --python-exit-code 1 --python "$MATRIX_CLOTH_WORK/bake-sewn-cage.py" -- --full-removal --shoulder-release
+```
+
+两条完整烘焙当前均应拒绝未收敛的模拟。导出后可以独立检查释放与结束，不将两个门槛互相替代：
+
+```sh
+node --import tsx --test "$MATRIX_CLOTH_WORK/full-release.test.mts"
+MORPHEUS_BODY_INPUT=shoulder-release-input MORPHEUS_CAGE_RESULT=shoulder-release-physics node --import tsx --test "$MATRIX_CLOTH_WORK/full-release.test.mts"
+node --import tsx --test "$MATRIX_CLOTH_WORK/full-removal-finish.test.mts"
+MORPHEUS_BODY_INPUT=shoulder-release-input MORPHEUS_CAGE_RESULT=shoulder-release-physics node --import tsx --test "$MATRIX_CLOTH_WORK/full-removal-finish.test.mts"
+```
+
+两个结束命令当前各有两项明确失败。`FrontExitBody.mts`、`front-exit-path.test.mts` 与 `diagnose-front-sleeves.mts` 保存前伸候选及圆弧袖管对照；前伸候选的身体测试也应失败，尚不能用于有效整衣烘焙。

@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: hands move around the full leather tails while preparing to withdraw the sleeves
+not ok 1 - hands move around the full leather tails while preparing to withdraw the sleeves
+  ---
+  duration_ms: 1604.6945
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-withdrawal-path-2026-10-20/withdrawal-path.test.mts:1:333'
+  failureType: 'testCodeFailure'
+  error: |-
+    keep the complete delivered coat, lapels and both tails
+    
+    26916 !== 25796
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 25796
+  actual: 26916
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-withdrawal-path-2026-10-20/withdrawal-path.test.mts:23:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"baseline":0,"results":[{"time":0,"self":0,"skin":0,"reachError":0},{"time":0.4,"self":0,"skin":0,"reachError":4.710277376051325e-16},{"time":0.8,"self":0,"skin":0,"reachError":0},{"time":1.2,"self":0,"skin":0,"reachError":6.753223014464259e-16},{"time":1.6,"self":0,"skin":0,"reachError":7.447602459741819e-16},{"time":2,"self":0,"skin":0,"reachError":6.753223014464259e-16},{"time":2.4,"self":0,"skin":0,"reachError":2.220446049250313e-16},{"time":2.6,"self":0,"skin":0,"reachError":7.108895957933346e-16},{"time":2.8,"self":0,"skin":0,"reachError":6.661338147750939e-16},{"time":3,"self":0,"skin":0,"reachError":8.671119018262734e-16},{"time":3.1,"self":0,"skin":0,"reachError":3.510833468576701e-16},{"time":3.2,"self":0,"skin":0,"reachError":6.377745716588144e-16}]}
+# Subtest: withdrawing the arms does not introduce shirt folds through the torso or hands
+ok 2 - withdrawing the arms does not introduce shirt folds through the torso or hands
+  ---
+  duration_ms: 4146.495167
+  type: 'test'
+  ...
+# {"maximumStep":0.0502203304763906,"maximumFootDrift":7.468261590855957e-16,"maximumReachError":1.1957467920563633e-15}
+# Subtest: the withdrawal keeps planted feet and restores identical saved body surfaces
+ok 3 - the withdrawal keeps planted feet and restores identical saved body surfaces
+  ---
+  duration_ms: 4614.202916
+  type: 'test'
+  ...
+# {"recovery":[{"time":3.2,"self":0,"skin":0},{"time":3.5,"self":0,"skin":0},{"time":3.8,"self":0,"skin":0},{"time":4.1,"self":0,"skin":0},{"time":4.6,"self":0,"skin":0},{"time":4.9,"self":0,"skin":0},{"time":5.2,"self":0,"skin":0},{"time":5.6,"self":0,"skin":0},{"time":6,"self":0,"skin":0},{"time":6.6,"self":0,"skin":0},{"time":7,"self":0,"skin":0},{"time":7.6,"self":0,"skin":0},{"time":8,"self":0,"skin":0}]}
+# Subtest: after exiting the sleeves the hands clear the body and return continuously to the original standing pose
+ok 4 - after exiting the sleeves the hands clear the body and return continuously to the original standing pose
+  ---
+  duration_ms: 4384.809
+  type: 'test'
+  ...
+# {"coldMaximumDifference":2.27768957223677e-14,"maximumJointDifference":1.2427743010384781e-14}
+# Subtest: a fresh transformed body restores the same saved withdrawal surfaces
+ok 5 - a fresh transformed body restores the same saved withdrawal surfaces
+  ---
+  duration_ms: 2945.794792
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17909.838833

@@ -1,12 +1,16 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import * as THREE from 'three';
+import { AMBUSH_DOFF } from '@auto_matrix/shared';
 import { makeModel, meshSurface, worldPoints } from '../morpheus-ambush-doff-2026-10-17/grip-fixture.mjs';
 import { WithdrawalBody } from './WithdrawalBody.mjs';
 import { WithdrawalCuffs } from './WithdrawalCuffs.mjs';
 
-const h = await makeModel(), directory = new URL(process.argv[2] ?? './clearance-input/', import.meta.url);
+const full = process.argv.includes('--full-removal');
+const shoulderRelease = process.argv.includes('--shoulder-release');
+const destination = process.argv.slice(2).find(arg => !arg.startsWith('--')) ?? (shoulderRelease ? './shoulder-release-input/' : full ? './full-removal-input/' : './clearance-input/');
+const h = await makeModel(), directory = new URL(destination, import.meta.url);
 await mkdir(directory, { recursive: true });
-const body = new WithdrawalBody(h.rig); body.pose(.8);
+const body = new WithdrawalBody(h.rig, shoulderRelease); body.pose(.8);
 const guides = new WithdrawalCuffs(h.rig, body);
 const clothes = ['morpheus-ambush-coat', 'morpheus-ambush-lapels'].map(name => h.rig.root.getObjectByName(name) as THREE.Mesh);
 clothes.push(...h.rig.panels.map(panel => panel.mesh));
@@ -24,7 +28,8 @@ for (const surface of surfaces) {
 }
 const wristBase = Object.fromEntries(['R', 'L'].map(side => [side, h.rig.bones.get(`wrist_${side}`)!.matrixWorld.clone()]));
 const frames = [];
-for (let frame = 1; frame <= 73; frame++) {
+const frameCount = full ? Math.round((AMBUSH_DOFF.duration - .8) * 30) + 1 : 73;
+for (let frame = 1; frame <= frameCount; frame++) {
   const time = .8 + (frame - 1) / 30; body.pose(time);
   const flat = new Float32Array(bodies.flatMap(mesh => worldPoints(mesh).flatMap(p => [.4 * p.x, -.4 * p.z, .4 * p.y])));
   await writeFile(new URL(`body-${frame}.bin`, directory), Buffer.from(flat.buffer));

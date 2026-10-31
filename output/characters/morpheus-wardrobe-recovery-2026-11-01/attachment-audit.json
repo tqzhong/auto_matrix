@@ -1,0 +1,19 @@
+{
+  "structuralEdges": 231,
+  "armAnchors": 0,
+  "tailArmAnchors": 0,
+  "bad": [],
+  "nonzeroArmAnchors": 53,
+  "maximumArmWeight": 0.11301340162754059,
+  "perPartMaximumArmWeight": {
+    "1": 0.11301340162754059,
+    "2": 0,
+    "3": 0
+  },
+  "sourceHashes": {
+    "attachment-semantics.json": "841e459ea34b7bafd04d975e4dd3c65457e88604b170af16b073ece52385644b",
+    "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+    "full-removal-physics/withdrawal.blend": "ec0e725f893d04b42210aac75430cd532b137391397a7d0a179acf74796e3f0d"
+  },
+  "scope": "Nearest delivered source-vertex weight classification of each actual structural edge anchor; not a dynamic garment acceptance."
+}
