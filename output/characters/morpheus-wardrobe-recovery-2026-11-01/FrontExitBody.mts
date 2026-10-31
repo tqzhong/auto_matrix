@@ -4,7 +4,7 @@ import { reach } from '../../../packages/client/src/agents/SpoonPerformance.js';
 
 // Keep each delivered joint's reference roll while aiming the elbow and wrist.
 // Rebuilding orientation from an unrotated axis discards that reference frame.
-function reachArm(upper: THREE.Object3D, lower: THREE.Object3D, end: THREE.Vector3, target: THREE.Vector3, pole: THREE.Vector3, reference: THREE.Quaternion[]): void {
+function reachArm(upper: THREE.Object3D, lower: THREE.Object3D, end: THREE.Vector3, target: THREE.Vector3, pole: THREE.Vector3, reference: THREE.Quaternion[], hinged: boolean): void {
   const start = upper.getWorldPosition(new THREE.Vector3()), direction = target.clone().sub(start);
   const scale = upper.getWorldScale(new THREE.Vector3()).x;
   const a = lower.position.length() * scale, b = end.length() * scale;
@@ -13,6 +13,30 @@ function reachArm(upper: THREE.Object3D, lower: THREE.Object3D, end: THREE.Vecto
   const along = (a * a - b * b + length * length) / (2 * length);
   pole.addScaledVector(direction, -pole.dot(direction)).normalize();
   const hinge = start.clone().addScaledVector(direction, along).addScaledVector(pole, Math.sqrt(Math.max(0, a * a - along * along)));
+  if (hinged) {
+    // The delivered elbow flexes about local X. Aim both segments with the
+    // shoulder's swing/roll instead of bending the elbow sideways to reach.
+    const restUpper = lower.position.clone().normalize(), restForearm = end.clone().normalize();
+    const desiredUpper = upper.parent!.worldToLocal(hinge.clone()).sub(upper.position).normalize();
+    const desiredForearm = upper.parent!.worldToLocal(target.clone()).sub(upper.parent!.worldToLocal(hinge.clone())).normalize();
+    const constant = restUpper.x * restForearm.x;
+    const cosine = restUpper.y * restForearm.y + restUpper.z * restForearm.z;
+    const sine = restUpper.z * restForearm.y - restUpper.y * restForearm.z;
+    const angle = Math.atan2(sine, cosine) - Math.acos(THREE.MathUtils.clamp(
+      (desiredUpper.dot(desiredForearm) - constant) / Math.hypot(cosine, sine), -1, 1));
+    const flexion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), angle);
+    const frame = (axis: THREE.Vector3, next: THREE.Vector3) => {
+      const across = next.clone().addScaledVector(axis, -axis.dot(next)).normalize();
+      return new THREE.Matrix4().makeBasis(axis, across, axis.clone().cross(across));
+    };
+    const original = frame(restUpper, restForearm.applyQuaternion(flexion));
+    const desired = frame(desiredUpper, desiredForearm);
+    upper.quaternion.setFromRotationMatrix(desired.multiply(original.transpose()));
+    upper.updateWorldMatrix(false, true);
+    lower.quaternion.copy(flexion);
+    lower.updateWorldMatrix(false, true);
+    return;
+  }
   for (const [index, joint, child, goal] of [[0, upper, lower.position, hinge], [1, lower, end, target]] as const) {
     const desired = joint.parent!.worldToLocal(goal.clone()).sub(joint.position).normalize();
     const original = child.clone().applyQuaternion(reference[index]).normalize();
@@ -29,6 +53,7 @@ export class FrontExitBody {
   private passage = new Map<string, THREE.Vector3[]>();
   private aligned = new Map<string, THREE.Quaternion>();
   private elbowPoles = new Map<string, THREE.Vector3>();
+  private elbowAxes = new Map<string, THREE.Vector3>();
   private thumbTips = new Map<string, THREE.Vector3>();
   readonly errors: { side: string; distance: number }[] = [];
   constructor(private rig: HeroRig, private shoulderRelease: boolean | 'front-exit' = false) {
@@ -47,6 +72,7 @@ export class FrontExitBody {
       const shoulder = rig.root.worldToLocal(rig.bones.get(`shoulder_${side}`)!.getWorldPosition(new THREE.Vector3()));
       const direction = this.rest.get(side)!.clone().sub(shoulder).normalize();
       const elbow = rig.root.worldToLocal(rig.bones.get(`elbow_${side}`)!.getWorldPosition(new THREE.Vector3())).sub(shoulder);
+      this.elbowAxes.set(side, direction.clone().cross(elbow).normalize());
       this.elbowPoles.set(side, elbow.addScaledVector(direction, -elbow.dot(direction)).normalize());
       const ankle = rig.bones.get(`ankle_${side}`)!;
       this.feet.set(side, { point: rig.root.worldToLocal(ankle.getWorldPosition(new THREE.Vector3())),
@@ -113,7 +139,13 @@ export class FrontExitBody {
       target.lerp(this.rest.get(side)!, release);
       const goal = this.rig.root.localToWorld(target);
       const pole = this.elbowPoles.get(side)!.clone().lerp(new THREE.Vector3(sign, -.3, -.55).normalize(), smooth(time, 0, .8) * (1 - release));
-      reachArm(shoulder, elbow, wrist.position, goal, pole.applyQuaternion(rotation), [this.initial.get(shoulder.name)!.q, this.initial.get(elbow.name)!.q]);
+      if (this.shoulderRelease === 'front-exit') {
+        // Keep one continuous flexion plane. A blended pole can pass through
+        // the hand direction and flip the complete arm to its other IK branch.
+        const aim = goal.clone().sub(shoulder.getWorldPosition(new THREE.Vector3())).applyQuaternion(rotation.clone().invert());
+        pole.copy(this.elbowAxes.get(side)!).cross(aim);
+      }
+      reachArm(shoulder, elbow, wrist.position, goal, pole.applyQuaternion(rotation), [this.initial.get(shoulder.name)!.q, this.initial.get(elbow.name)!.q], this.shoulderRelease === 'front-exit');
       wrist.quaternion.copy(this.initial.get(wrist.name)!.q);
       if (this.aligned.has(side)) {
         const aligned = elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation).multiply(this.aligned.get(side)!);

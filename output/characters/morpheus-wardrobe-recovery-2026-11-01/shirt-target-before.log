@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/test_feasible_shirt_projection.py", line 12, in <module>
+    from shirt_targets import transport_target
+ModuleNotFoundError: No module named 'shirt_targets'

@@ -7,6 +7,29 @@ import { FrontExitBody as WithdrawalBody } from './FrontExitBody.mjs';
 
 const shoulderRelease = process.env.MORPHEUS_SHOULDER_RELEASE === 'front-exit' ? 'front-exit' : process.env.MORPHEUS_SHOULDER_RELEASE === '1';
 
+function shirtAndInnerLayers(h: Awaited<ReturnType<typeof makeModel>>) {
+  const shirt = h.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
+  const outer = [h.rig.root.getObjectByName('morpheus-ambush-coat'), h.rig.root.getObjectByName('morpheus-ambush-lapels'), ...h.rig.panels.map(panel => panel.mesh)];
+  const inner: THREE.Mesh[] = [];
+  h.rig.root.traverseVisible(object => { if (object instanceof THREE.Mesh && object !== shirt && !outer.includes(object)) inner.push(object); });
+  assert.equal(inner.length, 12, 'include wrist skin, collar and tie as well as the main skin');
+  return { shirt, inner };
+}
+
+test('both elbows retain their authored flexion axis while reaching the withdrawal path', async t => {
+  const h = await makeModel(); t.after(() => h.models.dispose());
+  const body = new WithdrawalBody(h.rig, 'front-exit');
+  for (const time of [.4, .8, 1.6, 2, 2.4, 3.2, 3.8, 6.4, 8]) {
+    body.pose(time);
+    for (const side of ['R', 'L']) {
+      const elbow = h.rig.bones.get(`elbow_${side}`)!;
+      assert.ok(Math.hypot(elbow.quaternion.y, elbow.quaternion.z) < 1e-6,
+        `${side} elbow bends sideways at ${time}: ${elbow.quaternion.toArray()}`);
+    }
+    assert.ok(body.errors.every(error => error.distance < 1e-6), `unreachable wrists at ${time}`);
+  }
+});
+
 test('hands move around the full leather tails while preparing to withdraw the sleeves', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
   const body = new WithdrawalBody(h.rig, shoulderRelease);
@@ -33,19 +56,18 @@ test('hands move around the full leather tails while preparing to withdraw the s
 test('withdrawing the arms does not introduce shirt folds through the torso or hands', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
   const body = new WithdrawalBody(h.rig, shoulderRelease);
-  const shirt = h.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
-  const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
-  const initial = auditCage(meshSurface(shirt), [meshSurface(skin)]);
+  const { shirt, inner } = shirtAndInnerLayers(h);
+  const initial = auditCage(meshSurface(shirt), inner.map(mesh => meshSurface(mesh)));
   assert.equal(initial.selfCount, 0, 'the corrected centre seam must not reintroduce the old 23 crossings');
   const results = [];
   for (const time of [0, .4, .8, 1.2, 1.6, 2, 2.4, 2.6, 2.8, 3, 3.1, 3.2]) {
     body.pose(time);
-    const result = auditCage(meshSurface(shirt), [meshSurface(skin)]);
-    results.push({ time, self: result.selfCount, skin: result.bodyCount,
+    const result = auditCage(meshSurface(shirt), inner.map(mesh => meshSurface(mesh)));
+    results.push({ time, self: result.selfCount, inner: result.bodyCount,
       reachError: Math.max(...body.errors.map(row => row.distance), 0) });
   }
   console.log(JSON.stringify({ baseline: initial.selfCount, results }));
-  assert.ok(results.every(row => row.self === 0 && row.skin === 0), `arms enter the torso or shirt: ${JSON.stringify(results)}`);
+  assert.ok(results.every(row => row.self === 0 && row.inner === 0), `arms enter the torso or shirt: ${JSON.stringify(results)}`);
   assert.ok(results.every(row => row.reachError < 1e-6), 'both wrist paths must be reachable without hidden clamping');
 });
 
@@ -76,18 +98,18 @@ test('the withdrawal keeps planted feet and restores identical saved body surfac
 test('after exiting the sleeves the hands clear the body and return continuously to the original standing pose', async t => {
   const h = await makeModel(); t.after(() => h.models.dispose());
   const body = new WithdrawalBody(h.rig, shoulderRelease);
-  const shirt = h.rig.root.getObjectByName('morpheus-ambush-shirt') as THREE.SkinnedMesh;
+  const { shirt, inner } = shirtAndInnerLayers(h);
   const skin = h.rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
   const initialSkin = worldPoints(skin), initialShirt = worldPoints(shirt);
-  const baseline = auditCage(meshSurface(shirt), [meshSurface(skin)]);
+  const baseline = auditCage(meshSurface(shirt), inner.map(mesh => meshSurface(mesh)));
   assert.equal(baseline.selfCount, 0);
   const rows = [];
   for (const time of [3.2, 3.5, 3.8, 4.1, 4.6, 4.9, 5.2, 5.6, 6, 6.6, 7, 7.6, 8]) {
-    body.pose(time); const result = auditCage(meshSurface(shirt), [meshSurface(skin)]);
-    rows.push({ time, self: result.selfCount, skin: result.bodyCount });
+    body.pose(time); const result = auditCage(meshSurface(shirt), inner.map(mesh => meshSurface(mesh)));
+    rows.push({ time, self: result.selfCount, inner: result.bodyCount });
   }
   console.log(JSON.stringify({ recovery: rows }));
-  assert.ok(rows.every(row => row.self === 0 && row.skin === 0), `recovery intersects: ${JSON.stringify(rows)}`);
+  assert.ok(rows.every(row => row.self === 0 && row.inner === 0), `recovery intersects: ${JSON.stringify(rows)}`);
   const difference = Math.max(...worldPoints(skin).map((point, i) => point.distanceTo(initialSkin[i])), ...worldPoints(shirt).map((point, i) => point.distanceTo(initialShirt[i])));
   assert.ok(difference < 1e-5, `exiting the saved action would jump ${difference}`);
 });
@@ -123,4 +145,18 @@ test('a fresh transformed body restores the same saved withdrawal surfaces', asy
   console.log(JSON.stringify({ coldMaximumDifference: maximum, maximumJointDifference }));
   assert.ok(maximumJointDifference < 1e-9, `saved joint pose depends on world placement: ${maximumJointDifference}`);
   assert.ok(maximum < 1e-6, `saved body depends on its world placement: ${maximum}`);
+});
+
+test('the front-exit body restores every visible inner surface at the eight-second boundary', async t => {
+  const h = await makeModel(); t.after(() => h.models.dispose());
+  const body = new WithdrawalBody(h.rig, 'front-exit');
+  const { shirt, inner } = shirtAndInnerLayers(h), meshes = [shirt, ...inner];
+  body.pose(0); const initial = meshes.map(mesh => worldPoints(mesh));
+  body.pose(2.4); body.pose(8);
+  let maximum = 0;
+  for (const [part, mesh] of meshes.entries()) {
+    for (const [id, point] of worldPoints(mesh).entries()) maximum = Math.max(maximum, point.distanceTo(initial[part][id]));
+  }
+  console.log(JSON.stringify({ standingBoundaryMaximum: maximum, visibleInnerLayers: meshes.length }));
+  assert.ok(maximum < 1e-6, `the complete body jumps when leaving the saved action: ${maximum}`);
 });

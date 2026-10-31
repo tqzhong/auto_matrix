@@ -1,0 +1,19 @@
+{"name":"boundary-cage-rest","vertices":2265,"faces":4036,"protectedBoundaryPoints":189,"actualInnerLayers":13,"self":0,"body":856,"acceptedForProduction":false,"sourceHashes":{"current-input/manifest.json":"0dc25fd3b0559872f760c5b1d22d7fa28f694713bbf9ad177e64116e6d75dcff","boundary-cage-rest.json":"c318300d903fb1f5663eacc6b05f3cc54b6ada4748d276772520418d43d4ba69","boundary-controls.json":"8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6"},"scope":"Initial standing physical cage and thirteen actual visible inner layers; display binding, dynamics and removal remain unaccepted."}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+856 !== 0
+
+    at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/audit-standing-cage.mts:31:42) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 856,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.2

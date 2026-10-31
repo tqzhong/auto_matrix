@@ -1,0 +1,105 @@
+{
+  "recordedAtUtc": "2026-10-31T19:59:14.041669+00:00",
+  "baseCommit": "f3050f02b3c290ea3ab1a2c6702a2f62b34ab1d7",
+  "runtimeAndRootTestsUnchanged": true,
+  "bodyGates": {
+    "total": 7,
+    "passed": 4,
+    "failed": 3
+  },
+  "standingGarmentGates": {
+    "total": 3,
+    "passed": 3
+  },
+  "projectionGeometryTests": {
+    "total": 5,
+    "passed": 5
+  },
+  "independentPrefixes": [
+    {
+      "reportSha256": "5b05ad5c9351407ff2e4a04ac2bef0ec24f5a339d9c796541051bb6a57a875d8",
+      "verifierSha256": "c9b0c2e7a9f508ff85a86ff6a37b5743716e3b345f82d4cb98f4c7859f79ca24",
+      "inputSourceHashes": {
+        "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+        "export-shirt-contact-input.mts": "021331004e3b0c2168b54cf1fc9b38342bdf6f4190493e01a41b7adb51a43144",
+        "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+        "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+      },
+      "cacheSourceHashes": {
+        "construct-shirt-contact.py": "52ffdede0e4b58d022a88a7ec5b558a7caa7549f41f617af6cf0a774ceb505d0",
+        "feasible_projection.py": "3afa3f7a412bc9244242b20ca56e380c7070a60ca2096d2c7aa11291b9630ce4",
+        "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021"
+      },
+      "availableThroughFrame": 94,
+      "availableThroughSeconds": 1.55,
+      "wholeEightSecondsPresent": false,
+      "completeDisplayedFaces": 23046,
+      "completeDisplayedVertices": 11977,
+      "otherLayers": 12,
+      "samples": 193,
+      "passed": true,
+      "acceptedForProduction": false,
+      "scope": "Independent Float32 full-shirt samples against all twelve actual posed inner layers, including cache-key midpoints. This does not prove all nonlinear runtime intervals or cloth-material quality.",
+      "rows": null,
+      "verifierSourceSnapshot": "verify-shirt-contact-prefix-snapshot.mts"
+    },
+    {
+      "reportSha256": "bcc19a86f9d16c1b5c099e408a2aab2dbad3a2b2ca2f55ee53e528af4b81f8b0",
+      "verifierSha256": "29c17d6c2793d3cad43482ce8bb6ce066845ea8de02eb3b382e2c4ed70e454c9",
+      "inputSourceHashes": {
+        "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+        "export-shirt-contact-input.mts": "021331004e3b0c2168b54cf1fc9b38342bdf6f4190493e01a41b7adb51a43144",
+        "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+        "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+      },
+      "cacheSourceHashes": {
+        "construct-shirt-contact-bvh.py": "eed9862e504726cd58b4ecefe509a34c12f816455e40b4dd56d383ee0c6cfc5a",
+        "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3",
+        "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021"
+      },
+      "cacheDirectory": "shirt-contact-bvh",
+      "availableThroughFrame": 95,
+      "availableThroughSeconds": 1.5666666666666667,
+      "wholeEightSecondsPresent": false,
+      "completeDisplayedFaces": 23046,
+      "completeDisplayedVertices": 11977,
+      "otherLayers": 12,
+      "samples": 197,
+      "passed": true,
+      "acceptedForProduction": false,
+      "scope": "Independent Float32 full-shirt samples against all twelve actual posed inner layers, including cache-key midpoints. This does not prove all nonlinear runtime intervals or cloth-material quality.",
+      "rows": null
+    },
+    {
+      "reportSha256": "19244dc4ca2410d1e9718a184ed56271920d8755eeca0b06175f6ce55db2d3d1",
+      "verifierSha256": "29c17d6c2793d3cad43482ce8bb6ce066845ea8de02eb3b382e2c4ed70e454c9",
+      "inputSourceHashes": {
+        "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+        "export-shirt-contact-input.mts": "021331004e3b0c2168b54cf1fc9b38342bdf6f4190493e01a41b7adb51a43144",
+        "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+        "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+      },
+      "cacheSourceHashes": {
+        "construct-shirt-contact-bvh.py": "eed9862e504726cd58b4ecefe509a34c12f816455e40b4dd56d383ee0c6cfc5a",
+        "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3",
+        "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021"
+      },
+      "cacheDirectory": "shirt-contact-bvh",
+      "availableThroughFrame": 103,
+      "availableThroughSeconds": 1.7,
+      "wholeEightSecondsPresent": false,
+      "completeDisplayedFaces": 23046,
+      "completeDisplayedVertices": 11977,
+      "otherLayers": 12,
+      "samples": 8,
+      "passed": true,
+      "acceptedForProduction": false,
+      "scope": "Independent Float32 full-shirt samples against all twelve actual posed inner layers, including cache-key midpoints. This does not prove all nonlinear runtime intervals or cloth-material quality.",
+      "rows": null
+    }
+  ],
+  "fullShirtEightSecondsAccepted": false,
+  "wholeRemovalAccepted": false,
+  "highQualityTrilogyGroups": 0,
+  "totalTrilogyGroups": 42
+}

@@ -1,0 +1,16 @@
+{
+  "name": "boundary-cage-fit-2",
+  "vertices": 3040,
+  "faces": 5586,
+  "protectedBoundaryPoints": 189,
+  "actualInnerLayers": 13,
+  "self": 0,
+  "body": 190,
+  "acceptedForProduction": false,
+  "sourceHashes": {
+    "current-input/manifest.json": "0dc25fd3b0559872f760c5b1d22d7fa28f694713bbf9ad177e64116e6d75dcff",
+    "boundary-cage-fit-2.json": "8864b6d5b037d146f22fb9443b03d5222dd273d5fe445e08e595fdd6fd13171a",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6"
+  },
+  "scope": "Initial standing physical cage and thirteen actual visible inner layers; display binding, dynamics and removal remain unaccepted."
+}

@@ -1,0 +1,45 @@
+{
+  "frame": 104,
+  "begin": 0.125,
+  "end": 0.12890625,
+  "seconds": 3.342320832423866,
+  "mode": "feasible-anchored-frame",
+  "iterations": 1,
+  "passed": true,
+  "maximumStep": 7.132705679936663e-05,
+  "maximumRawCorrection": 0.009022092698401615,
+  "allFaces": 97646,
+  "sourceHashes": {
+    "diagnose-shirt-transport.py": "17f8838c15fad07d424451efd629366d4ad054b659d92829d236daedcca73971",
+    "shirt_targets.py": "b81173545db0f8846002466811463333a3b82d17c0a23257f1d8da13aace2591",
+    "construct-shirt-contact-bvh.py": "eed9862e504726cd58b4ecefe509a34c12f816455e40b4dd56d383ee0c6cfc5a",
+    "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3"
+  },
+  "rawTargetDiagnostics": [
+    {
+      "name": "stationary",
+      "intersections": false,
+      "wholeIntervalClear": true,
+      "maximumStepMetres": 0.0
+    },
+    {
+      "name": "fixed-body-only",
+      "intersections": false,
+      "wholeIntervalClear": true,
+      "maximumStepMetres": 5.95812217064853e-05
+    },
+    {
+      "name": "transported-target",
+      "intersections": true,
+      "wholeIntervalClear": false,
+      "maximumStepMetres": 5.95812217064853e-05
+    },
+    {
+      "name": "raw-target",
+      "intersections": true,
+      "wholeIntervalClear": false,
+      "maximumStepMetres": 0.009045346085207611
+    }
+  ],
+  "acceptedForProduction": false
+}

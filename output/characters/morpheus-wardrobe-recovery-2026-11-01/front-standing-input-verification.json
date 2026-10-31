@@ -1,0 +1,17 @@
+{
+  "sourceHashes": {
+    "export-front-standing.mts": "7908ef63ffc05b0235a2ce144b1e5033a9e316e69f0bb0d334a3a0609859e4a6",
+    "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+    "current-input/manifest.json": "a20e31335c0261b437b495b93b9d99ca556c03070b9c2712b47ebaf1004ee7b2",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "../../../packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+    "../../../packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc"
+  },
+  "vertices": 13960,
+  "faces": 26916,
+  "visibleInnerLayers": 13,
+  "maximumWeldError": 1.1102230246251565e-16,
+  "self": 0,
+  "body": 0,
+  "acceptedForProduction": false
+}

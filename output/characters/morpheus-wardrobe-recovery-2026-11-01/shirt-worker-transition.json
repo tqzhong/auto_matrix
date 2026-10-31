@@ -1,0 +1,24 @@
+{
+  "recordedAtUtc": "2026-10-31T19:43:53.411469+00:00",
+  "previousWorker": {
+    "pid": 33365,
+    "execSession": 81613,
+    "exitCode": 143,
+    "reason": "Replaced after three geometry tests and a full 97,646-face frame-92 benchmark verified an earlier temporal split with unchanged contact/CCD gates.",
+    "lastCompleteFrame": 95,
+    "lastCompleteTime": 1.5666666666666667,
+    "reportSha256": "b2d7ebe32910fca0b9c3b154c20705f4262ff22463584312958eab8564dd84b5"
+  },
+  "independentDisplayedPrefix": {
+    "throughFrame": 94,
+    "samples": 193,
+    "passed": true
+  },
+  "newWorkerOutput": "shirt-contact-bvh",
+  "newWorkerStartsAtFrame": 1,
+  "sourceHashes": {
+    "construct-shirt-contact-bvh.py": "eed9862e504726cd58b4ecefe509a34c12f816455e40b4dd56d383ee0c6cfc5a",
+    "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3"
+  },
+  "acceptedForProduction": false
+}

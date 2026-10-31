@@ -1,0 +1,19 @@
+{
+  "frame": 94,
+  "time": 1.55,
+  "sourceHashes": {
+    "render-shirt-contact.py": "7c16a76ab86694a9d3886e0464547047117a9735568334e399e7b14407515176",
+    "shirt-contact-render-faces.json": "925f6347a3af6dec25fab318a684b5c81badc68f2528b82f1bfe8c3841560784",
+    "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021",
+    "shirt-contact-input/shirt-94.bin": "0302d319a3cb9be35207378dbbc4abd7c6cfbca947cb8d132fc6373e06e4e8bc",
+    "shirt-contact-input/body-94.bin": "d689a41ea572ec940d0d791e282e0a9cb1ce7bdb1616f0e6c009e6c9284dc167",
+    "shirt-contact-path/cloth-94.bin": "b46600cd54b3c85f22adfcb9b70a2cbf6d39f959c3c4d4f8cfa3fb7ab6199cc6",
+    "shirt-contact-path/source-to-weld.json": "893cf4604b8bc03071beb8bb16be21a17e20a9f77d31afa53d65d2b14354a67f"
+  },
+  "shirtVertices": 11977,
+  "shirtFaces": 23046,
+  "otherVisibleLayers": 12,
+  "outerCoatIncluded": false,
+  "gameplay": false,
+  "acceptedForProduction": false
+}

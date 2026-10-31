@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: both elbows retain their authored flexion axis while reaching the withdrawal path
+not ok 1 - both elbows retain their authored flexion axis while reaching the withdrawal path
+  ---
+  duration_ms: 1518.687459
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/front-exit-path.test.mts:1:481'
+  failureType: 'testCodeFailure'
+  error: 'R elbow bends sideways at 0.4: -0.307848410256505,0.03569768873455605,0.17026954166454963,0.9353947372649141'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/front-exit-path.test.mts:17:14)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1732.144167

@@ -1,0 +1,3389 @@
+[
+  {
+    "frame": 2,
+    "time": 0.016666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-2-1.0000000000.bin",
+        "report": {
+          "context": "shirt-2-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5074167922139168,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 3,
+    "time": 0.03333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-3-1.0000000000.bin",
+        "report": {
+          "context": "shirt-3-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5066416254267097,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 4,
+    "time": 0.05,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-4-1.0000000000.bin",
+        "report": {
+          "context": "shirt-4-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5194218335673213,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 5,
+    "time": 0.06666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-5-1.0000000000.bin",
+        "report": {
+          "context": "shirt-5-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5108536668121815,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 6,
+    "time": 0.08333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-6-1.0000000000.bin",
+        "report": {
+          "context": "shirt-6-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5288547500967979,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 7,
+    "time": 0.1,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-7-1.0000000000.bin",
+        "report": {
+          "context": "shirt-7-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5333924172446132,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 8,
+    "time": 0.11666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-8-1.0000000000.bin",
+        "report": {
+          "context": "shirt-8-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5378398336470127,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 9,
+    "time": 0.13333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-9-1.0000000000.bin",
+        "report": {
+          "context": "shirt-9-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.55986712500453,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 10,
+    "time": 0.15,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-10-1.0000000000.bin",
+        "report": {
+          "context": "shirt-10-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5705586252734065,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 11,
+    "time": 0.16666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-11-1.0000000000.bin",
+        "report": {
+          "context": "shirt-11-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5882962923496962,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 12,
+    "time": 0.18333333333333332,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-12-1.0000000000.bin",
+        "report": {
+          "context": "shirt-12-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6189585002139211,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 13,
+    "time": 0.2,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-13-1.0000000000.bin",
+        "report": {
+          "context": "shirt-13-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6250807913020253,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 14,
+    "time": 0.21666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-14-1.0000000000.bin",
+        "report": {
+          "context": "shirt-14-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.635391665622592,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 15,
+    "time": 0.23333333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-15-1.0000000000.bin",
+        "report": {
+          "context": "shirt-15-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6581352921202779,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 16,
+    "time": 0.25,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-16-1.0000000000.bin",
+        "report": {
+          "context": "shirt-16-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6748767914250493,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 17,
+    "time": 0.26666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-17-1.0000000000.bin",
+        "report": {
+          "context": "shirt-17-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6882932502776384,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 18,
+    "time": 0.2833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-18-1.0000000000.bin",
+        "report": {
+          "context": "shirt-18-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6967805828899145,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 19,
+    "time": 0.3,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-19-1.0000000000.bin",
+        "report": {
+          "context": "shirt-19-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6957525825127959,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 20,
+    "time": 0.31666666666666665,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-20-1.0000000000.bin",
+        "report": {
+          "context": "shirt-20-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6990673337131739,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 21,
+    "time": 0.3333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-21-1.0000000000.bin",
+        "report": {
+          "context": "shirt-21-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.689482499845326,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 22,
+    "time": 0.35,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-22-1.0000000000.bin",
+        "report": {
+          "context": "shirt-22-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6795310005545616,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 23,
+    "time": 0.36666666666666664,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-23-1.0000000000.bin",
+        "report": {
+          "context": "shirt-23-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6482221251353621,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 24,
+    "time": 0.38333333333333336,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-24-1.0000000000.bin",
+        "report": {
+          "context": "shirt-24-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6224967502057552,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 25,
+    "time": 0.4,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-25-1.0000000000.bin",
+        "report": {
+          "context": "shirt-25-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6109023336321115,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 26,
+    "time": 0.4166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-26-1.0000000000.bin",
+        "report": {
+          "context": "shirt-26-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5594387911260128,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 27,
+    "time": 0.43333333333333335,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-27-1.0000000000.bin",
+        "report": {
+          "context": "shirt-27-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.619937707670033,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 28,
+    "time": 0.45,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-28-1.0000000000.bin",
+        "report": {
+          "context": "shirt-28-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6034611668437719,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 29,
+    "time": 0.4666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-29-1.0000000000.bin",
+        "report": {
+          "context": "shirt-29-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6101705422624946,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 30,
+    "time": 0.48333333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-30-1.0000000000.bin",
+        "report": {
+          "context": "shirt-30-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6156441243365407,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 31,
+    "time": 0.5,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-31-1.0000000000.bin",
+        "report": {
+          "context": "shirt-31-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6151723340153694,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 32,
+    "time": 0.5166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-32-1.0000000000.bin",
+        "report": {
+          "context": "shirt-32-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6046319585293531,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 33,
+    "time": 0.5333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-33-1.0000000000.bin",
+        "report": {
+          "context": "shirt-33-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6009164582937956,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 34,
+    "time": 0.55,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-34-1.0000000000.bin",
+        "report": {
+          "context": "shirt-34-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6048159589990973,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 35,
+    "time": 0.5666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-35-1.0000000000.bin",
+        "report": {
+          "context": "shirt-35-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6007321244105697,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 36,
+    "time": 0.5833333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-36-1.0000000000.bin",
+        "report": {
+          "context": "shirt-36-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5976265827193856,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 37,
+    "time": 0.6,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-37-1.0000000000.bin",
+        "report": {
+          "context": "shirt-37-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5886469576507807,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 38,
+    "time": 0.6166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-38-1.0000000000.bin",
+        "report": {
+          "context": "shirt-38-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5723210414871573,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 39,
+    "time": 0.6333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-39-1.0000000000.bin",
+        "report": {
+          "context": "shirt-39-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5883135832846165,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 40,
+    "time": 0.65,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-40-1.0000000000.bin",
+        "report": {
+          "context": "shirt-40-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5644077910110354,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 41,
+    "time": 0.6666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-41-1.0000000000.bin",
+        "report": {
+          "context": "shirt-41-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5602338751778007,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 42,
+    "time": 0.6833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-42-1.0000000000.bin",
+        "report": {
+          "context": "shirt-42-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.54633045848459,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 43,
+    "time": 0.7,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-43-1.0000000000.bin",
+        "report": {
+          "context": "shirt-43-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5313560403883457,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 44,
+    "time": 0.7166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-44-1.0000000000.bin",
+        "report": {
+          "context": "shirt-44-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5254394160583615,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 45,
+    "time": 0.7333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-45-1.0000000000.bin",
+        "report": {
+          "context": "shirt-45-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5170529996976256,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 46,
+    "time": 0.75,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-46-1.0000000000.bin",
+        "report": {
+          "context": "shirt-46-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5133754573762417,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 47,
+    "time": 0.7666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-47-1.0000000000.bin",
+        "report": {
+          "context": "shirt-47-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5251514576375484,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 48,
+    "time": 0.7833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-48-1.0000000000.bin",
+        "report": {
+          "context": "shirt-48-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5074417497962713,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 49,
+    "time": 0.8,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-49-1.0000000000.bin",
+        "report": {
+          "context": "shirt-49-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5037443330511451,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 50,
+    "time": 0.8166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-50-1.0000000000.bin",
+        "report": {
+          "context": "shirt-50-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5056841671466827,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 51,
+    "time": 0.8333333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-51-1.0000000000.bin",
+        "report": {
+          "context": "shirt-51-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5117105832323432,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 52,
+    "time": 0.85,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-52-1.0000000000.bin",
+        "report": {
+          "context": "shirt-52-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5192232923582196,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 53,
+    "time": 0.8666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-53-1.0000000000.bin",
+        "report": {
+          "context": "shirt-53-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5460393754765391,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 54,
+    "time": 0.8833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-54-1.0000000000.bin",
+        "report": {
+          "context": "shirt-54-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5477315001189709,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 55,
+    "time": 0.9,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-55-1.0000000000.bin",
+        "report": {
+          "context": "shirt-55-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5429449155926704,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 56,
+    "time": 0.9166666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-56-1.0000000000.bin",
+        "report": {
+          "context": "shirt-56-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5662342086434364,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 57,
+    "time": 0.9333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-57-1.0000000000.bin",
+        "report": {
+          "context": "shirt-57-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.554860457777977,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 58,
+    "time": 0.95,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-58-1.0000000000.bin",
+        "report": {
+          "context": "shirt-58-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5743022924289107,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 59,
+    "time": 0.9666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-59-1.0000000000.bin",
+        "report": {
+          "context": "shirt-59-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5747061669826508,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 60,
+    "time": 0.9833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-60-1.0000000000.bin",
+        "report": {
+          "context": "shirt-60-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5924109583720565,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 61,
+    "time": 1,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-61-1.0000000000.bin",
+        "report": {
+          "context": "shirt-61-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6032170411199331,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 62,
+    "time": 1.0166666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-62-1.0000000000.bin",
+        "report": {
+          "context": "shirt-62-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6144039584323764,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 63,
+    "time": 1.0333333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-63-1.0000000000.bin",
+        "report": {
+          "context": "shirt-63-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6236761668697,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 64,
+    "time": 1.05,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-64-1.0000000000.bin",
+        "report": {
+          "context": "shirt-64-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6344110416248441,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 65,
+    "time": 1.0666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-65-1.0000000000.bin",
+        "report": {
+          "context": "shirt-65-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6470952080562711,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 66,
+    "time": 1.0833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-66-1.0000000000.bin",
+        "report": {
+          "context": "shirt-66-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6486191246658564,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 67,
+    "time": 1.1,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-67-1.0000000000.bin",
+        "report": {
+          "context": "shirt-67-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6561771659180522,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 68,
+    "time": 1.1166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-68-1.0000000000.bin",
+        "report": {
+          "context": "shirt-68-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6524816667661071,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 69,
+    "time": 1.1333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-69-1.0000000000.bin",
+        "report": {
+          "context": "shirt-69-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6700524995103478,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 70,
+    "time": 1.15,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-70-1.0000000000.bin",
+        "report": {
+          "context": "shirt-70-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6625436674803495,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 71,
+    "time": 1.1666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-71-1.0000000000.bin",
+        "report": {
+          "context": "shirt-71-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.656374666839838,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 72,
+    "time": 1.1833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-72-1.0000000000.bin",
+        "report": {
+          "context": "shirt-72-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.680927624925971,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 73,
+    "time": 1.2,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-73-1.0000000000.bin",
+        "report": {
+          "context": "shirt-73-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6737312087789178,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 74,
+    "time": 1.2166666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-74-1.0000000000.bin",
+        "report": {
+          "context": "shirt-74-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6413259571418166,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 75,
+    "time": 1.2333333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-75-1.0000000000.bin",
+        "report": {
+          "context": "shirt-75-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6450007501989603,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 76,
+    "time": 1.25,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-76-1.0000000000.bin",
+        "report": {
+          "context": "shirt-76-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6267413329333067,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 77,
+    "time": 1.2666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-77-1.0000000000.bin",
+        "report": {
+          "context": "shirt-77-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6161084175109863,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 78,
+    "time": 1.2833333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-78-1.0000000000.bin",
+        "report": {
+          "context": "shirt-78-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6074762493371964,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 79,
+    "time": 1.3,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-79-1.0000000000.bin",
+        "report": {
+          "context": "shirt-79-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.6065449165180326,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 80,
+    "time": 1.3166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-80-1.0000000000.bin",
+        "report": {
+          "context": "shirt-80-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5931186666712165,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 81,
+    "time": 1.3333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-81-1.0000000000.bin",
+        "report": {
+          "context": "shirt-81-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.578873542137444,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 82,
+    "time": 1.35,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-82-1.0000000000.bin",
+        "report": {
+          "context": "shirt-82-0.0000000000-1.0000000000",
+          "mode": "clear-authored-motion",
+          "iterations": [],
+          "seconds": 0.5829667504876852,
+          "maximumCorrection": 0.0,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0
+      }
+    ]
+  },
+  {
+    "frame": 83,
+    "time": 1.3666666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-83-1.0000000000.bin",
+        "report": {
+          "context": "shirt-83-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1281542482.5080154,
+              "residual": 37194414.33069015,
+              "contacts": 166,
+              "step": 1.0,
+              "maximumStep": 0.004513505543872991,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003719441433069015
+            }
+          ],
+          "seconds": 2.5864040423184633,
+          "maximumCorrection": 3.7507684620197324e-05,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 3.7507684620197324e-05
+      }
+    ]
+  },
+  {
+    "frame": 84,
+    "time": 1.3833333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-84-1.0000000000.bin",
+        "report": {
+          "context": "shirt-84-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1301510711.6748416,
+              "residual": 41775624.878550574,
+              "contacts": 188,
+              "step": 1.0,
+              "maximumStep": 0.005044249817719521,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004177562487855058
+            }
+          ],
+          "seconds": 2.3128321673721075,
+          "maximumCorrection": 0.00016203421909597766,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.00016203421909597766
+      }
+    ]
+  },
+  {
+    "frame": 85,
+    "time": 1.4,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-85-1.0000000000.bin",
+        "report": {
+          "context": "shirt-85-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1437434282.502027,
+              "residual": 45919743.79195119,
+              "contacts": 183,
+              "step": 1.0,
+              "maximumStep": 0.0055049628796327195,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004591974379195118
+            }
+          ],
+          "seconds": 2.30622495803982,
+          "maximumCorrection": 0.0003017637953398395,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0003017637953398395
+      }
+    ]
+  },
+  {
+    "frame": 86,
+    "time": 1.4166666666666667,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-86-1.0000000000.bin",
+        "report": {
+          "context": "shirt-86-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1669946580.4813955,
+              "residual": 49658518.357724726,
+              "contacts": 198,
+              "step": 1.0,
+              "maximumStep": 0.005904817600879935,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004965851835772472
+            }
+          ],
+          "seconds": 2.312873249873519,
+          "maximumCorrection": 0.0004229619708114221,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0004229619708114221
+      }
+    ]
+  },
+  {
+    "frame": 87,
+    "time": 1.4333333333333333,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-87-1.0000000000.bin",
+        "report": {
+          "context": "shirt-87-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1965347036.954442,
+              "residual": 53235990.749262996,
+              "contacts": 207,
+              "step": 0.31396484375,
+              "maximumStep": 0.001971126331171624,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0053235990749263
+            },
+            {
+              "iteration": 1,
+              "energy": 924979253.9177088,
+              "residual": 36521761.23179363,
+              "contacts": 243,
+              "step": 1.0,
+              "maximumStep": 0.00430704898217156,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0036521761231793626
+            }
+          ],
+          "seconds": 3.880473332479596,
+          "maximumCorrection": 0.0006000953173079886,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0006000953173079886
+      }
+    ]
+  },
+  {
+    "frame": 88,
+    "time": 1.45,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-88-1.0000000000.bin",
+        "report": {
+          "context": "shirt-88-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2318698663.766675,
+              "residual": 56695709.0854614,
+              "contacts": 237,
+              "step": 0.43505859375,
+              "maximumStep": 0.002885627724721143,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00566957090854614
+            },
+            {
+              "iteration": 1,
+              "energy": 740033065.6892489,
+              "residual": 32029753.61908056,
+              "contacts": 264,
+              "step": 1.0,
+              "maximumStep": 0.0037471058111392974,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003202975361908056
+            }
+          ],
+          "seconds": 3.851012833416462,
+          "maximumCorrection": 0.00077945883970847,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.00077945883970847
+      }
+    ]
+  },
+  {
+    "frame": 89,
+    "time": 1.4666666666666666,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-89-1.0000000000.bin",
+        "report": {
+          "context": "shirt-89-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2732852177.876417,
+              "residual": 60015924.15361801,
+              "contacts": 274,
+              "step": 1.0,
+              "maximumStep": 0.006966491742964328,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0060015924153618005
+            }
+          ],
+          "seconds": 2.3269533328711987,
+          "maximumCorrection": 0.0010566669070649454,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0010566669070649454
+      }
+    ]
+  },
+  {
+    "frame": 90,
+    "time": 1.4833333333333334,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-90-1.0000000000.bin",
+        "report": {
+          "context": "shirt-90-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 3209691702.230881,
+              "residual": 63176952.93203807,
+              "contacts": 283,
+              "step": 1.0,
+              "maximumStep": 0.0072776918873662085,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.006317695293203807
+            }
+          ],
+          "seconds": 2.3423149585723877,
+          "maximumCorrection": 0.0013949387917164956,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0013949387917164956
+      }
+    ]
+  },
+  {
+    "frame": 91,
+    "time": 1.5,
+    "keys": [
+      {
+        "fraction": 1.0,
+        "file": "cloth-91-1.0000000000.bin",
+        "report": {
+          "context": "shirt-91-0.0000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 3750102353.510197,
+              "residual": 66176144.138290204,
+              "contacts": 283,
+              "step": 0.797607421875,
+              "maximumStep": 0.006033695904090675,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0066176144138290205
+            },
+            {
+              "iteration": 1,
+              "energy": 153614526.48220453,
+              "residual": 13393560.422521045,
+              "contacts": 351,
+              "step": 1.0,
+              "maximumStep": 0.0015310480270478478,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0013393560422521045
+            }
+          ],
+          "seconds": 3.871086999773979,
+          "maximumCorrection": 0.001654955397722106,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.001654955397722106
+      }
+    ]
+  },
+  {
+    "frame": 92,
+    "time": 1.5166666666666666,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-92-0.5000000000.bin",
+        "report": {
+          "context": "shirt-92-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1088489088.9711921,
+              "residual": 34496097.66317696,
+              "contacts": 345,
+              "step": 1.0,
+              "maximumStep": 0.003913087573058145,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003449609766317696
+            }
+          ],
+          "seconds": 2.2755341669544578,
+          "maximumCorrection": 0.0018112489587283583,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0018112489587283583
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-92-1.0000000000.bin",
+        "report": {
+          "context": "shirt-92-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1088489088.9712029,
+              "residual": 34496097.66317696,
+              "contacts": 351,
+              "step": 1.0,
+              "maximumStep": 0.003913087573169803,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003449609766317696
+            }
+          ],
+          "seconds": 2.2999370004981756,
+          "maximumCorrection": 0.0019623532105128554,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0019623532105128554
+      }
+    ]
+  },
+  {
+    "frame": 93,
+    "time": 1.5333333333333334,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-93-0.5000000000.bin",
+        "report": {
+          "context": "shirt-93-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1255028948.2160342,
+              "residual": 35799741.99266589,
+              "contacts": 338,
+              "step": 1.0,
+              "maximumStep": 0.004030297614452526,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003579974199266589
+            }
+          ],
+          "seconds": 2.2784794168546796,
+          "maximumCorrection": 0.002122283023734429,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.002122283023734429
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-93-1.0000000000.bin",
+        "report": {
+          "context": "shirt-93-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1255028948.216048,
+              "residual": 35799741.99266811,
+              "contacts": 345,
+              "step": 1.0,
+              "maximumStep": 0.0040302976144363485,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003579974199266811
+            }
+          ],
+          "seconds": 2.299008583649993,
+          "maximumCorrection": 0.002248134528202887,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.002248134528202887
+      }
+    ]
+  },
+  {
+    "frame": 94,
+    "time": 1.55,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-94-0.5000000000.bin",
+        "report": {
+          "context": "shirt-94-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1436612488.7786517,
+              "residual": 36991567.91590719,
+              "contacts": 345,
+              "step": 1.0,
+              "maximumStep": 0.004134257148405571,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0036991567915907186
+            }
+          ],
+          "seconds": 2.2802254585549235,
+          "maximumCorrection": 0.002382649582053326,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.002382649582053326
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-94-1.0000000000.bin",
+        "report": {
+          "context": "shirt-94-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1436612488.7786672,
+              "residual": 36991567.91590719,
+              "contacts": 335,
+              "step": 0.57373046875,
+              "maximumStep": 0.0023719492913272,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0036991567915907186
+            },
+            {
+              "iteration": 1,
+              "energy": 261040696.9692419,
+              "residual": 15768378.31571698,
+              "contacts": 343,
+              "step": 1.0,
+              "maximumStep": 0.0017623078564012666,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.001576837831571698
+            }
+          ],
+          "seconds": 3.804096915759146,
+          "maximumCorrection": 0.002517506266620015,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.002517506266620015
+      }
+    ]
+  },
+  {
+    "frame": 95,
+    "time": 1.5666666666666667,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-95-0.5000000000.bin",
+        "report": {
+          "context": "shirt-95-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1632466309.0053477,
+              "residual": 38064501.72514353,
+              "contacts": 347,
+              "step": 1.0,
+              "maximumStep": 0.004224075903717305,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003806450172514353
+            }
+          ],
+          "seconds": 2.2993273325264454,
+          "maximumCorrection": 0.002631745844870085,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.002631745844870085
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-95-1.0000000000.bin",
+        "report": {
+          "context": "shirt-95-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1632466309.0053654,
+              "residual": 38064501.72514131,
+              "contacts": 370,
+              "step": 0.880859375,
+              "maximumStep": 0.003720816860395604,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.003806450172514131
+            },
+            {
+              "iteration": 1,
+              "energy": 23172024.291431654,
+              "residual": 4535028.525847196,
+              "contacts": 402,
+              "step": 1.0,
+              "maximumStep": 0.0005022226736756037,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00045350285258471956
+            }
+          ],
+          "seconds": 3.7675227094441652,
+          "maximumCorrection": 0.0027439677490758074,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0027439677490758074
+      }
+    ]
+  },
+  {
+    "frame": 96,
+    "time": 1.5833333333333333,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-96-0.5000000000.bin",
+        "report": {
+          "context": "shirt-96-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 1841586429.3534257,
+              "residual": 40153272.99617261,
+              "contacts": 415,
+              "step": 0.884765625,
+              "maximumStep": 0.0038013584310936754,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004015327299617261
+            },
+            {
+              "iteration": 1,
+              "energy": 24454354.708208404,
+              "residual": 4627037.317918303,
+              "contacts": 409,
+              "step": 1.0,
+              "maximumStep": 0.0004926233154402253,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00046270373179183033
+            }
+          ],
+          "seconds": 3.825272750109434,
+          "maximumCorrection": 0.0028509303880498793,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0028509303880498793
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-96-0.7500000000.bin",
+        "report": {
+          "context": "shirt-96-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 460396607.3385123,
+              "residual": 20076636.498086166,
+              "contacts": 416,
+              "step": 1.0,
+              "maximumStep": 0.002141655077467432,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0020076636498086164
+            }
+          ],
+          "seconds": 2.2374332500621676,
+          "maximumCorrection": 0.002908377558379649,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.002908377558379649
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-96-1.0000000000.bin",
+        "report": {
+          "context": "shirt-96-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 460396607.33852255,
+              "residual": 20076636.498086166,
+              "contacts": 434,
+              "step": 0.6328125,
+              "maximumStep": 0.001353933853427455,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0020076636498086164
+            },
+            {
+              "iteration": 1,
+              "energy": 62073736.914908275,
+              "residual": 7371889.964140899,
+              "contacts": 436,
+              "step": 1.0,
+              "maximumStep": 0.000785298526151412,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0007371889964140899
+            }
+          ],
+          "seconds": 4.194886416196823,
+          "maximumCorrection": 0.0029641352550712208,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0029641352550712208
+      }
+    ]
+  },
+  {
+    "frame": 97,
+    "time": 1.6,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-97-0.5000000000.bin",
+        "report": {
+          "context": "shirt-97-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2062750753.612697,
+              "residual": 43399957.819148794,
+              "contacts": 440,
+              "step": 0.6083984375,
+              "maximumStep": 0.002640446652473603,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004339995781914879
+            },
+            {
+              "iteration": 1,
+              "energy": 316326507.50340927,
+              "residual": 16995491.294412855,
+              "contacts": 502,
+              "step": 1.0,
+              "maximumStep": 0.0016995491294412854,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0016995491294412857
+            }
+          ],
+          "seconds": 4.901384958066046,
+          "maximumCorrection": 0.0030749946528968544,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0030749946528968544
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-97-1.0000000000.bin",
+        "report": {
+          "context": "shirt-97-0.5000000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2062750753.6127412,
+              "residual": 43399957.819148794,
+              "contacts": 478,
+              "step": 0.674072265625,
+              "maximumStep": 0.002925470789518306,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.004339995781914879
+            },
+            {
+              "iteration": 1,
+              "energy": 219123718.84952378,
+              "residual": 14145249.92396582,
+              "contacts": 513,
+              "step": 1.0,
+              "maximumStep": 0.001414524992396582,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.001414524992396582
+            }
+          ],
+          "seconds": 4.922185166738927,
+          "maximumCorrection": 0.003166680699836973,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.003166680699836973
+      }
+    ]
+  },
+  {
+    "frame": 98,
+    "time": 1.6166666666666667,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-98-0.2500000000.bin",
+        "report": {
+          "context": "shirt-98-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 573633414.9052732,
+              "residual": 23322166.12638438,
+              "contacts": 526,
+              "step": 0.43115234375,
+              "maximumStep": 0.0010055406586717485,
+              "feasibilityRejections": 1,
+              "energyRejections": 0,
+              "anchorError": 0.002332216612638438
+            },
+            {
+              "iteration": 1,
+              "energy": 185620692.14479712,
+              "residual": 13266759.539666828,
+              "contacts": 528,
+              "step": 1.0,
+              "maximumStep": 0.0013266759539666828,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0013266759539666828
+            }
+          ],
+          "seconds": 5.099239333532751,
+          "maximumCorrection": 0.003204289846853965,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.003204289846853965
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-98-0.5000000000.bin",
+        "report": {
+          "context": "shirt-98-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 573633414.9052987,
+              "residual": 23322166.12638438,
+              "contacts": 534,
+              "step": 0.91796875,
+              "maximumStep": 0.002140901968632941,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002332216612638438
+            },
+            {
+              "iteration": 1,
+              "energy": 3860051.5135976695,
+              "residual": 1913146.440054858,
+              "contacts": 552,
+              "step": 1.0,
+              "maximumStep": 0.0001913146440054858,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0001913146440054858
+            }
+          ],
+          "seconds": 4.575837083160877,
+          "maximumCorrection": 0.003248714141974139,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.003248714141974139
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-98-0.7500000000.bin",
+        "report": {
+          "context": "shirt-98-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 573633414.9053321,
+              "residual": 23322166.12638438,
+              "contacts": 553,
+              "step": 0.736328125,
+              "maximumStep": 0.0017172766854779125,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002332216612638438
+            },
+            {
+              "iteration": 1,
+              "energy": 39880634.2572793,
+              "residual": 6149399.271605238,
+              "contacts": 573,
+              "step": 1.0,
+              "maximumStep": 0.0006149399271605238,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0006149399271605238
+            }
+          ],
+          "seconds": 3.907569708302617,
+          "maximumCorrection": 0.003294579318614181,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.003294579318614181
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-98-0.8750000000.bin",
+        "report": {
+          "context": "shirt-98-0.7500000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 143408353.7266311,
+              "residual": 11661083.06319219,
+              "contacts": 575,
+              "step": 0.994140625,
+              "maximumStep": 0.00115927564046188,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.001166108306319219
+            },
+            {
+              "iteration": 1,
+              "energy": 4923.535482243452,
+              "residual": 68326.65857325893,
+              "contacts": 593,
+              "step": 0.771484375,
+              "maximumStep": 8.12980603684624e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 6.8326658573258925e-06
+            },
+            {
+              "iteration": 2,
+              "energy": 257.1043905279325,
+              "residual": 15613.709088146965,
+              "contacts": 605,
+              "step": 1.0,
+              "maximumStep": 8.212181129630905e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 1.5613709088146965e-06
+            }
+          ],
+          "seconds": 5.504063040949404,
+          "maximumCorrection": 0.0033103519886342,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0033103519886342
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-98-1.0000000000.bin",
+        "report": {
+          "context": "shirt-98-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 143408353.726649,
+              "residual": 11661083.06319219,
+              "contacts": 601,
+              "step": 1.0,
+              "maximumStep": 0.001166108306319219,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.001166108306319219
+            }
+          ],
+          "seconds": 2.339975541457534,
+          "maximumCorrection": 0.003342902126498038,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.003342902126498038
+      }
+    ]
+  },
+  {
+    "frame": 99,
+    "time": 1.6333333333333333,
+    "keys": [
+      {
+        "fraction": 0.5,
+        "file": "cloth-99-0.5000000000.bin",
+        "report": {
+          "context": "shirt-99-0.0000000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 2535322775.223252,
+              "residual": 49870175.395654306,
+              "contacts": 633,
+              "step": 0.4541015625,
+              "maximumStep": 0.0022646124569315673,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00498701753956543
+            },
+            {
+              "iteration": 1,
+              "energy": 755539127.468985,
+              "residual": 27224050.826338552,
+              "contacts": 664,
+              "step": 1.0,
+              "maximumStep": 0.0027224050826338553,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0027224050826338553
+            }
+          ],
+          "seconds": 4.176073708571494,
+          "maximumCorrection": 0.0034905387381335114,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0034905387381335114
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-99-0.7500000000.bin",
+        "report": {
+          "context": "shirt-99-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 633830693.8062687,
+              "residual": 24935087.697827153,
+              "contacts": 673,
+              "step": 0.83203125,
+              "maximumStep": 0.0020746772186082747,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002493508769782715
+            },
+            {
+              "iteration": 1,
+              "energy": 17882582.89924157,
+              "residual": 4188315.5117444783,
+              "contacts": 683,
+              "step": 1.0,
+              "maximumStep": 0.0004188315511744478,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0004188315511744478
+            }
+          ],
+          "seconds": 4.045777792111039,
+          "maximumCorrection": 0.003564306720406647,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.003564306720406647
+      },
+      {
+        "fraction": 0.875,
+        "file": "cloth-99-0.8750000000.bin",
+        "report": {
+          "context": "shirt-99-0.7500000000-0.8750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 158457673.4520383,
+              "residual": 12467543.848913576,
+              "contacts": 693,
+              "step": 1.0,
+              "maximumStep": 0.0012467543848913576,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0012467543848913576
+            }
+          ],
+          "seconds": 2.3818776244297624,
+          "maximumCorrection": 0.0035959152464088533,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0035959152464088533
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-99-1.0000000000.bin",
+        "report": {
+          "context": "shirt-99-0.8750000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 158457673.45208022,
+              "residual": 12467543.848913299,
+              "contacts": 701,
+              "step": 1.0,
+              "maximumStep": 0.0012467543848913298,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0012467543848913298
+            }
+          ],
+          "seconds": 2.3181889578700066,
+          "maximumCorrection": 0.0036301577055363934,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0036301577055363934
+      }
+    ]
+  },
+  {
+    "frame": 100,
+    "time": 1.65,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-100-0.2500000000.bin",
+        "report": {
+          "context": "shirt-100-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 695834575.6547642,
+              "residual": 26530629.14662413,
+              "contacts": 716,
+              "step": 0.35791015625,
+              "maximumStep": 0.0009495581623279047,
+              "feasibilityRejections": 1,
+              "energyRejections": 0,
+              "anchorError": 0.002653062914662413
+            },
+            {
+              "iteration": 1,
+              "energy": 286878238.6990684,
+              "residual": 17035047.52334495,
+              "contacts": 714,
+              "step": 1.0,
+              "maximumStep": 0.0017035047523344948,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0017035047523344948
+            }
+          ],
+          "seconds": 4.2482949597761035,
+          "maximumCorrection": 0.0036986192578420687,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0036986192578420687
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-100-0.5000000000.bin",
+        "report": {
+          "context": "shirt-100-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 695834575.6548667,
+              "residual": 26530629.146623854,
+              "contacts": 725,
+              "step": 1.0,
+              "maximumStep": 0.002653062914662385,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002653062914662385
+            }
+          ],
+          "seconds": 2.375173792243004,
+          "maximumCorrection": 0.0037660990853218427,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0037660990853218427
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-100-0.7500000000.bin",
+        "report": {
+          "context": "shirt-100-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 695834575.6549829,
+              "residual": 26530629.146623854,
+              "contacts": 714,
+              "step": 1.0,
+              "maximumStep": 0.002653062914662385,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002653062914662385
+            }
+          ],
+          "seconds": 2.418134666979313,
+          "maximumCorrection": 0.0038332688517314323,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0038332688517314323
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-100-1.0000000000.bin",
+        "report": {
+          "context": "shirt-100-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 695834575.6551121,
+              "residual": 26530629.146623854,
+              "contacts": 729,
+              "step": 1.0,
+              "maximumStep": 0.002653062914662385,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002653062914662385
+            }
+          ],
+          "seconds": 2.419961833395064,
+          "maximumCorrection": 0.004187141915446545,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.004187141915446545
+      }
+    ]
+  },
+  {
+    "frame": 101,
+    "time": 1.6666666666666667,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-101-0.2500000000.bin",
+        "report": {
+          "context": "shirt-101-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 759163904.6254798,
+              "residual": 28100728.535591647,
+              "contacts": 749,
+              "step": 0.8076171875,
+              "maximumStep": 0.002269463134661552,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0028100728535591646
+            },
+            {
+              "iteration": 1,
+              "energy": 28097526.527272455,
+              "residual": 5406097.188976056,
+              "contacts": 761,
+              "step": 1.0,
+              "maximumStep": 0.0005406097188976056,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0005406097188976056
+            }
+          ],
+          "seconds": 4.21173133328557,
+          "maximumCorrection": 0.004556593060884039,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.004556593060884039
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-101-0.5000000000.bin",
+        "report": {
+          "context": "shirt-101-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 759163904.6256369,
+              "residual": 28100728.535591647,
+              "contacts": 765,
+              "step": 0.5322265625,
+              "maximumStep": 0.00149559541522436,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0028100728535591646
+            },
+            {
+              "iteration": 1,
+              "energy": 166114163.82060635,
+              "residual": 13144774.383347934,
+              "contacts": 774,
+              "step": 1.0,
+              "maximumStep": 0.0013144774383347935,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0013144774383347935
+            }
+          ],
+          "seconds": 4.167070624418557,
+          "maximumCorrection": 0.004938739850540791,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.004938739850540791
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-101-0.7500000000.bin",
+        "report": {
+          "context": "shirt-101-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 759163904.6258143,
+              "residual": 28100728.535591647,
+              "contacts": 766,
+              "step": 0.69921875,
+              "maximumStep": 0.001964855628074572,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0028100728535591646
+            },
+            {
+              "iteration": 1,
+              "energy": 68681072.85492529,
+              "residual": 8452172.254845846,
+              "contacts": 767,
+              "step": 1.0,
+              "maximumStep": 0.0008452172254845847,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0008452172254845847
+            }
+          ],
+          "seconds": 4.123668250627816,
+          "maximumCorrection": 0.00532844470643332,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.00532844470643332
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-101-1.0000000000.bin",
+        "report": {
+          "context": "shirt-101-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 759163904.6260074,
+              "residual": 28100728.535591368,
+              "contacts": 795,
+              "step": 1.0,
+              "maximumStep": 0.002810072853559137,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002810072853559137
+            }
+          ],
+          "seconds": 2.511077624745667,
+          "maximumCorrection": 0.005715034334366213,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.005715034334366213
+      }
+    ]
+  },
+  {
+    "frame": 102,
+    "time": 1.6833333333333333,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-102-0.2500000000.bin",
+        "report": {
+          "context": "shirt-102-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 823308069.8359329,
+              "residual": 29637446.7192953,
+              "contacts": 802,
+              "step": 0.7919921875,
+              "maximumStep": 0.0023472626259129384,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00296374467192953
+            },
+            {
+              "iteration": 1,
+              "energy": 35622276.136753924,
+              "residual": 6164820.46016581,
+              "contacts": 829,
+              "step": 1.0,
+              "maximumStep": 0.000616482046016581,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.000616482046016581
+            }
+          ],
+          "seconds": 4.09892937541008,
+          "maximumCorrection": 0.006099498817468695,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.006099498817468695
+      },
+      {
+        "fraction": 0.375,
+        "file": "cloth-102-0.3750000000.bin",
+        "report": {
+          "context": "shirt-102-0.2500000000-0.3750000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 205827017.460578,
+              "residual": 14818723.35964779,
+              "contacts": 831,
+              "step": 0.958984375,
+              "maximumStep": 0.0014210924159349736,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.001481872335964779
+            },
+            {
+              "iteration": 1,
+              "energy": 346258.98455408437,
+              "residual": 607799.2002981314,
+              "contacts": 865,
+              "step": 1.0,
+              "maximumStep": 6.495325409533951e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 6.077992002981314e-05
+            }
+          ],
+          "seconds": 4.098178041167557,
+          "maximumCorrection": 0.006293704813139518,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.006293704813139518
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-102-0.5000000000.bin",
+        "report": {
+          "context": "shirt-102-0.3750000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 205827017.46069425,
+              "residual": 14818723.35964779,
+              "contacts": 869,
+              "step": 1.0,
+              "maximumStep": 0.001481872335964779,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.001481872335964779
+            }
+          ],
+          "seconds": 2.41176341753453,
+          "maximumCorrection": 0.0064838942245131655,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.0064838942245131655
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-102-0.7500000000.bin",
+        "report": {
+          "context": "shirt-102-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 823308069.8364081,
+              "residual": 29637446.71929558,
+              "contacts": 885,
+              "step": 0.9912109375,
+              "maximumStep": 0.002937696134773927,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.002963744671929558
+            },
+            {
+              "iteration": 1,
+              "energy": 63598.59107499429,
+              "residual": 260485.37155626272,
+              "contacts": 932,
+              "step": 1.0,
+              "maximumStep": 5.098132202556341e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 2.6048537155626272e-05
+            }
+          ],
+          "seconds": 4.225875666365027,
+          "maximumCorrection": 0.006873947352228531,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.006873947352228531
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-102-1.0000000000.bin",
+        "report": {
+          "context": "shirt-102-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 823308069.8366818,
+              "residual": 29637446.7192953,
+              "contacts": 921,
+              "step": 1.0,
+              "maximumStep": 0.00296374467192953,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.00296374467192953
+            }
+          ],
+          "seconds": 2.5095394998788834,
+          "maximumCorrection": 0.007259463885734668,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.007259463885734668
+      }
+    ]
+  },
+  {
+    "frame": 103,
+    "time": 1.7,
+    "keys": [
+      {
+        "fraction": 0.25,
+        "file": "cloth-103-0.2500000000.bin",
+        "report": {
+          "context": "shirt-103-0.0000000000-0.2500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 887735241.5121791,
+              "residual": 31133057.761350837,
+              "contacts": 955,
+              "step": 1.0,
+              "maximumStep": 0.0031133057761350835,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0031133057761350835
+            }
+          ],
+          "seconds": 2.4795506251975894,
+          "maximumCorrection": 0.00764942721777697,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.00764942721777697
+      },
+      {
+        "fraction": 0.5,
+        "file": "cloth-103-0.5000000000.bin",
+        "report": {
+          "context": "shirt-103-0.2500000000-0.5000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 887735241.5124953,
+              "residual": 31133057.761351112,
+              "contacts": 970,
+              "step": 1.0,
+              "maximumStep": 0.0031133057761351113,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0031133057761351113
+            }
+          ],
+          "seconds": 2.5674567501991987,
+          "maximumCorrection": 0.008034390862491782,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.008034390862491782
+      },
+      {
+        "fraction": 0.75,
+        "file": "cloth-103-0.7500000000.bin",
+        "report": {
+          "context": "shirt-103-0.5000000000-0.7500000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 887735241.5128347,
+              "residual": 31133057.761350837,
+              "contacts": 1005,
+              "step": 1.0,
+              "maximumStep": 0.0031133057761350835,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0031133057761350835
+            }
+          ],
+          "seconds": 2.512238832190633,
+          "maximumCorrection": 0.008428731339494344,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.008428731339494344
+      },
+      {
+        "fraction": 1.0,
+        "file": "cloth-103-1.0000000000.bin",
+        "report": {
+          "context": "shirt-103-0.7500000000-1.0000000000",
+          "mode": "feasible-anchored-frame",
+          "iterations": [
+            {
+              "iteration": 0,
+              "energy": 887735241.5131981,
+              "residual": 31133057.761350837,
+              "contacts": 1035,
+              "step": 0.970703125,
+              "maximumStep": 0.003022095645974876,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 0.0031133057761350835
+            },
+            {
+              "iteration": 1,
+              "energy": 761949.2736819589,
+              "residual": 912101.3016019642,
+              "contacts": 1071,
+              "step": 1.0,
+              "maximumStep": 9.174575988954024e-05,
+              "feasibilityRejections": 0,
+              "energyRejections": 0,
+              "anchorError": 9.121013016019641e-05
+            }
+          ],
+          "seconds": 4.288116499781609,
+          "maximumCorrection": 0.00882769798015237,
+          "fixedAnchors": true,
+          "wholeIntervalClear": true,
+          "energyEquilibriumProven": false
+        },
+        "displacementFromRawMetres": 0.00882769798015237
+      }
+    ]
+  }
+]

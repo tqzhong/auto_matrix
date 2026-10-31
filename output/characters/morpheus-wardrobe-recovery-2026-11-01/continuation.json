@@ -1,7 +1,13 @@
 {
-  "recordedAtUtc": "2026-10-31T19:04:01.898729+00:00",
-  "status": "previous_workers_terminal",
-  "activeNativeWorker": null,
+  "recordedAtUtc": "2026-10-31T19:59:14.041669+00:00",
+  "status": "transported_shirt_contact_authoring",
+  "activeNativeWorker": {
+    "pid": 66344,
+    "execSession": 6738,
+    "command": "output/tools/cloth-ipc-venv/bin/python output/characters/morpheus-wardrobe-recovery-2026-11-01/construct-shirt-contact-transport.py",
+    "lastCompleteFrame": 87,
+    "lastCompleteTime": 1.4333333333333333
+  },
   "stoppedWorkers": [
     {
       "pid": 36566,
@@ -13,18 +19,31 @@
       "execSession": 23251,
       "exitCode": 143,
       "reason": "Forward-exit body/shirt contacts failed; do not continue this input."
+    },
+    {
+      "pid": 33365,
+      "execSession": 81613,
+      "exitCode": 143,
+      "reason": "Superseded after validated temporal split/BVH changes; original source and prefix kept."
+    },
+    {
+      "pid": 51560,
+      "execSession": 79821,
+      "exitCode": 1,
+      "reason": "Rejected frame 104 at subdivision depth eight; complete prefix ends at frame 103 / 1.7 seconds. Target-reset diagnosis retained."
     }
   ],
   "requiresLiveProcessRevalidation": true,
   "latestVerifiedBodyProfiles": [
     "full-removal",
-    "shoulder-release"
+    "shoulder-release",
+    "front-exit: four kinematic gates only; three raw clothing gates remain rejected"
   ],
   "rejectedCompleteGarments": [
     "full-removal-physics",
     "shoulder-release-physics"
   ],
-  "nextAction": "Fix the FrontExitBody shoulder/shirt self-intersections first. Current neutral-wrist samples have no skin crossings, but rounding alone leaves 192/132 shoulder pairs at 2.0/2.4 seconds. Do not rerun cloth until the body gate passes; preserve the older invalid front-exit input/cache before creating new input.",
+  "nextAction": "Poll the confirmed transported-shirt worker; do not restart on an observation timeout. On completion, verify all 481 frames and every adaptive key/midpoint against complete Float32 shirt and twelve actual inner layers. On failure, diagnose the actual rejected interval. The new standing coat cage and display binding are ready; do not start full coat dynamics until the complete shirt path passes. Whole garment rendering, grip/release/ground contact and actual gameplay verification remain required.",
   "wholeRemovalAccepted": false,
   "highQualityTrilogyGroups": 0,
   "totalTrilogyGroups": 42

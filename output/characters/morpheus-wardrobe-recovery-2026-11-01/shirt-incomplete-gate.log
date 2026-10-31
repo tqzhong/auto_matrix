@@ -1,0 +1,18 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: A partial cache cannot pass the complete eight-second gate.
+
+95 !== 481
+
+    at <anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/verify-shirt-contact.mts:17:35) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 95,
+  expected: 481,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.2

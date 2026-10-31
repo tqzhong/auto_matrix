@@ -1,0 +1,37 @@
+{
+  "frame": 104,
+  "begin": 0.125,
+  "end": 0.12890625,
+  "sourceSha256": {
+    "construct-shirt-contact-bvh.py": "eed9862e504726cd58b4ecefe509a34c12f816455e40b4dd56d383ee0c6cfc5a",
+    "feasible_shirt_projection.py": "0ef3e4906208f7e5475555a353e7faffebdfafb2cee952b3ba8c3f0d2c5a23d3",
+    "shirt-contact-input/manifest.json": "f662c4ff09cb1cb02a1b202f62ae47e6d3efe23c1e1dbb9445dc43778f0e0021"
+  },
+  "rows": [
+    {
+      "name": "stationary",
+      "intersections": false,
+      "wholeIntervalClear": true,
+      "maxStep": 0.0
+    },
+    {
+      "name": "fixed-body-only",
+      "intersections": false,
+      "wholeIntervalClear": true,
+      "maxStep": 5.95812217064853e-05
+    },
+    {
+      "name": "transported-correction",
+      "intersections": true,
+      "wholeIntervalClear": false,
+      "maxStep": 5.958122170647374e-05
+    },
+    {
+      "name": "raw-target",
+      "intersections": true,
+      "wholeIntervalClear": false,
+      "maxStep": 0.009045346085207611
+    }
+  ],
+  "acceptedForProduction": false
+}
