@@ -13,6 +13,7 @@ import {
   MIRROR_TOUCH,
   PILL_ROOM,
   PILL_TIMING,
+  PILL_TALK_SECONDS,
   WAKE_CALL,
   OFFICE_CUSTODY,
   filmPosition,
@@ -40,10 +41,6 @@ function setup() {
   let tick = 0; let sequence = 0;
   sandbox.life.begin(neo, 0);
   const life = sandbox.state.neoLife!;
-  life.evidence = ['commute', 'clock', 'receipt']; life.doubt = 60; life.contactAfterDay = 1;
-  sandbox.tick(++tick);
-  assert.equal(life.chapter, 1); assert.equal(life.contactSignal, true);
-  assert.equal(neo.currentLocation, 'neo_apartment'); assert.deepEqual(neo.position, lifeRoomCenter('neo_apartment'));
   const state = () => sandbox.life.film.state!;
   const command = (target: string) => players.sandboxAction('player', { kind: 'life', target: `film:${target}` }, ++tick);
   const frame = (input: Partial<{ x: number; z: number; yaw: number; sprint: boolean; crouch: boolean; focus: boolean; climb: number }> = {}, running = true) => {
@@ -69,6 +66,23 @@ function setup() {
     const saved = JSON.parse(JSON.stringify(sandbox.state));
     sandbox.restore(saved); players.release('player', tick); players.possess('player', 'neo', tick);
   };
+  const daily = (target: string) => players.sandboxAction('player', { kind: 'life', target }, ++tick);
+  const investigate = () => {
+    if (life.anomaly) daily(life.anomaly.id === 'screen' ? 'anomaly:observe' : 'anomaly:test');
+  };
+  assert.equal(life.chapter, 0); assert.equal(life.evidence.length, 0); assert.equal(neo.isAwakened, false);
+  for (let day = 0; day < 12 && !life.contactSignal; day++) {
+    daily('go:neo_apartment'); daily('breakfast'); assert.equal(life.activity?.id, 'breakfast'); frames(3.6); investigate();
+    if (life.contactSignal) break;
+    daily('go:central_park'); daily('walk'); assert.equal(life.activity?.id, 'walk'); frames(3.6); investigate();
+    if (life.contactSignal) break;
+    daily('go:neo_apartment'); walkLocal('film_anderson_flat', APARTMENT.bedside.x, APARTMENT.bedside.z);
+    daily('sleep'); assert.equal(life.activity?.id, 'sleep'); frames(5.6);
+  }
+  assert.equal(life.contactSignal, true, JSON.stringify({ day: life.day, evidence: life.evidence, doubt: life.doubt }));
+  assert.ok(life.day >= 2 && life.evidence.length >= 3 && life.doubt >= 42);
+  assert.equal(neo.isAwakened, false, 'investigating ordinary life does not awaken Neo before the pill');
+  daily('go:neo_apartment'); assert.deepEqual(neo.position, lifeRoomCenter('neo_apartment'));
   command('continue');
   return { world, sandbox, players, neo, state, command, frame, frames, walk, walkLocal, reload, tick: () => tick };
 }
@@ -145,6 +159,16 @@ function answerSecondCall(h: Harness) {
 function meetAndTravel(h: Harness, tracker: boolean) {
   const bridge = FILM_SCENE_BY_ID.m1_bridge;
   assert.equal(h.sandbox.state.weather, 'rain');
+  if (tracker) {
+    const life = h.sandbox.state.neoLife!;
+    const before = structuredClone({ completed: h.state().completed, choices: life.choices, evidence: life.evidence, money: life.money });
+    for (let frame = 0; frame < 600 && h.state().bridgeTail?.phase !== 'failed'; frame++) h.frame();
+    assert.equal(h.state().bridgeTail?.phase, 'failed', 'waiting at the tracked meeting must expose Neo to the pursuing agent');
+    h.command('retry');
+    assert.equal(h.state().bridgeTail?.phase, 'tracking'); assert.equal(h.state().bridgeTail?.attempts, 1);
+    assert.deepEqual({ completed: h.state().completed, choices: life.choices, evidence: life.evidence, money: life.money }, before,
+      'retrying the failed meeting keeps the previous daily life and completed story');
+  }
   h.walk(filmStepPosition(bridge, bridge.steps[0])); assert.equal(h.state().step, 1);
   assert.equal(h.state().bridgeArrival?.phase, 'parked');
   h.command('act'); h.frames(15); assert.equal(h.state().meeting?.phase, 'choice');
@@ -175,10 +199,18 @@ function reachPillChoice(h: Harness) {
   assert.equal(h.state().hotel?.welcome?.phase, 'ready'); h.command('act'); h.frames(9);
   assert.equal(h.state().hotel?.welcome?.phase, 'done');
   h.walkLocal('film_lafayette', 0, 0); h.walkLocal('film_lafayette', 0, -3.3);
-  h.command('act'); h.frames(6); assert.equal(h.state().pills?.phase, 'choice');
+  h.command('act'); h.frames(PILL_TIMING.seat + .1);
+  assert.equal(h.state().pills?.phase, 'talking');
+  for (const [beat, seconds] of PILL_TALK_SECONDS.entries()) {
+    assert.equal(h.state().pills?.conversation?.beat, beat);
+    h.frames(seconds + .1); h.command(beat === 0 ? 'pill:belief:agency' : 'act');
+  }
+  h.frames(PILL_TIMING.offer + .1);
+  assert.equal(h.state().pills?.phase, 'choice');
+  assert.equal(h.sandbox.state.neoLife!.choices['m1_pills:fate'], 'agency');
 }
 
-test('P0 runs continuously from daily contact through a clean escape and the red pill', () => {
+test('P0 runs continuously from ordinary daily life through a clean escape and the red pill', () => {
   const h = setup(); completeContactAndClub(h); completeWorkday(h);
   for (const [x, z] of [[-16, 11], [-24, 11], [-24, -13], [-16, -13], [-24, -13], [-24, -27]])
     assert.ok(h.walkLocal('film_metacortex_floor', x, z, undefined, { crouch: true }));
@@ -205,7 +237,7 @@ test('P0 runs continuously from daily contact through a clean escape and the red
   assert.ok(h.state().completed.includes('m1_mirror'));
 });
 
-test('P0 runs continuously from daily contact through capture, tracker removal and the blue pill', () => {
+test('P0 runs continuously from ordinary daily life through capture, tracker removal and the blue pill', () => {
   const h = setup(); completeContactAndClub(h); completeWorkday(h);
   for (const [x, z] of [[-16, 11], [-8, 11], [-8, -13], [-16, -13], [-8, -13], [-8, -24], [-24, -27]]) {
     if (!h.walkLocal('film_metacortex_floor', x, z, undefined, { sprint: true, stopOnCapture: true })) break;
@@ -226,10 +258,10 @@ test('P0 runs continuously from daily contact through capture, tracker removal a
   h.command('act'); h.frames(7); assert.equal(h.state().step, 1); h.command('act'); h.frames(25);
   assert.equal(h.state().office?.bugged, true); assert.equal(h.state().step, 2); h.command('next');
   answerSecondCall(h); meetAndTravel(h, true); reachPillChoice(h);
-  const life = h.sandbox.state.neoLife!; life.money = 287; life.evidence = ['office_tracker'];
+  const life = h.sandbox.state.neoLife!; const before = { money: life.money, evidence: [...life.evidence] };
   h.command('blue'); h.frames(PILL_TIMING.take + .1);
   assert.equal(life.journey, undefined); assert.equal(life.chapter, 0); assert.equal(life.choices.pill, 'blue');
-  assert.equal(life.money, 287); assert.deepEqual(life.evidence, ['office_tracker']);
+  assert.equal(life.money, before.money); assert.deepEqual(life.evidence, before.evidence);
   assert.equal(h.neo.currentLocation, 'neo_apartment');
   assert.equal(h.sandbox.state.weather, 'clear', 'returning to ordinary life releases the bridge rain');
 });

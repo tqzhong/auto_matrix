@@ -109,7 +109,15 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror', epil
         }
       });
       socket.connect(); await waitFor(() => Boolean(state), 'client did not receive its world snapshot');
-      return { socket, messages, state: () => state! };
+      const snapshot = async () => {
+        // Observe several player frames, then request a fresh state even when unchanged deltas are suppressed.
+        await new Promise(resolve => setTimeout(resolve, 250));
+        const marker = messages.length;
+        socket.emit('message', { type: 'request_full_state', data: {} });
+        await waitFor(() => messages.slice(marker).some(message => message.type === 'world_state_full'), 'the requested world snapshot did not arrive');
+        return state!;
+      };
+      return { socket, messages, state: () => state!, snapshot };
     };
     return { base, connect, stop };
   };
@@ -340,8 +348,7 @@ test('a real machine-core restart preserves the paused connection before possess
   const next = await restored.connect();
   next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
   await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
-  const pausedMarker = next.messages.length;
-  await waitFor(() => next.messages.length > pausedMarker + 4, 'paused connection snapshots did not arrive');
+  await next.snapshot();
   assert.deepEqual(next.state().sandbox!.neoLife, before.sandbox!.neoLife);
   assert.deepEqual(body(next.state(), 'neo'), body(before, 'neo'));
   next.socket.emit('message', { type: 'resume', data: {} });
@@ -349,8 +356,7 @@ test('a real machine-core restart preserves the paused connection before possess
   assert.equal(next.state().sandbox!.neoLife!.journey!.deus!.consent, 0);
   assert.equal(next.state().sandbox!.neoLife!.choices.machine_connection, undefined, 'the failure question is not consent');
   await waitFor(() => (next.state().agents.neo.currentAction?.parameters.deusPact as DeusPactEncounter | undefined)?.phase === 'consent', 'the probe did not resume to the consent boundary', 10000);
-  const consentMarker = next.messages.length;
-  await waitFor(() => next.messages.length > consentMarker + 8, 'waiting probe snapshots did not arrive');
+  await next.snapshot();
   assert.equal((next.state().agents.neo.currentAction!.parameters.deusPact as DeusPactEncounter).phase, 'consent');
   assert.equal(next.state().sandbox!.neoLife!.choices.machine_connection, undefined, 'a reload is not consent to connect');
   let sequence = 0;
@@ -365,8 +371,7 @@ test('a real machine-core restart preserves the paused connection before possess
   assert.equal(settled.sandbox!.neoLife!.journey!.step, FILM_SCENE_BY_ID.m3_deus.steps.length);
   assert.equal(settled.sandbox!.neoLife!.journey!.completed.filter(id => id === 'm3_deus').length, 1);
   assert.equal(settled.sandbox!.neoLife!.journal.filter(entry => entry.title === FILM_SCENE_BY_ID.m3_deus.title).length, 1);
-  const settledMarker = next.messages.length;
-  await waitFor(() => next.messages.length > settledMarker + 6, 'settled connection snapshots did not arrive');
+  await next.snapshot();
   // Normal world ticks may change energy and time while Neo remains connected.
   // Check the completed scene and its rewards instead of freezing ordinary life.
   assert.deepEqual(next.state().sandbox!.neoLife!.choices, settled.sandbox!.neoLife!.choices, 'connected cannot change the pact again');
@@ -433,8 +438,7 @@ for (const [scene, phase, elapsed] of [['m3_rain', 'air_dodge', .2], ['m3_surren
     const next = await restored.connect();
     next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
     await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
-    const marker = next.messages.length;
-    await waitFor(() => next.messages.length >= marker + 4, 'paused finale snapshots did not arrive');
+    await next.snapshot();
     assert.deepEqual(next.state().sandbox!.neoLife, before.sandbox!.neoLife);
     for (const id of ['neo', 'smith']) assert.deepEqual(body(next.state(), id), body(before, id));
     next.socket.emit('message', { type: 'resume', data: {} });
@@ -512,8 +516,7 @@ test('every fast truck-rescue packet carries all three bodies at the same saved 
   client.socket.emit('message', { type: 'pause', data: {} });
   await waitFor(() => client.state().simulation?.running === false, 'the rescue did not pause');
   const paused = client.state().sandbox!.neoLife!.journey!.trucks!.rescueElapsed;
-  const count = client.messages.length;
-  await waitFor(() => client.messages.length >= count + 3, 'paused body snapshots did not arrive');
+  await client.snapshot();
   for (const role of ['morpheus', 'keymaker', 'neo']) assert.equal((client.state().agents[role].currentAction!.parameters.truckRescue as TruckEncounter).rescueElapsed, paused);
 });
 
@@ -598,8 +601,7 @@ test('a real farewell restart preserves both paused bodies and Neo life, then se
   const next = await restored.connect();
   next.socket.emit('message', { type: 'play_as', data: { agentId: 'neo' } });
   await waitFor(() => next.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'neo'), 'Neo did not reconnect');
-  const marker = next.messages.length;
-  await waitFor(() => next.messages.length >= marker + 4, 'paused snapshots did not arrive');
+  await next.snapshot();
   assert.deepEqual(next.state().sandbox!.neoLife, before.sandbox!.neoLife);
   for (const id of ['neo', 'trinity']) assert.deepEqual(body(next.state(), id), body(before, id));
   next.socket.emit('message', { type: 'resume', data: {} });
@@ -607,8 +609,7 @@ test('a real farewell restart preserves both paused bodies and Neo life, then se
   const still = structuredClone(next.state());
   assert.equal(still.sandbox!.neoLife!.journey!.step, 2); assert.equal(still.agents.trinity.status, 'dead'); assert.equal(still.agents.trinity.health, 0);
   assert.equal(still.sandbox!.neoLife!.journey!.completed.includes('m3_farewell'), false, 'the player still has to make the final reflection');
-  const afterDeath = next.messages.length;
-  await waitFor(() => next.messages.length >= afterDeath + 4, 'post-farewell snapshots did not arrive');
+  await next.snapshot();
   assert.deepEqual(next.state().sandbox!.neoLife, still.sandbox!.neoLife, 'stillness cannot repeat the death beat or award a scene every frame');
   next.socket.emit('message', { type: 'sandbox_action', data: { kind: 'life', target: 'film:reflect:care' } });
   await waitFor(() => next.state().sandbox!.neoLife!.journey!.completed.includes('m3_farewell'), 'the farewell reflection was not settled');

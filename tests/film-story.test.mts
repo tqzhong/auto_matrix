@@ -13,7 +13,7 @@ import { CABIN, CABIN_ROUTE_LENGTH, cabinGuidePose, RELOADED, RELOADED_FINALE } 
 import { dockGunneryTarget } from '@auto_matrix/shared';
 import assert from 'node:assert/strict';
 import { mirrorEntryPose, awakeningDuration, MIRROR_GUIDE_ROUTE } from '@auto_matrix/shared';
-import { AMBUSH_STAIRS } from '@auto_matrix/shared';
+import { AMBUSH_CALL, AMBUSH_STAIRS } from '@auto_matrix/shared';
 import test from 'node:test';
 import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_CAST, NEO_CHAPTERS, CHARACTERS, RESCUE, RESCUE_LOADOUTS, GOVERNMENT_RESCUE, AIR_RESCUE, MATRIX_ESCAPE, THE_ONE, SMITH_FINALE, OPENING_HOTEL, OPENING_ESCAPE, PILL_ROOM, PILL_TIMING, MIRROR_TOUCH, MIRROR_SEAT, MIRROR_TRINITY, MIRROR_TIMING, DOCK_GUNNERY, awakeningPose, mirrorSilver, filmReflections, filmStepActionReady, filmStepPosition, filmEntry, filmPosition, groundHeight, playerBlocked, stepPlayer, newFreewayRide, stepFreeway, freewayTraffic, newGarageEscape, stepGarageEscape, ambushCat, neoSkillUnlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -1340,10 +1340,13 @@ test('the repeated cat seals the old exit, leaves the service passage open and p
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true, 'the visible brickwork must block the original door');
   const passage = { ...door, x: door.x - 17, z: door.z + 5 };
   assert.equal(playerBlocked(passage, true, 1.1, h.sandbox.state.structures), false);
-  const barriers = h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu'); assert.equal(barriers.length, 2);
+  const barriers = h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu');
+  const ids = ['film:ambush:room-door', 'film:ambush:seal:0:0', 'film:ambush:seal:0:1'];
+  assert.deepEqual(barriers.map(s => s.id).sort(), ids);
+  for (const barrier of barriers) assert.equal(playerBlocked(barrier.position, true, 1.1, h.sandbox.state.structures), true, barrier.id);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
   h.command('retry'); assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
-  assert.equal(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').length, 2, 'loading and retry cannot duplicate the sealed windows');
+  assert.deepEqual(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').map(s => s.id).sort(), ids, 'loading and retry cannot duplicate the sealed windows or room door');
   h.sandbox.life.begin(h.world.agents.get('neo')!, h.tick(), true);
   assert.equal(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').length, 0, 'a new cycle restores the original building');
 });
@@ -1353,7 +1356,8 @@ test('ambush enemies can approach beside the sealed door without trying to disma
   Object.assign(state, { scene: scene.id, actor: 'neo', step: 0 });
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.actor().currentLocation = scene.set;
   h.command('act'); for (let frame = 0; frame < 100; frame++) h.players.step(.1, true, h.tick());
-  assert.equal(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').length, 2);
+  assert.deepEqual(h.sandbox.state.structures.filter(s => s.film?.scene === 'm1_dejavu').map(s => s.id).sort(),
+    ['film:ambush:room-door', 'film:ambush:seal:0:0', 'film:ambush:seal:0:1']);
   h.command('act'); h.advance();
   const center = FILM_SETS[scene.set].center;
   h.actor().position = { ...center, z: center.z - 18 };
@@ -3655,7 +3659,9 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 180 && state.ambushEscape.phase === 'descending'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.ambushEscape.phase, 'window'); h.command('act');
           walk(-18, -37, -13.2); walk(-5.4, -37, -13.2); h.command('act');
-          for (let frame = 0; frame < 56; frame++) h.players.step(.1, true, h.tick());
+          assert.equal(state.ambushEscape.phase, 'call');
+          for (let frame = 0; frame < Math.ceil((AMBUSH_CALL.approach + AMBUSH_CALL.duration + .1) / .1)
+            && state.ambushEscape.phase === 'call'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.step, 2); assert.equal(state.ambushEscape.phase, 'forming');
           for (let frame = 0; frame < 180 && state.ambushEscape.phase === 'forming'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.ambushEscape.phase, 'wetwall');

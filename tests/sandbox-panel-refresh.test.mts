@@ -101,3 +101,20 @@ test('the G key offers the same anomaly as the journal after an earlier offline 
   sandbox.state.neoLife!.computerCheck = { phase: 'reading', elapsed: 0 };
   ui.interact(); assert.deepEqual(sent, [{ kind: 'life', target: 'computer:disconnect' }]);
 });
+
+test('a failed bridge keeps its retry button attached while background story clocks advance', () => {
+  const { ui, body, sandbox } = fixture();
+  sandbox.state.neoLife!.journey = { version: 1, scene: 'm1_bridge', actor: 'neo', step: 0, completed: [],
+    enteredAt: 0, reflections: {}, lastText: '接头被追踪特工阻断。', checkpoint: filmPosition('film_adams_bridge', 0, 24.32),
+    bridgeTail: { phase: 'failed', alert: 70, lastTick: 0, attempts: 1, spawned: true } };
+  ui.renderPanel(); const retry = body.action('film:retry'); assert.ok(retry && !retry.disabled);
+  body.scrollTop = 120;
+  for (let frame = 1; frame <= 20; frame++) {
+    sandbox.state.neoLife!.journey!.bridgeTail!.lastTick = frame; ui.tick = frame; ui.renderPanel();
+  }
+  assert.equal(retry.connected, true, 'an unchanged failure menu detached the retry button before click');
+  assert.equal(body.action('film:retry'), retry); assert.equal(body.scrollTop, 120);
+  sandbox.state.neoLife!.journey!.bridgeTail!.attempts = 2; ui.renderPanel();
+  assert.equal(retry.connected, false, 'a changed attempt count must still update the visible menu');
+  assert.match(body.innerHTML, /第 3 次尝试/);
+});

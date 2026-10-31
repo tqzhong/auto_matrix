@@ -2372,9 +2372,9 @@ export class SandboxUI {
     if (!this.panel || !this.player || !this.state) return;
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
-    const helJournal = life && helGarageActive(life.journey) && (this.panel === 'journal' || this.panel === 'map')
+    const stableJournal = life && (helGarageActive(life.journey) || life.journey?.scene === 'm1_bridge' && life.journey.bridgeTail?.phase === 'failed') && (this.panel === 'journal' || this.panel === 'map')
       ? renderNeoLife(player, state, this.time) : undefined;
-    const signature = helJournal !== undefined ? JSON.stringify([this.panel, helJournal]) : JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures.filter(s => !s.film), state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
+    const signature = stableJournal !== undefined ? JSON.stringify([this.panel, stableJournal]) : JSON.stringify([this.panel, this.selectedFilm, profile.inventory, profile.xp, profile.skills, profile.trackedMission, profile.visited, state.missions, state.structures.filter(s => !s.film), state.incidents, Math.round(player.position.x), Math.round(player.position.z), state.ending,
       life && [life.chapter, life.day, life.money, life.cycle, Math.floor(this.time / 500), life.anomaly, life.computerCheck?.phase, life.activity, life.journal[0], life.appointment, life.journey, player.status, state.threats.length]]);
     if (signature === this.signature) return;
     this.signature = signature;
@@ -2387,7 +2387,7 @@ export class SandboxUI {
     this.root.querySelectorAll<HTMLElement>('.sandbox-window [data-panel]').forEach(button => button.classList.toggle('active', button.dataset.panel === this.panel));
     this.el('sandbox-profile').textContent = neoPanel ? `${player.name} · 第 ${life!.cycle} 轮 · 自动保存生活、证据和选择` : `${player.name} · 等级 ${1 + Math.floor(profile.xp / 50)} · ${profile.xp} XP · 可用技能点 ${skillPoints(profile)}`;
     if (neoPanel) {
-      body.innerHTML = helJournal ?? renderNeoLife(player, state, this.time);
+      body.innerHTML = stableJournal ?? renderNeoLife(player, state, this.time);
     } else if (this.panel === 'inventory') {
       body.innerHTML = `<div class="inventory-summary"><span>代码 <b>${profile.inventory.code}</b></span><span>零件 <b>${profile.inventory.scrap}</b></span><span>技能点 <b>${skillPoints(profile)}</b></span></div>
         <p class="sandbox-help">搜集物资箱和数据终端 → 制作补给 → 搭建安全屋 → 挑战任务。设施放置在面前 9 米处；靠近安全屋可恢复生命和消除追踪。</p>
