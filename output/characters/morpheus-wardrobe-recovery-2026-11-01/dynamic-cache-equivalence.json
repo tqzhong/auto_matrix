@@ -1,0 +1,14 @@
+{
+  "comparedFiles": 75,
+  "byteIdentical": true,
+  "mismatches": [],
+  "sourceHashes": {
+    "bake-sewn-cage.py": "a3f275270b8d10bad183941e4d1bcaaf5044aa88124017e6b14b867222d3edbd",
+    "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+    "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+    "current-input/manifest.json": "a20e31335c0261b437b495b93b9d99ca556c03070b9c2712b47ebaf1004ee7b2"
+  },
+  "nativeDynamicFailedFrames": [
+    2
+  ]
+}

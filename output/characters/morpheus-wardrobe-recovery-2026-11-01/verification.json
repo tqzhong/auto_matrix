@@ -1,0 +1,159 @@
+{
+  "recordedAtUtc": "2026-10-31T18:09:07.319728+00:00",
+  "repositoryHeadBefore": "d5be9a3b17f434909d5861b21060ee0f71b8629b",
+  "scope": "Offline current-garment calibration and retained dynamic rejection. No production character, game scene or trilogy acceptance.",
+  "trilogyHighQualityAccepted": {
+    "accepted": 0,
+    "total": 42
+  },
+  "fullRemovalAccepted": false,
+  "surface": {
+    "displayVertices": 13960,
+    "displayFaces": 26916,
+    "physicalVertices": 3077,
+    "physicalFaces": 5657,
+    "actualInnerLayers": 13,
+    "originalControls": 189,
+    "cageRestTests": {
+      "passed": 3,
+      "failed": 0,
+      "command": "node --import tsx --test output/characters/morpheus-wardrobe-recovery-2026-11-01/cage-rest.test.mts"
+    }
+  },
+  "freeFall": {
+    "originalControlExpectedExit": 1,
+    "originalDropMetres": 0.0008931501284680135,
+    "originalStructuralEdges": 648,
+    "calibratedExit": 0,
+    "calibratedDropMetres": 0.3296734894883636,
+    "maximumRelativeDriftMetres": 3.7806135355077924e-06,
+    "initialBindingMaximumErrorMetres": 1.8040773554348215e-06,
+    "displayBindingToleranceMetres": 1e-05,
+    "calibratedStructuralEdges": 231,
+    "nativeStatus": "SUCCESS in all nine simulated frames",
+    "nativeVersion": "4.5.3 LTS"
+  },
+  "bodyCacheReload": {
+    "exit": 0,
+    "blenderVersion": "4.5.3 LTS",
+    "relativeSidecar": "//actual-body.pc2",
+    "records": [
+      {
+        "frame": 1,
+        "vertices": 51490,
+        "bitIdentical": true,
+        "maximumScaledError": 0.0
+      },
+      {
+        "frame": 25,
+        "vertices": 51490,
+        "bitIdentical": true,
+        "maximumScaledError": 0.0
+      },
+      {
+        "frame": 16,
+        "vertices": 51490,
+        "bitIdentical": true,
+        "maximumScaledError": 0.0
+      },
+      {
+        "frame": 10,
+        "vertices": 51490,
+        "bitIdentical": true,
+        "maximumScaledError": 0.0
+      },
+      {
+        "frame": 16.5,
+        "vertices": 51490,
+        "bitIdentical": null,
+        "maximumScaledError": 1.4901161193847656e-08
+      }
+    ],
+    "scope": "Only the actual saved thirteen-layer collider cache; does not accept cloth dynamics or gameplay."
+  },
+  "dynamicRejected": {
+    "bakeExit": 1,
+    "geometryAuditExit": 1,
+    "nativeFailedFrames": [
+      2
+    ],
+    "maximumCuffErrorMetres": 4.254636159282015e-07,
+    "sampledCrossings": [
+      {
+        "frame": 1,
+        "time": 0.8,
+        "self": 0,
+        "body": 0,
+        "minimumFloorHeightMetres": 0.19558485820889474
+      },
+      {
+        "frame": 10,
+        "time": 1.1,
+        "self": 6,
+        "body": 210,
+        "minimumFloorHeightMetres": 0.15985960736870766
+      },
+      {
+        "frame": 16,
+        "time": 1.3,
+        "self": 28,
+        "body": 213,
+        "minimumFloorHeightMetres": 0.10424601510167122
+      },
+      {
+        "frame": 25,
+        "time": 1.6,
+        "self": 32,
+        "body": 374,
+        "minimumFloorHeightMetres": 0.03568994477391243
+      }
+    ],
+    "originalAndCurrentSourceBakeGeometry": {
+      "comparedFiles": 75,
+      "byteIdentical": true,
+      "mismatches": [],
+      "sourceHashes": {
+        "bake-sewn-cage.py": "a3f275270b8d10bad183941e4d1bcaaf5044aa88124017e6b14b867222d3edbd",
+        "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+        "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+        "current-input/manifest.json": "a20e31335c0261b437b495b93b9d99ca556c03070b9c2712b47ebaf1004ee7b2"
+      },
+      "nativeDynamicFailedFrames": [
+        2
+      ]
+    }
+  },
+  "artifactHashes": {
+    "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+    "calibrate-sewn-cage.py": "2f8e9c52a4fcfdefe3c80943ef7390ece7db81edd163fe5913f9d29f3d193e37",
+    "cage-rest.test.mts": "e888a15f0cc0fbe5336fc15ebb7b26e86db5f812a5a6a9917ad0f333041dec26",
+    "bake-sewn-cage.py": "a3f275270b8d10bad183941e4d1bcaaf5044aa88124017e6b14b867222d3edbd",
+    "verify-body-cache.py": "e1057a8342486851ef143acf42546db6757de384d90cd5d85af758f636535f91",
+    "audit-dynamic.mts": "f625a65bdff65b10451d685ce617f67bf394ddf198672d4584f61dbd85204cf2",
+    "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "sewn-cage-bound-rest.bin": "f8c9b1e442dce1cd2f631080f2f0df3fcf0106e645f7b550259d670b08c0028a",
+    "sewn-cage-fall-normalized-material.json": "640e7766400e39ad5566052a181fd0ad98e809c8cabdee370ae6244ece68bb33",
+    "full-sewn-fall-original.json": "b5e8257227031c677f142d5d47bfa46145881974dadaafcb8d26838686b0c156",
+    "body-cache-reopen.json": "f6354fcdd3482d1b217452077ba7d566673a7067e266fedde287ac49cc5c9cdd",
+    "dynamic-surface-audit.json": "13a9861cd6588c607c3f3f95d6b6a990f0b10ddea5abb2bcca4717330346a207",
+    "dynamic-cache-equivalence.json": "dd61c7b9aea0851133b28c3750a4ba90f8ed54babf65ec930759a2d6c3d664da",
+    "sewn-complete-garment-diagnostic.png": "7f7ae624d587b6d2e547c4d5d30ea3ebf17a267e5364e08ea49e247140c74a59"
+  },
+  "gameInputHashes": {
+    "packages/client/src/agents/HeroModel.ts": "773b0b90c427205ec292b8a574a856fd0e6354a9065422dd3269fe0c1fa683cc",
+    "packages/client/src/agents/AmbushWardrobeAppearance.ts": "7807706bc19bdc4ecf5a58a7ef53a10c8fbe27abbd3aa8301fc7e085cce545ba",
+    "packages/client/public/assets/characters/morpheus.glb": "9ba4be3a608849353ee9bd1e6c08cbad1cacaca12532c48b8f843789f43ad5ed",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/WithdrawalBody.mts": "41ba64b16d2b35bb639cae4b5a5f01144afd190dfe096d729c1e70bb64779062",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/WithdrawalCuffs.mts": "f2641bc8cbaa4f8ada3987f7d1b6de46a948b3235e18ca9185c97703b6ac6017",
+    "output/characters/morpheus-withdrawal-path-2026-10-20/export-clearance-input.mts": "995f025f5b766aaf18cfaee5e2c12687a52772d08348c4b9c7681561a877668d",
+    "scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44",
+    "scripts/cloth_display.py": "2a198ffb3439376847b0f62a4e8d431fe9c9bb207b67cbf916c6f8bef54eb62f"
+  },
+  "unfinished": [
+    "Complete 0–8 second removal and realistic grip, release and floor placement",
+    "Full displayed-surface self/body/environment contact throughout the actual runtime animation",
+    "Independent single world garment and its cold load/retry lifecycle (four existing renderer tests still fail)",
+    "Film likeness, real gameplay success/failure/save restoration and performance for all 42 groups"
+  ]
+}

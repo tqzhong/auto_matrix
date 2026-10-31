@@ -1,0 +1,37 @@
+{
+  "blenderVersion": "4.5.3 LTS",
+  "relativeSidecar": "//actual-body.pc2",
+  "records": [
+    {
+      "frame": 1,
+      "vertices": 51490,
+      "bitIdentical": true,
+      "maximumScaledError": 0.0
+    },
+    {
+      "frame": 25,
+      "vertices": 51490,
+      "bitIdentical": true,
+      "maximumScaledError": 0.0
+    },
+    {
+      "frame": 16,
+      "vertices": 51490,
+      "bitIdentical": true,
+      "maximumScaledError": 0.0
+    },
+    {
+      "frame": 10,
+      "vertices": 51490,
+      "bitIdentical": true,
+      "maximumScaledError": 0.0
+    },
+    {
+      "frame": 16.5,
+      "vertices": 51490,
+      "bitIdentical": null,
+      "maximumScaledError": 1.4901161193847656e-08
+    }
+  ],
+  "scope": "Only the actual saved thirteen-layer collider cache; does not accept cloth dynamics or gameplay."
+}

@@ -1,0 +1,129 @@
+{
+  "stitches": 231,
+  "vertices": 13960,
+  "faces": 26916,
+  "physicalVertices": 3077,
+  "massTotal": 3.000000052736141,
+  "nativeVersion": "4.5.3 LTS",
+  "acceptedForProduction": false,
+  "scope": "Free fall without body, floor, collision or pins; does not accept a removal animation.",
+  "sourceHashes": {
+    "calibrate-sewn-cage.py": "2f8e9c52a4fcfdefe3c80943ef7390ece7db81edd163fe5913f9d29f3d193e37",
+    "cage_garment.py": "2b5c636bf691a965137f444917e2fef3614243cd454056f48e8a724213282fdd",
+    "boundary-cage-fit-4.json": "eb7510906a69a0f42d6c9f8f4af8222cf2ae1818b2e525ff1c081217d0a67dbc",
+    "current-input/manifest.json": "a20e31335c0261b437b495b93b9d99ca556c03070b9c2712b47ebaf1004ee7b2"
+  },
+  "restSurfaceSha256": "f8c9b1e442dce1cd2f631080f2f0df3fcf0106e645f7b550259d670b08c0028a",
+  "airDamping": 0.00649983761832118,
+  "tension": 35.0,
+  "rows": [
+    {
+      "frame": 1,
+      "time": 0.0,
+      "centreDropMetres": 1.1135032615612284e-08,
+      "maximumDriftMetres": 1.8040773554348215e-06,
+      "maximumRelativeDriftMetres": 1.7930062731149246e-06,
+      "solverStatus": [],
+      "maximumSolverIterations": 0
+    },
+    {
+      "frame": 2,
+      "time": 0.03333333333333333,
+      "centreDropMetres": 0.00502672541899492,
+      "maximumDriftMetres": 0.005027658285336415,
+      "maximumRelativeDriftMetres": 1.1198913948174994e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 44
+    },
+    {
+      "frame": 3,
+      "time": 0.06666666666666667,
+      "centreDropMetres": 0.01920476211831729,
+      "maximumDriftMetres": 0.01920586916256595,
+      "maximumRelativeDriftMetres": 2.4656271757805914e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 43
+    },
+    {
+      "frame": 4,
+      "time": 0.1,
+      "centreDropMetres": 0.04194476311158686,
+      "maximumDriftMetres": 0.041946805510005195,
+      "maximumRelativeDriftMetres": 3.7407842181722204e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 45
+    },
+    {
+      "frame": 5,
+      "time": 0.13333333333333333,
+      "centreDropMetres": 0.07269538903345381,
+      "maximumDriftMetres": 0.0726972327439168,
+      "maximumRelativeDriftMetres": 4.590019341795676e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 47
+    },
+    {
+      "frame": 6,
+      "time": 0.16666666666666666,
+      "centreDropMetres": 0.1109408321931201,
+      "maximumDriftMetres": 0.1109432349338106,
+      "maximumRelativeDriftMetres": 5.294237678778284e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 44
+    },
+    {
+      "frame": 7,
+      "time": 0.2,
+      "centreDropMetres": 0.15619848595006788,
+      "maximumDriftMetres": 0.1562009558713244,
+      "maximumRelativeDriftMetres": 5.8192284882221345e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 47
+    },
+    {
+      "frame": 8,
+      "time": 0.23333333333333334,
+      "centreDropMetres": 0.20801692927368423,
+      "maximumDriftMetres": 0.20801888794846762,
+      "maximumRelativeDriftMetres": 4.918244175837465e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 46
+    },
+    {
+      "frame": 9,
+      "time": 0.26666666666666666,
+      "centreDropMetres": 0.2659736847246243,
+      "maximumDriftMetres": 0.2659755835042782,
+      "maximumRelativeDriftMetres": 4.795830942363411e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 46
+    },
+    {
+      "frame": 10,
+      "time": 0.3,
+      "centreDropMetres": 0.3296734894883636,
+      "maximumDriftMetres": 0.3296747010384077,
+      "maximumRelativeDriftMetres": 3.7806135355077924e-06,
+      "solverStatus": [
+        "SUCCESS"
+      ],
+      "maximumSolverIterations": 47
+    }
+  ]
+}
