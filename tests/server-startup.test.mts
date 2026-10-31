@@ -47,11 +47,11 @@ function start(t: TestContext, directory: string, mode: string) {
       await new Promise(resolve => setTimeout(resolve, 20));
     }
   };
-  const stop = async (signal: NodeJS.Signals = 'SIGTERM') => {
-    child.kill(signal);
-    assert.equal(await Promise.race([finished, new Promise(resolve => setTimeout(() => resolve('shutdown timeout'), 5000).unref())]), 0, output);
+  const exited = async (code: number) => {
+    assert.equal(await Promise.race([finished, new Promise(resolve => setTimeout(() => resolve('shutdown timeout'), 5000).unref())]), code, output);
   };
-  return { waitFor, stop, output: () => output };
+  const stop = async (signal: NodeJS.Signals = 'SIGTERM') => { child.kill(signal); await exited(0); };
+  return { waitFor, stop, exited, output: () => output };
 }
 
 async function controls(t: TestContext, server: ReturnType<typeof start>) {
@@ -63,17 +63,36 @@ async function controls(t: TestContext, server: ReturnType<typeof start>) {
   t.after(() => socket.disconnect());
   const connected = new Promise<void>((resolve, reject) => { socket.once('connect', resolve); socket.once('connect_error', reject); });
   socket.connect(); await connected;
+  const deadline = Date.now() + 5000;
+  while (!messages.some(message => message.type === 'world_state_full')) {
+    assert.ok(Date.now() < deadline, 'the initial world snapshot did not arrive');
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
   const world = async () => await (await fetch(`${base}/api/world`)).json() as WorldStateFull;
   const conversations = async () => (await (await fetch(`${base}/api/conversations`)).json()).active as ConversationRecord[];
   const command = async (type: string, data: unknown, ready: (state: WorldStateFull) => boolean) => {
-    socket.emit('message', { type, data }); const end = Date.now() + 5000;
+    const marker = messages.length;
+    socket.emit('message', { type, data });
+    socket.emit('message', { type: 'request_full_state', data: {} });
+    const end = Date.now() + 5000;
     for (;;) {
-      const state = await world(); if (ready(state)) return state;
+      const state = await world();
+      if (messages.slice(marker).some(message => message.type === 'world_state_full') && ready(state)) return state;
       assert.ok(Date.now() < end, `${type} was not acknowledged`);
       await new Promise(resolve => setTimeout(resolve, 20));
     }
   };
   return { socket, messages, world, conversations, command };
+}
+
+async function replayed(client: Awaited<ReturnType<typeof controls>>, records: ConversationRecord[], copies = 1) {
+  const starts = records.length * copies, lines = records.reduce((count, record) => count + record.messages.length, 0) * copies;
+  const deadline = Date.now() + 5000;
+  while (client.messages.filter(message => message.type === 'conversation_start').length < starts
+    || client.messages.filter(message => message.type === 'conversation_message').length < lines) {
+    assert.ok(Date.now() < deadline, 'the saved dialogue did not arrive over the reconnecting socket');
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
 }
 
 for (const [mode, signal] of [['memories', 'SIGTERM'], ['checkpoint', 'SIGINT']] as const) {
@@ -89,7 +108,8 @@ for (const [mode, signal] of [['memories', 'SIGTERM'], ['checkpoint', 'SIGINT']]
 test('shutdown after a rejected checkpoint preserves the original file for recovery', { timeout: 30000 }, async t => {
   const f = await fixture(t); const damaged = '{"version":1,"tick":"damaged","recoverable":"Neo at the old house"}';
   await writeFile(f.file, damaged);
-  const server = start(t, f.directory, 'normal'); await server.waitFor('Unsupported world checkpoint'); await server.stop();
+  const server = start(t, f.directory, 'normal'); await server.waitFor('Unsupported world checkpoint'); await server.exited(1);
+  assert.doesNotMatch(server.output(), /STARTUP_LISTENING/, 'a rejected checkpoint cannot serve a replacement world');
   assert.equal(await readFile(f.file, 'utf8'), damaged, 'a failed load must not silently replace the original with a new world');
 });
 
@@ -323,15 +343,24 @@ test('a real server restart preserves an unfinished NPC conversation and replays
   for (const id of active.flatMap(record => record.participants)) {
     assert.deepEqual(world.agents[id].currentAction, paused.agents[id].currentAction, 'participants must remain in their saved talk action');
   }
+  await replayed(next, active);
   const starts = next.messages.filter(message => message.type === 'conversation_start');
   assert.deepEqual(starts.map(message => (message.data as { id: string }).id).sort(), active.map(record => record.id).sort());
   const spoken = next.messages.filter(message => message.type === 'conversation_message');
   assert.deepEqual(spoken.map(message => ({ ...(message.data as object), tick: message.tick })), active.flatMap(record => record.messages.map(line => ({ conversationId: record.id, speaker: line.speaker, content: line.content, tone: line.tone, tick: line.tick }))));
   const observer = await controls(t, restored);
+  await replayed(observer, active);
   next.socket.emit('message', { type: 'request_full_state', data: {} });
   await new Promise(resolve => setTimeout(resolve, 100));
   assert.equal(next.messages.filter(message => message.type.startsWith('conversation_')).length, starts.length + spoken.length, 'routine world snapshots must not duplicate dialogue');
   assert.equal(observer.messages.filter(message => message.type.startsWith('conversation_')).length, starts.length + spoken.length, 'a new page must receive the existing exchange without rebroadcasting it to other pages');
+  observer.socket.disconnect(); observer.socket.connect();
+  await replayed(observer, active, 2);
+  assert.deepEqual(observer.messages.filter(message => message.type === 'conversation_start').map(message => (message.data as { id: string }).id),
+    [...starts, ...starts].map(message => (message.data as { id: string }).id), 'reconnecting the same page replays the same active exchanges once');
+  assert.deepEqual(observer.messages.filter(message => message.type === 'conversation_message').map(message => ({ ...message, timestamp: 0 })),
+    [...spoken, ...spoken].map(message => ({ ...message, timestamp: 0 })), 'reconnection preserves each line, speaker and saved tick');
+  assert.equal(next.messages.filter(message => message.type.startsWith('conversation_')).length, starts.length + spoken.length, 'another page reconnecting must not replay dialogue to an existing page');
   observer.socket.disconnect();
 
   const receivedAtResume = next.messages.length;
