@@ -96,6 +96,27 @@
 
 完整八秒外套仍需制作；新内层的非均匀时刻还要正确接到原生模拟时间，不能把 587 帧都当成 1/60 秒。正在独立核查的时间控制与完整密度自由落体仍有数值误差或不收敛，未借它们宣布整衣通过。上轮对同一运行时代码实际执行的类型检查、生产构建和 **359/359** 集成回归通过；四项 `ambush-doff-renderer` 仍 **0/4**。正式人物资产、运行代码、5173 发布包和主存档未修改，三部曲综合验收保持 **0/42**。
 
+## 新身体的完整袖口与八秒引导
+
+`FrontExitCuffs.mts` 将原退袖控制从 0.8 秒的参考姿态组合到站姿起点，覆盖与完整内层相同的 587 个真实时刻。检查保留每侧全部 61 个原点，不缩放衣口，不改手部。首份检查错误地将制作控制点的编号顺序当成边界环；右／左两侧分别只有 31／44 条所连线段属于实际边界。该检查被明确作废，保留 `front-cuff-passage-unordered.mts` 和 `front-cuff-passage-unordered-verification.json`，没有把其负余量归咎于手部或衣口。
+
+增加实际边界断言先复现失败后，沿原 26,916 面的边界图遍历出两条各 61 边的闭合环，原顶点集合和坐标均保持。最终 `front-cuff-passage.test.mts` **2/2**：0.8–1.7 秒的 218 个完整手面／袖口截面样本满足原 1 mm 净余量要求，最小约 **1.175 mm**；结束样本双手均已通过。0–1.7 秒的 120 Hz 路径最大单步约 0.01994 模型单位，尺寸误差小于 `6.6e-16`，另一根位置／朝向／缩放的冷恢复偏差小于 `3.5e-14`；回放顺序不改变结果。它只接受有限袖口截面与刚性控制，不代表整条袖管、真实抓衣或全部帧间接触通过。
+
+`export-corrected-cuffs.mts` 在核对该检查的完整源码哈希后导出 `corrected-cuff-input.json`，保留全部 587 个身体时刻；初始矩阵为精确单位矩阵，所有变换为有限刚性矩阵。领口在 0.8 秒后、袖口在 1.7 秒后解除控制，解除时刻不能替代完整衣物退出或抓放验收。
+
+时间控制依据固定 Blender 4.5.3 的[原生力与求解源码](https://github.com/blender/blender/blob/v4.5.3/source/blender/simulation/intern/SIM_mass_spring.cc)及[缓存时间应用](https://github.com/blender/blender/blob/v4.5.3/source/blender/blenkernel/intern/cloth.cc)：布料重力乘以 `.001`，采用原生帧单位，不能直接把实际秒数乘渲染 FPS。独立四顶点控制在全部 587 个时刻、八秒内比较物理重力／已知线性阻力的解析离散参考；原 FPS 假设明确失败。换算后仍保留约 **315 μm** 的最大累计偏差，未通过预设的 **100 μm** 精度门槛。无阻力完整密度对照仍有不收敛。原始失败、固定版本探针快照及范围均保留，未提高阈值。
+
+`bake-corrected-full.py --diagnostic` 在新的 `corrected-full-physics/` 中制作完整八秒引导候选：同一 13,960 点／26,916 面衣物直接模拟，完整十三层、587 个非均匀时刻和地面均保留；每帧检查实际身体缓存、衣面索引和边界解除权重。元数据明确记录 `clockPrecisionPassed: false`、`actualHandPinchProven: false`，最后仍拒绝任何未收敛及未通过的时间精度，不能作为正常游戏资源。当前执行状态见 `continuation.json`，观察超时不能当作进程停止而重复启动。
+
+```sh
+node --import tsx --test "$MATRIX_CLOTH_WORK/front-cuff-passage.test.mts"
+node --import tsx "$MATRIX_CLOTH_WORK/export-corrected-cuffs.mts"
+# 时间精度门槛当前仍应退出 1。
+"$MATRIX_CLOTH_BLENDER" --background --factory-startup --threads 2 --python-exit-code 1 --python "$MATRIX_CLOTH_WORK/probe-native-clock.py" -- --damped
+# 仅制作明确未接受的完整诊断引导，保留末尾所有拒绝门槛。
+"$MATRIX_CLOTH_BLENDER" --background --factory-startup --threads 2 --python-exit-code 1 --python "$MATRIX_CLOTH_WORK/bake-corrected-full.py" -- --diagnostic
+```
+
 ## 更早的动态失败控制
 
 0.8–1.6 秒的完整退袖烘焙仍有一个早期模拟帧未收敛。完整显示面与实际可见内层的检查如下，数字是相交三角面对数，不能当作穿入深度或画质评分：

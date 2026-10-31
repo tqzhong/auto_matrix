@@ -1,0 +1,6 @@
+{
+  "reason": "The control vertex set was incorrectly treated as an ordered polygon. Only 31/44 of 61 listed segments were actual boundary edges. It is not evidence of a physical hand/cuff failure.",
+  "sourceSnapshotSha256": "83b88c7f652729d277eab09fa6b938ba41ef0424c7ec9609f6b2469ab074c772",
+  "reportSha256": "d1920da0aa56fa6ae0c28ebf823490d26599adf182d14c355cb9d357fd56e47b",
+  "accepted": false
+}

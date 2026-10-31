@@ -1,0 +1,12 @@
+WARN (translation.language): source/blender/blentranslation/intern/blt_lang.cc:214 BLT_lang_init: Falling back to standard locale ("C")
+{"mode": "scaled", "linearDampingPerSecond": 20, "nativeVersion": "4.5.3 LTS", "frames": 587, "realEndSeconds": 8, "nominalEndSeconds": 9.766666666666667, "maximumClockDropErrorMetres": 0.00031514892631978597, "sourceHashes": {"probe-native-clock.py": "9eb1398a755d86b926dcf7977a4d517e5e95bccdc98ce033b326f4e4f4a11c36", "corrected-body-input/manifest.json": "95ecd6424e348717d57619d201c544d22785b697db8fc830d0301133afd524eb"}, "acceptedForProduction": false, "scope": "Four-vertex constant-gravity clock isolation using every actual adaptive body timestamp. Damped mode has a known 20/s linear drag and retains garment-scale coordinates for eight seconds. It does not accept garment dynamics."}
+Blender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:33:39)
+Traceback (most recent call last):
+  File "/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/probe-native-clock.py", line 70, in <module>
+    assert report['maximumClockDropErrorMetres'] < (.0001 if damped else .01), 'Native time differs from the actual adaptive schedule.'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Native time differs from the actual adaptive schedule.
+
+Error: script failed, file: 'output/characters/morpheus-wardrobe-recovery-2026-11-01/probe-native-clock.py', exiting.
+
+Blender quit

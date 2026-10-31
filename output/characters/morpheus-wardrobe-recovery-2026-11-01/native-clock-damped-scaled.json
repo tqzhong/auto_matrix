@@ -1,0 +1,6472 @@
+{
+  "mode": "scaled",
+  "linearDampingPerSecond": 20,
+  "nativeVersion": "4.5.3 LTS",
+  "frames": 587,
+  "realEndSeconds": 8,
+  "nominalEndSeconds": 9.766666666666667,
+  "maximumClockDropErrorMetres": 0.00031514892631978597,
+  "sourceHashes": {
+    "probe-native-clock.py": "9eb1398a755d86b926dcf7977a4d517e5e95bccdc98ce033b326f4e4f4a11c36",
+    "corrected-body-input/manifest.json": "95ecd6424e348717d57619d201c544d22785b697db8fc830d0301133afd524eb"
+  },
+  "acceptedForProduction": false,
+  "scope": "Four-vertex constant-gravity clock isolation using every actual adaptive body timestamp. Damped mode has a known 20/s linear drag and retains garment-scale coordinates for eight seconds. It does not accept garment dynamics.",
+  "rows": [
+    {
+      "frame": 1,
+      "realTime": 0,
+      "nativeTimeScale": 1.0,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": -0.0,
+      "expectedImplicitEulerDropMetres": -0.0,
+      "solverStatus": []
+    },
+    {
+      "frame": 2,
+      "realTime": 0.016666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.0012712749093770981,
+      "expectedImplicitEulerDropMetres": 0.0012712747812080414,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 3,
+      "realTime": 0.03333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.004485928416252136,
+      "expectedImplicitEulerDropMetres": 0.004485930679504119,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 4,
+      "realTime": 0.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.009096904695034026,
+      "expectedImplicitEulerDropMetres": 0.009096910845641966,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 5,
+      "realTime": 0.06666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.014711142778396608,
+      "expectedImplicitEulerDropMetres": 0.014711153544187923,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 6,
+      "realTime": 0.08333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.021046228408813476,
+      "expectedImplicitEulerDropMetres": 0.021046242920053103,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 7,
+      "realTime": 0.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.02789924144744873,
+      "expectedImplicitEulerDropMetres": 0.027899262464161422,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 8,
+      "realTime": 0.11666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.03512439012527466,
+      "expectedImplicitEulerDropMetres": 0.035124416149435456,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 9,
+      "realTime": 0.13333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.04261691570281982,
+      "expectedImplicitEulerDropMetres": 0.04261694916017128,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 10,
+      "realTime": 0.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.050301551818847656,
+      "expectedImplicitEulerDropMetres": 0.050301594895260864,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 11,
+      "realTime": 0.16666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.05812422275543213,
+      "expectedImplicitEulerDropMetres": 0.0581242741106687,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 12,
+      "realTime": 0.18333333333333332,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.06604607105255128,
+      "expectedImplicitEulerDropMetres": 0.06604613073222104,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 13,
+      "realTime": 0.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.07403918266296386,
+      "expectedImplicitEulerDropMetres": 0.07403924657194907,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 14,
+      "realTime": 0.21666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.08208350658416748,
+      "expectedImplicitEulerDropMetres": 0.08208356234089907,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 15,
+      "realTime": 0.23333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.09016461849212647,
+      "expectedImplicitEulerDropMetres": 0.0901646653890172,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 16,
+      "realTime": 0.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.09827215671539308,
+      "expectedImplicitEulerDropMetres": 0.09827220019063887,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 17,
+      "realTime": 0.26666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.10639868259429933,
+      "expectedImplicitEulerDropMetres": 0.1063987262742763,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 18,
+      "realTime": 0.2833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.11453884601593017,
+      "expectedImplicitEulerDropMetres": 0.11453889764227032,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 19,
+      "realTime": 0.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.12268881320953369,
+      "expectedImplicitEulerDropMetres": 0.12268887318172676,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 20,
+      "realTime": 0.31666666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.13084582805633543,
+      "expectedImplicitEulerDropMetres": 0.13084589304327665,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 21,
+      "realTime": 0.3333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.13900791645050048,
+      "expectedImplicitEulerDropMetres": 0.13900797426813968,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 22,
+      "realTime": 0.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.14717363357543944,
+      "expectedImplicitEulerDropMetres": 0.14717369209539657,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 23,
+      "realTime": 0.36666666666666664,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.15534196376800535,
+      "expectedImplicitEulerDropMetres": 0.15534202283070855,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 24,
+      "realTime": 0.38333333333333336,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.16351216316223144,
+      "expectedImplicitEulerDropMetres": 0.16351223094709363,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 25,
+      "realTime": 0.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.17168372154235842,
+      "expectedImplicitEulerDropMetres": 0.17168378796654735,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 26,
+      "realTime": 0.4166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.1798562526702881,
+      "expectedImplicitEulerDropMetres": 0.17985631417628142,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 27,
+      "realTime": 0.43333333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.1880294704437256,
+      "expectedImplicitEulerDropMetres": 0.1880295367516931,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 28,
+      "realTime": 0.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.19620318412780763,
+      "expectedImplicitEulerDropMetres": 0.19620325966761273,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 29,
+      "realTime": 0.4666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.20437729835510254,
+      "expectedImplicitEulerDropMetres": 0.20437734207945782,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 30,
+      "realTime": 0.48333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.21255166053771973,
+      "expectedImplicitEulerDropMetres": 0.21255168279003828,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 31,
+      "realTime": 0.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.22072617530822755,
+      "expectedImplicitEulerDropMetres": 0.2207262090889161,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 32,
+      "realTime": 0.5166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.228900728225708,
+      "expectedImplicitEulerDropMetres": 0.22890086873345694,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 33,
+      "realTime": 0.5333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.23707562446594238,
+      "expectedImplicitEulerDropMetres": 0.2370756241871952,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 34,
+      "realTime": 0.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.24525052070617676,
+      "expectedImplicitEulerDropMetres": 0.2452504484800852,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 35,
+      "realTime": 0.5666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.25342541694641113,
+      "expectedImplicitEulerDropMetres": 0.2534253222340804,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 36,
+      "realTime": 0.5833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.2616003131866455,
+      "expectedImplicitEulerDropMetres": 0.2616002315260053,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 37,
+      "realTime": 0.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.2697752094268799,
+      "expectedImplicitEulerDropMetres": 0.2697751663520229,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 38,
+      "realTime": 0.6166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.27795010566711426,
+      "expectedImplicitEulerDropMetres": 0.2779501195243511,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 39,
+      "realTime": 0.6333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.28612500190734863,
+      "expectedImplicitEulerDropMetres": 0.28612508587855,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 40,
+      "realTime": 0.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.294299898147583,
+      "expectedImplicitEulerDropMetres": 0.2943000617039567,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 41,
+      "realTime": 0.6666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.3024747943878174,
+      "expectedImplicitEulerDropMetres": 0.30247504433444977,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 42,
+      "realTime": 0.6833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.31064969062805176,
+      "expectedImplicitEulerDropMetres": 0.31065003185441514,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 43,
+      "realTime": 0.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.31882458686828613,
+      "expectedImplicitEulerDropMetres": 0.31882502288747855,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 44,
+      "realTime": 0.7166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.3269994926452637,
+      "expectedImplicitEulerDropMetres": 0.3270000164447118,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 45,
+      "realTime": 0.7333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.33517438888549805,
+      "expectedImplicitEulerDropMetres": 0.3351750118155676,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 46,
+      "realTime": 0.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.34334928512573243,
+      "expectedImplicitEulerDropMetres": 0.34335000848951586,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 47,
+      "realTime": 0.7666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.3515241813659668,
+      "expectedImplicitEulerDropMetres": 0.35152500609973925,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 48,
+      "realTime": 0.7833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.3596990776062012,
+      "expectedImplicitEulerDropMetres": 0.35970000438267863,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 49,
+      "realTime": 0.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.36787397384643555,
+      "expectedImplicitEulerDropMetres": 0.3678750031489662,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 50,
+      "realTime": 0.8166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.37604887008666993,
+      "expectedImplicitEulerDropMetres": 0.3760500022625407,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 51,
+      "realTime": 0.8333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.3842237663269043,
+      "expectedImplicitEulerDropMetres": 0.3842250016256418,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 52,
+      "realTime": 0.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.3923986625671387,
+      "expectedImplicitEulerDropMetres": 0.3924000011680284,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 53,
+      "realTime": 0.8666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.40057355880737305,
+      "expectedImplicitEulerDropMetres": 0.400575000839232,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 54,
+      "realTime": 0.8833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.40874845504760743,
+      "expectedImplicitEulerDropMetres": 0.40875000060299094,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 55,
+      "realTime": 0.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.4169233512878418,
+      "expectedImplicitEulerDropMetres": 0.4169250004332511,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 56,
+      "realTime": 0.9166666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.4250982475280762,
+      "expectedImplicitEulerDropMetres": 0.42510000031129264,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 57,
+      "realTime": 0.9333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.43327314376831055,
+      "expectedImplicitEulerDropMetres": 0.4332750002236652,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 58,
+      "realTime": 0.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.44144804000854493,
+      "expectedImplicitEulerDropMetres": 0.4414500001607047,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 59,
+      "realTime": 0.9666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.4496229362487793,
+      "expectedImplicitEulerDropMetres": 0.44962500011546735,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 60,
+      "realTime": 0.9833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.4577978324890137,
+      "expectedImplicitEulerDropMetres": 0.4578000000829642,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 61,
+      "realTime": 1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.46597272872924805,
+      "expectedImplicitEulerDropMetres": 0.4659750000596106,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 62,
+      "realTime": 1.0166666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.47414762496948243,
+      "expectedImplicitEulerDropMetres": 0.47415000004283114,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 63,
+      "realTime": 1.0333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.4823225212097168,
+      "expectedImplicitEulerDropMetres": 0.4823250000307751,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 64,
+      "realTime": 1.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.4904974174499512,
+      "expectedImplicitEulerDropMetres": 0.4905000000221127,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 65,
+      "realTime": 1.0666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.49867231369018555,
+      "expectedImplicitEulerDropMetres": 0.4986750000158888,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 66,
+      "realTime": 1.0833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.50684720993042,
+      "expectedImplicitEulerDropMetres": 0.506850000011417,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 67,
+      "realTime": 1.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5150221061706544,
+      "expectedImplicitEulerDropMetres": 0.5150250000082042,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 68,
+      "realTime": 1.1166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5231970024108887,
+      "expectedImplicitEulerDropMetres": 0.5232000000058956,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 69,
+      "realTime": 1.1333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5313718986511231,
+      "expectedImplicitEulerDropMetres": 0.5313750000042368,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 70,
+      "realTime": 1.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5395467948913575,
+      "expectedImplicitEulerDropMetres": 0.5395500000030448,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 71,
+      "realTime": 1.1666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5477216911315919,
+      "expectedImplicitEulerDropMetres": 0.5477250000021886,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 72,
+      "realTime": 1.1833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5558965873718262,
+      "expectedImplicitEulerDropMetres": 0.5559000000015735,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 73,
+      "realTime": 1.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5640714836120606,
+      "expectedImplicitEulerDropMetres": 0.5640750000011311,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 74,
+      "realTime": 1.2166666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.572246379852295,
+      "expectedImplicitEulerDropMetres": 0.5722500000008133,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 75,
+      "realTime": 1.2333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5804212760925294,
+      "expectedImplicitEulerDropMetres": 0.5804250000005854,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 76,
+      "realTime": 1.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5885961723327637,
+      "expectedImplicitEulerDropMetres": 0.5886000000004212,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 77,
+      "realTime": 1.2666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.5967710685729981,
+      "expectedImplicitEulerDropMetres": 0.5967750000003035,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 78,
+      "realTime": 1.2833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6049459648132325,
+      "expectedImplicitEulerDropMetres": 0.6049500000002189,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 79,
+      "realTime": 1.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6131208610534669,
+      "expectedImplicitEulerDropMetres": 0.613125000000158,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 80,
+      "realTime": 1.3166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6212957572937012,
+      "expectedImplicitEulerDropMetres": 0.6213000000001143,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 81,
+      "realTime": 1.3333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6294706535339356,
+      "expectedImplicitEulerDropMetres": 0.6294750000000828,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 82,
+      "realTime": 1.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.63764554977417,
+      "expectedImplicitEulerDropMetres": 0.6376500000000604,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 83,
+      "realTime": 1.3666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6458209991455078,
+      "expectedImplicitEulerDropMetres": 0.6458250000000443,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 84,
+      "realTime": 1.3833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6539966583251953,
+      "expectedImplicitEulerDropMetres": 0.6540000000000327,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 85,
+      "realTime": 1.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6621723175048828,
+      "expectedImplicitEulerDropMetres": 0.6621750000000243,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 86,
+      "realTime": 1.4166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6703479766845704,
+      "expectedImplicitEulerDropMetres": 0.6703500000000184,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 87,
+      "realTime": 1.4333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6785236358642578,
+      "expectedImplicitEulerDropMetres": 0.678525000000014,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 88,
+      "realTime": 1.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6866992950439453,
+      "expectedImplicitEulerDropMetres": 0.686700000000011,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 89,
+      "realTime": 1.4666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.6948749542236328,
+      "expectedImplicitEulerDropMetres": 0.6948750000000081,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 90,
+      "realTime": 1.4833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7030506134033203,
+      "expectedImplicitEulerDropMetres": 0.7030500000000073,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 91,
+      "realTime": 1.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7112262725830079,
+      "expectedImplicitEulerDropMetres": 0.7112250000000064,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 92,
+      "realTime": 1.5083333333333333,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7153141021728515,
+      "expectedImplicitEulerDropMetres": 0.7153125000000049,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 93,
+      "realTime": 1.5166666666666666,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7194019317626953,
+      "expectedImplicitEulerDropMetres": 0.7194000000000056,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 94,
+      "realTime": 1.5333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7275775909423828,
+      "expectedImplicitEulerDropMetres": 0.7275750000000047,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 95,
+      "realTime": 1.5416666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7316654205322266,
+      "expectedImplicitEulerDropMetres": 0.7316625000000054,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 96,
+      "realTime": 1.55,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7357532501220703,
+      "expectedImplicitEulerDropMetres": 0.7357500000000061,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 97,
+      "realTime": 1.5583333333333333,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.739841079711914,
+      "expectedImplicitEulerDropMetres": 0.7398375000000068,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 98,
+      "realTime": 1.5666666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7439289093017578,
+      "expectedImplicitEulerDropMetres": 0.7439250000000075,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 99,
+      "realTime": 1.575,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7480167388916016,
+      "expectedImplicitEulerDropMetres": 0.7480125000000082,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 100,
+      "realTime": 1.5833333333333333,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7521045684814454,
+      "expectedImplicitEulerDropMetres": 0.7521000000000089,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 101,
+      "realTime": 1.5916666666666668,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.756192398071289,
+      "expectedImplicitEulerDropMetres": 0.7561875000000096,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 102,
+      "realTime": 1.6,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7602802276611328,
+      "expectedImplicitEulerDropMetres": 0.7602750000000102,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 103,
+      "realTime": 1.6041666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7623233795166016,
+      "expectedImplicitEulerDropMetres": 0.7623187500000106,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 104,
+      "realTime": 1.6083333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7643665313720703,
+      "expectedImplicitEulerDropMetres": 0.7643625000000109,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 105,
+      "realTime": 1.6125,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7664096832275391,
+      "expectedImplicitEulerDropMetres": 0.7664062500000113,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 106,
+      "realTime": 1.6166666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7684528350830078,
+      "expectedImplicitEulerDropMetres": 0.7684500000000116,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 107,
+      "realTime": 1.625,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7725406646728515,
+      "expectedImplicitEulerDropMetres": 0.7725375000000123,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 108,
+      "realTime": 1.6291666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7745838165283203,
+      "expectedImplicitEulerDropMetres": 0.7745812500000127,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 109,
+      "realTime": 1.6333333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7766269683837891,
+      "expectedImplicitEulerDropMetres": 0.776625000000013,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 110,
+      "realTime": 1.6375,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7786701202392579,
+      "expectedImplicitEulerDropMetres": 0.7786687500000133,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 111,
+      "realTime": 1.6416666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7807132720947265,
+      "expectedImplicitEulerDropMetres": 0.7807125000000137,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 112,
+      "realTime": 1.6458333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7827564239501953,
+      "expectedImplicitEulerDropMetres": 0.782756250000014,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 113,
+      "realTime": 1.65,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7847995758056641,
+      "expectedImplicitEulerDropMetres": 0.7848000000000144,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 114,
+      "realTime": 1.6541666666666668,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7868427276611328,
+      "expectedImplicitEulerDropMetres": 0.7868437500000147,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 115,
+      "realTime": 1.6583333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7888858795166016,
+      "expectedImplicitEulerDropMetres": 0.7888875000000151,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 116,
+      "realTime": 1.6625,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7909290313720703,
+      "expectedImplicitEulerDropMetres": 0.7909312500000154,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 117,
+      "realTime": 1.6666666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.792972183227539,
+      "expectedImplicitEulerDropMetres": 0.7929750000000158,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 118,
+      "realTime": 1.6708333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7950153350830078,
+      "expectedImplicitEulerDropMetres": 0.7950187500000161,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 119,
+      "realTime": 1.675,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7970584869384766,
+      "expectedImplicitEulerDropMetres": 0.7970625000000164,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 120,
+      "realTime": 1.6791666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.7991016387939454,
+      "expectedImplicitEulerDropMetres": 0.7991062500000168,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 121,
+      "realTime": 1.6833333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.801144790649414,
+      "expectedImplicitEulerDropMetres": 0.8011500000000171,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 122,
+      "realTime": 1.6875,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8031879425048828,
+      "expectedImplicitEulerDropMetres": 0.8031937500000175,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 123,
+      "realTime": 1.6916666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8052310943603516,
+      "expectedImplicitEulerDropMetres": 0.8052375000000178,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 124,
+      "realTime": 1.6958333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8072742462158203,
+      "expectedImplicitEulerDropMetres": 0.8072812500000182,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 125,
+      "realTime": 1.7,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8093173980712891,
+      "expectedImplicitEulerDropMetres": 0.8093250000000185,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 126,
+      "realTime": 1.7041666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8113605499267578,
+      "expectedImplicitEulerDropMetres": 0.8113687500000188,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 127,
+      "realTime": 1.7083333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8134037017822265,
+      "expectedImplicitEulerDropMetres": 0.8134125000000192,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 128,
+      "realTime": 1.7125,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8154468536376953,
+      "expectedImplicitEulerDropMetres": 0.8154562500000195,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 129,
+      "realTime": 1.7166666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8174900054931641,
+      "expectedImplicitEulerDropMetres": 0.8175000000000199,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 130,
+      "realTime": 1.7208333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8195331573486329,
+      "expectedImplicitEulerDropMetres": 0.8195437500000202,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 131,
+      "realTime": 1.725,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8215763092041015,
+      "expectedImplicitEulerDropMetres": 0.8215875000000206,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 132,
+      "realTime": 1.7291666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8236194610595703,
+      "expectedImplicitEulerDropMetres": 0.8236312500000209,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 133,
+      "realTime": 1.7333333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8256626129150391,
+      "expectedImplicitEulerDropMetres": 0.8256750000000213,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 134,
+      "realTime": 1.7375,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8277057647705078,
+      "expectedImplicitEulerDropMetres": 0.8277187500000216,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 135,
+      "realTime": 1.7416666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8297489166259766,
+      "expectedImplicitEulerDropMetres": 0.8297625000000219,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 136,
+      "realTime": 1.7458333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8317920684814453,
+      "expectedImplicitEulerDropMetres": 0.8318062500000223,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 137,
+      "realTime": 1.75,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.833835220336914,
+      "expectedImplicitEulerDropMetres": 0.8338500000000226,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 138,
+      "realTime": 1.7541666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8358783721923828,
+      "expectedImplicitEulerDropMetres": 0.835893750000023,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 139,
+      "realTime": 1.7562499999999999,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8369007110595703,
+      "expectedImplicitEulerDropMetres": 0.8369156250000231,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 140,
+      "realTime": 1.7583333333333333,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8379230499267578,
+      "expectedImplicitEulerDropMetres": 0.8379375000000233,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 141,
+      "realTime": 1.7604166666666665,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8389453887939453,
+      "expectedImplicitEulerDropMetres": 0.8389593750000235,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 142,
+      "realTime": 1.7625,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8399677276611328,
+      "expectedImplicitEulerDropMetres": 0.8399812500000237,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 143,
+      "realTime": 1.7666666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8420108795166016,
+      "expectedImplicitEulerDropMetres": 0.842025000000024,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 144,
+      "realTime": 1.7708333333333335,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8440540313720704,
+      "expectedImplicitEulerDropMetres": 0.8440687500000243,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 145,
+      "realTime": 1.7750000000000001,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.846097183227539,
+      "expectedImplicitEulerDropMetres": 0.8461125000000247,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 146,
+      "realTime": 1.7791666666666668,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8481403350830078,
+      "expectedImplicitEulerDropMetres": 0.848156250000025,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 147,
+      "realTime": 1.7833333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8501834869384766,
+      "expectedImplicitEulerDropMetres": 0.8502000000000254,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 148,
+      "realTime": 1.7875,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8522266387939453,
+      "expectedImplicitEulerDropMetres": 0.8522437500000257,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 149,
+      "realTime": 1.7916666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8542697906494141,
+      "expectedImplicitEulerDropMetres": 0.8542875000000261,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 150,
+      "realTime": 1.7958333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8563129425048828,
+      "expectedImplicitEulerDropMetres": 0.8563312500000264,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 151,
+      "realTime": 1.7979166666666666,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8573352813720703,
+      "expectedImplicitEulerDropMetres": 0.8573531250000266,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 152,
+      "realTime": 1.8,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8583576202392578,
+      "expectedImplicitEulerDropMetres": 0.8583750000000268,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 153,
+      "realTime": 1.8020833333333333,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8593799591064453,
+      "expectedImplicitEulerDropMetres": 0.8593968750000269,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 154,
+      "realTime": 1.8041666666666667,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8604022979736328,
+      "expectedImplicitEulerDropMetres": 0.8604187500000271,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 155,
+      "realTime": 1.8083333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8624454498291015,
+      "expectedImplicitEulerDropMetres": 0.8624625000000274,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 156,
+      "realTime": 1.8125,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8644886016845703,
+      "expectedImplicitEulerDropMetres": 0.8645062500000278,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 157,
+      "realTime": 1.8166666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8665317535400391,
+      "expectedImplicitEulerDropMetres": 0.8665500000000281,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 158,
+      "realTime": 1.8208333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8685749053955079,
+      "expectedImplicitEulerDropMetres": 0.8685937500000285,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 159,
+      "realTime": 1.825,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8706180572509765,
+      "expectedImplicitEulerDropMetres": 0.8706375000000288,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 160,
+      "realTime": 1.8291666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8726612091064453,
+      "expectedImplicitEulerDropMetres": 0.8726812500000292,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 161,
+      "realTime": 1.8333333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8747043609619141,
+      "expectedImplicitEulerDropMetres": 0.8747250000000295,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 162,
+      "realTime": 1.8375000000000001,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8767475128173828,
+      "expectedImplicitEulerDropMetres": 0.8767687500000299,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 163,
+      "realTime": 1.8395833333333333,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8777698516845703,
+      "expectedImplicitEulerDropMetres": 0.87779062500003,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 164,
+      "realTime": 1.8416666666666668,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8787921905517578,
+      "expectedImplicitEulerDropMetres": 0.8788125000000302,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 165,
+      "realTime": 1.84375,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8798145294189453,
+      "expectedImplicitEulerDropMetres": 0.8798343750000304,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 166,
+      "realTime": 1.8458333333333334,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8808368682861328,
+      "expectedImplicitEulerDropMetres": 0.8808562500000305,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 167,
+      "realTime": 1.85,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8828800201416016,
+      "expectedImplicitEulerDropMetres": 0.8829000000000309,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 168,
+      "realTime": 1.8541666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8849231719970703,
+      "expectedImplicitEulerDropMetres": 0.8849437500000312,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 169,
+      "realTime": 1.8583333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.886966323852539,
+      "expectedImplicitEulerDropMetres": 0.8869875000000316,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 170,
+      "realTime": 1.8625,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8890094757080078,
+      "expectedImplicitEulerDropMetres": 0.8890312500000319,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 171,
+      "realTime": 1.8666666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8910526275634766,
+      "expectedImplicitEulerDropMetres": 0.8910750000000323,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 172,
+      "realTime": 1.8708333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8930957794189454,
+      "expectedImplicitEulerDropMetres": 0.8931187500000326,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 173,
+      "realTime": 1.875,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.895138931274414,
+      "expectedImplicitEulerDropMetres": 0.895162500000033,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 174,
+      "realTime": 1.8791666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8971820831298828,
+      "expectedImplicitEulerDropMetres": 0.8972062500000333,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 175,
+      "realTime": 1.8833333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.8992252349853516,
+      "expectedImplicitEulerDropMetres": 0.8992500000000336,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 176,
+      "realTime": 1.8875,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9012683868408203,
+      "expectedImplicitEulerDropMetres": 0.901293750000034,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 177,
+      "realTime": 1.8916666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9033115386962891,
+      "expectedImplicitEulerDropMetres": 0.9033375000000343,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 178,
+      "realTime": 1.8958333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9053546905517578,
+      "expectedImplicitEulerDropMetres": 0.9053812500000347,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 179,
+      "realTime": 1.9,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9073978424072265,
+      "expectedImplicitEulerDropMetres": 0.907425000000035,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 180,
+      "realTime": 1.9041666666666668,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9094409942626953,
+      "expectedImplicitEulerDropMetres": 0.9094687500000354,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 181,
+      "realTime": 1.9083333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9114841461181641,
+      "expectedImplicitEulerDropMetres": 0.9115125000000357,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 182,
+      "realTime": 1.9125,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9135272979736329,
+      "expectedImplicitEulerDropMetres": 0.913556250000036,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 183,
+      "realTime": 1.9166666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9155704498291015,
+      "expectedImplicitEulerDropMetres": 0.9156000000000364,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 184,
+      "realTime": 1.925,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9196582794189453,
+      "expectedImplicitEulerDropMetres": 0.9196875000000371,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 185,
+      "realTime": 1.9291666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9217014312744141,
+      "expectedImplicitEulerDropMetres": 0.9217312500000374,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 186,
+      "realTime": 1.9333333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9237445831298828,
+      "expectedImplicitEulerDropMetres": 0.9237750000000378,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 187,
+      "realTime": 1.9375,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9257877349853516,
+      "expectedImplicitEulerDropMetres": 0.9258187500000381,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 188,
+      "realTime": 1.9416666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9278308868408203,
+      "expectedImplicitEulerDropMetres": 0.9278625000000384,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 189,
+      "realTime": 1.9458333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.929874038696289,
+      "expectedImplicitEulerDropMetres": 0.9299062500000388,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 190,
+      "realTime": 1.95,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9319171905517578,
+      "expectedImplicitEulerDropMetres": 0.9319500000000391,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 191,
+      "realTime": 1.9541666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9339603424072266,
+      "expectedImplicitEulerDropMetres": 0.9339937500000395,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 192,
+      "realTime": 1.9583333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9360034942626954,
+      "expectedImplicitEulerDropMetres": 0.9360375000000398,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 193,
+      "realTime": 1.9666666666666666,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.940091323852539,
+      "expectedImplicitEulerDropMetres": 0.9401250000000405,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 194,
+      "realTime": 1.9708333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9421344757080078,
+      "expectedImplicitEulerDropMetres": 0.9421687500000409,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 195,
+      "realTime": 1.975,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9441776275634766,
+      "expectedImplicitEulerDropMetres": 0.9442125000000412,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 196,
+      "realTime": 1.9791666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9462207794189453,
+      "expectedImplicitEulerDropMetres": 0.9462562500000415,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 197,
+      "realTime": 1.9833333333333334,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9482639312744141,
+      "expectedImplicitEulerDropMetres": 0.9483000000000419,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 198,
+      "realTime": 1.9875,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9503070831298828,
+      "expectedImplicitEulerDropMetres": 0.9503437500000422,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 199,
+      "realTime": 1.9916666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9523502349853515,
+      "expectedImplicitEulerDropMetres": 0.9523875000000426,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 200,
+      "realTime": 1.9958333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9543933868408203,
+      "expectedImplicitEulerDropMetres": 0.9544312500000429,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 201,
+      "realTime": 2,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9564365386962891,
+      "expectedImplicitEulerDropMetres": 0.9564750000000433,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 202,
+      "realTime": 2.0041666666666664,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9584796905517579,
+      "expectedImplicitEulerDropMetres": 0.9585187500000436,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 203,
+      "realTime": 2.0083333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9605228424072265,
+      "expectedImplicitEulerDropMetres": 0.960562500000044,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 204,
+      "realTime": 2.0166666666666666,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9646106719970703,
+      "expectedImplicitEulerDropMetres": 0.9646500000000446,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 205,
+      "realTime": 2.020833333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9666538238525391,
+      "expectedImplicitEulerDropMetres": 0.966693750000045,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 206,
+      "realTime": 2.025,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9686969757080078,
+      "expectedImplicitEulerDropMetres": 0.9687375000000453,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 207,
+      "realTime": 2.033333333333333,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9727848052978516,
+      "expectedImplicitEulerDropMetres": 0.972825000000046,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 208,
+      "realTime": 2.0374999999999996,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9748279571533203,
+      "expectedImplicitEulerDropMetres": 0.9748687500000464,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 209,
+      "realTime": 2.0416666666666665,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.976871109008789,
+      "expectedImplicitEulerDropMetres": 0.9769125000000467,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 210,
+      "realTime": 2.05,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9809589385986328,
+      "expectedImplicitEulerDropMetres": 0.9810000000000474,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 211,
+      "realTime": 2.0541666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9830020904541016,
+      "expectedImplicitEulerDropMetres": 0.9830437500000477,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 212,
+      "realTime": 2.0583333333333336,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9850452423095704,
+      "expectedImplicitEulerDropMetres": 0.9850875000000481,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 213,
+      "realTime": 2.0625,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.987088394165039,
+      "expectedImplicitEulerDropMetres": 0.9871312500000484,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 214,
+      "realTime": 2.066666666666667,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9891315460205078,
+      "expectedImplicitEulerDropMetres": 0.9891750000000488,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 215,
+      "realTime": 2.075,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9932193756103516,
+      "expectedImplicitEulerDropMetres": 0.9932625000000495,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 216,
+      "realTime": 2.0791666666666666,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9952625274658203,
+      "expectedImplicitEulerDropMetres": 0.9953062500000498,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 217,
+      "realTime": 2.0833333333333335,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 0.9973056793212891,
+      "expectedImplicitEulerDropMetres": 0.9973500000000501,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 218,
+      "realTime": 2.091666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0013935089111328,
+      "expectedImplicitEulerDropMetres": 1.0014375000000508,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 219,
+      "realTime": 2.095833333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0034366607666017,
+      "expectedImplicitEulerDropMetres": 1.0034812500000512,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 220,
+      "realTime": 2.1,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0054798126220703,
+      "expectedImplicitEulerDropMetres": 1.0055250000000515,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 221,
+      "realTime": 2.1083333333333334,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.009567642211914,
+      "expectedImplicitEulerDropMetres": 1.0096125000000522,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 222,
+      "realTime": 2.1166666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0136554718017579,
+      "expectedImplicitEulerDropMetres": 1.013700000000053,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 223,
+      "realTime": 2.120833333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0156986236572265,
+      "expectedImplicitEulerDropMetres": 1.0157437500000532,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 224,
+      "realTime": 2.125,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0177417755126954,
+      "expectedImplicitEulerDropMetres": 1.0177875000000536,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 225,
+      "realTime": 2.1333333333333333,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.021829605102539,
+      "expectedImplicitEulerDropMetres": 1.0218750000000543,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 226,
+      "realTime": 2.1416666666666666,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0259174346923827,
+      "expectedImplicitEulerDropMetres": 1.025962500000055,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 227,
+      "realTime": 2.15,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0300052642822266,
+      "expectedImplicitEulerDropMetres": 1.0300500000000556,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 228,
+      "realTime": 2.152083333333333,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.031027603149414,
+      "expectedImplicitEulerDropMetres": 1.0310718750000558,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 229,
+      "realTime": 2.1541666666666663,
+      "nativeTimeScale": 0.06588078290224075,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0320499420166016,
+      "expectedImplicitEulerDropMetres": 1.032093750000056,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 230,
+      "realTime": 2.158333333333333,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0340930938720703,
+      "expectedImplicitEulerDropMetres": 1.0341375000000563,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 231,
+      "realTime": 2.1624999999999996,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0361362457275392,
+      "expectedImplicitEulerDropMetres": 1.0361812500000567,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 232,
+      "realTime": 2.1666666666666665,
+      "nativeTimeScale": 0.1317615658044815,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0381793975830078,
+      "expectedImplicitEulerDropMetres": 1.038225000000057,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 233,
+      "realTime": 2.175,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0422672271728515,
+      "expectedImplicitEulerDropMetres": 1.0423125000000577,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 234,
+      "realTime": 2.183333333333333,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0463550567626954,
+      "expectedImplicitEulerDropMetres": 1.0464000000000584,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 235,
+      "realTime": 2.191666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.050442886352539,
+      "expectedImplicitEulerDropMetres": 1.050487500000059,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 236,
+      "realTime": 2.2,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.054530715942383,
+      "expectedImplicitEulerDropMetres": 1.0545750000000598,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 237,
+      "realTime": 2.2083333333333335,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0586185455322266,
+      "expectedImplicitEulerDropMetres": 1.0586625000000605,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 238,
+      "realTime": 2.216666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0627063751220702,
+      "expectedImplicitEulerDropMetres": 1.0627500000000611,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 239,
+      "realTime": 2.225,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.066794204711914,
+      "expectedImplicitEulerDropMetres": 1.0668375000000618,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 240,
+      "realTime": 2.2333333333333334,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0708820343017578,
+      "expectedImplicitEulerDropMetres": 1.0709250000000625,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 241,
+      "realTime": 2.2416666666666667,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0749698638916017,
+      "expectedImplicitEulerDropMetres": 1.0750125000000632,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 242,
+      "realTime": 2.25,
+      "nativeTimeScale": 0.263523131608963,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0790576934814453,
+      "expectedImplicitEulerDropMetres": 1.079100000000064,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 243,
+      "realTime": 2.2666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0872333526611329,
+      "expectedImplicitEulerDropMetres": 1.0872750000000653,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 244,
+      "realTime": 2.283333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.0954090118408204,
+      "expectedImplicitEulerDropMetres": 1.0954500000000666,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 245,
+      "realTime": 2.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1035846710205077,
+      "expectedImplicitEulerDropMetres": 1.103625000000068,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 246,
+      "realTime": 2.316666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1117603302001953,
+      "expectedImplicitEulerDropMetres": 1.1118000000000694,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 247,
+      "realTime": 2.3333333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1199359893798828,
+      "expectedImplicitEulerDropMetres": 1.1199750000000708,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 248,
+      "realTime": 2.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1281116485595704,
+      "expectedImplicitEulerDropMetres": 1.1281500000000722,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 249,
+      "realTime": 2.3666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.136287307739258,
+      "expectedImplicitEulerDropMetres": 1.1363250000000735,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 250,
+      "realTime": 2.3833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1444629669189452,
+      "expectedImplicitEulerDropMetres": 1.144500000000075,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 251,
+      "realTime": 2.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1526386260986328,
+      "expectedImplicitEulerDropMetres": 1.1526750000000763,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 252,
+      "realTime": 2.4166666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1608142852783203,
+      "expectedImplicitEulerDropMetres": 1.1608500000000777,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 253,
+      "realTime": 2.433333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1689899444580079,
+      "expectedImplicitEulerDropMetres": 1.169025000000079,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 254,
+      "realTime": 2.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1771656036376954,
+      "expectedImplicitEulerDropMetres": 1.1772000000000804,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 255,
+      "realTime": 2.466666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1853412628173827,
+      "expectedImplicitEulerDropMetres": 1.1853750000000818,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 256,
+      "realTime": 2.4833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.1935169219970703,
+      "expectedImplicitEulerDropMetres": 1.1935500000000832,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 257,
+      "realTime": 2.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2016925811767578,
+      "expectedImplicitEulerDropMetres": 1.2017250000000845,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 258,
+      "realTime": 2.5166666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2098682403564454,
+      "expectedImplicitEulerDropMetres": 1.209900000000086,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 259,
+      "realTime": 2.533333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.218043899536133,
+      "expectedImplicitEulerDropMetres": 1.2180750000000873,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 260,
+      "realTime": 2.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2262195587158202,
+      "expectedImplicitEulerDropMetres": 1.2262500000000887,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 261,
+      "realTime": 2.566666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2343952178955078,
+      "expectedImplicitEulerDropMetres": 1.23442500000009,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 262,
+      "realTime": 2.5833333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2425708770751953,
+      "expectedImplicitEulerDropMetres": 1.2426000000000914,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 263,
+      "realTime": 2.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2507465362548829,
+      "expectedImplicitEulerDropMetres": 1.2507750000000928,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 264,
+      "realTime": 2.6166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2589221954345704,
+      "expectedImplicitEulerDropMetres": 1.2589500000000942,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 265,
+      "realTime": 2.6333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2670978546142577,
+      "expectedImplicitEulerDropMetres": 1.2671250000000955,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 266,
+      "realTime": 2.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2752735137939453,
+      "expectedImplicitEulerDropMetres": 1.275300000000097,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 267,
+      "realTime": 2.6666666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2834490966796874,
+      "expectedImplicitEulerDropMetres": 1.2834750000000983,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 268,
+      "realTime": 2.683333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.291624755859375,
+      "expectedImplicitEulerDropMetres": 1.2916500000000997,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 269,
+      "realTime": 2.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.2998004150390625,
+      "expectedImplicitEulerDropMetres": 1.299825000000101,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 270,
+      "realTime": 2.716666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.30797607421875,
+      "expectedImplicitEulerDropMetres": 1.3080000000001024,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 271,
+      "realTime": 2.7333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3161517333984376,
+      "expectedImplicitEulerDropMetres": 1.3161750000001038,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 272,
+      "realTime": 2.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.324327392578125,
+      "expectedImplicitEulerDropMetres": 1.3243500000001052,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 273,
+      "realTime": 2.7666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3325030517578125,
+      "expectedImplicitEulerDropMetres": 1.3325250000001065,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 274,
+      "realTime": 2.783333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3406787109375,
+      "expectedImplicitEulerDropMetres": 1.340700000000108,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 275,
+      "realTime": 2.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3488543701171876,
+      "expectedImplicitEulerDropMetres": 1.3488750000001093,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 276,
+      "realTime": 2.816666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.357030029296875,
+      "expectedImplicitEulerDropMetres": 1.3570500000001107,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 277,
+      "realTime": 2.8333333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3652056884765624,
+      "expectedImplicitEulerDropMetres": 1.365225000000112,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 278,
+      "realTime": 2.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.37338134765625,
+      "expectedImplicitEulerDropMetres": 1.3734000000001134,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 279,
+      "realTime": 2.8666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3815570068359375,
+      "expectedImplicitEulerDropMetres": 1.3815750000001148,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 280,
+      "realTime": 2.8833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.389732666015625,
+      "expectedImplicitEulerDropMetres": 1.3897500000001162,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 281,
+      "realTime": 2.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.3979083251953126,
+      "expectedImplicitEulerDropMetres": 1.3979250000001175,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 282,
+      "realTime": 2.9166666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.406083984375,
+      "expectedImplicitEulerDropMetres": 1.406100000000119,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 283,
+      "realTime": 2.933333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4142596435546875,
+      "expectedImplicitEulerDropMetres": 1.4142750000001203,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 284,
+      "realTime": 2.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.422435302734375,
+      "expectedImplicitEulerDropMetres": 1.4224500000001217,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 285,
+      "realTime": 2.966666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4306109619140626,
+      "expectedImplicitEulerDropMetres": 1.430625000000123,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 286,
+      "realTime": 2.9833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.43878662109375,
+      "expectedImplicitEulerDropMetres": 1.4388000000001244,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 287,
+      "realTime": 3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4469622802734374,
+      "expectedImplicitEulerDropMetres": 1.4469750000001258,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 288,
+      "realTime": 3.0166666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.455137939453125,
+      "expectedImplicitEulerDropMetres": 1.4551500000001272,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 289,
+      "realTime": 3.033333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4633135986328125,
+      "expectedImplicitEulerDropMetres": 1.4633250000001286,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 290,
+      "realTime": 3.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4714892578125,
+      "expectedImplicitEulerDropMetres": 1.47150000000013,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 291,
+      "realTime": 3.066666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4796649169921876,
+      "expectedImplicitEulerDropMetres": 1.4796750000001313,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 292,
+      "realTime": 3.0833333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.487840576171875,
+      "expectedImplicitEulerDropMetres": 1.4878500000001327,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 293,
+      "realTime": 3.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.4960162353515625,
+      "expectedImplicitEulerDropMetres": 1.496025000000134,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 294,
+      "realTime": 3.1166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.50419189453125,
+      "expectedImplicitEulerDropMetres": 1.5042000000001354,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 295,
+      "realTime": 3.1333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.5123675537109376,
+      "expectedImplicitEulerDropMetres": 1.5123750000001368,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 296,
+      "realTime": 3.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.520543212890625,
+      "expectedImplicitEulerDropMetres": 1.5205500000001382,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 297,
+      "realTime": 3.1666666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.5287188720703124,
+      "expectedImplicitEulerDropMetres": 1.5287250000001396,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 298,
+      "realTime": 3.183333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.53689453125,
+      "expectedImplicitEulerDropMetres": 1.536900000000141,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 299,
+      "realTime": 3.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.5450701904296875,
+      "expectedImplicitEulerDropMetres": 1.5450750000001423,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 300,
+      "realTime": 3.216666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.553245849609375,
+      "expectedImplicitEulerDropMetres": 1.5532500000001437,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 301,
+      "realTime": 3.2333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.5614215087890626,
+      "expectedImplicitEulerDropMetres": 1.561425000000145,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 302,
+      "realTime": 3.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.56959716796875,
+      "expectedImplicitEulerDropMetres": 1.5696000000001464,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 303,
+      "realTime": 3.2666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.5777728271484375,
+      "expectedImplicitEulerDropMetres": 1.5777750000001478,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 304,
+      "realTime": 3.283333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.585948486328125,
+      "expectedImplicitEulerDropMetres": 1.5859500000001492,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 305,
+      "realTime": 3.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.5941241455078126,
+      "expectedImplicitEulerDropMetres": 1.5941250000001506,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 306,
+      "realTime": 3.316666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6022998046875,
+      "expectedImplicitEulerDropMetres": 1.602300000000152,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 307,
+      "realTime": 3.3333333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6104754638671874,
+      "expectedImplicitEulerDropMetres": 1.6104750000001533,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 308,
+      "realTime": 3.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.618651123046875,
+      "expectedImplicitEulerDropMetres": 1.6186500000001547,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 309,
+      "realTime": 3.3666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6268267822265625,
+      "expectedImplicitEulerDropMetres": 1.626825000000156,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 310,
+      "realTime": 3.3833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.63500244140625,
+      "expectedImplicitEulerDropMetres": 1.6350000000001574,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 311,
+      "realTime": 3.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6431781005859376,
+      "expectedImplicitEulerDropMetres": 1.6431750000001588,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 312,
+      "realTime": 3.4166666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.651353759765625,
+      "expectedImplicitEulerDropMetres": 1.6513500000001602,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 313,
+      "realTime": 3.433333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6595294189453125,
+      "expectedImplicitEulerDropMetres": 1.6595250000001616,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 314,
+      "realTime": 3.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.667705078125,
+      "expectedImplicitEulerDropMetres": 1.667700000000163,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 315,
+      "realTime": 3.466666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6758807373046876,
+      "expectedImplicitEulerDropMetres": 1.6758750000001643,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 316,
+      "realTime": 3.4833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.684056396484375,
+      "expectedImplicitEulerDropMetres": 1.6840500000001657,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 317,
+      "realTime": 3.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.6922320556640624,
+      "expectedImplicitEulerDropMetres": 1.692225000000167,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 318,
+      "realTime": 3.5166666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.70040771484375,
+      "expectedImplicitEulerDropMetres": 1.7004000000001684,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 319,
+      "realTime": 3.533333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7085833740234375,
+      "expectedImplicitEulerDropMetres": 1.7085750000001698,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 320,
+      "realTime": 3.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.716759033203125,
+      "expectedImplicitEulerDropMetres": 1.7167500000001712,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 321,
+      "realTime": 3.566666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7249346923828126,
+      "expectedImplicitEulerDropMetres": 1.7249250000001726,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 322,
+      "realTime": 3.5833333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7331103515625,
+      "expectedImplicitEulerDropMetres": 1.733100000000174,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 323,
+      "realTime": 3.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7412860107421875,
+      "expectedImplicitEulerDropMetres": 1.7412750000001753,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 324,
+      "realTime": 3.6166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.749461669921875,
+      "expectedImplicitEulerDropMetres": 1.7494500000001767,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 325,
+      "realTime": 3.6333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7576373291015626,
+      "expectedImplicitEulerDropMetres": 1.757625000000178,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 326,
+      "realTime": 3.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.76581298828125,
+      "expectedImplicitEulerDropMetres": 1.7658000000001794,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 327,
+      "realTime": 3.6666666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7739886474609374,
+      "expectedImplicitEulerDropMetres": 1.7739750000001808,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 328,
+      "realTime": 3.683333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.782164306640625,
+      "expectedImplicitEulerDropMetres": 1.7821500000001822,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 329,
+      "realTime": 3.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.7903399658203125,
+      "expectedImplicitEulerDropMetres": 1.7903250000001836,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 330,
+      "realTime": 3.716666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.798515625,
+      "expectedImplicitEulerDropMetres": 1.798500000000185,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 331,
+      "realTime": 3.7333333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8066912841796876,
+      "expectedImplicitEulerDropMetres": 1.8066750000001863,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 332,
+      "realTime": 3.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.814866943359375,
+      "expectedImplicitEulerDropMetres": 1.8148500000001877,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 333,
+      "realTime": 3.7666666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8230426025390625,
+      "expectedImplicitEulerDropMetres": 1.823025000000189,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 334,
+      "realTime": 3.783333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.83121826171875,
+      "expectedImplicitEulerDropMetres": 1.8312000000001905,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 335,
+      "realTime": 3.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8393939208984376,
+      "expectedImplicitEulerDropMetres": 1.8393750000001918,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 336,
+      "realTime": 3.816666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.847569580078125,
+      "expectedImplicitEulerDropMetres": 1.8475500000001932,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 337,
+      "realTime": 3.8333333333333335,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8557452392578124,
+      "expectedImplicitEulerDropMetres": 1.8557250000001946,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 338,
+      "realTime": 3.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8639208984375,
+      "expectedImplicitEulerDropMetres": 1.863900000000196,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 339,
+      "realTime": 3.8666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8720965576171875,
+      "expectedImplicitEulerDropMetres": 1.8720750000001973,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 340,
+      "realTime": 3.8833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.880272216796875,
+      "expectedImplicitEulerDropMetres": 1.8802500000001987,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 341,
+      "realTime": 3.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.8884478759765626,
+      "expectedImplicitEulerDropMetres": 1.8884250000002,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 342,
+      "realTime": 3.9166666666666665,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.89662353515625,
+      "expectedImplicitEulerDropMetres": 1.8966000000002015,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 343,
+      "realTime": 3.933333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9047991943359375,
+      "expectedImplicitEulerDropMetres": 1.9047750000002028,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 344,
+      "realTime": 3.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.912974853515625,
+      "expectedImplicitEulerDropMetres": 1.9129500000002042,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 345,
+      "realTime": 3.966666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9211505126953126,
+      "expectedImplicitEulerDropMetres": 1.9211250000002056,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 346,
+      "realTime": 3.9833333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.929326171875,
+      "expectedImplicitEulerDropMetres": 1.929300000000207,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 347,
+      "realTime": 4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9375018310546874,
+      "expectedImplicitEulerDropMetres": 1.9374750000002083,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 348,
+      "realTime": 4.016666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.945677490234375,
+      "expectedImplicitEulerDropMetres": 1.9456500000002097,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 349,
+      "realTime": 4.033333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9538531494140625,
+      "expectedImplicitEulerDropMetres": 1.953825000000211,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 350,
+      "realTime": 4.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.96202880859375,
+      "expectedImplicitEulerDropMetres": 1.9620000000002125,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 351,
+      "realTime": 4.066666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9702044677734376,
+      "expectedImplicitEulerDropMetres": 1.9701750000002138,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 352,
+      "realTime": 4.083333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.978380126953125,
+      "expectedImplicitEulerDropMetres": 1.9783500000002152,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 353,
+      "realTime": 4.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9865557861328125,
+      "expectedImplicitEulerDropMetres": 1.9865250000002166,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 354,
+      "realTime": 4.116666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 1.9947314453125,
+      "expectedImplicitEulerDropMetres": 1.994700000000218,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 355,
+      "realTime": 4.133333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.0029071044921873,
+      "expectedImplicitEulerDropMetres": 2.0028750000002193,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 356,
+      "realTime": 4.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.011082763671875,
+      "expectedImplicitEulerDropMetres": 2.0110500000002207,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 357,
+      "realTime": 4.166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.0192584228515624,
+      "expectedImplicitEulerDropMetres": 2.019225000000222,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 358,
+      "realTime": 4.183333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.02743408203125,
+      "expectedImplicitEulerDropMetres": 2.0274000000002235,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 359,
+      "realTime": 4.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.0356097412109375,
+      "expectedImplicitEulerDropMetres": 2.035575000000225,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 360,
+      "realTime": 4.216666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.043785400390625,
+      "expectedImplicitEulerDropMetres": 2.043750000000226,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 361,
+      "realTime": 4.233333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.0519610595703126,
+      "expectedImplicitEulerDropMetres": 2.0519250000002276,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 362,
+      "realTime": 4.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.06013671875,
+      "expectedImplicitEulerDropMetres": 2.060100000000229,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 363,
+      "realTime": 4.266666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.0683123779296877,
+      "expectedImplicitEulerDropMetres": 2.0682750000002303,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 364,
+      "realTime": 4.283333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.076488037109375,
+      "expectedImplicitEulerDropMetres": 2.0764500000002317,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 365,
+      "realTime": 4.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.0846636962890623,
+      "expectedImplicitEulerDropMetres": 2.084625000000233,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 366,
+      "realTime": 4.316666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.09283935546875,
+      "expectedImplicitEulerDropMetres": 2.0928000000002345,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 367,
+      "realTime": 4.333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1010150146484374,
+      "expectedImplicitEulerDropMetres": 2.100975000000236,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 368,
+      "realTime": 4.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.109190673828125,
+      "expectedImplicitEulerDropMetres": 2.1091500000002372,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 369,
+      "realTime": 4.366666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1173663330078125,
+      "expectedImplicitEulerDropMetres": 2.1173250000002386,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 370,
+      "realTime": 4.383333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1255419921875,
+      "expectedImplicitEulerDropMetres": 2.12550000000024,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 371,
+      "realTime": 4.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1337176513671876,
+      "expectedImplicitEulerDropMetres": 2.1336750000002414,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 372,
+      "realTime": 4.416666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.141893310546875,
+      "expectedImplicitEulerDropMetres": 2.1418500000002427,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 373,
+      "realTime": 4.433333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1500689697265627,
+      "expectedImplicitEulerDropMetres": 2.150025000000244,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 374,
+      "realTime": 4.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.15824462890625,
+      "expectedImplicitEulerDropMetres": 2.1582000000002455,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 375,
+      "realTime": 4.466666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1664202880859373,
+      "expectedImplicitEulerDropMetres": 2.166375000000247,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 376,
+      "realTime": 4.483333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.174595947265625,
+      "expectedImplicitEulerDropMetres": 2.1745500000002482,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 377,
+      "realTime": 4.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1827716064453124,
+      "expectedImplicitEulerDropMetres": 2.1827250000002496,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 378,
+      "realTime": 4.516666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.190947265625,
+      "expectedImplicitEulerDropMetres": 2.190900000000251,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 379,
+      "realTime": 4.533333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.1991229248046875,
+      "expectedImplicitEulerDropMetres": 2.1990750000002524,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 380,
+      "realTime": 4.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.207298583984375,
+      "expectedImplicitEulerDropMetres": 2.2072500000002537,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 381,
+      "realTime": 4.566666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2154742431640626,
+      "expectedImplicitEulerDropMetres": 2.215425000000255,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 382,
+      "realTime": 4.583333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.22364990234375,
+      "expectedImplicitEulerDropMetres": 2.2236000000002565,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 383,
+      "realTime": 4.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2318255615234377,
+      "expectedImplicitEulerDropMetres": 2.231775000000258,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 384,
+      "realTime": 4.616666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.240001220703125,
+      "expectedImplicitEulerDropMetres": 2.2399500000002592,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 385,
+      "realTime": 4.633333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2481768798828123,
+      "expectedImplicitEulerDropMetres": 2.2481250000002606,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 386,
+      "realTime": 4.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2563525390625,
+      "expectedImplicitEulerDropMetres": 2.256300000000262,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 387,
+      "realTime": 4.666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2645281982421874,
+      "expectedImplicitEulerDropMetres": 2.2644750000002634,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 388,
+      "realTime": 4.683333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.272703857421875,
+      "expectedImplicitEulerDropMetres": 2.2726500000002647,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 389,
+      "realTime": 4.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2808795166015625,
+      "expectedImplicitEulerDropMetres": 2.280825000000266,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 390,
+      "realTime": 4.716666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.28905517578125,
+      "expectedImplicitEulerDropMetres": 2.2890000000002675,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 391,
+      "realTime": 4.733333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.2972308349609376,
+      "expectedImplicitEulerDropMetres": 2.297175000000269,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 392,
+      "realTime": 4.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.305406494140625,
+      "expectedImplicitEulerDropMetres": 2.3053500000002702,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 393,
+      "realTime": 4.766666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3135821533203127,
+      "expectedImplicitEulerDropMetres": 2.3135250000002716,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 394,
+      "realTime": 4.783333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3217578125,
+      "expectedImplicitEulerDropMetres": 2.321700000000273,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 395,
+      "realTime": 4.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3299334716796873,
+      "expectedImplicitEulerDropMetres": 2.3298750000002744,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 396,
+      "realTime": 4.816666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.338109130859375,
+      "expectedImplicitEulerDropMetres": 2.3380500000002757,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 397,
+      "realTime": 4.833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3462847900390624,
+      "expectedImplicitEulerDropMetres": 2.346225000000277,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 398,
+      "realTime": 4.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.35446044921875,
+      "expectedImplicitEulerDropMetres": 2.3544000000002785,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 399,
+      "realTime": 4.866666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3626361083984375,
+      "expectedImplicitEulerDropMetres": 2.36257500000028,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 400,
+      "realTime": 4.883333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.370811767578125,
+      "expectedImplicitEulerDropMetres": 2.3707500000002812,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 401,
+      "realTime": 4.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3789874267578126,
+      "expectedImplicitEulerDropMetres": 2.3789250000002826,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 402,
+      "realTime": 4.916666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3871630859375,
+      "expectedImplicitEulerDropMetres": 2.387100000000284,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 403,
+      "realTime": 4.933333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.3953387451171877,
+      "expectedImplicitEulerDropMetres": 2.3952750000002854,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 404,
+      "realTime": 4.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.403514404296875,
+      "expectedImplicitEulerDropMetres": 2.4034500000002867,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 405,
+      "realTime": 4.966666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.4116900634765623,
+      "expectedImplicitEulerDropMetres": 2.411625000000288,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 406,
+      "realTime": 4.983333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.41986572265625,
+      "expectedImplicitEulerDropMetres": 2.4198000000002895,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 407,
+      "realTime": 5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.4280413818359374,
+      "expectedImplicitEulerDropMetres": 2.427975000000291,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 408,
+      "realTime": 5.016666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.436217041015625,
+      "expectedImplicitEulerDropMetres": 2.4361500000002922,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 409,
+      "realTime": 5.033333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.4443927001953125,
+      "expectedImplicitEulerDropMetres": 2.4443250000002936,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 410,
+      "realTime": 5.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.452568359375,
+      "expectedImplicitEulerDropMetres": 2.452500000000295,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 411,
+      "realTime": 5.066666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.4607440185546876,
+      "expectedImplicitEulerDropMetres": 2.4606750000002964,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 412,
+      "realTime": 5.083333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.468919677734375,
+      "expectedImplicitEulerDropMetres": 2.4688500000002978,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 413,
+      "realTime": 5.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.4770953369140627,
+      "expectedImplicitEulerDropMetres": 2.477025000000299,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 414,
+      "realTime": 5.116666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.48527099609375,
+      "expectedImplicitEulerDropMetres": 2.4852000000003005,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 415,
+      "realTime": 5.133333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.4934466552734373,
+      "expectedImplicitEulerDropMetres": 2.493375000000302,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 416,
+      "realTime": 5.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.501622314453125,
+      "expectedImplicitEulerDropMetres": 2.5015500000003033,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 417,
+      "realTime": 5.166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5097979736328124,
+      "expectedImplicitEulerDropMetres": 2.5097250000003046,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 418,
+      "realTime": 5.183333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5179736328125,
+      "expectedImplicitEulerDropMetres": 2.517900000000306,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 419,
+      "realTime": 5.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5261492919921875,
+      "expectedImplicitEulerDropMetres": 2.5260750000003074,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 420,
+      "realTime": 5.216666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.534324951171875,
+      "expectedImplicitEulerDropMetres": 2.5342500000003088,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 421,
+      "realTime": 5.233333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5425006103515626,
+      "expectedImplicitEulerDropMetres": 2.54242500000031,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 422,
+      "realTime": 5.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.55067626953125,
+      "expectedImplicitEulerDropMetres": 2.5506000000003115,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 423,
+      "realTime": 5.266666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5588519287109377,
+      "expectedImplicitEulerDropMetres": 2.558775000000313,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 424,
+      "realTime": 5.283333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.567024841308594,
+      "expectedImplicitEulerDropMetres": 2.5669500000003143,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 425,
+      "realTime": 5.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.575197448730469,
+      "expectedImplicitEulerDropMetres": 2.5751250000003156,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 426,
+      "realTime": 5.316666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5833700561523436,
+      "expectedImplicitEulerDropMetres": 2.583300000000317,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 427,
+      "realTime": 5.333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.5915426635742187,
+      "expectedImplicitEulerDropMetres": 2.5914750000003184,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 428,
+      "realTime": 5.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.599715270996094,
+      "expectedImplicitEulerDropMetres": 2.5996500000003198,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 429,
+      "realTime": 5.366666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.607887878417969,
+      "expectedImplicitEulerDropMetres": 2.607825000000321,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 430,
+      "realTime": 5.383333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.616060485839844,
+      "expectedImplicitEulerDropMetres": 2.6160000000003225,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 431,
+      "realTime": 5.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.6242330932617186,
+      "expectedImplicitEulerDropMetres": 2.624175000000324,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 432,
+      "realTime": 5.416666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.6324057006835937,
+      "expectedImplicitEulerDropMetres": 2.6323500000003253,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 433,
+      "realTime": 5.433333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.640578308105469,
+      "expectedImplicitEulerDropMetres": 2.6405250000003266,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 434,
+      "realTime": 5.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.648750915527344,
+      "expectedImplicitEulerDropMetres": 2.648700000000328,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 435,
+      "realTime": 5.466666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.656923522949219,
+      "expectedImplicitEulerDropMetres": 2.6568750000003294,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 436,
+      "realTime": 5.483333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.6650961303710936,
+      "expectedImplicitEulerDropMetres": 2.6650500000003308,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 437,
+      "realTime": 5.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.6732687377929687,
+      "expectedImplicitEulerDropMetres": 2.673225000000332,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 438,
+      "realTime": 5.516666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.681441345214844,
+      "expectedImplicitEulerDropMetres": 2.6814000000003335,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 439,
+      "realTime": 5.533333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.689613952636719,
+      "expectedImplicitEulerDropMetres": 2.689575000000335,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 440,
+      "realTime": 5.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.697786560058594,
+      "expectedImplicitEulerDropMetres": 2.6977500000003363,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 441,
+      "realTime": 5.566666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.7059591674804686,
+      "expectedImplicitEulerDropMetres": 2.7059250000003376,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 442,
+      "realTime": 5.583333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.7141317749023437,
+      "expectedImplicitEulerDropMetres": 2.714100000000339,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 443,
+      "realTime": 5.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.722304382324219,
+      "expectedImplicitEulerDropMetres": 2.7222750000003404,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 444,
+      "realTime": 5.616666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.730476989746094,
+      "expectedImplicitEulerDropMetres": 2.7304500000003418,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 445,
+      "realTime": 5.633333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.738649597167969,
+      "expectedImplicitEulerDropMetres": 2.738625000000343,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 446,
+      "realTime": 5.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.7468222045898436,
+      "expectedImplicitEulerDropMetres": 2.7468000000003445,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 447,
+      "realTime": 5.666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.7549948120117187,
+      "expectedImplicitEulerDropMetres": 2.754975000000346,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 448,
+      "realTime": 5.683333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.763167419433594,
+      "expectedImplicitEulerDropMetres": 2.7631500000003473,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 449,
+      "realTime": 5.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.771340026855469,
+      "expectedImplicitEulerDropMetres": 2.7713250000003486,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 450,
+      "realTime": 5.716666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.779512634277344,
+      "expectedImplicitEulerDropMetres": 2.77950000000035,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 451,
+      "realTime": 5.733333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.7876852416992186,
+      "expectedImplicitEulerDropMetres": 2.7876750000003514,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 452,
+      "realTime": 5.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.7958578491210937,
+      "expectedImplicitEulerDropMetres": 2.7958500000003528,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 453,
+      "realTime": 5.766666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.804030456542969,
+      "expectedImplicitEulerDropMetres": 2.804025000000354,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 454,
+      "realTime": 5.783333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.812203063964844,
+      "expectedImplicitEulerDropMetres": 2.8122000000003555,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 455,
+      "realTime": 5.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.820375671386719,
+      "expectedImplicitEulerDropMetres": 2.820375000000357,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 456,
+      "realTime": 5.816666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.8285482788085936,
+      "expectedImplicitEulerDropMetres": 2.8285500000003583,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 457,
+      "realTime": 5.833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.8367208862304687,
+      "expectedImplicitEulerDropMetres": 2.8367250000003597,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 458,
+      "realTime": 5.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.844893493652344,
+      "expectedImplicitEulerDropMetres": 2.844900000000361,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 459,
+      "realTime": 5.866666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.853066101074219,
+      "expectedImplicitEulerDropMetres": 2.8530750000003624,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 460,
+      "realTime": 5.883333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.861238708496094,
+      "expectedImplicitEulerDropMetres": 2.861250000000364,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 461,
+      "realTime": 5.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.8694113159179686,
+      "expectedImplicitEulerDropMetres": 2.869425000000365,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 462,
+      "realTime": 5.916666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.8775839233398437,
+      "expectedImplicitEulerDropMetres": 2.8776000000003665,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 463,
+      "realTime": 5.933333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.885756530761719,
+      "expectedImplicitEulerDropMetres": 2.885775000000368,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 464,
+      "realTime": 5.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.893929138183594,
+      "expectedImplicitEulerDropMetres": 2.8939500000003693,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 465,
+      "realTime": 5.966666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.902101745605469,
+      "expectedImplicitEulerDropMetres": 2.9021250000003707,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 466,
+      "realTime": 5.983333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.9102743530273436,
+      "expectedImplicitEulerDropMetres": 2.910300000000372,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 467,
+      "realTime": 6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.9184469604492187,
+      "expectedImplicitEulerDropMetres": 2.9184750000003734,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 468,
+      "realTime": 6.016666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.926619567871094,
+      "expectedImplicitEulerDropMetres": 2.926650000000375,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 469,
+      "realTime": 6.033333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.934792175292969,
+      "expectedImplicitEulerDropMetres": 2.934825000000376,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 470,
+      "realTime": 6.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.942964782714844,
+      "expectedImplicitEulerDropMetres": 2.9430000000003775,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 471,
+      "realTime": 6.066666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.9511373901367186,
+      "expectedImplicitEulerDropMetres": 2.951175000000379,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 472,
+      "realTime": 6.083333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.9593099975585937,
+      "expectedImplicitEulerDropMetres": 2.9593500000003803,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 473,
+      "realTime": 6.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.967482604980469,
+      "expectedImplicitEulerDropMetres": 2.9675250000003817,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 474,
+      "realTime": 6.116666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.975655212402344,
+      "expectedImplicitEulerDropMetres": 2.975700000000383,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 475,
+      "realTime": 6.133333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.983827819824219,
+      "expectedImplicitEulerDropMetres": 2.9838750000003844,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 476,
+      "realTime": 6.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 2.9920004272460936,
+      "expectedImplicitEulerDropMetres": 2.992050000000386,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 477,
+      "realTime": 6.166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.0001730346679687,
+      "expectedImplicitEulerDropMetres": 3.000225000000387,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 478,
+      "realTime": 6.183333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.008345642089844,
+      "expectedImplicitEulerDropMetres": 3.0084000000003885,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 479,
+      "realTime": 6.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.016518249511719,
+      "expectedImplicitEulerDropMetres": 3.01657500000039,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 480,
+      "realTime": 6.216666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.024690856933594,
+      "expectedImplicitEulerDropMetres": 3.0247500000003913,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 481,
+      "realTime": 6.233333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.0328634643554686,
+      "expectedImplicitEulerDropMetres": 3.0329250000003927,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 482,
+      "realTime": 6.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.0410360717773437,
+      "expectedImplicitEulerDropMetres": 3.041100000000394,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 483,
+      "realTime": 6.266666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.049208679199219,
+      "expectedImplicitEulerDropMetres": 3.0492750000003954,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 484,
+      "realTime": 6.283333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.057381286621094,
+      "expectedImplicitEulerDropMetres": 3.057450000000397,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 485,
+      "realTime": 6.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.065553894042969,
+      "expectedImplicitEulerDropMetres": 3.065625000000398,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 486,
+      "realTime": 6.316666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.0737265014648436,
+      "expectedImplicitEulerDropMetres": 3.0738000000003995,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 487,
+      "realTime": 6.333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.0818991088867187,
+      "expectedImplicitEulerDropMetres": 3.081975000000401,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 488,
+      "realTime": 6.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.090071716308594,
+      "expectedImplicitEulerDropMetres": 3.0901500000004023,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 489,
+      "realTime": 6.366666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.098244323730469,
+      "expectedImplicitEulerDropMetres": 3.0983250000004037,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 490,
+      "realTime": 6.383333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.106416931152344,
+      "expectedImplicitEulerDropMetres": 3.106500000000405,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 491,
+      "realTime": 6.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.1145895385742186,
+      "expectedImplicitEulerDropMetres": 3.1146750000004064,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 492,
+      "realTime": 6.416666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.1227621459960937,
+      "expectedImplicitEulerDropMetres": 3.122850000000408,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 493,
+      "realTime": 6.433333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.130934753417969,
+      "expectedImplicitEulerDropMetres": 3.131025000000409,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 494,
+      "realTime": 6.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.139107360839844,
+      "expectedImplicitEulerDropMetres": 3.1392000000004106,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 495,
+      "realTime": 6.466666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.147279968261719,
+      "expectedImplicitEulerDropMetres": 3.147375000000412,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 496,
+      "realTime": 6.483333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.1554525756835936,
+      "expectedImplicitEulerDropMetres": 3.1555500000004133,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 497,
+      "realTime": 6.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.1636251831054687,
+      "expectedImplicitEulerDropMetres": 3.1637250000004147,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 498,
+      "realTime": 6.516666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.171797790527344,
+      "expectedImplicitEulerDropMetres": 3.171900000000416,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 499,
+      "realTime": 6.533333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.179970397949219,
+      "expectedImplicitEulerDropMetres": 3.1800750000004174,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 500,
+      "realTime": 6.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.188143005371094,
+      "expectedImplicitEulerDropMetres": 3.188250000000419,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 501,
+      "realTime": 6.566666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.1963156127929686,
+      "expectedImplicitEulerDropMetres": 3.19642500000042,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 502,
+      "realTime": 6.583333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.2044882202148437,
+      "expectedImplicitEulerDropMetres": 3.2046000000004216,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 503,
+      "realTime": 6.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.212660827636719,
+      "expectedImplicitEulerDropMetres": 3.212775000000423,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 504,
+      "realTime": 6.616666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.220833435058594,
+      "expectedImplicitEulerDropMetres": 3.2209500000004243,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 505,
+      "realTime": 6.633333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.229006042480469,
+      "expectedImplicitEulerDropMetres": 3.2291250000004257,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 506,
+      "realTime": 6.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.2371786499023436,
+      "expectedImplicitEulerDropMetres": 3.237300000000427,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 507,
+      "realTime": 6.666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.2453512573242187,
+      "expectedImplicitEulerDropMetres": 3.2454750000004284,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 508,
+      "realTime": 6.683333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.253523864746094,
+      "expectedImplicitEulerDropMetres": 3.25365000000043,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 509,
+      "realTime": 6.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.261696472167969,
+      "expectedImplicitEulerDropMetres": 3.261825000000431,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 510,
+      "realTime": 6.716666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.269869079589844,
+      "expectedImplicitEulerDropMetres": 3.2700000000004326,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 511,
+      "realTime": 6.733333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.2780416870117186,
+      "expectedImplicitEulerDropMetres": 3.278175000000434,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 512,
+      "realTime": 6.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.2862142944335937,
+      "expectedImplicitEulerDropMetres": 3.2863500000004353,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 513,
+      "realTime": 6.766666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.294386901855469,
+      "expectedImplicitEulerDropMetres": 3.2945250000004367,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 514,
+      "realTime": 6.783333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.302559509277344,
+      "expectedImplicitEulerDropMetres": 3.302700000000438,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 515,
+      "realTime": 6.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.310732116699219,
+      "expectedImplicitEulerDropMetres": 3.3108750000004394,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 516,
+      "realTime": 6.816666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.3189047241210936,
+      "expectedImplicitEulerDropMetres": 3.319050000000441,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 517,
+      "realTime": 6.833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.3270773315429687,
+      "expectedImplicitEulerDropMetres": 3.327225000000442,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 518,
+      "realTime": 6.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.335249938964844,
+      "expectedImplicitEulerDropMetres": 3.3354000000004436,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 519,
+      "realTime": 6.866666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.343422546386719,
+      "expectedImplicitEulerDropMetres": 3.343575000000445,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 520,
+      "realTime": 6.883333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.351595153808594,
+      "expectedImplicitEulerDropMetres": 3.3517500000004463,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 521,
+      "realTime": 6.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.3597677612304686,
+      "expectedImplicitEulerDropMetres": 3.3599250000004477,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 522,
+      "realTime": 6.916666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.3679403686523437,
+      "expectedImplicitEulerDropMetres": 3.368100000000449,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 523,
+      "realTime": 6.933333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.376112976074219,
+      "expectedImplicitEulerDropMetres": 3.3762750000004504,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 524,
+      "realTime": 6.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.384285583496094,
+      "expectedImplicitEulerDropMetres": 3.384450000000452,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 525,
+      "realTime": 6.966666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.392458190917969,
+      "expectedImplicitEulerDropMetres": 3.392625000000453,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 526,
+      "realTime": 6.983333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.4006307983398436,
+      "expectedImplicitEulerDropMetres": 3.4008000000004546,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 527,
+      "realTime": 7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.4088034057617187,
+      "expectedImplicitEulerDropMetres": 3.408975000000456,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 528,
+      "realTime": 7.016666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.416976013183594,
+      "expectedImplicitEulerDropMetres": 3.4171500000004573,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 529,
+      "realTime": 7.033333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.425148620605469,
+      "expectedImplicitEulerDropMetres": 3.4253250000004587,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 530,
+      "realTime": 7.05,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.433321228027344,
+      "expectedImplicitEulerDropMetres": 3.43350000000046,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 531,
+      "realTime": 7.066666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.4414938354492186,
+      "expectedImplicitEulerDropMetres": 3.4416750000004614,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 532,
+      "realTime": 7.083333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.4496664428710937,
+      "expectedImplicitEulerDropMetres": 3.449850000000463,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 533,
+      "realTime": 7.1,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.457839050292969,
+      "expectedImplicitEulerDropMetres": 3.458025000000464,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 534,
+      "realTime": 7.116666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.466011657714844,
+      "expectedImplicitEulerDropMetres": 3.4662000000004656,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 535,
+      "realTime": 7.133333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.474184265136719,
+      "expectedImplicitEulerDropMetres": 3.474375000000467,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 536,
+      "realTime": 7.15,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.4823568725585936,
+      "expectedImplicitEulerDropMetres": 3.4825500000004683,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 537,
+      "realTime": 7.166666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.4905294799804687,
+      "expectedImplicitEulerDropMetres": 3.4907250000004697,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 538,
+      "realTime": 7.183333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.498702087402344,
+      "expectedImplicitEulerDropMetres": 3.498900000000471,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 539,
+      "realTime": 7.2,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.506874694824219,
+      "expectedImplicitEulerDropMetres": 3.5070750000004725,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 540,
+      "realTime": 7.216666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.515047302246094,
+      "expectedImplicitEulerDropMetres": 3.515250000000474,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 541,
+      "realTime": 7.233333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.5232199096679686,
+      "expectedImplicitEulerDropMetres": 3.523425000000475,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 542,
+      "realTime": 7.25,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.5313925170898437,
+      "expectedImplicitEulerDropMetres": 3.5316000000004766,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 543,
+      "realTime": 7.266666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.539565124511719,
+      "expectedImplicitEulerDropMetres": 3.539775000000478,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 544,
+      "realTime": 7.283333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.547737731933594,
+      "expectedImplicitEulerDropMetres": 3.5479500000004793,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 545,
+      "realTime": 7.3,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.555910339355469,
+      "expectedImplicitEulerDropMetres": 3.5561250000004807,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 546,
+      "realTime": 7.316666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.5640829467773436,
+      "expectedImplicitEulerDropMetres": 3.564300000000482,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 547,
+      "realTime": 7.333333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.5722555541992187,
+      "expectedImplicitEulerDropMetres": 3.5724750000004835,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 548,
+      "realTime": 7.35,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.580428161621094,
+      "expectedImplicitEulerDropMetres": 3.580650000000485,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 549,
+      "realTime": 7.366666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.588600769042969,
+      "expectedImplicitEulerDropMetres": 3.588825000000486,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 550,
+      "realTime": 7.383333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.596773376464844,
+      "expectedImplicitEulerDropMetres": 3.5970000000004876,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 551,
+      "realTime": 7.4,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.6049459838867186,
+      "expectedImplicitEulerDropMetres": 3.605175000000489,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 552,
+      "realTime": 7.416666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.6131185913085937,
+      "expectedImplicitEulerDropMetres": 3.6133500000004903,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 553,
+      "realTime": 7.433333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.621291198730469,
+      "expectedImplicitEulerDropMetres": 3.6215250000004917,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 554,
+      "realTime": 7.45,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.629463806152344,
+      "expectedImplicitEulerDropMetres": 3.629700000000493,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 555,
+      "realTime": 7.466666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.637636413574219,
+      "expectedImplicitEulerDropMetres": 3.6378750000004945,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 556,
+      "realTime": 7.483333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.6458090209960936,
+      "expectedImplicitEulerDropMetres": 3.646050000000496,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 557,
+      "realTime": 7.5,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.6539816284179687,
+      "expectedImplicitEulerDropMetres": 3.654225000000497,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 558,
+      "realTime": 7.516666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.662154235839844,
+      "expectedImplicitEulerDropMetres": 3.6624000000004986,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 559,
+      "realTime": 7.533333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.670326843261719,
+      "expectedImplicitEulerDropMetres": 3.6705750000005,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 560,
+      "realTime": 7.55,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.678499450683594,
+      "expectedImplicitEulerDropMetres": 3.6787500000005013,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 561,
+      "realTime": 7.566666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.6866720581054686,
+      "expectedImplicitEulerDropMetres": 3.6869250000005027,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 562,
+      "realTime": 7.583333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.6948446655273437,
+      "expectedImplicitEulerDropMetres": 3.695100000000504,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 563,
+      "realTime": 7.6,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.703017272949219,
+      "expectedImplicitEulerDropMetres": 3.7032750000005055,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 564,
+      "realTime": 7.616666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.711189880371094,
+      "expectedImplicitEulerDropMetres": 3.711450000000507,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 565,
+      "realTime": 7.633333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.719362487792969,
+      "expectedImplicitEulerDropMetres": 3.719625000000508,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 566,
+      "realTime": 7.65,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.7275350952148436,
+      "expectedImplicitEulerDropMetres": 3.7278000000005096,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 567,
+      "realTime": 7.666666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.7357077026367187,
+      "expectedImplicitEulerDropMetres": 3.735975000000511,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 568,
+      "realTime": 7.683333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.743880310058594,
+      "expectedImplicitEulerDropMetres": 3.7441500000005123,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 569,
+      "realTime": 7.7,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.752052917480469,
+      "expectedImplicitEulerDropMetres": 3.7523250000005137,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 570,
+      "realTime": 7.716666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.760225524902344,
+      "expectedImplicitEulerDropMetres": 3.760500000000515,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 571,
+      "realTime": 7.733333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.7683981323242186,
+      "expectedImplicitEulerDropMetres": 3.7686750000005165,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 572,
+      "realTime": 7.75,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.7765707397460937,
+      "expectedImplicitEulerDropMetres": 3.776850000000518,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 573,
+      "realTime": 7.766666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.784743347167969,
+      "expectedImplicitEulerDropMetres": 3.7850250000005192,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 574,
+      "realTime": 7.783333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.792915954589844,
+      "expectedImplicitEulerDropMetres": 3.7932000000005206,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 575,
+      "realTime": 7.8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.801088562011719,
+      "expectedImplicitEulerDropMetres": 3.801375000000522,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 576,
+      "realTime": 7.816666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.8092611694335936,
+      "expectedImplicitEulerDropMetres": 3.8095500000005234,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 577,
+      "realTime": 7.833333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.8174337768554687,
+      "expectedImplicitEulerDropMetres": 3.8177250000005247,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 578,
+      "realTime": 7.85,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.825606384277344,
+      "expectedImplicitEulerDropMetres": 3.825900000000526,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 579,
+      "realTime": 7.866666666666666,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.833778991699219,
+      "expectedImplicitEulerDropMetres": 3.8340750000005275,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 580,
+      "realTime": 7.883333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.841951599121094,
+      "expectedImplicitEulerDropMetres": 3.842250000000529,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 581,
+      "realTime": 7.9,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.8501242065429686,
+      "expectedImplicitEulerDropMetres": 3.8504250000005302,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 582,
+      "realTime": 7.916666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.8582968139648437,
+      "expectedImplicitEulerDropMetres": 3.8586000000005316,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 583,
+      "realTime": 7.933333333333334,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.866469421386719,
+      "expectedImplicitEulerDropMetres": 3.866775000000533,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 584,
+      "realTime": 7.95,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.874642028808594,
+      "expectedImplicitEulerDropMetres": 3.8749500000005344,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 585,
+      "realTime": 7.966666666666667,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.882814636230469,
+      "expectedImplicitEulerDropMetres": 3.8831250000005357,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 586,
+      "realTime": 7.983333333333333,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.8909872436523436,
+      "expectedImplicitEulerDropMetres": 3.891300000000537,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    },
+    {
+      "frame": 587,
+      "realTime": 8,
+      "nativeTimeScale": 0.527046263217926,
+      "gravityMetresPerSecondSquared": -9.81,
+      "dropMetres": 3.8991598510742187,
+      "expectedImplicitEulerDropMetres": 3.8994750000005385,
+      "solverStatus": [
+        "SUCCESS"
+      ]
+    }
+  ]
+}

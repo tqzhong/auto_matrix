@@ -1,0 +1,36 @@
+TAP version 13
+# {"worst":{"time":1.1833333333333333,"side":"L","sectionPoints":468,"clearance":-0.06420254826708782,"nonPlanarity":0.002270211720954568},"last":[{"time":1.7000000000000002,"side":"R","sectionPoints":0,"clearance":null,"nonPlanarity":0.0024144727910623068},{"time":1.7000000000000002,"side":"L","sectionPoints":0,"clearance":null,"nonPlanarity":0.0022702117209544223}]}
+# Subtest: the hinged body clears both complete standing-coat cuffs before releasing their controls
+not ok 1 - the hinged body clears both complete standing-coat cuffs before releasing their controls
+  ---
+  duration_ms: 2576.596833
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/front-cuff-passage.test.mts:1:2725'
+  failureType: 'testCodeFailure'
+  error: 'The actual hand cannot pass the complete cuff with the existing 1 mm clearance.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/front-cuff-passage.test.mts:75:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"maximumStep":0.019937254872577883,"maximumSizeError":6.38378239159465e-16,"maximumColdError":3.475725133890934e-14}
+# Subtest: standing-cuff controls preserve their size and are independent of playback history and placement
+ok 2 - standing-cuff controls preserve their size and are independent of playback history and placement
+  ---
+  duration_ms: 2768.718916
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5631.815041

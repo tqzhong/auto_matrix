@@ -1,7 +1,13 @@
 {
-  "recordedAtUtc": "2026-10-31T21:00:37.892987+00:00",
-  "status": "complete-shirt-and-preparation-display-geometry-checked",
-  "activeNativeWorker": null,
+  "recordedAtUtc": "2026-10-31T21:13:15.263331+00:00",
+  "status": "full-corrected-native-guide-diagnostic-running",
+  "activeNativeWorker": {
+    "pid": 38601,
+    "execSession": 81301,
+    "command": "output/tools/blender-4.5.3-arm64/Blender.app/Contents/MacOS/Blender --background --factory-startup --threads 2 --python-exit-code 1 --python output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-corrected-full.py -- --diagnostic",
+    "lastCompleteFrame": 111,
+    "lastCompleteTime": 1.6416666666666666
+  },
   "stoppedWorkers": [
     {
       "pid": 36566,
@@ -37,7 +43,7 @@
     "full-removal-physics",
     "shoulder-release-physics"
   ],
-  "nextAction": "Use the complete corrected-body input (587 adaptive keys at their real times) for the full outer-coat path. First derive and independently check cuff controls for the hinged front-exit body. Native clock candidates and full-density dynamics remain rejected; do not silently treat every key as 1/60 second or waive NO_CONVERGENCE. Complete grip, withdrawal, release, floor contact, detached world rendering and actual gameplay/restore/performance checks remain required.",
+  "nextAction": "Revalidate PID 38601 / exec session 81301, then poll the same full corrected native guide; never restart on observation timeout. On completion inspect all 587 native rows, the retained clock precision rejection and complete coat geometry against the corrected shirt plus twelve actual inner layers. Cuff openings passed 218 finite samples, with real topology and no resizing; this does not accept full sleeves or hand pinch. Full removal, grip/release, ground contact, detached world rendering, gameplay/restore/performance and film quality remain required.",
   "wholeRemovalAccepted": false,
   "highQualityTrilogyGroups": 0,
   "totalTrilogyGroups": 42,
@@ -66,5 +72,6 @@
       "artifact": "preparation-contact-display-verification.json"
     }
   ],
-  "latestContactCheckpoint": "completed-contact-checkpoint.json"
+  "latestContactCheckpoint": "completed-contact-checkpoint.json",
+  "latestCuffCheckpoint": "full-guide-input-checkpoint.json"
 }

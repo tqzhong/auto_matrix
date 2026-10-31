@@ -1,0 +1,1683 @@
+{
+  "sourceHashes": {
+    "front-cuff-passage.test.mts": "b2fe851c935d4014a3516cf750bf75f9de3bf93fd7682ad7cf84e062ddc9f344",
+    "FrontExitBody.mts": "8a85798d8e40e0bca845b9b6b9310c7d56e283962d56232a0b5b45484fef6a7b",
+    "FrontExitCuffs.mts": "a5624722650801bbbc296c7ab3b395527a07d2ef1b22759ec29c935c45708f99",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "corrected-body-input/manifest.json": "95ecd6424e348717d57619d201c544d22785b697db8fc830d0301133afd524eb",
+    "../morpheus-withdrawal-path-2026-10-20/WithdrawalCuffs.mts": "3a4bf2bf5abf17abb7fbd5e9985ab0c7787a8a8d79d3b0ab14142a57ef19f3f6"
+  },
+  "worst": {
+    "time": 1.1916666666666667,
+    "side": "R",
+    "sectionPoints": 500,
+    "clearance": 0.005047446518755141,
+    "nonPlanarity": 0.0021104253746388763
+  },
+  "cuffs": [
+    {
+      "side": "R",
+      "ring": [
+        10257,
+        10258,
+        10306,
+        10303,
+        10304,
+        10305,
+        10301,
+        10302,
+        10300,
+        10299,
+        10298,
+        10297,
+        10296,
+        10295,
+        10293,
+        10291,
+        10292,
+        10290,
+        10289,
+        10288,
+        10287,
+        10285,
+        10286,
+        10317,
+        10281,
+        10282,
+        10279,
+        10280,
+        10278,
+        10277,
+        10276,
+        10273,
+        10274,
+        10275,
+        10271,
+        10272,
+        10269,
+        10270,
+        10266,
+        10267,
+        10268,
+        10316,
+        10283,
+        10284,
+        10310,
+        10309,
+        10307,
+        10308,
+        10264,
+        10262,
+        10263,
+        10260,
+        10261,
+        10265,
+        10314,
+        10315,
+        10312,
+        10313,
+        10311,
+        10294,
+        10259
+      ]
+    },
+    {
+      "side": "L",
+      "ring": [
+        10393,
+        10394,
+        10430,
+        10447,
+        10448,
+        10449,
+        10450,
+        10451,
+        10401,
+        10396,
+        10397,
+        10398,
+        10399,
+        10400,
+        10443,
+        10444,
+        10446,
+        10445,
+        10419,
+        10420,
+        10452,
+        10402,
+        10403,
+        10404,
+        10405,
+        10406,
+        10407,
+        10408,
+        10409,
+        10410,
+        10411,
+        10412,
+        10413,
+        10414,
+        10415,
+        10416,
+        10417,
+        10418,
+        10453,
+        10421,
+        10422,
+        10425,
+        10423,
+        10424,
+        10426,
+        10427,
+        10428,
+        10429,
+        10431,
+        10432,
+        10433,
+        10434,
+        10435,
+        10436,
+        10437,
+        10438,
+        10439,
+        10440,
+        10441,
+        10442,
+        10395
+      ]
+    }
+  ],
+  "geometryPassed": true,
+  "handPassageBeforeRelease": true,
+  "minimumRequiredClearanceModelUnits": 0.0025,
+  "acceptedForProduction": false,
+  "rows": [
+    {
+      "time": 0.8,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.035558844115710565,
+      "nonPlanarity": 0.002110425374638153
+    },
+    {
+      "time": 0.8,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03540773929653193,
+      "nonPlanarity": 0.002127856047104401
+    },
+    {
+      "time": 0.8083333333333333,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.03555812333140423,
+      "nonPlanarity": 0.0021104253746385623
+    },
+    {
+      "time": 0.8083333333333333,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.035407017827427646,
+      "nonPlanarity": 0.0021278560471044497
+    },
+    {
+      "time": 0.8166666666666668,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.03555315814632835,
+      "nonPlanarity": 0.0021104253746386447
+    },
+    {
+      "time": 0.8166666666666668,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03540204792498823,
+      "nonPlanarity": 0.002127856047103298
+    },
+    {
+      "time": 0.8250000000000001,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.035539922963823335,
+      "nonPlanarity": 0.00211042537463784
+    },
+    {
+      "time": 0.8250000000000001,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03538880016757824,
+      "nonPlanarity": 0.002127856047104096
+    },
+    {
+      "time": 0.8333333333333334,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.035514626763224484,
+      "nonPlanarity": 0.0021104253746382657
+    },
+    {
+      "time": 0.8333333333333334,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03536347993185056,
+      "nonPlanarity": 0.00212785604710352
+    },
+    {
+      "time": 0.8416666666666667,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.0354737085409808,
+      "nonPlanarity": 0.002110425374637772
+    },
+    {
+      "time": 0.8416666666666667,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03532252282914309,
+      "nonPlanarity": 0.002127856047103596
+    },
+    {
+      "time": 0.8500000000000001,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.035413832687284666,
+      "nonPlanarity": 0.002110425374638629
+    },
+    {
+      "time": 0.8500000000000001,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03526259007730783,
+      "nonPlanarity": 0.0021278560471036864
+    },
+    {
+      "time": 0.8583333333333334,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.035331884238305626,
+      "nonPlanarity": 0.002110425374638675
+    },
+    {
+      "time": 0.8583333333333334,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03518056374807938,
+      "nonPlanarity": 0.002127856047103617
+    },
+    {
+      "time": 0.8666666666666667,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.03522496391994985,
+      "nonPlanarity": 0.0021104253746378233
+    },
+    {
+      "time": 0.8666666666666667,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03507354180595317,
+      "nonPlanarity": 0.0021278560471037072
+    },
+    {
+      "time": 0.875,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.03509038287786568,
+      "nonPlanarity": 0.0021104253746386022
+    },
+    {
+      "time": 0.875,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.034938832833314046,
+      "nonPlanarity": 0.0021278560471035407
+    },
+    {
+      "time": 0.8833333333333334,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.03492565697213084,
+      "nonPlanarity": 0.002110425374637818
+    },
+    {
+      "time": 0.8833333333333334,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.034773950320265014,
+      "nonPlanarity": 0.0021278560471040472
+    },
+    {
+      "time": 0.8916666666666667,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.034728500505131654,
+      "nonPlanarity": 0.002110425374637696
+    },
+    {
+      "time": 0.8916666666666667,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.03457660638770381,
+      "nonPlanarity": 0.002127856047104096
+    },
+    {
+      "time": 0.9,
+      "side": "R",
+      "sectionPoints": 204,
+      "clearance": 0.03449681924853584,
+      "nonPlanarity": 0.002110425374638173
+    },
+    {
+      "time": 0.9,
+      "side": "L",
+      "sectionPoints": 204,
+      "clearance": 0.0343447048095369,
+      "nonPlanarity": 0.0021278560471040472
+    },
+    {
+      "time": 0.9083333333333334,
+      "side": "R",
+      "sectionPoints": 208,
+      "clearance": 0.034297780050912774,
+      "nonPlanarity": 0.0021104253746386656
+    },
+    {
+      "time": 0.9083333333333334,
+      "side": "L",
+      "sectionPoints": 208,
+      "clearance": 0.03414119338123929,
+      "nonPlanarity": 0.002127856047104415
+    },
+    {
+      "time": 0.9166666666666667,
+      "side": "R",
+      "sectionPoints": 212,
+      "clearance": 0.0340835718584623,
+      "nonPlanarity": 0.0021104253746387185
+    },
+    {
+      "time": 0.9166666666666667,
+      "side": "L",
+      "sectionPoints": 212,
+      "clearance": 0.03392479154193182,
+      "nonPlanarity": 0.0021278560471036656
+    },
+    {
+      "time": 0.925,
+      "side": "R",
+      "sectionPoints": 212,
+      "clearance": 0.03366059445007967,
+      "nonPlanarity": 0.002110425374638623
+    },
+    {
+      "time": 0.925,
+      "side": "L",
+      "sectionPoints": 212,
+      "clearance": 0.03351357061745478,
+      "nonPlanarity": 0.002127856047104082
+    },
+    {
+      "time": 0.9333333333333333,
+      "side": "R",
+      "sectionPoints": 216,
+      "clearance": 0.03316308562296903,
+      "nonPlanarity": 0.0021104253746381954
+    },
+    {
+      "time": 0.9333333333333333,
+      "side": "L",
+      "sectionPoints": 216,
+      "clearance": 0.03301303157653487,
+      "nonPlanarity": 0.0021278560471040264
+    },
+    {
+      "time": 0.9416666666666667,
+      "side": "R",
+      "sectionPoints": 212,
+      "clearance": 0.03276020526911992,
+      "nonPlanarity": 0.00211042537463821
+    },
+    {
+      "time": 0.9416666666666667,
+      "side": "L",
+      "sectionPoints": 212,
+      "clearance": 0.03260200532902397,
+      "nonPlanarity": 0.002127856047103721
+    },
+    {
+      "time": 0.9500000000000001,
+      "side": "R",
+      "sectionPoints": 220,
+      "clearance": 0.032420771013292146,
+      "nonPlanarity": 0.002110425374638205
+    },
+    {
+      "time": 0.9500000000000001,
+      "side": "L",
+      "sectionPoints": 220,
+      "clearance": 0.03225909138265598,
+      "nonPlanarity": 0.0021278560471036517
+    },
+    {
+      "time": 0.9583333333333334,
+      "side": "R",
+      "sectionPoints": 220,
+      "clearance": 0.03204914781861883,
+      "nonPlanarity": 0.0021104253746374053
+    },
+    {
+      "time": 0.9583333333333334,
+      "side": "L",
+      "sectionPoints": 220,
+      "clearance": 0.0318836649807056,
+      "nonPlanarity": 0.002127856047104068
+    },
+    {
+      "time": 0.9666666666666667,
+      "side": "R",
+      "sectionPoints": 228,
+      "clearance": 0.03163062401897071,
+      "nonPlanarity": 0.002110425374638668
+    },
+    {
+      "time": 0.9666666666666667,
+      "side": "L",
+      "sectionPoints": 228,
+      "clearance": 0.03158912375542772,
+      "nonPlanarity": 0.002127856047103596
+    },
+    {
+      "time": 0.9750000000000001,
+      "side": "R",
+      "sectionPoints": 228,
+      "clearance": 0.031114558344344328,
+      "nonPlanarity": 0.0021104253746386022
+    },
+    {
+      "time": 0.9750000000000001,
+      "side": "L",
+      "sectionPoints": 228,
+      "clearance": 0.031088553430852366,
+      "nonPlanarity": 0.0021278560471036725
+    },
+    {
+      "time": 0.9833333333333334,
+      "side": "R",
+      "sectionPoints": 228,
+      "clearance": 0.03003421670844662,
+      "nonPlanarity": 0.002110425374639488
+    },
+    {
+      "time": 0.9833333333333334,
+      "side": "L",
+      "sectionPoints": 228,
+      "clearance": 0.030012044919254067,
+      "nonPlanarity": 0.0021278560471031174
+    },
+    {
+      "time": 0.9916666666666667,
+      "side": "R",
+      "sectionPoints": 232,
+      "clearance": 0.028908456993203026,
+      "nonPlanarity": 0.002110425374638553
+    },
+    {
+      "time": 0.9916666666666667,
+      "side": "L",
+      "sectionPoints": 232,
+      "clearance": 0.028891449754619193,
+      "nonPlanarity": 0.002127856047104061
+    },
+    {
+      "time": 1,
+      "side": "R",
+      "sectionPoints": 240,
+      "clearance": 0.027713632594705086,
+      "nonPlanarity": 0.0021104253746394956
+    },
+    {
+      "time": 1,
+      "side": "L",
+      "sectionPoints": 240,
+      "clearance": 0.02770214481597365,
+      "nonPlanarity": 0.0021278560471029093
+    },
+    {
+      "time": 1.0083333333333333,
+      "side": "R",
+      "sectionPoints": 252,
+      "clearance": 0.026450948397945873,
+      "nonPlanarity": 0.0021104253746382006
+    },
+    {
+      "time": 1.0083333333333333,
+      "side": "L",
+      "sectionPoints": 252,
+      "clearance": 0.026445334563168835,
+      "nonPlanarity": 0.0021278560471044566
+    },
+    {
+      "time": 1.0166666666666666,
+      "side": "R",
+      "sectionPoints": 248,
+      "clearance": 0.025074137083060728,
+      "nonPlanarity": 0.0021104253746382015
+    },
+    {
+      "time": 1.0166666666666666,
+      "side": "L",
+      "sectionPoints": 248,
+      "clearance": 0.025079182756380835,
+      "nonPlanarity": 0.002127856047103985
+    },
+    {
+      "time": 1.0250000000000001,
+      "side": "R",
+      "sectionPoints": 244,
+      "clearance": 0.023934022531500006,
+      "nonPlanarity": 0.00211042537463874
+    },
+    {
+      "time": 1.0250000000000001,
+      "side": "L",
+      "sectionPoints": 244,
+      "clearance": 0.023929720662823496,
+      "nonPlanarity": 0.0021278560471036864
+    },
+    {
+      "time": 1.0333333333333334,
+      "side": "R",
+      "sectionPoints": 256,
+      "clearance": 0.02274435702164713,
+      "nonPlanarity": 0.0021104253746385597
+    },
+    {
+      "time": 1.0333333333333334,
+      "side": "L",
+      "sectionPoints": 256,
+      "clearance": 0.022708747761214735,
+      "nonPlanarity": 0.0021278560471041097
+    },
+    {
+      "time": 1.0416666666666667,
+      "side": "R",
+      "sectionPoints": 268,
+      "clearance": 0.021490628487342664,
+      "nonPlanarity": 0.002110425374638302
+    },
+    {
+      "time": 1.0416666666666667,
+      "side": "L",
+      "sectionPoints": 268,
+      "clearance": 0.021435843938931425,
+      "nonPlanarity": 0.002127856047104096
+    },
+    {
+      "time": 1.05,
+      "side": "R",
+      "sectionPoints": 268,
+      "clearance": 0.020420545755252973,
+      "nonPlanarity": 0.002110425374637787
+    },
+    {
+      "time": 1.05,
+      "side": "L",
+      "sectionPoints": 268,
+      "clearance": 0.020366978851816982,
+      "nonPlanarity": 0.0021278560471044844
+    },
+    {
+      "time": 1.0583333333333333,
+      "side": "R",
+      "sectionPoints": 276,
+      "clearance": 0.0193387721935712,
+      "nonPlanarity": 0.002110425374638702
+    },
+    {
+      "time": 1.0583333333333333,
+      "side": "L",
+      "sectionPoints": 276,
+      "clearance": 0.0192929434787864,
+      "nonPlanarity": 0.00212785604710361
+    },
+    {
+      "time": 1.0666666666666667,
+      "side": "R",
+      "sectionPoints": 288,
+      "clearance": 0.018274899441218295,
+      "nonPlanarity": 0.0021104253746377947
+    },
+    {
+      "time": 1.0666666666666667,
+      "side": "L",
+      "sectionPoints": 288,
+      "clearance": 0.018234240957679056,
+      "nonPlanarity": 0.002127856047104179
+    },
+    {
+      "time": 1.0750000000000002,
+      "side": "R",
+      "sectionPoints": 304,
+      "clearance": 0.017354688513950972,
+      "nonPlanarity": 0.0021104253746386525
+    },
+    {
+      "time": 1.0750000000000002,
+      "side": "L",
+      "sectionPoints": 304,
+      "clearance": 0.01732090276613865,
+      "nonPlanarity": 0.0021278560471036725
+    },
+    {
+      "time": 1.0833333333333335,
+      "side": "R",
+      "sectionPoints": 320,
+      "clearance": 0.01643844850893389,
+      "nonPlanarity": 0.0021104253746394306
+    },
+    {
+      "time": 1.0833333333333335,
+      "side": "L",
+      "sectionPoints": 320,
+      "clearance": 0.01640972680449596,
+      "nonPlanarity": 0.0021278560471033048
+    },
+    {
+      "time": 1.0916666666666668,
+      "side": "R",
+      "sectionPoints": 352,
+      "clearance": 0.015663468292055317,
+      "nonPlanarity": 0.002110425374639544
+    },
+    {
+      "time": 1.0916666666666668,
+      "side": "L",
+      "sectionPoints": 352,
+      "clearance": 0.01564087551164886,
+      "nonPlanarity": 0.0021278560471032423
+    },
+    {
+      "time": 1.1,
+      "side": "R",
+      "sectionPoints": 332,
+      "clearance": 0.014924746941468744,
+      "nonPlanarity": 0.0021104253746377782
+    },
+    {
+      "time": 1.1,
+      "side": "L",
+      "sectionPoints": 332,
+      "clearance": 0.014907047454576227,
+      "nonPlanarity": 0.0021278560471044983
+    },
+    {
+      "time": 1.1083333333333334,
+      "side": "R",
+      "sectionPoints": 332,
+      "clearance": 0.013020566638369804,
+      "nonPlanarity": 0.002110425374637761
+    },
+    {
+      "time": 1.1083333333333334,
+      "side": "L",
+      "sectionPoints": 332,
+      "clearance": 0.013031799185118867,
+      "nonPlanarity": 0.002127856047104415
+    },
+    {
+      "time": 1.1166666666666667,
+      "side": "R",
+      "sectionPoints": 320,
+      "clearance": 0.01089067170894054,
+      "nonPlanarity": 0.002110425374637814
+    },
+    {
+      "time": 1.1166666666666667,
+      "side": "L",
+      "sectionPoints": 320,
+      "clearance": 0.010900625237054476,
+      "nonPlanarity": 0.0021278560471041028
+    },
+    {
+      "time": 1.125,
+      "side": "R",
+      "sectionPoints": 324,
+      "clearance": 0.00916023339094622,
+      "nonPlanarity": 0.0021104253746386716
+    },
+    {
+      "time": 1.125,
+      "side": "L",
+      "sectionPoints": 324,
+      "clearance": 0.009167362601627666,
+      "nonPlanarity": 0.0021278560471037072
+    },
+    {
+      "time": 1.1333333333333333,
+      "side": "R",
+      "sectionPoints": 324,
+      "clearance": 0.008028780558560563,
+      "nonPlanarity": 0.002110425374637877
+    },
+    {
+      "time": 1.1333333333333333,
+      "side": "L",
+      "sectionPoints": 324,
+      "clearance": 0.008033938407695443,
+      "nonPlanarity": 0.0021278560471044775
+    },
+    {
+      "time": 1.1416666666666666,
+      "side": "R",
+      "sectionPoints": 332,
+      "clearance": 0.0073233998827188255,
+      "nonPlanarity": 0.0021104253746382405
+    },
+    {
+      "time": 1.1416666666666666,
+      "side": "L",
+      "sectionPoints": 332,
+      "clearance": 0.007326452718294557,
+      "nonPlanarity": 0.0021278560471041028
+    },
+    {
+      "time": 1.15,
+      "side": "R",
+      "sectionPoints": 352,
+      "clearance": 0.0067847148522139885,
+      "nonPlanarity": 0.002110425374638553
+    },
+    {
+      "time": 1.15,
+      "side": "L",
+      "sectionPoints": 352,
+      "clearance": 0.006787065516295884,
+      "nonPlanarity": 0.0021278560471036656
+    },
+    {
+      "time": 1.1583333333333334,
+      "side": "R",
+      "sectionPoints": 356,
+      "clearance": 0.006254161683761159,
+      "nonPlanarity": 0.0021104253746382536
+    },
+    {
+      "time": 1.1583333333333334,
+      "side": "L",
+      "sectionPoints": 356,
+      "clearance": 0.006256725436111117,
+      "nonPlanarity": 0.0021278560471044428
+    },
+    {
+      "time": 1.1666666666666667,
+      "side": "R",
+      "sectionPoints": 384,
+      "clearance": 0.005658187626837838,
+      "nonPlanarity": 0.0021104253746390862
+    },
+    {
+      "time": 1.1666666666666667,
+      "side": "L",
+      "sectionPoints": 384,
+      "clearance": 0.00564900143438731,
+      "nonPlanarity": 0.0021278560471036934
+    },
+    {
+      "time": 1.175,
+      "side": "R",
+      "sectionPoints": 416,
+      "clearance": 0.005376149920036587,
+      "nonPlanarity": 0.0021104253746382718
+    },
+    {
+      "time": 1.175,
+      "side": "L",
+      "sectionPoints": 416,
+      "clearance": 0.005366419977329606,
+      "nonPlanarity": 0.002127856047104068
+    },
+    {
+      "time": 1.1833333333333333,
+      "side": "R",
+      "sectionPoints": 468,
+      "clearance": 0.005373049966350475,
+      "nonPlanarity": 0.0021104253746387818
+    },
+    {
+      "time": 1.1833333333333333,
+      "side": "L",
+      "sectionPoints": 468,
+      "clearance": 0.005398628929512532,
+      "nonPlanarity": 0.002127856047103603
+    },
+    {
+      "time": 1.1916666666666667,
+      "side": "R",
+      "sectionPoints": 500,
+      "clearance": 0.005047446518755141,
+      "nonPlanarity": 0.0021104253746388763
+    },
+    {
+      "time": 1.1916666666666667,
+      "side": "L",
+      "sectionPoints": 500,
+      "clearance": 0.005067603225746417,
+      "nonPlanarity": 0.0021278560471037072
+    },
+    {
+      "time": 1.2000000000000002,
+      "side": "R",
+      "sectionPoints": 524,
+      "clearance": 0.005829772563281645,
+      "nonPlanarity": 0.0021104253746385476
+    },
+    {
+      "time": 1.2000000000000002,
+      "side": "L",
+      "sectionPoints": 524,
+      "clearance": 0.00577086837057895,
+      "nonPlanarity": 0.0021278560471040195
+    },
+    {
+      "time": 1.2083333333333335,
+      "side": "R",
+      "sectionPoints": 552,
+      "clearance": 0.005682048945400065,
+      "nonPlanarity": 0.0021104253746386283
+    },
+    {
+      "time": 1.2083333333333335,
+      "side": "L",
+      "sectionPoints": 552,
+      "clearance": 0.005631008075196953,
+      "nonPlanarity": 0.0021278560471038044
+    },
+    {
+      "time": 1.2166666666666668,
+      "side": "R",
+      "sectionPoints": 528,
+      "clearance": 0.0077753395382241415,
+      "nonPlanarity": 0.002110425374638588
+    },
+    {
+      "time": 1.2166666666666668,
+      "side": "L",
+      "sectionPoints": 528,
+      "clearance": 0.007750256657642743,
+      "nonPlanarity": 0.0021278560471042485
+    },
+    {
+      "time": 1.225,
+      "side": "R",
+      "sectionPoints": 516,
+      "clearance": 0.012490636260372811,
+      "nonPlanarity": 0.00211042537463858
+    },
+    {
+      "time": 1.225,
+      "side": "L",
+      "sectionPoints": 512,
+      "clearance": 0.01245536050165394,
+      "nonPlanarity": 0.002127856047104415
+    },
+    {
+      "time": 1.2333333333333334,
+      "side": "R",
+      "sectionPoints": 516,
+      "clearance": 0.015431044980588258,
+      "nonPlanarity": 0.002110425374638206
+    },
+    {
+      "time": 1.2333333333333334,
+      "side": "L",
+      "sectionPoints": 512,
+      "clearance": 0.015398520473039462,
+      "nonPlanarity": 0.0021278560471026456
+    },
+    {
+      "time": 1.2416666666666667,
+      "side": "R",
+      "sectionPoints": 560,
+      "clearance": 0.016552961109298776,
+      "nonPlanarity": 0.0021104253746383663
+    },
+    {
+      "time": 1.2416666666666667,
+      "side": "L",
+      "sectionPoints": 556,
+      "clearance": 0.016421237564877275,
+      "nonPlanarity": 0.002127856047105116
+    },
+    {
+      "time": 1.25,
+      "side": "R",
+      "sectionPoints": 560,
+      "clearance": 0.01632433567170387,
+      "nonPlanarity": 0.002110425374638631
+    },
+    {
+      "time": 1.25,
+      "side": "L",
+      "sectionPoints": 560,
+      "clearance": 0.016309804588397234,
+      "nonPlanarity": 0.0021278560471038807
+    },
+    {
+      "time": 1.2583333333333333,
+      "side": "R",
+      "sectionPoints": 536,
+      "clearance": 0.015499305862173764,
+      "nonPlanarity": 0.0021104253746383017
+    },
+    {
+      "time": 1.2583333333333333,
+      "side": "L",
+      "sectionPoints": 536,
+      "clearance": 0.015475727653856217,
+      "nonPlanarity": 0.002127856047103964
+    },
+    {
+      "time": 1.2666666666666666,
+      "side": "R",
+      "sectionPoints": 528,
+      "clearance": 0.015782915059708632,
+      "nonPlanarity": 0.002110425374638491
+    },
+    {
+      "time": 1.2666666666666666,
+      "side": "L",
+      "sectionPoints": 528,
+      "clearance": 0.015723290655502698,
+      "nonPlanarity": 0.0021278560471043317
+    },
+    {
+      "time": 1.275,
+      "side": "R",
+      "sectionPoints": 492,
+      "clearance": 0.018513809913997297,
+      "nonPlanarity": 0.002110425374639252
+    },
+    {
+      "time": 1.275,
+      "side": "L",
+      "sectionPoints": 492,
+      "clearance": 0.018418367303916147,
+      "nonPlanarity": 0.00212785604710429
+    },
+    {
+      "time": 1.2833333333333334,
+      "side": "R",
+      "sectionPoints": 420,
+      "clearance": 0.025857018285153237,
+      "nonPlanarity": 0.0021104253746384682
+    },
+    {
+      "time": 1.2833333333333334,
+      "side": "L",
+      "sectionPoints": 420,
+      "clearance": 0.025974574018699167,
+      "nonPlanarity": 0.002127856047104304
+    },
+    {
+      "time": 1.2916666666666667,
+      "side": "R",
+      "sectionPoints": 432,
+      "clearance": 0.022554420871643322,
+      "nonPlanarity": 0.002110425374637806
+    },
+    {
+      "time": 1.2916666666666667,
+      "side": "L",
+      "sectionPoints": 432,
+      "clearance": 0.02257046163458031,
+      "nonPlanarity": 0.002127856047103825
+    },
+    {
+      "time": 1.3,
+      "side": "R",
+      "sectionPoints": 436,
+      "clearance": 0.017553199485231593,
+      "nonPlanarity": 0.0021104253746381
+    },
+    {
+      "time": 1.3,
+      "side": "L",
+      "sectionPoints": 436,
+      "clearance": 0.017567354384698204,
+      "nonPlanarity": 0.0021278560471025207
+    },
+    {
+      "time": 1.3083333333333333,
+      "side": "R",
+      "sectionPoints": 412,
+      "clearance": 0.013130968346706736,
+      "nonPlanarity": 0.0021104253746381976
+    },
+    {
+      "time": 1.3083333333333333,
+      "side": "L",
+      "sectionPoints": 412,
+      "clearance": 0.013138658819419198,
+      "nonPlanarity": 0.0021278560471042346
+    },
+    {
+      "time": 1.3166666666666669,
+      "side": "R",
+      "sectionPoints": 424,
+      "clearance": 0.01133870390419527,
+      "nonPlanarity": 0.002110425374638201
+    },
+    {
+      "time": 1.3166666666666669,
+      "side": "L",
+      "sectionPoints": 424,
+      "clearance": 0.011340951216298502,
+      "nonPlanarity": 0.0021278560471041236
+    },
+    {
+      "time": 1.3250000000000002,
+      "side": "R",
+      "sectionPoints": 384,
+      "clearance": 0.012170692042660502,
+      "nonPlanarity": 0.002110425374639068
+    },
+    {
+      "time": 1.3250000000000002,
+      "side": "L",
+      "sectionPoints": 384,
+      "clearance": 0.012164350755870714,
+      "nonPlanarity": 0.0021278560471037697
+    },
+    {
+      "time": 1.3333333333333335,
+      "side": "R",
+      "sectionPoints": 352,
+      "clearance": 0.01977577714367088,
+      "nonPlanarity": 0.002110425374637793
+    },
+    {
+      "time": 1.3333333333333335,
+      "side": "L",
+      "sectionPoints": 348,
+      "clearance": 0.019719033455232775,
+      "nonPlanarity": 0.002127856047103943
+    },
+    {
+      "time": 1.3416666666666668,
+      "side": "R",
+      "sectionPoints": 260,
+      "clearance": 0.04458879148471041,
+      "nonPlanarity": 0.002110425374638865
+    },
+    {
+      "time": 1.3416666666666668,
+      "side": "L",
+      "sectionPoints": 260,
+      "clearance": 0.04464013228226676,
+      "nonPlanarity": 0.0021278560471037003
+    },
+    {
+      "time": 1.35,
+      "side": "R",
+      "sectionPoints": 220,
+      "clearance": 0.04113508282766232,
+      "nonPlanarity": 0.002110425374638273
+    },
+    {
+      "time": 1.35,
+      "side": "L",
+      "sectionPoints": 224,
+      "clearance": 0.04116668277775556,
+      "nonPlanarity": 0.002127856047104054
+    },
+    {
+      "time": 1.3583333333333334,
+      "side": "R",
+      "sectionPoints": 140,
+      "clearance": 0.03982785608323416,
+      "nonPlanarity": 0.002110425374638122
+    },
+    {
+      "time": 1.3583333333333334,
+      "side": "L",
+      "sectionPoints": 140,
+      "clearance": 0.03983976354562385,
+      "nonPlanarity": 0.0021278560471033256
+    },
+    {
+      "time": 1.3666666666666667,
+      "side": "R",
+      "sectionPoints": 112,
+      "clearance": 0.040971778723836956,
+      "nonPlanarity": 0.0021104253746383863
+    },
+    {
+      "time": 1.3666666666666667,
+      "side": "L",
+      "sectionPoints": 112,
+      "clearance": 0.04095609288502269,
+      "nonPlanarity": 0.002127856047103527
+    },
+    {
+      "time": 1.375,
+      "side": "R",
+      "sectionPoints": 80,
+      "clearance": 0.045288497350178855,
+      "nonPlanarity": 0.0021104253746389717
+    },
+    {
+      "time": 1.375,
+      "side": "L",
+      "sectionPoints": 80,
+      "clearance": 0.04525129271611147,
+      "nonPlanarity": 0.0021278560471039154
+    },
+    {
+      "time": 1.3833333333333333,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374639005
+    },
+    {
+      "time": 1.3833333333333333,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103173
+    },
+    {
+      "time": 1.3916666666666666,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.00211042537463867
+    },
+    {
+      "time": 1.3916666666666666,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471031382
+    },
+    {
+      "time": 1.4,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746383264
+    },
+    {
+      "time": 1.4,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471039987
+    },
+    {
+      "time": 1.4083333333333332,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746389743
+    },
+    {
+      "time": 1.4083333333333332,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471041028
+    },
+    {
+      "time": 1.4166666666666667,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638355
+    },
+    {
+      "time": 1.4166666666666667,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471042346
+    },
+    {
+      "time": 1.425,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746393646
+    },
+    {
+      "time": 1.425,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471034297
+    },
+    {
+      "time": 1.4333333333333333,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746384543
+    },
+    {
+      "time": 1.4333333333333333,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471034713
+    },
+    {
+      "time": 1.4416666666666669,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638853
+    },
+    {
+      "time": 1.4416666666666669,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103971
+    },
+    {
+      "time": 1.4500000000000002,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746387024
+    },
+    {
+      "time": 1.4500000000000002,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471040195
+    },
+    {
+      "time": 1.4583333333333335,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746381378
+    },
+    {
+      "time": 1.4583333333333335,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471043734
+    },
+    {
+      "time": 1.4666666666666668,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638166
+    },
+    {
+      "time": 1.4666666666666668,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471037003
+    },
+    {
+      "time": 1.475,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638755
+    },
+    {
+      "time": 1.475,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471044428
+    },
+    {
+      "time": 1.4833333333333334,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638553
+    },
+    {
+      "time": 1.4833333333333334,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103714
+    },
+    {
+      "time": 1.4916666666666667,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746383494
+    },
+    {
+      "time": 1.4916666666666667,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471037627
+    },
+    {
+      "time": 1.5,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638007
+    },
+    {
+      "time": 1.5,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471046926
+    },
+    {
+      "time": 1.5083333333333333,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638853
+    },
+    {
+      "time": 1.5083333333333333,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471046856
+    },
+    {
+      "time": 1.5166666666666666,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374639191
+    },
+    {
+      "time": 1.5166666666666666,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471033534
+    },
+    {
+      "time": 1.525,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746383047
+    },
+    {
+      "time": 1.525,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471041583
+    },
+    {
+      "time": 1.5333333333333332,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638009
+    },
+    {
+      "time": 1.5333333333333332,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103145
+    },
+    {
+      "time": 1.5416666666666667,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746384036
+    },
+    {
+      "time": 1.5416666666666667,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471039917
+    },
+    {
+      "time": 1.55,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638393
+    },
+    {
+      "time": 1.55,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103756
+    },
+    {
+      "time": 1.5583333333333333,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746385164
+    },
+    {
+      "time": 1.5583333333333333,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471040195
+    },
+    {
+      "time": 1.5666666666666669,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374639134
+    },
+    {
+      "time": 1.5666666666666669,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471042623
+    },
+    {
+      "time": 1.5750000000000002,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638753
+    },
+    {
+      "time": 1.5750000000000002,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471040195
+    },
+    {
+      "time": 1.5833333333333335,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746381564
+    },
+    {
+      "time": 1.5833333333333335,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471037836
+    },
+    {
+      "time": 1.5916666666666668,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746379083
+    },
+    {
+      "time": 1.5916666666666668,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471035685
+    },
+    {
+      "time": 1.6,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746377253
+    },
+    {
+      "time": 1.6,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471043283
+    },
+    {
+      "time": 1.6083333333333334,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746382865
+    },
+    {
+      "time": 1.6083333333333334,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103756
+    },
+    {
+      "time": 1.6166666666666667,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746391712
+    },
+    {
+      "time": 1.6166666666666667,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471044636
+    },
+    {
+      "time": 1.625,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638461
+    },
+    {
+      "time": 1.625,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471028538
+    },
+    {
+      "time": 1.6333333333333333,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746381304
+    },
+    {
+      "time": 1.6333333333333333,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471034054
+    },
+    {
+      "time": 1.6416666666666666,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746379977
+    },
+    {
+      "time": 1.6416666666666666,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103749
+    },
+    {
+      "time": 1.65,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746379543
+    },
+    {
+      "time": 1.65,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471045364
+    },
+    {
+      "time": 1.6583333333333332,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374637984
+    },
+    {
+      "time": 1.6583333333333332,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471033638
+    },
+    {
+      "time": 1.6666666666666667,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746385008
+    },
+    {
+      "time": 1.6666666666666667,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047104814
+    },
+    {
+      "time": 1.675,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746394496
+    },
+    {
+      "time": 1.675,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471034887
+    },
+    {
+      "time": 1.6833333333333333,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021104253746382787
+    },
+    {
+      "time": 1.6833333333333333,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047103447
+    },
+    {
+      "time": 1.6916666666666669,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638499
+    },
+    {
+      "time": 1.6916666666666669,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002127856047104113
+    },
+    {
+      "time": 1.7000000000000002,
+      "side": "R",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.002110425374638576
+    },
+    {
+      "time": 1.7000000000000002,
+      "side": "L",
+      "sectionPoints": 0,
+      "clearance": null,
+      "nonPlanarity": 0.0021278560471037905
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "frames": 587,
+  "startSeconds": 0,
+  "endSeconds": 8,
+  "irregularTimestamps": true,
+  "physicalVertices": 13960,
+  "physicalFaces": 26916,
+  "displayVertices": 13960,
+  "displayFaces": 26916,
+  "directFullDensity": true,
+  "innerLayers": 13,
+  "boundaryControls": 189,
+  "cuffReleaseAfterSeconds": 1.7,
+  "collarReleaseAfterSeconds": 0.8,
+  "nativeTimeFactor": 31.622776601683793,
+  "clockPrecisionPassed": false,
+  "isolatedClockMaximumErrorMetres": 0.00031514892631978597,
+  "floorZ": -0.0017056860029697417,
+  "actualHandPinchProven": false,
+  "acceptedForProduction": false,
+  "sourceHashes": {
+    "bake-corrected-full.py": "829eb63ede7a1fa55a9a930d93b78c271bed9afd5742211642a55f71a54f9f13",
+    "full_garment.py": "eee1adcdb50e7c16591f055658e947c3cd3415a158adde6ff840bec6172a3302",
+    "boundary-controls.json": "8d1992ae0162a5f055b9b51871b9e4755f229924895f3bc9105404cf352923d6",
+    "corrected-body-input/manifest.json": "95ecd6424e348717d57619d201c544d22785b697db8fc830d0301133afd524eb",
+    "corrected-cuff-input.json": "f379cf135fda5146b78c510d40358961e622182776ee8498faa385c0f7b17463",
+    "native-clock-damped-scaled.json": "2e1d3f2b6272ca830ec6103313a633920781ae704e5d150072fae8d89df423d7",
+    "../../../scripts/cloth_collision.py": "a92c2258e93ccc49f241e17c73f41e4532bc1d5f085dc1f27182272c68e40b44"
+  },
+  "scope": "Full-duration diagnostic guide candidate. Clock precision, solver convergence, complete contact, actual grip/release, appearance and gameplay remain separate unmet gates."
+}

@@ -1,0 +1,24 @@
+TAP version 13
+# {"worst":{"time":1.1916666666666667,"side":"R","sectionPoints":500,"clearance":0.005047446518755141,"nonPlanarity":0.0021104253746388763},"last":[{"time":1.7000000000000002,"side":"R","sectionPoints":0,"clearance":null,"nonPlanarity":0.002110425374638576},{"time":1.7000000000000002,"side":"L","sectionPoints":0,"clearance":null,"nonPlanarity":0.0021278560471037905}]}
+# Subtest: the hinged body clears both complete standing-coat cuffs before releasing their controls
+ok 1 - the hinged body clears both complete standing-coat cuffs before releasing their controls
+  ---
+  duration_ms: 2516.20975
+  type: 'test'
+  ...
+# {"maximumStep":0.019937254872577883,"maximumSizeError":6.522560269672795e-16,"maximumColdError":3.475725133890934e-14}
+# Subtest: standing-cuff controls preserve their size and are independent of playback history and placement
+ok 2 - standing-cuff controls preserve their size and are independent of playback history and placement
+  ---
+  duration_ms: 2773.093708
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5572.324959

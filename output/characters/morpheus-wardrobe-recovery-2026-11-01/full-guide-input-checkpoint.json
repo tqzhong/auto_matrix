@@ -1,0 +1,40 @@
+{
+  "recordedAtUtc": "2026-10-31T21:13:15.263331+00:00",
+  "cuffOpeningTestsPassed": 2,
+  "apertureSamples": 218,
+  "pointsPerCuff": 61,
+  "minimumNetClearanceMetres": 0.001174808457646506,
+  "requiredNetClearanceMetres": 0.001,
+  "handPassageBeforeRelease": true,
+  "adaptiveFrames": 587,
+  "endSeconds": 8,
+  "geometryOrBodyChanged": false,
+  "unorderedPolygonAuditRejected": true,
+  "nativeClockPrecisionPassed": false,
+  "actualHandPinchProven": false,
+  "wholeRemovalAccepted": false,
+  "sourceHashes": {
+    "FrontExitCuffs.mts": "a5624722650801bbbc296c7ab3b395527a07d2ef1b22759ec29c935c45708f99",
+    "front-cuff-passage.test.mts": "b2fe851c935d4014a3516cf750bf75f9de3bf93fd7682ad7cf84e062ddc9f344",
+    "front-cuff-passage-verification.json": "1bf364316ba31875cf3aaf607be6c074d93b83a4859b15ead38adcec10fec11a",
+    "export-corrected-cuffs.mts": "0db87a92587ee85b87369eadd66293f986985869642ecd2210780f9dd34b50ae",
+    "corrected-cuff-input.json": "f379cf135fda5146b78c510d40358961e622182776ee8498faa385c0f7b17463",
+    "probe-native-clock.py": "9eb1398a755d86b926dcf7977a4d517e5e95bccdc98ce033b326f4e4f4a11c36",
+    "native-clock-damped-scaled.json": "2e1d3f2b6272ca830ec6103313a633920781ae704e5d150072fae8d89df423d7",
+    "bake-corrected-full.py": "829eb63ede7a1fa55a9a930d93b78c271bed9afd5742211642a55f71a54f9f13",
+    "corrected-full-physics/metadata.json": "29779b1dc16ea72d126ae0a23598873e131a5ae8106c0efe7660e3a51150c9b6"
+  },
+  "nativeWorker": {
+    "pid": 38601,
+    "execSession": 81301,
+    "verifiedProcess": "38601 02:54 Rs   output/tools/blender-4.5.3-arm64/Blender.app/Contents/MacOS/Blender --background --factory-startup --threads 2 --python-exit-code 1 --python output/characters/morpheus-wardrobe-recovery-2026-11-01/bake-corrected-full.py -- --diagnostic",
+    "lastCompleteFrame": 111,
+    "lastCompleteTime": 1.6416666666666666,
+    "rejectedNativeFrames": [
+      2
+    ]
+  },
+  "acceptedForProduction": false,
+  "highQualityTrilogyGroups": 0,
+  "totalTrilogyGroups": 42
+}

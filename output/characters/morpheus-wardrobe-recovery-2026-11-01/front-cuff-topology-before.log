@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the hinged body clears both complete standing-coat cuffs before releasing their controls
+not ok 1 - the hinged body clears both complete standing-coat cuffs before releasing their controls
+  ---
+  duration_ms: 1.496125
+  type: 'test'
+  location: '/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/front-cuff-passage.test.mts:1:3021'
+  failureType: 'testCodeFailure'
+  error: |-
+    A cuff polygon segment must be an actual mesh boundary edge.
+    
+    undefined !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/tianqizhong/ai_project/auto_matrix/output/characters/morpheus-wardrobe-recovery-2026-11-01/front-cuff-passage.test.mts:60:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# {"maximumStep":0.019937254872577883,"maximumSizeError":6.38378239159465e-16,"maximumColdError":3.475725133890934e-14}
+# Subtest: standing-cuff controls preserve their size and are independent of playback history and placement
+ok 2 - standing-cuff controls preserve their size and are independent of playback history and placement
+  ---
+  duration_ms: 2933.001
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3168.231042
