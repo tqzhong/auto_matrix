@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prepareSkinnedPrecision } from './SkinnedPrecision.js';
 
 /** Bound each bone's influenced vertices once, then move only those bounds.
  * Nonnegative, normalized skin weights keep the posed vertices in the combined box.
@@ -9,6 +10,7 @@ export function enableSkinnedCulling(root: THREE.Object3D): void {
   const point = new THREE.Vector3();
   root.traverse(object => {
     if (!(object instanceof THREE.SkinnedMesh)) return;
+    prepareSkinnedPrecision(object);
     const mesh = object; const { position, skinIndex, skinWeight } = mesh.geometry.attributes;
     const boxes = mesh.skeleton.bones.map(() => new THREE.Box3());
     const transforms = mesh.skeleton.boneInverses.map(inverse => inverse.clone().multiply(mesh.bindMatrix));
