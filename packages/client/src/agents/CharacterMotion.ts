@@ -418,8 +418,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
       moving, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
   }
-  if (input.mobilRefusal || input.mobilFamily && !input.seated || input.mobilReunion?.reunion.phase === 'embracing') {
-    Object.assign(state, newMotion(), { time: input.mobilRefusal?.elapsed ?? input.mobilReunion?.reunion.elapsed ?? input.mobilFamily!.elapsed });
+  if (input.mobilReunion?.reunion.phase === 'embracing') {
+    Object.assign(state, newMotion());
+    return advanceMotion(state, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 }, 0);
+  }
+  if (input.mobilRefusal || input.mobilFamily && !input.seated) {
+    Object.assign(state, newMotion(), { time: input.mobilRefusal?.elapsed ?? input.mobilFamily!.elapsed });
     return { legs: [0, 1].map(() => ({ hip: 0, knee: 0, ankle: 0 })),
       arms: [0, 1].map(i => ({ shoulder: .03, elbow: .08, outward: (i ? 1 : -1) * .14, grip: 0 })),
       hipHeight: 1.98, twist: 0, lean: 0, sway: 0, lunge: 0, roll: 0, headTurn: 0,
