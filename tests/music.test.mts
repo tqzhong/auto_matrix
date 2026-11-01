@@ -10,6 +10,8 @@ import { MUSIC, MusicDirector, musicForScene, type MusicScene, type MusicCue } f
 import { GameAudio, readAudioSettings } from '../packages/client/src/engine/GameAudio.js';
 import { FILM_MUSIC, FILM_TRACKS } from '../packages/client/src/engine/OriginalScore.js';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
 
 function scene(): MusicScene {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -146,7 +148,7 @@ test('saved audio settings preserve zero, clamp old out-of-range values, and tol
   for (const raw of ['broken', 'null', '[]', null]) assert.deepEqual(readAudioSettings(raw), { music: .48, effects: .8, musicMuted: false, effectsMuted: false });
 });
 
-function audioHarness(t: TestContext, saved?: string) {
+function audioHarness(t: TestContext, saved?: string, Audio = GameAudio) {
   class Param {
     value = 1;
     events: { value: number; time: number }[] = [];
@@ -198,7 +200,7 @@ function audioHarness(t: TestContext, saved?: string) {
     fetch: (url: string, options: { signal: AbortSignal }) => new Promise<Response>(resolve => requests.push({ url, resolve, signal: options.signal })) };
   const previous = Object.keys(globals).map(key => Object.getOwnPropertyDescriptor(globalThis, key));
   Object.assign(globalThis, globals);
-  const audio = new GameAudio();
+  const audio = new Audio();
   t.after(() => {
     audio.dispose();
     Object.keys(globals).forEach((key, i) => {
@@ -209,6 +211,27 @@ function audioHarness(t: TestContext, saved?: string) {
   const respond = async (index: number, ok = true) => { await flush(); requests[index].resolve({ ok, status: ok ? 200 : 503, arrayBuffer: async () => new ArrayBuffer(8) } as Response); await flush(); };
   return { audio, contexts, requests, window, document, storage, legacyStorage, flush, respond };
 }
+
+test('development startup stays silent after gestures even with saved unmuted settings', async t => {
+  const bundle = await build({ entryPoints: [fileURLToPath(new URL('../packages/client/src/engine/GameAudio.ts', import.meta.url))],
+    bundle: true, write: false, format: 'esm', platform: 'browser', define: { 'import.meta.env.DEV': 'true' } });
+  const { GameAudio: DevelopmentAudio } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].contents).toString('base64')}`);
+  for (const saved of [undefined, '{"music":0.25,"effects":0.65,"musicMuted":false,"effectsMuted":false}']) {
+    await t.test(saved ? 'saved sound-on preferences' : 'new browser settings', async context => {
+      const h = audioHarness(context, saved, DevelopmentAudio); h.audio.update(scene());
+      h.window.dispatchEvent(new Event('keydown')); await h.audio.resume(); await h.flush();
+      assert.equal(h.audio.settings.musicMuted, true); assert.equal(h.audio.settings.effectsMuted, true);
+      h.audio.alarmSound();
+      const ctx = h.contexts[0];
+      assert.equal(ctx.gains[0].gain.value, 0); assert.equal(ctx.gains[1].gain.value, 0);
+      assert.equal(h.requests.length, 0); assert.equal(ctx.sources.length, 0); assert.equal(ctx.oscillators.length, 0);
+      h.audio.toggle('effects'); h.audio.alarmSound(); assert.equal(ctx.oscillators.length, 3);
+      h.audio.toggle('music'); await h.respond(0);
+      assert.equal(ctx.gains[0].gain.value, saved ? .25 : .48);
+      assert.equal(ctx.gains[1].gain.value, saved ? .65 : .8);
+    });
+  }
+});
 
 test('audio waits for a gesture, loops a cue once, ducks dialogue, and sends the same mix to recordings', async t => {
   const h = audioHarness(t); const game = scene(); h.audio.update(game);

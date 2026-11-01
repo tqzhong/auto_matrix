@@ -45,6 +45,7 @@ export class GameAudio {
     let saved = null;
     try { saved = localStorage.getItem('matrix:audio'); } catch { /* Storage may be disabled. */ }
     this.settings = readAudioSettings(saved);
+    if (import.meta.env?.DEV) { this.settings.musicMuted = true; this.settings.effectsMuted = true; }
     window.addEventListener('pointerdown', this.unlock);
     window.addEventListener('keydown', this.unlock);
     document.addEventListener('visibilitychange', this.visibility);
