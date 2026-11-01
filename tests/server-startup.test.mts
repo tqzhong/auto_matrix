@@ -113,6 +113,17 @@ test('shutdown after a rejected checkpoint preserves the original file for recov
   assert.equal(await readFile(f.file, 'utf8'), damaged, 'a failed load must not silently replace the original with a new world');
 });
 
+test('a damaged character memory blocks startup while preserving the world and damaged file for recovery', { timeout: 30000 }, async t => {
+  const f = await fixture(t), memoryFile = path.join(f.directory, 'memories/neo.json');
+  const worldBefore = await readFile(f.file, 'utf8'), damaged = '{"agentId":"neo","memories":[';
+  await writeFile(memoryFile, damaged);
+  const server = start(t, f.directory, 'normal'); await server.exited(1);
+  assert.match(server.output(), /Cannot load character memory neo\.json/);
+  assert.doesNotMatch(server.output(), /STARTUP_LISTENING/, 'an incomplete set of character memories cannot serve a replacement world');
+  assert.equal(await readFile(f.file, 'utf8'), worldBefore);
+  assert.equal(await readFile(memoryFile, 'utf8'), damaged);
+});
+
 test('a fully loaded server saves and resumes the same story, memories and relationships across restarts', { timeout: 30000 }, async t => {
   const f = await fixture(t);
   for (let restart = 0; restart < 2; restart++) {

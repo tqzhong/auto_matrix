@@ -13,6 +13,7 @@ export class PersistentMemoryManager extends MemoryManager {
   private dataDir: string;
   private dirtyAgents: Set<AgentId> = new Set();
   private loaded = false;
+  private pending: Promise<void> = Promise.resolve();
 
   constructor(dataDir: string = 'data/memories') {
     super();
@@ -34,27 +35,24 @@ export class PersistentMemoryManager extends MemoryManager {
    */
   async loadAll(): Promise<number> {
     let totalLoaded = 0;
-    try {
-      await fs.mkdir(this.dataDir, { recursive: true });
-      const files = await fs.readdir(this.dataDir);
-      const jsonFiles = files.filter(f => f.endsWith('.json'));
+    await fs.mkdir(this.dataDir, { recursive: true });
+    const files = await fs.readdir(this.dataDir);
+    const jsonFiles = files.filter(f => f.endsWith('.json'));
 
-      for (const file of jsonFiles) {
-        try {
-          const filePath = path.join(this.dataDir, file);
-          const raw = await fs.readFile(filePath, 'utf-8');
-          const data: PersistedMemories = JSON.parse(raw);
-
-          if (data.agentId && Array.isArray(data.memories)) {
-            this.replaceMemories(data.agentId, data.memories);
-            totalLoaded += data.memories.length;
-          }
-        } catch {
-          // Skip corrupted files
-        }
+    for (const file of jsonFiles) {
+      try {
+        const filePath = path.join(this.dataDir, file);
+        const raw = await fs.readFile(filePath, 'utf-8');
+        const data: PersistedMemories = JSON.parse(raw);
+        if (!data || data.agentId !== path.basename(file, '.json') || !Array.isArray(data.memories)
+          || data.memories.some(memory => !memory || memory.agentId !== data.agentId || typeof memory.id !== 'string'
+            || typeof memory.content !== 'string' || !Number.isFinite(memory.timestamp) || !Number.isFinite(memory.importance)
+            || !Array.isArray(memory.tags) || !Array.isArray(memory.relatedAgents))) throw new Error('Unsupported character memories');
+        this.replaceMemories(data.agentId, data.memories);
+        totalLoaded += data.memories.length;
+      } catch (error) {
+        throw new Error(`Cannot load character memory ${file}`, { cause: error });
       }
-    } catch {
-      // Directory might not exist yet - that's fine
     }
 
     this.loaded = true;
@@ -85,48 +83,48 @@ export class PersistentMemoryManager extends MemoryManager {
    * Save all dirty agents to disk. Call periodically (every 60 ticks).
    */
   async saveAll(): Promise<number> {
-    if (this.dirtyAgents.size === 0) return 0;
+    if (this.dirtyAgents.size === 0) { await this.pending; return 0; }
 
-    await fs.mkdir(this.dataDir, { recursive: true });
-
-    let savedCount = 0;
     const agentsToSave = Array.from(this.dirtyAgents);
     this.dirtyAgents = new Set();
-
-    for (const agentId of agentsToSave) {
+    // Capture and enqueue every snapshot before disk I/O yields to new events.
+    const saved = await Promise.all(agentsToSave.map(async agentId => {
       try {
-        const memories = this.getAllMemories(agentId);
-        const data: PersistedMemories = {
-          agentId,
-          memories,
-          lastSaved: Date.now(),
-        };
-        const filePath = path.join(this.dataDir, `${agentId}.json`);
-        await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-        savedCount++;
+        await this.writeAgent(agentId);
+        return 1;
       } catch {
         // Re-add to dirty set so we retry next time
         this.dirtyAgents.add(agentId);
+        return 0;
       }
-    }
-
-    return savedCount;
+    }));
+    return saved.reduce<number>((sum, count) => sum + count, 0);
   }
 
   /**
    * Save a single agent's memories to disk immediately.
    */
   async saveAgent(agentId: AgentId): Promise<void> {
-    await fs.mkdir(this.dataDir, { recursive: true });
+    this.dirtyAgents.delete(agentId);
+    try { await this.writeAgent(agentId); }
+    catch (error) { this.dirtyAgents.add(agentId); throw error; }
+  }
+
+  private writeAgent(agentId: AgentId): Promise<void> {
     const memories = this.getAllMemories(agentId);
     const data: PersistedMemories = {
       agentId,
       memories,
       lastSaved: Date.now(),
     };
+    const serialized = JSON.stringify(data, null, 2);
     const filePath = path.join(this.dataDir, `${agentId}.json`);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    this.dirtyAgents.delete(agentId);
+    this.pending = this.pending.catch(() => {}).then(async () => {
+      await fs.mkdir(this.dataDir, { recursive: true });
+      await fs.writeFile(`${filePath}.tmp`, serialized, 'utf-8');
+      await fs.rename(`${filePath}.tmp`, filePath);
+    });
+    return this.pending;
   }
 
   /**
