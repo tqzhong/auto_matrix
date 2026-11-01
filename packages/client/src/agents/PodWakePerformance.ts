@@ -27,6 +27,9 @@ function placeRunoffBody(rig: HeroRig, elapsed: number): void {
     if (elapsed < 4.6) correction = Math.max(0, correction);
     runoffContacts.set(rig, { elapsed, frame, meshes, correction });
   }
+  // Release downward attraction before the final skin sample leaves the pipe.
+  // Keep upward clearance so the patient cannot sink through the outlet.
+  if (correction < 0) correction *= 1 - THREE.MathUtils.smoothstep(elapsed, 6.6, 6.9);
   const pelvis = rig.bones.get('pelvis')!, target = pelvis.getWorldPosition(new THREE.Vector3());
   target.y += correction * weight; pelvis.position.copy(pelvis.parent!.worldToLocal(target));
   rig.root.updateWorldMatrix(true, true);
