@@ -2530,7 +2530,8 @@ export class PlayerControls {
       // Keep the cinematic shot in the open channel; V retains free eye movement.
       const center = FILM_SETS.film_power_plant_pods.center;
       const interior = (this.motion.podRescue ?? 0) >= POD_RESCUE.hoisted + .65;
-      const approach = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, 4.4, 5.3);
+      // Move beneath the opening before the rising head reaches the solid deck.
+      const approach = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, 3.5, 4.4);
       const ideal = interior ? new THREE.Vector3(center.x + 5.2, center.y + 4.4, center.z + 18)
         : new THREE.Vector3(this.position.x + 6.5 - approach * 4.5, Math.min(center.y - 2.1, this.position.y + 4.8), this.position.z + 4.5 - approach * 2.5);
       if (resetCamera || interior !== this.podInterior) this.camera.position.copy(ideal);

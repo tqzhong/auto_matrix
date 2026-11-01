@@ -19,7 +19,8 @@ async function setup(t: test.TestContext) {
   const frame = (beat: AwakeningBeat) => {
     const pose = awakeningPose(beat);
     h.neo.position = filmPosition('film_power_plant_pods', pose.x, pose.z); h.neo.position.y += pose.y;
-    h.neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose }, startedAt: 0, duration: 1, progress: 0 };
+    h.neo.currentAction = { type: 'idle', parameters: { filmPose: pose.pose,
+      ...(beat.kind === 'rescue' ? { podRescue: beat.elapsed } : {}) }, startedAt: 0, duration: 1, progress: 0 };
     h.renderer.updateAgent('neo', h.neo);
     controls.performing = true; camera.fov = 68; camera.updateProjectionMatrix();
     // Exercise the same ordering as Engine: input/camera, actual posed actor, then camera resampling.
@@ -86,6 +87,42 @@ test('first-person oral removal frames both actual hands throughout the establis
       }
     }
     t.diagnostic(JSON.stringify(results));
+  } finally { h.dispose(); }
+});
+
+test('the rescue shot sees the actual head through the open hatch throughout the approach to the ship', async t => {
+  const h = await setup(t), blocked: unknown[] = [];
+  try {
+    const check = (elapsed: number, cold: boolean) => {
+      const beat = { kind: 'rescue' as const, elapsed };
+      if (cold) { h.at(elapsed, 100, false, beat); h.controls.possess(h.neo); }
+      h.frame(beat);
+      const body = h.renderer.getAgentBody('neo')!, head = new THREE.Box3(); let samples = 0;
+      body.traverseVisible(object => {
+        if (!(object instanceof THREE.SkinnedMesh) || (object.material as THREE.Material).name !== 'Skin') return;
+        object.skeleton.update(); const a = object.geometry.attributes;
+        for (const vertex of new Set(object.geometry.index!.array)) {
+          if (![0, 1, 2, 3].some(k => a.skinWeight.getComponent(vertex, k) > .5
+            && object.skeleton.bones[a.skinIndex.getComponent(vertex, k)].name === 'head')) continue;
+          head.expandByPoint(object.localToWorld(object.getVertexPosition(vertex, new THREE.Vector3()))); samples++;
+        }
+      });
+      assert.ok(samples > 100, 'sample the delivered posed head skin');
+      const bay = h.root.getObjectByName('pod-rescue-bay')!, surfaces: THREE.Object3D[] = [];
+      bay.traverseVisible(object => { if (object instanceof THREE.Mesh) surfaces.push(object); });
+      const center = head.getCenter(new THREE.Vector3());
+      for (const target of [center, center.clone().setY(head.max.y - .015)]) {
+        const delta = target.clone().sub(h.camera.position), distance = delta.length();
+        const hit = new THREE.Raycaster(h.camera.position, delta.divideScalar(distance), .02, distance - .02).intersectObjects(surfaces, false)[0];
+        if (hit) blocked.push({ elapsed, cold, camera: h.camera.position.toArray(), head: target.toArray(),
+          obstruction: hit.object.name || hit.object.parent?.name, distance: hit.distance });
+      }
+    };
+    for (const elapsed of [3.3, 3.8, 4.1, 4.35, 4.515, 4.7, 4.9, 5.1, 5.3, 5.6, 5.65, 6, 6.5]) check(elapsed, true);
+    h.at(0, 100, false, { kind: 'rescue', elapsed: 0 }); h.controls.possess(h.neo);
+    for (let frame = 0; frame <= 390; frame++) check(frame / 60, false);
+    t.diagnostic(JSON.stringify({ coldPoses: 13, sequentialFrames: 391, blocked }));
+    assert.deepEqual(blocked, [], 'the camera must approach the real opening before the rising head is hidden by the solid deck');
   } finally { h.dispose(); }
 });
 
