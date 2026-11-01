@@ -1,9 +1,19 @@
 import type { Engine, FrameProfile } from '../engine/Engine.js';
-import { Frustum, Matrix4, PointLight, Sphere, Vector3, type Object3D } from 'three';
+import { Frustum, LinearMipmapLinearFilter, Matrix4, Mesh, MeshPhysicalMaterial, PointLight, REVISION, Sphere, Vector3, type Camera, type Material, type Object3D, type WebGLRenderTarget } from 'three';
 import { GpuTimer } from './GpuTimer.js';
 import { CharacterModels } from '../agents/CharacterModel.js';
 import { HeroModels } from '../agents/HeroModel.js';
 import { FightingHands } from '../agents/FightingHands.js';
+
+export function frameDrawPass(camera: Camera, mainCamera: Camera, material: Material, target: WebGLRenderTarget | null): string {
+  if (material.type === 'MeshDepthMaterial' || material.type === 'MeshDistanceMaterial') return 'shadows';
+  if (material.type === 'MeshNormalMaterial') return 'occlusion';
+  // Three.js 0.170.0 copies opaque objects into this multisampled, mipmapped
+  // target before drawing glass. It uses the same camera as the color pass.
+  const transmission = target?.samples === 4 && target.texture.generateMipmaps && target.texture.minFilter === LinearMipmapLinearFilter;
+  if (transmission && camera.type === 'PerspectiveCamera') return camera === mainCamera ? 'transmission' : 'reflectionTransmission';
+  return camera === mainCamera ? 'scene' : camera.type === 'PerspectiveCamera' ? 'reflectionOrPreview' : 'postprocessing';
+}
 
 // Opt-in development measurement. Sampling does not capture or encode frames;
 // a separate button exports one lossless frame when sampling is idle.
@@ -186,9 +196,7 @@ export class PerformancePanel {
     const renderer = this.engine.renderer; const draw = renderer.renderBufferDirect; this.restoreDraw = draw;
     renderer.renderBufferDirect = (...args) => {
       const [camera, , , material, object] = args;
-      const pass = material.type === 'MeshDepthMaterial' || material.type === 'MeshDistanceMaterial' ? 'shadows'
-        : material.type === 'MeshNormalMaterial' ? 'occlusion' : camera === this.engine.camera ? 'scene'
-          : camera.type === 'PerspectiveCamera' ? 'reflectionOrPreview' : 'postprocessing';
+      const pass = frameDrawPass(camera, this.engine.camera, material, renderer.getRenderTarget());
       const calls = renderer.info.render.calls; const triangles = renderer.info.render.triangles;
       draw.apply(renderer, args);
       const total = frameDraws[pass] ??= { calls: 0, triangles: 0 };
@@ -256,10 +264,17 @@ export class PerformancePanel {
     const podTowers = this.engine.scene.getObjectByName('pod-distant-towers');
     const lightFrustum = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(this.engine.camera.projectionMatrix, this.engine.camera.matrixWorldInverse));
     const lights: { name: string; type: string; intensity: number; distance: number; intersectsView: boolean; position: number[] }[] = [];
+    const transmissionSurfaces: { name: string; parent: string; material: string; transmission: number; thickness: number; roughness: number; ior: number; inMainView: boolean }[] = [];
     this.engine.scene.traverseVisible(object => {
       if (object instanceof PointLight) {
         const position = object.getWorldPosition(new Vector3());
         lights.push({ name: object.name, type: object.type, intensity: object.intensity, distance: object.distance, intersectsView: !object.distance || lightFrustum.intersectsSphere(new Sphere(position, object.distance)), position: position.toArray() });
+      }
+      if (object instanceof Mesh) for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        if (!(material instanceof MeshPhysicalMaterial) || material.transmission <= 0) continue;
+        transmissionSurfaces.push({ name: object.name, parent: object.parent?.name ?? '', material: material.name,
+          transmission: material.transmission, thickness: material.thickness, roughness: material.roughness, ior: material.ior,
+          inMainView: !object.frustumCulled || lightFrustum.intersectsObject(object) });
       }
     });
     const report = {
@@ -269,6 +284,8 @@ export class PerformancePanel {
       browserMainThread: { supported: PerformanceObserver.supportedEntryTypes.filter(type => ['longtask', 'long-animation-frame'].includes(type)),
         entries: this.browserEntries.filter(entry => entry.startTime >= this.startAt + 3000).map(entry => entry.toJSON()) },
       lights,
+      transmissionSurfaces,
+      drawClassification: { threeRevision: REVISION, transmissionTargetSamples: 4, transmissionTargetMinFilter: 'LinearMipmapLinearFilter' },
       finiteLightCulling: { enabled: this.engine.lightCulling.enabled, ...this.engine.lightCulling.lastView },
       occlusionInPlace: this.engine.postProcessing.occlusionInPlace,
       occlusionSingleChannel: this.engine.postProcessing.occlusionSingleChannel,
