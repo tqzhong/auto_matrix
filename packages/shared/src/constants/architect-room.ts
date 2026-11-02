@@ -2,7 +2,7 @@ import type { ArchitectEncounter } from './film-story.js';
 
 export const ARCHITECT_ROOM = {
   radius: 23, centerZ: -6, height: 15.5, entry: { x: 0, z: 13 },
-  chair: { x: 0, z: -14, seat: 1.22, width: 2.25, depth: 1.85, back: 3.95, arm: 2.04 },
+  chair: { x: 0, z: -14, seat: .97, width: 2.25, depth: 1.3, back: 3.75, arm: 1.84 },
   doors: { matrix: { x: -8, z: -27.5 }, source: { x: 8, z: -27.5 } },
   doorWidth: 4.8, doorHeight: 7.9, openingSeconds: 1.8,
   screens: { columns: 48, rows: 8, width: 2.78, height: 1.58, pitchY: 1.73 },

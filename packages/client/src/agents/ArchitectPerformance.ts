@@ -61,13 +61,14 @@ export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture, del
     // AgentRenderer already offsets the character root by -1, matching the
     // film set floor. Do not apply that offset a second time inside the rig.
     rig.detail.position.set(0, 0, 0); rig.detail.rotation.set(0, 0, 0);
-    rig.torso.position.set(0, 1.48, -.06); rig.torso.rotation.set(-.045, 0, 0);
+    const hipHeight = ARCHITECT_ROOM.chair.seat + .31;
+    rig.torso.position.set(0, hipHeight, -.06); rig.torso.rotation.set(-.045, 0, 0);
     rig.head.rotation.set(.045, Math.sin(gesture.elapsed * .3) * .025, 0);
     rig.root.updateWorldMatrix(true, true);
     const rotation = rig.detail.getWorldQuaternion(new THREE.Quaternion());
     for (let i = 0; i < 2; i++) {
       const sign = i ? 1 : -1;
-      rig.hips[i].position.set(sign * .225, 1.48, -.06); rig.hips[i].updateWorldMatrix(false, true);
+      rig.hips[i].position.set(sign * .225, hipHeight, -.06); rig.hips[i].updateWorldMatrix(false, true);
       reach(rig.hips[i], rig.knees[i], rig.ankles[i].position,
         rig.detail.localToWorld(new THREE.Vector3(sign * .32, .16, 1.02)), new THREE.Vector3(sign * .1, .3, 1).applyQuaternion(rotation));
       rig.ankles[i].quaternion.copy(rig.knees[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
@@ -75,7 +76,7 @@ export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture, del
       const wrist = rig.mobilWrists![i], palm = new THREE.Vector3(0, -.14, -.05);
       const orientation = rotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), i ? 0 : .6))
         .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
-      const contact = rig.detail.localToWorld(new THREE.Vector3(sign * .84, i ? ARCHITECT_ROOM.chair.arm + .0715 : 2.22, i ? .73 : .28));
+      const contact = rig.detail.localToWorld(new THREE.Vector3(sign * .84, ARCHITECT_ROOM.chair.arm + (i ? .0715 : .18), i ? .73 : .28));
       reach(rig.shoulders[i], rig.elbows[i], wrist.position,
         contact.sub(palm.applyQuaternion(orientation)), new THREE.Vector3(sign * .3, -1, -.35).applyQuaternion(rotation));
       wrist.quaternion.copy(rig.elbows[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));

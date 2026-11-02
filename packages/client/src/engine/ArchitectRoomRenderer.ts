@@ -80,15 +80,16 @@ export class ArchitectRoomRenderer {
     this.screens.forEach((screen, i) => { screen.name = `CRT-wall-neo-${i}`; screen.count = counts[i]; screen.instanceMatrix.needsUpdate = true; screen.computeBoundingSphere(); });
     cases.computeBoundingSphere();
     this.chair.name = 'architect-black-leather-swivel-chair'; this.chair.position.set(room.chair.x, 0, room.chair.z);
-    this.box(this.chair, leather, 0, room.chair.seat - .16, .05, 1.73, .32, room.chair.depth, .12);
-    this.box(this.chair, leather, 0, 2.58, -.77, 1.9, 2.67, .36, .15);
-    this.box(this.chair, leather, 0, 3.75, -.74, 1.72, .36, .38, .12);
+    const cushion = this.box(this.chair, leather, 0, room.chair.seat - .16, -.10, 1.73, .32, room.chair.depth, .12);
+    cushion.rotation.x = .1;
+    this.box(this.chair, leather, 0, (room.chair.seat + room.chair.back - .01) / 2, -.77, 1.9, room.chair.back - room.chair.seat - .06, .36, .15);
+    this.box(this.chair, leather, 0, room.chair.back - .20, -.74, 1.72, .36, .38, .12);
     for (const side of [-1, 1]) {
       this.box(this.chair, leather, side * .84, room.chair.arm, .12, .26, .105, 1.42, .05);
-      this.box(this.chair, chrome, side * .84, 1.56, .28, .065, .83, .07);
-      this.box(this.chair, chrome, side * .84, 1.29, -.55, .065, .4, .07);
+      this.box(this.chair, chrome, side * .84, (room.chair.seat + room.chair.arm - .14) / 2, .28, .065, room.chair.arm - room.chair.seat + .01, .07);
+      this.box(this.chair, chrome, side * .84, (room.chair.seat + room.chair.arm - .68) / 2, -.55, .065, room.chair.arm - room.chair.seat - .42, .07);
     }
-    this.mesh(this.chair, this.own(new THREE.CylinderGeometry(.12, .14, .9, 16)), chrome, 0, .57, -.17);
+    this.mesh(this.chair, this.own(new THREE.CylinderGeometry(.12, .14, room.chair.seat - .32, 16)), chrome, 0, room.chair.seat / 2 - .04, -.17);
     for (let i = 0; i < 5; i++) {
       const angle = i / 5 * Math.PI * 2, spoke = this.box(this.chair, chrome, Math.sin(angle) * .47, .14, -.17 + Math.cos(angle) * .47, .1, .09, .96, .035); spoke.rotation.y = angle;
       const wheel = this.mesh(this.chair, this.own(new THREE.CylinderGeometry(.09, .09, .13, 12)), black, Math.sin(angle) * .93, .095, -.17 + Math.cos(angle) * .93); wheel.rotation.z = Math.PI / 2;

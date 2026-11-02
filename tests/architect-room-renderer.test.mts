@@ -67,6 +67,39 @@ test('the seated Architect’s actual shoes rest at the room floor', async t => 
   assert.ok(bottom >= -.012 && bottom < .035, `shoes float or penetrate the floor: ${bottom}, floor 0`);
 });
 
+test('the seated knees stay above the cushion and the complete trousers clear the actual chair', async t => {
+  const h = await fixture(t), room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room);
+  t.after(() => renderer.dispose()); room.position.z = -ARCHITECT_ROOM.chair.z; room.updateMatrixWorld(true);
+  const knee = Math.min(...h.rig.knees.map(joint => joint.getWorldPosition(new THREE.Vector3()).y));
+  assert.ok(knee > ARCHITECT_ROOM.chair.seat + .07, `knees ${knee} lie below or inside the seat ${ARCHITECT_ROOM.chair.seat}`);
+  const surface = (root: THREE.Object3D) => {
+    const result = [];
+    root.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      if (object instanceof THREE.SkinnedMesh) object.skeleton.update();
+      const p = object.geometry.attributes.position, index = object.geometry.index;
+      for (let offset = 0; offset < (index?.count ?? p.count); offset += 3) {
+        const ids = [0, 1, 2].map(part => index ? index.getX(offset + part) : offset + part);
+        const points = ids.map(vertex => object.localToWorld(object.getVertexPosition(vertex, new THREE.Vector3())));
+        result.push({ face: result.length, ids, points, box: new THREE.Box3().setFromPoints(points) });
+      }
+    });
+    return result;
+  };
+  const pants = surface(h.rig.root.getObjectByName('architect-work-trousers')!);
+  const contact = crossings(pants, surface(renderer.chair), false);
+  assert.equal(contact.count, 0, `actual trousers enter the cushion or frame: ${JSON.stringify(contact)}`);
+  const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float64Array(pants.flatMap(face => face.points.flatMap(point => point.toArray()))), 3));
+  const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), target = new THREE.Mesh(geometry, material);
+  t.after(() => { geometry.dispose(); material.dispose(); });
+  let supported = 0;
+  for (const side of [-1, 1]) for (const x of [.2, .3, .4]) for (const z of [-.1, .05, .2, .35]) {
+    const hit = new THREE.Raycaster(new THREE.Vector3(side * x, 0, z), new THREE.Vector3(0, 1, 0), 0, 2).intersectObject(target)[0];
+    if (hit && new THREE.Raycaster(hit.point, new THREE.Vector3(0, -1, 0), 0, .05).intersectObject(renderer.chair, true).length) supported++;
+  }
+  assert.ok(supported >= 6, `the complete trousers float above the seat: only ${supported} support rays`);
+});
+
 test('the coat opening follows both actual thighs through sitting, partial bending, walking and restoration', async t => {
   const h = await fixture(t, true), parts = ['architect-tailored-jacket', 'architect-shirt'].map(name => h.rig.root.getObjectByName(name) as THREE.SkinnedMesh);
   const influence = () => {
