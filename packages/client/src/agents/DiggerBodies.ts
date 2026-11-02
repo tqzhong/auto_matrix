@@ -150,10 +150,15 @@ export class DiggerBodies {
     rig.detail.add(model); entry.model = model;
     const inverse = new THREE.Matrix4(), matrix = new THREE.Matrix4(), center = new THREE.Vector3();
     const openings: { mesh: THREE.Mesh; target: number }[] = [], thigh = new THREE.Vector3();
+    const walking: { mesh: THREE.Mesh; target: number; back: boolean }[] = [];
     if (entry.role === 'architect') model.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       const target = object.morphTargetDictionary?.['architect-seated-opening'];
       if (target !== undefined) openings.push({ mesh: object, target });
+      for (const back of [false, true]) {
+        const target = object.morphTargetDictionary?.[back ? 'architect-walk-back' : 'architect-walk-front'];
+        if (target !== undefined) walking.push({ mesh: object, target, back });
+      }
     });
     const synchronize = () => {
       inverse.copy(rig.detail.matrixWorld).invert();
@@ -168,14 +173,21 @@ export class DiggerBodies {
         }
         bone.matrixWorldNeedsUpdate = true;
       }
-      if (openings.length) {
-        let flexion = Infinity;
+      if (openings.length || walking.length) {
+        let flexion = Infinity, forward = 0, backward = 0;
         for (const hip of rig.hips) {
           thigh.set(0, -1, 0).applyQuaternion(hip.quaternion);
-          flexion = Math.min(flexion, Math.atan2(thigh.z, -thigh.y));
+          const angle = Math.atan2(thigh.z, -thigh.y);
+          flexion = Math.min(flexion, angle); forward = Math.max(forward, angle); backward = Math.max(backward, -angle);
         }
-        const amount = architectSeatedPoseActive(rig) ? THREE.MathUtils.smoothstep(flexion, .2, 1.05) : 0;
+        const seated = architectSeatedPoseActive(rig);
+        const amount = seated ? THREE.MathUtils.smoothstep(flexion, .2, 1.05) : 0;
         for (const { mesh, target } of openings) mesh.morphTargetInfluences![target] = amount;
+        if (walking.length) {
+          const front = seated ? 0 : THREE.MathUtils.smoothstep(forward, .28, .8);
+          const back = seated ? 0 : THREE.MathUtils.smoothstep(backward, .12, .5);
+          for (const { mesh, target, back: rear } of walking) mesh.morphTargetInfluences![target] = rear ? back : front;
+        }
       }
     };
     synchronize();
