@@ -27,8 +27,16 @@ async function shipped(name: string) {
   if (name.endsWith('-head')) asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
   return asset;
 }
-async function fixture(t: TestContext) {
+async function fixture(t: TestContext, coatOpening = false) {
   const assets = Object.fromEntries(await Promise.all(['architect-head', 'architect-body', 'neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club', 'smith', 'morpheus', 'choi', 'dujour'].map(async name => [name, await shipped(name)])));
+  if (coatOpening) {
+    for (const name of ['architect-tailored-jacket', 'architect-shirt']) {
+      const part = assets['architect-body'].scene.getObjectByName(name) as THREE.SkinnedMesh;
+      // Zero displacements isolate the real rig's shared costume driver from fitting.
+      part.geometry.morphAttributes.position = [new THREE.BufferAttribute(new Float32Array(part.geometry.attributes.position.count * 3), 3)];
+      part.geometry.morphTargetsRelative = true; part.updateMorphTargets(); part.morphTargetDictionary = { 'architect-seated-opening': 0 };
+    }
+  }
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => assets[String(url).split('/').pop()!.replace('.glb', '')]);
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const previous = globalThis.document;
@@ -57,6 +65,32 @@ test('the seated Architect’s actual shoes rest at the room floor', async t => 
   // Character root and set root both receive the -1 runtime offset, so the
   // floor is zero in this fixture; the old generic sitting pose was below it.
   assert.ok(bottom >= -.012 && bottom < .035, `shoes float or penetrate the floor: ${bottom}, floor 0`);
+});
+
+test('the coat opening follows both actual thighs through sitting, partial bending, walking and restoration', async t => {
+  const h = await fixture(t, true), parts = ['architect-tailored-jacket', 'architect-shirt'].map(name => h.rig.root.getObjectByName(name) as THREE.SkinnedMesh);
+  const influence = () => {
+    const values = parts.map(part => part.morphTargetInfluences![part.morphTargetDictionary!['architect-seated-opening']]);
+    assert.ok(values.every(value => value === values[0]), 'attached costume parts must share the coat opening');
+    return values[0];
+  };
+  assert.equal(influence(), 1, 'the complete sitting pose must open the coat');
+  h.rig.hips.forEach(hip => hip.rotation.set(-.8, 0, 0)); h.rig.root.updateMatrixWorld(true);
+  assert.ok(influence() > 0 && influence() < 1, 'a partial bend must retain a partial opening');
+  h.rig.hips[0].rotation.x = -.2; h.rig.root.updateMatrixWorld(true);
+  assert.equal(influence(), 0, 'one raised thigh must not open both front panels');
+  for (let frame = 0; frame < 12; frame++) h.pose();
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined;
+  for (let frame = 0; frame < 12; frame++) { h.pose(); assert.ok(influence() >= 0 && influence() <= 1); }
+  assert.equal(influence(), 0, 'the completed exit must release the seated coat shape');
+  for (const speed of [0, 2.5]) {
+    h.input.speed = speed;
+    for (let frame = 0; frame < 24; frame++) { h.pose(); assert.equal(influence(), 0, 'standing or walking retained the seated coat shape'); }
+  }
+  h.input.speed = 0; h.input.seated = true; h.input.performance = true;
+  h.input.architect = { role: 'architect', phase: 'cycles', elapsed: 3, chairYaw: 0 };
+  for (let frame = 0; frame < 12; frame++) h.pose();
+  assert.equal(influence(), 1, 'restoring the actual sitting pose must restore its coat shape');
 });
 
 test('actual Architect hands sit above the armrest surface instead of sinking into the leather', async t => {

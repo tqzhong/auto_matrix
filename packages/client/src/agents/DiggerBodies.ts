@@ -148,6 +148,12 @@ export class DiggerBodies {
     // update observes even late contact corrections in the current frame.
     rig.detail.add(model); entry.model = model;
     const inverse = new THREE.Matrix4(), matrix = new THREE.Matrix4(), center = new THREE.Vector3();
+    const openings: { mesh: THREE.Mesh; target: number }[] = [], thigh = new THREE.Vector3();
+    if (entry.role === 'architect') model.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const target = object.morphTargetDictionary?.['architect-seated-opening'];
+      if (target !== undefined) openings.push({ mesh: object, target });
+    });
     const synchronize = () => {
       inverse.copy(rig.detail.matrixWorld).invert();
       for (const { bone, joint, offset } of drivers) {
@@ -160,6 +166,15 @@ export class DiggerBodies {
           bone.matrix.makeTranslation(center.x, center.y, center.z);
         }
         bone.matrixWorldNeedsUpdate = true;
+      }
+      if (openings.length) {
+        let flexion = Infinity;
+        for (const hip of rig.hips) {
+          thigh.set(0, -1, 0).applyQuaternion(hip.quaternion);
+          flexion = Math.min(flexion, Math.atan2(thigh.z, -thigh.y));
+        }
+        const amount = THREE.MathUtils.smoothstep(flexion, .55, 1.05);
+        for (const { mesh, target } of openings) mesh.morphTargetInfluences![target] = amount;
       }
     };
     synchronize();
