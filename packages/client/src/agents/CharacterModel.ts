@@ -1234,7 +1234,7 @@ export class CharacterModels {
       poseTrinityRelay(rig, input.trinityRelay);
       poseTrinityTerminal(rig, input.trinityTerminal);
       poseSourcePortal(rig, input.sourcePortal);
-      poseArchitect(rig, input.architect);
+      poseArchitect(rig, input.architect, delta);
       poseReloadedCatch(rig, input.catch);
       if (input.trinityTerminal) rig.hero.glasses.visible = false;
       if (input.trinityRelay?.role === 'trinity') this.heroes.crosscutInterfaces(rig.hero);
@@ -1413,7 +1413,7 @@ export class CharacterModels {
     poseLogosBane(rig, input.logosBane);
     poseHammerPilot(rig, input.hammerPilot);
     poseLogosPilot(rig, input.logosPilot);
-    poseArchitect(rig, input.architect);
+    poseArchitect(rig, input.architect, delta);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
     if (rig.spoonHands) connectGardenWrists(rig, rig.spoonHands);
     this.oracleFirstBodies.present(rig);

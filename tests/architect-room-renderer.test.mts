@@ -77,6 +77,8 @@ test('the coat opening follows both actual thighs through sitting, partial bendi
   assert.equal(influence(), 1, 'the complete sitting pose must open the coat');
   h.rig.hips.forEach(hip => hip.rotation.set(-.8, 0, 0)); h.rig.root.updateMatrixWorld(true);
   assert.ok(influence() > 0 && influence() < 1, 'a partial bend must retain a partial opening');
+  h.rig.hips.forEach(hip => hip.rotation.set(-.4, 0, 0)); h.rig.root.updateMatrixWorld(true);
+  assert.ok(influence() > 0, 'the coat must stay open while both thighs still project forward');
   h.rig.hips[0].rotation.x = -.2; h.rig.root.updateMatrixWorld(true);
   assert.equal(influence(), 0, 'one raised thigh must not open both front panels');
   for (let frame = 0; frame < 12; frame++) h.pose();
@@ -290,6 +292,35 @@ test('leaving the Architect encounter restores normal hip placement for standing
     assert.ok(h.rig.hips.every(hip => hip.position.z === 0), `speed ${speed}: the seated hip offset survives leaving the encounter`);
     assert.ok(Math.abs(h.rig.detail.worldToLocal(pelvis.getWorldPosition(new THREE.Vector3())).z) < 1e-7,
       `speed ${speed}: the actual body pelvis keeps a different depth from its standing torso`);
+  }
+});
+
+test('leaving the special Architect pose starts from its real joints and releases the pen wrist pose', async t => {
+  const h = await fixture(t), joints = [h.rig.detail, h.rig.torso, ...h.rig.hips, ...h.rig.knees,
+    ...h.rig.ankles, ...h.rig.shoulders, ...h.rig.elbows, ...h.rig.mobilWrists!];
+  const before = joints.map(joint => ({ quaternion: joint.quaternion.clone(), position: joint.getWorldPosition(new THREE.Vector3()) }));
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined;
+  h.models.animate(h.rig, 1/60, h.input, 1); h.rig.root.updateMatrixWorld(true);
+  const angle = Math.max(...joints.map((joint, index) => joint.quaternion.angleTo(before[index].quaternion)));
+  const distance = Math.max(...joints.map((joint, index) => joint.getWorldPosition(new THREE.Vector3()).distanceTo(before[index].position)));
+  assert.ok(angle < .12, `the first exit frame jumps to a different sitting pose by ${angle} radians`);
+  assert.ok(distance < .05, `the first exit frame displaces a joint by ${distance}`);
+  for (let frame = 0; frame < 60; frame++) { h.models.animate(h.rig, 1/60, h.input, 1); h.rig.root.updateMatrixWorld(true); }
+  assert.ok(h.rig.hips.every(hip => hip.position.z === 0));
+  assert.ok(h.rig.mobilWrists!.every(wrist => wrist.quaternion.angleTo(new THREE.Quaternion()) < 1e-7), 'ordinary hands retained the pen/resting-palm rotation');
+});
+
+test('every actual boot vertex stays above the floor throughout the Architect exit blend', async t => {
+  const h = await fixture(t), shoes = h.rig.root.getObjectByName('architect-work-boots') as THREE.SkinnedMesh;
+  const root = h.rig.root.position.clone();
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined;
+  for (let frame = 1; frame <= 72; frame++) {
+    h.models.animate(h.rig, 1/60, h.input, 1); h.rig.root.updateMatrixWorld(true); shoes.skeleton.update();
+    let minimum = Infinity;
+    for (let vertex = 0; vertex < shoes.geometry.attributes.position.count; vertex++)
+      minimum = Math.min(minimum, shoes.localToWorld(shoes.getVertexPosition(vertex, new THREE.Vector3())).y);
+    assert.ok(minimum >= -.012 && minimum < .04, `exit frame ${frame}: actual boot/floor gap ${minimum}`);
+    assert.ok(h.rig.root.position.equals(root), 'foot support changed the saved world root');
   }
 });
 

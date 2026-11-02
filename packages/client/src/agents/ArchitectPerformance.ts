@@ -4,13 +4,59 @@ import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { crosscutPalm } from './CrosscutPerformance.js';
 
-export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture): void {
+const seatedPoses = new WeakMap<CharacterRig, { elapsed: number; joints: { node: THREE.Object3D; position: THREE.Vector3; quaternion: THREE.Quaternion }[] }>();
+const bootPoints = new WeakMap<CharacterRig, THREE.Vector3[][]>();
+
+export function architectSeatedPoseActive(rig: CharacterRig): boolean { return seatedPoses.has(rig); }
+
+function supportArchitectFeet(rig: CharacterRig): void {
+  let feet = bootPoints.get(rig);
+  if (!feet) {
+    const shoes = rig.detail.getObjectByName('architect-work-boots');
+    if (!(shoes instanceof THREE.SkinnedMesh)) return;
+    const attrs = shoes.geometry.attributes;
+    feet = ['R', 'L'].map(side => {
+      const joint = shoes.skeleton.bones.findIndex(bone => bone.name === 'ankle_' + side), points = [];
+      for (let vertex = 0; vertex < attrs.position.count; vertex++) {
+        if (![0, 1, 2, 3].some(part => attrs.skinIndex.getComponent(vertex, part) === joint && attrs.skinWeight.getComponent(vertex, part) > .999)) continue;
+        points.push(new THREE.Vector3().fromBufferAttribute(attrs.position, vertex).applyMatrix4(shoes.bindMatrix).applyMatrix4(shoes.skeleton.boneInverses[joint]));
+      }
+      return points;
+    });
+    bootPoints.set(rig, feet);
+  }
+  rig.root.updateWorldMatrix(true, true);
+  const inverse = rig.root.matrixWorld.clone().invert(), transform = new THREE.Matrix4(), sample = new THREE.Vector3();
+  let minimum = Infinity;
+  for (let side = 0; side < 2; side++) {
+    transform.multiplyMatrices(inverse, rig.ankles[side].matrixWorld);
+    for (const point of feet[side]) minimum = Math.min(minimum, sample.copy(point).applyMatrix4(transform).y);
+  }
+  if (minimum < 0) { rig.detail.position.y -= minimum; rig.root.updateWorldMatrix(true, true); }
+}
+
+export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture, delta = 0): void {
   if (rig.architectThumbs) {
     rig.architectThumbs.forEach(thumb => thumb.quaternion.identity());
     for (const hand of [...rig.fingers, rig.architectThumbs]) for (const digit of hand)
       for (const part of ['mid', 'tip']) digit.getObjectByName(`architect-${part}`)?.quaternion.identity();
   }
-  if (!gesture) return;
+  if (!gesture) {
+    if (rig.architectPen) rig.mobilWrists?.forEach(wrist => wrist.quaternion.identity());
+    const previous = seatedPoses.get(rig);
+    if (previous) {
+      previous.elapsed += delta;
+      const amount = THREE.MathUtils.smoothstep(previous.elapsed, 0, .4), target = new THREE.Quaternion();
+      if (amount < 1) for (const joint of previous.joints) {
+        joint.node.position.lerpVectors(joint.position, joint.node.position, amount);
+        target.copy(joint.node.quaternion); joint.node.quaternion.copy(joint.quaternion).slerp(target, amount);
+      }
+      else seatedPoses.delete(rig);
+      rig.root.updateWorldMatrix(true, true);
+      supportArchitectFeet(rig);
+    }
+    return;
+  }
   if (gesture.role === 'architect' && !rig.hero) {
     // AgentRenderer already offsets the character root by -1, matching the
     // film set floor. Do not apply that offset a second time inside the rig.
@@ -60,4 +106,13 @@ export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture): vo
     hand.lerp(contact, THREE.MathUtils.smoothstep(gesture.opening, 0, .35)); crosscutPalm(rig, 'R', hand);
   }
   rig.root.updateWorldMatrix(true, true);
+  if (gesture.role === 'architect' && !rig.hero) {
+    const hands = [...rig.fingers.flat(), ...(rig.architectThumbs ?? [])];
+    const nodes = [rig.detail, rig.torso, rig.head, ...rig.hips, ...rig.knees, ...rig.ankles,
+      ...rig.shoulders, ...rig.elbows, ...(rig.mobilWrists ?? []), ...hands];
+    for (const hand of hands) for (const part of ['mid', 'tip']) {
+      const joint = hand.getObjectByName(`architect-${part}`); if (joint) nodes.push(joint);
+    }
+    seatedPoses.set(rig, { elapsed: 0, joints: nodes.map(node => ({ node, position: node.position.clone(), quaternion: node.quaternion.clone() })) });
+  }
 }

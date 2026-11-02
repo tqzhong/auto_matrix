@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { CharacterRig } from './CharacterModel.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
+import { architectSeatedPoseActive } from './ArchitectPerformance.js';
 
 interface BodyEntry {
   role: 'spoon_boy' | 'zee' | 'charra' | 'niobe' | 'lock' | 'roland' | 'architect' | 'seraph' | 'keymaker' | 'rama_kandra' | 'kamala' | 'trainman' | 'hamann' | 'west' | 'dillard' | 'maggie' | 'colt' | 'link' | 'bane' | 'mifune' | 'kid';
@@ -173,7 +174,7 @@ export class DiggerBodies {
           thigh.set(0, -1, 0).applyQuaternion(hip.quaternion);
           flexion = Math.min(flexion, Math.atan2(thigh.z, -thigh.y));
         }
-        const amount = THREE.MathUtils.smoothstep(flexion, .55, 1.05);
+        const amount = architectSeatedPoseActive(rig) ? THREE.MathUtils.smoothstep(flexion, .2, 1.05) : 0;
         for (const { mesh, target } of openings) mesh.morphTargetInfluences![target] = amount;
       }
     };
