@@ -906,7 +906,7 @@ export class FilmSetRenderer {
     if (this.tvRepair) { fog.color.setHex(0xa6b4a1); fog.density = .0015; this.scene.environmentIntensity = .55; return { color: 0xffebc9, ambient: .8, sun: .2 }; }
     if (this.pods) {
       (this.scene.background as THREE.Color).setHex(0x080f14); fog.color.setHex(0x080f14); fog.density = .005;
-      this.scene.environmentIntensity = .45;
+      this.scene.environmentIntensity = .04;
       return { color: 0xb2cdd7, ambient: .4, sun: .35 };
     }
     if (this.neb) {

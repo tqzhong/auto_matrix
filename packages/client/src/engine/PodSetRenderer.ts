@@ -107,7 +107,7 @@ export class PodSetRenderer {
     this.nearBank();
     this.drain = new PodDrainRenderer(this.root);
     this.tube([[-7, 0, -12], [-9, -8, -2], [-9, -17, 12], [-25, -18, 30]], 1.1, this.dark);
-    const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x101e24, roughness: .23, metalness: .35, clearcoat: 1 }); this.materials.add(waterMat);
+    const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x101e24, roughness: .13, metalness: 0, ior: 1.333, clearcoat: 0 }); this.materials.add(waterMat);
     this.water = this.mesh(new THREE.PlaneGeometry(200, 170, 1, 1), waterMat, 0, -POD_WATER_DROP + 1.7, 30); this.water.rotation.x = -Math.PI / 2;
     const rippleMat = new THREE.MeshBasicMaterial({ color: 0x66818a, transparent: true, opacity: .25, depthWrite: false }); this.materials.add(rippleMat);
     this.ripple = this.mesh(new THREE.RingGeometry(.96, 1, 64), rippleMat, 0, -POD_WATER_DROP + 1.73, 12); this.ripple.rotation.x = -Math.PI / 2;

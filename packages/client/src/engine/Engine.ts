@@ -24,6 +24,7 @@ import { VoxelRenderer } from './VoxelRenderer.js';
 import { AgentRenderer } from '../agents/AgentRenderer.js';
 import { CameraController } from './CameraController.js';
 import { LightingSystem } from './LightingSystem.js';
+import { createRenderEnvironment } from './RenderEnvironment.js';
 import { ParticleSystem } from './ParticleSystem.js';
 import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
@@ -101,22 +102,9 @@ export class Engine {
     this.renderer.toneMappingExposure = 1.12;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    const environmentScene = new THREE.Scene();
-    const sky = new THREE.SphereGeometry(500, 32, 16); const skyColors: number[] = [];
-    const horizon = new THREE.Color(0xc6c8c5); const zenith = new THREE.Color(0xb8d3e6); const ground = new THREE.Color(0x514c42);
-    for (let i = 0; i < sky.attributes.position.count; i++) {
-      const elevation = sky.attributes.position.getY(i) / 500;
-      const color = horizon.clone().lerp(elevation > 0 ? zenith : ground, Math.abs(elevation) ** .5);
-      skyColors.push(color.r, color.g, color.b);
-    }
-    sky.setAttribute('color', new THREE.Float32BufferAttribute(skyColors, 3));
-    const skyMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide });
-    environmentScene.add(new THREE.Mesh(sky, skyMaterial));
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.environment = pmrem.fromScene(environmentScene, 0.04);
+    this.environment = createRenderEnvironment(this.renderer);
     this.scene.environment = this.environment.texture;
     this.scene.environmentIntensity = 0.6;
-    sky.dispose(); skyMaterial.dispose(); pmrem.dispose();
     this.renderer.domElement.setAttribute('aria-label', 'Matrix 三维开放世界，接入角色后使用 WASD 移动、鼠标转动视角');
     container.appendChild(this.renderer.domElement);
     this.lightingSystem = new LightingSystem(this.scene);

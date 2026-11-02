@@ -92,8 +92,8 @@ export class PodDrainRenderer {
     }
     ring.setIndex(arcs); ring.computeBoundingSphere(); this.geometries.add(ring);
     this.rings = new THREE.InstancedMesh(ring, foam, 7); this.rings.frustumCulled = false; this.root.add(this.rings);
-    const light = new THREE.PointLight(0x8daebd, 95, 13, 2); light.position.set(1, -7, -3); this.root.add(light);
-    const bounce = new THREE.PointLight(0x7f9daa, 65, 12, 2); bounce.position.set(-1.4, podRunoffHeight(0, 2)! + radius + .8, 2); this.root.add(bounce);
+    const light = new THREE.PointLight(0x8daebd, 12, 13, 2); light.position.set(1, -7, -3); this.root.add(light);
+    const bounce = new THREE.PointLight(0x7f9daa, 8, 12, 2); bounce.position.set(-1.4, podRunoffHeight(0, 2)! + radius + .8, 2); this.root.add(bounce);
     batchStaticGeometry(this.root, new Set([this.water])).forEach(geometry => this.geometries.add(geometry));
     this.update(undefined);
   }
