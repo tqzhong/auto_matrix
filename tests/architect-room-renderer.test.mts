@@ -80,6 +80,40 @@ test('actual Architect hands sit above the armrest surface instead of sinking in
   assert.ok(count > 20); assert.ok(minimum >= ARCHITECT_ROOM.chair.arm + .0525 - .025, `hand surface enters the armrest: ${minimum}`);
 });
 
+test('the Architect’s jacket pockets stay on his torso when his forearms move', async t => {
+  const h = await fixture(t), body = h.rig.root.getObjectByName('architect-detailed-body')!;
+  const pockets = [-1, 1].map(side => body.getObjectByName(`architect-welt-pocket-${side}`) as THREE.SkinnedMesh);
+  const surface = () => pockets.map(mesh => {
+    assert.ok(mesh instanceof THREE.SkinnedMesh); mesh.skeleton.update();
+    return Array.from({ length: mesh.geometry.attributes.position.count }, (_, vertex) =>
+      mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3())));
+  });
+  const before = surface();
+  h.rig.elbows[0].rotation.x += .45; h.rig.elbows[1].rotation.x -= .35;
+  h.rig.root.updateMatrixWorld(true);
+  const after = surface(); let maximum = 0;
+  for (let side = 0; side < pockets.length; side++) for (let vertex = 0; vertex < before[side].length; vertex++)
+    maximum = Math.max(maximum, before[side][vertex].distanceTo(after[side][vertex]));
+  assert.ok(maximum < .001, `jacket pockets follow the forearms by ${maximum} instead of staying on the torso`);
+});
+
+test('every Architect pocket vertex projects onto the front of the seated jacket', async t => {
+  const h = await fixture(t), body = h.rig.root.getObjectByName('architect-detailed-body')!;
+  const jacket = body.getObjectByName('architect-tailored-jacket') as THREE.SkinnedMesh;
+  jacket.skeleton.update(); const point = new THREE.Vector3(), ray = new THREE.Raycaster();
+  for (const side of [-1, 1]) {
+    const pocket = body.getObjectByName(`architect-welt-pocket-${side}`) as THREE.SkinnedMesh; pocket.skeleton.update();
+    for (let vertex = 0; vertex < pocket.geometry.attributes.position.count; vertex++) {
+      pocket.localToWorld(pocket.getVertexPosition(vertex, point));
+      ray.set(point.clone().add(new THREE.Vector3(0, 0, .5)), new THREE.Vector3(0, 0, -1)); ray.far = 1;
+      const hit = ray.intersectObject(jacket, false)[0];
+      assert.ok(hit, `pocket ${side}/${vertex} extends outside the jacket`);
+      const clearance = hit.distance - .5;
+      assert.ok(clearance > .005 && clearance < .05, `pocket ${side}/${vertex} misses the jacket surface: ${clearance}`);
+    }
+  }
+});
+
 test('the physical CRT ring, chair and left hinge agree with the saved room geometry and preserve the closed Source door', async t => {
   const h = await fixture(t), room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room); t.after(() => renderer.dispose());
   const encounter: ArchitectEncounter = { phase: 'decision', sourceReviewed: true, trinityReviewed: true, remaining: 45, lastTick: 0, attempts: 0,

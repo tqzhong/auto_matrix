@@ -510,6 +510,10 @@ def main(source, output, role):
 
         def front_patch(name, outline, material, wardrobe=None, lift=.020):
             p, tex, polygons, influence = [], [], [], []
+            pocket = role == 'architect' and name.startswith('welt-pocket-')
+            # The relaxed forearms overlap the waist in front projection.
+            # Jacket pockets must sample the torso, not the nearer sleeve.
+            candidates = weights[:, arm_ids].sum(axis=1) < .01 if pocket else np.ones(len(weights), dtype=bool)
             center = np.array(outline).mean(axis=0)
             for a, b in zip(outline, outline[1:] + outline[:1]):
                 a, b = np.array(a), np.array(b); start = len(p); rows = 16
@@ -519,7 +523,7 @@ def main(source, output, role):
                         offset = xy - front_origin
                         u = (offset[:, 0] * ac[:, 1] - offset[:, 1] * ac[:, 0]) / determinant
                         v = (ab[:, 0] * offset[:, 1] - ab[:, 1] * offset[:, 0]) / determinant
-                        inside = np.flatnonzero((u >= -1e-7) & (v >= -1e-7) & (u + v <= 1 + 1e-7))
+                        inside = np.flatnonzero((u >= -1e-7) & (v >= -1e-7) & (u + v <= 1 + 1e-7) & candidates[front_faces].all(axis=1))
                         if len(inside):
                             barycentric = np.column_stack((1 - u[inside] - v[inside], u[inside], v[inside]))
                             depth = (front_points[inside, :, 2] * barycentric).sum(axis=1)
@@ -527,6 +531,7 @@ def main(source, output, role):
                             height = depth[index]; weight = (weights[front_faces[at]] * barycentric[index, :, None]).sum(axis=0)
                         else:
                             distance = (vest[:, 0] - xy[0]) ** 2 + (vest[:, 1] - xy[1]) ** 2 + (vest[:, 2] < 0) * 100
+                            distance[~candidates] = np.inf
                             nearby = np.argsort(distance)[:3]; mix = 1 / np.maximum(distance[nearby], 1e-8); mix /= mix.sum()
                             height = vest[nearby, 2] @ mix; weight = (weights[nearby] * mix[:, None]).sum(axis=0)
                         p.append([*xy, height + lift]); tex.append([column / max(1, row), row / rows]); influence.append(weight)
@@ -542,10 +547,11 @@ def main(source, output, role):
             shirt_cut = np.minimum(3.45 - y, y - np.where(arms > .3, 1.79, 1.98))
             sp, su, sf, sw = builder.trim_neckline(shirt, uv, faces, weights, shirt[:, 1] + shirt_cut)
             export(role + '-shirt', sp, su, sf, sw, 5)
+            pocket_end = .38 if role == 'architect' else .46
             for sign in [-1, 1]:
                 front_patch('lapel-' + str(sign), [[sign * x, y] for x, y in [[.17, 3.43], [.36, 3.29], [.30, 3.18], [.42, 3.10], [.15, 2.62], [.095, 2.72]]], 1, lift=.033)
                 front_patch('shirt-collar-' + str(sign), [[sign * x, y] for x, y in [[.10, 3.51], [.26, 3.36], [.16, 3.15], [.045, 3.37]]], 5, lift=.024)
-                front_patch('welt-pocket-' + str(sign), [[sign * x, y] for x, y in [[.23, 2.17], [.46, 2.18], [.46, 2.14], [.23, 2.13]]], 1, lift=.027)
+                front_patch('welt-pocket-' + str(sign), [[sign * x, y] for x, y in [[.23, 2.17], [pocket_end, 2.18], [pocket_end, 2.14], [.23, 2.13]]], 1, lift=.027)
             if role in ['architect', 'rama_kandra']:
                 front_patch('tie-knot', [[-.039, 3.36], [.039, 3.36], [.025, 3.27], [-.025, 3.27]], 6, lift=.043)
                 front_patch('tie', [[-.025, 3.285], [.025, 3.285], [.055, 2.72], [0, 2.65], [-.055, 2.72]], 6, lift=.027)
