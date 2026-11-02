@@ -27,15 +27,16 @@ async function shipped(name: string) {
   if (name.endsWith('-head')) asset.scene.traverse(object => { if (object instanceof THREE.Mesh) (object.material as THREE.MeshStandardMaterial).map = new THREE.Texture(); });
   return asset;
 }
-async function fixture(t: TestContext, coatOpening: boolean | 'walking' = false) {
+async function fixture(t: TestContext, coatOpening: boolean | 'walking' | 'walking-legs' = false) {
   const assets = Object.fromEntries(await Promise.all(['architect-head', 'architect-body', 'neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club', 'smith', 'morpheus', 'choi', 'dujour'].map(async name => [name, await shipped(name)])));
   if (coatOpening) {
     for (const name of ['architect-tailored-jacket', 'architect-shirt']) {
       const part = assets['architect-body'].scene.getObjectByName(name) as THREE.SkinnedMesh;
       // Zero displacements isolate the real rig's shared costume driver from fitting.
-      part.geometry.morphAttributes.position = Array.from({ length: coatOpening === 'walking' ? 3 : 1 }, () => new THREE.BufferAttribute(new Float32Array(part.geometry.attributes.position.count * 3), 3));
+      part.geometry.morphAttributes.position = Array.from({ length: coatOpening === 'walking-legs' ? 7 : coatOpening === 'walking' ? 3 : 1 }, () => new THREE.BufferAttribute(new Float32Array(part.geometry.attributes.position.count * 3), 3));
       part.geometry.morphTargetsRelative = true; part.updateMorphTargets(); part.morphTargetDictionary = { 'architect-seated-opening': 0,
-        ...(coatOpening === 'walking' ? { 'architect-walk-front': 1, 'architect-walk-back': 2 } : {}) };
+        ...(typeof coatOpening === 'string' ? { 'architect-walk-front': 1, 'architect-walk-back': 2 } : {}),
+        ...(coatOpening === 'walking-legs' ? { 'architect-walk-front-R': 3, 'architect-walk-back-R': 4, 'architect-walk-front-L': 5, 'architect-walk-back-L': 6 } : {}) };
     }
   }
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => assets[String(url).split('/').pop()!.replace('.glb', '')]);
@@ -162,6 +163,31 @@ test('walking hem shapes follow actual front and back thigh motion and stay sepa
   for (let frame = 0; frame < 12; frame++) h.pose();
   assert.equal(value('architect-seated-opening'), 1);
   assert.equal(value('architect-walk-front'), 0); assert.equal(value('architect-walk-back'), 0);
+});
+
+test('left and right walking corrections follow their own actual thigh and reset with the seated pose', async t => {
+  const h = await fixture(t, 'walking-legs'), parts = ['architect-tailored-jacket', 'architect-shirt'].map(name => h.rig.root.getObjectByName(name) as THREE.SkinnedMesh);
+  const names = ['architect-walk-front-R', 'architect-walk-back-R', 'architect-walk-front-L', 'architect-walk-back-L'];
+  const values = () => names.map(name => {
+    const amount = parts.map(part => part.morphTargetInfluences![part.morphTargetDictionary![name]]);
+    assert.equal(amount[0], amount[1], 'all attached parts must share the per-leg correction'); return amount[0];
+  });
+  assert.deepEqual(values(), [0, 0, 0, 0]);
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined;
+  for (let frame = 0; frame < 12; frame++) h.pose();
+  h.input.speed = 0;
+  h.rig.hips[0].rotation.x = -.8; h.rig.hips[1].rotation.x = .5; h.rig.root.updateMatrixWorld(true);
+  assert.deepEqual(values(), [1, 0, 0, 1], 'forward right and backward left thighs need independent corrections');
+  h.rig.hips[0].rotation.x = .5; h.rig.hips[1].rotation.x = -.8; h.rig.root.updateMatrixWorld(true);
+  assert.deepEqual(values(), [0, 1, 1, 0], 'swapping the actual thighs must swap the affected side');
+  h.rig.hips.forEach(hip => hip.rotation.x = -.25); h.rig.knees.forEach(knee => knee.rotation.x = .3); h.rig.root.updateMatrixWorld(true);
+  assert.deepEqual(values(), [0, 0, 0, 0], 'a symmetric supported standing pose must keep gait corrections inactive');
+  h.rig.hips[0].rotation.x = -.4; h.rig.hips[1].rotation.x = 0; h.rig.root.updateMatrixWorld(true);
+  assert(values()[0] > 0 && values()[0] < 1, 'partial thigh motion must blend the corresponding correction');
+  assert.deepEqual(values().slice(1), [0, 0, 0]);
+  h.input.seated = true; h.input.performance = true; h.input.architect = { role: 'architect', phase: 'cycles', elapsed: 3, chairYaw: 0 };
+  for (let frame = 0; frame < 12; frame++) h.pose();
+  assert.deepEqual(values(), [0, 0, 0, 0]);
 });
 
 test('actual Architect hands sit above the armrest surface instead of sinking into the leather', async t => {
