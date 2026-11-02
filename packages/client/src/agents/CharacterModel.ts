@@ -978,7 +978,10 @@ export class CharacterModels {
       }
       for (const side of [-1, 1]) rig.detail.getObjectByName(`sati-covered-arm-${side}`)!.visible = !input.mobilStation;
     }
-    if (rig.architectPen) { rig.architectPen.visible = input.architect?.role === 'architect'; if (!input.architect) rig.detail.position.y = .04; }
+    if (rig.architectPen) {
+      rig.architectPen.visible = input.architect?.role === 'architect';
+      if (!input.architect) { rig.detail.position.y = .04; rig.hips.forEach(hip => { hip.position.z = 0; }); }
+    }
     if (input.architect?.role === 'architect' && !rig.architectPen) {
       const pen = new THREE.Group(); pen.name = 'architect-metal-pen'; rig.detail.add(pen); rig.architectPen = pen;
       const metal = this.material(new THREE.MeshStandardMaterial({ color: 0xaeb3ae, roughness: .28, metalness: .85 }));

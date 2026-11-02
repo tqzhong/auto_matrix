@@ -244,6 +244,21 @@ test('the saved Architect body and pen restore after walking and reverse story-c
   assert.deepEqual(snapshot(), expected, 'the complete body or pen retained a previous pose');
 });
 
+test('leaving the Architect encounter restores normal hip placement for standing and walking', async t => {
+  const h = await fixture(t), saved = structuredClone(h.input);
+  const skin = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
+  const pelvis = skin.skeleton.bones.find(bone => bone.name === 'pelvis')!;
+  for (const speed of [0, 2.5]) {
+    Object.assign(h.input, saved); h.pose();
+    assert.ok(h.rig.hips.every(hip => hip.position.z === -.06), 'exercise the actual seated hip offset');
+    h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined; h.input.speed = speed;
+    for (let frame = 0; frame < 12; frame++) h.pose();
+    assert.ok(h.rig.hips.every(hip => hip.position.z === 0), `speed ${speed}: the seated hip offset survives leaving the encounter`);
+    assert.ok(Math.abs(h.rig.detail.worldToLocal(pelvis.getWorldPosition(new THREE.Vector3())).z) < 1e-7,
+      `speed ${speed}: the actual body pelvis keeps a different depth from its standing torso`);
+  }
+});
+
 test('the Architect’s jacket pockets stay on his torso when his forearms move', async t => {
   const h = await fixture(t), body = h.rig.root.getObjectByName('architect-detailed-body')!;
   const pockets = [-1, 1].map(side => body.getObjectByName(`architect-welt-pocket-${side}`) as THREE.SkinnedMesh);
