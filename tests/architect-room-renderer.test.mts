@@ -187,6 +187,39 @@ test('the complete Architect hands and pen clear the real chair without hand sel
   assert.equal(result.count, 0, `hand or pen enters the chair: ${JSON.stringify(result)}`);
 });
 
+test('the complete Architect skin and head stay clear through seated head turns and standing', async t => {
+  const h = await fixture(t), mesh = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
+  const head = h.rig.root.getObjectByName('architect-anatomical-head') as THREE.Mesh;
+  const positions = mesh.geometry.attributes.position;
+  assert.ok(Array.from({ length: positions.count }, (_, vertex) => positions.getY(vertex)).filter(y => y > 3.4).length > 400, 'the anatomical neck must remain present');
+  const surface = (mesh: THREE.Mesh) => {
+    if (mesh instanceof THREE.SkinnedMesh) mesh.skeleton.update();
+    const attrs = mesh.geometry.attributes, index = mesh.geometry.index!, weld = new Map<string, number>(), points = new Map<number, THREE.Vector3>(), welded = new Map<number, number>(), faces = [];
+    for (let offset = 0; offset < index.count; offset += 3) {
+      const ids = [0, 1, 2].map(part => index.getX(offset + part));
+      const triangle = ids.map(vertex => {
+        if (!points.has(vertex)) {
+          points.set(vertex, mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3())));
+          const key = new THREE.Vector3().fromBufferAttribute(attrs.position, vertex).toArray().map(value => value.toFixed(6)).join(',');
+          if (!weld.has(key)) weld.set(key, weld.size); welded.set(vertex, weld.get(key)!);
+        }
+        return points.get(vertex)!;
+      });
+      faces.push({ face: offset / 3, ids: ids.map(vertex => welded.get(vertex)!), points: triangle, box: new THREE.Box3().setFromPoints(triangle) });
+    }
+    return faces;
+  };
+  const states = [];
+  for (const elapsed of [0, 3, 9, undefined]) {
+    if (elapsed === undefined) { h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined; for (let frame = 0; frame < 12; frame++) h.pose(); }
+    else { h.input.architect!.elapsed = elapsed; h.pose(); }
+    const body = surface(mesh), skull = surface(head);
+    states.push({ state: elapsed === undefined ? 'standing' : `seated-${elapsed}`, self: crossings(body, body), headBody: crossings(body, skull, false) });
+  }
+  console.log('Full Architect skin/head contacts:', JSON.stringify(states));
+  assert.ok(states.every(state => state.self.count === 0 && state.headBody.count === 0), JSON.stringify(states));
+});
+
 test('the saved Architect body and pen restore after walking and reverse story-clock changes', async t => {
   const h = await fixture(t), saved = structuredClone(h.input);
   const snapshot = () => {

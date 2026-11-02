@@ -102,8 +102,7 @@ def cloth_sections(points, faces, arms, bottom=1.9, top=3.23):
     return heights, sections
 
 
-def head_neck_section(role, directory=None):
-    """Read the actual fitted head, whose neck sits behind the rig origin."""
+def head_surface(role, directory=None):
     directory = directory or builder.ROOT / 'packages/client/public/assets/characters'
     data = (directory / (role + '-head.glb')).read_bytes()
     length = struct.unpack_from('<I', data, 12)[0]
@@ -115,7 +114,12 @@ def head_neck_section(role, directory=None):
                              count=accessor['count'] * width, offset=view.get('byteOffset', 0)).reshape(-1, width)
 
     mesh = next(mesh for mesh in doc['meshes'] if mesh['name'] == role + '-anatomical-head')['primitives'][0]
-    points = array(mesh['attributes']['POSITION'], 3); triangles = array(mesh['indices'], 1).reshape(-1, 3)
+    return array(mesh['attributes']['POSITION'], 3), array(mesh['indices'], 1).reshape(-1, 3)
+
+
+def head_neck_section(role, directory=None):
+    """Read the actual fitted head, whose neck sits behind the rig origin."""
+    points, triangles = head_surface(role, directory)
     section = []
     for a, b in [(0, 1), (1, 2), (2, 0)]:
         start, end = points[triangles[:, a]], points[triangles[:, b]]
@@ -127,6 +131,36 @@ def head_neck_section(role, directory=None):
     offset = section - center; angles = np.arctan2(offset[:, 0], offset[:, 1]); radius = np.linalg.norm(offset, axis=1)
     order = np.argsort(angles)
     return center, angles[order], radius[order]
+
+
+def fit_architect_neck(points, faces, weights, origin):
+    """Fit every retained neck vertex inside the actual lower head surface."""
+    head, triangles = head_surface('architect')
+    center, _, _ = head_neck_section('architect')
+    used = np.unique([vertex for face in faces for vertex, _ in face])
+    used = used[points[used, 1] > 3.4]
+    surface = head[triangles]
+    surface = surface[(surface[:, :, 1].min(axis=1) < points[used, 1].max() - origin[1])]
+    a, ab, ac = surface[:, 0], surface[:, 1] - surface[:, 0], surface[:, 2] - surface[:, 0]
+    for vertex in used:
+        theta = np.arctan2(points[vertex, 0] - center[0], points[vertex, 2] - center[1])
+        direction = np.array([np.sin(theta), 0, np.cos(theta)])
+        start = np.array([center[0], max(points[vertex, 1] - origin[1], head[:, 1].min() + 1e-6), center[1]])
+        cross = np.cross(direction, ac)
+        determinant = (ab * cross).sum(axis=1)
+        offset = start - a
+        q = np.cross(offset, ab)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            u = (offset * cross).sum(axis=1) / determinant
+            v = q @ direction / determinant
+            distance = (ac * q).sum(axis=1) / determinant
+        hits = distance[(np.abs(determinant) > 1e-12) & (u >= -1e-8) & (v >= -1e-8) & (u + v <= 1 + 1e-8) & (distance > 0)]
+        assert len(hits), f'Open fitted head section at {start}'
+        radius = hits.min() - .003
+        assert radius > .02
+        points[vertex, [0, 2]] = center + direction[[0, 2]] * radius
+        weights[vertex] = 0
+        weights[vertex, 2] = 1
 
 
 def main(source, output, role):
@@ -265,6 +299,10 @@ def main(source, output, role):
         ankle = names.index('ankle_' + side)
         matrices[ankle] = np.diag([.27, .25, .27])
     translation = rest - np.einsum('nij,nj->ni', matrices, source_pivots)
+    if role == 'architect':
+        # Clip one continuous source neck instead of folding the neck/chest
+        # transition across two different authoring translations.
+        translation[2] = translation[1]
     points = np.zeros_like(base)
     for i in range(len(names)): points += (base @ matrices[i].T + translation[i]) * weights[:, i:i + 1]
     faces = [face for face, group in zip(faces, groups) if group == 'body']
@@ -384,6 +422,8 @@ def main(source, output, role):
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(points, uv, faces, weights, y + skin_covered - .008, above=True)
     skin_p, skin_uv, skin_faces, skin_w = builder.trim_neckline(skin_p, skin_uv, skin_faces, skin_w, 1.96, above=True,
                                                               preserve=skin_w[:, arm_ids].sum(axis=1) > .3)
+    if role == 'architect':
+        fit_architect_neck(skin_p, skin_faces, skin_w, rest[2] + [0, .55, 0])
     if child:
         hand_ids = [i for i, name in enumerate(names) if name.startswith(('wrist', 'finger'))]
         hand_weight = skin_w[:, hand_ids].sum(axis=1)
