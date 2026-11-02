@@ -21,6 +21,7 @@ export class DiggerBodies {
   private entries = new Map<CharacterRig, BodyEntry>();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private textures = new Set<THREE.Texture>();
   private skeletons = new Set<THREE.Skeleton>();
   private disposed = false;
 
@@ -121,6 +122,11 @@ export class DiggerBodies {
       }
       bone.matrixAutoUpdate = false; drivers.push({ bone, joint, offset });
     }
+    // Capture imported maps before shared cloth maps replace any material slots.
+    model.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      for (const value of Object.values(object.material)) if (value instanceof THREE.Texture) this.textures.add(value);
+    });
     model.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       this.geometries.add(object.geometry); object.castShadow = object.receiveShadow = true;
@@ -166,6 +172,7 @@ export class DiggerBodies {
   private release(): void {
     this.geometries.forEach(geometry => geometry.dispose()); this.geometries.clear();
     this.materials.forEach(material => material.dispose()); this.materials.clear();
+    this.textures.forEach(texture => texture.dispose()); this.textures.clear();
     this.skeletons.forEach(skeleton => skeleton.dispose()); this.skeletons.clear();
   }
 
