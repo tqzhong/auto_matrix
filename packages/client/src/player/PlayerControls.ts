@@ -44,13 +44,14 @@ import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
+import { podThirdPersonCamera } from './PodCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
 import { upperDiggerEye, upperDiggerLookBack } from '../agents/UpperDiggerPerformance.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { officeClipboardPoint } from '@auto_matrix/shared';
-import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RUNOFF, podRunoffHeight, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
@@ -2502,22 +2503,10 @@ export class PlayerControls {
       else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if ((this.motion.performance === 'pod' || this.motion.performance === 'fall') && state.currentLocation === 'film_power_plant_pods') {
-      const center = FILM_SETS.film_power_plant_pods.center;
       if (this.firstPerson) {
         this.syncPodCamera(group);
       } else {
-        const falling = this.motion.performance === 'fall', head = group.getObjectByName('head'), pelvis = group.getObjectByName('pelvis');
-        group.updateWorldMatrix(true, true);
-        const focus = falling ? head && pelvis ? head.getWorldPosition(new THREE.Vector3()).lerp(pelvis.getWorldPosition(new THREE.Vector3()), .5)
-          : new THREE.Vector3(this.position.x, this.position.y + 1.7, this.position.z) : new THREE.Vector3(center.x, center.y + 3.45, center.z - 12.5);
-        const ideal = falling ? focus.clone().add(new THREE.Vector3(6.2, 4.5, 4.5).multiplyScalar(Math.max(1, .8 / this.camera.aspect)))
-          : new THREE.Vector3(center.x + 5.8, center.y + 8.2, center.z - 6.5);
-        if (falling) {
-          const z = focus.z - center.z + 4;
-          ideal.set(center.x + .65, center.y - 1 + podRunoffHeight(0, Math.min(POD_RUNOFF.endZ, z))! + POD_RUNOFF.halfWidth, center.z + z);
-        }
-        // A boom outside the circular pipe would look through its roof. Saved poses
-        // place both cameras inside the same solid geometry, including cold loads.
+        const falling = this.motion.performance === 'fall', { focus, ideal } = podThirdPersonCamera(group, this.position, this.motion.performance);
         if (resetCamera || falling) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }
@@ -2528,16 +2517,11 @@ export class PlayerControls {
       (this.motion.performance === 'float' || this.motion.performance === 'lift')) {
       // The ordinary rear boom rises through the tower behind the drain.
       // Keep the cinematic shot in the open channel; V retains free eye movement.
-      const center = FILM_SETS.film_power_plant_pods.center;
-      const interior = (this.motion.podRescue ?? 0) >= POD_RESCUE.hoisted + .65;
-      // Move beneath the opening before the rising head reaches the solid deck.
-      const approach = THREE.MathUtils.smoothstep(this.motion.podRescue ?? 0, 3.5, 4.4);
-      const ideal = interior ? new THREE.Vector3(center.x + 5.2, center.y + 4.4, center.z + 18)
-        : new THREE.Vector3(this.position.x + 6.5 - approach * 4.5, Math.min(center.y - 2.1, this.position.y + 4.8), this.position.z + 4.5 - approach * 2.5);
+      const { ideal, focus, interior } = podThirdPersonCamera(group, this.position, this.motion.performance, this.motion.podRescue);
       if (resetCamera || interior !== this.podInterior) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.podInterior = interior;
-      this.camera.lookAt(this.position.x, this.position.y + 2.5 - podRescuePose(this.motion.podRescue ?? 0).settle, this.position.z);
+      this.camera.lookAt(focus);
     } else if (this.performing && this.motion.crossing !== undefined && !this.firstPerson) {
       const center = FILM_SETS.film_metacortex_floor.center;
       const outside = THREE.MathUtils.smoothstep(this.motion.crossing, 1.7, 5.4);
