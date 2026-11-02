@@ -37,6 +37,25 @@ test('opening the left door requires a real crossing and never skips the reveal,
   assert.equal(h.journey.step,6);assert.equal(h.journey.architect!.door,'matrix');assert.equal(h.sandbox.life.state!.choices.architect_door,'matrix');
   assert.equal(h.neo.health,37);assert.equal(h.sandbox.state.profiles.neo.inventory.medkit,0);
 });
+test('leaving the Source scene keeps the living Architect in his chair instead of clearing him into a standing pose',()=>{
+  const h=setup();h.frames(.2);
+  h.journey.step=FILM_SCENE_BY_ID.m2_architect.steps.length;
+  h.journey.architect!.phase='done';h.journey.architect!.door='matrix';h.frames(.1);
+  const before=structuredClone(h.architect);
+  assert.equal(before.currentAction?.parameters.architect!==undefined,true);
+  h.command('next');assert.notEqual(h.journey.scene,'m2_architect');h.frames(2);
+  assert.deepEqual(h.architect.position,before.position);
+  assert.equal(h.architect.rotation,before.rotation);assert.equal(h.architect.health,before.health);
+  assert.deepEqual(h.architect.currentAction,before.currentAction,'scene cleanup must retain the actual seated gesture');
+  assert.equal(h.neo.currentAction?.parameters.architect,undefined,'Neo must be released from the Source doorway gesture');
+});
+test('Source cleanup releases a dead Architect from the seated gesture without moving or reviving him',()=>{
+  const h=setup();h.frames(.2);h.journey.step=FILM_SCENE_BY_ID.m2_architect.steps.length;
+  h.journey.architect!.phase='done';h.journey.architect!.door='matrix';h.architect.status='dead';h.architect.health=0;
+  const before=structuredClone(h.architect);h.command('next');assert.notEqual(h.journey.scene,'m2_architect');
+  assert.equal(h.architect.currentAction,null);assert.equal(h.architect.status,before.status);assert.equal(h.architect.health,before.health);
+  assert.deepEqual(h.architect.position,before.position);
+});
 test('partial door motion pauses, saves and resumes without advancing during release or an occupied Architect',()=>{
   const h=setup();h.command('act');h.frames(.6);const initial=structuredClone(h.journey.architect);
   h.frames(3,false);assert.deepEqual(h.journey.architect,initial);

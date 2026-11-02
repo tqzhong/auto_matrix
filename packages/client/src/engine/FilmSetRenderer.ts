@@ -258,6 +258,7 @@ export class FilmSetRenderer {
   private powerStatus?: { primary: THREE.MeshBasicMaterial; emergency: THREE.MeshBasicMaterial; lights: THREE.PointLight[] };
   private sourceDoor?: SourcePortalRenderer;
   private architectRoom?: ArchitectRoomRenderer;
+  private architectState?: AgentState;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.root);
@@ -270,6 +271,7 @@ export class FilmSetRenderer {
   get televisionPreviewImage(): string | undefined { return this.construct?.televisionPreviewImage; }
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
   setRecoverySubject(subject?: THREE.Object3D): void { this.recoverySubject = subject; }
+  setArchitectState(state?: AgentState): void { this.architectState = state; }
   setCrosscutSubjects(bodies: (id: string) => THREE.Object3D | undefined, avatars: (id: string) => THREE.Object3D | undefined): void { this.crosscutBodies = bodies; this.phoneBodies = avatars; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera): FilmSet | undefined {
@@ -621,7 +623,9 @@ export class FilmSetRenderer {
       this.powerStatus.lights.forEach(light => { light.intensity = energized ? 210 : 19; light.color.setHex(energized ? 0xf3e7c9 : 0xac5144); });
     }
     this.sourceDoor?.update(journey?.keyDoor);
-    this.architectRoom?.update(journey?.architect);
+    const architect = this.architectState;
+    this.architectRoom?.update(journey?.architect, architect?.status === 'alive' && architect.currentLocation === 'film_architect_room'
+      && architect.currentAction?.parameters.seated ? architect.rotation : undefined);
     if (this.portalDoor) {
       const open = journey?.completed.includes(this.portalDoor.scene) || journey?.scene === this.portalDoor.scene && journey.step >= FILM_SCENE_BY_ID[this.portalDoor.scene].steps.length;
       this.portalDoor.panel.position.x = open ? 5.2 : 0;

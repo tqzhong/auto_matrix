@@ -7260,7 +7260,11 @@ export class FilmStorySystem {
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.airRescue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.matrixEscape) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.theOne || other.currentAction?.parameters.reloaded || other.currentAction?.parameters.catch)) other.currentAction = null;
-    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.architect) other.currentAction = null;
+    for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.architect) {
+      const gesture = other.currentAction.parameters.architect as ArchitectGesture;
+      if (gesture.role === 'architect' && other.status === 'alive' && other.currentLocation === 'film_architect_room') continue;
+      other.currentAction = null;
+    }
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.smithFinale) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && other.currentAction?.parameters.epilogue) other.currentAction = null;
     for (const other of this.world.agents.values()) if (!other.controller && (other.currentAction?.parameters.recoveryCrew || other.currentAction?.parameters.medical !== undefined || other.currentAction?.parameters.cabin || other.currentAction?.parameters.cabinGuide || other.currentAction?.parameters.construct || other.currentAction?.parameters.truth || other.currentAction?.parameters.download)) other.currentAction = null;

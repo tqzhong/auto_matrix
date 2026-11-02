@@ -114,9 +114,9 @@ export class ArchitectRoomRenderer {
     key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0003; this.group.add(key, key.target);
     for (const group of [this.fixed, this.chair, this.leftDoor, this.rightDoor]) batchStaticGeometry(group, new Set()).forEach(g => this.geometries.add(g));
   }
-  update(encounter?: ArchitectEncounter): void {
+  update(encounter?: ArchitectEncounter, seatedYaw = this.chair.rotation.y): void {
     this.time.value = encounter?.room?.elapsed ?? 0;
-    this.chair.rotation.y = encounter?.room?.chairYaw ?? 0;
+    this.chair.rotation.y = encounter?.room?.chairYaw ?? seatedYaw;
     this.leftDoor.rotation.y = architectDoorAngle(encounter);
     this.exitGlow.visible = this.leftDoor.rotation.y > .1;
     const live = Boolean(encounter && ['trinity', 'reflection', 'decision', 'failed', 'done'].includes(encounter.phase));

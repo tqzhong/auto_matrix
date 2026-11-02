@@ -198,6 +198,7 @@ export class Engine {
     }
     this.filmSets.setMirrorSubject(this.playerControls?.id ? this.agentRenderer.getAgentBody(this.playerControls.id) : undefined);
     this.filmSets.setRecoverySubject(this.agentRenderer.getAgentBody('neo'));
+    this.filmSets.setArchitectState(this.agentRenderer.getAgentState('architect') ?? undefined);
     this.filmSets.setCrosscutSubjects(id => this.agentRenderer.getPhysicalBody(id), id => this.agentRenderer.getAgentBody(id));
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined, this.sandbox?.traffic);

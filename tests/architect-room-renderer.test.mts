@@ -67,6 +67,18 @@ test('the seated Architect’s actual shoes rest at the room floor', async t => 
   assert.ok(bottom >= -.012 && bottom < .035, `shoes float or penetrate the floor: ${bottom}, floor 0`);
 });
 
+test('the swivel chair keeps its last angle and can restore the seated performer angle without the old encounter', async t => {
+  await fixture(t);
+  const room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room);
+  t.after(() => renderer.dispose());
+  const encounter = { phase: 'done', room: { elapsed: 8, chairYaw: .57 } } as ArchitectEncounter;
+  renderer.update(encounter); renderer.update(undefined);
+  assert.equal(renderer.chair.rotation.y, .57, 'clearing the finished encounter rotates the chair under the seated actor');
+  const restored = new ArchitectRoomRenderer(new THREE.Group()); t.after(() => restored.dispose());
+  restored.update(undefined, -.43);
+  assert.equal(restored.chair.rotation.y, -.43, 'a cold room must use the saved seated performer angle');
+});
+
 test('the seated knees stay above the cushion and the complete trousers clear the actual chair', async t => {
   const h = await fixture(t), room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room);
   t.after(() => renderer.dispose()); room.position.z = -ARCHITECT_ROOM.chair.z; room.updateMatrixWorld(true);
