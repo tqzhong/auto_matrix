@@ -5,6 +5,11 @@ import { reach } from './SpoonPerformance.js';
 import { crosscutPalm } from './CrosscutPerformance.js';
 
 export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture): void {
+  if (rig.architectThumbs) {
+    rig.architectThumbs.forEach(thumb => thumb.quaternion.identity());
+    for (const hand of [...rig.fingers, rig.architectThumbs]) for (const digit of hand)
+      for (const part of ['mid', 'tip']) digit.getObjectByName(`architect-${part}`)?.quaternion.identity();
+  }
   if (!gesture) return;
   if (gesture.role === 'architect' && !rig.hero) {
     // AgentRenderer already offsets the character root by -1, matching the
@@ -21,13 +26,26 @@ export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture): vo
         rig.detail.localToWorld(new THREE.Vector3(sign * .32, .16, 1.02)), new THREE.Vector3(sign * .1, .3, 1).applyQuaternion(rotation));
       rig.ankles[i].quaternion.copy(rig.knees[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
       rig.ankles[i].updateWorldMatrix(false, true);
-      reach(rig.shoulders[i], rig.elbows[i], new THREE.Vector3(0, -.79, .055),
-        rig.detail.localToWorld(new THREE.Vector3(sign * .84, 2.34, .28)), new THREE.Vector3(sign * .3, -1, -.35).applyQuaternion(rotation));
-      rig.fingers[i].forEach(finger => { finger.rotation.x = i ? -.12 : -.52; });
+      const wrist = rig.mobilWrists![i], palm = new THREE.Vector3(0, -.14, -.05);
+      const orientation = rotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), i ? 0 : .6))
+        .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
+      const contact = rig.detail.localToWorld(new THREE.Vector3(sign * .84, i ? ARCHITECT_ROOM.chair.arm + .0715 : 2.22, i ? .73 : .28));
+      reach(rig.shoulders[i], rig.elbows[i], wrist.position,
+        contact.sub(palm.applyQuaternion(orientation)), new THREE.Vector3(sign * .3, -1, -.35).applyQuaternion(rotation));
+      wrist.quaternion.copy(rig.elbows[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
+      wrist.updateWorldMatrix(false, true);
+      rig.fingers[i].forEach((finger, digit) => {
+        finger.rotation.x = i ? -.04 : digit === 3 ? .1125 : .1575;
+        const middle = finger.getObjectByName('architect-mid'), tip = finger.getObjectByName('architect-tip');
+        if (middle) middle.rotation.x = i ? 0 : .36;
+        if (tip) tip.rotation.x = i ? 0 : .2475;
+      });
+      rig.architectThumbs?.[i].rotation.set(0, i ? .7 : 0, i ? 0 : -.3);
     }
     if (rig.architectPen) {
-      const palm = rig.elbows[0].localToWorld(new THREE.Vector3(0, -.79, .055));
-      rig.architectPen.position.copy(rig.detail.worldToLocal(palm)); rig.architectPen.rotation.set(.18, 0, -.65);
+      const grip = rig.mobilWrists![0].localToWorld(new THREE.Vector3(.089294, -.138959, -.026224));
+      rig.architectPen.rotation.set(.05, 0, -.1);
+      rig.architectPen.position.copy(rig.detail.worldToLocal(grip)).add(new THREE.Vector3(0, .05, 0).applyEuler(rig.architectPen.rotation));
     }
   } else if (gesture.role === 'neo' && rig.hero && gesture.opening !== undefined && gesture.opening < .65) {
     const room = ARCHITECT_ROOM, c = FILM_SETS.film_architect_room.center;

@@ -188,6 +188,15 @@ def main(source, output, role):
             ref = 2 + (finger if side == 'L' else 3 - finger)
             names.append(f'finger{finger}_{side}'); source_pivots.append(pivot(f'finger{ref}-1.{side}'))
             rest.append([sign * shoulder_x - .063 + finger * .041, 1.62, .01])
+    if role == 'architect':
+        for side in ['R', 'L']:
+            names.append('thumb_' + side); source_pivots.append(pivot('finger1-1.' + side)); rest.append([0, 0, 0])
+        for side in ['R', 'L']:
+            for digit in range(5):
+                part = 'thumb' if digit == 0 else f'finger{digit - 1}'
+                ref = 1 if digit == 0 else digit + 1 if side == 'L' else 6 - digit
+                for segment, suffix in [(2, 'mid'), (3, 'tip')]:
+                    names.append(part + suffix + '_' + side); source_pivots.append(pivot(f'finger{ref}-{segment}.{side}')); rest.append([0, 0, 0])
     rest, source_pivots = np.array(rest), np.array(source_pivots)
 
     def mapped(name):
@@ -197,6 +206,10 @@ def main(source, output, role):
             if name.startswith(prefix): return names.index(target + '_' + side)
         if name.startswith('finger'):
             finger = int(name[6])
+            if role == 'architect':
+                part = 'thumb' if finger == 1 else f'finger{finger - 2 if side == "L" else 5 - finger}'
+                segment = int(name.split('-')[1].split('.')[0])
+                return names.index(part + ({2: 'mid', 3: 'tip'}.get(segment, '')) + '_' + side)
             return names.index('wrist_' + side if finger == 1 else f'finger{finger - 2 if side == "L" else 5 - finger}_{side}')
         if name.startswith(('neck', 'head', 'jaw', 'special', 'eye', 'tongue', 'levator', 'orbicularis', 'oris', 'temporalis', 'oculi', 'risorius')): return 2
         if name.startswith(('spine', 'clavicle', 'shoulder', 'breast')): return 1
@@ -229,11 +242,26 @@ def main(source, output, role):
         width = .123 / np.linalg.norm(pivot(f'finger5-1.{side}') - pivot(f'finger2-1.{side}'))
         length = .17 / np.linalg.norm(pivot(f'finger3-1.{side}') - pivot('wrist.' + side))
         matrices[wrist] = np.diag([width, -length, -.22]) @ basis.T
+        if role == 'architect':
+            thumb = names.index('thumb_' + side)
+            matrices[thumb] = matrices[wrist]
+            rest[thumb] = rest[wrist] + matrices[wrist] @ (source_pivots[thumb] - source_pivots[wrist])
         for finger in range(4):
             i = names.index(f'finger{finger}_{side}')
             ref = 2 + (finger if side == 'L' else 3 - finger)
             direction = pivot(f'finger{ref}-3.{side}') - source_pivots[i]
             matrices[i] = builder.align(direction, np.array([0, -1, 0])) * .24
+            if role == 'architect':
+                # One hand fit retains the source knuckle spacing and webbing.
+                matrices[i] = matrices[wrist]
+                rest[i] = rest[wrist] + matrices[wrist] @ (source_pivots[i] - source_pivots[wrist])
+        if role == 'architect':
+            for part in ['thumb', 'finger0', 'finger1', 'finger2', 'finger3']:
+                first = names.index(part + '_' + side)
+                for suffix in ['mid', 'tip']:
+                    joint = names.index(part + suffix + '_' + side)
+                    matrices[joint] = matrices[first]
+                    rest[joint] = rest[first] + matrices[first] @ (source_pivots[joint] - source_pivots[first])
         ankle = names.index('ankle_' + side)
         matrices[ankle] = np.diag([.27, .25, .27])
     translation = rest - np.einsum('nij,nj->ni', matrices, source_pivots)
@@ -321,7 +349,7 @@ def main(source, output, role):
         doc['meshes'].append({'name': name, 'primitives': [{'attributes': attrs, 'indices': accessor(indices, 'SCALAR', 5125), 'material': material}]})
         print(role, name, len(pairs), 'vertices', len(indices) // 3, 'triangles')
 
-    arm_ids = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow', 'wrist', 'finger'))]
+    arm_ids = [i for i, name in enumerate(names) if name.startswith(('shoulder', 'elbow', 'wrist', 'finger', 'thumb'))]
     arms = weights[:, arm_ids].sum(axis=1)
     # A sleeveless work top has a scooped front neck and wide shoulder straps.
     # Both the garment and exposed skin are clipped against these same cuts.

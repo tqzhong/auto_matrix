@@ -10,6 +10,8 @@ import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { crossings } from './helpers/hand-self-contact.mjs';
+import { capsuleTriangleGap } from './helpers/pill-prop-contact.mjs';
 
 async function shipped(name: string) {
   const bytes = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
@@ -41,7 +43,7 @@ async function fixture(t: TestContext) {
   pose(); await new Promise(resolve => setImmediate(resolve)); for (let i = 0; i < 40; i++) pose();
   return { rig, pose, input, models, world };
 }
-test('the seated Architect’s actual shoes rest at the room floor and his palms reach the armrests', async t => {
+test('the seated Architect’s actual shoes rest at the room floor', async t => {
   const { rig } = await fixture(t);
   const body = rig.root.getObjectByName('architect-detailed-body')!; assert.ok(body);
   const shoes: THREE.SkinnedMesh[] = [];
@@ -55,11 +57,6 @@ test('the seated Architect’s actual shoes rest at the room floor and his palms
   // Character root and set root both receive the -1 runtime offset, so the
   // floor is zero in this fixture; the old generic sitting pose was below it.
   assert.ok(bottom >= -.012 && bottom < .035, `shoes float or penetrate the floor: ${bottom}, floor 0`);
-  for (let i = 0; i < 2; i++) {
-    const palm = rig.elbows[i].localToWorld(new THREE.Vector3(0, -.79, .055));
-    const rest = rig.detail.localToWorld(new THREE.Vector3((i ? 1 : -1) * .84, 2.34, .28));
-    assert.ok(palm.distanceTo(rest) < .14, `palm ${i} misses the actual armrest: ${palm.distanceTo(rest)}`);
-  }
 });
 
 test('actual Architect hands sit above the armrest surface instead of sinking into the leather', async t => {
@@ -71,13 +68,147 @@ test('actual Architect hands sit above the armrest surface instead of sinking in
     const positions = object.geometry.attributes.position, skin = object.geometry.attributes.skinIndex, weights = object.geometry.attributes.skinWeight;
     for (let i = 0; i < positions.count; i++) {
       const indices = [skin.getX(i), skin.getY(i), skin.getZ(i), skin.getW(i)], values = [weights.getX(i), weights.getY(i), weights.getZ(i), weights.getW(i)];
-      if (!indices.some((index, j) => values[j] > .5 && /wrist|finger/.test(object.skeleton.bones[index].name))) continue;
+      if (!indices.some((index, j) => values[j] > .5 && /wrist|finger|thumb/.test(object.skeleton.bones[index].name))) continue;
       const v = h.rig.detail.worldToLocal(object.localToWorld(object.getVertexPosition(i, new THREE.Vector3())));
       if (Math.abs(Math.abs(v.x) - .84) < .16 && v.z > -.15 && v.z < .65) { minimum = Math.min(minimum, v.y); count++; }
     }
   });
   console.log('Actual hand surface above leather:', minimum, count);
   assert.ok(count > 20); assert.ok(minimum >= ARCHITECT_ROOM.chair.arm + .0525 - .025, `hand surface enters the armrest: ${minimum}`);
+});
+
+test('the Architect rests his real left palm downward on the chair', async t => {
+  const h = await fixture(t), skin = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
+  const room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room); t.after(() => renderer.dispose());
+  room.position.z = -ARCHITECT_ROOM.chair.z; room.updateMatrixWorld(true);
+  const wrist = skin.skeleton.bones.findIndex(bone => bone.name === 'wrist_L');
+  const attrs = skin.geometry.attributes, point = new THREE.Vector3(), normal = new THREE.Vector3(), mean = new THREE.Vector3();
+  const transform = skin.matrixWorld.clone().multiply(skin.bindMatrixInverse)
+    .multiply(skin.skeleton.bones[wrist].matrixWorld).multiply(skin.skeleton.boneInverses[wrist]).multiply(skin.bindMatrix);
+  let count = 0, supported = 0, gap = Infinity;
+  for (let vertex = 0; vertex < attrs.position.count; vertex++) {
+    if (![0, 1, 2, 3].some(part => attrs.skinIndex.getComponent(vertex, part) === wrist && attrs.skinWeight.getComponent(vertex, part) > .99)) continue;
+    point.fromBufferAttribute(attrs.position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[wrist]);
+    normal.fromBufferAttribute(attrs.normal, vertex);
+    if (Math.abs(point.x) > .065 || point.y < -.14 || point.y > -.04 || normal.z > -.6) continue;
+    mean.add(normal.transformDirection(transform)); count++;
+    const contact = skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3()));
+    const hit = new THREE.Raycaster(contact, new THREE.Vector3(0, -1, 0), 0, .05).intersectObject(renderer.chair, true)[0];
+    if (hit) { supported++; gap = Math.min(gap, hit.distance); }
+  }
+  assert.ok(count > 30, `missing actual palm surface: ${count}`);
+  const down = mean.normalize().dot(new THREE.Vector3(0, -1, 0));
+  assert.ok(down > .9, `the left palm faces upward or sideways: downward alignment ${down}`);
+  assert.ok(supported > 20 && gap < .02, `the real palm floats above the armrest: ${supported} samples, gap ${gap}`);
+});
+
+test('the Architect pinches the visible pen between actual thumb and index surfaces without piercing his hand', async t => {
+  const h = await fixture(t), skin = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
+  const pen = h.rig.architectPen!, shaft = pen.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.CylinderGeometry) as THREE.Mesh<THREE.CylinderGeometry>;
+  skin.skeleton.update(); const attrs = skin.geometry.attributes, index = skin.geometry.index!, points = new Map<number, THREE.Vector3>();
+  const has = (vertex: number, pattern: RegExp) => [0, 1, 2, 3].some(part => attrs.skinWeight.getComponent(vertex, part) > .05 && pattern.test(skin.skeleton.bones[attrs.skinIndex.getComponent(vertex, part)].name));
+  const hand = [];
+  for (let offset = 0; offset < index.count; offset += 3) {
+    const ids = [0, 1, 2].map(part => index.getX(offset + part));
+    if (!ids.some(vertex => has(vertex, /^(?:wrist|thumb\w*|finger\w*)_R$/))) continue;
+    const triangle = ids.map(vertex => {
+      if (!points.has(vertex)) points.set(vertex, skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3())));
+      return points.get(vertex)!;
+    });
+    hand.push({ face: offset / 3, ids, points: triangle, box: new THREE.Box3().setFromPoints(triangle) });
+  }
+  const penFaces: typeof hand = [];
+  pen.traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const a = object.geometry.attributes.position, indices = object.geometry.index;
+    for (let offset = 0; offset < (indices?.count ?? a.count); offset += 3) {
+      const ids = [0, 1, 2].map(part => indices ? indices.getX(offset + part) : offset + part);
+      const triangle = ids.map(vertex => object.localToWorld(new THREE.Vector3().fromBufferAttribute(a, vertex)));
+      penFaces.push({ face: penFaces.length, ids, points: triangle, box: new THREE.Box3().setFromPoints(triangle) });
+    }
+  });
+  const contact = crossings(penFaces, hand, false);
+  assert.equal(contact.count, 0, `pen crosses the actual hand: ${JSON.stringify(contact)}`);
+  const weld = new Map<string, number>(), welded = new Map<number, number>();
+  for (const vertex of points.keys()) {
+    const key = [attrs.position.getX(vertex), attrs.position.getY(vertex), attrs.position.getZ(vertex)].map(value => value.toFixed(6)).join(',');
+    if (!weld.has(key)) weld.set(key, weld.size); welded.set(vertex, weld.get(key)!);
+  }
+  const surface = hand.map(face => ({ ...face, ids: face.ids.map(vertex => welded.get(vertex)!) }));
+  const self = crossings(surface, surface);
+  assert.equal(self.count, 0, `the pen grip folds the real hand through itself: ${JSON.stringify(self)}`);
+  const gaps = { thumb: Infinity, index: Infinity }, radius = shaft.geometry.parameters.radiusTop, length = shaft.geometry.parameters.height;
+  for (const face of hand) {
+    const triangle = face.points.map(point => shaft.worldToLocal(point.clone())) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
+    const gap = capsuleTriangleGap(triangle, radius, length);
+    if (face.ids.some(vertex => has(vertex, /^thumb\w*_R$/))) gaps.thumb = Math.min(gaps.thumb, gap);
+    if (face.ids.some(vertex => has(vertex, /^finger3\w*_R$/))) gaps.index = Math.min(gaps.index, gap);
+  }
+  console.log('Actual pen grip gaps:', gaps);
+  for (const [digit, gap] of Object.entries(gaps)) assert.ok(gap >= -.001 && gap < .004, `${digit} misses or penetrates the pen: ${gap}`);
+});
+
+test('the complete Architect hands and pen clear the real chair without hand self intersections', async t => {
+  const h = await fixture(t), skin = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
+  const room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room); t.after(() => renderer.dispose());
+  room.position.z = -ARCHITECT_ROOM.chair.z; room.updateMatrixWorld(true); skin.skeleton.update();
+  const attrs = skin.geometry.attributes, indices = skin.geometry.index!, points = new Map<number, THREE.Vector3>();
+  const hands = [], weld = new Map<string, number>(), welded = new Map<number, number>();
+  for (let offset = 0; offset < indices.count; offset += 3) {
+    const ids = [0, 1, 2].map(part => indices.getX(offset + part));
+    if (!ids.some(vertex => [0, 1, 2, 3].some(part => attrs.skinWeight.getComponent(vertex, part) > .05 && /^(wrist|thumb\w*|finger\w*)_[RL]$/.test(skin.skeleton.bones[attrs.skinIndex.getComponent(vertex, part)].name)))) continue;
+    const triangle = ids.map(vertex => {
+      if (!points.has(vertex)) {
+        points.set(vertex, skin.localToWorld(skin.getVertexPosition(vertex, new THREE.Vector3())));
+        const key = [attrs.position.getX(vertex), attrs.position.getY(vertex), attrs.position.getZ(vertex)].map(value => value.toFixed(6)).join(',');
+        if (!weld.has(key)) weld.set(key, weld.size); welded.set(vertex, weld.get(key)!);
+      }
+      return points.get(vertex)!;
+    });
+    hands.push({ face: offset / 3, ids, points: triangle, box: new THREE.Box3().setFromPoints(triangle) });
+  }
+  assert.ok(hands.length > 20000, `the complete hand surfaces are required: ${hands.length}`);
+  const surface = hands.map(face => ({ ...face, ids: face.ids.map(vertex => welded.get(vertex)!) }));
+  const self = crossings(surface, surface); assert.equal(self.count, 0, JSON.stringify(self));
+  const faces = (root: THREE.Object3D) => {
+    const result: typeof hands = [];
+    root.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const a = object.geometry.attributes.position, index = object.geometry.index;
+      for (let offset = 0; offset < (index?.count ?? a.count); offset += 3) {
+        const ids = [0, 1, 2].map(part => index ? index.getX(offset + part) : offset + part);
+        const triangle = ids.map(vertex => object.localToWorld(new THREE.Vector3().fromBufferAttribute(a, vertex)));
+        result.push({ face: result.length, ids, points: triangle, box: new THREE.Box3().setFromPoints(triangle) });
+      }
+    });
+    return result;
+  };
+  const result = crossings([...hands, ...faces(h.rig.architectPen!)], faces(renderer.chair), false);
+  assert.equal(result.count, 0, `hand or pen enters the chair: ${JSON.stringify(result)}`);
+});
+
+test('the saved Architect body and pen restore after walking and reverse story-clock changes', async t => {
+  const h = await fixture(t), saved = structuredClone(h.input);
+  const snapshot = () => {
+    const result: { name: string; positions: number[] }[] = [];
+    h.rig.root.updateMatrixWorld(true);
+    h.rig.root.getObjectByName('architect-detailed-body')!.traverse(object => {
+      if (!(object instanceof THREE.SkinnedMesh)) return;
+      object.skeleton.update(); const positions: number[] = [], point = new THREE.Vector3();
+      for (let vertex = 0; vertex < object.geometry.attributes.position.count; vertex++)
+        positions.push(...object.localToWorld(object.getVertexPosition(vertex, point)).toArray());
+      result.push({ name: object.name, positions });
+    });
+    return { meshes: result, pen: h.rig.architectPen!.matrixWorld.toArray(), visible: h.rig.architectPen!.visible };
+  };
+  const expected = snapshot();
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined; h.input.speed = 2.5;
+  for (let frame = 0; frame < 12; frame++) h.pose();
+  assert.equal(h.rig.architectPen!.visible, false);
+  for (const thumb of h.rig.architectThumbs!) assert.deepEqual(thumb.quaternion.toArray(), [0, 0, 0, 1]);
+  Object.assign(h.input, saved);
+  for (const elapsed of [9, 0, 6, 3]) { h.input.architect!.elapsed = elapsed; h.pose(); }
+  assert.deepEqual(snapshot(), expected, 'the complete body or pen retained a previous pose');
 });
 
 test('the Architect’s jacket pockets stay on his torso when his forearms move', async t => {

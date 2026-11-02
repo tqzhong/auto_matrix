@@ -163,6 +163,7 @@ export interface CharacterRig {
   diggerProps?: DiggerProps;
   sourcePortalProps?: SourcePortalProps;
   architectPen?: THREE.Group;
+  architectThumbs?: THREE.Object3D[];
   freewayProps?: FreewayPickupProps;
   truckProps?: TruckWeaponProps;
 }
@@ -769,7 +770,7 @@ export class CharacterModels {
       if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, state.id === 'oracle' ? cloth : seams,
         [0, state.id === 'oracle' ? -.588 : -.56, 0], state.id === 'oracle' ? [.109, .035, .106] : [.13, .045, .14]);
       const handMaterial = look.leather ? black : skin;
-      const parentHand = state.id === 'spoon_boy' || state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
+      const parentHand = state.id === 'spoon_boy' || state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'architect', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
       const hand = wristOffset ? this.joint(elbow, 0, -wristOffset) : elbow;
       if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle' && state.id !== 'spoon_boy') mobilWrists.push(hand); }
@@ -981,8 +982,8 @@ export class CharacterModels {
     if (input.architect?.role === 'architect' && !rig.architectPen) {
       const pen = new THREE.Group(); pen.name = 'architect-metal-pen'; rig.detail.add(pen); rig.architectPen = pen;
       const metal = this.material(new THREE.MeshStandardMaterial({ color: 0xaeb3ae, roughness: .28, metalness: .85 }));
-      this.mesh(pen, this.geometry(new THREE.CylinderGeometry(.022, .022, .36, 10)), metal, [0, 0, 0]);
-      this.mesh(pen, this.geometry(new THREE.ConeGeometry(.021, .05, 10)), metal, [0, -.2, 0]).rotation.z = Math.PI;
+      this.mesh(pen, this.geometry(new THREE.CylinderGeometry(.011, .011, .36, 16)), metal, [0, 0, 0]);
+      this.mesh(pen, this.geometry(new THREE.ConeGeometry(.010, .05, 12)), metal, [0, -.2, 0]).rotation.z = Math.PI;
     }
     if (rig.sourcePortalProps && !rig.hero) { rig.detail.position.set(0, .04, 0); rig.detail.rotation.set(0, 0, 0); }
     if (input.sourcePortal && input.sourcePortal.role !== 'morpheus' && !rig.sourcePortalProps) {
@@ -1394,7 +1395,6 @@ export class CharacterModels {
       rig.head.rotation.y = Math.sin(input.training.elapsed * .8) * .12;
     }
     poseSourcePortal(rig, input.sourcePortal);
-    poseArchitect(rig, input.architect);
     poseMobilRefusal(rig, input.mobilRefusal);
     poseMobilReunion(rig, input.mobilReunion);
     poseMobilFamily(rig, input.mobilFamily);
@@ -1410,6 +1410,7 @@ export class CharacterModels {
     poseLogosBane(rig, input.logosBane);
     poseHammerPilot(rig, input.hammerPilot);
     poseLogosPilot(rig, input.logosPilot);
+    poseArchitect(rig, input.architect);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
     if (rig.spoonHands) connectGardenWrists(rig, rig.spoonHands);
     this.oracleFirstBodies.present(rig);

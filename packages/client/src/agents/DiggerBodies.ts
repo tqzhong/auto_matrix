@@ -95,10 +95,29 @@ export class DiggerBodies {
           joint = child ?? rig.mobilWrists?.[side] ?? rig.elbows[side];
           if (!child) offset = new THREE.Matrix4().makeTranslation(0, rig.mobilWrists ? 0 : -.65, .005);
         }
+        else if (part === 'thumb' && entry.role === 'architect') {
+          const thumb = new THREE.Group(); thumb.name = `architect-thumb-${side}`;
+          thumb.position.copy(bone.position).sub(model.getObjectByName(`wrist_${side ? 'L' : 'R'}`)!.position); thumb.position.z += .005;
+          rig.mobilWrists![side].add(thumb);
+          rig.architectThumbs ??= []; rig.architectThumbs[side] = thumb; joint = thumb;
+        }
         else if (part === 'hip') joint = rig.hips[side];
         else if (part === 'knee') joint = rig.knees[side];
         else if (part === 'ankle') joint = rig.ankles[side];
-        else if (part.startsWith('finger')) joint = rig.fingers[side][Number(part.slice(6))];
+        else if (entry.role === 'architect' && /^(thumb|finger[0-3])(mid|tip)$/.test(part)) {
+          const [, digit, segment] = /^(thumb|finger[0-3])(mid|tip)$/.exec(part)!;
+          const first = digit === 'thumb' ? rig.architectThumbs![side] : rig.fingers[side][Number(digit.slice(6))];
+          const parent = segment === 'mid' ? first : first.getObjectByName('architect-mid')!;
+          const previous = model.getObjectByName(`${digit}${segment === 'mid' ? '' : 'mid'}_${side ? 'L' : 'R'}`)!;
+          const child = new THREE.Group(); child.name = `architect-${segment}`; child.position.copy(bone.position).sub(previous.position);
+          parent.add(child); joint = child;
+        }
+        else if (part.startsWith('finger')) {
+          joint = rig.fingers[side][Number(part.slice(6))];
+          if (entry.role === 'architect') {
+            joint.position.copy(bone.position).sub(model.getObjectByName(`wrist_${side ? 'L' : 'R'}`)!.position); joint.position.z += .005;
+          }
+        }
       }
       bone.matrixAutoUpdate = false; drivers.push({ bone, joint, offset });
     }
