@@ -171,6 +171,29 @@ test('the Architect rests his real left palm downward on the chair', async t => 
   assert.ok(supported > 20 && gap < .02, `the real palm floats above the armrest: ${supported} samples, gap ${gap}`);
 });
 
+test('the left forearm axis clears the leather by at least its actual wrist radius', async t => {
+  const h = await fixture(t), skin = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
+  const room = new THREE.Group(), renderer = new ArchitectRoomRenderer(room); t.after(() => renderer.dispose());
+  room.position.z = -ARCHITECT_ROOM.chair.z; room.updateMatrixWorld(true);
+  const elbow = skin.skeleton.bones.findIndex(bone => bone.name === 'elbow_L');
+  const wrist = skin.skeleton.bones.findIndex(bone => bone.name === 'wrist_L');
+  const attrs = skin.geometry.attributes, axis = h.rig.mobilWrists![1].position.clone().normalize();
+  const used = new Set(skin.geometry.index!.array), point = new THREE.Vector3();
+  let radius = 0, count = 0;
+  for (const vertex of used) {
+    if (![0, 1, 2, 3].some(part => [elbow, wrist].includes(attrs.skinIndex.getComponent(vertex, part)) && attrs.skinWeight.getComponent(vertex, part) > .25)) continue;
+    point.fromBufferAttribute(attrs.position, vertex).applyMatrix4(skin.bindMatrix).applyMatrix4(skin.skeleton.boneInverses[elbow]);
+    const along = point.dot(axis);
+    if (along < .60 || along > .64) continue;
+    radius = Math.max(radius, point.addScaledVector(axis, -along).length()); count++;
+  }
+  assert.ok(count > 32 && radius > .04 && radius < .10, 'actual visible wrist cross-section is required');
+  const hit = new THREE.Raycaster(new THREE.Vector3(.84, 3, .12), new THREE.Vector3(0, -1, 0), 0, 2).intersectObject(renderer.chair, true)[0];
+  assert.ok(hit, 'the actual leather armrest must be present');
+  const gap = h.rig.elbows[1].getWorldPosition(new THREE.Vector3()).y - hit.point.y;
+  assert.ok(gap >= radius + .008, `forearm axis clearance ${gap} cannot accommodate the actual wrist radius ${radius}`);
+});
+
 test('the Architect pinches the visible pen between actual thumb and index surfaces without piercing his hand', async t => {
   const h = await fixture(t), skin = h.rig.root.getObjectByName('architect-anatomical-body') as THREE.SkinnedMesh;
   const pen = h.rig.architectPen!, shaft = pen.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.CylinderGeometry) as THREE.Mesh<THREE.CylinderGeometry>;

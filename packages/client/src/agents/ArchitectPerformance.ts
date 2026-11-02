@@ -78,7 +78,7 @@ export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture, del
         .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2));
       const contact = rig.detail.localToWorld(new THREE.Vector3(sign * .84, ARCHITECT_ROOM.chair.arm + (i ? .0715 : .18), i ? .73 : .28));
       reach(rig.shoulders[i], rig.elbows[i], wrist.position,
-        contact.sub(palm.applyQuaternion(orientation)), new THREE.Vector3(sign * .3, -1, -.35).applyQuaternion(rotation));
+        contact.sub(palm.applyQuaternion(orientation)), new THREE.Vector3(sign * (i ? .65 : .3), -1, -.35).applyQuaternion(rotation));
       wrist.quaternion.copy(rig.elbows[i].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
       wrist.updateWorldMatrix(false, true);
       rig.fingers[i].forEach((finger, digit) => {
