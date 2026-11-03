@@ -97,3 +97,26 @@ test('changed skin bindings cannot reuse a field from an unrelated arm', t => {
   h.arms[1].shoulder.rotation.y = .65; h.surface.update(); h.reference(); h.seams();
   h.arms[1].shoulder.rotation.y = -.4; h.surface.update(); h.reference(); h.seams();
 });
+
+test('wrist shading only reads bone frames for nonzero normalized skin influences', t => {
+  const h = wrists(); t.after(() => h.dispose());
+  let indexReads = 0, activeInfluences = 0;
+  for (const mesh of [h.hand, h.body]) {
+    const weights = new THREE.Uint8BufferAttribute(Array(10).fill([160, 95, 0, 0]).flat(), 4, true);
+    mesh.geometry.setAttribute('skinWeight', weights);
+    const indices = mesh.geometry.getAttribute('skinIndex') as THREE.BufferAttribute;
+    for (let vertex = 0; vertex < indices.count; vertex++) indices.setY(vertex, vertex < 5 ? 0 : 2);
+    const readWeight = weights.getComponent.bind(weights), readIndex = indices.getComponent.bind(indices);
+    t.mock.method(weights, 'getComponent', (vertex: number, component: number) => {
+      const weight = readWeight(vertex, component); if (weight !== 0) activeInfluences++; return weight;
+    });
+    t.mock.method(indices, 'getComponent', (vertex: number, component: number) => {
+      indexReads++; return readIndex(vertex, component);
+    });
+  }
+  h.arms[0].shoulder.rotation.y = .4; h.arms[1].shoulder.rotation.y = -.3;
+  h.surface.update();
+  assert.ok(activeInfluences > 0);
+  assert.equal(indexReads, activeInfluences, 'zero-weight influences must not read a bone frame');
+  h.reference(); h.seams();
+});

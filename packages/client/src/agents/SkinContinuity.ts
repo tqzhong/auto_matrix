@@ -76,7 +76,9 @@ export class SkinContinuity {
   private blend(mesh: THREE.SkinnedMesh, frames: THREE.Matrix3[], vertex: number): THREE.Matrix3 {
     const a = mesh.geometry.attributes, values = this.linear.elements; values.fill(0);
     for (let k = 0; k < 4; k++) {
-      const frame = frames[a.skinIndex.getComponent(vertex, k)].elements, weight = a.skinWeight.getComponent(vertex, k);
+      const weight = a.skinWeight.getComponent(vertex, k);
+      if (weight === 0) continue;
+      const frame = frames[a.skinIndex.getComponent(vertex, k)].elements;
       for (let i = 0; i < 9; i++) values[i] += frame[i] * weight;
     }
     return this.linear;

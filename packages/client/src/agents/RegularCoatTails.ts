@@ -53,7 +53,7 @@ export class RegularCoatTails {
       }
       return { mesh, vertices: Uint32Array.from(vertices), edges: Uint32Array.from(edges), points: new Float64Array(vertices.length * 3), matrices: mesh.skeleton.bones.map(() => new THREE.Matrix4()), bands: new Map<number, number[]>(), visits: new Uint32Array(edges.length / 2) };
     });
-    this.lastPose = new Float64Array(3 + rig.bones.size * 16 + this.inner.length * 2 + this.panels.length * 2); this.lastPose.fill(NaN);
+    this.lastPose = new Float64Array(3 + rig.bones.size * 16 + this.inner.length * 2 + this.panels.length * 5); this.lastPose.fill(NaN);
   }
 
   private collect(x: number, z: number): void {
@@ -122,12 +122,15 @@ export class RegularCoatTails {
   update(motion: MotionState, coat: number): boolean {
     if (!this.panels.some(({ source }) => source.mesh.visible)) { this.lastPose.fill(NaN); return false; }
     this.rig.root.updateMatrixWorld(true);
-    let changed = false, offset = 0;
-    const check = (value: number) => { changed ||= this.lastPose[offset] !== value; this.lastPose[offset++] = value; };
+    let changed = false, refit = coat !== 0 || this.lastPose[2] !== coat, offset = 0;
+    const check = (value: number, fit = false) => { const different = this.lastPose[offset] !== value; changed ||= different; refit ||= fit && different; this.lastPose[offset++] = value; };
     check(motion.time); check(motion.phase); check(coat);
-    for (const part of this.inner) { check(part.mesh.geometry.id); check(Number(part.mesh.visible)); }
+    for (const part of this.inner) { check(part.mesh.geometry.id, true); check(Number(part.mesh.visible), true); }
     for (const bone of this.rig.bones.values()) for (const value of bone.matrixWorld.elements) check(value);
-    for (const { source } of this.panels) { check(source.mesh.geometry.id); check((source.mesh.geometry.attributes.position as THREE.BufferAttribute).version); }
+    for (const { source } of this.panels) {
+      check(source.mesh.geometry.id, true); check((source.mesh.geometry.attributes.position as THREE.BufferAttribute).version, true);
+      check(source.mesh.position.x, true); check(source.mesh.position.y, true); check(source.mesh.position.z, true);
+    }
     if (!changed) return true;
     const pelvis = this.rig.bones.get('pelvis')!;
     this.inverse.copy(pelvis.matrixWorld).invert();
@@ -142,8 +145,16 @@ export class RegularCoatTails {
           const weight = skinWeight.getComponent(id, joint);
           if (weight) this.point.addScaledVector(this.weighted.copy(this.base).applyMatrix4(matrices[skinIndex.getComponent(id, joint)]), weight);
         }
-        this.point.applyMatrix4(this.transform).toArray(part.points, i * 3);
+        this.point.applyMatrix4(this.transform);
+        refit ||= part.points[i * 3] !== this.point.x || part.points[i * 3 + 1] !== this.point.y || part.points[i * 3 + 2] !== this.point.z;
+        this.point.toArray(part.points, i * 3);
       }
+    }
+    // Compare the actual posed surface, including current morphs and skin
+    // bindings. A moving head or clock alone cannot change an unflared coat.
+    if (!refit) return true;
+    for (const part of this.inner) {
+      if (!part.mesh.visible || !part.vertices.length) continue;
       for (const band of part.bands.values()) band.length = 0;
       part.visits.fill(0);
       for (let edge = 0; edge < part.edges.length; edge += 2) {
@@ -213,8 +224,8 @@ export class RegularCoatTails {
       for (let i = 0; i < work.length; i++) { const value = Math.fround(work[i]); changed ||= position.array[i] !== value; position.array[i] = value; source.velocity[i] = 0; }
       if (changed) { position.needsUpdate = true; source.mesh.geometry.computeVertexNormals(); source.mesh.geometry.computeBoundingBox(); source.mesh.geometry.computeBoundingSphere(); source.mesh.geometry.boundingSphere!.radius += 1e-6; }
     }
-    offset = this.lastPose.length - this.panels.length * 2;
-    for (const { source } of this.panels) { this.lastPose[offset++] = source.mesh.geometry.id; this.lastPose[offset++] = (source.mesh.geometry.attributes.position as THREE.BufferAttribute).version; }
+    offset = this.lastPose.length - this.panels.length * 5;
+    for (const { source } of this.panels) { this.lastPose[offset] = source.mesh.geometry.id; this.lastPose[offset + 1] = (source.mesh.geometry.attributes.position as THREE.BufferAttribute).version; offset += 5; }
     return true;
   }
 }
