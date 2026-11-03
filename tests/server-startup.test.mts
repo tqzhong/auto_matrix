@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
@@ -152,6 +152,30 @@ test('a first startup without a world checkpoint still saves a usable new world'
   assert.ok(Array.isArray(saved.events) && Array.isArray(saved.relationships));
   const restored = start(t, f.directory, 'normal'); await restored.waitFor('Restored world at tick 0');
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
+});
+
+test('real restarts preserve paused pill action clocks and progress for both performers', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_pills'), journey = f.checkpoint.sandbox.neoLife.journey;
+  journey.pills = { phase: 'talking', elapsed: 4.3, conversation: { beat: 1, belief: 'agency' },
+    approach: { x: PILL_ROOM.seat, z: PILL_ROOM.z, yaw: -Math.PI / 2 } };
+  for (const role of ['neo', 'morpheus'] as const) {
+    const actor = f.checkpoint.agents[role];
+    actor.position = filmPosition('film_lafayette', role === 'neo' ? PILL_ROOM.seat : -PILL_ROOM.seat, PILL_ROOM.z);
+    actor.rotation = role === 'neo' ? -Math.PI / 2 : Math.PI / 2;
+    actor.currentAction = { type: 'idle', parameters: { ...(role === 'neo' ? { player: true, resolved: true } : { seated: true }),
+      pills: { phase: 'talking', elapsed: 4.3, conversation: journey.pills.conversation, role } }, startedAt: 1341, duration: 1, progress: role === 'neo' ? .5 : 1 };
+  }
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  for (let restart = 0; restart < 2; restart++) {
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+    const address = JSON.parse(server.output().match(/STARTUP_LISTENING (\{[^\n]+\})/)![1]);
+    const world = await (await fetch(`http://127.0.0.1:${address.port}/api/world`)).json();
+    assert.equal(world.simulation.running, false); assert.equal(world.simulation.tick, 1343);
+    assert.deepEqual(world.sandbox.neoLife.journey.pills, journey.pills);
+    for (const role of ['neo', 'morpheus']) assert.deepEqual(world.agents[role].currentAction, f.checkpoint.agents[role].currentAction,
+      `${role}: startup must retain authoritative saved action clocks instead of starting at the current world tick`);
+    await server.stop();
+  }
 });
 
 test('paused awakening checkpoints reconstruct their saved performance before any player reconnects', { timeout: 60000 }, async t => {

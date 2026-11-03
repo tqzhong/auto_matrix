@@ -377,6 +377,7 @@ export class HeroModels {
     const glasses = new THREE.Group(); head.add(glasses);
     const glassesId = support === 'mouse' ? 'mouse' : id;
     if (glassesId === 'smith') this.smithGlasses(glasses, eye, root);
+    else if (glassesId === 'morpheus' && !support) this.morpheusGlasses(glasses, eye, root);
     else this.glasses(glasses, eye, glassesId, metadata.glassesTemples);
     if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
@@ -701,6 +702,92 @@ export class HeroModels {
     const bridge = new THREE.CatmullRomCurve3([ends[0], crest, ends[1]]).getPoints(24);
     for (const p of bridge) p.z = Math.max(p.z, front(p.x, p.y) + .005);
     this.mesh(parent, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bridge), 32, .0018, 6), metal).name = 'smith-glasses-bridge';
+  }
+
+  private morpheusGlasses(parent: THREE.Group, eye: THREE.Vector3, root: THREE.Group): void {
+    const head = parent.parent!, skin = root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+    skin.skeleton.update(); const space = head.matrixWorld.clone().invert().multiply(skin.matrixWorld);
+    const points = Array.from({ length: skin.geometry.attributes.position.count }, (_, id) => skin.getVertexPosition(id, new THREE.Vector3()).applyMatrix4(space));
+    const index = skin.geometry.index!, triangles: { a: THREE.Vector3; b: THREE.Vector3; c: THREE.Vector3; left: number; right: number; bottom: number; top: number; denominator: number }[] = [];
+    for (let i = 0; i < index.count; i += 3) {
+      const [a, b, c] = [0, 1, 2].map(k => points[index.getX(i + k)]);
+      const left = Math.min(a.x, b.x, c.x), right = Math.max(a.x, b.x, c.x), bottom = Math.min(a.y, b.y, c.y), top = Math.max(a.y, b.y, c.y);
+      const denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
+      if (top < eye.y - .10 || bottom > eye.y + .10 || Math.abs(denominator) < 1e-10) continue;
+      triangles.push({ a, b, c, left, right, bottom, top, denominator });
+    }
+    const front = (x: number, y: number) => {
+      let outer = -Infinity;
+      for (const { a, b, c, left, right, bottom, top, denominator } of triangles) {
+        if (x < left || x > right || y < bottom || y > top) continue;
+        const s = ((b.y - c.y) * (x - c.x) + (c.x - b.x) * (y - c.y)) / denominator;
+        const t = ((c.y - a.y) * (x - c.x) + (a.x - c.x) * (y - c.y)) / denominator, w = 1 - s - t;
+        if (s >= -1e-6 && t >= -1e-6 && w >= -1e-6) outer = Math.max(outer, s * a.z + t * b.z + w * c.z);
+      }
+      return outer;
+    };
+    const black = new THREE.MeshPhysicalMaterial({ color: '#060909', metalness: .08, roughness: .12, clearcoat: 1 });
+    const metal = new THREE.MeshStandardMaterial({ color: '#343b38', metalness: .85, roughness: .28 });
+    const width = .064, height = .040, spacing = Math.max(eye.x, width + .01), segments = 64;
+    const point = (side: number, x: number, y: number, z = 0) => new THREE.Vector3(x, y, z - .17 * x * side - x * x * 1.4)
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), -side * .035).add(new THREE.Vector3(side * spacing, eye.y, eye.z + .077));
+    const lenses = [-1, 1].map(side => {
+      const positions: number[] = [], faces: number[] = [];
+      const vertex = (r: number, angle: number, sign: number) => {
+        const id = positions.length / 3;
+        positions.push(...point(side, width * r * Math.cos(angle), height * r * Math.sin(angle), sign * .0014).toArray());
+        return id;
+      };
+      const edges: number[][] = [];
+      for (const sign of [1, -1]) {
+        const center = vertex(0, 0, sign); let previous = [center];
+        for (let ring = 1; ring <= 4; ring++) {
+          const next = Array.from({ length: segments }, (_, i) => vertex(ring / 4, i / segments * Math.PI * 2, sign));
+          const triangle = (a: number, b: number, c: number) => faces.push(...(sign > 0 ? [a, b, c] : [a, c, b]));
+          for (let i = 0; i < segments; i++) {
+            const j = (i + 1) % segments;
+            if (ring === 1) triangle(center, next[i], next[j]);
+            else { triangle(previous[i], next[i], next[j]); triangle(previous[i], next[j], previous[j]); }
+          }
+          previous = next;
+        }
+        edges.push(previous);
+      }
+      // A thin edge closes the parallel curved faces without a bulbous rim.
+      for (let i = 0; i < segments; i++) {
+        const j = (i + 1) % segments;
+        faces.push(edges[0][i], edges[1][i], edges[1][j], edges[0][i], edges[1][j], edges[0][j]);
+      }
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setIndex(faces);
+      return { side, geometry };
+    });
+    let forward = -Infinity;
+    for (const { geometry } of lenses) {
+      const p = geometry.attributes.position;
+      for (let i = 0; i < p.count; i++) forward = Math.max(forward, front(p.getX(i), p.getY(i)) + .005 - p.getZ(i));
+    }
+    for (const { side, geometry } of lenses) {
+      const p = geometry.attributes.position;
+      for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) + forward);
+      geometry.computeVertexNormals(); this.mesh(parent, geometry, black).name = `morpheus-glasses-lens-${side}`;
+    }
+    const ends = [-1, 1].map(side => point(side, -side * width * Math.sqrt(1 - (.005 / height) ** 2), .005).add(new THREE.Vector3(0, 0, forward)));
+    const crest = ends[0].clone().lerp(ends[1], .5); crest.y += .009;
+    const bridge = new THREE.CatmullRomCurve3([ends[0], crest, ends[1]]).getPoints(32);
+    for (const p of bridge) p.z = Math.max(p.z, front(p.x, p.y) + .0035);
+    this.mesh(parent, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bridge), 32, .0015, 8), metal).name = 'morpheus-glasses-bridge';
+    for (const [i, side] of [-1, 1].entries()) {
+      const center = new THREE.Vector3(side * .022, eye.y - .008, 0); center.z = front(center.x, center.y) + .0025;
+      const pad = new THREE.SphereGeometry(1, 16, 10), vertices = pad.attributes.position;
+      for (let j = 0; j < vertices.count; j++) {
+        const x = center.x + vertices.getX(j) * .0035, y = center.y + vertices.getY(j) * .005;
+        vertices.setXYZ(j, x, y, front(x, y) + .0025 + vertices.getZ(j) * .001);
+      }
+      pad.computeVertexNormals(); this.mesh(parent, pad, metal).name = `morpheus-nose-pad-${side}`;
+      const mount = new THREE.CatmullRomCurve3([ends[i], new THREE.Vector3(center.x, eye.y + .003, center.z + .004), center]).getPoints(16);
+      for (const p of mount) p.z = Math.max(p.z, front(p.x, p.y) + .0035);
+      this.mesh(parent, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(mount), 16, .0012, 8), metal).name = `morpheus-nose-mount-${side}`;
+    }
   }
 
   private glasses(head: THREE.Group, eye: THREE.Vector3, id: Exclude<HeroId, 'smith'> | 'mouse', temples?: [number, number, number][][]): void {

@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -342,7 +342,9 @@ async function main(): Promise<void> {
       if (!agent) continue;
       Object.assign(agent.state, saved);
       delete agent.state.controller;
-      if (agent.state.currentAction?.type === 'talk_to' && !checkpoint.conversations || agent.state.currentAction?.parameters.player) {
+      const journey = checkpoint.sandbox?.neoLife?.journey;
+      const savedPillAction = journey && journey.actor === id && pillLocked(journey) && agent.state.currentAction?.parameters.pills;
+      if (agent.state.currentAction?.type === 'talk_to' && !checkpoint.conversations || agent.state.currentAction?.parameters.player && !savedPillAction) {
         agent.state.currentAction = null; agent.state.targetPosition = null; agent.state.currentPath = [];
         agent.state.velocity = { x: 0, y: 0, z: 0 };
       }

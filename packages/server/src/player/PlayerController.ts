@@ -157,7 +157,8 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
+    if (!(interlude && interlude.actor === agent.id && pillLocked(interlude) && agent.currentAction?.parameters.pills)) agent.currentAction = null;
+    agent.targetPosition = null; agent.currentPath = [];
     agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
     this.owners.set(id, socketId);
@@ -245,7 +246,9 @@ export class PlayerController {
     if (agent) {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
-      agent.currentAction = null; agent.velocity = { x: 0, y: 0, z: 0 };
+      const journey = this.sandbox?.life.film.state;
+      if (!(journey && journey.actor === agent.id && pillLocked(journey) && agent.currentAction?.parameters.pills)) agent.currentAction = null;
+      agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);

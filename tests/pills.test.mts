@@ -110,6 +110,27 @@ test('cold loading restores both pill performers before a player reconnects', ()
   }
 });
 
+test('paused pill re-entry preserves the saved action clocks and progress without masking a new choice', () => {
+  for (const phase of ['talking', 'taking'] as const) {
+    const h = setup();
+    if (phase === 'taking') { h.offer(); h.command('pill:red'); }
+    else { h.command('act'); h.frames(PILL_TIMING.seat + .1); }
+    h.frames(1.3);
+    const morpheus = h.world.agents.get('morpheus')!;
+    h.neo.currentAction!.progress = .5; morpheus.currentAction!.progress = 1;
+    const actions = structuredClone([h.neo.currentAction, morpheus.currentAction]), saved = structuredClone(h.state().pills);
+    h.players.release('player', h.tick() + 1); h.players.possess('player', 'neo', h.tick() + 2);
+    assert.deepEqual(h.state().pills, saved);
+    assert.deepEqual([h.neo.currentAction, morpheus.currentAction], actions, `${phase}: re-entry must not restart unchanged saved actions`);
+    const position = structuredClone(h.neo.position);
+    h.frames(.2); assert(h.state().pills!.elapsed > saved!.elapsed, 'normal running frames must still advance the performance');
+    if (phase === 'taking') assert.deepEqual(h.neo.position, position);
+  }
+  const h = setup(); h.offer(); h.command('pill:red');
+  assert.equal(h.neo.currentAction!.parameters.pills.choice, 'red');
+  assert.equal(h.world.agents.get('morpheus')!.currentAction!.parameters.pills.choice, 'red', 'a genuinely changed action must still reach both actors');
+});
+
 test('pill pose restoration leaves occupied and dead performers alone', () => {
   for (const reserved of ['neo', 'morpheus'] as const) for (const condition of ['occupied', 'dead'] as const) {
     const h = setup(); h.command('act'); h.frames(PILL_TIMING.seat + .1); h.players.release('player', h.tick());

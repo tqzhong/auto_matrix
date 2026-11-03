@@ -2420,6 +2420,7 @@ export class FilmStorySystem {
     if (!state || !this.controls(agent) || !pillLocked(state)) return;
     if (this.world.agents.get('morpheus')?.controller) return;
     const pills = state.pills!; const life = this.sandbox().neoLife!;
+    const previous = [agent.currentAction, this.world.agents.get('morpheus')!.currentAction];
     const duration = pills.phase === 'seating' ? PILL_TIMING.seat : pills.phase === 'talking' ? PILL_TALK_SECONDS[pills.conversation!.beat]
       : pills.phase === 'offering' ? PILL_TIMING.offer : PILL_TIMING.take;
     if (pills.phase !== 'choice') pills.elapsed = Math.min(duration, pills.elapsed + Math.min(.1, dt));
@@ -2429,6 +2430,10 @@ export class FilmStorySystem {
     const morpheus = this.world.agents.get('morpheus')!;
     morpheus.position = filmPosition(this.scene!.set, -PILL_ROOM.seat, PILL_ROOM.z); morpheus.rotation = Math.PI / 2; morpheus.velocity = { x: 0, y: 0, z: 0 };
     morpheus.currentAction = { type: 'idle', parameters: { seated: true, pills: { phase: pills.phase, elapsed: pills.elapsed, choice: pills.choice, conversation: pills.conversation, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
+    if (dt === 0) for (const [index, actor] of [agent, morpheus].entries()) {
+      const action = previous[index];
+      if (action?.type === 'idle' && JSON.stringify(action.parameters) === JSON.stringify(actor.currentAction!.parameters)) actor.currentAction = action;
+    }
     state.lastText = pills.phase === 'seating' ? '你在对面的皮椅上坐下。Morpheus 等你安静下来。'
       : pills.phase === 'talking' ? pillTalkCue(pills).text
       : pills.phase === 'offering' ? pills.conversation ? 'MORPHEUS · 蓝色让你回到熟悉的生活；红色让你继续追索真相。我不能替你承担这个选择。'
