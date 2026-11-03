@@ -156,6 +156,17 @@ export class OpeningHotelSystem {
     }
     return true;
   }
+  restoreFrame(actor: AgentState): boolean {
+    const journey = this.journey, state = this.state;
+    if (journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id
+      || !state || !['breach', 'dive', 'ladder_ready', 'climbing'].includes(state.phase)) return false;
+    const action = actor.currentAction, gesture = action?.parameters.hotel303 as { phase: string; elapsed: number } | undefined;
+    const saved = state.phase === 'breach' || state.phase === 'dive'
+      ? gesture?.phase === (state.phase === 'breach' ? 'surrender' : 'dive') && gesture.elapsed === state.elapsed
+      : action?.parameters.climbing === true;
+    if (!saved) this.frame(actor);
+    return true;
+  }
   frame(actor: AgentState): void {
     const state = this.state; if (!state) return;
     if (state.phase === 'breach') {

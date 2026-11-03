@@ -699,6 +699,42 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
   assert.equal(state.openingHotel?.phase, 'done'); assert.ok(state.completed.includes('m1_room303'));
 });
 
+test('paused 303 performances retain their complete action and pose through release, restore and re-entry', () => {
+  for (const phase of ['breach', 'dive', 'ladder_ready', 'climbing'] as const) {
+    const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!, actor = h.actor();
+    Object.assign(state.openingHotel!, { phase, elapsed: .5, climbed: phase === 'climbing' ? 2.4 : 0 });
+    state.step = phase === 'breach' ? 1 : phase === 'dive' ? 4 : 5;
+    h.sandbox.life.film.openingHotel.frame(actor);
+    actor.currentAction!.startedAt = h.tick() - 7; actor.currentAction!.progress = .37;
+    const pose = () => structuredClone({ action: actor.currentAction, position: actor.position, rotation: actor.rotation, velocity: actor.velocity });
+    const before = pose(), saved = structuredClone(h.sandbox.state);
+    h.players.step(.1, false, h.tick());
+    assert.deepEqual(pose(), before, `${phase}: paused frames must retain the saved performance`);
+    h.players.release('film-player', h.tick());
+    assert.deepEqual(pose(), before, `${phase}: releasing must retain the paused action and pose`);
+    h.sandbox.restore(saved);
+    assert.deepEqual(pose(), before, `${phase}: restoring must retain the saved action clock`);
+    assert.equal(h.players.possess('film-player', 'trinity', h.tick()).agentId, 'trinity');
+    assert.deepEqual(pose(), before, `${phase}: re-entry must retain the action and pose`);
+    assert.deepEqual(h.sandbox.life.film.state, saved.neoLife!.journey);
+  }
+});
+
+test('legacy 303 saves reconstruct missing performance actions without affecting a different actor or visiting scene', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!, actor = h.actor();
+  Object.assign(state.openingHotel!, { phase: 'dive', elapsed: .8 }); state.step = 4;
+  h.sandbox.life.film.openingHotel.frame(actor);
+  const expected = structuredClone({ action: actor.currentAction, position: actor.position, velocity: actor.velocity });
+  actor.currentAction = null; h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual({ action: actor.currentAction, position: actor.position, velocity: actor.velocity }, expected);
+  const neo = h.world.agents.get('neo')!, before = structuredClone(neo);
+  h.players.possess('other-player', 'neo', h.tick());
+  assert.deepEqual(neo.position, before.position); assert.equal(neo.currentAction, null);
+  h.sandbox.life.film.state!.visiting = 'm1_room303'; actor.currentAction = null;
+  h.players.release('film-player', h.tick()); h.players.possess('film-player', 'trinity', h.tick());
+  assert.equal(actor.currentAction, null, 'visiting a completed set must not restart the 303 performance');
+});
+
 test('303 fire escape requires upward input and preserves climbing progress through a save and disconnect', t => {
   let now = 10000; t.mock.method(Date, 'now', () => now);
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;

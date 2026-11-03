@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot, OPENING_HOTEL } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
@@ -180,6 +180,37 @@ for (const [phase, elapsed] of [['approach', 1.2], ['ready', 0], ['handshake', 1
       };
       check(cold);
       check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+      client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world());
+      await server.stop();
+    }
+  });
+}
+
+for (const phase of ['breach', 'dive', 'ladder_ready', 'climbing'] as const) {
+  test(`real restarts and re-entry retain the paused 303 ${phase} performance`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_room303'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+    journey.step = phase === 'breach' ? 1 : phase === 'dive' ? 4 : 5;
+    Object.assign(journey.openingHotel, { phase, elapsed: .8, climbed: phase === 'climbing' ? 2.4 : 0, lastTick: 1343 });
+    const ladder = phase === 'ladder_ready' || phase === 'climbing';
+    actor.position = filmPosition('film_heart_hotel', 0, ladder ? OPENING_HOTEL.ladderZ : phase === 'dive' ? -26 : 12);
+    if (ladder) actor.position.y += -.35 + journey.openingHotel.climbed;
+    if (phase === 'dive') actor.position.y += .925;
+    actor.rotation = Math.PI;
+    actor.velocity = phase === 'dive' ? { x: 0, y: -.35 / OPENING_HOTEL.diveSeconds, z: -6 / OPENING_HOTEL.diveSeconds } : { x: 0, y: 0, z: 0 };
+    actor.currentAction = { type: ladder ? 'move_to' : 'idle', parameters: ladder
+      ? { player: true, resolved: true, climbing: true, climbDirection: 0 }
+      : { resolved: true, hotel303: { phase: phase === 'breach' ? 'surrender' : 'dive', elapsed: .8 } }, startedAt: 1341, duration: 1, progress: .37 };
+    f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', parameters: { player: true }, startedAt: 1340, duration: 1, progress: .2 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.openingHotel, journey.openingHotel);
+      for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents.trinity[key], actor[key], `${phase}: ${key}`);
+      assert.equal(state.agents.citizen_5.currentAction, null, 'transient attacks must still clear');
+    };
+    for (let restart = 0; restart < 2; restart++) {
+      const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+      const client = await controls(t, server); check(await client.world());
+      check(await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller)));
       client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world());
       await server.stop();
     }

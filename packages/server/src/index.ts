@@ -344,7 +344,9 @@ async function main(): Promise<void> {
       delete agent.state.controller;
       const journey = checkpoint.sandbox?.neoLife?.journey;
       const savedPerformanceAction = journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
-        || lafayetteWelcomeLocked(journey) && agent.state.currentAction?.parameters.welcome);
+        || lafayetteWelcomeLocked(journey) && agent.state.currentAction?.parameters.welcome
+        || journey.scene === 'm1_room303' && !journey.visiting && ['breach', 'dive', 'ladder_ready', 'climbing'].includes(journey.openingHotel?.phase ?? '')
+          && (agent.state.currentAction?.parameters.hotel303 || agent.state.currentAction?.parameters.climbing));
       if (agent.state.currentAction?.type === 'talk_to' && !checkpoint.conversations || agent.state.currentAction?.parameters.player && !savedPerformanceAction) {
         agent.state.currentAction = null; agent.state.targetPosition = null; agent.state.currentPath = [];
         agent.state.velocity = { x: 0, y: 0, z: 0 };
