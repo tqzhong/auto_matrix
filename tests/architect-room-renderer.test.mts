@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ArchitectRoomRenderer } from '../packages/client/src/engine/ArchitectRoomRenderer.js';
-import { ARCHITECT_ROOM, FILM_SETS, architectDoorAngle, type ArchitectEncounter } from '@auto_matrix/shared';
+import { ARCHITECT_ROOM, FILM_SETS, architectDoorAngle, gardenPose, gardenGroundHeight, type ArchitectEncounter } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
@@ -204,6 +204,35 @@ test('the Architect skin driver matrices remain identical under a common world t
   for (const [x, z] of [[4096, 6300], [1000000, -1000000], [-1000000, 1000000]]) {
     h.rig.root.position.copy(origin).add(new THREE.Vector3(x, 0, z)); h.rig.root.updateMatrixWorld(true);
     assert.deepEqual(matrices(), expected, 'map translation cannot change actor-local skin matrices');
+  }
+});
+
+test('the complete coat clears the trousers during the initial turn of legacy park saves', async t => {
+  const h = await fixture(t), center = FILM_SETS.film_sunrise_garden.center;
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined;
+  const surface = (mesh: THREE.SkinnedMesh) => {
+    mesh.skeleton.update();
+    const index = mesh.geometry.index!, points = new Map<number, THREE.Vector3>(), result = [];
+    for (let offset = 0; offset < index.count; offset += 3) {
+      const ids = [0, 1, 2].map(part => index.getX(offset + part));
+      const triangle = ids.map(vertex => {
+        if (!points.has(vertex)) points.set(vertex, mesh.localToWorld(mesh.getVertexPosition(vertex, new THREE.Vector3())));
+        return points.get(vertex)!;
+      });
+      result.push({ face: offset / 3, ids, points: triangle, box: new THREE.Box3().setFromPoints(triangle) });
+    }
+    return result;
+  };
+  for (let frame = 0; frame <= 15; frame++) {
+    const epilogue = { kind: 'dawn' as const, role: 'architect' as const, phase: 'leaving' as const,
+      elapsed: frame / 60, total: frame / 60, parkArrivalVersion: 2 as const };
+    const pose = gardenPose(epilogue, 'architect'); h.input.epilogue = epilogue;
+    h.rig.root.position.set(center.x + pose.x, center.y + gardenGroundHeight(pose.x, pose.z) - 1, center.z + pose.z); h.rig.root.rotation.y = pose.yaw;
+    h.models.animate(h.rig, frame ? 1 / 60 : 1, h.input, 1); h.rig.root.updateMatrixWorld(true);
+    if (frame !== 13 && frame !== 15) continue;
+    const contact = crossings(surface(h.rig.root.getObjectByName('architect-tailored-jacket') as THREE.SkinnedMesh),
+      surface(h.rig.root.getObjectByName('architect-work-trousers') as THREE.SkinnedMesh), false);
+    assert.equal(contact.count, 0, `legacy frame ${frame}: the complete rear coat enters the trousers: ${JSON.stringify(contact)}`);
   }
 });
 

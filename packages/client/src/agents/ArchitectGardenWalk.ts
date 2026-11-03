@@ -52,7 +52,7 @@ export function poseArchitectGardenWalk(rig: CharacterRig, gesture: TrilogyEpilo
   const pose = gardenPose(gesture, 'architect'), cosine = Math.cos(pose.yaw), sine = Math.sin(pose.yaw);
   const feet = [0, 1].map(side => {
     const anchor = (travel: number, leg = side) => {
-      const p = at(travel), lateral = leg ? .36 : -.36;
+      const p = at(travel), width = leaving ? .32 : .36, lateral = leg ? width : -width;
       return { x: p.x + Math.cos(p.yaw) * lateral, z: p.z - Math.sin(p.yaw) * lateral, yaw: p.yaw };
     };
     let next = landings.findIndex((landing, step) => step % 2 === side && landing > distance);
