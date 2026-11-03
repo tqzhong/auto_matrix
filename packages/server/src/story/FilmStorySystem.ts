@@ -1912,11 +1912,13 @@ export class FilmStorySystem {
     if (workday.phase === 'signing' && workday.elapsed >= duration) { workday.phase = 'delivered'; workday.elapsed = 0; agent.currentAction = null; }
     for (const actor of [manager, courier]) {
       if (actor.controller) continue;
+      const savedWorkday = actor.currentAction?.parameters.workday as typeof workday & { role: string } | undefined;
+      const restoring = dt === 0 && savedWorkday?.phase === workday.phase && savedWorkday.elapsed === workday.elapsed && savedWorkday.role === actor.id;
       const root = actor === manager ? OFFICE_WORKDAY.manager : officeCourierRoot(workday);
       const previous = actor.position; actor.position = filmPosition('film_metacortex_floor', root.x, root.z); actor.rotation = root.yaw;
-      actor.velocity = dt > 0 ? { x: (actor.position.x - previous.x) / dt, y: 0, z: (actor.position.z - previous.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.velocity = dt > 0 ? { x: (actor.position.x - previous.x) / dt, y: 0, z: (actor.position.z - previous.z) / dt } : restoring ? actor.velocity : { x: 0, y: 0, z: 0 };
       actor.currentLocation = 'film_metacortex_floor'; actor.isInMatrix = true;
-      actor.currentAction = { type: 'idle', parameters: { resolved: true, seated: actor === manager,
+      if (!restoring) actor.currentAction = { type: 'idle', parameters: { resolved: true, seated: actor === manager,
         workday: { ...workday, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
     }
     if (workdayLocked(state)) {
@@ -2556,6 +2558,15 @@ export class FilmStorySystem {
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, window: office.window, phone: heldPhone(state) }, startedAt: tick, duration: 1, progress: 0 };
     state.lastText = office.window < .7 ? '左手扶住窗上的把手，手机仍在耳边。' : office.window < 1.2 ? '转动把手，窗锁松开。' : '窗扇向外推开。风声涌入，街道远在脚下。';
     if (office.window >= OFFICE_WINDOW.seconds) this.advance(this.step!.text!, agent, tick);
+  }
+  restorePhoneFrame(agent: AgentState, tick: number): boolean {
+    const state = this.state;
+    if (!state || state.scene !== 'm1_boss' || state.visiting || !this.controls(agent) || !state.phone) return false;
+    const phone = agent.currentAction?.parameters.phone as typeof state.phone | undefined;
+    if (phone?.phase !== state.phone.phase || phone.elapsed !== state.phone.elapsed) {
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, phone: { ...state.phone } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    return true;
   }
   phoneFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;

@@ -71,6 +71,7 @@ export class SandboxSystem {
     if (journey?.scene === 'm1_boss') {
       delete journey.started;
       this.life.film.workdayFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+      this.life.film.restorePhoneFrame(this.world.agents.get(journey.actor)!, this.world.simulationTick);
     }
     if (journey) this.life.film.betrayalFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.rescueFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);

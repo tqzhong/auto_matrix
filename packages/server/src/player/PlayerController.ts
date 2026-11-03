@@ -157,11 +157,12 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    const openingPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick);
-    if (!openingPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
+    const restoredPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
+      || this.sandbox?.life.film.restorePhoneFrame(agent, tick);
+    if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
-    if (!openingPose) agent.velocity = { x: 0, y: 0, z: 0 };
+    if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
     this.owners.set(id, socketId);
     this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
@@ -249,10 +250,11 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const openingPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick);
-      if (!openingPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
+      const restoredPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
+        || this.sandbox?.life.film.restorePhoneFrame(agent, tick);
+      if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
-      if (!openingPose) agent.velocity = { x: 0, y: 0, z: 0 };
+      if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filmStepPosition, filmPosition, OFFICE_DELIVERY_SECONDS, officeCourierRoot, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { filmStepPosition, filmPosition, OFFICE_DELIVERY_SECONDS, officeCourierRoot, playerBlocked, type OfficePhone, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -90,3 +90,42 @@ test('old delivered-phone saves do not require receiving a second parcel', () =>
   h.goal(); h.act(); h.frame(12);
   assert.equal(h.state().phone?.phase, 'connected'); assert.equal(h.state().step, 2);
 });
+
+function setupPhone(phase: OfficePhone['phase']) {
+  const h = setup(); h.goal(); h.act(); h.frame(10); h.act();
+  h.goal(); h.act(); h.frame(11); h.act(); h.frame(4.1); h.act();
+  h.frame(phase === 'pickup' ? .8 : 3);
+  if (phase === 'answering' || phase === 'connected') { h.act(); h.frame(phase === 'answering' ? 3.3 : 12); }
+  assert.equal(h.state().phone?.phase, phase);
+  return h;
+}
+
+for (const phase of ['pickup', 'ready', 'answering', 'connected'] as const) {
+  test(`paused ${phase} phone action and returning courier survive disconnect, restore and re-entry`, () => {
+    const h = setupPhone(phase), phone = structuredClone(h.state().phone);
+    const snapshot = () => Object.fromEntries(['neo', 'courier', 'rhineheart'].map(id => {
+      const actor = h.world.agents.get(id)!;
+      return [id, structuredClone({ action: actor.currentAction, position: actor.position, rotation: actor.rotation, velocity: actor.velocity })];
+    }));
+    const expected = snapshot();
+    h.frame(2, false); assert.deepEqual(snapshot(), expected);
+    h.players.release('player', h.tick() + 3);
+    assert.deepEqual(snapshot(), expected, 'disconnect must retain the handset and saved motion');
+    h.frame(2); assert.deepEqual(h.state().phone, phone);
+    h.sandbox.restore(structuredClone(h.sandbox.state));
+    assert.deepEqual(snapshot(), expected, 'zero-time recovery must not stop the returning courier');
+    h.players.possess('player', 'neo', h.tick() + 7);
+    assert.deepEqual(snapshot(), expected); assert.deepEqual(h.state().phone, phone);
+  });
+
+  test(`legacy ${phase} phone saves reconstruct the missing handset before simulation resumes`, () => {
+    const h = setupPhone(phase), phone = structuredClone(h.state().phone), position = { ...h.neo.position };
+    h.neo.currentAction = null;
+    h.sandbox.restore(structuredClone(h.sandbox.state));
+    assert.deepEqual(h.neo.currentAction?.parameters.phone, phone);
+    assert.deepEqual(h.state().phone, phone); assert.deepEqual(h.neo.position, position);
+    h.players.possess('player', 'neo', h.tick()); h.frame(2, false);
+    assert.deepEqual(h.neo.currentAction?.parameters.phone, phone);
+    assert.deepEqual(h.state().phone, phone); assert.deepEqual(h.neo.position, position);
+  });
+}

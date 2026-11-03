@@ -154,6 +154,29 @@ test('a first startup without a world checkpoint still saves a usable new world'
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
 });
 
+for (const [phase, elapsed] of [['pickup', .8], ['ready', 0], ['answering', 3.3], ['connected', 11]] as const) {
+  test(`real restarts retain the paused ${phase} office phone action and clock`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_boss', 'phone'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
+    journey.step = phase === 'connected' ? 2 : 1; journey.phone = { phase, elapsed };
+    actor.rotation = Math.PI; actor.velocity = { x: 0, y: 0, z: 0 };
+    actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true, phone: { phase, elapsed } }, startedAt: 1341, duration: 1, progress: .37 };
+    f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', parameters: { player: true }, startedAt: 1340, duration: 1, progress: .2 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, 1343);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.phone, journey.phone);
+      for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents.neo[key], actor[key], `${phase}: ${key}`);
+      assert.equal(state.agents.citizen_5.currentAction, null, 'unrelated transient attacks must still clear');
+    };
+    for (let restart = 0; restart < 2; restart++) {
+      const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+      check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+      client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world());
+      await server.stop();
+    }
+  });
+}
+
 for (const [phase, elapsed] of [['approach', 1.2], ['ready', 0], ['handshake', 1.3], ['departing', 2.5]] as const) {
   test(`real restarts and re-entry preserve all three paused ${phase} greeting actions`, { timeout: 30000 }, async t => {
     const f = await fixture(t, 'm1_pills', 'welcome'), journey = f.checkpoint.sandbox.neoLife.journey;
