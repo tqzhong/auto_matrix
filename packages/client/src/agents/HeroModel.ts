@@ -729,7 +729,7 @@ export class HeroModels {
     const black = new THREE.MeshPhysicalMaterial({ color: '#060909', metalness: .08, roughness: .12, clearcoat: 1 });
     const metal = new THREE.MeshStandardMaterial({ color: '#343b38', metalness: .85, roughness: .28 });
     const width = .064, height = .040, spacing = Math.max(eye.x, width + .01), segments = 64;
-    const point = (side: number, x: number, y: number, z = 0) => new THREE.Vector3(x, y, z - .17 * x * side - x * x * 1.4)
+    const point = (side: number, x: number, y: number, z = 0) => new THREE.Vector3(x, y, z - .04 * x * side - x * x * 3 - y * y * 6.5)
       .applyAxisAngle(new THREE.Vector3(0, 0, 1), -side * .035).add(new THREE.Vector3(side * spacing, eye.y, eye.z + .077));
     const lenses = [-1, 1].map(side => {
       const positions: number[] = [], faces: number[] = [];

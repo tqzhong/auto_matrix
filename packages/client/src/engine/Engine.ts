@@ -30,6 +30,7 @@ import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
 import { FrameRate } from './FrameRate.js';
 import { LightCulling } from './LightCulling.js';
+import { PillReflection } from './PillReflection.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
 
 export interface FrameProfile {
@@ -91,6 +92,7 @@ export class Engine {
   onRendered?: () => void;
   onProfile?: (frame: FrameProfile) => void;
   private environment: THREE.WebGLRenderTarget;
+  private pillReflection = new PillReflection();
 
   constructor(container: HTMLElement) {
     this.scene.background = new THREE.Color(0x071410);
@@ -241,6 +243,7 @@ export class Engine {
     this.eventRing.scale.setScalar(1 + this.eventAge * 3);
     (this.eventRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.7 - this.eventAge * 0.15);
     measure?.('effects');
+    this.pillReflection.update(meeting, this.agentRenderer.getAgentBody('morpheus'), this.agentRenderer.getAgentBody(meeting?.actor ?? 'neo'));
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
     try { this.postProcessing.render(filmSet?.id !== 'film_extraction_car'); }
     finally { this.lightCulling.restore(); }
@@ -634,6 +637,7 @@ export class Engine {
   dispose(): void {
     cancelAnimationFrame(this.animationId);
     window.removeEventListener('resize', this.resize);
+    this.pillReflection.dispose();
     this.filmSets.dispose(); this.voxelRenderer.dispose(); this.agentRenderer.dispose(); this.cameraController.dispose();
     this.sandboxRenderer.dispose();
     this.combatEffects.dispose();
