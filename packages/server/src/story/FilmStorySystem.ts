@@ -1980,12 +1980,14 @@ export class FilmStorySystem {
     }
     for (const role of ['neo', 'morpheus', 'trinity'] as const) {
       const actor = role === 'neo' ? agent : this.world.agents.get(role)!;
+      const previous = actor.currentAction;
       const before = { ...actor.position }; const root = lafayetteWelcomeRoot(welcome, role);
       actor.position = filmPosition('film_lafayette', root.x, root.z); actor.rotation = root.yaw;
       actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       actor.currentLocation = 'film_lafayette'; actor.isInMatrix = true;
       actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true,
         seated: role === 'morpheus' && welcome.phase === 'done', welcome: { phase: welcome.phase, elapsed: welcome.elapsed, role } }, startedAt: tick, duration: 1, progress: 0 };
+      if (dt === 0 && previous?.type === 'idle' && JSON.stringify(previous.parameters) === JSON.stringify(actor.currentAction.parameters)) actor.currentAction = previous;
     }
     state.checkpoint = { ...agent.position };
     state.lastText = welcome.phase === 'approach' ? welcome.elapsed < 1.35 ? '雷声掠过窗外。窗前的人影转过身，离开垂着薄纱的高窗。'
@@ -2133,8 +2135,11 @@ export class FilmStorySystem {
   }
   restoreHotelSpace(): void {
     const actor = this.state && this.world.agents.get(this.state.actor);
-    if (actor?.status === 'alive' && !actor.controller && this.world.agents.get('morpheus')?.status === 'alive')
+    if (actor?.status === 'alive' && !actor.controller && this.world.agents.get('morpheus')?.status === 'alive') {
       this.pillFrame(actor, 0, this.world.simulationTick);
+      if (this.state && lafayetteWelcomeLocked(this.state) && this.world.agents.get('trinity')?.status === 'alive')
+        this.welcomeFrame(actor, 0, this.world.simulationTick);
+    }
     if (this.state?.hotel) { this.sealHotelDoor(); return; }
     const center = FILM_SETS.film_lafayette.center;
     const migrate = (position?: AgentState['position']) => {

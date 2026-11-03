@@ -663,6 +663,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     input = { ...input, armed: false, turn: 0 };
     dt = 0;
   }
+  if (input.welcome) {
+    const greeting = input.welcome;
+    const walking = greeting.phase === 'approach' || greeting.phase === 'departing' && greeting.role !== 'neo';
+    const speed = walking ? greeting.role === 'morpheus' ? 2.6 : greeting.role === 'neo' ? 2.3 : 1.8 : 0;
+    Object.assign(state, newMotion(), { time: greeting.elapsed, speed, seated: lafayetteWelcomePose(greeting).seated, skill: undefined });
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false };
+    dt = 0;
+  }
   if (input.truth || download) {
     Object.assign(state, newMotion(), { time: input.truth?.elapsed ?? download!.elapsed, skill: undefined });
     if (download?.role === 'neo' && (input.training?.kind === 'download' || input.download?.phase === 'ready')) state.seated = 1;

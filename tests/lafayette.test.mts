@@ -213,6 +213,35 @@ test('crossing 1313 starts a saved greeting, waits for the handshake, then relea
   assert.equal(h.state().step, 0, 'the seated conversation precedes the explicit pill decision');
 });
 
+test('a paused greeting retains all three action clocks across release and re-entry', () => {
+  for (const [phase, elapsed] of [['approach', 1.2], ['ready', 0], ['handshake', 1.3], ['departing', 2.5]] as const) {
+    const h = setup(); h.command('act');
+    Object.assign(h.state().hotel!, { entered: true, door: LAFAYETTE.doorSeconds, welcome: { phase, elapsed } });
+    h.sandbox.life.film.hotelFrame(h.neo, 0, h.tick());
+    const roles = ['neo', 'morpheus', 'trinity'] as const;
+    for (const role of roles) { const action = h.world.agents.get(role)!.currentAction!; action.startedAt = h.tick() - 7; action.progress = .37; }
+    const before = roles.map(role => structuredClone(h.world.agents.get(role)!.currentAction)), saved = structuredClone(h.state());
+    h.players.release('player', h.tick() + 1);
+    assert.deepEqual(roles.map(role => h.world.agents.get(role)!.currentAction), before, `${phase}: releasing must preserve the paused performance`);
+    assert.equal(h.players.possess('player', 'neo', h.tick() + 2).agentId, 'neo');
+    assert.deepEqual(roles.map(role => h.world.agents.get(role)!.currentAction), before, `${phase}: re-entry must not restart action clocks`);
+    assert.deepEqual(h.state(), saved);
+    if (phase === 'ready') h.command('act');
+    h.frames(.2); assert(h.state().hotel!.welcome!.elapsed > elapsed, 'resuming still advances the greeting');
+  }
+});
+
+test('cold loading reconstructs a missing greeting action before a player reconnects', () => {
+  const h = setup(); h.command('act');
+  Object.assign(h.state().hotel!, { entered: true, door: LAFAYETTE.doorSeconds, welcome: { phase: 'handshake', elapsed: 1.3 } });
+  h.sandbox.life.film.hotelFrame(h.neo, 0, h.tick());
+  h.players.release('player', h.tick()); h.world.simulationTick = h.tick();
+  const saved = structuredClone(h.sandbox.state), actors = ['neo', 'morpheus', 'trinity'].map(id => structuredClone(h.world.agents.get(id)));
+  h.neo.currentAction = null; h.sandbox.restore(saved);
+  assert.deepEqual(['neo', 'morpheus', 'trinity'].map(id => h.world.agents.get(id)), actors);
+  assert.deepEqual(h.sandbox.state.neoLife, saved.neoLife);
+});
+
 test('legacy room saves migrate once while new lower-floor saves retain their actual height', () => {
   const h = setup(); h.command('act');
   delete h.state().hotel;

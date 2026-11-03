@@ -1,4 +1,4 @@
-import { AMBUSH_DOFF, metacortexLiftLocked } from '@auto_matrix/shared';
+import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
@@ -157,7 +157,8 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    if (!(interlude && interlude.actor === agent.id && pillLocked(interlude) && agent.currentAction?.parameters.pills)) agent.currentAction = null;
+    if (!(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
+      || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
     agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
@@ -247,7 +248,8 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      if (!(journey && journey.actor === agent.id && pillLocked(journey) && agent.currentAction?.parameters.pills)) agent.currentAction = null;
+      if (!(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
+        || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
       agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);

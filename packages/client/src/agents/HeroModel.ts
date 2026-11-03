@@ -1739,7 +1739,7 @@ export class HeroModels {
     const ambushCenter = FILM_SETS.film_ambush_house.center, origin = rig.root.getWorldPosition(new THREE.Vector3());
     const onStairs = Math.abs(origin.x - ambushCenter.x) <= 9 && origin.z >= ambushCenter.z + 12 && origin.z <= ambushCenter.z + 34
       && origin.y >= ambushCenter.y - 1 - AMBUSH_STAIRS.rise * AMBUSH_STOREYS - .1 && origin.y <= ambushCenter.y - 1 + .1;
-    const savedCloth = input.ambushCall || input.ambushEscort || input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
+    const savedCloth = input.welcome || input.ambushCall || input.ambushEscort || input.helGarage || input.trainmanChase || input.truckHood || input.truckRescue || smithFinaleLocked(input.smithFinale);
     const fittedTails = (ambushWardrobe?.poseTails(input, motion, pose.coat) ?? false)
       || (this.regularCoatTails.get(rig)?.update(motion, pose.coat) ?? false);
     if (delta <= 0 && !fittedTails && !savedCloth && spoonFloor === undefined && !onStairs || !rig.panels.some(panel => panel.mesh.visible)) return;

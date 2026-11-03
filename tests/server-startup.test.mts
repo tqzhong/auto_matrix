@@ -7,15 +7,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
 
-async function fixture(t: TestContext, scene = 'm1_dejavu') {
-  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene], { cwd: root, encoding: 'utf8' }).trim();
+async function fixture(t: TestContext, scene = 'm1_dejavu', variant?: string) {
+  const directory = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/film-review-fixture.mts', scene, ...(variant ? [variant] : [])], { cwd: root, encoding: 'utf8' }).trim();
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = path.join(directory, 'world.json');
   const checkpoint = JSON.parse(await readFile(file, 'utf8'));
@@ -153,6 +153,38 @@ test('a first startup without a world checkpoint still saves a usable new world'
   const restored = start(t, f.directory, 'normal'); await restored.waitFor('Restored world at tick 0');
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
 });
+
+for (const [phase, elapsed] of [['approach', 1.2], ['ready', 0], ['handshake', 1.3], ['departing', 2.5]] as const) {
+  test(`real restarts and re-entry preserve all three paused ${phase} greeting actions`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_pills', 'welcome'), journey = f.checkpoint.sandbox.neoLife.journey;
+    journey.hotel.welcome = { phase, elapsed };
+    for (const role of ['neo', 'morpheus', 'trinity'] as const) {
+      const actor = f.checkpoint.agents[role], pose = lafayetteWelcomeRoot(journey.hotel.welcome, role);
+      actor.position = filmPosition('film_lafayette', pose.x, pose.z); actor.rotation = pose.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, seated: false, welcome: { phase, elapsed, role } }, startedAt: 1341, duration: 1, progress: .37 };
+    }
+    f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', parameters: { player: true }, startedAt: 1340, duration: 1, progress: .2 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    for (let restart = 0; restart < 2; restart++) {
+      const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+      const client = await controls(t, server), cold = await client.world();
+      assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, 1343);
+      assert.deepEqual(cold.sandbox!.neoLife!.journey!.hotel!.welcome, journey.hotel.welcome);
+      assert.equal(cold.agents.citizen_5.currentAction, null, 'transient player attacks still clear');
+      const check = (world: WorldStateFull) => {
+        for (const role of ['neo', 'morpheus', 'trinity'] as const) {
+          assert.deepEqual(world.agents[role].currentAction, f.checkpoint.agents[role].currentAction, `${role}: retain the saved greeting action and clock`);
+          assert.deepEqual(world.agents[role].position, f.checkpoint.agents[role].position);
+        }
+      };
+      check(cold);
+      check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+      client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world());
+      await server.stop();
+    }
+  });
+}
 
 test('real restarts preserve paused pill action clocks and progress for both performers', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_pills'), journey = f.checkpoint.sandbox.neoLife.journey;
