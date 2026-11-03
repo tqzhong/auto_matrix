@@ -164,7 +164,7 @@ test('the saved Sati arrival keeps the real Oracle, Sati and Seraph bodies above
 
 test('the shipped Sati and Seraph bodies stay supported on the rolling lawn throughout finite saved walking samples', async t => {
   const h = await fixture(t), center = FILM_SETS.film_sunrise_garden.center;
-  for (const elapsed of [0, .4, 1.2, 2.6, 4.4, 6, 8, 10.3, 12]) {
+  for (const elapsed of [0, .4, 1.2, 2.6, 4.4, 6, 8, 10.3, 12, 13.6, 15.6, 17.3]) {
     h.step('sati', elapsed, true);
     for (const role of ['sati', 'seraph'] as const) {
       const gaps = vertices(h.rigs[role].root).map(point => point.y - (center.y - 1 + gardenGroundHeight(point.x - center.x, point.z - center.z)));
@@ -265,8 +265,8 @@ test('park shots frame the arriving and departing speakers, then the reunited gr
   const samples: [TrilogyEpilogueEncounter['phase'], number, ('oracle' | 'architect' | 'sati' | 'seraph')[]][] = [
     ['sitting', 1.479, ['oracle']], ['architect', 0, ['oracle', 'architect']], ['architect', 1.6, ['oracle', 'architect']],
     ['architect', 3.8, ['oracle', 'architect']], ['leaving', 2.2, ['oracle', 'architect']],
-    ['leaving', 4.8, ['oracle', 'architect']], ['promise', 0, ['oracle', 'sati', 'seraph']],
-    ...[0, 1.6, 3.328, 4.8, 6, 8, 9.2, 10.3, 12].map(elapsed => ['sati', elapsed, ['oracle', 'sati', 'seraph']] as typeof samples[number]),
+    ['leaving', 4.8, ['oracle', 'architect']], ['promise', 0, ['oracle']],
+    ...[0, 1.6, 3.328, 4.8, 6, 8, 9.2, 10.3, 12, 13.6, 15.6, 17.3].map(elapsed => ['sati', elapsed, ['oracle', 'sati', 'seraph']] as typeof samples[number]),
     ...[0, 3.1, 6.2].map(elapsed => ['sunrise', elapsed, ['oracle', 'sati', 'seraph']] as typeof samples[number]),
     ['belief', 1.2, ['oracle', 'sati', 'seraph']], ['done', 0, ['oracle', 'sati', 'seraph']],
   ];

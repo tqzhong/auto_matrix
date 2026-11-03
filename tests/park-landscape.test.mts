@@ -48,7 +48,7 @@ test('new Sati and Seraph arrivals approach from the hill, while unversioned sav
   const encounter = { ...newTrilogyEpilogue('dawn'), phase: 'sati' as const };
   for (const role of ['sati', 'seraph'] as const) {
     assert.ok(gardenPose(encounter, role).z > 5, `${role} should emerge from the park behind the bench`);
-    for (let elapsed = 0; elapsed <= 12; elapsed += .2) {
+    for (let elapsed = 0; elapsed <= 17.3; elapsed += .2) {
       const pose = gardenPose({ ...encounter, elapsed }, role), position = filmPosition('film_sunrise_garden', pose.x, pose.z);
       assert.equal(playerBlocked(position, true, 1.2), false, `${role}/${elapsed}: the new walking route intersects scenery`);
       assert.ok(Math.abs(position.y - groundHeight(position, true)) < 1e-9, `${role}/${elapsed}: simulation must use the rendered hill`);
@@ -56,7 +56,7 @@ test('new Sati and Seraph arrivals approach from the hill, while unversioned sav
     }
   }
   let playing: TrilogyEpilogueEncounter = encounter;
-  for (let i = 0; i < 119; i++) playing = stepTrilogyEpilogue(playing, .1);
+  for (let i = 0; i < 172; i++) playing = stepTrilogyEpilogue(playing, .1);
   assert.equal(playing.phase, 'sati'); playing = stepTrilogyEpilogue(playing, .1); assert.equal(playing.phase, 'sunrise');
   const old: TrilogyEpilogueEncounter = { kind: 'dawn', phase: 'sati', elapsed: 2.4, total: 15.1 };
   for (const [role, x, z, yaw] of [['sati', 3.7, -25.5, -1.2], ['seraph', 6.15, -23.2, Math.atan2(-15.7, 9.6)]] as const) {

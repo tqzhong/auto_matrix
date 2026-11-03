@@ -288,7 +288,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     }
   }
   if (!reset && seated === 0 && gesture.role !== 'architect') {
-    supportGardenFeet(rig, gesture.parkArrivalVersion === 2);
+    supportGardenFeet(rig, gesture.parkArrivalVersion !== undefined);
   }
   if (gesture.role === 'oracle') drapeOracleClothes(rig, gesture);
   drapeSatiSkirt(rig);

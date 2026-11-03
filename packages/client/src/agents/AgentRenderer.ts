@@ -235,6 +235,7 @@ export class AgentRenderer {
       && fastEpilogue.total >= savedEpilogue.total ? fastEpilogue : savedEpilogue;
     const savedGarden = journey?.scene === 'm3_dawn' && !journey.visiting ? journey.epilogue : undefined;
     const gardenClock = savedGarden && fastEpilogue?.kind === savedGarden.kind
+      && fastEpilogue.parkArrivalVersion === savedGarden.parkArrivalVersion
       && fastEpilogue.total >= savedGarden.total ? fastEpilogue : savedGarden;
     const savedPickup = journey?.scene === 'm2_freeway' && journey.step === 0 && !journey.visiting ? journey.freewayPickup : undefined;
     const fastPickup = this.playerId === journey?.actor ? this.playerMotion?.freewayPickup : undefined;

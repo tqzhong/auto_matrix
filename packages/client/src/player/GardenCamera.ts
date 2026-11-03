@@ -3,7 +3,8 @@ import { gardenPose, gardenSunrise, gardenGroundHeight, type TrilogyEpilogueEnco
 
 /** Keep approaches wide, then move in for the seated conversation above the subtitles. */
 export function gardenCamera(encounter: TrilogyEpilogueEncounter, aspect: number, look: { yaw: number; pitch: number }) {
-  const arrival = ['promise', 'sati', 'sunrise', 'belief', 'done'].includes(encounter.phase);
+  const arrival = ['sati', 'sunrise', 'belief', 'done'].includes(encounter.phase)
+    || encounter.phase === 'promise' && encounter.parkArrivalVersion !== 3;
   const roles = arrival ? ['oracle', 'sati', 'seraph'] as const
     : ['architect', 'choice', 'leaving'].includes(encounter.phase) ? ['oracle', 'architect'] as const : ['oracle'] as const;
   const bounds = new THREE.Box3();

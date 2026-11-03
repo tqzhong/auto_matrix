@@ -508,6 +508,7 @@ export class FilmSetRenderer {
     const savedEpilogue = ['m3_ceasefire', 'm3_neo_carried', 'm3_reset', 'm3_dawn'].includes(journey?.scene ?? '') && !journey?.visiting ? journey?.epilogue : undefined;
     const fastEpilogue = player?.id === journey?.actor ? player?.currentAction?.parameters.epilogue as TrilogyEpilogueEncounter | undefined : undefined;
     const epilogue = savedEpilogue && fastEpilogue?.kind === savedEpilogue.kind
+      && (savedEpilogue.kind !== 'dawn' || fastEpilogue.parkArrivalVersion === savedEpilogue.parkArrivalVersion)
       && fastEpilogue.total >= savedEpilogue.total ? fastEpilogue : savedEpilogue;
     this.machineCore?.update(deus, elapsed, firstPerson && player?.id === 'neo' && !player.isInMatrix, {
       x: (playerPosition?.x ?? this.current?.center.x ?? 0) - (this.current?.center.x ?? 0),

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { SUNRISE_GARDEN, gardenPose, newTrilogyEpilogue, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { SUNRISE_GARDEN, gardenPose, gardenGroundHeight, newTrilogyEpilogue, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { SunriseGardenRenderer } from '../packages/client/src/engine/SunriseGardenRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
@@ -143,14 +143,20 @@ test('park water updates its live color reflection but never redraws the world f
   }
 });
 
-test('the actual park shadow projection covers the seated cast and nearby stems throughout the saved sunrise', t => {
+test('the actual park shadow projection covers waiting, approaching and seated cast and nearby stems throughout the saved sunrise', t => {
   const { scene, garden } = park(t);
   let sun!: THREE.DirectionalLight; garden.group.traverse(object => { if (object instanceof THREE.DirectionalLight && object.castShadow) sun = object; });
-  for (const [phase, elapsed] of [['sati', 3.328], ['sunrise', 0], ['sunrise', 3.1], ['sunrise', 6.2], ['belief', 1.3]] as const) {
-    const state = { ...newTrilogyEpilogue('dawn'), phase, elapsed, total: 16 + elapsed };
+  for (const parkArrivalVersion of [undefined, 2, 3] as const) for (const [phase, elapsed] of [['sati', 0], ['sati', .6], ['sati', 3.328], ['sati', 7.2],
+    ['sati', 12.2], ['sati', 15.2], ['sati', 17.3], ['sunrise', 0], ['sunrise', 3.1], ['sunrise', 6.2], ['belief', 1.3]] as const) {
+    const state = { ...newTrilogyEpilogue('dawn'), parkArrivalVersion, phase, elapsed, total: 16 + elapsed };
     garden.update(state); scene.updateMatrixWorld(true); sun.shadow.updateMatrices(sun);
     const points = SUNRISE_GARDEN.trees.slice(0, 2).map(([x, z]) => new THREE.Vector3(x, 1, z));
-    for (const role of ['oracle', 'sati', 'seraph'] as const) { const pose = gardenPose(state, role); points.push(new THREE.Vector3(pose.x, 2.2, pose.z)); }
+    for (const role of ['oracle', 'sati', 'seraph'] as const) {
+      const pose = gardenPose(state, role);
+      const width = role === 'oracle' ? 3.9 : 1.2, floor = gardenGroundHeight(pose.x, pose.z);
+      for (const x of [-width, width]) for (const z of [-1.2, 1.2]) for (const y of [0, role === 'sati' ? 3.3 : 4.9])
+        points.push(new THREE.Vector3(pose.x + x, floor + y, pose.z + z));
+    }
     for (const point of points) {
       const screen = point.clone().project(sun.shadow.camera);
       assert.ok(Math.abs(screen.x) < 1 && Math.abs(screen.y) < 1 && Math.abs(screen.z) < 1,
@@ -159,5 +165,8 @@ test('the actual park shadow projection covers the seated cast and nearby stems 
     const intensity = sun.intensity, color = sun.color.getHex(); garden.update(structuredClone(state));
     assert.equal(sun.intensity, intensity); assert.equal(sun.color.getHex(), color, 'pause/cold reads use the same saved sunrise light');
     assert.equal(garden.atmosphere().sun, 0); assert.equal(sun.castShadow, true, 'only the unused global sun is disabled');
+    assert.equal(sun.shadow.camera.right - sun.shadow.camera.left, 84, 'the new wait marks retain the existing shadow texel density');
+    assert.equal(sun.shadow.mapSize.x, 2048); assert.equal(sun.shadow.mapSize.y, 2048);
+    assert.equal(sun.target.position.x, parkArrivalVersion === 3 ? 6 : -6, 'old arrivals keep their original shadow footprint');
   }
 });

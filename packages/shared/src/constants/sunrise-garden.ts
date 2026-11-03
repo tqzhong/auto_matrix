@@ -96,6 +96,20 @@ export function gardenPose(encounter: TrilogyEpilogueEncounter, role: TrilogyEpi
       yaw: leaving > 0 ? Math.atan2(-21.7, -4.5) * departureTurn : mix(1.3, 0, smooth((arriving - .8) / .2)), seated: 0,
       walk: phase === 'architect' && elapsed < 3.8 || phase === 'leaving' ? 1 : 0 };
   }
+  if (encounter.parkArrivalVersion === 3) {
+    const seraph = role === 'seraph', seconds = seraph ? 15.6 : 13.6;
+    const present = ['sunrise', 'belief', 'done'].includes(phase);
+    const t = present ? 1 : phase === 'sati' ? smooth(elapsed / seconds) : 0, a = 1 - t;
+    // Wait at the right grove, then pass clear of the shore-side tree and bench.
+    const x = seraph ? mix(41, -1.7, t) : a ** 3 * 38 + 3 * a * a * t * 35 + 3 * a * t * t * 12 - t ** 3 * 4.6;
+    const z = seraph ? mix(16, -18.4, t) : a ** 3 * 14 - 3 * a * a * t * 15 - 3 * a * t * t * 32 - t ** 3 * 22.4;
+    const walking = seraph ? Math.atan2(-42.7, -34.4)
+      : Math.atan2(-9 * a * a - 138 * a * t - 49.8 * t * t, -87 * a * a - 102 * a * t + 28.8 * t * t);
+    const listening = mix(walking, seraph ? Math.atan2(bench.x + 1.7, bench.z - .14 + 18.4) : -1.2, smooth((t - .8) / .2));
+    const towardSky = seraph ? 0 : phase === 'sunrise' ? smooth(elapsed / 6.2) : ['belief', 'done'].includes(phase) ? 1 : 0;
+    return { x, z, yaw: mix(listening, -Math.PI, towardSky), seated: 0,
+      walk: phase === 'sati' ? smooth(elapsed / .45) * smooth((seconds - elapsed) / .55) : 0 };
+  }
   const modern = encounter.parkArrivalVersion === 2, seraph = role === 'seraph';
   const seconds = modern ? seraph ? 10.3 : 9.2 : 4.8;
   const present = ['sunrise', 'belief', 'done'].includes(phase), arrival = present ? 1 : phase === 'sati' ? smooth(elapsed / seconds) : 0;

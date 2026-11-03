@@ -125,6 +125,41 @@ test('the Oracle stays seated while the player considers the Architect’s promi
   assert.equal(h.state().step, 3, 'seated movement locking must still allow the explicit answer');
 });
 
+test('old park conversations upgrade the unstarted arrival without moving the speakers or taking controlled cast', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_dawn;
+  const encounter: TrilogyEpilogueEncounter = { ...newTrilogyEpilogue('dawn'), parkArrivalVersion: 2, phase: 'choice', elapsed: 1.3, total: 10.7 };
+  Object.assign(h.state(), { scene: scene.id, actor: 'oracle', step: 2, epilogue: encounter });
+  const seraph = h.world.agents.get('seraph')!; seraph.controller = 'other-player';
+  h.players.possess('p', 'oracle', h.tick()); h.frame(1, false);
+  assert.equal(h.state().epilogue!.parkArrivalVersion, 2, 'the shared scene must wait while its cast is controlled');
+  assert.equal(seraph.controller, 'other-player');
+  const before = structuredClone(h.state().epilogue!);
+  const architectPose = gardenPose(before, 'architect'), oraclePose = gardenPose(before, 'oracle');
+  delete seraph.controller; h.frame(1, false);
+  const after = h.state().epilogue!;
+  assert.equal(after.parkArrivalVersion, 3);
+  assert.deepEqual({ ...after, parkArrivalVersion: 2 }, before, 'phase, elapsed time and departure must remain saved');
+  assert.deepEqual(gardenPose(after, 'architect'), architectPose); assert.deepEqual(gardenPose(after, 'oracle'), oraclePose);
+  for (const id of ['sati', 'seraph'] as const) {
+    const pose = gardenPose(after, id), member = h.world.agents.get(id)!;
+    assert.deepEqual(member.position, filmPosition(scene.set, pose.x, pose.z), `${id}: world and renderer must agree on the new wait mark`);
+  }
+});
+
+test('a saved version-two arrival already in motion keeps its route and clock through re-entry', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m3_dawn;
+  const encounter: TrilogyEpilogueEncounter = { kind: 'dawn', phase: 'sati', elapsed: 3.328, total: 21.1, parkArrivalVersion: 2 };
+  Object.assign(h.state(), { scene: scene.id, actor: 'oracle', step: 3, epilogue: encounter });
+  h.players.possess('p', 'oracle', h.tick()); h.frame(1, false);
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'oracle', h.tick()); h.frame(1, false);
+  assert.deepEqual(h.state().epilogue, encounter);
+  for (const id of ['sati', 'seraph'] as const) {
+    const pose = gardenPose(encounter, id);
+    assert.deepEqual(h.world.agents.get(id)!.position, filmPosition(scene.set, pose.x, pose.z));
+  }
+});
+
 test('the Architect continues along the waterfront while the player waits to welcome Sati', () => {
   let encounter: TrilogyEpilogueEncounter = { ...newTrilogyEpilogue('dawn'), phase: 'leaving', total: 7.8 };
   for (let frame = 0; frame < 48; frame++) encounter = stepTrilogyEpilogue(encounter, .1);
@@ -316,7 +351,7 @@ test('ceasefire, Neo transport and dawn form a saved playable epilogue without a
   h.command('reflect:trust'); assert.equal(h.state().epilogue?.phase, 'leaving'); assert.equal(h.state().step, 3);
   h.command('act'); assert.equal(h.state().epilogue?.phase, 'leaving', 'wait for the Architect to leave');
   h.frame(100); assert.equal(h.state().epilogue?.phase, 'promise');
-  h.command('act'); h.frame(440);
+  h.command('act'); h.frame(550);
   assert.equal(h.state().epilogue?.phase, 'done'); assert.equal(h.state().step, dawn.steps.length);
   assert.equal(h.state().finished, undefined, 'watching the sunrise must not silently start another cycle');
   h.command('next'); assert.equal(h.state().finished, true); assert.equal(h.sandbox.state.ending, 'peace');

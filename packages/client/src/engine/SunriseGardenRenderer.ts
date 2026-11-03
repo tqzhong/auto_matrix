@@ -435,6 +435,8 @@ export class SunriseGardenRenderer {
   update(encounter?: TrilogyEpilogueEncounter): void {
     this.rise = gardenSunrise(encounter); this.sky.uniforms.rise.value = this.rise;
     (this.water.material as THREE.ShaderMaterial).uniforms.parkTime.value = encounter?.total ?? 0;
+    this.sun.target.position.x = encounter?.parkArrivalVersion === 3 ? 6 : -6;
+    this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDirection, 100);
     this.sun.intensity = 1.6 + this.rise * 1.6;
     this.sun.color.set(0xdce7eb).lerp(new THREE.Color(0xffc186), this.rise);
     this.fill.intensity = .34 - this.rise * .18;

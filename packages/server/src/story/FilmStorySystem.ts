@@ -454,6 +454,10 @@ export class FilmStorySystem {
         state.epilogue.phase = 'sitting'; state.epilogue.elapsed = Math.min(2.4, state.epilogue.elapsed);
         state.epilogue.parkApproach = { x: -7, z: -20, yaw: Math.PI };
       }
+      if (kind === 'dawn' && state.epilogue.parkArrivalVersion !== 3
+        && ['ready', 'sitting', 'architect', 'choice', 'leaving', 'promise'].includes(state.epilogue.phase)
+        && !['architect', 'sati', 'seraph'].some(id => this.world.agents.get(id)?.controller))
+        state.epilogue.parkArrivalVersion = 3;
       return;
     }
     const encounter = newTrilogyEpilogue(kind);

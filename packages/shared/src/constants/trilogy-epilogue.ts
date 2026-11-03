@@ -41,8 +41,8 @@ export interface TrilogyEpilogueEncounter {
   parkApproach?: { x: number; z: number; yaw: number };
   /** Existing active saves retain the earlier wake-first timing. */
   resetVersion?: 2;
-  /** New park arrivals cross the hill; already playing saves retain the waterfront route. */
-  parkArrivalVersion?: 2;
+  /** New arrivals wait outside the conversation shot; active older approaches keep their route. */
+  parkArrivalVersion?: 2 | 3;
   /** Departure keeps moving during the welcome prompt; legacy saves start at their current pose. */
   parkDeparture?: { elapsed: number; origin: { x: number; z: number; yaw: number } };
 }
@@ -76,7 +76,7 @@ const running = new Set<TrilogyEpiloguePhase>([
 
 export function newTrilogyEpilogue(kind: TrilogyEpilogueKind): TrilogyEpilogueEncounter {
   return { kind, phase: 'ready', elapsed: 0, total: 0, ...(kind === 'reset' ? { resetVersion: 2 as const } : {}),
-    ...(kind === 'dawn' ? { parkArrivalVersion: 2 as const } : {}) };
+    ...(kind === 'dawn' ? { parkArrivalVersion: 3 as const } : {}) };
 }
 
 /** The withdrawal stays outside the temple lintel and uses the saved performance clock. */
@@ -99,6 +99,7 @@ export function ceasefireSentinelPose(encounter: TrilogyEpilogueEncounter, index
 }
 
 function epilogueSeconds(encounter: TrilogyEpilogueEncounter): number | undefined {
+  if (encounter.kind === 'dawn' && encounter.parkArrivalVersion === 3 && encounter.phase === 'sati') return 17.3;
   if (encounter.kind === 'dawn' && encounter.parkArrivalVersion === 2 && encounter.phase === 'sati') return 12;
   if (encounter.kind === 'reset' && encounter.resetVersion === 2) {
     if (encounter.phase === 'cat') return 8.8;
