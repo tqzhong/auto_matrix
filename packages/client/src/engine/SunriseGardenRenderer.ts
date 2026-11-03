@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { SUNRISE_GARDEN, gardenSunrise, gardenTreePlacement, gardenBankTreePlacement, gardenGroundHeight, type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
@@ -15,18 +16,26 @@ export class SunriseGardenRenderer {
   private sky: THREE.ShaderMaterial;
   private sun = new THREE.DirectionalLight(0xffd3aa, 1.4);
   private fill = new THREE.HemisphereLight(0xc8d9e4, 0x53633b, 1.05);
+  private sunDirection = new THREE.Vector3(.1, .065, -1).normalize();
   private rise = 0;
   private seed = 2003;
   private treeFallback = new THREE.Group();
   private treeInstances = new Set<THREE.InstancedMesh>();
   private disposed = false;
   readonly treesReady: Promise<void>;
+  readonly skyReady: Promise<void>;
 
   constructor(root: THREE.Group) {
     this.group.name = 'sunrise-waterfront-park'; root.add(this.group);
     this.sky = this.skyMaterial();
     const dome = this.mesh(new THREE.SphereGeometry(850, 48, 24), this.sky, 0, 0, 0);
     dome.name = 'sati-sunrise'; dome.castShadow = dome.receiveShadow = false; dome.renderOrder = -10;
+    this.skyReady = new Promise(resolve => {
+      dome.onBeforeRender = () => {
+        dome.onBeforeRender = () => {};
+        void this.loadSky().then(resolve);
+      };
+    });
     const grass = this.pbr('park', 'lawn_grass', 0xffffff, 40, 28); grass.normalScale.set(.25, .25);
     // A mown lawn scatters light across blades; the source map multiplied by
     // the generic .8 roughness otherwise produces broad, wet-looking glints.
@@ -79,11 +88,11 @@ export class SunriseGardenRenderer {
         float facing = clamp(abs(normalize(parkWaterView).y), 0.0, 1.0);
         float reflection = .035 + .84 * pow(1.0 - facing, 5.0);
         gl_FragColor = vec4(mix(color, base.rgb, reflection), 1.0);`);
-    this.sun.position.set(22, 25, -105); this.sun.target.position.set(-6, 0, -20);
+    this.sun.target.position.set(-6, 0, -20); this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunDirection, 100);
     this.sun.castShadow = true; this.sun.shadow.mapSize.set(2048, 2048);
     Object.assign(this.sun.shadow.camera, { left: -42, right: 42, top: 42, bottom: -42, near: 1, far: 180 });
     this.sun.shadow.camera.updateProjectionMatrix();
-    this.sun.shadow.bias = -.0003; this.sun.shadow.normalBias = .025;
+    this.sun.shadow.bias = -.0003; this.sun.shadow.normalBias = .015;
     this.group.add(this.sun, this.sun.target, this.fill);
     batchStaticGeometry(this.group, new Set([this.water])).forEach(geometry => this.geometries.add(geometry));
     this.update(undefined);
@@ -309,39 +318,62 @@ export class SunriseGardenRenderer {
     const bank = this.box(0, -.85, -149, 640, 1.3, 17, park); bank.castShadow = bank.receiveShadow = false;
   }
   private skyMaterial(): THREE.ShaderMaterial {
-    const sky = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, toneMapped: false,
-      uniforms: { rise: { value: 0 } },
+    // Brightest upper-hemisphere pixel of the shipped HDRI, including its latitude.
+    const panoramaSun = new THREE.Vector3(.6105932176022756, .03604074152070623, -.7911238762474168);
+    const panoramaRotation = new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(
+      new THREE.Quaternion().setFromUnitVectors(this.sunDirection, panoramaSun)));
+    const sky = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
+      uniforms: { rise: { value: 0 }, sunDirection: { value: this.sunDirection }, panoramaRotation: { value: panoramaRotation }, panorama: { value: null }, panoramaReady: { value: 0 } },
       vertexShader: `varying vec3 direction; void main(){ direction=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `varying vec3 direction; uniform float rise;
-        float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-        float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1)),f.x),f.y);}
-        float cloud(vec2 p){float v=0.0,a=.5;for(int i=0;i<5;i++){v+=noise(p)*a;p=p*2.04+13.7;a*=.5;}return v;}
+      fragmentShader: `varying vec3 direction; uniform float rise; uniform vec3 sunDirection; uniform mat3 panoramaRotation; uniform sampler2D panorama; uniform float panoramaReady;
+        vec3 paint(vec3 c){return mix(c/12.92,pow((c+.055)/1.055,vec3(2.4)),step(vec3(.04045),c));}
+        float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+        float noise(vec2 p,float period){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+          return mix(mix(hash(vec2(mod(i.x,period),i.y)),hash(vec2(mod(i.x+1.0,period),i.y)),f.x),
+            mix(hash(vec2(mod(i.x,period),i.y+1.0)),hash(vec2(mod(i.x+1.0,period),i.y+1.0)),f.x),f.y);}
+        float cloud(vec2 p){float v=0.0,a=.5,period=32.0;for(int i=0;i<4;i++){v+=noise(p,period)*a;p=p*2.0+13.7;period*=2.0;a*=.5;}return v;}
         void main(){vec3 d=normalize(direction);float h=max(0.0,d.y);float front=pow(max(0.0,-d.z),3.0);
           vec3 dawn=mix(vec3(.38,.50,.52),vec3(.07,.15,.29),smoothstep(0.0,.7,h));
-          vec3 gold=mix(vec3(1.0,.43,.12),vec3(.12,.24,.42),smoothstep(.015,.65,h));
-          float n=cloud(vec2(atan(d.x,-d.z)*6.0,h*19.0));
-          vec3 bands=mix(vec3(.18,.31,.30),vec3(.46,.11,.26),smoothstep(.32,.7,n));
-          gold=mix(gold,bands,smoothstep(.1,.6,h)*.62);
-          float wisps=smoothstep(.46,.7,n)*smoothstep(.025,.2,h);
-          vec3 sky=mix(dawn,gold,rise*.87);
-          sky=mix(sky,mix(vec3(.46,.55,.59),vec3(1.0,.56,.27),rise),wisps*(.27+rise*.23));
-          vec3 sunDir=normalize(vec3(.1,.065,-1.0));float angle=length(d-sunDir);
-          float halo=exp(-angle*8.0);sky+=vec3(1.0,.46,.12)*halo*(.12+rise*.8);
-          sky+=vec3(1.0,.87,.52)*(1.0-smoothstep(.011,.015,angle))*(.3+rise*2.1);
-          sky+=vec3(.6,.19,.12)*front*exp(-h*20.0)*rise*.25;
+          vec3 gold=mix(paint(vec3(1.0,.63,.22)),paint(vec3(.09,.16,.31)),smoothstep(.01,.65,h));
+          if(panoramaReady>.5){
+            vec3 p=normalize(panoramaRotation*d);
+            vec2 uv=vec2(atan(p.x,-p.z)*.159154943+.5,asin(clamp(p.y,-1.0,1.0))*.318309886+.5);
+            vec3 photo=texture2D(panorama,uv).rgb*.08;
+            #ifdef TONE_MAPPING
+              photo=toneMapping(photo);
+            #endif
+            dawn=photo*vec3(.24,.5,.6);
+            gold=photo;
+          }else{
+            float n=cloud(vec2(atan(d.x,-d.z)*5.092958,h*23.0));
+            gold=mix(gold,paint(vec3(.50,.29,.43)),smoothstep(.38,.67,n)*smoothstep(.07,.32,h)*.4);
+          }
+          vec3 sky=mix(dawn,gold,rise);
+          float angle=length(d-sunDirection),halo=exp(-angle*angle*170.0)+exp(-angle*6.0)*.2;
+          sky+=vec3(1.0,.58,.16)*halo*(.04+rise*.65);
+          if(panoramaReady<.5)sky+=vec3(1.0,.78,.42)*(1.0-smoothstep(.011,.015,angle))*(.3+rise*3.1);
+          sky+=paint(vec3(.8,.20,.12))*front*exp(-h*17.0)*rise*.26;
           gl_FragColor=vec4(sky,1.0);
           #include <colorspace_fragment>
         }` });
     this.materials.add(sky); return sky;
+  }
+  private async loadSky(): Promise<void> {
+    try {
+      const texture = await new RGBELoader().loadAsync('/assets/park/sunset-clouds-4k.hdr');
+      if (this.disposed) { texture.dispose(); return; }
+      texture.wrapS = THREE.RepeatWrapping; this.textures.add(texture);
+      this.sky.uniforms.panorama.value = texture; this.sky.uniforms.panoramaReady.value = 1;
+    } catch (error) { if (!this.disposed) console.warn('Sunrise clouds unavailable; retaining the procedural sky.', error); }
   }
   update(encounter?: TrilogyEpilogueEncounter): void {
     this.rise = gardenSunrise(encounter); this.sky.uniforms.rise.value = this.rise;
     (this.water.material as THREE.ShaderMaterial).uniforms.parkTime.value = encounter?.total ?? 0;
     this.sun.intensity = 1.6 + this.rise * 1.6;
     this.sun.color.set(0xdce7eb).lerp(new THREE.Color(0xffc186), this.rise);
-    this.fill.intensity = 1.05 + this.rise * .15;
+    this.fill.intensity = .85 - this.rise * .35;
   }
-  atmosphere(): { color: number; ambient: number; sun: number } { return { color: 0xffd4ad, ambient: .55 + this.rise * .1, sun: 0 }; }
+  atmosphere(): { color: number; ambient: number; sun: number } { return { color: 0xffd4ad, ambient: .55 - this.rise * .18, sun: 0 }; }
   dispose(): void {
     this.disposed = true; this.treeInstances.forEach(instances => instances.dispose());
     this.group.removeFromParent(); this.group.clear(); this.water.dispose(); this.sun.dispose(); this.fill.dispose();

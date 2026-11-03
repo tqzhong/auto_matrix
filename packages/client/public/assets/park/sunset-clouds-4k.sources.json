@@ -1,0 +1,31 @@
+{
+  "file": "sunset-clouds-4k.hdr",
+  "asset": "Belfast Sunset (Pure Sky)",
+  "authors": {
+    "Dimitrios Savva": "Photography",
+    "Greg Zaal": "Processing",
+    "Jarod Guest": "Sky edits"
+  },
+  "license": "CC0-1.0",
+  "licenseURL": "https://polyhaven.com/license",
+  "assetURL": "https://polyhaven.com/a/belfast_sunset_puresky",
+  "downloadURL": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/4k/belfast_sunset_puresky_4k.hdr",
+  "downloadedAt": "2026-11-03",
+  "bytes": 17420114,
+  "sha256": "cafc52b99ce15d84bd039826a0333f5ab0259d8c1f4feb2f7faf5fafa039108a",
+  "originalMd5": "52d2339c16069a2aaa7fd37a320d8495",
+  "width": 4096,
+  "height": 2048,
+  "brightestUpperPixel": {
+    "value": 29.547219271945956,
+    "x": 2476,
+    "y": 1000
+  },
+  "sourceSunDirection": [
+    0.6105932176022756,
+    0.03604074152070623,
+    -0.7911238762474168
+  ],
+  "sourceBytesUnmodified": true,
+  "credit": "Powered by Poly Haven; one-time asset download, no live API in the game."
+}
