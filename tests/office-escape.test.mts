@@ -414,6 +414,58 @@ test('successful escape skips interrogation and the car scan does not invent an 
   assert.match(h.state().lastText, /没有发现追踪装置/); assert.equal(h.state().office?.bugged, false);
 });
 
+for (const ladder of [false, true]) {
+  test(`retreating from the ${ladder ? 'ladder' : 'ledge'} starts real office custody without losing personal state`, () => {
+    const h = setup(); h.office(); h.finish(); h.crossWindow();
+    if (ladder) { h.goal(); h.advance(); h.command('escape:climb'); h.climb(1); }
+    if (ladder) assert.equal(h.players.possess('guard-player', 'smith', h.tick()).agentId, 'smith');
+    const guard = h.players.getAgent('guard-player'), guardPosition = guard && { ...guard.position }, guardController = guard?.controller;
+    h.neo().health = 63; h.sandbox.state.neoLife!.money = 321; h.sandbox.state.neoLife!.evidence = ['loop'];
+    h.command('escape:retreat');
+    assert.equal(h.scene().id, 'm1_office_escape'); assert.equal(h.state().step, h.scene().steps.length);
+    assert.equal(h.neo().currentLocation, 'film_metacortex_floor');
+    assert.deepEqual(h.neo().position, filmPosition('film_metacortex_floor', -25.25, -27.65));
+    assert.equal(playerBlocked(h.neo().position, true), false);
+    assert.equal(h.state().office?.outcome, 'captured'); assert.equal(h.state().office?.climbed, undefined);
+    assert.equal(h.state().office?.custody?.phase, 'securing');
+    assert.equal(h.state().completed.filter(id => id === 'm1_ledge').length, 1);
+    const personal = () => ({ health: h.neo().health, money: h.sandbox.state.neoLife!.money, evidence: h.sandbox.state.neoLife!.evidence });
+    const expected = personal();
+    h.command('next'); assert.equal(h.scene().id, 'm1_office_escape', 'next cannot bypass the physical escort');
+    const custody = structuredClone(h.state().office!.custody!);
+    h.players.release('neo-player', h.tick()); h.sandbox.restore(structuredClone(h.sandbox.state));
+    h.players.possess('neo-player', 'neo', h.tick()); assert.deepEqual(h.state().office!.custody, custody);
+    assert.deepEqual(personal(), expected);
+    if (ladder) {
+      const bodies = structuredClone(h.state().office!.custody!.bodies);
+      for (let frame = 0; frame < 80; frame++) h.players.step(.05, true, h.tick());
+      assert.equal(h.state().office!.custody!.paused, true); assert.equal(h.state().office!.custody!.elapsed, 0);
+      assert.equal(h.players.getAgent('guard-player')?.id, 'smith'); assert.equal(guard!.controller, guardController);
+      assert.deepEqual(guard!.position, guardPosition);
+      assert.deepEqual(h.state().office!.custody!.bodies, bodies);
+    } else {
+      h.escort(); assert.equal(h.scene().id, 'm1_interrogation');
+      assert.ok(!h.state().skipped?.includes('m1_ledge'), 'the played ledge must not also become a skipped scene');
+      assert.deepEqual(personal(), expected);
+    }
+  });
+}
+
+test('office custody waits for the catcher to walk within reach before securing Neo', () => {
+  const h = setup(); h.office(); h.finish(); h.sandbox.life.film.custody.begin(h.neo(), h.tick());
+  const custody = h.state().office!.custody!;
+  const gap = () => Math.hypot(custody.bodies[custody.catcher].position.x - h.neo().position.x, custody.bodies[custody.catcher].position.z - h.neo().position.z);
+  assert.ok(gap() > 8, 'this case starts with an agent across the office');
+  for (let frame = 0; frame < 40; frame++) h.players.step(.05, true, h.tick());
+  assert.ok(gap() > 2.2); assert.equal(custody.elapsed, 0, 'a distant agent cannot start the cuffs animation');
+  for (let frame = 0; frame < 1200 && custody.phase === 'securing'; frame++) {
+    const before = { ...custody.bodies[custody.catcher].position }; h.players.step(.05, true, h.tick());
+    assert.ok(Math.hypot(custody.bodies[custody.catcher].position.x - before.x, custody.bodies[custody.catcher].position.z - before.z) < .12, 'the catcher must walk rather than teleport');
+    if (gap() > 2.2) assert.equal(custody.elapsed, 0);
+  }
+  assert.equal(custody.phase, 'escorting'); assert.ok(gap() <= 2.2);
+});
+
 test('escaping requires descending the ladder; stopping, climbing up, pause and saving retain the handhold', () => {
   const h = setup(); h.office(); h.finish(); h.crossWindow(); h.goal(); h.advance(); h.command('escape:climb');
   h.advance(20); assert.equal(h.state().office?.outcome, undefined); assert.equal(h.state().office?.climbed, 0);

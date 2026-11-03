@@ -2549,6 +2549,10 @@ export class FilmStorySystem {
       neo.position = { ...point }; life.activity.position = { ...point };
       life.lift = { floor: 1, target: 1, phase: 'idle', elapsed: 0 };
     }
+    if (neo && life?.journey?.scene === 'm1_ledge' && !life.journey.visiting
+      && life.journey.office?.outcome === 'captured' && !life.journey.office.custody) {
+      this.returnToOfficeCustody(neo, this.world.simulationTick);
+    }
   }
   windowFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;
@@ -6410,7 +6414,7 @@ export class FilmStorySystem {
             : state.scene === 'm3_oracle_absorbed' && state.completed.includes('m3_bane_questions') ? state.completed.includes('m3_logos_plan') ? 'm3_zion_prepare' : 'm3_logos_plan' : undefined;
       const next = branch ? FILM_SCENE_BY_ID[branch] : FILM_SCENES[index + 1];
       if (branch) {
-        const skipped = FILM_SCENES.slice(index + 1, FILM_SCENES.indexOf(next!)).map(s => s.id);
+        const skipped = FILM_SCENES.slice(index + 1, FILM_SCENES.indexOf(next!)).map(s => s.id).filter(id => !state.completed.includes(id));
         state.skipped = [...new Set([...(state.skipped ?? []), ...skipped])];
       }
       if (!next) { state.finished = true; life.ending = 'peace'; this.sandbox().ending = 'peace'; return '三部曲通关。停战与本轮反思已经保存。'; }
@@ -7109,6 +7113,14 @@ export class FilmStorySystem {
     if (!state.office.custody) agent.position = { ...state.checkpoint };
     state.step = this.scene!.steps.length - 1;
     this.advance(text, agent, tick);
+    if (state.scene === 'm1_ledge') this.returnToOfficeCustody(agent, tick);
+  }
+  private returnToOfficeCustody(agent: AgentState, tick: number): void {
+    const state = this.state!, scene = FILM_SCENE_BY_ID.m1_office_escape;
+    state.scene = scene.id; state.step = scene.steps.length;
+    delete state.started; delete state.fighting; delete state.office!.climbed; delete state.office!.crossing;
+    this.place(agent, scene, filmPosition(scene.set, OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ));
+    this.custody.begin(agent, tick);
   }
   private place(agent: AgentState, scene: FilmScene, position: AgentState['position']): void {
     this.sealResetFacade();

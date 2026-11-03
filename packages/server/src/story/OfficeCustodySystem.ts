@@ -266,7 +266,8 @@ export class OfficeCustodySystem {
     if (custody.lift) this.stageStreet(custody, delta > 0);
     const exit = filmPosition('film_metacortex_floor', OFFICE_CUSTODY.exit.x, OFFICE_CUSTODY.exit.z);
     if (custody.phase === 'securing') {
-      custody.elapsed = Math.min(OFFICE_CUSTODY.securing, custody.elapsed + delta);
+      if (planar(custody.bodies[custody.catcher].position, agent.position) <= 2.2)
+        custody.elapsed = Math.min(OFFICE_CUSTODY.securing, custody.elapsed + delta);
       if (custody.elapsed >= OFFICE_CUSTODY.securing) custody.phase = 'escorting';
     }
     const blocked = (point: Vector3, role: OfficeCustodyRole) => playerBlocked(point, true, .7, state.structures)
@@ -314,7 +315,9 @@ export class OfficeCustodySystem {
     if (custody.phase === 'riding') agent.currentAction.parameters.metacortexLift = true;
     else delete agent.currentAction.parameters.metacortexLift;
     agent.currentAction.parameters.officeCustody = { role: 'neo', phase: custody.phase, elapsed: custody.elapsed, paused: custody.paused, locked: officeCustodyLocked(journey), street: custody.street };
-    journey.checkpoint = { ...agent.position }; journey.lastText = journey.office!.guide = officeCustodyText(custody);
+    journey.checkpoint = { ...agent.position };
+    journey.lastText = journey.office!.guide = !custody.paused && custody.phase === 'securing' && planar(custody.bodies[custody.catcher].position, agent.position) > 2.2
+      ? '特工正沿办公室通道走近。先停在原地，等待他们靠近。' : officeCustodyText(custody);
     if (delta && custody.street?.phase === 'departed') { this.onDeparted?.(agent, tick); return true; }
     return officeCustodyLocked(journey);
   }

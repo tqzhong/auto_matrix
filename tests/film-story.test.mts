@@ -36,6 +36,8 @@ import { ORACLE_LAST, oracleLastLines, distance } from '@auto_matrix/shared';
 import { BANE_INQUIRY, baneInquiryLines } from '@auto_matrix/shared';
 import { ORACLE_ABSORPTION } from '@auto_matrix/shared';
 import { SENTINEL_POWER, SENTINEL_TIMING } from '@auto_matrix/shared';
+import { exitOfficeCustody, boardOfficeArrest, departOfficeArrest } from './helpers/office-custody-route.mts';
+import type { PlayerInput } from '@auto_matrix/shared';
 
 function setup() {
   const world = new WorldState(); const manager = new AgentManager(world); manager.initializeAllAgents();
@@ -4200,6 +4202,18 @@ test('the entire film route completes through interactions, driving and real com
           for (let frame = 0; frame < 50; frame++) h.players.step(.1, true, h.tick());
         } else h.command(scene.id === 'm1_wake_up' ? 'contact:follow' : scene.id === 'm1_ledge' ? 'escape:retreat' : scene.id === 'm1_pills' ? 'pill:red'
           : ['m3_oracle_request', 'm3_hel_bargain'].includes(scene.id) ? `reflect:${filmReflections(scene.id)[0].id}` : 'reflect:agency');
+        if (scene.id === 'm1_ledge') {
+          assert.equal(state.scene, 'm1_office_escape');
+          let escortFrames = 0;
+          const input = (values: Partial<PlayerInput> = {}) => {
+            h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, sprint: false, jump: false, ...values, sequence: ++sequence });
+            h.players.step(.05, true, h.tick()); if (++escortFrames % 10 === 0) h.advance();
+          };
+          exitOfficeCustody(h.actor(), () => state, input, h.command);
+          boardOfficeArrest(h.actor(), () => state, input, h.command);
+          departOfficeArrest(() => state, input, h.command);
+          assert.ok(!state.skipped?.includes('m1_ledge')); break;
+        }
         if (scene.id === 'm1_smith_question') for (let frame = 0; frame < 130 && state.step === index; frame++) {
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: h.actor().rotation, jump: false, sprint: false, focus: true, sequence: ++sequence });
           h.players.step(.1, true, h.tick());
@@ -4809,7 +4823,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
-    if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id)) h.command('next');
+    if (!['m1_ledge', 'm1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }
   assert.equal(state.finished, true); assert.equal(state.completed.length, FILM_SCENES.length);

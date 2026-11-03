@@ -214,6 +214,33 @@ test('real restarts retain the paused office window contact and resume its remai
   assert.equal(complete.sandbox!.neoLife!.journey!.office!.window, OFFICE_WINDOW.seconds); await resumed.stop();
 });
 
+test('real restarts recover legacy ledge retreat into office custody only once', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_ledge'), journey = f.checkpoint.sandbox.neoLife.journey;
+  journey.step = FILM_SCENE_BY_ID.m1_ledge.steps.length;
+  journey.office.outcome = 'captured'; delete journey.office.custody;
+  journey.completed = [...new Set([...journey.completed, 'm1_ledge'])];
+  f.checkpoint.sandbox.neoLife.choices.office_escape = 'captured';
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  let expected;
+  for (let restart = 0; restart < 2; restart++) {
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    const check = (state: WorldStateFull) => {
+      const restored = state.sandbox!.neoLife!.journey!;
+      assert.equal(restored.scene, 'm1_office_escape'); assert.equal(restored.office?.custody?.phase, 'securing');
+      assert.equal(restored.completed.filter(id => id === 'm1_ledge').length, 1);
+      assert.equal(state.agents.neo.currentLocation, 'film_metacortex_floor');
+      assert.deepEqual(state.agents.neo.position, filmPosition('film_metacortex_floor', OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ));
+      assert.equal(state.agents.neo.health, 63); assert.equal(state.simulation!.running, false);
+      assert.equal(state.simulation!.tick, 1343);
+      for (const key of ['money', 'evidence', 'choices'] as const) assert.deepEqual(state.sandbox!.neoLife![key], f.checkpoint.sandbox.neoLife[key]);
+      expected ??= structuredClone(restored.office!.custody);
+      assert.deepEqual(restored.office!.custody, expected);
+    };
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+  }
+});
+
 for (const phase of ['crossing', 'climbing'] as const) {
   test(`real restarts retain the paused office ${phase} performance and clock`, { timeout: 30000 }, async t => {
     const f = await fixture(t, phase === 'crossing' ? 'm1_office_escape' : 'm1_ledge', phase === 'crossing' ? 'crossing' : undefined);
