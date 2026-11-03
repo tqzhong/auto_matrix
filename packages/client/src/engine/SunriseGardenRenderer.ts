@@ -259,34 +259,100 @@ export class SunriseGardenRenderer {
       shader.fragmentShader = 'varying vec2 parkFacadeUv; varying float parkFacadeSide;\n' + shader.fragmentShader;
       shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
         vec2 cell = fract(parkFacadeUv), edge = max(fwidth(parkFacadeUv), vec2(.003));
-        vec2 pane = smoothstep(vec2(.13,.18), vec2(.13,.18)+edge, cell) * (1.0-smoothstep(vec2(.84,.79)-edge, vec2(.84,.79), cell));
+        vec2 pane = smoothstep(vec2(.19,.18), vec2(.19,.18)+edge, cell) * (1.0-smoothstep(vec2(.81,.82)-edge, vec2(.81,.82), cell));
         float parkWindow = pane.x * pane.y * parkFacadeSide;
         float room = fract(sin(dot(floor(parkFacadeUv),vec2(127.1,311.7)))*43758.5453);
-        vec3 glass = mix(vec3(.055,.082,.09),vec3(.17,.22,.235),room);
+        vec3 glass = mix(vec3(.008,.013,.018),vec3(.020,.029,.036),room);
         diffuseColor.rgb = mix(diffuseColor.rgb * (.92 + room*.08),glass,parkWindow);
         totalEmissiveRadiance += vec3(.42,.23,.075)*parkWindow*step(.985,room);`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, .26, parkWindow);');
     };
-    material.customProgramCacheKey = () => 'park-window-grid-v1'; return material;
+    material.customProgramCacheKey = () => 'park-window-grid-v2'; return material;
   }
   private city(): void {
     const skyline = new THREE.Group(); skyline.name = 'park-city-skyline'; this.group.add(skyline);
-    const stone = [this.facade(0x79736a), this.facade(0x565f66), this.facade(0x85816f)];
+    const colors = [0x79736a, 0x565f66, 0x85816f], stone = colors.map(color => this.facade(color));
+    const ribs = colors.map(color => this.material(color, .86));
+    const frames = new THREE.Group(); frames.name = 'park-city-recessed-frames'; skyline.add(frames);
     const trim = this.material(0x404b4d, .72), park = this.material(0x253b29, .96);
     const facadeUv = (mesh: THREE.Mesh, width: number, height: number, depth: number) => {
       mesh.castShadow = mesh.receiveShadow = false;
       if (!stone.includes(mesh.material as THREE.MeshStandardMaterial)) return;
       const uv = mesh.geometry.attributes.uv, normal = mesh.geometry.attributes.normal;
       for (let vertex = 0; vertex < uv.count; vertex++) uv.setXY(vertex,
-        uv.getX(vertex) * (Math.abs(normal.getX(vertex)) > .5 ? depth : width) / 2.6 + mesh.position.x / 2.6,
+        uv.getX(vertex) * (Math.abs(normal.getX(vertex)) > .5 ? depth : width) / 2.2 + mesh.position.x / 2.2,
         uv.getY(vertex) * height / 3.3 + (mesh.position.y - height / 2) / 3.3);
     };
-    const block = (x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material) => {
-      const mesh = this.box(x, y, z, w, h, d, material, skyline); facadeUv(mesh, w, h, d); return mesh;
+    const facadeFrames = (span: number, bottom: number, height: number, offset: number,
+      point: (u: number, y: number, depth: number) => THREE.Vector3, material: THREE.Material, round = false) => {
+      const positions: number[] = [], normals: number[] = [], uv: number[] = [], indices: number[] = [], recess = round ? .4 : .36;
+      const quad = (points: THREE.Vector3[], smooth?: THREE.Vector3[]) => {
+        const start = positions.length / 3;
+        const face = points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize();
+        points.forEach((p, i) => { positions.push(p.x, p.y, p.z); const normal = smooth?.[i] ?? face; normals.push(normal.x, normal.y, normal.z); });
+        uv.push(0, 0, 1, 0, 1, 1, 0, 1); indices.push(start, start + 1, start + 2, start, start + 2, start + 3);
+      };
+      const strip = (a: number, b: number, low: number, high: number, vertical: boolean) => {
+        if (b - a < .001 || high - low < .001) return;
+        // A slight projecting sill avoids coplanar faces at masonry joints.
+        const front = vertical ? 0 : -.012;
+        const corners = [[a, low], [b, low], [b, high], [a, high]];
+        quad(corners.map(([u, v]) => point(u, v, front)), corners.map(([u, v]) => point(u, v, front).sub(point(u, v, recess)).normalize()));
+        if (vertical) {
+          quad([point(a, low, front), point(a, high, front), point(a, high, recess), point(a, low, recess)]);
+          quad([point(b, low, recess), point(b, high, recess), point(b, high, front), point(b, low, front)]);
+        } else {
+          quad([point(a, low, front), point(a, low, recess), point(b, low, recess), point(b, low, front)]);
+          quad([point(a, high, front), point(b, high, front), point(b, high, recess), point(a, high, recess)]);
+        }
+      };
+      const columns: [number, number][] = round ? [] : [[0, recess], [span - recess, span]];
+      for (let column = Math.ceil((offset - .418) / 2.2); column <= Math.floor((offset + span + .418) / 2.2); column++) {
+        const u = column * 2.2 - offset;
+        if (round && u >= span - .001) continue;
+        columns.push(round ? [u - .418, u + .418] : [Math.max(0, u - .418), Math.min(span, u + .418)]);
+      }
+      columns.sort(([a], [b]) => a - b);
+      const merged: [number, number][] = [];
+      for (const [a, b] of columns) {
+        const previous = merged.at(-1);
+        if (previous && a <= previous[1]) previous[1] = Math.max(previous[1], b); else merged.push([a, b]);
+      }
+      for (const [a, b] of merged) strip(a, b, bottom, bottom + height, true);
+      // Recessed spandrels divide the floors; round towers use wider belt spacing.
+      const beltSpacing = round ? 13.2 : 6.6;
+      for (let floor = Math.ceil((bottom - .594) / beltSpacing); floor <= Math.floor((bottom + height + .594) / beltSpacing); floor++) {
+        const low = Math.max(bottom, floor * beltSpacing - .594), high = Math.min(bottom + height, floor * beltSpacing + .594);
+        const segments = round ? 16 : 1;
+        for (let part = 0; part < segments; part++) strip(span * part / segments, span * (part + 1) / segments, low, high, false);
+      }
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices);
+      const mesh = this.mesh(geometry, material, 0, 0, 0, frames); mesh.castShadow = mesh.receiveShadow = false;
+    };
+    const block = (x: number, y: number, z: number, w: number, h: number, d: number, material: THREE.Material, detailed = false) => {
+      const index = stone.indexOf(material as THREE.MeshStandardMaterial), recess = detailed && index >= 0 && h >= 5 ? .36 : 0;
+      const mesh = this.box(x, y, z, w - recess * 2, h, d - recess * 2, material, skyline); facadeUv(mesh, w - recess * 2, h, d - recess * 2);
+      if (recess) {
+        facadeFrames(w, y - h / 2, h, x - recess, (u, v, depth) => new THREE.Vector3(x - w / 2 + u, v, z + d / 2 - depth), ribs[index]);
+        for (const side of [-1, 1])
+          facadeFrames(d, y - h / 2, h, x - recess, (u, v, depth) => new THREE.Vector3(x + side * (w / 2 - depth), v, z + side * (d / 2 - u)), ribs[index]);
+      }
+      return mesh;
     };
     const cylinder = (x: number, y: number, z: number, radius: number, height: number, material: THREE.Material) => {
-      const mesh = this.mesh(new THREE.CylinderGeometry(radius, radius, height, 24), material, x, y, z, skyline);
-      facadeUv(mesh, radius * Math.PI * 2, height, radius * Math.PI * 2); return mesh;
+      const index = stone.indexOf(material as THREE.MeshStandardMaterial), recess = index >= 0 && height >= 5 ? .4 : 0;
+      const mesh = this.mesh(new THREE.CylinderGeometry(radius - recess, radius - recess, height, 24), material, x, y, z, skyline);
+      facadeUv(mesh, (radius - recess) * Math.PI * 2, height, (radius - recess) * Math.PI * 2);
+      if (recess) {
+        const columns = Math.round((radius - recess) * Math.PI * 2 / 2.2), span = columns * 2.2, uv = mesh.geometry.attributes.uv;
+        for (let vertex = 0; vertex < uv.count; vertex++) uv.setX(vertex, (uv.getX(vertex) - x / 2.2) * columns * 2.2 / ((radius - recess) * Math.PI * 2));
+        facadeFrames(span, y - height / 2, height, 0, (u, v, depth) => {
+          const angle = u / span * Math.PI * 2; return new THREE.Vector3(x + Math.sin(angle) * (radius - depth), v, z + Math.cos(angle) * (radius - depth));
+        }, ribs[index], true);
+      }
+      return mesh;
     };
     // Tall clusters frame the lower district and the sun; the city is a deep backdrop across the lake.
     for (const [x, z, w, d, h, style] of [[-182,-212,28,22,126,0],[-144,-185,23,24,106,1],[-128,-172,18,20,82,1],[-112,-208,27,28,153,0],[-87,-230,18,20,111,1],[-62,-185,26,25,94,0],[-37,-257,16,20,53,1],
@@ -300,7 +366,7 @@ export class SunriseGardenRenderer {
       } else {
         let bottom = 4;
         for (const [ratio, scale] of style === 1 ? [[.64,1],[.2,.83],[.1,.64],[.06,.42]] : [[.82,1],[.14,.82],[.04,.5]]) {
-          const height = h * ratio; block(x, bottom + height / 2, z, w * scale, height, d * scale, material);
+          const height = h * ratio; block(x, bottom + height / 2, z, w * scale, height, d * scale, material, true);
           bottom += height; block(x, bottom, z, w * scale + .5, .55, d * scale + .5, trim);
         }
       }
