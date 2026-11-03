@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { SUNRISE_GARDEN, gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
 import { SunriseGardenRenderer } from '../packages/client/src/engine/SunriseGardenRenderer.js';
+import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
 
 function park(t: TestContext) {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -14,6 +15,22 @@ function park(t: TestContext) {
   const scene = new THREE.Scene(), root = new THREE.Group(); scene.add(root);
   const garden = new SunriseGardenRenderer(root); t.after(() => garden.dispose()); return { scene, garden };
 }
+
+test('the saved park sunrise reduces the real camera fill while preserving the authored sun', t => {
+  const { scene, garden } = park(t), lighting = new LightingSystem(scene), camera = new THREE.PerspectiveCamera();
+  t.after(() => lighting.dispose());
+  const fill = scene.children.find(object => object instanceof THREE.DirectionalLight && object !== lighting.directionalLight) as THREE.DirectionalLight;
+  let previous = Infinity;
+  for (const [phase, elapsed] of [['choice', 0], ['sunrise', 3.1], ['done', 0]] as const) {
+    const state = { ...newTrilogyEpilogue('dawn'), phase, elapsed };
+    garden.update(state); lighting.update(0, camera, false, garden.atmosphere());
+    assert(fill.intensity > 0 && fill.intensity < .3, 'camera fill must retain readable actors without overpowering the sunrise');
+    assert(fill.intensity < previous, 'front fill reduces as the saved sunrise grows'); previous = fill.intensity;
+    garden.update(structuredClone(state)); lighting.update(0, camera, false, garden.atmosphere());
+    assert.equal(fill.intensity, previous, 'pause and cold reads retain the same fill');
+    assert.equal(lighting.directionalLight.intensity, 0, 'the park retains its own shadow sun');
+  }
+});
 
 test('the park light casts shadows away from the visible low sunrise', t => {
   const { scene, garden } = park(t);

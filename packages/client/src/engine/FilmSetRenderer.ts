@@ -757,7 +757,7 @@ export class FilmSetRenderer {
     for (const item of this.moving) item.update(elapsed);
     return set;
   }
-  atmosphere(): { color: number; ambient: number; sun: number } | undefined {
+  atmosphere(): { color: number; ambient: number; sun: number; fill?: number } | undefined {
     if (!this.current || ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(this.current.id)) return;
     const palette = palettes[this.current.light];
     (this.scene.background as THREE.Color).setHex(palette.sky);

@@ -477,7 +477,7 @@ export class TrilogyEpilogueRenderer {
     this.park?.update(state);
   }
 
-  parkAtmosphere(): { color: number; ambient: number; sun: number } | undefined { return this.park?.atmosphere(); }
+  parkAtmosphere(): { color: number; ambient: number; sun: number; fill?: number } | undefined { return this.park?.atmosphere(); }
 
   dispose(): void {
     this.park?.dispose();

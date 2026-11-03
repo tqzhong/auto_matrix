@@ -20,7 +20,7 @@ export class LightingSystem {
     scene.add(this.ambientLight, this.directionalLight, this.directionalLight.target, this.fill, this.fill.target);
   }
   setTime(time: number): void { this.timeOfDay = time; }
-  update(_elapsed: number, camera?: THREE.Camera, interiorShadows = false, atmosphere?: { ambient: number; sun: number; color: number }): void {
+  update(_elapsed: number, camera?: THREE.Camera, interiorShadows = false, atmosphere?: { ambient: number; sun: number; color: number; fill?: number }): void {
     const daylight = Math.max(0, Math.sin((this.timeOfDay / 24000 - 0.25) * Math.PI * 2));
     this.ambientLight.intensity = .5 + daylight * 1.1;
     this.directionalLight.intensity = .35 + daylight * 2.6;
@@ -41,6 +41,7 @@ export class LightingSystem {
     this.directionalLight.target.position.copy(center);
     const angle = (this.timeOfDay / 24000 - .25) * Math.PI * 2;
     this.directionalLight.position.copy(center).add(new THREE.Vector3(-Math.cos(angle) * 90, 35 + daylight * 100, 45).multiplyScalar(camera ? 1 : 5));
+    this.fill.intensity = atmosphere?.fill ?? .75;
     this.fill.visible = Boolean(camera);
     if (camera) {
       this.fill.position.copy(camera.position).add(new THREE.Vector3(0, 8, 0));
