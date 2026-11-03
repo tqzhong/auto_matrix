@@ -114,6 +114,32 @@ function inside(point: THREE.Vector3, target: THREE.Mesh): boolean {
   return new Set(intersections.map(hit => Math.round(hit.distance * 10000))).size % 2 === 1;
 }
 
+test('the recorded whisper has no crossing edges in the inspected head surfaces', async t => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club'].map(async id => [id, await geometry(id)] as const)));
+  const h = setup(t, assets); h.snapshot(6.4, 'whisper'); await new Promise(resolve => setImmediate(resolve)); h.renderer.update(0, undefined, 0);
+  const heads = ['neo', 'trinity'].map(id => {
+    const body = h.renderer.getAgentBody(id)!;
+    return surface(body.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh,
+      body.getObjectByName('head')!.getWorldPosition(new THREE.Vector3()).y - .25);
+  });
+  try {
+    for (const [i, id] of ['neo', 'trinity'].entries()) {
+      const source = heads[i].mesh.geometry, indices = source.index!, positions = source.attributes.position;
+      const target = heads[1 - i].mesh, bounds = new THREE.Box3().setFromPoints(heads[1 - i].points), edges = new Set<number>();
+      const from = new THREE.Vector3(), to = new THREE.Vector3(), direction = new THREE.Vector3(), edgeBounds = new THREE.Box3();
+      for (let face = 0; face < indices.count; face += 3) for (let side = 0; side < 3; side++) {
+        const a = indices.getX(face + side), b = indices.getX(face + (side + 1) % 3);
+        const key = Math.min(a, b) * positions.count + Math.max(a, b); if (edges.has(key)) continue; edges.add(key);
+        from.fromBufferAttribute(positions, a); to.fromBufferAttribute(positions, b);
+        if (!edgeBounds.makeEmpty().expandByPoint(from).expandByPoint(to).intersectsBox(bounds)) continue;
+        direction.subVectors(to, from); const length = direction.length(); if (length <= .00002) continue;
+        const hits = new THREE.Raycaster(from, direction.normalize(), .00001, length - .00001).intersectObject(target, false);
+        assert.equal(hits.length, 0, `${id} head edge ${a}/${b} crosses the other face at whisper 6.4`);
+      }
+    }
+  } finally { heads.forEach(head => head.dispose()); }
+});
+
 test('actual shoe soles stay above the floor and neither shoes nor head skin overlap throughout the close steps and retreat', async t => {
   const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking', 'trinity', 'trinity-club'].map(async id => [id, await geometry(id)] as const)));
   const h = setup(t, assets); h.snapshot(0, 'whisper'); await new Promise(resolve => setImmediate(resolve));
