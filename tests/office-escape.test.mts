@@ -429,6 +429,34 @@ test('escaping requires descending the ladder; stopping, climbing up, pause and 
   h.climb(.1, 0); assert.ok(h.neo().position.y < FILM_SETS.film_office_ledge.center.y - 30, 'the lower platform must support the body');
 });
 
+for (const phase of ['crossing', 'climbing'] as const) {
+  const performance = () => {
+    const h = setup(); h.office(); h.finish();
+    if (phase === 'crossing') { h.command('next'); for (let i = 0; i < 40; i++) h.players.step(.05, true, h.tick()); }
+    else { h.crossWindow(); h.goal(); h.advance(); h.command('escape:climb'); h.climb(2); }
+    return h;
+  };
+
+  test(`paused office ${phase} preserves its full action and motion through release, restore and re-entry`, () => {
+    const h = performance(), actor = h.neo(), office = structuredClone(h.state().office);
+    const snapshot = () => structuredClone({ action: actor.currentAction, position: actor.position, rotation: actor.rotation, velocity: actor.velocity });
+    const expected = snapshot(); h.players.step(.05, false, h.tick()); assert.deepEqual(snapshot(), expected);
+    h.players.release('neo-player', h.tick() + 4); assert.deepEqual(snapshot(), expected);
+    h.sandbox.restore(structuredClone(h.sandbox.state)); assert.deepEqual(snapshot(), expected);
+    h.players.possess('neo-player', 'neo', h.tick() + 7); assert.deepEqual(snapshot(), expected);
+    assert.deepEqual(h.state().office, office);
+  });
+
+  test(`legacy office ${phase} saves rebuild the missing contact before possession`, () => {
+    const h = performance(), actor = h.neo(), position = { ...actor.position }, office = structuredClone(h.state().office);
+    h.players.release('neo-player', h.tick()); actor.currentAction = null;
+    h.sandbox.restore(structuredClone(h.sandbox.state));
+    if (phase === 'crossing') assert.equal(actor.currentAction?.parameters.crossing, office!.crossing);
+    else assert.equal(actor.currentAction?.parameters.climbing, true);
+    assert.deepEqual(actor.position, position); assert.deepEqual(h.state().office, office);
+  });
+}
+
 test('losing sight reduces suspicion, reopening the save retains patrol progress, and retry resets detection', () => {
   const h = setup(); h.office(); h.advance(8); const guard = h.sandbox.state.threats.find(t => t.id === 'office:0')!;
   h.neo().position = { ...guard.position, z: guard.position.z + 8 }; guard.yaw = 0; h.advance();

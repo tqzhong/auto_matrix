@@ -214,6 +214,47 @@ test('real restarts retain the paused office window contact and resume its remai
   assert.equal(complete.sandbox!.neoLife!.journey!.office!.window, OFFICE_WINDOW.seconds); await resumed.stop();
 });
 
+for (const phase of ['crossing', 'climbing'] as const) {
+  test(`real restarts retain the paused office ${phase} performance and clock`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, phase === 'crossing' ? 'm1_office_escape' : 'm1_ledge', phase === 'crossing' ? 'crossing' : undefined);
+    if (phase === 'climbing') {
+      const journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
+      journey.step = 1; actor.position = filmStepPosition(FILM_SCENE_BY_ID.m1_ledge, FILM_SCENE_BY_ID.m1_ledge.steps[1]);
+      actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 }; journey.checkpoint = { ...actor.position };
+    }
+    f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', parameters: { player: true, climbing: true }, startedAt: 1340, duration: 1, progress: .2 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+    await client.command('resume', {}, state => state.simulation!.running);
+    const progress = (state: WorldStateFull) => state.sandbox!.neoLife!.journey!.office![phase === 'crossing' ? 'crossing' : 'climbed'];
+    await client.command('sandbox_action', { kind: 'life', target: phase === 'crossing' ? 'film:next' : 'film:escape:climb' }, state => progress(state) !== undefined);
+    let sequence = 0;
+    const descend = () => client.socket.emit('message', { type: 'player_input', data: { x: 0, z: 0, yaw: Math.PI / 2, sprint: false, jump: false, climb: 1, sequence: ++sequence } });
+    const input = phase === 'climbing' ? setInterval(descend, 80) : undefined;
+    try {
+      if (input) descend();
+      const deadline = Date.now() + 5000;
+      while ((progress(await client.world()) ?? 0) < (phase === 'crossing' ? 2.2 : 7.2)) {
+        assert.ok(Date.now() < deadline, `the actual ${phase} never reached its checkpoint`); await new Promise(resolve => setTimeout(resolve, 20));
+      }
+    } finally { if (input) clearInterval(input); }
+    const paused = await client.command('pause', {}, state => !state.simulation!.running);
+    client.socket.disconnect(); await server.stop();
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.office, paused.sandbox!.neoLife!.journey!.office);
+      for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents.neo[key], paused.agents.neo[key], `${phase}: ${key}`);
+      assert.equal(state.agents.citizen_5.currentAction, null, 'unrelated player attacks must still clear');
+    };
+    for (let restart = 0; restart < 2; restart++) {
+      const resumed = start(t, f.directory, 'normal'); await resumed.waitFor('STARTUP_LISTENING'); const next = await controls(t, resumed);
+      check(await next.world()); check(await next.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+      next.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await next.world()); await resumed.stop();
+    }
+  });
+}
+
 for (const [phase, elapsed] of [['approach', 1.2], ['ready', 0], ['handshake', 1.3], ['departing', 2.5]] as const) {
   test(`real restarts and re-entry preserve all three paused ${phase} greeting actions`, { timeout: 30000 }, async t => {
     const f = await fixture(t, 'm1_pills', 'welcome'), journey = f.checkpoint.sandbox.neoLife.journey;

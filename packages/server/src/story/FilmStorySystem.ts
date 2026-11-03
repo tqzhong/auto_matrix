@@ -2494,10 +2494,11 @@ export class FilmStorySystem {
       }
     }
   }
-  crossingFrame(agent: AgentState, dt: number, tick: number): void {
+  crossingFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;
-    if (!state || !this.controls(agent) || !windowCrossing(state)) return;
+    if (!state || !this.controls(agent) || !windowCrossing(state)) return false;
     const office = state.office!;
+    if (dt === 0 && agent.currentAction?.parameters.crossing === office.crossing) return true;
     office.crossing = Math.min(OFFICE_CROSSING_SECONDS, office.crossing! + Math.min(.1, dt));
     const pose = officeCrossingPose(office.crossing);
     agent.position = filmPosition('film_metacortex_floor', pose.x, pose.z); agent.position.y += pose.y;
@@ -2510,6 +2511,7 @@ export class FilmStorySystem {
       state.scene = next.id; state.step = 0;
       this.enter(next, tick, position); agent.rotation = pose.yaw;
     }
+    return true;
   }
   restoreOfficeSpace(): void {
     const center = FILM_SETS.film_metacortex_floor.center;
@@ -5163,6 +5165,7 @@ export class FilmStorySystem {
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
     if (this.openingHotel.climbFrame(agent, direction, dt, tick)) return true;
     if (!this.climbing(agent)) return false;
+    if (dt === 0 && agent.currentAction?.parameters.climbing === true) return true;
     const state = this.state!; const office = state.office!;
     office.climbed = Math.max(0, Math.min(OFFICE_LADDER.depth, office.climbed! + direction * Math.min(.1, dt) * OFFICE_LADDER.speed));
     agent.position = filmPosition(this.scene!.set, OFFICE_LADDER.x, OFFICE_LADDER.z); agent.position.y -= office.climbed;
