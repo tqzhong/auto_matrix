@@ -4,7 +4,7 @@ import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { poseStreetWake } from './StreetWakePerformance.js';
 import { holdGardenHandle, connectGardenWrists } from './OracleParkHands.js';
-import { architectWalkPose, ARCHITECT_WALK_CYCLE } from './CharacterMotion.js';
+import { poseArchitectGardenWalk } from './ArchitectGardenWalk.js';
 
 const wakeSupports = new WeakMap<CharacterRig, { rising: number; surfaceVersion: number; height: number }>();
 const oracleDrapes = new WeakMap<CharacterRig, string>();
@@ -263,21 +263,7 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
     rig.fingers[i].forEach(finger => { finger.rotation.x = -.12; });
   }
   if (!reset && gesture.role === 'architect') {
-    const clock = gesture.parkDeparture?.elapsed ?? gesture.elapsed, sample = 1 / 120;
-    const sampleAt = (elapsed: number) => gardenPose(gesture.parkDeparture
-      ? { ...gesture, parkDeparture: { ...gesture.parkDeparture, elapsed } } : { ...gesture, elapsed }, 'architect');
-    const before = sampleAt(Math.max(0, clock - sample)), after = sampleAt(clock + sample);
-    const speed = Math.hypot(after.x - before.x, after.z - before.z) / (clock + sample - Math.max(0, clock - sample));
-    const origin = gesture.parkDeparture?.origin ?? (gesture.phase === 'leaving' ? { x: -8.3, z: -25.5 } : { x: -25, z: -30 });
-    const distance = gesture.parkDeparture ? Math.abs(pose.x - origin.x) + Math.abs(pose.z - origin.z) : Math.hypot(pose.x - origin.x, pose.z - origin.z);
-    const walk = architectWalkPose(distance / ARCHITECT_WALK_CYCLE, THREE.MathUtils.smoothstep(speed, 0, 2.2));
-    rig.torso.position.y = walk.hipHeight; rig.torso.rotation.set(walk.lean, walk.twist, 0);
-    rig.head.rotation.set(-walk.lean * .6, walk.headTurn, 0);
-    for (let i = 0; i < 2; i++) {
-      rig.hips[i].position.y = walk.hipHeight; rig.hips[i].rotation.set(walk.legs[i].hip, 0, 0);
-      rig.knees[i].rotation.set(walk.legs[i].knee, 0, 0); rig.ankles[i].rotation.set(walk.legs[i].ankle, 0, 0);
-      rig.shoulders[i].rotation.set(walk.arms[i].shoulder, 0, walk.arms[i].outward); rig.elbows[i].rotation.set(walk.arms[i].elbow, 0, 0);
-    }
+    poseArchitectGardenWalk(rig, gesture);
   }
   if (seated > 0) {
     rig.root.updateWorldMatrix(true, true); const orientation = rig.root.getWorldQuaternion(new THREE.Quaternion());
@@ -301,8 +287,8 @@ export function poseGarden(rig: CharacterRig, gesture?: TrilogyEpilogueGesture, 
       }
     }
   }
-  if (!reset && seated === 0) {
-    supportGardenFeet(rig, gesture.parkArrivalVersion === 2 && gesture.role !== 'architect');
+  if (!reset && seated === 0 && gesture.role !== 'architect') {
+    supportGardenFeet(rig, gesture.parkArrivalVersion === 2);
   }
   if (gesture.role === 'oracle') drapeOracleClothes(rig, gesture);
   drapeSatiSkirt(rig);

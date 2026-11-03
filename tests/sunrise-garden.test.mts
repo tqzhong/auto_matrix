@@ -20,6 +20,48 @@ function vertices(body: THREE.Object3D): THREE.Vector3[] {
   return points;
 }
 
+test('legacy Architect departure turns gradually toward its actual saved route', () => {
+  const encounter = { ...newTrilogyEpilogue('dawn'), phase: 'leaving' as const, elapsed: 0, total: 0 };
+  const start = gardenPose(encounter, 'architect'); let previous = start.yaw;
+  for (let frame = 1; frame <= 48; frame++) {
+    const current = gardenPose({ ...encounter, elapsed: frame / 60 }, 'architect');
+    const change = Math.atan2(Math.sin(current.yaw - previous), Math.cos(current.yaw - previous));
+    assert(Math.abs(change) < .1, `legacy departure snaps ${change} radians in one update`);
+    previous = current.yaw;
+  }
+  const end = gardenPose({ ...encounter, elapsed: 4.8 }, 'architect');
+  assert.equal(end.x, -30); assert.equal(end.z, -30);
+  assert(Math.abs(end.yaw - Math.atan2(end.x - start.x, end.z - start.z)) < 1e-12);
+  const after = gardenPose({ ...encounter, phase: 'promise', elapsed: 0 }, 'architect');
+  assert.equal(after.yaw, end.yaw, 'the next saved phase must retain the departure heading');
+});
+
+test('saved Architect leg rotations are independent of the world translation', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const previous = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), actor = world.agents.get('architect')!;
+  const encounter = { ...newTrilogyEpilogue('dawn'), phase: 'leaving' as const, elapsed: 1 / 3, total: 1 / 3 };
+  const p = gardenPose(encounter, 'architect');
+  Object.assign(actor, { currentLocation: 'film_sunrise_garden', position: filmPosition('film_sunrise_garden', p.x, p.z), rotation: p.yaw,
+    currentAction: { type: 'idle', parameters: { epilogue: { ...encounter, role: 'architect' } }, startedAt: 0, duration: 1e9, progress: 0 } });
+  try {
+    renderer.updateAgent('architect', actor); renderer.update(0);
+    const entries = (renderer as unknown as { agents: Map<string, { rig: { hips: THREE.Group[]; knees: THREE.Group[]; ankles: THREE.Group[] } }> }).agents;
+    const rig = entries.get('architect')!.rig;
+    const rotations = () => [...rig.hips, ...rig.knees, ...rig.ankles].map(joint => joint.quaternion.toArray());
+    const expected = rotations();
+    for (const [x, z] of [[0, 0], [1000000, -1000000], [-1000000, 1000000]]) {
+      scene.position.set(x, 0, z); scene.updateMatrixWorld(true); renderer.update(0);
+      assert.deepEqual(rotations(), expected, 'a common world translation must not change a saved local leg pose');
+    }
+  } finally { renderer.dispose(); globalThis.document = previous; }
+});
+
 test('saved park poses support the seated Oracle and standing Sati without putting visible meshes through the slats or lawn', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));

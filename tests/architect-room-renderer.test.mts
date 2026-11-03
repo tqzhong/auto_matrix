@@ -193,6 +193,20 @@ test('left and right walking corrections follow their own actual thigh and reset
   assert.deepEqual(values(), [0, 0, 0, 0]);
 });
 
+test('the Architect skin driver matrices remain identical under a common world translation', async t => {
+  const h = await fixture(t);
+  h.input.architect = undefined; h.input.seated = false; h.input.performance = undefined;
+  h.input.epilogue = { kind: 'dawn', role: 'architect', phase: 'leaving', elapsed: 1 / 3, total: 1 / 3, parkArrivalVersion: 2 };
+  for (let frame = 0; frame < 12; frame++) h.pose();
+  const coat = h.rig.root.getObjectByName('architect-tailored-jacket') as THREE.SkinnedMesh;
+  const matrices = () => coat.skeleton.bones.map(bone => bone.matrix.toArray());
+  const expected = matrices(), origin = h.rig.root.position.clone();
+  for (const [x, z] of [[4096, 6300], [1000000, -1000000], [-1000000, 1000000]]) {
+    h.rig.root.position.copy(origin).add(new THREE.Vector3(x, 0, z)); h.rig.root.updateMatrixWorld(true);
+    assert.deepEqual(matrices(), expected, 'map translation cannot change actor-local skin matrices');
+  }
+});
+
 test('actual Architect hands sit above the armrest surface instead of sinking into the leather', async t => {
   const h = await fixture(t), body = h.rig.root.getObjectByName('architect-detailed-body')!;
   let minimum = Infinity, count = 0;

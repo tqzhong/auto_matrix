@@ -91,8 +91,9 @@ export function gardenPose(encounter: TrilogyEpilogueEncounter, role: TrilogyEpi
     if (encounter.parkDeparture) return gardenDeparturePose(encounter.parkDeparture);
     const arriving = phase === 'architect' ? smooth(elapsed / 3.8) : ['ready', 'sitting', 'cat'].includes(phase) ? 0 : 1;
     const leaving = phase === 'leaving' ? smooth(elapsed / 4.8) : ['promise', 'sati', 'sunrise', 'belief', 'done'].includes(phase) ? 1 : 0;
+    const departureTurn = phase === 'leaving' ? smooth(elapsed / SUNRISE_GARDEN.departure.turnSeconds) : leaving;
     return { x: mix(mix(-25, -8.3, arriving), -30, leaving), z: mix(mix(-30, -25.5, arriving), -30, leaving),
-      yaw: leaving > 0 ? -Math.PI / 2 : mix(1.3, 0, smooth((arriving - .8) / .2)), seated: 0,
+      yaw: leaving > 0 ? Math.atan2(-21.7, -4.5) * departureTurn : mix(1.3, 0, smooth((arriving - .8) / .2)), seated: 0,
       walk: phase === 'architect' && elapsed < 3.8 || phase === 'leaving' ? 1 : 0 };
   }
   const modern = encounter.parkArrivalVersion === 2, seraph = role === 'seraph';

@@ -149,6 +149,14 @@ export class DiggerBodies {
     // update observes even late contact corrections in the current frame.
     rig.detail.add(model); entry.model = model;
     const inverse = new THREE.Matrix4(), matrix = new THREE.Matrix4(), center = new THREE.Vector3();
+    const localMatrices = entry.role === 'architect' ? new Map<THREE.Object3D, THREE.Matrix4>([[rig.detail, new THREE.Matrix4()]]) : undefined;
+    const localTransforms: { node: THREE.Object3D; matrix: THREE.Matrix4; parent: THREE.Matrix4 }[] = [];
+    const localMatrix = (node: THREE.Object3D): THREE.Matrix4 => {
+      const cached = localMatrices!.get(node); if (cached) return cached;
+      const parent = localMatrix(node.parent!), matrix = new THREE.Matrix4();
+      localMatrices!.set(node, matrix); localTransforms.push({ node, matrix, parent }); return matrix;
+    };
+    if (localMatrices) for (const { joint } of drivers) if (joint) localMatrix(joint);
     const openings: { mesh: THREE.Mesh; target: number }[] = [], thigh = new THREE.Vector3();
     const walking: { mesh: THREE.Mesh; target: number; back: boolean; side?: 0 | 1 }[] = [];
     if (entry.role === 'architect') model.traverse(object => {
@@ -166,10 +174,15 @@ export class DiggerBodies {
     });
     const perLegWalking = walking.some(shape => shape.side !== undefined);
     const synchronize = () => {
-      inverse.copy(rig.detail.matrixWorld).invert();
+      if (localMatrices) for (const { node, matrix, parent } of localTransforms) {
+        if (node.matrixAutoUpdate) node.updateMatrix();
+        matrix.multiplyMatrices(parent, node.matrix);
+      }
+      else inverse.copy(rig.detail.matrixWorld).invert();
       for (const { bone, joint, offset } of drivers) {
         if (joint) {
-          matrix.multiplyMatrices(inverse, joint.matrixWorld);
+          if (localMatrices) matrix.copy(localMatrices.get(joint)!);
+          else matrix.multiplyMatrices(inverse, joint.matrixWorld);
           if (offset) matrix.multiply(offset);
           bone.matrix.copy(matrix);
         } else {
