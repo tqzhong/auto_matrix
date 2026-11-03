@@ -217,6 +217,34 @@ for (const phase of ['breach', 'dive', 'ladder_ready', 'climbing'] as const) {
   });
 }
 
+for (const elapsed of [.7, 2.2, 3]) {
+  test(`real restarts preserve the actual rooftop exit at ${elapsed} seconds`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_roofs'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+    journey.step = 2; journey.openingRoof = { phase: 'running', lastTick: 1343, attempts: 0, crossed: true };
+    actor.currentLocation = 'film_hotel_roofs'; actor.position = filmPosition('film_hotel_roofs', 0, -38); actor.currentAction = null;
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+    await client.command('resume', {}, state => state.simulation!.running);
+    await client.command('sandbox_action', { kind: 'life', target: 'film:act' }, state => Boolean(state.agents.trinity.currentAction?.parameters.roofExit));
+    const deadline = Date.now() + 5000;
+    while (Number(((await client.world()).agents.trinity.currentAction?.parameters.roofExit as { elapsed: number } | undefined)?.elapsed ?? 0) < elapsed) {
+      assert.ok(Date.now() < deadline, 'the actual exit never reached its checkpoint'); await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    const paused = await client.command('pause', {}, state => !state.simulation!.running);
+    client.socket.disconnect(); await server.stop();
+    const check = (state: WorldStateFull) => {
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.openingRoof, paused.sandbox!.neoLife!.journey!.openingRoof);
+      for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents.trinity[key], paused.agents.trinity[key], key);
+    };
+    for (let restart = 0; restart < 2; restart++) {
+      const resumed = start(t, f.directory, 'normal'); await resumed.waitFor('STARTUP_LISTENING'); const next = await controls(t, resumed);
+      check(await next.world()); check(await next.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller)));
+      next.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await next.world()); await resumed.stop();
+    }
+  });
+}
+
 test('real restarts preserve paused pill action clocks and progress for both performers', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_pills'), journey = f.checkpoint.sandbox.neoLife.journey;
   journey.pills = { phase: 'talking', elapsed: 4.3, conversation: { beat: 1, belief: 'agency' },

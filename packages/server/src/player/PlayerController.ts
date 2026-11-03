@@ -157,7 +157,7 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    const openingPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent);
+    const openingPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick);
     if (!openingPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
@@ -249,7 +249,7 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const openingPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent);
+      const openingPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick);
       if (!openingPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
       if (!openingPose) agent.velocity = { x: 0, y: 0, z: 0 };
@@ -344,6 +344,9 @@ export class PlayerController {
     for (const session of this.sessions.values()) {
       const agent = this.world.agents.get(session.agentId)!;
       const computer = this.sandbox?.life.computerFrame(agent, running && agent.status === 'alive' ? dt : 0, tick);
+      if (this.sandbox?.life.film.openingRoofFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
       if (this.sandbox?.life.film.dockEvacuation.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
         now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;

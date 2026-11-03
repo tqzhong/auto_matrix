@@ -851,6 +851,41 @@ test('Brown pursues Trinity across a real rooftop gap and a fall or capture rest
   h.advance(); assert.equal(state.openingRoof?.phase, 'failed', 'falling between roofs can fail the chase');
 });
 
+test('the three-second rooftop exit runs through the window instead of waiting for Brown on the marker', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m1_roofs;
+  Object.assign(state, { scene: scene.id, step: 2, checkpoint: filmEntry(scene), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0, crossed: true } });
+  const actor = h.actor(), brown = h.world.agents.get('agent_brown')!;
+  actor.currentLocation = scene.set; actor.position = filmPosition(scene.set, 0, -38);
+  brown.currentLocation = scene.set; brown.position = filmPosition(scene.set, 0, -22);
+  const origin = { ...actor.position };
+  h.command('act');
+  const frames = (count: number) => { for (let frame = 0; frame < count; frame++) { h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance(); } };
+  frames(10);
+  assert.ok(actor.position.z < origin.z - 3, 'starting the exit must actually move toward the window');
+  assert.equal(state.completed.includes(scene.id), false, 'the three-second exit cannot complete early');
+  const saved = structuredClone({ position: actor.position, action: actor.currentAction, velocity: actor.velocity });
+  h.players.step(.1, false, h.tick()); h.players.release('film-player', h.tick());
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('film-player', actor.id, h.tick());
+  assert.deepEqual({ position: actor.position, action: actor.currentAction, velocity: actor.velocity }, saved);
+  frames(21);
+  assert.ok(h.sandbox.life.film.state!.completed.includes(scene.id));
+  assert.equal(h.sandbox.life.film.state!.openingRoof?.phase, 'escaped');
+  assert.ok(actor.position.z < FILM_SETS[scene.set].center.z - FILM_SETS[scene.set].depth / 2, 'Trinity must leave through the actual rear window');
+  const landing = { ...actor.position }; frames(10); assert.deepEqual(actor.position, landing, 'waiting to continue must retain the landing');
+  h.command('next'); assert.equal(h.sandbox.life.film.state!.scene, 'm1_phone_escape');
+});
+
+test('the rooftop window does not grant immunity when Brown has already reached the exit', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m1_roofs;
+  Object.assign(state, { scene: scene.id, step: 2, openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0, crossed: true } });
+  h.actor().currentLocation = scene.set; h.actor().position = filmPosition(scene.set, 0, -38);
+  const brown = h.world.agents.get('agent_brown')!; brown.currentLocation = scene.set; brown.position = filmPosition(scene.set, 0, -35.2);
+  h.command('act'); h.players.step(.1, true, h.tick()); h.advance();
+  assert.equal(state.openingRoof?.phase, 'failed'); assert.equal(state.completed.includes(scene.id), false);
+  h.command('retry'); assert.equal(state.openingRoof?.phase, 'running'); assert.equal(state.step, 0);
+  assert.equal(h.actor().currentAction?.parameters.roofExit, undefined, 'retry must clear the failed exit');
+});
+
 test('Brown leaps across the roof gap instead of running through empty air, and the leap survives a save', () => {
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
   const roofs = FILM_SCENE_BY_ID.m1_roofs; const center = FILM_SETS[roofs.set].center;
@@ -941,7 +976,7 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
     if (length <= 3) break;
   }
   assert.equal(state.openingRoof?.phase, 'running', state.lastText);
-  h.command('act'); h.advance(6);
+  h.command('act'); for (let frame = 0; frame < 31; frame++) move(0, 0);
   assert.ok(state.completed.includes(roofs.id), state.lastText);
   h.command('next'); assert.equal(state.scene, phone.id);
   for (let frame = 0; frame < 115 && state.openingPhone?.phase === 'running' && state.step === 0; frame++) move(0, -1);
@@ -4174,6 +4209,11 @@ test('the entire film route completes through interactions, driving and real com
         if (scene.id === 'm1_cypher_console') for (let frame = 0; frame < 110; frame++) h.players.step(.1, true, h.tick());
       }
       else if (step.kind === 'interact') {
+        if (scene.id === 'm1_roofs' && index === 2) {
+          h.command('act');
+          for (let frame = 0; frame < 31 && state.step === index; frame++) { h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance(); }
+          assert.equal(state.step, index + 1); assert.equal(state.openingRoof?.phase, 'escaped'); continue;
+        }
         if (scene.id === 'm3_oracle_request') {
           h.command('act');
           for (let frame = 0; frame < 200 && state.step === index; frame++) h.players.step(.1, true, h.tick());

@@ -113,6 +113,7 @@ export interface MotionInput {
   reloaded?: ReloadedGesture;
   catch?: CatchGesture;
   hotel303?: { phase: 'surrender' | 'dive'; elapsed: number };
+  roofExit?: { elapsed: number; origin: { x: number; y: number; z: number } };
   openingRoofLeap?: number;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
@@ -661,6 +662,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     if (!input.ambushEscort) Object.assign(state, newMotion(), { speed: input.speed, phase: (input.wetwall?.progress ?? 0) / 2.8 });
     state.time = input.ambushCall.elapsed;
     input = { ...input, armed: false, turn: 0 };
+    dt = 0;
+  }
+  if (input.roofExit) {
+    const elapsed = input.roofExit.elapsed, speed = input.hotel303 ? 0 : input.speed;
+    Object.assign(state, newMotion(), { time: elapsed, speed, phase: elapsed * speed / 2.8, skill: undefined });
+    input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.welcome) {

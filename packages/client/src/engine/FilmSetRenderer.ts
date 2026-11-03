@@ -248,6 +248,8 @@ export class FilmSetRenderer {
   private hotel303Glass?: THREE.Group;
   private hotel303Shards?: THREE.Group;
   private hotel303Pistol?: THREE.Group;
+  private openingRoofGlass?: THREE.Group;
+  private openingRoofShards?: THREE.Group;
   private trainmanChase?: TrainmanChaseRenderer;
   private helGarage?: HelGarageRenderer;
   private helLift?: { cage: THREE.Group; doors: [THREE.Group, THREE.Group]; bands: { mesh: THREE.Mesh; y: number }[]; light: THREE.PointLight };
@@ -443,6 +445,11 @@ export class FilmSetRenderer {
         this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
         if (hotel?.fallen) this.hotel303Pistol.position.set(hotel.fallen.x - this.current!.center.x, .12, hotel.fallen.z - this.current!.center.z);
       }
+    }
+    if (this.openingRoofGlass && this.openingRoofShards) {
+      const exit = sceneId === 'm1_roofs' && !journey?.visiting ? player?.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
+      const broken = Boolean(exit && exit.elapsed >= 1.68 || journey?.scene === 'm1_roofs' && !journey.visiting && journey.openingRoof?.phase === 'escaped');
+      this.openingRoofGlass.visible = !broken; this.openingRoofShards.visible = broken;
     }
     if (this.openingTruck && this.openingBooth && this.openingGlass) {
       const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
@@ -2412,7 +2419,10 @@ export class FilmSetRenderer {
     const { architecture: a, width: w, depth: d } = set;
     if (a === 'rooftop') {
       for (const side of [-1, 1]) this.box(this.plaster, side * (w / 2 - .5), 1.7, 0, .7, 3.4, d);
-      for (const z of [-d / 2 + .5, d / 2 - .5]) this.box(this.plaster, 0, 1.7, z, w, 3.4, .7);
+      for (const z of [-d / 2 + .5, d / 2 - .5]) {
+        if (set.id === 'film_hotel_roofs' && z < 0) for (const side of [-1, 1]) this.box(this.plaster, side * (w + 7.4) / 4, 1.7, z, (w - 7.4) / 2, 3.4, .7);
+        else this.box(this.plaster, 0, 1.7, z, w, 3.4, .7);
+      }
       for (const x of [-w * .34, w * .34]) for (const z of [-d * .26, d * .23]) {
         this.box(this.metal, x, 2.2, z, 6, 4.4, 8, .1); for (let i = 0; i < 7; i++) this.box(this.black, x, 4.45, z - 2.7 + i * .8, 5, .06, .3);
         this.cylinder(this.metal, x, 5.4, z + 2, 1.1, 2); this.cylinder(this.metal, x, 6.4, z + 2, 1.5, .3);
@@ -2429,10 +2439,24 @@ export class FilmSetRenderer {
           this.box(this.brass, 3.2, .18, z, .16, .04, .75);
         }
         for (const z of [OPENING_ESCAPE.roofGapNear, OPENING_ESCAPE.roofGapFar]) this.box(this.mat(0xb7ad83, .75), 0, .18, z, w - 2, .07, .18);
-        this.box(this.plaster, 0, 7.5, -d / 2 + 1, 19, 15, 1);
+        for (const x of [-6.6, 6.6]) this.box(this.plaster, x, 7.5, -d / 2 + 1, 5.8, 15, 1);
+        this.box(this.plaster, 0, .05, -d / 2 + 1, 7.4, .1, 1);
+        this.box(this.plaster, 0, 11.55, -d / 2 + 1, 7.4, 6.9, 1);
         const windowGlow = new THREE.MeshBasicMaterial({ color: 0x8a9a7c }); this.materials.add(windowGlow);
-        this.box(windowGlow, 0, 5.8, -d / 2 + 1.38, 7.1, 7.6, .06);
-        this.window(0, 5.8, -d / 2 + 1.6, 7.4, 8, false);
+        this.openingRoofGlass = new THREE.Group(); this.openingRoofGlass.name = 'opening-roof-window-glass'; this.openingRoofGlass.userData.dynamic = true; this.root.add(this.openingRoofGlass);
+        this.openingRoofGlass.add(this.box(windowGlow, 0, 4.1, -d / 2 + 1.6, 7.1, 8, .06));
+        this.openingRoofGlass.add(this.box(this.glass, 0, 4.1, -d / 2 + 1.65, 7.1, 8, .08));
+        this.openingRoofGlass.add(this.box(this.wood, 0, 4.1, -d / 2 + 1.7, .16, 8, .3));
+        this.openingRoofGlass.add(this.box(this.wood, 0, 4.1, -d / 2 + 1.7, 7.4, .16, .3));
+        for (const x of [-3.7, 3.7]) this.box(this.wood, x, 4.1, -d / 2 + 1.7, .16, 8.4, .4);
+        for (const y of [.1, 8.1]) this.box(this.wood, 0, y, -d / 2 + 1.7, 7.8, .16, .4);
+        this.box(this.metal, 0, -.45, -d / 2 - 2, 8, .2, 6);
+        for (const x of [-4, 4]) this.box(this.metal, x, .8, -d / 2 - 2, .12, 2.4, 6);
+        this.openingRoofShards = new THREE.Group(); this.openingRoofShards.name = 'opening-roof-window-shards'; this.openingRoofShards.userData.dynamic = true; this.openingRoofShards.visible = false; this.root.add(this.openingRoofShards);
+        for (let i = 0; i < 16; i++) {
+          const shard = this.box(i % 4 === 0 ? this.wood : this.glass, (i % 2 ? 1 : -1) * (1.4 + i % 4 * .4), -.33, -d / 2 - .4 - i % 6 * .5, .15 + i % 3 * .12, .04, .3 + i % 4 * .15);
+          shard.rotation.y = i * 2.4; this.openingRoofShards.add(shard);
+        }
         for (let i = 0; i < 5; i++) {
           const z = -d / 2 + 3 + i * 2.2;
           this.box(this.metal, 12, -i * 1.2, z, 6, .18, 2.5);
@@ -2740,6 +2764,7 @@ export class FilmSetRenderer {
     this.mobil?.dispose(); this.mobil = undefined;
     this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
+    this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;
     this.helGarage?.dispose(); this.helGarage = undefined;
     this.helLift = undefined;
