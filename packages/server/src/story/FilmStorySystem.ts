@@ -2548,16 +2548,18 @@ export class FilmStorySystem {
       life.lift = { floor: 1, target: 1, phase: 'idle', elapsed: 0 };
     }
   }
-  windowFrame(agent: AgentState, dt: number, tick: number): void {
+  windowFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;
-    if (!state || !this.controls(agent) || !windowOpening(state)) return;
+    if (!state || !this.controls(agent) || !windowOpening(state)) return false;
     const office = state.office!;
+    if (dt === 0 && agent.currentAction?.parameters.window === office.window) return true;
     office.window = Math.min(OFFICE_WINDOW.seconds, office.window! + Math.min(.1, dt));
     agent.position = filmPosition(this.scene!.set, OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ); agent.rotation = -Math.PI / 2;
     agent.velocity = { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, window: office.window, phone: heldPhone(state) }, startedAt: tick, duration: 1, progress: 0 };
     state.lastText = office.window < .7 ? '左手扶住窗上的把手，手机仍在耳边。' : office.window < 1.2 ? '转动把手，窗锁松开。' : '窗扇向外推开。风声涌入，街道远在脚下。';
     if (office.window >= OFFICE_WINDOW.seconds) this.advance(this.step!.text!, agent, tick);
+    return true;
   }
   restorePhoneFrame(agent: AgentState, tick: number): boolean {
     const state = this.state;

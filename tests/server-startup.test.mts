@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot, OPENING_HOTEL } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
@@ -176,6 +176,43 @@ for (const [phase, elapsed] of [['pickup', .8], ['ready', 0], ['answering', 3.3]
     }
   });
 }
+
+test('real restarts retain the paused office window contact and resume its remaining motion', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_office_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
+  journey.step = 2; journey.phone = { phase: 'connected', elapsed: 11 };
+  actor.position = filmPosition('film_metacortex_floor', OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ);
+  actor.currentAction = null; journey.checkpoint = { ...actor.position };
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+  await client.command('resume', {}, state => state.simulation!.running);
+  await client.command('sandbox_action', { kind: 'life', target: 'film:act' }, state => typeof state.agents.neo.currentAction?.parameters.window === 'number');
+  const deadline = Date.now() + 5000;
+  while (Number((await client.world()).agents.neo.currentAction?.parameters.window ?? 0) < 1.1) {
+    assert.ok(Date.now() < deadline, 'the native window action never reached its checkpoint'); await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  const paused = await client.command('pause', {}, state => !state.simulation!.running);
+  client.socket.disconnect(); await server.stop();
+  const check = (state: WorldStateFull) => {
+    assert.equal(state.simulation!.running, false);
+    assert.deepEqual(state.sandbox!.neoLife!.journey!.office, paused.sandbox!.neoLife!.journey!.office);
+    for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents.neo[key], paused.agents.neo[key], key);
+  };
+  for (let restart = 0; restart < 2; restart++) {
+    const resumed = start(t, f.directory, 'normal'); await resumed.waitFor('STARTUP_LISTENING'); const next = await controls(t, resumed);
+    check(await next.world()); check(await next.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    next.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await next.world()); await resumed.stop();
+  }
+  const resumed = start(t, f.directory, 'normal'); await resumed.waitFor('STARTUP_LISTENING'); const next = await controls(t, resumed);
+  await next.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+  await next.command('resume', {}, state => state.simulation!.running);
+  const finished = Date.now() + 5000;
+  while ((await next.world()).sandbox!.neoLife!.journey!.step !== 3) {
+    assert.ok(Date.now() < finished, 'the restored window did not complete'); await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  const complete = await next.command('pause', {}, state => !state.simulation!.running);
+  assert.equal(complete.sandbox!.neoLife!.journey!.office!.window, OFFICE_WINDOW.seconds); await resumed.stop();
+});
 
 for (const [phase, elapsed] of [['approach', 1.2], ['ready', 0], ['handshake', 1.3], ['departing', 2.5]] as const) {
   test(`real restarts and re-entry preserve all three paused ${phase} greeting actions`, { timeout: 30000 }, async t => {

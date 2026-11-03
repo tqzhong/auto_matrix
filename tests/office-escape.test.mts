@@ -283,6 +283,17 @@ test('opening the office window has a saved physical action, not an elapsed stor
   h.crossWindow(); assert.equal(h.scene().id, 'm1_ledge');
 });
 
+test('legacy paused window saves rebuild the hand contact before any player reconnects', () => {
+  const h = setup(); h.office(); h.goal(); h.advance(); h.goal(); h.advance(); h.goal(); h.command('act');
+  h.players.step(.1, true, h.tick()); h.players.step(.1, true, h.tick());
+  const window = h.state().office!.window, position = { ...h.neo().position };
+  h.players.release('neo-player', h.tick()); h.world.agents.get('neo')!.currentAction = null;
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.equal(h.world.agents.get('neo')!.currentAction?.parameters.window, window);
+  assert.deepEqual(h.world.agents.get('neo')!.currentAction?.parameters.phone, h.state().phone);
+  assert.equal(h.state().office!.window, window); assert.deepEqual(h.world.agents.get('neo')!.position, position);
+});
+
 test('opening the window does not make Neo immune to an agent who reaches him', () => {
   const h = setup(); h.office(); h.goal(); h.advance(); h.goal(); h.advance(); h.goal(); h.command('act');
   h.players.step(.1, true, h.tick());
