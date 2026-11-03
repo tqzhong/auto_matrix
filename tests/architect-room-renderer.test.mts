@@ -182,6 +182,9 @@ test('left and right walking corrections follow their own actual thigh and reset
   assert.deepEqual(values(), [0, 1, 1, 0], 'swapping the actual thighs must swap the affected side');
   h.rig.hips.forEach(hip => hip.rotation.x = -.25); h.rig.knees.forEach(knee => knee.rotation.x = .3); h.rig.root.updateMatrixWorld(true);
   assert.deepEqual(values(), [0, 0, 0, 0], 'a symmetric supported standing pose must keep gait corrections inactive');
+  h.rig.hips[0].rotation.x = -.14; h.rig.hips[1].rotation.x = 0; h.rig.root.updateMatrixWorld(true);
+  assert(values()[0] > 0, 'a short forward step needs clearance before the legacy hem flare starts');
+  assert.deepEqual(values().slice(1), [0, 0, 0]);
   h.rig.hips[0].rotation.x = -.4; h.rig.hips[1].rotation.x = 0; h.rig.root.updateMatrixWorld(true);
   assert(values()[0] > 0 && values()[0] < 1, 'partial thigh motion must blend the corresponding correction');
   assert.deepEqual(values().slice(1), [0, 0, 0]);

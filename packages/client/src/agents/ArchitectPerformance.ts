@@ -9,7 +9,7 @@ const bootPoints = new WeakMap<CharacterRig, THREE.Vector3[][]>();
 
 export function architectSeatedPoseActive(rig: CharacterRig): boolean { return seatedPoses.has(rig); }
 
-function supportArchitectFeet(rig: CharacterRig): void {
+function supportArchitectFeet(rig: CharacterRig, planted = false): void {
   let feet = bootPoints.get(rig);
   if (!feet) {
     const shoes = rig.detail.getObjectByName('architect-work-boots');
@@ -32,7 +32,8 @@ function supportArchitectFeet(rig: CharacterRig): void {
     transform.multiplyMatrices(inverse, rig.ankles[side].matrixWorld);
     for (const point of feet[side]) minimum = Math.min(minimum, sample.copy(point).applyMatrix4(transform).y);
   }
-  if (minimum < 0) { rig.detail.position.y -= minimum; rig.root.updateWorldMatrix(true, true); }
+  const correction = planted ? .001 - minimum : Math.max(0, -minimum);
+  if (correction) { rig.detail.position.y += correction; rig.root.updateWorldMatrix(true, true); }
 }
 
 export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture, delta = 0): void {
@@ -52,9 +53,8 @@ export function poseArchitect(rig: CharacterRig, gesture?: ArchitectGesture, del
         target.copy(joint.node.quaternion); joint.node.quaternion.copy(joint.quaternion).slerp(target, amount);
       }
       else seatedPoses.delete(rig);
-      rig.root.updateWorldMatrix(true, true);
-      supportArchitectFeet(rig);
     }
+    if (rig.head.name === 'architect-head') supportArchitectFeet(rig, !previous && rig.motion.airborne < .01 && rig.motion.seated < .01);
     return;
   }
   if (gesture.role === 'architect' && !rig.hero) {

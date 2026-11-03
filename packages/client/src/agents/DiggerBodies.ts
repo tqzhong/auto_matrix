@@ -164,6 +164,7 @@ export class DiggerBodies {
         }
       }
     });
+    const perLegWalking = walking.some(shape => shape.side !== undefined);
     const synchronize = () => {
       inverse.copy(rig.detail.matrixWorld).invert();
       for (const { bone, joint, offset } of drivers) {
@@ -192,8 +193,12 @@ export class DiggerBodies {
         if (walking.length) {
           const front = seated ? 0 : THREE.MathUtils.smoothstep(forward, .28, .8);
           const back = seated ? 0 : THREE.MathUtils.smoothstep(backward, .12, .5);
+          const knees = perLegWalking ? rig.knees.map(knee => {
+            thigh.set(0, -1, 0).applyQuaternion(knee.quaternion); return Math.atan2(thigh.z, -thigh.y);
+          }) : [];
+          const activity = perLegWalking ? THREE.MathUtils.smoothstep(Math.abs(angles[0] - angles[1]) + Math.abs(knees[0] - knees[1]), .005, .04) : 0;
           for (const { mesh, target, back: rear, side } of walking) mesh.morphTargetInfluences![target] = side === undefined ? rear ? back : front
-            : seated ? 0 : rear ? THREE.MathUtils.smoothstep(-angles[side], .12, .5) : THREE.MathUtils.smoothstep(angles[side], .28, .8);
+            : seated ? 0 : activity * (rear ? THREE.MathUtils.smoothstep(-angles[side], .12, .5) : THREE.MathUtils.smoothstep(angles[side], 0, .65));
         }
       }
     };

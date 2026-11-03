@@ -980,7 +980,7 @@ export class CharacterModels {
     }
     if (rig.architectPen) {
       rig.architectPen.visible = input.architect?.role === 'architect';
-      if (!input.architect) { rig.detail.position.y = .04; rig.hips.forEach(hip => { hip.position.z = 0; }); }
+      if (!input.architect) { rig.detail.position.y = 0; rig.hips.forEach(hip => { hip.position.z = 0; }); }
     }
     if (input.architect?.role === 'architect' && !rig.architectPen) {
       const pen = new THREE.Group(); pen.name = 'architect-metal-pen'; rig.detail.add(pen); rig.architectPen = pen;
@@ -1200,7 +1200,7 @@ export class CharacterModels {
     const carryingCargo = input.dockEvacuation?.role === 'kid' && ['lifting', 'carrying', 'depositing'].includes(input.dockEvacuation.phase);
     if (carryingCargo && !rig.dockCargo) { rig.dockCargo = new DockCargoModel(); this.dockCargo.add(rig.dockCargo); rig.root.add(rig.dockCargo.root); }
     if (rig.dockCargo) rig.dockCargo.root.visible = carryingCargo;
-    const pose = advanceMotion(rig.motion, input, spoonBoy ? 0 : delta);
+    const pose = advanceMotion(rig.motion, input, spoonBoy ? 0 : delta, rig.head.name === 'architect-head');
     const kamalaSkirt = rig.detail.getObjectByName('kamala-skirt') as THREE.Mesh | undefined;
     if (kamalaSkirt) {
       const rest = kamalaSkirt.userData.standing as Float32Array, position = kamalaSkirt.geometry.attributes.position;

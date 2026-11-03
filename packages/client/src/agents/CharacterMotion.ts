@@ -232,7 +232,22 @@ export function solveLeg(z: number, height: number): { hip: number; knee: number
   return { hip, knee, ankle: -hip - knee };
 }
 
-export function advanceMotion(state: MotionState, input: MotionInput, delta: number) {
+export const ARCHITECT_WALK_CYCLE = 2 * .75 / .62;
+
+export function architectWalkPose(phase: number, moving: number) {
+  const feet = [0, .5].map(offset => footTrajectory(phase + offset, .75 * moving, .62));
+  // Keep both requested feet within the leg's reach. A support foot stays
+  // planted while the other clears the floor with a small return stroke.
+  const height = Math.min(...feet.map(foot => .15 + foot.lift * .06 * moving + Math.sqrt(1.838 ** 2 - foot.z ** 2)));
+  const hipHeight = mix(1.98, height, moving), cycle = phase * Math.PI * 2;
+  return { hipHeight, legs: feet.map(foot => solveLeg(foot.z, hipHeight - .15 - foot.lift * .06 * moving)),
+    arms: [0, 1].map(i => ({ shoulder: Math.cos(cycle + i * Math.PI) * .14 * moving, elbow: -.15,
+      outward: (i ? 1 : -1) * (.08 + .03 * moving), grip: 0 })),
+    lean: .015 * moving, twist: Math.sin(cycle) * .012 * moving, sway: Math.sin(cycle) * .012 * moving,
+    headTurn: -Math.sin(cycle) * .005 * moving, run: 0, coat: .08 * moving };
+}
+
+export function advanceMotion(state: MotionState, input: MotionInput, delta: number, architect = false) {
   const freeCrouch = Boolean(input.ambushWardrobe && !input.realWorld && !input.performance
     && !input.ambushEscort && !input.ambushCall && !input.wetwall && !input.sixth
     && !input.bathroom && !input.basement && !input.tvExit && !input.crosscut && !input.betrayal);
@@ -748,7 +763,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const crouchGait = freeCrouch ? crouch * (1 - state.airborne) : 0;
   const stride = mix(mix(.84, 1.22, run), .46, crouchGait);
   const stance = mix(mix(.6, .42, run), .65, crouchGait);
-  if (input.grounded) state.phase += speed * dt / (2 * stride / stance);
+  const architectWalking = architect && !input.architect && !input.epilogue && !input.seated && !input.performance
+    && !input.riding && !input.crouching && input.climbing === undefined && !input.armed
+    && input.grounded && state.airborne < .01 && state.landing < .01 && state.attackAge > 1 && state.hitAge > .5 && state.skillAge > 1;
+  if (input.grounded) state.phase += speed * dt / (architectWalking ? ARCHITECT_WALK_CYCLE : 2 * stride / stance);
   if (smithLocked) state.phase = (smithFinale![input.smithFinale!.role].travel ?? 0) / (2 * stride / stance);
   if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
   if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;
@@ -1320,8 +1338,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const epilogueLean = input.epilogue?.role === 'kid' && input.epilogue.phase === 'running' ? -.18 : 0;
   const mealLean = meal ? Math.sin(Math.PI * (input.interlude?.role === 'neo' ? meal.rise : input.interlude?.role === 'tank' ? meal.tankSeat : 0)) * .18 : 0;
   const theOneRoll = theOne ? theOne.wound * .58 + theOne.fallen * 1.08 + theOne.burst * (.18 + Math.sin(input.theOne!.elapsed * 11) * .12) + theOne.flight * Math.sin(input.theOne!.elapsed * .8) * .08 : 0;
-  return { legs, arms, hipHeight, twist, lean: mealLean + boardingCrouch * .18 + run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + crouch * .26 + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + smithLean + epilogueLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
+  const pose = { legs, arms, hipHeight, twist, lean: mealLean + boardingCrouch * .18 + run * .12 + state.landing * .12 + state.airborne * .04 + extension * .10 - kick * .27 - recoil * .35 + crouch * .26 + (input.riding ? .2 : 0) + doorPush * .38 + oracleLean + betrayalLean + rescueLean + lobbyLean + governmentLean + airRescueLean + escapeLean + theOneLean + hotelLean + farewellLean + deusLean + smithLean + epilogueLean + (recoveryCrew?.support ?? 0) * .1 - roofLeap * .45 - (reloaded?.falling ?? 0) * .85 + (reloaded?.dreamAgent ?? 0) * 2 + (reloaded?.down ?? 0) * 1.25 - (reloaded?.flight ?? 0) * .65 - (catchFlying && catching?.role === 'neo' ? .45 : 0) + (catching?.role === 'trinity' && catching.phase === 'flight' ? .25 : 0),
     sway: Math.sin(cycle) * moving * .035, lunge: extension * .16 - kick * .25 - recoil * .22 - dodging * .35 + doorPush * .12 + (matrixEscape?.strike ?? 0) * .32,
     roll: -state.turn * run * .035 - dodging * .22 + betrayalRoll + lobbyRoll + governmentRoll + airRescueRoll + escapeRoll + theOneRoll + farewellRoll + smithRoll + (reloaded?.down ?? 0) * 1.1 - (reloaded?.dodge ?? 0) * .6 + (reloaded?.falling ?? 0) * (input.reloaded?.drift ?? 0) * .055, headTurn: -twist * .65 + glance + oracleLook + rescueLook + (recoveryCrew?.support ?? 0) * (input.recoveryCrew?.role === 'morpheus' ? -.12 : .12), moving, run, airborne: state.airborne,
     coat: moving * (.10 + run * .3) + state.airborne * .18 + kick * .35, impact: extension, landing: state.landing };
+  return architectWalking && moving > 0 ? { ...pose, ...architectWalkPose(state.phase, moving) } : pose;
 }
