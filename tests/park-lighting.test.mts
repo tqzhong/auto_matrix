@@ -5,9 +5,12 @@ import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { SUNRISE_GARDEN, gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
+import { SUNRISE_GARDEN, gardenPose, newTrilogyEpilogue, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { SunriseGardenRenderer } from '../packages/client/src/engine/SunriseGardenRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 function park(t: TestContext) {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -15,6 +18,44 @@ function park(t: TestContext) {
   const scene = new THREE.Scene(), root = new THREE.Group(); scene.add(root);
   const garden = new SunriseGardenRenderer(root); t.after(() => garden.dispose()); return { scene, garden };
 }
+
+test('the saved sunrise reduces actual environment lighting and leaving the park restores the next set', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('oracle')!;
+  Object.assign(player, { isInMatrix: true, currentLocation: 'film_sunrise_garden', position: filmPosition('film_sunrise_garden', -7, -20) });
+  const journey = { version: 1, scene: 'm3_dawn', actor: 'oracle', step: 1, completed: [], enteredAt: 0,
+    checkpoint: { ...player.position }, reflections: {}, lastText: '', epilogue: newTrilogyEpilogue('dawn') } as FilmJourney;
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const create = () => {
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(); scene.fog = new THREE.FogExp2();
+    const renderer = new FilmSetRenderer(scene), lighting = new LightingSystem(scene);
+    t.after(() => { renderer.dispose(); lighting.dispose(); }); return { scene, renderer, lighting };
+  };
+  const { scene, renderer, lighting } = create(); let previous = 1;
+  for (const [phase, elapsed] of [['choice', 0], ['sunrise', 3.1], ['done', 0]] as const) {
+    Object.assign(journey.epilogue!, { phase, elapsed });
+    renderer.update(player, sandbox, 0); lighting.update(0, undefined, false, renderer.atmosphere());
+    assert(scene.environmentIntensity > 0 && scene.environmentIntensity < .3, 'the visible park must not retain the generic bright environment');
+    let hemisphereIntensity = 0;
+    scene.traverse(object => { if (object instanceof THREE.HemisphereLight) hemisphereIntensity += object.intensity; });
+    assert(hemisphereIntensity > 0 && hemisphereIntensity < .6, 'the actual global and local sky lights must not overwhelm the pre-dawn park');
+    assert(scene.environmentIntensity < previous, 'indirect lighting recedes as the saved sunrise brightens'); previous = scene.environmentIntensity;
+    renderer.update(player, structuredClone(sandbox), 100); lighting.update(0, undefined, false, renderer.atmosphere());
+    assert.equal(scene.environmentIntensity, previous, 'paused frames retain the saved lighting');
+    const cold = create(); cold.renderer.update(player, structuredClone(sandbox), 800);
+    cold.lighting.update(0, undefined, false, cold.renderer.atmosphere());
+    assert.equal(cold.scene.environmentIntensity, previous, 'a cold scene must recover the same indirect lighting');
+    let coldHemisphereIntensity = 0;
+    cold.scene.traverse(object => { if (object instanceof THREE.HemisphereLight) coldHemisphereIntensity += object.intensity; });
+    assert.equal(coldHemisphereIntensity, hemisphereIntensity, 'a cold scene recovers both sky-light channels');
+  }
+  Object.assign(player, { currentLocation: 'film_smith_avenue', position: filmPosition('film_smith_avenue', 0, 0) });
+  renderer.update(player, undefined, 101); renderer.atmosphere();
+  assert.equal(renderer.active?.id, 'film_smith_avenue');
+  assert.equal(scene.environmentIntensity, .72, 'leaving restores the following set instead of carrying the garden environment into it');
+});
 
 test('the saved park sunrise reduces the real camera fill while preserving the authored sun', t => {
   const { scene, garden } = park(t), lighting = new LightingSystem(scene), camera = new THREE.PerspectiveCamera();

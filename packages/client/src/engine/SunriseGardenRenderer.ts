@@ -437,9 +437,9 @@ export class SunriseGardenRenderer {
     (this.water.material as THREE.ShaderMaterial).uniforms.parkTime.value = encounter?.total ?? 0;
     this.sun.intensity = 1.6 + this.rise * 1.6;
     this.sun.color.set(0xdce7eb).lerp(new THREE.Color(0xffc186), this.rise);
-    this.fill.intensity = .85 - this.rise * .35;
+    this.fill.intensity = .34 - this.rise * .18;
   }
-  atmosphere(): { color: number; ambient: number; sun: number; fill: number } { return { color: 0xffd4ad, ambient: .55 - this.rise * .18, sun: 0, fill: .28 - this.rise * .12 }; }
+  atmosphere(): { color: number; ambient: number; sun: number; fill: number; environment: number } { return { color: 0xffd4ad, ambient: .2 - this.rise * .1, sun: 0, fill: .28 - this.rise * .12, environment: .24 - this.rise * .1 }; }
   dispose(): void {
     this.disposed = true; this.treeInstances.forEach(instances => instances.dispose());
     this.group.removeFromParent(); this.group.clear(); this.water.dispose(); this.sun.dispose(); this.fill.dispose();

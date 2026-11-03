@@ -769,7 +769,7 @@ export class FilmSetRenderer {
       return { color: 0xc3c8b0, ambient: .6, sun: .08 };
     }
     const park = this.trilogyEpilogue?.parkAtmosphere();
-    if (park) { fog.density = .0009; fog.color.setHex(0x8ba6b2); this.scene.environmentIntensity = .55; return park; }
+    if (park) { fog.density = .0009; fog.color.setHex(0x8ba6b2); this.scene.environmentIntensity = park.environment; return park; }
     if (this.currentScene === 'm3_reset') {
       fog.density = .008; fog.color.setHex(0x0b171d); (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .18;
