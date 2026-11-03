@@ -41,6 +41,7 @@ export class ConstructSuitAppearance {
   private jacket: THREE.SkinnedMesh;
   private originalJacket: THREE.BufferGeometry;
   private openJacket: THREE.BufferGeometry;
+  private regularJacket: THREE.BufferGeometry;
 
   constructor(private rig: HeroRig, private fabric: THREE.Texture) {
     this.source = rig.root.getObjectByName('morpheus-hammer-sweater') as THREE.SkinnedMesh;
@@ -69,6 +70,7 @@ export class ConstructSuitAppearance {
       }
     }
     this.openJacket = this.geometry(jacketVertices, jacketIndices, true);
+    this.regularJacket = this.fitRegularJacket();
 
     const source = this.source.geometry, index = source.index!, vertices: Vertex[] = [], indices: number[] = [];
     for (let i = 0; i < index.count; i += 3) for (const side of [-1, 1]) {
@@ -124,6 +126,35 @@ export class ConstructSuitAppearance {
     const pin = [[-.036, 3.23], [.036, 3.23], [.036, 3.219], [-.036, 3.219]].map(([x, y]) => this.sample(x, y, .049));
     this.make('morpheus-construct-tie-pin', pin, [0, 2, 1, 0, 3, 2], metal);
     this.vertices = []; this.shirtVertices = [];
+    this.jacket.geometry = this.regularJacket;
+  }
+
+  private fitRegularJacket(): THREE.BufferGeometry {
+    const geometry = this.originalJacket.clone(), position = geometry.attributes.position, normal = geometry.attributes.normal;
+    const derivative = (y: number, low: number, high: number) => {
+      const t = THREE.MathUtils.clamp((y - low) / (high - low), 0, 1);
+      return 6 * t * (1 - t) / (high - low);
+    };
+    const vector = new THREE.Vector3();
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+      const lower = THREE.MathUtils.smoothstep(y, 2.7, 3.05), upper = 1 - THREE.MathUtils.smoothstep(y, 3.45, 3.7);
+      const amount = .09 * lower * upper;
+      if (!amount) continue;
+      // The delivered jacket cuts through the crew neck at the chest and
+      // armholes even in bind pose. Ease this full ring, retaining the collar,
+      // cuffs, waist, every original face and all skinning/UV attributes.
+      const scale = 1 + amount, slope = .09 * (derivative(y, 2.7, 3.05) * upper - lower * derivative(y, 3.45, 3.7));
+      position.setXYZ(i, x * scale, y, z * scale);
+      // Inverse transpose of this smooth radial deformation, including its
+      // height derivative. Preserve the authored welded normal field.
+      const nx = normal.getX(i), ny = normal.getY(i), nz = normal.getZ(i);
+      vector.set(nx / scale, ny - slope / scale * (x * nx + z * nz), nz / scale).normalize();
+      normal.setXYZ(i, vector.x, vector.y, vector.z);
+    }
+    position.needsUpdate = true; normal.needsUpdate = true;
+    geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+    return geometry;
   }
 
   private vertex(index: number, mesh = this.source): Vertex {
@@ -180,7 +211,7 @@ export class ConstructSuitAppearance {
     const active = input.constructSuit === true || input.construct?.role === 'morpheus'
       || input.reveal?.role === 'morpheus' && ['construct', 'desert'].includes(input.reveal.kind);
     for (const mesh of this.meshes) mesh.visible = active;
-    this.jacket.geometry = active ? this.openJacket : this.originalJacket;
+    this.jacket.geometry = active ? this.openJacket : this.regularJacket;
     if (!active) return;
     for (const part of this.rig.wardrobe) {
       if (part.outer) part.mesh.visible = false;
@@ -193,7 +224,7 @@ export class ConstructSuitAppearance {
   }
 
   dispose(): void {
-    this.jacket.geometry = this.originalJacket; this.openJacket.dispose();
+    this.jacket.geometry = this.originalJacket; this.openJacket.dispose(); this.regularJacket.dispose();
     for (const mesh of this.meshes) { mesh.removeFromParent(); mesh.geometry.dispose(); }
     this.materials.forEach(material => material.dispose());
   }
