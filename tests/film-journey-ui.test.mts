@@ -1,7 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SCENE_BY_ID, SENTINEL_POWER, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, GOVERNMENT_RESCUE, SENTINEL_POWER, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
+
+test('the interrogation offers a seated decision and leaves G available for resistance', async t => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const module = async (name: string) => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles.find(f => f.path.endsWith(name + '.js'))!.contents).toString('base64')}`);
+  const { SandboxUI } = await module('SandboxUI'), { renderFilmJourney } = await module('FilmJourneyPanel');
+  const scene = FILM_SCENE_BY_ID.m1_smith_question, root = GOVERNMENT_RESCUE.questioning.roots.morpheus;
+  const player = { id: 'morpheus', status: 'alive', isInMatrix: true, position: filmPosition(scene.set, root.x, root.z) } as AgentState;
+  const state = { threats: [], neoLife: { journey: { scene: scene.id, actor: player.id, step: 0, completed: [], reflections: {}, lastText: '',
+    government: { kind: 'questioning', phase: 'ready', elapsed: 0, attempt: 0, resolve: 1 } } } } as SandboxState;
+  const journey = state.neoLife!.journey!;
+  await t.test('the restrained role can answer at the saved chair', () => {
+    const markup = renderFilmJourney(player, state);
+    assert.ok(/data-target="film:reflect:care" >/.test(markup), 'the answer button is enabled at the interrogation chair');
+  });
+  await t.test('G during the monologue never opens the journal or sends a discrete action', () => {
+    const opened: string[] = [], sent: unknown[] = [];
+    const ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, open: (panel: string) => opened.push(panel), send: (command: unknown) => sent.push(command) });
+    journey.government!.phase = 'monologue';
+    ui.interact();
+    assert.deepEqual(opened, []); assert.deepEqual(sent, []);
+    journey.government!.phase = 'alarm_ready'; journey.step = 1;
+    ui.interact();
+    assert.deepEqual(sent, [{ kind: 'life', target: 'film:act' }]);
+  });
+});
 
 test('the console journal and live G button expose taking and tasting as separate player actions', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,

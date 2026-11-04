@@ -3193,6 +3193,21 @@ export class FilmStorySystem {
       seated: encounter.kind === 'questioning' && role === 'morpheus', armed,
       government: { ...encounter, resolved: encounter.resolved ? [...encounter.resolved] : undefined, role } }, startedAt: tick, duration: 1, progress: 0 };
   }
+  private stageGovernmentRooftopBody(encounter: GovernmentRescueEncounter, tick: number): void {
+    const returned = encounter.phase === 'trinity' && encounter.elapsed >= 2.4
+      || ['download_ready', 'downloading', 'done'].includes(encounter.phase);
+    const pilot = encounter.phase === 'ready' || returned;
+    const inactive = this.world.agents.get(pilot ? 'agent_jones' : 'citizen_11');
+    if (inactive && !inactive.controller && inactive.currentLocation === this.scene!.set) {
+      inactive.currentLocation = CHARACTERS[inactive.id].initialLocation;
+      inactive.position = locationEntrance(inactive.currentLocation);
+      inactive.currentAction = null; inactive.targetPosition = null; inactive.currentPath = [];
+      inactive.velocity = { x: 0, y: 0, z: 0 };
+    }
+    const pose = returned && encounter.phase !== 'trinity'
+      ? { ...encounter, phase: 'trinity' as const, elapsed: GOVERNMENT_RESCUE.rooftop.trinity } : encounter;
+    this.stageGovernmentActor(pilot ? 'pilot' : 'agent_jones', pose, 0, tick);
+  }
   private clearGovernmentActions(): void {
     for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.government) {
       actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
@@ -3219,10 +3234,13 @@ export class FilmStorySystem {
       const roles: GovernmentRescueRole[] = encounter.kind === 'questioning'
         ? ['morpheus', 'smith', 'agent_brown', 'agent_jones'] : ['neo', 'trinity'];
       for (const role of roles) this.stageGovernmentActor(role, encounter, 0, tick);
+      if (encounter.kind === 'rooftop') this.stageGovernmentRooftopBody(encounter, tick);
       state.checkpoint = { ...agent.position }; state.lastText = governmentText(encounter); return true;
     }
     if (encounter.phase === 'failed' || encounter.phase === 'alarm_ready' || encounter.phase === 'download_ready') {
-      this.clearGovernmentActions(); state.lastText = governmentText(encounter); return false;
+      this.clearGovernmentActions();
+      if (encounter.kind === 'rooftop') this.stageGovernmentRooftopBody(encounter, tick);
+      state.lastText = governmentText(encounter); return false;
     }
     const occupied = this.governmentOccupied(encounter);
     if (occupied) {
@@ -3256,9 +3274,6 @@ export class FilmStorySystem {
       encounter.elapsed = Math.min(GOVERNMENT_RESCUE.rooftop.opening, encounter.elapsed + delta);
       if (encounter.elapsed >= GOVERNMENT_RESCUE.rooftop.opening) {
         encounter.phase = 'bullet_time'; encounter.elapsed = 0; encounter.resolved = []; encounter.dodges = 0; encounter.wounds = 0;
-        agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
-        agent.activeEffects.push({ abilityId: 'film:bullet-dodge', visualEffect: 'slow_motion', remainingTicks: 1,
-          remainingSeconds: GOVERNMENT_RESCUE.rooftop.finish + 1 });
       }
     } else if (encounter.phase === 'bullet_time') {
       encounter.elapsed = Math.min(GOVERNMENT_RESCUE.rooftop.finish, encounter.elapsed + delta);
@@ -3280,6 +3295,7 @@ export class FilmStorySystem {
       if (encounter.elapsed >= GOVERNMENT_RESCUE.rooftop.trinity) {
         encounter.phase = 'download_ready'; encounter.elapsed = 0; this.clearGovernmentActions();
         this.advance('Trinity 在 Jones 身后近距离开火。特工代码退出飞行员身体，她随后把 Neo 拉起来。', agent, tick);
+        this.stageGovernmentRooftopBody(encounter, tick);
         state.lastText = governmentText(encounter); return false;
       }
     } else if (encounter.phase === 'downloading') {
@@ -3290,10 +3306,18 @@ export class FilmStorySystem {
         this.governmentFrame(agent, false, 0, tick); return false;
       }
     }
-    const roles: GovernmentRescueRole[] = encounter.phase === 'trinity'
-      ? ['neo', 'trinity', encounter.elapsed >= 2.4 ? 'pilot' : 'agent_jones']
-      : encounter.phase === 'downloading' ? ['neo', 'trinity'] : ['neo', 'trinity', 'agent_jones'];
-    for (const role of roles) this.stageGovernmentActor(role, encounter, dt, tick);
+    if (encounter.phase === 'bullet_time' && agent.controller) {
+      // Rebuild the transient effect from the same clock that owns the dodge windows.
+      const remainingSeconds = GOVERNMENT_RESCUE.rooftop.finish - encounter.elapsed + .5;
+      const slowMotion = agent.activeEffects.find(effect => effect.abilityId === 'film:bullet-dodge');
+      if (slowMotion) slowMotion.remainingSeconds = remainingSeconds;
+      else {
+        agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
+        agent.activeEffects.push({ abilityId: 'film:bullet-dodge', visualEffect: 'slow_motion', remainingTicks: 1, remainingSeconds });
+      }
+    }
+    for (const role of ['neo', 'trinity'] as const) this.stageGovernmentActor(role, encounter, dt, tick);
+    this.stageGovernmentRooftopBody(encounter, tick);
     state.checkpoint = { ...agent.position }; state.lastText = governmentText(encounter); return governmentLocked(state);
   }
   governmentDodge(agent: AgentState, tick: number): string | undefined {
@@ -3306,9 +3330,6 @@ export class FilmStorySystem {
     if (!match) return '弹道尚未进入闪避窗口。观察时间收缩，在子弹贴近时按 X。';
     encounter.resolved.push(match.index); encounter.dodges = (encounter.dodges ?? 0) + 1;
     this.governmentShot(encounter, 'agent_jones', undefined, 0, tick, [-2.4, 2.1, -1.4][match.index] ?? 0);
-    agent.activeEffects = agent.activeEffects.filter(effect => effect.visualEffect !== 'slow_motion');
-    agent.activeEffects.push({ abilityId: 'film:bullet-dodge', visualEffect: 'slow_motion', remainingTicks: 1,
-      remainingSeconds: Math.max(.8, GOVERNMENT_RESCUE.rooftop.finish - encounter.elapsed + .5) });
     this.governmentFrame(agent, false, 0, tick); return match.distance < GOVERNMENT_RESCUE.rooftop.window * .45
       ? 'Neo 在弹道闭合前折身闪过。' : '子弹贴身掠过，闪避仍然有效。';
   }
@@ -5726,6 +5747,10 @@ export class FilmStorySystem {
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
     }
     const pickupActor = this.world.agents.get(this.state.actor);
+    if (this.state.scene === 'm1_bullet_dodge' && !this.state.visiting) {
+      const encounter = this.ensureGovernment();
+      if (!this.governmentOccupied(encounter)) this.stageGovernmentRooftopBody(encounter, this.world.simulationTick);
+    }
     if (pickupActor) this.sentinelFrame(pickupActor, { movement: 0, sprint: false, jump: false }, 0, this.world.simulationTick);
     if (pickupActor) this.interludeFrame(pickupActor, 0, this.world.simulationTick);
     this.oracleRequest.restoreSeat(this.world.simulationTick);

@@ -878,10 +878,11 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const meetingAction = scene.id === 'm1_bug' && (journey.meeting?.phase === 'done' && journey.step >= 2 || journey.meeting?.phase === 'parked');
   const arrival = scene.id === 'm1_construct' ? journey.constructArrival : undefined;
   const truth = journey.truthRecovery;
+  const seatedQuestion = scene.id === 'm1_smith_question' && !journey.visiting && journey.government?.phase === 'ready';
   const actionLabel = scene.id === 'm3_hel_entry' && journey.step === 0 && journey.helElevator?.phase === 'arrived' ? '亲自拉开电梯铁门'
     : chairApproach ? '坐下，接入训练' : truth?.phase === 'ready' ? '请求退出程序' : arrival?.phase === 'ready' ? '检查残余自我影像' : meetingAction ? journey.meeting?.phase === 'parked' ? '打开车门下车' : '启程前往 Lafayette' : step?.label;
   const close = chairApproach ? journey.downloadSetup!.progress >= CABIN_ROUTE_LENGTH && distance(player.position, stepPosition!) <= 1.8
-    : truth?.phase === 'ready' || arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
+    : seatedQuestion || truth?.phase === 'ready' || arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
     : meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix')
       && distance(player.position, stepPosition) <= (scene.id === 'm3_hel_entry' && journey.step === 0 ? 1.1 : 4)));
   const current = player.id === journey.actor;

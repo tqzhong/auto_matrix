@@ -19,7 +19,9 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 
 function setup(sceneId: 'm1_smith_question' | 'm1_bullet_dodge') {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -103,6 +105,10 @@ test('Neo must hit two of three bullet-time dodge windows before Trinity can fin
   if (state.government!.phase === 'bullet_time') h.frames(Math.max(0, GOVERNMENT_RESCUE.rooftop.finish - state.government!.elapsed) + .1);
   assert.equal(state.government!.dodges, 2); assert.equal(state.government!.wounds, 1);
   assert.equal(state.government!.phase, 'trinity'); assert.ok(h.actor.health < h.actor.maxHealth, 'the missed line leaves a saved graze');
+  const injured = h.actor.health, dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true; h.actor.mind!.stress = 0;
+  for (let i = 0; i < 20; i++) { h.frames(.1); dynamics.tick(h.tick()); }
+  assert.equal(h.actor.health, injured, 'being shot cannot be healed by the staged idle animation');
   h.frames(GOVERNMENT_RESCUE.rooftop.trinity + .2);
   assert.equal(state.step, 1); assert.equal(state.government!.phase, 'download_ready');
   assert.equal(h.world.agents.get('agent_jones')!.currentAction, null);
@@ -110,6 +116,23 @@ test('Neo must hit two of three bullet-time dodge windows before Trinity can fin
   assert.equal(h.impacts.filter(impact => impact.source === 'agent_jones' && impact.target === 'neo' && impact.damage > 0).length, 1, 'the missed window emits the saved graze');
   assert.equal(h.impacts.filter(impact => impact.source === 'agent_jones' && impact.damage === 0).length, 2, 'successful bends leave two visible miss trajectories');
   assert.ok(h.impacts.some(impact => impact.source === 'trinity' && impact.target === 'agent_jones' && impact.downed), 'Trinity finishing shot is emitted once');
+});
+
+test('one physical rooftop position passes from the pilot to Jones and back to the fallen pilot', () => {
+  const h = setup('m1_bullet_dodge'), state = h.sandbox.life.film.state!;
+  const pilot = h.world.agents.get('citizen_11')!, jones = h.world.agents.get('agent_jones')!;
+  const position = filmPosition(h.scene.set, GOVERNMENT_RESCUE.rooftop.roots.pilot.x, GOVERNMENT_RESCUE.rooftop.roots.pilot.z);
+  assert.deepEqual(pilot.position, position); assert.notEqual(jones.currentLocation, h.scene.set);
+  h.command('act');
+  assert.deepEqual(jones.position, position); assert.notEqual(pilot.currentLocation, h.scene.set);
+  state.government = { kind: 'rooftop', phase: 'trinity', elapsed: 2.35, attempt: 0, trinityShot: true };
+  h.frames(.1);
+  assert.deepEqual(pilot.position, position); assert.notEqual(jones.currentLocation, h.scene.set);
+  h.frames(GOVERNMENT_RESCUE.rooftop.trinity);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.equal(state.government!.phase, 'download_ready'); assert.deepEqual(pilot.position, position);
+  assert.equal(governmentPose(pilot.currentAction!.parameters.government!).fall, 1);
+  assert.notEqual(jones.currentLocation, h.scene.set);
 });
 
 test('missing rooftop fire fails, retry clears slow motion, and the pilot download is a separate saved action', () => {
@@ -126,6 +149,25 @@ test('missing rooftop fire fails, retry clears slow motion, and the pilot downlo
   for (const id of ['neo', 'trinity']) {
     assert.equal(h.world.agents.get(id)!.currentAction?.parameters.government?.phase, 'done', `${id} keeps the B-212 completion shot instead of dropping to a camera inside the hull`);
   }
+});
+
+test('the rooftop restores bullet time from the saved clock after reconnecting', () => {
+  const h = setup('m1_bullet_dodge');
+  h.command('act'); h.frames(GOVERNMENT_RESCUE.rooftop.opening + GOVERNMENT_RESCUE.rooftop.beats[0]);
+  assert.match(h.players.act('film-player', 'dodge', h.tick()), /闪过|掠过/);
+  h.frames(.2);
+  const saved = structuredClone(h.sandbox.life.film.state!.government!);
+  const effects = structuredClone(h.actor.activeEffects);
+  assert.deepEqual(saved.resolved, [0]); assert.equal(h.players.timeScale(), .25);
+
+  h.players.release('film-player', h.tick());
+  for (let i = 0; i < 70; i++) h.players.step(.1, true, h.tick() + i + 1);
+  assert.equal(h.players.timeScale(), 1);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  h.players.possess('film-player', 'neo', h.tick());
+  assert.deepEqual(h.sandbox.life.film.state!.government, saved);
+  assert.equal(h.players.timeScale(), .25);
+  assert.deepEqual(h.actor.activeEffects, effects);
 });
 
 test('government poses keep film roles at authored roots and expose the extreme Neo bend', () => {

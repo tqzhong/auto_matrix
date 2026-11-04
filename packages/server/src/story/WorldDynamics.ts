@@ -28,7 +28,7 @@ export class WorldDynamics {
       const training = action?.parameters.training as TrainingGesture | undefined;
       const jumpInjury = training?.role === 'neo' && (training.kind === 'jump_fall' || training.kind === 'jump_return');
       if (resting && mind.stress < 20 && !jumpInjury && !action.parameters.crosscut && !action.parameters.rescue
-        && !action.parameters.sourcePortal && !action.parameters.helGarage)
+        && !action.parameters.government && !action.parameters.sourcePortal && !action.parameters.helGarage)
         agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
       const destination = agent.currentAction?.parameters.location as string | undefined;
       if (destination && !agent.targetPosition && agent.currentAction?.parameters.resolved && agent.currentLocation !== destination) {

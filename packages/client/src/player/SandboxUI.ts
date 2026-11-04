@@ -168,6 +168,7 @@ export class SandboxUI {
     }
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
+      if (!journey.visiting && journey.scene === 'm1_smith_question' && journey.government?.phase === 'monologue') return;
       if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
         this.send({ kind: 'life', target: 'film:act' }); return;
       }
