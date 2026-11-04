@@ -148,6 +148,49 @@ test('many offscreen lights use bounded shader slots without losing any contribu
   } finally { h.culling.dispose(); }
 });
 
+test('the commute keeps four point-light slots as nearby interiors appear and disappear', () => {
+  const h = view();
+  const street = [h.light(0, -10, 4), h.light(0, 10, 4)];
+  const lobby = new THREE.Group(); h.scene.add(lobby);
+  for (const x of [-1, 0, 1]) lobby.add(h.light(x, -10, 4));
+  const actual = [...street, ...(lobby.children as THREE.PointLight[])];
+  const normal = new THREE.MeshNormalMaterial();
+  const visibleLights = () => {
+    const lights: THREE.PointLight[] = [];
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+    return lights;
+  };
+  const children = h.scene.children.length;
+  h.culling.reservePointSlots = true;
+  try {
+    lobby.visible = false;
+    h.before();
+    const filled = visibleLights();
+    assert.equal(filled.length, 4);
+    assert.equal(filled.filter(light => light.intensity > 0).length, 1);
+    assert.ok(filled.filter(light => !actual.includes(light)).every(light => !light.castShadow));
+    h.scene.overrideMaterial = normal;
+    h.before();
+    assert.deepEqual(visibleLights(), street);
+    h.after(); h.scene.overrideMaterial = null;
+    assert.deepEqual(visibleLights(), filled);
+    h.after();
+    assert.deepEqual(visibleLights(), street);
+    assert.equal(street[1].intensity, 10);
+    lobby.visible = true;
+    h.before();
+    assert.deepEqual(visibleLights().filter(light => light.intensity > 0), [street[0], ...lobby.children]);
+    assert.equal(visibleLights().length, 4);
+    h.after();
+    lobby.visible = false;
+    h.before(); h.culling.restore();
+    assert.deepEqual(visibleLights(), street);
+    h.culling.reservePointSlots = false;
+    h.before(); assert.deepEqual(visibleLights(), street); h.after();
+  } finally { normal.dispose(); h.culling.dispose(); }
+  assert.equal(h.scene.children.length, children);
+});
+
 test('a fixed point-light set keeps its shader slots while turning and turning lights off', () => {
   const h = view(); h.culling.stablePointSlots = true;
   const lights = Array.from({ length: 12 }, (_, index) => h.light(index < 7 ? index * .1 : 60 + index, -10, 3));

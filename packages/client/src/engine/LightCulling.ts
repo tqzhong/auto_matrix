@@ -1,17 +1,20 @@
 import * as THREE from 'three';
 
-type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; intensities: number[] };
+const POINT_SLOT_FLOOR = 4;
+type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; intensities: number[]; fill: number };
 
 /** Reuse non-shadow light shader variants across camera changes. */
 export class LightCulling {
   enabled = true;
   stablePointSlots = false;
+  reservePointSlots = false;
   lastView = { considered: 0, culled: 0 };
   private frustum = new THREE.Frustum();
   private projection = new THREE.Matrix4();
   private sphere = new THREE.Sphere();
   private frames: LightSelection[] = [];
   private depth = 0;
+  private pointFill?: THREE.Group;
   private previousBefore: THREE.Scene['onBeforeRender'];
   private previousAfter: THREE.Scene['onAfterRender'];
 
@@ -25,8 +28,9 @@ export class LightCulling {
     // A mirror has a different view. Restore the parent pass before selecting
     // its lights, then reinstate the parent's selection when the mirror ends.
     this.restoreSelection(this.frames[this.depth - 1]);
-    const selected = this.frames[this.depth] ??= { hidden: [], muted: [], intensities: [] };
+    const selected = this.frames[this.depth] ??= { hidden: [], muted: [], intensities: [], fill: 0 };
     selected.hidden.length = selected.muted.length = selected.intensities.length = 0; this.depth++;
+    selected.fill = 0;
     const camera = args[2]; let considered = 0, kept = 0;
     if (this.enabled && !this.scene.overrideMaterial && !(camera instanceof THREE.ArrayCamera)) {
       this.frustum.setFromProjectionMatrix(this.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
@@ -47,13 +51,16 @@ export class LightCulling {
         } else kept++;
       });
       // Small fixed rigs keep all their slots. Elsewhere bound the extra slots.
-      const slots = this.stablePointSlots ? kept + selected.muted.length : Math.max(4, 2 ** Math.ceil(Math.log2(Math.max(1, kept))));
+      const slots = this.stablePointSlots ? kept + selected.muted.length : Math.max(POINT_SLOT_FLOOR, 2 ** Math.ceil(Math.log2(Math.max(1, kept))));
       const padding = Math.min(selected.muted.length, slots - kept);
       for (let index = padding; index < selected.muted.length; index++) {
         const light = selected.muted[index]; light.intensity = selected.intensities[index];
         light.visible = false; selected.hidden.push(light);
       }
       selected.muted.length = selected.intensities.length = padding;
+      // Crossing an interior boundary can leave too few real lights to pad the shader.
+      if (this.reservePointSlots) selected.fill = Math.max(0, POINT_SLOT_FLOOR - kept - padding);
+      this.setPointFill(selected.fill);
     }
     if (this.depth === 1 && !this.scene.overrideMaterial) this.lastView = { considered, culled: selected.hidden.length + selected.muted.length };
   };
@@ -61,14 +68,31 @@ export class LightCulling {
   private after: THREE.Scene['onAfterRender'] = (...args) => {
     this.restoreSelection(this.frames[--this.depth]);
     const parent = this.frames[this.depth - 1];
-    if (parent) { for (const light of parent.hidden) light.visible = false; for (const light of parent.muted) light.intensity = 0; }
+    if (parent) {
+      for (const light of parent.hidden) light.visible = false;
+      for (const light of parent.muted) light.intensity = 0;
+      this.setPointFill(parent.fill);
+    }
     this.previousAfter.apply(this.scene, args);
   };
 
   private restoreSelection(selected?: LightSelection): void {
+    if (this.pointFill) this.pointFill.visible = false;
     if (!selected) return;
     for (const light of selected.hidden) light.visible = true;
     selected.muted.forEach((light, index) => { light.intensity = selected.intensities[index]; });
+  }
+
+  private setPointFill(count: number): void {
+    if (!this.pointFill && count > 0) {
+      this.pointFill = new THREE.Group();
+      for (let i = 0; i < POINT_SLOT_FLOOR; i++) this.pointFill.add(new THREE.PointLight(0xffffff, 0, 1));
+      this.scene.add(this.pointFill);
+    }
+    if (this.pointFill) {
+      this.pointFill.visible = count > 0;
+      this.pointFill.children.forEach((light, i) => { light.visible = i < count; });
+    }
   }
 
   /** Also called from the frame's finally block if a nested renderer throws. */
@@ -78,5 +102,6 @@ export class LightCulling {
 
   dispose(): void {
     this.restore(); this.scene.onBeforeRender = this.previousBefore; this.scene.onAfterRender = this.previousAfter;
+    this.pointFill?.removeFromParent();
   }
 }
