@@ -39,7 +39,7 @@ import { oracleAbsorptionActive, oracleAbsorptionLocked, oracleAbsorptionText } 
 import { TRAINMAN_CHASE, trainmanChaseActive, trainmanChaseCanAct, trainmanChaseText } from '@auto_matrix/shared';
 import { HEL_GARAGE, helGarageActive, helGarageText } from '@auto_matrix/shared';
 import { helElevatorText } from '@auto_matrix/shared';
-import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
+import { FILM_SETS, FILM_SCENES, FILM_SCENE_BY_ID, FILM_NAMES, filmReflections, GRID_HACK_SECONDS, GRID_REROUTE_SECONDS, HEL_ELEVATOR, HEL_DANCE_DOOR, filmStepPosition, filmStepActionReady, helElevatorLocked, helDanceDoorLocked, pillLocked, lafayetteWelcomeLocked, awakeningLocked, awakeningWaiting, podRescuePose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, mirrorGuidePose, PILL_ROOM, trainingLocked, trainingWaiting, TRAINING_SECONDS, DOJO_COMBO_WINDOW, windowOpening, windowCrossing, officeRetreat, officeRetreatReady, OFFICE_RETREAT_WINDOW, dockPowerOffline, ITEMS, RECIPES, SKILLS, FILMS, MISSIONS, LOCATIONS, CITY_BUILDINGS, NEO_CHAPTERS, LIFE_ACTIONS, lifeActionPosition, lifeRoomCenter, locationEntrance, distance, missionPosition, nearTransit, skillPoints,
   type AgentState, type SandboxState, type SandboxCommand, type ItemId, type SkillId, type Vector3 } from '@auto_matrix/shared';
 import './sandbox.css';
 import './trinity-terminal.css';
@@ -181,6 +181,11 @@ export class SandboxUI {
       }
       if (!journey.visiting && journey.scene === 'm1_oracle' && journey.step === 1 && journey.oracle?.consultation?.phase === 'waiting') {
         this.send({ kind: 'life', target: 'film:act' }); return;
+      }
+      if (!journey.visiting && journey.scene === 'm1_ledge' && journey.office?.climbed !== undefined) return;
+      if (officeRetreat(journey)) {
+        if (player && officeRetreatReady(journey, player.position, player.isInMatrix)) this.send({ kind: 'life', target: 'film:act' });
+        return;
       }
       if (journey.visiting || step?.kind === 'reflect' || journey.scene === 'm2_persephone' && journey.step === 2 || journey.finished) this.open('journal');
       else this.send({ kind: 'life', target: `film:${step ? 'act' : 'next'}` });
@@ -2048,6 +2053,19 @@ export class SandboxUI {
       document.getElementById('game-objective-copy')!.textContent = '你被捕了，故事仍会继续 · G 进入审讯';
     }
     if (scene.id === 'm1_pills' && step?.kind === 'reflect') this.el('sandbox-nearby').textContent = '选择红色或蓝色药丸';
+    if (officeRetreat(journey)) {
+      const crossing = windowCrossing(journey), ladder = journey.office?.climbed !== undefined;
+      const ready = officeRetreatReady(journey, player.position, player.isInMatrix);
+      document.getElementById('game-objective-copy')!.textContent = crossing ? '正在翻回办公室 · 动作进度自动保存'
+        : ladder ? '按住 S 回到上层窄台 · 松手停留' : ready ? 'G 翻回办公室' : '沿幕墙走回开启的窗口';
+      this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      this.el('sandbox-nearby').textContent = '翻回办公室';
+      const gap = distance(OFFICE_RETREAT_WINDOW, player.position);
+      const direction = Math.atan2(OFFICE_RETREAT_WINDOW.x - player.position.x, OFFICE_RETREAT_WINDOW.z - player.position.z) - player.rotation;
+      this.el('sandbox-waypoint').innerHTML = crossing || ready ? '' : ladder ? '↑ 上层窄台'
+        : `<span style="transform:rotate(${-direction}rad)">↑</span>开启的窗口 <b>${Math.round(gap)} m</b>`;
+      return;
+    }
     if (scene.id === 'm1_ledge' && step?.kind === 'reach' && !journey.visiting) this.el('sandbox-interact').classList.add('hidden');
     if (scene.id === 'm1_ledge' && journey.office?.climbed !== undefined && !journey.visiting) {
       this.el('film-phone').classList.remove('hidden');

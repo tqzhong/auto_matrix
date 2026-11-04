@@ -75,7 +75,7 @@ import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL, SIGNAL_OBSTACLES, signalLocked, type WorldStructure } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_CAST, GRID_WINDOW_SECONDS, GRID_REROUTE_SECONDS, GRID_HACK_SECONDS, ARCHITECT_DOOR_SECONDS, RELOADED_FINALE, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, filmReflections, CHARACTERS, LOCATIONS, NEO_CHAPTERS, filmCharacterFates, filmEntry, filmPosition, filmStepPosition, filmStepNear, locationEntrance, distance, playerBlocked, newFreewayRide, stepFreeway, OFFICE_LADDER, awakeningLocked, awakeningPose, AWAKENING_SECONDS, MIRROR_TOUCH, MIRROR_TIMING, MIRROR_GUIDE_LENGTH, mirrorGuidePose, mirrorGuideProgress, mirrorSilver, recoveryCrewPose, CONSTRUCT_REVEAL, DESERT_REVEAL, oracleActing,
-  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, officeCrossingPose, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, redDressAttention, stepRedDress, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
+  AMBUSH_REWRITE, AMBUSH_SECONDS, AMBUSH_SEALS, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_CROSSING_SECONDS, OFFICE_RETREAT_WINDOW, officeCrossingPose, officeRetreat, officeRetreatReady, windowCrossing, phoneLocked, heldPhone, windowOpening, pillLocked, pillRoot, PILL_ROOM, PILL_TIMING, trainingLocked, trainingRoot, trainingText, redDressAttention, stepRedDress, TRAINING_SECONDS, DOJO_COMBO_WINDOW,
   lobbyLocked, meleeReach, groundHeight, MIRROR_SEAT, MIRROR_TRINITY, type DriveInput, type AgentState, type FilmScene, type FilmStep, type GridOperation, type SandboxState, type SandboxThreat, type TrainingRole, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import { LobbyCombatSystem } from './LobbyCombatSystem.js';
@@ -2546,11 +2546,25 @@ export class FilmStorySystem {
     if (!state || !this.controls(agent) || !windowCrossing(state)) return false;
     const office = state.office!;
     if (dt === 0 && agent.currentAction?.parameters.crossing === office.crossing) return true;
-    office.crossing = Math.min(OFFICE_CROSSING_SECONDS, office.crossing! + Math.min(.1, dt));
+    const from = officeRetreat(state)?.from, delta = Math.min(.1, dt);
+    office.crossing = from ? Math.max(0, office.crossing! - delta) : Math.min(OFFICE_CROSSING_SECONDS, office.crossing! + delta);
     const pose = officeCrossingPose(office.crossing);
     agent.position = filmPosition('film_metacortex_floor', pose.x, pose.z); agent.position.y += pose.y;
     agent.rotation = pose.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
+    if (from) {
+      // Fade the live starting position into the authored path before the sill contact.
+      const t = Math.max(0, 1 - (OFFICE_CROSSING_SECONDS - office.crossing) / .8), remaining = t * t * (3 - 2 * t);
+      agent.position.x += (from.x - OFFICE_RETREAT_WINDOW.x) * remaining;
+      agent.position.y += (from.y - OFFICE_RETREAT_WINDOW.y) * remaining;
+      agent.position.z += (from.z - OFFICE_RETREAT_WINDOW.z) * remaining;
+      agent.rotation += Math.atan2(Math.sin(from.yaw), Math.cos(from.yaw)) * remaining;
+    }
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crossing: office.crossing, phone: heldPhone(state) }, startedAt: tick, duration: 1, progress: 0 };
+    if (from) {
+      state.lastText = 'Neo 扶住窗沿，从外侧窄台翻回办公室。';
+      if (office.crossing <= 1e-6) this.capture(agent, tick, 'Neo 已经回到室内。特工正在走近，电话中的联系尚未结束。', true);
+      return true;
+    }
     state.lastText = office.crossing < 1.7 ? '左手撑住窗台。慢慢抬起左腿，手机仍贴在耳边。' : office.crossing < 3.5 ? '身体穿过窗口，先把左脚探向外沿。' : office.crossing < 5.4 ? '右腿越过窗沿。脚下踩稳后，再松开扶着窗台的手。' : '两脚已经落在窄台上。沿幕墙前往远端的维修架。';
     if (office.crossing >= OFFICE_CROSSING_SECONDS) {
       const position = { ...agent.position }; delete office.crossing;
@@ -5290,10 +5304,24 @@ export class FilmStorySystem {
     if (!this.climbing(agent)) return false;
     if (dt === 0 && agent.currentAction?.parameters.climbing === true) return true;
     const state = this.state!; const office = state.office!;
+    const retreat = officeRetreat(state);
+    if (retreat && (retreat.ladderExit !== undefined || office.climbed === 0 && direction < 0)) {
+      const exit = retreat.ladderExit = Math.min(1, (retreat.ladderExit ?? 0) + Math.max(0, -direction) * Math.min(.1, dt) / .9);
+      const step = exit * exit * (3 - 2 * exit);
+      agent.position = filmPosition(this.scene!.set, OFFICE_LADDER.x + 1.8 * step, OFFICE_LADDER.z);
+      agent.rotation = Math.PI / 2; agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0, officeLadder: { depth: 0, exit } }, startedAt: tick, duration: 1, progress: 0 };
+      if (exit === 1) {
+        delete retreat.ladderExit; delete office.climbed; agent.currentAction = null;
+        state.lastText = '双脚已回到上层窄台。沿幕墙回到开启的窗口。';
+      }
+      return true;
+    }
+    if (retreat) direction = Math.min(0, direction);
     office.climbed = Math.max(0, Math.min(OFFICE_LADDER.depth, office.climbed! + direction * Math.min(.1, dt) * OFFICE_LADDER.speed));
     agent.position = filmPosition(this.scene!.set, OFFICE_LADDER.x, OFFICE_LADDER.z); agent.position.y -= office.climbed;
     agent.rotation = Math.PI / 2; agent.velocity = { x: 0, y: -direction * OFFICE_LADDER.speed, z: 0 };
-    agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction }, startedAt: tick, duration: 1, progress: 0 };
+    agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction, officeLadder: { depth: office.climbed } }, startedAt: tick, duration: 1, progress: 0 };
     if (office.climbed >= OFFICE_LADDER.depth) {
       office.outcome = 'escaped'; office.bugged = false; delete office.climbed;
       agent.position.x = FILM_SETS[this.scene!.set].center.x; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
@@ -6475,7 +6503,7 @@ export class FilmStorySystem {
       if (state.scene === 'm1_dejavu' && state.step === 0) { delete state.ambush; this.sandbox().structures = this.sandbox().structures.filter(s => s.film?.scene !== 'm1_dejavu'); }
       if (state.scene === 'm1_boss' && state.step === 1) delete state.phone;
       if (state.awakening) state.awakening = state.scene === 'm1_pod' && state.step > 0 ? { kind: 'disconnect', elapsed: 9 } : undefined;
-      if (state.office) { delete state.office.climbed; delete state.office.crossing; }
+      if (state.office) { delete state.office.climbed; delete state.office.crossing; delete state.office.retreat; }
       if (state.scene === 'm1_lobby') this.lobby.reset();
       if (state.scene === 'm1_dojo' && state.step === 0) state.dojo = { dodged: false, combo: 0, hits: 0 };
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured') {
@@ -6528,7 +6556,7 @@ export class FilmStorySystem {
       }
       return state.lastText;
     }
-    if (windowCrossing(state)) return '正在跨过窗沿。撑稳身体再落到窄台，暂停或断线会保留当前姿势。';
+    if (windowCrossing(state)) return officeRetreat(state) ? state.lastText : '正在跨过窗沿。撑稳身体再落到窄台，暂停或断线会保留当前姿势。';
     if (meetingLocked(state)) {
       if (MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return '一位接头者正在由另一位玩家控制，检查进度已经保留。';
       this.meetingFrame(agent, false, 0, tick);
@@ -6889,8 +6917,17 @@ export class FilmStorySystem {
     if (state.scene === 'm1_subway' || state.scene === 'm1_city_chase') return this.matrixEscapeAct(agent, target, tick);
     if (state.scene === 'm1_death' || state.scene === 'm1_return' || state.scene === 'm1_final_call' && state.step > 0) return this.theOneAct(agent, target, tick);
     if (interrogationLocked(state) && state.interrogation!.phase !== 'response') return '审讯正在进行。可以转动视角观察，暂停会保留当前进度。';
-    if (target === 'escape:retreat' && state.scene === 'm1_ledge') {
-      this.capture(agent, tick, '你退回办公室。特工将你带走；电话中的联系尚未结束。');
+    if (target === 'escape:retreat' && state.scene === 'm1_ledge' && !state.visiting && !state.office?.outcome) {
+      const office = state.office ??= { alert: 0, suspicion: [], waypoints: [], lastTick: tick, guide: '' };
+      office.retreat ??= {};
+      return state.lastText = office.climbed !== undefined ? '按住 S 沿梯子回到上层窄台，再走回窗口。' : '沿幕墙回到开启的窗口，走近后按 G 翻入。';
+    }
+    const retreat = officeRetreat(state);
+    if (retreat) {
+      if (target !== 'act' || !officeRetreatReady(state, agent.position, agent.isInMatrix)) return state.lastText;
+      retreat.from = { ...agent.position, yaw: agent.rotation };
+      state.office!.crossing = OFFICE_CROSSING_SECONDS;
+      this.crossingFrame(agent, 0, tick);
       return state.lastText;
     }
     if (this.climbing(agent)) return 'W 沿梯子向下，S 向上。到达下方维修平台才能完成逃脱；停手会抓住当前横档。';
@@ -7258,25 +7295,28 @@ export class FilmStorySystem {
     if (!changed && state && previous) state.actor = previous;
     return changed;
   }
-  private capture(agent: AgentState, tick: number, text: string): void {
+  private capture(agent: AgentState, tick: number, text: string, returnedThroughWindow = false): void {
     const state = this.state!;
     state.office ??= { alert: 100, suspicion: [], waypoints: [], lastTick: tick, guide: '' };
     state.office.outcome = 'captured'; state.office.guide = text;
     delete state.office.climbed;
     delete state.office.crossing;
+    delete state.office.retreat;
     this.sandbox().neoLife!.choices.office_escape = 'captured';
     if (state.scene === 'm1_office_escape') this.custody.begin(agent, tick);
     this.clearThreats(); agent.velocity = { x: 0, y: 0, z: 0 };
-    if (!state.office.custody) agent.position = { ...state.checkpoint };
+    if (!state.office.custody && !returnedThroughWindow) agent.position = { ...state.checkpoint };
     state.step = this.scene!.steps.length - 1;
     this.advance(text, agent, tick);
-    if (state.scene === 'm1_ledge') this.returnToOfficeCustody(agent, tick);
+    if (state.scene === 'm1_ledge') this.returnToOfficeCustody(agent, tick, returnedThroughWindow);
   }
-  private returnToOfficeCustody(agent: AgentState, tick: number): void {
+  private returnToOfficeCustody(agent: AgentState, tick: number, returnedThroughWindow = false): void {
     const state = this.state!, scene = FILM_SCENE_BY_ID.m1_office_escape;
     state.scene = scene.id; state.step = scene.steps.length;
     delete state.started; delete state.fighting; delete state.office!.climbed; delete state.office!.crossing;
-    this.place(agent, scene, filmPosition(scene.set, OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ));
+    const yaw = agent.rotation;
+    this.place(agent, scene, returnedThroughWindow ? agent.position : filmPosition(scene.set, OFFICE_WINDOW.approachX, OFFICE_WINDOW.approachZ));
+    if (returnedThroughWindow) agent.rotation = yaw;
     this.custody.begin(agent, tick);
   }
   private place(agent: AgentState, scene: FilmScene, position: AgentState['position']): void {
@@ -8366,7 +8406,7 @@ export class FilmStorySystem {
     }
     if (state.scene === 'm1_boss' && state.step === 1) { delete state.started; return; }
     if (this.performing(actor)) return;
-    if (this.climbing(actor)) return;
+    if (this.climbing(actor) || officeRetreat(state)) return;
     if (step.kind === 'drive') {
       if ((state.scene === 'm3_defense' || state.scene === 'm3_sun') && state.logos?.phase === 'arrived') {
         actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;

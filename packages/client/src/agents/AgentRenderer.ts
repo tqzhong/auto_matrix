@@ -616,6 +616,7 @@ export class AgentRenderer {
         truckHood: state.currentAction?.parameters.truckHood as MotionInput['truckHood'],
         freewayHandoff: state.currentAction?.parameters.freewayHandoff as MotionInput['freewayHandoff'],
         climbing: state.currentAction?.parameters.climbing ? Number(state.currentAction.parameters.climbDirection ?? 0) : undefined,
+        officeLadder: state.currentAction?.parameters.officeLadder as MotionInput['officeLadder'],
       };
       // The ruined city is still a loading program: actors keep their residual
       // self image even though the represented place is the real world.

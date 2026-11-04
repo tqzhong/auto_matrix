@@ -1,4 +1,4 @@
-import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, RED_DRESS_PROGRAM, redDressFrame, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift } from '@auto_matrix/shared';
+import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, RED_DRESS_PROGRAM, redDressFrame, jumpDemonstration, jumpImpactPose, truckRescuePose, FREEWAY_HANDOFF, truckHoodBack, MOBIL_STATION, trainmanVaultLift, OFFICE_LADDER } from '@auto_matrix/shared';
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
@@ -48,6 +48,7 @@ export interface MotionInput {
   freewayHandoff?: import('@auto_matrix/shared').FreewayHandoff & { role: import('@auto_matrix/shared').FreewayHandoffRole };
   freewayRide?: import('@auto_matrix/shared').FreewayRide & { role: 'trinity' | 'keymaker' };
   climbing?: number;
+  officeLadder?: { depth: number; exit?: number };
   performance?: AwakeningPose;
   podWake?: number;
   podEmergence?: number;
@@ -746,7 +747,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     state.speed = 1.4 * mirrorEntryPose(input.mirrorEntry).walking;
     state.time = input.mirrorEntry.elapsed;
   }
-  state.climbPhase += (input.climbing ?? 0) * dt * 5;
+  state.climbPhase = input.officeLadder ? input.officeLadder.depth * (5 / OFFICE_LADDER.speed) : state.climbPhase + (input.climbing ?? 0) * dt * 5;
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
   if (input.performance === 'touch') state.seated = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.sit) - .65) / (MIRROR_TIMING.sit - .65)));
   if (input.mirrorRise !== undefined) state.seated = 1 - smooth(clamp(input.mirrorRise));
@@ -888,8 +889,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.riding) for (const arm of arms) { arm.shoulder = -.9; arm.elbow = -.65; arm.grip = .8; }
   if (input.climbing !== undefined) for (let i = 0; i < 2; i++) {
     const pull = Math.sin(state.climbPhase + i * Math.PI);
-    legs[i].hip = -.75 + pull * .4; legs[i].knee = 1.1 - pull * .6; legs[i].ankle = -.2;
-    arms[i].shoulder = -2.2 - pull * .55; arms[i].elbow = -.65 + pull * .5; arms[i].grip = 1;
+    const grip = 1 - smooth(input.officeLadder?.exit ?? 0);
+    legs[i].hip = mix(legs[i].hip, -.75 + pull * .4, grip); legs[i].knee = mix(legs[i].knee, 1.1 - pull * .6, grip); legs[i].ankle = mix(legs[i].ankle, -.2, grip);
+    arms[i].shoulder = mix(arms[i].shoulder, -2.2 - pull * .55, grip); arms[i].elbow = mix(arms[i].elbow, -.65 + pull * .5, grip); arms[i].grip = mix(arms[i].grip, 1, grip);
   }
   if (input.performance === 'touch') {
     if (input.mirrorEntry) for (const [index, arm] of arms.entries()) {

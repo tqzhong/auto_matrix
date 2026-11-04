@@ -43,7 +43,7 @@ import { MIRROR_FRAME, mirrorTime } from '@auto_matrix/shared';
 import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
-import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
+import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
@@ -781,6 +781,8 @@ export class FilmSetRenderer {
     if (journey && phoneLocked(journey)) this.marker.visible = false;
     if (basementLocked(journey) || tvExitLocked(journey)) this.marker.visible = false;
     if (journey && windowOpening(journey)) this.marker.visible = false;
+    const retreat = journey && officeRetreat(journey);
+    if (retreat && (journey.office?.climbed !== undefined || windowCrossing(journey))) this.marker.visible = false;
     if (journey?.scene === 'm1_dejavu' && journey.step === 0 && journey.ambush) this.marker.visible = false;
     if (!journey?.visiting && journey?.scene === 'm1_dejavu' && journey.ambushEscape && ['alarm', 'call', 'failed', 'done'].includes(journey.ambushEscape.phase)) this.marker.visible = false;
     if (!journey?.visiting && journey?.scene === 'm1_wetwall' && journey.wetwall?.phase !== 'sealed') this.marker.visible = false;
@@ -795,7 +797,8 @@ export class FilmSetRenderer {
         ? ambushEscapeTarget(journey.ambushEscape, player.position.x - center.x, player.position.y - center.y, player.position.z - center.z)
         : scene.id === 'm1_dejavu' && journey?.step === 0 && journey.ambushApproach && !journey.ambushApproach.ready && player
           ? ambushApproachTarget(player.position.x - center.x, player.position.y - center.y, player.position.z - center.z, journey.ambushApproach.stairCat) : undefined;
-      const position = ambushGoal ? { x: center.x + ambushGoal.x, y: center.y + ambushGoal.y, z: center.z + ambushGoal.z }
+      const position = retreat ? { ...OFFICE_RETREAT_WINDOW }
+        : ambushGoal ? { x: center.x + ambushGoal.x, y: center.y + ambushGoal.y, z: center.z + ambushGoal.z }
         : scene.id === 'm1_sentinels' && journey?.sentinel?.phase === 'briefing' ? filmPosition(scene.set, SENTINEL_POWER.inspect.x, SENTINEL_POWER.inspect.z)
         : arrivalGoal ? filmPosition(scene.set, arrivalGoal.x, arrivalGoal.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
         : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)

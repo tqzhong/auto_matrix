@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OFFICE_WINDOW, PILL_TIMING, WAKE_CALL, filmStepPosition, filmPosition, officeOccluded, playerBlocked, stepPlayer, type WorldEvent, type PlayerInput } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -418,10 +418,40 @@ for (const ladder of [false, true]) {
   test(`retreating from the ${ladder ? 'ladder' : 'ledge'} starts real office custody without losing personal state`, () => {
     const h = setup(); h.office(); h.finish(); h.crossWindow();
     if (ladder) { h.goal(); h.advance(); h.command('escape:climb'); h.climb(1); }
+    else h.move(0, OFFICE_WINDOW.z + 5);
     if (ladder) assert.equal(h.players.possess('guard-player', 'smith', h.tick()).agentId, 'smith');
     const guard = h.players.getAgent('guard-player'), guardPosition = guard && { ...guard.position }, guardController = guard?.controller;
     h.neo().health = 63; h.sandbox.state.neoLife!.money = 321; h.sandbox.state.neoLife!.evidence = ['loop'];
+    const outside = { ...h.neo().position };
     h.command('escape:retreat');
+    assert.equal(h.scene().id, 'm1_ledge'); assert.deepEqual(h.neo().position, outside);
+    assert.equal(h.state().office!.outcome, undefined);
+    h.command('act'); assert.equal(h.state().office!.crossing, undefined, 'G cannot start across the facade or from the ladder');
+    if (ladder) {
+      for (let i = 0; i < 90 && h.state().office!.climbed !== undefined; i++) {
+        const before = { ...h.neo().position }; h.climb(.05, -1);
+        assert.ok(Math.hypot(h.neo().position.x - before.x, h.neo().position.y - before.y) < .25, 'no jump off the top of the ladder');
+      }
+      assert.equal(h.state().office!.climbed, undefined);
+      assert.equal(playerBlocked(h.neo().position, true), false);
+    }
+    h.move(0, OFFICE_WINDOW.z);
+    const atWindow = { ...h.neo().position };
+    h.command('act'); assert.deepEqual(h.neo().position, atWindow);
+    const crossingFrame = () => {
+      const before = { ...h.neo().position }; h.players.step(.05, true, h.tick());
+      const moved = Math.hypot(h.neo().position.x - before.x, h.neo().position.y - before.y, h.neo().position.z - before.z);
+      assert.ok(moved < .3, `${h.scene().id} at crossing ${h.state().office?.crossing}: ${moved} m in one frame`);
+    };
+    for (let i = 0; i < 67; i++) crossingFrame();
+    const middle = structuredClone({ position: h.neo().position, action: h.neo().currentAction, office: h.state().office });
+    assert.ok(middle.position.y > atWindow.y + .4, 'Neo physically clears the sill');
+    assert.equal(middle.office!.outcome, undefined);
+    h.players.step(.1, false, h.tick());
+    h.players.release('neo-player', h.tick()); h.sandbox.restore(structuredClone(h.sandbox.state));
+    h.players.possess('neo-player', 'neo', h.tick());
+    assert.deepEqual({ position: h.neo().position, action: h.neo().currentAction, office: h.state().office }, middle);
+    for (let i = 0; i < 90 && h.scene().id === 'm1_ledge'; i++) crossingFrame();
     assert.equal(h.scene().id, 'm1_office_escape'); assert.equal(h.state().step, h.scene().steps.length);
     assert.equal(h.neo().currentLocation, 'film_metacortex_floor');
     assert.deepEqual(h.neo().position, filmPosition('film_metacortex_floor', -25.25, -27.65));
@@ -450,6 +480,21 @@ for (const ladder of [false, true]) {
     }
   });
 }
+
+test('retrying the ledge checkpoint clears an unfinished window return and preserves earlier scenes', () => {
+  const h = setup(); h.office(); h.finish(); h.crossWindow();
+  const completed = [...h.state().completed];
+  h.command('escape:retreat'); h.command('act'); h.players.step(.05, true, h.tick());
+  assert.ok(h.state().office?.retreat?.from && h.state().office?.crossing !== undefined);
+  h.command('retry');
+  assert.equal(h.scene().id, 'm1_ledge');
+  assert.deepEqual(h.neo().position, h.state().checkpoint);
+  assert.deepEqual(h.state().completed, completed);
+  assert.equal(h.state().office?.retreat, undefined);
+  assert.equal(h.state().office?.crossing, undefined);
+  h.command('escape:retreat'); h.command('act');
+  assert.ok(h.state().office?.retreat?.from && h.state().office?.crossing !== undefined);
+});
 
 test('office custody waits for the catcher to walk within reach before securing Neo', () => {
   const h = setup(); h.office(); h.finish(); h.sandbox.life.film.custody.begin(h.neo(), h.tick());

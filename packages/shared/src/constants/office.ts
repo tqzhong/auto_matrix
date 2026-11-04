@@ -2,7 +2,7 @@ import type { Vector3 } from '../types/agent.js';
 import { rayBox } from './lobby.js';
 import type { FilmJourney } from './film-story.js';
 import { OFFICE_MANAGER_FURNITURE } from './office-workday.js';
-import { METACORTEX_SHAFT } from './metacortex.js';
+import { METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
 import type { OfficeCustody } from './office-custody.js';
 
 export const OFFICE_CONTACT = { x: 14, z: 6.7, parcelX: 14.5, parcelZ: 5.31, pickupSeconds: 2.2, answerSeconds: 11 };
@@ -19,8 +19,17 @@ export function heldPhone(journey: FilmJourney): OfficePhone | undefined {
 export const OFFICE_WINDOW = { x: -26.8, z: -27, top: 8.9, height: 6, width: 5.7, handleY: 3.65, approachX: -25.25, approachZ: -27.65, seconds: 3.2 };
 export const OFFICE_LEDGE_OFFSET = -29.8;
 export const OFFICE_CROSSING_SECONDS = 6.4;
+export const OFFICE_RETREAT_WINDOW = metacortexPosition(OFFICE_LEDGE_OFFSET, OFFICE_WINDOW.z, 1);
+export function officeRetreat(journey: FilmJourney): OfficeEncounter['retreat'] {
+  if (!journey.visiting && journey.scene === 'm1_ledge' && !journey.office?.outcome) return journey.office?.retreat;
+}
+export function officeRetreatReady(journey: FilmJourney, position: Vector3, matrix: boolean): boolean {
+  return Boolean(officeRetreat(journey) && matrix && journey.office?.climbed === undefined && journey.office?.crossing === undefined
+    && Math.hypot(position.x - OFFICE_RETREAT_WINDOW.x, position.y - OFFICE_RETREAT_WINDOW.y, position.z - OFFICE_RETREAT_WINDOW.z) <= .75);
+}
 export function windowCrossing(journey: FilmJourney): boolean {
-  return !journey.visiting && journey.scene === 'm1_office_escape' && journey.step === 3 && journey.office?.crossing !== undefined && !journey.office.outcome;
+  return !journey.visiting && journey.office?.crossing !== undefined && !journey.office.outcome
+    && (journey.scene === 'm1_office_escape' && journey.step === 3 || Boolean(officeRetreat(journey)?.from));
 }
 // Contact positions use the office's floor coordinates, shared by the body and set.
 const crossingKeys = [
@@ -116,6 +125,7 @@ export interface OfficeEncounter {
   climbed?: number;
   window?: number;
   crossing?: number;
+  retreat?: { from?: Vector3 & { yaw: number }; ladderExit?: number };
 }
 export interface OfficeSearch { position: Vector3; remaining: number; source: 'sight' | 'sound'; facing?: number }
 export const OFFICE_LADDER = { x: -3.45, z: 26, depth: 32, speed: 4 };

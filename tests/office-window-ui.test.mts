@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, OFFICE_RETREAT_WINDOW, filmPosition, filmStepPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 const modules = Promise.all(['SandboxUI', 'FilmJourneyPanel'].map(async name => {
   const output = await build({ entryPoints: [`packages/client/src/player/${name}.ts`], bundle: true,
@@ -69,4 +69,30 @@ test('the journal only starts the physical window crossing from its actual inter
   assert.match(renderFilmJourney(player, sandbox), /data-target="film:next" disabled>正在跨窗/);
   delete journey.office!.crossing; journey.office!.outcome = 'captured';
   assert.doesNotMatch(renderFilmJourney(player, sandbox), /翻过窗台/);
+});
+
+test('the return prompt guides Neo to the open window and sends the same action for G at either ledge step', async () => {
+  const [{ SandboxUI }, { renderFilmJourney }] = await modules, { player, sandbox, journey } = openWindow();
+  journey.scene = 'm1_ledge'; journey.step = 1;
+  player.position = { ...OFFICE_RETREAT_WINDOW, z: OFFICE_RETREAT_WINDOW.z + 5 };
+  const commands: unknown[] = [];
+  const ui = Object.assign(Object.create(SandboxUI.prototype), {
+    player, state: sandbox, send: (action: unknown) => commands.push(action), open: () => assert.fail('G must not open the journal while hanging on the ladder'),
+  });
+  journey.office!.climbed = 4;
+  ui.interact();
+  journey.office!.retreat = {};
+  ui.interact();
+  delete journey.office!.climbed;
+  assert.match(renderFilmJourney(player, sandbox), /走回.*窗口/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /data-target="film:escape:climb"/);
+  assert.doesNotMatch(renderFilmJourney(player, sandbox), /沿幕墙走到脚手架|决定是否继续下降/);
+  assert.equal(commands.length, 0);
+  player.position = { ...OFFICE_RETREAT_WINDOW };
+  for (const step of [0, 1]) {
+    journey.step = step;
+    assert.match(renderFilmJourney(player, sandbox), /data-target="film:act" >翻回办公室/);
+    ui.interact();
+  }
+  assert.deepEqual(commands, [{ kind: 'life', target: 'film:act' }, { kind: 'life', target: 'film:act' }]);
 });

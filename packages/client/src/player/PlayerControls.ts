@@ -1196,6 +1196,7 @@ export class PlayerControls {
     this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
     const shaftRole = this.motion.tvExit?.phase === 'emerging' ? tvExitEmergingRole(this.motion.tvExit) : undefined;
     this.motion.climbing = dropRoot ? undefined : this.motion.wetwall?.hanging ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : shaftRole !== undefined && shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
+    this.motion.officeLadder = state.currentAction?.parameters.officeLadder as MotionInput['officeLadder'];
     if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }
@@ -2542,7 +2543,7 @@ export class PlayerControls {
       const center = FILM_SETS.film_metacortex_floor.center;
       const outside = THREE.MathUtils.smoothstep(this.motion.crossing, 1.7, 5.4);
       const ideal = new THREE.Vector3(center.x - 29.4, center.y + 3.8, center.z - 31 - outside * 4.5);
-      if (this.motion.crossing < .15 || resetCamera) this.camera.position.copy(ideal);
+      if (state.currentLocation !== 'film_office_ledge' && this.motion.crossing < .15 || resetCamera) this.camera.position.copy(ideal);
       else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(this.position.x, this.position.y + 1.9, this.position.z);
     } else if (this.performing && this.motion.window !== undefined && !this.firstPerson) {
