@@ -3,8 +3,51 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, LAFAYETTE, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+
+test('Lafayette prepares the visible actor in batches with the room lights that are reused at arrival', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { lighting.dispose(); renderer.dispose(); globalThis.document = document; });
+  lighting.stablePointSlots = true;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_extraction_car', 655, 38); neo.currentLocation = 'film_extraction_car'; neo.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: 'm1_bug', actor: 'neo', step: 2, enteredAt: 0, completed: [], reflections: {},
+    checkpoint: { ...neo.position }, lastText: '', meeting: { phase: 'outside', elapsed: 0, bugged: false, approach: { x: 4, z: -12.35, yaw: 0 } } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_extraction_car');
+  const actor = new THREE.Group(), geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  t.after(() => { geometry.dispose(); material.dispose(); });
+  for (let i = 0; i < 6; i++) actor.add(new THREE.Mesh(geometry, material));
+  const hidden = new THREE.Mesh(geometry, material); hidden.visible = false; actor.add(hidden);
+  const eye = new THREE.PerspectiveCamera(), batches: THREE.Object3D[][] = [];
+  const children = [...scene.children];
+  let key: THREE.SpotLight | undefined;
+  const webgl = {
+    extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, _eye: THREE.Camera, target: THREE.Scene) {
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
+      target.traverseVisible(object => { if (object instanceof THREE.SpotLight && object.intensity === 1900) key = object; });
+      assert.ok(key, 'the room shadow light must be present in the program variant');
+      assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  for (let i = 0; i < 3; i++) {
+    renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
+    assert.deepEqual(scene.children, children, 'preparation cannot light the street');
+  }
+  assert.deepEqual(batches.map(batch => batch.length), [4, 2]);
+  assert.deepEqual(batches.flat(), actor.children.slice(0, 6));
+  neo.position = filmPosition('film_lafayette', 0, 29); neo.position.y -= LAFAYETTE.upper;
+  assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
+  assert.ok(key && renderer.root.getObjectByProperty('uuid', key.uuid) === key);
+  assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
+});
 
 test('the fireplace and mirror carvings share one indexed source before room batching', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
