@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type WorldEvent } from '@auto_matrix/shared';
-import { hammerCrewRoot, newHammerFlight, newHammerGunnery, FILM_SETS } from '@auto_matrix/shared';
+import { HAMMER_ROUTE, hammerCrewRoot, newHammerFlight, newHammerGunnery, FILM_SETS } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -9,6 +9,7 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { rideForPlayer } from '../packages/client/src/engine/Engine.js';
 
 function setup(step = 0) {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -75,6 +76,32 @@ test('a previously completed copilot preparation remains complete and flight ret
   h.state.hammer!.hull = 1; h.state.hammer!.x = 30; h.frames(.1);
   h.command('retry'); assert.equal(h.state.step, 2); assert.equal(h.actor.status, 'alive');
   h.command('act'); assert.equal(h.state.hammer?.phase, 'riding');
+});
+
+test('Niobe stays in the Hammer at arrival while waiting to hand off to Charra', () => {
+  const h = setup(2); h.command('act');
+  const flight = h.state.hammer!;
+  flight.z = HAMMER_ROUTE.finish + .2;
+  flight.speed = 23;
+  h.frames(.05);
+  const arrived = h.state.hammer!, center = FILM_SETS[h.scene.set].center;
+  assert.equal(arrived.phase, 'arrived');
+  assert.equal(h.state.step, 3);
+  const seat = hammerCrewRoot(arrived, 'niobe');
+  const position = { x: center.x + seat.x, y: center.y + seat.y, z: center.z + seat.z };
+  const saved = structuredClone(h.sandbox.state);
+  h.frames(1);
+  assert.deepEqual(h.actor.position, position, 'arrival must not fall back to the walking floor');
+  assert.equal(h.actor.currentAction?.parameters.seated, true);
+  h.players.release('p', h.tick()); h.sandbox.restore(saved); h.players.possess('p', 'niobe', h.tick());
+  h.frames(1);
+  assert.deepEqual(h.actor.position, position);
+  assert.deepEqual(h.state.hammer, arrived, 'holding at the exit must not move the ship or spend ammunition');
+  assert.equal(rideForPlayer(h.state, 'niobe'), h.state.hammer, 'the client must not predict walking out of the cockpit');
+  assert.equal(rideForPlayer({ ...h.state, visiting: 'm3_bane' }, 'niobe'), undefined);
+  h.command('next');
+  assert.equal(h.state.scene, 'm3_diggers');
+  assert.equal(h.state.actor, 'charra');
 });
 
 test('new preparation waits for Ghost to reach and grip the actual gunner seat without a launch teleport', () => {

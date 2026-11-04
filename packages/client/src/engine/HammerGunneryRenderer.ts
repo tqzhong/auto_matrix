@@ -65,7 +65,7 @@ export class HammerGunneryRenderer {
       const cable = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 1.3, 14.3), new THREE.Vector3(x, .5, 14.4), new THREE.Vector3(x, -.8, 14.6), new THREE.Vector3(x * .6, -2.1, 14.6)]);
       this.mesh(new THREE.TubeGeometry(cable, 12, .055, 6, false), rubber, this.room);
     }
-    this.glow.position.set(0, .5, 12.8); this.room.add(this.glow);
+    this.glow.position.set(0, .5, 12.8); cockpit.add(this.glow);
     this.turret.position.set(HAMMER_GUNNERY.muzzle.x, HAMMER_GUNNERY.muzzle.y, HAMMER_GUNNERY.muzzle.z);
     this.mesh(new THREE.SphereGeometry(.3, 16, 10), metal, this.turret);
     for (const x of [-.13, .13]) {
@@ -103,6 +103,7 @@ export class HammerGunneryRenderer {
     const gun = flight?.gunnery; this.outside.visible = this.turret.visible = Boolean(gun);
     this.gate.rotation.y = !gun && handover?.station ? Math.PI / 2 * (1 - THREE.MathUtils.smoothstep(handover.elapsed, 15.9, 16.3)) : 0;
     this.room.visible = Boolean(gun || handover?.station || handover?.phase === 'waiting');
+    this.glow.intensity = this.room.visible ? 8 : 0;
     if (!flight || !gun) {
       if (this.room.visible && this.lastScreen !== 'standby') {
         this.lastScreen = 'standby';
@@ -184,6 +185,7 @@ export class HammerGunneryRenderer {
   }
 
   dispose(): void {
+    this.glow.removeFromParent();
     this.glow.dispose();
     this.room.removeFromParent(); this.outside.removeFromParent(); this.turret.removeFromParent();
     this.geometry.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.screens.forEach(s => s.texture.dispose());

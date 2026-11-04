@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BANE_INQUIRY, FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, newAmbushEscape, newBaneInquiry, newGarageEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { BANE_INQUIRY, FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newBaneInquiry, newGarageEscape, newHammerFlight, newHammerGunnery, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -503,6 +503,48 @@ test('the Bane interview keeps its light slots between the entrance and the mess
   journey.step = 1;
   journey.baneInquiry = newBaneInquiry(1, actor.health);
   assert.deepEqual(sample(BANE_INQUIRY.roots.roland, -1, 0), entrance);
+});
+
+test('Hammer keeps point-light slots while the crew looks around and switches views in flight', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m3_hammer_tunnels, center = FILM_SETS[scene.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!; actor.isInMatrix = false;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: scene.actor, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '', hammerHandover: { phase: 'waiting', elapsed: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.aspect = 16 / 9; h.camera.far = 5000; h.camera.updateProjectionMatrix();
+  const sample = (direction: number, firstPerson = false) => {
+    h.camera.position.set(actor.position.x, actor.position.y + 2.2, actor.position.z - direction * 4);
+    h.camera.lookAt(actor.position.x, actor.position.y + 2, actor.position.z + direction * 8);
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position, h.camera.position, undefined, firstPerson)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const slots: number[] = [];
+    try { h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) slots.push(light.id); }); }
+    finally { h.after(); }
+    return slots;
+  };
+  actor.position = filmEntry(scene);
+  const entrance = sample(-1);
+  assert.deepEqual(sample(1), entrance);
+  actor.position = filmStepPosition(scene, scene.steps[0]);
+  assert.deepEqual(sample(-1), entrance);
+  journey.step = 1; journey.hammerHandover = { phase: 'moving', elapsed: 3 };
+  assert.deepEqual(sample(-1), entrance, 'an older preparation can hide the gunner room without changing shader slots');
+  const flight = { ...newHammerFlight(), z: 45, gunnery: newHammerGunnery() };
+  journey.step = 2; journey.hammer = flight;
+  const root = hammerCrewRoot(flight, 'niobe');
+  actor.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
+  assert.deepEqual(sample(-1), entrance);
+  const exterior = h.scene.getObjectByProperty('id', entrance.find(id =>
+    (h.scene.getObjectByProperty('id', id) as THREE.PointLight).color.getHex() === 0x91b4d4)!) as THREE.PointLight;
+  assert.equal(exterior.intensity, 27);
+  const outsidePosition = exterior.getWorldPosition(new THREE.Vector3());
+  assert.deepEqual(sample(1, true), entrance, 'hiding the hull for the cockpit must not compile another light layout');
+  assert.equal(exterior.intensity, 0, 'the hull beacon still turns off in first person');
+  assert.deepEqual(exterior.getWorldPosition(new THREE.Vector3()).toArray(), outsidePosition.toArray());
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {

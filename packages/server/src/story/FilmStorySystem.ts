@@ -5402,7 +5402,7 @@ export class FilmStorySystem {
     if (!pilot || pilot.status !== 'alive' || pilot.health <= 0 || pilot.controller) {
       state.lastText = 'Niobe 当前无法继续驾驶，航程与炮位进度保留。'; return true;
     }
-    if (dt > 0 && Number.isFinite(input.yaw) && Number.isFinite(input.pitch ?? 0)) Object.assign(state.hammer.gunnery, hammerGunneryAngles(input.yaw, input.pitch ?? 0));
+    if (state.hammer.phase === 'riding' && dt > 0 && Number.isFinite(input.yaw) && Number.isFinite(input.pitch ?? 0)) Object.assign(state.hammer.gunnery, hammerGunneryAngles(input.yaw, input.pitch ?? 0));
     this.driveFrame(agent, hammerNiobeInput(state.hammer), dt, tick); return true;
   }
   hammerGunnerAction(agent: AgentState, kind: string, yaw: number, pitch: number, tick: number, running: boolean): string | undefined {
@@ -5646,6 +5646,10 @@ export class FilmStorySystem {
     return true;
   }
   driveFrame(agent: AgentState, input: DriveInput, dt: number, tick: number, focus = false): boolean {
+    const journey = this.state;
+    if (journey?.scene === 'm3_hammer_tunnels' && journey.hammer?.phase === 'arrived' && !journey.visiting && this.controls(agent)) {
+      this.hammerFrame(agent, tick); return true;
+    }
     const waitingAtGate = this.controls(agent) && !this.state?.visiting && this.state?.scene === 'm3_gate'
       && this.state.apu?.phase === 'arrived' && !this.state.dockGate;
     if (!this.driving(agent) && !waitingAtGate) return false;

@@ -10,6 +10,7 @@ export class HammerRouteRenderer {
   private group = new THREE.Group();
   private ship = new THREE.Group();
   private cockpit = new THREE.Group();
+  private hullBeacon = new THREE.PointLight(0x91b4d4, 27, 17, 2);
   private planar = new THREE.Group();
   private spatial = new THREE.Group();
   private sentinels: THREE.Group[] = [];
@@ -209,8 +210,6 @@ export class HammerRouteRenderer {
     this.radio.name = 'hammer-radio'; this.group.add(this.radio);
     const mast = this.mesh(new THREE.CylinderGeometry(.045, .09, 2.4, 8), armor, this.radio); mast.position.y = 1.2;
     const antenna = this.mesh(new THREE.BoxGeometry(2.3, .08, .09), armor, this.radio); antenna.position.y = 2.35;
-    const beacon = new THREE.PointLight(0x91b4d4, 27, 17, 2); beacon.position.set(0, -3.1, 1);
-    this.ship.add(beacon); this.lights.push(beacon);
   }
 
   private buildCanopy(panel: THREE.Material, frame: THREE.Material): void {
@@ -356,6 +355,8 @@ export class HammerRouteRenderer {
       arm.position.y = .03;
     }
     const brace = this.mesh(new THREE.CylinderGeometry(.055, .055, 3.4, 8), metal, this.cockpit); brace.name = 'roland-hammer-brace'; brace.rotation.z = Math.PI / 2; brace.position.set(0, floor + 2.2, HAMMER_COCKPIT.roots.roland.z - .45);
+    // The cockpit shares the hull transform and remains visible in both views.
+    this.hullBeacon.position.set(0, -3.1, 1); this.cockpit.add(this.hullBeacon); this.lights.push(this.hullBeacon);
     for (const z of [-6, 1, 7]) {
       const light = new THREE.PointLight(0x9cafce, 11, 7, 2); light.position.set(0, 1.7, z); this.cockpit.add(light); this.lights.push(light);
     }
@@ -372,6 +373,7 @@ export class HammerRouteRenderer {
     this.ship.position.set(transform.x, 1 + transform.y, transform.z);
     this.ship.rotation.set(transform.pitch, transform.yaw, transform.roll, 'YXZ');
     this.ship.visible = !firstPerson;
+    this.hullBeacon.intensity = firstPerson ? 0 : 27;
     this.cockpit.position.copy(this.ship.position); this.cockpit.rotation.copy(this.ship.rotation);
     this.gunner.update(flight, handover);
     this.controls.forEach(control => { control.rotation.z = -hammerControlTurn(pose); });

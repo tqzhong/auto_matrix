@@ -274,7 +274,7 @@ export class FilmSetRenderer {
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
-      || Boolean(this.baneInquiry)
+      || Boolean(this.baneInquiry || this.hammerRoute)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
       || id === 'film_zion_temple' && this.currentScene === 'm2_temple'
