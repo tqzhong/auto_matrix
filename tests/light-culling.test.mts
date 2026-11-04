@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BANE_INQUIRY, FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newBaneInquiry, newGarageEscape, newHammerFlight, newHammerGunnery, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { BANE_INQUIRY, DIGGERS, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newBaneInquiry, newDiggers, newGarageEscape, newHammerFlight, newHammerGunnery, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -545,6 +545,51 @@ test('Hammer keeps point-light slots while the crew looks around and switches vi
   assert.deepEqual(sample(1, true), entrance, 'hiding the hull for the cockpit must not compile another light layout');
   assert.equal(exterior.intensity, 0, 'the hull beacon still turns off in first person');
   assert.deepEqual(exterior.getWorldPosition(new THREE.Vector3()).toArray(), outsidePosition.toArray());
+});
+
+test('the drill defense keeps light slots through aperture movement, rocket impacts and climbing', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const ground = FILM_SCENE_BY_ID.m3_diggers, upper = FILM_SCENE_BY_ID.m3_upper_digger;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const charra = world.agents.get('charra')!, zee = world.agents.get('zee')!;
+  charra.isInMatrix = zee.isInMatrix = false;
+  const journey: FilmJourney = { version: 1, scene: ground.id, actor: charra.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(ground), reflections: {}, lastText: '', diggers: newDiggers() };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.aspect = 16 / 9; h.camera.far = 5000; h.camera.updateProjectionMatrix();
+  const sample = (actor: typeof charra, x: number, y: number, z: number, yaw: number) => {
+    actor.position = filmPosition(ground.set, x, z); actor.position.y += y;
+    h.camera.position.set(actor.position.x - Math.sin(yaw) * 4, actor.position.y + 3, actor.position.z - Math.cos(yaw) * 4);
+    h.camera.lookAt(actor.position.x + Math.sin(yaw) * 8, actor.position.y + 2, actor.position.z + Math.cos(yaw) * 8);
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position, h.camera.position, undefined, false, 12000, h.camera)?.id, ground.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    let slots = 0, dockLamps = 0;
+    try {
+      h.scene.traverseVisible(light => {
+        if (!(light instanceof THREE.PointLight)) return;
+        slots++;
+        if (light.color.getHex() === 0xffbd83) dockLamps++;
+      });
+    } finally { h.after(); }
+    return { slots, dockLamps };
+  };
+  const approach = sample(charra, -42, 0, 31, Math.PI);
+  assert.deepEqual(sample(charra, -42, 0, 16, Math.PI), approach);
+  assert.deepEqual(sample(charra, -42, 0, 31, Math.PI / 2), approach);
+  assert.equal(approach.dockLamps, 6, 'only the six nearby dock lamps occupy slots');
+  const aperture = DIGGERS.stations[0], joint = DIGGERS.knees[0];
+  Object.assign(journey.diggers!, { phase: 'rocket', total: 1.1, shot: { from: { ...aperture, y: 3.5 }, to: joint, at: 0, flight: 1, result: 'joint' } });
+  assert.deepEqual(sample(charra, aperture.x, 0, aperture.z, 1.9), approach);
+  Object.assign(journey.diggers!, { phase: 'done', damage: 3 });
+  journey.scene = upper.id; journey.actor = zee.id; journey.completed = [ground.id]; journey.upperDigger = newUpperDigger();
+  const ladder = UPPER_DIGGER.ladder;
+  const base = sample(zee, ladder.x, 0, ladder.z, -Math.PI / 2);
+  journey.upperDigger.phase = 'climbing'; journey.upperDigger.climb = 24;
+  assert.deepEqual(sample(zee, ladder.x, 24, ladder.z, -Math.PI / 2), base);
+  journey.upperDigger.phase = 'crawl'; journey.upperDigger.crawl = 15;
+  assert.deepEqual(sample(zee, -26, UPPER_DIGGER.height, 28, Math.PI / 2), base);
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
