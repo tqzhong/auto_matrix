@@ -578,7 +578,7 @@ export class SandboxSystem {
       if (distance(threat.position, target) > 3.3 || tick - threat.lastStrike < (threat.character === 'seraph' ? 4 : threat.character === 'morpheus' ? 7 : 5) || barrier) continue;
       threat.lastStrike = tick;
       threat.combo = threat.character ? ((threat.combo ?? -1) + 1) % 3 : 0;
-      threat.attackAt = tick + (threat.character === 'morpheus' || threat.scene === 'm2_chateau' ? 2 : 1);
+      threat.attackAt = tick + (threat.character === 'morpheus' || threat.character === 'seraph' || threat.scene === 'm2_chateau' ? 2 : 1);
     }
     this.state.structures = this.state.structures.filter(s => s.health > 0);
     this.state.threats = this.state.threats.filter(t => t.scene || t.mission || t.incident || this.world.agents.get(t.target)?.controller && (this.state.profiles[t.target]?.trace ?? 0) > 20);

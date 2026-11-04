@@ -2637,6 +2637,24 @@ test('Seraph calls off a losing spar and leaves a repeatable checkpoint', () => 
   h.command('act'); assert.equal(h.sandbox.state.threats.length, 1);
 });
 
+test('Seraph leaves a full extra simulation tick to react after a visible windup', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const scene = FILM_SCENE_BY_ID.m2_seraph;
+  state.scene = scene.id; state.actor = 'neo'; state.step = 0; h.players.possess('film-player', 'neo', h.tick());
+  const neo = h.actor(); neo.isInMatrix = true; neo.currentLocation = scene.set; neo.position = filmStepPosition(scene, scene.steps[0]);
+  h.command('act');
+  const threat = h.sandbox.state.threats[0];
+  for (let i = 0; i < 20 && threat.attackAt === undefined; i++) h.advance();
+  assert.ok(threat.attackAt !== undefined);
+  const health = neo.health;
+  h.advance();
+  assert.equal(neo.health, health, 'the cue must survive the first tick of player reaction time');
+  assert.equal(threat.attackAt, h.tick() + 1);
+  h.players.step(.05, true, h.tick());
+  h.players.act('film-player', 'dodge', h.tick());
+  assert.equal(state.seraph?.dodges, 1);
+  assert.equal(threat.attackAt, undefined);
+});
+
 test('the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const tea = FILM_SCENE_BY_ID.m2_seraph;
   state.scene = tea.id; state.actor = 'neo'; state.step = tea.steps.length; h.players.possess('film-player', 'neo', h.tick());
