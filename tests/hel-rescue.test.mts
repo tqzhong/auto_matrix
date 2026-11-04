@@ -82,6 +82,8 @@ test('Hel rescue has a saved chase train and separate garage, elevator, coat che
     journey.helBargain = { phase: 'disarmed', elapsed: 0, lastTick: 0, attempts: 0 };
     player.position = filmStepPosition(FILM_SCENE_BY_ID.m3_hel_bargain, FILM_SCENE_BY_ID.m3_hel_bargain.steps[1]);
     renderer.update(player, sandbox, 12);
+    assert.ok(renderer.root.getObjectByName('hel-elevator-left-door') === door, 'the VIP handoff reuses the same room');
+    assert.ok(renderer.root.getObjectByName('hel-dance-left-door') === danceDoor, 'the same open doors remain behind the trio');
     assert.equal(renderer.root.getObjectByName('hel-front-guard')?.visible, true);
     assert.equal(renderer.root.getObjectByName('hel-disarmed-guns')?.visible, true);
     assert.equal(renderer.root.getObjectByName('hel-flying-gun')?.visible, false);

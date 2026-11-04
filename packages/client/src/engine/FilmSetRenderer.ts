@@ -299,6 +299,8 @@ export class FilmSetRenderer {
     if (this.office && set && ['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.mobil && set?.id === 'film_mobil_station') this.currentScene = sceneId;
+    if (this.helStandoff && set?.id === 'film_club_hel' && this.currentScene === 'm3_hel_entry' && sceneId === 'm3_hel_bargain')
+      this.currentScene = sceneId;
     // The lower hotel is already visible from the curb before Neo confirms the entrance.
     if (this.hotel && set?.id === 'film_lafayette' && this.currentScene === 'm1_bug' && sceneId === 'm1_pills') this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
