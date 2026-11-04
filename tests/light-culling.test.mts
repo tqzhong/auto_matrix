@@ -371,6 +371,42 @@ test('the subway keeps one point-light layout on the platform and tracks', t => 
   assert.deepEqual(sample(16, -7, Math.PI / 2), platform);
 });
 
+test('the Sentinel pursuit keeps its light slots while Neo runs, turns and shuts down the machines', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!; actor.isInMatrix = false;
+  const tunnel: NonNullable<FilmJourney['tunnel']> = { phase: 'running', remaining: 14, focus: 0, lastTick: 0, attempts: 0 };
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '', tunnel };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = (z: number, yaw: number) => {
+    actor.position = filmPosition(scene.set, 0, z);
+    h.camera.position.set(actor.position.x, actor.position.y + 3, actor.position.z + 6 * Math.cos(yaw));
+    h.camera.rotation.y = yaw;
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const lights: { id: number; name: string; intensity: number }[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push({ id: light.id, name: light.name, intensity: light.intensity }); });
+      return lights;
+    } finally { h.after(); }
+  };
+  const entrance = sample(46, 0);
+  tunnel.pursuit = 12;
+  assert.deepEqual(sample(34, 0).map(light => light.id), entrance.map(light => light.id));
+  journey.step = 1; tunnel.phase = 'sensing'; tunnel.pursuit = 71;
+  const turn = sample(-25, Math.PI);
+  assert.deepEqual(turn.map(light => light.id), entrance.map(light => light.id));
+  assert.equal(turn.filter(light => light.name === 'sentinel-optical-light' && light.intensity > 0).length, 3);
+  tunnel.phase = 'collapsing'; tunnel.elapsed = 1;
+  const cut = sample(-25, Math.PI);
+  assert.deepEqual(cut.map(light => light.id), entrance.map(light => light.id));
+  assert.equal(cut.filter(light => light.name === 'sentinel-optical-light' && light.intensity === 0).length, 3);
+});
+
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const h = view(), renderer = new FilmSetRenderer(h.scene);

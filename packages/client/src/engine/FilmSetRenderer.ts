@@ -272,6 +272,7 @@ export class FilmSetRenderer {
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby)
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
+      || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
       || id === 'film_zion_temple' && this.currentScene === 'm2_temple'

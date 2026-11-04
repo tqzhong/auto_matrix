@@ -570,6 +570,25 @@ test('paused signal reattachment restores the saved performance without advancin
   }
 });
 
+test('pausing a live Sentinel signal freezes the current gesture through reattachment', () => {
+  for (const phase of ['sensing', 'stopping', 'collapsing'] as const) {
+    const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
+    Object.assign(state, { scene: scene.id, actor: 'neo', step: 1,
+      tunnel: { phase, remaining: 10, focus: phase === 'sensing' ? .8 : RELOADED_FINALE.signalSeconds,
+        age: 5, elapsed: .7, lastTick: h.tick(), attempts: 0, paused: undefined, unavailable: undefined } });
+    const neo = h.actor(); neo.currentLocation = scene.set; neo.isInMatrix = false; neo.position = filmStepPosition(scene, scene.steps[1]);
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, focus: true, sequence: 1 });
+    h.players.step(.05, true, h.tick());
+    const saved = structuredClone(state.tunnel), position = { ...neo.position };
+    h.players.step(.05, false, h.tick());
+    assert.deepEqual(neo.currentAction?.parameters.signal, saved, phase);
+    assert.deepEqual(state.tunnel, saved);
+    h.players.release('film-player', h.tick()); h.players.possess('film-player', 'neo', h.tick());
+    assert.deepEqual(neo.currentAction?.parameters.signal, saved);
+    assert.deepEqual(state.tunnel, saved); assert.deepEqual(neo.position, position);
+  }
+});
+
 test('a tunnel retry returns Neo to the signal point rather than the locked scene entrance', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_stop_sentinels;
   Object.assign(state, { scene: scene.id, actor: 'neo', step: 1, checkpoint: filmPosition(scene.set, 0, 46),
