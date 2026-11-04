@@ -96,6 +96,36 @@ test('companions wait for Neo, and the door performance freezes on pause, discon
   const progress = h.state().oracle!.arrival!.hostess; h.frame(50); assert.equal(h.state().oracle!.arrival!.hostess, progress, 'the hostess waits on the inside instead of leaving Neo outside');
 });
 
+test('opening the Oracle door keeps the exact authored poses through a cold restore and reconnect', () => {
+  const h = setup(); arriveAtDoor(h); h.command('act'); h.frame(12);
+  assert.equal(h.state().oracle!.arrival!.phase, 'opening');
+  const hostess = h.world.agents.get('oracle_priestess')!, morpheus = h.world.agents.get('morpheus')!;
+  const poses = () => [hostess, morpheus].map(({ position, rotation, velocity, currentAction }) =>
+    ({ position, rotation, velocity, currentAction }));
+  const expected = structuredClone(poses());
+  const door = structuredClone(h.sandbox.state.structures.find(item => item.id === 'film:oracle:door'));
+  assert.ok(playerBlocked(hostess.position, true), 'the authored handle reach can overlap the ordinary player clearance');
+  h.players.release('arrival-player', h.tick());
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(saved);
+  assert.deepEqual(poses(), expected, 'cold restore must preserve the active arrival pose');
+  h.players.possess('arrival-player', 'neo', h.tick());
+  assert.deepEqual(poses(), expected, 'zero-time reconnect must preserve the saved movement');
+  assert.deepEqual(h.sandbox.state.structures.find(item => item.id === 'film:oracle:door'), door);
+  assert.deepEqual(h.state().oracle!.arrival, saved.neoLife.journey.oracle.arrival);
+});
+
+test('cold restore restages the hostess from the door clock if an older load displaced her', () => {
+  const h = setup(); arriveAtDoor(h); h.command('act'); h.frame(12);
+  const hostess = h.world.agents.get('oracle_priestess')!, position = { ...hostess.position };
+  const arrival = structuredClone(h.state().oracle!.arrival);
+  h.players.release('arrival-player', h.tick());
+  hostess.position.x = FILM_SETS.film_oracle_home.center.x;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.deepEqual(hostess.position, position);
+  assert.deepEqual(hostess.currentAction?.parameters.oracleArrival, { ...arrival, role: 'hostess' });
+});
+
 test('retry preserves an ongoing arrival, while a legacy waiting-room save continues without replaying the entrance', () => {
   const h = setup(); arriveAtDoor(h); h.command('act'); h.frame(10);
   const clock = h.state().oracle!.arrival!.elapsed, checkpoint = { ...h.state().checkpoint };

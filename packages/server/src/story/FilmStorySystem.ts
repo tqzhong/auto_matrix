@@ -93,7 +93,7 @@ import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } fro
 import { SENTINEL_CAST, SENTINEL_TIMING, SENTINEL_POWER, sentinelActive, sentinelDanger, sentinelLocked, sentinelRoot, sentinelText, type SentinelRole } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeDuration, interludeKind, interludeLocked, interludeWaiting, interludeRoot, interludeSeated, interludeText, type InterludeEncounter, type InterludeRole } from '@auto_matrix/shared';
 import { ORACLE_VISIT, ORACLE_DEPARTURE, oracleDepartureRoot, oracleDepartureLocked, oracleDepartureText, oracleDepartureTarget, ORACLE_KITCHEN_CHAIRS, SPOON_LESSON, ORACLE_RECEPTION, ORACLE_RECEPTION_CAST, ORACLE_WAITING_CAST, oracleReceptionRoot, oracleReceptionLength, oracleReceptionText, spoonLessonLocked, spoonLessonRoot, spoonLessonBend, spoonLessonText, oracleLegacyChoice, oracleVisitDuration, oracleVisitLocked, oracleVisitRoot, oracleVisitText, type OracleVisitRole, type OracleWaitingGesture } from '@auto_matrix/shared';
-import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText } from '@auto_matrix/shared';
+import { ORACLE_ENTRANCE, oracleArrivalPending, oracleArrivalDoor, oracleArrivalLength, oracleArrivalRoot, oracleArrivalText, type OracleArrivalGesture } from '@auto_matrix/shared';
 import { AMBUSH_CAT_STAIRS, AMBUSH_CAT_DOORWAY, AMBUSH_CAT_WALLS, AMBUSH_WALLS, ambushStairsBlocked, AMBUSH_COMPANY, newAmbushApproach, ambushRouteRoot, ambushRouteLength, ambushRouteProgress, type AmbushCompanion } from '@auto_matrix/shared';
 import { AMBUSH_ESCAPE, AMBUSH_CALL, AMBUSH_DOFF, AMBUSH_WINDOW_PROGRESS, AMBUSH_RETREAT_LANDINGS, newAmbushEscape, ambushRetreatRoot, ambushRetreatLength, ambushRetreatShift, ambushRetreatProgress, ambushRetreatGoal, ambushEscapeText, ambushCompanyBlocked, ambushCompanyStep } from '@auto_matrix/shared';
 import { combatDisplace } from '@auto_matrix/shared';
@@ -2113,6 +2113,10 @@ export class FilmStorySystem {
   }
   restoreOracleSpace(): void {
     const center = FILM_SETS.film_oracle_home.center;
+    const journey = this.state, arrival = journey?.oracle?.arrival;
+    const visitor = journey?.scene === 'm1_spoon' && !journey.visiting && arrival && arrival.phase !== 'done'
+      ? this.world.agents.get(journey.actor) : undefined;
+    const restoringArrival = visitor?.status === 'alive';
     const migrate = (position?: AgentState['position']): boolean => {
       if (!position || Math.abs(position.x - center.x) > 21 || position.z > center.z + 30 || position.y > center.y + 7.8) return false;
       if (position.z < center.z - 8) {
@@ -2132,12 +2136,14 @@ export class FilmStorySystem {
         && !actor.controller && actor.status === 'alive' && seat && actor.currentAction?.parameters.seated
         && (actor.currentAction.parameters.oracleWaiting as OracleWaitingGesture | undefined)?.kind === seat.kind
         && distance(actor.position, filmPosition('film_oracle_home', seat.x, seat.z)) < .001;
-      if (!waiting && migrate(actor.position)) {
+      const arriving = restoringArrival && !actor.controller && actor.status === 'alive' && (actor.id === 'morpheus' || actor.id === 'oracle_priestess');
+      if (!arriving && !waiting && migrate(actor.position)) {
         actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
       }
     }
     if (this.scene?.set === 'film_oracle_home') migrate(this.state?.checkpoint);
     migrate(this.state?.returnPosition);
+    if (restoringArrival) this.oracleArrivalFrame(visitor, 0, this.world.simulationTick);
   }
   restoreApartmentSpace(): void {
     const center = FILM_SETS.film_anderson_flat.center;
@@ -4176,7 +4182,12 @@ export class FilmStorySystem {
     for (const [role, actor] of [['hostess', hostess], ['morpheus', morpheus]] as const) {
       if (actor.controller || this.unavailable(actor.id)) continue;
       const pose = oracleArrivalRoot(arrival, role), before = { ...actor.position };
-      this.place(actor, this.scene!, filmPosition(this.scene!.set, pose.x, pose.z)); actor.rotation = pose.yaw;
+      const position = filmPosition(this.scene!.set, pose.x, pose.z);
+      const saved = actor.currentAction?.parameters.oracleArrival as OracleArrivalGesture | undefined;
+      if (dt === 0 && saved?.role === role && saved.phase === arrival.phase && saved.elapsed === arrival.elapsed
+        && saved.hostess === arrival.hostess && saved.morpheus === arrival.morpheus && saved.seating === arrival.seating
+        && actor.currentLocation === this.scene!.set && distance(before, position) < .001 && actor.rotation === pose.yaw) continue;
+      this.place(actor, this.scene!, position); actor.rotation = pose.yaw;
       actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, oracleArrival: { ...arrival, role } }, startedAt: tick, duration: 1, progress: 0 };
     }
