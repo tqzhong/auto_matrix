@@ -2,8 +2,38 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { newSmithFinale, smithFinalePose, stepSmithFinale } from '@auto_matrix/shared';
+import { FILM_SETS, newSmithFinale, smithFinalePose, stepSmithFinale, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { SmithFinaleRenderer } from '../packages/client/src/engine/SmithFinaleRenderer.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+
+test('the crater and its reflection stay mounted between the rain duel and surrender', () => {
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = { ...FILM_SETS.film_smith_avenue.center }; neo.currentLocation = 'film_smith_avenue'; neo.isInMatrix = true;
+  const encounter = { ...newSmithFinale(), phase: 'rain_done' as const, total: 60, impactAt: 51, breachedAt: 33 };
+  const journey = { scene: 'm3_rain', actor: 'neo', step: 3, smithFinale: encounter } as FilmJourney;
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  try {
+    renderer.update(neo, sandbox, 0);
+    const crater = renderer.root.getObjectByName('smith-finale-crater')!;
+    const water = renderer.root.getObjectByName('smith-finale-reflected-water') as Reflector;
+    assert.ok(crater.visible && crater.scale.y === 1);
+    let disposed = 0;
+    water.getRenderTarget().addEventListener('dispose', () => disposed++);
+    journey.scene = 'm3_surrender'; journey.step = 0;
+    journey.smithFinale = { ...encounter, phase: 'assault_ready' };
+    renderer.update(neo, sandbox, 0);
+    assert.equal(disposed, 0, 'the journal handoff must keep the already rendered reflection');
+    assert.equal(renderer.root.getObjectByName(crater.name), crater);
+    assert.equal(renderer.root.getObjectByName(water.name), water);
+    assert.ok(crater.visible && crater.scale.y === 1);
+    renderer.update(undefined, sandbox, 0);
+    assert.equal(disposed, 1, 'leaving the avenue still releases the reflection');
+  } finally { renderer.dispose(); }
+});
 
 test('destroyed avenue geometry stays at the same saved pose during pause and cold loading', () => {
   const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);

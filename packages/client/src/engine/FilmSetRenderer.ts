@@ -319,6 +319,9 @@ export class FilmSetRenderer {
     if (this.hotel && set?.id === 'film_lafayette' && this.currentScene === 'm1_bug' && sceneId === 'm1_pills') this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
       && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
+    // Both chapters continue on the same damaged avenue and reflection pass.
+    if (this.smithFinale && set?.id === 'film_smith_avenue' && !journey?.visiting
+      && this.currentScene === 'm3_rain' && sceneId === 'm3_surrender') this.currentScene = sceneId;
     if (set?.id !== this.current?.id || sceneId !== this.currentScene) {
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       if (approach) { approach.renderer.moveStreet(approach.root); this.meeting = undefined; }

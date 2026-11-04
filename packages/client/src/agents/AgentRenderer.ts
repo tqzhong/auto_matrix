@@ -179,6 +179,9 @@ export class AgentRenderer {
   }
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
+  prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
+    this.smithEnding?.prepareEntrance(renderer, camera, this.scene);
+  }
   protectHelAttendant(attendant?: THREE.Object3D, state?: HelCoatcheckEncounter): void {
     const entry = this.agents.get('seraph'); if (!entry) return;
     poseHelProtection(entry.rig, entry.state.controller || entry.state.status !== 'alive' ? undefined : attendant, state);
@@ -981,11 +984,13 @@ export class AgentRenderer {
       this.oracleSmith.update(absorption, this.playerId === 'oracle' && this.firstPerson);
     } else if (this.oracleSmith) { this.oracleSmith.dispose(); this.oracleSmith = undefined; }
     const smithFinale = (this.playerId === 'neo' ? this.playerMotion?.smithFinale : neo?.state.currentAction?.parameters.smithFinale) as MotionInput['smithFinale'];
-    if (smithFinale && neo?.rig.hero && smith?.rig.hero && smith.state.currentAction?.parameters.smithFinale) {
-      poseSmithFinaleContact(neo.rig.hero, smith.rig.hero, smithFinale);
+    const smithGesture = smith?.state.currentAction?.parameters.smithFinale as MotionInput['smithFinale'];
+    if (smithGesture && neo?.rig.hero && smith?.rig.hero && neo.state.currentLocation === 'film_smith_avenue' && smith.state.currentLocation === 'film_smith_avenue') {
+      const encounter = smithFinale ?? smithGesture;
+      if (smithFinale) poseSmithFinaleContact(neo.rig.hero, smith.rig.hero, smithFinale);
       this.smithEnding ??= new SmithEndingAppearance(neo.rig.hero, smith.rig.hero);
-      this.smithEnding.update(smithFinale, this.playerId === 'neo' && this.firstPerson);
-      if (smithFinale.phase === 'done') { neo.shadow.visible = false; smith.shadow.visible = false; }
+      this.smithEnding.update(encounter, this.playerId === 'neo' && this.firstPerson);
+      if (encounter.phase === 'done') { neo.shadow.visible = false; smith.shadow.visible = false; }
     } else if (this.smithEnding) {
       this.smithEnding.dispose(); this.smithEnding = undefined;
     }

@@ -226,6 +226,8 @@ export class Engine {
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
+    if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
+      this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);

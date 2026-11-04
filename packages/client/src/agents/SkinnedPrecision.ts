@@ -24,7 +24,7 @@ function geometryWeights(geometry: THREE.BufferGeometry): void {
   geometry.setAttribute('skinWeightResidual', entry.attribute);
 }
 
-function skinMaterial(material: THREE.Material): void {
+export function prepareSkinnedMaterial(material: THREE.Material): void {
   if (materials.has(material)) return;
   materials.add(material);
   const compile = material.onBeforeCompile, key = material.customProgramCacheKey();
@@ -74,7 +74,7 @@ export function prepareSkinnedPrecision(mesh: THREE.SkinnedMesh): void {
   const inverse = new THREE.Matrix4(), translation = new THREE.Matrix4(), origin = new THREE.Vector3();
   let source: THREE.Skeleton;
   const begin = (material: THREE.Material) => {
-    skinMaterial(material); source = mesh.skeleton; inverse.copy(mesh.bindMatrixInverse);
+    prepareSkinnedMaterial(material); source = mesh.skeleton; inverse.copy(mesh.bindMatrixInverse);
     origin.setFromMatrixPosition(mesh.matrixWorld);
     mesh.skeleton = boneTexture(source, origin);
     mesh.bindMatrixInverse.multiply(translation.makeTranslation(origin.x, origin.y, origin.z));

@@ -107,6 +107,60 @@ test('F reaches the server in all five Smith counter windows while the duel owns
   press(); assert.equal(h.actions.length, 0, 'a paused counter cannot spend the input');
 });
 
+test('the avenue keeps both actors’ color and shadow materials from free approach through the final exchange', async t => {
+  const h = await setup(t);
+  const bodies = ['neo', 'smith'].map(id => h.renderer.getAgentBody(id)!.getObjectByName('Anatomical_head_and_hands') as THREE.Mesh);
+  bodies.forEach(mesh => assert.ok(mesh instanceof THREE.SkinnedMesh));
+  const materials = () => bodies.map(mesh => [mesh.material, mesh.customDepthMaterial] as const);
+  const originals = materials();
+  const approach = { ...newSmithFinale(), total: 2 };
+  const free = (beat: SmithFinaleEncounter) => {
+    h.setBeat(beat); h.actors[0].currentAction = null;
+    h.renderer.updateAgent('neo', h.actors[0]);
+    h.controls.update(.02, h.actors[0], h.group, false);
+    h.renderer.setPlayer('neo', false); h.renderer.setPlayerMotion(h.controls.motion); h.renderer.update(.02, h.camera, 0);
+  };
+  free(approach);
+  const installed = materials();
+  for (const [index, [surface, depth]] of installed.entries()) {
+    assert.notEqual(surface, originals[index][0], 'prepare the real final scene surfaces during free movement');
+    assert.ok(depth instanceof THREE.MeshDepthMaterial);
+  }
+  let supported = false, compiled = 0;
+  const output = new THREE.WebGLRenderTarget(1920, 1080);
+  let target = output;
+  const webgl = {
+    extensions: { has: () => supported }, getRenderTarget: () => target,
+    setRenderTarget: (value: THREE.WebGLRenderTarget) => { target = value; },
+    compile: (root: THREE.Object3D, camera: THREE.Camera, scene: THREE.Scene) => {
+      assert.ok(root.getObjectByName('Anatomical_head_and_hands') === bodies[1]);
+      assert.equal(camera, h.camera); assert.notEqual(target, output);
+      const mesh = bodies[1], surface = mesh.material as THREE.Material;
+      const prepared = surface.customProgramCacheKey();
+      mesh.onBeforeRender(webgl, scene, camera, mesh.geometry, surface, null);
+      const drawn = surface.customProgramCacheKey();
+      mesh.onAfterRender(webgl, scene, camera, mesh.geometry, surface, null);
+      assert.equal(drawn, prepared, 'the real skin draw must use the program already prepared');
+      compiled++;
+    },
+  } as unknown as THREE.WebGLRenderer;
+  h.renderer.prepareSmithEntrance(webgl, h.camera); assert.equal(compiled, 0);
+  supported = true;
+  h.renderer.prepareSmithEntrance(webgl, h.camera); h.renderer.prepareSmithEntrance(webgl, h.camera);
+  assert.equal(compiled, 1); assert.equal(target, output);
+  output.dispose();
+  const unchanged = () => materials().forEach(([surface, depth], index) => {
+    assert.equal(surface, installed[index][0]); assert.equal(depth, installed[index][1]);
+  });
+  h.frame({ ...approach, phase: 'entrance' }); unchanged();
+  free({ ...approach, phase: 'rain_done' }); unchanged();
+  free({ ...approach, phase: 'assault_ready' }); unchanged();
+  h.frame({ ...approach, phase: 'surrender' }); unchanged();
+  h.renderer.removeAgent('smith');
+  assert.equal(bodies[0].material, originals[0][0]);
+  assert.equal(bodies[0].customDepthMaterial, originals[0][1]);
+});
+
 test('the free entry camera stays outside the actual Neo body at the machine handoff in wide and narrow views', async t => {
   const h = await setup(t), actor = h.actors[0], center = FILM_SETS.film_smith_avenue.center;
   for (const aspect of [16 / 9, 9 / 16]) {

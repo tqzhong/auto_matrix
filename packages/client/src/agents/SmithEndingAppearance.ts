@@ -4,6 +4,7 @@ import { smithEndingPose, type SmithFinaleEncounter } from '@auto_matrix/shared'
 import { smithCodeSurface, smithCodeUniforms } from '../engine/SmithCodeSurface.js';
 import type { HeroRig } from './HeroModel.js';
 import { SmithFaceImpact } from './SmithFaceImpact.js';
+import { prepareSkinnedMaterial } from './SkinnedPrecision.js';
 
 /** One shared-geometry Smith body replaces Neo after the skin coating closes. */
 export class SmithEndingAppearance {
@@ -18,6 +19,7 @@ export class SmithEndingAppearance {
   private flares: { sprite: THREE.Sprite; role: 'neo' | 'smith'; local: THREE.Vector3 }[] = [];
   private glow: THREE.DataTexture;
   private face: SmithFaceImpact;
+  private entrancePrepared = false;
 
   constructor(private neo: HeroRig, private smith: HeroRig) {
     this.replica = clone(smith.root) as THREE.Group; this.replica.name = 'smith-assimilated-neo';
@@ -56,6 +58,24 @@ export class SmithEndingAppearance {
       const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: material.map, alphaTest: material.alphaTest });
       smithCodeSurface(depth, code, replica); object.customDepthMaterial = depth; this.materials.add(depth);
     });
+  }
+
+  prepareEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera, scene: THREE.Scene): void {
+    if (this.entrancePrepared || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const previous = renderer.getRenderTarget();
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    try {
+      // Queue the compositor's linear-output programs before Smith enters view.
+      renderer.setRenderTarget(target);
+      this.smith.root.traverse(object => {
+        if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
+      });
+      renderer.compile(this.smith.root, camera, scene);
+      this.entrancePrepared = true;
+    } finally {
+      renderer.setRenderTarget(previous);
+      target.dispose();
+    }
   }
 
   update(encounter: SmithFinaleEncounter, firstPerson: boolean): void {
