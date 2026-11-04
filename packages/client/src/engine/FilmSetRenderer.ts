@@ -280,6 +280,7 @@ export class FilmSetRenderer {
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
       || id === 'film_zion_temple' && this.currentScene === 'm2_temple'
       || id === 'film_zion_hangar' && (this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
+      || this.currentScene === 'm3_emp' && Boolean(this.empDock?.group.visible)
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
   }
@@ -290,6 +291,12 @@ export class FilmSetRenderer {
   setArchitectState(state?: AgentState): void { this.architectState = state; }
   setCrosscutSubjects(bodies: (id: string) => THREE.Object3D | undefined, avatars: (id: string) => THREE.Object3D | undefined): void { this.crosscutBodies = bodies; this.phoneBodies = avatars; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
+  prepareDockEmp(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
+    if (this.currentScene !== 'm3_emp' || journey?.scene !== 'm3_emp' || journey.visiting || !journey.empOperator || journey.emp || this.empDock
+      || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    this.empDock = new DockEmpRenderer(this.scene);
+    this.empDock.prepare(renderer, camera, this.scene, journey, ['mifune', 'charra', 'zee'].map(id => this.phoneBodies?.(id)));
+  }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
@@ -738,6 +745,8 @@ export class FilmSetRenderer {
     if (upperDiggerActive(journey) && upperDiggerLocked(journey?.upperDigger)) this.marker.visible = false;
     if (diggersActive(journey) && diggersLocked(journey?.diggers)) this.marker.visible = false;
     if (dockGateActive(journey) || journey?.scene === 'm3_gate' && journey.apu?.phase === 'riding') this.marker.visible = false;
+    const empExterior = this.currentScene === 'm3_emp' && this.empDock?.group.visible;
+    if (empExterior) this.marker.visible = false;
     if (journey?.scene === 'm3_dock_battle' && (journey.dockGunnery?.phase === 'firing' || dockReloadLocked(journey.dockReload) || dockLastStandLocked(journey.dockLastStand))) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
@@ -788,7 +797,7 @@ export class FilmSetRenderer {
       this.marker.scale.setScalar(1 + Math.sin(elapsed * 2) * .07); this.markerLight.position.copy(this.marker.position).y += 1.5;
     }
     // The marker is dark during the Sentinel scan, so the two lights can share a slot.
-    this.markerLight.visible = this.marker.visible || (this.stablePointSlots && !this.sentinel?.scanActive);
+    this.markerLight.visible = this.marker.visible || (this.stablePointSlots && !empExterior && !this.sentinel?.scanActive);
     this.markerLight.intensity = this.marker.visible ? 5 : 0;
     for (const item of this.moving) item.update(elapsed);
     return set;

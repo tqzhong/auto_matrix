@@ -92,7 +92,7 @@ export class DockEmpRenderer {
     this.flames.name = 'emp-fuel-flames'; this.flames.frustumCulled = false; this.fire.add(this.flames);
     // Burning wreckage flanks the landed hull, clear of the rear exit and reunion path.
     for (const [index, [x, z]] of [[31, 39], [16, 53]].entries()) {
-      const light = new THREE.PointLight(0xff873e, 0, 44, 2); light.position.set(x, 3, z); this.fire.add(light); this.fireLights.push(light);
+      const light = new THREE.PointLight(0xff873e, 0, 44, 2); light.position.set(x, 3, z); this.group.add(light); this.fireLights.push(light);
       for (let i = 0; i < 12; i++) {
         const pair = Math.floor(i / 2), angle = pair * 2.4;
         this.scratch.position.set(x + Math.sin(angle) * 2.3, 0, z + Math.cos(angle) * 3.1);
@@ -104,6 +104,28 @@ export class DockEmpRenderer {
   private instances(geometry: THREE.BufferGeometry, material: THREE.Material, count: number, name: string) {
     const mesh = new THREE.InstancedMesh(geometry, material, count); mesh.name = name; mesh.frustumCulled = false;
     mesh.castShadow = false; mesh.receiveShadow = true; this.swarm.add(mesh); return mesh;
+  }
+  prepare(renderer: THREE.WebGLRenderer, camera: THREE.Camera, scene: THREE.Scene, journey: FilmJourney, cast: readonly (THREE.Object3D | undefined)[]): void {
+    const exterior = new THREE.Scene();
+    exterior.environment = scene.environment;
+    exterior.fog = scene.fog;
+    for (const light of scene.children) {
+      if (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight) exterior.add(light.clone());
+    }
+    const previous = renderer.getRenderTarget();
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    try {
+      // Use the compositor's linear output variant. Queue links without drawing or waiting on them.
+      renderer.setRenderTarget(target);
+      this.update({ ...journey, emp: { firedAt: 0, elapsed: 0 } });
+      renderer.compile(this.group, camera, exterior);
+      exterior.add(this.flash.clone(), ...this.fireLights.map(light => light.clone()));
+      for (const body of cast) if (body) renderer.compile(body, camera, exterior);
+    } finally {
+      this.group.visible = false;
+      renderer.setRenderTarget(previous);
+      target.dispose();
+    }
   }
   update(journey?: FilmJourney, cameraPosition?: Vector3, camera?: THREE.Camera): void {
     this.group.visible = Boolean(journey?.emp && ['m3_emp', 'm3_dock_reunion'].includes(journey.scene) && !journey.visiting);

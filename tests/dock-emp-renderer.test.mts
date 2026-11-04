@@ -109,10 +109,40 @@ test('switching back inside the Hammer restores the cabin with its CRTs powered 
       && object.material.emissive.getHex() === 0x315367) screens.add(object.material);
   });
   assert.ok(screens.size > 0 && [...screens].every(material => material.emissiveIntensity > 0), 'the actual cabin starts with powered CRTs');
+  journey.empOperator = { phase: 'seating', elapsed: .5, approach: { x: -2.8, z: -16 } };
+  const marker = scene.children.find(object => object instanceof THREE.PointLight && object.color.getHex() === 0xf6d99c)!;
+  renderer.update(link, sandbox, .5, link.position);
+  assert.equal(marker.visible, true, 'seating retains the cabin light layout');
+  const before = structuredClone(journey), camera = new THREE.PerspectiveCamera();
+  const pointSlots: number[] = [];
+  const body = new THREE.Group();
+  renderer.setCrosscutSubjects(() => undefined, id => id === 'mifune' ? body : undefined);
+  let target: THREE.WebGLRenderTarget | null = null;
+  const webgl = {
+    extensions: { has: () => true }, getRenderTarget: () => target,
+    setRenderTarget: (next: typeof target) => { target = next; },
+    compile: (group: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) => {
+      assert.ok(target, 'prepare the programs for the offscreen color pass');
+      let points = 0;
+      for (const root of [group, lights]) root.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      pointSlots.push(points);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  renderer.prepareDockEmp(webgl, camera, journey);
+  renderer.prepareDockEmp(webgl, camera, journey);
+  assert.deepEqual(pointSlots, [3, 3], 'the dock and the existing cast use the same prepared light layout');
+  assert.deepEqual(journey, before, 'warming cannot spend the saved EMP charge');
+  assert.equal(target, null);
+  const exterior = scene.getObjectByName('hammer-emp-dock')!;
+  assert.equal(exterior.visible, false);
+  assert.equal(renderer.root.visible, true);
   journey.emp = { firedAt: 12, elapsed: 1.8 }; journey.step = 1;
   link.currentAction = { type: 'idle', parameters: { dockEmp: 1.8 }, startedAt: 0, duration: 1, progress: 0 };
   renderer.update(link, sandbox, 1, link.position);
+  assert.equal(scene.getObjectByName('hammer-emp-dock'), exterior, 'the discharge reuses the prepared exterior');
   assert.equal(renderer.root.visible, false, 'the exterior shot does not keep rendering the remote cabin');
+  assert.equal(renderer.stablePointSlots, true);
+  assert.equal(marker.visible, false, 'the exterior shot excludes the remote objective light');
   renderer.update(link, sandbox, 1, link.position, undefined, undefined, true);
   assert.equal(renderer.root.visible, true, 'V must restore the cabin around Link');
   assert.equal(scene.getObjectByName('hammer-emp-dock')!.visible, false);
@@ -133,7 +163,9 @@ test('fuel fires light the disabled dock without restoring powered fixtures, and
   t.after(() => renderer.dispose()); renderer.update(state);
   const fire = root.getObjectByName('emp-dock-fuel-fires'); assert.ok(fire, 'the blackout needs visible non-electrical light sources');
   const lights: THREE.PointLight[] = [];
-  fire.traverse(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+  renderer.group.traverse(object => {
+    if (object instanceof THREE.PointLight && object.color.getHex() === 0xff873e) lights.push(object);
+  });
   assert.equal(lights.length, 2); assert.ok(lights.every(light => light.visible && light.intensity > 0));
   const powered: THREE.PointLight[] = [];
   root.getObjectByName('zion-homecoming-set')!.traverseVisible(object => { if (object instanceof THREE.PointLight && object.intensity > 0) powered.push(object); });
@@ -146,4 +178,5 @@ test('fuel fires light the disabled dock without restoring powered fixtures, and
   assert.equal((coldRoot.getObjectByName('emp-fuel-flames') as THREE.InstancedMesh<THREE.PlaneGeometry, THREE.ShaderMaterial>).material.uniforms.time.value,
     (flame.material as THREE.ShaderMaterial).uniforms.time.value);
   state.emp!.elapsed = 0; renderer.update(state); assert.equal(fire.visible, false, 'new crash fires cannot precede the impact');
+  assert.ok(lights.every(light => light.visible && light.intensity === 0), 'the fuel lights occupy slots without illuminating the flash');
 });
