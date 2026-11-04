@@ -122,6 +122,19 @@ test('search, possession and grapple freeze during pause, disconnect, occupied r
   h.players.release('other-player', h.tick()); h.until('done');
 });
 
+test('cold restore keeps the sixth-floor plaster and city colliders in their saved order', () => {
+  const h = setup();
+  h.sandbox.traffic.restore();
+  h.enter(); h.command('act'); h.frame();
+  h.players.release('sixth-player', h.tick());
+  const saved = structuredClone(h.sandbox.state), ids = saved.structures.map(item => item.id);
+  assert.ok(ids.indexOf('traffic:0') >= 0 && ids.indexOf('traffic:0') < ids.indexOf('film:sixth:panel'));
+
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.sandbox.state.structures.map(item => item.id), ids);
+  assert.deepEqual(h.sandbox.state.structures, saved.structures);
+});
+
 test('the sixth-floor handoff starts Smith at his actual landing and reserves all five descending companions', () => {
   const h = setup(); h.enter(); h.command('act'); h.until('firing');
   h.players.act('sixth-player', 'shoot', h.tick()); h.until('done'); h.command('next');
