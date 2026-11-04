@@ -46,7 +46,7 @@ export class LightCulling {
           else { selected.muted.push(object); selected.intensities.push(object.intensity); object.intensity = 0; }
         } else kept++;
       });
-      // The meeting set has a small fixed rig. Elsewhere keep the extra slots bounded.
+      // Small fixed rigs keep all their slots. Elsewhere bound the extra slots.
       const slots = this.stablePointSlots ? kept + selected.muted.length : Math.max(4, 2 ** Math.ceil(Math.log2(Math.max(1, kept))));
       const padding = Math.min(selected.muted.length, slots - kept);
       for (let index = padding; index < selected.muted.length; index++) {

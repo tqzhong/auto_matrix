@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 function view() {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, .1, 100);
@@ -163,4 +167,52 @@ test('a fixed point-light set keeps its shader slots while turning and turning l
       inactive.intensity = yaw === 0 ? 10 : 0;
     }
   } finally { h.culling.dispose(); }
+});
+
+for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off the goal light without dropping its shader slot`, t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID[id], step = id === 'm1_sentinels' ? 0 : 1;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!;
+  actor.position = filmStepPosition(scene, scene.steps[step]);
+  actor.isInMatrix = FILM_SETS[scene.set].world === 'matrix';
+  const journey: FilmJourney = { version: 1, scene: id, actor: actor.id, step, completed: [], enteredAt: 0,
+    checkpoint: actor.position, reflections: {}, lastText: '' };
+  if (id === 'm1_sentinels') journey.sentinel = { phase: 'ready', elapsed: 0, noise: 0, attempt: 0 };
+  else journey.interlude = { kind: 'steak', phase: 'ready', elapsed: 0 };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const markerLight = h.scene.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
+  h.camera.position.set(actor.position.x, actor.position.y + 3, actor.position.z + 3);
+  const renderedLights = () => {
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const lights: THREE.PointLight[] = [];
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+    h.after();
+    return lights;
+  };
+  const ready = renderedLights();
+  assert.ok(ready.includes(markerLight));
+  assert.equal(markerLight.intensity, 5);
+  if (journey.sentinel) journey.sentinel.phase = 'shutdown';
+  if (journey.interlude) journey.interlude.phase = 'performing';
+  const active = renderedLights();
+  assert.equal(markerLight.intensity, 0);
+  assert.ok(active.includes(markerLight), 'the unlit marker still occupies its existing shader slot');
+  assert.deepEqual(active.map(light => light.id), ready.map(light => light.id));
+  if (journey.sentinel) {
+    const scanLight = h.scene.getObjectByName('sentinel-scan-light') as THREE.PointLight;
+    assert.ok(!ready.includes(scanLight), 'the dormant scanner shares the existing marker slot');
+    journey.sentinel.phase = 'sweep'; journey.sentinel.elapsed = 4;
+    const sweep = renderedLights();
+    assert.ok(sweep.includes(scanLight)); assert.ok(scanLight.intensity > 0);
+    assert.ok(!sweep.includes(markerLight));
+    assert.equal(sweep.length, ready.length);
+    journey.sentinel.phase = 'done'; journey.step = scene.steps.length;
+    const done = renderedLights();
+    assert.deepEqual(done.map(light => light.id), ready.map(light => light.id));
+    assert.equal(markerLight.intensity, 0);
+  }
 });

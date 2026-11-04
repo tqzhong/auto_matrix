@@ -269,6 +269,10 @@ export class FilmSetRenderer {
     this.markerLight = new THREE.PointLight(0xf6d99c, 0, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
+  get stablePointSlots(): boolean {
+    const id = this.current?.id;
+    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant);
+  }
   get helAttendant(): THREE.Group | undefined { return this.helPerformers?.coatcheckAttendant; }
   get televisionPreviewImage(): string | undefined { return this.construct?.televisionPreviewImage; }
   setMirrorSubject(subject?: THREE.Object3D): void { this.mirrorSubject = subject; }
@@ -765,7 +769,8 @@ export class FilmSetRenderer {
       this.marker.position.set(position.x, position.y - .82, position.z);
       this.marker.scale.setScalar(1 + Math.sin(elapsed * 2) * .07); this.markerLight.position.copy(this.marker.position).y += 1.5;
     }
-    this.markerLight.visible = this.marker.visible || Boolean(this.meeting);
+    // The marker is dark during the Sentinel scan, so the two lights can share a slot.
+    this.markerLight.visible = this.marker.visible || (this.stablePointSlots && !this.sentinel?.scanActive);
     this.markerLight.intensity = this.marker.visible ? 5 : 0;
     for (const item of this.moving) item.update(elapsed);
     return set;

@@ -198,6 +198,8 @@ export class SentinelSetRenderer {
     this.scanLight = new THREE.PointLight(0xff271c, 0, 30, 2); this.scanLight.name = 'sentinel-scan-light'; this.scanLight.position.set(0, 0, 3); this.machine.add(this.scanLight); this.lights.add(this.scanLight);
   }
 
+  get scanActive(): boolean { return this.scanLight.visible; }
+
   update(journey: FilmJourney | undefined, elapsed: number): void {
     const encounter = journey?.scene === 'm1_sentinels' && !journey.visiting ? journey.sentinel : undefined;
     const pose = sentinelMachinePose(encounter);
@@ -205,6 +207,7 @@ export class SentinelSetRenderer {
     this.machine.visible = Boolean(encounter && encounter.phase !== 'done');
     const beamMaterial = this.scanBeam.material as THREE.MeshBasicMaterial;
     this.scanBeam.visible = this.machine.visible && pose.scan > .04;
+    this.scanLight.visible = this.machine.visible && pose.scan > 0;
     beamMaterial.opacity = .012 + pose.scan * .055; this.scanLight.intensity = pose.scan * 560;
     this.scanBeam.scale.set(1 + pose.scan * .22, 1, 1 + pose.scan * .22);
     this.tentacles.forEach((tentacle, index) => {
