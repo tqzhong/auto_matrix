@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { newLogosFlight, filmStepPosition, FILM_SCENE_BY_ID, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { newLogosFlight, filmStepPosition, FILM_SCENES, FILM_SCENE_BY_ID, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 test('the shared Logos stage keeps its chapter number, retained damage and actual remaining climb in the HUD', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
@@ -21,7 +21,8 @@ test('the shared Logos stage keeps its chapter number, retained damage and actua
   const player = { id: 'trinity', status: 'alive', isInMatrix: false, rotation: Math.PI,
     position: filmStepPosition(scene, scene.steps[0], journey) } as AgentState;
   ui.updateFilm(player, sandbox);
-  assert.equal(element('sandbox-clock').textContent, '矩阵革命 · 第 116 段');
+  const chapter = FILM_SCENES.findIndex(scene => scene.id === 'm3_sun') + 1;
+  assert.equal(element('sandbox-clock').textContent, `矩阵革命 · 第 ${chapter} 段`);
   assert.match(element('sandbox-waypoint').textContent, /船体 72%.*Neo 58%/);
   assert.match(element('sandbox-nearby').textContent, /继续穿云/);
   journey.logos = { ...journey.logosEntry! }; ui.updateFilm(player, sandbox);

@@ -169,10 +169,10 @@ test('a fixed point-light set keeps its shader slots while turning and turning l
   } finally { h.culling.dispose(); }
 });
 
-test('the Reloaded temple keeps point-light shader slots while walking, turning and finishing the assembly', t => {
+for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach']) test(`${sceneId} keeps its point-light slots while walking and turning in the temple`, t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
-  const scene = FILM_SCENE_BY_ID.m2_temple;
+  const scene = FILM_SCENE_BY_ID[sceneId];
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const actor = world.agents.get(scene.actor)!;
   actor.isInMatrix = false;
@@ -186,8 +186,10 @@ test('the Reloaded temple keeps point-light shader slots while walking, turning 
   renderer.root.traverseVisible(object => { if (object instanceof THREE.PointLight) hallLights.push(object); });
   const intensities = hallLights.map(light => light.intensity);
   const slotCounts: number[] = [];
-  for (const [z, direction, step] of [[37, -1, 0], [10, -1, 0], [-15, -1, 0], [-35, 1, 1], [-26, -1, 3]]) {
-    actor.position = filmPosition(scene.set, 0, z);
+  const views = [[0, 37, -1, 0], [0, 10, -1, 0], [0, -15, -1, 0], [0, -35, 1, 1], [0, -26, -1, Math.min(3, scene.steps.length)],
+    [-8, -45, 1, 1], [8, -45, -1, 1], [0, -18, 1, scene.steps.length]];
+  for (const [x, z, direction, step] of views) {
+    actor.position = filmPosition(scene.set, x, z);
     journey.step = step;
     h.camera.position.set(actor.position.x, actor.position.y + 4, actor.position.z - direction * 6);
     h.camera.lookAt(actor.position.x, actor.position.y + 1, actor.position.z + direction * 10);
@@ -208,6 +210,36 @@ test('the Reloaded temple keeps point-light shader slots while walking, turning 
     } finally { h.after(); }
   }
   assert.deepEqual(slotCounts, Array(slotCounts.length).fill(hallLights.length + 1), 'hall lights and the objective marker must keep one shader variant');
+});
+
+test('the Logos wreck keeps the fire and objective light slots as Neo reaches Trinity', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m3_farewell;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get(scene.actor)!; neo.isInMatrix = false; neo.position = filmEntry(scene);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '', farewell: { phase: 'ready', elapsed: 0, total: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const slots = (direction: number, firstPerson = false) => {
+    h.camera.position.set(neo.position.x, neo.position.y + 3, neo.position.z - direction * (firstPerson ? 0 : 5));
+    h.camera.lookAt(neo.position.x, neo.position.y + 2, neo.position.z + direction * 10);
+    renderer.update(neo, sandbox, 0, neo.position, h.camera.position, undefined, firstPerson, 12000, h.camera);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const ids: number[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) ids.push(light.id); });
+      return ids;
+    } finally { h.after(); }
+  };
+  const entry = slots(-1);
+  assert.ok(entry.length > 1);
+  neo.position = filmStepPosition(scene, scene.steps[1], journey);
+  journey.step = 1;
+  assert.deepEqual(slots(1), entry);
+  journey.farewell = { phase: 'reaching', elapsed: 1.2, total: 1.2 };
+  assert.deepEqual(slots(-1, true), entry, 'hiding the objective must keep its dark shader slot');
 });
 
 test('the château keeps the hall and objective light slots when guards start the duel', t => {

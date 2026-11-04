@@ -135,13 +135,14 @@ test('the approach waypoint leaves the bodies and lighting clear throughout the 
   try {
     const marker = scene.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.TorusGeometry)!;
     const light = scene.children.find(object => object instanceof THREE.PointLight)!;
-    renderer.update(player, sandbox, 0); assert.equal(marker.visible, true); assert.equal(light.visible, true);
+    renderer.update(player, sandbox, 0); assert.equal(marker.visible, true); assert.equal(light.visible, true); assert.ok(light.intensity > 0);
     for (const phase of ['reaching', 'discovery', 'promise', 'goodbye', 'kiss', 'still'] as const) {
       journey.farewell = { phase, elapsed: 1.5, total: 17.1 };
       for (const time of [4, 200]) {
         renderer.update(player, sandbox, time);
         assert.equal(marker.visible, false, `${phase}: the pulsing waypoint must not overlap the actors during a locked or paused farewell`);
-        assert.equal(light.visible, false, `${phase}: the waypoint light must not tint the saved performance`);
+        assert.equal(light.visible, true, `${phase}: the waypoint keeps its shader slot`);
+        assert.equal(light.intensity, 0, `${phase}: the waypoint light must not tint the saved performance`);
       }
     }
     journey.farewell = newFarewell(); renderer.update(player, sandbox, 201); assert.equal(marker.visible, true);
