@@ -52,6 +52,19 @@ test('a lost participant stops the scene without reviving him or speaking throug
   assert.ok(h.state.dockBriefing!.elapsed > age, 'an explicit player rebuild permits continuation');
 });
 
+test('a paused briefing restores the saved cage and street collision layout before Niobe reconnects', () => {
+  const h = fixture(); h.sandbox.traffic.restore(); h.command('next'); h.command('act');
+  for (let i = 0; i < 15; i++) h.players.step(.1, true, 10);
+  assert.equal(h.state.dockBriefing?.phase, 'lowering');
+  h.players.release('p', 10);
+  const saved = structuredClone(h.sandbox.state);
+  const structureIds = saved.structures.map(structure => structure.id);
+  assert.ok(structureIds.indexOf('traffic:0') >= 0 && structureIds.indexOf('film:briefing:floor') > structureIds.indexOf('traffic:0'));
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.sandbox.state.structures.map(structure => structure.id), structureIds);
+  assert.deepEqual(h.sandbox.state.structures, saved.structures);
+});
+
 test('Niobe explicitly lowers the cage, walks to Lock and responds; dialogue and reflection cannot be skipped by timers', () => {
   const h = fixture(); h.command('next'); let state = h.sandbox.life.film.state!;
   let sequence = 0, tick = 10;

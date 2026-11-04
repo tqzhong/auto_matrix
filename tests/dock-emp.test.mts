@@ -131,7 +131,9 @@ test('Link fires the EMP after Hammer enters; blackout persists through reunion 
   command('act', 11); hold(65, false, 11);
   niobe.position = filmStepPosition(briefing, briefing.steps[1]); hold(60, false, 11);
   assert.equal(state.step, 2); command('act', 11); hold(50, false, 11);
-  assert.equal(state.dockBriefing?.phase, 'reply'); command('act', 11); hold(135, false, 11);
+  assert.equal(state.dockBriefing?.phase, 'reply'); command('act', 11);
+  hold(25, false, 11); assert.equal(state.dockBriefing?.phase, 'council');
+  hold(170, false, 11);
   assert.equal(state.step, 3); command('reflect:care', 11);
   niobe.position = filmStepPosition(briefing, briefing.steps[4]); hold(1, false, 11);
   assert.equal(state.dockBriefing?.phase, 'done'); command('next', 11);

@@ -116,6 +116,18 @@ test('normal player input unloads supplies, waits for the last crew and lowers t
   assert.equal(h.world.agents.get('mifune')!.status, 'dead'); assert.equal(h.world.agents.get('charra')!.status, 'dead');
   assert.equal(h.world.agents.get('colt')!.health, 53); assert.equal(h.state.emp?.firedAt, 7);
 });
+test('a paused evacuation restores the saved cargo lift and street collision layout before Kid reconnects', () => {
+  const h = fixture(); h.sandbox.traffic.restore(); h.walk(DOCK_EVACUATION.pickup); h.command('act');
+  for (let i = 0; i < 12; i++) h.frame();
+  assert.equal(h.state.dockEvacuation?.phase, 'lifting');
+  h.players.release('p', 10);
+  const saved = structuredClone(h.sandbox.state);
+  const structureIds = saved.structures.map(structure => structure.id);
+  assert.ok(structureIds.indexOf('traffic:0') >= 0 && structureIds.indexOf('film:evacuation:floor') > structureIds.indexOf('traffic:0'));
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.sandbox.state.structures.map(structure => structure.id), structureIds);
+  assert.deepEqual(h.sandbox.state.structures, saved.structures);
+});
 test('missing the lift fails and retry preserves supplies and film consequences instead of repeating the EMP', () => {
   const h = fixture(); unload(h);
   for (let i = 0; i < 270; i++) h.frame();
