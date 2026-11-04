@@ -17,6 +17,10 @@ test('meeting geometry leaves the central passage and both evacuation exits trav
   for (const role of ['trinity', 'morpheus', 'niobe', 'ballard', 'ghost', 'soren']) {
     const actor = reloadedRoot(state, role); const dx = -actor.x; const dz = 20 - actor.z;
     assert.ok((Math.sin(actor.yaw) * dx + Math.cos(actor.yaw) * dz) / Math.hypot(dx, dz) > .95, `${role} must face the briefing table`);
+    for (const exit of ['east', 'west'] as const) for (let frame = 0; frame <= RELOADED.evacuation * 20; frame++) {
+      const point = reloadedRoot({ ...state, phase: 'breach', exit, evacuation: frame / 20 }, role);
+      assert.equal(playerBlocked(filmPosition(set.id, point.x, point.z), true, .75), false, `${role} clips the ${exit} exit at ${frame / 20}s`);
+    }
   }
   for (const role of RELOADED.agents) {
     const waiting = reloadedRoot({ ...state, phase: 'breach', elapsed: 1 }, role);

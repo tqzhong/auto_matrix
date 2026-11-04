@@ -100,8 +100,8 @@ export function reloadedRoot(state: ReloadedOpening, role: string) {
   const cast = ['trinity', 'morpheus', 'niobe', 'ballard', 'ghost', 'soren']; const i = Math.max(0, cast.indexOf(role));
   const x = i < 2 ? i ? -7 : 7 : (i % 2 ? -1 : 1) * (3.7 + Math.floor(i / 2) * 2.4); const z = i < 2 ? 15 : 24 + (i % 2) * 3;
   const evacuation = state.exit ? smooth(state.evacuation / RELOADED.evacuation) : 0;
-  // Clear the end of the table before crossing to the selected side exit.
-  const runZ = z + (29 - z) * Math.min(1, evacuation * 2);
+  // Clear the table and keep the outermost lane inside the side opening.
+  const runZ = z + (28.2 - z) * Math.min(1, evacuation * 2);
   const runX = x + ((state.exit === 'east' ? 18.5 + i * .4 : -18.5 - i * .4) - x) * Math.max(0, evacuation * 2 - 1);
   return hall(runX, 0, runZ + evacuation * (i - 2.5) * .8, evacuation > .5 ? state.exit === 'east' ? Math.PI / 2 : -Math.PI / 2 : state.exit ? 0 : Math.atan2(-x, 20 - z));
 }

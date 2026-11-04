@@ -4027,8 +4027,18 @@ test('the entire film route completes through interactions, driving and real com
           h.command('act');
           for (let frame = 0; frame < 60 && state.theOne?.phase !== 'takeoff_ready'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.theOne?.phase, 'takeoff_ready');
+          const launch = filmPosition(scene.set, THE_ONE.flight.launch.x, THE_ONE.flight.launch.z);
+          for (let frame = 0; frame < 20 && actor.position.z < launch.z; frame++) {
+            h.players.receiveInput('film-player', { x: 0, z: 1, yaw: 0, jump: false, sprint: false, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
+          for (let frame = 0; frame < 20 && actor.position.x < launch.x; frame++) {
+            h.players.receiveInput('film-player', { x: 1, z: 0, yaw: Math.PI / 2, jump: false, sprint: false, sequence: ++sequence });
+            h.players.step(.1, true, h.tick());
+          }
           h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: true, sprint: false, focus: false, sequence: ++sequence });
           h.players.step(.1, true, h.tick());
+          assert.equal(state.theOne?.phase, 'takeoff');
           for (let frame = 0; frame < 80 && state.step === index; frame++) {
             h.players.receiveInput('film-player', { x: .35, z: -.5, yaw: actor.rotation, jump: false, sprint: true, focus: false, sequence: ++sequence });
             h.players.step(.1, true, h.tick());

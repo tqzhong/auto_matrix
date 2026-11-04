@@ -176,8 +176,8 @@ export class ReloadedOpeningSystem {
     const state = this.ensure(); const occupied = this.occupied();
     if (occupied) return `${occupied.name} 正在参与另一位玩家的行动，片段已保留。`;
     if (state.phase === 'failed' && ['act', 'retry'].includes(target)) {
-      const exit = state.exit; const attempt = state.attempt + 1;
-      this.journey!.reloaded = { ...newReloaded('meeting'), phase: 'combat', exit, attempt }; this.journey!.step = 3;
+      const { exit, evacuated, evacuation } = state; const attempt = state.attempt + 1;
+      this.journey!.reloaded = { ...newReloaded('meeting'), phase: 'combat', exit, attempt, evacuated, evacuation }; this.journey!.step = 3;
       actor.health = actor.maxHealth; actor.status = 'alive'; actor.activeEffects = []; this.clearActions();
       this.stage('neo', 0, tick); for (const id of RELOADED.agents) this.stage(id, 0, tick);
       this.journey!.checkpoint = { ...actor.position }; return reloadedText(this.ensure());

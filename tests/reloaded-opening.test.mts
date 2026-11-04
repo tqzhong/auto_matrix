@@ -60,6 +60,24 @@ test('dream gunfire, slow motion and memory remain a vision, never Trinity death
   assert.equal(h.world.agents.get('neo')!.currentLocation, 'film_neb_deck');
 });
 
+test('a cold dream save rebuilds the player’s fall before the next possession', () => {
+  const h = setup('m2_dream');
+  h.actor.position = filmPosition(h.scene.set, 0, -15); h.frames(.1); h.command();
+  h.frames(RELOADED.breakGlass + .1); h.frames(2.4, true);
+  assert.equal(h.state().phase, 'falling');
+  const tick = 145;
+  h.players.release('reload-player', tick);
+  h.world.simulationTick = tick;
+  const saved = structuredClone(h.sandbox.state), action = structuredClone(h.actor.currentAction), position = { ...h.actor.position };
+  assert.ok(action?.parameters.reloaded);
+  // Startup clears player actions before restoring the sandbox clock.
+  h.actor.currentAction = null;
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.actor.currentAction, action);
+  assert.deepEqual(h.actor.position, position);
+  assert.deepEqual(h.state(), saved.neoLife!.journey!.reloaded);
+});
+
 test('meeting preserves the real-world wake, intelligence and the chosen evacuation route', () => {
   const h = setup('m2_meeting'); assert.equal(h.actor.isInMatrix, false);
   reachMeeting(h);
@@ -94,9 +112,24 @@ test('pause, save, occupied cast and retry preserve the authored state without d
   assert.match(h.players.possess('other', 'agent_johnson', 0).error!, /片段|特工|参与/);
   h.world.agents.get('trinity')!.controller = 'other'; h.frames(1); assert.equal(h.state().cycle, cycle);
   delete h.world.agents.get('trinity')!.controller;
+  const evacuation = h.state().evacuation;
   h.actor.health = 0; h.actor.status = 'dead'; h.frames(.1); assert.equal(h.state().phase, 'failed');
   h.command('retry'); assert.equal(h.state().phase, 'combat'); assert.equal(h.state().attempt, 1); assert.equal(h.state().exit, 'east');
+  assert.equal(h.state().evacuation, evacuation, 'an interrupted retreat keeps its progress on combat retry');
   assert.equal(h.actor.status, 'alive'); assert.equal(h.sandbox.state.neoLife!.choices.ballard_watch, '36h');
+});
+
+test('a combat retry keeps the evacuated captains at their chosen exit', () => {
+  const h = setup('m2_meeting'); combat(h);
+  h.frames(RELOADED.evacuation + .1);
+  assert.equal(h.state().evacuated, true);
+  const position = { ...h.world.agents.get('niobe')!.position };
+  h.actor.health = 0; h.actor.status = 'dead'; h.frames(.1);
+  h.command('retry'); h.frames(.15);
+  assert.equal(h.state().phase, 'combat'); assert.equal(h.state().attempt, 1);
+  assert.equal(h.state().exit, 'east'); assert.equal(h.state().evacuated, true);
+  assert.equal(h.state().evacuation, RELOADED.evacuation);
+  assert.deepEqual(h.world.agents.get('niobe')!.position, position);
 });
 
 test('ship conversation reserves Link and agent pursuit reports movement to the animation', () => {
