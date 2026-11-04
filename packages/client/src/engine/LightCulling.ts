@@ -108,18 +108,18 @@ export class LightCulling {
     while (this.depth > 0) this.restoreSelection(this.frames[--this.depth]);
   }
 
-  compileWithDetachedLights(renderer: THREE.WebGLRenderer, camera: THREE.Camera, object: THREE.Object3D, subject?: THREE.Object3D): void {
+  compileSubject(renderer: THREE.WebGLRenderer, camera: THREE.Camera, subject: THREE.Object3D, detachedLights?: THREE.Object3D): void {
     const depth = this.depth;
-    this.scene.add(object);
+    if (detachedLights) this.scene.add(detachedLights);
     try {
       this.scene.updateMatrixWorld();
       camera.updateMatrixWorld();
       this.select(camera);
       // compile gathers lights from both roots. Keep the office in only one of them.
-      if (!subject) object.removeFromParent();
-      renderer.compile(subject ?? object, camera, this.scene);
+      if (subject === detachedLights) detachedLights.removeFromParent();
+      renderer.compile(subject, camera, this.scene);
     } finally {
-      object.removeFromParent();
+      detachedLights?.removeFromParent();
       if (this.depth > depth) this.finishSelection();
     }
   }

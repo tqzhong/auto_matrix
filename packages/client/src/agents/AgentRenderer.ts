@@ -32,6 +32,8 @@ import { contactOracleAbsorption } from './OracleAbsorptionPerformance.js';
 import { OracleSmithAppearance } from './OracleSmithAppearance.js';
 import { poseOracleExamination } from './OracleExaminationPerformance.js';
 import { poseAmbushCallPair } from './AmbushCallPerformance.js';
+import { prepareSkinnedMaterial } from './SkinnedPrecision.js';
+import type { LightCulling } from '../engine/LightCulling.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -73,6 +75,7 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
+  private preparedOfficeManager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textures: THREE.Texture[]; programs: boolean };
   private smithEnding?: SmithEndingAppearance;
   private markerGeometry = new THREE.RingGeometry(2.1, 2.5, 32);
   private shadowGeometry = new THREE.PlaneGeometry(3, 3);
@@ -180,6 +183,37 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
+  prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling): void {
+    const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
+    // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
+    if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return;
+    let prepared = this.preparedOfficeManager;
+    if (prepared?.root !== hero || prepared.gpu !== renderer.properties) {
+      const textures = new Set<THREE.Texture>();
+      hero.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+        for (const map of [object.material.map, object.material.bumpMap]) {
+          if (map?.image && map.version > 0) textures.add(map);
+        }
+      });
+      this.preparedOfficeManager = prepared = { root: hero, gpu: renderer.properties, textures: [...textures], programs: false };
+    }
+    const texture = prepared.textures.shift();
+    if (texture) { renderer.initTexture(texture); return; }
+    if (prepared.programs || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
+    try {
+      renderer.setRenderTarget(target);
+      hero.traverse(object => {
+        if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
+      });
+      lighting.compileSubject(renderer, camera, hero);
+      prepared.programs = true;
+    } finally {
+      renderer.setRenderTarget(previous);
+      target.dispose();
+    }
+  }
   prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
     this.smithEnding?.prepareEntrance(renderer, camera, this.scene);
   }
@@ -1103,6 +1137,7 @@ export class AgentRenderer {
     this.agents.delete(id);
   }
   dispose(): void {
+    this.preparedOfficeManager = undefined;
     this.smithEnding?.dispose(); this.smithEnding = undefined;
     this.oracleSmith?.dispose(); this.oracleSmith = undefined;
     this.custody.dispose();

@@ -333,7 +333,7 @@ export class FilmSetRenderer {
       subject?.traverse(object => {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
-      lighting.compileWithDetachedLights(renderer, eye, prepared.renderer.root, subject);
+      lighting.compileSubject(renderer, eye, subject ?? prepared.renderer.root, prepared.renderer.root);
     } finally {
       renderer.setRenderTarget(previous);
       target.dispose();

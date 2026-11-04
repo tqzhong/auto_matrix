@@ -8,6 +8,7 @@ import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.j
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 
 test('office luminaires illuminate desks without scorching the ceiling above them', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -158,4 +159,55 @@ test('the occupied lift prepares one hidden office with the arrival lights and r
   film.update(player, sandbox, 0);
   assert.equal(film.active?.id, 'film_metacortex_floor');
   assert.ok(scene.getObjectByName('office-window-glass') === windows[1]);
+});
+
+test('the approaching player gets staged manager texture uploads and a single color compile before the detailed body is visible', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const gradient = { addColorStop() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createRadialGradient: () => gradient, createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+    fillRect() {}, putImageData() {},
+  }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), agents = new AgentRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { agents.dispose(); lighting.dispose(); globalThis.document = document; });
+  const camera = new THREE.PerspectiveCamera(); camera.position.z = 200;
+  const manager = new THREE.Group(), detail = new THREE.Group(), hero = new THREE.Group();
+  scene.add(manager); manager.add(detail); detail.add(hero); detail.visible = false;
+  const skin = new THREE.Texture({ width: 2048, height: 2048 }); skin.needsUpdate = true;
+  const hair = new THREE.Texture({ width: 2048, height: 2048 }); hair.needsUpdate = true;
+  const coat = new THREE.Texture({ width: 2048, height: 2048 }); coat.needsUpdate = true;
+  const hiddenMap = new THREE.Texture({ width: 2048, height: 2048 }); hiddenMap.needsUpdate = true;
+  hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: skin })));
+  hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: hair, bumpMap: hair })));
+  hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: coat })));
+  const hidden = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: hiddenMap })); hidden.visible = false; hero.add(hidden);
+  t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : null);
+  t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : undefined);
+  const calls: (THREE.Texture | string)[] = [];
+  const renderTarget = new THREE.WebGLRenderTarget(2, 2);
+  let target: THREE.WebGLRenderTarget | null = renderTarget;
+  lighting.reservePointSlots = true;
+  const renderer = {
+    properties: {}, extensions: { has: () => true },
+    initTexture: (texture: THREE.Texture) => calls.push(texture),
+    getRenderTarget: () => target,
+    setRenderTarget: (value: typeof target) => { target = value; },
+    compile: (subject: THREE.Object3D, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(subject, hero); assert.equal(eye, camera); assert.equal(litScene, scene);
+      assert.ok(target && target !== renderTarget);
+      let points = 0; scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      assert.equal(points, 4);
+      calls.push('compile');
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => agents.prepareOfficeManager(renderer, camera, lighting);
+  prepare(); assert.deepEqual(calls, []);
+  camera.position.z = 120;
+  for (const expected of [skin, hair, coat, 'compile']) {
+    prepare(); assert.equal(calls.at(-1), expected);
+    assert.equal(detail.visible, false); assert.equal(hidden.visible, false); assert.equal(hero.parent, detail);
+    assert.equal(target, renderTarget);
+  }
+  prepare(); assert.deepEqual(calls, [skin, hair, coat, 'compile']);
 });
