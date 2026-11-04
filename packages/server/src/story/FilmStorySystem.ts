@@ -5743,6 +5743,8 @@ export class FilmStorySystem {
       }
       this.state.checkpoint.y = groundHeight(this.state.checkpoint, true);
     }
+    if (this.state.scene === 'm2_bane_copy' && this.state.step === 2 && this.state.started === undefined && this.state.baneCopy)
+      this.state.baneCopy.progress = 0;
     const bane = this.world.agents.get('bane');
     if (bane) {
       const infected = Boolean(this.sandbox().neoLife?.choices.bane_infected || this.state.completed.includes('m2_bane_copy'));
@@ -8372,8 +8374,11 @@ export class FilmStorySystem {
     if (state.scene === 'm1_spoon' && state.step === 1 && state.oracle?.reception) return;
     if (step.kind === 'reach' && this.near(actor, step) && !(state.scene === 'm1_cabin' && (state.cabinEscort?.progress ?? 0) < CABIN_ROUTE_LENGTH)) this.advance(step.label, actor, tick);
     else if (state.started !== undefined) {
-      if (!this.near(actor, step)) { delete state.started; state.lastText = '已离开互动位置。返回标记旁可重新开始。'; }
-      else if (tick - state.started >= (step.seconds ?? 3) * 2) {
+      if (!this.near(actor, step)) {
+        delete state.started;
+        if (state.scene === 'm2_bane_copy' && state.step === 2 && state.baneCopy) state.baneCopy.progress = 0;
+        state.lastText = '已离开互动位置。返回标记旁可重新开始。';
+      } else if (tick - state.started >= (step.seconds ?? 3) * 2) {
         if (state.scene === 'm2_trucks' && state.step === 2 && state.trucks) {
           state.trucks.phase = 'rescue'; state.trucks.elapsed = TRUCKS.collisionSeconds;
           state.trucks.rescueElapsed = 0;

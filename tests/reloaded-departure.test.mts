@@ -67,6 +67,42 @@ test('Bane passes the disk out first; infection survives reload but stays outsid
   h.command('next'); assert.equal(h.state().scene, 'm2_hamann'); assert.equal(h.actor().id, 'neo');
 });
 
+test('leaving the Smith copy clears only the interrupted effect and permits a clean retry', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m2_bane_copy, state = h.state();
+  h.players.possess('p', 'neo', 2);
+  state.scene = 'm2_room'; state.actor = 'neo'; state.step = FILM_SCENE_BY_ID.m2_room.steps.length;
+  h.command('next'); assert.equal(h.state().scene, scene.id);
+  const bane = h.actor();
+  bane.position = filmStepPosition(scene, scene.steps[0]); h.advance(1);
+  bane.position = filmStepPosition(scene, scene.steps[1]); h.command('act'); h.advance(7);
+  bane.position = filmStepPosition(scene, scene.steps[2]); h.command('act'); h.advance(3);
+  const started = h.state().started;
+  assert.equal(h.state().baneCopy?.progress, .3);
+  h.sandbox.restore(h.sandbox.state);
+  assert.equal(h.state().started, started, 'cold restoration keeps the active timer');
+  assert.equal(h.state().baneCopy?.progress, .3);
+
+  bane.position = filmPosition(scene.set, 0, -16); h.advance(1);
+  assert.match(h.state().lastText, /已离开互动位置/);
+  assert.equal(h.state().step, 2);
+  assert.equal(h.state().started, undefined);
+  assert.equal(h.state().baneCopy?.progress, 0, 'the overlay should vanish when the timer is cancelled');
+  assert.equal(bane.faction, 'zion');
+  assert.equal(h.sandbox.state.neoLife!.choices.oracle_disk_carrier, 'malachi');
+  assert.equal(h.sandbox.state.neoLife!.choices.bane_infected, undefined);
+
+  const legacy = structuredClone(h.sandbox.state);
+  legacy.neoLife!.journey!.baneCopy!.progress = .4;
+  h.sandbox.restore(legacy);
+  assert.equal(h.state().baneCopy?.progress, 0, 'older cancelled saves may contain a stale overlay');
+  bane.position = filmStepPosition(scene, scene.steps[2]); h.command('act'); h.advance(1);
+  assert.equal(h.state().baneCopy?.progress, .1);
+  h.advance(9);
+  assert.equal(h.state().step, 3);
+  assert.equal(h.state().baneCopy?.progress, 1);
+  assert.equal(bane.faction, 'machines');
+});
+
 test('Ballard delivers the Oracle disk before Zee, Bane, Kid and the takeoff clearance', () => {
   const h = game(), state = h.state();
   h.players.possess('p', 'neo', 2);
