@@ -3130,6 +3130,7 @@ test('truck rescue pauses without its player or while a passenger is occupied an
 test('truck rescue cold save reconstructs the same separated flight without replaying the pickup', () => {
   const h = truckRescueSetup();
   for (let i = 0; i < 17; i++) h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());
+  h.players.step(.1, false, h.tick());
   const saved = JSON.parse(JSON.stringify(h.sandbox.state));
   const cast = ['morpheus', 'keymaker', 'neo'].map(id => JSON.parse(JSON.stringify(h.world.agents.get(id)!)));
   const loaded = setup(); loaded.command('start');
@@ -3141,7 +3142,11 @@ test('truck rescue cold save reconstructs the same separated flight without repl
   assert.ok(loaded.world.agents.get('morpheus')!.currentAction?.parameters.truckRescue, 'a paused cold load must restore the carried body before the player reconnects');
   loaded.players.possess('film-player', 'morpheus', loaded.tick());
   loaded.sandbox.life.film.truckFrame(loaded.actor(), 0, loaded.tick());
-  for (const actor of cast) assert.deepEqual(loaded.world.agents.get(actor.id)!.position, actor.position);
+  for (const actor of cast) {
+    const restored = loaded.world.agents.get(actor.id)!;
+    assert.deepEqual(restored.position, actor.position);
+    assert.deepEqual(restored.velocity, actor.velocity, `${actor.id} must freeze with the same velocity before and after reload`);
+  }
   assert.equal(loaded.sandbox.life.film.state!.trucks!.rescueElapsed, saved.neoLife.journey.trucks.rescueElapsed);
   for (let frame = 0; frame < 16; frame++) {
     h.sandbox.life.film.truckFrame(h.actor(), .1, h.tick());

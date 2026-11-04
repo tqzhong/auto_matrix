@@ -91,7 +91,10 @@ test('three real inspection points and the captains response are required before
 
 test('a partially heard route freezes on release or occupied cast and resumes after restore without repeating completed routes', () => {
   const h = setup(), scene = FILM_SCENE_BY_ID.m2_plan;
-  h.actor().position = filmStepPosition(scene, scene.steps[0], h.journey); h.command('act');
+  h.actor().position = filmStepPosition(scene, scene.steps[0], h.journey);
+  h.actor().velocity = { x: 3.2, y: 0, z: -.8 };
+  h.command('act');
+  assert.deepEqual(h.actor().velocity, { x: 0, y: 0, z: 0 }, 'the route stops walking before the saved briefing begins');
   for (let i = 0; i < 15; i++) h.players.step(.1, true, h.tick());
   const age = h.journey.sourceBriefing!.elapsed;
   const niobe = h.world.agents.get('niobe')!, before = structuredClone(niobe.position);

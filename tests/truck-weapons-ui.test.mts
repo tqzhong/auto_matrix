@@ -44,6 +44,13 @@ test('the truck HUD uses the saved weapon stage rather than displaying zero gene
   road.phase = 'ready'; road.elapsed = 5;
   const sandbox = { threats: [], neoLife: { journey: { scene: 'm2_trucks', actor: 'morpheus', step: 0, completed: [], reflections: {}, fighting: true,
     trucks: { phase: 'duel', elapsed: 0, lastTick: 0, attempt: 2, weapons: newTruckWeapons(), road } } } } as SandboxState;
+  const encounter = sandbox.neoLife!.journey!.trucks!;
+  const weapons = encounter.weapons;
+  delete encounter.weapons;
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /G 持枪与刀迎战/);
+  assert.doesNotMatch(element('game-objective-copy').textContent, /F 连击|Q \/ C 技能/);
+  encounter.weapons = weapons;
   ui.updateFilm(player, sandbox);
   assert.match(element('game-objective-copy').textContent, /鼠标瞄准/);
   assert.doesNotMatch(element('game-objective-copy').textContent, /Q \/ C 技能/);

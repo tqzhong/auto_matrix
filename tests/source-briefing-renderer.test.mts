@@ -31,7 +31,15 @@ test('the apartment floor and plan table agree with the shared walking and jumpi
       assert.equal(ray.intersectObjects([paper, table], false)[0]?.object, paper, 'the plan must be visible above the table from its inspection point');
     }
     const point = filmPosition('film_operation_room', SOURCE_BRIEFING.table.x, SOURCE_BRIEFING.table.z);
-    const top = new THREE.Box3().setFromObject(table).max.y;
+    const tabletop = new THREE.Box3().setFromObject(table), top = tabletop.max.y;
+    const floorTop = new THREE.Box3().setFromObject(floor).max.y;
+    for (const x of [-2.8, 2.8]) for (const z of [-1.05, 1.05]) {
+      for (const y of [floorTop + .02, tabletop.min.y - .02]) {
+        const origin = new THREE.Vector3(point.x + x - .5, y, point.z + z);
+        const leg = new THREE.Raycaster(origin, new THREE.Vector3(1, 0, 0), 0, .6);
+        assert.ok(leg.intersectObject(h.renderer.group, true).length, 'each table leg joins the floor to the tabletop');
+      }
+    }
     assert.ok(Math.abs(top - h.center.y + 1 - SOURCE_BRIEFING.table.height) < 1e-6);
     assert.equal(playerBlocked({ ...point, y: top + .95 }, true), true);
     assert.equal(playerBlocked({ ...point, y: top + 1.05 }, true), false, 'the player can clear the visible table rather than an invisible taller box');

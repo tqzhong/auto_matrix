@@ -43,9 +43,9 @@ export class SourceBriefingRenderer {
     this.box(dark, 0, 7, -24, 36, 14, .5);
     const distant = new THREE.MeshStandardMaterial({ color: 0xb3ab81, emissive: 0xc2b883, emissiveIntensity: .4, roughness: .8 }); this.materials.add(distant);
     for (let x = -15; x <= 15; x += 3) for (const y of [3, 7, 11]) this.box((Math.round(x) + y) % 3 ? frame : distant, x, y, -23.7, 1.15, 2.1, .04);
-    const table = SOURCE_BRIEFING.table;
-    this.box(wood, table.x, 1 + table.height - .15, table.z, table.width, .3, table.depth, 'briefing-plan-table');
-    for (const x of [-2.8, 2.8]) for (const z of [-3.05, -.95]) this.box(frame, x, 1.75, z, .2, 1.5, .2);
+    const table = SOURCE_BRIEFING.table, tabletopThickness = .3, legHeight = table.height - tabletopThickness;
+    this.box(wood, table.x, 1 + table.height - tabletopThickness / 2, table.z, table.width, tabletopThickness, table.depth, 'briefing-plan-table');
+    for (const x of [-2.8, 2.8]) for (const z of [-1.05, 1.05]) this.box(frame, table.x + x, 1 + legHeight / 2, table.z + z, .2, legHeight, .2);
     for (const route of SOURCE_BRIEFING.routes) {
       const paper = new THREE.MeshStandardMaterial({ color: 0xd8d3b6, roughness: .95, map: this.diagram(route.id) });
       paper.name = `briefing-paper-${route.id}`; this.materials.add(paper); this.papers.set(route.id, paper);
@@ -54,8 +54,7 @@ export class SourceBriefingRenderer {
     }
     const leather = this.surface('leather_red_03', 0xb69279);
     const chair = createLoungeChair(leather); chair.name = 'briefing-keymaker-chair';
-    // The lounge chair's wooden feet start .12 above its origin, before scaling.
-    chair.position.set(0, 1 - .12 * chair.scale.y, SOURCE_BRIEFING.roots.keymaker.z - .3);
+    chair.position.set(0, 1, SOURCE_BRIEFING.roots.keymaker.z - .3);
     chair.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material); } }); this.static.add(chair);
     this.box(dark, -10, 2.5, -8.3, 1.1, 3, 1.1);
     const shade = this.material(0xbab293, .88);

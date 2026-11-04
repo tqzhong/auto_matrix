@@ -2322,7 +2322,7 @@ export class SandboxUI {
         return;
       }
       document.getElementById('game-objective-copy')!.textContent = road.paused || road.unavailable ? journey.lastText
-        : road.phase === 'ready' ? 'Johnson 已落在车顶。G 迎战 · F 连击 · X 闪避 · Q / C 技能'
+        : road.phase === 'ready' ? 'Johnson 已落在车顶。G 持枪与刀迎战 · 鼠标瞄准 · 左键 / T 射击'
           : road.phase === 'approach' ? '钥匙匠退向车顶后端；注意前方高架上的特工。' : 'Johnson 正从高架跳下；可拖动视角观察。';
       if (road.phase !== 'ready' || road.paused || road.unavailable) {
         this.el('sandbox-interact').classList.add('hidden'); this.el('sandbox-waypoint').textContent = ''; return;

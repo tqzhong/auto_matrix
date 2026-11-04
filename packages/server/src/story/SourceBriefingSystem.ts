@@ -52,7 +52,9 @@ export class SourceBriefingSystem {
         startedAt: journey.enteredAt, duration: 1e9, progress: 0 };
     }
     journey.lastText = sourceBriefingText(state);
-    return sourceBriefingLocked(state);
+    const locked = sourceBriefingLocked(state);
+    if (locked) actor.velocity = { x: 0, y: 0, z: 0 };
+    return locked;
   }
   command(actor: AgentState, target: string, tick: number): string | undefined {
     if (!this.active(actor)) return;

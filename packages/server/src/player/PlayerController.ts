@@ -445,7 +445,10 @@ export class PlayerController {
       if (!running || agent.status !== 'alive') this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.truckRoad.frame(agent, 0, tick);
       if (!running || agent.status !== 'alive') this.sandbox?.life.film.nebEscape.frame(agent, 0, tick);
-      if (!running && agent.status === 'alive') this.sandbox?.life.film.trainingFrame(agent, 0, tick);
+      if (!running && agent.status === 'alive') {
+        this.sandbox?.life.film.trainingFrame(agent, 0, tick);
+        this.sandbox?.life.film.truckFrame(agent, 0, tick);
+      }
       if (!running && agent.status === 'alive' && (this.sandbox?.life.film.openingHotel.restoreFrame(agent)
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
         || this.sandbox?.life.film.truthFrame(agent, 0, tick))) {
