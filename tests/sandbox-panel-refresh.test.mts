@@ -102,6 +102,19 @@ test('the G key offers the same anomaly as the journal after an earlier offline 
   ui.interact(); assert.deepEqual(sent, [{ kind: 'life', target: 'computer:disconnect' }]);
 });
 
+test('the Oracle kitchen G key starts the examination before opening the journal for the actual question', () => {
+  const { ui, body, sandbox, player } = fixture(), sent: object[] = [], opened: string[] = [];
+  player.position = filmPosition('film_oracle_home', -5, -22);
+  sandbox.state.neoLife!.journey = { version: 1, scene: 'm1_oracle', actor: 'neo', step: 1, completed: [],
+    enteredAt: 0, reflections: {}, lastText: '', checkpoint: player.position, oracle: { vase: 4.5, consultation: { phase: 'waiting', elapsed: 0 } } };
+  ui.send = (command: object) => sent.push(command); ui.open = (panel: string) => opened.push(panel);
+  ui.renderPanel(); assert.ok(body.action('film:act') && !body.action('film:act')!.disabled);
+  ui.interact(); assert.deepEqual(sent, [{ kind: 'life', target: 'film:act' }]); assert.deepEqual(opened, []);
+  sandbox.state.neoLife!.journey.oracle!.consultation!.phase = 'question';
+  ui.renderPanel(); assert.ok(body.action('film:reflect:care') && !body.action('film:reflect:care')!.disabled);
+  ui.interact(); assert.equal(sent.length, 1); assert.deepEqual(opened, ['journal']);
+});
+
 test('a failed bridge keeps its retry button attached while background story clocks advance', () => {
   const { ui, body, sandbox } = fixture();
   sandbox.state.neoLife!.journey = { version: 1, scene: 'm1_bridge', actor: 'neo', step: 0, completed: [],

@@ -171,6 +171,9 @@ export class SandboxUI {
       if (hammerBriefingActive(journey) && journey.hammerBriefing?.phase === 'faith') {
         this.send({ kind: 'life', target: 'film:act' }); return;
       }
+      if (!journey.visiting && journey.scene === 'm1_oracle' && journey.step === 1 && journey.oracle?.consultation?.phase === 'waiting') {
+        this.send({ kind: 'life', target: 'film:act' }); return;
+      }
       if (journey.visiting || step?.kind === 'reflect' || journey.scene === 'm2_persephone' && journey.step === 2 || journey.finished) this.open('journal');
       else this.send({ kind: 'life', target: `film:${step ? 'act' : 'next'}` });
       return;
