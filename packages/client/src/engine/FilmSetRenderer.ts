@@ -1181,10 +1181,22 @@ export class FilmSetRenderer {
     if (red) for (const dx of [-1.2, 1.2]) this.box(mat, dx, 2.1, 0, .48, .9, 2.7, .2);
     const group = new THREE.Group(); const children = this.root.children.slice(start); children.forEach(child => group.add(child)); group.scale.setScalar(red ? .85 : .68); group.position.set(x, 0, z); group.rotation.y = angle; this.root.add(group);
   }
-  private loungeChair(x: number, z: number, angle: number): void {
-    const group = createLoungeChair(this.leather);
-    group.traverse(object => { if (object instanceof THREE.Mesh) { this.own(object.geometry); this.materials.add(object.material); } });
+  private loungeChair(x: number, z: number, angle: number, template?: THREE.Group): THREE.Group {
+    const group = template?.clone() ?? createLoungeChair(this.leather);
+    const trim = new Map<THREE.Material, THREE.Material>();
+    if (template) {
+      // Separate trim materials keep the same batch and material sort order.
+      const surfaces = template.children.filter(object => object instanceof THREE.Mesh).map(object => object.material as THREE.Material);
+      for (const material of surfaces.sort((a, b) => a.id - b.id)) {
+        if (material !== this.leather && !trim.has(material)) trim.set(material, material.clone());
+      }
+    }
+    group.traverse(object => { if (object instanceof THREE.Mesh) {
+      object.material = trim.get(object.material) ?? object.material;
+      this.own(object.geometry); this.materials.add(object.material);
+    } });
     group.position.set(x, 0, z); group.rotation.y = angle; this.root.add(group);
+    return group;
   }
   private pillTable(): void {
     const { tableZ: z, tableY: y, tableRadius: radius } = PILL_ROOM;
@@ -1693,7 +1705,8 @@ export class FilmSetRenderer {
     if (a === 'lafayette') {
       const rug = this.imageMaterial('lafayette-rug-v1', 0x493b31);
       this.box(rug, 0, .035, -6, 12, .055, 14);
-      this.loungeChair(-PILL_ROOM.seat, PILL_ROOM.z, Math.PI / 2); this.loungeChair(PILL_ROOM.seat, PILL_ROOM.z, -Math.PI / 2);
+      const chair = this.loungeChair(-PILL_ROOM.seat, PILL_ROOM.z, Math.PI / 2);
+      this.loungeChair(PILL_ROOM.seat, PILL_ROOM.z, -Math.PI / 2, chair);
       this.pillTable();
       this.pillGlass = createPillGlass(); this.pillGlass.position.set(PILL_ROOM.cup.x, PILL_ROOM.cup.y, PILL_ROOM.cup.z); this.root.add(this.pillGlass);
       this.pillGlass.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
@@ -2834,14 +2847,22 @@ export class FilmSetRenderer {
   }
   private batch(): void {
     this.root.updateMatrixWorld(true);
-    const inverse = this.root.matrixWorld.clone().invert(); const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const remove: THREE.Object3D[] = [];
+    const inverse = this.root.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
+    const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const remove: THREE.Object3D[] = [];
     const lafayette = this.current?.id === 'film_lafayette';
+    const uses = new Map<THREE.BufferGeometry, number>();
+    if (lafayette) this.root.traverse(object => {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Line) uses.set(object.geometry, (uses.get(object.geometry) ?? 0) + 1);
+    });
     this.root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
       let ancestor: THREE.Object3D | null = object; while (ancestor && ancestor !== this.root) { if (ancestor.userData.dynamic) return; ancestor = ancestor.parent; }
-      // This is a temporary vertex buffer, so recreating the primitive would only repeat construction.
-      const geometry = (lafayette ? new THREE.BufferGeometry().copy(object.geometry) : object.geometry.clone())
-        .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+      const source = object.geometry;
+      // Static single-use buffers can be transformed and retired by the batch itself.
+      const reuse = lafayette && source.index && uses.get(source) === 1 && this.geometries.has(source);
+      const geometry = reuse ? source : lafayette ? new THREE.BufferGeometry().copy(source) : source.clone();
+      geometry.applyMatrix4(transform.multiplyMatrices(inverse, object.matrixWorld));
+      if (reuse) this.geometries.delete(source);
       // Reuse the room's existing indices, especially on the padded chairs.
       let normalized = geometry;
       if (lafayette && !geometry.index) normalized = mergeVertices(geometry, 1e-6);

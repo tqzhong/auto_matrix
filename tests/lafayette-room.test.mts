@@ -73,6 +73,48 @@ test('the fireplace and mirror carvings share one indexed source before room bat
   assert.equal(checked, true);
 });
 
+test('Lafayette uses the room-owned construction buffers for the two chairs and the static batches', async t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = document; });
+  const batching = renderer as unknown as { batch(): void; leather: THREE.Material }, original = batching.batch;
+  let chairs: THREE.Mesh<THREE.BufferGeometry, THREE.Material>[][] = [], exclusiveCopies = 0;
+  t.mock.method(batching, 'batch', () => {
+    chairs = renderer.root.children.filter(object =>
+      object instanceof THREE.Group && Math.abs(object.position.x) === PILL_ROOM.seat && object.position.z === PILL_ROOM.z)
+      .map(chair => [...chair.children] as THREE.Mesh<THREE.BufferGeometry, THREE.Material>[]);
+    const uses = new Map<THREE.BufferGeometry, number>();
+    renderer.root.traverse(object => {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Line) uses.set(object.geometry, (uses.get(object.geometry) ?? 0) + 1);
+    });
+    const copy = THREE.BufferGeometry.prototype.copy;
+    t.mock.method(THREE.BufferGeometry.prototype, 'copy', function (this: THREE.BufferGeometry, source: THREE.BufferGeometry) {
+      if (source.index && uses.get(source) === 1) exclusiveCopies++;
+      return copy.call(this, source);
+    });
+    original.call(renderer);
+  });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_lafayette', 1.75, -6); neo.isInMatrix = true;
+  assert.equal(renderer.update(neo, undefined, 0)?.id, 'film_lafayette');
+  await t.test('the matching chairs share indexed geometry and retain their original trim batches', () => {
+    assert.equal(chairs.length, 2);
+    const [left, right] = chairs;
+    assert.ok(left.length > 0);
+    assert.equal(right.length, left.length);
+    for (const [index, mesh] of left.entries()) {
+      assert.equal(right[index].geometry === mesh.geometry, true, 'the second chair should reuse the same source buffer');
+      assert.ok(mesh.geometry.index);
+      assert.equal(right[index].material === mesh.material, mesh.material === batching.leather);
+    }
+  });
+  await t.test('single-use indexed construction buffers are merged without copying them', () => {
+    assert.equal(exclusiveCopies, 0);
+  });
+});
+
 test('Lafayette windows, fireplace and tracking passage have matching visible geometry and access', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
