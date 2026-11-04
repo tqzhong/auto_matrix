@@ -717,7 +717,8 @@ export class AgentRenderer {
       input.podEmergence = podBody && (!podBeat || podBeat.kind === 'emerge') ? podBeat?.elapsed ?? 0 : undefined;
       input.podRescue = journey?.scene === 'm1_pod' && !journey.visiting && input.performance === 'lift' && journey.awakening?.kind === 'rescue'
         ? journey.awakening.elapsed : undefined;
-      input.officeShirt = officeClothing(state.id, state.currentLocation);
+      input.officeShirt = officeClothing(state.id, state.currentLocation, journey);
+      if (input.officeShirt) input.homeClothes = false;
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
       input.mobilStation = state.currentLocation === 'film_mobil_station';
       input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));

@@ -73,6 +73,7 @@ export function workdayText(workday: OfficeWorkday): string {
   if (workday.phase === 'signing') return workday.elapsed < 2.5 ? '你接过触控笔，在电子签收板上留下姓名。' : '快递员把包裹放在桌边，收回签收板。里面传来手机铃声。';
   return '包裹已交到你桌上。按 G 打开，再决定是否接听。';
 }
-export function officeClothing(id: string, location: string): boolean {
-  return id === 'neo' && ['film_metacortex_floor', 'film_office_ledge', 'film_agent_interrogation', 'metacortex_office'].includes(location);
+export function officeClothing(id: string, location: string, journey?: FilmJourney): boolean {
+  return id === 'neo' && (journey?.actor === id && journey.scene === 'm1_commute' && !journey.visiting
+    || ['film_metacortex_floor', 'film_office_ledge', 'film_agent_interrogation', 'metacortex_office'].includes(location));
 }

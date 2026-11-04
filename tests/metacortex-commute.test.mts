@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FILM_SETS, lifeRoomCenter, insideLifeRoom, groundHeight, playerBlocked, filmSetAt } from '@auto_matrix/shared';
-import { OFFICE_PATROLS, officeOccluded, metacortexPosition, metacortexLiftPose, type Vector3, type WorldEvent } from '@auto_matrix/shared';
+import { OFFICE_PATROLS, officeOccluded, officeClothing, metacortexPosition, metacortexLiftPose, type Vector3, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -54,6 +54,9 @@ test('commuting preserves the city walk, rides upward continuously, survives pau
     lastText: '', checkpoint: { ...h.neo.position }, morning: { phase: 'done', elapsed: 0 } };
   const position = { ...h.neo.position }, money = life.money;
   h.command('film:next'); assert.equal(life.journey.scene, 'm1_commute'); assert.deepEqual(h.neo.position, position);
+  assert.equal(officeClothing('neo', 'downtown', life.journey), true, 'the work outfit follows the active commute across city locations');
+  assert.equal(officeClothing('neo', 'downtown', { ...life.journey, visiting: 'm1_club' }), false);
+  assert.equal(officeClothing('neo', 'downtown'), false, 'ordinary street visits retain their location-based outfit');
   for (const [x, z] of [[1210, 720], [1200, 720], [1200, 880], [1140, 880], [1140, 851]]) h.walk({ x, y: 1, z });
   assert.equal(life.journey.step, 1); assert.equal(life.money, money);
   assert.match(h.command('film:act'), /电梯前/);

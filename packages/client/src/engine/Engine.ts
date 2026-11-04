@@ -206,9 +206,11 @@ export class Engine {
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined, this.sandbox?.traffic);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
+    const reserveCommuteLights = Boolean(this.matrix && meeting && !meeting.visiting && player?.id === meeting.actor
+      && (meeting.scene === 'm1_morning' || meeting.scene === 'm1_commute'));
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
       ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
-    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined);
+    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveCommuteLights);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
@@ -217,8 +219,7 @@ export class Engine {
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
     this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
-    this.lightCulling.reservePointSlots = Boolean(this.matrix && !cinematicSet && meeting && !meeting.visiting && player?.id === meeting.actor
-      && (meeting.scene === 'm1_morning' || meeting.scene === 'm1_commute'));
+    this.lightCulling.reservePointSlots = reserveCommuteLights && !cinematicSet;
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
     measure?.('film');

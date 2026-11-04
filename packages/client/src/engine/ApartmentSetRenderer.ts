@@ -29,10 +29,11 @@ export class ApartmentSetRenderer {
   private clockKey = '';
   private clockButton: THREE.Mesh;
   private glow = new THREE.PointLight(0x8bba81, 14, 10, 2);
+  private landingLight = new THREE.SpotLight(0xc9d2a3, 0, 30, 1.05, .65, 2);
   private windowGlass: THREE.MeshStandardMaterial;
   private windowLights: THREE.PointLight[] = [];
   private roomLights: THREE.Light[] = [];
-  constructor(parent: THREE.Group) {
+  constructor(parent: THREE.Group, cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
     const wood = this.mat(0x82765b, .88, 0, 'old_wood_floor');
     const plaster = this.mat(0x8a8b73, .94, 0, 'white_plaster_02');
@@ -214,12 +215,18 @@ export class ApartmentSetRenderer {
     this.box(metal, 13, 3, 4, .08, 6, .08);
     this.mesh(new THREE.ConeGeometry(.9, 1.1, 32, 1, true), paper, 13, 6, 4);
     const lamp = new THREE.PointLight(0xffce8b, 80, 23, 2); lamp.position.set(13, 5.65, 4); this.root.add(lamp);
-    const light = new THREE.SpotLight(0xc9d2a3, 180, 30, 1.05, .65, 2); light.position.set(0, 8.3, 16); light.target.position.set(0, 0, 11); light.castShadow = true; light.shadow.mapSize.set(1024, 1024); light.shadow.normalBias = .035; this.root.add(light, light.target);
+    const light = this.landingLight;
+    light.name = 'apartment-landing-light';
+    light.position.set(0, 8.3, 16); light.target.position.set(0, 0, 11);
+    light.castShadow = true; light.shadow.mapSize.set(1024, 1024); light.shadow.normalBias = .035;
+    this.root.add(light, light.target);
+    // The commute can retain the landing light slot after the room itself is culled.
+    if (cityLights) { cityLights.attach(light); cityLights.attach(light.target); }
     const luminous = new THREE.MeshBasicMaterial({ color: 0xc2cba1, toneMapped: false }); this.materials.add(luminous);
     const hallBounce = new THREE.PointLight(0xd7d0a7, 82, 20, 2); hallBounce.position.set(0, 5.8, 15.5); this.root.add(hallBounce);
     const doorwayFill = new THREE.PointLight(0xc3c8aa, 105, 14, 2); doorwayFill.name = 'apartment-doorway-fill'; doorwayFill.position.set(2, 4.8, 8.4); this.root.add(doorwayFill);
     this.box(trim, 0, 8.55, 16, 3.4, .16, .7); this.box(luminous, 0, 8.42, 16, 3.1, .08, .32);
-    this.root.traverse(object => { if (object instanceof THREE.Light) this.roomLights.push(object); });
+    this.root.traverse(object => { if (object instanceof THREE.Light && object !== light) this.roomLights.push(object); });
     this.batch(); this.update();
   }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
@@ -246,10 +253,13 @@ export class ApartmentSetRenderer {
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const mat = new THREE.MeshStandardMaterial({ map, roughness: .8 }); this.materials.add(mat); return this.mesh(new THREE.PlaneGeometry(w, h), mat, 0, 0, 0);
   }
-  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false, life?: NeoLifeState, check: ComputerInvestigation | undefined = life?.computerCheck): void {
+  update(journey?: FilmJourney, time = 22000, nearby = true, contactSignal = false, life?: NeoLifeState, check: ComputerInvestigation | undefined = life?.computerCheck, reserveLandingSlot = false): void {
     const daylight = Math.max(0, Math.sin((time / 24000 - .25) * Math.PI * 2));
     this.windowGlass.emissiveIntensity = .025 + daylight * .55;
     for (const light of this.roomLights) light.visible = nearby;
+    this.landingLight.visible = nearby || reserveLandingSlot;
+    this.landingLight.intensity = nearby ? 180 : 0;
+    this.landingLight.shadow.autoUpdate = nearby;
     for (const light of this.windowLights) light.intensity = daylight * 100;
     const morning = journey?.scene === 'm1_morning' && !journey.visiting ? journey.morning : undefined;
     const alarm = morning?.phase === 'alarm' || morning?.phase === 'stopping' && morning.elapsed < .55;
@@ -344,7 +354,8 @@ export class ApartmentSetRenderer {
     for (const geo of this.geometries) if (!live.has(geo)) { geo.dispose(); this.geometries.delete(geo); }
   }
   dispose(): void {
-    this.root.traverse(object => { if (object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
+    this.roomLights.forEach(light => light.dispose());
+    this.landingLight.dispose(); this.landingLight.removeFromParent(); this.landingLight.target.removeFromParent();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }
 }

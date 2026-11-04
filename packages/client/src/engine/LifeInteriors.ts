@@ -22,7 +22,7 @@ export class LifeInteriors {
       const center = lifeRoomCenter(id)!; const group = new THREE.Group(); group.position.set(center.x, 0, center.z); parent.add(group);
       this.rooms.push(group);
       if (id === 'metacortex_office') { this.metacortex = new MetacortexRenderer(group); continue; }
-      if (room.theme === 'home') { this.apartment = new ApartmentSetRenderer(group); continue; }
+      if (room.theme === 'home') { this.apartment = new ApartmentSetRenderer(group, parent); continue; }
       const plaster = room.theme === 'office' ? '#d1d7d4' : room.theme === 'bar' ? '#403c43' : room.theme === 'oracle' ? '#b7bf91' : '#ded3bd';
       this.part(group, [0, .04, 0], [room.width, .08, room.depth], room.theme === 'office' ? '#858d8d' : '#8c7258');
       for (let z = -room.depth / 2; z < room.depth / 2; z += 1.4) this.part(group, [0, .09, z], [room.width, .01, .026], room.theme === 'office' ? '#6b7573' : '#665643');
@@ -122,14 +122,14 @@ export class LifeInteriors {
       leaf.rotation.set(.4, i * 2.4, .5);
     }
   }
-  update(time: number, player: Vector3 | undefined, life?: NeoLifeState, camera?: Vector3, subject?: THREE.Object3D, check?: ComputerInvestigation): void {
+  update(time: number, player: Vector3 | undefined, life?: NeoLifeState, camera?: Vector3, subject?: THREE.Object3D, check?: ComputerInvestigation, reserveLandingSlot = false): void {
     for (const group of this.rooms) {
       const nearby = (position?: Vector3) => position && Math.hypot(position.x - group.position.x, position.z - group.position.z) < 120;
       group.visible = !player && !camera || Boolean(nearby(player) || nearby(camera));
     }
     const room = player ? insideLifeRoom(player) : undefined;
     const home = lifeRoomCenter('neo_apartment')!;
-    this.apartment.update(life?.journey, time, Boolean(player && Math.hypot(player.x - home.x, player.y - home.y, player.z - home.z) < 55), life?.contactSignal, life, check ?? life?.computerCheck);
+    this.apartment.update(life?.journey, time, Boolean(player && Math.hypot(player.x - home.x, player.y - home.y, player.z - home.z) < 55), life?.contactSignal, life, check ?? life?.computerCheck, reserveLandingSlot);
     for (const entry of this.lights) entry.light.visible = entry.location === room;
     for (const hand of this.clocks) hand.rotation.z = -time / 1000 * Math.PI * 2 + (life?.anomaly?.id === 'clock' ? Math.sin(time * 3) * .2 : 0);
     const office = lifeRoomCenter('metacortex_office')!;
