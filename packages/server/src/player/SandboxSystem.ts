@@ -65,6 +65,7 @@ export class SandboxSystem {
     if (journey) this.life.film.crossingFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey?.scene === 'm1_ledge') this.life.film.climbFrame(this.world.agents.get(journey.actor)!, 0, 0, this.world.simulationTick);
     if (journey) this.life.film.interrogationFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
+    if (journey?.scene === 'm1_bridge') this.life.film.restoreBridgeCapture(this.world.agents.get(journey.actor)!, this.world.simulationTick);
     if (journey) this.life.film.custody.frame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.restoreChateauSpace();
     if (journey) this.life.film.apartmentFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);

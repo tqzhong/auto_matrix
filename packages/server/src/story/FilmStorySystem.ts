@@ -2377,11 +2377,11 @@ export class FilmStorySystem {
     const state = this.state;
     if (!state || state.scene !== 'm1_bridge' || state.visiting || state.meeting || !(state.office?.bugged ?? state.office?.outcome === 'captured')) return;
     const tail = state.bridgeTail ??= { phase: 'tracking', alert: 0, lastTick: tick, attempts: 0, spawned: false };
-    const threat = this.sandbox().threats.find(item => item.id === 'bridge:tail');
     if (tail.phase !== 'tracking') {
-      if (tail.phase === 'failed' && threat && !agent.currentAction?.parameters.bridgeCaught) this.stageBridgeCapture(agent, threat, tick);
+      if (tail.phase === 'failed') this.restoreBridgeCapture(agent, tick);
       tail.lastTick = tick; return;
     }
+    const threat = this.sandbox().threats.find(item => item.id === 'bridge:tail');
     if (!threat && tail.spawned) {
       tail.phase = 'evaded'; tail.lastTick = tick;
       state.lastText = '追踪特工失去了这次接头位置。体内的装置仍在；上车后还必须接受检查。';
@@ -2415,6 +2415,15 @@ export class FilmStorySystem {
   private stageBridgeCapture(agent: AgentState, threat: SandboxThreat, tick: number): void {
     agent.currentAction = { type: 'idle', parameters: { bridgeCaught: { x: threat.position.x, z: threat.position.z } },
       startedAt: tick, duration: 1, progress: 0 };
+  }
+  restoreBridgeCapture(agent: AgentState, tick: number): boolean {
+    const state = this.state;
+    if (state?.scene !== 'm1_bridge' || state.visiting || state.meeting || state.bridgeTail?.phase !== 'failed' || !this.controls(agent)) return false;
+    if (agent.currentAction?.type === 'idle' && agent.currentAction.parameters.bridgeCaught) return true;
+    const threat = this.sandbox().threats.find(item => item.id === 'bridge:tail');
+    if (!threat) return false;
+    this.stageBridgeCapture(agent, threat, tick);
+    return true;
   }
   interrogationFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;

@@ -124,6 +124,32 @@ for (const [phase, elapsed] of [['file', 1.2], ['response', 0], ['coercion', 9.2
   });
 }
 
+for (const savedAction of [true, false]) {
+  test(`a paused bridge capture ${savedAction ? 'keeps its saved action' : 'recovers its missing action'} at startup and reconnect`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_bridge', 'meeting');
+    const journey = f.checkpoint.sandbox.neoLife.journey, neo = f.checkpoint.agents.neo;
+    const position = { ...neo.position, z: neo.position.z + 2 };
+    const tail = { phase: 'failed', alert: 70, lastTick: 1342, attempts: 1, spawned: true };
+    journey.bridgeTail = tail;
+    f.checkpoint.sandbox.threats.push({ id: 'bridge:tail', scene: 'm1_bridge', kind: 'agent', patrol: true, yaw: Math.PI,
+      position, matrix: true, health: 80, maxHealth: 80, target: 'neo', stunUntil: 1300, lastStrike: 1300 });
+    const action = { type: 'idle', parameters: { bridgeCaught: { x: position.x, z: position.z } },
+      startedAt: savedAction ? 1320 : f.checkpoint.tick, duration: 1, progress: 0 };
+    neo.currentAction = savedAction ? action : null;
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.bridgeTail, tail);
+      assert.deepEqual(state.sandbox!.threats.find(threat => threat.id === 'bridge:tail')!.position, position);
+      assert.deepEqual(state.agents.neo.position, neo.position);
+      assert.deepEqual(state.agents.neo.currentAction, action);
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+  });
+}
+
 for (const [mode, signal] of [['memories', 'SIGTERM'], ['checkpoint', 'SIGINT']] as const) {
   test(`shutdown during ${mode} loading must preserve the last complete world and memories`, { timeout: 30000 }, async t => {
     const f = await fixture(t);
