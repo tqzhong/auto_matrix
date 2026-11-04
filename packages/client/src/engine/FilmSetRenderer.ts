@@ -1687,7 +1687,9 @@ export class FilmSetRenderer {
       const front = f.z + f.depth / 2;
       const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0);
       leafShape.bezierCurveTo(-.13, .12, -.1, .28, 0, .38); leafShape.bezierCurveTo(.1, .28, .13, .12, 0, 0);
-      const leafGeometry = new THREE.ExtrudeGeometry(leafShape, { depth: .045, bevelEnabled: true, bevelSize: .014, bevelThickness: .012, bevelSegments: 2, curveSegments: 6, steps: 1 });
+      const leafBlank = new THREE.ExtrudeGeometry(leafShape, { depth: .045, bevelEnabled: true, bevelSize: .014, bevelThickness: .012, bevelSegments: 2, curveSegments: 6, steps: 1 });
+      const leafGeometry = mergeVertices(leafBlank, 1e-6);
+      leafBlank.dispose();
       this.box(hearth, f.x, .13, f.z, f.width, .26, f.depth, .025);
       const surround = new THREE.Shape(); surround.moveTo(-3.14, .26); surround.lineTo(3.14, .26);
       surround.lineTo(3.14, 4.18); surround.lineTo(-3.14, 4.18); surround.closePath();
@@ -2789,7 +2791,9 @@ export class FilmSetRenderer {
     this.root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
       let ancestor: THREE.Object3D | null = object; while (ancestor && ancestor !== this.root) { if (ancestor.userData.dynamic) return; ancestor = ancestor.parent; }
-      const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+      // This is a temporary vertex buffer, so recreating the primitive would only repeat construction.
+      const geometry = (lafayette ? new THREE.BufferGeometry().copy(object.geometry) : object.geometry.clone())
+        .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
       // Reuse the room's existing indices, especially on the padded chairs.
       let normalized = geometry;
       if (lafayette && !geometry.index) normalized = mergeVertices(geometry, 1e-6);

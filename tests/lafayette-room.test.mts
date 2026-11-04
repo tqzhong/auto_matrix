@@ -6,6 +6,30 @@ import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.j
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
+test('the fireplace and mirror carvings share one indexed source before room batching', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = document; });
+  const batching = renderer as unknown as { batch(): void }, original = batching.batch;
+  let checked = false;
+  t.mock.method(batching, 'batch', () => {
+    const uses = new Map<THREE.BufferGeometry, number>();
+    renderer.root.traverse(object => {
+      if (object instanceof THREE.Mesh) uses.set(object.geometry, (uses.get(object.geometry) ?? 0) + 1);
+    });
+    const carving = [...uses].find(([, copies]) => copies === 118)?.[0];
+    assert.ok(carving?.index, 'the repeated leaf is indexed once before any of its placements are transformed');
+    checked = true;
+    original.call(renderer);
+  });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!; neo.position = filmPosition('film_lafayette', 1.75, -6); neo.isInMatrix = true;
+  assert.equal(renderer.update(neo, undefined, 0)?.id, 'film_lafayette');
+  assert.equal(checked, true);
+});
+
 test('Lafayette windows, fireplace and tracking passage have matching visible geometry and access', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
