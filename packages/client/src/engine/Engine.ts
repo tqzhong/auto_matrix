@@ -214,8 +214,10 @@ export class Engine {
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
-    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera, this.tick);
+    const avatarPosition = player ? this.agentRenderer.getAgent(player.id)?.position : undefined;
+    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, avatarPosition, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera, this.tick);
     this.lightCulling.stablePointSlots = this.filmSets.stablePointSlots;
+    if (this.filmSets.lafayetteStreetHidden) this.agentRenderer.hideLafayetteStreetCast();
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
     this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
@@ -230,7 +232,12 @@ export class Engine {
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
     this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
-    if (meeting && player?.id === meeting.actor) this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, this.agentRenderer.getAgentHero('neo'));
+    if (meeting && player?.id === meeting.actor) {
+      const neo = this.agentRenderer.getAgentHero('neo');
+      this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo);
+      if (meeting.scene === 'm1_pills' && avatarPosition)
+        this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, [neo, this.agentRenderer.getAgentHero('trinity')]);
+    }
     if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet && !this.sandbox?.neoLife?.lift?.passenger)
       this.agentRenderer.prepareOfficeManager(this.renderer, this.camera, this.lightCulling);
     if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);

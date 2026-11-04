@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, LAFAYETTE, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -47,6 +49,79 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
   assert.ok(key && renderer.root.getObjectByProperty('uuid', key.uuid) === key);
   assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
+});
+
+test('Lafayette prepares the third-floor light layout without removing the active street', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { lighting.dispose(); renderer.dispose(); globalThis.document = document; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_lafayette', 43, 23); neo.position.y = 8; neo.currentLocation = 'film_lafayette'; neo.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: 'm1_pills', actor: 'neo', step: 0, enteredAt: 0, completed: [], reflections: {},
+    checkpoint: { ...neo.position }, lastText: '', hotel: { progress: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  assert.equal(renderer.update(neo, sandbox, 0, neo.position)?.id, 'film_lafayette');
+  const { approach, hotel } = renderer as unknown as { approach: { root: THREE.Group }; hotel: { lights: THREE.PointLight[] } };
+  const before = hotel.lights.map(light => light.position.toArray());
+  const actors = [new THREE.Group(), new THREE.Group()] as const;
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  t.after(() => { geometry.dispose(); material.dispose(); });
+  for (const actor of actors) for (let i = 0; i < 3; i++) actor.add(new THREE.Mesh(geometry, material));
+  const eye = new THREE.PerspectiveCamera(); eye.position.y = 12;
+  const batches: THREE.Object3D[][] = [];
+  const webgl = {
+    extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D, camera: THREE.Camera) {
+      assert.equal(approach.root.visible, false);
+      assert.equal(camera.position.y, eye.position.y + LAFAYETTE.rise);
+      assert.equal(hotel.lights[0].position.y, before[0][1] + LAFAYETTE.rise);
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, 7.9, actors);
+  assert.equal(batches.length, 0);
+  for (let i = 0; i < 2; i++) {
+    renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+    assert.equal(renderer.lafayetteStreetHidden, false);
+    assert.deepEqual(hotel.lights.map(light => light.position.toArray()), before);
+  }
+  assert.deepEqual(batches.map(batch => batch.length), [4, 4]);
+  assert.deepEqual(batches.flat().slice(0, 6), actors.flatMap(actor => actor.children));
+  neo.position.y = 15; renderer.update(neo, sandbox, 0, neo.position);
+  assert.equal(renderer.lafayetteStreetHidden, true);
+  renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+  assert.equal(batches.length, 2);
+});
+
+test('retiring the Lafayette street hides parked crew and keeps the tracking-room cast', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = document; });
+  const apoc = world.agents.get('apoc')!, crew = world.agents.get('switch')!, trinity = world.agents.get('trinity')!;
+  for (const actor of [apoc, crew, trinity]) {
+    actor.isInMatrix = true; actor.currentLocation = actor === trinity ? 'film_lafayette' : 'film_extraction_car';
+    renderer.updateAgent(actor.id, actor); assert.equal(renderer.getAgent(actor.id)?.visible, true);
+  }
+  renderer.hideLafayetteStreetCast();
+  assert.equal(renderer.getAgent('apoc')?.visible, false);
+  assert.equal(renderer.getAgent('switch')?.visible, false);
+  assert.equal(renderer.getAgent('trinity')?.visible, true);
+  for (const actor of [apoc, crew]) {
+    assert.equal(actor.currentLocation, 'film_extraction_car');
+    actor.currentLocation = 'film_lafayette'; renderer.updateAgent(actor.id, actor);
+  }
+  renderer.hideLafayetteStreetCast();
+  assert.equal(renderer.getAgent('apoc')?.visible, true);
+  assert.equal(renderer.getAgent('switch')?.visible, true);
 });
 
 test('the fireplace and mirror carvings share one indexed source before room batching', t => {

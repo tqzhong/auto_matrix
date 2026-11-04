@@ -141,6 +141,9 @@ const palettes = {
 };
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
+type LafayetteMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
+const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 
 /** Only the current film set is resident; static meshes are merged by material.
  * Texture/geometry ownership is scoped to a set and released on every transition. */
@@ -167,7 +170,8 @@ export class FilmSetRenderer {
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
-  private preparedLafayette?: { actor: THREE.Group; lights: LafayetteRoomLights; meshes: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[] };
+  private preparedLafayette?: { actor: THREE.Group; lights: LafayetteRoomLights; meshes: LafayetteMesh[] };
+  private preparedLafayetteLanding?: LafayetteMesh[];
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
@@ -274,6 +278,7 @@ export class FilmSetRenderer {
     this.markerLight = new THREE.PointLight(0xf6d99c, 0, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
+  get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil)
@@ -360,13 +365,41 @@ export class FilmSetRenderer {
       const lights = prepared?.lights ?? this.lafayetteRoomLights();
       const { x, y, z } = FILM_SETS.film_lafayette.center;
       lights.shell.position.set(x, y - 1, z);
-      const meshes: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[] = [];
+      const meshes: LafayetteMesh[] = [];
       actor.traverseVisible(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
       });
       this.preparedLafayette = prepared = { actor, lights, meshes };
     }
     const batch = prepared.meshes.splice(0, 4);
+    this.compileLafayetteBatch(renderer, camera, lighting, batch, prepared.lights.shell);
+  }
+  prepareLafayetteLanding(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
+    height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
+    const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
+    if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height < LAFAYETTE_SECOND_FLOOR_Y
+      || height >= LAFAYETTE_THIRD_FLOOR_Y || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!this.preparedLafayetteLanding) {
+      const meshes: LafayetteMesh[] = [];
+      for (const root of [neo, trinity, hotel.root]) root.traverseVisible(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
+      });
+      this.preparedLafayetteLanding = meshes;
+    }
+    const batch = this.preparedLafayetteLanding.splice(0, 4);
+    if (!batch.length) return;
+    const eye = camera.clone(); eye.position.y += LAFAYETTE.rise;
+    try {
+      street.visible = false;
+      hotel.updateLights(height - 1 + LAFAYETTE.rise);
+      this.compileLafayetteBatch(renderer, eye, lighting, batch);
+    } finally {
+      street.visible = true;
+      hotel.updateLights(height - 1);
+    }
+  }
+  private compileLafayetteBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    batch: LafayetteMesh[], lights?: THREE.Group): void {
     if (!batch.length) return;
     const subject = new THREE.Group();
     subject.traverse = visit => batch.forEach(visit);
@@ -374,7 +407,7 @@ export class FilmSetRenderer {
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);
-      lighting.compileSubject(renderer, camera, subject, prepared.lights.shell);
+      lighting.compileSubject(renderer, camera, subject, lights);
     } finally {
       renderer.setRenderTarget(previous);
       target.dispose();
@@ -556,7 +589,7 @@ export class FilmSetRenderer {
     this.meeting?.update(journey, elapsed, player?.id === journey?.actor ? player?.currentAction?.parameters.meeting as MeetingGesture | undefined : undefined);
     this.hotel?.update(journey?.visiting ? undefined : journey?.hotel, (playerPosition?.y ?? 1) - 1);
     if (this.approach) {
-      this.approach.root.visible = (playerPosition?.y ?? 1) < 15;
+      this.approach.root.visible = (playerPosition?.y ?? 1) < LAFAYETTE_THIRD_FLOOR_Y;
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
     this.office?.update(journey, cameraPosition, playerPosition, workday, elapsed, timeOfDay);
@@ -2885,6 +2918,7 @@ export class FilmSetRenderer {
     this.cancelOfficePreparation();
     this.preparedLafayette?.lights.shell.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
     this.preparedLafayette = undefined;
+    this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;

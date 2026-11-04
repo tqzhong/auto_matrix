@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HOTEL_SURFACES, HOTEL_WALLS, LAFAYETTE, lafayetteKnockPose, lafayetteSideDoor, type HotelApproach } from '@auto_matrix/shared';
 
 export class LafayetteApproachRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
   private static = new THREE.Group();
   private door = new THREE.Group();
   private sideDoor = new THREE.Group();
@@ -171,6 +171,9 @@ export class LafayetteApproachRenderer {
     this.door.position.x = LAFAYETTE.door.x - lafayetteKnockPose(hotel?.knock ?? 0).strike * .035;
     this.door.rotation.y = -THREE.MathUtils.smoothstep(progress, 0, 1) * 1.48;
     this.sideDoor.rotation.y = -THREE.MathUtils.smoothstep(lafayetteSideDoor(hotel?.welcome), 0, 1) * 1.4;
+    this.updateLights(height, exterior);
+  }
+  updateLights(height: number, exterior = false): void {
     const floor = Math.max(0, Math.min(12, Math.floor(height / 7)));
     this.lights[0].position.set(39, floor * 7 + 5.5, 23);
     this.lights[1].position.set(45.5, floor * 7 + 5, -5);

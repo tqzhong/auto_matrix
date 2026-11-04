@@ -183,6 +183,12 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
+  hideLafayetteStreetCast(): void {
+    for (const id of ['apoc', 'switch']) {
+      const entry = this.agents.get(id);
+      if (entry?.state.currentLocation === 'film_extraction_car') entry.group.visible = false;
+    }
+  }
   prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling): void {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
     // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
