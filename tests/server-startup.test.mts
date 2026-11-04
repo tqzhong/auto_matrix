@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, cabinGuidePose, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
@@ -559,6 +559,38 @@ test('a paused cabin walk does not complete the next objective while restoring t
   assert.deepEqual(cold.agents.neo.position, neo.position); assert.equal(cold.agents.neo.rotation, .62);
   assert.equal(cold.agents.neo.currentAction, null, 'a completed performance cannot replace free movement with a seated pose');
   assert.equal(cold.simulation!.running, false); assert.equal(cold.simulation!.tick, f.checkpoint.tick);
+  const joined = await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller));
+  assert.deepEqual(joined.sandbox!.neoLife!.journey, journey, 'rejoining also cannot complete the walk while paused');
+  assert.equal(joined.agents.morpheus.currentAction?.parameters.cabinGuide, true, 'an older save can reconstruct the missing guide');
+  client.socket.disconnect(); await server.stop();
+});
+
+test('a paused moving cabin guide keeps his saved walk across startup and reconnect', { timeout: 15000 }, async t => {
+  const f = await fixture(t, 'm1_cabin'), journey = f.checkpoint.sandbox.neoLife.journey;
+  const scene = FILM_SCENE_BY_ID.m1_cabin, { neo, morpheus } = f.checkpoint.agents;
+  f.checkpoint.simulation = { running: false, speed: 1 };
+  journey.step = 1; journey.awakening = { kind: 'cabin', elapsed: AWAKENING_SECONDS.cabin };
+  journey.cabinEscort = { progress: 33.6 };
+  journey.lastText = 'Morpheus：这艘飞船是我们在现实中的家。前面的核心区负责广播信号。';
+  neo.position = filmPosition(scene.set, .2, -16.4); neo.currentAction = null;
+  const root = cabinGuidePose(journey.cabinEscort.progress);
+  morpheus.position = filmPosition(scene.set, root.x, root.z); morpheus.rotation = root.yaw;
+  morpheus.velocity = { x: 3.1, y: 0, z: 0 };
+  morpheus.currentAction = { type: 'move_to', parameters: { resolved: true, cabinGuide: true }, startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server);
+  const check = (state: WorldStateFull) => {
+    assert.deepEqual(state.sandbox!.neoLife!.journey, journey);
+    const guide = state.agents.morpheus;
+    assert.deepEqual(guide.position, morpheus.position);
+    assert.deepEqual(guide.velocity, morpheus.velocity);
+    assert.deepEqual(guide.currentAction, morpheus.currentAction);
+    assert.equal(state.simulation!.tick, f.checkpoint.tick);
+  };
+  check(await client.world());
+  check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+  check(await client.command('leave_character', {}, state => !state.agents.neo.controller));
   client.socket.disconnect(); await server.stop();
 });
 

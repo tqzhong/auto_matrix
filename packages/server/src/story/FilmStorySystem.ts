@@ -4412,7 +4412,10 @@ export class FilmStorySystem {
       return arrival.phase !== 'approach';
     }
     if (this.controls(agent) && this.state?.scene === 'm1_cabin' && this.state.step === 1) {
-      const state = this.state, escort = state.cabinEscort ??= { progress: 0 }, guide = this.world.agents.get('morpheus')!;
+      const state = this.state, guide = this.world.agents.get('morpheus')!;
+      // Rejoining or leaving while paused must keep the saved guide's stride and cue.
+      if (dt === 0 && state.cabinEscort && !guide.controller && guide.currentAction?.parameters.cabinGuide) return false;
+      const escort = state.cabinEscort ??= { progress: 0 };
       const root = cabinGuidePose(escort.progress), position = filmPosition(this.scene!.set, root.x, root.z);
       const waiting = guide.controller || distance(agent.position, position) > 10;
       if (!waiting) escort.progress = Math.min(CABIN_ROUTE_LENGTH, escort.progress + Math.min(.1, dt) * 3.1);
@@ -4427,7 +4430,7 @@ export class FilmStorySystem {
         : waiting ? 'Morpheus 停下来等你。沿舱门和中央通道跟上他。'
           : escort.progress < CABIN_ROUTE_LENGTH ? 'Morpheus：这艘飞船是我们在现实中的家。前面的核心区负责广播信号。'
             : 'Morpheus 已在连接椅后等候。走到椅子前，亲自决定是否接入。';
-      if (escort.progress >= CABIN_ROUTE_LENGTH && this.near(agent, this.step!)) this.advance(this.step!.label, agent, tick);
+      if (dt > 0 && escort.progress >= CABIN_ROUTE_LENGTH && this.near(agent, this.step!)) this.advance(this.step!.label, agent, tick);
       return false;
     }
     if (!this.controls(agent) || !awakeningLocked(this.state!)) return false;
