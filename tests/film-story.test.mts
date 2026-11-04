@@ -2804,8 +2804,21 @@ test('the château guard can wound Neo, and a failed attempt retries without los
   assert.equal(state.chateau?.weapon, 'sword'); assert.equal(h.actor().status, 'alive');
   assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 0);
   h.command('act'); assert.equal(state.chateau?.phase, 'ready');
+  const neo = h.actor();
+  h.players.step(.05, true, h.tick());
+  const pose = structuredClone(neo.currentAction);
+  const saved = structuredClone(h.sandbox.state);
+  assert.equal(pose?.parameters.chateauWeapon, 'sword');
+  h.players.release('film-player', h.tick());
+  assert.deepEqual(neo.currentAction, pose, 'disconnect must retain the equipped sword');
+  neo.currentAction = null;
+  h.world.simulationTick = h.tick();
+  h.sandbox.restore(saved);
+  assert.deepEqual(neo.currentAction, pose, 'a paused cold load rebuilds the equipped sword');
+  h.players.possess('film-player', 'neo', h.tick());
+  assert.deepEqual(neo.currentAction, pose, 'resuming control must keep the sword visible while paused');
   h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
-  assert.equal(state.chateau?.weapon, 'sword'); assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
+  assert.equal(h.sandbox.life.film.state?.chateau?.weapon, 'sword'); assert.equal(h.sandbox.state.threats.filter(t => t.scene === hall.id).length, 2);
 });
 
 test('Neo must inspect the mountain exit, call Link, then steer a saved flight south before the garage cut', () => {

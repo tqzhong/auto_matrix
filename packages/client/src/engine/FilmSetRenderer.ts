@@ -235,8 +235,6 @@ export class FilmSetRenderer {
   private exileDessert?: THREE.Group;
   private bookDoor?: THREE.Group;
   private chateauVolley?: THREE.Group;
-  private chateauVolleyTick?: number;
-  private chateauVolleyStart = 0;
   private chateauDoor?: THREE.Mesh;
   private garageCar?: THREE.Group;
   private garageGhosts: THREE.Group[] = [];
@@ -274,6 +272,7 @@ export class FilmSetRenderer {
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby)
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
+      || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_zion_temple' && this.currentScene === 'm2_temple'
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
@@ -285,7 +284,7 @@ export class FilmSetRenderer {
   setArchitectState(state?: AgentState): void { this.architectState = state; }
   setCrosscutSubjects(bodies: (id: string) => THREE.Object3D | undefined, avatars: (id: string) => THREE.Object3D | undefined): void { this.crosscutBodies = bodies; this.phoneBodies = avatars; }
   renderTelevisionPreview(renderer: THREE.WebGLRenderer): void { this.construct?.renderPreview(renderer, this.scene.environment); }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
@@ -662,9 +661,9 @@ export class FilmSetRenderer {
     }
     if (this.bookDoor) this.bookDoor.position.x = sceneId === 'm2_library' && !journey?.visiting && (journey?.step ?? 0) >= 3 ? -5.8 : 0;
     if (this.chateauVolley) {
-      const volley = sceneId === 'm2_chateau' && !journey?.visiting ? journey?.chateau?.volleyAt : undefined;
-      if (volley !== undefined && volley !== this.chateauVolleyTick) { this.chateauVolleyTick = volley; this.chateauVolleyStart = elapsed; }
-      this.chateauVolley.visible = volley !== undefined && elapsed - this.chateauVolleyStart < 1.25;
+      const encounter = sceneId === 'm2_chateau' && !journey?.visiting ? journey?.chateau : undefined;
+      const volley = encounter?.phase === 'duel' && encounter.wave === 1 ? encounter.volleyAt : undefined;
+      this.chateauVolley.visible = volley !== undefined && tick >= volley && tick - volley < 3;
     }
     if (this.chateauDoor) this.chateauDoor.position.x = sceneId === 'm2_chateau' && (journey?.step ?? 0) >= 2 ? 5 : 0;
     if (this.garageCar) {
@@ -2777,7 +2776,7 @@ export class FilmSetRenderer {
     this.smithFinale?.dispose(); this.smithFinale = undefined;
     this.trilogyEpilogue?.dispose(); this.trilogyEpilogue = undefined;
     this.portalDoor = undefined; this.oracleLetter = undefined; this.courtyardStaff = undefined; this.courtyardBirds = []; this.courtyardDisturbedAt = undefined;
-    this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauVolleyTick = undefined; this.chateauDoor = undefined;
+    this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobil?.dispose(); this.mobil = undefined;
     this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;

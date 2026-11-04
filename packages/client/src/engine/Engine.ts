@@ -211,7 +211,7 @@ export class Engine {
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
-    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera);
+    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, player ? this.agentRenderer.getAgent(player.id)?.position : undefined, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera, this.tick);
     this.lightCulling.stablePointSlots = this.filmSets.stablePointSlots;
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
     this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));

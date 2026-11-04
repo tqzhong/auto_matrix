@@ -69,7 +69,10 @@ export class SandboxSystem {
     if (journey?.scene === 'm1_bridge') this.life.film.restoreBridgeCapture(this.world.agents.get(journey.actor)!, this.world.simulationTick);
     if (journey) this.life.film.restoreMeetingFrame(this.world.agents.get(journey.actor)!, this.world.simulationTick);
     if (journey) this.life.film.custody.frame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
-    if (journey) this.life.film.restoreChateauSpace();
+    if (journey?.scene === 'm2_chateau') {
+      this.life.film.restoreChateauSpace();
+      this.life.film.restoreChateauPose(this.world.agents.get(journey.actor)!, this.world.simulationTick);
+    }
     if (journey) this.life.film.apartmentFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.clubFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.morningFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);

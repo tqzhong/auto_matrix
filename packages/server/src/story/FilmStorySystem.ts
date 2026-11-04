@@ -5155,6 +5155,16 @@ export class FilmStorySystem {
     const encounter = this.state?.scene === 'm2_chateau' && !this.state.visiting && this.controls(agent) ? this.state.chateau : undefined;
     if (encounter && agent.currentAction) agent.currentAction.parameters.chateauWeapon = encounter.weapon;
   }
+  restoreChateauPose(agent: AgentState, tick: number): boolean {
+    const state = this.state, weapon = state?.chateau?.weapon;
+    if (state?.scene !== 'm2_chateau' || state.visiting || !this.controls(agent) || !weapon || agent.status !== 'alive') return false;
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    if (agent.currentAction?.type !== 'idle' || agent.currentAction.parameters.chateauWeapon !== weapon) {
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crouching: false, chateauWeapon: weapon },
+        startedAt: tick, duration: 1, progress: 0 };
+    }
+    return true;
+  }
   chateauParry(agent: AgentState, tick: number): string | undefined {
     const encounter = this.state?.scene === 'm2_chateau' && this.controls(agent) && !this.state.visiting ? this.state.chateau : undefined;
     if (encounter?.phase !== 'duel') return undefined;

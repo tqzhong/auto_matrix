@@ -210,6 +210,46 @@ test('the Reloaded temple keeps point-light shader slots while walking, turning 
   assert.deepEqual(slotCounts, Array(slotCounts.length).fill(hallLights.length + 1), 'hall lights and the objective marker must keep one shader variant');
 });
 
+test('the château keeps the hall and objective light slots when guards start the duel', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = document; });
+  const scene = FILM_SCENE_BY_ID.m2_chateau;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!;
+  actor.position = filmStepPosition(scene, scene.steps[0]);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: actor.position, reflections: {}, lastText: '',
+    chateau: { phase: 'ready', wave: 1, parries: 0, disarms: 0, attempts: 0, wounded: false } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const marker = h.scene.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
+  const renderLights = (yaw: number, tick = 12) => {
+    h.camera.position.set(actor.position.x, actor.position.y + 4, actor.position.z + 6);
+    h.camera.rotation.y = yaw;
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position, undefined, undefined, false, 12000, undefined, tick)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const lights: number[] = [];
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object.id); });
+    h.after();
+    return lights;
+  };
+  const approach = renderLights(0);
+  assert.ok(approach.includes(marker.id));
+  assert.ok(marker.intensity > 0);
+  journey.chateau!.phase = 'duel';
+  journey.chateau!.volleyAt = 12;
+  assert.deepEqual(renderLights(0), approach);
+  assert.deepEqual(renderLights(Math.PI), approach);
+  assert.equal(marker.intensity, 0, 'the duel keeps the marker slot dark');
+  const volley = (renderer as unknown as { chateauVolley: THREE.Group }).chateauVolley;
+  assert.equal(volley.visible, true, 'stopped rounds are visible during the volley');
+  renderLights(0, 16);
+  assert.equal(volley.visible, false, 'saved volley age does not depend on time since opening the client');
+});
+
 for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off the goal light without dropping its shader slot`, t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
