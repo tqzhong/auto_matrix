@@ -51,7 +51,7 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
 });
 
-test('Lafayette prepares the third-floor light layout without removing the active street', t => {
+test('Lafayette prepares the ground and third-floor light layouts without changing the active street', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
@@ -71,6 +71,30 @@ test('Lafayette prepares the third-floor light layout without removing the activ
   t.after(() => { geometry.dispose(); material.dispose(); });
   for (const actor of actors) for (let i = 0; i < 3; i++) actor.add(new THREE.Mesh(geometry, material));
   const eye = new THREE.PerspectiveCamera(); eye.position.y = 12;
+  const pointLights = () => {
+    const lights: THREE.PointLight[] = [];
+    scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+    return lights;
+  };
+  const groundLights = pointLights();
+  const groundBatches: number[] = [];
+  const groundWebgl = {
+    extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
+    compile(subject: THREE.Object3D) {
+      assert.equal(approach.root.visible, true);
+      let count = 0; subject.traverse(() => count++);
+      assert.ok(count > 0 && count <= 4);
+      groundBatches.push(pointLights().length);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 8, actors);
+  assert.deepEqual(groundBatches, []);
+  for (let i = 0; i < 2; i++) {
+    renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 1, actors);
+    assert.deepEqual(pointLights(), groundLights);
+    assert.equal(lighting.enabled, true);
+  }
+  assert.deepEqual(groundBatches, [8, 4]);
   const batches: THREE.Object3D[][] = [];
   const webgl = {
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},

@@ -235,8 +235,11 @@ export class Engine {
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');
       this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo);
-      if (meeting.scene === 'm1_pills' && avatarPosition)
-        this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, [neo, this.agentRenderer.getAgentHero('trinity')]);
+      if (meeting.scene === 'm1_pills' && avatarPosition) {
+        const actors = [neo, this.agentRenderer.getAgentHero('trinity')] as const;
+        this.filmSets.prepareLafayetteGround(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
+        this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
+      }
     }
     if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet && !this.sandbox?.neoLife?.lift?.passenger)
       this.agentRenderer.prepareOfficeManager(this.renderer, this.camera, this.lightCulling);

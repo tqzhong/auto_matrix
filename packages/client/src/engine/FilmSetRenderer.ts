@@ -171,6 +171,7 @@ export class FilmSetRenderer {
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
   private preparedLafayette?: { actor: THREE.Group; lights: LafayetteRoomLights; meshes: LafayetteMesh[] };
+  private preparedLafayetteGround?: { meshes: LafayetteMesh[]; fourSlots: boolean };
   private preparedLafayetteLanding?: LafayetteMesh[];
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
@@ -365,27 +366,44 @@ export class FilmSetRenderer {
       const lights = prepared?.lights ?? this.lafayetteRoomLights();
       const { x, y, z } = FILM_SETS.film_lafayette.center;
       lights.shell.position.set(x, y - 1, z);
-      const meshes: LafayetteMesh[] = [];
-      actor.traverseVisible(object => {
-        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
-      });
-      this.preparedLafayette = prepared = { actor, lights, meshes };
+      this.preparedLafayette = prepared = { actor, lights, meshes: this.lafayetteMeshes([actor]) };
     }
     const batch = prepared.meshes.splice(0, 4);
     this.compileLafayetteBatch(renderer, camera, lighting, batch, prepared.lights.shell);
+  }
+  prepareLafayetteGround(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
+    height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
+    const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
+    if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height >= LAFAYETTE_SECOND_FLOOR_Y
+      || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const prepared = this.preparedLafayetteGround ??= { meshes: this.lafayetteMeshes([neo, trinity, hotel.root, street]), fourSlots: false };
+    const batch = prepared.meshes.slice(0, 4);
+    if (!batch.length) return;
+    // Turns after the rear entrance reuse either variant. Keep frustum selection in the actual render.
+    const slots = prepared.fourSlots ? 4 : 8;
+    const pointLights: THREE.PointLight[] = [];
+    this.scene.traverseVisible(object => {
+      if (object instanceof THREE.PointLight && !object.castShadow) pointLights.push(object);
+    });
+    if (pointLights.length < slots) return;
+    const hidden = pointLights.slice(slots), enabled = lighting.enabled;
+    try {
+      for (const light of hidden) light.visible = false;
+      lighting.enabled = false;
+      this.compileLafayetteBatch(renderer, camera, lighting, batch);
+    } finally {
+      lighting.enabled = enabled;
+      for (const light of hidden) light.visible = true;
+    }
+    if (prepared.fourSlots) prepared.meshes.splice(0, batch.length);
+    prepared.fourSlots = !prepared.fourSlots;
   }
   prepareLafayetteLanding(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
     height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height < LAFAYETTE_SECOND_FLOOR_Y
       || height >= LAFAYETTE_THIRD_FLOOR_Y || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    if (!this.preparedLafayetteLanding) {
-      const meshes: LafayetteMesh[] = [];
-      for (const root of [neo, trinity, hotel.root]) root.traverseVisible(object => {
-        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
-      });
-      this.preparedLafayetteLanding = meshes;
-    }
+    this.preparedLafayetteLanding ??= this.lafayetteMeshes([neo, trinity, hotel.root]);
     const batch = this.preparedLafayetteLanding.splice(0, 4);
     if (!batch.length) return;
     const eye = camera.clone(); eye.position.y += LAFAYETTE.rise;
@@ -397,6 +415,13 @@ export class FilmSetRenderer {
       street.visible = true;
       hotel.updateLights(height - 1);
     }
+  }
+  private lafayetteMeshes(roots: THREE.Group[]): LafayetteMesh[] {
+    const meshes: LafayetteMesh[] = [];
+    for (const root of roots) root.traverseVisible(object => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
+    });
+    return meshes;
   }
   private compileLafayetteBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
     batch: LafayetteMesh[], lights?: THREE.Group): void {
@@ -2918,6 +2943,7 @@ export class FilmSetRenderer {
     this.cancelOfficePreparation();
     this.preparedLafayette?.lights.shell.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
     this.preparedLafayette = undefined;
+    this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined;
