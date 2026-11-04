@@ -174,6 +174,7 @@ export class FilmSetRenderer {
   private mountain?: MountainSetRenderer;
   private training?: TrainingSetRenderer;
   private currentScene?: string;
+  private dockGunnerApproach = false;
   private mirror?: Reflector;
   private resetMirrorFrame?: () => void;
   private mirrorSubject?: THREE.Object3D;
@@ -278,7 +279,7 @@ export class FilmSetRenderer {
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
       || id === 'film_zion_temple' && this.currentScene === 'm2_temple'
-      || id === 'film_zion_hangar' && (this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger')
+      || id === 'film_zion_hangar' && (this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockGunnerApproach)
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
   }
@@ -296,6 +297,7 @@ export class FilmSetRenderer {
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
     const journey = sandbox?.neoLife?.journey;
     const sceneId = journey?.visiting ?? journey?.scene;
+    this.dockGunnerApproach = journey?.scene === 'm3_dock_battle' && !journey.visiting && (journey.dockGunnery?.phase ?? 'ready') === 'ready';
     if (player && player.id === journey?.actor && !journey.visiting && ['m3_defense', 'm3_sun'].includes(journey.scene))
       set = FILM_SETS[logosFlightSet(journey.logos ?? journey.logosEntry ?? newLogosFlight(journey.scene === 'm3_defense' ? 'defense' : 'sun'))];
     if (this.office && set && ['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }

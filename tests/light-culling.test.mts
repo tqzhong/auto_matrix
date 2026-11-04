@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BANE_INQUIRY, DIGGERS, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newBaneInquiry, newDiggers, newGarageEscape, newHammerFlight, newHammerGunnery, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { APU_RIG, BANE_INQUIRY, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -547,7 +547,7 @@ test('Hammer keeps point-light slots while the crew looks around and switches vi
   assert.deepEqual(exterior.getWorldPosition(new THREE.Vector3()).toArray(), outsidePosition.toArray());
 });
 
-test('the drill defense keeps light slots through aperture movement, rocket impacts and climbing', t => {
+test('the dock defense stabilizes the moving approach and keeps cockpit light culling', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
   const ground = FILM_SCENE_BY_ID.m3_diggers, upper = FILM_SCENE_BY_ID.m3_upper_digger;
@@ -590,6 +590,19 @@ test('the drill defense keeps light slots through aperture movement, rocket impa
   assert.deepEqual(sample(zee, ladder.x, 24, ladder.z, -Math.PI / 2), base);
   journey.upperDigger.phase = 'crawl'; journey.upperDigger.crawl = 15;
   assert.deepEqual(sample(zee, -26, UPPER_DIGGER.height, 28, Math.PI / 2), base);
+
+  const mifune = world.agents.get('mifune')!;
+  mifune.isInMatrix = false;
+  journey.scene = 'm3_dock_battle'; journey.actor = mifune.id; journey.completed.push(upper.id);
+  journey.upperDigger.phase = 'done'; journey.upperDigger.charraDead = true;
+  journey.dockGunnery = newDockGunnery(0);
+  const entrance = sample(mifune, 0, 0, 44, Math.PI);
+  assert.equal(entrance.dockLamps, 6);
+  assert.deepEqual(sample(mifune, -4.3, 0, 44, -Math.PI / 2), entrance);
+  assert.deepEqual(sample(mifune, -4.3, 0, 10, Math.PI), entrance);
+  journey.dockGunnery.phase = 'firing';
+  sample(mifune, 0, APU_RIG.floor + APU_RIG.pilot.y, DOCK_GUNNERY.apuZ, Math.PI - .8);
+  assert.equal(renderer.stablePointSlots, false, 'the cockpit can cull lights outside its restricted view');
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
