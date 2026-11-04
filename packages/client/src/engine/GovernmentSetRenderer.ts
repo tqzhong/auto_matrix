@@ -25,6 +25,7 @@ export class GovernmentSetRenderer {
   private rescueFire?: THREE.Group;
   private glassShards?: THREE.Group;
   private rescueRope?: THREE.Mesh;
+  private rescueRopeDrop?: THREE.Mesh;
   private impactRipples?: THREE.Group;
   private crashFire?: THREE.Group;
   private crashLight?: THREE.PointLight;
@@ -136,7 +137,8 @@ export class GovernmentSetRenderer {
 
   private buildRoof(): void {
     this.box(this.group, this.concrete, 0, -.25, 0, 62, .5, 90, 'government-roof-deck');
-    for (const x of [-30.6, 30.6]) this.box(this.group, this.darkConcrete, x, 1.25, 0, .8, 2.5, 90);
+    const parapet = AIR_RESCUE.roof.parapet;
+    for (const x of [parapet.x, -parapet.x]) this.box(this.group, this.darkConcrete, x, parapet.height / 2, 0, parapet.width, parapet.height, 90);
     for (const z of [-44.6, 44.6]) this.box(this.group, this.darkConcrete, 0, 1.25, z, 62, 2.5, .8);
     for (let i = 0; i < 18; i++) {
       const seam = this.box(this.group, this.darkConcrete, -27 + i % 6 * 11, .015, -38 + Math.floor(i / 6) * 38, .06, .02, 34);
@@ -243,18 +245,23 @@ export class GovernmentSetRenderer {
       cloud.position.set(-3.8 + (i * 2.37) % 7.6, 1.4 + i % 4 * 1.05, -.1 + (i % 3) * .34); cloud.scale.y = 1.15 + i % 2 * .35;
       cloud.castShadow = false; cloud.userData.smoke = i; cloud.userData.originY = cloud.position.y;
     }
-    const light = new THREE.PointLight(0xff6a24, 0, 45, 2); light.name = 'air-rescue-crash-light'; this.light(light, fire); this.crashLight = light;
+    const light = new THREE.PointLight(0xff6a24, 0, 45, 2); light.name = 'air-rescue-crash-light';
+    light.position.copy(fire.position); this.light(light); this.crashLight = light;
   }
 
   private buildRope(): void {
     const ropeMaterial = this.material(0x202725, .76, .08);
     const rope = this.mesh(new THREE.CylinderGeometry(.085, .085, 1, 12), ropeMaterial, this.group, 'air-rescue-rope'); rope.visible = false; this.rescueRope = rope;
+    if (this.setId === 'film_government_roof') {
+      this.rescueRopeDrop = this.mesh(rope.geometry, ropeMaterial, this.group, 'air-rescue-rope-drop');
+      this.rescueRopeDrop.visible = false;
+    }
   }
 
-  private positionRope(from: THREE.Vector3, to: THREE.Vector3): void {
-    if (!this.rescueRope) return; const delta = to.clone().sub(from);
-    this.rescueRope.visible = true; this.rescueRope.position.copy(from).add(to).multiplyScalar(.5);
-    this.rescueRope.scale.set(1, delta.length(), 1); this.rescueRope.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
+  private positionRope(from: THREE.Vector3, to: THREE.Vector3, rope = this.rescueRope): void {
+    if (!rope) return; const delta = to.clone().sub(from);
+    rope.visible = true; rope.position.copy(from).add(to).multiplyScalar(.5);
+    rope.scale.set(1, delta.length(), 1); rope.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize());
   }
 
   private buildBulletLines(): void {
@@ -291,7 +298,7 @@ export class GovernmentSetRenderer {
         if (rescue) {
           const approach = rescue.phase === 'ready' ? 0 : rescue.phase === 'approach'
             ? THREE.MathUtils.smoothstep(rescue.elapsed, 0, AIR_RESCUE.office.approach) : 1;
-          const catchProgress = rescue.phase === 'catching' || rescue.phase === 'done'
+          const catchProgress = rescue.phase === 'done' ? 1 : rescue.phase === 'catching'
             ? THREE.MathUtils.smoothstep(rescue.elapsed, 0, AIR_RESCUE.office.catching) : 0;
           this.helicopter.position.set(19 - approach * 15 + catchProgress * 4.5, 1 + approach * .35 + catchProgress * 2.8,
             -36 + Math.sin(elapsed * 1.7) * .24 - catchProgress * 2.2);
@@ -350,7 +357,7 @@ export class GovernmentSetRenderer {
         const impact = roofRescue.phase === 'ready' ? 0 : roofRescue.phase === 'impact'
           ? THREE.MathUtils.smoothstep(roofRescue.elapsed, 0, AIR_RESCUE.roof.impact) : 1;
         const drift = roofRescue.phase === 'bracing' ? THREE.MathUtils.smoothstep(roofRescue.elapsed, 0, AIR_RESCUE.roof.duration) : ['pulling', 'done'].includes(roofRescue.phase) ? 1 : 0;
-        const crash = roofRescue.phase === 'pulling' || roofRescue.phase === 'done'
+        const crash = roofRescue.phase === 'done' ? 1 : roofRescue.phase === 'pulling'
           ? THREE.MathUtils.smoothstep(roofRescue.elapsed, 0, 3.2) : 0;
         this.helicopter.position.set(7 - impact * 2 - drift * 5 - crash * 7, 2 + impact * 5 + drift * 2 - crash * 5,
           -24 - impact * 7 - drift * 7 - crash * 10);
@@ -367,9 +374,22 @@ export class GovernmentSetRenderer {
       : -Math.PI * .42 * Math.max(0, Math.min(1, (rooftop?.elapsed ?? 0) / 2.8)) * (rooftop?.phase === 'downloading' ? 1 : 0);
     if (this.minigun) this.minigun.visible = !roofRescue;
     if (this.rescueRope) this.rescueRope.visible = false;
+    if (this.rescueRopeDrop) this.rescueRopeDrop.visible = false;
     if (roofRescue && ['impact', 'bracing', 'pulling', 'done'].includes(roofRescue.phase)) {
-      const neo = airRescueRoot(roofRescue, 'neo'); const trinity = airRescueRoot(roofRescue, 'trinity');
-      this.positionRope(new THREE.Vector3(neo.x, neo.y + 2.8, neo.z), new THREE.Vector3(trinity.x, trinity.y + 2.4, trinity.z));
+      const grip = AIR_RESCUE.roof.grip, parapet = AIR_RESCUE.roof.parapet;
+      const trinity = airRescueRoot(roofRescue, 'trinity');
+      const from = new THREE.Vector3(grip.x, grip.y, grip.z), to = new THREE.Vector3(trinity.x, trinity.y + 2.4, trinity.z);
+      const edgeX = parapet.x - parapet.width / 2 - .11;
+      let end = to;
+      if (to.x < edgeX) {
+        const ledge = from.clone().lerp(to, (edgeX - from.x) / (to.x - from.x));
+        if (ledge.y < parapet.height + .11) {
+          ledge.y = parapet.height + .11;
+          end = ledge;
+          this.positionRope(ledge, to, this.rescueRopeDrop);
+        }
+      }
+      this.positionRope(from, end);
     }
     const crashVisible = Boolean(roofRescue && (roofRescue.crash || roofRescue.phase === 'done' || roofRescue.phase === 'pulling' && roofRescue.elapsed >= 2.65));
     if (this.impactRipples) {

@@ -3,7 +3,7 @@ import type { CombatImpact } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
 export class GunfireEffects {
-  private flashes: { group: THREE.Group; line: THREE.Line; light: THREE.PointLight; age: number }[] = [];
+  private flashes: { group: THREE.Group; line: THREE.Line; light?: THREE.PointLight; age: number }[] = [];
   private debris: { mesh: THREE.Mesh; velocity: THREE.Vector3; age: number }[] = [];
   private clouds: { sprite: THREE.Sprite; age: number }[] = [];
   private chip = new THREE.TetrahedronGeometry(1);
@@ -24,7 +24,11 @@ export class GunfireEffects {
     const group = new THREE.Group(); group.position.copy(from);
     const flare = new THREE.Mesh(this.muzzle, this.flash); flare.scale.set(1, 1, 2.7); flare.lookAt(to.clone().sub(from)); group.add(flare);
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), to.clone().sub(from)]), new THREE.LineBasicMaterial({ color: 0xebd8a0, transparent: true, opacity: .6, toneMapped: false, depthWrite: false })); group.add(line);
-    const light = new THREE.PointLight(0xffd495, 85, 9); group.add(light); this.scene.add(group); this.flashes.push({ group, line, light, age: 0 });
+    // The air rescue has its own fixed light rig, including the minigun and crash flashes.
+    const scriptedRescue = hit.target === 'government-glass' || hit.target === 'helicopter-rope' || hit.target === 'glass-facade';
+    const light = scriptedRescue ? undefined : new THREE.PointLight(0xffd495, 85, 9);
+    if (light) group.add(light);
+    this.scene.add(group); this.flashes.push({ group, line, light, age: 0 });
     if (shot.surface === 'stone') {
       for (let i = 0; i < 10; i++) {
         if (this.debris.length >= 180) { const old = this.debris.shift()!; old.mesh.removeFromParent(); }
@@ -54,7 +58,8 @@ export class GunfireEffects {
   update(dt: number): void {
     for (let i = this.flashes.length - 1; i >= 0; i--) {
       const item = this.flashes[i]; item.age += dt;
-      (item.line.material as THREE.LineBasicMaterial).opacity = Math.max(0, .6 * (1 - item.age / .1)); item.light.intensity = Math.max(0, 85 * (1 - item.age / .07));
+      (item.line.material as THREE.LineBasicMaterial).opacity = Math.max(0, .6 * (1 - item.age / .1));
+      if (item.light) item.light.intensity = Math.max(0, 85 * (1 - item.age / .07));
       if (item.age > .1) { this.removeFlash(item); this.flashes.splice(i, 1); }
     }
     for (let i = this.debris.length - 1; i >= 0; i--) {
@@ -69,7 +74,7 @@ export class GunfireEffects {
       if (item.age > 2) { item.sprite.removeFromParent(); item.sprite.material.dispose(); this.clouds.splice(i, 1); }
     }
   }
-  private removeFlash(item: typeof this.flashes[number]): void { item.group.removeFromParent(); item.line.geometry.dispose(); (item.line.material as THREE.Material).dispose(); item.light.dispose(); }
+  private removeFlash(item: typeof this.flashes[number]): void { item.group.removeFromParent(); item.line.geometry.dispose(); (item.line.material as THREE.Material).dispose(); item.light?.dispose(); }
   dispose(): void {
     this.flashes.forEach(item => this.removeFlash(item)); this.debris.forEach(item => item.mesh.removeFromParent());
     this.clouds.forEach(item => { item.sprite.removeFromParent(); item.sprite.material.dispose(); });

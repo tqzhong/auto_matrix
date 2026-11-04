@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, newAmbushEscape, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmPosition, filmStepPosition, newAmbushEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -215,6 +215,44 @@ for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off th
     assert.deepEqual(done.map(light => light.id), ready.map(light => light.id));
     assert.equal(markerLight.intensity, 0);
   }
+});
+
+test('the minigun changes illumination without dropping a light slot during the air rescue', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_helicopter;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!;
+  actor.isInMatrix = true;
+  const rescue: AirRescueEncounter = { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0 };
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: actor.position, reflections: {}, lastText: '', airRescue: rescue };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const slots = () => {
+    const root = airRescueRoot(rescue, 'neo');
+    actor.position = filmPosition(scene.set, root.x, root.z);
+    actor.position.y += root.y;
+    h.camera.position.set(actor.position.x, actor.position.y + 3, actor.position.z - 6);
+    h.camera.rotation.y = Math.PI;
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const lights: { id: number; name: string; intensity: number }[] = [];
+    h.scene.traverseVisible(object => {
+      if (object instanceof THREE.PointLight) lights.push({ id: object.id, name: object.name, intensity: object.intensity });
+    });
+    h.after();
+    return lights;
+  };
+  const ready = slots();
+  rescue.phase = 'firing'; rescue.suppression = .5;
+  const firing = slots();
+  rescue.phase = 'catching'; rescue.elapsed = 1.4;
+  const catching = slots();
+  assert.equal(ready.find(light => light.name === 'air-rescue-minigun-flash')?.intensity, 0);
+  assert.ok(firing.some(light => light.name === 'air-rescue-minigun-flash' && light.intensity > 20));
+  assert.deepEqual(firing.map(light => light.id), ready.map(light => light.id));
+  assert.deepEqual(catching.map(light => light.id), ready.map(light => light.id));
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {

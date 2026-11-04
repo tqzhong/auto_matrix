@@ -1,8 +1,9 @@
 import { poseReloadedCatchContact } from './ReloadedCatchPerformance.js';
+import { crosscutPalm } from './CrosscutPerformance.js';
 import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
-import { HEL_DISARM, HEL_TRIO, helDanceDoorDuration, helDanceDoorLocked } from '@auto_matrix/shared';
+import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, helDanceDoorDuration, helDanceDoorLocked } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -996,6 +997,27 @@ export class AgentRenderer {
     }
     const rescued = this.agents.get('trinity'), catchGesture = (this.playerId === 'neo' ? this.playerMotion?.catch : neo?.state.currentAction?.parameters.catch) as MotionInput['catch'];
     if (neo && rescued && catchGesture && rescued.state.currentAction?.parameters.catch && !rescued.state.controller) poseReloadedCatchContact(neo.rig, rescued.rig, catchGesture);
+    const airRescue = !journey?.visiting ? journey?.airRescue : undefined;
+    if (airRescue?.kind === 'office' && (airRescue.phase === 'catching' || airRescue.phase === 'done')
+      && neo?.rig.hero && morpheus?.rig.hero && morpheus.state.currentAction?.parameters.airRescue && !morpheus.state.controller) {
+      const weight = airRescue.phase === 'done' ? 1 : THREE.MathUtils.smoothstep(airRescue.elapsed, .85, AIR_RESCUE.office.contact);
+      if (weight > 0) {
+        const neoBones = neo.rig.hero.bones, morpheusBones = morpheus.rig.hero.bones;
+        const contact = neoBones.get('shoulder_R')!.getWorldPosition(new THREE.Vector3())
+          .lerp(morpheusBones.get('shoulder_L')!.getWorldPosition(new THREE.Vector3()), .5);
+        contact.y -= .34;
+        const neoPalm = neoBones.get('wrist_R')!.localToWorld(new THREE.Vector3(0, -.19, .035));
+        const morpheusPalm = morpheusBones.get('wrist_L')!.localToWorld(new THREE.Vector3(0, -.19, .035));
+        crosscutPalm(neo.rig, 'R', neoPalm.lerp(contact, weight));
+        contact.y -= .09;
+        crosscutPalm(morpheus.rig, 'L', morpheusPalm.lerp(contact, weight));
+      }
+    }
+    if (airRescue?.kind === 'roof' && neo?.rig.hero && neo.state.currentAction?.parameters.airRescue
+      && ['impact', 'bracing', 'pulling', 'done'].includes(airRescue.phase)) {
+      const center = FILM_SETS.film_government_roof.center, grip = AIR_RESCUE.roof.grip;
+      crosscutPalm(neo.rig, 'R', new THREE.Vector3(center.x + grip.x, center.y - 1 + grip.y, center.z + grip.z));
+    }
     const custody = officeCustodyActive(journey) ? journey!.office!.custody : undefined;
     const front = custody && Object.keys(custody.bodies).find(role => role !== custody.leader && role !== custody.catcher);
     const lookout = this.agents.get('trinity');

@@ -28,6 +28,7 @@ export const AIR_RESCUE = {
     fire: 3.6,
     leapAt: .8,
     leapWindow: 2.4,
+    contact: 1.4,
     catching: 4.6,
   },
   roof: {
@@ -36,6 +37,8 @@ export const AIR_RESCUE = {
     beats: [1.25, 3.35, 5.55] as readonly number[],
     window: .58,
     pulling: 5.6,
+    parapet: { x: -30.6, width: .8, height: 2.5 },
+    grip: { x: -29.52, y: 2.86, z: -22.34 },
   },
 } as const;
 
@@ -52,23 +55,23 @@ export function airRescueRoot(encounter: AirRescueEncounter, role: AirRescueRole
   if (encounter.kind === 'office') {
     const approach = encounter.phase === 'ready' ? 0 : encounter.phase === 'approach'
       ? smooth(encounter.elapsed / AIR_RESCUE.office.approach) : 1;
-    const catchProgress = encounter.phase === 'catching' || encounter.phase === 'done'
-      ? smooth(encounter.elapsed / AIR_RESCUE.office.catching) : 0;
+    const catchElapsed = encounter.phase === 'done' ? AIR_RESCUE.office.catching : encounter.phase === 'catching' ? encounter.elapsed : 0;
+    const catchProgress = smooth(catchElapsed / AIR_RESCUE.office.catching);
+    const connect = smooth(catchElapsed / AIR_RESCUE.office.contact);
+    const lift = smooth((catchElapsed - 1.1) / (AIR_RESCUE.office.catching - 1.1));
     const helicopter = { x: 19 - approach * 15 + catchProgress * 4.5, y: 1 + approach * .35 + catchProgress * 2.8, z: -36 - catchProgress * 2.2 };
     const gunner = { x: helicopter.x - 4.9, y: helicopter.y + 1.15, z: helicopter.z + .4 };
     if (role === 'neo') {
       if (encounter.phase !== 'catching' && encounter.phase !== 'done') return { ...gunner, yaw: 0 };
-      const connect = smooth(encounter.elapsed / 1.4); const lift = smooth((encounter.elapsed - 1.1) / (AIR_RESCUE.office.catching - 1.1));
       return { x: gunner.x + (2.6 - gunner.x) * connect, y: gunner.y + (.4 - gunner.y) * connect + lift * 3.3,
-        z: gunner.z + (-30 - gunner.z) * connect + lift * .2, yaw: 0 };
+        z: gunner.z + (-30.65 - gunner.z) * connect + lift * .2, yaw: 0 };
     }
     if (role === 'trinity') return { x: helicopter.x + 1.25, y: helicopter.y + 1.1, z: helicopter.z + 2.4, yaw: 0 };
     if (role === 'morpheus') {
       const free = encounter.phase === 'firing' ? smooth(((encounter.suppression ?? 0) - .35) / .65)
         : ['leap_window', 'catching', 'done'].includes(encounter.phase) ? 1 : 0;
       if (encounter.phase !== 'catching' && encounter.phase !== 'done') return { x: 0, y: 0, z: -2.2 - free * 20.2, yaw: Math.PI };
-      const connect = smooth(encounter.elapsed / 1.4); const lift = smooth((encounter.elapsed - 1.1) / (AIR_RESCUE.office.catching - 1.1));
-      return { x: 2.6 * lift, y: -1.3 * connect + lift * 5, z: -22.4 - connect * 7.6 + lift * .2, yaw: Math.PI };
+      return { x: 2.6 * connect, y: -.25 * connect + lift * 3.3, z: -22.4 - connect * 6.95 + lift * .2, yaw: Math.PI };
     }
     const roots = {
       smith: { x: -5.5, y: 0, z: -8.5, yaw: .45 },
@@ -79,11 +82,14 @@ export function airRescueRoot(encounter: AirRescueEncounter, role: AirRescueRole
   }
 
   if (role === 'neo') return { x: -28.5, y: 0, z: -22, yaw: -Math.PI / 2 };
-  if (role === 'morpheus') return { x: -23, y: 0, z: -18.5, yaw: -2.4 };
+  if (role === 'morpheus') return { x: -26.5, y: 0, z: -16, yaw: -2.4 };
   if (role === 'trinity') {
-    const rising = encounter.phase === 'pulling' || encounter.phase === 'done' ? smooth(encounter.elapsed / 4.2) : 0;
-    const crossing = encounter.phase === 'pulling' || encounter.phase === 'done' ? smooth((encounter.elapsed - 3.8) / 1.8) : 0;
-    return { x: -35.2 + crossing * 6.7, y: -8.5 + rising * 8.5, z: -31 + rising * 5.8 + crossing * 2.4, yaw: .2 };
+    const time = encounter.phase === 'done' ? AIR_RESCUE.roof.pulling : encounter.phase === 'pulling' ? encounter.elapsed : 0;
+    const rising = smooth(time / 4.2);
+    const crossing = smooth((time - 3.8) / 1.8);
+    const overWall = smooth((time - 3.15) / .95) * (1 - smooth((time - 5.15) / .45));
+    return { x: -35.2 + crossing * 6.7, y: -8.5 + rising * 8.5 + overWall * (AIR_RESCUE.roof.parapet.height + .3),
+      z: -31 + rising * 5.8 + crossing * .7, yaw: .2 };
   }
   return { x: 14, y: 0, z: -18, yaw: -Math.PI / 2 };
 }

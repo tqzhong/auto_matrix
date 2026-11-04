@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import * as THREE from 'three';
 import {
   AIR_RESCUE,
   FILM_SCENE_BY_ID,
@@ -10,8 +11,10 @@ import {
   type AgentState,
   type AirRescueEncounter,
   type CombatImpact,
+  type PlayerInput,
   type WorldEvent,
 } from '@auto_matrix/shared';
+import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -79,6 +82,42 @@ test('missing Morpheus fails explicitly and retry restores the helicopter checkp
   assert.equal(state.airRescue!.attempt, 1); assert.equal(state.airRescue!.suppression, 0);
 });
 
+test('acknowledging the same-actor retry preserves held G and newer input sequences', t => {
+  const h = setup('m1_helicopter');
+  h.command('act'); h.frames(AIR_RESCUE.office.approach + AIR_RESCUE.office.fire + AIR_RESCUE.office.leapWindow + .5, true);
+  assert.equal(h.actor.status, 'dead');
+  class InputTarget extends EventTarget { matches() { return false; } }
+  const window = new InputTarget(), canvas = new InputTarget();
+  const document = Object.assign(new InputTarget(), { pointerLockElement: null, hidden: false });
+  const previous = ['window', 'document'].map(key => Object.getOwnPropertyDescriptor(globalThis, key));
+  Object.assign(globalThis, { window, document });
+  let now = 1000;
+  t.mock.method(performance, 'now', () => now);
+  t.mock.method(Date, 'now', () => now);
+  const sent: PlayerInput[] = [], group = new THREE.Group();
+  const controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, new THREE.PerspectiveCamera(), input => {
+    sent.push(input); h.players.receiveInput('air-player', input);
+  }, action => { if (action === 'interact') h.command('act'); });
+  t.after(() => { controls.dispose(); ['window', 'document'].forEach((key, i) => {
+    if (previous[i]) Object.defineProperty(globalThis, key, previous[i]!); else Reflect.deleteProperty(globalThis, key);
+  }); });
+  const frame = (state: AgentState) => { now += 100; controls.update(.1, state, group, true); };
+  const key = (type: string) => window.dispatchEvent(Object.assign(new Event(type, { cancelable: true }), { code: 'KeyG', repeat: false }));
+  const dead = structuredClone(h.actor);
+  controls.possess(dead); frame(dead); frame(dead);
+  assert.deepEqual(h.players.possess('air-player', 'neo', h.tick()), { agentId: 'neo' });
+  key('keydown'); frame(dead);
+  assert.equal(sent.at(-1)!.focus, true);
+  const beforeAcknowledgement = sent.at(-1)!.sequence;
+  controls.possess(structuredClone(h.actor));
+  for (let i = 0; i < 32; i++) { frame(structuredClone(h.actor)); h.players.step(.1, true, h.tick() + i + 1); }
+  assert.ok(sent.at(-32)!.sequence > beforeAcknowledgement, 'the retry must not replay sequence numbers already accepted by the replacement session');
+  assert.equal(sent.at(-1)!.focus, true, 'a delayed retry acknowledgement must not drop the player’s held action');
+  assert.ok(h.sandbox.life.film.state!.airRescue!.suppression! > 0);
+  key('keyup'); frame(h.actor);
+  assert.equal(sent.at(-1)!.focus, false);
+});
+
 test('roof rescue requires a held rope and two of three timed braces before Neo pulls Trinity up', () => {
   const h = setup('m1_rooftop_rescue'); const state = h.sandbox.life.film.state!;
   assert.match(h.command('act'), /绳索|Trinity/); h.frames(AIR_RESCUE.roof.impact + .2, true);
@@ -130,6 +169,16 @@ test('office performers stay attached to the moving B-212 controls before the ca
   assert.ok(Math.hypot(trinity.x - 5.25, trinity.z - -33.6) < .8, 'Trinity belongs in the cockpit seat');
   const approach: AirRescueEncounter = { ...firing, phase: 'approach', elapsed: 1.3, suppression: 0 };
   assert.ok(airRescueRoot(approach, 'neo').x > airRescueRoot(firing, 'neo').x + 6, 'the gunner follows the aircraft through its approach');
+});
+
+test('the catch carries two distinct performers within arm reach through the lift', () => {
+  for (const elapsed of [1.4, 2, 3.2, AIR_RESCUE.office.catching]) {
+    const catchState: AirRescueEncounter = { kind: 'office', phase: elapsed < AIR_RESCUE.office.catching ? 'catching' : 'done', elapsed, attempt: 0 };
+    const neo = airRescueRoot(catchState, 'neo'), morpheus = airRescueRoot(catchState, 'morpheus');
+    const gap = morpheus.z - neo.z;
+    assert.ok(gap >= 1 && gap < 1.7, `facing performers must be in arm reach without sharing a body at ${elapsed}: ${gap}`);
+    assert.ok(Math.abs(neo.x - morpheus.x) < .2 && neo.y - morpheus.y >= .3 && neo.y - morpheus.y < 1);
+  }
 });
 
 test('another player cannot take an actor required by a locked air rescue', () => {

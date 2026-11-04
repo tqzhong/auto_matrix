@@ -236,7 +236,11 @@ export class PlayerControls {
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
     this.gardenLook = { yaw: 0, pitch: 0 };
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
-    this.keys.clear(); this.lastSent = 0; this.sequence = 0;
+    // A retry can accept input before its acknowledgement reaches this client.
+    const keepFocus = !changedActor && this.keys.has('KeyG');
+    this.keys.clear();
+    if (keepFocus) this.keys.add('KeyG');
+    this.lastSent = 0;
     this.firing = false; this.lastShot = -1000;
     this.camera.near = this.defaultNear; this.camera.fov = 57; this.camera.updateProjectionMatrix();
     this.onViewChange?.(false);
