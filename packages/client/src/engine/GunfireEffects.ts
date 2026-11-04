@@ -26,7 +26,7 @@ export class GunfireEffects {
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), to.clone().sub(from)]), new THREE.LineBasicMaterial({ color: 0xebd8a0, transparent: true, opacity: .6, toneMapped: false, depthWrite: false })); group.add(line);
     // The air rescue has its own fixed light rig, including the minigun and crash flashes.
     const scriptedRescue = hit.target === 'government-glass' || hit.target === 'helicopter-rope' || hit.target === 'glass-facade';
-    const light = scriptedRescue ? undefined : new THREE.PointLight(0xffd495, 85, 9);
+    const light = shot.sceneLight || scriptedRescue ? undefined : new THREE.PointLight(0xffd495, 85, 9);
     if (light) group.add(light);
     this.scene.add(group); this.flashes.push({ group, line, light, age: 0 });
     if (shot.surface === 'stone') {

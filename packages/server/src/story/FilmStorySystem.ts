@@ -3809,6 +3809,7 @@ export class FilmStorySystem {
     actor.position = position; actor.rotation = root.yaw; actor.currentLocation = root.set; actor.isInMatrix = FILM_SETS[root.set].world === 'matrix';
     actor.velocity = dt > 0 ? { x: (position.x - before.x) / dt, y: (position.y - before.y) / dt, z: (position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
     actor.currentAction = { type: 'idle', parameters: { player: actor.id === this.state!.actor, resolved: true,
+      finaleComa: role === 'neo' && (encounter.phase === 'flatline' || encounter.phase === 'listening') || undefined,
       armed: role === 'smith' && ['ambush', 'gunfire'].includes(encounter.phase), theOne: { ...encounter, resolved: [...encounter.resolved], role } },
       startedAt: tick, duration: 1, progress: 0 };
   }
@@ -3834,7 +3835,7 @@ export class FilmStorySystem {
     const fromRoot = theOneRoot(encounter, source === 'smith' ? 'smith' : 'neo'); const from = filmPosition(fromRoot.set, fromRoot.x, fromRoot.z); from.y += fromRoot.y + 2;
     const length = Math.max(.001, distance(from, position));
     this.onImpact?.({ source, target, position, direction: { x: (position.x - from.x) / length, y: (position.y - from.y) / length, z: (position.z - from.z) / length },
-      damage: 0, combo: 0, matrix: encounter.phase !== 'emp', downed, shot: source === 'smith' ? { from, surface: 'stone' } : undefined }, tick);
+      damage: 0, combo: 0, matrix: encounter.phase !== 'emp', downed, shot: source === 'smith' ? { from, surface: 'stone', sceneLight: true } : undefined }, tick);
   }
   theOneHit(agent: AgentState, threat: SandboxThreat, _combo: number, tick: number): boolean {
     const state = this.state; const encounter = state?.theOne;
@@ -3903,7 +3904,7 @@ export class FilmStorySystem {
         if (encounter.elapsed >= THE_ONE.death.ambush) { encounter.phase = 'gunfire'; encounter.elapsed = 0; }
       } else if (encounter.phase === 'gunfire') {
         const before = encounter.elapsed; encounter.elapsed = Math.min(THE_ONE.death.gunfire, encounter.elapsed + delta);
-        for (const beat of [.35, .78, 1.22]) if (!encounter.resolved.includes(beat) && before < beat && encounter.elapsed >= beat) {
+        for (const beat of THE_ONE.death.shots) if (!encounter.resolved.includes(beat) && before < beat && encounter.elapsed >= beat) {
           encounter.resolved.push(beat); this.theOneImpact('smith', 'neo', tick, beat === 1.22);
         }
         for (const role of ['neo', 'smith', 'agent_brown'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
@@ -3987,13 +3988,27 @@ export class FilmStorySystem {
         encounter.elapsed = Math.min(THE_ONE.flight.call, encounter.elapsed + delta); this.stageTheOneActor('neo', encounter, dt, tick);
         if (encounter.elapsed >= THE_ONE.flight.call) { encounter.phase = 'takeoff_ready'; encounter.elapsed = 0; }
       } else if (encounter.phase === 'takeoff_ready') {
-        this.stageTheOneActor('neo', encounter, dt, tick);
-        if (input.jump) { encounter.phase = 'takeoff'; encounter.elapsed = 0; }
+        this.theOneAction(agent, tick);
+        if (input.jump) {
+          const { launch, boothZ } = THE_ONE.flight;
+          const center = FILM_SETS.film_final_phone.center;
+          const point = filmPosition('film_final_phone', launch.x, launch.z);
+          if (distance(agent.position, point) <= launch.radius) {
+            encounter.phase = 'takeoff'; encounter.elapsed = 0; encounter.clearedBooth = true;
+            encounter.flightX = agent.position.x - center.x;
+            encounter.flightZ = agent.position.z - center.z - boothZ;
+            this.stageTheOneActor('neo', encounter, 0, tick);
+          }
+          state.lastText = theOneText(encounter);
+          return true;
+        }
       } else if (encounter.phase === 'takeoff') {
         encounter.elapsed = Math.min(THE_ONE.flight.takeoff, encounter.elapsed + delta);
         const progress = encounter.elapsed / THE_ONE.flight.takeoff; encounter.altitude = THE_ONE.flight.maxAltitude * progress * progress * (3 - 2 * progress);
         const speed = THE_ONE.flight.speed * (input.sprint ? 1.35 : 1); encounter.flightX += input.x * speed * delta; encounter.flightZ += input.z * speed * delta;
-        encounter.flightX = Math.max(-18, Math.min(18, encounter.flightX)); encounter.flightZ = Math.max(-14, Math.min(14, encounter.flightZ));
+        const minX = encounter.clearedBooth && encounter.altitude <= THE_ONE.flight.boothHeight ? 3 : -18;
+        encounter.flightX = Math.max(minX, Math.min(18, encounter.flightX));
+        encounter.flightZ = Math.max(-THE_ONE.flight.driftZ, Math.min(THE_ONE.flight.driftZ, encounter.flightZ));
         this.stageTheOneActor('neo', encounter, dt, tick);
         if (encounter.elapsed >= THE_ONE.flight.takeoff) {
           encounter.phase = 'done'; this.clearTheOneActions(); this.stageTheOneActor('neo', encounter, 0, tick);
@@ -4001,7 +4016,8 @@ export class FilmStorySystem {
         }
       }
     }
-    state.lastText = theOneText(encounter); return theOneLocked(state);
+    state.lastText = theOneText(encounter);
+    return theOneLocked(state) || encounter.kind === 'flight' && encounter.phase === 'done';
   }
   private retryTheOne(agent: AgentState, tick: number): string {
     const state = this.state!; const previous = this.ensureTheOne(); const attempt = previous.attempt + 1;

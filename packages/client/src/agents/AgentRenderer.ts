@@ -789,7 +789,7 @@ export class AgentRenderer {
       }
       const mountainFlying = input.mountainFlight && ['takeoff', 'flying', 'arrived'].includes(input.mountainFlight.phase) || input.truckFlight;
       const catchFlying = input.catch && ['departing', 'flight', 'catching', 'ascent', 'landing'].includes(input.catch.phase);
-      const coma = state.currentAction?.parameters.finaleComa === true;
+      const coma = state.currentAction?.parameters.finaleComa === true && !input.theOne;
       const medicalPatient = coma && state.currentLocation === 'film_hammer_deck' && journey?.scene === 'm2_medical' && !journey.visiting
         && (id === 'neo' || id === 'bane') ? id : undefined;
       const epilogueCarried = input.epilogue?.kind === 'neo_carried' && input.epilogue.role === 'neo';

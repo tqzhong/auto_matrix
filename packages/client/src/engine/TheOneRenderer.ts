@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { THE_ONE, type FilmJourney } from '@auto_matrix/shared';
+import { THE_ONE, theOneRoot, type FilmJourney } from '@auto_matrix/shared';
 
 type TheOneSet = 'film_heart_hotel' | 'film_neb_deck' | 'film_final_phone';
 
@@ -14,6 +14,7 @@ export class TheOneRenderer {
   private door?: THREE.Mesh;
   private phoneGlow?: THREE.MeshStandardMaterial;
   private gunfire?: THREE.Group;
+  private muzzleLight?: THREE.PointLight;
   private bulletField?: THREE.Group;
   private bulletOrigins: THREE.Vector3[] = [];
   private codeShell?: THREE.Group;
@@ -26,6 +27,7 @@ export class TheOneRenderer {
   private commuters?: THREE.Group;
   private flightRings?: THREE.Group;
   private flightTrail?: THREE.Group;
+  private launchMark?: THREE.Mesh;
 
   private plaster = this.material(0x8f907b, .92, .02);
   private wallpaper = this.material(0x69715c, .88, .02);
@@ -99,11 +101,12 @@ export class TheOneRenderer {
       const lamp = new THREE.PointLight(0xdde2b8, 14, 15, 2); lamp.position.set(0, 9.9, z); this.light(lamp, hotel);
     }
     const doorFrame = new THREE.Group(); doorFrame.position.set(0, 0, -16); hotel.add(doorFrame);
-    this.box(doorFrame, this.wood, 0, 5.1, -.22, 5.8, 10.2, .45);
+    for (const x of [-2.56, 2.56]) this.box(doorFrame, this.wood, x, 4.5, -.22, .68, 9, .45);
+    this.box(doorFrame, this.wood, 0, 9.6, -.22, 5.8, 1.2, .45);
     const door = this.box(doorFrame, this.material(0x42342b, .74, .08), 0, 4.65, .05, 4.45, 8.7, .28, 'one-room-303-door');
     door.geometry.translate(-2.18, 0, 0); door.position.x = 2.18; this.door = door;
     this.box(door, this.brass, -2.1, 1.4, .18, .62, .3, .05);
-    for (const x of [-1.2, 0, 1.2]) this.box(doorFrame, this.brass, x, 8.35, .24, .64, .09, .04);
+    for (const x of [-1.2, 0, 1.2]) this.box(doorFrame, this.brass, x, 9.35, .05, .64, .09, .04);
 
     const phone = new THREE.Group(); phone.name = 'one-exit-phone'; phone.position.set(0, 0, -23.5); hotel.add(phone);
     this.box(phone, this.wood, 0, 3.35, .4, 2.6, 6.7, .5); this.box(phone, this.black, 0, 3.7, .08, 1.65, 2.2, .42);
@@ -111,6 +114,8 @@ export class TheOneRenderer {
     this.box(phone, this.black, -.62, 3.6, -.26, .3, 1.45, .22); this.line(phone, this.black, new THREE.Vector3(-.62, 2.9, -.2), new THREE.Vector3(-.28, 2.15, .08), .035);
 
     const flashes = new THREE.Group(); flashes.name = 'one-gunfire-flashes'; flashes.visible = false; flashes.position.set(0, 3.2, -19.4); hotel.add(flashes); this.gunfire = flashes;
+    this.muzzleLight = new THREE.PointLight(0xffd495, 0, 9); this.muzzleLight.name = 'one-muzzle-light';
+    this.muzzleLight.position.copy(flashes.position); this.light(this.muzzleLight, hotel);
     for (let i = 0; i < 3; i++) {
       const flash = this.mesh(new THREE.OctahedronGeometry(.24 + i * .04), this.basic(0xfff2b3, .92), flashes); flash.position.set((i - 1) * .18, i * .13, i * .12);
       const beam = this.mesh(new THREE.CylinderGeometry(.018, .095, 5.5, 7, 1, true), this.basic(0xffd27a, .32), flashes); beam.rotation.x = Math.PI / 2; beam.position.z = 2.75;
@@ -188,11 +193,15 @@ export class TheOneRenderer {
       const x = (i - 7) * 7.2; const height = 17 + (i * 13) % 33;
       this.box(skyline, this.material(i % 2 ? 0x66736f : 0x596965, .82, .1), x, height / 2, -4 - i % 3 * 4, 6.2, height, 7.5);
     }
-    const booth = new THREE.Group(); booth.name = 'one-final-phone-booth'; booth.position.set(0, 0, -25); street.add(booth);
+    const booth = new THREE.Group(); booth.name = 'one-final-phone-booth'; booth.position.set(0, 0, THE_ONE.flight.boothZ); street.add(booth);
     for (const x of [-1.55, 1.55]) for (const z of [-1.3, 1.3]) this.box(booth, this.steel, x, 3.35, z, .16, 6.7, .16);
     this.box(booth, this.steel, 0, 6.75, 0, 3.45, .22, 3); this.box(booth, this.glass, 0, 3.45, -1.38, 2.9, 6.1, .05);
     this.box(booth, this.glass, -1.64, 3.45, 0, .05, 6.1, 2.45); this.box(booth, this.glass, 1.64, 3.45, 0, .05, 6.1, 2.45);
-    this.box(booth, this.black, -.65, 3.5, .95, 1.15, 2.15, .38); this.box(booth, this.brass, -.65, 4.6, .72, .9, .22, .08);
+    this.box(booth, this.black, -.65, 3.5, -1.13, 1.15, 2.15, .38); this.box(booth, this.brass, -.65, 4.6, -.9, .9, .22, .08);
+    const launch = THE_ONE.flight.launch;
+    this.launchMark = this.mesh(new THREE.RingGeometry(launch.radius - .045, launch.radius, 36), this.basic(0xa9d8bd, .72), street, 'one-flight-launch');
+    this.launchMark.position.set(launch.x, .035, launch.z); this.launchMark.rotation.x = -Math.PI / 2;
+    this.launchMark.visible = false; this.launchMark.castShadow = this.launchMark.receiveShadow = false;
 
     const commuters = new THREE.Group(); commuters.name = 'one-final-commuters'; street.add(commuters); this.commuters = commuters;
     for (let i = 0; i < 18; i++) {
@@ -216,13 +225,19 @@ export class TheOneRenderer {
     if (!encounter || journey?.visiting) { this.group.visible = false; return; }
     this.group.visible = true;
     if (this.setId === 'film_heart_hotel') {
-      const death = encounter.kind === 'death'; const open = encounter.kind === 'return' ? 1 : death && encounter.phase !== 'ready' ? THREE.MathUtils.smoothstep(encounter.elapsed, 0, .8) : 0;
+      const death = encounter.kind === 'death';
+      const open = encounter.phase === 'ready' && death ? 0 : encounter.phase === 'ambush' ? THREE.MathUtils.smoothstep(encounter.elapsed, 0, .8) : 1;
       if (this.door) this.door.rotation.y = -open * 1.18;
       if (this.phoneGlow) this.phoneGlow.emissiveIntensity = encounter.kind === 'return' && ['exit_run', 'exit_ready', 'exit_phone'].includes(encounter.phase)
         ? 1.8 + Math.sin(encounter.deadline * 7) * .7 : .25;
-      if (this.gunfire) {
-        this.gunfire.visible = death && encounter.phase === 'gunfire';
-        this.gunfire.children.forEach((child, index) => { child.visible = this.gunfire!.visible && Math.sin(encounter.elapsed * 37 + index * 2.3) > .1; });
+      if (this.gunfire && this.muzzleLight) {
+        let flash = 0;
+        if (death && encounter.phase === 'gunfire') for (const beat of THE_ONE.death.shots) {
+          const age = encounter.elapsed - beat;
+          if (age >= 0 && age < .12) flash = 1 - age / .12;
+        }
+        this.gunfire.visible = flash > 0;
+        this.muzzleLight.intensity = 85 * flash;
       }
       const bulletsVisible = encounter.kind === 'return' && ['code_reveal', 'bullet_window', 'bullet_stop'].includes(encounter.phase);
       if (this.bulletField) {
@@ -270,9 +285,11 @@ export class TheOneRenderer {
       person.position.set(base.x, 0, ((base.z + time * base.pace * (index % 2 ? 1 : -1) + 43) % 86 + 86) % 86 - 43);
     });
     const flying = encounter.kind === 'flight' && (encounter.phase === 'takeoff' || encounter.phase === 'done');
+    if (this.launchMark) this.launchMark.visible = encounter.phase === 'takeoff_ready';
     if (this.flightRings) { this.flightRings.visible = flying; this.flightRings.scale.setScalar(.9 + encounter.altitude / THE_ONE.flight.maxAltitude * .35); }
     if (this.flightTrail) {
-      this.flightTrail.visible = flying; this.flightTrail.position.set(encounter.flightX, encounter.altitude + 1.3, -25 - encounter.flightZ - encounter.altitude * 1.23);
+      this.flightTrail.visible = flying;
+      const root = theOneRoot(encounter, 'neo'); this.flightTrail.position.set(root.x, root.y + 1.3, root.z);
       this.flightTrail.rotation.z = -encounter.flightX * .012;
     }
   }

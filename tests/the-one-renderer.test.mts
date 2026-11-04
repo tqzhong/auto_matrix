@@ -30,6 +30,40 @@ test('room 303 owns the door, exit phone, gunfire damage, stopped volley and cod
   renderer.dispose(); assert.equal(root.children.length, 0);
 });
 
+test('303 opens a clear sightline to Smith and stays open through the first shot', () => {
+  const root = new THREE.Group(); const renderer = new TheOneRenderer(root, 'film_heart_hotel');
+  const corridor = root.getObjectByName('one-hotel-corridor')!;
+  const ray = new THREE.Raycaster(new THREE.Vector3(0, 3, -14), new THREE.Vector3(0, 0, -1), 0, 6.5);
+  const sightline = (phase: TheOnePhase, elapsed: number) => {
+    renderer.update(journey('death', phase, elapsed), 0); root.updateMatrixWorld(true);
+    return ray.intersectObject(corridor, true).filter(hit => hit.object.parent?.visible);
+  };
+  assert.equal(sightline('ready', 0)[0]?.object.name, 'one-room-303-door');
+  assert.equal(sightline('ambush', 1.2).length, 0);
+  assert.equal(sightline('gunfire', .02).length, 0);
+  renderer.dispose();
+});
+
+test('303 keeps one light slot and illuminates only the saved shot beats', () => {
+  const root = new THREE.Group(); const renderer = new TheOneRenderer(root, 'film_heart_hotel');
+  const state = journey('death', 'ambush', 1.4);
+  renderer.update(state, 0);
+  const light = root.getObjectByName('one-muzzle-light') as THREE.PointLight;
+  assert.ok(light?.isPointLight && light.visible);
+  assert.equal(light.intensity, 0);
+  state.theOne!.phase = 'gunfire';
+  for (const shot of [.35, .78, 1.22]) {
+    state.theOne!.elapsed = shot + .025; renderer.update(state, 1);
+    assert.ok(light.intensity > 20);
+    renderer.update(state, 10); assert.ok(light.intensity > 20);
+    state.theOne!.elapsed = shot + .2; renderer.update(state, 10);
+    assert.equal(light.intensity, 0);
+    assert.equal(root.getObjectByName('one-muzzle-light'), light);
+    assert.equal(light.visible, true);
+  }
+  renderer.dispose();
+});
+
 test('Nebuchadnezzar overlay distinguishes flatline, hull breach and Morpheus EMP', () => {
   const root = new THREE.Group(); const renderer = new TheOneRenderer(root, 'film_neb_deck');
   for (const name of ['one-life-monitor', 'one-flatline-line', 'one-heart-pulse', 'one-sentinel-cutters', 'one-emp-switch', 'one-emp-flash']) {
@@ -51,6 +85,11 @@ test('final daylight corner owns a phone booth, commuters, skyline and saved fli
   }
   const state = journey('flight', 'call', 2.4); renderer.update(state, 2);
   assert.equal(root.getObjectByName('one-final-phone-booth')!.visible, true);
+  const booth = root.getObjectByName('one-final-phone-booth')!;
+  state.theOne!.phase = 'takeoff_ready'; renderer.update(state, 3); root.updateMatrixWorld(true);
+  const egress = new THREE.Raycaster(new THREE.Vector3(-.35, 2.8, THE_ONE.flight.boothZ), new THREE.Vector3(0, 0, 1), 0, 2);
+  assert.equal(egress.intersectObject(booth, true).length, 0, 'the phone cannot obstruct Neo’s shoulder at the open side');
+  assert.equal(root.getObjectByName('one-flight-launch')!.visible, true);
   state.theOne!.phase = 'takeoff'; state.theOne!.elapsed = 3.6; state.theOne!.altitude = 17; state.theOne!.flightX = 4; state.theOne!.flightZ = -3;
   renderer.update(state, 5); const trail = root.getObjectByName('one-flight-trail')!;
   assert.equal(trail.visible, true); const saved = trail.position.clone(); renderer.update(state, 100);

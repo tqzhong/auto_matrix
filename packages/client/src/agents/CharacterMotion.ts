@@ -249,6 +249,14 @@ export function architectWalkPose(phase: number, moving: number) {
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number, architect = false) {
+  const theOne = input.theOne && theOnePose(input.theOne);
+  if (theOne?.seated) {
+    Object.assign(state, newMotion(), { time: input.theOne!.elapsed, seated: 1 });
+    return { legs: [0, 1].map(() => ({ hip: -1.2, knee: 1.3, ankle: -.1 })),
+      arms: [0, 1].map(i => ({ shoulder: -.32, elbow: -1.02, outward: (i ? 1 : -1) * .16, grip: .08 })),
+      hipHeight: 1.48, twist: 0, lean: .19 - theOne.revive * .24, sway: 0, lunge: 0, roll: .045, headTurn: 0,
+      moving: 0, run: 0, airborne: 0, coat: 0, impact: 0, landing: 0 };
+  }
   const freeCrouch = Boolean(input.ambushWardrobe && !input.realWorld && !input.performance
     && !input.ambushEscort && !input.ambushCall && !input.wetwall && !input.sixth
     && !input.bathroom && !input.basement && !input.tvExit && !input.crosscut && !input.betrayal);
@@ -709,7 +717,6 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const government = input.government && governmentPose(input.government);
   const airRescue = input.airRescue && airRescuePose(input.airRescue);
   const matrixEscape = input.matrixEscape && matrixEscapePose(input.matrixEscape);
-  const theOne = input.theOne && theOnePose(input.theOne);
   const reloaded = input.reloaded && reloadedPose(input.reloaded);
   const recoveryCrew = input.recoveryCrew && recoveryCrewPose(input.recoveryCrew);
   const boardingCrouch = input.recoveryCrew?.boarding ? podRescuePose(input.recoveryCrew.elapsed).settle : 0;

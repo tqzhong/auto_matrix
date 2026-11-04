@@ -5,6 +5,7 @@ import {
   THE_ONE,
   filmEntry,
   filmPosition,
+  filmSetAt,
   filmStepPosition,
   theOneLocked,
   theOnePose,
@@ -19,7 +20,10 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
+import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 
 type SceneId = 'm1_death' | 'm1_return' | 'm1_final_call';
 
@@ -71,6 +75,19 @@ test('room 303 ambush cuts to the real body and only Trinity voice focus restore
   assert.equal(h.sandbox.life.film.state!.theOne!.phase, 'done');
   assert.ok(h.sandbox.life.film.state!.completed.includes('m1_death')); assert.equal(h.actor.currentLocation, 'film_heart_hotel');
   assert.equal(h.actor.isInMatrix, true); assert.equal(h.actor.health, h.actor.maxHealth);
+});
+
+test('Tank keeps his earlier wound while attending Neo on the ship', () => {
+  const h = setup('m1_death'); const tank = h.world.agents.get('tank')!;
+  tank.health = 40; tank.mind!.stress = 0;
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.frames(.2); h.command('act');
+  h.frames(THE_ONE.death.ambush + THE_ONE.death.gunfire + THE_ONE.death.flatline + .3);
+  assert.equal(h.sandbox.life.film.state!.theOne!.phase, 'listening');
+  assert.equal(tank.currentAction?.parameters.theOne?.role, 'tank');
+  const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true;
+  for (let tick = 0; tick < 20; tick++) dynamics.tick(tick);
+  assert.equal(tank.health, 40);
 });
 
 test('code sight stops a timed volley, then a real block and counters destroy Smith', () => {
@@ -128,12 +145,20 @@ test('the final call waits for reflection, then Space launches a steerable first
   h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); assert.match(h.command('act'), /电话|系统/); assert.equal(encounter.phase, 'call');
   h.frames(THE_ONE.flight.call + .3); assert.equal(encounter.phase, 'takeoff_ready');
   const ground = h.actor.position.y; h.frames(1); assert.equal(encounter.phase, 'takeoff_ready'); assert.equal(h.actor.position.y, ground);
+  h.frames(.2, { jump: true });
+  assert.equal(encounter.phase, 'takeoff_ready', 'Space inside the booth cannot launch through its glass or roof');
+  assert.equal(h.actor.position.y, ground);
+  h.actor.position = filmPosition(h.scene.set, 4.5, -21);
   h.frames(.2, { jump: true }); assert.equal(encounter.phase, 'takeoff');
-  h.frames(THE_ONE.flight.takeoff / 2, { x: 1, z: -1, sprint: true }); assert.ok(encounter.altitude > 8); assert.notEqual(encounter.flightX, 0);
+  h.frames(1.3, { x: -1, z: -1, sprint: true });
+  assert.ok(theOneRoot(encounter, 'neo').x >= 3, 'steering cannot pass through the booth while still below the roof');
+  h.frames(2, { x: 1, z: -1, sprint: true }); assert.ok(encounter.altitude > 8); assert.notEqual(encounter.flightX, 0);
   const saved = structuredClone(h.sandbox.state); const altitude = encounter.altitude; h.frames(.5, { jump: true }, false); assert.equal(encounter.altitude, altitude);
   h.sandbox.restore(saved); h.frames(THE_ONE.flight.takeoff + .4, { z: -1, sprint: true });
   assert.equal(h.sandbox.life.film.state!.theOne!.phase, 'done'); assert.ok(h.sandbox.life.film.state!.completed.includes('m1_final_call'));
-  assert.ok(h.actor.position.y > filmPosition(h.scene.set).y + 20);
+  assert.equal(h.actor.position.y, filmPosition(h.scene.set).y + THE_ONE.flight.maxAltitude);
+  assert.equal(h.actor.currentLocation, h.scene.set);
+  assert.equal(filmSetAt(h.actor.position, true)?.id, h.scene.set);
 });
 
 test('the One roots and poses distinguish the shooting, kiss, stopped bullets, code dive and flight', () => {
@@ -149,4 +174,21 @@ test('the One roots and poses distinguish the shooting, kiss, stopped bullets, c
   assert.ok(theOnePose({ ...returned, phase: 'dive', elapsed: 1.1, role: 'neo' }).dive > .5);
   const flight: TheOneEncounter = { ...death, kind: 'flight', phase: 'takeoff', elapsed: 3, checkpoint: 'phone', altitude: 12 };
   assert.ok(theOnePose({ ...flight, role: 'neo' }).flight > .3);
+});
+
+test('Neo stays supported by the ship chair until the cut, and only the last scene ends in flight', () => {
+  const death = setup('m1_death').sandbox.life.film.state!.theOne!;
+  for (const [phase, elapsed] of [['flatline', .9], ['listening', 0], ['kiss', 1.8], ['revive', .66]] as const) {
+    const gesture = { ...death, role: 'neo' as const, phase, elapsed };
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, theOne: gesture };
+    const pose = advanceMotion(newMotion(), input, 0);
+    assert.equal(theOneRoot(gesture, 'neo').set, 'film_neb_deck');
+    assert.ok(pose.hipHeight > 1.35 && pose.hipHeight < 1.65, `${phase}: the hips rest on the seat`);
+    assert.ok(pose.legs.every(leg => leg.hip < -1 && leg.knee > 1.2), `${phase}: legs remain seated`);
+    const warm = newMotion(); advanceMotion(warm, { ...input, theOne: undefined, speed: 8 }, .1);
+    assert.deepEqual(advanceMotion(warm, input, .1), pose);
+  }
+  for (const kind of ['death', 'return', 'flight'] as const) {
+    assert.equal(theOnePose({ ...death, kind, phase: 'done', role: 'neo' }).flight, Number(kind === 'flight'));
+  }
 });

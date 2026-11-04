@@ -40,7 +40,7 @@ import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matr
 import { dockBriefingLocked } from '@auto_matrix/shared';
 import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION, SHAFT_SEAL } from '@auto_matrix/shared';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, MATRIX_ESCAPE, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, MATRIX_ESCAPE, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, THE_ONE, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
@@ -294,7 +294,7 @@ export class PlayerControls {
       event.preventDefault(); this.keys.add(event.code);
     }
     if (!event.repeat) {
-      if (event.code === 'Space') { this.localJump = true; this.networkJump = true; }
+      if (event.code === 'Space') { this.localJump = this.motion.theOne?.phase !== 'takeoff_ready'; this.networkJump = true; }
       if (event.code === 'KeyE') this.action('talk');
       if (event.code === 'KeyF') this.triggerCombat('attack');
       if (event.code === 'KeyH') this.onHUD?.();
@@ -1782,8 +1782,7 @@ export class PlayerControls {
       const gesture = this.motion.theOne; const center = FILM_SETS[state.currentLocation].center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const pose = theOnePose(gesture);
       if (this.firstPerson) {
-        const eyeHeight = gesture.kind === 'flight' ? 2.35 : gesture.kind === 'death' && ['flatline', 'listening', 'kiss'].includes(gesture.phase)
-          ? .95 : 2.99 - pose.wound * 1.25 - pose.fallen * 1.7;
+        const eyeHeight = gesture.kind === 'flight' ? 2.35 : pose.seated ? 2.42 : 2.99 - pose.wound * 1.25 - pose.fallen * 1.7;
         const eye = new THREE.Vector3(this.position.x, this.position.y + eyeHeight, this.position.z); this.camera.position.copy(eye);
         let focus: THREE.Vector3 | undefined;
         const role = gesture.kind === 'death' ? state.currentLocation === 'film_neb_deck' ? 'trinity' : 'smith'
@@ -1801,9 +1800,10 @@ export class PlayerControls {
         const portrait = this.camera.aspect < .85; let ideal: THREE.Vector3; let focus: THREE.Vector3;
         if (state.currentLocation === 'film_neb_deck') {
           if (gesture.kind === 'death') {
-            const close = gesture.phase === 'kiss' ? THREE.MathUtils.smoothstep(gesture.elapsed, .2, 1.55) : 0;
-            ideal = new THREE.Vector3(portrait ? 14 : 11.5, 5.4, .8).lerp(new THREE.Vector3(portrait ? 11 : 9, 4.1, -.8), close);
-            focus = new THREE.Vector3(4.7, 1.9, -5);
+            const close = gesture.phase === 'kiss' ? THREE.MathUtils.smoothstep(gesture.elapsed, .2, 1.55)
+              : gesture.phase === 'revive' ? 1 - THREE.MathUtils.smoothstep(gesture.elapsed, 0, THE_ONE.death.shipCut) : 0;
+            ideal = new THREE.Vector3(2, 4.8, portrait ? 3.5 : 1.5).lerp(new THREE.Vector3(4.8, 3.7, portrait ? .5 : -1), close);
+            focus = new THREE.Vector3(5.1, 2.25, -5);
           } else {
             ideal = new THREE.Vector3(4, portrait ? 10 : 8.5, portrait ? 18 : 13); focus = new THREE.Vector3(4, 2.2, -2.8);
           }

@@ -21,6 +21,7 @@ export interface TheOneEncounter {
   flightX: number;
   flightZ: number;
   resolved: number[];
+  clearedBooth?: boolean;
   bulletStopped?: boolean;
   smithBurst?: boolean;
   empFired?: boolean;
@@ -30,22 +31,27 @@ export type TheOneGesture = TheOneEncounter & { role: TheOneRole };
 export interface TheOneRoot { set: 'film_heart_hotel' | 'film_neb_deck' | 'film_final_phone'; x: number; y: number; z: number; yaw: number }
 
 export const THE_ONE = {
-  death: { ambush: 1.6, gunfire: 2.1, flatline: 1.3, listen: 3.2, kiss: 2.35, revive: 2.8 },
+  death: { ambush: 1.6, gunfire: 2.1, shots: [.35, .78, 1.22], flatline: 1.3, listen: 3.2, kiss: 2.35, revive: 2.8, shipCut: 1.344 },
   return: {
     reveal: 2.2, bulletDuration: 3.1, bulletBeat: 1.7, bulletWindow: .62, bulletStop: 2.7,
     requiredHits: 3, requiredBlocks: 1, dive: 2.15, burst: 2.45, exitDeadline: 12, exitPhone: 1.5, emp: 2.9,
   },
-  flight: { call: 5.4, takeoff: 7.2, maxAltitude: 34, speed: 8 },
+  flight: {
+    call: 5.4, takeoff: 7.2, maxAltitude: 34, speed: 8, travel: 42, driftZ: 14,
+    boothZ: -25, boothHeight: 6.86, launch: { x: 4.5, z: -21, radius: 1.2 },
+  },
 } as const;
 
 const clamp = (value: number): number => Math.max(0, Math.min(1, value));
 const smooth = (value: number): number => { const t = clamp(value); return t * t * (3 - 2 * t); };
 const pulse = (time: number, center: number, radius: number): number => smooth(1 - Math.abs(time - center) / radius);
+const deathOnShip = (encounter: TheOneEncounter): boolean => encounter.phase === 'flatline' || encounter.phase === 'listening'
+  || encounter.phase === 'kiss' || encounter.phase === 'revive' && encounter.elapsed < THE_ONE.death.shipCut;
 
 export function theOnePhaseLocked(encounter?: TheOneEncounter): boolean {
   if (!encounter) return false;
   return ['ambush', 'gunfire', 'flatline', 'listening', 'kiss', 'revive', 'code_reveal', 'bullet_window', 'bullet_stop',
-    'dive', 'burst', 'exit_phone', 'emp', 'call', 'takeoff_ready', 'takeoff'].includes(encounter.phase);
+    'dive', 'burst', 'exit_phone', 'emp', 'call', 'takeoff'].includes(encounter.phase);
 }
 
 export function theOneLocked(journey: FilmJourney): boolean {
@@ -92,7 +98,7 @@ export function theOneText(encounter: TheOneEncounter): string {
   if (encounter.phase === 'ready') return '先在手记中决定：看见规则之后，要用这份力量打开什么？';
   if (encounter.phase === 'call_ready') return '街角电话已经接通。走近听筒，按 G 向系统说出你的选择。';
   if (encounter.phase === 'call') return '追踪程序再次运行。Neo 不再隐藏，并把一个仍可改变的世界交还给其中的人。';
-  if (encounter.phase === 'takeoff_ready') return '放下听筒，走出电话亭。按住空格离地，WASD 在上升中调整方向。';
+  if (encounter.phase === 'takeoff_ready') return '从电话亭开口走到街上的起飞标记，再按空格。';
   if (encounter.phase === 'takeoff') return `城市正在脚下缩小。高度 ${Math.round(encounter.altitude)} / ${THE_ONE.flight.maxAltitude} 米。`;
   return 'Neo 飞越城市上空。第一部的选择已经写入这个世界。';
 }
@@ -102,10 +108,13 @@ export function theOneRoot(encounter: TheOneEncounter, role: TheOneRole): TheOne
   const ship = (x: number, y: number, z: number, yaw: number): TheOneRoot => ({ set: 'film_neb_deck', x, y, z, yaw });
   const street = (x: number, y: number, z: number, yaw: number): TheOneRoot => ({ set: 'film_final_phone', x, y, z, yaw });
   if (encounter.kind === 'death') {
-    const real = ['flatline', 'listening', 'kiss'].includes(encounter.phase) || encounter.phase === 'revive' && encounter.elapsed < THE_ONE.death.revive * .48;
-    if (real) {
-      if (role === 'neo') return ship(6.5, .45, -5, -Math.PI / 2);
-      if (role === 'trinity') return ship(encounter.phase === 'kiss' ? 5 : 2.8, 0, -5, Math.PI / 2);
+    if (deathOnShip(encounter)) {
+      if (role === 'neo') return ship(6.5, 0, -5, -Math.PI / 2);
+      if (role === 'trinity') {
+        const near = encounter.phase === 'kiss' ? smooth(encounter.elapsed / .95)
+          : encounter.phase === 'revive' ? 1 : 0;
+        return ship(2.8 + 2.25 * near, 0, -5, Math.PI / 2);
+      }
       if (role === 'morpheus') return ship(-1.2, 0, -8, .65);
       if (role === 'tank') return ship(10.5, 0, 1.5, -2.6);
       return hotel(role === 'smith' ? 0 : 4, 0, role === 'smith' ? -21 : -24, 0);
@@ -123,7 +132,7 @@ export function theOneRoot(encounter: TheOneEncounter, role: TheOneRole): TheOne
   }
   if (encounter.kind === 'return') {
     if (encounter.phase === 'emp' || encounter.phase === 'done') {
-      if (role === 'neo') return ship(6.5, .45, -5, -Math.PI / 2);
+      if (role === 'neo') return ship(encounter.phase === 'emp' ? 6.5 : 4.6, 0, -5, -Math.PI / 2);
       if (role === 'trinity') return ship(2.8, 0, -5, Math.PI / 2);
       if (role === 'morpheus') return ship(-2.5, 0, -1.8, 1.35);
       if (role === 'tank') return ship(10.5, 0, 1.5, -2.6);
@@ -144,15 +153,19 @@ export function theOneRoot(encounter: TheOneEncounter, role: TheOneRole): TheOne
   if (role !== 'neo') return street(role === 'smith' ? -9 : 9, 0, 4, Math.PI);
   if (encounter.phase === 'takeoff' || encounter.phase === 'done') {
     const p = encounter.phase === 'done' ? 1 : smooth(encounter.elapsed / THE_ONE.flight.takeoff);
-    return street(encounter.flightX, encounter.altitude, -25 - p * 42 + encounter.flightZ, Math.PI);
+    return street(encounter.flightX, encounter.altitude, THE_ONE.flight.boothZ - p * THE_ONE.flight.travel + encounter.flightZ, Math.PI);
   }
-  return street(0, 0, -25, Math.PI);
+  return street(0, 0, THE_ONE.flight.boothZ, Math.PI);
 }
 
 export function theOnePose(gesture: TheOneGesture) {
   const wound = gesture.phase === 'gunfire' && gesture.role === 'neo' ? smooth(gesture.elapsed / THE_ONE.death.gunfire) : 0;
-  const fallen = ['flatline', 'listening', 'kiss'].includes(gesture.phase) && gesture.role === 'neo' ? 1 : 0;
-  const kiss = gesture.phase === 'kiss' && gesture.role === 'trinity' ? smooth(gesture.elapsed / (THE_ONE.death.kiss * .72)) : 0;
+  const onShip = gesture.kind === 'death' && deathOnShip(gesture);
+  const seated = gesture.role === 'neo' && (onShip || gesture.kind === 'return' && gesture.phase === 'emp');
+  const fallen = gesture.phase === 'revive' && !onShip && gesture.role === 'neo'
+    ? 1 - smooth((gesture.elapsed - THE_ONE.death.shipCut) / (THE_ONE.death.revive - THE_ONE.death.shipCut)) : 0;
+  const kiss = gesture.role === 'trinity' && onShip ? gesture.phase === 'kiss' ? smooth(gesture.elapsed / (THE_ONE.death.kiss * .72))
+    : gesture.phase === 'revive' ? 1 - smooth(gesture.elapsed / THE_ONE.death.shipCut) : 0 : 0;
   const revive = gesture.phase === 'revive' && gesture.role === 'neo' ? pulse(gesture.elapsed, THE_ONE.death.revive * .58, THE_ONE.death.revive * .5) : 0;
   const aim = (gesture.phase === 'ambush' || gesture.phase === 'gunfire') && gesture.role === 'smith' ? smooth(gesture.elapsed / .35) : 0;
   const stop = gesture.phase === 'bullet_stop' && gesture.role === 'neo' ? smooth(gesture.elapsed / .7) : 0;
@@ -160,7 +173,7 @@ export function theOnePose(gesture: TheOneGesture) {
   const dive = gesture.phase === 'dive' && gesture.role === 'neo' ? smooth(gesture.elapsed / THE_ONE.return.dive) : 0;
   const burst = gesture.phase === 'burst' && gesture.role === 'smith' ? pulse(gesture.elapsed, 1.15, 1.1) : 0;
   const phone = (gesture.phase === 'exit_phone' || gesture.phase === 'call') && gesture.role === 'neo' ? 1 : 0;
-  const flight = gesture.role === 'neo' && (gesture.phase === 'takeoff' || gesture.phase === 'done')
+  const flight = gesture.kind === 'flight' && gesture.role === 'neo' && (gesture.phase === 'takeoff' || gesture.phase === 'done')
     ? gesture.phase === 'done' ? 1 : smooth(gesture.elapsed / THE_ONE.flight.takeoff) : 0;
-  return { wound, fallen, kiss, revive, aim, stop, block, dive, burst, phone, flight };
+  return { wound, seated, fallen, kiss, revive, aim, stop, block, dive, burst, phone, flight };
 }

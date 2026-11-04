@@ -31,6 +31,7 @@ import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.
 import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { OPENING_ESCAPE } from './opening-escape.js';
+import { THE_ONE } from './the-one.js';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
 import { BASEMENT, basementBlocked, TV_EXIT_OBSTACLES } from './basement-escape.js';
@@ -162,6 +163,10 @@ export function filmSetAt(position: Vector3, matrix: boolean): FilmSet | undefin
   const x = position.x - bridge.center.x; const z = position.z - bridge.center.z;
   if (matrix && hotelContains(x - MEETING_DESTINATION.x, z)) return FILM_SETS.film_lafayette;
   if (matrix && meetingRoadContains(x, z) && (x < MEETING_DESTINATION.x - 23 || x > MEETING_DESTINATION.x + 23 || z >= 27 || z < -27)) return FILM_SETS.film_extraction_car;
+  const finalStreet = FILM_SETS.film_final_phone, flight = THE_ONE.flight;
+  const flightZ = position.z - finalStreet.center.z;
+  if (matrix && position.y > finalStreet.center.y + flight.boothHeight && Math.abs(position.x - finalStreet.center.x) < finalStreet.width / 2
+    && flightZ >= flight.boothZ - flight.travel - flight.driftZ && flightZ <= 0) return finalStreet;
   return Object.values(FILM_SETS).find(set => set !== home && set !== ledge && !(set === office && (outside || position.y < office.center.y - 1 || position.y > office.center.y + 14)) && (set.world === 'matrix') === matrix && Math.abs(position.x - set.center.x) < set.width / 2 + 28 && Math.abs(position.z - set.center.z) < set.depth / 2 + 28);
 }
 export function filmPosition(id: string, x = 0, z = 0): Vector3 {
@@ -198,6 +203,11 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+  if (set.id === 'film_final_phone') {
+    const z = THE_ONE.flight.boothZ, height = THE_ONE.flight.boothHeight;
+    return [{ x: 0, z: z - 1.38, width: 3.15, depth: .16, height },
+      ...[-1.64, 1.64].map(x => ({ x, z, width: .16, depth: 2.78, height }))];
+  }
   if (set.id === 'film_red_dress_plaza') return [...RED_DRESS_PLAZA.benches, ...RED_DRESS_PLAZA.planters];
   if (set.id === 'film_hammer_route') return [
     ...(['niobe', 'morpheus'] as const).map(role => ({ x: HAMMER_COCKPIT.roots[role].x, z: HAMMER_ROUTE.start + HAMMER_COCKPIT.roots[role].z, width: 1.55, depth: 1.45, height: 12 })),

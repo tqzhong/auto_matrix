@@ -1941,6 +1941,8 @@ export class SandboxUI {
       const windup = state.threats.some(threat => threat.scene === scene.id && threat.attackAt !== undefined && threat.attackAt > this.tick);
       const bulletBeat = phase === 'bullet_window' && Math.abs(encounter.elapsed - THE_ONE.return.bulletBeat) <= THE_ONE.return.bulletWindow;
       const exitRemaining = THE_ONE.return.exitDeadline - encounter.deadline;
+      const launch = phase === 'takeoff_ready' ? filmPosition(scene.set, THE_ONE.flight.launch.x, THE_ONE.flight.launch.z) : undefined;
+      const canLaunch = launch && distance(launch, player.position) <= THE_ONE.flight.launch.radius;
       const close = !step || distance(player.position, filmStepPosition(scene, step)) < 4;
       const canAct = phase === 'done' || phase === 'failed' || phase === 'exit_ready' || phase === 'call_ready' && close
         || phase === 'ready' && (encounter.kind !== 'death' || journey.step === 1 && close);
@@ -1961,7 +1963,7 @@ export class SandboxUI {
                       : '鼠标观察 · V 切换主视角与场景镜头 · 当前一拍自动保存'
           : phase === 'ready' ? 'G / J 打开手记，决定如何使用这份力量'
             : phase === 'call_ready' ? '走近街角电话亭 · G 接通系统线路'
-              : phase === 'takeoff_ready' ? '按住空格离地 · 起飞后 WASD 改变方向，Shift 加速'
+              : phase === 'takeoff_ready' ? canLaunch ? '按空格离地 · WASD 改变方向，Shift 加速' : 'WASD 走出电话亭 · 前往街上的起飞标记'
                 : phase === 'takeoff' ? `WASD 调整航向 · Shift 加速 · 高度 ${Math.round(encounter.altitude)} / ${THE_ONE.flight.maxAltitude} m`
                   : phase === 'done' ? 'G 保存第一部结局并继续 · V 可在空中切换视角' : '鼠标观察 · V 切换主视角与场景镜头';
       this.el('sandbox-interact').classList.toggle('hidden', !canAct);
@@ -1986,10 +1988,10 @@ export class SandboxUI {
       this.el('sandbox-trace').textContent = encounter.kind === 'death' ? `连接信号 ${Math.round(encounter.signal * 100)}%`
         : encounter.kind === 'return' ? phase === 'exit_run' ? `出口剩余 ${Math.max(0, Math.ceil(exitRemaining))} 秒` : `格挡 ${encounter.blocks}/${THE_ONE.return.requiredBlocks} · 反击 ${encounter.hits}/${THE_ONE.return.requiredHits}`
           : `飞行高度 ${Math.round(encounter.altitude)} / ${THE_ONE.flight.maxAltitude} m`;
-      if (step && (phase === 'exit_run' || phase === 'call_ready' || encounter.kind === 'death' && phase === 'ready')) {
-        const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
-        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${step.label} <b>${Math.round(distance(target, player.position))} m</b>`;
-      } else if (theOneLocked(journey) || phase === 'counter' || phase === 'takeoff_ready' || phase === 'done') this.el('sandbox-waypoint').textContent = '';
+      if (step && (launch || phase === 'exit_run' || phase === 'call_ready' || encounter.kind === 'death' && phase === 'ready')) {
+        const target = launch ?? filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${launch ? '起飞点' : step.label} <b>${Math.round(distance(target, player.position))} m</b>`;
+      } else if (theOneLocked(journey) || phase === 'counter' || phase === 'done') this.el('sandbox-waypoint').textContent = '';
       return;
     }
     if (scene.id === 'm1_office_escape' && journey.office && !journey.office.outcome && !journey.visiting) {

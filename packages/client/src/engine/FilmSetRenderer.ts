@@ -272,6 +272,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby)
+      || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
