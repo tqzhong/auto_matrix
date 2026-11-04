@@ -143,3 +143,24 @@ test('many offscreen lights use bounded shader slots without losing any contribu
     }
   } finally { h.culling.dispose(); }
 });
+
+test('a fixed point-light set keeps its shader slots while turning and turning lights off', () => {
+  const h = view(); h.culling.stablePointSlots = true;
+  const lights = Array.from({ length: 12 }, (_, index) => h.light(index < 7 ? index * .1 : 60 + index, -10, 3));
+  const inactive = lights[0]; inactive.intensity = 0;
+  const shadow = h.light(90, -10, 3); shadow.castShadow = true;
+  try {
+    for (const yaw of [0, Math.PI, 0]) {
+      h.camera.rotation.y = yaw;
+      h.before();
+      assert.equal(lights.filter(light => light.visible).length, 12);
+      assert.equal(lights[1].intensity, yaw === 0 ? 10 : 0);
+      assert.equal(inactive.intensity, 0);
+      assert.equal(shadow.visible, false);
+      h.after();
+      assert.equal(lights[1].intensity, 10);
+      assert.equal(shadow.visible, true);
+      inactive.intensity = yaw === 0 ? 10 : 0;
+    }
+  } finally { h.culling.dispose(); }
+});

@@ -266,7 +266,7 @@ export class FilmSetRenderer {
     scene.add(this.root);
     this.marker = new THREE.Mesh(new THREE.TorusGeometry(1.2, .035, 8, 48), new THREE.MeshBasicMaterial({ color: 0xeac987, transparent: true, opacity: .8, depthWrite: false }));
     this.marker.rotation.x = -Math.PI / 2; this.marker.visible = false; scene.add(this.marker);
-    this.markerLight = new THREE.PointLight(0xf6d99c, 5, 5); scene.add(this.markerLight);
+    this.markerLight = new THREE.PointLight(0xf6d99c, 0, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
   get helAttendant(): THREE.Group | undefined { return this.helPerformers?.coatcheckAttendant; }
@@ -287,9 +287,13 @@ export class FilmSetRenderer {
       set = FILM_SETS[logosFlightSet(journey.logos ?? journey.logosEntry ?? newLogosFlight(journey.scene === 'm3_defense' ? 'defense' : 'sun'))];
     if (this.office && set && ['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
+    // The lower hotel is already visible from the curb before Neo confirms the entrance.
+    if (this.hotel && set?.id === 'film_lafayette' && this.currentScene === 'm1_bug' && sceneId === 'm1_pills') this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
       && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
     if (set?.id !== this.current?.id || sceneId !== this.currentScene) {
+      const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
+      if (approach) { approach.renderer.moveStreet(approach.root); this.meeting = undefined; }
       this.clear(); this.current = set; this.currentScene = sceneId;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
@@ -368,8 +372,8 @@ export class FilmSetRenderer {
           }
           if (set.id === 'film_lafayette') {
             this.hotel = new LafayetteApproachRenderer(this.root, new THREE.Vector3(0, -LAFAYETTE.upper, 0));
-            const root = new THREE.Group(); root.position.set(-MEETING_DESTINATION.x, -LAFAYETTE.upper, 0); this.root.add(root);
-            this.approach = { root, renderer: new MeetingSetRenderer(root, false) };
+            const root = approach?.root ?? new THREE.Group(); root.position.set(-MEETING_DESTINATION.x, -LAFAYETTE.upper, 0); this.root.add(root);
+            this.approach = approach ?? { root, renderer: new MeetingSetRenderer(root, false) };
           }
         }
         if (sceneId === 'm2_meeting' && set.id === 'film_neb_deck') this.reloaded = new ReloadedOpeningRenderer(this.root, set.id);
@@ -761,7 +765,8 @@ export class FilmSetRenderer {
       this.marker.position.set(position.x, position.y - .82, position.z);
       this.marker.scale.setScalar(1 + Math.sin(elapsed * 2) * .07); this.markerLight.position.copy(this.marker.position).y += 1.5;
     }
-    this.markerLight.visible = this.marker.visible;
+    this.markerLight.visible = this.marker.visible || Boolean(this.meeting);
+    this.markerLight.intensity = this.marker.visible ? 5 : 0;
     for (const item of this.moving) item.update(elapsed);
     return set;
   }
@@ -2684,14 +2689,15 @@ export class FilmSetRenderer {
   private batch(): void {
     this.root.updateMatrixWorld(true);
     const inverse = this.root.matrixWorld.clone().invert(); const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const remove: THREE.Object3D[] = [];
+    const lafayette = this.current?.id === 'film_lafayette';
     this.root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
       let ancestor: THREE.Object3D | null = object; while (ancestor && ancestor !== this.root) { if (ancestor.userData.dynamic) return; ancestor = ancestor.parent; }
       const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-      // The padded chairs share many triangle corners. Preserve that reuse,
-      // including normals and UVs so hard edges and texture seams stay separate.
-      const normalized = this.current?.id === 'film_lafayette' ? mergeVertices(geometry, 1e-6)
-        : geometry.index ? geometry.toNonIndexed() : geometry;
+      // Reuse the room's existing indices, especially on the padded chairs.
+      let normalized = geometry;
+      if (lafayette && !geometry.index) normalized = mergeVertices(geometry, 1e-6);
+      else if (!lafayette && geometry.index) normalized = geometry.toNonIndexed();
       if (normalized !== geometry) geometry.dispose();
       // All generated mesh primitives carry position, normal and uv. Extraneous attributes are not needed.
       for (const name of Object.keys(normalized.attributes)) if (!['position', 'normal', 'uv'].includes(name)) normalized.deleteAttribute(name);

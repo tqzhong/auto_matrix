@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, LAFAYETTE, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -64,5 +64,39 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
       assert.equal(levels[0].scale.y, .45, 'changing view distance after drinking must not refill the glass');
       assert.equal(levels[0].position.y, -.12, 'both views retain the saved water surface height');
     }
+  } finally { renderer.dispose(); globalThis.document = document; }
+});
+
+test('crossing the Lafayette entrance keeps the already visible hotel and street resources', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_extraction_car', 655, 38); neo.currentLocation = 'film_extraction_car'; neo.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: 'm1_bug', actor: 'neo', step: 2, enteredAt: 0, completed: [], reflections: {},
+    checkpoint: { ...neo.position }, lastText: '', meeting: { phase: 'outside', elapsed: 0, bugged: false, approach: { x: 4, z: -12.35, yaw: 0 } } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  try {
+    assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_extraction_car');
+    let street: THREE.Mesh | undefined;
+    renderer.root.traverse(object => { if (object instanceof THREE.Mesh && object.material.name === 'meeting-asphalt') street = object; });
+    assert.ok(street);
+    const streetPosition = street.getWorldPosition(new THREE.Vector3());
+    let disposals = 0; street.geometry.addEventListener('dispose', () => disposals++);
+    neo.position = filmPosition('film_lafayette', 0, 29); neo.position.y -= LAFAYETTE.upper;
+    assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
+    assert.ok(renderer.root.getObjectByProperty('uuid', street.uuid) === street, 'the road from the ride must remain the same object');
+    assert.deepEqual(street.getWorldPosition(new THREE.Vector3()), streetPosition);
+    assert.equal(disposals, 0);
+    const children = [...renderer.root.children];
+    assert.ok(renderer.root.getObjectByName('pill-water-glass'));
+    journey.scene = 'm1_pills'; journey.step = 0; journey.hotel = { progress: 0 }; delete journey.meeting;
+    assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
+    assert.ok(children.every((child, index) => renderer.root.children[index] === child), 'confirming the entrance must keep the already rendered set');
+    renderer.update(undefined, undefined, 0);
+    assert.equal(renderer.root.children.length, 0);
+    assert.equal(disposals, 1, 'leaving the combined street and hotel must release the road once');
   } finally { renderer.dispose(); globalThis.document = document; }
 });

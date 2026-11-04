@@ -5,6 +5,7 @@ type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; i
 /** Reuse non-shadow light shader variants across camera changes. */
 export class LightCulling {
   enabled = true;
+  stablePointSlots = false;
   lastView = { considered: 0, culled: 0 };
   private frustum = new THREE.Frustum();
   private projection = new THREE.Matrix4();
@@ -36,7 +37,7 @@ export class LightCulling {
         this.sphere.center.setFromMatrixPosition(object.matrixWorld);
         // Three's cutoff distance is in world units, independent of node scale.
         this.sphere.radius = object.distance + .01;
-        if (object.intensity === 0) {
+        if (object.intensity === 0 && (!this.stablePointSlots || object.castShadow)) {
           object.visible = false; selected.hidden.push(object);
         } else if (object.distance > 0 && !this.frustum.intersectsSphere(this.sphere)) {
           // Light count is part of Three's program cache key. A zero-energy
@@ -45,8 +46,8 @@ export class LightCulling {
           else { selected.muted.push(object); selected.intensities.push(object.intensity); object.intensity = 0; }
         } else kept++;
       });
-      // Small batches bound the extra zero-light work even in a large city.
-      const slots = Math.max(4, 2 ** Math.ceil(Math.log2(Math.max(1, kept))));
+      // The meeting set has a small fixed rig. Elsewhere keep the extra slots bounded.
+      const slots = this.stablePointSlots ? kept + selected.muted.length : Math.max(4, 2 ** Math.ceil(Math.log2(Math.max(1, kept))));
       const padding = Math.min(selected.muted.length, slots - kept);
       for (let index = padding; index < selected.muted.length; index++) {
         const light = selected.muted[index]; light.intensity = selected.intensities[index];

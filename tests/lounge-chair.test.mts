@@ -14,6 +14,10 @@ test('the wingback upholstery has deep tufted cushions and a closed padded rear'
     assert.ok(hit, 'both faces of the lower back cushion must be closed'); return hit.point.z;
   };
   try {
+    const upholstery = chair.children.find(object => object instanceof THREE.Mesh && object.material === leather) as THREE.Mesh;
+    assert.ok(upholstery.geometry.index, 'batched upholstery should retain the padded shell’s existing index');
+    assert.ok(upholstery.geometry.attributes.position.count * 2 < upholstery.geometry.index.count,
+      'retain shared vertices across the actual upholstered triangles');
     const button = surface(0, 3, -1), cushion = surface(.204, 3, -1);
     assert.ok(cushion - button > .12, `the visible tuft must indent the actual cushion, rather than dot a flat shell: ${cushion - button}`);
     const rear = surface(.204, -3, 1);

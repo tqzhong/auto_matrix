@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONSTRUCT } from '@auto_matrix/shared';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** The same wingback chair is loaded in Lafayette and the Construct. Callers own its mesh resources. */
 export function createLoungeChair(leather: THREE.Material): THREE.Group {
@@ -92,7 +92,7 @@ export function createLoungeChair(leather: THREE.Material): THREE.Group {
   for (const child of root.children as THREE.Mesh<THREE.BufferGeometry, THREE.Material>[]) {
     child.updateMatrix(); originals.add(child.geometry);
     const transformed = child.geometry.clone().applyMatrix4(child.matrix);
-    const piece = transformed.index ? transformed.toNonIndexed() : transformed;
+    const piece = transformed.index ? transformed : mergeVertices(transformed, 1e-6);
     if (piece !== transformed) transformed.dispose();
     const list = parts.get(child.material) ?? []; list.push(piece); parts.set(child.material, list);
   }
