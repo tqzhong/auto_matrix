@@ -103,7 +103,7 @@ export class OfficeWorkdayRenderer {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const meshes: THREE.Mesh[] = [];
     this.root.traverse(object => { if (object instanceof THREE.Mesh && !Array.isArray(object.material) && !object.material.transparent) meshes.push(object); });
     for (const mesh of meshes) {
-      const source = mesh.geometry.clone().applyMatrix4(inverse.clone().multiply(mesh.matrixWorld)); const geometry = source.index ? source.toNonIndexed() : source;
+      const source = new THREE.BufferGeometry().copy(mesh.geometry).applyMatrix4(inverse.clone().multiply(mesh.matrixWorld)); const geometry = source.index ? source.toNonIndexed() : source;
       if (geometry !== source) source.dispose();
       const material = mesh.material as THREE.Material; const list = batches.get(material) ?? []; list.push(geometry); batches.set(material, list);
       mesh.geometry.dispose(); mesh.removeFromParent();

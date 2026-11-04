@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { FILM_SETS } from '@auto_matrix/shared';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
+import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 
 test('office luminaires illuminate desks without scorching the ceiling above them', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -42,4 +44,24 @@ test('office luminaires illuminate desks without scorching the ceiling above the
     const day = irradiance(new THREE.Vector3(-18, 2.5, 2), new THREE.Vector3(0, 1, 0));
     assert.ok(day > night * 1.5, 'window daylight follows the world clock');
   } finally { renderer.dispose(); globalThis.document = original; }
+});
+
+test('static office batching copies existing rounded solids without generating another solid', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const original = globalThis.document, descriptor = Object.getOwnPropertyDescriptor(RoundedBoxGeometry.prototype, 'constructor')!;
+  let regenerated = 0;
+  Object.defineProperty(RoundedBoxGeometry.prototype, 'constructor', { ...descriptor, value: new Proxy(RoundedBoxGeometry, {
+    construct(target, args, newTarget) { regenerated++; return Reflect.construct(target, args, newTarget); },
+  }) });
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  try {
+    const manager = new OfficeWorkdayRenderer(new THREE.Group());
+    const managerCopies = regenerated; manager.dispose();
+    const office = new OfficeSetRenderer(new THREE.Group(), FILM_SETS.film_metacortex_floor);
+    const officeCopies = regenerated - managerCopies; office.dispose();
+    assert.deepEqual({ managerCopies, officeCopies }, { managerCopies: 0, officeCopies: 0 }, 'copying generated vertices must not run the solid constructor again');
+  } finally {
+    Object.defineProperty(RoundedBoxGeometry.prototype, 'constructor', descriptor); globalThis.document = original;
+  }
 });

@@ -361,7 +361,7 @@ export class OfficeSetRenderer {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); this.root.updateMatrixWorld(true);
     for (const child of [...this.root.children]) {
       if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) continue;
-      const source = child.geometry.clone().applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
+      const source = new THREE.BufferGeometry().copy(child.geometry).applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
       if (source !== geometry) source.dispose();
       const group = batches.get(child.material) ?? []; group.push(geometry); batches.set(child.material, group);
       child.geometry.dispose(); child.removeFromParent();

@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 
-/** A finite point light outside this view cannot illuminate any of its pixels. */
+type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; intensities: number[] };
+
+/** Reuse non-shadow light shader variants across camera changes. */
 export class LightCulling {
   enabled = true;
   lastView = { considered: 0, culled: 0 };
   private frustum = new THREE.Frustum();
   private projection = new THREE.Matrix4();
   private sphere = new THREE.Sphere();
-  private frames: THREE.PointLight[][] = [];
+  private frames: LightSelection[] = [];
   private depth = 0;
   private previousBefore: THREE.Scene['onBeforeRender'];
   private previousAfter: THREE.Scene['onAfterRender'];
@@ -21,34 +23,56 @@ export class LightCulling {
     this.previousBefore.apply(this.scene, args);
     // A mirror has a different view. Restore the parent pass before selecting
     // its lights, then reinstate the parent's selection when the mirror ends.
-    for (const light of this.frames[this.depth - 1] ?? []) light.visible = true;
-    const hidden = this.frames[this.depth] ??= []; hidden.length = 0; this.depth++;
-    const camera = args[2]; let considered = 0;
+    this.restoreSelection(this.frames[this.depth - 1]);
+    const selected = this.frames[this.depth] ??= { hidden: [], muted: [], intensities: [] };
+    selected.hidden.length = selected.muted.length = selected.intensities.length = 0; this.depth++;
+    const camera = args[2]; let considered = 0, kept = 0;
     if (this.enabled && !this.scene.overrideMaterial && !(camera instanceof THREE.ArrayCamera)) {
       this.frustum.setFromProjectionMatrix(this.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
       this.scene.traverseVisible(object => {
-        if (!(object instanceof THREE.PointLight) || object.children.length) return;
+        if (!(object instanceof THREE.PointLight)) return;
+        if (object.children.length) { kept++; return; }
         considered++;
         this.sphere.center.setFromMatrixPosition(object.matrixWorld);
         // Three's cutoff distance is in world units, independent of node scale.
         this.sphere.radius = object.distance + .01;
-        if (object.intensity === 0 || object.distance > 0 && !this.frustum.intersectsSphere(this.sphere)) {
-          object.visible = false; hidden.push(object);
-        }
+        if (object.intensity === 0) {
+          object.visible = false; selected.hidden.push(object);
+        } else if (object.distance > 0 && !this.frustum.intersectsSphere(this.sphere)) {
+          // Light count is part of Three's program cache key. A zero-energy
+          // slot avoids compiling every material again when the camera turns.
+          if (object.castShadow) { object.visible = false; selected.hidden.push(object); }
+          else { selected.muted.push(object); selected.intensities.push(object.intensity); object.intensity = 0; }
+        } else kept++;
       });
+      // Small batches bound the extra zero-light work even in a large city.
+      const slots = Math.max(4, 2 ** Math.ceil(Math.log2(Math.max(1, kept))));
+      const padding = Math.min(selected.muted.length, slots - kept);
+      for (let index = padding; index < selected.muted.length; index++) {
+        const light = selected.muted[index]; light.intensity = selected.intensities[index];
+        light.visible = false; selected.hidden.push(light);
+      }
+      selected.muted.length = selected.intensities.length = padding;
     }
-    if (this.depth === 1 && !this.scene.overrideMaterial) this.lastView = { considered, culled: hidden.length };
+    if (this.depth === 1 && !this.scene.overrideMaterial) this.lastView = { considered, culled: selected.hidden.length + selected.muted.length };
   };
 
   private after: THREE.Scene['onAfterRender'] = (...args) => {
-    for (const light of this.frames[--this.depth]) light.visible = true;
-    for (const light of this.frames[this.depth - 1] ?? []) light.visible = false;
+    this.restoreSelection(this.frames[--this.depth]);
+    const parent = this.frames[this.depth - 1];
+    if (parent) { for (const light of parent.hidden) light.visible = false; for (const light of parent.muted) light.intensity = 0; }
     this.previousAfter.apply(this.scene, args);
   };
 
+  private restoreSelection(selected?: LightSelection): void {
+    if (!selected) return;
+    for (const light of selected.hidden) light.visible = true;
+    selected.muted.forEach((light, index) => { light.intensity = selected.intensities[index]; });
+  }
+
   /** Also called from the frame's finally block if a nested renderer throws. */
   restore(): void {
-    while (this.depth > 0) for (const light of this.frames[--this.depth]) light.visible = true;
+    while (this.depth > 0) this.restoreSelection(this.frames[--this.depth]);
   }
 
   dispose(): void {
