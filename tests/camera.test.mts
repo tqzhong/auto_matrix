@@ -3616,6 +3616,20 @@ test('the keyboard attack reaches the dream encounter while its camera owns move
   game.key('KeyF', false); game.controls.update(.1, game.state, game.group, false); game.key('KeyF'); assert.deepEqual(game.actions, ['attack'], 'paused dream cannot fire');
 });
 
+test('the keyboard attack reaches Source corridor cover while the movement lock is active', t => {
+  const game = setup(t);
+  game.state.currentLocation = 'film_source_corridor';
+  game.state.position = filmPosition('film_source_corridor', 1.65, -37.25);
+  game.controls.possess(game.state);
+  for (const [phase, running, attacks] of [['opening', true, 0], ['cover', false, 0], ['cover', true, 1], ['escaping', true, 1]] as const) {
+    game.state.currentAction = { type: 'idle', parameters: { sourcePortal: { phase, elapsed: .4, attempts: 1, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.update(.1, game.state, game.group, running);
+    assert.equal(game.controls.performing, true);
+    game.key('KeyF'); game.key('KeyF', false);
+    assert.deepEqual(game.actions, Array(attacks).fill('attack'), phase);
+  }
+});
+
 test('the keyboard attack reaches Trinity revival while the rooftop camera owns movement', async t => {
   const { newCatch } = await import('@auto_matrix/shared');
   const game = setup(t); game.state.currentLocation = 'film_trinity_roof'; game.state.position = filmPosition('film_trinity_roof', 0, -15);
