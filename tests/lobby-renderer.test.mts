@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, filmPosition, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { LobbySetRenderer } from '../packages/client/src/engine/LobbySetRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 
 const canvasDocument = () => ({
   createElement: () => ({ width: 0, height: 0, getContext: () => ({
@@ -33,4 +35,38 @@ test('the lobby checkpoint has physical alarm, console, weapon case and impact a
     const debris = root.getObjectByName('lobby-impact-debris')!; const before = debris.children[0].position.clone(); renderer.update(state, 4.5);
     assert.ok(debris.children[0].position.distanceTo(before) > 0, 'stone hits throw physical chips instead of leaving only a flat decal');
   } finally { renderer.dispose(); globalThis.document = savedDocument; }
+});
+
+test('the lobby keeps the goal light shader slot through security, combat and the elevator', t => {
+  const savedDocument = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  t.after(() => { culling.dispose(); renderer.dispose(); globalThis.document = savedDocument; });
+  const state = journey(), camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 200);
+  const actor = { id: 'neo', position: filmPosition('film_government_lobby', 0, 22), isInMatrix: true } as AgentState;
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  const marker = scene.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
+  camera.position.set(actor.position.x, actor.position.y + 4, actor.position.z);
+  const lights = () => {
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, 'film_government_lobby');
+    culling.stablePointSlots = renderer.stablePointSlots;
+    scene.updateMatrixWorld(); camera.updateMatrixWorld();
+    const rendererContext = {} as THREE.WebGLRenderer;
+    scene.onBeforeRender(rendererContext, scene, camera, null);
+    const points: number[] = [];
+    scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points.push(object.id); });
+    scene.onAfterRender(rendererContext, scene, camera);
+    return points;
+  };
+  state.fighting = false; state.lobby!.phase = 'ready';
+  const ready = lights();
+  assert.equal(ready.length, 7);
+  assert.equal(marker.intensity, 5);
+  state.fighting = true; state.lobby!.phase = 'checkpoint';
+  assert.deepEqual(lights(), ready, 'the alarm must not change the light count');
+  assert.equal(marker.intensity, 0);
+  state.lobby!.phase = 'combat'; camera.rotation.y = Math.PI;
+  assert.deepEqual(lights(), ready);
+  state.fighting = false; state.lobby!.phase = 'cleared'; state.step = 2;
+  assert.deepEqual(lights(), ready);
+  assert.equal(marker.intensity, 5);
 });

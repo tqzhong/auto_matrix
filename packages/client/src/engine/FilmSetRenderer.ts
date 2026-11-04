@@ -271,7 +271,7 @@ export class FilmSetRenderer {
   get active(): FilmSet | undefined { return this.current; }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
-    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant)
+    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby)
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
   }
   get helAttendant(): THREE.Group | undefined { return this.helPerformers?.coatcheckAttendant; }
