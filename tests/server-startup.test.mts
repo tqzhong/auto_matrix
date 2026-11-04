@@ -150,6 +150,34 @@ for (const savedAction of [true, false]) {
   });
 }
 
+for (const savedAction of [true, false]) {
+  test(`a paused tracker extraction ${savedAction ? 'preserves all four actions' : 'rebuilds the missing Neo action'} across a cold start`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_bridge', 'meeting-scan'), journey = f.checkpoint.sandbox.neoLife.journey;
+    assert.equal(journey.scene, 'm1_bug'); assert.equal(journey.meeting.phase, 'removing');
+    const roles = ['neo', 'trinity', 'switch', 'apoc'] as const;
+    const actions = Object.fromEntries(roles.map((role, index) => {
+      const actor = f.checkpoint.agents[role];
+      const action = { ...actor.currentAction, startedAt: role === 'neo' && !savedAction ? f.checkpoint.tick : 1300 + index };
+      actor.currentAction = role === 'neo' && !savedAction ? null : action;
+      return [role, action];
+    }));
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      const restored = state.sandbox!.neoLife!.journey!;
+      assert.deepEqual(restored.meeting, journey.meeting); assert.equal(restored.office!.bugged, true);
+      assert.equal(restored.lastText, journey.lastText);
+      for (const role of roles) {
+        assert.deepEqual(state.agents[role].currentAction, actions[role], role);
+        for (const key of ['position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents[role][key], f.checkpoint.agents[role][key], `${role}: ${key}`);
+      }
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+  });
+}
+
 for (const [mode, signal] of [['memories', 'SIGTERM'], ['checkpoint', 'SIGINT']] as const) {
   test(`shutdown during ${mode} loading must preserve the last complete world and memories`, { timeout: 30000 }, async t => {
     const f = await fixture(t);

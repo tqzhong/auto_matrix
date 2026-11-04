@@ -160,7 +160,8 @@ export class PlayerController {
     const restoredPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
       || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
-      || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick);
+      || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
+      || this.sandbox?.life.film.restoreMeetingFrame(agent, tick);
     if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
@@ -178,7 +179,6 @@ export class PlayerController {
     this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
     this.sandbox?.life.film.trainingFrame(agent, 0, tick);
     this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
-    this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
     this.sandbox?.life.film.workdayFrame(agent, 0, tick);
     this.sandbox?.life.film.office.phoneFrame(tick, this.world.agents);
@@ -255,7 +255,8 @@ export class PlayerController {
       const restoredPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
         || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
-        || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick);
+        || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
+        || this.sandbox?.life.film.restoreMeetingFrame(agent, tick);
       if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
@@ -269,7 +270,6 @@ export class PlayerController {
       this.sandbox?.life.film.awakeningFrame(agent, 0, tick);
       if (agent.status === 'alive') this.sandbox?.life.film.trainingFrame(agent, 0, tick);
       this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
-      this.sandbox?.life.film.meetingFrame(agent, false, 0, tick);
       this.sandbox?.life.film.hotelFrame(agent, 0, tick);
       this.sandbox?.life.film.workdayFrame(agent, 0, tick);
       this.sandbox?.life.film.custody.frame(agent, 0, tick);

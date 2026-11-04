@@ -84,7 +84,7 @@ import { jumpImpactPose } from '@auto_matrix/shared';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { OfficeCustodySystem } from './OfficeCustodySystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot, type InterrogationGesture } from '@auto_matrix/shared';
-import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
+import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter, type MeetingGesture } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentComputerPose, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
@@ -2307,12 +2307,7 @@ export class FilmStorySystem {
     if (encounter.phase === 'driving' && encounter.roadTime !== undefined && encounter.roadTime >= MEETING_DRIVE_SECONDS) {
       encounter.phase = 'parked'; encounter.elapsed = 0;
     }
-    for (const role of ['neo', ...MEETING_CAST] as const) {
-      const actor = this.world.agents.get(role)!; const pose = meetingRoot(encounter, role);
-      actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.rotation = pose.yaw;
-      actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
-      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, roadTime: encounter.roadTime, role } }, startedAt: tick, duration: 1, progress: 0 };
-    }
+    this.stageMeetingCast(encounter, tick, false);
     if (encounter.phase === 'leaving' && encounter.elapsed >= MEETING_TIMING.leaving) {
       if (encounter.roadTime !== undefined) state.bridgeArrival = { phase: 'parked', elapsed: BRIDGE_ARRIVAL_SECONDS, parkedRoadTime: encounter.roadTime };
       state.checkpoint = { ...agent.position };
@@ -2341,6 +2336,24 @@ export class FilmStorySystem {
       : encounter.phase === 'removing' ? focus ? '保持稳定。Trinity 拉动泵杆，透明收集筒里的压力正在改变。' : '你暂时停止配合。装置停在原处；继续按住 G 才会抽取。'
       : '追踪器已经离开身体。Trinity 把收集装置移到窗边，将它弹入雨中。';
     if (finish) this.advance(encounter.bugged ? this.step!.text! : '扫描完成，没有发现追踪装置。Trinity 收起仪器，确认接头安全。', agent, tick);
+  }
+  private stageMeetingCast(encounter: MeetingEncounter, tick: number, preserveActions: boolean): void {
+    for (const role of ['neo', ...MEETING_CAST] as const) {
+      const actor = this.world.agents.get(role)!; const pose = meetingRoot(encounter, role);
+      actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.rotation = pose.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
+      const saved = actor.currentAction?.parameters.meeting as MeetingGesture | undefined;
+      if (preserveActions && actor.currentAction?.type === 'idle' && saved?.role === role && saved.phase === encounter.phase
+        && saved.elapsed === encounter.elapsed && saved.bugged === encounter.bugged && saved.roadTime === encounter.roadTime) continue;
+      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, meeting: { phase: encounter.phase, elapsed: encounter.elapsed, bugged: encounter.bugged, roadTime: encounter.roadTime, role } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+  }
+  restoreMeetingFrame(agent: AgentState, tick: number): boolean {
+    const state = this.state;
+    if (!state || !this.controls(agent) || !meetingLocked(state) || MEETING_CAST.some(id => this.world.agents.get(id)?.controller)) return false;
+    if (state.meeting) this.stageMeetingCast(state.meeting, tick, true);
+    else this.meetingFrame(agent, false, 0, tick);
+    return true;
   }
   private acceptMeeting(agent: AgentState, tick: number): void {
     const state = this.state!; const encounter = state.meeting!;
