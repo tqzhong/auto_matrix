@@ -83,7 +83,7 @@ import { HelCoatcheckSystem } from './HelCoatcheckSystem.js';
 import { jumpImpactPose } from '@auto_matrix/shared';
 import { OfficeEscapeSystem } from './OfficeEscapeSystem.js';
 import { OfficeCustodySystem } from './OfficeCustodySystem.js';
-import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot } from '@auto_matrix/shared';
+import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot, type InterrogationGesture } from '@auto_matrix/shared';
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
 import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
@@ -2416,17 +2416,20 @@ export class FilmStorySystem {
     agent.currentAction = { type: 'idle', parameters: { bridgeCaught: { x: threat.position.x, z: threat.position.z } },
       startedAt: tick, duration: 1, progress: 0 };
   }
-  interrogationFrame(agent: AgentState, dt: number, tick: number): void {
+  interrogationFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;
-    if (!state || !this.controls(agent) || !interrogationLocked(state)) return;
-    if (INTERROGATION_CAST.some(id => this.world.agents.get(id)?.controller)) return;
+    if (!state || !this.controls(agent) || !interrogationLocked(state)) return false;
+    if (INTERROGATION_CAST.some(id => this.world.agents.get(id)?.controller)) return false;
     const encounter = state.interrogation!;
     if (encounter.phase === 'file' || encounter.phase === 'coercion') encounter.elapsed = Math.min(INTERROGATION_TIMING[encounter.phase], encounter.elapsed + Math.min(.1, dt));
     for (const role of ['neo', ...INTERROGATION_CAST] as const) {
       const actor = this.world.agents.get(role)!; const pose = interrogationRoot(encounter, role);
       actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.rotation = pose.yaw;
       actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = this.scene!.set; actor.isInMatrix = true;
-      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, interrogation: { phase: encounter.phase, elapsed: encounter.elapsed, role } }, startedAt: tick, duration: 1, progress: 0 };
+      const saved = actor.currentAction?.parameters.interrogation as InterrogationGesture | undefined;
+      if (dt !== 0 || actor.currentAction?.type !== 'idle' || saved?.role !== role || saved.phase !== encounter.phase || saved.elapsed !== encounter.elapsed) {
+        actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, interrogation: { phase: encounter.phase, elapsed: encounter.elapsed, role } }, startedAt: tick, duration: 1, progress: 0 };
+      }
     }
     const t = encounter.elapsed;
     state.lastText = encounter.phase === 'file' ? t < 2 ? '椅脚擦过地面。Smith 在桌子的另一侧打开文件夹。' : 'SMITH · 公司职员和名叫 Neo 的黑客。档案把你的两种生活摆在一起。'
@@ -2448,6 +2451,7 @@ export class FilmStorySystem {
     } else if (encounter.phase === 'coercion' && t >= INTERROGATION_TIMING.coercion) {
       encounter.phase = 'done'; this.advance(this.step!.text!, agent, tick); this.interrogationFrame(agent, 0, tick);
     }
+    return true;
   }
   pillFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;

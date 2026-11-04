@@ -76,3 +76,31 @@ test('an already occupied agent is never taken over to start the interrogation',
   h.frames(10); assert.deepEqual(agent.position, position);
   assert.equal(h.neo.currentAction?.parameters.interrogation, undefined);
 });
+
+for (const [phase, elapsed] of [['file', .75], ['response', 0], ['coercion', 9.25], ['done', 24]] as const) {
+  test(`zero-time restoration and reconnect preserve all four complete ${phase} interrogation actions`, () => {
+    const h = setup(); h.command('act'); const encounter = h.state().interrogation!;
+    encounter.phase = phase; encounter.elapsed = elapsed; h.state().step = phase === 'file' ? 0 : phase === 'done' ? 2 : 1;
+    h.sandbox.life.film.interrogationFrame(h.neo, 0, 41);
+    const actors = ['neo', 'smith', 'agent_jones', 'agent_brown'].map(id => h.world.agents.get(id)!);
+    actors.forEach((actor, index) => { actor.currentAction!.startedAt = 13 + index; actor.currentAction!.progress = .2 + index * .1; });
+    const snapshot = () => actors.map(actor => ({ action: structuredClone(actor.currentAction), position: { ...actor.position }, rotation: actor.rotation, velocity: { ...actor.velocity } }));
+    const before = snapshot();
+    h.sandbox.life.film.interrogationFrame(h.neo, 0, 99); assert.deepEqual(snapshot(), before);
+    h.players.step(.05, false, 99); assert.deepEqual(snapshot(), before);
+    h.players.release('player', 99); assert.deepEqual(snapshot(), before);
+    h.players.possess('player', 'neo', 100); assert.deepEqual(snapshot(), before);
+    h.sandbox.restore(structuredClone(h.sandbox.state)); assert.deepEqual(snapshot(), before);
+    h.command('retry'); assert.deepEqual(snapshot(), before);
+  });
+}
+
+test('legacy interrogation saves rebuild missing actions before a player reconnects', () => {
+  const h = setup(); h.command('act'); h.state().interrogation!.elapsed = 1.2; h.world.simulationTick = 41;
+  h.sandbox.life.film.interrogationFrame(h.neo, 0, 41);
+  const actors = ['neo', 'smith', 'agent_jones', 'agent_brown'].map(id => h.world.agents.get(id)!);
+  const before = actors.map(actor => structuredClone(actor.currentAction));
+  actors.forEach(actor => { actor.currentAction = null; });
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(actors.map(actor => actor.currentAction), before);
+});

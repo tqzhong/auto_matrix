@@ -9,6 +9,7 @@ import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
 import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
+import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -93,6 +94,34 @@ async function replayed(client: Awaited<ReturnType<typeof controls>>, records: C
     assert.ok(Date.now() < deadline, 'the saved dialogue did not arrive over the reconnecting socket');
     await new Promise(resolve => setTimeout(resolve, 20));
   }
+}
+
+for (const [phase, elapsed] of [['file', 1.2], ['response', 0], ['coercion', 9.25], ['done', 24]] as const) {
+  test(`real restarts preserve all four paused ${phase} interrogation actions and clocks`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_interrogation'), journey = f.checkpoint.sandbox.neoLife.journey;
+    const encounter: InterrogationEncounter = { phase, elapsed, approach: { x: 5.9, z: 0, yaw: .3 } };
+    journey.interrogation = encounter; journey.step = phase === 'file' ? 0 : phase === 'done' ? 2 : 1;
+    const roles = ['neo', 'smith', 'agent_jones', 'agent_brown'] as const;
+    for (const [index, role] of roles.entries()) {
+      const actor = f.checkpoint.agents[role], pose = interrogationRoot(encounter, role);
+      actor.position = filmPosition('film_agent_interrogation', pose.x, pose.z); actor.rotation = pose.yaw;
+      actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentLocation = 'film_agent_interrogation'; actor.isInMatrix = true;
+      actor.currentAction = { type: 'idle', parameters: { player: role === 'neo', resolved: true, interrogation: { phase, elapsed, role } }, startedAt: 1300 + index, duration: 1, progress: role === 'neo' ? .25 : 1 };
+    }
+    f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', parameters: { player: true, interrogation: { phase, elapsed, role: 'neo' } }, startedAt: 1340, duration: 1, progress: .2 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, 1343);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.interrogation, encounter);
+      for (const role of roles) for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const) assert.deepEqual(state.agents[role][key], f.checkpoint.agents[role][key], `${role}: ${key}`);
+      assert.equal(state.agents.neo.health, 63); assert.equal(state.agents.citizen_5.currentAction, null);
+    };
+    for (let restart = 0; restart < 2; restart++) {
+      const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+      check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+      client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+    }
+  });
 }
 
 for (const [mode, signal] of [['memories', 'SIGTERM'], ['checkpoint', 'SIGINT']] as const) {
