@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, TV_EXIT, crosscutLocked, type PlayerInput, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, TV_EXIT, crosscutLocked, filmStepPosition, type PlayerInput, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -79,6 +79,13 @@ test('Tank retries his counter with the same wound and the already lost crew, th
   const seat={...h.neo.position};h.frame({x:1});assert.deepEqual(h.neo.position,seat,'a still-seated body cannot walk the connection chair across the deck');
   h.command('next');assert.equal(h.state().scene,'m1_rescue_decision');assert.equal(h.world.agents.get('tank')!.health,wound,'rescue preparation cannot erase the shipboard shot');
   for(const id of ['dozer','apoc','switch','mouse','cypher'])assert.equal(h.world.agents.get(id)!.status,'dead');
+  const briefing=FILM_SCENE_BY_ID.m1_rescue_decision,tank=h.world.agents.get('tank')!;
+  h.neo.position=filmStepPosition(briefing,briefing.steps[0]);h.command('reflect:care');
+  h.neo.position=filmStepPosition(briefing,briefing.steps[1]);h.command('act');
+  assert.equal(h.state().rescue!.phase,'briefing');assert.ok(tank.currentAction?.parameters.rescue);
+  const dynamics=new WorldDynamics(h.world,new MemoryManager(),new RelationshipGraph(),()=>{});dynamics.neoStory=true;tank.mind!.stress=0;
+  for(let tick=1;tick<=20;tick++)dynamics.tick(tick);
+  assert.equal(tank.health,wound,'delivering the rescue briefing cannot heal the shipboard shot');
 });
 
 test('ordinary world ticks cannot heal the interrupted assault while no player owns its clock',()=>{
