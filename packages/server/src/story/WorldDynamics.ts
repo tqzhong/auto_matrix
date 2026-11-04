@@ -1,4 +1,4 @@
-import { LOCATIONS, distance, locationEntrance, type AgentState, type WorldEvent } from '@auto_matrix/shared';
+import { LOCATIONS, distance, locationEntrance, type AgentState, type TrainingGesture, type WorldEvent } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { MemoryManager } from '../memory/MemoryManager.js';
 import type { RelationshipGraph } from '../agents/RelationshipGraph.js';
@@ -19,12 +19,16 @@ export class WorldDynamics {
     for (const agent of this.world.agents.values()) {
       const mind = agent.mind;
       if (!mind || agent.status !== 'alive') continue;
-      const resting = agent.currentAction?.type === 'idle' || agent.currentAction?.type === 'hide';
+      const action = agent.currentAction;
+      const resting = action?.type === 'idle' || action?.type === 'hide';
       mind.energy = Math.min(100, Math.max(0, mind.energy + (resting ? 0.8 : -0.12)));
       mind.social = Math.max(0, mind.social - 0.15);
       mind.stress = Math.max(0, mind.stress - 0.18);
       mind.memoryCount = this.memories.getMemoryCount(agent.id);
-      if (resting && mind.stress < 20 && !agent.currentAction?.parameters.crosscut && !agent.currentAction?.parameters.sourcePortal && !agent.currentAction?.parameters.helGarage) agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
+      const training = action?.parameters.training as TrainingGesture | undefined;
+      const jumpInjury = training?.role === 'neo' && (training.kind === 'jump_fall' || training.kind === 'jump_return');
+      if (resting && mind.stress < 20 && !jumpInjury && !action.parameters.crosscut && !action.parameters.sourcePortal && !action.parameters.helGarage)
+        agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
       const destination = agent.currentAction?.parameters.location as string | undefined;
       if (destination && !agent.targetPosition && agent.currentAction?.parameters.resolved && agent.currentLocation !== destination) {
         agent.currentLocation = destination;

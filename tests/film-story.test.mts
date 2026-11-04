@@ -22,7 +22,9 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 import { musicForScene } from '../packages/client/src/engine/Soundtrack.js';
 import { HOTEL_ROUTE, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
 import { hammerPilotInput } from './helpers/hammer-pilot.mts';
@@ -2534,6 +2536,8 @@ test('the first rooftop jump uses gravity and a recoverable fall rather than a t
 
 test('Neo reaches the street before the training records failure and never loses health twice after reloading impact', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const dynamics = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  dynamics.neoStory = true;
   Object.assign(state, { scene: 'm1_dojo', actor: 'neo', step: FILM_SCENE_BY_ID.m1_dojo.steps.length, dojo: undefined, fighting: undefined });
   h.command('next'); const scene = FILM_SCENE_BY_ID.m1_jump, center = FILM_SETS[scene.set].center;
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(); h.command('act');
@@ -2546,10 +2550,23 @@ test('Neo reaches the street before the training records failure and never loses
   const health = h.actor().health; assert.equal(health, 88);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); h.players.step(.1, false, h.tick());
   assert.equal(h.actor().health, health);
-  for (let i = 0; i < 40; i++) h.players.step(.1, true, h.tick());
+  h.actor().mind!.stress = 0;
+  for (let i = 0; i < 40; i++) {
+    h.players.step(.1, true, h.tick());
+    if (i % 5 === 4) dynamics.tick(h.tick());
+  }
   assert.equal(h.actor().health, health); assert.equal(h.sandbox.life.film.state!.step, 2);
   h.command('next'); assert.equal(h.sandbox.life.film.state!.scene, 'm1_jump_return');
   assert.equal(h.actor().isInMatrix, false); assert.equal(h.actor().health, health, 'returning to the real body retains the injury');
+  h.command('act');
+  for (let i = 0; i <= 120; i++) {
+    h.players.step(.1, true, h.tick());
+    if (i % 5 === 4) dynamics.tick(h.tick());
+  }
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.equal(h.actor().health, health, 'the return performance retains the injury until the lesson is over');
+  h.actor().currentAction = { type: 'idle', parameters: {}, startedAt: h.tick(), duration: 1, progress: 0 };
+  dynamics.tick(h.tick()); assert.equal(h.actor().health, health + .15, 'ordinary rest still recovers health');
 });
 
 test('Morpheus and Seraph take part in their own nonlethal duels without cloning an occupied role', () => {
