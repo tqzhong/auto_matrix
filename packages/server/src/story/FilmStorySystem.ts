@@ -354,8 +354,9 @@ export class FilmStorySystem {
     oracle.rotation = pose.yaw; oracle.currentLocation = 'film_smith_avenue'; oracle.isInMatrix = true;
     oracle.status = 'alive'; oracle.health = oracle.maxHealth;
     oracle.velocity = { x: 0, y: 0, z: 0 }; oracle.targetPosition = null; oracle.currentPath = [];
-    oracle.currentAction = { type: 'idle', parameters: { resolved: true, oracleRestored: true },
-      startedAt: tick, duration: 100000, progress: 0 };
+    if (!oracle.currentAction?.parameters.oracleRestored)
+      oracle.currentAction = { type: 'idle', parameters: { resolved: true, oracleRestored: true },
+        startedAt: tick, duration: 100000, progress: 0 };
   }
   smithFinaleFrame(agent: AgentState, input: { focus: boolean; x: number; z: number; yaw: number }, dt: number, tick: number): boolean {
     if (!this.controls(agent) || !['m3_rain', 'm3_surrender'].includes(this.state?.scene ?? '') || this.state?.visiting) return false;
@@ -474,12 +475,13 @@ export class FilmStorySystem {
   private placeNeoBody(agent: AgentState, encounter: TrilogyEpilogueEncounter, tick: number): void {
     const pose = neoCarryPose(encounter);
     const action = agent.currentAction, saved = action?.parameters.epilogue as TrilogyEpilogueEncounter | undefined;
-    const startedAt = action?.parameters.finaleComa && saved?.kind === encounter.kind && saved.phase === encounter.phase ? action.startedAt : tick;
+    const sameBeat = action?.parameters.finaleComa && saved?.kind === encounter.kind && saved.phase === encounter.phase;
     agent.position = filmPosition('film_machine_core', pose.x, pose.z); agent.position.y += pose.y;
     agent.currentLocation = 'film_machine_core'; agent.isInMatrix = false; agent.rotation = Math.PI;
     agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
     agent.currentAction = { type: 'idle', parameters: { resolved: true, finaleComa: true,
-      epilogue: { ...encounter, role: 'neo' } }, startedAt, duration: 100000, progress: 0 };
+      epilogue: { ...encounter, role: 'neo' } }, startedAt: sameBeat ? action.startedAt : tick,
+      duration: 100000, progress: sameBeat ? action.progress : 0 };
   }
   private placeEpilogue(agent: AgentState, tick: number): void {
     this.ensureEpilogue(); const state = this.state; const encounter = state?.epilogue;
@@ -5817,6 +5819,7 @@ export class FilmStorySystem {
       actor.health = fate === 'alive' ? actor.maxHealth : 0;
       if (id === 'neo' && actor.currentAction?.parameters.finaleComa
         && (actor.currentAction.parameters.epilogue as TrilogyEpilogueEncounter | undefined)?.kind === 'neo_carried') continue;
+      if (id === 'oracle' && fate === 'alive' && this.state.scene !== 'm3_dawn' && actor.currentAction?.parameters.oracleRestored) continue;
       if (actor.currentAction?.parameters.crosscut && ['m1_tv_exit', 'm1_unplugged'].includes(this.state.scene)) continue;
       if (id === 'charra' && this.state.upperDigger?.charraDead && actor.currentAction?.parameters.upperDigger) continue;
       if (id === 'mifune' && !this.state.visiting && ['m3_dock_battle', 'm3_gate'].includes(this.state.scene)

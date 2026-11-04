@@ -166,6 +166,7 @@ export class PlayerController {
     if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
+      || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
       || interlude.matrixEscape && !interlude.visiting && agent.currentAction?.type === 'idle' && agent.currentAction.parameters.matrixEscape))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
     if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
@@ -265,6 +266,7 @@ export class PlayerController {
       if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
+        || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
         || journey.matrixEscape && !journey.visiting && agent.currentAction?.type === 'idle' && agent.currentAction.parameters.matrixEscape))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);

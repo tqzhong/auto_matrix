@@ -23,6 +23,7 @@ import {
 import { TrilogyEpilogueRenderer } from '../packages/client/src/engine/TrilogyEpilogueRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { Agent } from '../packages/server/src/agents/Agent.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
@@ -250,6 +251,11 @@ test('Neo transport keeps a phase’s action start while its saved physical moti
   assert.ok(h.actor().currentAction!.startedAt > start, 'entering a new physical transport phase still starts its action');
   const moving = structuredClone(h.actor().currentAction);
   h.frame(10, false); assert.deepEqual(h.actor().currentAction, moving, 'pausing cannot rewrite the held action');
+  h.world.simulationTick += 30;
+  const save = structuredClone(h.sandbox.state);
+  h.players.release('p', h.world.simulationTick); h.sandbox.restore(save);
+  h.players.possess('p', 'neo', h.world.simulationTick);
+  assert.deepEqual(h.actor().currentAction, moving, 'reconnecting mid-transfer preserves the saved transport action');
 });
 
 test('the Smith ending leaves a persistent real-world body while Kid witnesses the ceasefire', () => {
@@ -265,9 +271,14 @@ test('the Smith ending leaves a persistent real-world body while Kid witnesses t
   const body = structuredClone({ position: neo.position, action: neo.currentAction });
   assert.ok(h.players.possess('other', 'neo', h.tick()).error, 'ordinary possession must not revive Neo');
   h.frame(20); assert.deepEqual(neo.position, body.position);
+  const oracle = h.world.agents.get('oracle')!;
+  h.world.simulationTick += 90;
+  for (const agent of [neo, oracle]) new Agent(agent, '').update(h.world.simulationTick);
+  const restingActions = structuredClone([neo.currentAction, oracle.currentAction]);
   const save = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(save);
   assert.equal(neo.currentLocation, 'film_machine_core'); assert.equal(neo.currentAction?.parameters.finaleComa, true);
   h.players.possess('p', 'kid', h.tick());
+  assert.deepEqual([neo.currentAction, oracle.currentAction], restingActions, 'reconnecting as Kid keeps both bodies on their saved idle clocks');
   Object.assign(h.state(), { step: FILM_SCENE_BY_ID.m3_ceasefire.steps.length,
     epilogue: { ...newTrilogyEpilogue('ceasefire'), phase: 'done' } });
   h.command('next');
