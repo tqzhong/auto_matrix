@@ -164,7 +164,8 @@ export class PlayerController {
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick);
     if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
-      || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
+      || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
+      || interlude.matrixEscape && !interlude.visiting && agent.currentAction?.type === 'idle' && agent.currentAction.parameters.matrixEscape))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
     if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
@@ -260,7 +261,8 @@ export class PlayerController {
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick);
       if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
-        || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
+        || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
+        || journey.matrixEscape && !journey.visiting && agent.currentAction?.type === 'idle' && agent.currentAction.parameters.matrixEscape))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
@@ -291,6 +293,7 @@ export class PlayerController {
       this.sandbox?.life.film.rescueFrame(agent, 0, tick);
       this.sandbox?.life.film.governmentFrame(agent, false, 0, tick);
       this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick);
+      this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick);
       this.sandbox?.life.film.farewellFrame(agent, 0, tick);
       this.sandbox?.life.film.deusFrame(agent, false, 0, tick);
       this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick);

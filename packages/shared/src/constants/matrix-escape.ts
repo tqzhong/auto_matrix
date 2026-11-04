@@ -125,13 +125,13 @@ export function matrixEscapeRoot(encounter: MatrixEscapeEncounter, role: MatrixE
   if (encounter.kind === 'subway') {
     if (encounter.phase === 'phone_shot') {
       const shot = smooth(encounter.elapsed / MATRIX_ESCAPE.subway.phoneShot);
-      return role === 'neo' ? { x: -7, y: 0, z: 31.5 - shot * 2, yaw: Math.PI }
+      return role === 'neo' ? { x: -7, y: 0, z: 31.5 - shot * 2, yaw: 0 }
         : role === 'smith' ? { x: 1.5, y: 0, z: 22 + shot * 2, yaw: 0 }
           : { x: -8, y: 0, z: -27, yaw: 0 };
     }
     if (encounter.phase === 'stance') {
       const turn = smooth(encounter.elapsed / MATRIX_ESCAPE.subway.stance);
-      return role === 'neo' ? { x: -3 + turn * 3, y: 0, z: 27 - turn * 17, yaw: Math.PI * (1 - turn) }
+      return role === 'neo' ? { x: -3 + turn * 3, y: 0, z: 27 - turn * 17, yaw: Math.PI * turn }
         : role === 'smith' ? { x: 0, y: 0, z: 2, yaw: 0 }
           : { x: -8, y: 0, z: -27, yaw: 0 };
     }

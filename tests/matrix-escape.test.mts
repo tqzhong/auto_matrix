@@ -72,6 +72,8 @@ test('the subway escape starts with the destroyed phone and requires real hits p
   assert.equal(encounter.phase, 'duel'); assert.equal(matrixEscapeLocked(state), false);
   const threat = h.sandbox.state.threats.find(candidate => candidate.scene === 'm1_subway');
   assert.equal(threat?.kind, 'smith'); assert.equal(threat?.character, 'smith');
+  assert.ok((threat!.position.x - h.actor.position.x) * Math.sin(h.actor.rotation)
+    + (threat!.position.z - h.actor.position.z) * Math.cos(h.actor.rotation) > 0, 'Neo faces Smith when the stance hands over to live combat');
   const originalHealth = threat!.health;
   finishSubwayDuel(h);
   assert.equal(threat!.health, originalHealth, 'the authored duel ends through saved exchanges instead of deleting Smith as an ordinary mob');
@@ -100,6 +102,29 @@ test('train timing fails explicitly, then retry resumes at the tracks and Smith 
   assert.equal(resumed.matrixEscape!.phase, 'done'); assert.ok(resumed.completed.includes('m1_subway'));
   assert.equal(resumed.matrixEscape!.possessions, 1); assert.equal(resumed.matrixEscape!.host, 'citizen_13');
   assert.ok(h.impacts.some(impact => impact.source === 'subway-train' && impact.target === 'smith' && impact.downed));
+});
+
+for (const [id, duration, phase] of [
+  ['m1_subway', .85, 'phone_shot'],
+  ['m1_subway', MATRIX_ESCAPE.subway.phoneShot + MATRIX_ESCAPE.subway.stance + .3, 'duel'],
+  ['m1_city_chase', MATRIX_ESCAPE.city.briefing + .3, 'running'],
+] as const) test(`disconnect and cold restore retain Neo's paused ${phase} pose`, () => {
+  const h = setup(id);
+  h.command('act'); h.frames(duration); h.frames(.1, {}, false);
+  h.world.simulationTick = h.tick();
+  const state = h.sandbox.life.film.state!;
+  assert.equal(state.matrixEscape!.phase, phase);
+  assert.ok(h.actor.currentAction?.parameters.matrixEscape);
+  const action = structuredClone(h.actor.currentAction);
+  const position = { ...h.actor.position }, clock = structuredClone(state.matrixEscape);
+  h.players.release('escape-player', h.tick());
+  assert.deepEqual(h.actor.currentAction, action);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.actor.currentAction, action);
+  assert.deepEqual(h.players.possess('returned-player', 'neo', h.tick()), { agentId: 'neo' });
+  assert.deepEqual(h.actor.currentAction, action);
+  assert.deepEqual(h.actor.position, position);
+  assert.deepEqual(h.sandbox.life.film.state!.matrixEscape, clock);
 });
 
 test('Tank route is a moving pursuit with a failed phone, garbage-truck evade, two possessions and room 303 exit', () => {
