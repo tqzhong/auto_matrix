@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, filmStepPosition, newAmbushEscape, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -215,4 +215,44 @@ for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off th
     assert.deepEqual(done.map(light => light.id), ready.map(light => light.id));
     assert.equal(markerLight.intensity, 0);
   }
+});
+
+test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_dejavu, center = FILM_SETS[scene.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get('neo')!;
+  actor.position = filmStepPosition(scene, scene.steps[0]);
+  actor.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [],
+    enteredAt: 0, checkpoint: actor.position, reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const renderedLights = () => {
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    const points: THREE.PointLight[] = [];
+    h.before();
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points.push(object); });
+    h.after();
+    return points;
+  };
+  h.camera.position.set(center.x + 11, center.y + 3, center.z + 31.8);
+  const arrival = renderedLights();
+  assert.equal(arrival.length, 11, 'lights inside the closed pipe shaft and room 608 are outside the chase rig');
+  journey.step = 1; journey.ambushEscape = newAmbushEscape(); journey.ambushEscape.elapsed = 2.8;
+  const firing = renderedLights();
+  assert.deepEqual(firing, arrival);
+  assert.ok(firing.some(light => light.intensity === 900), 'the Mouse room flash retains its light');
+  journey.ambushEscape.phase = 'descending';
+  h.camera.position.y = center.y - 15; h.camera.rotation.y = Math.PI;
+  assert.deepEqual(renderedLights(), arrival);
+
+  journey.scene = 'm1_wetwall'; journey.step = 0;
+  renderedLights();
+  const shaft = h.scene.getObjectByName('ambush-wetwall-shaft')!;
+  const points: THREE.PointLight[] = [];
+  shaft.traverseVisible(object => { if (object instanceof THREE.PointLight) points.push(object); });
+  assert.equal(points.length, 6, 'the shaft and room lights return when their scene loads');
 });

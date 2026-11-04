@@ -11,11 +11,12 @@ export class WetwallRenderer {
   private dust = new THREE.Group();
   private sixthPanel = new THREE.Group();
   private gunHole = new THREE.Group();
+  private lights = new THREE.Group();
   private sixth: SixthFloorRenderer;
   private geometries = new Set<THREE.BufferGeometry>();
   private dustMaterial = new THREE.MeshStandardMaterial({ color: 0xb8aa8d, transparent: true, opacity: .16, depthWrite: false, roughness: 1 });
   constructor(parent: THREE.Group, material: { plaster: THREE.Material; wood: THREE.Material; iron: THREE.Material; trim: THREE.Material }) {
-    this.root.name = 'ambush-wetwall-shaft'; parent.add(this.root);
+    this.root.name = 'ambush-wetwall-shaft'; this.root.add(this.lights); parent.add(this.root);
     const shaft = WETWALL_SHAFT, bottom = shaft.low - 1, top = shaft.top + 7.4, height = top - bottom;
     this.box(material.plaster, -17.5, bottom - .18, -32.4, 9, .36, 3.2);
     this.box(material.plaster, -17.5, (bottom + shaft.top) / 2, shaft.back, 9, shaft.top - bottom, .5);
@@ -65,7 +66,7 @@ export class WetwallRenderer {
         this.box(material.wood, -13.7, y + .3 + row * .47, shaft.front - .24, .9, .11, .14);
       }
       const light = new THREE.PointLight(level < 2 ? 0xcbb389 : 0xb0c5bc, level === 0 ? 75 : 45, 15, 2);
-      light.position.set(-17.5, y + 4.8, -33.25); this.root.add(light);
+      light.position.set(-17.5, y + 4.8, -33.25); this.lights.add(light);
     }
     const sources = [...this.geometries];
     batchStaticGeometry(this.root, new Set()).forEach(geometry => this.geometries.add(geometry));
@@ -97,6 +98,8 @@ export class WetwallRenderer {
     mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = true; this.root.add(mesh); return mesh;
   }
   update(journey?: FilmJourney): void {
+    // Before the wall breach story, the enclosed shaft cannot light the stairwell.
+    this.lights.visible = (journey?.visiting ?? journey?.scene) !== 'm1_dejavu';
     const wall = journey?.wetwall, active = Boolean(wall && ['m1_wetwall', 'm1_wall_exposed', 'm1_bathroom'].includes(journey!.scene));
     const exposure = journey?.wallExposure;
     const sixth = Boolean(exposure && ['m1_wall_exposed', 'm1_bathroom'].includes(journey!.scene));

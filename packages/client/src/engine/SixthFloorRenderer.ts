@@ -9,6 +9,7 @@ export class SixthFloorRenderer {
   private rifle = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
+  private lamp = new THREE.PointLight(0xd6c392, 12, 12, 2);
   private lights: { role: 'citizen_4' | 'citizen_14'; light: THREE.SpotLight }[] = [];
   constructor(parent: THREE.Group, material: { plaster: THREE.Material; wood: THREE.Material; iron: THREE.Material; trim: THREE.Material }) {
     this.root.name = 'room-608'; parent.add(this.root);
@@ -44,7 +45,7 @@ export class SixthFloorRenderer {
     const bulbMaterial = this.mat(new THREE.MeshStandardMaterial({ color: 0xcebda0, emissive: 0xccae70, emissiveIntensity: .8 }));
     this.box(material.iron, -17.5, y + 6.6, -24.7, .32, .16, .32);
     const bulb = this.mesh(new THREE.SphereGeometry(.15, 12, 8), bulbMaterial); bulb.position.set(-17.5, y + 6.3, -24.7);
-    const lamp = new THREE.PointLight(0xd6c392, 12, 12, 2); lamp.position.copy(bulb.position); this.root.add(lamp);
+    this.lamp.position.copy(bulb.position); this.root.add(this.lamp);
     const source = [...this.geometries]; batchStaticGeometry(this.root, new Set()).forEach(geometry => this.geometries.add(geometry));
     const used = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh) used.add(object.geometry); });
     for (const geometry of source) if (!used.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
@@ -68,6 +69,7 @@ export class SixthFloorRenderer {
     const mesh = this.mesh(new THREE.BoxGeometry(width, height, depth), material, parent); mesh.position.set(x, y, z); return mesh;
   }
   update(journey?: FilmJourney): void {
+    this.lamp.visible = (journey?.visiting ?? journey?.scene) !== 'm1_dejavu';
     const encounter = journey?.wallExposure, active = Boolean(encounter && ['m1_wall_exposed', 'm1_bathroom'].includes(journey!.scene));
     this.rifle.visible = active && ['replacing', 'rushing', 'grapple', 'breach', 'done'].includes(encounter!.phase);
     this.rifle.position.set(-17.4, WETWALL_SHAFT.sixth + Math.max(.16, 2.1 - (encounter?.phase === 'replacing' ? encounter.elapsed * 3 : 8)), -20.8); this.rifle.rotation.y = .6;
