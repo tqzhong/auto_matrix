@@ -4,6 +4,24 @@ import * as THREE from 'three';
 import { bridgeArrivalPose, meetingCarPose, meetingRollRoadTime, MEETING_ROAD_WIDTH, MEETING_CAR, type FilmJourney } from '@auto_matrix/shared';
 import { MeetingSetRenderer } from '../packages/client/src/engine/MeetingSetRenderer.js';
 
+test('the bridge and car retain only drawn geometry and keep the indexed wheel batches', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const parent = new THREE.Group(), renderer = new MeetingSetRenderer(parent, false);
+  t.after(() => renderer.dispose());
+  const { geometries, wheels } = renderer as unknown as {
+    geometries: Set<THREE.BufferGeometry>; wheels: { spin: THREE.Group }[];
+  };
+  const live = new Set<THREE.BufferGeometry>();
+  parent.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) live.add(object.geometry); });
+  assert.equal([...geometries].filter(geometry => !live.has(geometry)).length, 0,
+    'source buffers replaced by static batches must be released while the set is active');
+  for (const wheel of wheels) {
+    const meshes = wheel.spin.children.filter(object => object instanceof THREE.Mesh);
+    assert.ok(meshes.length > 0);
+    assert.ok(meshes.every(mesh => mesh.geometry.index !== null), 'each wheel keeps its existing triangle indices');
+  }
+});
+
 test('the actual car body uses the same fast pose as its occupants between journey snapshots', t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;

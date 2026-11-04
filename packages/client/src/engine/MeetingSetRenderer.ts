@@ -520,13 +520,27 @@ export class MeetingSetRenderer {
     const mesh = this.mesh(parent, new THREE.CylinderGeometry(radius, radius, height, 32), material); mesh.position.set(x, y, z); return mesh;
   }
   private batch(root = this.static): void {
-    root.updateWorldMatrix(true, true); const inverse = root.matrixWorld.clone().invert(); const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+    root.updateWorldMatrix(true, true);
+    const inverse = root.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
+    const batches = new Map<THREE.Material, THREE.Mesh[]>();
     root.traverse(object => { if (object instanceof THREE.Mesh) {
-      const geometry = (object.geometry.index ? object.geometry.toNonIndexed() : object.geometry.clone()).applyMatrix4(inverse.clone().multiply(object.matrixWorld));
-      const material = object.material as THREE.Material; const list = batches.get(material) ?? []; list.push(geometry); batches.set(material, list);
+      const material = object.material as THREE.Material;
+      const list = batches.get(material) ?? []; list.push(object); batches.set(material, list);
     } });
     root.clear();
-    for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) this.mesh(root, geometry, material); }
+    for (const [material, meshes] of batches) {
+      // These construction meshes own their geometry. Keep one draw per material.
+      const indexed = meshes.every(mesh => mesh.geometry.index !== null);
+      const parts = meshes.map(mesh => {
+        const source = mesh.geometry;
+        const part = !indexed && source.index ? source.toNonIndexed() : source;
+        this.geometries.delete(source);
+        if (part !== source) source.dispose();
+        return part.applyMatrix4(transform.multiplyMatrices(inverse, mesh.matrixWorld));
+      });
+      const geometry = mergeGeometries(parts); parts.forEach(part => part.dispose());
+      if (geometry) this.mesh(root, geometry, material);
+    }
   }
   update(journey: FilmJourney | undefined, elapsed: number, occupant?: MeetingGesture): void {
     const encounter = journey?.visiting ? undefined : occupant ?? journey?.meeting;
