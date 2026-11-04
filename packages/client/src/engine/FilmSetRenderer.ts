@@ -274,6 +274,7 @@ export class FilmSetRenderer {
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby)
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
+      || id === 'film_zion_temple' && this.currentScene === 'm2_temple'
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
   }
@@ -558,7 +559,9 @@ export class FilmSetRenderer {
     this.theOne?.update(journey, elapsed);
     this.reloaded?.update(journey);
     this.catchSet?.update(journey, this.phoneBodies?.('trinity'));
-    this.zion?.update(epilogue && journey?.scene === 'm3_ceasefire' && !journey.visiting ? { ...journey, epilogue } : journey, elapsed, cameraPosition, camera);
+    // For fixed slots, the render pass mutes off-view lights without changing the shader layout.
+    this.zion?.update(epilogue && journey?.scene === 'm3_ceasefire' && !journey.visiting ? { ...journey, epilogue } : journey,
+      elapsed, cameraPosition, this.stablePointSlots ? undefined : camera);
     this.baneCopy?.update(journey, elapsed, player && journey?.actor === player.id ? player.position : undefined, set?.center);
     if (this.logosBane) {
       const encounter = journey?.scene === 'm3_bane' && !journey.visiting ? journey.bane : undefined;

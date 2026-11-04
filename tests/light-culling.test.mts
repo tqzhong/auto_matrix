@@ -169,6 +169,47 @@ test('a fixed point-light set keeps its shader slots while turning and turning l
   } finally { h.culling.dispose(); }
 });
 
+test('the Reloaded temple keeps point-light shader slots while walking, turning and finishing the assembly', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m2_temple;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!;
+  actor.isInMatrix = false;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.aspect = 16 / 9; h.camera.far = 300; h.camera.updateProjectionMatrix();
+  actor.position = journey.checkpoint;
+  renderer.update(actor, sandbox, 0, actor.position);
+  const hallLights: THREE.PointLight[] = [];
+  renderer.root.traverseVisible(object => { if (object instanceof THREE.PointLight) hallLights.push(object); });
+  const intensities = hallLights.map(light => light.intensity);
+  const slotCounts: number[] = [];
+  for (const [z, direction, step] of [[37, -1, 0], [10, -1, 0], [-15, -1, 0], [-35, 1, 1], [-26, -1, 3]]) {
+    actor.position = filmPosition(scene.set, 0, z);
+    journey.step = step;
+    h.camera.position.set(actor.position.x, actor.position.y + 4, actor.position.z - direction * 6);
+    h.camera.lookAt(actor.position.x, actor.position.y + 1, actor.position.z + direction * 10);
+    renderer.update(actor, sandbox, 0, actor.position, h.camera.position, undefined, false, 12000, h.camera);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      let slots = 0;
+      h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
+      slotCounts.push(slots);
+      const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(h.camera.projectionMatrix, h.camera.matrixWorldInverse));
+      hallLights.forEach((light, index) => {
+        if (frustum.intersectsSphere(new THREE.Sphere(light.getWorldPosition(new THREE.Vector3()), light.distance))) {
+          assert.equal(light.visible, true);
+          assert.equal(light.intensity, intensities[index], 'a light reaching the visible hall keeps its authored energy');
+        }
+      });
+    } finally { h.after(); }
+  }
+  assert.deepEqual(slotCounts, Array(slotCounts.length).fill(hallLights.length + 1), 'hall lights and the objective marker must keep one shader variant');
+});
+
 for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off the goal light without dropping its shader slot`, t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
