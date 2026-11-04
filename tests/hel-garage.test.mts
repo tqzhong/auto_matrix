@@ -85,6 +85,7 @@ test('dodge, disarm and three paired counters advance once; a manually opened do
   assert.equal(h.state().completed.filter(id => id === h.scene.id).length, 1);
   assert.deepEqual(Object.fromEntries(Object.keys(before).map(id => [id, h.world.agents.get(id)!.health])), before);
   h.command('next'); assert.equal(h.state().scene, 'm3_hel_entry');
+  assert.equal(h.actor.health, 73, 'entering the lift continues the garage encounter without healing Trinity');
   assert.equal(h.sandbox.state.structures.some(item => item.id.startsWith('film:hel-garage:')), false);
 });
 
@@ -133,8 +134,14 @@ test('restoring during disarm and a partially open door reconstructs the saved p
   };
   verify(); until(h, 'combo');
   for (let i = 0; i < 3; i++) { h.players.act('hel-player', 'attack', h.tick()); until(h, i === 2 ? 'cleared' : 'combo'); }
-  walk(h, 2.7, -28.55); h.command('act'); h.frame(6); assert.ok(h.state().helGarage!.door > 0 && h.state().helGarage!.door < 1);
-  verify(); assert.equal(h.state().step, 1); assert.equal(h.actor.health, 73);
+  walk(h, 2.7, -28.55); h.command('act'); h.frame(2); assert.ok(h.state().helGarage!.door > 0 && h.state().helGarage!.door < 1);
+  assert.ok(Math.abs(h.actor.velocity.z) > .1, 'pause before Trinity has stopped pushing the door');
+  h.frame(1, false);
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+  verify();
+  h.players.release('hel-player', h.tick()); h.players.possess('hel-player', 'trinity', h.tick());
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+  assert.equal(h.state().step, 1); assert.equal(h.actor.health, 73);
 });
 
 test('Trinity crossing alone cannot claim both companions have already entered the lift', () => {

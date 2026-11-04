@@ -52,6 +52,24 @@ test('the slow story tick cannot finish the Trainman chase after its player disc
   assert.deepEqual(h.world.agents.get('trainman')!.position, trainman);
 });
 
+test('the Trainman confrontation and brake freeze Seraph’s walking velocity before reconnect', () => {
+  const h = setup(), scene = FILM_SCENE_BY_ID.m3_trainman_chase;
+  h.actor.position = filmStepPosition(scene, scene.steps[0]);
+  h.players.receiveInput('chase-player', { x: 0, z: -1, yaw: Math.PI, sequence: 1, location: scene.set });
+  h.frame(2);
+  assert.ok(h.actor.velocity.z < -.1, 'start the conversation while Seraph is still walking');
+  h.command('act');
+  assert.equal(h.state().helChase?.performance?.phase, 'confronting');
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+  h.frame(67); h.frame(1, false);
+  const saved = structuredClone(h.state().helChase), position = { ...h.actor.position };
+  assert.equal(saved?.performance?.phase, 'braking');
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+  h.players.release('chase-player', h.tick()); h.players.possess('chase-player', 'seraph', h.tick());
+  assert.deepEqual(h.state().helChase, saved); assert.deepEqual(h.actor.position, position);
+  assert.deepEqual(h.actor.velocity, { x: 0, y: 0, z: 0 });
+});
+
 test('an occupied companion or dead Trainman cannot be moved or healed by the pursuit', () => {
   const h = setup(), scene = FILM_SCENE_BY_ID.m3_trainman_chase;
   h.actor.position = filmStepPosition(scene, scene.steps[0]); h.command('act');

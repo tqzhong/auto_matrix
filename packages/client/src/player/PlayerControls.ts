@@ -475,7 +475,9 @@ export class PlayerControls {
   private requestAttack(guided = false, guidedCombo?: number): boolean {
     if (this.motion.officeCustody) return false;
     const chainShot = this.motion.freewayPickup?.phase === 'mounted' && this.motion.freewayPickup.chain;
-    if (chainShot || this.motion.truckHood || this.motion.bathroom || this.motion.sourcePortal?.phase === 'cover'
+    const garage = this.motion.helGarage;
+    const garageCounter = garage && !garage.paused && !garage.unavailable && (garage.phase === 'counter' || garage.phase === 'combo');
+    if (chainShot || garageCounter || this.motion.truckHood || this.motion.bathroom || this.motion.sourcePortal?.phase === 'cover'
       || this.motion.reloaded?.phase === 'falling' || this.motion.catch?.phase === 'pulse' || this.motion.dockReload?.phase === 'jammed') {
       if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
       this.send(this.input(false)); this.action('attack'); return true;

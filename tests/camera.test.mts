@@ -3630,6 +3630,24 @@ test('the keyboard attack reaches Source corridor cover while the movement lock 
   }
 });
 
+test('F reaches the Hel garage disarm and counter windows while movement is locked', t => {
+  const game = setup(t);
+  game.state.id = 'trinity'; game.state.currentLocation = 'film_hel_garage';
+  game.state.position = filmPosition('film_hel_garage', 5.3, -16.35);
+  game.controls.possess(game.state);
+  for (const [phase, running, paused, attacks] of [
+    ['drawing', true, undefined, 0], ['counter', false, undefined, 0], ['counter', true, 'Seraph', 0],
+    ['counter', true, undefined, 1], ['disarming', true, undefined, 1], ['combo', true, undefined, 2], ['striking', true, undefined, 2],
+  ] as const) {
+    game.state.currentAction = { type: 'idle', parameters: { helGarage: { phase, elapsed: .1, age: 4, hits: 0, door: 0,
+      role: 'trinity', pair: 2, paused } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.update(.1, game.state, game.group, running);
+    assert.equal(game.controls.performing, true);
+    game.key('KeyF'); game.key('KeyF', false);
+    assert.deepEqual(game.actions, Array(attacks).fill('attack'), phase);
+  }
+});
+
 test('the keyboard attack reaches Trinity revival while the rooftop camera owns movement', async t => {
   const { newCatch } = await import('@auto_matrix/shared');
   const game = setup(t); game.state.currentLocation = 'film_trinity_roof'; game.state.position = filmPosition('film_trinity_roof', 0, -15);

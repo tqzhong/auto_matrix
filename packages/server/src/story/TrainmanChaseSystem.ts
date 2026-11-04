@@ -143,7 +143,9 @@ export class TrainmanChaseSystem {
     journey.helChase!.phase = state.phase === 'escaped' ? 'escaped' : ['ready', 'confronting', 'braking'].includes(state.phase) ? 'sighting' : 'running';
     journey.helChase!.elapsed = state.elapsed; journey.helChase!.lastTick = tick;
     journey.lastText = trainmanChaseText(state);
-    return trainmanChaseLocked(state);
+    const locked = trainmanChaseLocked(state);
+    if (locked) actor.velocity = zero();
+    return locked;
   }
   private fire(actor: AgentState, state: TrainmanChase): void {
     const source = position(TRAINMAN_CHASE.escape.x, TRAINMAN_CHASE.escape.z, 2.5), aim = state.aim!, length = distance(source, aim);

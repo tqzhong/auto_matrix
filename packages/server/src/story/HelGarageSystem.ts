@@ -98,7 +98,9 @@ export class HelGarageSystem {
       helGarage: { phase: state.phase, elapsed: state.elapsed, age: state.age, hits: state.hits, door: state.door, role: 'trinity', pair: 2,
         paused: state.paused, unavailable: state.unavailable } }, startedAt: this.journey!.enteredAt, duration: 1e9, progress: 0 };
     this.journey!.lastText = helGarageText(state);
-    return helGarageLocked(state);
+    const locked = helGarageLocked(state);
+    if (locked && !elapsed) actor.velocity = { x: 0, y: 0, z: 0 };
+    return locked;
   }
   command(actor: AgentState, target: string, tick: number): string | undefined {
     if (!this.active(actor)) return;
