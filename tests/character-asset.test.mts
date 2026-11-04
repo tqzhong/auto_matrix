@@ -2297,6 +2297,7 @@ test('office window cleaners keep the squeegee above their faces during the brie
   const root = new THREE.Group(); const renderer = new OfficeSetRenderer(root, FILM_SETS.film_metacortex_floor);
   const journey: FilmJourney = { version: 1, scene: 'm1_boss', actor: 'neo', step: 0, completed: [], enteredAt: 0, reflections: {}, checkpoint: { x: 0, y: 0, z: 0 }, lastText: '' };
   try {
+    renderer.update(journey);
     await Promise.resolve();
     for (const time of [0, 1.5, 3]) {
       renderer.update(journey, undefined, undefined, undefined, time); root.updateMatrixWorld(true);

@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FILM_SETS, OFFICE_DESKS, metacortexPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_DESKS, metacortexPosition, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
@@ -172,6 +172,33 @@ test('the occupied lift prepares the hidden office and city materials with the a
   film.update(player, sandbox, 0);
   assert.equal(film.active?.id, 'film_metacortex_floor');
   assert.ok(scene.getObjectByName('office-window-glass') === windows[1]);
+});
+
+test('office visits and cold escapes skip the cleaners while the live workday loads them once', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const load = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  const floor = FILM_SETS.film_metacortex_floor;
+  const workday: FilmJourney = { version: 1, scene: 'm1_boss', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, checkpoint: floor.center, lastText: '' };
+  const visit = new OfficeSetRenderer(new THREE.Group(), floor);
+  t.after(() => visit.dispose());
+  visit.update({ ...workday, scene: 'm1_interrogation', visiting: 'm1_boss' });
+  assert.equal(load.mock.callCount(), 0, 'a journal visit never shows the window cleaners');
+  const escape = new OfficeSetRenderer(new THREE.Group(), FILM_SETS.film_office_ledge);
+  t.after(() => escape.dispose());
+  escape.update({ ...workday, scene: 'm1_ledge' });
+  assert.equal(load.mock.callCount(), 0, 'a cold load on the ledge skips the earlier background performance');
+
+  const live = new OfficeSetRenderer(new THREE.Group(), floor);
+  t.after(() => live.dispose());
+  live.update({ ...workday, scene: 'm1_commute' });
+  live.update(workday);
+  live.update(workday);
+  assert.deepEqual(load.mock.calls.map(call => call.arguments), [['/assets/characters/club-male.glb']]);
+  assert.equal(live.root.getObjectByName('office-window-cleaners')?.visible, true);
 });
 
 test('the approaching player gets staged manager texture uploads and a single color compile before the detailed body is visible', t => {

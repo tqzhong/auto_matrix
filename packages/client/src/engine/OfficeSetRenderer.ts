@@ -25,6 +25,7 @@ export class OfficeSetRenderer {
   private cleaners = new THREE.Group();
   private cleanerActors: { root: THREE.Group; bones: Map<string, THREE.Bone>; blade: THREE.Mesh; handle: THREE.Mesh; z: number }[] = [];
   private cleanerSkeletons: THREE.Skeleton[] = [];
+  private cleanersRequested = false;
   private disposed = false;
   private construction?: Generator<void>;
   constructor(parent: THREE.Group | undefined, set: FilmSet) {
@@ -41,7 +42,6 @@ export class OfficeSetRenderer {
     this.root.position.set(set.id === 'film_office_ledge' ? -OFFICE_LEDGE_OFFSET : 0, 0, 0);
     parent.add(this.root);
     while (!this.prepareStep()) { /* Finish any work left by a late restore. */ }
-    void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
   }
   private *build(): Generator<void> {
     this.office();
@@ -148,7 +148,12 @@ export class OfficeSetRenderer {
     if (this.windowLight) this.windowLight.intensity = 500 * Math.max(0, Math.sin((timeOfDay / 24000 - .25) * Math.PI * 2));
     if (journey?.scene === 'm1_boss' && !journey.visiting && clock) journey = { ...journey, workday: clock };
     this.workday?.update(journey);
-    this.updateCleaners(time, journey?.scene === 'm1_boss' && !journey.visiting);
+    const liveScene = journey?.visiting ? undefined : journey?.scene;
+    if (!this.cleanersRequested && (liveScene === 'm1_commute' || liveScene === 'm1_boss')) {
+      this.cleanersRequested = true;
+      void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
+    }
+    this.updateCleaners(time, liveScene === 'm1_boss');
     if (this.sash && this.latch) {
       const time = journey?.office?.window ?? (journey?.completed.includes('m1_office_escape') && journey.office?.outcome !== 'captured' ? OFFICE_WINDOW.seconds : 0);
       const pose = officeWindowPose(time); this.sash.rotation.z = pose.angle; this.latch.rotation.x = pose.latch;
