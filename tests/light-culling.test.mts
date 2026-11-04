@@ -212,6 +212,39 @@ for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach']) te
   assert.deepEqual(slotCounts, Array(slotCounts.length).fill(hallLights.length + 1), 'hall lights and the objective marker must keep one shader variant');
 });
 
+test('the interrogation keeps the objective light slot when Neo sits down', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = document; });
+  const scene = FILM_SCENE_BY_ID.m1_interrogation;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get(scene.actor)!; neo.currentLocation = scene.set; neo.isInMatrix = true;
+  neo.position = filmStepPosition(scene, scene.steps[0]);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  h.camera.position.set(neo.position.x, neo.position.y + 2, neo.position.z + 2);
+  h.camera.lookAt(neo.position.x - 5, neo.position.y, neo.position.z);
+  const sample = () => {
+    renderer.update(neo, sandbox, 0, neo.position, h.camera.position, undefined, false, 12000, h.camera);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const lights: THREE.PointLight[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push(light); });
+      return lights.map(light => ({ id: light.id, energy: light.intensity }));
+    } finally { h.after(); }
+  };
+  const standing = sample();
+  assert.equal(standing.length, 2);
+  assert.ok(standing.some(light => light.energy === 5), 'the visible marker still lights the floor');
+  journey.interrogation = { phase: 'file', elapsed: .5, approach: { x: 5.9, z: 0, yaw: -Math.PI / 2 } };
+  const sitting = sample();
+  assert.deepEqual(sitting.map(light => light.id), standing.map(light => light.id));
+  assert.deepEqual(sitting.map(light => light.energy), standing.map(light => light.energy === 5 ? 0 : light.energy));
+});
+
 test('the Logos wreck keeps the fire and objective light slots as Neo reaches Trinity', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
