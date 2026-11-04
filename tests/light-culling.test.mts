@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmPosition, filmStepPosition, newAmbushEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, newAmbushEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -253,6 +253,34 @@ test('the minigun changes illumination without dropping a light slot during the 
   assert.ok(firing.some(light => light.name === 'air-rescue-minigun-flash' && light.intensity > 20));
   assert.deepEqual(firing.map(light => light.id), ready.map(light => light.id));
   assert.deepEqual(catching.map(light => light.id), ready.map(light => light.id));
+});
+
+test('the subway keeps one point-light layout on the platform and tracks', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_subway;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!;
+  actor.isInMatrix = true; actor.position = filmEntry(scene);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: actor.position, reflections: {}, lastText: '', matrixEscape: { kind: 'subway', phase: 'ready', elapsed: 0,
+      attempt: 0, checkpoint: 'duel', hits: 0, dodges: 0, pursuit: 0, segment: 0, possessions: 0, resolved: [] } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = (x: number, z: number, yaw: number) => {
+    const camera = filmPosition(scene.set, x, z);
+    h.camera.position.set(camera.x, camera.y + 3, camera.z); h.camera.rotation.y = yaw;
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const lights: number[] = [];
+    h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push(light.id); });
+    h.after();
+    return lights;
+  };
+  const platform = sample(-3, 24, 0);
+  journey.matrixEscape!.phase = 'train_window'; journey.matrixEscape!.elapsed = 2.4;
+  assert.deepEqual(sample(16, -7, Math.PI), platform);
+  assert.deepEqual(sample(16, -7, Math.PI / 2), platform);
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {

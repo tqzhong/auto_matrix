@@ -48,8 +48,10 @@ export const MATRIX_ESCAPE = {
     truckDuration: 3.5,
     truckBeat: 2.15,
     truckWindow: .62,
+    truckDodge: .68,
     possession: 2.3,
     door: 2.1,
+    hotelThreshold: { z: -50.5, height: 2.54 },
     pursuitIdle: .13,
     pursuitMoving: .045,
     pursuitSprint: .14,
@@ -62,7 +64,8 @@ const pulse = (time: number, center: number, radius: number): number => smooth(1
 
 export function matrixEscapePhaseLocked(encounter?: MatrixEscapeEncounter): boolean {
   if (!encounter) return false;
-  return ['phone_shot', 'stance', 'wall_break', 'tracks', 'train_window', 'train_escape', 'body_swap', 'briefing',
+  return encounter.kind === 'city' && encounter.phase === 'done'
+    || ['phone_shot', 'stance', 'wall_break', 'tracks', 'train_window', 'train_escape', 'body_swap', 'briefing',
     'phone_failure', 'truck_warning', 'truck_window', 'possession', 'door'].includes(encounter.phase);
 }
 
@@ -168,11 +171,18 @@ export function matrixEscapeRoot(encounter: MatrixEscapeEncounter, role: MatrixE
     : role === 'citizen_13' ? { x: 3.5, y: 0, z: 15, yaw: -.7 } : { x: 7, y: 0, z: 10, yaw: 0 };
   if (encounter.phase === 'truck_warning' || encounter.phase === 'truck_window') return role === 'neo'
     ? { x: 7, y: 0, z: -12, yaw: Math.PI } : { x: -5, y: 0, z: -22, yaw: 0 };
-  if (encounter.phase === 'possession') return role === 'neo' ? { x: 7, y: 0, z: -18, yaw: Math.PI }
-    : role === 'citizen_14' ? { x: -8, y: 0, z: -28, yaw: -.5 } : { x: 5, y: 0, z: -24, yaw: 0 };
+  if (encounter.phase === 'possession') {
+    const dodge = smooth(encounter.elapsed / MATRIX_ESCAPE.city.truckDodge);
+    const recovery = smooth((encounter.elapsed - MATRIX_ESCAPE.city.truckDodge) / (MATRIX_ESCAPE.city.possession - MATRIX_ESCAPE.city.truckDodge));
+    return role === 'neo' ? { x: 7 + 6.25 * dodge, y: 0, z: -12 - dodge - recovery * 5, yaw: Math.PI - Math.sin(dodge * Math.PI) * .8 }
+      : role === 'citizen_14' ? { x: -8, y: 0, z: -28, yaw: -.5 } : { x: 5, y: 0, z: -24, yaw: 0 };
+  }
   if (encounter.phase === 'door' || encounter.phase === 'done') {
     const entry = encounter.phase === 'door' ? smooth(encounter.elapsed / MATRIX_ESCAPE.city.door) : 1;
-    return role === 'neo' ? { x: 0, y: entry * 2.2, z: -42 - entry * 6, yaw: Math.PI }
+    const { z: threshold, height } = MATRIX_ESCAPE.city.hotelThreshold;
+    const z = -42 + (threshold - 1.7 + 42) * entry;
+    const y = .7 * smooth((-z - 43.2) / .9) + (height - .7) * clamp((-z - 45.2) / 3.9);
+    return role === 'neo' ? { x: 0, y, z, yaw: Math.PI }
       : { x: 4, y: 0, z: -35, yaw: Math.PI };
   }
   return role === 'neo' ? { x: 0, y: 0, z: 35, yaw: Math.PI } : { x: -10, y: 0, z: 24, yaw: 0 };
@@ -186,10 +196,11 @@ export function matrixEscapePose(gesture: MatrixEscapeGesture) {
   const wall = gesture.phase === 'wall_break' ? smooth(gesture.elapsed / MATRIX_ESCAPE.subway.wallBreak) : 0;
   const grapple = !['tracks', 'train_window'].includes(gesture.phase) ? 0 : gesture.role === 'smith' ? .9 : gesture.role === 'neo' ? .72 : 0;
   const leap = gesture.phase === 'train_escape' && gesture.role === 'neo' ? smooth(gesture.elapsed / MATRIX_ESCAPE.subway.escape) : 0;
-  const transform = ['body_swap', 'possession'].includes(gesture.phase) && gesture.role === gesture.host
-    ? pulse(gesture.elapsed, gesture.kind === 'subway' ? 1.35 : 1.05, 1.2) : 0;
-  const brace = gesture.phase === 'truck_window' && gesture.role === 'neo'
-    ? pulse(gesture.elapsed, MATRIX_ESCAPE.city.truckBeat, MATRIX_ESCAPE.city.truckWindow * 1.5) : 0;
+  const transform = gesture.phase === 'body_swap' && gesture.role === gesture.host ? pulse(gesture.elapsed, 1.35, 1.2)
+    : gesture.phase === 'possession' && gesture.role === 'citizen_14' ? pulse(gesture.elapsed, 1.45, .85) : 0;
+  const brace = gesture.role === 'neo' && gesture.phase === 'truck_window'
+    ? pulse(gesture.elapsed, MATRIX_ESCAPE.city.truckBeat, MATRIX_ESCAPE.city.truckWindow * 1.5)
+    : gesture.role === 'neo' && gesture.phase === 'possession' ? pulse(gesture.elapsed, MATRIX_ESCAPE.city.truckDodge / 2, MATRIX_ESCAPE.city.truckDodge / 2) : 0;
   const door = gesture.phase === 'door' && gesture.role === 'neo' ? smooth(gesture.elapsed / MATRIX_ESCAPE.city.door) : 0;
   return { phone, aim, stance, strike, wall, grapple, leap, transform, brace, door };
 }

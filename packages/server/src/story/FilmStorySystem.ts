@@ -3736,8 +3736,9 @@ export class FilmStorySystem {
         for (const role of ['neo', encounter.host ?? 'citizen_14'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
         if (encounter.elapsed >= MATRIX_ESCAPE.city.door) {
           encounter.phase = 'done'; this.clearThreats(); this.clearMatrixEscapeActions(); this.advance(this.step!.text ?? 'Neo 进入 303 房间的撤离楼梯。', agent, tick);
+          this.stageMatrixEscapeActor('neo', encounter, 0, tick);
         }
-      }
+      } else if (encounter.phase === 'done') this.stageMatrixEscapeActor('neo', encounter, 0, tick);
     }
     state.lastText = matrixEscapeText(encounter); return matrixEscapeLocked(state);
   }

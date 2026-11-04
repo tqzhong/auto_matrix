@@ -150,6 +150,11 @@ test('Tank route is a moving pursuit with a failed phone, garbage-truck evade, t
   assert.equal(encounter.phase, 'door_ready'); assert.match(h.command('act'), /303|楼梯/); assert.equal(encounter.phase, 'door');
   h.frames(MATRIX_ESCAPE.city.door + .2);
   assert.equal(encounter.phase, 'done'); assert.ok(state.completed.includes('m1_city_chase')); assert.equal(state.step, h.scene.steps.length);
+  const root = matrixEscapeRoot(encounter, 'neo');
+  const landing = filmPosition(h.scene.set, root.x, root.z);
+  landing.y += root.y;
+  h.frames(.5);
+  assert.deepEqual(h.actor.position, landing, 'Neo stands on the completed stairwell landing until the next scene is requested');
 });
 
 test('city pursuit and truck impact each fail at a saved street checkpoint', () => {

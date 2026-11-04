@@ -40,7 +40,7 @@ import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matr
 import { dockBriefingLocked } from '@auto_matrix/shared';
 import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION, SHAFT_SEAL } from '@auto_matrix/shared';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, MATRIX_ESCAPE, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
@@ -1691,13 +1691,14 @@ export class PlayerControls {
     } else if (this.motion.matrixEscape && escapeCinematic) {
       const gesture = this.motion.matrixEscape; const center = FILM_SETS[state.currentLocation].center;
       const origin = new THREE.Vector3(center.x, center.y - 1, center.z); const pose = matrixEscapePose(gesture);
+      const citySwap = gesture.kind === 'city' && gesture.phase === 'possession' && gesture.elapsed >= MATRIX_ESCAPE.city.truckDodge;
       if (this.firstPerson) {
         const eyeHeight = 2.99 - pose.grapple * .82 - pose.brace * .52;
         const eye = new THREE.Vector3(this.position.x, this.position.y + eyeHeight, this.position.z);
         let look: THREE.Vector3 | undefined;
         const focusRole = gesture.kind === 'subway'
           ? gesture.phase === 'body_swap' ? 'citizen_13' : 'smith'
-          : gesture.phase === 'phone_failure' ? 'citizen_13' : gesture.phase === 'possession' ? 'citizen_14' : undefined;
+          : gesture.phase === 'phone_failure' ? 'citizen_13' : citySwap ? 'citizen_14' : undefined;
         if (focusRole) {
           const root = matrixEscapeRoot(gesture, focusRole); look = new THREE.Vector3(center.x + root.x, center.y + root.y + 2.25, center.z + root.z);
         }
@@ -1731,15 +1732,16 @@ export class PlayerControls {
           ideal = new THREE.Vector3(portrait ? 17 : 13, 6, 43); focus = new THREE.Vector3(0, 2.8, 29);
         } else if (gesture.phase === 'phone_failure') {
           ideal = new THREE.Vector3(portrait ? 15 : 11, 4.8, 27); focus = new THREE.Vector3(-3, 2.6, 17);
-        } else if (gesture.phase === 'possession') {
+        } else if (citySwap) {
           ideal = new THREE.Vector3(portrait ? -19 : -14, 4.6, -18); focus = new THREE.Vector3(-5, 2.6, -27);
-        } else if (gesture.phase === 'door') {
+        } else if (gesture.phase === 'door' || gesture.phase === 'done') {
           ideal = new THREE.Vector3(portrait ? 18 : 14, portrait ? 8 : 7, portrait ? -21 : -23); focus = new THREE.Vector3(0, 3.1, -43);
         } else {
-          const truck = gesture.phase === 'truck_window' ? THREE.MathUtils.smoothstep(gesture.elapsed, .2, 3) : 0;
+          const truck = gesture.phase === 'possession' ? 1 : gesture.phase === 'truck_window' ? THREE.MathUtils.smoothstep(gesture.elapsed, .2, 3) : 0;
           ideal = new THREE.Vector3(14, portrait ? 8 : 7.5, portrait ? -36 : -34)
             .lerp(new THREE.Vector3(13, portrait ? 7 : 6.5, portrait ? -32 : -30), truck);
           focus = new THREE.Vector3(7, 2.4, -10.5);
+          if (gesture.phase === 'possession') focus.x = (7 + matrixEscapeRoot(gesture, 'neo').x) / 2;
         }
         ideal.add(origin); focus.add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
