@@ -161,7 +161,8 @@ export class PlayerController {
       || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
-      || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick);
+      || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
+      || this.sandbox?.life.film.restoreBurlyPose(agent, tick);
     if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
@@ -258,7 +259,8 @@ export class PlayerController {
         || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
-        || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick);
+        || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
+        || this.sandbox?.life.film.restoreBurlyPose(agent, tick);
       if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome

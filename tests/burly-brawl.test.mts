@@ -48,6 +48,27 @@ test('Smith grapple needs an intentional escape; clearing copies alone cannot fi
   assert.ok(h.sandbox.state.threats.some(t => t.scene === h.scene.id), 'copies spread into the cleared space');
 });
 
+test('a paused grapple reconstructs both actors before and after possession', () => {
+  const h = setup(); h.command('act'); h.advance(3.2);
+  assert.equal(h.journey.burly?.phase, 'grapple');
+  const smith = h.world.agents.get('smith')!;
+  const neoPose = structuredClone(h.neo.currentAction), smithPose = structuredClone(smith.currentAction);
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('neo-player', h.tick());
+  assert.deepEqual(h.neo.currentAction, neoPose);
+  assert.deepEqual(smith.currentAction, smithPose);
+  h.neo.currentAction = null; smith.currentAction = null;
+  h.world.simulationTick = h.tick();
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.neo.currentAction, neoPose);
+  assert.deepEqual(smith.currentAction, smithPose);
+  assert.equal(h.players.possess('neo-player', 'neo', h.tick()).agentId, 'neo');
+  assert.deepEqual(h.neo.currentAction, neoPose);
+  assert.deepEqual(smith.currentAction, smithPose);
+  assert.deepEqual(h.sandbox.life.film.state!.burly, saved.neoLife!.journey!.burly);
+  assert.match(h.players.act('neo-player', 'dodge', h.tick()), /挣脱/);
+});
+
 test('staff swings create a flight opening, and the escape survives save/retry without skipping it', () => {
   const h = setup(); h.command('act'); h.advance(2.5); h.players.act('neo-player', 'dodge', h.tick());
   const strike = () => {
@@ -63,6 +84,7 @@ test('staff swings create a flight opening, and the escape survives save/retry w
   assert.equal(h.journey.burly?.phase, 'staff');
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); h.sandbox.restore(saved);
   assert.equal(h.sandbox.life.film.state!.burly?.phase, 'staff');
+  assert.equal((h.neo.currentAction?.parameters.burly as { phase?: string } | undefined)?.phase, 'staff', 'show the held staff while the restored clock is paused');
   h.neo.position = filmPosition(h.scene.set, 0, 0);
   for (let i = 0; i < 5 && h.sandbox.life.film.state!.step === 0; i++) { h.advance(.5); strike(); }
   assert.equal(h.sandbox.life.film.state!.step, 1);

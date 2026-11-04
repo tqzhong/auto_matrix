@@ -4969,6 +4969,9 @@ export class FilmStorySystem {
     const encounter = this.burlyEncounter(tick);
     if (!burlyLocked(state)) return false;
     encounter.elapsed += Math.max(0, Math.min(.1, dt));
+    if (encounter.phase === 'approaching' && encounter.elapsed >= BURLY.approach) {
+      encounter.phase = 'grapple'; encounter.elapsed = 0;
+    }
     if (encounter.phase === 'approaching' || encounter.phase === 'grapple') {
       const smith = this.world.agents.get('smith');
       if (smith && !smith.controller) {
@@ -4977,8 +4980,7 @@ export class FilmStorySystem {
         smith.currentAction = { type: 'move_to', parameters: { resolved: true, burly: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
       }
       agent.position = filmPosition(this.scene!.set, 0, 0); agent.rotation = Math.PI;
-      if (encounter.phase === 'approaching' && encounter.elapsed >= BURLY.approach) { encounter.phase = 'grapple'; encounter.elapsed = 0; }
-      else if (encounter.phase === 'grapple' && encounter.elapsed >= BURLY.grapple) { this.burlyFailed(agent, tick); return true; }
+      if (encounter.phase === 'grapple' && encounter.elapsed >= BURLY.grapple) { this.burlyFailed(agent, tick); return true; }
     } else if (encounter.phase === 'flight') {
       const from = encounter.flightFrom!; const progress = Math.min(1, encounter.elapsed / BURLY.flight); const drift = progress * progress * (3 - 2 * progress);
       agent.position = { x: from.x, y: from.y + 50 * Math.sin(Math.min(1, progress * 1.1) * Math.PI / 2), z: from.z - 14 * drift };
@@ -4992,6 +4994,16 @@ export class FilmStorySystem {
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, burly: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
     state.checkpoint = { ...agent.position };
     state.lastText = burlyText(encounter);
+    return true;
+  }
+  restoreBurlyPose(agent: AgentState, tick: number): boolean {
+    const state = this.state, encounter = state?.burly;
+    if (state?.scene !== 'm2_burly' || state.visiting || !this.controls(agent) || !encounter) return false;
+    if (burlyLocked(state)) return this.burlyFrame(agent, 0, tick);
+    if (!['staff', 'flight_ready'].includes(encounter.phase) && !(encounter.assimilation > 0 && ['swarm', 'staff_ready'].includes(encounter.phase))) return false;
+    agent.velocity = { x: 0, y: 0, z: 0 };
+    agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crouching: false }, startedAt: tick, duration: 1, progress: 0 };
+    this.burlyAction(agent);
     return true;
   }
   burlyAction(agent: AgentState): void {
