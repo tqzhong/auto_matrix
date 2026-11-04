@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, newAmbushEscape, newGarageEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { BANE_INQUIRY, FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, newAmbushEscape, newBaneInquiry, newGarageEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -437,18 +437,20 @@ test('Mobil keeps its point-light slots when turning from the platform to the st
   assert.equal(platform.length, 6, 'all five station lamps and the objective light share one layout');
 });
 
-test('the Oracle rescue visit keeps the living-room light slots while Trinity approaches and listens', t => {
+for (const [sceneId, x, z] of [['m3_oracle_request', -4.6, 12], ['m3_oracle_last', -6, -15.4]] as const) test(`${sceneId} keeps the light slots while approaching and turning to the Oracle`, t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {} };
   globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = document; });
-  const scene = FILM_SCENE_BY_ID.m3_oracle_request;
+  const scene = FILM_SCENE_BY_ID[sceneId];
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const actor = world.agents.get(scene.actor)!; actor.isInMatrix = true;
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
-    checkpoint: filmEntry(scene), reflections: {}, lastText: '', oracleRequest: { phase: 'ready', elapsed: 0, guide: 0 } };
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '',
+    ...(sceneId === 'm3_oracle_request' ? { oracleRequest: { phase: 'ready', elapsed: 0, guide: 0 } }
+      : { oracleLast: { phase: 'waiting', arrival: 0, elapsed: 0, checkpointHealth: actor.health } }) };
   const sandbox = { neoLife: { journey } } as SandboxState;
   const sample = (x: number, z: number, dx: number, dz: number) => {
     actor.position = filmPosition(scene.set, x, z);
@@ -464,9 +466,43 @@ test('the Oracle rescue visit keeps the living-room light slots while Trinity ap
     } finally { h.after(); }
   };
   const entrance = sample(0, 19.2, 0, -1);
-  assert.deepEqual(sample(-4.6, 12, -1, 0), entrance);
-  journey.oracleRequest!.phase = 'answering';
-  assert.deepEqual(sample(-4.6, 12, -1, 0), entrance);
+  assert.deepEqual(sample(x, z, -1, 0), entrance);
+  if (journey.oracleRequest) journey.oracleRequest.phase = 'answering';
+  if (journey.oracleLast) Object.assign(journey.oracleLast, { phase: 'answering', arrival: 28 });
+  assert.deepEqual(sample(x, z, -1, 0), entrance);
+});
+
+test('the Bane interview keeps its light slots between the entrance and the mess table', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = previous; });
+  const scene = FILM_SCENE_BY_ID.m3_bane_questions;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!; actor.isInMatrix = false;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '', baneInquiry: newBaneInquiry(0, actor.health) };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = (point: { x: number; z: number }, dx: number, dz: number) => {
+    actor.position = filmPosition(scene.set, point.x, point.z);
+    h.camera.position.set(actor.position.x - dx * 5, actor.position.y + 3, actor.position.z - dz * 5);
+    h.camera.lookAt(actor.position.x + dx * 8, actor.position.y + 2, actor.position.z + dz * 8);
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const lights: number[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push(light.id); });
+      return lights;
+    } finally { h.after(); }
+  };
+  const entrance = sample(BANE_INQUIRY.entry, 0, -1);
+  assert.deepEqual(sample(BANE_INQUIRY.approach, 0, -1), entrance);
+  journey.step = 1;
+  journey.baneInquiry = newBaneInquiry(1, actor.health);
+  assert.deepEqual(sample(BANE_INQUIRY.roots.roland, -1, 0), entrance);
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
