@@ -13,6 +13,7 @@ export class OfficeSetRenderer {
   private root = new THREE.Group();
   private materials: THREE.Material[] = [];
   private textures: THREE.Texture[] = [];
+  private roundedBoxes: Map<string, THREE.BufferGeometry> | undefined = new Map();
   private windowLight?: THREE.SpotLight;
   private delivery?: THREE.Group;
   private flap?: THREE.Group;
@@ -30,6 +31,7 @@ export class OfficeSetRenderer {
     if (set.id === 'film_office_ledge') this.root.position.x = -OFFICE_LEDGE_OFFSET;
     this.office(); this.ledge();
     this.batch();
+    this.roundedBoxes = undefined;
     this.workday = new OfficeWorkdayRenderer(this.root);
     this.parcel(); this.openingWindow();
     this.cleaners.name = 'office-window-cleaners'; this.root.add(this.cleaners);
@@ -164,7 +166,11 @@ export class OfficeSetRenderer {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.push(material); return material;
   }
   private box(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, radius = 0): THREE.Mesh {
-    const mesh = new THREE.Mesh(radius ? new RoundedBoxGeometry(w, h, d, 2, radius) : new THREE.BoxGeometry(w, h, d), material);
+    // Only share immutable rounded templates until static batching finishes.
+    const key = radius ? `${w}:${h}:${d}:${radius}` : '';
+    const geometry = radius ? this.roundedBoxes?.get(key) ?? new RoundedBoxGeometry(w, h, d, 2, radius) : new THREE.BoxGeometry(w, h, d);
+    if (radius) this.roundedBoxes?.set(key, geometry);
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = !material.transparent; this.root.add(mesh); return mesh;
   }
   private surface(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, tile: number): void {

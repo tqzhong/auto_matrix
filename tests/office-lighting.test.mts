@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FILM_SETS } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_DESKS } from '@auto_matrix/shared';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 
@@ -64,4 +64,32 @@ test('static office batching copies existing rounded solids without generating a
   } finally {
     Object.defineProperty(RoundedBoxGeometry.prototype, 'constructor', descriptor); globalThis.document = original;
   }
+});
+
+test('identical office keycaps share construction buffers within each scene build', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const original = globalThis.document, copy = THREE.BufferGeometry.prototype.copy;
+  const positions = (geometry: THREE.BufferGeometry) => {
+    const array = geometry.getAttribute('position').array; return Buffer.from(array.buffer, array.byteOffset, array.byteLength);
+  };
+  const managerKey = new RoundedBoxGeometry(.09, .025, .084, 2, .008), officeKey = new RoundedBoxGeometry(.145, .05, .132, 2, .01);
+  const managerKeys: THREE.BufferGeometry[][] = [[], []], officeKeys: THREE.BufferGeometry[] = []; let build = 0;
+  t.mock.method(THREE.BufferGeometry.prototype, 'copy', function(this: THREE.BufferGeometry, source: THREE.BufferGeometry) {
+    if (source instanceof RoundedBoxGeometry) {
+      if (positions(source).equals(positions(managerKey))) managerKeys[build].push(source);
+      if (positions(source).equals(positions(officeKey))) officeKeys.push(source);
+    }
+    return copy.call(this, source);
+  });
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  try {
+    const manager = new OfficeWorkdayRenderer(new THREE.Group()); manager.dispose(); build++;
+    const office = new OfficeSetRenderer(new THREE.Group(), FILM_SETS.film_metacortex_floor); office.dispose();
+    assert.deepEqual(managerKeys.map(keys => keys.length), [52, 52], 'both full keyboards remain in the scene builds');
+    assert.equal(officeKeys.length, OFFICE_DESKS.length * 52, 'every workstation keeps all of its keycaps');
+    assert.deepEqual(managerKeys.map(keys => new Set(keys).size), [1, 1]);
+    assert.equal(new Set(officeKeys).size, 1, 'identical workstation keys only generate one solid');
+    assert.notEqual(managerKeys[0][0], managerKeys[1][0], 'disposed scene templates must not be retained for the next scene');
+  } finally { managerKey.dispose(); officeKey.dispose(); globalThis.document = original; }
 });

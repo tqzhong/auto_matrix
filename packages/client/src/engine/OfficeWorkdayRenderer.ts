@@ -8,6 +8,7 @@ export class OfficeWorkdayRenderer {
   private root = new THREE.Group();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private roundedBoxes: Map<string, THREE.BufferGeometry> | undefined = new Map();
   private clipboard = new THREE.Group();
   private signature = new THREE.Line();
   constructor(parent: THREE.Group) {
@@ -63,6 +64,7 @@ export class OfficeWorkdayRenderer {
     for (const z of [30.4, 31.6]) for (const y of [.6, 1.6, 2.6]) this.box(this.root, metal, -23.97, y, z, .06, .07, .5);
     const task = new THREE.PointLight(0xf4eacb, 18, 10, 2); task.position.set(-21, 5, 27.4); this.root.add(task);
     this.batch();
+    this.roundedBoxes = undefined;
     this.root.add(this.clipboard); this.clipboard.name = 'delivery-clipboard';
     this.box(this.clipboard, dark, 0, -.005, 0, .85, .055, 1.05, .035);
     const screen = this.mat(0x91a492, .55);
@@ -78,7 +80,10 @@ export class OfficeWorkdayRenderer {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material); return material;
   }
   private box(parent: THREE.Object3D, material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, radius = 0) {
-    const mesh = new THREE.Mesh(radius ? new RoundedBoxGeometry(w, h, d, 2, radius) : new THREE.BoxGeometry(w, h, d), material);
+    const key = radius ? `${w}:${h}:${d}:${radius}` : '';
+    const geometry = radius ? this.roundedBoxes?.get(key) ?? new RoundedBoxGeometry(w, h, d, 2, radius) : new THREE.BoxGeometry(w, h, d);
+    if (radius) this.roundedBoxes?.set(key, geometry);
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x, y, z); mesh.castShadow = mesh.receiveShadow = !material.transparent; parent.add(mesh); return mesh;
   }
   private label(title: string, subtitle: string, width: number, height: number, parent: THREE.Object3D, x: number, y: number, z: number, yaw: number, color = '#d5d8c6', background = '#4d5953') {
