@@ -3,7 +3,7 @@ import { ApuModel } from './ApuModel.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APU_RIG, APU_ROUTE, DOCK_GUNNERY, ZION_OBSTACLES, dockPowerOffline, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, DOCK_GUNNERY, ZION_BOARDING, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_OBSTACLES, dockPowerOffline, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { dockLastStandPose } from '@auto_matrix/shared';
 import { DockLastStandRenderer } from './DockLastStandRenderer.js';
 import { DockGateRenderer } from './DockGateRenderer.js';
@@ -27,6 +27,7 @@ export class ZionHomecomingRenderer {
   private signals: THREE.MeshStandardMaterial[] = [];
   private messageDisk?: THREE.Group;
   private messageDoor?: THREE.Group;
+  private boarding?: { closedRail: THREE.Mesh; bridge: THREE.Mesh; bay: THREE.Group };
   private departureGifts?: { charm: THREE.Group; spoon: THREE.Group; engines: THREE.MeshStandardMaterial };
   private apu?: THREE.Group;
   private apuModel?: ApuModel;
@@ -155,11 +156,13 @@ export class ZionHomecomingRenderer {
     this.dockRoof = new THREE.Group(); this.dockRoof.name = 'zion-dock-roof'; this.moving.add(this.dockRoof);
     this.rockShell(108, 138, 65, stone); this.grating(24, 108, metal, 3);
     for (const side of [-1, 1]) {
-      this.box(iron, side * 12, 1.2, 3, .6, 2.4, 108);
+      if (side < 0) this.box(iron, -12, 1.2, 3, .6, 2.4, 108);
+      else for (const rail of ZION_BOARDING_RAILS) this.box(iron, rail.x, rail.height / 2, rail.z, rail.width, rail.height, rail.depth);
       for (let z = -50; z < 59; z += 9) { this.pipe(metal, [side * 12.5, 1, z], [side * 12.5, 7, z], .15); this.lamp(side * 16, z, 9, 80); }
     }
     // Ship is anchored beyond the walkway, with actual thruster housings and a landing truss.
-    const ship = new THREE.Group(); ship.name = 'zion-docked-nebuchadnezzar'; ship.position.set(20, 11, 17); ship.userData.dynamic = true; this.moving.add(ship);
+    const boarding = ZION_BOARDING;
+    const ship = new THREE.Group(); ship.name = 'zion-docked-nebuchadnezzar'; ship.position.set(boarding.x, boarding.y, boarding.z); ship.userData.dynamic = true; this.moving.add(ship);
     const hull = this.mesh(new THREE.CylinderGeometry(5.5, 3.5, 31, 16), iron, ship); hull.rotation.x = Math.PI / 2;
     this.box(metal, 0, 2.7, -3, 8, 1.2, 19, ship); this.box(metal, 0, -.5, 10, 12, 1.4, 6, ship);
     for (const side of [-1, 1]) {
@@ -168,6 +171,18 @@ export class ZionHomecomingRenderer {
       this.box(engine, side * 5.4, -.5, 13.3, 2.6, .18, .1, ship);
       this.box(iron, side * 7.5, 2.8, -4, 10, .7, 5, ship);
     }
+    const bay = new THREE.Group(); bay.name = 'zion-boarding-bay'; bay.position.copy(ship.position).negate(); ship.add(bay);
+    for (const wall of ZION_BOARDING_BAY_WALLS) this.box(iron, wall.x, wall.height / 2, wall.z, wall.width, wall.height, wall.depth, bay);
+    const bayLength = (boarding.x - boarding.hatchX) * 2;
+    this.box(metal, boarding.x, -.065, boarding.z, bayLength, .18, boarding.depth, bay, 'zion-boarding-bay-deck');
+    this.box(iron, boarding.x, boarding.clearance + .22, boarding.z, bayLength + .32, .44, boarding.depth + .32, bay);
+    this.box(iron, boarding.x, boarding.clearance + .95, boarding.z, 3.1, 1.25, 4.5, bay);
+    this.box(lit, boarding.hatchX, boarding.clearance - .2, boarding.z, .22, .11, boarding.depth - .6, bay);
+    const closedRail = this.box(iron, 12, 1.2, boarding.z, .6, 2.4, 8, this.moving);
+    const bridgeStart = 9;
+    const bridge = this.box(metal, (bridgeStart + boarding.hatchX) / 2, -.065, boarding.z, boarding.hatchX - bridgeStart, .18, boarding.depth, this.moving, 'zion-boarding-bridge');
+    bay.visible = bridge.visible = false;
+    this.boarding = { closedRail, bridge, bay };
     for (let i = 0; i < 8; i++) {
       const z = -48 + i * 12; this.pipe(metal, [-43, 34, z], [43, 34, z], .28, this.dockRoof); this.pipe(iron, [-43, 34, z], [-12, 2, z], .18, this.dockRoof);
       this.pipe(iron, [43, 34, z], [12, 2, z], .18, this.dockRoof);
@@ -382,9 +397,14 @@ export class ZionHomecomingRenderer {
       const nearest = [...this.dockLamps].sort((a, b) => a.position.distanceToSquared(viewer) - b.position.distanceToSquared(viewer)).slice(0, 6);
       for (const light of this.dockLamps) light.visible = nearest.includes(light);
     }
+    const departure = journey?.scene === 'm2_departure' && !journey.visiting;
     const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) {
-      ship.position.y = 11 + Math.sin(elapsed * .45) * .24;
+      ship.position.y = ZION_BOARDING.y + (departure ? 0 : Math.sin(elapsed * .45) * .24);
       ship.visible = !journey || !['m3_diggers', 'm3_upper_digger', 'm3_dock_battle', 'm3_gate', 'm3_emp', 'm3_dock_reunion'].includes(journey.scene);
+    }
+    if (this.boarding) {
+      this.boarding.closedRail.visible = !departure;
+      this.boarding.bridge.visible = this.boarding.bay.visible = departure;
     }
     if (this.apu) {
       const battle = !journey?.visiting && ['m3_dock_battle', 'm3_gate', 'm3_emp'].includes(journey?.scene ?? '');
@@ -465,7 +485,6 @@ export class ZionHomecomingRenderer {
     if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step >= 1 ? -.85 : 0;
     if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;
     if (this.departureGifts) {
-      const departure = journey?.scene === 'm2_departure' && !journey.visiting;
       this.departureGifts.charm.visible = departure && journey.step < 1;
       this.departureGifts.spoon.visible = departure && journey.step >= 2 && journey.step < 3;
       this.departureGifts.engines.emissiveIntensity = departure && journey.step >= 4 ? 4 : 1.2;

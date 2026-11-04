@@ -68,7 +68,7 @@ import { BasementEscapeSystem } from './BasementEscapeSystem.js';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { sixthLocked, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry } from '@auto_matrix/shared';
 import { wetwallLocked } from '@auto_matrix/shared';
-import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
+import { newReloaded, reloadedLocked, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_CAST } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuidePose } from '@auto_matrix/shared';
 import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText, type ConstructGesture } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
@@ -5715,6 +5715,20 @@ export class FilmStorySystem {
         film: { scene: 'm2_oracle_message', width: 4.2, depth: .35, height: 8.8 } });
     } else this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id);
   }
+  private sealZionBoarding(): void {
+    const prefix = 'film:zion:boarding:';
+    const sandbox = this.sandbox();
+    if (this.state?.scene !== 'm2_departure' || this.state.visiting) {
+      sandbox.structures = sandbox.structures.filter(s => !s.id.startsWith(prefix));
+      return;
+    }
+    [...ZION_BOARDING_RAILS, ...ZION_BOARDING_BAY_WALLS].forEach((wall, index) => {
+      const id = prefix + index;
+      if (!sandbox.structures.some(s => s.id === id)) sandbox.structures.push({ id, kind: 'barricade', owner: 'zion', matrix: false, health: 1,
+        position: filmPosition('film_zion_hangar', wall.x, wall.z),
+        film: { scene: 'm2_departure', width: wall.width, depth: wall.depth, height: wall.height } });
+    });
+  }
   private sealResetFacade(): void {
     const id = 'film:reset:facade';
     if ((this.state?.visiting ?? this.state?.scene) === 'm3_reset') {
@@ -5735,6 +5749,7 @@ export class FilmStorySystem {
     this.nebEscape.seal(); this.sealSentinelControls(); this.sealSignal(); this.sealMedical(); this.sealMobil();
     this.ensureHelDanceDoor(this.world.simulationTick);
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
+    this.sealZionBoarding();
     if (this.state.scene === 'm3_hel_entry' && !this.state.visiting && this.state.step >= 4) {
       for (const id of HEL_TRIO) {
         const member = this.world.agents.get(id);
@@ -6108,6 +6123,7 @@ export class FilmStorySystem {
       agent.position = { ...(state.returnPosition ?? state.checkpoint) }; agent.currentLocation = this.scene.set;
       agent.isInMatrix = FILM_SETS[this.scene.set].world === 'matrix';
       delete state.visiting; delete state.returnPosition; this.stageCast();
+      if (state.scene === 'm2_departure') this.sealZionBoarding();
       return '已回到原来的剧情检查点。';
     }
     if (target.startsWith('visit:')) {
@@ -6118,6 +6134,7 @@ export class FilmStorySystem {
         || this.climbing(agent) || this.performing(agent) && !(state.finished && state.scene === 'm3_dawn' && state.epilogue?.phase === 'done')) return '先完成当前战斗或互动，再回访场景。';
       if (!state.visiting) state.returnPosition = { ...agent.position };
       state.visiting = visited.id; this.place(agent, visited, filmEntry(visited));
+      if (state.scene === 'm2_departure') this.sealZionBoarding();
       return `回访${FILM_SETS[visited.set].name}。J 可返回当前剧情，回访不会改写进度。`;
     }
     if (this.basement.active(agent) && target === 'retry') return this.basement.command(agent, target, tick);

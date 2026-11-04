@@ -161,3 +161,49 @@ test('the low Zion bedroom leaves the actual third-person camera clear at the me
   assert.deepEqual(ray.intersectObjects(renderer.group.children, true).map(hit => hit.object.name), []);
   renderer.dispose();
 });
+
+test('departure completes inside the ship bay after crossing the gangway', () => {
+  const h = game(), scene = FILM_SCENE_BY_ID.m2_departure, state = h.state();
+  h.players.possess('p', 'neo', 2);
+  state.scene = 'm2_oracle_message'; state.actor = 'neo'; state.step = FILM_SCENE_BY_ID.m2_oracle_message.steps.length;
+  h.command('next'); assert.equal(state.scene, scene.id);
+  state.step = 4;
+  h.actor().position = filmPosition(scene.set, 11, 17); h.advance(1);
+  assert.equal(state.step, 4, 'the former marker is still on the dock side of the boarding bay');
+  const structures = h.sandbox.state.structures;
+  assert.equal(playerBlocked(filmPosition(scene.set, 12, 8), false, 1.1, structures), true, 'the rail beside the opening remains solid');
+  for (let x = 9; x <= 20; x += .5) {
+    h.actor().position = filmPosition(scene.set, x, 17); h.advance(1);
+    assert.equal(playerBlocked(h.actor().position, false, 1.1, structures), false, `clear gangway at ${x}`);
+    if (x < 19) assert.equal(state.step, 4, `boarding cannot finish early at ${x}`);
+  }
+  assert.equal(state.step, 5);
+  assert.equal(playerBlocked(filmPosition(scene.set, 20, 20), false, 1.1, structures), true, 'the bay wall is solid');
+  const oldSave = structuredClone(h.sandbox.state);
+  oldSave.structures = oldSave.structures.filter(s => !s.id.startsWith('film:zion:boarding:'));
+  h.actor().position = filmPosition(scene.set, 11, 17);
+  h.sandbox.restore(oldSave);
+  assert.equal(h.state().step, 5);
+  assert.equal(playerBlocked(filmPosition(scene.set, 12, 8), false, 1.1, h.sandbox.state.structures), true);
+  h.command('next'); assert.equal(h.state().scene, 'm2_seraph');
+  assert.equal(h.sandbox.state.structures.some(s => s.id.startsWith('film:zion:boarding:')), false);
+});
+
+test('the departure gangway has head clearance through the rail and a supported floor inside the hull', () => {
+  const root = new THREE.Group(), renderer = new ZionHomecomingRenderer(root, 'film_zion_hangar');
+  try {
+    renderer.update({ scene: 'm2_departure', step: 4, completed: [] } as never, 3);
+    root.updateMatrixWorld(true);
+    const visible = (ray: THREE.Raycaster) => ray.intersectObject(root, true).filter(hit => {
+      for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+      return true;
+    });
+    for (const y of [1, 2, 3.9]) {
+      assert.deepEqual(visible(new THREE.Raycaster(new THREE.Vector3(9, y, 17), new THREE.Vector3(1, 0, 0), 0, 11)).map(hit => hit.object.name), []);
+    }
+    const floor = visible(new THREE.Raycaster(new THREE.Vector3(20, .4, 17), new THREE.Vector3(0, -1, 0), 0, .41));
+    assert.ok(floor.some(hit => hit.object.name === 'zion-boarding-bay-deck' && Math.abs(hit.point.y) < .04));
+    const ship = root.getObjectByName('zion-docked-nebuchadnezzar')!;
+    assert.ok(ship.getObjectByName('zion-boarding-bay-deck'), 'the bay belongs to the actual ship');
+  } finally { renderer.dispose(); }
+});

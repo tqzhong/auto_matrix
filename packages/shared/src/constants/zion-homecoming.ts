@@ -1,5 +1,15 @@
 // Physical anchors shared by the six homecoming sets, collision and cast staging.
 export const ZION_HOMECOMING = ['m2_dock', 'm2_lock', 'm2_residents', 'm2_temple', 'm2_room', 'm2_hamann'] as const;
+export const ZION_BOARDING = { x: 20, y: 11, z: 17, hatchX: 16.75, depth: 6.5, clearance: 5.3 };
+export const ZION_BOARDING_RAILS = [
+  { x: 12, z: -19, width: .6, depth: 64, height: 2.4 },
+  { x: 12, z: 39, width: .6, depth: 36, height: 2.4 },
+];
+export const ZION_BOARDING_BAY_WALLS = [
+  ...[-1, 1].map(side => ({ x: ZION_BOARDING.x, z: ZION_BOARDING.z + side * ZION_BOARDING.depth / 2,
+    width: 6.5, depth: .3, height: ZION_BOARDING.clearance })),
+  { x: 23.25, z: ZION_BOARDING.z, width: .3, depth: 6.8, height: ZION_BOARDING.clearance },
+];
 export const ZION_OBSTACLES: Record<string, { x: number; z: number; width: number; depth: number; height: number }[]> = {
   film_zion_hangar: [{ x: 18, z: -15, width: 9, depth: 13, height: 9 }, { x: -24, z: -30, width: 9, depth: 13, height: 8 }],
   film_zion_council: [{ x: 0, z: -27, width: 13, depth: 3, height: 3 }, { x: -18, z: -7, width: 3, depth: 12, height: 4 }],
