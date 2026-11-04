@@ -563,6 +563,9 @@ export class SandboxUI {
         return;
       }
     }
+    if (!journey.visiting && scene.id === 'm2_power' && journey.step > 0 && step) {
+      document.getElementById('game-objective-copy')!.textContent = primaryText(journey.primaryDemolition);
+    }
     if (!journey.visiting && scene.id === 'm2_blackout' && journey.primaryDemolition?.blast) {
       const phase = journey.primaryDemolition.blast.phase;
       if (phase === 'countdown' || phase === 'blast') {

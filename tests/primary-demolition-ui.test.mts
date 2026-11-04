@@ -3,7 +3,7 @@ import test from 'node:test';
 import { build } from 'esbuild';
 import { filmPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
-test('midnight HUD offers G at the clock, observes during detonation, then offers the Trinity handoff', async t => {
+test('the power station HUD follows installation, evacuation and midnight instead of showing a generic G prompt', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, loader: { '.css': 'empty' }, logLevel: 'silent' });
   const { SandboxUI } = await import(`data:text/javascript;base64,${Buffer.from(output.outputFiles[0].contents).toString('base64')}`);
@@ -29,4 +29,15 @@ test('midnight HUD offers G at the clock, observes during detonation, then offer
   }
   journey.primaryDemolition!.blast!.phase = 'done'; journey.step = 1;
   ui.updateFilm(player, sandbox); assert.match(element('game-objective-copy').textContent, /Trinity/);
+
+  journey.scene = 'm2_power';
+  journey.primaryDemolition = { phase: 'mounting', selected: 0, elapsed: 1.1, installed: [], remaining: 35, attempts: 0 };
+  ui.updateFilm(player, sandbox);
+  assert.match(element('game-objective-copy').textContent, /按住 G.*西侧变压器.*50%/);
+  journey.primaryDemolition.phase = 'sync';
+  ui.updateFilm(player, sandbox); assert.match(element('game-objective-copy').textContent, /绿色区.*按 G 校准/);
+  journey.primaryDemolition.phase = 'retreat';
+  ui.updateFilm(player, sandbox); assert.match(element('game-objective-copy').textContent, /35 秒内带 Ghost/);
+  journey.primaryDemolition.phase = 'failed';
+  ui.updateFilm(player, sandbox); assert.match(element('game-objective-copy').textContent, /按 J 重试当前撤离检查点/);
 });

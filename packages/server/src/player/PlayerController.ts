@@ -431,7 +431,7 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.primaryDemolition.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
-        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true, !running)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.dockReunionFrame(agent, running && agent.status === 'alive' ? dt : 0, tick,

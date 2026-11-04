@@ -99,10 +99,17 @@ test('releasing and reconnecting the captain preserves the escaped companion pos
   h.players.possess('power-player', 'niobe', h.tick()); assert.deepEqual(ghost.position, position); assert.equal(ghost.health, 47);
 });
 
-test('disconnecting while Ghost walks freezes his actual velocity as well as the saved countdown', () => {
-  const h = setup(); arm(h); h.advance(.2); const ghost = h.world.agents.get('ghost')!, position = { ...ghost.position };
+test('pausing or disconnecting while Ghost walks freezes his actual velocity and the saved countdown', () => {
+  const h = setup(); arm(h); h.advance(.2);
+  const ghost = h.world.agents.get('ghost')!, state = h.journey.primaryDemolition!;
+  const position = { ...ghost.position }, remaining = state.remaining;
   assert.ok(Math.hypot(ghost.velocity.x, ghost.velocity.z) > 0);
-  h.players.release('power-player'); assert.deepEqual(ghost.position, position); assert.deepEqual(ghost.velocity, { x: 0, y: 0, z: 0 });
+  h.advance(.2, false, false);
+  assert.deepEqual(ghost.position, position); assert.deepEqual(ghost.velocity, { x: 0, y: 0, z: 0 });
+  assert.equal(state.remaining, remaining);
+  h.advance(.2); const resumed = { ...ghost.position };
+  assert.ok(Math.hypot(ghost.velocity.x, ghost.velocity.z) > 0);
+  h.players.release('power-player'); assert.deepEqual(ghost.position, resumed); assert.deepEqual(ghost.velocity, { x: 0, y: 0, z: 0 });
 });
 
 function blackout() {

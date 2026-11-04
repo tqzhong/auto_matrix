@@ -10,7 +10,7 @@ export class PrimaryDemolitionSystem {
   clear(): void {
     for (const member of this.world.agents.values()) if (!member.controller && (member.currentAction?.parameters.primaryDemolition || member.currentAction?.parameters.primaryDemolitionCompanion)) member.currentAction = null;
   }
-  frame(actor: AgentState, dt: number, tick: number, held = false): boolean {
+  frame(actor: AgentState, dt: number, tick: number, held = false, simulationPaused = false): boolean {
     if (!this.active(actor)) return false;
     const journey = this.journey!, scene = FILM_SCENE_BY_ID.m2_power, blackout = journey.scene === 'm2_blackout';
     const state = journey.primaryDemolition ??= { phase: journey.step >= 2 ? 'done' : 'install', installed: journey.step >= 2 ? PRIMARY_DEMOLITION.sites.map(site => site.id) : [],
@@ -64,7 +64,7 @@ export class PrimaryDemolitionSystem {
         ghost.position.x += (target.x - ghost.position.x) / gap * amount; ghost.position.z += (target.z - ghost.position.z) / gap * amount;
         ghost.position.y = FILM_SETS[scene.set].center.y + primaryFloor(ghost.position.x - FILM_SETS[scene.set].center.x, ghost.position.z - FILM_SETS[scene.set].center.z);
       }
-      if (gap <= .01 || state.paused || state.unavailable || !actor.controller) ghost.velocity = { x: 0, y: 0, z: 0 };
+      if (gap <= .01 || simulationPaused || state.paused || state.unavailable || !actor.controller) ghost.velocity = { x: 0, y: 0, z: 0 };
       if (blackout && gap <= .01) {
         const center = FILM_SETS[scene.set].center;
         ghost.rotation = Math.atan2(center.x - ghost.position.x, center.z - ghost.position.z);
