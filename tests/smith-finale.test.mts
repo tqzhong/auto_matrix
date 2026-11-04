@@ -171,6 +171,23 @@ test('the Smith finale has action windows, an air checkpoint and a deliberate cr
   assert.equal(duel.phase, 'choice');
 });
 
+test('the descent checks the held brace at impact and preserves the result through the shock and a reload', () => {
+  const { impact, braceSeconds, seconds } = SMITH_FINALE.descent;
+  const descent = { ...newSmithFinale(), phase: 'descent', checkpoint: 'sky' } as const;
+  const input = { focus: true, x: 0, z: 0 };
+  const landed = stepSmithFinale(descent, input, impact);
+  assert.equal(landed.focus, braceSeconds);
+  const recovered = JSON.parse(JSON.stringify(landed)) as typeof landed;
+  const shock = stepSmithFinale(recovered, { ...input, focus: false }, seconds - impact);
+  assert.equal(shock.phase, 'crater', 'a release or missing input during the impact effect cannot undo a completed brace');
+
+  const earlyRelease = stepSmithFinale(descent, input, impact - .3);
+  const missed = stepSmithFinale(earlyRelease, { ...input, focus: false }, .3);
+  const late = stepSmithFinale(missed, input, seconds - impact);
+  assert.equal(late.phase, 'failed', 'holding G after impact cannot compensate for releasing it too early');
+  assert.equal(late.checkpoint, 'sky');
+});
+
 test('Neo must finish the pact, duel, reflection, surrender and purge as one saved encounter', () => {
   const h = game(); const previous = FILM_SCENE_BY_ID.m3_deus; const rain = FILM_SCENE_BY_ID.m3_rain;
   const state = h.state(); Object.assign(state, { scene: previous.id, actor: 'neo', step: previous.steps.length,
@@ -261,10 +278,14 @@ test('the cleared Smith host restores the same Oracle in the crater and preserve
   const restored = structuredClone(oracle.position);
   assert.ok(restored.y < h.actor().position.y + 1, 'the Oracle must lie on the crater floor');
   assert.ok(h.players.possess('other', 'oracle', h.tick()).error, 'a recovered, unconscious host cannot be made to walk away');
+  const otherPrograms = () => ['sati', 'seraph'].map(id => h.world.agents.get(id)!.status);
+  assert.deepEqual(otherPrograms(), ['disconnected', 'disconnected']);
   const save = structuredClone(h.sandbox.state); h.players.release('p', h.tick()); h.sandbox.restore(save); h.players.possess('p', 'neo', h.tick());
   assert.deepEqual(oracle.position, restored); assert.equal(oracle.currentAction?.parameters.oracleRestored, true);
+  assert.deepEqual(otherPrograms(), ['disconnected', 'disconnected'], 'reconnecting during the Oracle’s shot cannot restore the other programs early');
   assert.ok(h.state().smithFinale!.total > clock!.total);
   h.frame(160); assert.equal(h.state().smithFinale!.phase, 'done');
+  assert.deepEqual(otherPrograms(), ['alive', 'alive'], 'both programs return when the purge is complete');
   h.command('next'); assert.equal(h.state().scene, 'm3_ceasefire'); assert.deepEqual(oracle.position, restored);
   assert.equal(oracle.currentAction?.parameters.oracleRestored, true);
   Object.assign(h.state(), { scene: 'm3_neo_carried', actor: 'kid', step: FILM_SCENE_BY_ID.m3_neo_carried.steps.length });

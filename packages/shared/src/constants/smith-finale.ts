@@ -229,7 +229,9 @@ export function stepSmithFinale(encounter: SmithFinaleEncounter, input: SmithFin
   else if (next.phase === 'sky_grapple' && next.elapsed + 1e-6 >= SMITH_FINALE.grapple) {
     next.phase = 'descent'; next.elapsed = 0; next.focus = 0;
   } else if (next.phase === 'descent') {
-    next.focus = clamp(next.focus + (input.focus ? dt : -dt * .42), 0, SMITH_FINALE.descent.braceSeconds);
+    // The impact fixes the result. The rest of the beat plays out the shock.
+    const braceTime = Math.min(dt, Math.max(0, SMITH_FINALE.descent.impact - encounter.elapsed));
+    next.focus = clamp(next.focus + (input.focus ? braceTime : -braceTime * .42), 0, SMITH_FINALE.descent.braceSeconds);
     if (next.elapsed >= SMITH_FINALE.descent.impact && next.impactAt === undefined)
       next.impactAt = next.total - (next.elapsed - SMITH_FINALE.descent.impact);
     if (next.elapsed + 1e-6 >= SMITH_FINALE.descent.seconds) {

@@ -35,7 +35,8 @@ test('the purge light stays in the pit between its bodies rather than orbiting t
       const beat: SmithFinaleEncounter = { ...newSmithFinale(), phase: 'purging', elapsed, total: 100 + elapsed };
       renderer.update(beat, false, { x: 0, z: -38 }); root.updateMatrixWorld(true);
       const purge = root.getObjectByName('smith-finale-purge')!;
-      const light = purge.children.find(child => child instanceof THREE.PointLight)!;
+      const light = root.getObjectByName('smith-finale-purge-light');
+      assert.ok(light instanceof THREE.PointLight);
       const position = light.getWorldPosition(new THREE.Vector3());
       assert.ok(Math.abs(position.x) < 1 && Math.abs(position.z + 38) < 3 && position.y < -5,
         `the connection light leaves the bodies: ${position.toArray()}`);

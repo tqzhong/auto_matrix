@@ -27,8 +27,9 @@ export function filmCharacterFates(journey: FilmJourney): Record<string, FilmFat
   if (journey.maggieDiscovery?.incident) fates.maggie = 'dead';
   if (journey.upperDigger?.charraDead) fates.charra = 'dead';
   if (journey.ambushEscape?.mouseDead) fates.mouse = 'dead';
-  if (journey.scene === 'm3_surrender' && smithOracleRestored(journey.smithFinale))
-    Object.assign(fates, FILM_CONSEQUENCES.m3_surrender);
+  if (journey.scene === 'm3_surrender' && smithOracleRestored(journey.smithFinale)) {
+    fates.smith = 'dead'; fates.oracle = 'alive';
+  }
   const cut = journey.tvExit?.crosscut;
   if (cut) for (const [id, dead] of Object.entries({ dozer: cut.dozerDead, apoc: cut.apocDead, switch: cut.switchDead, cypher: cut.cypherDead })) if (dead) fates[id] = 'dead';
   // Saves from before the shipboard discovery still reached the Logos fight.

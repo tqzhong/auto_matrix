@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APU_RIG, APU_ROUTE, BANE_INQUIRY, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -240,6 +240,42 @@ test('the Logos wreck keeps the fire and objective light slots as Neo reaches Tr
   assert.deepEqual(slots(1), entry);
   journey.farewell = { phase: 'reaching', elapsed: 1.2, total: 1.2 };
   assert.deepEqual(slots(-1, true), entry, 'hiding the objective must keep its dark shader slot');
+});
+
+test('the Smith avenue keeps its light slots through lightning, the purge and the end of the rain', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m3_rain;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get(scene.actor)!; neo.isInMatrix = true; neo.position = filmEntry(scene);
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = (phase: SmithFinaleEncounter['phase'], total: number, elapsed = 0, direction = -1) => {
+    journey.smithFinale = { ...newSmithFinale(), phase, total, elapsed };
+    h.camera.position.set(neo.position.x, neo.position.y + 3, neo.position.z);
+    h.camera.lookAt(neo.position.x, neo.position.y + 2, neo.position.z + direction * 10);
+    renderer.update(neo, sandbox, total, neo.position, h.camera.position, undefined, false, 12000, h.camera);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const ids: number[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) ids.push(light.id); });
+      return ids;
+    } finally { h.after(); }
+  };
+  const dark = sample('approach', 0);
+  assert.ok(dark.length > 1);
+  assert.deepEqual(sample('approach', .2), dark, 'a lightning flash must reuse the same shader slots');
+  const lightning = h.scene.getObjectByName('smith-finale-lightning-light') as THREE.PointLight;
+  const purge = h.scene.getObjectByName('smith-finale-purge-light') as THREE.PointLight;
+  assert.ok(lightning.intensity > 0);
+  assert.equal(purge.intensity, 0);
+  assert.deepEqual(sample('purging', 50, 1, 1), dark, 'the purge and a camera turn must keep the same shader slots');
+  assert.ok(purge.intensity > 0);
+  assert.deepEqual(sample('done', 60), dark, 'ending the rain must leave the slots in place');
+  assert.equal(lightning.intensity, 0);
+  assert.equal(purge.intensity, 0);
 });
 
 test('the château keeps the hall and objective light slots when guards start the duel', t => {

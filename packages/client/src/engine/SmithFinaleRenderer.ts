@@ -34,6 +34,8 @@ export class SmithFinaleRenderer {
   private materials = new Set<THREE.Material>();
   private lights: THREE.Light[] = [];
   private backlight!: THREE.DirectionalLight;
+  private flashLight!: THREE.PointLight;
+  private purgeLight!: THREE.PointLight;
   private shockShell!: THREE.LineSegments;
   private flightSpray!: THREE.LineSegments;
   private purgeDust!: THREE.Points;
@@ -302,7 +304,9 @@ export class SmithFinaleRenderer {
       const boltGeometry = this.geometry(new THREE.BufferGeometry()); boltGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
       const bolt = new THREE.LineSegments(boltGeometry, lightningMaterial); bolt.name = 'smith-finale-lightning-bolt'; this.lightning.add(bolt);
     }
-    const flash = new THREE.PointLight(0xe2f2ef, 0, 150, 2); flash.position.set(0, 31, -35); this.lightning.add(flash); this.lights.push(flash);
+    this.flashLight = new THREE.PointLight(0xe2f2ef, 0, 150, 2);
+    this.flashLight.name = 'smith-finale-lightning-light'; this.flashLight.position.set(0, 31, -35);
+    this.group.add(this.flashLight); this.lights.push(this.flashLight);
   }
 
   private buildDestruction(): void {
@@ -467,7 +471,8 @@ export class SmithFinaleRenderer {
   }
 
   private buildConnection(): void {
-    const light = new THREE.PointLight(0xe5f3ff, 0, 50, 2); this.purge.add(light); this.lights.push(light);
+    this.purgeLight = new THREE.PointLight(0xe5f3ff, 0, 50, 2);
+    this.purgeLight.name = 'smith-finale-purge-light'; this.group.add(this.purgeLight); this.lights.push(this.purgeLight);
     const material = new THREE.PointsMaterial({ color: 0xd0ded8, size: .065, transparent: true, opacity: .6, depthWrite: false });
     material.onBeforeCompile = shader => {
       shader.fragmentShader = shader.fragmentShader.replace('#include <clipping_planes_fragment>',
@@ -497,8 +502,7 @@ export class SmithFinaleRenderer {
     (this.rain.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.MeshBasicMaterial>).material.opacity = .28 * ending.rain;
     const flash = (Math.sin(state.total * 1.73 + 1.2) > .965 || phase === 'shockwave');
     this.lightning.visible = flash && ending.rain > 0;
-    const flashLight = this.lightning.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight | undefined;
-    if (flashLight) flashLight.intensity = this.lightning.visible ? phase === 'purging' ? 1800 : 780 : 0;
+    this.flashLight.intensity = this.lightning.visible ? phase === 'purging' ? 1800 : 780 : 0;
     (this.puddles.material as THREE.MeshBasicMaterial).opacity = .1 * ending.rain;
     for (let index = 0; index < this.puddles.count; index++) {
       const scale = .3 + ((state.total * 1.3 + cityNoise(index, 71)) % 1) * 1.7;
@@ -561,10 +565,11 @@ export class SmithFinaleRenderer {
       points.needsUpdate = true;
     }
     this.purge.visible = phase === 'purging';
+    this.purgeLight.intensity = this.purge.visible ? Math.max(ending.neoPulse, ending.smithPulse) * 180 : 0;
     if (this.purge.visible) {
       const body = state.elapsed < 2.5 ? pose.neo : pose.smith;
       this.purge.position.set(body.x, body.y + 2.8, body.z);
-      (this.purge.children.find(child => child instanceof THREE.PointLight) as THREE.PointLight).intensity = Math.max(ending.neoPulse, ending.smithPulse) * 180;
+      this.purgeLight.position.copy(this.purge.position);
       const age = Math.max(0, state.elapsed - (state.elapsed < 2.5 ? 1.6 : 3.8));
       const points = this.purgeDust.geometry.getAttribute('position') as THREE.BufferAttribute;
       this.purgeDust.visible = age > 0 && age < 2;

@@ -65,7 +65,8 @@ async function setup(t: TestContext) {
   await new Promise(resolve => setImmediate(resolve));
   const group = renderer.getAgent('neo')!, head = group.getObjectByName('head')!;
   assert.ok(head instanceof THREE.Bone && head.userData.cameraEye, 'use the delivered GLB head and eye metadata');
-  const controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, () => {}); controls.possess(actors[0]);
+  const actions: string[] = [];
+  const controls = new PlayerControls(canvas as unknown as HTMLCanvasElement, camera, () => {}, kind => actions.push(kind)); controls.possess(actors[0]);
   const setBeat = (beat: SmithFinaleEncounter) => {
     const poses = smithFinalePose(beat);
     for (const actor of actors) {
@@ -77,8 +78,8 @@ async function setup(t: TestContext) {
     }
   };
   const sync = (subject = group) => controls.syncSmithFinaleCamera(subject);
-  const frame = (beat: SmithFinaleEncounter) => {
-    setBeat(beat); controls.update(.02, actors[0], group, false);
+  const frame = (beat: SmithFinaleEncounter, running = false) => {
+    setBeat(beat); controls.update(.02, actors[0], group, running);
     renderer.setPlayer('neo', controls.firstPerson); renderer.setPlayerMotion(controls.motion); renderer.update(.02, camera, 0); sync();
     group.updateWorldMatrix(true, true); camera.updateMatrixWorld();
     return head.localToWorld((head.userData.cameraEye as THREE.Vector3).clone());
@@ -88,8 +89,23 @@ async function setup(t: TestContext) {
   t.after(() => { controls.dispose(); renderer.dispose(); ['window', 'document'].forEach((key, i) => {
     if (previous[i]) Object.defineProperty(globalThis, key, previous[i]!); else Reflect.deleteProperty(globalThis, key);
   }); });
-  return { world, actors, controls, renderer, group, head, camera, frame, setBeat, sync, look, key };
+  return { world, actors, controls, renderer, group, head, camera, frame, setBeat, sync, look, key, actions };
 }
+
+test('F reaches the server in all five Smith counter windows while the duel owns Neo’s pose', async t => {
+  const h = await setup(t);
+  const press = () => { h.key('KeyF'); h.key('KeyF', false); };
+  for (const phase of ['ground_warning', 'ground_dodge', 'choice'] as const) {
+    h.frame({ ...newSmithFinale(), phase }, true);
+    press(); assert.equal(h.actions.length, 0, `${phase} is not a counter window`);
+  }
+  for (const phase of ['ground_counter', 'air_counter', 'interior_counter', 'sky_counter', 'pit_counter'] as const) {
+    h.frame({ ...newSmithFinale(), phase }, true);
+    press(); assert.deepEqual(h.actions.splice(0), ['attack'], phase);
+  }
+  h.frame({ ...newSmithFinale(), phase: 'pit_counter' });
+  press(); assert.equal(h.actions.length, 0, 'a paused counter cannot spend the input');
+});
 
 test('the free entry camera stays outside the actual Neo body at the machine handoff in wide and narrow views', async t => {
   const h = await setup(t), actor = h.actors[0], center = FILM_SETS.film_smith_avenue.center;

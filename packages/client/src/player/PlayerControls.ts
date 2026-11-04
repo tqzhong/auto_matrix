@@ -477,7 +477,8 @@ export class PlayerControls {
     const chainShot = this.motion.freewayPickup?.phase === 'mounted' && this.motion.freewayPickup.chain;
     const garage = this.motion.helGarage;
     const garageCounter = garage && !garage.paused && !garage.unavailable && (garage.phase === 'counter' || garage.phase === 'combo');
-    if (chainShot || garageCounter || this.motion.truckHood || this.motion.bathroom || this.motion.sourcePortal?.phase === 'cover'
+    const smithCounter = this.motion.smithFinale?.role === 'neo' && this.motion.smithFinale.phase.endsWith('_counter');
+    if (chainShot || garageCounter || smithCounter || this.motion.truckHood || this.motion.bathroom || this.motion.sourcePortal?.phase === 'cover'
       || this.motion.reloaded?.phase === 'falling' || this.motion.catch?.phase === 'pulse' || this.motion.dockReload?.phase === 'jammed') {
       if (!this.running || !this.enabled || this.authoritative?.status !== 'alive') return false;
       this.send(this.input(false)); this.action('attack'); return true;

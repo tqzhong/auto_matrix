@@ -919,8 +919,9 @@ export class SandboxUI {
                           : phase === 'interior_counter' ? `现在按 F 高踢反击 · 剩余 ${Math.max(0, SMITH_FINALE.interior.counter - finale.elapsed).toFixed(1)} 秒`
                             : phase === 'sky_dodge' ? `现在按 X 第二轮闪避 · 剩余 ${Math.max(0, SMITH_FINALE.air.dodge - finale.elapsed).toFixed(1)} 秒`
                               : phase === 'sky_counter' ? `现在按 F 第二轮反击 · 剩余 ${Math.max(0, SMITH_FINALE.air.counter - finale.elapsed).toFixed(1)} 秒`
-                      : phase === 'descent' ? finale.focus >= SMITH_FINALE.descent.braceSeconds ? '姿态已稳住 · 保持 G，等待落地'
-                        : `按住 G 稳住坠落姿态 · ${Math.round(finale.focus / SMITH_FINALE.descent.braceSeconds * 100)}%`
+                      : phase === 'descent' ? finale.elapsed >= SMITH_FINALE.descent.impact ? '撞击已发生 · 等待冲击散去'
+                        : finale.focus >= SMITH_FINALE.descent.braceSeconds ? '姿态已稳住 · 保持 G 到撞击'
+                          : `按住 G 稳住坠落姿态 · ${Math.round(finale.focus / SMITH_FINALE.descent.braceSeconds * 100)}%`
                         : phase === 'crater' ? finale.elapsed < SMITH_FINALE.crater.settleSeconds ? '撞击余波尚未平息 · 稍后按住 G 撑起身体'
                           : `按住 G 从坑底站起 · ${Math.round(finale.focus / SMITH_FINALE.crater.riseSeconds * 100)}%`
                           : phase === 'choice' ? 'J 打开手记，亲自回答为什么仍要继续'
