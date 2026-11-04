@@ -349,7 +349,7 @@ export class PlayerController {
         effect.remainingSeconds -= dt; return effect.remainingSeconds > 0 && agent.status === 'alive';
       });
     }
-    for (const session of this.sessions.values()) {
+    for (const [socketId, session] of this.sessions) {
       const agent = this.world.agents.get(session.agentId)!;
       const computer = this.sandbox?.life.computerFrame(agent, running && agent.status === 'alive' ? dt : 0, tick);
       if (this.sandbox?.life.film.openingRoofFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
@@ -468,6 +468,8 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.basement.frame(agent, input, dt, tick)) {
+        const current = this.sessions.get(socketId);
+        if (current && current.agentId !== agent.id) this.onStoryRole?.(socketId, current.agentId, tick);
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.sixth.frame(agent, input, dt, tick)) {

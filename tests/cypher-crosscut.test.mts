@@ -29,7 +29,14 @@ function setup() {
 }
 
 test('the ship assault causes the hardline failure before the two Matrix unplugging deaths',()=>{
-  const h=setup();h.phone();h.wait(()=>h.players.getAgent('crosscut-player')!.id==='tank');
+  const h=setup();
+  const handoffs: string[]=[];
+  h.players.onStoryRole=(socketId,agentId)=>{
+    assert.equal(socketId,'crosscut-player');
+    assert.equal(h.players.getAgent(socketId)!.id,agentId);
+    handoffs.push(agentId);
+  };
+  h.phone();h.wait(()=>h.players.getAgent('crosscut-player')!.id==='tank');
   assert.equal(h.state().scene,'m1_tv_exit');assert.equal(h.neo.isInMatrix,true);assert.equal(h.neo.currentLocation,'film_tv_repair');
   assert.equal(h.world.agents.get('dozer')!.status,'alive','Dozer cannot be dead before the visible assault');
   h.wait(()=>h.world.agents.get('dozer')!.status==='dead');assert.ok(h.world.agents.get('tank')!.health<100);
@@ -43,6 +50,8 @@ test('the ship assault causes the hardline failure before the two Matrix unplugg
   assert.equal(h.world.agents.get('switch')!.status,'alive');
   h.wait(()=>h.world.agents.get('switch')!.status==='dead');assert.equal(h.players.getAgent('crosscut-player')!.id,'neo');
   h.wait(()=>h.state().tvExit!.phase==='done');assert.equal(h.neo.isInMatrix,true);assert.equal(h.world.agents.get('trinity')!.isInMatrix,true);
+  assert.deepEqual(handoffs,['tank','neo','tank','neo','tank','neo'],'each timed cut publishes the new player role');
+  h.command('next');assert.deepEqual(handoffs,['tank','neo','tank','neo','tank','neo','tank'],'the explicit handoff still publishes once');
 });
 
 test('both-world positions, injury and the shared intercut clock survive pause, disconnection and restore',()=>{

@@ -82,4 +82,16 @@ test('crosscut HUD uses existing template elements and presents the currently pl
   ui.updateFilm(h.player,h.sandbox);assert.match(elements.get('film-sequence-hint').textContent,/G.*反击/);
   cut.phase='failed';ui.updateFilm(h.player,h.sandbox);assert.match(elements.get('film-sequence-hint').textContent,/J.*重试/);
   assert.ok(elements.get('sandbox-interact').classes.has('hidden'));
+  const commands: unknown[] = [], panels: string[] = [];
+  Object.assign(ui, { state: h.sandbox, player: h.player, send: (command: unknown) => commands.push(command), open: (panel: string) => panels.push(panel) });
+  h.player.id='neo';cut.phase='return';
+  ui.interact();
+  assert.deepEqual(panels, [], 'G does not open the journal while the HUD still has the previous role');
+  assert.deepEqual(commands, []);
+  h.journey.actor='neo';cut.phase='trinity_ready';cut.view='matrix';
+  ui.interact();assert.deepEqual(commands, [], 'Neo must leave the phone clear before G sends the exit action');
+  h.player.position.x+=3;
+  ui.interact();assert.deepEqual(commands, [{ kind: 'life', target: 'film:act' }]);
+  cut.phase='done';h.journey.step=2;
+  ui.interact();assert.deepEqual(commands.at(-1), { kind: 'life', target: 'film:next' });
 });

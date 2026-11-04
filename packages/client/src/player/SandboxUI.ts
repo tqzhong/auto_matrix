@@ -159,6 +159,13 @@ export class SandboxUI {
   toggle(panel: Panel): void { if (this.panel === panel) this.close(); else this.open(panel); }
   interact(): void {
     const journey = this.state?.neoLife?.journey;
+    const player = this.player;
+    if (journey && crosscutActive(journey) && (player?.id === 'neo' || player?.id === 'tank')) {
+      if (journey.actor !== player.id) return;
+      const action = crosscutAction(journey, player.position);
+      if (action && action.target !== 'retry') this.send({ kind: 'life', target: `film:${action.target}` });
+      return;
+    }
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
       if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
