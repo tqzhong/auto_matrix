@@ -3638,6 +3638,25 @@ test('V enters the pickup rider view looking along the road and keeps mouse pitc
   assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(direction) > .25, 'mouse must still turn and look down');
 });
 
+test('F fires the carrier chain shot only while mounted, chained and running', async t => {
+  const { newFreewayPickup } = await import('@auto_matrix/shared');
+  const game = setup(t);
+  game.state.id = 'trinity'; game.state.currentLocation = 'film_freeway_101';
+  const pickup = { ...newFreewayPickup(), phase: 'mounted' as const, key: true, role: 'trinity' as const };
+  game.state.currentAction = { type: 'idle', parameters: { freewayPickup: pickup }, startedAt: 0, duration: 1e9, progress: 0 };
+  game.controls.possess(game.state); game.step(.1);
+  assert.equal(game.controls.performing, true);
+  game.key('KeyF'); game.key('KeyF', false);
+  assert.deepEqual(game.actions, ['attack']);
+  game.state.currentAction.parameters.freewayPickup = { ...pickup, phase: 'shooting' };
+  game.step(.1); game.key('KeyF'); game.key('KeyF', false);
+  game.state.currentAction.parameters.freewayPickup = { ...pickup, chain: false };
+  game.step(.1); game.key('KeyF'); game.key('KeyF', false);
+  game.state.currentAction.parameters.freewayPickup = pickup;
+  game.step(.1, .1, false); game.key('KeyF');
+  assert.deepEqual(game.actions, ['attack']);
+});
+
 test('pickup turns carry the first-person view with the body while preserving the player mouse offset', async t => {
   const { newFreewayPickup, freewayPickupRoot } = await import('@auto_matrix/shared');
   const game = setup(t); game.state.id = 'trinity'; game.state.currentLocation = 'film_freeway_101';

@@ -2949,10 +2949,17 @@ test('Trinity drives the garage escape with companions, saved progress, retry an
   h.players.release('other', h.tick()); h.command('act'); assert.equal(state.garage?.phase, 'riding');
   assert.match(h.players.possess('other', 'keymaker', h.tick()).error!, /车/);
   for (let frame = 0; frame < 18; frame++) h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 0, brake: false }, .05, h.tick());
-  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const at = { ...h.actor().position };
-  h.sandbox.restore(saved); state = h.sandbox.life.film.state!; h.players.release('film-player', h.tick()); h.advance();
+  const driver = h.actor(), pose = structuredClone(driver.currentAction)!;
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const at = { ...driver.position };
+  h.world.simulationTick = h.tick();
+  h.players.release('film-player', h.tick());
+  assert.deepEqual(driver.currentAction, { ...pose, parameters: { ...pose.parameters, player: false } });
+  driver.currentAction = null;
+  h.sandbox.restore(saved); state = h.sandbox.life.film.state!;
+  assert.deepEqual(driver.currentAction, { ...pose, parameters: { ...pose.parameters, player: false } });
   assert.deepEqual(h.sandbox.life.film.state?.garage, saved.neoLife.journey.garage);
   h.players.possess('film-player', 'trinity', h.tick()); assert.deepEqual(h.actor().position, at);
+  assert.deepEqual(driver.currentAction, pose);
   for (let frame = 0; frame < 160 && h.sandbox.life.film.state?.garage?.phase === 'riding'; frame++)
     h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 0, brake: false }, .05, h.tick());
   h.advance(); assert.equal(state.step, 2); assert.equal(h.world.agents.get('keymaker')!.status, 'alive');

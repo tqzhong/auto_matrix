@@ -273,6 +273,7 @@ export class FilmSetRenderer {
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
+      || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
       || id === 'film_zion_temple' && this.currentScene === 'm2_temple'
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);

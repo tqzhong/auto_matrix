@@ -239,6 +239,7 @@ export class PlayerController {
     this.sandbox?.life.film.sourceBriefing.frame(agent, 0, tick);
     this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
     this.sandbox?.life.film.templeDefense.frame(agent, 0, tick);
+    this.sandbox?.life.film.restoreGaragePose(agent, tick);
     if (['m3_gate', 'm2_freeway'].includes(this.sandbox?.life.film.state?.scene ?? '')) this.sandbox?.life.film.driveFrame(agent, { throttle: 0, steer: 0, brake: false }, 0, tick);
     this.sandbox?.life.film.diggers.frame(agent, 0, tick);
     this.sandbox?.life.film.upperDigger.frame(agent, 0, tick);

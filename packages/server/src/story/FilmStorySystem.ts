@@ -108,7 +108,7 @@ import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
-import { GARAGE, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
+import { GARAGE, newGarageEscape, stepGarageEscape, type GarageEscape } from '@auto_matrix/shared';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, continueLogosFlight, stepLogosFlight, logosCrewRoot, logosFlightSet, logosIgnitionText } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
@@ -5334,6 +5334,17 @@ export class FilmStorySystem {
   }
   driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (['m3_defense', 'm3_sun'].includes(this.state?.scene ?? '') && this.state?.logos?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
 
+  private placeGarageDriver(agent: AgentState, escape: GarageEscape, tick: number): void {
+    agent.position = filmPosition(this.scene!.set, escape.x - 1.05, escape.z);
+    agent.rotation = Math.PI - Math.atan2(escape.lateral, Math.max(1, escape.speed));
+    agent.currentAction = { type: 'move_to', parameters: { player: Boolean(agent.controller), resolved: true, riding: true, seated: true },
+      startedAt: tick, duration: 1, progress: 0 };
+  }
+  restoreGaragePose(agent: AgentState, tick: number): void {
+    const state = this.state;
+    if (state?.scene === 'm2_garage' && state.garage && agent.status === 'alive' && this.driving(agent)) this.placeGarageDriver(agent, state.garage, tick);
+  }
+
   hammerFrame(agent: AgentState, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm3_hammer_tunnels' || state.visiting || agent.id !== state.actor) return;
@@ -5681,10 +5692,8 @@ export class FilmStorySystem {
     if (this.state!.scene === 'm2_garage') {
       const state = this.state!; const before = state.garage!;
       const escape = state.garage = stepGarageEscape(before, input, dt);
-      agent.position = { ...filmPosition(this.scene!.set, escape.x - 1.05, escape.z), y: FILM_SETS[this.scene!.set].center.y };
+      this.placeGarageDriver(agent, escape, tick);
       agent.velocity = { x: escape.lateral, y: 0, z: -escape.speed };
-      agent.rotation = Math.PI - Math.atan2(escape.lateral, Math.max(1, escape.speed));
-      agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, riding: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
       for (const [id, x, z] of [['morpheus', 2.05, .2], ['keymaker', .1, 1.7]] as const) {
         const passenger = this.world.agents.get(id); if (!passenger || passenger.controller) continue;
         passenger.position = { ...agent.position, x: agent.position.x + x, z: agent.position.z + z };
@@ -5803,6 +5812,7 @@ export class FilmStorySystem {
       actor.currentAction = null; actor.targetPosition = null; actor.currentPath = []; actor.velocity = { x: 0, y: 0, z: 0 };
     }
     const pickupActor = this.world.agents.get(this.state.actor);
+    if (pickupActor) this.restoreGaragePose(pickupActor, this.world.simulationTick);
     if (this.state.scene === 'm1_bullet_dodge' && !this.state.visiting) {
       const encounter = this.ensureGovernment();
       if (!this.governmentOccupied(encounter)) this.stageGovernmentRooftopBody(encounter, this.world.simulationTick);

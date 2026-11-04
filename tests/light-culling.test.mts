@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, newAmbushEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, airRescueRoot, filmEntry, filmPosition, filmStepPosition, newAmbushEscape, newGarageEscape, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -250,7 +250,13 @@ test('the château keeps the hall and objective light slots when guards start th
   assert.equal(volley.visible, false, 'saved volley age does not depend on time since opening the client');
 });
 
-for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off the goal light without dropping its shader slot`, t => {
+for (const id of ['m1_sentinels', 'm1_steak', 'm2_garage'] as const) test(`${id} turns off the goal light without dropping its shader slot`, t => {
+  if (id === 'm2_garage') {
+    t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+    const document = globalThis.document;
+    globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+    t.after(() => { globalThis.document = document; });
+  }
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
   const scene = FILM_SCENE_BY_ID[id], step = id === 'm1_sentinels' ? 0 : 1;
@@ -261,7 +267,7 @@ for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off th
   const journey: FilmJourney = { version: 1, scene: id, actor: actor.id, step, completed: [], enteredAt: 0,
     checkpoint: actor.position, reflections: {}, lastText: '' };
   if (id === 'm1_sentinels') journey.sentinel = { phase: 'ready', elapsed: 0, noise: 0, attempt: 0 };
-  else journey.interlude = { kind: 'steak', phase: 'ready', elapsed: 0 };
+  if (id === 'm1_steak') journey.interlude = { kind: 'steak', phase: 'ready', elapsed: 0 };
   const sandbox = { neoLife: { journey } } as SandboxState;
   const markerLight = h.scene.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
   h.camera.position.set(actor.position.x, actor.position.y + 3, actor.position.z + 3);
@@ -279,6 +285,7 @@ for (const id of ['m1_sentinels', 'm1_steak'] as const) test(`${id} turns off th
   assert.equal(markerLight.intensity, 5);
   if (journey.sentinel) journey.sentinel.phase = 'shutdown';
   if (journey.interlude) journey.interlude.phase = 'performing';
+  if (id === 'm2_garage') journey.garage = newGarageEscape();
   const active = renderedLights();
   assert.equal(markerLight.intensity, 0);
   assert.ok(active.includes(markerLight), 'the unlit marker still occupies its existing shader slot');
