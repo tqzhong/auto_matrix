@@ -269,7 +269,7 @@ export class FilmSetRenderer {
   get active(): FilmSet | undefined { return this.current; }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
-    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby)
+    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil)
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
@@ -297,6 +297,7 @@ export class FilmSetRenderer {
       set = FILM_SETS[logosFlightSet(journey.logos ?? journey.logosEntry ?? newLogosFlight(journey.scene === 'm3_defense' ? 'defense' : 'sun'))];
     if (this.office && set && ['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
+    if (this.mobil && set?.id === 'film_mobil_station') this.currentScene = sceneId;
     // The lower hotel is already visible from the curb before Neo confirms the entrance.
     if (this.hotel && set?.id === 'film_lafayette' && this.currentScene === 'm1_bug' && sceneId === 'm1_pills') this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')

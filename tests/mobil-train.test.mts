@@ -91,8 +91,13 @@ test('Trainman knocks the held bag onto the platform, Rama retrieves it, and the
   assert.ok(fallen.y < airborne.y && fallen.y >= 0, 'saved gravity lowers the released suitcase onto the floor');
   h.frame(1); assert.equal(h.journey.mobil!.luggage?.phase, 'retrieving');
   assert.equal(mobilTrainPose(h.journey.mobil).doors, 1, 'doors cannot close through the retrieving parent');
-  const paused = structuredClone(h.journey.mobil), parent = structuredClone(h.world.agents.get('rama_kandra')!.position);
-  h.frame(1, false); assert.deepEqual(h.journey.mobil, paused); assert.deepEqual(h.world.agents.get('rama_kandra')!.position, parent);
+  const rama = h.world.agents.get('rama_kandra')!, paused = structuredClone(h.journey.mobil), parent = { ...rama.position };
+  assert.ok(Math.hypot(rama.velocity.x, rama.velocity.z) > .1, 'pause while Rama is walking back to the case');
+  h.frame(1, false); assert.deepEqual(h.journey.mobil, paused); assert.deepEqual(rama.position, parent);
+  assert.deepEqual(rama.velocity, { x: 0, y: 0, z: 0 }, 'the paused body must already match its cold pose');
+  h.players.release('train-player', h.tick()); h.players.possess('train-player', 'neo', h.tick());
+  assert.deepEqual(h.journey.mobil, paused); assert.deepEqual(rama.position, parent);
+  assert.deepEqual(rama.velocity, { x: 0, y: 0, z: 0 });
   h.frame(16); assert.equal(h.journey.mobil!.luggage?.phase, 'returned');
   assert.equal(h.journey.mobil!.phase, 'gone'); assert.equal(h.journey.step, 3);
   assert.equal(h.actor.health, 90, 'waiting for the luggage cannot apply the strike twice');

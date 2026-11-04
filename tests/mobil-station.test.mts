@@ -49,7 +49,15 @@ test('Mobil station keeps its platform, track, station signs and saved train pha
     const disposed: string[] = []; train.traverse(object => {
       if (object instanceof THREE.Mesh) object.geometry.addEventListener('dispose', () => disposed.push(object.uuid));
     });
-    renderer.dispose(); assert.ok(disposed.length > 10, 'train geometry is released when the set closes');
+    journey.scene = 'm3_family'; journey.mobil!.phase = 'waiting'; renderer.update(player, sandbox, 10);
+    assert.ok(renderer.root.getObjectByName('mobil-train') === train, 'another chapter in Mobil uses the same platform and carriage');
+    assert.equal(train.visible, false);
+    journey.scene = 'm3_mobil_release'; journey.mobil!.phase = 'stopped'; journey.mobil!.elapsed = 1;
+    renderer.update(player, sandbox, 11);
+    assert.equal(train.visible, true); assert.ok(right.position.z - left.position.z > 4);
+    assert.equal(disposed.length, 0, 'do not recreate GPU resources while the same station stays active');
+    renderer.update(undefined, undefined, 12);
+    assert.ok(disposed.length > 10, 'train geometry is released when the player leaves the set');
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 

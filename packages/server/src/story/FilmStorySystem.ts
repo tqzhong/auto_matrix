@@ -1106,6 +1106,14 @@ export class FilmStorySystem {
           seated: passenger.id === 'kamala' && pose.seated > .5 }, startedAt: tick, duration: 1, progress: boarding };
     }
   }
+  pauseMobilPassengers(actor: AgentState): void {
+    if (this.state?.scene !== 'm3_trainman' || this.state.visiting || !this.controls(actor)) return;
+    for (const { id } of MOBIL_FAMILY) {
+      const passenger = this.world.agents.get(id);
+      if (passenger?.status === 'alive' && !passenger.controller && passenger.currentAction?.parameters.mobilBoarding !== undefined)
+        passenger.velocity = { x: 0, y: 0, z: 0 };
+    }
+  }
   private mobilCastBlocked(): boolean {
     const state = this.state;
     if (!state || state.visiting || state.scene === 'm3_trainman' && state.mobil?.phase === 'gone') return false;

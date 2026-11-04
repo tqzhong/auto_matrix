@@ -448,6 +448,7 @@ export class PlayerController {
       if (!running && agent.status === 'alive') {
         this.sandbox?.life.film.trainingFrame(agent, 0, tick);
         this.sandbox?.life.film.truckFrame(agent, 0, tick);
+        this.sandbox?.life.film.pauseMobilPassengers(agent);
         if (this.sandbox?.life.film.state?.scene === 'm2_stop_sentinels') this.sandbox.life.film.finaleFrame(agent, false, agent.rotation, 0, tick);
       }
       if (!running && agent.status === 'alive' && (this.sandbox?.life.film.openingHotel.restoreFrame(agent)

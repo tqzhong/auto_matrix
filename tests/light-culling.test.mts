@@ -407,6 +407,36 @@ test('the Sentinel pursuit keeps its light slots while Neo runs, turns and shuts
   assert.equal(cut.filter(light => light.name === 'sentinel-optical-light' && light.intensity === 0).length, 3);
 });
 
+test('Mobil keeps its point-light slots when turning from the platform to the station sign', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = document; });
+  const scene = FILM_SCENE_BY_ID.m3_mobil;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!; actor.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: filmEntry(scene), reflections: {}, lastText: '' };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const renderLights = (x: number, z: number, dx: number, dz: number) => {
+    actor.position = filmPosition(scene.set, x, z);
+    h.camera.position.set(actor.position.x - dx * 4, actor.position.y + 3, actor.position.z - dz * 4);
+    h.camera.lookAt(actor.position.x + dx * 8, actor.position.y + 2, actor.position.z + dz * 8);
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const lights: number[] = [];
+      h.scene.traverseVisible(light => { if (light instanceof THREE.PointLight) lights.push(light.id); });
+      return lights;
+    } finally { h.after(); }
+  };
+  const platform = renderLights(0, 22, 0, -1);
+  journey.step = 1;
+  assert.deepEqual(renderLights(-10, 17, -1, 0), platform);
+  assert.equal(platform.length, 6, 'all five station lamps and the objective light share one layout');
+});
+
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const h = view(), renderer = new FilmSetRenderer(h.scene);
