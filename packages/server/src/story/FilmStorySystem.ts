@@ -52,7 +52,7 @@ import { DOCK_REUNION, dockDepartureFinished, dockDepartureRoot, dockReunionLock
 import { newUpperDigger, upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
 import { diggersActive, diggersLocked, newDiggers } from '@auto_matrix/shared';
 import { DiggersSystem } from './DiggersSystem.js';
-import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthRole, DOWNLOAD_SETUP_SECONDS, DOWNLOAD_OPERATOR, downloadRoot, downloadSetupText } from '@auto_matrix/shared';
+import { TRUTH_SECONDS, truthScene, truthRoot, truthText, truthRest, type TruthGesture, type TruthRole, DOWNLOAD_SETUP_SECONDS, DOWNLOAD_OPERATOR, downloadRoot, downloadSetupText } from '@auto_matrix/shared';
 import { METACORTEX, OFFICE_LEDGE_OFFSET, OFFICE_PATROLS, metacortexPosition } from '@auto_matrix/shared';
 import { ReloadedOpeningSystem } from './ReloadedOpeningSystem.js';
 import { ReloadedCatchSystem } from './ReloadedCatchSystem.js';
@@ -70,7 +70,7 @@ import { sixthLocked, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry } from '@auto_m
 import { wetwallLocked } from '@auto_matrix/shared';
 import { newReloaded, reloadedLocked, ZION_CAST } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuidePose } from '@auto_matrix/shared';
-import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText } from '@auto_matrix/shared';
+import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText, type ConstructGesture } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
 import { awakeningDuration, mirrorTime } from '@auto_matrix/shared';
 import { SENTINEL_SIGNAL, SIGNAL_OBSTACLES, signalLocked, type WorldStructure } from '@auto_matrix/shared';
@@ -4358,7 +4358,7 @@ export class FilmStorySystem {
     if (oracleVisitLocked(state)) return '谈话进行中。可以转动视角观察；暂停、断线与重新载入会保留当前动作。';
     return state.lastText;
   }
-  private truthFrame(agent: AgentState, dt: number, tick: number): boolean {
+  truthFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state, scene = this.scene, truth = state?.truthRecovery;
     if (!state || !scene || !truth || !truthScene(state.scene) || !this.controls(agent)) return false;
     const roles: TruthRole[] = state.scene === 'm1_truth_exit' || truthRest(truth) ? ['neo', 'morpheus'] : ['neo', 'morpheus', 'trinity', 'dozer'];
@@ -4367,6 +4367,8 @@ export class FilmStorySystem {
     if (!occupied && duration) truth.elapsed = Math.min(duration, truth.elapsed + Math.min(.1, dt));
     for (const role of roles) {
       const actor = this.world.agents.get(role); if (!actor || actor.controller && actor !== agent) continue;
+      const saved = actor.currentAction?.parameters.truth as TruthGesture | undefined;
+      if (dt === 0 && saved?.role === role && saved.phase === truth.phase && saved.elapsed === truth.elapsed) continue;
       const root = truthRoot(truth, role), before = actor.position;
       actor.position = filmPosition(scene.set, root.x, root.z); actor.position.y += root.y; actor.rotation = root.yaw;
       actor.currentLocation = scene.set; actor.isInMatrix = FILM_SETS[scene.set].world === 'matrix';
@@ -4395,7 +4397,9 @@ export class FilmStorySystem {
       const state = this.state, arrival = state.constructArrival!, guide = this.world.agents.get('morpheus')!;
       if (arrival.phase !== 'ready' && !guide.controller) arrival.elapsed = Math.min(CONSTRUCT.guideSeconds, arrival.elapsed + Math.min(.1, dt));
       if (arrival.phase === 'image' && arrival.elapsed >= CONSTRUCT.imageSeconds) { arrival.phase = 'approach'; agent.currentAction = null; }
-      if (!guide.controller) {
+      const savedGuide = guide.currentAction?.parameters.construct as ConstructGesture | undefined;
+      const keepSavedGuide = dt === 0 && savedGuide?.role === 'morpheus' && savedGuide.phase === arrival.phase && savedGuide.elapsed === arrival.elapsed;
+      if (!guide.controller && !keepSavedGuide) {
         const root = constructGuidePose(arrival.elapsed), before = guide.position;
         guide.position = filmPosition('film_white_construct', root.x, root.z); guide.rotation = root.yaw;
         guide.velocity = dt > 0 ? { x: (guide.position.x - before.x) / dt, y: 0, z: (guide.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };

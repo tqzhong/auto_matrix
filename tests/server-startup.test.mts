@@ -10,6 +10,7 @@ import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_ma
 import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, cabinGuidePose, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
+import { CONSTRUCT, constructGuidePose, truthRoot, truthText, type TruthRecovery } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -593,6 +594,73 @@ test('a paused moving cabin guide keeps his saved walk across startup and reconn
   check(await client.command('leave_character', {}, state => !state.agents.neo.controller));
   client.socket.disconnect(); await server.stop();
 });
+
+test('a paused Construct arrival keeps the moving guide across startup and reconnect', { timeout: 15000 }, async t => {
+  const f = await fixture(t, 'm1_construct'), journey = f.checkpoint.sandbox.neoLife.journey;
+  const set = FILM_SCENE_BY_ID.m1_construct.set, { neo, morpheus } = f.checkpoint.agents;
+  const arrival = { phase: 'image' as const, elapsed: 3.4 };
+  f.checkpoint.simulation = { running: false, speed: 1 };
+  journey.constructArrival = arrival;
+  neo.position = filmPosition(set, CONSTRUCT.arrival.x, CONSTRUCT.arrival.z);
+  const root = constructGuidePose(arrival.elapsed), previous = constructGuidePose(arrival.elapsed - .05);
+  morpheus.position = filmPosition(set, root.x, root.z); morpheus.rotation = root.yaw;
+  morpheus.velocity = { x: (root.x - previous.x) / .05, y: 0, z: (root.z - previous.z) / .05 };
+  morpheus.currentAction = { type: 'move_to', parameters: { resolved: true, construct: { ...arrival, role: 'morpheus' }, seated: false },
+    startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server);
+  const check = (state: WorldStateFull) => {
+    assert.deepEqual(state.sandbox!.neoLife!.journey!.constructArrival, arrival);
+    const guide = state.agents.morpheus;
+    assert.deepEqual(guide.position, morpheus.position);
+    assert.deepEqual(guide.velocity, morpheus.velocity);
+    assert.deepEqual(guide.currentAction, morpheus.currentAction);
+    assert.equal(state.simulation!.tick, f.checkpoint.tick);
+  };
+  check(await client.world());
+  check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+  check(await client.command('leave_character', {}, state => !state.agents.neo.controller));
+  client.socket.disconnect(); await server.stop();
+});
+
+for (const [scene, phase, elapsed, roles] of [
+  ['m1_truth_exit', 'exit', 2.59, ['neo', 'morpheus']],
+  ['m1_truth_return', 'unplug', 7.2, ['neo', 'morpheus', 'trinity', 'dozer']],
+] as const) {
+  test(`a paused truth ${phase} keeps authored movement across startup and reconnect`, { timeout: 15000 }, async t => {
+    const f = await fixture(t, scene), journey = f.checkpoint.sandbox.neoLife.journey;
+    const truth: TruthRecovery = { phase, elapsed }, set = FILM_SCENE_BY_ID[scene].set;
+    f.checkpoint.simulation = { running: false, speed: 1 };
+    journey.truthRecovery = truth; journey.lastText = truthText(truth);
+    for (const role of roles) {
+      const actor = f.checkpoint.agents[role], root = truthRoot(truth, role);
+      const previous = truthRoot({ ...truth, elapsed: elapsed - .05 }, role);
+      actor.position = filmPosition(set, root.x, root.z); actor.position.y += root.y;
+      actor.rotation = root.yaw;
+      actor.velocity = { x: (root.x - previous.x) / .05, y: 0, z: (root.z - previous.z) / .05 };
+      actor.currentAction = { type: Math.hypot(actor.velocity.x, actor.velocity.z) > .05 ? 'move_to' : 'idle', parameters: {
+        player: role === 'neo', resolved: true, seated: root.seated > 0, truth: { ...truth, role },
+      }, startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    }
+    journey.checkpoint = { ...f.checkpoint.agents.neo.position };
+    await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+    const client = await controls(t, server);
+    const check = (state: WorldStateFull) => {
+      assert.deepEqual(state.sandbox!.neoLife!.journey, journey);
+      assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      for (const role of roles) for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const)
+        assert.deepEqual(state.agents[role][key], f.checkpoint.agents[role][key], `${role}: ${key}`);
+    };
+    check(await client.world());
+    check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    const next = await controls(t, server);
+    check(await next.command('play_as', { agentId: 'neo', takeover: true }, state => Boolean(state.agents.neo.controller)));
+    check(await next.command('leave_character', {}, state => !state.agents.neo.controller));
+    client.socket.disconnect(); next.socket.disconnect(); await server.stop();
+  });
+}
 
 test('a paused world keeps its clock, selected speed and story across a server restart', { timeout: 30000 }, async t => {
   const f = await fixture(t), server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
