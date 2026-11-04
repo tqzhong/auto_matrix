@@ -156,13 +156,14 @@ export class LafayetteApproachRenderer {
     const mesh = this.mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: texture, roughness: .8 }), new THREE.Vector3(x, y, z)); mesh.rotation.y = yaw;
   }
   private batch(): void {
-    this.static.updateWorldMatrix(true, true); const inverse = this.static.matrixWorld.clone().invert();
+    this.static.updateWorldMatrix(true, true); const inverse = this.static.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const meshes: THREE.Mesh[] = [];
     this.static.traverse(object => { if (object instanceof THREE.Mesh) {
-      const geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+      // Each construction mesh owns its geometry and will be replaced by a batch.
+      const geometry = object.geometry.applyMatrix4(transform.multiplyMatrices(inverse, object.matrixWorld));
       const material = object.material as THREE.Material; const list = batches.get(material) ?? []; list.push(geometry); batches.set(material, list); meshes.push(object);
     } });
-    meshes.forEach(mesh => mesh.removeFromParent());
+    for (const mesh of meshes) { mesh.removeFromParent(); this.geometries.delete(mesh.geometry); }
     for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) this.mesh(geometry, material); }
   }
   update(hotel: HotelApproach | undefined, height: number, exterior = false): void {

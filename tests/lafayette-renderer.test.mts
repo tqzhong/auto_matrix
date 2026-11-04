@@ -4,6 +4,24 @@ import * as THREE from 'three';
 import { LAFAYETTE, HOTEL_DOOR_PROGRESS, HOTEL_SURFACES } from '@auto_matrix/shared';
 import { LafayetteApproachRenderer } from '../packages/client/src/engine/LafayetteApproachRenderer.js';
 
+test('the Lafayette stairwell keeps only the geometry used by the batches and doors', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  for (const exterior of [false, true]) {
+    const root = new THREE.Group(); const renderer = new LafayetteApproachRenderer(root, new THREE.Vector3(), exterior);
+    try {
+      const { geometries } = renderer as unknown as { geometries: Set<THREE.BufferGeometry> };
+      const live = new Set<THREE.BufferGeometry>();
+      root.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
+      assert.ok(live.size > 0);
+      assert.equal(geometries.size, live.size, 'source geometry must be released as soon as its replacement batch exists');
+      assert.ok([...live].every(geometry => geometries.has(geometry)), 'both moving doors and the static batches remain owned');
+    } finally { renderer.dispose(); }
+  }
+});
+
 test('worn stair nosings stay flush with the surface used for foot contact', t => {
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
