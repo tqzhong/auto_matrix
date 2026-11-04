@@ -278,7 +278,7 @@ export class FilmSetRenderer {
       || Boolean(this.interrogation || this.baneInquiry || this.hammerRoute || this.smithFinale)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
-      || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach'].includes(this.currentScene ?? '')
+      || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(this.currentScene ?? '')
       || this.currentScene === 'm3_farewell' && Boolean(this.logosWreck)
       || id === 'film_zion_hangar' && (this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
       || this.currentScene === 'm3_emp' && Boolean(this.empDock?.group.visible)

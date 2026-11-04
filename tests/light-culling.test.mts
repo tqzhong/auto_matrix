@@ -169,7 +169,7 @@ test('a fixed point-light set keeps its shader slots while turning and turning l
   } finally { h.culling.dispose(); }
 });
 
-for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach']) test(`${sceneId} keeps its point-light slots while walking and turning in the temple`, t => {
+for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire']) test(`${sceneId} keeps its point-light slots while walking and turning in the temple`, t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
   const scene = FILM_SCENE_BY_ID[sceneId];
@@ -178,6 +178,10 @@ for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach']) te
   actor.isInMatrix = false;
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
     checkpoint: filmEntry(scene), reflections: {}, lastText: '' };
+  if (sceneId === 'm3_ceasefire') {
+    journey.completed.push('m3_temple_breach');
+    journey.epilogue = { kind: 'ceasefire', phase: 'ready', elapsed: 0, total: 0 };
+  }
   const sandbox = { neoLife: { journey } } as SandboxState;
   h.camera.aspect = 16 / 9; h.camera.far = 300; h.camera.updateProjectionMatrix();
   actor.position = journey.checkpoint;
@@ -185,12 +189,18 @@ for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach']) te
   const hallLights: THREE.PointLight[] = [];
   renderer.root.traverseVisible(object => { if (object instanceof THREE.PointLight) hallLights.push(object); });
   const intensities = hallLights.map(light => light.intensity);
+  const beacon = renderer.root.getObjectByName('trilogy-epilogue-ceasefire')?.children.find(light => light instanceof THREE.PointLight);
+  if (journey.epilogue) assert.ok(beacon instanceof THREE.PointLight && beacon.intensity > 0);
   const slotCounts: number[] = [];
   const views = [[0, 37, -1, 0], [0, 10, -1, 0], [0, -15, -1, 0], [0, -35, 1, 1], [0, -26, -1, Math.min(3, scene.steps.length)],
     [-8, -45, 1, 1], [8, -45, -1, 1], [0, -18, 1, scene.steps.length]];
   for (const [x, z, direction, step] of views) {
     actor.position = filmPosition(scene.set, x, z);
     journey.step = step;
+    if (journey.epilogue) {
+      journey.epilogue.phase = step === 0 ? 'ready' : step === 1 ? 'retreat' : 'message_ready';
+      journey.epilogue.elapsed = step === 1 ? 2 : 0;
+    }
     h.camera.position.set(actor.position.x, actor.position.y + 4, actor.position.z - direction * 6);
     h.camera.lookAt(actor.position.x, actor.position.y + 1, actor.position.z + direction * 10);
     renderer.update(actor, sandbox, 0, actor.position, h.camera.position, undefined, false, 12000, h.camera);
@@ -202,13 +212,15 @@ for (const sceneId of ['m2_temple', 'm3_temple_defense', 'm3_temple_breach']) te
       slotCounts.push(slots);
       const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(h.camera.projectionMatrix, h.camera.matrixWorldInverse));
       hallLights.forEach((light, index) => {
-        if (frustum.intersectsSphere(new THREE.Sphere(light.getWorldPosition(new THREE.Vector3()), light.distance))) {
+        const power = light === beacon && step >= 2 ? 0 : intensities[index];
+        if (power > 0 && frustum.intersectsSphere(new THREE.Sphere(light.getWorldPosition(new THREE.Vector3()), light.distance))) {
           assert.equal(light.visible, true);
-          assert.equal(light.intensity, intensities[index], 'a light reaching the visible hall keeps its authored energy');
+          assert.equal(light.intensity, power, 'a light reaching the visible hall keeps its authored energy');
         }
       });
     } finally { h.after(); }
   }
+  if (beacon instanceof THREE.PointLight) assert.equal(beacon.intensity, 0, 'the beacon goes dark after the withdrawal');
   assert.deepEqual(slotCounts, Array(slotCounts.length).fill(hallLights.length + 1), 'hall lights and the objective marker must keep one shader variant');
 });
 
