@@ -1955,11 +1955,14 @@ export class FilmStorySystem {
       hotel.knock = Math.min(LAFAYETTE_KNOCK_SECONDS, hotel.knock + dt);
       const root = lafayetteKnockRoot(hotel); agent.position = filmPosition('film_lafayette', root.x, root.z); agent.rotation = root.yaw;
       agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentLocation = 'film_lafayette'; agent.isInMatrix = true;
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, knock: hotel.knock }, startedAt: tick, duration: 1, progress: 0 };
+      if (dt > 0 || agent.currentAction?.type !== 'idle' || agent.currentAction.parameters.knock !== hotel.knock)
+        agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, knock: hotel.knock }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
       state.lastText = hotel.knock < .7 ? 'Neo 走近 1313 的木门，抬起右手。' : hotel.knock < 1.55 ? '三下敲门声穿过安静的十三层走廊。' : '门内传来脚步。Trinity 向后退开。';
       const guidePose = hotelRoutePose(hotel.progress); guide.position = filmPosition('film_lafayette', guidePose.x, guidePose.z); guide.rotation = -Math.PI / 2;
-      guide.velocity = { x: 0, y: 0, z: 0 }; guide.currentAction = { type: 'idle', parameters: { resolved: true, hotelGuide: true }, startedAt: tick, duration: 1, progress: 0 };
+      guide.velocity = { x: 0, y: 0, z: 0 };
+      if (dt > 0 || guide.currentAction?.type !== 'idle' || !guide.currentAction.parameters.hotelGuide)
+        guide.currentAction = { type: 'idle', parameters: { resolved: true, hotelGuide: true }, startedAt: tick, duration: 1, progress: 0 };
       if (hotel.knock < LAFAYETTE_KNOCK_SECONDS) { this.sealHotelDoor(); return; }
       delete hotel.knock; delete hotel.knockFrom; hotel.door = 0; agent.currentAction = null;
     }
@@ -2164,6 +2167,8 @@ export class FilmStorySystem {
   }
   restoreHotelSpace(): void {
     const actor = this.state && this.world.agents.get(this.state.actor);
+    if (actor?.status === 'alive' && !actor.controller && this.state && lafayetteKnocking(this.state))
+      this.hotelFrame(actor, 0, this.world.simulationTick);
     if (actor?.status === 'alive' && !actor.controller && this.world.agents.get('morpheus')?.status === 'alive') {
       this.pillFrame(actor, 0, this.world.simulationTick);
       if (this.state && lafayetteWelcomeLocked(this.state) && this.world.agents.get('trinity')?.status === 'alive')

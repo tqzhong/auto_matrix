@@ -1,4 +1,4 @@
-import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteWelcomeLocked } from '@auto_matrix/shared';
+import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
@@ -163,6 +163,7 @@ export class PlayerController {
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick);
     if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
+      || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
     if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
@@ -258,6 +259,7 @@ export class PlayerController {
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick);
       if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
+        || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);

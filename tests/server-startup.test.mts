@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
@@ -362,6 +362,32 @@ for (const phase of ['crossing', 'climbing'] as const) {
       check(await next.world()); check(await next.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
       next.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await next.world()); await resumed.stop();
     }
+  });
+}
+
+for (const savedAction of [true, false]) {
+  test(`a paused 1313 knock ${savedAction ? 'keeps its saved action' : 'recovers its missing action'} at startup and reconnect`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_pills', 'knock'), journey = f.checkpoint.sandbox.neoLife.journey;
+    const hotel = journey.hotel, neo = f.checkpoint.agents.neo, guide = f.checkpoint.agents.trinity;
+    hotel.knock = .92; hotel.knockFrom = { x: 24.8, z: -.8, yaw: 0 };
+    const pose = lafayetteKnockRoot(hotel);
+    neo.position = filmPosition('film_lafayette', pose.x, pose.z); neo.rotation = pose.yaw; journey.checkpoint = { ...neo.position };
+    const action = { type: 'idle', parameters: { player: true, resolved: true, knock: hotel.knock },
+      startedAt: savedAction ? 1341 : f.checkpoint.tick, duration: 1, progress: savedAction ? .25 : 0 };
+    neo.currentAction = savedAction ? action : null;
+    guide.currentAction = { ...guide.currentAction, startedAt: 1340, progress: .5 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (world: WorldStateFull) => {
+      assert.equal(world.simulation!.running, false); assert.equal(world.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(world.sandbox!.neoLife!.journey!.hotel, hotel);
+      assert.deepEqual(world.agents.neo.currentAction, action);
+      assert.deepEqual(world.agents.neo.position, neo.position);
+      assert.deepEqual(world.agents.trinity.currentAction, guide.currentAction);
+      assert.deepEqual(world.agents.trinity.position, guide.position);
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
   });
 }
 
