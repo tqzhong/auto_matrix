@@ -298,6 +298,12 @@ export class FilmSetRenderer {
     this.empDock = new DockEmpRenderer(this.scene);
     this.empDock.prepare(renderer, camera, this.scene, journey, ['mifune', 'charra', 'zee'].map(id => this.phoneBodies?.(id)));
   }
+  prepareSmithCrater(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey?: FilmJourney): void {
+    if (!this.smithFinale || journey?.scene !== 'm3_rain' || journey.visiting || !journey.smithFinale) return;
+    const { phase, elapsed } = journey.smithFinale;
+    if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
+      this.smithFinale.prepareCrater(renderer, camera, this.scene);
+  }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;

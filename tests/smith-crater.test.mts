@@ -60,6 +60,61 @@ function surface(root: THREE.Group, x: number, z: number): number {
   return ray.intersectObjects(meshes, false)[0]?.point.y ?? -Infinity;
 }
 
+test('the intact avenue shares asphalt with the broken lip and uploads crater maps one at a time before impact', async t => {
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: {} });
+  t.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, 'document', previousDocument);
+    else Reflect.deleteProperty(globalThis, 'document');
+  });
+  const paths: string[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, loaded: (texture: THREE.Texture) => void) => {
+    const texture = new THREE.Texture(); texture.name = url; paths.push(url);
+    queueMicrotask(() => loaded(texture));
+    return texture;
+  });
+  const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);
+  t.after(() => renderer.dispose());
+  await Promise.resolve();
+  const road = root.getObjectByName('smith-finale-flooded-road') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  const lip = root.getObjectByName('smith-finale-crater')!.children.flatMap(child => child.children)
+    .find(child => child instanceof THREE.Mesh && child.material.map?.name.includes('asphalt_02')) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  assert.ok(lip?.material.map && road.material.map);
+  assert.equal(paths.filter(url => url.includes('asphalt_02')).length, 3);
+  for (const map of ['map', 'normalMap', 'roughnessMap'] as const) assert.equal(lip.material[map], road.material[map]);
+  const points = lip.geometry.getAttribute('position'), uv = lip.geometry.getAttribute('uv');
+  for (let i = 0; i < uv.count; i++) {
+    assert.ok(Math.abs(uv.getX(i) * road.material.map.repeat.x - points.getX(i) / 8) < .00001);
+    assert.ok(Math.abs(uv.getY(i) * road.material.map.repeat.y - points.getZ(i) / 8) < .00001);
+  }
+  const uploads: string[] = [];
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+  let compiled = 0, target: THREE.WebGLRenderTarget | null = null;
+  const gpu = {
+    initTexture: (texture: THREE.Texture) => uploads.push(texture.name),
+    extensions: { has: () => true }, getRenderTarget: () => target,
+    setRenderTarget: (value: THREE.WebGLRenderTarget | null) => { target = value; },
+    compile: (objects: THREE.Object3D, view: THREE.Camera, lighting: THREE.Scene) => {
+      assert.equal(objects, root.getObjectByName('smith-finale-crater'));
+      assert.equal(objects.visible, false);
+      assert.equal(view, camera); assert.equal(lighting, scene);
+      assert.ok(target instanceof THREE.WebGLRenderTarget);
+      compiled++;
+    },
+  } as unknown as THREE.WebGLRenderer;
+  for (let i = 0; i < 6; i++) {
+    renderer.prepareCrater(gpu, camera, scene);
+    assert.equal(uploads.length, i + 1);
+    assert.equal(compiled, 0, 'linking must not compete with a texture upload');
+    assert.ok(Math.abs(surface(root, 0, -38)) < .1, 'preparation must keep the road intact');
+  }
+  renderer.prepareCrater(gpu, camera, scene); renderer.prepareCrater(gpu, camera, scene);
+  assert.equal(compiled, 1); assert.equal(target, null);
+  assert.equal(new Set(uploads).size, 6);
+  assert.equal(uploads.length, 6);
+  assert.ok(uploads.every(url => /brown_mud_03|seaside_rock/.test(url)));
+});
+
 test('impact cuts through asphalt, paint and reflected water, leaving a deep supported floor', () => {
   const root = new THREE.Group(), renderer = new SmithFinaleRenderer(root);
   try {

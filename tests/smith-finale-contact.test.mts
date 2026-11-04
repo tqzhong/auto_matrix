@@ -180,6 +180,21 @@ test('the delivered bodies keep their support and orientation across impact, fai
   }
 });
 
+test('a cold impact scans each delivered coat vertex once before finding the support extrema', async t => {
+  const h = await setup(t);
+  const coat = h.smith.getObjectByName('Tailored_coat_upper') as THREE.SkinnedMesh;
+  assert.ok(coat instanceof THREE.SkinnedMesh);
+  const position = coat.geometry.getAttribute('position'), getX = position.getX;
+  let reads = 0;
+  t.mock.method(position, 'getX', function (this: typeof position, index: number) {
+    reads++;
+    return getX.call(this, index);
+  });
+  h.frame({ ...newSmithFinale(), phase: 'descent', elapsed: SMITH_FINALE.descent.impact + .1, total: 23 });
+  // Allow the small second pass that skins the selected support vertices.
+  assert.ok(reads >= position.count && reads <= position.count * 2, `${reads} reads for ${position.count} vertices`);
+});
+
 test('getting up plants the delivered boots before releasing the supporting hands', async t => {
   const h = await setup(t), floor = FILM_SETS.film_smith_avenue.center.y - 1 - SMITH_FINALE.crater.depth + .025;
   for (const rise of [.35, .5, .65, .8, .95]) {

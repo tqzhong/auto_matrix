@@ -21,15 +21,19 @@ function supportSurface(rig: HeroRig) {
     // delivered mesh is sampled once; each saved pose then skins this boundary.
     const groups = new Map<string, { values: number[]; indices: number[] }>();
     const { skinIndex, skinWeight } = object.geometry.attributes;
+    const boneGroups = object.skeleton.bones.map(({ name }) => name.startsWith('finger') ? `wrist_${name.endsWith('_R') ? 'R' : 'L'}` : name);
     for (let i = 0; i < position.count; i++) {
-      let dominant = 0;
-      for (let k = 1; k < 4; k++) if (skinWeight.getComponent(i, k) > skinWeight.getComponent(i, dominant)) dominant = k;
-      let name = object.skeleton.bones[skinIndex.getComponent(i, dominant)].name;
-      if (name.startsWith('finger')) name = `wrist_${name.endsWith('_R') ? 'R' : 'L'}`;
+      let dominant = 0, weight = skinWeight.getX(i);
+      for (let k = 1; k < 4; k++) {
+        const influence = skinWeight.getComponent(i, k);
+        if (influence > weight) { dominant = k; weight = influence; }
+      }
+      const name = boneGroups[skinIndex.getComponent(i, dominant)];
       let group = groups.get(name);
       if (!group) { group = { values: directions.map(() => -Infinity), indices: directions.map(() => i) }; groups.set(name, group); }
+      const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
       for (let k = 0; k < directions.length; k++) {
-        const d = directions[k], value = position.getX(i) * d.x + position.getY(i) * d.y + position.getZ(i) * d.z;
+        const d = directions[k], value = x * d.x + y * d.y + z * d.z;
         if (value > group.values[k]) { group.values[k] = value; group.indices[k] = i; }
       }
     }

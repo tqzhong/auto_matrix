@@ -21,6 +21,9 @@ export class SmithFinaleRenderer {
   private weatherTime = { value: 0 };
   private pitWater = { value: 0 };
   private textures = new Set<THREE.Texture>();
+  private craterTextures: THREE.Texture[] = [];
+  private surfaceSetsLoading = 0;
+  private craterProgramsPrepared = false;
   private rain = new THREE.Group();
   private lightning = new THREE.Group();
   private shockwave = new THREE.Group();
@@ -71,15 +74,18 @@ export class SmithFinaleRenderer {
 
   private geometry<T extends THREE.BufferGeometry>(geometry: T): T { this.geometries.add(geometry); return geometry; }
 
-  private surfaceMaps(materials: THREE.MeshStandardMaterial[], asset: string, repeat: [number, number]): void {
+  private surfaceMaps(materials: THREE.MeshStandardMaterial[], asset: string, repeat: [number, number], prepareCrater = false): void {
     if (typeof document === 'undefined') return;
+    this.surfaceSetsLoading++;
     let ready = 0; const maps: THREE.Texture[] = [];
     for (const kind of ['color', 'normal', 'roughness']) {
       const texture = new THREE.TextureLoader().load(`/assets/surfaces/${asset}-${kind}.jpg`, () => {
         if (++ready !== 3 || this.disposed) return;
+        this.surfaceSetsLoading--;
         for (const material of materials) {
           [material.map, material.normalMap, material.roughnessMap] = maps; material.needsUpdate = true;
         }
+        if (prepareCrater) this.craterTextures.push(...maps);
       });
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(...repeat); texture.anisotropy = 8;
       if (kind === 'color') texture.colorSpace = THREE.SRGBColorSpace;
@@ -96,7 +102,6 @@ export class SmithFinaleRenderer {
   private buildAvenue(): void {
     this.avenue.name = 'smith-finale-facades'; this.group.add(this.avenue);
     const wet = this.material({ color: 0x88918b, metalness: .03, roughness: .58, normalScale: new THREE.Vector2(.35, .35) });
-    this.surfaceMaps([wet], 'asphalt_02', [42 / 8, 190 / 8]);
     const curb = this.material({ color: 0x686e68, roughness: .65 });
     const stone = this.material({ color: 0x575e59, metalness: .05, roughness: .82 });
     const sandstone = this.material({ color: 0x737568, roughness: .86 });
@@ -343,6 +348,8 @@ export class SmithFinaleRenderer {
 
   private buildCrater(): void {
     const { depth, z: centerZ } = SMITH_FINALE.crater;
+    const asphalt = this.material({ color: 0x69716b, roughness: .5, normalScale: new THREE.Vector2(.5, .5) });
+    this.surfaceMaps([this.road.material as THREE.MeshStandardMaterial, asphalt], 'asphalt_02', [42 / 8, 190 / 8]);
     const rock = this.material({ color: 0xa8b0a5, vertexColors: true, roughness: .55, metalness: 0,
       normalScale: new THREE.Vector2(.38, .38) });
     rock.onBeforeCompile = shader => {
@@ -372,13 +379,13 @@ export class SmithFinaleRenderer {
     pool.rotation.x = -Math.PI / 2; pool.castShadow = false;
     const mudPoints = pool.geometry.getAttribute('position'), mudUV = pool.geometry.getAttribute('uv');
     for (let i = 0; i < mudPoints.count; i++) mudUV.setXY(i, mudPoints.getX(i) / 2.6, -mudPoints.getY(i) / 2.6);
-    this.surfaceMaps([rock, mud], 'brown_mud_03', [1, 1]);
+    this.surfaceMaps([rock, mud], 'brown_mud_03', [1, 1], true);
     this.poolWater = this.geometry(new THREE.CircleGeometry(8.9, 96).translate(0, -centerZ, 0));
     const poolPoints = this.poolWater.getAttribute('position'), poolUV = this.poolWater.getAttribute('uv');
     for (let i = 0; i < poolPoints.count; i++) poolUV.setXY(i, poolPoints.getX(i) / 42 + .5, poolPoints.getY(i) / 190 + .5);
     const concrete = this.material({ color: 0xaaa99e, roughness: .58, metalness: .01, normalScale: new THREE.Vector2(.7, .7) });
     const gravel = this.material({ color: 0xb4b6ac, vertexColors: true, roughness: .55, metalness: .01, normalScale: new THREE.Vector2(.7, .7) });
-    this.surfaceMaps([concrete, gravel], 'seaside_rock', [1, 1]);
+    this.surfaceMaps([concrete, gravel], 'seaside_rock', [1, 1], true);
     // Fractured road plates have a thin asphalt face and pale aggregate edges,
     // unlike repeated round boulders. Keep the debris outside the playing floor.
     const outline = new THREE.Shape(); outline.moveTo(-.96, -.4); outline.lineTo(-.35, -.8);
@@ -412,8 +419,6 @@ export class SmithFinaleRenderer {
       this.rubble.setColorAt(i, new THREE.Color().setScalar(.72 + cityNoise(i, 227) * .28));
     }
     const utilities = new THREE.Group(); this.crater.add(utilities);
-    const asphalt = this.material({ color: 0x69716b, roughness: .5, normalScale: new THREE.Vector2(.5, .5) });
-    this.surfaceMaps([asphalt], 'asphalt_02', [1, 1]);
     for (let i = 0; i < 40; i++) {
       const angle = i * 2.399963 + .2, radius = 10.7 + cityNoise(i, 229) * 5.4;
       const x = Math.cos(angle) * radius, z = centerZ + Math.sin(angle) * radius;
@@ -432,7 +437,7 @@ export class SmithFinaleRenderer {
           new THREE.Vector3(Math.cos(angle) * (radius - .55), -.3 - cityNoise(index % 144, 241) * .22, centerZ + Math.sin(angle) * (radius - .55))];
       });
       for (const point of [edges[0][0], edges[0][1], edges[1][0], edges[1][0], edges[0][1], edges[1][1]]) {
-        lipPositions.push(...point.toArray()); lipUV.push(point.x / 8, point.z / 8);
+        lipPositions.push(...point.toArray()); lipUV.push(point.x / 42, point.z / 190);
       }
     }
     const lip = new THREE.BufferGeometry(); lip.setAttribute('position', new THREE.Float32BufferAttribute(lipPositions, 3));
@@ -481,6 +486,27 @@ export class SmithFinaleRenderer {
     this.materials.add(material);
     const dust = this.geometry(new THREE.BufferGeometry()); dust.setAttribute('position', new THREE.BufferAttribute(new Float32Array(480 * 3), 3).setUsage(THREE.DynamicDrawUsage));
     this.purgeDust = new THREE.Points(dust, material); this.purgeDust.name = 'smith-finale-purge-dust'; this.purgeDust.frustumCulled = false; this.purge.add(this.purgeDust);
+  }
+
+  prepareCrater(renderer: THREE.WebGLRenderer, camera: THREE.Camera, scene: THREE.Scene): void {
+    if (this.crater.visible) return;
+    // Keep the first draw from uploading all of the hidden pit surfaces at once.
+    const texture = this.craterTextures.shift();
+    if (texture) {
+      renderer.initTexture(texture);
+      return;
+    }
+    if (this.surfaceSetsLoading || this.craterProgramsPrepared || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const previous = renderer.getRenderTarget();
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    try {
+      renderer.setRenderTarget(target);
+      renderer.compile(this.crater, camera, scene);
+      this.craterProgramsPrepared = true;
+    } finally {
+      renderer.setRenderTarget(previous);
+      target.dispose();
+    }
   }
 
   update(encounter: SmithFinaleEncounter | undefined, firstPerson: boolean, player: { x: number; z: number }, camera?: THREE.Camera): void {
