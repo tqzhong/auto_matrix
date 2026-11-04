@@ -164,7 +164,7 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
-  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group };
+  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
@@ -307,7 +307,7 @@ export class FilmSetRenderer {
     if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
-  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group): void {
+  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group): void {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting
       || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
@@ -316,24 +316,30 @@ export class FilmSetRenderer {
     }
     const set = FILM_SETS.film_metacortex_floor;
     const prepared = this.preparedOffice ??= { renderer: new OfficeSetRenderer(undefined, set), ready: false };
-    const subject = prepared.ready ? actor : undefined;
-    if (prepared.ready) {
-      if (!subject || subject === prepared.actor) return;
-      prepared.actor = subject;
-    } else {
+    let subject = prepared.renderer.root;
+    if (!prepared.ready) {
       if (!prepared.renderer.prepareStep()) return;
       prepared.ready = true;
-    }
+    } else if (actor && actor !== prepared.actor) {
+      prepared.actor = subject = actor;
+    } else if (city?.visible && city !== prepared.city) {
+      prepared.city = city;
+      subject = new THREE.Group();
+      // Compile the existing street meshes. Their lights are already in the target scene.
+      subject.traverse = visit => {
+        for (const object of city.children) if (object.visible && object instanceof THREE.Mesh) visit(object);
+      };
+    } else return;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     const eye = camera.clone();
     eye.position.y += set.center.y - player.position.y;
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);
-      subject?.traverse(object => {
+      if (subject === actor) subject.traverse(object => {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
-      lighting.compileSubject(renderer, eye, subject ?? prepared.renderer.root, prepared.renderer.root);
+      lighting.compileSubject(renderer, eye, subject, prepared.renderer.root);
     } finally {
       renderer.setRenderTarget(previous);
       target.dispose();

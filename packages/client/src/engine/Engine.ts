@@ -229,7 +229,7 @@ export class Engine {
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
-    this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'));
+    this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
     if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet && !this.sandbox?.neoLife?.lift?.passenger)
       this.agentRenderer.prepareOfficeManager(this.renderer, this.camera, this.lightCulling);
     if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);

@@ -97,7 +97,7 @@ test('identical office keycaps share construction buffers within each scene buil
   } finally { managerKey.dispose(); officeKey.dispose(); globalThis.document = original; }
 });
 
-test('the occupied lift prepares one hidden office with the arrival lights and reuses it at the landing', t => {
+test('the occupied lift prepares the hidden office and city materials with the arrival lights', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const document = globalThis.document;
@@ -107,7 +107,9 @@ test('the occupied lift prepares one hidden office with the arrival lights and r
   culling.reservePointSlots = true;
   const lamp = new THREE.PointLight(0xffffff, 8, 10);
   const landing = new THREE.SpotLight(0xffffff, 0); landing.castShadow = true;
-  scene.add(lamp, landing);
+  const city = new THREE.Group(), street = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshPhysicalMaterial(), 1);
+  const hidden = new THREE.Mesh(); hidden.visible = false;
+  city.add(lamp, street, hidden); scene.add(city, landing);
   const position = { ...metacortexPosition(0, -29), y: 21 };
   const player = { id: 'neo', position, isInMatrix: true } as AgentState;
   const sandbox = { threats: [], neoLife: {
@@ -119,7 +121,7 @@ test('the occupied lift prepares one hidden office with the arrival lights and r
   let target: THREE.WebGLRenderTarget | null = null;
   const windows: THREE.Mesh[] = [];
   const neo = new THREE.Group(); scene.add(neo);
-  let neoCompiles = 0;
+  let neoCompiles = 0, cityCompiles = 0;
   const renderer = {
     extensions: { has: () => true },
     getRenderTarget: () => target,
@@ -138,14 +140,25 @@ test('the occupied lift prepares one hidden office with the arrival lights and r
         neoCompiles++;
         return;
       }
+      const materials: THREE.Object3D[] = [];
+      root.traverse(object => { if (object instanceof THREE.Mesh) materials.push(object); });
+      if (materials.includes(street)) {
+        assert.deepEqual(materials, [street]);
+        assert.equal(street.parent, city);
+        assert.equal(lamp.parent, city);
+        assert.ok(litScene.getObjectByName('office-window-glass'));
+        cityCompiles++;
+        return;
+      }
       assert.equal(root.parent, null);
       windows.push(root.getObjectByName('office-window-glass') as THREE.Mesh);
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
-  for (let i = 0; i < 6; i++) film.prepareOffice(renderer, camera, culling, player, sandbox, neo);
+  for (let i = 0; i < 9; i++) film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
+  assert.equal(cityCompiles, 1);
   assert.equal(scene.getObjectByName('office-window-glass'), undefined);
   assert.equal(lamp.intensity, 8);
   assert.equal(target, null);
