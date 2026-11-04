@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APU_RIG, BANE_INQUIRY, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -603,6 +603,18 @@ test('the dock defense stabilizes the moving approach and keeps cockpit light cu
   journey.dockGunnery.phase = 'firing';
   sample(mifune, 0, APU_RIG.floor + APU_RIG.pilot.y, DOCK_GUNNERY.apuZ, Math.PI - .8);
   assert.equal(renderer.stablePointSlots, false, 'the cockpit can cull lights outside its restricted view');
+
+  const kid = world.agents.get('kid')!;
+  kid.isInMatrix = false;
+  journey.scene = 'm3_gate'; journey.actor = kid.id; journey.completed.push('m3_dock_battle');
+  delete journey.dockGunnery;
+  const handoff = sample(kid, -1.55, 0, 6.3, -Math.PI / 2);
+  assert.deepEqual(sample(kid, -5.5, 0, 6.3, Math.PI / 2), handoff);
+  journey.step = 1;
+  assert.deepEqual(sample(kid, APU_ROUTE.entry.x, 0, APU_ROUTE.entry.z, .12), handoff);
+  journey.apu = newApuRun();
+  sample(kid, 0, APU_RIG.floor + APU_RIG.pilot.y, APU_ROUTE.start, Math.PI);
+  assert.equal(renderer.stablePointSlots, false, 'the moving APU keeps its existing culling');
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {

@@ -2144,8 +2144,8 @@ export class SandboxUI {
       this.el('film-ride-speed').textContent = `${Math.ceil(gate.remaining)} 秒`;
       this.el('film-ride-health').textContent = `缆索损伤 ${gate.hits}/${DOCK_GATE.hits} · 弹药 ${gate.ammo}`;
       this.el('film-ride-controls').textContent = gate.phase === 'aiming' ? '鼠标瞄准 · 左键 / T 开炮 · V 切换视角' : dockGateText(gate);
-      this.el('sandbox-interact').classList.toggle('hidden', gate.phase !== 'ready');
-      this.el('sandbox-nearby').textContent = '接管 APU 机炮'; this.el('sandbox-waypoint').textContent = '';
+      this.el('sandbox-interact').classList.toggle('hidden', gate.phase !== 'ready' && gate.phase !== 'done');
+      this.el('sandbox-nearby').textContent = gate.phase === 'done' ? '交接 Link，准备启动 EMP' : '接管 APU 机炮'; this.el('sandbox-waypoint').textContent = '';
       this.el('film-sequence').classList.toggle('hidden', gate.phase === 'aiming' || gate.phase === 'ready');
       this.el('film-sequence-line').textContent = dockGateText(gate);
       this.el('film-sequence-hint').textContent = gate.phase === 'failed' ? 'J 从闸门炮位重试' : gate.phase === 'braced' ? '按住 G 抬炮 · 松开会失去支撑 · V 切换视角' : 'V 切换视角';
