@@ -10,7 +10,7 @@ import type { OfficeWorkday } from '@auto_matrix/shared';
 
 /** Office cover is drawn from the same dimensions used by movement and guard sight. */
 export class OfficeSetRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
   private materials: THREE.Material[] = [];
   private textures: THREE.Texture[] = [];
   private roundedBoxes: Map<string, THREE.BufferGeometry> | undefined = new Map();
@@ -18,7 +18,7 @@ export class OfficeSetRenderer {
   private delivery?: THREE.Group;
   private flap?: THREE.Group;
   private phone?: PhoneModel;
-  private workday: OfficeWorkdayRenderer;
+  private workday?: OfficeWorkdayRenderer;
   private sash?: THREE.Group;
   private latch?: THREE.Group;
   private windowMaterials: { material: THREE.MeshStandardMaterial; opacity: number; depthWrite: boolean }[] = [];
@@ -26,16 +26,33 @@ export class OfficeSetRenderer {
   private cleanerActors: { root: THREE.Group; bones: Map<string, THREE.Bone>; blade: THREE.Mesh; handle: THREE.Mesh; z: number }[] = [];
   private cleanerSkeletons: THREE.Skeleton[] = [];
   private disposed = false;
-  constructor(parent: THREE.Group, set: FilmSet) {
+  private construction?: Generator<void>;
+  constructor(parent: THREE.Group | undefined, set: FilmSet) {
+    this.construction = this.build();
+    if (parent) this.attach(parent, set);
+    else this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
+  }
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+  attach(parent: THREE.Group, set: FilmSet): void {
+    this.root.position.set(set.id === 'film_office_ledge' ? -OFFICE_LEDGE_OFFSET : 0, 0, 0);
     parent.add(this.root);
-    if (set.id === 'film_office_ledge') this.root.position.x = -OFFICE_LEDGE_OFFSET;
-    this.office(); this.ledge();
-    this.batch();
+    while (!this.prepareStep()) { /* Finish any work left by a late restore. */ }
+    void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
+  }
+  private *build(): Generator<void> {
+    this.office();
+    yield;
+    this.ledge(); this.batch();
     this.roundedBoxes = undefined;
+    yield;
     this.workday = new OfficeWorkdayRenderer(this.root);
     this.parcel(); this.openingWindow();
     this.cleaners.name = 'office-window-cleaners'; this.root.add(this.cleaners);
-    void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
+    yield;
   }
   private async loadCleaners(): Promise<void> {
     const asset = await new GLTFLoader().loadAsync('/assets/characters/club-male.glb');
@@ -130,7 +147,7 @@ export class OfficeSetRenderer {
   update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3, clock?: OfficeWorkday, time = 0, timeOfDay = 12000): void {
     if (this.windowLight) this.windowLight.intensity = 500 * Math.max(0, Math.sin((timeOfDay / 24000 - .25) * Math.PI * 2));
     if (journey?.scene === 'm1_boss' && !journey.visiting && clock) journey = { ...journey, workday: clock };
-    this.workday.update(journey);
+    this.workday?.update(journey);
     this.updateCleaners(time, journey?.scene === 'm1_boss' && !journey.visiting);
     if (this.sash && this.latch) {
       const time = journey?.office?.window ?? (journey?.completed.includes('m1_office_escape') && journey.office?.outcome !== 'captured' ? OFFICE_WINDOW.seconds : 0);
@@ -380,7 +397,9 @@ export class OfficeSetRenderer {
   }
   dispose(): void {
     this.disposed = true;
-    this.workday.dispose();
+    this.construction = undefined;
+    this.roundedBoxes = undefined;
+    this.workday?.dispose();
     this.phone?.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.cleanerSkeletons.forEach(skeleton => skeleton.dispose());

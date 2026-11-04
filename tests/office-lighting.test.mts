@@ -3,7 +3,9 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FILM_SETS, OFFICE_DESKS } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_DESKS, metacortexPosition, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 
@@ -92,4 +94,68 @@ test('identical office keycaps share construction buffers within each scene buil
     assert.equal(new Set(officeKeys).size, 1, 'identical workstation keys only generate one solid');
     assert.notEqual(managerKeys[0][0], managerKeys[1][0], 'disposed scene templates must not be retained for the next scene');
   } finally { managerKey.dispose(); officeKey.dispose(); globalThis.document = original; }
+});
+
+test('the occupied lift prepares one hidden office with the arrival lights and reuses it at the landing', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  t.after(() => { film.dispose(); culling.dispose(); globalThis.document = document; });
+  culling.reservePointSlots = true;
+  const lamp = new THREE.PointLight(0xffffff, 8, 10);
+  const landing = new THREE.SpotLight(0xffffff, 0); landing.castShadow = true;
+  scene.add(lamp, landing);
+  const position = { ...metacortexPosition(0, -29), y: 21 };
+  const player = { id: 'neo', position, isInMatrix: true } as AgentState;
+  const sandbox = { threats: [], neoLife: {
+    journey: { scene: 'm1_commute', actor: 'neo', step: 1, completed: [] },
+    lift: { phase: 'travel', floor: 0, target: 1, elapsed: 3, passenger: position },
+  } } as unknown as SandboxState;
+  const before = structuredClone(sandbox), camera = new THREE.PerspectiveCamera();
+  camera.position.set(position.x, position.y + 4, position.z - 2);
+  let target: THREE.WebGLRenderTarget | null = null;
+  const windows: THREE.Mesh[] = [];
+  const neo = new THREE.Group(); scene.add(neo);
+  let neoCompiles = 0;
+  const renderer = {
+    extensions: { has: () => true },
+    getRenderTarget: () => target,
+    setRenderTarget: (next: typeof target) => { target = next; },
+    compile: (root: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.ok(target);
+      assert.equal(eye.position.y, 70);
+      let points = 0, spots = 0;
+      for (const group of root === neo ? [litScene] : [root, litScene]) group.traverseVisible(object => {
+        if (object instanceof THREE.PointLight) points++;
+        if (object instanceof THREE.SpotLight) spots++;
+      });
+      assert.deepEqual({ points, spots }, { points: 4, spots: 5 });
+      if (root === neo) {
+        assert.ok(litScene.getObjectByName('office-window-glass'));
+        neoCompiles++;
+        return;
+      }
+      assert.equal(root.parent, null);
+      windows.push(root.getObjectByName('office-window-glass') as THREE.Mesh);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  film.update(player, sandbox, 0);
+  for (let i = 0; i < 6; i++) film.prepareOffice(renderer, camera, culling, player, sandbox, neo);
+  assert.equal(windows.length, 1);
+  assert.equal(neoCompiles, 1);
+  assert.equal(scene.getObjectByName('office-window-glass'), undefined);
+  assert.equal(lamp.intensity, 8);
+  assert.equal(target, null);
+  assert.deepEqual(sandbox, before);
+  let released = false;
+  windows[0].geometry.addEventListener('dispose', () => { released = true; });
+  film.prepareOffice(renderer, camera, culling, undefined, sandbox);
+  assert.equal(released, true, 'leaving the lift releases the detached office');
+  for (let i = 0; i < 6; i++) film.prepareOffice(renderer, camera, culling, player, sandbox);
+  player.position = metacortexPosition(0, -29, 1);
+  film.update(player, sandbox, 0);
+  assert.equal(film.active?.id, 'film_metacortex_floor');
+  assert.ok(scene.getObjectByName('office-window-glass') === windows[1]);
 });

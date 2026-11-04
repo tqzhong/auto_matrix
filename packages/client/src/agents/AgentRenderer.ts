@@ -179,6 +179,7 @@ export class AgentRenderer {
   }
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
+  getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
   prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
     this.smithEnding?.prepareEntrance(renderer, camera, this.scene);
   }

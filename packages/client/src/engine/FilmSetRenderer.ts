@@ -48,6 +48,8 @@ import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
+import type { LightCulling } from './LightCulling.js';
+import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
 import type { TruckEncounter } from '@auto_matrix/shared';
 import { PodSetRenderer } from './PodSetRenderer.js';
@@ -162,6 +164,7 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
+  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group };
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
@@ -304,6 +307,42 @@ export class FilmSetRenderer {
     if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
+  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group): void {
+    const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
+    if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting
+      || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
+      this.cancelOfficePreparation();
+      return;
+    }
+    const set = FILM_SETS.film_metacortex_floor;
+    const prepared = this.preparedOffice ??= { renderer: new OfficeSetRenderer(undefined, set), ready: false };
+    const subject = prepared.ready ? actor : undefined;
+    if (prepared.ready) {
+      if (!subject || subject === prepared.actor) return;
+      prepared.actor = subject;
+    } else {
+      if (!prepared.renderer.prepareStep()) return;
+      prepared.ready = true;
+    }
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const eye = camera.clone();
+    eye.position.y += set.center.y - player.position.y;
+    const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
+    try {
+      renderer.setRenderTarget(target);
+      subject?.traverse(object => {
+        if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
+      });
+      lighting.compileWithDetachedLights(renderer, eye, prepared.renderer.root, subject);
+    } finally {
+      renderer.setRenderTarget(previous);
+      target.dispose();
+    }
+  }
+  private cancelOfficePreparation(): void {
+    this.preparedOffice?.renderer.dispose();
+    this.preparedOffice = undefined;
+  }
   update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
@@ -329,13 +368,19 @@ export class FilmSetRenderer {
     if (this.smithFinale && set?.id === 'film_smith_avenue' && !journey?.visiting
       && this.currentScene === 'm3_rain' && sceneId === 'm3_surrender') this.currentScene = sceneId;
     if (set?.id !== this.current?.id || sceneId !== this.currentScene) {
+      const enteringOffice = set?.id === 'film_metacortex_floor' || set?.id === 'film_office_ledge';
+      const prepared = enteringOffice ? this.preparedOffice?.renderer : undefined;
+      if (prepared) this.preparedOffice = undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       if (approach) { approach.renderer.moveStreet(approach.root); this.meeting = undefined; }
       this.clear(); this.current = set; this.currentScene = sceneId;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
       if (set && set.id !== 'film_anderson_flat') {
-        if (['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) this.office = new OfficeSetRenderer(this.root, set);
+        if (enteringOffice) {
+          this.office = prepared ?? new OfficeSetRenderer(this.root, set);
+          prepared?.attach(this.root, set);
+        }
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
         else if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') { this.logosBane = new LogosBaneRenderer(this.root); void this.logosBane.ready.catch(error => console.error('金色 Smith 加载失败', error)); }
@@ -2758,6 +2803,7 @@ export class FilmSetRenderer {
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   private clear(): void {
+    this.cancelOfficePreparation();
     this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;

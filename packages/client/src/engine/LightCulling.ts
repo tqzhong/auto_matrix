@@ -25,13 +25,17 @@ export class LightCulling {
 
   private before: THREE.Scene['onBeforeRender'] = (...args) => {
     this.previousBefore.apply(this.scene, args);
+    this.select(args[2]);
+  };
+
+  private select(camera: THREE.Camera): void {
     // A mirror has a different view. Restore the parent pass before selecting
     // its lights, then reinstate the parent's selection when the mirror ends.
     this.restoreSelection(this.frames[this.depth - 1]);
     const selected = this.frames[this.depth] ??= { hidden: [], muted: [], intensities: [], fill: 0 };
     selected.hidden.length = selected.muted.length = selected.intensities.length = 0; this.depth++;
     selected.fill = 0;
-    const camera = args[2]; let considered = 0, kept = 0;
+    let considered = 0, kept = 0;
     if (this.enabled && !this.scene.overrideMaterial && !(camera instanceof THREE.ArrayCamera)) {
       this.frustum.setFromProjectionMatrix(this.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
       this.scene.traverseVisible(object => {
@@ -63,9 +67,14 @@ export class LightCulling {
       this.setPointFill(selected.fill);
     }
     if (this.depth === 1 && !this.scene.overrideMaterial) this.lastView = { considered, culled: selected.hidden.length + selected.muted.length };
-  };
+  }
 
   private after: THREE.Scene['onAfterRender'] = (...args) => {
+    this.finishSelection();
+    this.previousAfter.apply(this.scene, args);
+  };
+
+  private finishSelection(): void {
     this.restoreSelection(this.frames[--this.depth]);
     const parent = this.frames[this.depth - 1];
     if (parent) {
@@ -73,8 +82,7 @@ export class LightCulling {
       for (const light of parent.muted) light.intensity = 0;
       this.setPointFill(parent.fill);
     }
-    this.previousAfter.apply(this.scene, args);
-  };
+  }
 
   private restoreSelection(selected?: LightSelection): void {
     if (this.pointFill) this.pointFill.visible = false;
@@ -98,6 +106,22 @@ export class LightCulling {
   /** Also called from the frame's finally block if a nested renderer throws. */
   restore(): void {
     while (this.depth > 0) this.restoreSelection(this.frames[--this.depth]);
+  }
+
+  compileWithDetachedLights(renderer: THREE.WebGLRenderer, camera: THREE.Camera, object: THREE.Object3D, subject?: THREE.Object3D): void {
+    const depth = this.depth;
+    this.scene.add(object);
+    try {
+      this.scene.updateMatrixWorld();
+      camera.updateMatrixWorld();
+      this.select(camera);
+      // compile gathers lights from both roots. Keep the office in only one of them.
+      if (!subject) object.removeFromParent();
+      renderer.compile(subject ?? object, camera, this.scene);
+    } finally {
+      object.removeFromParent();
+      if (this.depth > depth) this.finishSelection();
+    }
   }
 
   dispose(): void {
