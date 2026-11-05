@@ -48,7 +48,7 @@ import { OPENING_HOTEL } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
-import { OfficeSetRenderer } from './OfficeSetRenderer.js';
+import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
 import type { LightCulling } from './LightCulling.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -212,7 +212,7 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
-  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
+  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[]; actor?: THREE.Group; city?: THREE.Group };
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
   private courtyardCastColors?: CastColorPreparation;
@@ -630,7 +630,8 @@ export class FilmSetRenderer {
       return;
     }
     const set = FILM_SETS.film_metacortex_floor;
-    const prepared = this.preparedOffice ??= { renderer: new OfficeSetRenderer(undefined, set), ready: false };
+    const prepared = this.preparedOffice ??= { renderer: new OfficeSetRenderer(undefined, set), ready: false, programs: [] };
+    const programs = renderer.info.programs;
     let subject = prepared.renderer.root;
     if (!prepared.ready) {
       if (!prepared.renderer.prepareStep()) return;
@@ -644,18 +645,28 @@ export class FilmSetRenderer {
       subject.traverse = visit => {
         for (const object of city.children) if (object.visible && object instanceof THREE.Mesh) visit(object);
       };
-    } else return;
+    } else {
+      // Linking alone leaves uniform and attribute queries for the first draw.
+      const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
+      if (ready >= 0) prepared.programs.splice(ready, 1)[0].getUniforms();
+      return;
+    }
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const start = programs?.length ?? 0;
     const eye = camera.clone();
     eye.position.y += set.center.y - player.position.y;
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
+    const liftSlots = lighting.minimumPointSlots;
     try {
+      lighting.minimumPointSlots = OFFICE_POINT_SLOTS;
       renderer.setRenderTarget(target);
       if (subject === actor) subject.traverse(object => {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
       lighting.compileSubject(renderer, eye, subject, prepared.renderer.root);
+      if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
+      lighting.minimumPointSlots = liftSlots;
       renderer.setRenderTarget(previous);
       target.dispose();
     }

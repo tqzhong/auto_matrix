@@ -8,6 +8,8 @@ import { PhoneModel } from '../agents/PhoneModel.js';
 import { OfficeWorkdayRenderer } from './OfficeWorkdayRenderer.js';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 
+export const OFFICE_POINT_SLOTS = 6; // The city lights and goal marker share this layout indoors and on the ledge.
+
 /** Office cover is drawn from the same dimensions used by movement and guard sight. */
 export class OfficeSetRenderer {
   readonly root = new THREE.Group();

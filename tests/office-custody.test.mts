@@ -102,6 +102,30 @@ test('being caught cannot skip the physical escort with next or act', () => {
   assert.equal(h.state().completed.includes(FILM_SCENE_BY_ID.m1_interrogation.id), false);
 });
 
+test('a distant escort leader can catch up to the player waiting at the lift', () => {
+  const h = setup(), custody = h.state().office!.custody!;
+  Object.assign(custody, { phase: 'escorting', elapsed: OFFICE_CUSTODY.securing, leader: 'smith', catcher: 'agent_jones' });
+  h.neo.position = metacortexPosition(.08, -25.33, 1);
+  h.neo.rotation = 5.73;
+  custody.bodies.smith.position = metacortexPosition(14, 6.7, 1);
+  custody.bodies.agent_jones.position = metacortexPosition(1.725, -24.38, 1);
+  custody.bodies.agent_brown.position = metacortexPosition(3.72, -23.23, 1);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  const restored = h.state().office!.custody!, start = { ...restored.bodies.smith.position };
+  h.frame(.5, false);
+  assert.deepEqual(restored.bodies.smith.position, start);
+  const neo = { ...h.neo.position };
+  for (let frame = 0; frame < 800 && restored.phase !== 'ready'; frame++) {
+    const previous = restored.bodies.smith.position;
+    h.input();
+    const current = restored.bodies.smith.position;
+    assert.ok(Math.hypot(current.x - previous.x, current.z - previous.z) <= OFFICE_CUSTODY.speed * .05 + .001);
+    assert.equal(playerBlocked(current, true, .7, h.sandbox.state.structures), false);
+  }
+  assert.equal(restored.phase, 'ready', 'the leader must regroup at the lift');
+  assert.deepEqual(h.neo.position, neo);
+});
+
 test('reaching the elevator starts physical boarding instead of skipping the ride and lobby', () => {
   const h = setup(); h.frame(4);
   const catcher = h.state().office!.custody!.bodies[h.state().office!.custody!.catcher];

@@ -122,7 +122,11 @@ test('the occupied lift prepares the hidden office and city materials with the a
   const windows: THREE.Mesh[] = [];
   const neo = new THREE.Group(); scene.add(neo);
   let neoCompiles = 0, cityCompiles = 0;
+  let ready = false;
+  const uniformQueries: string[] = [];
+  const programs: { isReady(): boolean; getUniforms(): void }[] = [];
   const renderer = {
+    info: { programs },
     extensions: { has: () => true },
     getRenderTarget: () => target,
     setRenderTarget: (next: typeof target) => { target = next; },
@@ -134,7 +138,7 @@ test('the occupied lift prepares the hidden office and city materials with the a
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.SpotLight) spots++;
       });
-      assert.deepEqual({ points, spots }, { points: 4, spots: 5 });
+      assert.deepEqual({ points, spots }, { points: 6, spots: 5 });
       if (root === neo) {
         assert.ok(litScene.getObjectByName('office-window-glass'));
         neoCompiles++;
@@ -152,6 +156,8 @@ test('the occupied lift prepares the hidden office and city materials with the a
       }
       assert.equal(root.parent, null);
       windows.push(root.getObjectByName('office-window-glass') as THREE.Mesh);
+      for (const material of ['glass', 'fluorescent shade', 'carpet'])
+        programs.push({ isReady: () => ready, getUniforms: () => { uniformQueries.push(material); } });
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
@@ -159,8 +165,16 @@ test('the occupied lift prepares the hidden office and city materials with the a
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
   assert.equal(cityCompiles, 1);
+  assert.deepEqual(uniformQueries, [], 'an unfinished program must not stall the lift');
+  programs.splice(1, 1);
+  ready = true;
+  film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
+  assert.deepEqual(uniformQueries, ['glass'], 'one ready program is prepared per frame');
+  film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
+  assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
   assert.equal(scene.getObjectByName('office-window-glass'), undefined);
   assert.equal(lamp.intensity, 8);
+  assert.equal(culling.minimumPointSlots, 4, 'the elevator keeps its own light layout while the office is prepared');
   assert.equal(target, null);
   assert.deepEqual(sandbox, before);
   let released = false;

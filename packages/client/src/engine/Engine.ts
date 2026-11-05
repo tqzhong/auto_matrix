@@ -32,6 +32,7 @@ import { FrameRate } from './FrameRate.js';
 import { LightCulling, POINT_SLOT_FLOOR } from './LightCulling.js';
 import { garageCarPose, garageRiderPose } from '@auto_matrix/shared';
 import { SUBWAY_POINT_SLOTS } from './MatrixEscapeRenderer.js';
+import { OFFICE_POINT_SLOTS } from './OfficeSetRenderer.js';
 import { PillReflection } from './PillReflection.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
 
@@ -235,10 +236,12 @@ export class Engine {
     this.lightCulling.stablePointSlots = this.filmSets.stablePointSlots;
     if (this.filmSets.lafayetteStreetHidden) this.agentRenderer.hideLafayetteStreetCast();
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
-    this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
-    const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
+    const officeSet = filmSet?.id === 'film_metacortex_floor' || filmSet?.id === 'film_office_ledge';
+    this.voxelRenderer.showOfficeInterior(officeSet || Boolean(this.sandbox?.neoLife?.lift?.passenger));
+    const cinematicSet = filmSet && !officeSet && filmSet.id !== 'film_anderson_flat' ? filmSet : undefined;
     this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
       : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
+      : officeSet ? OFFICE_POINT_SLOTS
       : reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0;
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;

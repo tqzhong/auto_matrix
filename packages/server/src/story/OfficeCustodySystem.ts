@@ -287,9 +287,11 @@ export class OfficeCustodySystem {
     else for (const role of [custody.leader, custody.catcher, ...OFFICE_AGENT_ROLES.filter(role => role !== custody.leader && role !== custody.catcher)]) {
       const body = custody.bodies[role], before = { ...body.position };
       const leading = role === custody.leader;
-      const destination = leading ? custody.phase === 'securing' ? nearby(role, 3.8)
-        : planar(agent.position, exit) < 5 ? nearby(role, 3.8) : exit : nearby(role, role === custody.catcher ? 1.9 : 4.2);
-      if (delta > 0 && (!leading || planar(body.position, agent.position) < 8)) {
+      const separatedLeader = leading && planar(body.position, agent.position) >= 8;
+      const waitingAhead = separatedLeader && custody.phase !== 'securing' && planar(body.position, exit) < planar(agent.position, exit);
+      const destination = leading ? custody.phase === 'securing' || separatedLeader || planar(agent.position, exit) < 5 ? nearby(role, 3.8)
+        : exit : nearby(role, role === custody.catcher ? 1.9 : 4.2);
+      if (delta > 0 && !waitingAhead) {
         const blockers = [agent.position, ...OFFICE_AGENT_ROLES.filter(other => other !== role).map(other => custody.bodies[other].position),
           ...['courier', 'rhineheart'].flatMap(id => { const other = this.world.agents.get(id); return other?.currentLocation === 'film_metacortex_floor' ? [other.position] : []; })];
         let point = officeNextPoint(body.position, destination, .71, blockers);
