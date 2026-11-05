@@ -3,14 +3,86 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, ambushFloor, ambushRouteRoot, ambushRetreatRoot, AMBUSH_RETREAT_LANDINGS, filmPosition, newAmbushApproach, type AmbushEscort, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, ambushFloor, ambushRouteRoot, ambushRetreatRoot, AMBUSH_RETREAT_LANDINGS, filmPosition, newAmbushApproach, type AmbushEscort, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
+
+test('the old building can be constructed offscreen and adopted without rebuilding its meshes', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const prepared = new AmbushSetRenderer(), parent = new THREE.Group();
+  const coldParent = new THREE.Group(), cold = new AmbushSetRenderer(coldParent);
+  t.after(() => { prepared.dispose(); cold.dispose(); });
+  let steps = 0;
+  while (!prepared.prepareStep()) assert.ok(++steps < 100);
+  assert.ok(steps > 2, 'the building must span more than one preparation frame');
+  assert.equal(prepared.root.parent, null);
+  const door = prepared.root.getObjectByName('mouse-room-door')!;
+  prepared.attach(parent);
+  assert.ok(parent.getObjectByName(door.name) === door, 'the prepared door must enter with the same geometry');
+  const snapshot = (root: THREE.Group) => {
+    const data: unknown[] = [];
+    root.traverse(object => data.push([object.name, object.type, object.visible, object.position.toArray(), object.rotation.toArray(),
+      object instanceof THREE.Mesh ? object.geometry.attributes.position.count : undefined,
+      object instanceof THREE.Light ? [object.color.getHex(), object.intensity, object.castShadow] : undefined]));
+    return data;
+  };
+  prepared.update(undefined, [], 0); cold.update(undefined, [], 0);
+  assert.deepEqual(snapshot(prepared.root), snapshot(cold.root));
+});
+
+test('the Oracle exit prepares the old building with the same lights used at the stairwell entry', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene);
+  t.after(() => { sets.dispose(); globalThis.document = document; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_oracle_home', 0, 27); neo.isInMatrix = true;
+  const journey = { scene: 'm1_oracle', actor: 'neo', step: 2, completed: [], oracle: { departure: { phase: 'leaving', elapsed: 0, rise: 3.8 } } } as FilmJourney;
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  sets.update(neo, sandbox, 0);
+  const pointLights = (root: THREE.Scene) => {
+    const lights: number[] = [];
+    root.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object.id); });
+    return lights;
+  };
+  const coatMap = new THREE.Texture(), body = new THREE.Group(), detail = new THREE.Group(), hero = new THREE.Group();
+  const uploads: THREE.Texture[] = [];
+  detail.visible = false; body.add(detail); detail.add(hero);
+  const material = new THREE.MeshStandardMaterial({ map: coatMap });
+  const geometry = new THREE.BoxGeometry(); hero.add(new THREE.Mesh(geometry, material));
+  t.after(() => { geometry.dispose(); material.dispose(); coatMap.dispose(); });
+  let preparedLights: number[] | undefined, preparedDoor: THREE.Object3D | undefined;
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null, setRenderTarget() {},
+    properties: { get: () => ({}) }, initTexture(texture: THREE.Texture) { uploads.push(texture); },
+    compile(_subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
+      preparedLights = pointLights(target); preparedDoor = target.getObjectByName('mouse-room-door');
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera();
+  const prepare = () => sets.prepareAmbush(graphics, camera, journey, id => id === 'neo' ? body : undefined,
+    id => id === 'neo' ? hero : undefined);
+  for (let frame = 0; frame < 100 && !preparedLights; frame++) prepare();
+  assert.ok(preparedLights && preparedDoor);
+  assert.deepEqual(uploads, []);
+  coatMap.image = { width: 2048, height: 2048 }; coatMap.needsUpdate = true;
+  for (let frame = 0; frame < 100; frame++) prepare();
+  assert.deepEqual(uploads, [coatMap], 'upload the decoded coat map once before entry');
+  assert.equal(detail.visible, false, 'do not change the actor detail level in the apartment');
+  assert.equal(scene.getObjectByName('mouse-room-door'), undefined, 'the apartment stays on screen until the handoff');
+  journey.scene = 'm1_dejavu'; journey.step = 0;
+  neo.position = filmPosition('film_ambush_house', -5.5, 32);
+  sets.update(neo, sandbox, 1);
+  assert.equal(preparedLights.length, pointLights(scene).length, 'the closed shaft must stay unlit during shader preparation');
+  assert.ok(scene.getObjectByName('mouse-room-door') === preparedDoor);
+});
 
 function setup(t: test.TestContext) {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());

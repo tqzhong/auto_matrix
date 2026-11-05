@@ -232,6 +232,8 @@ export class Engine {
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera);
+    if (this.running && meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
+      this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');

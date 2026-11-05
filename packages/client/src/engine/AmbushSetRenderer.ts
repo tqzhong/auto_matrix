@@ -7,7 +7,8 @@ import { WetwallRenderer } from './WetwallRenderer.js';
 
 /** The changed masonry uses the same footprints as the saved, authoritative barriers. */
 export class AmbushSetRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
+  private construction?: Generator<void>;
   private seals = new THREE.Group();
   private eighthSeals = new THREE.Group();
   private lowerWindows: THREE.Mesh[] = [];
@@ -29,17 +30,28 @@ export class AmbushSetRenderer {
   private bathroomDebris = new THREE.Group();
   private bathroomDust = new THREE.Group();
   private bathroomLight!: THREE.PointLight;
-  private daylight: THREE.SpotLight;
-  private window: THREE.Mesh;
+  private daylight!: THREE.SpotLight;
+  private window!: THREE.Mesh;
   private materials: THREE.Material[] = [];
   private textures: THREE.Texture[] = [];
   private clock = 0;
   private previousTime = 0;
   private catReportedTime = -1;
   private catReportedAt = 0;
-  private wetwall: WetwallRenderer;
-  constructor(parent: THREE.Group) {
+  private wetwall!: WetwallRenderer;
+  constructor(parent?: THREE.Group) {
+    this.construction = this.build();
+    if (parent) this.attach(parent);
+  }
+  prepareStep(): boolean {
+    if (this.construction?.next().done) this.construction = undefined;
+    return !this.construction;
+  }
+  attach(parent: THREE.Group): void {
+    while (!this.prepareStep()) { /* Direct loads finish the remaining building. */ }
     parent.add(this.root);
+  }
+  private *build(): Generator<void> {
     const plaster = this.pbr('damaged_plaster', 0x989d86, 4);
     const floor = this.pbr('old_wood_floor', 0x81745c, 6);
     const wood = this.pbr('old_wood_floor', 0x4e5140, 2);
@@ -49,6 +61,7 @@ export class AmbushSetRenderer {
     // stairs. A continuous slab here would cut through every climbing body.
     for (const surface of AMBUSH_FLOORS.slice(0, 4)) this.box(plaster, surface.x, 9.2, surface.z, surface.width, .4, surface.depth);
     this.makeStairwell(wood, iron);
+    yield;
     for (const z of [-34, 34]) this.box(plaster, 0, 4.5, z, 44, 9, .7);
     this.box(plaster, 22, 4.5, 0, .7, 9, 68);
     // The side window is a genuine opening, so its light can disappear with the brickwork.
@@ -101,9 +114,9 @@ export class AmbushSetRenderer {
       const side = i % 2 ? 1 : -1; const x = side * (10.9 + i % 5 * .23); const z = -31 + i * 11 % 62;
       const chip = this.box(trim, x, .065, z, .2 + i % 3 * .14, .1, .12 + i % 4 * .11); chip.rotation.y = i * 2.4;
     }
-    this.makeLowerFloors(plaster, wood, trim, iron, windowMaterial);
+    yield* this.makeLowerFloors(plaster, wood, trim, iron, windowMaterial);
     this.makeCatDoorway(wood, trim, plaster);
-    this.batch();
+    yield* this.batch();
     this.makeMouseRoom(wood, trim, iron);
     this.wetwall = new WetwallRenderer(this.root, { plaster, wood, iron, trim });
     this.root.add(this.seals, this.eighthSeals, this.cat, this.doorwayCat, this.gunfire);
@@ -163,7 +176,7 @@ export class AmbushSetRenderer {
     const light = new THREE.PointLight(0xdbe2ca, 240, 32, 2); light.position.set(0, 7.6, 20.5); this.root.add(light);
     const lower = new THREE.PointLight(0xd4c99d, 100, 20, 2); lower.position.set(-5.5, -2, 31.5); this.root.add(lower);
   }
-  private makeLowerFloors(plaster: THREE.Material, wood: THREE.Material, trim: THREE.Material, iron: THREE.Material, glass: THREE.Material): void {
+  private *makeLowerFloors(plaster: THREE.Material, wood: THREE.Material, trim: THREE.Material, iron: THREE.Material, glass: THREE.Material): Generator<void> {
     const lamp = this.mat(0xc8b587, .5); lamp.emissive.setHex(0x8e7846); lamp.emissiveIntensity = .65;
     for (let floor = 1; floor <= AMBUSH_STOREYS; floor++) {
       const y = -floor * AMBUSH_STAIRS.rise, height = AMBUSH_STAIRS.rise;
@@ -188,6 +201,7 @@ export class AmbushSetRenderer {
       for (const z of [8, 31.5]) this.box(lamp, -11, y + 6, z, .45, .3, .45);
       this.box(trim, 20, y + .08, 32.8, 1.3, .15, .3);
       this.sign(`${13 - floor}`, 17, y + 4.3, 33.58, Math.PI, 2.4, 2);
+      yield;
     }
     this.sign('13 / 1313', -12.6, 5.7, -17.5, Math.PI / 2, 2.8, 1.2);
     this.sign('8 / 808', -12.6, AMBUSH_ESCAPE.window.y + 5.1, -17.5, Math.PI / 2, 2.8, 1.2);
@@ -523,21 +537,30 @@ export class AmbushSetRenderer {
       ankle.quaternion.copy(knee.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)); ankle.updateWorldMatrix(false, true);
     }
   }
-  private batch(): void {
+  private *batch(): Generator<void> {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
-    for (const child of [...this.root.children]) {
-      if (!(child instanceof THREE.Mesh) || child === this.window || this.lowerWindows.includes(child) || child.userData.sign || Array.isArray(child.material)) continue;
-      child.updateMatrix(); const source = child.geometry.clone().applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
-      if (source !== geometry) source.dispose(); const group = batches.get(child.material) ?? []; group.push(geometry); batches.set(child.material, group);
-      child.geometry.dispose(); child.removeFromParent();
-    }
-    for (const [material, geometries] of batches) {
-      const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (!geometry) throw new Error('Ambush geometry could not be merged');
-      const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; this.root.add(mesh);
+    let count = 0;
+    try {
+      for (const child of [...this.root.children]) {
+        if (!(child instanceof THREE.Mesh) || child === this.window || this.lowerWindows.includes(child) || child.userData.sign || Array.isArray(child.material)) continue;
+        child.updateMatrix(); const source = child.geometry.clone().applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
+        if (source !== geometry) source.dispose(); const group = batches.get(child.material) ?? []; group.push(geometry); batches.set(child.material, group);
+        child.geometry.dispose(); child.removeFromParent();
+        if (++count % 96 === 0) yield;
+      }
+      for (const [material, geometries] of batches) {
+        const geometry = mergeGeometries(geometries); if (!geometry) throw new Error('Ambush geometry could not be merged');
+        geometries.forEach(g => g.dispose()); batches.delete(material);
+        const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = true; this.root.add(mesh);
+        yield;
+      }
+    } finally {
+      for (const geometries of batches.values()) geometries.forEach(geometry => geometry.dispose());
     }
   }
   dispose(): void {
-    this.wetwall.dispose();
+    this.construction?.return(undefined); this.construction = undefined;
+    this.wetwall?.dispose();
     this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }

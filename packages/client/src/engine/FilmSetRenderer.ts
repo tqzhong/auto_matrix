@@ -141,16 +141,23 @@ const palettes = {
 };
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
-type LafayetteMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
-type LafayetteProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
+type ColorMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type LafayettePreparation = {
   lights: LafayetteRoomLights;
   actor?: THREE.Group;
-  meshes: LafayetteMesh[];
-  programs: LafayetteProgram[];
+  meshes: ColorMesh[];
+  programs: ColorProgram[];
   room?: FilmSetRenderer;
   roomSteps?: Generator<void>;
   skin?: { texture: THREE.Texture; version: number; gpu: THREE.WebGLRenderer['properties'] };
+};
+type AmbushPreparation = {
+  renderer: AmbushSetRenderer;
+  scene?: THREE.Scene;
+  meshes: ColorMesh[];
+  programs: ColorProgram[];
+  textures: Set<THREE.Texture>;
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -160,6 +167,7 @@ const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 export class FilmSetRenderer {
   readonly root = new THREE.Group();
   private current?: FilmSet;
+  private preparedAmbush?: AmbushPreparation;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -181,8 +189,8 @@ export class FilmSetRenderer {
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
   private preparedLafayette?: LafayettePreparation;
-  private preparedLafayetteGround?: { meshes: LafayetteMesh[]; fourSlots: boolean };
-  private preparedLafayetteLanding?: LafayetteMesh[];
+  private preparedLafayetteGround?: { meshes: ColorMesh[]; fourSlots: boolean };
+  private preparedLafayetteLanding?: ColorMesh[];
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
@@ -331,6 +339,57 @@ export class FilmSetRenderer {
   preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera): void {
     this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene);
   }
+  prepareAmbush(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
+    const phase = journey.oracle?.departure?.phase;
+    if (this.current?.id !== 'film_oracle_home' || journey.scene !== 'm1_oracle' || journey.visiting
+      || !phase || !['talking', 'bite_ready', 'biting', 'leaving', 'done'].includes(phase)) return;
+    const prepared = this.preparedAmbush ??= { renderer: new AmbushSetRenderer(), meshes: [], programs: [], textures: new Set() };
+    if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.scene) {
+      const scene = prepared.scene = new THREE.Scene();
+      scene.environment = this.scene.environment; scene.fog = this.scene.fog;
+      // Use the old building's actual fixtures while the apartment stays on screen.
+      for (const light of this.scene.children) {
+        if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) scene.add(light.clone());
+      }
+      const marker = this.markerLight.clone(); marker.visible = true; scene.add(marker);
+      prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0); scene.add(prepared.renderer.root);
+      const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_dejavu.cast];
+      const bodies = cast.map(body).filter((root): root is THREE.Group => Boolean(root));
+      const heroes = cast.map(hero).filter((root): root is THREE.Group => Boolean(root));
+      prepared.meshes = this.colorMeshes([...bodies, prepared.renderer.root]);
+      // A distant actor's detailed model can have a hidden parent in the apartment.
+      for (const { material } of new Set([...prepared.meshes, ...this.colorMeshes(heroes)])) {
+        for (const map of [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]) {
+          if (map) prepared.textures.add(map);
+        }
+      }
+    }
+    const programs = renderer.info.programs;
+    const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
+    if (ready >= 0) {
+      const [program] = prepared.programs.splice(ready, 1);
+      program.getUniforms();
+      return;
+    }
+    const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
+    if (batch.length) {
+      this.compileColorBatch(renderer, batch, subject => renderer.compile(subject, camera, prepared.scene));
+      if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
+      return;
+    }
+    for (const texture of prepared.textures) {
+      const image = texture.image as { width?: number; complete?: boolean } | null;
+      if (!texture.version || !image || image.complete === false) continue;
+      prepared.textures.delete(texture);
+      const uploaded = renderer.properties.get(texture) as { __version?: number };
+      if ((image.width ?? 0) >= 1024 && uploaded.__version !== texture.version) {
+        renderer.initTexture(texture);
+        return;
+      }
+    }
+  }
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group): void {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting
@@ -381,14 +440,14 @@ export class FilmSetRenderer {
       if (!actor) return;
       if (prepared.actor !== actor) {
         prepared.actor = actor;
-        prepared.meshes = this.lafayetteMeshes([actor, this.root]);
+        prepared.meshes = this.colorMeshes([actor, this.root]);
       }
       const batch = prepared.meshes.splice(0, 4);
       if (batch.length) {
         const programs = renderer.info.programs, start = programs?.length ?? 0;
         prepared.lights.shell.position.set(x, y - 1, z);
-        this.compileLafayetteBatch(renderer, camera, lighting, batch, prepared.lights.shell);
-        if (programs) prepared.programs.push(...programs.slice(start) as LafayetteProgram[]);
+        this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject, prepared.lights.shell));
+        if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
         return;
       }
     }
@@ -446,7 +505,7 @@ export class FilmSetRenderer {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height >= LAFAYETTE_SECOND_FLOOR_Y
       || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    const prepared = this.preparedLafayetteGround ??= { meshes: this.lafayetteMeshes([neo, trinity, hotel.root, street]), fourSlots: false };
+    const prepared = this.preparedLafayetteGround ??= { meshes: this.colorMeshes([neo, trinity, hotel.root, street]), fourSlots: false };
     const batch = prepared.meshes.slice(0, 4);
     if (!batch.length) return;
     // Turns after the rear entrance reuse either variant. Keep frustum selection in the actual render.
@@ -460,7 +519,7 @@ export class FilmSetRenderer {
     try {
       for (const light of hidden) light.visible = false;
       lighting.enabled = false;
-      this.compileLafayetteBatch(renderer, camera, lighting, batch);
+      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject));
     } finally {
       lighting.enabled = enabled;
       for (const light of hidden) light.visible = true;
@@ -473,28 +532,27 @@ export class FilmSetRenderer {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height < LAFAYETTE_SECOND_FLOOR_Y
       || height >= LAFAYETTE_THIRD_FLOOR_Y || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    this.preparedLafayetteLanding ??= this.lafayetteMeshes([neo, trinity, hotel.root]);
+    this.preparedLafayetteLanding ??= this.colorMeshes([neo, trinity, hotel.root]);
     const batch = this.preparedLafayetteLanding.splice(0, 4);
     if (!batch.length) return;
     const eye = camera.clone(); eye.position.y += LAFAYETTE.rise;
     try {
       street.visible = false;
       hotel.updateLights(height - 1 + LAFAYETTE.rise);
-      this.compileLafayetteBatch(renderer, eye, lighting, batch);
+      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, eye, subject));
     } finally {
       street.visible = true;
       hotel.updateLights(height - 1);
     }
   }
-  private lafayetteMeshes(roots: THREE.Group[]): LafayetteMesh[] {
-    const meshes: LafayetteMesh[] = [];
+  private colorMeshes(roots: THREE.Group[]): ColorMesh[] {
+    const meshes: ColorMesh[] = [];
     for (const root of roots) root.traverseVisible(object => {
       if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
     });
     return meshes;
   }
-  private compileLafayetteBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
-    batch: LafayetteMesh[], lights?: THREE.Group): void {
+  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: ColorMesh[], compile: (subject: THREE.Group) => void): void {
     if (!batch.length) return;
     const subject = new THREE.Group();
     subject.traverse = visit => batch.forEach(visit);
@@ -502,7 +560,7 @@ export class FilmSetRenderer {
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);
-      lighting.compileSubject(renderer, camera, subject, lights);
+      compile(subject);
     } finally {
       renderer.setRenderTarget(previous);
       target.dispose();
@@ -547,6 +605,8 @@ export class FilmSetRenderer {
       if (lafayetteRoom) this.preparedLafayette = undefined;
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
       if (preparedPods) this.preparedPods = undefined;
+      const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush?.renderer : undefined;
+      if (preparedAmbush) this.preparedAmbush = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -609,7 +669,10 @@ export class FilmSetRenderer {
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
-        else if (set.id === 'film_ambush_house') this.ambush = new AmbushSetRenderer(this.root);
+        else if (set.id === 'film_ambush_house') {
+          this.ambush = preparedAmbush ?? new AmbushSetRenderer();
+          this.ambush.attach(this.root);
+        }
         else if (set.id === 'film_tv_repair') this.tvRepair = new TvRepairRenderer(this.root);
         else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
@@ -3077,6 +3140,7 @@ export class FilmSetRenderer {
     this.meeting?.dispose(); this.meeting = undefined;
     this.interrogation?.dispose(); this.interrogation = undefined;
     this.pillGlass = undefined;
+    this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
     this.ambush?.dispose(); this.ambush = undefined;
     this.basement?.dispose(); this.basement = undefined; this.basementFrame = undefined;
     this.tvRepair?.dispose(); this.tvRepair = undefined;
