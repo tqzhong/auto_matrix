@@ -489,6 +489,40 @@ for (const id of ['m1_sentinels', 'm1_steak', 'm2_garage'] as const) test(`${id}
   }
 });
 
+test('the crew meal retains its light slots through seating, camera turns and return to the core', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_meal;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmStepPosition(scene, scene.steps[0]); neo.isInMatrix = false;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '', interlude: { kind: 'meal', phase: 'ready', elapsed: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const marker = h.scene.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
+  const visibleLights = (yaw: number) => {
+    h.camera.position.set(neo.position.x, neo.position.y + 3, neo.position.z);
+    h.camera.rotation.y = yaw;
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const lights: number[] = [];
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object.id); });
+    h.after();
+    return lights;
+  };
+  const ready = visibleLights(0);
+  assert.ok(ready.includes(marker.id));
+  assert.equal(marker.intensity, 5);
+  journey.interlude!.phase = 'performing';
+  assert.deepEqual(visibleLights(0), ready, 'seating keeps the dark marker in the same program');
+  assert.equal(marker.intensity, 0);
+  assert.deepEqual(visibleLights(Math.PI), ready, 'a turn at the table only mutes offscreen lights');
+  journey.interlude!.phase = 'done'; journey.step = 1;
+  neo.position = filmStepPosition(scene, scene.steps[1]);
+  assert.deepEqual(visibleLights(0), ready, 'walking back to the core keeps the same program');
+});
+
 test('the minigun changes illumination without dropping a light slot during the air rescue', t => {
   const h = view(), renderer = new FilmSetRenderer(h.scene);
   t.after(() => { h.culling.dispose(); renderer.dispose(); });
