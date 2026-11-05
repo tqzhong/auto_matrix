@@ -9,6 +9,8 @@ export class ZionCrowdRenderer {
   private disposed = false;
   private journey?: Pick<FilmJourney, 'scene' | 'step' | 'visiting' | 'epilogue'>;
   private elapsed = 0;
+  private posedClock?: number;
+  private posedDanceClock?: number;
   private residents: { x: number; z: number; height: number; sex: string; delay: number }[] = [];
   private batches: { mesh: THREE.InstancedMesh; source: THREE.Mesh; indices: number[]; height: number }[] = [];
   private geometries = new Set<THREE.BufferGeometry>();
@@ -17,7 +19,7 @@ export class ZionCrowdRenderer {
   private cloth: THREE.DataTexture;
   private dummy = new THREE.Object3D();
 
-  constructor(root: THREE.Group) {
+  constructor(root: THREE.Group, private readonly stationary = false) {
     this.group.name = 'zion-temple-crowd'; root.add(this.group);
     for (let row = 0; row < 6; row++) for (let col = 0; col < 16; col++) {
       const x = -39 + col * 5.1 + Math.sin(row * 11 + col) * .9, z = 13 + row * 6 + Math.cos(col * 4) * .8;
@@ -59,6 +61,9 @@ export class ZionCrowdRenderer {
     if (this.disposed) { this.release(); return; }
     const indices = this.residents.map((_, index) => index).filter(index => this.residents[index].sex === sex);
     for (const source of sources) {
+      // These residents use the base pose throughout the defense and breach.
+      // Keep their full surfaces and avoid building unused GPU morph textures.
+      if (this.stationary) source.geometry.morphAttributes = {};
       const mesh = new THREE.InstancedMesh(source.geometry, source.material, indices.length);
       mesh.name = `zion-crowd-${sex}-${source.name}`; mesh.userData.dynamic = true;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.receiveShadow = true;
@@ -71,7 +76,7 @@ export class ZionCrowdRenderer {
       }
       this.group.add(mesh); this.batches.push({ mesh, source, indices, height: asset.parser.json.extras.height });
     }
-    this.applyPose();
+    this.applyPose(true);
   }
 
   update(journey?: FilmJourney, elapsed = 0): void {
@@ -80,12 +85,15 @@ export class ZionCrowdRenderer {
     this.elapsed = elapsed; this.applyPose();
   }
 
-  private applyPose(): void {
-    const journey = this.journey, encounter = journey?.scene === 'm3_ceasefire' && !journey.visiting ? journey.epilogue : undefined;
+  private applyPose(newBatch = false): void {
+    const journey = this.journey, encounter = !this.stationary && journey?.scene === 'm3_ceasefire' && !journey.visiting ? journey.epilogue : undefined;
     const clock = encounter?.phase === 'announcement' ? encounter.elapsed
       : encounter?.phase === 'embrace' ? TRILOGY_EPILOGUE.seconds.announcement + encounter.elapsed
         : encounter?.phase === 'done' ? TRILOGY_EPILOGUE.seconds.announcement + TRILOGY_EPILOGUE.seconds.embrace : 0;
-    const dancing = journey?.scene === 'm2_temple' && journey.step >= 2 && !journey.visiting;
+    const dancing = !this.stationary && journey?.scene === 'm2_temple' && journey.step >= 2 && !journey.visiting;
+    const danceClock = dancing ? this.elapsed : undefined;
+    // Unchanged poses can keep their instance buffers and morph textures on the GPU.
+    if (!newBatch && this.posedClock === clock && this.posedDanceClock === danceClock) return;
     const smooth = (value: number, start: number, end: number) => THREE.MathUtils.smoothstep(value, start, end);
     for (const batch of this.batches) {
       for (let instance = 0; instance < batch.indices.length; instance++) {
@@ -98,6 +106,7 @@ export class ZionCrowdRenderer {
         this.dummy.rotation.set(0, entrance + turn * angle + (dancing ? Math.sin(this.elapsed * 1.7 + index) * .16 : Math.sin(index) * .06), 0);
         this.dummy.scale.setScalar(resident.height / batch.height); this.dummy.updateMatrix();
         batch.mesh.setMatrixAt(instance, this.dummy.matrix);
+        if (this.stationary) continue;
         const weights = batch.source.morphTargetInfluences!; weights.fill(0);
         const response = index % 7, clapping = !dancing && response >= 1 && response <= 3;
         for (let side = 0; side < 2; side++) {
@@ -119,9 +128,12 @@ export class ZionCrowdRenderer {
         }
         batch.mesh.setMorphAt(instance, batch.source);
       }
-      batch.mesh.instanceMatrix.needsUpdate = true; batch.mesh.morphTexture!.needsUpdate = true;
+      batch.mesh.instanceMatrix.needsUpdate = true;
+      if (batch.mesh.morphTexture) batch.mesh.morphTexture.needsUpdate = true;
       batch.mesh.computeBoundingBox(); batch.mesh.computeBoundingSphere();
     }
+    this.posedClock = clock;
+    this.posedDanceClock = danceClock;
   }
 
   private release(): void {

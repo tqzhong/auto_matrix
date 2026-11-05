@@ -65,6 +65,60 @@ test('a paused or cold-loaded ceasefire audience cannot change pose when the sam
   } finally { renderer.dispose(); }
 });
 
+test('temple crowds upload pose data only when the pose clock changes', async t => {
+  mockAssets(t);
+  const crowd = new ZionCrowdRenderer(new THREE.Group());
+  t.after(() => crowd.dispose());
+  const defense: FilmJourney = { ...announcement, scene: 'm3_temple_defense', actor: 'zee', step: 0, epilogue: undefined };
+  crowd.update(defense, 1);
+  await crowd.ready;
+  const batches = instances(crowd.group);
+  const revisions = () => batches.map(mesh => [mesh.instanceMatrix.version, mesh.morphTexture!.version]);
+  const standing = revisions();
+  crowd.update(defense, 2);
+  assert.deepEqual(revisions(), standing, 'standing residents keep their uploaded matrices and morph weights');
+
+  crowd.update(announcement, 3);
+  const cheering = revisions();
+  assert.ok(cheering.every(([matrix, morph], index) => matrix > standing[index][0] && morph > standing[index][1]));
+  crowd.update(structuredClone(announcement), 30);
+  assert.deepEqual(revisions(), cheering, 'a paused announcement retains the uploaded pose');
+
+  const dance: FilmJourney = { ...defense, scene: 'm2_temple', step: 2 };
+  crowd.update(dance, 0);
+  const firstBeat = revisions();
+  crowd.update(dance, .25);
+  assert.ok(revisions().every(([matrix, morph], index) => matrix > firstBeat[index][0] && morph > firstBeat[index][1]),
+    'the Reloaded dance continues to upload its changing pose');
+});
+
+test('stationary temple defenses retain the same residents without allocating morph textures', async t => {
+  mockAssets(t);
+  const animated = new ZionCrowdRenderer(new THREE.Group());
+  t.after(() => animated.dispose());
+  await animated.ready;
+  const standing = instances(animated.group);
+  for (const scene of ['m3_temple_defense', 'm3_temple_breach']) {
+    const root = new THREE.Group(), renderer = new ZionHomecomingRenderer(root, 'film_zion_temple', scene);
+    try {
+      await (renderer as unknown as { crowd: ZionCrowdRenderer }).crowd.ready;
+      const stationary = instances(root.getObjectByName('zion-temple-crowd')!);
+      assert.deepEqual(stationary.map(mesh => mesh.name), standing.map(mesh => mesh.name));
+      for (const [index, mesh] of stationary.entries()) {
+        const same = standing[index];
+        assert.equal(mesh.morphTexture, null, `${scene}: idle bodies need no morph texture`);
+        assert.deepEqual(mesh.geometry.morphAttributes, {});
+        assert.equal(mesh.count, same.count);
+        assert.deepEqual(mesh.instanceMatrix.array, same.instanceMatrix.array);
+        assert.deepEqual(mesh.instanceColor!.array, same.instanceColor!.array);
+        assert.deepEqual(mesh.geometry.index!.array, same.geometry.index!.array);
+        for (const attribute of ['position', 'normal', 'uv'])
+          assert.deepEqual(mesh.geometry.getAttribute(attribute).array, same.geometry.getAttribute(attribute).array);
+      }
+    } finally { renderer.dispose(); }
+  }
+});
+
 test('the shipped crowd assets retain textured faces, anatomical hands, separate legs, soles and matching arm morph topology within budget', async () => {
   for (const sex of ['male', 'female']) {
     const { asset, original, bytes } = await loadAsset(sex);
