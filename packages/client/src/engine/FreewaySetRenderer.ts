@@ -9,7 +9,7 @@ import { UrbanMaterials } from './UrbanMaterials.js';
 
 /** The ride, traffic and roadside barriers share the server's road coordinates. */
 export class FreewaySetRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -43,14 +43,41 @@ export class FreewaySetRenderer {
   private steel: THREE.MeshStandardMaterial;
   private windows: THREE.MeshStandardMaterial;
   private white: THREE.MeshStandardMaterial;
+  private construction?: Generator<void>;
 
-  constructor(parent: THREE.Group, private set: FilmSet) {
-    parent.add(this.root);
+  constructor(parent: THREE.Group | undefined, private set: FilmSet) {
     this.paint = this.mat(0xffffff, .26, .65); this.rubber = this.mat(0x121713, .9); this.steel = this.mat(0x858c82, .34, .8);
     this.windows = this.mat(0x1e393b, .13, .7); this.white = this.mat(0xd3cfb9, .85);
-    this.buildRoad(); this.batch(); this.buildBike(); this.buildTraffic(false); this.buildTraffic(true);
-    if (set.id === 'film_freeway_trucks' || set.id === 'film_freeway_101') this.buildTruckScene();
-    if (set.id === 'film_freeway_101') this.buildCarrier();
+    this.construction = this.build();
+    if (parent) this.attach(parent);
+    else this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
+  }
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+  attach(parent: THREE.Group): void {
+    while (!this.prepareStep()) { /* Finish the road when entering from a late or direct checkpoint. */ }
+    this.root.position.set(0, 0, 0);
+    parent.add(this.root);
+  }
+  private *build(): Generator<void> {
+    yield* this.buildRoad();
+    yield* this.batchSteps();
+    this.buildBike();
+    yield;
+    this.buildTraffic(false);
+    yield;
+    this.buildTraffic(true);
+    yield;
+    if (this.set.id === 'film_freeway_trucks' || this.set.id === 'film_freeway_101') yield* this.buildTruckScene();
+    if (this.set.id === 'film_freeway_101') this.buildCarrier();
+    const live = new Set<THREE.BufferGeometry>();
+    this.root.traverse(object => { if (object instanceof THREE.Mesh) live.add(object.geometry); });
+    for (const geometry of this.geometries) if (!live.has(geometry)) {
+      geometry.dispose(); this.geometries.delete(geometry);
+    }
   }
   private mat(color: number, roughness: number, metalness = 0): THREE.MeshStandardMaterial {
     const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(mat); return mat;
@@ -64,7 +91,7 @@ export class FreewaySetRenderer {
   private cylinder(mat: THREE.Material, x: number, y: number, z: number, r: number, h: number, parent = this.root): THREE.Mesh {
     return this.mesh(new THREE.CylinderGeometry(r, r, h, 16), mat, x, y, z, parent);
   }
-  private buildRoad(): void {
+  private *buildRoad(): Generator<void> {
     const length = Math.max(1600, this.set.depth), half = length / 2;
     const road = this.urban.surface('asphalt_02', 60, length, 6); road.name = 'freeway-asphalt';
     road.color.setHex(0xc5c6be); road.normalScale.set(.38, .38); this.urban.setWet(false); this.materials.add(road);
@@ -77,6 +104,7 @@ export class FreewaySetRenderer {
     }
     for (const x of [-26, -2.8, 2.8, 26]) this.box(yellow, x, .015, 0, .18, .025, length);
     for (const x of [-18, -10, 10, 18]) for (let z = -half + 4; z < half; z += 20) this.box(this.white, x, .025, z, .22, .025, 8);
+    yield;
     for (const side of [-1, 1]) for (let z = -half + 20; z < half; z += 80) {
       this.cylinder(this.steel, side * 29, 11, z, .16, 22);
       this.box(this.steel, side * 26, 22, z, 6, .2, .2);
@@ -96,10 +124,14 @@ export class FreewaySetRenderer {
     }
     // Industrial edges, shallow embankments and repeating sound barriers give the road depth.
     const wall = this.mat(0x969b8b, .97); const earth = this.mat(0x7b806a, 1);
-    const facades = [0, 1, 3].map(variant => {
-      const material = this.urban.facade(variant); material.emissiveIntensity = .025; this.materials.add(material); return material;
-    });
+    const facades: THREE.MeshStandardMaterial[] = [];
+    for (const variant of [0, 1, 3]) {
+      yield;
+      const material = this.urban.facade(variant);
+      material.emissiveIntensity = .025; this.materials.add(material); facades.push(material);
+    }
     for (const side of [-1, 1]) {
+      yield;
       this.box(earth, side * 83, -1, 0, 100, 2, length + 60);
       for (let z = -half + 10; z < half; z += 24) {
         this.box(wall, side * 42, 4.2, z, 1, 8.4, 23.7);
@@ -107,6 +139,7 @@ export class FreewaySetRenderer {
         for (const dz of [-10.2, -6.8, -3.4, 0, 3.4, 6.8, 10.2]) this.box(concrete, side * 41.43, 4.25, z + dz, .18, 8.15, .16);
         this.box(concrete, side * 42, 8.48, z, 1.15, .16, 23.8);
       }
+      yield;
       for (let z = -half + 60, index = 0; z < half; z += 132, index++) {
         const h = 12 + (Math.abs(z) % 7) * 4, x = side * (82 + index % 3 * 6);
         this.box(facades[index % facades.length], x, h / 2, z, 37, h, 65);
@@ -242,7 +275,7 @@ export class FreewaySetRenderer {
     sparks.visible = false;
     carrier.visible = false;
   }
-  private buildTruckScene(): void {
+  private *buildTruckScene(): Generator<void> {
     const trailer = this.mat(0xd2d3c9, .64, .28); const roof = this.mat(0x9ca79e, .81, .2); const cab = this.mat(0x394b43, .32, .38);
     const freightGreen = this.mat(0x35483d, .78, .18); const lamp = this.mat(0xffdca4, .19);
     const glazing = new THREE.MeshPhysicalMaterial({ color: 0x76918a, roughness: .11, metalness: .08,
@@ -398,6 +431,7 @@ export class FreewaySetRenderer {
       return rig;
     };
     this.heroTruck = buildRig(cab, trailer, 'matrix-freeway-hero-truck', 'LONGPATH'); this.heroTruck.position.set(TRUCKS.roof.x, 0, TRUCKS.morpheus.z);
+    yield;
     if (this.set.id === 'film_freeway_101') {
       this.handoffTruck = this.heroTruck; this.handoffTruck.name = 'matrix-freeway-handoff-truck';
       this.handoffTruck.rotation.y = Math.PI; this.handoffTruck.visible = false;
@@ -411,6 +445,7 @@ export class FreewaySetRenderer {
     } else { this.heroTruck.rotation.y = 0; }
     this.oncomingTruck = buildRig(cab, freightGreen, 'matrix-freeway-oncoming-truck', 'GIL'); this.oncomingTruck.position.set(TRUCKS.roof.x, 0, TRUCKS.oncomingStart);
     this.oncomingTruck.rotation.y = Math.PI;
+    yield;
     const car = this.niobeCar = new THREE.Group(); car.name = 'matrix-freeway-niobe-car'; this.root.add(car); car.position.set(TRUCKS.niobe.x, 0, TRUCKS.niobe.z);
     this.buildNiobeCar(car);
     this.neoTrail = new THREE.Group(); this.neoTrail.name = 'matrix-freeway-neo-trail'; this.root.add(this.neoTrail);
@@ -463,6 +498,7 @@ export class FreewaySetRenderer {
       shard.name = `matrix-freeway-crash-shard-${i}`;
     }
     this.impact.visible = false; this.neoTrail.visible = false;
+    yield;
   }
   private buildNiobeCar(car: THREE.Group): void {
     const silver = this.mat(0x8da7a7, .28, .75), trim = this.mat(0x202b2b, .62), seat = this.mat(0x27332f, .9);
@@ -662,18 +698,25 @@ export class FreewaySetRenderer {
     }
   }
   private batch(parent = this.root): void {
+    const steps = this.batchSteps(parent);
+    while (!steps.next().done) { /* These batches contain individual props. */ }
+  }
+  private *batchSteps(parent = this.root): Generator<void> {
     parent.updateMatrixWorld(true); const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
-    for (const child of [...parent.children]) if (child instanceof THREE.Mesh && !Array.isArray(child.material)) {
+    for (const [index, child] of [...parent.children].entries()) if (child instanceof THREE.Mesh && !Array.isArray(child.material)) {
       const source = child.geometry.clone().applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
       if (source !== geometry) source.dispose();
       const list = batches.get(child.material) ?? []; list.push(geometry); batches.set(child.material, list); parent.remove(child);
+      if ((index + 1) % 128 === 0) yield;
     }
     for (const [material, geometries] of batches) {
       const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose());
       if (geometry) this.mesh(geometry, material, 0, 0, 0, parent);
+      yield;
     }
   }
   dispose(): void {
+    this.construction = undefined;
     this.root.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
     this.root.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.urban.dispose();

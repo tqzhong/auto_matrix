@@ -52,6 +52,7 @@ import { OfficeSetRenderer } from './OfficeSetRenderer.js';
 import type { LightCulling } from './LightCulling.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
+import { newFreewayPickup } from '@auto_matrix/shared';
 import type { TruckEncounter } from '@auto_matrix/shared';
 import { PodSetRenderer } from './PodSetRenderer.js';
 import { NebDeckRenderer } from './NebDeckRenderer.js';
@@ -213,6 +214,7 @@ export class FilmSetRenderer {
   private preparedLafayetteLanding?: ColorMesh[];
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
+  private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
   private pods?: PodSetRenderer;
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
@@ -480,6 +482,19 @@ export class FilmSetRenderer {
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id === 'film_chateau_garage' && journey?.scene === 'm2_garage' && !journey.visiting && journey.step >= 1) {
+      if (journey.garage?.phase === 'wrecked') return;
+      const prepared = this.preparedFreeway ??= { renderer: new FreewaySetRenderer(undefined, FILM_SETS.film_freeway_101) };
+      if (!prepared.renderer.prepareStep()) return;
+      const next = FILM_SCENE_BY_ID.m2_freeway;
+      if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
+        prepared.renderer.update({ ...journey, scene: next.id, step: 0, freewayPickup: newFreewayPickup() }, 0);
+        prepared.colors = { ...this.colorPreparation(prepared.renderer.root, []), actors: new Set() };
+      }
+      if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [next.actor, ...next.cast], actor);
+      return;
+    }
+    this.cancelFreewayPreparation();
     if (this.current?.id === 'film_chateau_hall' && journey?.scene === 'm2_chateau' && !journey.visiting && journey.step >= 1) {
       if (!this.preparedMountain) {
         const root = new THREE.Group();
@@ -843,6 +858,8 @@ export class FilmSetRenderer {
       if (preparedSecondOracle) this.preparedSecondOracle = undefined;
       const preparedMountain = set?.id === 'film_mountain_range' && sceneId === 'm2_mountain' && !journey?.visiting ? this.preparedMountain : undefined;
       if (preparedMountain) this.preparedMountain = undefined;
+      const preparedFreeway = set?.id === 'film_freeway_101' && sceneId === 'm2_freeway' && !journey?.visiting ? this.preparedFreeway?.renderer : undefined;
+      if (preparedFreeway) this.preparedFreeway = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -889,7 +906,10 @@ export class FilmSetRenderer {
           if (preparedZion) this.root.add(preparedZion.group);
         }
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
-        else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
+        else if (set.architecture === 'freeway') {
+          this.freeway = preparedFreeway ?? new FreewaySetRenderer(this.root, set);
+          preparedFreeway?.attach(this.root);
+        }
         else if (set.architecture === 'pods') {
           this.pods = preparedPods ?? new PodSetRenderer();
           this.pods.attach(this.root);
@@ -3426,6 +3446,9 @@ export class FilmSetRenderer {
   private cancelSecondOraclePreparation(): void {
     this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
   }
+  private cancelFreewayPreparation(): void {
+    this.preparedFreeway?.renderer.dispose(); this.preparedFreeway = undefined;
+  }
   private cancelMountainPreparation(): void {
     const prepared = this.preparedMountain;
     if (!prepared) return;
@@ -3444,6 +3467,7 @@ export class FilmSetRenderer {
     this.cancelOneDeckPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
+    this.cancelFreewayPreparation();
     this.cancelMountainPreparation();
     this.courtyardCastColors = undefined;
     this.preparedMeetingHall?.renderer.dispose(); this.preparedMeetingHall = undefined;

@@ -88,6 +88,42 @@ test('Trinity can walk away from the garage car after driving it out', t => {
   assert.ok(renderer.getAgent(player.id)!.position.distanceTo(new THREE.Vector3(walking.x, walking.y, walking.z)) < 1e-7);
 });
 
+test('the garage chase prepares the same freeway and carrier used on arrival', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
+  const coldScene = new THREE.Scene(), cold = new FilmSetRenderer(coldScene);
+  t.after(() => { renderer.dispose(); cold.dispose(); globalThis.document = original; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('trinity')!, camera = new THREE.PerspectiveCamera();
+  const state: FilmJourney = { ...journey(), scene: 'm2_garage', actor: player.id, step: 0 };
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  Object.assign(player, { currentLocation: 'film_chateau_garage', isInMatrix: true, position: filmPosition('film_chateau_garage') });
+  renderer.update(player, sandbox, 0);
+  let preview: THREE.Scene | undefined;
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
+    setRenderTarget() {}, initTexture() {}, properties: { get: () => ({}) },
+    compile(_subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) { preview = target; } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => renderer.prepareSecondOracle(graphics, camera, state, () => undefined);
+  for (let frame = 0; frame < 120; frame++) prepare();
+  assert.equal(preview, undefined, 'wait until Trinity reaches the car');
+  state.step = 1; state.garage = newGarageEscape();
+  for (let frame = 0; frame < 120; frame++) prepare();
+  const carrierName = 'matrix-motorcycle-carrier', carrier = preview?.getObjectByName(carrierName);
+  assert.ok(carrier?.visible, 'the road and its arrival carrier are prepared before the cut');
+  assert.ok(!scene.getObjectByName(carrierName), 'the prepared road stays out of the garage');
+  state.scene = 'm2_freeway'; state.step = 0; state.freewayPickup = newFreewayPickup();
+  Object.assign(player, { currentLocation: 'film_freeway_101', position: filmPosition('film_freeway_101', 14, 403) });
+  renderer.update(player, sandbox, 1);
+  cold.update(player, sandbox, 1);
+  assert.ok(scene.getObjectByName(carrierName) === carrier);
+  scene.updateMatrixWorld(true); coldScene.updateMatrixWorld(true);
+  assert.equal(snapshot(carrier.parent!), snapshot(coldScene.getObjectByName(carrierName)!.parent!));
+  const part = carrier.children.find(child => child instanceof THREE.Mesh) as THREE.Mesh;
+  let disposed = 0; part.geometry.addEventListener('dispose', () => disposed++);
+  renderer.update(undefined, undefined, 2);
+  assert.equal(disposed, 1, 'the adopted road is released when leaving it');
+});
+
 function setup(t: { after: (callback: () => void) => void }) {
   const original = globalThis.document; globalThis.document = canvasDocument();
   const root = new THREE.Group(), renderer = new FreewaySetRenderer(root, FILM_SETS.film_freeway_trucks);
