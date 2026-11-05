@@ -142,10 +142,12 @@ const palettes = {
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
 type LafayetteMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+type LafayetteProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type LafayettePreparation = {
   lights: LafayetteRoomLights;
   actor?: THREE.Group;
   meshes: LafayetteMesh[];
+  programs: LafayetteProgram[];
   room?: FilmSetRenderer;
   roomSteps?: Generator<void>;
 };
@@ -367,18 +369,20 @@ export class FilmSetRenderer {
   }
   prepareLafayette(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group): void {
     if (!this.meeting || journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside') return;
-    const prepared = this.preparedLafayette ??= { lights: this.lafayetteRoomLights(), meshes: [] };
+    const prepared = this.preparedLafayette ??= { lights: this.lafayetteRoomLights(), meshes: [], programs: [] };
     const set = FILM_SETS.film_lafayette, { x, y, z } = set.center;
     if (!prepared.room && renderer.extensions.has('KHR_parallel_shader_compile')) {
       if (!actor) return;
       if (prepared.actor !== actor) {
         prepared.actor = actor;
-        prepared.meshes = this.lafayetteMeshes([actor]);
+        prepared.meshes = this.lafayetteMeshes([actor, this.root]);
       }
       const batch = prepared.meshes.splice(0, 4);
       if (batch.length) {
+        const programs = renderer.info.programs, start = programs?.length ?? 0;
         prepared.lights.shell.position.set(x, y - 1, z);
         this.compileLafayetteBatch(renderer, camera, lighting, batch, prepared.lights.shell);
+        if (programs) prepared.programs.push(...programs.slice(start) as LafayetteProgram[]);
         return;
       }
     }
@@ -388,7 +392,16 @@ export class FilmSetRenderer {
       room.root.position.set(x, y - 1, z);
       prepared.roomSteps = room.lafayetteRoomSteps(set, prepared.lights);
     }
-    if (prepared.roomSteps?.next().done) prepared.roomSteps = undefined;
+    if (prepared.roomSteps) {
+      if (prepared.roomSteps.next().done) prepared.roomSteps = undefined;
+      return;
+    }
+    // A linked program still queries its uniform and attribute locations on first use.
+    const ready = prepared.programs.findIndex(program => renderer.info.programs?.includes(program) && program.isReady());
+    if (ready >= 0) {
+      const [program] = prepared.programs.splice(ready, 1);
+      program.getUniforms();
+    }
   }
   private *lafayetteRoomSteps(set: FilmSet, lights: LafayetteRoomLights): Generator<void> {
     yield* this.buildSteps(set, lights);
@@ -514,7 +527,8 @@ export class FilmSetRenderer {
       const lafayetteRoom = set?.id === 'film_lafayette' ? this.preparedLafayette : undefined;
       if (lafayetteRoom) this.preparedLafayette = undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
-      if (approach) { approach.renderer.moveStreet(approach.root); this.meeting = undefined; }
+      const transferredHotel = approach?.renderer.moveStreet(approach.root);
+      if (approach) this.meeting = undefined;
       this.clear(); this.current = set; this.currentScene = sceneId;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
@@ -602,7 +616,9 @@ export class FilmSetRenderer {
           if (set.id === 'film_lafayette') {
             if (this.mirror) this.resetMirrorFrame = showMirrorSubject(this.mirror, () => this.mirrorSubject,
               () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
-            this.hotel = new LafayetteApproachRenderer(this.root, new THREE.Vector3(0, -LAFAYETTE.upper, 0));
+            const offset = new THREE.Vector3(0, -LAFAYETTE.upper, 0);
+            this.hotel = transferredHotel ?? new LafayetteApproachRenderer(this.root, offset);
+            transferredHotel?.attachInterior(this.root, offset);
             const root = approach?.root ?? new THREE.Group(); root.position.set(-MEETING_DESTINATION.x, -LAFAYETTE.upper, 0); this.root.add(root);
             this.approach = approach ?? { root, renderer: new MeetingSetRenderer(root, false) };
           }

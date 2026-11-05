@@ -30,21 +30,37 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   const eye = new THREE.PerspectiveCamera(), batches: THREE.Object3D[][] = [];
   const children = [...scene.children];
   let key: THREE.SpotLight | undefined;
+  let firstReady = false;
+  const bindings: number[] = [];
+  const programs: { isReady: () => boolean; getUniforms: () => void }[] = [];
   const webgl = {
+    info: { programs },
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
     compile(subject: THREE.Object3D, _eye: THREE.Camera, target: THREE.Scene) {
       const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
       target.traverseVisible(object => { if (object instanceof THREE.SpotLight && object.intensity === 1900) key = object; });
       assert.ok(key, 'the room shadow light must be present in the program variant');
       assert.equal(key.getWorldPosition(new THREE.Vector3()).y, FILM_SETS.film_lafayette.center.y - 1 + 9.4);
+      if (programs.length === 0) programs.push(
+        { isReady: () => firstReady, getUniforms: () => { bindings.push(1); } },
+        { isReady: () => true, getUniforms: () => { bindings.push(2); } },
+      );
     },
   } as unknown as THREE.WebGLRenderer;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
     assert.deepEqual(scene.children, children, 'preparation cannot light the street');
   }
-  assert.deepEqual(batches.map(batch => batch.length), [4, 2]);
-  assert.deepEqual(batches.flat(), actor.children.slice(0, 6));
+  assert.deepEqual(batches.map(batch => batch.length), [4, 4, 4, 4]);
+  assert.deepEqual(batches.flat().slice(0, 6), actor.children.slice(0, 6));
+  assert.ok(batches.flat().slice(6).every(object => renderer.root.getObjectById(object.id) === object),
+    'street and hotel materials compile from the live scene meshes');
+  for (let frame = 0; frame < 180 && !bindings.length; frame++)
+    renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
+  assert.deepEqual(bindings, [2], 'only a program with completed linking can prepare its binding locations');
+  firstReady = true;
+  renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
+  assert.deepEqual(bindings, [2, 1]);
   neo.position = filmPosition('film_lafayette', 0, 29); neo.position.y -= LAFAYETTE.upper;
   assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
   assert.ok(key && renderer.root.getObjectByProperty('uuid', key.uuid) === key);
@@ -301,7 +317,21 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
     let disposals = 0; street.geometry.addEventListener('dispose', () => disposals++);
     const webgl = { extensions: { has: () => false } } as unknown as THREE.WebGLRenderer;
     const eye = new THREE.PerspectiveCamera();
-    const staging = renderer as unknown as { preparedLafayette?: { room?: FilmSetRenderer; roomSteps?: Generator<void> } };
+    const staging = renderer as unknown as {
+      meeting?: { hotel?: { root: THREE.Group } };
+      hotel?: { root: THREE.Group };
+      preparedLafayette?: { room?: FilmSetRenderer; roomSteps?: Generator<void> };
+    };
+    const preview = staging.meeting?.hotel;
+    assert.ok(preview);
+    const previewPosition = preview.root.getWorldPosition(new THREE.Vector3());
+    const before = new Map<THREE.BufferGeometry, number>();
+    preview.root.traverse(object => {
+      if (object instanceof THREE.Mesh) {
+        before.set(object.geometry, 0);
+        object.geometry.addEventListener('dispose', () => before.set(object.geometry, (before.get(object.geometry) ?? 0) + 1));
+      }
+    });
     const streetChildren = [...renderer.root.children];
     const stagedTextureStart = pending.length;
     renderer.prepareLafayette(webgl, eye, lighting, journey);
@@ -327,6 +357,10 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
     assert.ok(renderer.root.getObjectByProperty('uuid', street.uuid) === street, 'the road from the ride must remain the same object');
     assert.deepEqual(street.getWorldPosition(new THREE.Vector3()), streetPosition);
     assert.equal(disposals, 0);
+    assert.ok(staging.hotel === preview, 'the hotel must keep the stair and facade resources from the ride');
+    assert.deepEqual(preview.root.getWorldPosition(new THREE.Vector3()), previewPosition);
+    const retired = [...before.values()].filter(count => count > 0);
+    assert.deepEqual(retired, [1], 'only the exterior-only roof batch is released at the handoff');
     const children = [...renderer.root.children];
     assert.equal(renderer.root.getObjectByName('pill-water-glass'), cup, 'arrival must attach the prepared room');
     assert.equal(roomDisposals, 0);
@@ -342,6 +376,7 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
     renderer.update(undefined, undefined, 0);
     assert.equal(renderer.root.children.length, 0);
     assert.equal(disposals, 1, 'leaving the combined street and hotel must release the road once');
+    assert.ok([...before.values()].every(count => count === 1));
     assert.ok(roomDisposals > 0, 'the adopted room releases its geometry when leaving');
     neo.position = curb; journey.scene = 'm1_bug'; journey.step = 2; journey.meeting = meeting; delete journey.hotel;
     assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_extraction_car');

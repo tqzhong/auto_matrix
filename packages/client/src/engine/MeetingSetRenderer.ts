@@ -574,10 +574,11 @@ export class MeetingSetRenderer {
     const closest = [...this.streetLamps].sort((a, b) => Math.hypot(a.x - car.x, a.z - car.z) - Math.hypot(b.x - car.x, b.z - car.z));
     this.lightPool.forEach((light, i) => { if (closest[i]) { light.position.copy(closest[i]); light.intensity = 180 * Math.max(0, 1 - Math.hypot(closest[i].x - car.x, closest[i].z - car.z) / 55); } });
   }
-  moveStreet(parent: THREE.Group): void {
-    // The hotel owns its full building after the transition.
-    this.hotel?.dispose(); this.hotel = undefined;
+  moveStreet(parent: THREE.Group): LafayetteApproachRenderer | undefined {
+    const hotel = this.hotel; this.hotel = undefined;
+    hotel?.root.removeFromParent();
     parent.add(this.root);
+    return hotel;
   }
   dispose(): void {
     this.disposed = true;

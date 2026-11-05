@@ -5,6 +5,7 @@ import { HOTEL_SURFACES, HOTEL_WALLS, LAFAYETTE, lafayetteKnockPose, lafayetteSi
 export class LafayetteApproachRenderer {
   readonly root = new THREE.Group();
   private static = new THREE.Group();
+  private exteriorShell?: THREE.Group;
   private door = new THREE.Group();
   private sideDoor = new THREE.Group();
   private lights: THREE.PointLight[] = [];
@@ -48,8 +49,9 @@ export class LafayetteApproachRenderer {
     this.box(0, 7.25, 26, 6, .5, 1.2, trim);
     this.box(22, 7, 24, 52, .24, 8, plaster);
     if (exterior) {
-      this.box(-21.5, 91, 0, 1, 14, 51, stone); this.box(0, 91, -25.5, 44, 14, 1, stone);
-      this.box(0, 91, 26, 44, 14, 1, stone); this.box(14, 98.4, 0, 71, .7, 54, stone);
+      const shell = this.exteriorShell = new THREE.Group(); this.root.add(shell);
+      this.box(-21.5, 91, 0, 1, 14, 51, stone, shell); this.box(0, 91, -25.5, 44, 14, 1, stone, shell);
+      this.box(0, 91, 26, 44, 14, 1, stone, shell); this.box(14, 98.4, 0, 71, .7, 54, stone, shell);
     }
     // Rear facade, drain pipes and the open service door.
     for (let floor = 1; floor <= 13; floor++) {
@@ -133,6 +135,17 @@ export class LafayetteApproachRenderer {
     this.box(.28, 3.45, 4.35, .16, .14, .65, metal, this.sideDoor);
     for (let i = 0; i < 3; i++) { const light = new THREE.PointLight(0xe8d9aa, 35, 19, 2); this.root.add(light); this.lights.push(light); }
     this.batch();
+    if (this.exteriorShell) this.batch(this.exteriorShell);
+  }
+  attachInterior(parent: THREE.Group, offset: THREE.Vector3): void {
+    this.exteriorShell?.traverse(object => {
+      if (object instanceof THREE.Mesh) {
+        this.geometries.delete(object.geometry);
+        object.geometry.dispose();
+      }
+    });
+    this.exteriorShell?.removeFromParent(); this.exteriorShell = undefined;
+    parent.add(this.root); this.root.position.copy(offset);
   }
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, position = new THREE.Vector3(), parent: THREE.Object3D = this.static): THREE.Mesh {
     this.geometries.add(geometry); this.materials.add(material); const mesh = new THREE.Mesh(geometry, material); mesh.position.copy(position); mesh.castShadow = mesh.receiveShadow = true; parent.add(mesh); return mesh;
@@ -155,16 +168,16 @@ export class LafayetteApproachRenderer {
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.add(texture);
     const mesh = this.mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: texture, roughness: .8 }), new THREE.Vector3(x, y, z)); mesh.rotation.y = yaw;
   }
-  private batch(): void {
-    this.static.updateWorldMatrix(true, true); const inverse = this.static.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
+  private batch(root = this.static): void {
+    root.updateWorldMatrix(true, true); const inverse = root.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const meshes: THREE.Mesh[] = [];
-    this.static.traverse(object => { if (object instanceof THREE.Mesh) {
+    root.traverse(object => { if (object instanceof THREE.Mesh) {
       // Each construction mesh owns its geometry and will be replaced by a batch.
       const geometry = object.geometry.applyMatrix4(transform.multiplyMatrices(inverse, object.matrixWorld));
       const material = object.material as THREE.Material; const list = batches.get(material) ?? []; list.push(geometry); batches.set(material, list); meshes.push(object);
     } });
     for (const mesh of meshes) { mesh.removeFromParent(); this.geometries.delete(mesh.geometry); }
-    for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) this.mesh(geometry, material); }
+    for (const [material, geometries] of batches) { const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose()); if (geometry) this.mesh(geometry, material, undefined, root); }
   }
   update(hotel: HotelApproach | undefined, height: number, exterior = false): void {
     const progress = hotel?.door === undefined ? hotel ? 0 : 1 : hotel.door / LAFAYETTE.doorSeconds;
