@@ -4934,7 +4934,12 @@ export class FilmStorySystem {
         return true;
       }
       threat.health = 0; this.sandbox().threats = this.sandbox().threats.filter(item => item !== threat);
-      const seraph = this.world.agents.get('seraph'); if (seraph && !seraph.controller) seraph.currentAction = null;
+      const seraph = this.world.agents.get('seraph');
+      if (seraph && !seraph.controller) {
+        seraph.position = { ...threat.position };
+        seraph.rotation = Math.atan2(agent.position.x - threat.position.x, agent.position.z - threat.position.z);
+        seraph.currentAction = null;
+      }
       state.lastText = '第二次攻防结束。Seraph 收手，取下钥匙，示意 Neo 跟他去茶馆后门。';
       return true;
     }
@@ -8111,7 +8116,15 @@ export class FilmStorySystem {
       if (state.step === 4) { state.keymaker.phase = 'escaped'; life.choices.keymaker_rescued = 'yes'; }
     }
     if (state.scene === 'm2_seraph' && state.step === 0) {
-      const seraph = this.world.agents.get('seraph'); if (seraph && !seraph.controller) { seraph.position = filmPosition(this.scene!.set, 2.8, -24); seraph.rotation = Math.PI; }
+      const seraph = this.world.agents.get('seraph');
+      if (seraph && !seraph.controller) {
+        const { set } = this.scene!, center = FILM_SETS[set].center;
+        const x = seraph.position.x - center.x, z = seraph.position.z - center.z;
+        // Cross between table rows before taking the center aisle.
+        const aisleZ = Math.ceil(z / 16) * 16 - 8;
+        seraph.targetPosition = filmPosition(set, 2.8, -24);
+        seraph.currentPath = Math.abs(x) <= 9 ? [] : [filmPosition(set, x, aisleZ), filmPosition(set, 2.8, aisleZ)];
+      }
     }
     if (state.scene === 'm2_bench' && state.step === 3) {
       life.choices.oracle_second_lead = 'le_vrai';

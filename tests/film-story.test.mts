@@ -2635,14 +2635,44 @@ test('Seraph tests two separately read attacks, blocks reckless blows and resets
   threat.attackAt = h.tick() + 1; h.sandbox.attack(h.actor(), h.tick(), 2);
   assert.equal(threat.attackAt, h.tick() + 1, 'a parried attack must not cancel Seraph’s windup');
   for (let exchange = 0; exchange < 2; exchange++) {
+    if (exchange === 1) threat.position = filmPosition(scene.set, 22, 16);
     threat.attackAt = h.tick() + 1; threat.stunUntil = 0;
     assert.equal(h.sandbox.life.film.trainingDodge(h.actor(), threat, h.tick()), true);
     h.actor().position = { ...threat.position, z: threat.position.z + 2 }; h.actor().rotation = Math.PI;
     h.sandbox.attack(h.actor(), h.tick(), exchange);
     assert.equal(state.seraph?.counters, exchange + 1);
   }
-  h.advance(); assert.equal(state.step, 1); assert.equal(h.world.agents.get('seraph')!.status, 'alive');
+  h.advance(); assert.equal(state.step, 1);
+  const seraph = h.world.agents.get('seraph')!;
+  assert.equal(seraph.status, 'alive');
+  assert.deepEqual(seraph.position, filmPosition(scene.set, 22, 16), 'the walk begins at the last visible attack position');
+  const door = filmPosition(scene.set, 2.8, -24);
+  for (let i = 0; i < 24 && seraph.targetPosition; i++) {
+    const before = seraph.position;
+    h.manager.updateAllAgents(h.tick() + i);
+    const dx = seraph.position.x - before.x, dz = seraph.position.z - before.z;
+    assert.ok(Math.hypot(dx, dz) <= 4.001, 'no jump between walking positions');
+    for (let j = 1; j <= 10; j++) assert.equal(playerBlocked({ x: before.x + dx * j / 10, y: before.y, z: before.z + dz * j / 10 }, true, 1.1), false);
+  }
+  assert.deepEqual(seraph.position, door, 'Seraph walks around the tables to the key door');
   h.command('retry'); assert.equal(state.step, 1, 'retry keeps the completed trial');
+});
+
+test('a legacy save after the last Seraph strike still leads to the tea door', () => {
+  const h = setup(); h.command('start');
+  const scene = FILM_SCENE_BY_ID.m2_seraph, state = h.sandbox.life.film.state!;
+  Object.assign(state, { scene: scene.id, actor: 'neo', step: 0, fighting: true, seraph: { dodges: 2, counters: 2, attempts: 0 } });
+  h.players.release('film-player', h.tick());
+  Object.assign(h.world.agents.get('neo')!, { isInMatrix: true, currentLocation: scene.set, position: filmEntry(scene) });
+  const seraph = h.world.agents.get('seraph')!;
+  const position = filmPosition(scene.set, 0, -8);
+  Object.assign(seraph, { isInMatrix: true, currentLocation: scene.set, position, targetPosition: null, currentPath: [] });
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  h.players.possess('film-player', 'neo', h.tick());
+  h.advance();
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.deepEqual(seraph.position, position);
+  assert.deepEqual(seraph.targetPosition, filmPosition(scene.set, 2.8, -24));
 });
 
 test('Seraph calls off a losing spar and leaves a repeatable checkpoint', () => {

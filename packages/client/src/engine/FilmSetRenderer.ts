@@ -167,6 +167,11 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_hamann: { scene: 'm2_oracle_message', step: 2 },
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
 };
+const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
+  m2_departure: { scene: 'm2_seraph', step: 4 },
+  m2_seraph: { scene: 'm2_backdoors', step: 1 },
+  m2_backdoors: { scene: 'm2_bench', step: 1 },
+};
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 
@@ -197,6 +202,7 @@ export class FilmSetRenderer {
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
   private preparedLafayette?: LafayettePreparation;
+  private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
   private preparedLafayetteGround?: { meshes: ColorMesh[]; fourSlots: boolean };
   private preparedLafayetteLanding?: ColorMesh[];
   private club?: ClubSetRenderer;
@@ -321,6 +327,8 @@ export class FilmSetRenderer {
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting'
+      || id === 'film_seraph_teahouse' || id === 'film_backdoor_hall'
+      || id === 'film_oracle_courtyard' && this.currentScene === 'm2_bench'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
@@ -462,6 +470,33 @@ export class FilmSetRenderer {
     const colors = this.preparedZion.colors;
     if (colors) this.prepareCastColors(renderer, camera, colors, [next.actor, ...next.cast], actor);
   }
+  prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined): void {
+    const cut = journey && SECOND_ORACLE_CUTS[journey.scene];
+    if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
+      || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
+      this.cancelSecondOraclePreparation(); return;
+    }
+    const next = FILM_SCENE_BY_ID[cut.scene];
+    if (!this.preparedSecondOracle) {
+      const set = FILM_SETS[next.set], { x, y, z } = set.center;
+      const room = new FilmSetRenderer(new THREE.Scene());
+      room.current = set; room.currentScene = next.id;
+      room.root.position.set(x, y - 1, z);
+      this.preparedSecondOracle = { scene: next.id, room, steps: room.prepareRoomSteps(set) };
+    }
+    const prepared = this.preparedSecondOracle;
+    if (prepared.steps) {
+      if (prepared.steps.next().done) prepared.steps = undefined;
+      return;
+    }
+    if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
+      // PBR maps are attached after decoding. Compile the mapped variants.
+      for (const texture of prepared.room.textures) if (!texture.image) return;
+      prepared.colors = { ...this.colorPreparation(prepared.room.root, []), actors: new Set() };
+    }
+    if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [next.actor, ...next.cast], actor);
+  }
   private prepareCastColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, colors: CastColorPreparation,
     cast: readonly string[], actor: (id: string) => THREE.Group | undefined): void {
     for (const id of cast) {
@@ -584,7 +619,7 @@ export class FilmSetRenderer {
       const room = prepared.room = new FilmSetRenderer(new THREE.Scene());
       room.current = set;
       room.root.position.set(x, y - 1, z);
-      prepared.roomSteps = room.lafayetteRoomSteps(set, prepared.lights);
+      prepared.roomSteps = room.prepareRoomSteps(set, prepared.lights);
     }
     if (prepared.roomSteps) {
       if (prepared.roomSteps.next().done) prepared.roomSteps = undefined;
@@ -606,21 +641,32 @@ export class FilmSetRenderer {
       prepared.skin = { texture, version: texture.version, gpu: renderer.properties };
     }
   }
-  private *lafayetteRoomSteps(set: FilmSet, lights: LafayetteRoomLights): Generator<void> {
-    yield* this.buildSteps(set, lights);
-    yield* this.batchSteps();
+  private *prepareRoomSteps(set: FilmSet, lights?: LafayetteRoomLights): Generator<void> {
+    yield* this.buildSteps(set, lights, true);
+    yield* this.batchSteps(true);
   }
-  private adoptLafayetteRoom(room: FilmSetRenderer): void {
+  private adoptRoomGeometry(room: FilmSetRenderer): void {
     this.root.add(...room.root.children.slice());
     [this.geometries, room.geometries] = [room.geometries, this.geometries];
     [this.materials, room.materials] = [room.materials, this.materials];
     [this.textures, room.textures] = [room.textures, this.textures];
     [this.materialCache, room.materialCache] = [room.materialCache, this.materialCache];
+  }
+  private adoptLafayetteRoom(room: FilmSetRenderer): void {
+    this.adoptRoomGeometry(room);
     this.pillGlass = room.pillGlass;
     this.mirror = room.mirror; room.mirror = undefined;
     this.mirrorFilament = room.mirrorFilament;
     this.trackingElectrode = room.trackingElectrode;
     this.trackingLead = room.trackingLead;
+    room.dispose();
+  }
+  private adoptSecondOracleRoom(room: FilmSetRenderer): void {
+    this.adoptRoomGeometry(room);
+    this.portalDoor = room.portalDoor;
+    this.oracleLetter = room.oracleLetter;
+    this.courtyardStaff = room.courtyardStaff;
+    this.courtyardBirds = room.courtyardBirds;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -752,6 +798,9 @@ export class FilmSetRenderer {
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
         && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion.renderer : undefined;
       if (preparedZion) this.preparedZion = undefined;
+      const preparedSecondOracle = this.preparedSecondOracle && set?.id === this.preparedSecondOracle.room.current?.id
+        && sceneId === this.preparedSecondOracle.scene && !journey?.visiting ? this.preparedSecondOracle : undefined;
+      if (preparedSecondOracle) this.preparedSecondOracle = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -856,6 +905,9 @@ export class FilmSetRenderer {
           if (lafayetteRoom?.room) {
             if (lafayetteRoom.roomSteps) for (const _ of lafayetteRoom.roomSteps) { /* Finish the room if the door is reached early. */ }
             this.adoptLafayetteRoom(lafayetteRoom.room);
+          } else if (preparedSecondOracle) {
+            if (preparedSecondOracle.steps) for (const _ of preparedSecondOracle.steps) { /* Finish an early handoff. */ }
+            this.adoptSecondOracleRoom(preparedSecondOracle.room);
           } else {
             this.build(set, lafayetteRoom?.lights); this.batch();
           }
@@ -1843,7 +1895,7 @@ export class FilmSetRenderer {
   private build(set: FilmSet, preparedLights?: LafayetteRoomLights): void {
     for (const _ of this.buildSteps(set, preparedLights)) { /* Build immediately for direct entry and restore. */ }
   }
-  private *buildSteps(set: FilmSet, preparedLights?: LafayetteRoomLights): Generator<void> {
+  private *buildSteps(set: FilmSet, preparedLights?: LafayetteRoomLights, staged = false): Generator<void> {
     const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
@@ -1855,7 +1907,7 @@ export class FilmSetRenderer {
     this.shell(set);
     const lights = lafayette ? preparedLights ?? this.lafayetteRoomLights() : undefined;
     if (lights) { lights.shell.position.set(0, 0, 0); this.root.add(lights.shell); }
-    if (lafayette) yield;
+    if (lafayette || staged) yield;
     const a = set.architecture;
     if (['hotel', 'apartment', 'oracle', 'lafayette', 'tenement'].includes(a)) yield* this.domestic(set);
     // Keep the tracking equipment light between the shell lights and room fixtures.
@@ -3254,11 +3306,12 @@ export class FilmSetRenderer {
   private batch(): void {
     for (const _ of this.batchSteps()) { /* Non-staged sets complete in the current frame. */ }
   }
-  private *batchSteps(): Generator<void> {
+  private *batchSteps(staged = false): Generator<void> {
     this.root.updateMatrixWorld(true);
     const inverse = this.root.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const remove: THREE.Object3D[] = [];
     const lafayette = this.current?.id === 'film_lafayette';
+    const incremental = lafayette || staged;
     const uses = new Map<THREE.BufferGeometry, number>();
     if (lafayette) this.root.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Line) uses.set(object.geometry, (uses.get(object.geometry) ?? 0) + 1);
@@ -3283,9 +3336,9 @@ export class FilmSetRenderer {
       if (normalized !== geometry) geometry.dispose();
       // All generated mesh primitives carry position, normal and uv. Extraneous attributes are not needed.
       for (const name of Object.keys(normalized.attributes)) if (!['position', 'normal', 'uv'].includes(name)) normalized.deleteAttribute(name);
-      if (lafayette) this.geometries.add(normalized);
+      if (incremental) this.geometries.add(normalized);
       const list = batches.get(material) ?? []; list.push(normalized); batches.set(material, list); remove.push(object);
-      if (lafayette && (index + 1) % 128 === 0) yield;
+      if (incremental && (index + 1) % 128 === 0) yield;
     }
     for (const object of remove) object.removeFromParent();
     let merged = 0;
@@ -3293,7 +3346,7 @@ export class FilmSetRenderer {
       const geometry = mergeGeometries(geometries); geometries.forEach(g => { this.geometries.delete(g); g.dispose(); });
       if (!geometry) throw new Error('Film set geometry could not be merged');
       const mesh = new THREE.Mesh(this.own(geometry), material); mesh.castShadow = true; mesh.receiveShadow = true; this.root.add(mesh);
-      if (lafayette && ++merged % 4 === 0) yield;
+      if (incremental && ++merged % 4 === 0) yield;
     }
     const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
@@ -3312,6 +3365,9 @@ export class FilmSetRenderer {
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
+  private cancelSecondOraclePreparation(): void {
+    this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
+  }
   private clear(keepCrosscut = false): void {
     if (!keepCrosscut) {
       if (this.crosscutTv !== this.tvRepair) this.crosscutTv?.dispose();
@@ -3324,6 +3380,7 @@ export class FilmSetRenderer {
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();
     this.cancelZionPreparation();
+    this.cancelSecondOraclePreparation();
     this.preparedMeetingHall?.renderer.dispose(); this.preparedMeetingHall = undefined;
     this.preparedMeetingAgents = undefined;
     this.preparedLafayetteGround = undefined;
