@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { MATRIX_ESCAPE, matrixEscapeRoot, type FilmJourney } from '@auto_matrix/shared';
+import { MATRIX_ESCAPE, filmPosition, matrixEscapeRoot, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { MatrixEscapeRenderer } from '../packages/client/src/engine/MatrixEscapeRenderer.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 const journey = (scene: 'm1_subway' | 'm1_city_chase'): FilmJourney => ({
   version: 1, scene, actor: 'neo', step: 0, completed: [], enteredAt: 0,
@@ -32,6 +36,82 @@ test('the subway batches opaque wall tiles', t => {
   let meshes = 0;
   platform.traverse(object => { if (object instanceof THREE.Mesh) meshes++; });
   assert.ok(meshes < 300, `expected the tiled walls to share draw calls, got ${meshes} platform meshes`);
+});
+
+test('the rooftop prepares one detached subway and reuses it with the entry light layout', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene);
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_government_roof'); neo.isInMatrix = true;
+  const roof: FilmJourney = { ...journey('m1_subway'), scene: 'm1_rooftop_rescue', matrixEscape: undefined,
+    airRescue: { kind: 'roof', phase: 'bracing', elapsed: 0, attempt: 0 } };
+  const sandbox = { neoLife: { journey: roof } } as SandboxState;
+  sets.update(neo, sandbox, 0);
+  assert.equal(sets.active?.id, 'film_government_roof');
+
+  const smith = new THREE.Group(), coat = new THREE.Texture(), skin = new THREE.Texture();
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial({ map: coat, normalMap: skin });
+  smith.add(new THREE.Mesh(geometry, material));
+  t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); coat.dispose(); skin.dispose(); });
+
+  const points = (root: THREE.Scene) => {
+    let count = 0;
+    root.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; });
+    return count;
+  };
+  let preparedScene: THREE.Scene | undefined, compiledSmith = false;
+  const uploads: THREE.Texture[] = [];
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
+    setRenderTarget() {}, properties: { get: () => ({}) }, initTexture(texture: THREE.Texture) { uploads.push(texture); },
+    compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
+      preparedScene = target;
+      let count = 0;
+      subject.traverse(object => { count++; if (object === smith.children[0]) compiledSmith = true; });
+      assert.ok(count <= 4);
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera();
+  const prepare = () => sets.prepareSubway(graphics, camera, roof, id => id === 'smith' ? smith : undefined);
+  prepare(); assert.equal(preparedScene, undefined, 'keep shader preparation outside the playable brace windows');
+  roof.airRescue!.phase = 'pulling';
+  prepare();
+  const station = preparedScene?.getObjectByName('matrix-escape-set');
+  assert.ok(station);
+  const platform = station.getObjectByName('matrix-subway-platform')!;
+  assert.ok(!scene.getObjectByName(station.name), 'leave the current rooftop as the only visible set');
+  assert.equal(uploads.length, 0);
+  for (const texture of [coat, skin]) { texture.image = { width: 2048, height: 2048 }; texture.needsUpdate = true; }
+  for (let frame = 0; frame < 100; frame++) {
+    const uploaded = uploads.length;
+    prepare(); assert.ok(uploads.length - uploaded <= 1);
+  }
+  assert.ok(compiledSmith);
+  assert.deepEqual(uploads, [coat, skin]);
+  const slots = points(preparedScene!);
+  assert.equal(slots, 12, 'prepare the color programs with one spare slot for the phone shot');
+
+  sandbox.neoLife!.journey = journey('m1_subway');
+  neo.position = filmPosition('film_subway_platform');
+  sets.update(neo, sandbox, 1);
+  assert.ok(sets.root.getObjectByName(station.name) === station && station.getObjectByName(platform.name) === platform);
+  const culling = new LightCulling(scene);
+  t.after(() => culling.dispose());
+  culling.stablePointSlots = sets.stablePointSlots; culling.minimumPointSlots = slots;
+  const renderedPoints = () => {
+    scene.updateMatrixWorld(); camera.updateMatrixWorld(); scene.onBeforeRender(graphics, scene, camera, null);
+    try { return points(scene); } finally { scene.onAfterRender(graphics, scene, camera); }
+  };
+  assert.equal(renderedPoints(), slots);
+  const flash = new THREE.PointLight(0xffd090, 26); scene.add(flash);
+  assert.equal(renderedPoints(), slots, 'the phone shot fills the spare slot');
+  assert.equal(flash.intensity, 26);
+  flash.removeFromParent(); flash.dispose();
+  assert.equal(sets.root.getObjectByName('matrix-subway-train')?.visible, false);
+  let released = 0;
+  const floor = platform.children.find(object => object instanceof THREE.Mesh) as THREE.Mesh;
+  floor.geometry.addEventListener('dispose', () => { released++; });
+  sets.update(undefined, undefined, 2);
+  assert.equal(released, 1);
+  assert.ok(!scene.getObjectByName(station.name));
 });
 
 test('the train keeps the headlight in the subway light layout when its body is hidden', t => {

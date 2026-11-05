@@ -12,7 +12,7 @@ import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/shared';
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
-import { CONSTRUCT, DESERT_REVEAL, filmPosition } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, filmPosition, type FilmJourney } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -29,6 +29,10 @@ interface PlayerSession {
   stagger: number;
 }
 const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, pitch: 0, sprint: false, jump: false, sequence: 0 });
+
+export function savedMatrixEscapeIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
+  return Boolean(journey.matrixEscape && !journey.visiting && action?.type === 'idle' && action.parameters.matrixEscape);
+}
 
 export class PlayerController {
   private running = true;
@@ -167,7 +171,7 @@ export class PlayerController {
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
       || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
-      || interlude.matrixEscape && !interlude.visiting && agent.currentAction?.type === 'idle' && agent.currentAction.parameters.matrixEscape))) agent.currentAction = null;
+      || savedMatrixEscapeIdle(interlude, agent.currentAction)))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
     if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
@@ -267,7 +271,7 @@ export class PlayerController {
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
-        || journey.matrixEscape && !journey.visiting && agent.currentAction?.type === 'idle' && agent.currentAction.parameters.matrixEscape))) agent.currentAction = null;
+        || savedMatrixEscapeIdle(journey, agent.currentAction)))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);

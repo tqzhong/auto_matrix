@@ -125,6 +125,32 @@ for (const [phase, elapsed] of [['file', 1.2], ['response', 0], ['coercion', 9.2
   });
 }
 
+for (const [scene, phase, variant] of [['m1_subway', 'duel', 'subway-duel'], ['m1_city_chase', 'running', undefined]] as const) {
+  test(`a paused ${phase} keeps the saved crouch through a server restart and reconnect`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, scene, variant), journey = f.checkpoint.sandbox.neoLife.journey;
+    const neo = f.checkpoint.agents.neo, encounter = { ...journey.matrixEscape, phase };
+    journey.matrixEscape = encounter;
+    if (phase === 'running') neo.position = filmPosition('film_escape_streets', 0, 36);
+    const action = { type: 'idle', parameters: { player: true, resolved: true, crouching: true,
+      matrixEscape: { ...encounter, role: 'neo' } }, startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    neo.currentAction = action;
+    f.checkpoint.agents.citizen_5.currentAction = action;
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(state.agents.neo.currentAction, action);
+      assert.deepEqual(state.agents.neo.position, neo.position);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.matrixEscape, encounter);
+      assert.equal(state.agents.citizen_5.currentAction, null, 'discard transient inputs from other players');
+    };
+    const restored = await client.world(); assert.equal(restored.agents.neo.controller, undefined); check(restored);
+    check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+  });
+}
+
 for (const savedAction of [true, false]) {
   test(`a paused bridge capture ${savedAction ? 'keeps its saved action' : 'recovers its missing action'} at startup and reconnect`, { timeout: 30000 }, async t => {
     const f = await fixture(t, 'm1_bridge', 'meeting');

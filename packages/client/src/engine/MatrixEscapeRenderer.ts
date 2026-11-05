@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { MATRIX_ESCAPE, matrixEscapeRoot, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 
+export const SUBWAY_POINT_SLOTS = 12; // Nine fixtures, the headlight, the goal light and the phone gunshot.
+
 /** Physical sets for the subway duel and Tank's three-part city escape.
  * Every moving prop is derived from the saved encounter instead of wall time. */
 export class MatrixEscapeRenderer {
@@ -36,8 +38,8 @@ export class MatrixEscapeRenderer {
   private glass = this.physical(0x9fc3bf, .16, .32);
   private backedGlass = this.physical(0x9fc3bf, .16, .32, false);
 
-  constructor(private root: THREE.Group, readonly setId: 'film_subway_platform' | 'film_escape_streets') {
-    this.group.name = 'matrix-escape-set'; this.root.add(this.group);
+  constructor(root: THREE.Group, readonly setId: 'film_subway_platform' | 'film_escape_streets') {
+    this.group.name = 'matrix-escape-set'; this.attach(root);
     if (setId === 'film_subway_platform') this.buildSubway(); else this.buildCity();
     batchStaticGeometry(this.group, new Set()).forEach(geometry => this.geometries.add(geometry));
     const usedGeometries = new Set<THREE.BufferGeometry>();
@@ -46,6 +48,8 @@ export class MatrixEscapeRenderer {
       this.geometries.delete(geometry); geometry.dispose();
     }
   }
+
+  attach(root: THREE.Group): void { root.add(this.group); }
 
   private material(color: number, roughness: number, metalness: number, emissive = 0, emissiveIntensity = 0): THREE.MeshStandardMaterial {
     const value = new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity });

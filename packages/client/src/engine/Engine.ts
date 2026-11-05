@@ -30,6 +30,7 @@ import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
 import { FrameRate } from './FrameRate.js';
 import { LightCulling, POINT_SLOT_FLOOR } from './LightCulling.js';
+import { SUBWAY_POINT_SLOTS } from './MatrixEscapeRenderer.js';
 import { PillReflection } from './PillReflection.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
 
@@ -224,6 +225,7 @@ export class Engine {
     this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
     this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
+      : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
       : reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0;
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
@@ -237,6 +239,8 @@ export class Engine {
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera);
     if (this.running && meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
+    if (this.running && meeting?.scene === 'm1_rooftop_rescue' && player?.id === meeting.actor)
+      this.filmSets.prepareSubway(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');

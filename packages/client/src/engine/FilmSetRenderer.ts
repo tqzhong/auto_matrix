@@ -152,9 +152,8 @@ type LafayettePreparation = {
   roomSteps?: Generator<void>;
   skin?: { texture: THREE.Texture; version: number; gpu: THREE.WebGLRenderer['properties'] };
 };
-type AmbushPreparation = {
-  renderer: AmbushSetRenderer;
-  scene?: THREE.Scene;
+type ColorPreparation = {
+  scene: THREE.Scene;
   meshes: ColorMesh[];
   programs: ColorProgram[];
   textures: Set<THREE.Texture>;
@@ -167,7 +166,7 @@ const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 export class FilmSetRenderer {
   readonly root = new THREE.Group();
   private current?: FilmSet;
-  private preparedAmbush?: AmbushPreparation;
+  private preparedAmbush?: { renderer: AmbushSetRenderer; colors?: ColorPreparation };
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -238,6 +237,7 @@ export class FilmSetRenderer {
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
   private matrixEscape?: MatrixEscapeRenderer;
+  private preparedSubway?: { renderer: MatrixEscapeRenderer; colors?: ColorPreparation };
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
   private catchSet?: ReloadedCatchRenderer;
@@ -347,28 +347,55 @@ export class FilmSetRenderer {
     const phase = journey.oracle?.departure?.phase;
     if (this.current?.id !== 'film_oracle_home' || journey.scene !== 'm1_oracle' || journey.visiting
       || !phase || !['talking', 'bite_ready', 'biting', 'leaving', 'done'].includes(phase)) return;
-    const prepared = this.preparedAmbush ??= { renderer: new AmbushSetRenderer(), meshes: [], programs: [], textures: new Set() };
+    const prepared = this.preparedAmbush ??= { renderer: new AmbushSetRenderer() };
     if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    if (!prepared.scene) {
-      const scene = prepared.scene = new THREE.Scene();
-      scene.environment = this.scene.environment; scene.fog = this.scene.fog;
-      // Use the old building's actual fixtures while the apartment stays on screen.
-      for (const light of this.scene.children) {
-        if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) scene.add(light.clone());
-      }
-      const marker = this.markerLight.clone(); marker.visible = true; scene.add(marker);
-      prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0); scene.add(prepared.renderer.root);
+    if (!prepared.colors) {
+      prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0);
       const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_dejavu.cast];
       const bodies = cast.map(body).filter((root): root is THREE.Group => Boolean(root));
       const heroes = cast.map(hero).filter((root): root is THREE.Group => Boolean(root));
-      prepared.meshes = this.colorMeshes([...bodies, prepared.renderer.root]);
       // A distant actor's detailed model can have a hidden parent in the apartment.
-      for (const { material } of new Set([...prepared.meshes, ...this.colorMeshes(heroes)])) {
-        for (const map of [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]) {
-          if (map) prepared.textures.add(map);
-        }
+      prepared.colors = this.colorPreparation(prepared.renderer.root, bodies, heroes);
+    }
+    this.prepareColorFrame(renderer, camera, prepared.colors);
+  }
+  prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
+    const phase = journey.airRescue?.phase;
+    if (this.currentScene !== 'm1_rooftop_rescue' || this.current?.id !== 'film_government_roof'
+      || journey.scene !== 'm1_rooftop_rescue' || journey.visiting || (phase !== 'pulling' && phase !== 'done')) {
+      this.cancelSubwayPreparation();
+      return;
+    }
+    if (!this.preparedSubway) {
+      const root = new THREE.Group();
+      const subway = new MatrixEscapeRenderer(root, 'film_subway_platform');
+      this.preparedSubway = { renderer: subway };
+      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
+        const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_subway.cast];
+        const actors = cast.map(actor).filter((group): group is THREE.Group => Boolean(group));
+        this.preparedSubway.colors = this.colorPreparation(root, actors);
+        this.preparedSubway.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       }
     }
+    if (this.preparedSubway.colors) this.prepareColorFrame(renderer, camera, this.preparedSubway.colors);
+  }
+  private colorPreparation(root: THREE.Group, actors: THREE.Group[], textureActors: THREE.Group[] = []): ColorPreparation {
+    const scene = new THREE.Scene();
+    scene.environment = this.scene.environment; scene.fog = this.scene.fog;
+    // Use the next set's fixtures and the shared world lights without affecting the live set.
+    for (const light of this.scene.children) {
+      if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) scene.add(light.clone());
+    }
+    const marker = this.markerLight.clone(); marker.visible = true; scene.add(marker, root);
+    const meshes = this.colorMeshes([...actors, root]), textures = new Set<THREE.Texture>();
+    for (const { material } of new Set([...meshes, ...this.colorMeshes(textureActors)])) {
+      for (const map of [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]) {
+        if (map) textures.add(map);
+      }
+    }
+    return { scene, meshes, programs: [], textures };
+  }
+  private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation): void {
     const programs = renderer.info.programs;
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
@@ -615,6 +642,8 @@ export class FilmSetRenderer {
       if (preparedPods) this.preparedPods = undefined;
       const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush?.renderer : undefined;
       if (preparedAmbush) this.preparedAmbush = undefined;
+      const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
+      if (preparedSubway) this.preparedSubway = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -642,7 +671,11 @@ export class FilmSetRenderer {
         else if (set.id === 'film_zion_defense_council') this.zionDeployment = new ZionDeploymentRenderer(this.root);
         else if (set.id === 'film_trainman_subway') this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage') this.helGarage = new HelGarageRenderer(this.root, player!);
-        else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id as 'film_subway_platform' | 'film_escape_streets');
+        else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform') {
+          this.matrixEscape = preparedSubway ?? new MatrixEscapeRenderer(this.root, set.id);
+          preparedSubway?.attach(this.root);
+        }
+        else if (sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id);
         else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) this.theOne = new TheOneRenderer(this.root, set.id);
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) this.reloaded = new ReloadedOpeningRenderer(this.root, set.id);
         else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof') this.catchSet = new ReloadedCatchRenderer(this.root);
@@ -3152,6 +3185,9 @@ export class FilmSetRenderer {
   private cancelPodPreparation(): void {
     this.preparedPods?.dispose(); this.preparedPods = undefined;
   }
+  private cancelSubwayPreparation(): void {
+    this.preparedSubway?.renderer.dispose(); this.preparedSubway = undefined;
+  }
   private clear(keepCrosscut = false): void {
     if (!keepCrosscut) {
       if (this.crosscutTv !== this.tvRepair) this.crosscutTv?.dispose();
@@ -3161,6 +3197,7 @@ export class FilmSetRenderer {
     this.cancelOfficePreparation();
     this.cancelLafayettePreparation();
     this.cancelPodPreparation();
+    this.cancelSubwayPreparation();
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;

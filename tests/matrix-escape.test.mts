@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import * as THREE from 'three';
 import {
   FILM_SCENE_BY_ID,
   MATRIX_ESCAPE,
@@ -11,6 +12,7 @@ import {
   matrixEscapeRoot,
   type CombatImpact,
   type MatrixEscapeEncounter,
+  type PlayerInput,
   type WorldEvent,
 } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -20,6 +22,7 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 
 function setup(sceneId: 'm1_subway' | 'm1_city_chase') {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -125,6 +128,48 @@ for (const [id, duration, phase] of [
   assert.deepEqual(h.actor.currentAction, action);
   assert.deepEqual(h.actor.position, position);
   assert.deepEqual(h.sandbox.life.film.state!.matrixEscape, clock);
+});
+
+function browserControls(t: test.TestContext, send: (input: PlayerInput) => void = () => {}) {
+  class InputTarget extends EventTarget { matches() { return false; } }
+  const oldWindow = globalThis.window, oldDocument = globalThis.document;
+  const window = new InputTarget();
+  Object.assign(globalThis, { window, document: Object.assign(new InputTarget(), { pointerLockElement: null }) });
+  const controls = new PlayerControls(new InputTarget() as unknown as HTMLCanvasElement, new THREE.PerspectiveCamera(), send, () => {});
+  t.after(() => { controls.dispose(); Object.assign(globalThis, { window: oldWindow, document: oldDocument }); });
+  return { controls, window, group: new THREE.Group() };
+}
+
+test('a paused subway crouch drives the local pose without a held key', t => {
+  const h = setup('m1_subway');
+  h.command('act'); h.frames(MATRIX_ESCAPE.subway.phoneShot + MATRIX_ESCAPE.subway.stance + .3);
+  assert.equal(h.sandbox.life.film.state!.matrixEscape!.phase, 'duel');
+  h.actor.currentAction!.parameters.crouching = true;
+  const { controls, group } = browserControls(t);
+  controls.possess(h.actor);
+  controls.update(.05, h.actor, group, false);
+  assert.equal(controls.motion.crouching, true, 'a freshly loaded, paused avatar shows the saved pose');
+  controls.update(.05, h.actor, group, true);
+  assert.equal(controls.motion.crouching, false, 'live input takes over when play resumes');
+});
+
+test('a late retry acknowledgement keeps the sprint already sent for the same actor', t => {
+  const h = setup('m1_city_chase'); h.command('act'); h.frames(MATRIX_ESCAPE.city.briefing + .2);
+  let now = 1000;
+  t.mock.method(performance, 'now', () => now);
+  const sent: PlayerInput[] = [];
+  const { controls, window, group } = browserControls(t, input => sent.push(input));
+  const frame = (actor = h.actor) => { now += 100; controls.update(.1, actor, group, true); return sent.at(-1)!; };
+  const press = (code: string) => window.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { code, repeat: false }));
+  controls.possess(h.actor); frame();
+  press('ShiftLeft'); press('KeyW');
+  const before = frame(); assert(before.sprint && Math.hypot(before.x, before.z) > .99);
+  controls.possess(structuredClone(h.actor));
+  const after = frame(); assert(after.sprint && Math.hypot(after.x, after.z) > .99, 'the player can continue the held sprint after retry');
+  assert(after.sequence > before.sequence);
+  const trinity = h.world.agents.get('trinity')!;
+  controls.possess(trinity);
+  const changed = frame(trinity); assert.equal(changed.sprint, false); assert.equal(Math.hypot(changed.x, changed.z), 0);
 });
 
 test('Tank route is a moving pursuit with a failed phone, garbage-truck evade, two possessions and room 303 exit', () => {

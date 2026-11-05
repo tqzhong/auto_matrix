@@ -57,6 +57,9 @@ import { ambushCat } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
+const HELD_INPUT_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyG', 'ShiftLeft', 'ShiftRight',
+  'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
 export class PlayerControls {
   id: string | null = null;
   firstPerson = false;
@@ -237,9 +240,8 @@ export class PlayerControls {
     this.gardenLook = { yaw: 0, pitch: 0 };
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
     // A retry can accept input before its acknowledgement reaches this client.
-    const keepFocus = !changedActor && this.keys.has('KeyG');
-    this.keys.clear();
-    if (keepFocus) this.keys.add('KeyG');
+    if (changedActor) this.keys.clear();
+    else for (const key of this.keys) if (!HELD_INPUT_KEYS.has(key)) this.keys.delete(key);
     this.lastSent = 0;
     this.firing = false; this.lastShot = -1000;
     this.camera.near = this.defaultNear; this.camera.fov = 57; this.camera.updateProjectionMatrix();
@@ -290,7 +292,7 @@ export class PlayerControls {
     if (this.ride && this.motion.hammerPilot?.flight.maneuver && ['Space', 'KeyC', 'KeyQ', 'KeyE'].includes(event.code)) {
       event.preventDefault(); this.keys.add(event.code); return;
     }
-    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyG', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+    if (HELD_INPUT_KEYS.has(event.code) || event.code === 'Space') {
       event.preventDefault(); this.keys.add(event.code);
     }
     if (!event.repeat) {
@@ -999,7 +1001,9 @@ export class PlayerControls {
     this.motion.seated = state.currentAction?.parameters.seated === true;
     this.motion.floorSeated = state.currentAction?.parameters.floorSeated === true;
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
-    this.motion.crouching = farewell?.role === 'neo' || !custody && this.enabled && !this.performing && this.keys.has('KeyZ');
+    const pausedEscape = !running && escapeGesture && state.currentAction?.type === 'idle';
+    this.motion.crouching = farewell?.role === 'neo' || !custody && (pausedEscape
+      ? state.currentAction?.parameters.crouching === true : this.enabled && !this.performing && this.keys.has('KeyZ'));
     this.motion.riding = Boolean(this.ride || this.gunner);
     if (logosPilot && this.logosPilotYaw === undefined) { this.yaw = this.movementYaw = state.rotation; this.pitch = .08; this.cameraReady = false; }
     if (logosPilot && this.logosPilotYaw !== undefined) {
