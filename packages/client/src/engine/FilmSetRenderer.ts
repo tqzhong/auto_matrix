@@ -186,6 +186,7 @@ export class FilmSetRenderer {
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private pods?: PodSetRenderer;
+  private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
   private sourceBriefing?: SourceBriefingRenderer;
   private primaryDemolition?: PrimaryDemolitionRenderer;
@@ -538,6 +539,8 @@ export class FilmSetRenderer {
       if (prepared) this.preparedOffice = undefined;
       const lafayetteRoom = set?.id === 'film_lafayette' ? this.preparedLafayette : undefined;
       if (lafayetteRoom) this.preparedLafayette = undefined;
+      const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
+      if (preparedPods) this.preparedPods = undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
       if (approach) this.meeting = undefined;
@@ -568,7 +571,10 @@ export class FilmSetRenderer {
         else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) this.zion = new ZionHomecomingRenderer(this.root, set.id);
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);
         else if (set.architecture === 'freeway') this.freeway = new FreewaySetRenderer(this.root, set);
-        else if (set.architecture === 'pods') this.pods = new PodSetRenderer(this.root);
+        else if (set.architecture === 'pods') {
+          this.pods = preparedPods ?? new PodSetRenderer();
+          this.pods.attach(this.root);
+        }
         else if (set.id === 'film_neb_deck') this.neb = new NebDeckRenderer(this.root);
         else if (set.id === 'film_operation_room') this.sourceBriefing = new SourceBriefingRenderer(this.root);
         else if (set.id === 'film_power_station') this.primaryDemolition = new PrimaryDemolitionRenderer(this.root);
@@ -732,6 +738,13 @@ export class FilmSetRenderer {
       player?.id === 'trinity' && player.id === journey?.actor ? player.currentAction?.parameters.freewayHandoff as import('@auto_matrix/shared').FreewayHandoff | undefined : undefined,
       player?.id === 'morpheus' && player.id === journey?.actor ? player.currentAction?.parameters.truckRoad as import('@auto_matrix/shared').TruckRoad | undefined : undefined,
       player?.id === 'morpheus' && player.id === journey?.actor ? player.currentAction?.parameters.truckHood as import('@auto_matrix/shared').TruckHood | undefined : undefined);
+    if (set?.id === 'film_lafayette' && sceneId === 'm1_mirror' && !journey?.visiting
+      && player?.id === journey?.actor && journey?.awakening?.kind === 'mirror') {
+      this.preparedPods ??= new PodSetRenderer();
+      this.preparedPods.prepareStep();
+    } else if (this.preparedPods) {
+      this.cancelPodPreparation();
+    }
     this.pods?.update(journey, elapsed, firstPerson, this.recoverySubject, camera);
     this.neb?.update(journey, elapsed, journey?.scene === 'm2_relay' ? this.phoneBodies?.('trinity') : this.recoverySubject,
       ['m1_cypher_console', 'm1_meal', 'm2_relay'].includes(journey?.scene ?? '') ? this.phoneBodies : this.crosscutBodies);
@@ -3038,9 +3051,13 @@ export class FilmSetRenderer {
     const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
+  private cancelPodPreparation(): void {
+    this.preparedPods?.dispose(); this.preparedPods = undefined;
+  }
   private clear(): void {
     this.cancelOfficePreparation();
     this.cancelLafayettePreparation();
+    this.cancelPodPreparation();
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;

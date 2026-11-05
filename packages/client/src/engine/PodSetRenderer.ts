@@ -17,47 +17,58 @@ const leftFeedReturn = { normal: .08, lateral: .6, height: .8 };
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
-  private root = new THREE.Group();
+  readonly root = new THREE.Group();
+  private construction?: Generator<void>;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Map<string, THREE.Texture>();
   private disposed = false;
   private robot = new THREE.Group();
-  private maintenance: PodMaintenanceRenderer;
-  private drain: PodDrainRenderer;
+  private maintenance!: PodMaintenanceRenderer;
+  private drain!: PodDrainRenderer;
   private basinLeaves: THREE.Mesh[] = [];
   private neckFrame = new THREE.Group();
   private rotor = new THREE.Group();
   private neckPlug = new THREE.Group();
   private clamps: { side: number; pad: THREE.Mesh; links: THREE.Mesh[]; hinges: THREE.Mesh[] }[] = [];
-  private needle: THREE.Mesh;
+  private needle!: THREE.Mesh;
   private claw = new THREE.Group();
-  private rescueClaw: PodRescueClawRenderer;
+  private rescueClaw!: PodRescueClawRenderer;
   private hatches: THREE.Group[] = [];
   private bay = new THREE.Group();
   private connections = new THREE.Group();
   private breather = new THREE.Group();
-  private oralTube: THREE.Mesh<THREE.TubeGeometry>;
-  private oralCore: THREE.Mesh<THREE.TubeGeometry>;
+  private oralTube!: THREE.Mesh<THREE.TubeGeometry>;
+  private oralCore!: THREE.Mesh<THREE.TubeGeometry>;
   private mouthpiece = new THREE.Group();
   private feeds: { mesh: THREE.Mesh<THREE.TubeGeometry>; plug: THREE.Mesh; start: THREE.Vector3 }[] = [];
-  private neckTube: THREE.Mesh<THREE.TubeGeometry>;
-  private water: THREE.Mesh;
-  private ripple: THREE.Mesh;
-  private liquid: THREE.Mesh;
-  private membrane: PodMembraneRenderer;
-  private scan: THREE.SpotLight;
-  private mist: THREE.Points;
-  private steel: THREE.MeshStandardMaterial;
-  private dark: THREE.MeshStandardMaterial;
+  private neckTube!: THREE.Mesh<THREE.TubeGeometry>;
+  private water!: THREE.Mesh;
+  private ripple!: THREE.Mesh;
+  private liquid!: THREE.Mesh;
+  private membrane!: PodMembraneRenderer;
+  private scan!: THREE.SpotLight;
+  private mist!: THREE.Points;
+  private steel!: THREE.MeshStandardMaterial;
+  private dark!: THREE.MeshStandardMaterial;
   private distant = new THREE.Group();
   private distantBatches: { mesh: THREE.InstancedMesh; matrices: Float32Array; bounds: THREE.Sphere[]; shown: number[] }[] = [];
   private distantFrustum = new THREE.Frustum();
   private distantProjection = new THREE.Matrix4();
   private distantView: number[] = [];
 
-  constructor(parent: THREE.Group) {
+  constructor(parent?: THREE.Group) {
+    this.construction = this.build();
+    if (parent) this.attach(parent);
+  }
+  prepareStep(): void {
+    if (this.construction?.next().done) this.construction = undefined;
+  }
+  attach(parent: THREE.Group): void {
+    while (this.construction) this.prepareStep();
     parent.add(this.root);
+  }
+  private *build(): Generator<void> {
     this.steel = this.mat(0x46565b, .4, .45); this.dark = this.mat(0x131b1d, .57, .35);
     const rubber = this.mat(0x1c181c, .72); const pink = this.mat(0x59212b, .24, .25); pink.emissive.setHex(0x541723); pink.emissiveIntensity = .25;
     const wet = new THREE.MeshPhysicalMaterial({ color: 0x331923, roughness: .28, metalness: .18, clearcoat: .8, side: THREE.DoubleSide }); this.materials.add(wet);
@@ -79,6 +90,7 @@ export class PodSetRenderer {
       const brace = this.mesh(new THREE.BoxGeometry(.13, 1.1, .18), this.steel, x, 1.55, z); brace.rotation.z = -Math.sin(a) * .3;
       this.mesh(new THREE.SphereGeometry(.065, 8, 6), this.steel, x, 2.15, z);
     }
+    yield;
     this.root.add(this.connections);
     for (let i = 0; i < 4; i++) {
       const side = i % 2 ? 1 : -1; const z = -14.2 + Math.floor(i / 2) * 1.25;
@@ -103,8 +115,10 @@ export class PodSetRenderer {
     for (const y of [.065, .18]) {
       const cuff = this.mesh(new THREE.TorusGeometry(.085, .012, 6, 24), this.steel, 0, y, 0, this.mouthpiece); cuff.rotation.x = Math.PI / 2;
     }
+    yield;
     this.towers(pink);
-    this.nearBank();
+    yield;
+    yield* this.nearBank();
     this.drain = new PodDrainRenderer(this.root);
     this.tube([[-7, 0, -12], [-9, -8, -2], [-9, -17, 12], [-25, -18, 30]], 1.1, this.dark);
     const waterMat = new THREE.MeshPhysicalMaterial({ color: 0x101e24, roughness: .13, metalness: 0, ior: 1.333, clearcoat: 0 }); this.materials.add(waterMat);
@@ -115,6 +129,7 @@ export class PodSetRenderer {
       this.mesh(new THREE.BoxGeometry(4, 35, 100), this.dark, x, -22, 14);
       for (let z = -20; z < 60; z += 12) this.tube([[x, -7, z], [x * .85, -7, z], [x * .85, -15, z]], .7, this.steel);
     }
+    yield;
     this.root.add(this.robot); this.robot.position.set(0, 10, -14);
     this.maintenance = new PodMaintenanceRenderer(this.robot);
     this.root.add(this.neckFrame); this.neckFrame.name = 'pod-neck-connection';
@@ -138,6 +153,7 @@ export class PodSetRenderer {
       });
       this.clamps.push({ side, pad, links, hinges });
     }
+    yield;
     this.root.add(this.claw); this.rescueClaw = new PodRescueClawRenderer(this.claw);
     this.scan = new THREE.SpotLight(0xc3e6ef, 2300, 70, .52, .7, 2); this.scan.position.set(0, 10, 12); this.scan.target.position.set(0, -18, 12); this.root.add(this.scan, this.scan.target);
     this.rescueBay();
@@ -152,6 +168,7 @@ export class PodSetRenderer {
     mistGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particles, 3)); this.geometries.add(mistGeometry);
     const mistMaterial = new THREE.PointsMaterial({ color: 0x91a1a2, size: .09, transparent: true, opacity: .25, depthWrite: false }); this.materials.add(mistMaterial);
     this.mist = new THREE.Points(mistGeometry, mistMaterial); this.root.add(this.mist);
+    yield;
     const movable = new Set([this.liquid, this.neckTube, this.needle, this.ripple]);
     batchStaticGeometry(this.root, movable).forEach(geometry => this.geometries.add(geometry));
   }
@@ -289,7 +306,7 @@ export class PodSetRenderer {
       this.distantBatches.push({ mesh, bounds, matrices: new Float32Array(mesh.instanceMatrix.array), shown: matrices.map((_, i) => i) });
     }
   }
-  private nearBank(): void {
+  private *nearBank(): Generator<void> {
     const bank = new THREE.Group(); this.root.add(bank);
     const wall = this.mat(0x1b282d, .75, .18); wall.emissive.setHex(0x24353d); wall.emissiveIntensity = .25;
     const support = this.mat(0x44545a, .56, .34); support.emissive.setHex(0x223139); support.emissiveIntensity = .3;
@@ -304,6 +321,7 @@ export class PodSetRenderer {
       for (let y = -10; y < 36; y += 2.4) {
         const joint = this.mesh(new THREE.TorusGeometry(.19, .045, 5, 10), support, x, y, -33.2, bank); joint.rotation.x = Math.PI / 2;
       }
+      yield;
     }
     const shell = this.mat(0x362a2b, .36, .23); shell.side = THREE.DoubleSide;
     shell.emissive.setHex(0x7b2635); shell.emissiveIntensity = .2;
@@ -346,9 +364,11 @@ export class PodSetRenderer {
       this.tube(points, .04, support, ribs);
     }
     const ribGeometry = batchStaticGeometry(ribs, new Set())[0]; this.instances(ribGeometry, support, matrices, bank);
+    yield;
     batchStaticGeometry(bank, new Set()).forEach(geometry => this.geometries.add(geometry));
     const waterBank = bank.clone(true); waterBank.rotation.y = -Math.PI / 2;
     waterBank.position.set(0, 12, 25); this.root.add(waterBank);
+    yield;
   }
   private towers(pink: THREE.MeshStandardMaterial): void {
     const distant = this.distant; distant.name = 'pod-distant-towers';
@@ -509,10 +529,11 @@ export class PodSetRenderer {
   }
   dispose(): void {
     this.disposed = true;
-    this.membrane.dispose();
-    this.maintenance.dispose();
-    this.drain.dispose();
-    this.rescueClaw.dispose();
+    this.construction = undefined;
+    this.membrane?.dispose();
+    this.maintenance?.dispose();
+    this.drain?.dispose();
+    this.rescueClaw?.dispose();
     this.root.traverse(object => { if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
     this.root.removeFromParent(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
     this.textures.forEach(t => t.dispose());
