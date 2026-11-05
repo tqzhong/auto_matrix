@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import type { AgentState, SandboxState, SandboxThreat, WorldNode, WorldStructure, WorldIncident, Vector3, CombatImpact, ChateauWeapon } from '@auto_matrix/shared';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/CharacterModel.js';
-import { newMotion } from '../agents/CharacterMotion.js';
+import { newMotion, type MotionInput } from '../agents/CharacterMotion.js';
+import type { AgentRenderer, DojoOpponent } from '../agents/AgentRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
 import { FILM_SETS, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
 import { mouseRoomGuard, MOUSE_ROOM_RETURN, ambushShotRecoil } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
-interface Enemy { group: THREE.Group; rig?: CharacterRig; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; gasClock?: BasementDropPlayback; }
+interface Enemy { group: THREE.Group; rig?: CharacterRig; dojoOpponent?: DojoOpponent; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; gasClock?: BasementDropPlayback; }
 
 export class SandboxRenderer {
   private state?: SandboxState;
@@ -35,7 +36,7 @@ export class SandboxRenderer {
   private fallen: Enemy[] = [];
   private actors: Record<string, AgentState> = {};
 
-  constructor(private scene: THREE.Scene) {}
+  constructor(private scene: THREE.Scene, private agentRenderer?: AgentRenderer) {}
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.push(value); return value; }
   private mesh(group: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, position: number[], scale: number[]): THREE.Mesh {
     const mesh = new THREE.Mesh(geometry, material); mesh.position.set(position[0], position[1], position[2]); mesh.scale.set(scale[0], scale[1], scale[2]);
@@ -105,8 +106,8 @@ export class SandboxRenderer {
     for (const [id, mission] of Object.entries(state.missions)) if (mission.escort) enemyIds.add(`escort:${id}`);
     for (const [id, enemy] of this.enemies) if (!enemyIds.has(id)) {
       this.enemies.delete(id);
-      if (enemy.fallen !== undefined) this.fallen.push(enemy);
-      else { this.scene.remove(enemy.group); this.pool.push(enemy); }
+      if (enemy.fallen !== undefined && !enemy.dojoOpponent) this.fallen.push(enemy);
+      else { this.releaseDojoOpponent(enemy); this.scene.remove(enemy.group); this.pool.push(enemy); }
     }
     for (const threat of state.threats) {
       this.updateEnemy(threat.id, threat.kind, threat.position, threat.health / threat.maxHealth, agents, threat.character, threat.scene);
@@ -117,8 +118,18 @@ export class SandboxRenderer {
     }
     for (const [id, mission] of Object.entries(state.missions)) if (mission.escort) this.updateEnemy(`escort:${id}`, 'escort', mission.escort.position, mission.escort.health / 100, agents);
   }
+  private attachDojoOpponent(enemy: Enemy, base: AgentState): void {
+    enemy.dojoOpponent = this.agentRenderer?.takeDojoOpponent();
+    enemy.rig = enemy.dojoOpponent?.rig ?? this.models.create({ ...base, id: 'morpheus' });
+    enemy.rig.root.position.y = -1; enemy.group.add(enemy.rig.root);
+  }
+  private releaseDojoOpponent(enemy: Enemy): void {
+    if (!enemy.dojoOpponent) return;
+    enemy.dojoOpponent.release(); enemy.dojoOpponent = undefined; enemy.rig = undefined;
+  }
   private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string, scene?: string): void {
     let enemy = this.enemies.get(id);
+    const dojo = kind === 'training' && scene === 'm1_dojo' && character === 'morpheus';
     if (!enemy) {
       const style = scene === 'm2_chateau' ? this.state?.threats.find(threat => threat.id === id)?.weapon : undefined;
       const reuse = this.pool.findIndex(entry => entry.kind === kind && entry.character === character && entry.scene === scene && entry.style === style);
@@ -133,7 +144,7 @@ export class SandboxRenderer {
             const points = [new THREE.Vector3(Math.cos(angle), 3, Math.sin(angle)), new THREE.Vector3(Math.cos(angle) * 2, 1.3, -2), new THREE.Vector3(Math.cos(angle) * 3, .5, -4)];
             this.mesh(group, this.geometry(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 8, .13, 5, false)), this.metal, [0, 0, 0], [1, 1, 1]);
           }
-        } else {
+        } else if (!dojo) {
           const guardBase = style === 'sword' ? 'cain' : style === 'mace' ? 'abel_mero' : style === 'spear' ? 'citizen_10' : 'citizen_13';
           const base = agents[character ?? (scene === 'm2_chateau' ? guardBase : kind === 'escort' ? 'keymaker' : 'smith')] ?? agents.neo;
           if (!base) return;
@@ -177,6 +188,7 @@ export class SandboxRenderer {
         const aimLine = new THREE.Line(this.geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])), this.aimMaterial); aimLine.visible = false; group.add(aimLine);
         enemy = { group, rig, kind, character, scene, style, bornAt: this.elapsed, replicate, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
       }
+      if (dojo && !enemy.rig) this.attachDojoOpponent(enemy, agents.morpheus ?? agents.neo);
       enemy.group.position.set(position.x, position.y, position.z); enemy.group.rotation.set(0, 0, 0); enemy.group.scale.setScalar(1);
       enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = character !== 'seraph'; enemy.bornAt = this.elapsed;
       enemy.gasClock = undefined;
@@ -208,6 +220,10 @@ export class SandboxRenderer {
     }
     for (const [id, enemy] of this.enemies) {
       const threat = this.state.threats.find(t => t.id === id);
+      if (enemy.dojoOpponent && !enemy.dojoOpponent.available()) {
+        this.releaseDojoOpponent(enemy);
+        this.attachDojoOpponent(enemy, this.actors.morpheus ?? this.actors.neo);
+      }
       enemy.group.visible = (threat?.matrix ?? true) === matrix;
       const difference = enemy.target.clone().sub(enemy.group.position);
       const actor = threat ? this.actors[threat.target] : undefined;
@@ -243,9 +259,14 @@ export class SandboxRenderer {
         enemy.rig.root.rotation.y += turn * (room || threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
       }
       const dist = enemy.group.position.distanceTo(camera.position);
-      if (enemy.rig) this.models.animate(enemy.rig, room || gas?.entry ? 0 : running ? delta : 0, { speed: room ? mouseRoomGuard(room.index, room.time).speed : gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
-        attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: room ? undefined : enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: room ? undefined : enemy.hit, impact: room ? undefined : enemy.impact, chateauWeapon: threat?.weapon,
-        dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' }, dist);
+      if (enemy.rig) {
+        const dt = room || gas?.entry ? 0 : running ? delta : 0;
+        const input: MotionInput = { speed: room ? mouseRoomGuard(room.index, room.time).speed : gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
+          attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: room ? undefined : enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: room ? undefined : enemy.hit, impact: room ? undefined : enemy.impact, chateauWeapon: threat?.weapon,
+          dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' };
+        if (enemy.dojoOpponent) enemy.dojoOpponent.animate(dt, input, dist);
+        else this.models.animate(enemy.rig, dt, input, dist);
+      }
       if (room && enemy.rig?.weapons?.[0] && actor) {
         const rig = enemy.rig, gun = rig.weapons![0], shoulder = rig.shoulders[0];
         // Bring the receiver back toward the chest so the support arm can
@@ -303,7 +324,7 @@ export class SandboxRenderer {
   private disposeLabel(sprite: THREE.Sprite): void { const map = sprite.material.map; if (map) { map.dispose(); this.textures.delete(map); } sprite.material.dispose(); }
   dispose(): void {
     for (const prop of this.props.values()) { this.scene.remove(prop.group); this.disposeLabel(prop.label); }
-    for (const enemy of [...this.enemies.values(), ...this.pool, ...this.fallen]) { this.scene.remove(enemy.group); this.disposeLabel(enemy.label); }
+    for (const enemy of [...this.enemies.values(), ...this.pool, ...this.fallen]) { this.releaseDojoOpponent(enemy); this.scene.remove(enemy.group); this.disposeLabel(enemy.label); }
     this.geometries.forEach(geometry => geometry.dispose());
     [this.metal, this.dark, this.green, this.amber, this.red, this.blue, this.warning, this.aimMaterial].forEach(material => material.dispose());
     this.models.dispose(); this.props.clear(); this.enemies.clear(); this.pool = [];

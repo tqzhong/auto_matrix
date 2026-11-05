@@ -116,7 +116,7 @@ export class Engine {
     this.voxelRenderer.init();
     this.filmSets = new FilmSetRenderer(this.scene);
     this.agentRenderer = new AgentRenderer(this.scene);
-    this.sandboxRenderer = new SandboxRenderer(this.scene);
+    this.sandboxRenderer = new SandboxRenderer(this.scene, this.agentRenderer);
     this.audio = new GameAudio();
     this.combatEffects = new CombatEffects(this.scene, this.audio);
     this.cameraController = new CameraController(this.camera, this.renderer.domElement);
@@ -663,8 +663,8 @@ export class Engine {
     cancelAnimationFrame(this.animationId);
     window.removeEventListener('resize', this.resize);
     this.pillReflection.dispose();
-    this.filmSets.dispose(); this.voxelRenderer.dispose(); this.agentRenderer.dispose(); this.cameraController.dispose();
-    this.sandboxRenderer.dispose();
+    this.filmSets.dispose(); this.voxelRenderer.dispose(); this.sandboxRenderer.dispose();
+    this.agentRenderer.dispose(); this.cameraController.dispose();
     this.combatEffects.dispose();
     this.audio.dispose();
     this.lightCulling.dispose(); this.lightingSystem.dispose(); this.particleSystem.dispose(); this.postProcessing.dispose();

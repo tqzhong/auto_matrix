@@ -1,12 +1,55 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SETS, filmBlocked, filmGroundHeight, filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, filmBlocked, filmGroundHeight, filmPosition, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
+import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { TrainingSetRenderer } from '../packages/client/src/engine/TrainingSetRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightingSystem } from '../packages/client/src/engine/LightingSystem.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 const set = FILM_SETS.film_kungfu_dojo;
+test('the dojo opponent uses and returns Morpheus’s existing rig across retries and possession', t => {
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
+    createRadialGradient: () => ({ addColorStop() {} }) }) }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const rigs: CharacterRig[] = [];
+  t.mock.method(CharacterModels.prototype, 'create', () => {
+    const rig = { root: new THREE.Group(), motion: newMotion() } as CharacterRig;
+    rigs.push(rig); return rig;
+  });
+  t.mock.method(CharacterModels.prototype, 'animate', () => {});
+  const scene = new THREE.Scene(), agents = new AgentRenderer(scene), sandbox = new SandboxRenderer(scene, agents);
+  t.after(() => { sandbox.dispose(); agents.dispose(); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const morpheus = world.agents.get('morpheus')!, neo = world.agents.get('neo')!;
+  morpheus.currentLocation = set.id; morpheus.position = filmPosition(set.id, 0, -6); morpheus.isInMatrix = true;
+  morpheus.currentAction = { type: 'idle', parameters: { filmDuel: true }, startedAt: 0, duration: 100, progress: 0 };
+  agents.updateAgent(morpheus.id, morpheus);
+  const root = agents.getAgentBody(morpheus.id)!, host = root.parent, motion = rigs[0].motion;
+  const threat: SandboxThreat = { id: 'dojo', scene: 'm1_dojo', kind: 'training', character: 'morpheus', position: morpheus.position,
+    matrix: true, health: 999, maxHealth: 999, target: 'neo', stunUntil: 0, lastStrike: 0 };
+  const sync = (threats: SandboxThreat[]) => sandbox.sync({ threats, nodes: [], structures: [], incidents: [], missions: {} } as SandboxState, { morpheus, neo });
+  sync([threat]);
+  assert.equal(rigs.length, 1, 'sparring must reuse the actor instead of building a second rig');
+  assert.ok(root.parent !== host && root.parent?.parent === scene);
+  sync([]);
+  assert.ok(root.parent === host && rigs[0].motion === motion);
+  sync([threat]);
+  assert.equal(rigs.length, 1, 'the pooled combat shell borrows the original rig again');
+  morpheus.controller = 'other-player'; agents.updateAgent(morpheus.id, morpheus);
+  sandbox.update(0, new THREE.PerspectiveCamera(), true, 0, false);
+  assert.ok(root.parent === host);
+  assert.equal(rigs.length, 2, 'a possessed actor returns to its owner and the opponent keeps a separate fallback rig');
+});
+
 function room(t: { after: (fn: () => void) => void }) {
   const root = new THREE.Group(); root.position.set(set.center.x, set.center.y - 1, set.center.z);
   const renderer = new TrainingSetRenderer(root, 'm1_dojo'); root.updateMatrixWorld(true); t.after(() => renderer.dispose());

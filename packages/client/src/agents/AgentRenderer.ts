@@ -62,6 +62,14 @@ interface Entry {
   logosPilot?: boolean;
   basementDropClock?: BasementDropPlayback;
   mouseFloor?: { model: THREE.Object3D; roll: number; offset: number };
+  dojoBorrowed?: boolean;
+}
+
+export interface DojoOpponent {
+  rig: CharacterRig;
+  available(): boolean;
+  animate(delta: number, input: MotionInput, distance: number): void;
+  release(): void;
 }
 
 export class AgentRenderer {
@@ -183,6 +191,22 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
+  takeDojoOpponent(): DojoOpponent | undefined {
+    const entry = this.agents.get('morpheus');
+    if (!entry || entry.dojoBorrowed) return;
+    const available = () => this.agents.get('morpheus') === entry && entry.state.currentLocation === 'film_kungfu_dojo'
+      && entry.state.isInMatrix && entry.state.status === 'alive' && !entry.state.controller;
+    if (!available()) return;
+    const { rig, group } = entry, { root, motion } = rig;
+    const position = root.position.clone(), rotation = root.quaternion.clone(), visible = root.visible;
+    entry.dojoBorrowed = true; group.visible = false; root.visible = true;
+    return { rig, available, animate: (delta, input, distance) => this.models.animate(rig, delta, input, distance), release: () => {
+      entry.dojoBorrowed = false;
+      group.add(root); root.position.copy(position); root.quaternion.copy(rotation); root.visible = visible;
+      rig.motion = motion;
+      group.visible = entry.state.isInMatrix === this.matrix && this.bodyPresent(entry.state);
+    } };
+  }
   hideLafayetteStreetCast(): void {
     for (const id of ['apoc', 'switch']) {
       const entry = this.agents.get(id);
@@ -320,6 +344,7 @@ export class AgentRenderer {
         currentAction: { type: 'idle', parameters: { seated: true, crosscut: { ...cut, role, body: true } }, startedAt: tick, duration: 1e9, progress: 0 } });
     }
     for (const [id, entry] of this.agents) {
+      if (entry.dojoBorrowed) { entry.group.visible = false; continue; }
       let state = entry.state; const physical = id.startsWith('body:');
       const disarmRole = disarmClock && HEL_TRIO.includes(id as typeof HEL_TRIO[number]) && (!state.controller || id === this.playerId)
         && state.status === 'alive' && state.currentLocation === 'film_club_hel' ? id as typeof HEL_TRIO[number] : undefined;
