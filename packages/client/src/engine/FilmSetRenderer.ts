@@ -165,6 +165,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_lock: { scene: 'm2_residents', step: 1 },
   m2_bane_copy: { scene: 'm2_hamann', step: 3 },
   m2_hamann: { scene: 'm2_oracle_message', step: 2 },
+  m2_oracle_message: { scene: 'm2_departure', step: 1 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -329,7 +330,7 @@ export class FilmSetRenderer {
       || Boolean(this.zion && ['m2_lock', 'm2_residents', 'm2_hamann', 'm2_oracle_message'].includes(this.currentScene ?? ''))
       || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(this.currentScene ?? '')
       || this.currentScene === 'm3_farewell' && Boolean(this.logosWreck)
-      || id === 'film_zion_hangar' && (this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
+      || id === 'film_zion_hangar' && (this.currentScene === 'm2_departure' || this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
       || this.currentScene === 'm3_emp' && Boolean(this.empDock?.group.visible)
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
@@ -452,7 +453,7 @@ export class FilmSetRenderer {
     }
     const next = FILM_SCENE_BY_ID[cut.scene];
     if (!this.preparedZion) {
-      const target = new ZionHomecomingRenderer(new THREE.Group(), next.set);
+      const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id);
       target.update({ ...journey, scene: next.id, step: 0 }, 0);
       this.preparedZion = { scene: next.id, renderer: target };
       if (renderer.extensions.has('KHR_parallel_shader_compile'))
@@ -793,7 +794,7 @@ export class FilmSetRenderer {
         else if (['film_zion_dock_exit', 'film_zion_command_bunker'].includes(set.id)) this.dockEvacuation = new DockEvacuationRenderer(this.root, set.id === 'film_zion_command_bunker');
         else if (set.id === 'film_zion_personnel') this.dockBriefing = new DockBriefingRenderer(this.root);
         else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) {
-          this.zion = preparedZion ?? new ZionHomecomingRenderer(this.root, set.id);
+          this.zion = preparedZion ?? new ZionHomecomingRenderer(this.root, set.id, sceneId);
           if (preparedZion) this.root.add(preparedZion.group);
         }
         else if (set.architecture === 'lobby') this.lobby = new LobbySetRenderer(this.root, set);

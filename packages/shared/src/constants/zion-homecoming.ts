@@ -1,5 +1,6 @@
 // Physical anchors shared by the six homecoming sets, collision and cast staging.
 export const ZION_HOMECOMING = ['m2_dock', 'm2_lock', 'm2_residents', 'm2_temple', 'm2_room', 'm2_hamann'] as const;
+export const ZION_BEDROOM_DOOR = { z: 17.6, hingeX: -2.5, width: 4.2, depth: .35, height: 8.8, openYaw: -Math.PI / 2 };
 export const ZION_BOARDING = { x: 20, y: 11, z: 17, hatchX: 16.75, depth: 6.5, clearance: 5.3 };
 export const ZION_BOARDING_RAILS = [
   { x: 12, z: -19, width: .6, depth: 64, height: 2.4 },
@@ -15,7 +16,8 @@ export const ZION_OBSTACLES: Record<string, { x: number; z: number; width: numbe
   film_zion_council: [{ x: 0, z: -27, width: 13, depth: 3, height: 3 }, { x: -18, z: -7, width: 3, depth: 12, height: 4 }],
   film_zion_residences: [{ x: 0, z: -34, width: 7, depth: 3, height: 3 }, ...[-1, 1].map(side => ({ x: side * 24, z: -21, width: 7, depth: 12, height: 8 }))],
   film_zion_temple: [{ x: 0, z: -41, width: 10, depth: 4, height: 4 }, ...[-1, 1].flatMap(side => [-28, -4, 20].map(z => ({ x: side * 31, z, width: 3, depth: 3, height: 40 })))],
-  film_zion_bedroom: [{ x: -7, z: -10, width: 9, depth: 7, height: 2 }],
+  film_zion_bedroom: [{ x: -7, z: -10, width: 9, depth: 7, height: 2 },
+    ...[-1, 1].map(side => ({ x: side * 9.37, z: 18.2, width: 13.28, depth: 4, height: 12 }))],
   film_zion_engineering: [{ x: -17, z: -25, width: 8, depth: 5, height: 5 }, { x: 17, z: -25, width: 8, depth: 6, height: 5 }, ...[-1, 1].map(side => ({ x: side * 22, z: 6, width: 7, depth: 11, height: 13 }))],
 };
 export const ZION_CAST: Record<string, Record<string, { x: number; z: number; yaw: number }>> = {

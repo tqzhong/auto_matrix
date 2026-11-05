@@ -56,7 +56,8 @@ test('Bane passes the disk out first; infection survives reload but stays outsid
   }
   const choices = h.sandbox.state.neoLife!.choices;
   assert.equal(choices.oracle_disk_carrier, 'malachi');
-  assert.equal(choices.bane_infected, 'smith'); assert.equal(choices.bane_returned, 'yes');
+  assert.equal(choices.bane_infected, 'smith'); assert.equal(choices.bane_returned, undefined);
+  assert.equal(h.actor().isInMatrix, true);
   assert.equal(h.world.agents.get('bane')!.faction, 'machines');
   assert.deepEqual(playerSkills(h.world.agents.get('bane')!), ['viral_overwrite', 'crushing_palm']);
   assert.ok(h.sandbox.state.neoLife!.journal.some(item => item.title.startsWith('旁观片段') && item.text.includes('不是 Neo')));
@@ -65,6 +66,8 @@ test('Bane passes the disk out first; infection survives reload but stays outsid
   assert.equal(h.sandbox.state.neoLife!.choices.bane_infected, 'smith');
   assert.equal(h.world.agents.get('bane')!.faction, 'machines');
   h.command('next'); assert.equal(h.state().scene, 'm2_hamann'); assert.equal(h.actor().id, 'neo');
+  assert.equal(h.sandbox.state.neoLife!.choices.bane_returned, 'yes');
+  assert.equal(h.world.agents.get('bane')!.isInMatrix, false);
 });
 
 test('leaving the Smith copy clears only the interrupted effect and permits a clean retry', () => {
@@ -160,6 +163,66 @@ test('the low Zion bedroom leaves the actual third-person camera clear at the me
   const ray = new THREE.Raycaster(camera, lookAt.clone().sub(camera).normalize(), 0, camera.distanceTo(lookAt));
   assert.deepEqual(ray.intersectObjects(renderer.group.children, true).map(hit => hit.object.name), []);
   renderer.dispose();
+});
+
+test('the bedroom has one walking surface under the disk handoff', t => {
+  const root = new THREE.Group(), renderer = new ZionHomecomingRenderer(root, 'film_zion_bedroom');
+  t.after(() => renderer.dispose());
+  root.updateMatrixWorld(true);
+  for (const x of [-5, 0, 5]) for (const z of [2, 6, 10, 14]) {
+    const ray = new THREE.Raycaster(new THREE.Vector3(x, .07, z), new THREE.Vector3(0, -1, 0), 0, .1);
+    const floor = ray.intersectObject(root, true).filter(hit => Math.abs(hit.point.y) < .015);
+    assert.equal(new Set(floor.map(hit => hit.object.uuid)).size, 1, `${x}, ${z}`);
+    const material = (floor[0].object as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    assert.equal(material.color.getHex(), 0x977b68);
+  }
+});
+
+test('the closed bedroom door blocks its frame and both sides, then clears the center aisle', t => {
+  const h = game(), state = h.state(), room = 'film_zion_bedroom';
+  state.scene = 'm2_hamann'; state.step = FILM_SCENE_BY_ID.m2_hamann.steps.length;
+  h.command('next'); assert.equal(state.scene, 'm2_oracle_message');
+  const root = new THREE.Group(), renderer = new ZionHomecomingRenderer(root, room);
+  t.after(() => renderer.dispose());
+  const blocked = (x: number) => playerBlocked(filmPosition(room, x, 17.6), false, 1.1, h.sandbox.state.structures);
+  const ray = (x: number) => {
+    root.updateMatrixWorld(true);
+    return new THREE.Raycaster(new THREE.Vector3(x, 2.5, 13), new THREE.Vector3(0, 0, 1), 0, 7).intersectObject(root, true);
+  };
+  renderer.update(state, 0);
+  for (const x of [-12, -6.5, 0, 6.5, 12]) {
+    assert.equal(blocked(x), true, `closed threshold at ${x}`);
+    assert.ok(ray(x).length, `the collision at ${x} has visible stone or iron`);
+  }
+  h.actor().position = filmPosition(room, 0, 13); h.command('act'); h.advance(5);
+  renderer.update(state, 0);
+  assert.equal(state.step, 1);
+  assert.equal(blocked(0), false); assert.equal(ray(0).length, 0);
+  for (const x of [-6.5, 6.5]) assert.equal(blocked(x), true);
+});
+
+test('a legacy save beyond the locked bedroom wall resumes on the room side', () => {
+  const h = game(), state = h.state(), room = 'film_zion_bedroom';
+  state.scene = 'm2_hamann'; state.step = FILM_SCENE_BY_ID.m2_hamann.steps.length;
+  h.command('next'); assert.equal(state.scene, 'm2_oracle_message');
+  const neo = h.actor(); neo.position = filmPosition(room, 6.5, 19);
+  h.players.release('p', 4);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.equal(h.state().step, 0);
+  assert.ok(neo.position.z < filmPosition(room, 0, 16).z);
+  assert.equal(playerBlocked(neo.position, false, 1.1, h.sandbox.state.structures), false);
+  assert.equal(h.players.possess('p', 'neo', 5).agentId, 'neo');
+  h.command('act'); h.advance(5); assert.equal(h.state().step, 1);
+});
+
+test('the departure hangar keeps the gangway and gifts without allocating hidden battle props', t => {
+  const root = new THREE.Group(), renderer = new ZionHomecomingRenderer(root, 'film_zion_hangar', 'm2_departure');
+  t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm2_departure', step: 0, completed: [] } as never, 0);
+  for (const name of ['zion-docked-nebuchadnezzar', 'zion-boarding-bay-deck', 'zee-farewell-charm', 'kid-spoon-gift'])
+    assert.ok(root.getObjectByName(name), name);
+  for (const name of ['zion-apu-loader', 'zion-ammo-cart', 'zion-gate-sentinel-1'])
+    assert.ok(!root.getObjectByName(name), name);
 });
 
 test('departure completes inside the ship bay after crossing the gangway', () => {

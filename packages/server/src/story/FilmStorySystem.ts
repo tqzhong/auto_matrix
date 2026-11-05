@@ -68,7 +68,7 @@ import { BasementEscapeSystem } from './BasementEscapeSystem.js';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { sixthLocked, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry } from '@auto_matrix/shared';
 import { wetwallLocked } from '@auto_matrix/shared';
-import { newReloaded, reloadedLocked, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_CAST } from '@auto_matrix/shared';
+import { newReloaded, reloadedLocked, ZION_BEDROOM_DOOR, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_CAST } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuidePose } from '@auto_matrix/shared';
 import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText, type ConstructGesture } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
@@ -5784,9 +5784,10 @@ export class FilmStorySystem {
   private sealZionMessageDoor(): void {
     const id = 'film:zion:oracle-door';
     if (this.state?.scene === 'm2_oracle_message' && this.state.step === 0 && !this.state.visiting) {
+      const { z, width, depth, height } = ZION_BEDROOM_DOOR;
       if (!this.sandbox().structures.some(s => s.id === id)) this.sandbox().structures.push({ id, kind: 'barricade', owner: 'zion',
-        position: filmPosition('film_zion_bedroom', 0, 17.6), matrix: false, health: 1,
-        film: { scene: 'm2_oracle_message', width: 4.2, depth: .35, height: 8.8 } });
+        position: filmPosition('film_zion_bedroom', 0, z), matrix: false, health: 1,
+        film: { scene: 'm2_oracle_message', width, depth, height } });
     } else this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== id);
   }
   private sealZionBoarding(): void {
@@ -5824,6 +5825,16 @@ export class FilmStorySystem {
     this.ensureHelDanceDoor(this.world.simulationTick);
     this.sealAmbush(); this.wetwall.seal(); this.sixth.seal(); this.sealZionMessageDoor(); this.sealArchitectDoors(); this.sealHelElevator(); this.sealHelDanceDoor();
     this.sealZionBoarding();
+    if (!this.state.visiting && ['m2_room', 'm2_oracle_message'].includes(this.state.scene)) {
+      const neo = this.world.agents.get('neo');
+      const door = filmPosition('film_zion_bedroom', 0, ZION_BEDROOM_DOOR.z);
+      const sealed = this.state.scene === 'm2_oracle_message' && this.state.step === 0;
+      if (neo?.currentLocation === 'film_zion_bedroom' && !neo.controller && !neo.isInMatrix
+        && (sealed && neo.position.z >= door.z || neo.position.z >= door.z - 3 && playerBlocked(neo.position, false, 1.1, this.sandbox().structures))) {
+        this.place(neo, this.scene!, filmPosition('film_zion_bedroom', 0, 13));
+        neo.rotation = 0; this.state.checkpoint = { ...neo.position };
+      }
+    }
     if (this.state.scene === 'm3_hel_entry' && !this.state.visiting && this.state.step >= 4) {
       for (const id of HEL_TRIO) {
         const member = this.world.agents.get(id);

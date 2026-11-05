@@ -3,7 +3,7 @@ import { ApuModel } from './ApuModel.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APU_RIG, APU_ROUTE, DOCK_GUNNERY, ZION_BOARDING, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_OBSTACLES, dockPowerOffline, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, DOCK_GUNNERY, ZION_BEDROOM_DOOR, ZION_BOARDING, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_OBSTACLES, dockPowerOffline, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { dockLastStandPose } from '@auto_matrix/shared';
 import { DockLastStandRenderer } from './DockLastStandRenderer.js';
 import { DockGateRenderer } from './DockGateRenderer.js';
@@ -53,9 +53,9 @@ export class ZionHomecomingRenderer {
   private templeDefense?: TempleDefenseRenderer;
   private crowd?: ZionCrowdRenderer;
   private disposed = false;
-  constructor(root: THREE.Group, readonly set: string) {
+  constructor(root: THREE.Group, readonly set: string, scene?: FilmJourney['scene']) {
     this.group.name = 'zion-homecoming-set'; root.add(this.group); this.group.add(this.static, this.moving);
-    if (set === 'film_zion_hangar') this.dock();
+    if (set === 'film_zion_hangar') this.dock(scene === 'm2_dock' || scene === 'm2_departure');
     if (set === 'film_zion_council') this.council();
     if (set === 'film_zion_residences') this.residences();
     if (set === 'film_zion_temple') this.temple();
@@ -110,7 +110,9 @@ export class ZionHomecomingRenderer {
     const panel = this.mesh(new THREE.PlaneGeometry(w, h), material, parent); panel.position.set(x, y, z); panel.rotation.y = rotate;
   }
   private rockShell(width: number, depth: number, height: number, stone: THREE.Material): void {
-    const dark = this.material(0x251f1b, 1); this.box(dark, 0, this.set === 'film_zion_temple' ? -.56 : -.5, 0, width, 1, depth);
+    const dark = this.material(0x251f1b, 1);
+    const stoneWalkway = this.set === 'film_zion_temple' || this.set === 'film_zion_bedroom';
+    this.box(dark, 0, stoneWalkway ? -.56 : -.5, 0, width, 1, depth);
     for (let side of [-1, 1]) for (let i = 0; i < 28; i++) {
       const z = -depth / 2 + 2 + i * (depth - 4) / 27;
       const uneven = Math.sin(i * 2.7 + side) * 2.1;
@@ -148,7 +150,7 @@ export class ZionHomecomingRenderer {
     for (const o of ZION_OBSTACLES[this.set] ?? []) this.box(mat, o.x, o.height / 2, o.z, o.width, o.height, o.depth,
       this.set === 'film_zion_hangar' && o.x > 0 ? this.moving.getObjectByName('zion-drill-cargo')! : this.static);
   }
-  private dock(): void {
+  private dock(civilian: boolean): void {
     const stone = this.surface('damaged_plaster', 0x706252, 6), metal = this.surface('metal_plate', 0x6d7770, 3);
     const iron = this.material(0x252e2d, .48, .68), lit = this.material(0xcebda0, .4, .25, 0xeaba72, 2);
     const engine = this.material(0x96c1a6, .28, .34, 0x7dc2aa, 1.2);
@@ -197,6 +199,19 @@ export class ZionHomecomingRenderer {
       for (const side of [-1, 1]) for (const end of [-1, 1]) this.box(iron, x + side * 3.15, height / 2, z + end * 1.6, .2, height, .2, parent);
     }
     this.box(metal, 11.5, -.04, 17, 8, .18, 3.2, this.static, 'zion-ship-gangway');
+    if (!civilian) this.dockBattle(metal, iron, lit);
+    const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.position.set(0, 2.4, 32); this.moving.add(charm);
+    this.mesh(new THREE.TorusGeometry(.24, .055, 8, 20), this.material(0xbca77b, .42, .6), charm);
+    this.mesh(new THREE.CylinderGeometry(.08, .09, .5, 8), metal, charm).position.y = -.18;
+    const spoon = new THREE.Group(); spoon.name = 'kid-spoon-gift'; spoon.position.set(-4.2, 2.3, 10); this.moving.add(spoon);
+    this.mesh(new THREE.SphereGeometry(.18, 12, 8), metal, spoon).scale.set(.7, .15, 1.7);
+    this.box(metal, 0, -.42, -.2, .055, .06, .75, spoon);
+    this.departureGifts = { charm, spoon, engines: engine };
+    this.glow(0xffb273, 420, 52, 0, 19, -54);
+    this.glow(0xffd0a0, 560, 68, 21, 18, 18); this.glow(0xeeb573, 330, 75, 18, 23, -28); this.glow(0x9cbaab, 180, 65, -29, 35, 18);
+    this.dockElectrical = { lights: [...this.lights].map(light => [light, light.intensity]), lit, engines: engine };
+  }
+  private dockBattle(metal: THREE.Material, iron: THREE.Material, lit: THREE.Material): void {
     const armor = this.surface('metal_plate', 0x69746b, 1), joint = this.material(0x343d39, .58, .65);
     this.apuModel = new ApuModel(this.moving, lit);
     this.apu = this.apuModel.group; this.cannons = this.apuModel.cannons; this.muzzleFlashes = this.apuModel.flashes;
@@ -266,16 +281,6 @@ export class ZionHomecomingRenderer {
       const signal = new THREE.PointLight(0xff5d3e, 130, 17, 2); signal.position.set(0, -.1, -1.5); sentinel.add(signal); this.lights.add(signal);
       this.sentinelDives.push(sentinel);
     }
-    const charm = new THREE.Group(); charm.name = 'zee-farewell-charm'; charm.position.set(0, 2.4, 32); this.moving.add(charm);
-    this.mesh(new THREE.TorusGeometry(.24, .055, 8, 20), this.material(0xbca77b, .42, .6), charm);
-    this.mesh(new THREE.CylinderGeometry(.08, .09, .5, 8), metal, charm).position.y = -.18;
-    const spoon = new THREE.Group(); spoon.name = 'kid-spoon-gift'; spoon.position.set(-4.2, 2.3, 10); this.moving.add(spoon);
-    this.mesh(new THREE.SphereGeometry(.18, 12, 8), metal, spoon).scale.set(.7, .15, 1.7);
-    this.box(metal, 0, -.42, -.2, .055, .06, .75, spoon);
-    this.departureGifts = { charm, spoon, engines: engine };
-    this.glow(0xffb273, 420, 52, 0, 19, -54);
-    this.glow(0xffd0a0, 560, 68, 21, 18, 18); this.glow(0xeeb573, 330, 75, 18, 23, -28); this.glow(0x9cbaab, 180, 65, -29, 35, 18);
-    this.dockElectrical = { lights: [...this.lights].map(light => [light, light.intensity]), lit, engines: engine };
   }
   private council(): void {
     const steel = this.surface('metal_plate', 0x737b72, 3), stone = this.surface('damaged_plaster', 0x6e675b, 3);
@@ -339,8 +344,9 @@ export class ZionHomecomingRenderer {
     for (const x of [-14, 14]) this.pipe(metal, [x, 8, -18], [x, 8, 18], .1);
     for (const x of [-2.5, 2.5]) this.box(metal, x, 5.1, 18.1, .45, 10.2, .65);
     this.box(metal, 0, 10, 18.1, 5.4, .55, .7, this.static, 'zion-bedroom-door-frame');
-    this.messageDoor = new THREE.Group(); this.messageDoor.position.set(-2.2, 0, 17.6); this.moving.add(this.messageDoor);
-    this.box(this.material(0x302d29, .55, .58), 2.2, 4.8, 0, 4.2, 8.8, .35, this.messageDoor, 'zion-bedroom-door');
+    const door = ZION_BEDROOM_DOOR;
+    this.messageDoor = new THREE.Group(); this.messageDoor.position.set(door.hingeX, 0, door.z); this.moving.add(this.messageDoor);
+    this.box(this.material(0x302d29, .55, .58), -door.hingeX, 4.8, 0, door.width, door.height, door.depth, this.messageDoor, 'zion-bedroom-door');
     const disk = new THREE.Group(); disk.name = 'oracle-message-disk'; disk.position.set(2.5, 2.3, 10.8); this.moving.add(disk);
     this.mesh(new THREE.CylinderGeometry(.38, .38, .035, 24), metal, disk);
     this.mesh(new THREE.CylinderGeometry(.09, .09, .045, 16), warm, disk).position.y = .04;
@@ -482,7 +488,7 @@ export class ZionHomecomingRenderer {
     }
     this.templeDefense?.update(journey);
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
-    if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step >= 1 ? -.85 : 0;
+    if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step === 0 && !journey.visiting ? 0 : ZION_BEDROOM_DOOR.openYaw;
     if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;
     if (this.departureGifts) {
       this.departureGifts.charm.visible = departure && journey.step < 1;
