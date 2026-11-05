@@ -60,7 +60,8 @@ players.onSkill = (skill, tick) => {
   sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, tick);
 };
 players.onReplaced = (socketId, tick) => {
-  sockets.getIO().to(socketId).emit('message', { type: 'player_state', data: { agentId: null, message: '已在另一页面继续游玩，进度已保留。当前页面已退出角色控制。' }, tick, timestamp: Date.now() });
+  sockets.broadcastDelta({ agents: {}, dirtyChunks: {}, events: [] }, tick,
+    { socketId, state: { agentId: null, message: '已在另一页面继续游玩，进度已保留。当前页面已退出角色控制。' } });
 };
 let speed = 1;
 let worldReady = false;
@@ -125,7 +126,7 @@ const simLoop = new SimulationLoop(config.simulation.tickRateMs, config.simulati
       if (action && action.progress < 1) actions.execute(agent.state, action, world.agents, tick);
     }
     manager.updateAllAgents(tick, (from, to, matrix) => cityVehicleBlocked(from, to, matrix, sandbox.state.structures));
-    dynamics.tick(tick);
+    dynamics.tick(tick, sandbox.life.film.state);
     sandbox.tick(tick);
     if (sandbox.state.ending === 'peace') story.setCeasefire(tick);
     world.advanceTick(sandbox.state.neoLife ? .25 : .72);
@@ -165,7 +166,8 @@ app.get('/api/conversations', (_req, res) => res.json({ active: conversations.ge
 app.get('/api/memories/:agentId', (req, res) => res.json({ recent: memory.getRecentContext(req.params.agentId, 20), total: memory.getMemoryCount(req.params.agentId) }));
 
 players.onStoryRole = (socketId, agentId, tick) => {
-  sockets.getIO().to(socketId).emit('message', { type: 'player_state', data: { agentId }, tick, timestamp: Date.now() });
+  sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, tick,
+    { socketId, state: { agentId } });
 };
 
 sockets.getIO().on('connection', async socket => {
@@ -187,14 +189,14 @@ sockets.getIO().on('connection', async socket => {
       const requested = data.agentId === 'neo' && sandbox.state.neoLife?.journey ? sandbox.state.neoLife.journey.actor : data.agentId;
       const result = players.possess(socket.id, requested, simLoop.getTick(), data.takeover === true);
       if (result.agentId === 'neo') sandbox.life.begin(world.agents.get('neo')!, simLoop.getTick());
-      sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), timeOfDay: world.timeOfDay, simulation: simulationState(), sandbox: sandbox.state }, simLoop.getTick());
-      socket.emit('message', { type: 'player_state', data: result, tick: simLoop.getTick(), timestamp: Date.now() });
+      sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), timeOfDay: world.timeOfDay, simulation: simulationState(), sandbox: sandbox.state }, simLoop.getTick(),
+        result.agentId ? { socketId: socket.id, state: { agentId: result.agentId } } : undefined);
+      if (!result.agentId) socket.emit('message', { type: 'player_state', data: result, tick: simLoop.getTick(), timestamp: Date.now() });
       return;
     }
     if (type === 'leave_character') {
       players.release(socket.id, simLoop.getTick());
-      socket.emit('message', { type: 'player_state', data: { agentId: null }, tick: simLoop.getTick(), timestamp: Date.now() });
-      sockets.broadcastDelta(sync.calculateDelta(world.agents), simLoop.getTick());
+      sockets.broadcastDelta(sync.calculateDelta(world.agents), simLoop.getTick(), { socketId: socket.id, state: { agentId: null } });
       return;
     }
     if (type === 'player_input') { players.receiveInput(socket.id, data); return; }

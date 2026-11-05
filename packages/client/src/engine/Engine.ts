@@ -29,9 +29,11 @@ import { ParticleSystem } from './ParticleSystem.js';
 import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
 import { FrameRate } from './FrameRate.js';
-import { LightCulling } from './LightCulling.js';
+import { LightCulling, POINT_SLOT_FLOOR } from './LightCulling.js';
 import { PillReflection } from './PillReflection.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
+
+const LOBBY_POINT_SLOTS = 9; // Six fixtures, the goal marker and two overlapping muzzle flashes.
 
 export interface FrameProfile {
   at: number;
@@ -221,7 +223,8 @@ export class Engine {
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);
     this.voxelRenderer.showOfficeInterior(Boolean(filmSet && ['film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id)) || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && ['film_anderson_flat', 'film_metacortex_floor', 'film_office_ledge'].includes(filmSet.id) ? undefined : filmSet;
-    this.lightCulling.reservePointSlots = reserveCommuteLights && !cinematicSet;
+    this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
+      : reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0;
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;
     measure?.('film');

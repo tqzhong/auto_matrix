@@ -104,7 +104,7 @@ test('the occupied lift prepares the hidden office and city materials with the a
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
   t.after(() => { film.dispose(); culling.dispose(); globalThis.document = document; });
-  culling.reservePointSlots = true;
+  culling.minimumPointSlots = 4;
   const lamp = new THREE.PointLight(0xffffff, 8, 10);
   const landing = new THREE.SpotLight(0xffffff, 0); landing.castShadow = true;
   const city = new THREE.Group(), street = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshPhysicalMaterial(), 1);
@@ -227,7 +227,7 @@ test('the approaching player gets staged manager texture uploads and a single co
   const calls: (THREE.Texture | string)[] = [];
   const renderTarget = new THREE.WebGLRenderTarget(2, 2);
   let target: THREE.WebGLRenderTarget | null = renderTarget;
-  lighting.reservePointSlots = true;
+  lighting.minimumPointSlots = 4;
   const renderer = {
     properties: {}, extensions: { has: () => true },
     initTexture: (texture: THREE.Texture) => calls.push(texture),

@@ -1,4 +1,4 @@
-import { LOCATIONS, distance, locationEntrance, type AgentState, type TrainingGesture, type WorldEvent } from '@auto_matrix/shared';
+import { LOCATIONS, distance, locationEntrance, type AgentState, type FilmJourney, type TrainingGesture, type WorldEvent } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { MemoryManager } from '../memory/MemoryManager.js';
 import type { RelationshipGraph } from '../agents/RelationshipGraph.js';
@@ -15,7 +15,9 @@ export class WorldDynamics {
     private random = Math.random,
   ) {}
 
-  tick(tick: number): void {
+  tick(tick: number, journey?: FilmJourney): void {
+    const rooftopInjuredActor = journey?.scene === 'm1_bullet_dodge' && !journey.visiting && (journey.government?.wounds ?? 0) > 0
+      ? journey.actor : undefined;
     for (const agent of this.world.agents.values()) {
       const mind = agent.mind;
       if (!mind || agent.status !== 'alive') continue;
@@ -28,7 +30,7 @@ export class WorldDynamics {
       const training = action?.parameters.training as TrainingGesture | undefined;
       const jumpInjury = training?.role === 'neo' && (training.kind === 'jump_fall' || training.kind === 'jump_return');
       const tendingNeo = agent.id === 'tank' && action?.parameters.theOne;
-      if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && !action.parameters.crosscut && !action.parameters.rescue
+      if (resting && mind.stress < 20 && !jumpInjury && !tendingNeo && agent.id !== rooftopInjuredActor && !action.parameters.crosscut && !action.parameters.rescue
         && !action.parameters.government && !action.parameters.sourcePortal && !action.parameters.helGarage)
         agent.health = Math.min(agent.maxHealth, agent.health + 0.15);
       const destination = agent.currentAction?.parameters.location as string | undefined;

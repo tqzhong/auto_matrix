@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 
-const POINT_SLOT_FLOOR = 4;
+export const POINT_SLOT_FLOOR = 4;
 type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; intensities: number[]; fill: number };
 
 /** Reuse non-shadow light shader variants across camera changes. */
 export class LightCulling {
   enabled = true;
   stablePointSlots = false;
-  reservePointSlots = false;
+  minimumPointSlots = 0;
   lastView = { considered: 0, culled: 0 };
   private frustum = new THREE.Frustum();
   private projection = new THREE.Matrix4();
@@ -62,8 +62,7 @@ export class LightCulling {
         light.visible = false; selected.hidden.push(light);
       }
       selected.muted.length = selected.intensities.length = padding;
-      // Crossing an interior boundary can leave too few real lights to pad the shader.
-      if (this.reservePointSlots) selected.fill = Math.max(0, POINT_SLOT_FLOOR - kept - padding);
+      selected.fill = Math.max(0, this.minimumPointSlots - kept - padding);
       this.setPointFill(selected.fill);
     }
     if (this.depth === 1 && !this.scene.overrideMaterial) this.lastView = { considered, culled: selected.hidden.length + selected.muted.length };
@@ -94,10 +93,10 @@ export class LightCulling {
   private setPointFill(count: number): void {
     if (!this.pointFill && count > 0) {
       this.pointFill = new THREE.Group();
-      for (let i = 0; i < POINT_SLOT_FLOOR; i++) this.pointFill.add(new THREE.PointLight(0xffffff, 0, 1));
       this.scene.add(this.pointFill);
     }
     if (this.pointFill) {
+      for (let i = this.pointFill.children.length; i < count; i++) this.pointFill.add(new THREE.PointLight(0xffffff, 0, 1));
       this.pointFill.visible = count > 0;
       this.pointFill.children.forEach((light, i) => { light.visible = i < count; });
     }

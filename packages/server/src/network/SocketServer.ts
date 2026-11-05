@@ -5,13 +5,14 @@ import type { ServerMessage, WorldStateFull, WorldStateDelta, AgentState, StoryP
 
 type StateMessage = { type: 'world_state_full'; data: WorldStateFull; tick: number; timestamp: number }
   | { type: 'world_state_delta'; data: WorldStateDelta; tick: number; timestamp: number };
+type RoleDelivery = { socketId: string; state: { agentId: string | null; message?: string } };
 
 export class SocketServer {
   private io: SocketIOServer;
   private lastFields = new Map<string, string>();
   private lastTick?: number;
   private compressedStates = new WeakMap<StateMessage, Buffer>();
-  private stateStreams = new WeakMap<Socket, { waiting: boolean; full?: StateMessage; delta?: Extract<StateMessage, { type: 'world_state_delta' }> }>();
+  private stateStreams = new WeakMap<Socket, { waiting: boolean; full?: StateMessage; delta?: Extract<StateMessage, { type: 'world_state_delta' }>; role?: ServerMessage }>();
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -40,7 +41,7 @@ export class SocketServer {
     });
   }
 
-  broadcastDelta(data: WorldStateDelta, tick: number): void {
+  broadcastDelta(data: WorldStateDelta, tick: number, role?: RoleDelivery): void {
     let changed = tick !== this.lastTick || Boolean(Object.keys(data.dirtyChunks).length || data.events.length);
     this.lastTick = tick;
     for (const [id, state] of Object.entries(data.agents)) changed = this.changed(`agent:${id}`, state) || changed;
@@ -50,7 +51,7 @@ export class SocketServer {
     for (const [key, value] of Object.entries(data)) {
       if (key !== 'agents' && key !== 'dirtyChunks' && key !== 'events') changed = this.changed(`world:${key}`, value) || changed;
     }
-    if (!changed) return;
+    if (!changed && !role) return;
     // Scene actors and their performance clocks travel together, including
     // stationary cast members, even when waiting frames are coalesced below.
     const message: StateMessage = {
@@ -59,15 +60,25 @@ export class SocketServer {
       tick,
       timestamp: Date.now(),
     };
-    for (const socket of this.io.sockets.sockets.values()) this.sendState(socket, message);
+    const control: ServerMessage | undefined = role && { type: 'player_state', data: role.state, tick, timestamp: message.timestamp };
+    for (const socket of this.io.sockets.sockets.values()) {
+      const after = socket.id === role?.socketId ? control : undefined;
+      if (changed || after) this.sendState(socket, message, after);
+    }
   }
 
-  private sendState(socket: Socket, message: StateMessage): void {
+  private sendState(socket: Socket, message: StateMessage, role?: ServerMessage): void {
     // Older open tabs keep their existing protocol until they reload.
-    if (socket.handshake.auth.stateAcknowledgements !== true) { socket.emit('message', message); return; }
+    if (socket.handshake.auth.stateAcknowledgements !== true) {
+      socket.emit('message', message);
+      if (role) socket.emit('message', role);
+      return;
+    }
     let stream = this.stateStreams.get(socket);
     if (!stream) { stream = { waiting: false }; this.stateStreams.set(socket, stream); }
     if (stream.waiting) {
+      // Deliver the latest role after the queued world state that includes it.
+      if (role) stream.role = role;
       // Freeze queued values: the simulation keeps mutating its live objects.
       const next = JSON.parse(JSON.stringify(message)) as StateMessage;
       if (next.type === 'world_state_full') {
@@ -91,7 +102,9 @@ export class SocketServer {
       if (!socket.connected) return;
       const next = stream.full ?? stream.delta;
       if (stream.full) stream.full = undefined; else stream.delta = undefined;
-      if (next) this.sendState(socket, next);
+      const nextRole = stream.full || stream.delta ? undefined : stream.role;
+      if (nextRole) stream.role = undefined;
+      if (next) this.sendState(socket, next, nextRole);
     };
     if (socket.handshake.auth.stateCompression === 'gzip') {
       // Some browser/proxy connections do not negotiate permessage-deflate.
@@ -103,6 +116,7 @@ export class SocketServer {
       }
       socket.compress(false).emit('message', compressed, receipt);
     } else socket.emit('message', message, receipt);
+    if (role) socket.emit('message', role);
   }
 
   private changed(key: string, value: unknown): boolean {

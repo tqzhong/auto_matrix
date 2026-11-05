@@ -189,7 +189,7 @@ test('the commute keeps four point-light slots as nearby interiors appear and di
     return lights;
   };
   const children = h.scene.children.length;
-  h.culling.reservePointSlots = true;
+  h.culling.minimumPointSlots = 4;
   try {
     lobby.visible = false;
     h.before();
@@ -213,7 +213,7 @@ test('the commute keeps four point-light slots as nearby interiors appear and di
     lobby.visible = false;
     h.before(); h.culling.restore();
     assert.deepEqual(visibleLights(), street);
-    h.culling.reservePointSlots = false;
+    h.culling.minimumPointSlots = 0;
     h.before(); assert.deepEqual(visibleLights(), street); h.after();
   } finally { normal.dispose(); h.culling.dispose(); }
   assert.equal(h.scene.children.length, children);
@@ -237,6 +237,33 @@ test('a fixed point-light set keeps its shader slots while turning and turning l
       assert.equal(shadow.visible, true);
       inactive.intensity = yaw === 0 ? 10 : 0;
     }
+  } finally { h.culling.dispose(); }
+});
+
+test('the lobby reserve absorbs two overlapping muzzle flashes without changing the light count or brightness', () => {
+  const h = view(); h.culling.stablePointSlots = true; h.culling.minimumPointSlots = 9;
+  for (let i = 0; i < 7; i++) h.light(i * .1, -10, 4);
+  const sample = () => {
+    h.before();
+    let count = 0, energy = 0;
+    h.scene.traverseVisible(object => {
+      if (object instanceof THREE.PointLight) { count++; energy += object.intensity; }
+    });
+    h.after();
+    return [count, energy];
+  };
+  try {
+    assert.deepEqual(sample(), [9, 70]);
+    const first = h.light(0, -9, 4, 85);
+    assert.deepEqual(sample(), [9, 155]);
+    const second = h.light(1, -9, 4, 85);
+    assert.deepEqual(sample(), [9, 240]);
+    const third = h.light(-1, -9, 4, 85);
+    assert.deepEqual(sample(), [10, 325], 'an extra shot still contributes its actual light');
+    for (const light of [first, second, third]) light.removeFromParent();
+    assert.deepEqual(sample(), [9, 70]);
+    h.culling.minimumPointSlots = 0;
+    assert.deepEqual(sample(), [7, 70]);
   } finally { h.culling.dispose(); }
 });
 

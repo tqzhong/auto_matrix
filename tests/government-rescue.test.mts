@@ -111,6 +111,10 @@ test('Neo must hit two of three bullet-time dodge windows before Trinity can fin
   assert.equal(h.actor.health, injured, 'being shot cannot be healed by the staged idle animation');
   h.frames(GOVERNMENT_RESCUE.rooftop.trinity + .2);
   assert.equal(state.step, 1); assert.equal(state.government!.phase, 'download_ready');
+  h.frames(.2);
+  assert.equal(h.actor.currentAction?.type, 'idle');
+  dynamics.tick(h.tick(), state);
+  assert.equal(h.actor.health, injured, 'waiting to download the pilot program preserves the rooftop graze');
   assert.equal(h.world.agents.get('agent_jones')!.currentAction, null);
   assert.ok(h.impacts.some(impact => impact.source === 'neo' && impact.target === 'agent_jones'), 'Neo opening fire reaches the shared combat-effects pipeline');
   assert.equal(h.impacts.filter(impact => impact.source === 'agent_jones' && impact.target === 'neo' && impact.damage > 0).length, 1, 'the missed window emits the saved graze');

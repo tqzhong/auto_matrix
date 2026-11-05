@@ -6,7 +6,7 @@ import { io } from 'socket.io-client';
 import { SocketServer } from '../packages/server/src/network/SocketServer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
-import type { AgentState, SandboxState, ServerMessage, WorldStateDelta, WorldStateFull } from '@auto_matrix/shared';
+import { filmPosition, type AgentState, type SandboxState, type ServerMessage, type WorldStateDelta, type WorldStateFull } from '@auto_matrix/shared';
 
 test('world updates use compressed wire bytes and a command can complete a round trip', async t => {
   const http = createServer(), server = new SocketServer(http);
@@ -215,4 +215,41 @@ test('resynchronization replaces pending state and retains updates following the
   assert.equal(slow.messages[1].type, 'world_state_full'); assert.deepEqual(slow.messages[1].data, JSON.parse(JSON.stringify(full)));
   slow.receipts.shift()!(); await slow.flush();
   assert.equal(slow.messages[2].type, 'world_state_delta'); assert.equal((slow.messages[2].data as WorldStateDelta).agents.neo.health, 68);
+});
+
+test('the receiving player gets the new role after its scene and pose, even when state is coalesced', async t => {
+  const game = await stream(t), slow = await game.connect(true), world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const morpheus = world.agents.get('morpheus')!, socketId = slow.client.id!;
+  const base = { dirtyChunks: {}, events: [] };
+  morpheus.position = filmPosition('film_ambush_house');
+  game.server.broadcastDelta({ ...base, agents: { morpheus } }, 1); await slow.flush();
+  morpheus.position = filmPosition('film_government_office'); morpheus.currentLocation = 'film_government_office';
+  const state = sandbox(); state.serial = 2;
+  game.server.broadcastDelta({ ...base, agents: { morpheus }, sandbox: state }, 2, { socketId, state: { agentId: morpheus.id } });
+  const full: WorldStateFull = { agents: { morpheus }, chunks: {}, locations: {}, phase: 'phase1_normal', timeOfDay: 8000, sandbox: state };
+  game.server.sendFullState(socketId, full, 3);
+  await slow.flush(); await game.flush();
+  assert.deepEqual(slow.messages.map(message => message.type), ['world_state_delta']);
+  assert.ok(game.messages.every(message => message.type !== 'player_state'));
+
+  slow.receipts.shift()!(); await slow.flush();
+  assert.deepEqual(slow.messages.map(message => message.type), ['world_state_delta', 'world_state_full', 'player_state']);
+  const updated = slow.messages[1].data as WorldStateFull;
+  assert.deepEqual(updated.agents.morpheus.position, morpheus.position);
+  assert.equal(updated.sandbox!.serial, 2);
+  assert.deepEqual(slow.messages[2].data, { agentId: morpheus.id });
+
+  const neo = world.agents.get('neo')!;
+  game.server.broadcastDelta({ ...base, agents: { neo } }, 4, { socketId, state: { agentId: neo.id } });
+  game.server.broadcastDelta({ ...base, agents: { neo: { controller: null } } }, 5, { socketId, state: { agentId: null } });
+  slow.receipts.shift()!(); await slow.flush();
+  assert.deepEqual(slow.messages.slice(3).map(message => message.type), ['world_state_delta', 'player_state']);
+  assert.deepEqual(slow.messages[4].data, { agentId: null });
+
+  await game.flush();
+  const delivered = game.messages.length;
+  game.server.broadcastDelta({ ...base, agents: { neo: { controller: null } } }, 5,
+    { socketId: game.client.id!, state: { agentId: null } });
+  await game.flush();
+  assert.deepEqual(game.messages.slice(delivered).map(message => message.type), ['world_state_delta', 'player_state']);
 });
