@@ -26,7 +26,7 @@ export class PodMembraneRenderer {
     }
   }
 
-  update(journey: FilmJourney | undefined, body?: THREE.Object3D): void {
+  update(journey: Pick<FilmJourney, 'scene' | 'visiting' | 'awakening'> | undefined, body?: THREE.Object3D): void {
     const beat = journey?.awakening;
     this.root.visible = journey?.scene === 'm1_pod' && !journey.visiting && (!beat || beat.kind === 'emerge'
       || beat.emerged === true && (beat.kind === 'breather' || beat.kind === 'disconnect' && beat.elapsed < 4));

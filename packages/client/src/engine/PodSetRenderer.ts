@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
+import { podThirdPersonCamera } from '../player/PodCamera.js';
+import { LightCulling } from './LightCulling.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { PodMembraneRenderer } from './PodMembraneRenderer.js';
 import { PodMaintenanceRenderer } from './PodMaintenanceRenderer.js';
@@ -14,11 +16,14 @@ const feedClearances = [
   { normal: .08, lateral: 0, height: -.2 },
 ] as const;
 const leftFeedReturn = { normal: .08, lateral: .6, height: .8 };
+type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 
 /** A single awakening set: the foreground tank, drain and rescue share story coordinates. */
 export class PodSetRenderer {
   readonly root = new THREE.Group();
   private construction?: Generator<void>;
+  private colorPreparation?: Generator<void>;
+  private colorProgramsReady = false;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Map<string, THREE.Texture>();
@@ -66,7 +71,64 @@ export class PodSetRenderer {
   }
   attach(parent: THREE.Group): void {
     while (this.construction) this.prepareStep();
+    this.stopPreparingColors();
     parent.add(this.root);
+  }
+  prepareColorPrograms(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene): void {
+    if (this.construction || this.colorProgramsReady || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    this.colorPreparation ??= this.prepareColors(renderer, camera, scene);
+    if (this.colorPreparation.next().done) {
+      this.colorPreparation = undefined;
+      this.colorProgramsReady = true;
+    }
+  }
+  private stopPreparingColors(): void {
+    this.colorPreparation?.return(undefined); this.colorPreparation = undefined;
+  }
+  private *prepareColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene): Generator<void> {
+    const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog?.clone() ?? null;
+    for (const light of scene.children) {
+      if (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight) lights.add(light.clone());
+    }
+    const { center } = FILM_SETS.film_power_plant_pods;
+    const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
+    const { ideal, focus } = podThirdPersonCamera(this.root, center, 'pod');
+    const eye = camera.clone(); eye.position.copy(ideal).sub(origin); eye.lookAt(focus.sub(origin));
+    eye.fov = 65; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
+    this.update({ scene: 'm1_pod' }, 0, false, undefined, eye);
+    this.root.updateMatrixWorld(true);
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
+    const meshes: THREE.Object3D[] = [];
+    this.root.traverseVisible(object => {
+      if (object instanceof THREE.Light) {
+        const light = object.clone(); object.getWorldPosition(light.position); lights.add(light);
+      } else if ((object instanceof THREE.Mesh || object instanceof THREE.Points) && (!object.frustumCulled || frustum.intersectsObject(object))) {
+        meshes.push(object);
+      }
+    });
+    const culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    target.texture.name = 'pod-color-preparation';
+    const pending: ColorProgram[] = [];
+    try {
+      yield;
+      while (meshes.length || pending.length) {
+        const programs = renderer.info.programs;
+        const ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
+        if (ready >= 0) {
+          const [program] = pending.splice(ready, 1); program.getUniforms();
+        } else if (meshes.length) {
+          const batch = meshes.splice(0, 4), subject = new THREE.Group();
+          subject.traverse = visit => batch.forEach(visit);
+          const previous = renderer.getRenderTarget(), start = programs?.length ?? 0;
+          try {
+            renderer.setRenderTarget(target);
+            culling.compileSubject(renderer, eye, subject);
+          } finally { renderer.setRenderTarget(previous); }
+          if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+        }
+        yield;
+      }
+    } finally { culling.dispose(); target.dispose(); }
   }
   private *build(): Generator<void> {
     this.steel = this.mat(0x46565b, .4, .45); this.dark = this.mat(0x131b1d, .57, .35);
@@ -427,7 +489,7 @@ export class PodSetRenderer {
       batch.mesh.count = shown.length;
     }
   }
-  update(journey: FilmJourney | undefined, elapsed: number, firstPerson = false, subject?: THREE.Object3D, camera?: THREE.Camera): void {
+  update(journey: Pick<FilmJourney, 'scene' | 'visiting' | 'awakening'> | undefined, elapsed: number, firstPerson = false, subject?: THREE.Object3D, camera?: THREE.Camera): void {
     const beat = journey?.visiting ? undefined : journey?.awakening;
     const disconnect = beat?.kind === 'disconnect' ? beat.elapsed : beat?.kind === 'rescue' ? 9 : 0;
     const clock = beat ? (beat.kind === 'rescue' ? 9 : 0) + beat.elapsed : journey?.scene === 'm1_pod' ? 0 : elapsed;
@@ -530,6 +592,7 @@ export class PodSetRenderer {
   dispose(): void {
     this.disposed = true;
     this.construction = undefined;
+    this.stopPreparingColors();
     this.membrane?.dispose();
     this.maintenance?.dispose();
     this.drain?.dispose();

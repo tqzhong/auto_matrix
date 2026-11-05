@@ -327,6 +327,9 @@ export class FilmSetRenderer {
     if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
+  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera): void {
+    this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene);
+  }
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group): void {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting

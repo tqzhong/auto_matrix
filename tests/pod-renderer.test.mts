@@ -4,6 +4,50 @@ import * as THREE from 'three';
 import { POD_RUNOFF, podRunoffHeight } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 
+test('pod color programs prepare offstage and query only ready programs', () => {
+  const pod = new PodSetRenderer(), scene = new THREE.Scene(), parent = new THREE.Group();
+  const key = new THREE.DirectionalLight(), camera = new THREE.PerspectiveCamera(58, 16 / 9, .1, 400);
+  key.castShadow = true; scene.add(key, new THREE.HemisphereLight());
+  scene.fog = new THREE.FogExp2(0x080f14, .005); scene.environment = new THREE.Texture();
+  const previous = new THREE.WebGLRenderTarget(12, 16);
+  let target = previous, disposals = 0, compiled = 0, queried = 0, supported = false, ready = false;
+  const program = { isReady: () => ready, getUniforms: () => { queried++; } };
+  const programs: typeof program[] = [];
+  const renderer = {
+    extensions: { has: () => supported }, info: { programs }, getRenderTarget: () => target,
+    setRenderTarget: (value: THREE.WebGLRenderTarget) => { target = value; },
+    compile: (subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) => {
+      assert.ok(lights !== scene && lights.environment === scene.environment);
+      assert.ok(lights.children.some(light => light instanceof THREE.DirectionalLight && light.castShadow));
+      assert.ok(lights.children.some(light => light instanceof THREE.PointLight));
+      assert.equal(pod.root.parent, null);
+      assert.equal(target.width, 1);
+      let meshes = 0; subject.traverse(() => meshes++);
+      assert.ok(meshes >= 1 && meshes <= 4);
+      if (++compiled === 1) {
+        programs.push(program);
+        target.addEventListener('dispose', () => disposals++);
+      }
+    },
+  } as unknown as THREE.WebGLRenderer;
+  try {
+    for (let i = 0; i < 40; i++) pod.prepareStep();
+    pod.prepareColorPrograms(renderer, camera, scene);
+    assert.equal(compiled, 0, 'unsupported drivers use ordinary rendering');
+    supported = true;
+    for (let i = 0; i < 5; i++) pod.prepareColorPrograms(renderer, camera, scene);
+    assert.ok(compiled > 0);
+    assert.equal(queried, 0);
+    assert.ok(target === previous && key.parent === scene);
+    ready = true;
+    pod.prepareColorPrograms(renderer, camera, scene);
+    assert.equal(queried, 1);
+    pod.attach(parent);
+    assert.equal(disposals, 1, 'the scratch target is released when the pod goes live');
+    assert.ok(pod.root.parent === parent && target === previous);
+  } finally { pod.dispose(); previous.dispose(); scene.environment.dispose(); }
+});
+
 test('the rescue bay has an open passage for the body and closes below it after boarding', () => {
   const root = new THREE.Group(); const set = new PodSetRenderer(root);
   try {
