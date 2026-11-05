@@ -2555,7 +2555,9 @@ export class PlayerControls {
       const reveal = THREE.MathUtils.smoothstep(this.motion.window, 2, 3.2);
       const ideal = new THREE.Vector3(-20, 6.6, -22.5).lerp(new THREE.Vector3(-24, 6.8, -25), reveal).add(new THREE.Vector3(center.x, center.y - 1, center.z));
       const focus = new THREE.Vector3(-28.5, 3.8, -27).lerp(new THREE.Vector3(-42, -8, -36), reveal).add(new THREE.Vector3(center.x, center.y - 1, center.z));
-      this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(focus);
+      if (resetCamera) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(focus);
     } else if (this.performing && this.phone && this.motion.window === undefined && this.motion.crossing === undefined && this.firstPerson) {
       const head = group.getObjectByName('head'); head?.updateWorldMatrix(true, false);
       const eye = head ? head.localToWorld(new THREE.Vector3(0, .1, .32)) : target;
@@ -2568,7 +2570,9 @@ export class PlayerControls {
       const origin = new THREE.Vector3(center.x + OFFICE_CONTACT.x, center.y - 1, center.z + OFFICE_CONTACT.z);
       const ideal = origin.clone().add(new THREE.Vector3(.7, 4.25, .5).lerp(new THREE.Vector3(2.35, 4.35, -2.5), call));
       const target = origin.clone().add(new THREE.Vector3(.5, 2.725, -1.39).lerp(new THREE.Vector3(.38, 3.255, -.66), lift).lerp(new THREE.Vector3(.15, 3.65, -.1), call));
-      this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta)); this.camera.lookAt(target);
+      if (resetCamera) this.camera.position.copy(ideal);
+      else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      this.camera.lookAt(target);
     } else if (this.performing && this.motion.vase !== undefined) {
       if (this.firstPerson) {
         const eye = new THREE.Vector3(this.position.x, this.position.y + 2.99, this.position.z);
