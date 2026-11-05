@@ -4,7 +4,7 @@ import { upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
 import { diggersActive, diggersLocked } from '@auto_matrix/shared';
 import { dockGateActive, dockLastStandLocked, dockReloadLocked } from '@auto_matrix/shared';
 import { type TrilogyEpilogueEncounter } from '@auto_matrix/shared';
-import { crosscutPhoneRole } from '@auto_matrix/shared';
+import { crosscutActive, crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
@@ -227,6 +227,8 @@ export class FilmSetRenderer {
   private basement?: BasementSetRenderer;
   private basementFrame?: number;
   private tvRepair?: TvRepairRenderer;
+  private crosscutTv?: TvRepairRenderer;
+  private crosscutDeck?: { root: THREE.Group; renderer: NebDeckRenderer };
   private pillGlass?: THREE.Group;
   private interrogation?: InterrogationSetRenderer;
   private meeting?: MeetingSetRenderer;
@@ -602,7 +604,8 @@ export class FilmSetRenderer {
     // Both chapters continue on the same damaged avenue and reflection pass.
     if (this.smithFinale && set?.id === 'film_smith_avenue' && !journey?.visiting
       && this.currentScene === 'm3_rain' && sceneId === 'm3_surrender') this.currentScene = sceneId;
-    if (set?.id !== this.current?.id || sceneId !== this.currentScene) {
+    const keepCrosscut = crosscutActive(journey) && (set?.id === 'film_tv_repair' || set?.id === 'film_neb_deck');
+    if (set?.id !== this.current?.id || sceneId !== this.currentScene || !keepCrosscut && Boolean(this.crosscutTv || this.crosscutDeck)) {
       const enteringOffice = set?.id === 'film_metacortex_floor' || set?.id === 'film_office_ledge';
       const prepared = enteringOffice ? this.preparedOffice?.renderer : undefined;
       if (prepared) this.preparedOffice = undefined;
@@ -616,7 +619,13 @@ export class FilmSetRenderer {
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
       if (approach) this.meeting = undefined;
-      this.clear(); this.current = set; this.currentScene = sceneId;
+      if (keepCrosscut && this.tvRepair) {
+        this.crosscutTv = this.tvRepair; this.tvRepair.root.removeFromParent(); this.tvRepair = undefined;
+      }
+      if (keepCrosscut && this.neb && this.crosscutDeck?.renderer === this.neb) {
+        this.crosscutDeck.root.removeFromParent(); this.neb = undefined;
+      }
+      this.clear(keepCrosscut); this.current = set; this.currentScene = sceneId;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
       if (set && set.id !== 'film_anderson_flat') {
@@ -647,7 +656,15 @@ export class FilmSetRenderer {
           this.pods = preparedPods ?? new PodSetRenderer();
           this.pods.attach(this.root);
         }
-        else if (set.id === 'film_neb_deck') this.neb = new NebDeckRenderer(this.root);
+        else if (set.id === 'film_neb_deck') {
+          if (keepCrosscut) {
+            if (!this.crosscutDeck) {
+              const root = new THREE.Group();
+              this.crosscutDeck = { root, renderer: new NebDeckRenderer(root) };
+            }
+            this.root.add(this.crosscutDeck.root); this.neb = this.crosscutDeck.renderer;
+          } else this.neb = new NebDeckRenderer(this.root);
+        }
         else if (set.id === 'film_operation_room') this.sourceBriefing = new SourceBriefingRenderer(this.root);
         else if (set.id === 'film_power_station') this.primaryDemolition = new PrimaryDemolitionRenderer(this.root);
         else if (set.id === 'film_source_corridor') this.sourceDoor = new SourcePortalRenderer(this.root);
@@ -678,7 +695,10 @@ export class FilmSetRenderer {
           this.ambush = preparedAmbush ?? new AmbushSetRenderer();
           this.ambush.attach(this.root);
         }
-        else if (set.id === 'film_tv_repair') this.tvRepair = new TvRepairRenderer(this.root);
+        else if (set.id === 'film_tv_repair') {
+          this.tvRepair = (keepCrosscut ? this.crosscutTv : undefined) ?? new TvRepairRenderer(this.root);
+          if (keepCrosscut) this.root.add(this.tvRepair.root);
+        }
         else if (set.id === 'film_agent_interrogation') this.interrogation = new InterrogationSetRenderer(this.root);
         else if (set.id === 'film_adams_bridge' || set.id === 'film_extraction_car') this.meeting = new MeetingSetRenderer(this.root);
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
@@ -3132,7 +3152,12 @@ export class FilmSetRenderer {
   private cancelPodPreparation(): void {
     this.preparedPods?.dispose(); this.preparedPods = undefined;
   }
-  private clear(): void {
+  private clear(keepCrosscut = false): void {
+    if (!keepCrosscut) {
+      if (this.crosscutTv !== this.tvRepair) this.crosscutTv?.dispose();
+      if (this.crosscutDeck?.renderer !== this.neb) this.crosscutDeck?.renderer.dispose();
+      this.crosscutTv = undefined; this.crosscutDeck = undefined;
+    }
     this.cancelOfficePreparation();
     this.cancelLafayettePreparation();
     this.cancelPodPreparation();

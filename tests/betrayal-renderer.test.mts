@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { filmPosition, type FilmJourney } from '@auto_matrix/shared';
+import { filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 const journey = (scene: 'm1_bathroom' | 'm1_unplugged', phase: NonNullable<FilmJourney['betrayal']>['phase'], elapsed = 0): FilmJourney => ({
   version: 1, scene, actor: scene === 'm1_bathroom' ? 'morpheus' : 'tank', step: scene === 'm1_bathroom' ? 0 : 1,
@@ -51,4 +54,58 @@ test('Cypher betrayal has physical jacks, per-person signals and a timed counter
     renderer.update(scene, 5.32); assert.equal(flash.visible, true, 'the saved firing beat restores the pulse discharge');
     scene.betrayal.elapsed = 3.1; renderer.update(scene, 6.1); assert.equal(flash.visible, false);
   } finally { renderer.dispose(); }
+});
+
+for (const visit of [false, true]) test(`the intercut reuses both rooms and releases them when ${visit ? 'visiting a scene' : 'the rescue begins'}`, t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new FilmSetRenderer(new THREE.Scene()), direct = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); direct.dispose(); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, tank = world.agents.get('tank')!;
+  neo.position = filmPosition('film_tv_repair', -7, -18.5); neo.isInMatrix = true;
+  tank.position = filmPosition('film_neb_deck', -3, 0); tank.isInMatrix = false;
+  const state = { ...journey('m1_unplugged', 'ready'), scene: 'm1_tv_exit', actor: 'neo', step: 3,
+    tvExit: { phase: 'calling', elapsed: 0, crosscut: { phase: 'call', elapsed: 3, view: 'matrix', attempts: 0,
+      tankHealth: 40, tankHit: true, dozerDead: true, apocDead: false, switchDead: false,
+      cypherDead: false, trinityOut: false, neoOut: false } } } as FilmJourney;
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  renderer.update(neo, sandbox, 0);
+  const shop = renderer.root.getObjectByName('franklin-erie-tv-repair')!;
+  const shopMesh = shop.getObjectsByProperty('type', 'Mesh')[0] as THREE.Mesh;
+  let shopDisposals = 0, deckDisposals = 0, shadowDisposals = 0;
+  shopMesh.geometry.addEventListener('dispose', () => shopDisposals++);
+  const daylight = shop.getObjectsByProperty('type', 'SpotLight')[0] as THREE.SpotLight;
+  daylight.shadow.map = new THREE.WebGLRenderTarget(1, 1);
+  daylight.shadow.map.addEventListener('dispose', () => shadowDisposals++);
+  const cut = state.tvExit!.crosscut!;
+  state.actor = tank.id; cut.view = 'ship'; cut.elapsed = 6;
+  renderer.update(tank, sandbox, 1);
+  const deck = renderer.root.getObjectByName('neb-interior-deck')!;
+  const deckMesh = deck.getObjectsByProperty('type', 'Mesh')[0] as THREE.Mesh;
+  deckMesh.geometry.addEventListener('dispose', () => deckDisposals++);
+  assert.equal(renderer.root.getObjectByName(shop.name), undefined, 'offstage shop lights cannot enter the ship render');
+  const snapshot = (root: THREE.Object3D) => {
+    const values: unknown[] = [];
+    root.traverse(object => values.push([object.name, object.type, object.visible, object.position.toArray(), object.rotation.toArray(),
+      object instanceof THREE.Light ? [object.intensity, object.color.getHex(), object.castShadow] : undefined]));
+    return values;
+  };
+  for (const elapsed of [9, 18]) {
+    state.actor = neo.id; cut.view = 'matrix'; cut.elapsed = elapsed; cut.apocDead = true; cut.switchDead = elapsed >= 18;
+    renderer.update(neo, sandbox, elapsed); direct.update(neo, sandbox, elapsed);
+    assert.ok(renderer.root.getObjectByName(shop.name) === shop, 'the shop survives the return cut');
+    assert.equal(renderer.root.getObjectByName(deck.name), undefined);
+    assert.deepEqual(snapshot(shop), snapshot(direct.root.getObjectByName(shop.name)!));
+    state.actor = tank.id; cut.view = 'ship'; cut.elapsed = elapsed + 5;
+    renderer.update(tank, sandbox, elapsed); direct.update(tank, sandbox, elapsed);
+    assert.ok(renderer.root.getObjectByName(deck.name) === deck, 'the deck survives the return cut');
+    assert.deepEqual(snapshot(deck), snapshot(direct.root.getObjectByName(deck.name)!));
+  }
+  state.scene = 'm1_unplugged'; renderer.update(tank, sandbox, 24);
+  assert.ok(renderer.root.getObjectByName(deck.name) === deck, 'Tank takes over on the retained ship');
+  assert.equal(shopDisposals, 0); assert.equal(deckDisposals, 0); assert.equal(shadowDisposals, 0);
+  if (visit) state.visiting = 'm1_unplugged';
+  else { state.scene = 'm1_rescue_decision'; delete state.tvExit; }
+  renderer.update(tank, sandbox, 25);
+  assert.equal(shopDisposals, 1); assert.equal(deckDisposals, 1); assert.equal(shadowDisposals, 1);
 });
