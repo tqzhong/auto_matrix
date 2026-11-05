@@ -58,6 +58,24 @@ test('the chateau staircase supports the player and its upper landing blocks ent
   assert.equal(groundHeight(landing, true), landing.y);
 });
 
+test('the château stair rails hold Neo on either wing when he turns too early', () => {
+  const set = FILM_SETS.film_chateau_hall;
+  for (const side of [-1, 1]) {
+    for (const direction of [-1, 1]) {
+      let position = filmPosition(set.id, side * 24.45, -27.08);
+      position.y = groundHeight(position, true);
+      const height = position.y;
+      let verticalVelocity = 0, horizontalVelocity = { x: 0, z: 0 };
+      for (let frame = 0; frame < 50; frame++) {
+        const next = stepPlayer(position, verticalVelocity, { x: direction, z: 0, yaw: 0, jump: false, sprint: false }, .05, true, [], horizontalVelocity);
+        position = next.position; verticalVelocity = next.verticalVelocity; horizontalVelocity = next.horizontalVelocity;
+      }
+      assert.equal(position.y, height, 'the rail stops lateral movement before the tread ends');
+      assert.ok(Math.abs(position.x - set.center.x - side * 24.4) < 4.6);
+    }
+  }
+});
+
 test('Neo can walk from the château floor up either staircase and reach the actual upper door', () => {
   for (const side of [-1, 1]) {
     let position = filmPosition('film_chateau_hall', 0, 0);

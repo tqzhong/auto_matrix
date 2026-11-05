@@ -1,4 +1,5 @@
 import { METACORTEX, METACORTEX_SHAFT, metacortexPosition } from './metacortex.js';
+import { CHATEAU, chateauRailBlocked, chateauStairTread } from './chateau.js';
 import { JUMP_TOWERS, jumpStreetHeight } from './jump-impact.js';
 import { ZION_DEPLOYMENT } from './zion-deployment.js';
 import { PRIMARY_DEMOLITION, primaryFloor } from './primary-demolition.js';
@@ -334,6 +335,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
   const x = position.x - set.center.x; const z = position.z - set.center.z;
+  if (set.id === 'film_chateau_hall' && chateauRailBlocked(x, position.y - set.center.y, z, radius)) return true;
   if (set.id === 'film_red_dress_plaza' && redDressFountainBlocked(x, position.y - set.center.y, z, radius)) return true;
   if (set.id === 'film_jump_roofs' && position.y < set.center.y - .5
     && JUMP_TOWERS.some(tower => Math.abs(x) < 25 + radius && Math.abs(z - tower.z) < tower.depth / 2 + radius)) return true;
@@ -408,10 +410,13 @@ export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 
   }
   if (set.architecture !== 'chateau') return set.center.y;
   const x = position.x - set.center.x; const z = position.z - set.center.z;
-  if (Math.abs(x) < set.width / 2 - 2 && Math.abs(z - (-set.depth / 2 + 7)) <= 6) return set.center.y + 10;
+  const { landing, stairs } = CHATEAU;
+  if (Math.abs(x) < set.width / 2 - 2 && Math.abs(z - landing.z) <= landing.depth / 2) return set.center.y + landing.height;
   let floor = set.center.y;
-  for (let i = 0; i < 18; i++) {
-    if (Math.abs(Math.abs(x) - (14 + i * .65)) <= 5 && Math.abs(z - (-4 - i * 1.45)) <= .8) floor = Math.max(floor, set.center.y + i * .55 + .25);
+  for (let i = 0; i < stairs.count; i++) {
+    const tread = chateauStairTread(i);
+    if (Math.abs(Math.abs(x) - tread.x) <= stairs.width / 2 && Math.abs(z - tread.z) <= stairs.depth / 2)
+      floor = Math.max(floor, set.center.y + tread.y + stairs.tread);
   }
   return floor;
 }

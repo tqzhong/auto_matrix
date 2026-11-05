@@ -50,7 +50,7 @@ import { renderNeoLife } from './NeoLifePanel.js';
 import { interrogationLocked, interrogationPose } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingLocked, MEETING_TIMING } from '@auto_matrix/shared';
 import { filmPosition, HOTEL_DOOR_PROGRESS } from '@auto_matrix/shared';
-import { CHATEAU, MOUNTAIN, GARAGE, TRUCKS } from '@auto_matrix/shared';
+import { CHATEAU, chateauStairWaypoint, MOUNTAIN, GARAGE, TRUCKS } from '@auto_matrix/shared';
 import { workdayLocked } from '@auto_matrix/shared';
 import { apartmentLocked, computerInvestigationStep } from '@auto_matrix/shared';
 import { wakeCallLocked, morningLocked } from '@auto_matrix/shared';
@@ -1258,7 +1258,7 @@ export class SandboxUI {
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', windup || phase === 'failed');
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = phase === 'ready' ? '走到大厅中央 · G 掩护同伴' : phase === 'failed' ? 'G 重试当前楼层 · 兵器保留'
-        : phase === 'landing' ? '沿任一侧楼梯上二层平台 · 兵器架仍可更换'
+        : phase === 'landing' ? '沿一侧楼梯直走到二层平台，再转向门扉'
         : `${encounter.weapon === 'sword' ? '长剑' : encounter.weapon === 'spear' ? '长矛' : '徒手'} · ${windup ? '现在按 X 格挡，再按 F 缴械' : '观察红色起手 · X 格挡 · F 反击'} · 已缴械 ${encounter.disarms}`;
       this.el('sandbox-interact').classList.toggle('hidden', !ready);
       this.el('sandbox-nearby').textContent = phase === 'failed' ? '重试当前楼层' : phase === 'ready' ? '挡住开火的守卫' : rack ? `取下${rack === 'sword' ? '长剑' : '长矛'}` : '';
@@ -1274,10 +1274,12 @@ export class SandboxUI {
       this.el('sandbox-job').style.width = `${(encounter.wave - 1) * 50 + (encounter.phase === 'landing' ? 50 : encounter.phase === 'duel' ? (2 - state.threats.filter(threat => threat.scene === scene.id).length) * 25 : 0)}%`;
       document.getElementById('game-objective')!.textContent = '城堡大厅 · 古兵器战';
       document.getElementById('game-objective-copy')!.textContent = phase === 'landing' ? '登上二层平台，迎战后方守卫' : phase === 'ready' ? '挡住火力，让同伴带钥匙匠离开' : journey.lastText;
-      const destination = phase === 'landing' ? landing : !encounter.weapon ? filmPosition(scene.set, CHATEAU.racks.sword.x, CHATEAU.racks.sword.z) : undefined;
+      const stair = phase === 'landing' ? chateauStairWaypoint(player.position, FILM_SETS[scene.set].center) : undefined;
+      const destination = phase === 'landing' ? stair?.position ?? landing : !encounter.weapon ? filmPosition(scene.set, CHATEAU.racks.sword.x, CHATEAU.racks.sword.z) : undefined;
       if (destination) {
         const direction = Math.atan2(destination.x - player.position.x, destination.z - player.position.z) - player.rotation;
-        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${phase === 'landing' ? '二层平台' : '左墙长剑'} <b>${Math.round(distance(destination, player.position))} m</b>`;
+        const label = phase === 'landing' ? stair?.label ?? '二层门扉' : '左墙长剑';
+        this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${label} <b>${Math.round(distance(destination, player.position))} m</b>`;
       } else this.el('sandbox-waypoint').textContent = '';
       return;
     }

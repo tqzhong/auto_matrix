@@ -91,6 +91,7 @@ import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
 import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 import { TheOneRenderer } from './TheOneRenderer.js';
 import { MountainSetRenderer } from './MountainSetRenderer.js';
+import { chateauStairTread, chateauStairWaypoint } from '@auto_matrix/shared';
 import { LogosBaneRenderer } from './LogosBaneRenderer.js';
 import { RevolutionsPreludeRenderer } from './RevolutionsPreludeRenderer.js';
 import { DockEmpRenderer } from './DockEmpRenderer.js';
@@ -219,6 +220,7 @@ export class FilmSetRenderer {
   private construct?: ConstructRenderer;
   private desert?: DesertRenderer;
   private mountain?: MountainSetRenderer;
+  private preparedMountain?: { root: THREE.Group; renderer: MountainSetRenderer; colors?: CastColorPreparation };
   private training?: TrainingSetRenderer;
   private currentScene?: string;
   private dockApuApproach = false;
@@ -337,6 +339,7 @@ export class FilmSetRenderer {
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
       || Boolean(this.interrogation || this.baneInquiry || this.hammerRoute || this.smithFinale)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
+      || id === 'film_mountain_range' && this.currentScene === 'm2_mountain'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
       || Boolean(this.zion && ['m2_lock', 'm2_residents', 'm2_hamann', 'm2_oracle_message'].includes(this.currentScene ?? ''))
       || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(this.currentScene ?? '')
@@ -475,6 +478,19 @@ export class FilmSetRenderer {
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id === 'film_chateau_hall' && journey?.scene === 'm2_chateau' && !journey.visiting && journey.step >= 1) {
+      if (!this.preparedMountain) {
+        const root = new THREE.Group();
+        this.preparedMountain = { root, renderer: new MountainSetRenderer(root) };
+        return;
+      }
+      const prepared = this.preparedMountain;
+      if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile'))
+        prepared.colors = { ...this.colorPreparation(prepared.root, []), actors: new Set() };
+      if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [journey.actor], actor);
+      return;
+    }
+    this.cancelMountainPreparation();
     if (this.current?.id === 'film_oracle_courtyard' && journey?.scene === 'm2_bench' && !journey.visiting && journey.step >= 1
       && renderer.extensions.has('KHR_parallel_shader_compile')) {
       const colors = this.courtyardCastColors ??= { ...this.colorPreparation(new THREE.Group(), []), actors: new Set() };
@@ -816,6 +832,8 @@ export class FilmSetRenderer {
       const preparedSecondOracle = this.preparedSecondOracle && set?.id === this.preparedSecondOracle.room.current?.id
         && sceneId === this.preparedSecondOracle.scene && !journey?.visiting ? this.preparedSecondOracle : undefined;
       if (preparedSecondOracle) this.preparedSecondOracle = undefined;
+      const preparedMountain = set?.id === 'film_mountain_range' && sceneId === 'm2_mountain' && !journey?.visiting ? this.preparedMountain : undefined;
+      if (preparedMountain) this.preparedMountain = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -893,7 +911,10 @@ export class FilmSetRenderer {
           this.desert = previewDesert ?? new DesertRenderer(this.root);
           previewDesert?.moveTo(this.root);
         }
-        else if (set.id === 'film_mountain_range') this.mountain = new MountainSetRenderer(this.root);
+        else if (set.id === 'film_mountain_range') {
+          if (preparedMountain) this.root.add(preparedMountain.root);
+          this.mountain = preparedMountain?.renderer ?? new MountainSetRenderer(this.root);
+        }
         else if (set.id === 'film_hammer_route') this.hammerRoute = new HammerRouteRenderer(this.root);
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');
         else if (set.id === 'film_logos_wreck') this.logosWreck = new LogosWreckRenderer(this.root);
@@ -1352,7 +1373,8 @@ export class FilmSetRenderer {
         : arrivalGoal ? filmPosition(scene.set, arrivalGoal.x, arrivalGoal.z) : bridgeDoor ? filmPosition(scene.set, bridgeDoor.x, bridgeDoor.z)
         : carSeat ? filmPosition(scene.set, carSeat.x, carSeat.z)
         : scene.id === 'm2_burly' && journey?.burly?.phase === 'staff_ready' ? filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z)
-        : scene.id === 'm2_chateau' && journey?.chateau?.phase === 'landing' ? filmStepPosition(scene, scene.steps[1])
+        : scene.id === 'm2_chateau' && journey?.chateau?.phase === 'landing'
+          ? (player && chateauStairWaypoint(player.position, center)?.position) ?? filmStepPosition(scene, scene.steps[1])
         : step.kind === 'drive' && journey?.ride ? filmPosition(scene.set, 14, FREEWAY_FINISH) : filmStepPosition(scene, step, journey);
       if (scene.id === 'm1_ledge' && journey?.office?.climbed !== undefined) position.y -= 32;
       this.marker.position.set(position.x, position.y - .82, position.z);
@@ -2683,15 +2705,19 @@ export class FilmSetRenderer {
     const { architecture: a, width: w, depth: d, height: h } = set;
     if (a === 'chateau') {
       // Two stair wings, a landing, balustrades and a weapons wall define the film's composition.
+      const { landing, stairs } = CHATEAU; const { rail } = stairs;
       for (const side of [-1, 1]) {
-        for (let i = 0; i < 18; i++) {
-          const x = side * (14 + i * .65); const z = -4 - i * 1.45; const y = i * .55;
-          this.box(this.marble, x, y / 2, z, 10, y + .5, 1.6, .04);
-          for (const edge of [-4.6, 4.6]) { this.cylinder(this.marble, x + edge, y + 1.7, z, .14, 2.7); this.sphere(this.marble, x + edge, y + 3.1, z, .22); }
+        for (let i = 0; i < stairs.count; i++) {
+          const tread = chateauStairTread(i), x = side * tread.x, { y, z } = tread;
+          this.box(this.marble, x, y / 2, z, stairs.width, y + 2 * stairs.tread, stairs.depth, .04);
+          for (const edge of [-rail.offset, rail.offset]) {
+            this.cylinder(this.marble, x + edge, y + rail.y, z, rail.radius, rail.height);
+            this.sphere(this.marble, x + edge, y + rail.capY, z, rail.cap);
+          }
         }
         this.pipe([[side * 9.4, 3.3, -4], [side * 15, 8, -16], [side * 20.5, 12.6, -29]], .19, this.wood);
       }
-      this.box(this.marble, 0, 9.5, -d / 2 + 7, w - 4, 1, 12, .1);
+      this.box(this.marble, landing.x, landing.height - .5, landing.z, w - 4, 1, landing.depth, .1);
       this.box(this.mat(0x745744), 0, 16, -d / 2 + .5, 16, 12, .2);
       // A geometric terrazzo inlay and classical busts distinguish the hall from a generic lobby.
       const inlay = this.mat(0x47483d, .3);
@@ -2723,7 +2749,13 @@ export class FilmSetRenderer {
       this.box(this.brass, 0, 18.3, -40.6, 7, .45, .25);
       for (const x of [-3, 3]) this.box(this.marble, x, 14.4, -40.6, .6, 8, .6);
       this.label('CHÂTEAU', 0, 20, -40.4, 6, '#ead5a6', '#33271e');
-      for (const z of [7, 24]) { this.cylinder(this.brass, 0, h - 3, z, 3, .3); for (let i = 0; i < 10; i++) this.lamp(Math.sin(i * Math.PI / 5) * 3, h - 3, z + Math.cos(i * Math.PI / 5) * 3); }
+      for (const z of [7, 24]) {
+        const y = h - 3;
+        this.cylinder(this.brass, 0, y, z, 3, .3);
+        for (let i = 0; i < 10; i++) this.lampShade(Math.sin(i * Math.PI / 5) * 3, y, z + Math.cos(i * Math.PI / 5) * 3);
+        const light = this.lampLight(0, y, z); light.intensity *= 10;
+        this.root.add(light);
+      }
     } else if (set.id === 'film_le_vrai') {
       const cloth = this.mat(0xb2a796, .94); const gold = this.mat(0x9e8257, .24, .55);
       const jade = this.mat(0x2c5145, .18, .25); const mirror = this.mat(0x687e72, .09, .65);
@@ -3383,6 +3415,11 @@ export class FilmSetRenderer {
   private cancelSecondOraclePreparation(): void {
     this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
   }
+  private cancelMountainPreparation(): void {
+    const prepared = this.preparedMountain;
+    if (!prepared) return;
+    prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedMountain = undefined;
+  }
   private clear(keepCrosscut = false): void {
     if (!keepCrosscut) {
       if (this.crosscutTv !== this.tvRepair) this.crosscutTv?.dispose();
@@ -3396,6 +3433,7 @@ export class FilmSetRenderer {
     this.cancelOneDeckPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
+    this.cancelMountainPreparation();
     this.courtyardCastColors = undefined;
     this.preparedMeetingHall?.renderer.dispose(); this.preparedMeetingHall = undefined;
     this.preparedMeetingAgents = undefined;

@@ -2837,6 +2837,23 @@ test('an older château save restarts its unfinished fight without erasing a cle
   assert.equal(h.sandbox.life.film.state?.step, 1);
 });
 
+test('a legacy château save inside a stair rail resumes on the same tread with its sword', () => {
+  const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
+  const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
+  Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
+  Object.assign(state.chateau!, { phase: 'landing', weapon: 'sword', parries: 2, disarms: 2 });
+  const neo = h.actor(), insideRail = filmPosition(hall.set, -19.8, -27.2);
+  neo.position = { ...insideRail, y: insideRail.y + 9.05 };
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('film-player', h.tick()); h.sandbox.restore(saved); h.players.possess('film-player', 'neo', h.tick());
+  assert.ok(neo.position.x < insideRail.x - 1 && neo.position.x > insideRail.x - 3);
+  assert.equal(neo.position.z, insideRail.z);
+  assert.equal(neo.position.y, insideRail.y + 9.05);
+  assert.equal(neo.currentAction?.parameters.chateauWeapon, 'sword');
+  assert.deepEqual(h.sandbox.life.film.state!.chateau, saved.neoLife!.journey!.chateau);
+});
+
 test('upper château guards remain on their floor when Neo retreats below the landing', () => {
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;

@@ -107,7 +107,7 @@ import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, ty
 import { BURLY, burlyLocked, burlyText, savedBurlyFailedIdle, type BurlyEncounter } from '@auto_matrix/shared';
 import { burlyCopyOccupied } from './BurlyMovement.js';
 import { EXILES } from '@auto_matrix/shared';
-import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
+import { CHATEAU, chateauRailBlocked, chateauStairTreadAt, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
 import { GARAGE, newGarageEscape, stepGarageEscape, type GarageEscape } from '@auto_matrix/shared';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
@@ -5157,12 +5157,25 @@ export class FilmStorySystem {
   }
   restoreChateauSpace(): void {
     const state = this.state;
-    if (state?.scene !== 'm2_chateau' || state.chateau) return;
+    if (state?.scene !== 'm2_chateau') return;
+    const actor = this.world.agents.get(state.actor);
+    if (state.chateau) {
+      if (!actor || state.visiting || actor.currentLocation !== 'film_chateau_hall') return;
+      const { center } = FILM_SETS.film_chateau_hall;
+      const x = actor.position.x - center.x, z = actor.position.z - center.z;
+      if (!chateauRailBlocked(x, actor.position.y - center.y, z, 1.1)) return;
+      // Keep older saves on the same tread when a newly solid baluster overlaps the player.
+      const inward = Math.sign(x) * chateauStairTreadAt(z).x - x;
+      for (let offset = .25; offset < Math.abs(inward) + .25; offset += .25) {
+        const position = { ...actor.position, x: actor.position.x + Math.sign(inward) * Math.min(offset, Math.abs(inward)) };
+        if (!playerBlocked(position, true, 1.1, this.sandbox().structures)) { actor.position = position; break; }
+      }
+      return;
+    }
     state.chateau = { phase: state.step === 0 ? 'ready' : 'cleared', wave: state.step === 0 ? 1 : 2,
       parries: 0, disarms: 0, attempts: 0, wounded: false };
     this.sandbox().threats = this.sandbox().threats.filter(threat => threat.scene !== 'm2_chateau');
     if (state.step !== 0) return;
-    const actor = this.world.agents.get(state.actor);
     if (!actor) return;
     actor.position = filmPosition('film_chateau_hall', 0, 10); actor.velocity = { x: 0, y: 0, z: 0 }; actor.currentAction = null;
     actor.status = 'alive'; actor.health = actor.maxHealth; state.checkpoint = { ...actor.position };

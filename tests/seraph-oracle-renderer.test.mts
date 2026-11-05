@@ -10,7 +10,7 @@ import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.j
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-test('the second Oracle route adopts prepared sets and keeps their interactive props live', t => {
+test('the second Oracle route adopts prepared sets and keeps their interactive props live', async t => {
   const previous = globalThis.document;
   const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} };
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
@@ -109,6 +109,27 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
   assert.equal(bookshelf.position.x, 0);
   enter('m2_library', 3); assert.equal(bookshelf.position.x, -5.8);
 
+  await t.test('the château keeps one light per chandelier', () => {
+    enter('m2_chateau', 0);
+    assert.equal(pointSlots(scene), 11);
+  });
+  await t.test('the snowy terrace is prepared once the upper fight clears', () => {
+    preview = undefined; prepare(); assert.ok(!preview);
+    enter('m2_chateau', 1);
+    const terrain = warm('mountain-snow-terrain') as THREE.Mesh;
+    const mountainSlots = pointSlots(preview!);
+    enter('m2_mountain', 0);
+    assert.ok(scene.getObjectByName(terrain.name) === terrain);
+    assert.equal(pointSlots(scene), mountainSlots);
+    let terrainDisposals = 0; terrain.geometry.addEventListener('dispose', () => terrainDisposals++);
+    enter('m2_departure', 4);
+    assert.equal(terrainDisposals, 1);
+    enter('m2_chateau', 1);
+    const abandoned = warm('mountain-snow-terrain') as THREE.Mesh;
+    let abandonedDisposals = 0; abandoned.geometry.addEventListener('dispose', () => abandonedDisposals++);
+    sets.update(undefined, sandbox, 1);
+    assert.equal(abandonedDisposals, 1);
+  });
   enter('m2_departure', 4);
   const abandoned = warm('m2_seraph-keyed-door') as THREE.Mesh;
   let disposed = 0; abandoned.geometry.addEventListener('dispose', () => disposed++);
