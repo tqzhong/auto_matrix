@@ -9,12 +9,15 @@ export interface ReloadedOpening {
   exit?: 'east' | 'west'; evacuated: boolean; evacuation: number;
   hits: number[]; opponent: number; cycle: number; round: number; evaded: boolean; countered: boolean;
   dodgeCooldown: number; dodgeAge: number; punchAge: number; punchResolved: boolean;
+  actionStart?: { x: number; y: number; z: number; yaw: number };
 }
 export type ReloadedGesture = ReloadedOpening & { role: string };
 export const RELOADED = {
   breakGlass: 1.15, fall: 7.4, impact: 1.1, dreamShots: [1.3, 3.2, 5.1], shotWindow: .65,
   wake: 2.8, conversation: 5.5, connect: 2.2, report: 8.6, earpiece: 3.2, breach: 3.6, evacuation: 9,
   strike: 1.65, recovery: 1.25, dodgeWindow: .48, departure: 4.5,
+  retreat: { turn: .28, walk: 1.35, coverZ: -9 },
+  launch: { x: 0, z: -24, radius: 1.25 },
   agents: ['agent_thompson', 'agent_jackson', 'agent_johnson'],
   cast: ['neo', 'trinity', 'morpheus', 'link', 'niobe', 'ballard', 'ghost', 'soren', 'smith', 'agent_thompson', 'agent_jackson', 'agent_johnson'],
 } as const;
@@ -56,27 +59,43 @@ export function reloadedText(state: ReloadedOpening): string {
       : state.elapsed < 6 ? 'Morpheus：舰队回城补给，但需要一艘船留下等先知的消息。' : 'Ballard 接下值守任务，期限 36 小时。Neo 察觉到入口外的异常。';
     case 'earpiece_ready': return 'Smith 在入口留下了信封。到铁门内侧，G 查看那份“礼物”。';
     case 'earpiece': return '信封里是一枚断开的特工耳机。离开的程序没有消失，门外还有新的追兵。';
-    case 'evacuate_ready': return '先通知船员撤离。G 选择西侧出口；J 可改选东侧。Neo 留在入口掩护。';
+    case 'evacuate_ready': return '在铁门内侧通知船员撤离。G 选择西侧出口，J 可改选东侧。Neo 留下掩护。';
     case 'breach': return '铁门连续凹陷。船员撤向你指定的出口，三名新型号特工破门进入。';
     case 'combat': return state.cycle < .75 && state.round % 2 === 1 ? '特工先做佯攻。别急着闪避，等他真正跨步。'
       : state.cycle < RELOADED.strike - RELOADED.dodgeWindow ? '观察特工肩膀与脚步。普通正面攻击会被抓住；等到冲拳时按 X。'
       : state.cycle < RELOADED.strike ? '现在按 X 避开冲拳！随后贴近，用 F 反击。'
       : state.evaded && !state.countered ? '防线露出空隙。面向特工并靠近，F 反击！' : '保持距离，等待下一次真实起手。';
-    case 'departure_ready': return state.evacuated ? '三名特工已被击退，船员已到出口。G 飞离现场，让 Link 接应回航。' : '特工已被击退，守住入口，等待最后的船员到达出口。';
+    case 'departure_ready': return state.evacuated ? '三名特工已被击退。穿过打开的铁门，到巷道起飞点后按 G。' : '特工已被击退，守住入口，等待最后的船员到达出口。';
     case 'departing': return 'Neo 飞入夜空。Link 确认船员撤离，尼布甲尼撒号准备返回锡安。';
     case 'failed': return '掩护失败。G 从铁门破开后的检查点重试；会议情报与出口选择保留。';
     default: return state.kind === 'dream' ? '梦境停在枪声里。G 回到醒着的 Neo。' : '船员安全撤离。耳机、值守约定与这场异常已经写入手记。';
   }
 }
 const smooth = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
+const turnTo = (from: number, to: number, progress: number) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * progress;
+function reloadedRetreat(state: ReloadedOpening) {
+  const start = state.actionStart;
+  if (state.phase !== 'breach' || !start) return;
+  const { turn, walk, coverZ } = RELOADED.retreat;
+  const t = Math.max(0, Math.min(1, (state.elapsed - turn) / walk)), progress = smooth(t);
+  const length = Math.hypot(start.x, coverZ - start.z);
+  return { progress, distance: length * progress, speed: 6 * t * (1 - t) * length / walk };
+}
 export function reloadedRoot(state: ReloadedOpening, role: string) {
   const dream = (x: number, y: number, z: number, yaw: number) => ({ set: 'film_trinity_roof', x, y, z, yaw });
   const hall = (x: number, y: number, z: number, yaw: number) => ({ set: 'film_captains_meeting', x, y, z, yaw });
   const ship = (x: number, y: number, z: number, yaw: number) => ({ set: 'film_neb_deck', x, y, z, yaw });
   if (state.kind === 'dream') {
     const t = state.phase === 'falling' ? state.elapsed : ['dream_hit', 'done'].includes(state.phase) ? RELOADED.fall : 0;
-    if (role === 'trinity') return state.phase === 'breaking' ? dream(0, Math.sin(state.elapsed / RELOADED.breakGlass * Math.PI) * 1.1, -15 - 9 * smooth(state.elapsed / RELOADED.breakGlass), Math.PI * (1 - smooth(state.elapsed / RELOADED.breakGlass)))
-      : dream(state.drift, -1.15 * t * t, -24 - t * .55, 0);
+    if (role === 'trinity') {
+      if (state.phase === 'breaking') {
+        const start = state.actionStart ?? { x: 0, y: 0, z: -15, yaw: Math.PI };
+        const time = Math.min(1, state.elapsed / RELOADED.breakGlass), progress = smooth(time);
+        return dream(start.x * (1 - progress), start.y * (1 - progress) + Math.sin(time * Math.PI) * 1.1,
+          start.z + (-24 - start.z) * progress, turnTo(start.yaw, 0, progress));
+      }
+      return dream(state.drift, -1.15 * t * t, -24 - t * .55, 0);
+    }
     return dream(1.5, 3 - 1.15 * Math.max(0, t - .8) ** 2, -21 - t * .55, Math.PI);
   }
   if (['waking', 'talk_ready', 'talking', 'connect_ready', 'connecting'].includes(state.phase)) {
@@ -87,8 +106,20 @@ export function reloadedRoot(state: ReloadedOpening, role: string) {
   if (role === 'neo') {
     if (state.phase === 'report') return hall(0, 0, 14.5, 0);
     if (state.phase === 'earpiece') return hall(0, 0, -14, Math.PI);
-    if (state.phase === 'departing' || state.phase === 'done') { const p = state.phase === 'done' ? 1 : smooth(state.elapsed / RELOADED.departure); return hall(0, p * 25, -24 - p * 10, Math.PI); }
-    return hall(0, 0, -9, Math.PI);
+    const retreat = reloadedRetreat(state), start = state.actionStart;
+    if (retreat && start) {
+      const { turn, walk, coverZ } = RELOADED.retreat;
+      const heading = Math.atan2(-start.x, coverZ - start.z);
+      const yaw = retreat.progress === 1 ? turnTo(heading, Math.PI, smooth((state.elapsed - turn - walk) / turn))
+        : turnTo(start.yaw, heading, smooth(state.elapsed / turn));
+      return hall(start.x * (1 - retreat.progress), start.y * (1 - retreat.progress), start.z + (coverZ - start.z) * retreat.progress, yaw);
+    }
+    if (state.phase === 'departing' || state.phase === 'done') {
+      const launch = start ?? { x: RELOADED.launch.x, y: 0, z: RELOADED.launch.z, yaw: Math.PI };
+      const p = state.phase === 'done' ? 1 : smooth(state.elapsed / RELOADED.departure);
+      return hall(launch.x * (1 - p), launch.y * (1 - p) + p * 25, launch.z + (RELOADED.launch.z - 10 - launch.z) * p, turnTo(launch.yaw, Math.PI, p));
+    }
+    return hall(0, 0, RELOADED.retreat.coverZ, Math.PI);
   }
   const index = RELOADED.agents.indexOf(role as typeof RELOADED.agents[number]);
   if (index >= 0) {
@@ -114,7 +145,7 @@ export function reloadedPose(gesture: ReloadedGesture) {
     seated: ['waking', 'talk_ready', 'talking', 'connect_ready'].includes(gesture.phase) && gesture.role !== 'link' ? 1 : 0,
     windup, strike: gesture.phase === 'combat' && enemy && active ? Math.sin(Math.min(1, Math.max(0, (gesture.cycle - RELOADED.strike + .1) / .5)) * Math.PI) : 0, punch: gesture.phase === 'combat' && gesture.role === 'neo' ? Math.sin(Math.min(1, gesture.punchAge / .5) * Math.PI) : 0,
     dodge: gesture.role === 'neo' ? 1 - smooth(gesture.dodgeAge / .55) : 0,
-    inspect: gesture.role === 'neo' && gesture.phase === 'earpiece' ? 1 : 0,
+    inspect: gesture.role === 'neo' && gesture.phase === 'earpiece' ? 1 : 0, retreat: gesture.role === 'neo' ? reloadedRetreat(gesture) : undefined,
     flight: gesture.role === 'neo' && ['departing', 'done'].includes(gesture.phase) ? gesture.phase === 'done' ? 1 : smooth(gesture.elapsed / 1.5) : 0,
     down: enemy && gesture.hits[RELOADED.agents.indexOf(gesture.role as typeof RELOADED.agents[number])] >= 2 ? 1 : 0 };
 }

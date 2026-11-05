@@ -85,6 +85,9 @@ export class AgentRenderer {
   private custody = new OfficeCustodyPerformance();
   private preparedOfficeManager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textures: THREE.Texture[]; programs: boolean };
   private smithEnding?: SmithEndingAppearance;
+  private meetingFrustum = new THREE.Frustum();
+  private meetingProjection = new THREE.Matrix4();
+  private meetingSkinBounds = new THREE.Sphere(new THREE.Vector3(), 7);
   private markerGeometry = new THREE.RingGeometry(2.1, 2.5, 32);
   private shadowGeometry = new THREE.PlaneGeometry(3, 3);
   private shadowTexture: THREE.CanvasTexture;
@@ -296,6 +299,12 @@ export class AgentRenderer {
   }
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney): void {
+    const meetingCamera = camera && !(camera instanceof THREE.ArrayCamera) && this.matrix && this.playerId === journey?.actor
+      && journey.scene === 'm2_meeting' && !journey.visiting ? camera : undefined;
+    if (meetingCamera) {
+      meetingCamera.updateMatrixWorld();
+      this.meetingFrustum.setFromProjectionMatrix(this.meetingProjection.multiplyMatrices(meetingCamera.projectionMatrix, meetingCamera.matrixWorldInverse));
+    }
     const farewellFrames: { entry: Entry; gesture: NonNullable<MotionInput['farewell']> }[] = [];
     let upperSupport: { entry: Entry; gesture: NonNullable<MotionInput['upperDigger']> } | undefined;
     const savedEpilogue = journey?.scene === 'm3_ceasefire' && !journey.visiting ? journey.epilogue : undefined;
@@ -913,6 +922,12 @@ export class AgentRenderer {
         else entry.mouseFloor = undefined;
       }
       if (medicalPatient || podBody) { entry.rig.motion = newMotion(); input.speed = 0; input.turn = 0; }
+      // The hall has no mirrors. Skin normals cannot affect an offscreen shadow or the actor's pose.
+      input.skipSkinContinuity = false;
+      if (meetingCamera && id !== this.playerId && state.currentLocation === 'film_captains_meeting') {
+        this.meetingSkinBounds.center.copy(entry.group.position).y += 1.5;
+        input.skipSkinContinuity = !this.meetingFrustum.intersectsSphere(this.meetingSkinBounds);
+      }
       this.models.animate(entry.rig, medicalPatient || podBody || mouseAlarm || mouseDead ? 0 : delta * (id === this.playerId && speed > 0 ? 1 : speed), input, dist);
       if (mouseDead) this.supportMouseBody(entry);
       if (input.maggieDiscovery?.role !== 'maggie') poseHammerPatient(entry.rig, medicalPatient);

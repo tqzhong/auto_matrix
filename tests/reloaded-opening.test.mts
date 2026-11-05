@@ -7,7 +7,9 @@ import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
-import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+import { MemoryManager } from '../packages/server/src/memory/MemoryManager.js';
+import { RelationshipGraph } from '../packages/server/src/agents/RelationshipGraph.js';
 
 function setup(id: 'm2_dream' | 'm2_meeting') {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -48,7 +50,11 @@ function combat(h: ReturnType<typeof setup>) {
 }
 
 test('dream gunfire, slow motion and memory remain a vision, never Trinity death', () => {
-  const h = setup('m2_dream'); h.actor.position = filmPosition(h.scene.set, 0, -15); h.frames(.1); h.command(); h.frames(RELOADED.breakGlass + .1);
+  const h = setup('m2_dream'); h.actor.position = filmPosition(h.scene.set, .7, -12.4); h.frames(.1);
+  const start = { ...h.actor.position }, facing = h.actor.rotation;
+  h.command(); assert.deepEqual(h.actor.position, start, 'the run-up starts where Trinity reached the window');
+  assert.equal(h.actor.rotation, facing);
+  h.frames(RELOADED.breakGlass + .1);
   assert.equal(h.state().phase, 'falling'); assert.equal(reloadedLocked(h.journey()), true);
   for (const beat of RELOADED.dreamShots) {
     h.frames(Math.max(0, beat - h.state().elapsed)); h.action('attack');
@@ -83,7 +89,14 @@ test('meeting preserves the real-world wake, intelligence and the chosen evacuat
   reachMeeting(h);
   const door = filmPosition(h.scene.set, 0, -20);
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true, 'closed iron door blocks passage');
-  h.command('exit:west'); h.frames(RELOADED.breach + .2);
+  const start = { ...h.actor.position };
+  h.command('exit:west'); assert.deepEqual(h.actor.position, start, 'evacuation begins at the earpiece');
+  h.frames(.75);
+  assert.ok(h.actor.position.z > start.z && h.actor.position.z < start.z + 5, 'Neo retreats before the door opens');
+  const saved = structuredClone(h.sandbox.state), position = { ...h.actor.position };
+  h.sandbox.restore(saved);
+  assert.deepEqual(h.actor.position, position);
+  h.frames(RELOADED.breach);
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false, 'breached doorway admits the agents');
   assert.equal(h.state().exit, 'west'); assert.equal(h.sandbox.state.neoLife!.choices.ballard_watch, '36h');
   assert.equal(h.sandbox.state.neoLife!.choices.smith_earpiece, 'received');
@@ -140,4 +153,21 @@ test('ship conversation reserves Link and agent pursuit reports movement to the 
   const before = { ...enemy.position }; h.frames(.05);
   assert.ok(Math.hypot(enemy.position.x - before.x, enemy.position.z - before.z) > 0);
   assert.ok(Math.hypot(enemy.velocity.x, enemy.velocity.z) > 0, 'pursuit must animate feet instead of sliding');
+});
+
+test('combat wounds persist and flight starts only outside the open door', () => {
+  const h = setup('m2_meeting'); combat(h);
+  const ambient = new WorldDynamics(h.world, new MemoryManager(), new RelationshipGraph(), () => {});
+  h.actor.health = 78; h.actor.mind!.stress = 0;
+  for (let tick = 0; tick < 5; tick++) ambient.tick(tick, h.journey());
+  assert.equal(h.actor.health, 78, 'an idle input in the fight cannot heal a strike');
+
+  Object.assign(h.state(), { phase: 'departure_ready', evacuated: true, hits: [2, 2, 2] }); h.journey().step = 4;
+  h.command(); assert.equal(h.state().phase, 'departure_ready', 'the covered hall is not a launch point');
+  h.actor.position = filmPosition(h.scene.set, .55, -23.6);
+  const launch = { ...h.actor.position };
+  h.command(); assert.equal(h.state().phase, 'departing');
+  assert.deepEqual(h.actor.position, launch);
+  h.frames(.8);
+  assert.ok(h.actor.position.y > launch.y && h.actor.position.z < launch.z);
 });

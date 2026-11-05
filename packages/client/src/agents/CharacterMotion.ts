@@ -20,6 +20,7 @@ export interface MotionInput {
   cast?: number;
   skill?: CombatSkillId;
   armed?: boolean;
+  skipSkinContinuity?: boolean;
   ambushEscort?: import('@auto_matrix/shared').AmbushEscort;
   ambushCall?: { role: 'morpheus' | 'trinity'; elapsed: number; ready?: true };
   ambushDoff?: import('@auto_matrix/shared').AmbushDoffGesture;
@@ -733,6 +734,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   state.time = input.farewell ? input.farewell.total : deusLocked ? input.deusPact!.total : smithLocked ? input.smithFinale!.total : state.time + dt;
   if (input.reveal) { state.time = input.reveal.elapsed; state.speed = 0; state.phase = 0; state.turn = 0; state.airborne = 0; }
   state.speed = mix(state.speed, input.riding || input.climbing !== undefined ? 0 : speed, blend);
+  if (reloaded?.retreat) state.speed = reloaded.retreat.speed;
   if (input.farewell) { state.speed = 0; state.airborne = 0; state.seated = 0; }
   if (input.cabin?.kind === 'core' && input.cabin.role === 'neo') state.speed = 2.2 * smooth(clamp(input.cabin.elapsed / .25)) * (1 - smooth(clamp((input.cabin.elapsed - .65) / .3)));
   const construct = input.construct?.role === 'morpheus' ? constructGuidePose(input.construct.elapsed) : undefined;
@@ -790,6 +792,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     && !input.riding && !input.crouching && input.climbing === undefined && !input.armed
     && input.grounded && state.airborne < .01 && state.landing < .01 && state.attackAge > 1 && state.hitAge > .5 && state.skillAge > 1;
   if (input.grounded) state.phase += speed * dt / (architectWalking ? ARCHITECT_WALK_CYCLE : 2 * stride / stance);
+  if (reloaded?.retreat) state.phase = reloaded.retreat.distance / (2 * stride / stance);
   if (smithLocked) state.phase = (smithFinale![input.smithFinale!.role].travel ?? 0) / (2 * stride / stance);
   if (welcomeWalking && input.welcome) state.phase = input.welcome.elapsed * welcomeSpeed / (2 * stride / stance);
   if (exiting) state.phase = (input.pills!.elapsed - PILL_TIMING.stand) * 1.1;

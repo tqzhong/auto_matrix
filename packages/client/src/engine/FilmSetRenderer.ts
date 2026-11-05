@@ -45,6 +45,7 @@ import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_K
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
 import { OPENING_HOTEL } from '@auto_matrix/shared';
+import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OfficeSetRenderer } from './OfficeSetRenderer.js';
@@ -158,6 +159,7 @@ type ColorPreparation = {
   programs: ColorProgram[];
   textures: Set<THREE.Texture>;
 };
+type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 
@@ -238,9 +240,11 @@ export class FilmSetRenderer {
   private government?: GovernmentSetRenderer;
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedSubway?: { renderer: MatrixEscapeRenderer; colors?: ColorPreparation };
-  private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: ColorPreparation & { actors: Set<THREE.Group> } };
+  private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation };
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
+  private preparedMeetingHall?: { renderer: ReloadedOpeningRenderer; colors?: CastColorPreparation };
+  private preparedMeetingAgents?: CastColorPreparation;
   private catchSet?: ReloadedCatchRenderer;
   private finale?: ReloadedFinaleRenderer;
   private zion?: ZionHomecomingRenderer;
@@ -308,6 +312,7 @@ export class FilmSetRenderer {
       || Boolean(this.basement)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
+      || this.reloaded?.set === 'film_captains_meeting'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
@@ -404,8 +409,35 @@ export class FilmSetRenderer {
         this.preparedOneDeck.colors = { ...this.colorPreparation(root, []), actors: new Set() };
     }
     const colors = this.preparedOneDeck.colors;
-    if (!colors) return;
-    for (const id of ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer']) {
+    if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer'], actor);
+  }
+  prepareCaptainsMeeting(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
+    const encounter = journey.reloaded;
+    if (journey.scene !== 'm2_meeting' || journey.visiting || encounter?.kind !== 'meeting') return;
+    const { phase, elapsed } = encounter;
+    if (this.current?.id === 'film_neb_deck' && (phase === 'talking' && elapsed >= .5 || phase === 'connect_ready' || phase === 'connecting')) {
+      if (!this.preparedMeetingHall) {
+        const hall = new ReloadedOpeningRenderer(new THREE.Group(), 'film_captains_meeting');
+        hall.update({ ...journey, reloaded: { ...encounter, phase: 'report_ready', elapsed: 0 } });
+        this.preparedMeetingHall = { renderer: hall };
+        if (renderer.extensions.has('KHR_parallel_shader_compile'))
+          this.preparedMeetingHall.colors = { ...this.colorPreparation(hall.group, []), actors: new Set() };
+      }
+      const colors = this.preparedMeetingHall.colors;
+      if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'niobe', 'ballard', 'ghost', 'soren'], actor);
+    } else if (this.reloaded?.set === 'film_captains_meeting' && ['earpiece_ready', 'earpiece', 'evacuate_ready', 'breach'].includes(phase)
+      && renderer.extensions.has('KHR_parallel_shader_compile')) {
+      if (!this.preparedMeetingAgents) {
+        const fixtures = new THREE.Group();
+        for (const child of this.reloaded.group.children) if (child instanceof THREE.PointLight) fixtures.add(child.clone());
+        this.preparedMeetingAgents = { ...this.colorPreparation(fixtures, []), actors: new Set() };
+      }
+      this.prepareCastColors(renderer, camera, this.preparedMeetingAgents, RELOADED.agents, actor);
+    }
+  }
+  private prepareCastColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, colors: CastColorPreparation,
+    cast: readonly string[], actor: (id: string) => THREE.Group | undefined): void {
+    for (const id of cast) {
       const group = actor(id);
       if (!group || colors.actors.has(group)) continue;
       const meshes = this.colorMeshes([group]);
@@ -688,6 +720,8 @@ export class FilmSetRenderer {
       if (preparedSubway) this.preparedSubway = undefined;
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
       if (preparedOneDeck) this.preparedOneDeck = undefined;
+      const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
+      if (preparedMeeting) this.preparedMeetingHall = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -721,7 +755,10 @@ export class FilmSetRenderer {
         }
         else if (sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id);
         else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) this.theOne = new TheOneRenderer(this.root, set.id);
-        else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) this.reloaded = new ReloadedOpeningRenderer(this.root, set.id);
+        else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) {
+          this.reloaded = preparedMeeting ?? new ReloadedOpeningRenderer(this.root, set.id);
+          if (preparedMeeting) this.root.add(preparedMeeting.group);
+        }
         else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof') this.catchSet = new ReloadedCatchRenderer(this.root);
         else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') this.baneCopy = new BaneCopyRenderer(this.root);
         else if (['film_zion_dock_exit', 'film_zion_command_bunker'].includes(set.id)) this.dockEvacuation = new DockEvacuationRenderer(this.root, set.id === 'film_zion_command_bunker');
@@ -3250,6 +3287,8 @@ export class FilmSetRenderer {
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();
+    this.preparedMeetingHall?.renderer.dispose(); this.preparedMeetingHall = undefined;
+    this.preparedMeetingAgents = undefined;
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;

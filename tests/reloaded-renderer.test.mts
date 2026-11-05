@@ -1,9 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { FILM_SETS, RELOADED, newReloaded, reloadedRoot, filmPosition, playerBlocked, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SETS, RELOADED, newReloaded, reloadedRoot, filmPosition, playerBlocked, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { ReloadedOpeningRenderer } from '../packages/client/src/engine/ReloadedOpeningRenderer.js';
 import { reloadedCamera } from '../packages/client/src/player/ReloadedCamera.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 const journey = (kind: 'dream' | 'meeting'): FilmJourney => ({ version: 1, scene: kind === 'dream' ? 'm2_dream' : 'm2_meeting', actor: kind === 'dream' ? 'trinity' : 'neo', step: 0, completed: [], enteredAt: 0, checkpoint: { x: 0, y: 0, z: 0 }, reflections: {}, lastText: '', reloaded: newReloaded(kind) });
 
@@ -75,6 +79,81 @@ test('dream framing keeps both Trinity and the shooting agent in view throughout
       assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .88, `${role} outside framing at ${elapsed}, ${aspect}: ${screen.toArray()}`);
     }
   }
+});
+
+test('the departure camera stays outside the vault from liftoff to the end', () => {
+  const set = FILM_SETS.film_captains_meeting;
+  for (const [phase, elapsed] of [['departing', 0], ['departing', 1.6], ['done', 0]] as const) {
+    const state = { ...newReloaded('meeting'), phase, elapsed };
+    const root = reloadedRoot(state, 'neo'); const position = filmPosition(root.set, root.x, root.z); position.y += root.y;
+    for (const aspect of [16 / 9, 9 / 16]) {
+      const view = reloadedCamera({ ...state, role: 'neo' }, position, root.set, false, aspect, 0, 0);
+      assert.ok(view.eye.z < set.center.z - 21 && view.target.z < set.center.z - 21, 'the vault cannot obscure the ascent');
+    }
+  }
+});
+
+test('the meeting adopts the prepared hall and warms the breach cast with the live light slots', t => {
+  const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene), world = new WorldState();
+  new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, state = journey('meeting');
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  neo.position = filmPosition('film_neb_deck', -7, 25.7); neo.isInMatrix = false;
+  state.reloaded!.phase = 'connecting'; sets.update(neo, sandbox, 0);
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshStandardMaterial();
+  const actor = new THREE.Group(), enemy = new THREE.Mesh(geometry, material); actor.add(enemy);
+  t.after(() => { sets.dispose(); geometry.dispose(); material.dispose(); });
+  let preview: THREE.Scene | undefined, enemySlots: number | undefined;
+  const pointSlots = (root: THREE.Scene) => {
+    let count = 0;
+    root.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; });
+    return count;
+  };
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
+    setRenderTarget() {}, properties: { get: () => ({}) },
+    compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
+      if (target.getObjectByName('captains-entry-door')) preview = target;
+      subject.traverse(object => { if (object === enemy) enemySlots = pointSlots(target); });
+    } } as unknown as THREE.WebGLRenderer;
+  const camera = new THREE.PerspectiveCamera();
+  const prepare = () => sets.prepareCaptainsMeeting(graphics, camera, state, id => id === 'agent_thompson' ? actor : undefined);
+  prepare();
+  const door = preview?.getObjectByName('captains-entry-door');
+  assert.ok(door && !scene.getObjectByName(door.name));
+  assert.equal(pointSlots(preview!), 9);
+
+  state.reloaded!.phase = 'report_ready'; neo.position = filmPosition('film_captains_meeting', 0, 31); neo.isInMatrix = true;
+  sets.update(neo, sandbox, 1);
+  assert.ok(scene.getObjectByName(door.name) === door);
+  assert.equal(sets.stablePointSlots, true);
+  assert.equal(pointSlots(scene), 9);
+  state.reloaded!.phase = 'earpiece_ready';
+  prepare(); assert.equal(enemySlots, 9);
+  state.reloaded!.phase = 'combat'; sets.update(neo, sandbox, 2);
+  assert.ok(door.rotation.y > 1);
+});
+
+test('the meeting defers offscreen skin shading and resumes it when the camera turns', t => {
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = originalDocument; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const observer = world.agents.get('citizen_1')!;
+  observer.position = filmPosition('film_captains_meeting', 8, 28); observer.isInMatrix = true; observer.currentLocation = 'film_captains_meeting';
+  renderer.updateAgent(observer.id, observer); renderer.setPlayer('neo');
+  const flags: boolean[] = [];
+  t.mock.method(renderer['models'], 'animate', (_rig, _delta, input) => flags.push(Boolean(input.skipSkinContinuity)));
+  const state = journey('meeting'); state.reloaded!.phase = 'combat';
+  const camera = new THREE.PerspectiveCamera(60, 16 / 9, .1, 120);
+  camera.position.copy(filmPosition('film_captains_meeting', 0, 2)); camera.position.y += 3;
+  camera.lookAt(camera.position.x, camera.position.y, camera.position.z - 10); renderer.update(.02, camera, 1, 0, state);
+  assert.equal(renderer.getAgent(observer.id)?.visible, true);
+  camera.lookAt(observer.position.x, observer.position.y + 2, observer.position.z); renderer.update(.02, camera, 1, 0, state);
+  assert.deepEqual(flags, [true, false]);
 });
 
 test('completed scene revisits retain their environment without replaying the current encounter', () => {

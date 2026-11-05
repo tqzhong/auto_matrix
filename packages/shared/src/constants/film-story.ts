@@ -56,6 +56,7 @@ import { ambushEscapeTarget } from './ambush-escape.js';
 import { WETWALL } from './wetwall.js';
 import { BASEMENT, basementRouteRoot, basementRouteLength, basementTunnelRoot, BASEMENT_TUNNEL_LENGTH, TV_EXIT } from './basement-escape.js';
 import { THE_ONE } from './the-one.js';
+import { RELOADED } from './reloaded-opening.js';
 
 export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
 export interface FilmStep {
@@ -358,7 +359,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_final_call', 1, 'final_phone', 'neo', '电话之后的天空', 'the_one', 'the_one', 'Neo 向系统宣告新的可能，随后飞向城市上空。第一部结束。', [think('力量将用来打开什么？', '让他人有选择的可能，比替所有人预先选择更困难。'), use('结束通话', '城市生活仍在继续，战争也没有结束。', 0, -25)]),
 
   scene('m2_dream', 2, 'trinity_roof', 'trinity', '关于坠落的梦', 'zion', 'chase', '第二部以 Trinity 的危险行动开场。高楼上的枪战与坠落不断出现在 Neo 的梦里。', [walk('穿过电网维护层', 0, -15), use('破窗后记住追击细节', '枪声留在梦里。Neo 将带着这段预感醒来。', 0, -15)]),
-  scene('m2_meeting', 2, 'captains_meeting', 'neo', '船长们的秘密会议', 'zion', 'infiltration', '机器大军正向锡安钻进。反抗军船长讨论防守与等待先知消息的分歧。', [use('醒来，与 Trinity 交谈', 'Link 准备好广播，船长们正在地下交通通道等待。'), use('核对地热图与值守约定', 'Ballard 留守 36 小时，等待先知的消息。', 0, 13), use('查看 Smith 留下的耳机', 'Smith 已经脱离原来的连接。', 0, -14), use('掩护船员撤离并迎战升级特工', '三名升级特工被击退，船员抵达出口。', 0, -9), use('飞离现场，返回锡安', 'Link 确认船员安全。', 0, -24)], ['morpheus', 'trinity', 'niobe', 'ballard', 'ghost', 'soren', 'link', 'smith', 'agent_johnson', 'agent_jackson', 'agent_thompson']),
+  scene('m2_meeting', 2, 'captains_meeting', 'neo', '船长们的秘密会议', 'zion', 'infiltration', '机器大军正向锡安钻进。反抗军船长讨论防守与等待先知消息的分歧。', [use('醒来，与 Trinity 交谈', 'Link 准备好广播，船长们正在地下交通通道等待。'), use('核对地热图与值守约定', 'Ballard 留守 36 小时，等待先知的消息。', 0, 13), use('查看 Smith 留下的耳机', 'Smith 已经脱离原来的连接。', 0, -14), use('掩护船员撤离并迎战升级特工', '三名升级特工被击退，船员抵达出口。', 0, -14), use('飞离现场，返回锡安', 'Link 确认船员安全。', RELOADED.launch.x, RELOADED.launch.z)], ['morpheus', 'trinity', 'niobe', 'ballard', 'ghost', 'soren', 'link', 'smith', 'agent_johnson', 'agent_jackson', 'agent_thompson']),
   scene('m2_dock', 2, 'zion_hangar', 'neo', '回到锡安', 'zion', 'zion', '尼布甲尼撒号从三号闸门入港。值守人员正在给飞船补电，Kid 在栈桥等你。', [walk('沿悬桥走向三号闸门', 0, -28), use('与 Kid 交谈', 'Kid 说是 Neo 救了自己。Neo 提醒他：真正决定逃出来的人是 Kid。', -4, -27), use('确认飞船补电和离港时间', 'Link 把补电进度交给维修班。舰队必须在机器抵达前重新起航。', 11, -15, 5)], ['kid', 'morpheus', 'trinity', 'link']),
   scene('m2_lock', 2, 'zion_council', 'morpheus', '信念与军令', 'zion', 'zion', 'Lock 等在金属指挥所里。72 小时的逼近情报已经摆上战术桌。', [walk('进入 Lock 的指挥室', 0, -13), use('在部署图上核对舰队与战备', '机器的钻进路线与剩余时间被标在图上。等待先知消息的船与守城兵力都必须被计入。', 0, -20), think('如何面对共同的风险？', '信念不能取消他人必须承担的代价。', 0, -13)], ['lock', 'niobe']),
   scene('m2_residents', 2, 'zion_residences', 'neo', '门口的请求', 'zion', 'zion', '居住层的人们认出 Neo。有人惦记在 Gnosis 上的 Jacob，也有人寻找 Icarus 上的女儿。', [walk('穿过居住层廊桥', 0, -17), use('记下 Jacob 与 Gnosis 的消息请求', '你记录姓名、船名和最后一次通信时间，没有许下无法保证的获救承诺。', -8, -22), use('记下 Icarus 上女儿的消息请求', '第二份请求也进入联络簿；居民需要被告知事实，而不是被一句预言打发。', 8, -22), use('把两份请求送入联络簿', '后勤人员收到两份寻人请求，承诺一有舰船回报就通知家属。', 0, -29, 4)], ['trinity', 'zion_parent', 'zion_neighbor']),
@@ -741,6 +742,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     : scene.id === 'm3_gate' && step !== scene.steps[2] ? 1.2
     : scene.id === 'm2_trucks' && step !== scene.steps[0] ? .7
     : scene.id === 'm1_return' && step === scene.steps[2] ? THE_ONE.return.exitRadius
+    : scene.id === 'm2_meeting' && step === scene.steps[4] ? RELOADED.launch.radius
     : scene.id === 'm1_morning' && step === scene.steps[0] ? .85
     : scene.id === 'm1_cabin' && step !== scene.steps[0] || scene.id === 'm1_construct' && step === scene.steps[0] ? .8 : 4;
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;

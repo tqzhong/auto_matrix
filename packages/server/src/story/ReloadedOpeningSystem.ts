@@ -1,4 +1,4 @@
-import { FILM_SCENE_BY_ID, FILM_SETS, RELOADED, newReloaded, reloadedLocked, reloadedRoot, reloadedText, filmPosition, distance, combatDisplace, meleeReach,
+import { FILM_SCENE_BY_ID, FILM_SETS, RELOADED, newReloaded, reloadedLocked, reloadedRoot, reloadedText, filmPosition, filmStepNear, distance, combatDisplace, meleeReach,
   type AgentState, type SandboxState, type ReloadedOpening, type ReloadedPhase, type CombatImpact } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -31,7 +31,15 @@ export class ReloadedOpeningSystem {
     const state = this.ensure(); if (state.phase === 'done') return; const roles: readonly string[] = state.kind === 'dream' ? ['agent_johnson'] : RELOADED.cast;
     return roles.map(id => this.world.agents.get(id)).find(actor => actor?.controller && actor.id !== this.journey!.actor);
   }
-  private phase(next: ReloadedPhase): void { const state = this.ensure(); state.phase = next; state.elapsed = 0; this.journey!.lastText = reloadedText(state); }
+  private phase(next: ReloadedPhase, from?: AgentState): void {
+    const state = this.ensure(); state.phase = next; state.elapsed = 0;
+    if (from) {
+      const center = FILM_SETS[FILM_SCENE_BY_ID[this.journey!.scene].set].center;
+      const { x, y, z } = from.position;
+      state.actionStart = { x: x - center.x, y: y - center.y, z: z - center.z, yaw: from.rotation };
+    } else delete state.actionStart;
+    this.journey!.lastText = reloadedText(state);
+  }
   private advance(actor: AgentState, tick: number): void { this.onAdvance?.(reloadedText(this.ensure()), actor, tick); }
   private clearActions(): void {
     for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.reloaded) { actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 }; }
@@ -183,16 +191,19 @@ export class ReloadedOpeningSystem {
       this.journey!.checkpoint = { ...actor.position }; return reloadedText(this.ensure());
     }
     if (target === 'retry') { this.frame(actor, { x: 0, focus: false }, 0, tick); return '已接回当前拍点，保留梦境细节、会议情报与撤离进度。'; }
+    const journey = this.journey!, scene = FILM_SCENE_BY_ID[journey.scene], step = scene.steps[journey.step];
+    const near = step && filmStepNear(scene, step, actor.position, actor.isInMatrix, journey);
     if (target === 'act') {
-      if (state.phase === 'window_ready' && distance(actor.position, filmPosition('film_trinity_roof', 0, -15)) < 4) this.phase('breaking');
+      if (state.phase === 'window_ready' && near) this.phase('breaking', actor);
       else if (state.phase === 'talk_ready') this.phase('talking');
       else if (state.phase === 'connect_ready') this.phase('connecting');
-      else if (state.phase === 'report_ready' && distance(actor.position, filmPosition('film_captains_meeting', 0, 13)) < 4) this.phase('report');
-      else if (state.phase === 'earpiece_ready' && distance(actor.position, filmPosition('film_captains_meeting', 0, -14)) < 4) this.phase('earpiece');
+      else if (state.phase === 'report_ready' && near) this.phase('report');
+      else if (state.phase === 'earpiece_ready' && near) this.phase('earpiece');
       else if (state.phase === 'evacuate_ready') return this.command(actor, 'exit:west', tick);
-      else if (state.phase === 'departure_ready' && state.evacuated) this.phase('departing');
+      else if (state.phase === 'departure_ready' && state.evacuated && near) this.phase('departing', actor);
     } else if (state.phase === 'evacuate_ready' && (target === 'exit:east' || target === 'exit:west')) {
-      state.exit = target === 'exit:east' ? 'east' : 'west'; this.sandbox().neoLife!.choices.captains_exit = state.exit; this.phase('breach');
+      if (!near) return '先回铁门内侧，再通知船员从指定出口撤离。';
+      state.exit = target === 'exit:east' ? 'east' : 'west'; this.sandbox().neoLife!.choices.captains_exit = state.exit; this.phase('breach', actor);
     }
     this.frame(actor, { x: 0, focus: false }, 0, tick); return this.journey!.lastText;
   }

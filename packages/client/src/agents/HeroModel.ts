@@ -1732,7 +1732,7 @@ export class HeroModels {
     if (input.wakeCall && !this.wakeCalls.has(rig)) this.wakeCalls.set(rig, new WakeCallPerformance(rig));
     this.wakeCalls.get(rig)?.update(input.wakeCall);
     fightingHands?.update();
-    this.skinContinuity.get(rig)?.forEach(skin => skin.update());
+    if (!input.skipSkinContinuity) this.skinContinuity.get(rig)?.forEach(skin => skin.update());
     this.poseFace(rig);
     ambushWardrobe?.poseDrape(input, motion);
     const spoonFloor = input.spoonLesson && spoonLessonSeat(input.spoonLesson) > 0 ? rig.root.getWorldPosition(new THREE.Vector3()).y + .025 : undefined;

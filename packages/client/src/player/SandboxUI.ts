@@ -1300,16 +1300,16 @@ export class SandboxUI {
     }
     if (journey.reloaded && !journey.visiting) {
       const encounter = journey.reloaded; const phase = encounter.phase;
-      const close = !step || distance(player.position, filmStepPosition(scene, step)) < 4;
-      const ready = ['talk_ready', 'connect_ready', 'evacuate_ready', 'failed', 'done'].includes(phase)
-        || ['window_ready', 'report_ready', 'earpiece_ready'].includes(phase) && close || phase === 'departure_ready' && encounter.evacuated;
+      const close = !step || filmStepNear(scene, step, player.position, player.isInMatrix, journey);
+      const ready = ['talk_ready', 'connect_ready', 'failed', 'done'].includes(phase)
+        || ['window_ready', 'report_ready', 'earpiece_ready', 'evacuate_ready'].includes(phase) && close || phase === 'departure_ready' && encounter.evacuated && close;
       const firing = phase === 'falling' && RELOADED.dreamShots.some(beat => Math.abs(encounter.elapsed - beat) <= RELOADED.shotWindow && !encounter.shots.includes(beat) && !encounter.missed.includes(beat));
       const dodgeNow = phase === 'combat' && encounter.cycle >= RELOADED.strike - RELOADED.dodgeWindow && encounter.cycle < RELOADED.strike;
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', firing || dodgeNow || phase === 'failed');
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = phase === 'falling' ? firing ? '现在按 F 还击 · G 可减慢梦中的时间' : '等待准星收拢 · A / D 调整姿态'
         : phase === 'combat' ? `WASD 移动 · 1 治疗 · 反击 ${encounter.hits.join(' / ')} · ${encounter.evacuated ? '船员已抵达出口' : '正在掩护撤离'}`
-        : phase === 'evacuate_ready' ? 'G 西侧撤离 · J 选择东侧出口' : 'WASD 移动 · G 互动 · J 手记 · V 切换视角';
+        : phase === 'evacuate_ready' && close ? 'G 西侧撤离 · J 选择东侧出口' : 'WASD 移动 · G 互动 · J 手记 · V 切换视角';
       this.el('sandbox-interact').classList.toggle('hidden', !ready);
       this.el('sandbox-nearby').textContent = phase === 'failed' ? '重试入口战斗' : phase === 'done' ? '继续下一段' : phase === 'talk_ready' ? '回应 Trinity' : phase === 'connect_ready' ? '接入船长会议' : phase === 'evacuate_ready' ? '通知西侧出口撤离' : step?.label ?? '继续';
       const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!; const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;
@@ -1322,7 +1322,7 @@ export class SandboxUI {
       this.el('sandbox-weather').textContent = player.isInMatrix ? '矩阵 · 夜间' : '真实世界 · 飞船';
       this.el('sandbox-trace').textContent = encounter.kind === 'dream' ? `梦境细节 ${encounter.shots.length}/3` : encounter.exit ? `${encounter.exit === 'east' ? '东' : '西'}侧撤离 · ${Math.round(encounter.evacuation / RELOADED.evacuation * 100)}%` : '等待先知的消息';
       document.getElementById('game-objective-copy')!.textContent = reloadedText(encounter);
-      if (['approach', 'window_ready', 'report_ready', 'earpiece_ready'].includes(phase) && step) {
+      if ((['approach', 'window_ready', 'report_ready', 'earpiece_ready', 'evacuate_ready'].includes(phase) || phase === 'departure_ready' && encounter.evacuated) && step) {
         const target = filmStepPosition(scene, step); const direction = Math.atan2(target.x - player.position.x, target.z - player.position.z) - player.rotation;
         this.el('sandbox-waypoint').innerHTML = `<span style="transform:rotate(${-direction}rad)">↑</span>${step.label} <b>${Math.round(distance(target, player.position))} m</b>`;
       } else this.el('sandbox-waypoint').textContent = '';

@@ -9,11 +9,16 @@ export function reloadedCamera(gesture: ReloadedGesture, position: Vector3, set:
     return { eye, target: eye.clone().add(forward) };
   }
   const portrait = aspect < .85; let eye: THREE.Vector3; let target: THREE.Vector3;
-  if (gesture.kind === 'dream' || gesture.phase === 'departing') {
+  if (gesture.kind === 'dream') {
     const enemy = reloadedRoot(gesture, 'agent_johnson');
-    const height = gesture.kind === 'dream' ? Math.max(0, origin.y + enemy.y - position.y) : 0;
-    eye = new THREE.Vector3(position.x + (portrait ? 12 : 9), position.y + 5 + height * .48, position.z + (gesture.kind === 'dream' ? portrait ? -31 : -24 : 16));
-    target = new THREE.Vector3(position.x, position.y + 2.1 + height * .46, position.z + (gesture.kind === 'dream' ? 1.5 : -3));
+    const height = Math.max(0, origin.y + enemy.y - position.y);
+    eye = new THREE.Vector3(position.x + (portrait ? 12 : 9), position.y + 5 + height * .48, position.z - (portrait ? 31 : 24));
+    target = new THREE.Vector3(position.x, position.y + 2.1 + height * .46, position.z + 1.5);
+    return { eye, target };
+  }
+  if (gesture.phase === 'departing' || gesture.phase === 'done') {
+    eye = new THREE.Vector3(position.x + (portrait ? 8 : 9), position.y + 4, position.z - (portrait ? 14 : 11));
+    target = new THREE.Vector3(position.x, position.y + 2.1, position.z - 1.5);
     return { eye, target };
   }
   if (ship && gesture.phase === 'waking') { eye = new THREE.Vector3(portrait ? 3 : 5, 5.1, 36); target = new THREE.Vector3(11.3, 2.3, 32); }
