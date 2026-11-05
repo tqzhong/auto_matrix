@@ -142,6 +142,13 @@ const palettes = {
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
 type LafayetteMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+type LafayettePreparation = {
+  lights: LafayetteRoomLights;
+  actor?: THREE.Group;
+  meshes: LafayetteMesh[];
+  room?: FilmSetRenderer;
+  roomSteps?: Generator<void>;
+};
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 
@@ -170,7 +177,7 @@ export class FilmSetRenderer {
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
-  private preparedLafayette?: { actor: THREE.Group; lights: LafayetteRoomLights; meshes: LafayetteMesh[] };
+  private preparedLafayette?: LafayettePreparation;
   private preparedLafayetteGround?: { meshes: LafayetteMesh[]; fourSlots: boolean };
   private preparedLafayetteLanding?: LafayetteMesh[];
   private club?: ClubSetRenderer;
@@ -359,17 +366,52 @@ export class FilmSetRenderer {
     this.preparedOffice = undefined;
   }
   prepareLafayette(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group): void {
-    if (!this.meeting || journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside'
-      || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    let prepared = this.preparedLafayette;
-    if (prepared?.actor !== actor) {
-      const lights = prepared?.lights ?? this.lafayetteRoomLights();
-      const { x, y, z } = FILM_SETS.film_lafayette.center;
-      lights.shell.position.set(x, y - 1, z);
-      this.preparedLafayette = prepared = { actor, lights, meshes: this.lafayetteMeshes([actor]) };
+    if (!this.meeting || journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside') return;
+    const prepared = this.preparedLafayette ??= { lights: this.lafayetteRoomLights(), meshes: [] };
+    const set = FILM_SETS.film_lafayette, { x, y, z } = set.center;
+    if (!prepared.room && renderer.extensions.has('KHR_parallel_shader_compile')) {
+      if (!actor) return;
+      if (prepared.actor !== actor) {
+        prepared.actor = actor;
+        prepared.meshes = this.lafayetteMeshes([actor]);
+      }
+      const batch = prepared.meshes.splice(0, 4);
+      if (batch.length) {
+        prepared.lights.shell.position.set(x, y - 1, z);
+        this.compileLafayetteBatch(renderer, camera, lighting, batch, prepared.lights.shell);
+        return;
+      }
     }
-    const batch = prepared.meshes.splice(0, 4);
-    this.compileLafayetteBatch(renderer, camera, lighting, batch, prepared.lights.shell);
+    if (!prepared.room) {
+      const room = prepared.room = new FilmSetRenderer(new THREE.Scene());
+      room.current = set;
+      room.root.position.set(x, y - 1, z);
+      prepared.roomSteps = room.lafayetteRoomSteps(set, prepared.lights);
+    }
+    if (prepared.roomSteps?.next().done) prepared.roomSteps = undefined;
+  }
+  private *lafayetteRoomSteps(set: FilmSet, lights: LafayetteRoomLights): Generator<void> {
+    yield* this.buildSteps(set, lights);
+    yield* this.batchSteps();
+  }
+  private adoptLafayetteRoom(room: FilmSetRenderer): void {
+    this.root.add(...room.root.children.slice());
+    [this.geometries, room.geometries] = [room.geometries, this.geometries];
+    [this.materials, room.materials] = [room.materials, this.materials];
+    [this.textures, room.textures] = [room.textures, this.textures];
+    [this.materialCache, room.materialCache] = [room.materialCache, this.materialCache];
+    this.pillGlass = room.pillGlass;
+    this.mirror = room.mirror; room.mirror = undefined;
+    this.mirrorFilament = room.mirrorFilament;
+    this.trackingElectrode = room.trackingElectrode;
+    this.trackingLead = room.trackingLead;
+    room.dispose();
+  }
+  private cancelLafayettePreparation(): void {
+    const prepared = this.preparedLafayette;
+    if (prepared?.room) prepared.room.dispose();
+    else prepared?.lights.shell.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
+    this.preparedLafayette = undefined;
   }
   prepareLafayetteGround(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
     height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
@@ -445,6 +487,9 @@ export class FilmSetRenderer {
     if (set?.id === 'film_adams_bridge' && player?.currentLocation === 'film_extraction_car') set = FILM_SETS.film_extraction_car;
     const journey = sandbox?.neoLife?.journey;
     const sceneId = journey?.visiting ?? journey?.scene;
+    if (this.preparedLafayette && set?.id !== 'film_lafayette'
+      && (journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside'))
+      this.cancelLafayettePreparation();
     this.dockApuApproach = Boolean(journey && !journey.visiting && (
       journey.scene === 'm3_dock_battle' && journey.step === 0 && (journey.dockGunnery?.phase ?? 'ready') === 'ready'
       || journey.scene === 'm3_gate' && journey.step <= 1 && !journey.apu));
@@ -466,8 +511,8 @@ export class FilmSetRenderer {
       const enteringOffice = set?.id === 'film_metacortex_floor' || set?.id === 'film_office_ledge';
       const prepared = enteringOffice ? this.preparedOffice?.renderer : undefined;
       if (prepared) this.preparedOffice = undefined;
-      const lafayetteLights = set?.id === 'film_lafayette' ? this.preparedLafayette?.lights : undefined;
-      if (lafayetteLights) this.preparedLafayette = undefined;
+      const lafayetteRoom = set?.id === 'film_lafayette' ? this.preparedLafayette : undefined;
+      if (lafayetteRoom) this.preparedLafayette = undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       if (approach) { approach.renderer.moveStreet(approach.root); this.meeting = undefined; }
       this.clear(); this.current = set; this.currentScene = sceneId;
@@ -529,7 +574,12 @@ export class FilmSetRenderer {
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else if (sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else {
-          this.build(set, lafayetteLights); this.batch();
+          if (lafayetteRoom?.room) {
+            if (lafayetteRoom.roomSteps) for (const _ of lafayetteRoom.roomSteps) { /* Finish the room if the door is reached early. */ }
+            this.adoptLafayetteRoom(lafayetteRoom.room);
+          } else {
+            this.build(set, lafayetteRoom?.lights); this.batch();
+          }
           if (['m3_oracle_last', 'm3_oracle_absorbed'].includes(sceneId ?? '') && set.id === 'film_oracle_home') this.oracleLast = new OracleLastRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home') this.oracleAbsorption = new OracleAbsorptionRenderer(this.root);
           if (sceneId === 'm3_oracle_absorbed' && set.id === 'film_oracle_home'
@@ -550,6 +600,8 @@ export class FilmSetRenderer {
             this.chateauDoor = this.mesh(new THREE.BoxGeometry(5, 7, .38), this.wood, 0, 14.5, -40.7);
           }
           if (set.id === 'film_lafayette') {
+            if (this.mirror) this.resetMirrorFrame = showMirrorSubject(this.mirror, () => this.mirrorSubject,
+              () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
             this.hotel = new LafayetteApproachRenderer(this.root, new THREE.Vector3(0, -LAFAYETTE.upper, 0));
             const root = approach?.root ?? new THREE.Group(); root.position.set(-MEETING_DESTINATION.x, -LAFAYETTE.upper, 0); this.root.add(root);
             this.approach = approach ?? { root, renderer: new MeetingSetRenderer(root, false) };
@@ -1167,11 +1219,11 @@ export class FilmSetRenderer {
   private pbr(id: string, color = 0xffffff, repeat = 4, roughness = .85, metalness = 0): THREE.MeshStandardMaterial {
     const loader = new THREE.TextureLoader();
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness, normalScale: new THREE.Vector2(.4, .4) });
-    this.materials.add(material);
+    const materials = this.materials; materials.add(material);
     const maps: Partial<Record<'color' | 'normal' | 'roughness', THREE.Texture>> = {};
     const texture = (kind: 'color' | 'normal' | 'roughness') => {
       const map = loader.load(`/assets/film-materials/${id}-${kind}.jpg`, loaded => {
-        if (!this.materials.has(material)) { loaded.dispose(); return; }
+        if (!materials.has(material)) { loaded.dispose(); return; }
         maps[kind] = loaded;
         if (maps.color && maps.normal && maps.roughness) {
           material.map = maps.color; material.normalMap = maps.normal; material.roughnessMap = maps.roughness;
@@ -1185,9 +1237,10 @@ export class FilmSetRenderer {
     return material;
   }
   private imageMaterial(id: string, fallback: number, repeat = false, tint = 0xffffff): THREE.MeshStandardMaterial {
-    const material = new THREE.MeshStandardMaterial({ color: fallback, roughness: .96 }); this.materials.add(material);
+    const material = new THREE.MeshStandardMaterial({ color: fallback, roughness: .96 });
+    const materials = this.materials; materials.add(material);
     const texture = new THREE.TextureLoader().load(`/assets/film-materials/${id}.jpg`, loaded => {
-      if (!this.materials.has(material)) { loaded.dispose(); return; }
+      if (!materials.has(material)) { loaded.dispose(); return; }
       material.map = loaded; material.color.setHex(tint); material.needsUpdate = true;
     });
     texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
@@ -1500,6 +1553,9 @@ export class FilmSetRenderer {
     for (let z = -d / 2 + 12; z < d / 2 - 4; z += 22) for (const x of [-w * .25, w * .25]) this.lamp(x, h - 2, z, set.light === 'warm' || lavish, true);
   }
   private build(set: FilmSet, preparedLights?: LafayetteRoomLights): void {
+    for (const _ of this.buildSteps(set, preparedLights)) { /* Build immediately for direct entry and restore. */ }
+  }
+  private *buildSteps(set: FilmSet, preparedLights?: LafayetteRoomLights): Generator<void> {
     const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
@@ -1511,8 +1567,9 @@ export class FilmSetRenderer {
     this.shell(set);
     const lights = lafayette ? preparedLights ?? this.lafayetteRoomLights() : undefined;
     if (lights) { lights.shell.position.set(0, 0, 0); this.root.add(lights.shell); }
+    if (lafayette) yield;
     const a = set.architecture;
-    if (['hotel', 'apartment', 'oracle', 'lafayette', 'tenement'].includes(a)) this.domestic(set);
+    if (['hotel', 'apartment', 'oracle', 'lafayette', 'tenement'].includes(a)) yield* this.domestic(set);
     // Keep the tracking equipment light between the shell lights and room fixtures.
     if (lights) this.root.add(lights.fixtures);
     if (['office', 'interrogation', 'power', 'workshop', 'backdoors', 'architect'].includes(a)) this.workplace(set);
@@ -1740,7 +1797,7 @@ export class FilmSetRenderer {
     }
     const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2); escapeLight.position.set(0, 8, -32); this.root.add(escapeLight);
   }
-  private domestic(set: FilmSet): void {
+  private *domestic(set: FilmSet): Generator<void> {
     const { architecture: a, width: w, depth: d } = set;
     if (set.id === 'film_heart_hotel' && this.currentScene === 'm1_room303') { this.openingHotelSet(set); return; }
     if (a === 'hotel' || a === 'tenement') {
@@ -1768,6 +1825,7 @@ export class FilmSetRenderer {
       this.pillTable();
       this.pillGlass = createPillGlass(); this.pillGlass.position.set(PILL_ROOM.cup.x, PILL_ROOM.cup.y, PILL_ROOM.cup.z); this.root.add(this.pillGlass);
       this.pillGlass.traverse(object => { if (object instanceof THREE.Mesh) { this.geometries.add(object.geometry); this.materials.add(object.material as THREE.Material); } });
+      yield;
       const wallpaper = this.imageMaterial('lafayette-wallpaper-v1', 0x5b6251, true, 0xa0a58e); const cable = this.mat(0x1a201f, .9);
       const trim = this.mat(0x414b3a, .87); const wornEdge = this.mat(0x727561, .91);
       for (const wall of filmObstacles(set).filter(item => item.z === -11.5)) {
@@ -1802,6 +1860,7 @@ export class FilmSetRenderer {
       this.trackingLead = new THREE.Line(leadGeometry, leadMaterial); this.trackingLead.name = 'tracking-electrode-lead'; this.root.add(this.trackingLead);
       this.trackingEquipment();
       for (const x of [-17.5, -16.5, -15.5]) this.pipe([[x, 0, -20], [x, 6.5, -20], [chairX - 2.2 + (x + 16.5) * .12, 6.5, chairZ + 1.5], [chairX - 1.9, 3.5, chairZ + 1.2]], .014, cable);
+      yield;
       const hearth = this.mat(0x30352f, .96); const stone = this.pbr('marble_01', 0x707363, 1, .94); stone.normalScale.set(.12, .12);
       const carving = this.mat(0x59604f, .92); const f = PILL_ROOM.fireplace;
       const front = f.z + f.depth / 2;
@@ -1851,6 +1910,7 @@ export class FilmSetRenderer {
         leaf.rotation.z = angle + Math.PI / 2; leaf.scale.set(.33, .43, .6);
       }
       for (const x of [-1.55, -.93, -.31, .31, .93, 1.55]) this.box(soot, f.x + x, .55, front - .3, .045, .53, .05);
+      yield;
       const mirrorY = MIRROR_FACE.y + 1;
       const mirrorWood = this.pbr('old_wood_floor', 0x252b22, 1.5, .66);
       const relief = this.mat(0x303727, .9); const mx = PILL_ROOM.mirror.x;
@@ -1872,7 +1932,6 @@ export class FilmSetRenderer {
       }
       this.mirror = createMirrorSurface(); this.own(this.mirror.geometry);
       this.mirror.scale.set(MIRROR_FACE.radiusX, MIRROR_FACE.radiusY, 1);
-      this.resetMirrorFrame = showMirrorSubject(this.mirror, () => this.mirrorSubject, () => [this.trackingElectrode!, this.trackingLead!].filter(object => object.userData.active));
       this.mirror.position.set(PILL_ROOM.mirror.x, mirrorY, PILL_ROOM.mirror.z); this.mirror.userData.dynamic = true; this.root.add(this.mirror);
       const liquidProfile = [[0, 0], [.14, 0], [.075, .06], [.027, .26], [.012, .5], [.018, .76], [.042, .95], [0, 1]].map(([x, y]) => new THREE.Vector2(x, y));
       this.mirrorFilament = this.mesh(new THREE.LatheGeometry(liquidProfile, 24), this.mat(0xb4c1bd, .08, .96), 0, 0, 0);
@@ -1884,6 +1943,7 @@ export class FilmSetRenderer {
       this.mesh(new THREE.CylinderGeometry(.3, .52, .68, 24, 1, true), wornEdge, 8, 5.9, -10.3);
       this.sphere(this.glow, 8, 5.7, -10.3, .11);
       this.door(0, d / 2 - .4);
+      yield;
     }
     if (a === 'oracle') {
       const lastVisit = this.currentScene === 'm3_oracle_last' || this.currentScene === 'm3_oracle_absorbed';
@@ -2904,6 +2964,9 @@ export class FilmSetRenderer {
     }
   }
   private batch(): void {
+    for (const _ of this.batchSteps()) { /* Non-staged sets complete in the current frame. */ }
+  }
+  private *batchSteps(): Generator<void> {
     this.root.updateMatrixWorld(true);
     const inverse = this.root.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); const remove: THREE.Object3D[] = [];
@@ -2912,9 +2975,13 @@ export class FilmSetRenderer {
     if (lafayette) this.root.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Line) uses.set(object.geometry, (uses.get(object.geometry) ?? 0) + 1);
     });
+    const meshes: { object: THREE.Mesh; material: THREE.Material }[] = [];
     this.root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || Array.isArray(object.material)) return;
       let ancestor: THREE.Object3D | null = object; while (ancestor && ancestor !== this.root) { if (ancestor.userData.dynamic) return; ancestor = ancestor.parent; }
+      meshes.push({ object, material: object.material });
+    });
+    for (const [index, { object, material }] of meshes.entries()) {
       const source = object.geometry;
       // Static single-use buffers can be transformed and retired by the batch itself.
       const reuse = lafayette && source.index && uses.get(source) === 1 && this.geometries.has(source);
@@ -2928,21 +2995,24 @@ export class FilmSetRenderer {
       if (normalized !== geometry) geometry.dispose();
       // All generated mesh primitives carry position, normal and uv. Extraneous attributes are not needed.
       for (const name of Object.keys(normalized.attributes)) if (!['position', 'normal', 'uv'].includes(name)) normalized.deleteAttribute(name);
-      const list = batches.get(object.material) ?? []; list.push(normalized); batches.set(object.material, list); remove.push(object);
-    });
+      if (lafayette) this.geometries.add(normalized);
+      const list = batches.get(material) ?? []; list.push(normalized); batches.set(material, list); remove.push(object);
+      if (lafayette && (index + 1) % 128 === 0) yield;
+    }
     for (const object of remove) object.removeFromParent();
+    let merged = 0;
     for (const [material, geometries] of batches) {
-      const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose());
+      const geometry = mergeGeometries(geometries); geometries.forEach(g => { this.geometries.delete(g); g.dispose(); });
       if (!geometry) throw new Error('Film set geometry could not be merged');
       const mesh = new THREE.Mesh(this.own(geometry), material); mesh.castShadow = true; mesh.receiveShadow = true; this.root.add(mesh);
+      if (lafayette && ++merged % 4 === 0) yield;
     }
     const live = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) live.add(object.geometry); });
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
   private clear(): void {
     this.cancelOfficePreparation();
-    this.preparedLafayette?.lights.shell.traverse(object => { if (object instanceof THREE.Light) object.dispose(); });
-    this.preparedLafayette = undefined;
+    this.cancelLafayettePreparation();
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;

@@ -276,7 +276,12 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
 });
 
 test('crossing the Lafayette entrance keeps the already visible hotel and street resources', t => {
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const pending: { url: string; texture: THREE.Texture; finish: () => void }[] = [];
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad?: (texture: THREE.Texture) => void) => {
+    const texture = new THREE.Texture();
+    if (onLoad) pending.push({ url, texture, finish: () => onLoad(texture) });
+    return texture;
+  });
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -284,8 +289,9 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
   neo.position = filmPosition('film_extraction_car', 655, 38); neo.currentLocation = 'film_extraction_car'; neo.isInMatrix = true;
   const journey: FilmJourney = { version: 1, scene: 'm1_bug', actor: 'neo', step: 2, enteredAt: 0, completed: [], reflections: {},
     checkpoint: { ...neo.position }, lastText: '', meeting: { phase: 'outside', elapsed: 0, bugged: false, approach: { x: 4, z: -12.35, yaw: 0 } } };
+  const curb = { ...neo.position }, meeting = journey.meeting;
   const sandbox = { neoLife: { journey } } as SandboxState;
-  const renderer = new FilmSetRenderer(new THREE.Scene());
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
   try {
     assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_extraction_car');
     let street: THREE.Mesh | undefined;
@@ -293,18 +299,62 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
     assert.ok(street);
     const streetPosition = street.getWorldPosition(new THREE.Vector3());
     let disposals = 0; street.geometry.addEventListener('dispose', () => disposals++);
+    const webgl = { extensions: { has: () => false } } as unknown as THREE.WebGLRenderer;
+    const eye = new THREE.PerspectiveCamera();
+    const staging = renderer as unknown as { preparedLafayette?: { room?: FilmSetRenderer; roomSteps?: Generator<void> } };
+    const streetChildren = [...renderer.root.children];
+    const stagedTextureStart = pending.length;
+    renderer.prepareLafayette(webgl, eye, lighting, journey);
+    const room = staging.preparedLafayette?.room;
+    assert.ok(room, 'room construction can begin on the approach without a shader extension');
+    assert.ok(staging.preparedLafayette?.roomSteps);
+    assert.equal(scene.getObjectByName('pill-water-glass'), undefined);
+    let frames = 1;
+    while (staging.preparedLafayette?.roomSteps && frames < 180) {
+      renderer.prepareLafayette(webgl, eye, lighting, journey);
+      frames++;
+    }
+    assert.ok(frames > 4 && frames < 180);
+    assert.deepEqual(renderer.root.children, streetChildren);
+    const cup = room.root.getObjectByName('pill-water-glass');
+    assert.ok(cup);
+    const rug = pending.slice(stagedTextureStart).find(entry => entry.url.endsWith('lafayette-rug-v1.jpg'));
+    assert.ok(rug);
+    let roomDisposals = 0;
+    cup.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.addEventListener('dispose', () => roomDisposals++); });
     neo.position = filmPosition('film_lafayette', 0, 29); neo.position.y -= LAFAYETTE.upper;
     assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
     assert.ok(renderer.root.getObjectByProperty('uuid', street.uuid) === street, 'the road from the ride must remain the same object');
     assert.deepEqual(street.getWorldPosition(new THREE.Vector3()), streetPosition);
     assert.equal(disposals, 0);
     const children = [...renderer.root.children];
-    assert.ok(renderer.root.getObjectByName('pill-water-glass'));
+    assert.equal(renderer.root.getObjectByName('pill-water-glass'), cup, 'arrival must attach the prepared room');
+    assert.equal(roomDisposals, 0);
+    rug.finish();
+    let rugAttached = false;
+    renderer.root.traverse(object => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && object.material.map === rug.texture) rugAttached = true;
+    });
+    assert.equal(rugAttached, true, 'a staged texture can finish loading after the room changes owners');
     journey.scene = 'm1_pills'; journey.step = 0; journey.hotel = { progress: 0 }; delete journey.meeting;
     assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
     assert.ok(children.every((child, index) => renderer.root.children[index] === child), 'confirming the entrance must keep the already rendered set');
     renderer.update(undefined, undefined, 0);
     assert.equal(renderer.root.children.length, 0);
     assert.equal(disposals, 1, 'leaving the combined street and hotel must release the road once');
-  } finally { renderer.dispose(); globalThis.document = document; }
+    assert.ok(roomDisposals > 0, 'the adopted room releases its geometry when leaving');
+    neo.position = curb; journey.scene = 'm1_bug'; journey.step = 2; journey.meeting = meeting; delete journey.hotel;
+    assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_extraction_car');
+    renderer.prepareLafayette(webgl, eye, lighting, journey);
+    const abandoned = staging.preparedLafayette?.room;
+    assert.ok(abandoned && staging.preparedLafayette?.roomSteps);
+    let abandonedGeometry: THREE.BufferGeometry | undefined;
+    abandoned.root.traverse(object => { if (!abandonedGeometry && object instanceof THREE.Mesh) abandonedGeometry = object.geometry; });
+    assert.ok(abandonedGeometry);
+    let abandonedDisposals = 0; abandonedGeometry.addEventListener('dispose', () => abandonedDisposals++);
+    journey.meeting = { ...meeting!, phase: 'parked' };
+    assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_extraction_car');
+    assert.equal(staging.preparedLafayette, undefined);
+    assert.equal(abandonedDisposals, 1, 'a room left before entry also releases its geometry');
+  } finally { lighting.dispose(); renderer.dispose(); globalThis.document = document; }
 });
