@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { THE_ONE, theOneRoot, type FilmJourney } from '@auto_matrix/shared';
+import { THE_ONE, theOnePose, theOneRoot, type FilmJourney } from '@auto_matrix/shared';
 
 type TheOneSet = 'film_heart_hotel' | 'film_neb_deck' | 'film_final_phone';
 
@@ -108,7 +108,7 @@ export class TheOneRenderer {
     this.box(door, this.brass, -2.1, 1.4, .18, .62, .3, .05);
     for (const x of [-1.2, 0, 1.2]) this.box(doorFrame, this.brass, x, 9.35, .05, .64, .09, .04);
 
-    const phone = new THREE.Group(); phone.name = 'one-exit-phone'; phone.position.set(0, 0, -23.5); hotel.add(phone);
+    const phone = new THREE.Group(); phone.name = 'one-exit-phone'; phone.position.set(0, 0, -23.5); phone.rotation.y = Math.PI; hotel.add(phone);
     this.box(phone, this.wood, 0, 3.35, .4, 2.6, 6.7, .5); this.box(phone, this.black, 0, 3.7, .08, 1.65, 2.2, .42);
     this.phoneGlow = this.material(0x56846b, .28, .15, 0x2bd37b, .25); this.box(phone, this.phoneGlow, 0, 5.05, -.16, 1.35, .5, .08);
     this.box(phone, this.black, -.62, 3.6, -.26, .3, 1.45, .22); this.line(phone, this.black, new THREE.Vector3(-.62, 2.9, -.2), new THREE.Vector3(-.28, 2.15, .08), .035);
@@ -134,7 +134,7 @@ export class TheOneRenderer {
     }
     for (let z = -23; z <= 7; z += 2.2) this.box(codeShell, this.code, 0, .035, z, 12.8, .025, .035);
 
-    const burst = new THREE.Group(); burst.name = 'one-smith-burst'; burst.visible = false; burst.position.set(0, 2.6, -20.7); hotel.add(burst); this.burst = burst;
+    const burst = new THREE.Group(); burst.name = 'one-smith-burst'; burst.visible = false; burst.position.set(0, 2.6, THE_ONE.return.burstZ); hotel.add(burst); this.burst = burst;
     for (let i = 0; i < 42; i++) {
       const shard = this.mesh(new THREE.TetrahedronGeometry(.07 + i % 4 * .035), i % 5 ? this.code : this.black, burst);
       const theta = i * 2.399; const radius = .35 + (i % 7) * .17;
@@ -168,8 +168,11 @@ export class TheOneRenderer {
       }
       const beam = this.mesh(new THREE.CylinderGeometry(.035, .12, 13, 9), this.red, claw); beam.position.set(0, -6.5, 0);
     }
-    const control = new THREE.Group(); control.name = 'one-emp-switch'; control.position.set(-2.5, 1.1, -1.8); this.group.add(control); this.empSwitch = control;
-    this.box(control, this.black, 0, .8, 0, 2.8, 1.6, 1.8); const handle = this.box(control, this.brass, 0, 1.8, 0, .24, 2.1, .24, 'one-emp-handle'); handle.geometry.translate(0, -1, 0); handle.position.y = 2.8;
+    const control = new THREE.Group(); control.name = 'one-emp-switch';
+    const { x, z } = THE_ONE.return.empConsole; control.position.set(x, 1.1, z); this.group.add(control); this.empSwitch = control;
+    this.box(control, this.black, 0, .8, 0, 2.8, 1.6, 1.8, 'one-emp-housing');
+    const handle = this.box(control, this.brass, 1.08, 1.6, 0, .24, .9, .24, 'one-emp-handle'); handle.geometry.translate(0, .45, 0);
+    this.box(handle, this.black, 0, .9, 0, .4, .22, .4);
     const flash = this.mesh(new THREE.SphereGeometry(34, 28, 18), this.basic(0xe9fff2, 0), this.group, 'one-emp-flash'); flash.visible = false; flash.scale.set(.05, .05, .05); this.empFlash = flash;
   }
 
@@ -245,7 +248,8 @@ export class TheOneRenderer {
         const approach = encounter.phase === 'code_reveal' ? 0 : encounter.phase === 'bullet_window' ? Math.min(1, encounter.elapsed / THE_ONE.return.bulletBeat) : 1;
         const fall = encounter.phase === 'bullet_stop' ? THREE.MathUtils.smoothstep(encounter.elapsed, 1.55, THE_ONE.return.bulletStop) : 0;
         this.bulletField.children.forEach((child, index) => {
-          const origin = this.bulletOrigins[index]; child.position.set(origin.x, origin.y - fall * (1.2 + index % 4 * .17), origin.z + approach * 5.1);
+          const origin = this.bulletOrigins[index], stopZ = THE_ONE.death.revivalZ - 1.5 + (index % 4) * .16;
+          child.position.set(origin.x, origin.y - fall * (1.2 + index % 4 * .17), THREE.MathUtils.lerp(origin.z, stopZ, approach));
           child.rotation.z = fall * (index % 2 ? 1 : -1) * 1.3;
         });
       }
@@ -270,7 +274,8 @@ export class TheOneRenderer {
       }
       if (this.empSwitch) {
         this.empSwitch.visible = encounter.kind === 'return' && encounter.phase === 'emp';
-        const handle = this.empSwitch.getObjectByName('one-emp-handle'); if (handle) handle.rotation.z = encounter.empFired ? -1.05 : -.16;
+        const handle = this.empSwitch.getObjectByName('one-emp-handle');
+        if (handle) handle.rotation.z = THREE.MathUtils.lerp(-.16, -1.05, theOnePose({ ...encounter, role: 'morpheus' }).empPull);
       }
       if (this.empFlash) {
         const flash = encounter.kind === 'return' && encounter.phase === 'emp' && encounter.empFired;

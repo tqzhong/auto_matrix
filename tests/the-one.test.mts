@@ -75,6 +75,16 @@ test('room 303 ambush cuts to the real body and only Trinity voice focus restore
   assert.equal(h.sandbox.life.film.state!.theOne!.phase, 'done');
   assert.ok(h.sandbox.life.film.state!.completed.includes('m1_death')); assert.equal(h.actor.currentLocation, 'film_heart_hotel');
   assert.equal(h.actor.isInMatrix, true); assert.equal(h.actor.health, h.actor.maxHealth);
+  const revived = { ...h.actor.position }, facing = h.actor.rotation;
+  h.command('next');
+  const next = h.sandbox.life.film.state!;
+  assert.equal(next.scene, 'm1_return');
+  assert.deepEqual(h.actor.position, revived, 'the next prompt stays where Neo stood up');
+  assert.equal(h.actor.rotation, facing);
+  assert.deepEqual(next.checkpoint, revived);
+  h.command('act');
+  assert.equal(next.theOne!.phase, 'code_reveal');
+  assert.deepEqual(h.actor.position, revived, 'the code reveal starts at the same spot');
 });
 
 test('Tank keeps his earlier wound while attending Neo on the ship', () => {
@@ -106,9 +116,21 @@ test('code sight stops a timed volley, then a real block and counters destroy Sm
     h.sandbox.attack(h.actor, h.tick() + hit + 1, hit % 3);
   }
   assert.equal(encounter.phase, 'dive');
-  h.frames(THE_ONE.return.dive + THE_ONE.return.burst + .4);
+  h.frames(THE_ONE.return.dive + .3);
+  assert.equal(encounter.phase, 'burst');
+  const landing = { ...h.actor.position };
+  h.frames(THE_ONE.return.burst + .2);
   assert.equal(state.step, 2); assert.equal(encounter.phase, 'exit_run'); assert.equal(encounter.smithBurst, true);
+  assert.deepEqual(h.actor.position, landing, 'keep the landing when the hardline timer starts');
+  assert.deepEqual(state.checkpoint, landing);
   assert.ok(h.impacts.some(impact => impact.source === 'neo-code' && impact.target === 'smith' && impact.downed));
+  h.frames(THE_ONE.return.exitDeadline + .2);
+  assert.equal(encounter.phase, 'failed');
+  h.command('retry');
+  assert.deepEqual(h.actor.position, landing);
+  assert.equal(state.theOne!.phase, 'exit_run');
+  for (let frame = 0; frame < 8 && state.theOne!.phase === 'exit_run'; frame++) h.frames(.1, { z: -1 });
+  assert.equal(state.theOne!.phase, 'exit_ready', 'walk the remaining distance to the hardline');
 });
 
 test('missing the bullet stop or the exit deadline has explicit saved retries', () => {
@@ -120,10 +142,12 @@ test('missing the bullet stop or the exit deadline has explicit saved retries', 
   assert.equal(bulletState.theOne!.phase, 'code_reveal'); assert.equal(bulletState.theOne!.attempt, 1);
 
   const exit = setup('m1_return'); const exitState = exit.sandbox.life.film.state!; const encounter = exitState.theOne!;
+  exitState.checkpoint = filmPosition(exit.scene.set, 0, 8);
   exitState.step = 2; Object.assign(encounter, { phase: 'exit_run', checkpoint: 'exit', elapsed: 0, deadline: THE_ONE.return.exitDeadline - .1,
     hits: THE_ONE.return.requiredHits, blocks: THE_ONE.return.requiredBlocks, smithBurst: true });
   exit.frames(.3); assert.equal(encounter.phase, 'failed');
   assert.match(exit.command('retry'), /出口|电话|重试/); assert.equal(exitState.theOne!.phase, 'exit_run'); assert.equal(exitState.theOne!.deadline, 0);
+  assert.deepEqual(exit.actor.position, exitState.checkpoint, 'keep the checkpoint from older exit saves');
 });
 
 test('answering the exit lets Morpheus fire EMP only after Neo is out', () => {

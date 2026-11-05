@@ -241,6 +241,8 @@ export class Engine {
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     if (this.running && meeting?.scene === 'm1_rooftop_rescue' && player?.id === meeting.actor)
       this.filmSets.prepareSubway(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
+    if ((meeting?.scene === 'm1_death' || meeting?.scene === 'm1_return') && player?.id === meeting.actor)
+      this.filmSets.prepareOneDeck(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id), player.position);
     this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');

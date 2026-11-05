@@ -238,6 +238,7 @@ export class FilmSetRenderer {
   private government?: GovernmentSetRenderer;
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedSubway?: { renderer: MatrixEscapeRenderer; colors?: ColorPreparation };
+  private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: ColorPreparation & { actors: Set<THREE.Group> } };
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
   private catchSet?: ReloadedCatchRenderer;
@@ -379,6 +380,42 @@ export class FilmSetRenderer {
     }
     if (this.preparedSubway.colors) this.prepareColorFrame(renderer, camera, this.preparedSubway.colors);
   }
+  prepareOneDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined, position: Vector3): void {
+    const encounter = journey.theOne;
+    const center = FILM_SETS.film_heart_hotel.center, door = FILM_SCENE_BY_ID.m1_death.steps[0];
+    const approaching = encounter?.phase === 'ready' && Math.hypot(position.x - center.x - door.x, position.z - center.z - door.z) < 20;
+    const shooting = journey.scene === 'm1_death' && encounter?.kind === 'death'
+      && (approaching || encounter.phase === 'ambush' || encounter.phase === 'gunfire');
+    const exiting = journey.scene === 'm1_return' && encounter?.kind === 'return'
+      && (encounter.phase === 'dive' && encounter.elapsed >= .35 || ['burst', 'exit_run', 'exit_ready', 'exit_phone'].includes(encounter.phase));
+    if (this.current?.id !== 'film_heart_hotel' || journey.visiting || !encounter || (!shooting && !exiting)) {
+      this.cancelOneDeckPreparation();
+      return;
+    }
+    // Give Smith's first frames the render budget and keep any deck already prepared.
+    if (encounter.phase === 'ambush' && encounter.elapsed < .35) return;
+    if (!this.preparedOneDeck) {
+      const root = new THREE.Group();
+      const deck = new NebDeckRenderer(root), overlay = new TheOneRenderer(root, 'film_neb_deck');
+      this.preparedOneDeck = { root, deck, overlay };
+      deck.update(journey, 0);
+      overlay.update({ ...journey, theOne: { ...encounter, phase: shooting ? 'flatline' : 'emp', elapsed: 0 } }, 0);
+      if (renderer.extensions.has('KHR_parallel_shader_compile'))
+        this.preparedOneDeck.colors = { ...this.colorPreparation(root, []), actors: new Set() };
+    }
+    const colors = this.preparedOneDeck.colors;
+    if (!colors) return;
+    for (const id of ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer']) {
+      const group = actor(id);
+      if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group]);
+      if (!meshes.length) continue;
+      colors.actors.add(group);
+      colors.meshes.unshift(...meshes);
+      this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors);
+  }
   private colorPreparation(root: THREE.Group, actors: THREE.Group[], textureActors: THREE.Group[] = []): ColorPreparation {
     const scene = new THREE.Scene();
     scene.environment = this.scene.environment; scene.fog = this.scene.fog;
@@ -388,12 +425,15 @@ export class FilmSetRenderer {
     }
     const marker = this.markerLight.clone(); marker.visible = true; scene.add(marker, root);
     const meshes = this.colorMeshes([...actors, root]), textures = new Set<THREE.Texture>();
-    for (const { material } of new Set([...meshes, ...this.colorMeshes(textureActors)])) {
+    this.queueColorTextures(textures, new Set([...meshes, ...this.colorMeshes(textureActors)]));
+    return { scene, meshes, programs: [], textures };
+  }
+  private queueColorTextures(textures: Set<THREE.Texture>, meshes: Iterable<ColorMesh>): void {
+    for (const { material } of meshes) {
       for (const map of [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]) {
         if (map) textures.add(map);
       }
     }
-    return { scene, meshes, programs: [], textures };
   }
   private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation): void {
     const programs = renderer.info.programs;
@@ -622,6 +662,8 @@ export class FilmSetRenderer {
         || this.currentScene === 'm1_pills' && sceneId === 'm1_mirror' && !journey?.visiting)) this.currentScene = sceneId;
     if (set?.id === 'film_oracle_home' && this.current?.id === set.id && !journey?.visiting
       && this.currentScene === 'm1_spoon' && sceneId === 'm1_oracle') this.currentScene = sceneId;
+    if (this.theOne?.setId === 'film_heart_hotel' && set?.id === 'film_heart_hotel' && !journey?.visiting
+      && this.currentScene === 'm1_death' && sceneId === 'm1_return') this.currentScene = sceneId;
     if (this.ambush && set?.id === 'film_ambush_house' && !journey?.visiting && (
       this.currentScene === 'm1_dejavu' && sceneId === 'm1_wetwall'
       || this.currentScene === 'm1_wetwall' && sceneId === 'm1_wall_exposed'
@@ -644,6 +686,8 @@ export class FilmSetRenderer {
       if (preparedAmbush) this.preparedAmbush = undefined;
       const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
       if (preparedSubway) this.preparedSubway = undefined;
+      const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
+      if (preparedOneDeck) this.preparedOneDeck = undefined;
       const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
@@ -690,7 +734,9 @@ export class FilmSetRenderer {
           this.pods.attach(this.root);
         }
         else if (set.id === 'film_neb_deck') {
-          if (keepCrosscut) {
+          if (preparedOneDeck) {
+            this.root.add(preparedOneDeck.root); this.neb = preparedOneDeck.deck; this.theOne = preparedOneDeck.overlay;
+          } else if (keepCrosscut) {
             if (!this.crosscutDeck) {
               const root = new THREE.Group();
               this.crosscutDeck = { root, renderer: new NebDeckRenderer(root) };
@@ -3188,6 +3234,11 @@ export class FilmSetRenderer {
   private cancelSubwayPreparation(): void {
     this.preparedSubway?.renderer.dispose(); this.preparedSubway = undefined;
   }
+  private cancelOneDeckPreparation(): void {
+    const prepared = this.preparedOneDeck;
+    if (!prepared) return;
+    prepared.root.removeFromParent(); prepared.overlay.dispose(); prepared.deck.dispose(); this.preparedOneDeck = undefined;
+  }
   private clear(keepCrosscut = false): void {
     if (!keepCrosscut) {
       if (this.crosscutTv !== this.tvRepair) this.crosscutTv?.dispose();
@@ -3198,6 +3249,7 @@ export class FilmSetRenderer {
     this.cancelLafayettePreparation();
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();
+    this.cancelOneDeckPreparation();
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;

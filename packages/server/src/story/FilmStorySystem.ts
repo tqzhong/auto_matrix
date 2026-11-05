@@ -3985,7 +3985,7 @@ export class FilmStorySystem {
         if (encounter.elapsed >= THE_ONE.return.burst) {
           this.advance(this.step!.text ?? 'Neo 从内部撕开 Smith 的程序外壳。', agent, tick); encounter.phase = 'exit_run'; encounter.elapsed = 0;
           encounter.checkpoint = 'exit'; encounter.deadline = 0; this.clearTheOneActions();
-          agent.position = filmPosition(this.scene!.set, 0, 8); agent.rotation = Math.PI; state.checkpoint = { ...agent.position };
+          state.checkpoint = { ...agent.position };
         }
       } else if (encounter.phase === 'exit_run') {
         encounter.deadline = Math.min(THE_ONE.return.exitDeadline, encounter.deadline + delta);
@@ -3999,7 +3999,7 @@ export class FilmStorySystem {
       } else if (encounter.phase === 'emp') {
         const before = encounter.elapsed; encounter.elapsed = Math.min(THE_ONE.return.emp, encounter.elapsed + delta);
         for (const role of ['neo', 'trinity', 'morpheus', 'tank'] as TheOneRole[]) this.stageTheOneActor(role, encounter, dt, tick);
-        if (!encounter.empFired && before < 1.15 && encounter.elapsed >= 1.15) encounter.empFired = true;
+        if (!encounter.empFired && before < THE_ONE.return.empFireAt && encounter.elapsed >= THE_ONE.return.empFireAt) encounter.empFired = true;
         if (encounter.elapsed >= THE_ONE.return.emp) {
           encounter.phase = 'done'; this.clearTheOneActions(); this.stageTheOneActor('neo', encounter, 0, tick);
           this.advance(this.step!.text ?? 'Neo 离线后，Morpheus 启动 EMP。', agent, tick);
@@ -4051,7 +4051,8 @@ export class FilmStorySystem {
       state.theOne = { kind: 'return', phase: exit ? 'exit_run' : 'code_reveal', elapsed: 0, attempt, checkpoint: exit ? 'exit' : 'bullets',
         signal: 0, hits: exit ? THE_ONE.return.requiredHits : 0, blocks: exit ? THE_ONE.return.requiredBlocks : 0, deadline: 0,
         altitude: 0, flightX: 0, flightZ: 0, resolved: [], bulletStopped: exit || previous.bulletStopped, smithBurst: exit || previous.smithBurst };
-      agent.position = exit ? filmPosition(this.scene!.set, 0, 8) : filmPosition(this.scene!.set, 0, -9.5); agent.isInMatrix = true; agent.currentLocation = this.scene!.set;
+      agent.position = exit ? { ...state.checkpoint } : filmPosition(this.scene!.set, 0, THE_ONE.death.revivalZ);
+      agent.isInMatrix = true; agent.currentLocation = this.scene!.set;
     } else {
       state.theOne = { kind: previous.kind, phase: 'ready', elapsed: 0, attempt, checkpoint: previous.checkpoint,
         signal: 0, hits: 0, blocks: 0, deadline: 0, altitude: 0, flightX: 0, flightZ: 0, resolved: [] };
@@ -6634,7 +6635,7 @@ export class FilmStorySystem {
       else if (next.id === 'm1_wake_again' && this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500) this.elapse((20500 - this.world.timeOfDay) * .06, tick);
       const sameRoom = state.scene === 'm1_morning' && next.id === 'm1_commute' || state.scene === 'm1_commute' && next.id === 'm1_boss' || state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
         || state.scene === 'm1_dejavu' && next.id === 'm1_wetwall' || state.scene === 'm1_wetwall' && next.id === 'm1_wall_exposed'
-        || state.scene === 'm1_spoon' && next.id === 'm1_oracle'
+        || state.scene === 'm1_spoon' && next.id === 'm1_oracle' || state.scene === 'm1_death' && next.id === 'm1_return'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
         || state.scene === 'm3_rain' && next.id === 'm3_surrender'
         || state.scene === 'm3_dock_battle' && next.id === 'm3_gate'

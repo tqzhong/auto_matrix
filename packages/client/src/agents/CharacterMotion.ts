@@ -1172,6 +1172,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       arms[1].shoulder = mix(arms[1].shoulder, -1.4, theOne.phone); arms[1].elbow = mix(arms[1].elbow, -1.5, theOne.phone);
       arms[1].outward = mix(arms[1].outward, .4, theOne.phone); arms[1].grip = mix(arms[1].grip, .56, theOne.phone);
     }
+    if (theOne.empReach) {
+      const arm = arms[1];
+      arm.shoulder = mix(arm.shoulder, mix(-1.62, -1.22, theOne.empPull), theOne.empReach);
+      arm.elbow = mix(arm.elbow, mix(-.22, -.74, theOne.empPull), theOne.empReach);
+      arm.outward = mix(arm.outward, .06, theOne.empReach); arm.grip = mix(arm.grip, .78, theOne.empReach);
+    }
     if (theOne.flight && role === 'neo') for (let i = 0; i < 2; i++) {
       arms[i].shoulder = mix(arms[i].shoulder, -1.58, theOne.flight); arms[i].elbow = mix(arms[i].elbow, -.12, theOne.flight);
       arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .14, theOne.flight); arms[i].grip = mix(arms[i].grip, .28, theOne.flight);
