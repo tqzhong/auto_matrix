@@ -37,6 +37,7 @@ import { PHONE_HAND } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
 import { ShoulderSupport } from './ShoulderSupport.js';
 import { FightingHands } from './FightingHands.js';
+import { applyNailSurface } from './NailSurface.js';
 import { ConsoleDrinkPerformance } from './ConsoleDrinkPerformance.js';
 import { poseConsoleOperator } from './ConsoleOperatorPerformance.js';
 import { ConsolePourPerformance } from './ConsolePourPerformance.js';
@@ -177,7 +178,7 @@ export class HeroModels {
   private handRotation = new THREE.Quaternion();
   private patientSkin: THREE.DataTexture;
 
-  constructor(private portrait: THREE.Texture, private fabric: THREE.Texture) {
+  constructor(private portrait: THREE.Texture, private fabric: THREE.Texture, private readonly pose: 'animated' | 'fixed' = 'animated') {
     const size = 96; const data = new Uint8Array(size * size * 4);
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
       const pore = Math.sin(x * 2.37 + y * .73) * Math.sin(y * 2.11 - x * .41);
@@ -570,9 +571,13 @@ export class HeroModels {
     if (id === 'morpheus' && !support) this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
     if (id === 'morpheus' && !support) this.regularCoatTails.set(rig, new RegularCoatTails(rig));
     if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
-    if (!support && !guard) this.fightingHands.set(rig, new FightingHands(rig));
+    if (!support && !guard) {
+      const skin = root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
+      if (skin.geometry.hasAttribute('_nail_detail')) applyNailSurface(skin.material as THREE.MeshStandardMaterial);
+      if (this.pose === 'animated') this.fightingHands.set(rig, new FightingHands(rig, skin));
+    }
     if (id === 'neo' && !support) this.geometries.add(prepareConstructSleeves(rig));
-    if (!support && !guard) this.skinContinuity.set(rig, wardrobe
+    if (!support && !guard && this.pose === 'animated') this.skinContinuity.set(rig, wardrobe
       .filter(part => part.mesh instanceof THREE.SkinnedMesh && /^(Wrist skin|Office skin|Tracking skin)$/.test((part.mesh.material as THREE.Material).name))
       .map(part => new SkinContinuity(rig, part.mesh as THREE.SkinnedMesh)));
     if (id === 'neo' && !support) {

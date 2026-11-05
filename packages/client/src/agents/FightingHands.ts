@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import type { HeroRig } from './HeroModel.js';
 import type { MotionInput } from './CharacterMotion.js';
 import { HandCurve } from './HandCurve.js';
-import { applyNailSurface } from './NailSurface.js';
 
 type Attributes = Record<'position' | 'normal' | 'skinIndex' | 'skinWeight', THREE.BufferAttribute>;
 interface MaterialPoint { id: number; amount: number; interval: number; u: number; n: number; b: number; t: number }
@@ -240,7 +239,6 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
 /** Rounded material coordinates preserve finger volume through a bend.
  * Neo's pill, mirror and pod grips retain their authored joints and targets. */
 export class FightingHands {
-  private skin: THREE.SkinnedMesh;
   private base: Attributes;
   private output: Attributes;
   private binding: Binding;
@@ -263,9 +261,7 @@ export class FightingHands {
   private normals: Float64Array;
   private shapes = new Map<Hand, { key: string; delta: Float64Array }>();
 
-  constructor(private rig: HeroRig) {
-    this.skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
-    if (this.skin.geometry.hasAttribute('_nail_detail')) applyNailSurface(this.skin.material as THREE.MeshStandardMaterial);
+  constructor(private rig: HeroRig, private skin: THREE.SkinnedMesh) {
     const source = this.skin.geometry;
     this.base = Object.fromEntries(attributes.map(name => [name, source.attributes[name]])) as Attributes;
     let binding = bindings.get(source); if (!binding) { binding = bind(this.skin, rig); bindings.set(source, binding); } this.binding = binding;

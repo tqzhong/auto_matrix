@@ -177,6 +177,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_burly: { scene: 'm2_merovingian', step: 1 },
   m2_persephone: { scene: 'm2_library', step: 3 },
   m2_mountain: { scene: 'm2_garage', step: 2 },
+  m2_backup: { scene: 'm2_key_door', step: 1 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -522,6 +523,7 @@ export class FilmSetRenderer {
       || !approachingGarage || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
       this.cancelSecondOraclePreparation(); return;
     }
+    if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
     const next = FILM_SCENE_BY_ID[cut.scene];
     if (!this.preparedSecondOracle) {
       const set = FILM_SETS[next.set], { x, y, z } = set.center;
@@ -687,6 +689,10 @@ export class FilmSetRenderer {
     }
   }
   private *prepareRoomSteps(set: FilmSet, lights?: LafayetteRoomLights): Generator<void> {
+    if (set.id === 'film_source_corridor') {
+      this.sourceDoor = new SourcePortalRenderer(this.root);
+      return;
+    }
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
   }
@@ -716,6 +722,7 @@ export class FilmSetRenderer {
     this.bookDoor = room.bookDoor;
     this.garageCar = room.garageCar;
     this.garageGhosts = room.garageGhosts;
+    this.sourceDoor = room.sourceDoor; room.sourceDoor = undefined;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -927,7 +934,7 @@ export class FilmSetRenderer {
         }
         else if (set.id === 'film_operation_room') this.sourceBriefing = new SourceBriefingRenderer(this.root);
         else if (set.id === 'film_power_station') this.primaryDemolition = new PrimaryDemolitionRenderer(this.root);
-        else if (set.id === 'film_source_corridor') this.sourceDoor = new SourcePortalRenderer(this.root);
+        else if (set.id === 'film_source_corridor' && !preparedSecondOracle) this.sourceDoor = new SourcePortalRenderer(this.root);
         else if (set.id === 'film_architect_room') this.architectRoom = new ArchitectRoomRenderer(this.root);
         else if (set.id === 'film_mobil_station') {
           this.mobil = new MobilStationRenderer(this.root);

@@ -635,6 +635,8 @@ def main(source, output, role):
                     front_patch('apron-strap-' + str(sign), [[sign * a, b] for a, b in [[.11, 3.40], [.14, 3.40], [.27, 2.96], [.23, 2.96]]], 6, lift=.048)
                 doc['materials'].append({'name': 'Keymaker keys', 'pbrMetallicRoughness': {'baseColorFactor': [.43, .35, .17, 1], 'metallicFactor': .72, 'roughnessFactor': .42}, 'doubleSided': True})
                 kp, ku, kf, kw = [], [], [], []
+                key_weight = np.zeros(len(names))
+                key_weight[names.index('torso')] = 1
 
                 def key_patch(outline):
                     start = len(kp)
@@ -642,7 +644,7 @@ def main(source, output, role):
                         distance = (vest[:, 0] - xy[0]) ** 2 + (vest[:, 1] - xy[1]) ** 2 + (vest[:, 2] < 0) * 100
                         nearby = np.argsort(distance)[:3]; mix = 1 / np.maximum(distance[nearby], 1e-8); mix /= mix.sum()
                         kp.append([*xy, vest[nearby, 2] @ mix + .080]); ku.append([xy[0], xy[1]])
-                        kw.append((weights[nearby] * mix[:, None]).sum(axis=0))
+                        kw.append(key_weight)
                     kf.append([(j, j) for j in range(start, len(kp))])
 
                 for sign in [-1, 1]:

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { SOURCE_PORTAL, sourcePortalAngle, sourcePortalSourceAngle, type SourcePortalState } from '@auto_matrix/shared';
 import { TruckWeaponProps } from '../agents/TruckWeaponPerformance.js';
 import { reach } from '../agents/SpoonPerformance.js';
@@ -17,12 +18,14 @@ export class SourcePortalRenderer {
   private lamps: THREE.PointLight[] = [];
   private glow: THREE.Mesh;
   private heroes: HeroModels;
-  private weapons: TruckWeaponProps[] = [];
+  private volleyWeapon?: TruckWeaponProps;
+  private volleySkeletons = new Set<THREE.Skeleton>();
+  private muzzleFlashes: THREE.Object3D[] = [];
   private crowdGroup = new THREE.Group();
   private flashes = new THREE.Group();
   private disposed = false;
   constructor(root: THREE.Group) {
-    const portrait = new THREE.Texture(), fabric = new THREE.Texture(); this.textures.add(portrait); this.textures.add(fabric); this.heroes = new HeroModels(portrait, fabric);
+    const portrait = new THREE.Texture(), fabric = new THREE.Texture(); this.textures.add(portrait); this.textures.add(fabric); this.heroes = new HeroModels(portrait, fabric, 'fixed');
     this.group.name = 'source-white-hall-and-stud-room'; root.add(this.group); this.group.add(this.static, this.crowdGroup, this.flashes);
     const white = this.surface('white_plaster_02', 0xd6d9cd, 8), floor = this.surface('marble_01', 0x7b8b7b, 14);
     floor.roughness = .24; floor.metalness = .12;
@@ -63,27 +66,40 @@ export class SourcePortalRenderer {
     this.box(chrome, -8.4, 3.05, -54.08, .3, .16, .15);
     this.glow = this.box(strip, 0, 3.85, -54.65, 5.35, 7.7, .015, 'source-light'); this.glow.visible = false;
     this.crowdGroup.name = 'smith-volley-line';
+    void this.loadVolley();
     for (const z of [-30, -25, -20]) for (const x of [-2.5, -1, 1, 2.5]) {
-      this.heroes.create('smith').then(rig => {
-        if (!rig || this.disposed) return;
-        rig.root.position.set(x, 0, z); rig.root.rotation.y = Math.PI; this.crowdGroup.add(rig.root);
-        const b = rig.bones, rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
-        for (const side of ['R', 'L'] as const) {
-          const wrist = b.get(`wrist_${side}`)!, elbow = b.get(`elbow_${side}`)!;
-          const target = rig.root.localToWorld(new THREE.Vector3(side === 'R' ? -.55 : -.35, 3.15, side === 'R' ? 1.2 : 1.35));
-          const offset = new THREE.Vector3(0, -.19, .035).applyQuaternion(rotation);
-          reach(b.get(`shoulder_${side}`)!, elbow, wrist.position, target.sub(offset), new THREE.Vector3(side === 'R' ? -1 : 1, -.5, .2).applyQuaternion(rotation));
-          wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
-          for (let f = 1; f <= 5; f++) for (let j = 1; j <= 3; j++) b.get(`finger${f}-${j}_${side}`)!.rotation.z = (side === 'R' ? 1 : -1) * (f === 1 ? .2 : .6);
-        }
-        const weapon = new TruckWeaponProps(b.get('wrist_R')!); this.weapons.push(weapon);
-        weapon.gun.visible = true; weapon.gun.name = 'smith-volley-pistol'; weapon.gun.position.set(0, -.19, .035); weapon.gun.scale.setScalar(1.12);
-        weapon.sword.visible = false; weapon.flash.visible = false; weapon.flash.position.copy(weapon.gun.position).add(new THREE.Vector3(0, .185 * 1.12, .62 * 1.12)); rig.root.updateMatrixWorld(true);
-      });
       const flash = this.box(new THREE.MeshBasicMaterial({ color: 0xffd397, toneMapped: false }), x, 3.25, z - 1.4, .14, .14, 2, 'smith-shot-streak');
       flash.removeFromParent(); this.flashes.add(flash);
     }
     batchStaticGeometry(this.static, new Set()).forEach(g => this.geometries.add(g)); this.update();
+  }
+  private async loadVolley(): Promise<void> {
+    const rig = await this.heroes.create('smith');
+    if (!rig || this.disposed) return;
+    const root = rig.root;
+    root.position.set(-2.5, 0, -30); root.rotation.y = Math.PI; this.crowdGroup.add(root);
+    const b = rig.bones, rotation = root.getWorldQuaternion(new THREE.Quaternion());
+    for (const side of ['R', 'L'] as const) {
+      const wrist = b.get(`wrist_${side}`)!, elbow = b.get(`elbow_${side}`)!;
+      const target = root.localToWorld(new THREE.Vector3(side === 'R' ? -.55 : -.35, 3.15, side === 'R' ? 1.2 : 1.35));
+      const offset = new THREE.Vector3(0, -.19, .035).applyQuaternion(rotation);
+      reach(b.get(`shoulder_${side}`)!, elbow, wrist.position, target.sub(offset), new THREE.Vector3(side === 'R' ? -1 : 1, -.5, .2).applyQuaternion(rotation));
+      wrist.quaternion.copy(elbow.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation));
+      for (let f = 1; f <= 5; f++) for (let j = 1; j <= 3; j++) b.get(`finger${f}-${j}_${side}`)!.rotation.z = (side === 'R' ? 1 : -1) * (f === 1 ? .2 : .6);
+    }
+    const weapon = this.volleyWeapon = new TruckWeaponProps(b.get('wrist_R')!);
+    weapon.gun.visible = true; weapon.gun.name = 'smith-volley-pistol'; weapon.gun.position.set(0, -.19, .035); weapon.gun.scale.setScalar(1.12);
+    weapon.flash.position.copy(weapon.gun.position).add(new THREE.Vector3(0, .185 * 1.12, .62 * 1.12));
+    this.muzzleFlashes.push(weapon.flash); root.updateMatrixWorld(true);
+    // The firing line holds one fixed pose. The copies share its meshes and
+    // local bounds and each has bones attached to its own place in the hall.
+    for (const z of [-30, -25, -20]) for (const x of [-2.5, -1, 1, 2.5]) {
+      if (x === root.position.x && z === root.position.z) continue;
+      const copy = clone(root);
+      copy.position.set(x, 0, z); this.crowdGroup.add(copy);
+      copy.traverse(object => { if (object instanceof THREE.SkinnedMesh) this.volleySkeletons.add(object.skeleton); });
+      this.muzzleFlashes.push(copy.getObjectByName(weapon.flash.name)!);
+    }
   }
   private material(color: number, roughness: number, metalness = 0): THREE.MeshStandardMaterial { const m = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(m); return m; }
   private surface(name: string, color: number, repeat: number): THREE.MeshStandardMaterial {
@@ -112,7 +128,11 @@ export class SourcePortalRenderer {
     this.glow.visible = p?.phase === 'entering' && p.elapsed < 2.65;
     this.crowdGroup.visible = Boolean(p && ['opening', 'cover', 'escaping', 'sealing', 'failed'].includes(p.phase));
     this.flashes.visible = p?.phase === 'escaping' && p.elapsed >= .65 && p.elapsed < 1.55 && Math.floor(p.elapsed * 18) % 3 !== 0;
-    this.weapons.forEach(w => { w.flash.visible = this.flashes.visible; });
+    this.muzzleFlashes.forEach(flash => { flash.visible = this.flashes.visible; });
   }
-  dispose(): void { this.disposed = true; this.weapons.forEach(w => w.dispose()); this.group.removeFromParent(); this.heroes.dispose(); this.lamps.forEach(l => l.dispose()); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); }
+  dispose(): void {
+    this.disposed = true;
+    this.volleyWeapon?.dispose(); this.volleySkeletons.forEach(skeleton => skeleton.dispose());
+    this.group.removeFromParent(); this.heroes.dispose(); this.lamps.forEach(l => l.dispose()); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
+  }
 }

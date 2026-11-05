@@ -10,6 +10,8 @@ import { SourcePortalRenderer } from '../packages/client/src/engine/SourcePortal
 import { sourcePortalRoot, sourcePortalAngle, SOURCE_PORTAL, type SourcePortalGesture } from '@auto_matrix/shared';
 import { sourceKeyContact } from '../packages/client/src/agents/SourcePortalPerformance.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
+import { HandCurve } from '../packages/client/src/agents/HandCurve.js';
+import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 async function models(t: test.TestContext) {
   const assets = new Map();
@@ -68,6 +70,20 @@ test('the delivered wounded Keymaker stays supported above the floor, including 
     const before=h.keymaker.head.getWorldPosition(new THREE.Vector3());h.pose();assert.ok(before.distanceTo(h.keymaker.head.getWorldPosition(new THREE.Vector3()))<1e-7);
   }
 });
+test('Keymaker’s apron keys stay rigid as he reaches out to offer the last key', async t => {
+  const h = await portalPose(t, 'key_ready', 0);
+  const keys = h.keymaker.root.getObjectByName('keymaker-keys');
+  assert.ok(keys instanceof THREE.SkinnedMesh && keys.geometry.index);
+  const indices = keys.geometry.index, positions = keys.geometry.getAttribute('position');
+  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  let restEdge = 0, posedEdge = 0;
+  for (let i = 0; i < indices.count; i += 3) for (let side = 0; side < 3; side++) {
+    const first = indices.getX(i + side), second = indices.getX(i + (side + 1) % 3);
+    restEdge = Math.max(restEdge, a.fromBufferAttribute(positions, first).distanceTo(b.fromBufferAttribute(positions, second)));
+    posedEdge = Math.max(posedEdge, keys.getVertexPosition(first, a).distanceTo(keys.getVertexPosition(second, b)));
+  }
+  assert.ok(posedEdge <= restEdge + .003, `an apron key edge stretched from ${restEdge} to ${posedEdge}`);
+});
 test('accepting the last key brings both real hands to the same visible contact',async t=>{
   const h=await portalPose(t,'taking',.9), target=sourceKeyContact();
   const neo=h.neo.hero!.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(0,-.19,.035));
@@ -78,6 +94,8 @@ test('accepting the last key brings both real hands to the same visible contact'
 });
 test('the door rotates on its hinge and the narrow white corridor uses the same blocking walls',async t=>{
   const h=await portalPose(t,'opening',.8),room=new THREE.Group(),center=FILM_SETS.film_source_corridor.center;
+  const create = t.mock.method(HeroModels.prototype, 'create');
+  const fitHand = t.mock.method(HandCurve.prototype, 'closest');
   room.position.set(center.x,center.y-1,center.z);const renderer=new SourcePortalRenderer(room);t.after(()=>renderer.dispose());
   const state={portalOpened:false,keyTaken:false,performance:h.state};renderer.update(state);room.updateMatrixWorld(true);
   assert.equal(renderer.portal.rotation.y,sourcePortalAngle(state));assert.equal(renderer.portal.position.x,-SOURCE_PORTAL.door.width/2);
@@ -89,10 +107,16 @@ test('the door rotates on its hinge and the narrow white corridor uses the same 
   assert.ok(room.getObjectByName('finished-hall-ceiling'));assert.ok(room.getObjectByName('bare-wall-stud'));
   await new Promise(resolve=>setImmediate(resolve));renderer.update({...state,performance:{...h.state,phase:'cover',elapsed:0}});room.updateMatrixWorld(true);
   const crowd=renderer.group.getObjectByName('smith-volley-line')!;assert.equal(crowd.children.length,12);
+  assert.equal(create.mock.callCount(),1,'the fixed volley pose must be assembled once');
+  assert.equal(fitHand.mock.callCount(),0,'the fixed volley pose does not need animated hand surface fitting');
+  const sharedPistol = crowd.children[0].getObjectByName('smith-volley-pistol')!.children[0] as THREE.Mesh;
   for(const smith of crowd.children){const gun=smith.getObjectByName('smith-volley-pistol')!;assert.ok(gun.visible,'the reused pistol must be visible after its constructor hides props');
+    assert.equal((gun.children[0] as THREE.Mesh).geometry,sharedPistol.geometry);
     const direction=new THREE.Vector3(0,0,1).applyQuaternion(gun.getWorldQuaternion(new THREE.Quaternion()));assert.ok(direction.z<-.95,'the actual gun points toward the portal');
     assert.ok(surfaceFloor(smith)>=-.04,'posed delivered Smith mesh crosses the floor');
   }
+  renderer.update({...state,performance:{...h.state,phase:'escaping',elapsed:.9}});
+  assert.ok(crowd.children.every(smith=>smith.getObjectByName('truck-pistol-flash')?.visible));
   renderer.update({portalOpened:true,keyTaken:true,performance:{phase:'done',elapsed:0,attempts:0}});room.updateMatrixWorld(true);
   const visible:THREE.Object3D[]=[];renderer.group.traverseVisible(o=>{if(o instanceof THREE.Mesh)visible.push(o);});
   const ray=new THREE.Raycaster(new THREE.Vector3(center.x,center.y-1+2.8,center.z-55.4),new THREE.Vector3(0,0,1),0,2);
