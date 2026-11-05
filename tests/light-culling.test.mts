@@ -18,6 +18,34 @@ function view() {
   return { scene, camera, culling, before, after, light };
 }
 
+test('the desert lightning keeps the same point-light slots between pulses', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_real_desert', 1.8, -28); neo.isInMatrix = false;
+  h.camera.position.set(neo.position.x, neo.position.y + 4, neo.position.z + 4);
+  const journey: FilmJourney = { version: 1, scene: 'm1_desert', actor: neo.id, step: 1, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '', awakening: { kind: 'desert', elapsed: 2, started: true } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const renderedLights = () => {
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position)?.id, 'film_real_desert');
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    const lights: { id: number; energy: number }[] = [];
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push({ id: object.id, energy: object.intensity }); });
+    h.after();
+    return lights;
+  };
+  const dark = renderedLights();
+  journey.awakening!.elapsed = 2 + Math.PI / (2 * 2.7);
+  const bright = renderedLights();
+  assert.deepEqual(dark.map(light => light.id), bright.map(light => light.id), 'a pulse must reuse the existing programs');
+  const flash = h.scene.getObjectByName('desert-cloud-flash')!;
+  assert.equal(dark.find(light => light.id === flash.id)?.energy, 0);
+  assert.ok((bright.find(light => light.id === flash.id)?.energy ?? 0) > 500);
+});
+
 test('only lights whose finite influence misses the view lose energy, preserving possible contributors', () => {
   const h = view(), front = h.light(0, -10, 4), outside = h.light(60, -10, 4);
   const overlapping = h.light(8, -10, 6), behind = h.light(0, 3, 6), unlimited = h.light(300, 10, 0);

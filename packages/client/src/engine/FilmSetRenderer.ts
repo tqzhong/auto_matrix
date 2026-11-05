@@ -293,7 +293,7 @@ export class FilmSetRenderer {
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
-    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil)
+    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
@@ -544,6 +544,7 @@ export class FilmSetRenderer {
       if (lafayetteRoom) this.preparedLafayette = undefined;
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
       if (preparedPods) this.preparedPods = undefined;
+      const previewDesert = set?.id === 'film_real_desert' && sceneId === 'm1_desert' && !journey?.visiting ? this.construct?.takePreviewDesert() : undefined;
       const approach = set?.id === 'film_lafayette' && this.meeting ? { root: new THREE.Group(), renderer: this.meeting } : undefined;
       const transferredHotel = approach?.renderer.moveStreet(approach.root);
       if (approach) this.meeting = undefined;
@@ -590,7 +591,10 @@ export class FilmSetRenderer {
         else if (set.id === 'film_backup_station') this.trinityTerminal = new TrinityTerminalRenderer(this.root);
         else if (set.id === 'film_cypher_restaurant') this.restaurant = new CypherRestaurantRenderer(this.root);
         else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
-        else if (set.id === 'film_real_desert') this.desert = new DesertRenderer(this.root);
+        else if (set.id === 'film_real_desert') {
+          this.desert = previewDesert ?? new DesertRenderer(this.root);
+          previewDesert?.moveTo(this.root);
+        }
         else if (set.id === 'film_mountain_range') this.mountain = new MountainSetRenderer(this.root);
         else if (set.id === 'film_hammer_route') this.hammerRoute = new HammerRouteRenderer(this.root);
         else if (set.id === 'film_machine_defense' || set.id === 'film_above_clouds') this.logosFlight = new LogosFlightRenderer(this.root, set.id === 'film_machine_defense' ? 'defense' : 'sun');

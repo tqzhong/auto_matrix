@@ -10,11 +10,11 @@ const srgbBytes = Uint8Array.from({ length: 256 }, (_, byte) => {
   return Math.round(255 * (linear <= .0031308 ? linear * 12.92 : 1.055 * linear ** (1 / 2.4) - .055));
 });
 
-export function renderTargetPreviewImage(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget): string | undefined {
+export async function renderTargetPreviewImage(renderer: THREE.WebGLRenderer, target: THREE.WebGLRenderTarget): Promise<string | undefined> {
   if (typeof document === 'undefined') return;
   const { width, height } = target;
   const pixels = new Uint8Array(width * height * 4);
-  renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+  if (!await renderer.readRenderTargetPixelsAsync(target, 0, 0, width, height, pixels)) return;
   const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext('2d'); if (!ctx) return;
   const frame = ctx.createImageData(width, height);
@@ -27,7 +27,14 @@ export function renderTargetPreviewImage(renderer: THREE.WebGLRenderer, target: 
     frame.data[dest + 3] = pixels[source + 3];
   }
   ctx.putImageData(frame, 0, 0);
-  return canvas.toDataURL('image/webp', .82);
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', .82));
+  if (!blob) return;
+  return new Promise<string | undefined>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : undefined);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 /** Horizonless loading program used for the first truth lesson and the later
@@ -46,7 +53,7 @@ export class ConstructRenderer {
   private revealActive = false;
   private disposed = false;
   private previewImage?: string;
-  private preview?: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; target: THREE.WebGLRenderTarget; desert: DesertRenderer; captures: number; capturedAt: number };
+  private preview?: { scene: THREE.Scene; camera: THREE.PerspectiveCamera; target: THREE.WebGLRenderTarget; desert: DesertRenderer; captures: number; capturedAt: number; imageCapture: number };
   private white = this.material(new THREE.MeshBasicMaterial({ color: 0xeeeeea, toneMapped: false }));
   private leather = this.material(new THREE.MeshStandardMaterial({ color: 0xdec6b8, roughness: .94, metalness: .03 }));
   private wood = this.material(new THREE.MeshStandardMaterial({ color: 0x593a29, roughness: .56 }));
@@ -270,27 +277,33 @@ export class ConstructRenderer {
   /** Capture the real wasteland set for the final CRT image. The preview is
    * refreshed briefly for local textures, then held while Neo makes his choice. */
   renderPreview(renderer: THREE.WebGLRenderer, environment?: THREE.Texture | null): boolean {
-    if (this.sceneId !== 'm1_construct' || !this.revealActive || this.revealElapsed < 7.65 || !this.screenMaterial) return false;
+    if (this.sceneId !== 'm1_construct' || !this.revealActive || !this.screenMaterial) return false;
     if (!this.preview) {
       const scene = new THREE.Scene(); scene.background = new THREE.Color(0x303b3e); scene.fog = new THREE.FogExp2(0x303b3e, .0055);
       scene.environment = environment ?? null; scene.environmentIntensity = .55;
       const root = new THREE.Group(); scene.add(root);
-      const desert = new DesertRenderer(root);
+      const desert = new DesertRenderer(root, true);
       const ambient = new THREE.AmbientLight(0xb4c7c6, .7); scene.add(ambient);
       const sun = new THREE.DirectionalLight(0xb4c7c6, .48); sun.position.set(30, 80, 60); scene.add(sun);
       const camera = new THREE.PerspectiveCamera(61, 1280 / 800, .1, 300);
       camera.position.set(1.8, 2.8, 41); camera.lookAt(0, 14, -65);
-      this.preview = { scene, camera, target: new THREE.WebGLRenderTarget(1280, 800), desert, captures: 0, capturedAt: -Infinity };
+      this.preview = { scene, camera, target: new THREE.WebGLRenderTarget(1280, 800), desert, captures: 0, capturedAt: -Infinity, imageCapture: -1 };
     }
     const preview = this.preview; const now = performance.now();
+    if (this.revealElapsed < 7.65) { preview.desert.prepareStep(); return false; }
+    preview.desert.finishPreparation();
     if (preview.captures >= 4 || now - preview.capturedAt < 750) return false;
     const previousTarget = renderer.getRenderTarget();
     try {
       renderer.setRenderTarget(preview.target);
       renderer.render(preview.scene, preview.camera);
       if (preview.captures === 0 || preview.captures === 3) {
-        try { this.previewImage = renderTargetPreviewImage(renderer, preview.target); }
-        catch (error) { console.warn('荒漠转场帧捕获失败', error); }
+        const capture = preview.captures;
+        void renderTargetPreviewImage(renderer, preview.target).then(image => {
+          if (this.preview !== preview || !image || capture < preview.imageCapture) return;
+          preview.imageCapture = capture;
+          this.previewImage = image;
+        }, error => { if (this.preview === preview) console.warn('荒漠转场帧捕获失败', error); });
       }
     } finally { renderer.setRenderTarget(previousTarget); }
     preview.captures++; preview.capturedAt = now;
@@ -300,9 +313,17 @@ export class ConstructRenderer {
     return true;
   }
 
+  takePreviewDesert(): DesertRenderer | undefined {
+    const preview = this.preview;
+    if (!preview) return;
+    this.preview = undefined;
+    preview.target.dispose(); preview.scene.clear();
+    return preview.desert;
+  }
+
   dispose(): void {
     this.disposed = true;
-    if (this.preview) { this.preview.desert.dispose(); this.preview.target.dispose(); this.preview.scene.clear(); this.preview = undefined; }
+    this.takePreviewDesert()?.dispose();
     this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();

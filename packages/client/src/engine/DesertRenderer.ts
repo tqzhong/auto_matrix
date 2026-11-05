@@ -11,10 +11,11 @@ export class DesertRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
+  private construction?: Generator<void>;
   private disposed = false;
-  private ash: THREE.Points;
-  private towerGlow: THREE.MeshStandardMaterial;
-  private flash: THREE.PointLight;
+  private ash!: THREE.Points;
+  private towerGlow!: THREE.MeshStandardMaterial;
+  private flash!: THREE.PointLight;
   private ground = this.material(new THREE.MeshStandardMaterial({ color: 0x77828f, roughness: .98, metalness: .04 }));
   private concrete = this.material(new THREE.MeshStandardMaterial({ color: 0x626a73, roughness: .96 }));
   private brokenConcrete = this.material(new THREE.MeshStandardMaterial({ color: 0x343c47, roughness: .98 }));
@@ -23,13 +24,37 @@ export class DesertRenderer {
   private rust = this.material(new THREE.MeshStandardMaterial({ color: 0x694a39, roughness: .86, metalness: .36 }));
   private glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0x6a7b77, roughness: .24, metalness: .42, transparent: true, opacity: .4, depthWrite: false }));
 
-  constructor(private root: THREE.Group) {
+  constructor(private root: THREE.Group, incremental = false) {
+    this.construction = this.build();
+    if (!incremental) this.finishPreparation();
+  }
+
+  prepareStep(): void {
+    if (this.construction?.next().done) this.construction = undefined;
+  }
+
+  finishPreparation(): void {
+    while (this.construction) this.prepareStep();
+  }
+
+  moveTo(root: THREE.Group): void {
+    this.finishPreparation();
+    root.add(...this.root.children.slice());
+    this.root = root;
+  }
+
+  private *build(): Generator<void> {
     if (typeof document !== 'undefined') {
       this.surface([this.ground], 'surfaces', 'asphalt_02');
       this.surface([this.plaster], 'film-materials', 'damaged_plaster');
     }
     this.towerGlow = this.material(new THREE.MeshStandardMaterial({ color: 0x8d563c, emissive: 0xe06d37, emissiveIntensity: .5, metalness: .76, roughness: .31 }));
-    this.terrain(); this.city(); this.overpass(); this.harvesters(); this.furniture();
+    this.terrain();
+    yield;
+    yield* this.city();
+    this.overpass(); this.harvesters();
+    yield;
+    this.furniture();
     this.ash = this.createAsh();
     const ambient = new THREE.HemisphereLight(0x8099b3, 0x15191f, 1.45); ambient.name = 'desert-dead-sky-fill'; this.root.add(ambient); this.lights.add(ambient);
     this.flash = new THREE.PointLight(0xaac7c5, 0, 150, 1.5); this.flash.name = 'desert-cloud-flash'; this.flash.position.set(-28, 37, -58); this.root.add(this.flash); this.lights.add(this.flash);
@@ -215,36 +240,43 @@ export class DesertRenderer {
     }
   }
 
-  private batchCity(city: THREE.Group): void {
+  private *batchCity(city: THREE.Group): Generator<void> {
     city.updateMatrixWorld(true);
-    const inverse = city.matrixWorld.clone().invert();
+    const inverse = city.matrixWorld.clone().invert(), transform = new THREE.Matrix4();
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
-    city.traverse(object => {
-      if (!(object instanceof THREE.Mesh)) return;
-      let geometry = object.geometry.clone().applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+    const meshes: THREE.Mesh<THREE.BufferGeometry, THREE.Material>[] = [];
+    city.traverse(object => { if (object instanceof THREE.Mesh) meshes.push(object); });
+    for (const [index, object] of meshes.entries()) {
+      let geometry = object.geometry.clone().applyMatrix4(transform.multiplyMatrices(inverse, object.matrixWorld));
       this.tileUvs(geometry);
       if (!geometry.index) { const indexed = mergeVertices(geometry); geometry.dispose(); geometry = indexed; }
+      this.geometries.add(geometry);
       const bucket = batches.get(object.material) ?? []; bucket.push(geometry); batches.set(object.material, bucket);
-    });
-    city.traverse(object => {
-      if (!(object instanceof THREE.Mesh)) return;
+      if ((index + 1) % 24 === 0) yield;
+    }
+    for (const object of meshes) {
       this.geometries.delete(object.geometry); object.geometry.dispose();
-    });
+    }
     city.clear();
     for (const [material, geometries] of batches) {
       const merged = mergeGeometries(geometries, false);
-      geometries.forEach(geometry => geometry.dispose());
+      geometries.forEach(geometry => { this.geometries.delete(geometry); geometry.dispose(); });
       if (merged) this.mesh(city, merged, material, 'desert-ruin-facades');
+      yield;
     }
   }
 
-  private city(): void {
+  private *city(): Generator<void> {
     const city = new THREE.Group(); city.name = 'desert-ruined-skyline'; this.root.add(city);
-    for (const [i, ruin] of DESERT_RUINS.entries()) this.brokenBuilding(city, ruin.x, ruin.z, ruin.width, ruin.depth, ruin.height, i);
+    for (const [i, ruin] of DESERT_RUINS.entries()) {
+      this.brokenBuilding(city, ruin.x, ruin.z, ruin.width, ruin.depth, ruin.height, i);
+      yield;
+    }
     for (const [x, z, scale] of [[-54, -78, 1.7], [42, -91, 1.45], [5, -103, 2.1]] as const) {
       this.brokenBuilding(city, x, z, 12 * scale, 10 * scale, 28 * scale, 30 + Math.round(scale * 10));
+      yield;
     }
-    this.batchCity(city);
+    yield* this.batchCity(city);
   }
 
   private overpass(): void {
@@ -332,6 +364,8 @@ export class DesertRenderer {
 
   dispose(): void {
     this.disposed = true;
+    this.construction = undefined;
+    this.root.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
     this.root.clear(); this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.lights.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.lights.clear();

@@ -86,11 +86,11 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
     const screen = root.getObjectByName('construct-television-screen') as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
     const paintedMap = screen.material.map;
     const previousTarget = new THREE.WebGLRenderTarget(1, 1); let activeTarget: THREE.WebGLRenderTarget | null = previousTarget;
-    let previewScene: THREE.Scene | undefined; let previewCamera: THREE.Camera | undefined;
+    let previewScene: THREE.Scene | undefined; let previewCamera: THREE.Camera | undefined; let previewTarget: THREE.WebGLRenderTarget | null = null;
     const webgl = {
       getRenderTarget: () => activeTarget,
       setRenderTarget: (target: THREE.WebGLRenderTarget | null) => { activeTarget = target; },
-      render: (scene: THREE.Scene, camera: THREE.Camera) => { previewScene = scene; previewCamera = camera; },
+      render: (scene: THREE.Scene, camera: THREE.Camera) => { previewScene = scene; previewCamera = camera; previewTarget = activeTarget; },
     } as unknown as THREE.WebGLRenderer;
     globalThis.document = savedDocument;
     assert.equal(renderer.renderPreview(webgl), true, 'the television captures the playable desert instead of retaining a painted stand-in');
@@ -100,6 +100,21 @@ test('the Construct has physical red chairs, an authored CRT reveal and a separa
     assert.notEqual(screen.material.map, paintedMap);
     assert.equal(screen.material.map?.isRenderTargetTexture, true);
     assert.equal(activeTarget, previousTarget, 'offscreen rendering restores the game render target');
+    const ground = previewScene!.getObjectByName('desert-cracked-ground') as THREE.Mesh;
+    let groundDisposals = 0, previewDisposals = 0;
+    ground.geometry.addEventListener('dispose', () => groundDisposals++);
+    (previewTarget as THREE.WebGLRenderTarget | null)?.addEventListener('dispose', () => previewDisposals++);
+    const live = new THREE.Group(), desert = renderer.takePreviewDesert();
+    assert.ok(desert);
+    try {
+      desert.moveTo(live);
+      renderer.dispose();
+      assert.ok(live.getObjectByName('desert-cracked-ground') === ground);
+      assert.equal(groundDisposals, 0, 'closing the television must retain the playable scene');
+      assert.equal(previewDisposals, 1, 'the old television render target is released');
+      assert.equal(previewScene!.children.length, 0);
+    } finally { desert.dispose(); }
+    assert.equal(groundDisposals, 1, 'leaving the adopted scene releases the terrain once');
     previousTarget.dispose();
   } finally { renderer.dispose(); globalThis.document = savedDocument; }
 
@@ -228,19 +243,29 @@ test('the desert bank matches the actual walking height and visible side debris 
   } finally { renderer.dispose(); }
 });
 
-test('the television preview can become a correctly oriented transition frame', () => {
-  const savedDocument = globalThis.document; let captured: Uint8ClampedArray | undefined;
+test('the television preview reads and encodes a correctly oriented transition frame asynchronously', async () => {
+  const savedDocument = globalThis.document, savedReader = globalThis.FileReader;
+  let captured: Uint8ClampedArray | undefined;
+  const webp = new Blob(['preview'], { type: 'image/webp' });
+  globalThis.FileReader = class {
+    onload?: () => void;
+    result = 'data:image/webp;base64,preview';
+    readAsDataURL(blob: Blob): void { assert.ok(blob === webp); queueMicrotask(() => this.onload?.()); }
+  } as unknown as typeof FileReader;
   globalThis.document = { createElement: () => ({ width: 0, height: 0,
     getContext: () => ({ createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }),
       putImageData: (image: { data: Uint8ClampedArray }) => { captured = image.data; } }),
-    toDataURL: () => 'data:image/webp;base64,preview' }) } as unknown as Document;
+    toBlob: (done: BlobCallback, type: string) => { assert.equal(type, 'image/webp'); queueMicrotask(() => done(webp)); } }) } as unknown as Document;
   const target = new THREE.WebGLRenderTarget(1, 2);
-  const webgl = { readRenderTargetPixels: (_target: THREE.WebGLRenderTarget, _x: number, _y: number, _width: number, _height: number, pixels: Uint8Array) => {
+  const webgl = { readRenderTargetPixelsAsync: async (_target: THREE.WebGLRenderTarget, _x: number, _y: number, _width: number, _height: number, pixels: Uint8Array) => {
     pixels.set([255, 0, 0, 255, 0, 0, 128, 255]);
+    return pixels;
   } } as unknown as THREE.WebGLRenderer;
   try {
-    assert.equal(renderTargetPreviewImage(webgl, target), 'data:image/webp;base64,preview');
+    const pending = renderTargetPreviewImage(webgl, target);
+    assert.equal(captured, undefined);
+    assert.equal(await pending, 'data:image/webp;base64,preview');
     assert.deepEqual(Array.from(captured!.slice(0, 4)), [0, 0, 188, 255], 'the bottom WebGL row becomes the top browser row with linear colour converted for CSS');
     assert.deepEqual(Array.from(captured!.slice(4, 8)), [255, 0, 0, 255]);
-  } finally { target.dispose(); globalThis.document = savedDocument; }
+  } finally { target.dispose(); globalThis.document = savedDocument; globalThis.FileReader = savedReader; }
 });
