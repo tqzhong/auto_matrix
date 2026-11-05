@@ -36,6 +36,7 @@ export interface MotionInput {
   shot?: number;
   crouching?: boolean;
   seated?: boolean;
+  garageSeated?: boolean;
   sourceBriefing?: import('@auto_matrix/shared').SourceBriefingGesture;
   trinityRelay?: import('@auto_matrix/shared').TrinityRelayGesture;
   trinityTerminal?: import('@auto_matrix/shared').TrinityTerminal;
@@ -751,6 +752,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   }
   state.climbPhase = input.officeLadder ? input.officeLadder.depth * (5 / OFFICE_LADDER.speed) : state.climbPhase + (input.climbing ?? 0) * dt * 5;
   state.seated = input.cabin?.kind === 'core' && input.cabin.role === 'neo' ? cabinSeat(input.cabin.elapsed) : deus ? deus.seated : reloaded ? reloaded.seated : pills ? pills.seat : welcome ? welcome.seated : mix(state.seated, input.seated || input.riding || input.performance === 'connect' || input.performance === 'construct' ? 1 : 0, blend);
+  if (input.garageSeated) state.seated = 1;
   if (input.performance === 'touch') state.seated = smooth(clamp(((input.mirrorBeat ?? MIRROR_TIMING.sit) - .65) / (MIRROR_TIMING.sit - .65)));
   if (input.mirrorRise !== undefined) state.seated = 1 - smooth(clamp(input.mirrorRise));
   if (input.construct || input.reveal) state.seated = construct?.seated ?? (input.reveal?.role === 'morpheus' ? 1 : 0);

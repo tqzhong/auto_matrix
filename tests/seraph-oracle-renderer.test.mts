@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BURLY, FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { BURLY, FILM_SCENE_BY_ID, filmEntry, newGarageEscape, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
@@ -39,7 +39,7 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
     Object.assign(neo, { position: filmEntry(beat), isInMatrix: id !== 'm2_departure', currentLocation: beat.set });
     sets.update(neo, sandbox, 0);
   };
-  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith'].includes(id) ? cast : undefined);
+  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith', 'trinity'].includes(id) ? cast : undefined);
   const warm = (name: string) => {
     preview = undefined; castCompiled = false;
     for (let i = 0; i < 120; i++) prepare();
@@ -129,6 +129,22 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
     let abandonedDisposals = 0; abandoned.geometry.addEventListener('dispose', () => abandonedDisposals++);
     sets.update(undefined, sandbox, 1);
     assert.equal(abandonedDisposals, 1);
+  });
+  await t.test('the flight prepares the garage and keeps the same car after the cut', () => {
+    enter('m2_mountain', 2);
+    journey.mountain = { phase: 'ready', elapsed: 0, x: 0, z: 245, altitude: 0, attempt: 0 };
+    preview = undefined; prepare(); assert.ok(!preview);
+    Object.assign(journey.mountain, { phase: 'flying', elapsed: 2, z: 112, altitude: 48 });
+    const car = warm('garage-chase-car');
+    const garageSlots = pointSlots(preview!);
+    journey.garage = { ...newGarageEscape(), x: 1.2, z: -10 };
+    enter('m2_garage', 1);
+    assert.ok(scene.getObjectByName(car.name) === car);
+    assert.equal(pointSlots(scene), garageSlots);
+    assert.equal(car.position.x, 1.2);
+    assert.equal(car.position.z, -10);
+    delete journey.garage;
+    delete journey.mountain;
   });
   enter('m2_departure', 4);
   const abandoned = warm('m2_seraph-keyed-door') as THREE.Mesh;

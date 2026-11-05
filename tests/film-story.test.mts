@@ -3028,6 +3028,14 @@ test('Trinity drives the garage escape with companions, saved progress, retry an
   h.players.release('other', h.tick()); h.command('act'); assert.equal(state.garage?.phase, 'riding');
   assert.match(h.players.possess('other', 'keymaker', h.tick()).error!, /车/);
   for (let frame = 0; frame < 18; frame++) h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 0, brake: false }, .05, h.tick());
+  h.sandbox.life.film.driveFrame(h.actor(), { throttle: 1, steer: 1, brake: false }, .05, h.tick());
+  const escape = state.garage!, yaw = -Math.atan2(escape.lateral, escape.speed);
+  for (const [role, x, z] of [['trinity', -1.05, 0], ['morpheus', 1, .2], ['keymaker', -.95, 1.7]] as const) {
+    const rider = h.world.agents.get(role)!;
+    const seat = filmPosition(scene.set, escape.x + x * Math.cos(yaw) + z * Math.sin(yaw), escape.z - x * Math.sin(yaw) + z * Math.cos(yaw));
+    assert.ok(Math.hypot(seat.x - rider.position.x, seat.z - rider.position.z) < .0001, `${role} stays in their seat when turning`);
+    assert.equal(rider.rotation, Math.PI + yaw);
+  }
   const driver = h.actor(), pose = structuredClone(driver.currentAction)!;
   const saved = JSON.parse(JSON.stringify(h.sandbox.state)); const at = { ...driver.position };
   h.world.simulationTick = h.tick();

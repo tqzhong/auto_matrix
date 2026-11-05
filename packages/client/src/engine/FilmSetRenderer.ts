@@ -91,6 +91,7 @@ import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
 import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 import { TheOneRenderer } from './TheOneRenderer.js';
 import { MountainSetRenderer } from './MountainSetRenderer.js';
+import { MOUNTAIN, garageCarPose, type GarageCarPose } from '@auto_matrix/shared';
 import { chateauStairTread, chateauStairWaypoint } from '@auto_matrix/shared';
 import { LogosBaneRenderer } from './LogosBaneRenderer.js';
 import { RevolutionsPreludeRenderer } from './RevolutionsPreludeRenderer.js';
@@ -174,6 +175,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_backdoors: { scene: 'm2_bench', step: 1 },
   m2_burly: { scene: 'm2_merovingian', step: 1 },
   m2_persephone: { scene: 'm2_library', step: 3 },
+  m2_mountain: { scene: 'm2_garage', step: 2 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -498,8 +500,11 @@ export class FilmSetRenderer {
       return;
     }
     const cut = journey && SECOND_ORACLE_CUTS[journey.scene];
+    const flight = journey?.mountain;
+    const approachingGarage = journey?.scene !== 'm2_mountain' || flight?.phase === 'arrived'
+      || flight?.phase === 'flying' && flight.z <= MOUNTAIN.launch.z - 30;
     if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
-      || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
+      || !approachingGarage || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
       this.cancelSecondOraclePreparation(); return;
     }
     const next = FILM_SCENE_BY_ID[cut.scene];
@@ -694,6 +699,8 @@ export class FilmSetRenderer {
     this.courtyardBirds = room.courtyardBirds;
     this.exileDessert = room.exileDessert;
     this.bookDoor = room.bookDoor;
+    this.garageCar = room.garageCar;
+    this.garageGhosts = room.garageGhosts;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -768,7 +775,7 @@ export class FilmSetRenderer {
       target.dispose();
     }
   }
-  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0): FilmSet | undefined {
+  update(player: AgentState | undefined, sandbox: SandboxState | undefined, elapsed: number, playerPosition?: Vector3, cameraPosition?: Vector3, workday?: OfficeWorkday, firstPerson = false, timeOfDay = 12000, camera?: THREE.Camera, tick = 0, garageCar?: GarageCarPose): FilmSet | undefined {
     this.resetMirrorFrame?.();
     let set = player ? filmSetAt(player.position, player.isInMatrix) : undefined;
     if (set?.id === 'film_extraction_car' && player?.currentLocation === 'film_adams_bridge') set = FILM_SETS.film_adams_bridge;
@@ -798,6 +805,8 @@ export class FilmSetRenderer {
       && this.currentScene === 'm2_bench' && sceneId === 'm2_burly') this.currentScene = sceneId;
     if (set?.id === 'film_le_vrai' && this.current?.id === set.id && !journey?.visiting
       && this.currentScene === 'm2_merovingian' && sceneId === 'm2_persephone') this.currentScene = sceneId;
+    if (this.freeway && set?.id === 'film_freeway_101' && this.current?.id === set.id && !journey?.visiting
+      && this.currentScene === 'm2_freeway' && sceneId === 'm2_trucks' && journey?.trucks?.road) this.currentScene = sceneId;
     if (this.theOne?.setId === 'film_heart_hotel' && set?.id === 'film_heart_hotel' && !journey?.visiting
       && this.currentScene === 'm1_death' && sceneId === 'm1_return') this.currentScene = sceneId;
     if (this.ambush && set?.id === 'film_ambush_house' && !journey?.visiting && (
@@ -1267,8 +1276,9 @@ export class FilmSetRenderer {
     if (this.chateauDoor) this.chateauDoor.position.x = sceneId === 'm2_chateau' && (journey?.step ?? 0) >= 2 ? 5 : 0;
     if (this.garageCar) {
       const escape = sceneId === 'm2_garage' && !journey?.visiting ? journey?.garage : undefined;
-      this.garageCar.position.set(escape?.x ?? GARAGE.start.x, 0, escape?.z ?? GARAGE.start.z);
-      this.garageCar.rotation.y = escape ? -Math.atan2(escape.lateral, Math.max(1, escape.speed)) : 0;
+      const pose = escape ? garageCar ?? garageCarPose(escape) : undefined;
+      this.garageCar.position.set(pose?.x ?? GARAGE.start.x, 0, pose?.z ?? GARAGE.start.z);
+      this.garageCar.rotation.y = pose?.yaw ?? 0;
       this.garageGhosts.forEach((ghost, index) => {
         ghost.visible = Boolean(escape && escape.elapsed < escape.ghostUntil[index]);
         ghost.rotation.y = elapsed * (index ? -3 : 3);
@@ -3169,6 +3179,7 @@ export class FilmSetRenderer {
         this.box(paint, 0, .12, -35, 11, .04, .27);
         this.car(-17, -14, 0x343f3c); this.car(17, 22, 0x626a65);
         this.garageCar = this.car(GARAGE.start.x, GARAGE.start.z, 0x303b3a);
+        this.garageCar.name = 'garage-chase-car';
         this.garageCar.userData.dynamic = true;
         const vapor = new THREE.MeshBasicMaterial({ color: 0xe3f2ed, transparent: true, opacity: .48, depthWrite: false, side: THREE.DoubleSide });
         this.materials.add(vapor);

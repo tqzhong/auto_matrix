@@ -82,6 +82,14 @@ test('a paused console encounter rebuilds seated crew and standing Neo from save
   }
 });
 
+test('a paused garage ride seats an occupant before the first rendered frame', () => {
+  const state = newMotion();
+  const pose = advanceMotion(state, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+    seated: true, riding: true, garageSeated: true }, 0);
+  assert.equal(state.seated, 1);
+  assert.ok(pose.legs.every(leg => leg.knee > 1));
+});
+
 test('download preparation and upload reconstruct the saved pose independently of old movement or combat', () => {
   for (const role of ['neo', 'tank'] as const) {
     const gestures = [

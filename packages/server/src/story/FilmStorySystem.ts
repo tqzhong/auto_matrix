@@ -109,7 +109,7 @@ import { burlyCopyOccupied } from './BurlyMovement.js';
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, chateauRailBlocked, chateauStairTreadAt, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
-import { GARAGE, newGarageEscape, stepGarageEscape, type GarageEscape } from '@auto_matrix/shared';
+import { GARAGE, garageCarPose, garageRiderPose, newGarageEscape, stepGarageEscape, type GarageCarPose } from '@auto_matrix/shared';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, HAMMER_HANDOVER_SECONDS, HAMMER_HANDOVER_CAST, hammerHandoverDuration, hammerHandoverPose, hammerHandoverText, hammerCrewRoot, hammerHeight, hammerRouteFrame, hammerRoutePoint, newHammerFlight, stepHammerFlight } from '@auto_matrix/shared';
 import { newLogosFlight, continueLogosFlight, stepLogosFlight, logosCrewRoot, logosFlightSet, logosIgnitionText } from '@auto_matrix/shared';
 import { farewellLocked, farewellPose, newFarewell, stepFarewell } from '@auto_matrix/shared';
@@ -5408,15 +5408,16 @@ export class FilmStorySystem {
   }
   driving(agent: AgentState): boolean { return this.controls(agent) && !this.state?.visiting && ((this.state?.scene === 'm2_freeway' && this.state.ride?.phase === 'riding') || (this.state?.scene === 'm2_garage' && this.state.garage?.phase === 'riding') || (this.state?.scene === 'm3_hammer_tunnels' && this.state.hammer?.phase === 'riding') || (['m3_defense', 'm3_sun'].includes(this.state?.scene ?? '') && this.state?.logos?.phase === 'riding') || (this.state?.scene === 'm3_gate' && this.state.apu?.phase === 'riding')); }
 
-  private placeGarageDriver(agent: AgentState, escape: GarageEscape, tick: number): void {
-    agent.position = filmPosition(this.scene!.set, escape.x - 1.05, escape.z);
-    agent.rotation = Math.PI - Math.atan2(escape.lateral, Math.max(1, escape.speed));
+  private placeGarageDriver(agent: AgentState, car: GarageCarPose, tick: number): void {
+    const seat = garageRiderPose(car, 'trinity');
+    agent.position = filmPosition(this.scene!.set, seat.x, seat.z);
+    agent.rotation = seat.yaw;
     agent.currentAction = { type: 'move_to', parameters: { player: Boolean(agent.controller), resolved: true, riding: true, seated: true },
       startedAt: tick, duration: 1, progress: 0 };
   }
   restoreGaragePose(agent: AgentState, tick: number): void {
     const state = this.state;
-    if (state?.scene === 'm2_garage' && state.garage && agent.status === 'alive' && this.driving(agent)) this.placeGarageDriver(agent, state.garage, tick);
+    if (state?.scene === 'm2_garage' && state.garage && agent.status === 'alive' && this.driving(agent)) this.placeGarageDriver(agent, garageCarPose(state.garage), tick);
   }
 
   hammerFrame(agent: AgentState, tick: number): void {
@@ -5770,12 +5771,14 @@ export class FilmStorySystem {
     if (this.state!.scene === 'm2_garage') {
       const state = this.state!; const before = state.garage!;
       const escape = state.garage = stepGarageEscape(before, input, dt);
-      this.placeGarageDriver(agent, escape, tick);
+      const car = garageCarPose(escape);
+      this.placeGarageDriver(agent, car, tick);
       agent.velocity = { x: escape.lateral, y: 0, z: -escape.speed };
-      for (const [id, x, z] of [['morpheus', 2.05, .2], ['keymaker', .1, 1.7]] as const) {
+      for (const id of ['morpheus', 'keymaker'] as const) {
         const passenger = this.world.agents.get(id); if (!passenger || passenger.controller) continue;
-        passenger.position = { ...agent.position, x: agent.position.x + x, z: agent.position.z + z };
-        passenger.velocity = { ...agent.velocity }; passenger.rotation = agent.rotation;
+        const seat = garageRiderPose(car, id);
+        passenger.position = filmPosition(this.scene!.set, seat.x, seat.z);
+        passenger.velocity = { ...agent.velocity }; passenger.rotation = seat.yaw;
         passenger.currentAction = { type: 'idle', parameters: { riding: true, passenger: true, seated: true }, startedAt: tick, duration: 1, progress: 0 };
       }
       for (let index = 0; index < 2; index++) {

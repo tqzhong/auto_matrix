@@ -30,6 +30,7 @@ import { PostProcessing } from './PostProcessing.js';
 import type { PlayerControls } from '../player/PlayerControls.js';
 import { FrameRate } from './FrameRate.js';
 import { LightCulling, POINT_SLOT_FLOOR } from './LightCulling.js';
+import { garageCarPose, garageRiderPose } from '@auto_matrix/shared';
 import { SUBWAY_POINT_SLOTS } from './MatrixEscapeRenderer.js';
 import { PillReflection } from './PillReflection.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
@@ -177,7 +178,19 @@ export class Engine {
       this.agentRenderer.setPlayerMotion(this.playerControls.motion);
     }
     measure?.('controls');
-    this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting);
+    const garage = meeting?.scene === 'm2_garage' && !meeting.visiting ? meeting.garage : undefined;
+    let garageCar = garage && garageCarPose(garage);
+    if (garage?.phase === 'riding' && this.playerControls?.id === 'trinity') {
+      const driver = this.agentRenderer.getAgentState('trinity');
+      const position = this.agentRenderer.getAgent('trinity')?.position;
+      if (position && driver?.currentLocation === 'film_chateau_garage' && driver.currentAction?.parameters.riding) {
+        // Use the same interpolated root as the driving camera.
+        const yaw = driver.rotation - Math.PI, seat = garageRiderPose({ x: 0, z: 0, yaw }, 'trinity');
+        const { center } = FILM_SETS.film_chateau_garage;
+        garageCar = { x: position.x - center.x - seat.x, z: position.z - center.z - seat.z, yaw };
+      }
+    }
+    this.agentRenderer.update(delta, this.camera, this.simulationSpeed, this.tick, meeting, garageCar);
     if (this.playerControls?.id) {
       const group = this.agentRenderer.getAgent(this.playerControls.id);
       if (group) {
@@ -218,7 +231,7 @@ export class Engine {
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
     const avatarPosition = player ? this.agentRenderer.getAgent(player.id)?.position : undefined;
-    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, avatarPosition, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera, this.tick);
+    const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, avatarPosition, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera, this.tick, garageCar);
     this.lightCulling.stablePointSlots = this.filmSets.stablePointSlots;
     if (this.filmSets.lafayetteStreetHidden) this.agentRenderer.hideLafayetteStreetCast();
     this.agentRenderer.protectHelAttendant(this.filmSets.helAttendant, meeting?.scene === 'm3_hel_entry' && !meeting.visiting ? meeting.helCoatcheck : undefined);

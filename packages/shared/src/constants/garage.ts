@@ -3,13 +3,26 @@ import type { DriveInput } from './freeway.js';
 export const GARAGE = {
   start: { x: 0, z: 14 }, finish: -40, limit: 13.5,
   twins: [{ x: 0, z: -9 }, { x: 2.5, z: -23 }],
+  seats: { trinity: { x: -1.05, z: 0 }, morpheus: { x: 1, z: .2 }, keymaker: { x: -.95, z: 1.7 } },
 } as const;
+
+export type GarageRider = keyof typeof GARAGE.seats;
+export type GarageCarPose = { x: number; z: number; yaw: number };
 
 export interface GarageEscape {
   x: number; z: number; speed: number; lateral: number; elapsed: number;
   hull: number; passenger: number; cooldown: number; hits: number;
   twins: number; ghostUntil: [number, number];
   phase: 'riding' | 'arrived' | 'wrecked';
+}
+
+export function garageCarPose(escape: GarageEscape): GarageCarPose {
+  return { x: escape.x, z: escape.z, yaw: -Math.atan2(escape.lateral, Math.max(1, escape.speed)) };
+}
+
+export function garageRiderPose(car: GarageCarPose, role: GarageRider): GarageCarPose {
+  const seat = GARAGE.seats[role], c = Math.cos(car.yaw), s = Math.sin(car.yaw);
+  return { x: car.x + seat.x * c + seat.z * s, z: car.z - seat.x * s + seat.z * c, yaw: Math.PI + car.yaw };
 }
 
 export function newGarageEscape(): GarageEscape {

@@ -9,6 +9,7 @@ import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
 import { truckRoadRoot, freewayHandoffRoot, truckWeaponPairRoot, truckHoodRoot } from '@auto_matrix/shared';
 import { freewayPickupRoot, freewayDriverRoot, freewayRideRoot } from '@auto_matrix/shared';
+import { garageRiderPose, type GarageCarPose } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose, logosFlightSet } from '@auto_matrix/shared';
 import { CONNECTED_ROLES, BETRAYAL, AMBUSH_ESCAPE, AMBUSH_DOFF, MOUSE_ROOM_SHOTS, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
@@ -302,7 +303,7 @@ export class AgentRenderer {
     entry.body.position.y += support.offset;
   }
 
-  update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney): void {
+  update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney, garageCar?: GarageCarPose): void {
     const meetingCamera = camera && !(camera instanceof THREE.ArrayCamera) && this.matrix && this.playerId === journey?.actor
       && journey.scene === 'm2_meeting' && !journey.visiting ? camera : undefined;
     if (meetingCamera) {
@@ -478,7 +479,19 @@ export class AgentRenderer {
       } else entry.basementDropClock = undefined;
       const dropRoot = basement?.drop !== undefined && basement.start ? basementDropRoot(basement.role, basement.start, basement.drop) : undefined;
       if (sixthRoot?.hidden) entry.body.visible = entry.marker.visible = entry.label.visible = false;
-      if (id !== this.playerId) {
+      let garageSeat = garageCar && (id === 'trinity' || id === 'morpheus' || id === 'keymaker')
+        && state.currentLocation === 'film_chateau_garage' && state.status === 'alive' && (!state.controller || id === this.playerId)
+        ? garageRiderPose(garageCar, id) : undefined;
+      const garageCenter = FILM_SETS.film_chateau_garage.center;
+      if (garageSeat && journey?.garage?.phase !== 'riding') {
+        const position = id === this.playerId ? entry.group.position : state.position;
+        if (Math.hypot(position.x - garageCenter.x - garageSeat.x, position.y - garageCenter.y, position.z - garageCenter.z - garageSeat.z) > .15)
+          garageSeat = undefined;
+      }
+      if (garageSeat) {
+        entry.group.position.set(garageCenter.x + garageSeat.x, garageCenter.y, garageCenter.z + garageSeat.z);
+        entry.body.rotation.y = guideHeading = garageSeat.yaw;
+      } else if (id !== this.playerId) {
         const previous = entry.group.position.clone();
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
@@ -926,6 +939,8 @@ export class AgentRenderer {
         else entry.mouseFloor = undefined;
       }
       if (medicalPatient || podBody) { entry.rig.motion = newMotion(); input.speed = 0; input.turn = 0; }
+      input.garageSeated = Boolean(garageSeat);
+      if (garageSeat) { input.seated = true; input.riding = true; }
       // The hall has no mirrors. Skin normals cannot affect an offscreen shadow or the actor's pose.
       input.skipSkinContinuity = false;
       if (meetingCamera && id !== this.playerId && state.currentLocation === 'film_captains_meeting') {

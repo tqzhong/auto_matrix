@@ -4,7 +4,7 @@ import test, { beforeEach } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, TRUCKS, FREEWAY_PICKUP, filmObstacles, filmPosition, truckApproachPose, newFreewayPickup, stepFreewayPickup, newTruckHood, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FreewaySetRenderer } from '../packages/client/src/engine/FreewaySetRenderer.js';
-import { newFreewayRide, freewayRideRoot, stepFreeway, freewayPursuitVehicles } from '@auto_matrix/shared';
+import { newFreewayRide, freewayRideRoot, stepFreeway, freewayPursuitVehicles, newFreewayHandoff, newTruckRoad, newGarageEscape, garageCarPose } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -43,6 +43,49 @@ test('escort vehicle and traffic consume the same fast saved frame and reject pa
   const coldScene = new THREE.Scene(), cold = new FilmSetRenderer(coldScene); t.after(() => cold.dispose());
   state.ride = structuredClone(fast); renderer.update(player, sandbox, 102, player.position); cold.update(player, sandbox, 800, player.position);
   assert.equal(snapshot(coldScene.getObjectByName('matrix-freeway-motorcycle')!.parent!), snapshot(freeway), 'a cold renderer must draw the same saved traffic and bank');
+});
+
+test('the completed transfer keeps the truck visible and carries the same road into the duel', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
+  const coldScene = new THREE.Scene(), cold = new FilmSetRenderer(coldScene);
+  t.after(() => { renderer.dispose(); cold.dispose(); globalThis.document = original; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const handoff = newFreewayHandoff(newFreewayRide());
+  handoff.phase = 'done';
+  const state: FilmJourney = { ...journey(), scene: 'm2_freeway', actor: 'trinity', step: 2, freewayHandoff: handoff };
+  const sandbox = { neoLife: { journey: state } } as SandboxState;
+  const trinity = world.agents.get('trinity')!, morpheus = world.agents.get('morpheus')!;
+  Object.assign(trinity, { currentLocation: 'film_freeway_101', isInMatrix: true, position: filmPosition('film_freeway_101', 14, handoff.truck.z) });
+  renderer.update(trinity, sandbox, 0);
+  const truck = scene.getObjectByName('matrix-freeway-handoff-truck')!;
+  assert.ok(truck.visible);
+  state.step = 3;
+  renderer.update(trinity, sandbox, 1);
+  const visibleAfterConfirmation = truck.visible;
+  const roof = { x: 0, y: TRUCKS.roof.height, z: 0, yaw: Math.PI };
+  state.scene = 'm2_trucks'; state.actor = 'morpheus'; state.step = 0;
+  state.trucks = { phase: 'duel', elapsed: 0, lastTick: 1, attempt: 0, road: newTruckRoad(handoff.truck, roof, roof, 100) };
+  Object.assign(morpheus, { currentLocation: 'film_freeway_101', isInMatrix: true, position: { ...trinity.position, y: trinity.position.y + roof.y } });
+  renderer.update(morpheus, sandbox, 2);
+  cold.update(morpheus, sandbox, 50);
+  assert.deepEqual({ visibleAfterConfirmation, sameTruck: scene.getObjectByName(truck.name) === truck, visibleInDuel: truck.visible },
+    { visibleAfterConfirmation: true, sameTruck: true, visibleInDuel: true });
+  assert.equal(truck.position.z, state.trucks.road!.truck.z);
+  assert.equal(snapshot(truck.parent!), snapshot(coldScene.getObjectByName(truck.name)!.parent!));
+});
+
+test('Trinity can walk away from the garage car after driving it out', t => {
+  const original = globalThis.document; globalThis.document = canvasDocument();
+  const renderer = new AgentRenderer(new THREE.Scene());
+  t.after(() => { renderer.dispose(); globalThis.document = original; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const player = world.agents.get('trinity')!, garage = { ...newGarageEscape(), phase: 'arrived' as const, z: -40 };
+  const walking = filmPosition('film_chateau_garage', -4, garage.z);
+  Object.assign(player, { position: walking, currentLocation: 'film_chateau_garage', isInMatrix: true });
+  renderer.updateAgent(player.id, player); renderer.setPlayer(player.id);
+  renderer.update(0, undefined, 0, 1, { ...journey(), scene: 'm2_garage', actor: player.id, step: 2, garage }, garageCarPose(garage));
+  assert.ok(renderer.getAgent(player.id)!.position.distanceTo(new THREE.Vector3(walking.x, walking.y, walking.z)) < 1e-7);
 });
 
 function setup(t: { after: (callback: () => void) => void }) {

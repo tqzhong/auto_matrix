@@ -540,7 +540,7 @@ export class FreewaySetRenderer {
     this.windshieldCracks = this.mesh(geometry,material,0,0,0,car); this.windshieldCracks.name = 'niobe-windshield-cracks'; this.windshieldCracks.visible = false;
   }
   update(journey: FilmJourney | undefined, elapsed: number, playerPosition?: Vector3, rescuePose?: TruckEncounter, pickupPose?: FreewayPickup, ridePose?: FreewayRide, handoffPose?: FreewayHandoff, roadPose?: TruckRoad, hoodPose?: TruckHood): void {
-    const savedHandoff = journey?.scene === 'm2_freeway' && journey.step === 2 && !journey.visiting ? journey.freewayHandoff : undefined;
+    const savedHandoff = journey?.scene === 'm2_freeway' && journey.step >= 2 && !journey.visiting ? journey.freewayHandoff : undefined;
     const handoff = savedHandoff && handoffPose?.attempt === savedHandoff.attempt && handoffPose.total >= savedHandoff.total ? handoffPose : savedHandoff;
     if (this.handoffTruck) {
       this.handoffTruck.visible = Boolean(handoff || journey?.scene === 'm2_trucks' && journey.trucks?.road && !journey.visiting);
