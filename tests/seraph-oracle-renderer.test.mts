@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BURLY, FILM_SCENE_BY_ID, filmEntry, newGarageEscape, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { BURLY, FILM_SCENE_BY_ID, filmEntry, newCatch, newGarageEscape, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -28,11 +28,12 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
   t.after(() => { sets.dispose(); body.geometry.dispose(); body.material.dispose(); });
 
   let preview: THREE.Scene | undefined, castCompiled = false;
+  const compiled = new Set<THREE.Object3D>();
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
     setRenderTarget() {}, initTexture() {}, properties: { get: () => ({}) },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
       preview = target;
-      subject.traverse(mesh => { if (mesh === body) castCompiled = true; });
+      subject.traverse(mesh => { compiled.add(mesh); if (mesh === body) castCompiled = true; });
     } } as unknown as THREE.WebGLRenderer;
   const enter = (id: string, step: number) => {
     const beat = FILM_SCENE_BY_ID[id];
@@ -42,7 +43,7 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
   };
   const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith', 'trinity'].includes(id) ? cast : undefined);
   const warm = (name: string) => {
-    preview = undefined; castCompiled = false;
+    preview = undefined; castCompiled = false; compiled.clear();
     for (let i = 0; i < 120; i++) prepare();
     const mesh = preview?.getObjectByName(name);
     assert.ok(mesh instanceof THREE.Mesh || mesh instanceof THREE.Group, `${name} was prepared`);
@@ -166,6 +167,64 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
     delete journey.keyDoor;
     delete journey.trinityTerminal;
     let disposals = 0; leaf.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_departure', 4);
+    assert.equal(disposals, 1);
+  });
+  await t.test('the key handoff prepares the Architect room and preserves its door and light rig', t => {
+    t.mock.method(HeroModels.prototype, 'create', async () => undefined);
+    let finishAtlas: (() => void) | undefined;
+    t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad?: (texture: THREE.Texture) => void) => {
+      if (!url.endsWith('/neo-reactions-atlas.png')) return new THREE.Texture({ width: 1, complete: true });
+      const texture = new THREE.Texture();
+      finishAtlas = () => { texture.image = { width: 1672, complete: true }; texture.needsUpdate = true; onLoad?.(texture); };
+      return texture;
+    });
+    enter('m2_key_door', 3); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m2_key_door', 4);
+    const monitors = warm('CRT-wall-cases') as THREE.InstancedMesh;
+    const displays = [0, 1, 2, 3].map(index => preview!.getObjectByName(`CRT-wall-neo-${index}`) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>);
+    const maps = displays.map(display => display.material.map!);
+    assert.equal(new Set(maps.map(map => map.source)).size, 1, 'all four CRT views share one uploaded image');
+    assert.equal(new Set(maps.map(map => map.offset.toArray().join(','))).size, 4);
+    assert.ok(maps.every(map => map.version === 0), 'CRT views wait for decoded image data before upload');
+    assert.ok(finishAtlas); finishAtlas();
+    assert.ok(maps.every(map => map.version > 0 && map.image.width === 1672));
+    assert.ok(displays.every(display => compiled.has(display)), 'CRT program preparation includes the instanced screens');
+    const preparedSlots = pointSlots(preview!);
+    enter('m2_architect', 0);
+    assert.equal(scene.getObjectByName(monitors.name), monitors);
+    assert.equal(pointSlots(scene), preparedSlots);
+    assert.equal(sets.stablePointSlots, true);
+    const hinge = scene.getObjectByName('architect-matrix-hinge')!;
+    assert.equal(hinge.rotation.y, 0);
+    journey.architect = { phase: 'decision', sourceReviewed: true, trinityReviewed: true, remaining: 40, lastTick: 0, attempts: 0,
+      room: { elapsed: 1, chairYaw: .3, exit: { elapsed: 1.1, x: -8, z: -26 } } };
+    enter('m2_architect', 5);
+    assert.equal(scene.getObjectByName(hinge.name), hinge);
+    assert.ok(hinge.rotation.y > .3);
+    assert.equal(pointSlots(scene), preparedSlots);
+    delete journey.architect;
+    let disposals = 0; monitors.geometry.addEventListener('dispose', () => disposals++);
+    enter('m2_departure', 4);
+    assert.equal(disposals, 1);
+  });
+  await t.test('the Architect choice prepares the rescue set with its actual breakable window', () => {
+    enter('m2_architect', 2); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m2_architect', 3);
+    const pane = warm('catch-burning-exit') as THREE.Mesh;
+    assert.ok(compiled.has(preview!.getObjectByName('catch-lit-window-grid')!), 'prepare the instanced window program before the cut');
+    const preparedSlots = pointSlots(preview!);
+    enter('m2_catch', 0);
+    assert.equal(scene.getObjectByName(pane.name), pane);
+    assert.equal(pane.visible, true);
+    assert.equal(pointSlots(scene), preparedSlots);
+    assert.equal(sets.stablePointSlots, true);
+    journey.catch = { ...newCatch(), phase: 'flight', elapsed: .6 };
+    enter('m2_catch', 1);
+    assert.equal(pane.visible, false);
+    assert.equal(pointSlots(scene), preparedSlots);
+    delete journey.catch;
+    let disposals = 0; pane.geometry.addEventListener('dispose', () => disposals++);
     enter('m2_departure', 4);
     assert.equal(disposals, 1);
   });

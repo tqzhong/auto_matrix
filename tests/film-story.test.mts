@@ -466,12 +466,15 @@ test('Neo walks through the same hatch as all three crew members before a saved 
       h.sandbox.state.structures.filter(s => s.owner !== id && s.id !== 'film:neb-escape:hatch')), false, `${id} crossed solid geometry`);
   }
   assert.equal(state.shipLoss?.phase, 'destroying'); assert.equal(state.step, 3);
+  assert.equal(h.actor().currentAction, null, 'reaching safety must finish Neo’s ordinary movement before the blast');
   for (const id of ['morpheus', 'trinity', 'link']) assert.ok(h.world.agents.get(id)!.position.z - FILM_SETS.film_neb_deck.center.z >= NEB_ESCAPE.safeZ);
   h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, sequence: ++sequence });
   for (let frame = 0; frame < 11; frame++) h.players.step(.1, true, h.tick());
   assert.ok(Math.abs(h.actor().rotation - Math.PI) < .01, 'Neo can turn back while movement is locked during destruction');
   const before = JSON.parse(JSON.stringify(state.shipLoss)), bodies = NEB_CREW.map(id => structuredClone(h.world.agents.get(id)!.position));
+  h.actor().currentAction = { type: 'move_to', parameters: { player: true, resolved: true, crouching: false }, startedAt: h.tick(), duration: 1, progress: 0 };
   for (let frame = 0; frame < 20; frame++) h.players.step(.1, false, h.tick());
+  assert.equal(h.actor().currentAction, null, 'older saves clear the stale locomotion action while the blast is paused');
   assert.deepEqual(JSON.parse(JSON.stringify(state.shipLoss)), before); assert.deepEqual(NEB_CREW.map(id => h.world.agents.get(id)!.position), bodies);
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
   assert.deepEqual(JSON.parse(JSON.stringify(state.shipLoss)), before); assert.deepEqual(NEB_CREW.map(id => h.world.agents.get(id)!.position), bodies);

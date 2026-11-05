@@ -64,6 +64,7 @@ export class NebEscapeSystem {
       if (elapsed > 0 && actor.position.z - center.z >= NEB_ESCAPE.playerZ && Math.abs(actor.position.x - center.x) < NEB_ESCAPE.routeHalfWidth - 1.1
         && NEB_CREW.filter(id => id !== actor.id).every(id => this.world.agents.get(id)!.position.z - center.z >= NEB_ESCAPE.safeZ)) {
         loss.phase = 'destroying'; loss.elapsed = 0; actor.velocity = { x: 0, y: 0, z: 0 };
+        this.clearExitMovement(actor);
         journey.lastText = '全员已经离开船体。炸弹击中尼布甲尼撒号；回头看，爆炸正在吞没旧船。';
       }
       return nebEscapeLocked(loss);
@@ -79,6 +80,7 @@ export class NebEscapeSystem {
         crew.currentAction = { type: 'move_to', parameters: { resolved: true, nebEscape: loss.phase }, startedAt: journey.enteredAt, duration: 1e9, progress: 0 }; }
     }
     if (loss.phase === 'destroying') {
+      this.clearExitMovement(actor);
       if (elapsed > 0 && yaw !== undefined) actor.rotation = yaw;
       loss.elapsed = Math.min(NEB_ESCAPE.blastSeconds, (loss.elapsed ?? 0) + elapsed);
       if (loss.elapsed >= NEB_ESCAPE.blastSeconds - 1e-8) {
@@ -86,6 +88,10 @@ export class NebEscapeSystem {
       }
     }
     return nebEscapeLocked(loss);
+  }
+  private clearExitMovement(actor: AgentState): void {
+    const action = actor.currentAction;
+    if ((action?.type === 'move_to' || action?.type === 'idle') && action.parameters.player) actor.currentAction = null;
   }
   private moveCrew(id: NebCrewRole, actor: AgentState, dt: number, tick: number): void {
     const member = this.world.agents.get(id)!;

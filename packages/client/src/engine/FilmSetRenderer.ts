@@ -145,7 +145,7 @@ const palettes = {
 };
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
-type ColorMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+type ColorMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>;
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type LafayettePreparation = {
   lights: LafayetteRoomLights;
@@ -178,6 +178,8 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_persephone: { scene: 'm2_library', step: 3 },
   m2_mountain: { scene: 'm2_garage', step: 2 },
   m2_backup: { scene: 'm2_key_door', step: 1 },
+  m2_key_door: { scene: 'm2_architect', step: 4 },
+  m2_architect: { scene: 'm2_catch', step: 3 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -333,7 +335,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
-      || Boolean(this.basement)
+      || Boolean(this.basement || this.architectRoom || this.catchSet)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting'
@@ -389,7 +391,7 @@ export class FilmSetRenderer {
       const bodies = cast.map(body).filter((root): root is THREE.Group => Boolean(root));
       const heroes = cast.map(hero).filter((root): root is THREE.Group => Boolean(root));
       // A distant actor's detailed model can have a hidden parent in the apartment.
-      prepared.colors = this.colorPreparation(prepared.renderer.root, bodies, heroes);
+      prepared.colors = this.colorPreparation(prepared.renderer.root, bodies, { textureActors: heroes });
     }
     this.prepareColorFrame(renderer, camera, prepared.colors);
   }
@@ -540,7 +542,10 @@ export class FilmSetRenderer {
     if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
       // PBR maps are attached after decoding. Compile the mapped variants.
       for (const texture of prepared.room.textures) if (!texture.image) return;
-      prepared.colors = { ...this.colorPreparation(prepared.room.root, []), actors: new Set() };
+      const room = prepared.room;
+      const colors = this.colorPreparation(room.root, [], { includeBasic: Boolean(room.architectRoom || room.catchSet) });
+      for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
+      prepared.colors = { ...colors, actors: new Set() };
     }
     if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [next.actor, ...next.cast], actor);
   }
@@ -557,7 +562,8 @@ export class FilmSetRenderer {
     }
     this.prepareColorFrame(renderer, camera, colors);
   }
-  private colorPreparation(root: THREE.Group, actors: THREE.Group[], textureActors: THREE.Group[] = []): ColorPreparation {
+  private colorPreparation(root: THREE.Group, actors: THREE.Group[],
+    { textureActors = [], includeBasic = false }: { textureActors?: THREE.Group[]; includeBasic?: boolean } = {}): ColorPreparation {
     const scene = new THREE.Scene();
     scene.environment = this.scene.environment; scene.fog = this.scene.fog;
     // Use the next set's fixtures and the shared world lights without affecting the live set.
@@ -565,13 +571,16 @@ export class FilmSetRenderer {
       if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) scene.add(light.clone());
     }
     const marker = this.markerLight.clone(); marker.visible = true; scene.add(marker, root);
-    const meshes = this.colorMeshes([...actors, root]), textures = new Set<THREE.Texture>();
+    const meshes = this.colorMeshes([...actors, root], includeBasic), textures = new Set<THREE.Texture>();
     this.queueColorTextures(textures, new Set([...meshes, ...this.colorMeshes(textureActors)]));
     return { scene, meshes, programs: [], textures };
   }
   private queueColorTextures(textures: Set<THREE.Texture>, meshes: Iterable<ColorMesh>): void {
     for (const { material } of meshes) {
-      for (const map of [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]) {
+      const maps = material instanceof THREE.MeshStandardMaterial
+        ? [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]
+        : [material.map, material.alphaMap];
+      for (const map of maps) {
         if (map) textures.add(map);
       }
     }
@@ -693,6 +702,15 @@ export class FilmSetRenderer {
       this.sourceDoor = new SourcePortalRenderer(this.root);
       return;
     }
+    if (set.id === 'film_architect_room') {
+      this.architectRoom = new ArchitectRoomRenderer(this.root);
+      return;
+    }
+    if (set.id === 'film_trinity_roof' && this.currentScene === 'm2_catch') {
+      this.catchSet = new ReloadedCatchRenderer(this.root);
+      this.catchSet.update();
+      return;
+    }
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
   }
@@ -723,6 +741,8 @@ export class FilmSetRenderer {
     this.garageCar = room.garageCar;
     this.garageGhosts = room.garageGhosts;
     this.sourceDoor = room.sourceDoor; room.sourceDoor = undefined;
+    this.architectRoom = room.architectRoom; room.architectRoom = undefined;
+    this.catchSet = room.catchSet; room.catchSet = undefined;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -776,10 +796,11 @@ export class FilmSetRenderer {
       hotel.updateLights(height - 1);
     }
   }
-  private colorMeshes(roots: THREE.Group[]): ColorMesh[] {
+  private colorMeshes(roots: THREE.Group[], includeBasic = false): ColorMesh[] {
     const meshes: ColorMesh[] = [];
     for (const root of roots) root.traverseVisible(object => {
-      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) meshes.push(object);
+      if (object instanceof THREE.Mesh && (object.material instanceof THREE.MeshStandardMaterial
+        || includeBasic && object.material instanceof THREE.MeshBasicMaterial)) meshes.push(object);
     });
     return meshes;
   }
@@ -904,7 +925,7 @@ export class FilmSetRenderer {
           this.reloaded = preparedMeeting ?? new ReloadedOpeningRenderer(this.root, set.id);
           if (preparedMeeting) this.root.add(preparedMeeting.group);
         }
-        else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof') this.catchSet = new ReloadedCatchRenderer(this.root);
+        else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof' && !preparedSecondOracle) this.catchSet = new ReloadedCatchRenderer(this.root);
         else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') this.baneCopy = new BaneCopyRenderer(this.root);
         else if (['film_zion_dock_exit', 'film_zion_command_bunker'].includes(set.id)) this.dockEvacuation = new DockEvacuationRenderer(this.root, set.id === 'film_zion_command_bunker');
         else if (set.id === 'film_zion_personnel') this.dockBriefing = new DockBriefingRenderer(this.root);
@@ -935,7 +956,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_operation_room') this.sourceBriefing = new SourceBriefingRenderer(this.root);
         else if (set.id === 'film_power_station') this.primaryDemolition = new PrimaryDemolitionRenderer(this.root);
         else if (set.id === 'film_source_corridor' && !preparedSecondOracle) this.sourceDoor = new SourcePortalRenderer(this.root);
-        else if (set.id === 'film_architect_room') this.architectRoom = new ArchitectRoomRenderer(this.root);
+        else if (set.id === 'film_architect_room' && !preparedSecondOracle) this.architectRoom = new ArchitectRoomRenderer(this.root);
         else if (set.id === 'film_mobil_station') {
           this.mobil = new MobilStationRenderer(this.root);
           this.resetMirrorFrame = showMirrorSubject(this.mobil.reflection, () => this.mirrorSubject);

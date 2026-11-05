@@ -37,9 +37,14 @@ export class ArchitectRoomRenderer {
     }
     const ceiling = this.mesh(this.fixed, this.own(new THREE.CircleGeometry(room.radius + .5, 96)), plaster, 0, room.height, room.centerZ); ceiling.rotation.x = Math.PI / 2;
     const loader = new THREE.TextureLoader();
-    this.neo = [0, 1, 2, 3].map(index => {
-      const texture = loader.load('/assets/architect/neo-reactions-atlas.png');
-      texture.repeat.set(.5, .5); texture.offset.set(index % 2 * .5, index < 2 ? .5 : 0); return texture;
+    const views = Array.from({ length: 3 }, () => new THREE.Texture());
+    const atlas = loader.load('/assets/architect/neo-reactions-atlas.png', () => {
+      for (const view of views) view.needsUpdate = true;
+    });
+    this.neo = [atlas, ...views];
+    this.neo.forEach((texture, index) => {
+      texture.source = atlas.source;
+      texture.repeat.set(.5, .5); texture.offset.set(index % 2 * .5, index < 2 ? .5 : 0);
     });
     this.trinity = loader.load('/assets/architect/trinity-signal.png');
     for (const texture of [...this.neo, this.trinity]) { texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4; this.textures.add(texture); }
@@ -114,6 +119,7 @@ export class ArchitectRoomRenderer {
     key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0003; this.group.add(key, key.target);
     for (const group of [this.fixed, this.chair, this.leftDoor, this.rightDoor]) batchStaticGeometry(group, new Set()).forEach(g => this.geometries.add(g));
   }
+  get screenTextures(): readonly THREE.Texture[] { return [this.neo[0], this.trinity]; }
   update(encounter?: ArchitectEncounter, seatedYaw = this.chair.rotation.y): void {
     this.time.value = encounter?.room?.elapsed ?? 0;
     this.chair.rotation.y = encounter?.room?.chairYaw ?? seatedYaw;
