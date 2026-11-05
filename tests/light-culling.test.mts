@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APU_RIG, APU_ROUTE, BANE_INQUIRY, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newUpperDigger, type AirRescueEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newUpperDigger, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -521,6 +521,43 @@ test('the crew meal retains its light slots through seating, camera turns and re
   journey.interlude!.phase = 'done'; journey.step = 1;
   neo.position = filmStepPosition(scene, scene.steps[1]);
   assert.deepEqual(visibleLights(0), ready, 'walking back to the core keeps the same program');
+});
+
+test('the basement keeps the same light slots from the grate through the drain turns', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const scene = FILM_SCENE_BY_ID.m1_basement, center = FILM_SETS[scene.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.isInMatrix = true;
+  const basement = { phase: 'hatch_ready', hatch: 1, gas: 0 } as BasementEncounter;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: neo.id, step: 3, completed: [], enteredAt: 0,
+    checkpoint: neo.position, reflections: {}, lastText: '', basement };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const marker = h.scene.children.find(object => object instanceof THREE.PointLight) as THREE.PointLight;
+  const visibleLights = (x: number, y: number, z: number, yaw: number) => {
+    neo.position = { x: center.x + x, y: center.y + y, z: center.z + z };
+    h.camera.position.set(neo.position.x, neo.position.y + 1.5, neo.position.z);
+    h.camera.rotation.y = yaw;
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    const lights: { id: number; intensity: number }[] = [];
+    h.before();
+    h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push({ id: object.id, intensity: object.intensity }); });
+    h.after();
+    return lights;
+  };
+  const grate = visibleLights(BASEMENT.approach.x, BASEMENT.floor, BASEMENT.approach.z, Math.PI);
+  assert.equal(marker.intensity, 5);
+  basement.phase = 'tunnel'; journey.step = 4;
+  const tunnel = visibleLights(9, BASEMENT.tunnelFloor, 30, Math.PI / 2);
+  assert.deepEqual(tunnel.map(light => light.id), grate.map(light => light.id));
+  assert.equal(tunnel.find(light => light.id === marker.id)?.intensity, 0);
+  const turn = visibleLights(0, BASEMENT.tunnelFloor, 30, Math.PI);
+  assert.deepEqual(turn.map(light => light.id), tunnel.map(light => light.id));
+  assert.ok(turn.some(light => light.id !== marker.id && light.intensity === 0));
+  assert.ok(turn.some(light => light.intensity > 0));
 });
 
 test('the minigun changes illumination without dropping a light slot during the air rescue', t => {

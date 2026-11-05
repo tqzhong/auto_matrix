@@ -302,6 +302,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
+      || Boolean(this.basement)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.matrixEscape?.setId === 'film_subway_platform'
@@ -592,6 +593,10 @@ export class FilmSetRenderer {
         || this.currentScene === 'm1_pills' && sceneId === 'm1_mirror' && !journey?.visiting)) this.currentScene = sceneId;
     if (set?.id === 'film_oracle_home' && this.current?.id === set.id && !journey?.visiting
       && this.currentScene === 'm1_spoon' && sceneId === 'm1_oracle') this.currentScene = sceneId;
+    if (this.ambush && set?.id === 'film_ambush_house' && !journey?.visiting && (
+      this.currentScene === 'm1_dejavu' && sceneId === 'm1_wetwall'
+      || this.currentScene === 'm1_wetwall' && sceneId === 'm1_wall_exposed'
+      || this.currentScene === 'm1_wall_exposed' && sceneId === 'm1_bathroom')) this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
       && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
     // Both chapters continue on the same damaged avenue and reflection pass.

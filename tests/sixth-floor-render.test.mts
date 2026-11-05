@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, WETWALL_SHAFT, playerBlocked, type FilmJourney, type SixthEncounter } from '@auto_matrix/shared';
+import { FILM_SETS, WETWALL_SHAFT, filmPosition, playerBlocked, type FilmJourney, type SandboxState, type SixthEncounter } from '@auto_matrix/shared';
 import { WetwallRenderer } from '../packages/client/src/engine/WetwallRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -35,6 +36,43 @@ test('the bathroom sink and toilet block walking while the sixth-floor combat la
   assert.equal(playerBlocked(position(-20.95, -28.25), true, .2), true, 'the toilet must share its visible footprint with movement');
   assert.equal(playerBlocked(position(-15.5, -27.2), true, 1.1), false);
   assert.equal(playerBlocked(position(-15.5, -24.8), true, 1.1), false);
+});
+
+test('the approach, pipe chase and bathroom retain the building as the physical opening changes', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const retained = new FilmSetRenderer(new THREE.Scene()), direct = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => { retained.dispose(); direct.dispose(); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, morpheus = world.agents.get('morpheus')!;
+  neo.isInMatrix = morpheus.isInMatrix = true;
+  neo.position = filmPosition('film_ambush_house', -15.5, -32.2); neo.position.y += WETWALL_SHAFT.sixth;
+  morpheus.position = filmPosition('film_ambush_house', -15.5, -27.2); morpheus.position.y += WETWALL_SHAFT.sixth;
+  const journey = { scene: 'm1_dejavu', actor: neo.id, step: 0, completed: [] } as unknown as FilmJourney;
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  retained.update(neo, sandbox, 0);
+  const room = retained.root.getObjectByName('room-608')!;
+  const floor = room.children.find(object => object instanceof THREE.Mesh) as THREE.Mesh;
+  let disposed = 0; floor.geometry.addEventListener('dispose', () => disposed++);
+  journey.scene = 'm1_wetwall'; retained.update(neo, sandbox, 1);
+  assert.ok(retained.root.getObjectByName(room.name) === room);
+  journey.scene = 'm1_wall_exposed'; journey.wallExposure = { phase: 'searching', elapsed: 3, starts: {} } as SixthEncounter;
+  retained.update(neo, sandbox, 2);
+  const panel = retained.root.getObjectByName('sixth-breakable-plaster')!;
+  assert.equal(panel.visible, true);
+  journey.scene = 'm1_bathroom'; journey.actor = morpheus.id; journey.wallExposure.phase = 'done';
+  retained.update(morpheus, sandbox, 3); direct.update(morpheus, sandbox, 3);
+  assert.ok(retained.root.getObjectByName(room.name) === room);
+  assert.equal(disposed, 0); assert.equal(panel.visible, false);
+  const snapshot = (root: THREE.Group) => {
+    const values: unknown[] = [];
+    root.traverse(object => values.push([object.name, object.type, object.visible, object.position.toArray(), object.rotation.toArray(),
+      object instanceof THREE.Mesh ? object.geometry.attributes.position.count : undefined,
+      object instanceof THREE.Light ? [object.color.getHex(), object.intensity, object.castShadow] : undefined]));
+    return values;
+  };
+  assert.deepEqual(snapshot(retained.root), snapshot(direct.root), 'the handed-off bathroom matches a direct saved load');
+  retained.update(undefined, undefined, 4);
+  assert.equal(disposed, 1);
 });
 
 test('a police replacement hides the unused body, label and contact shadow in both directions', t => {
