@@ -10,12 +10,17 @@ export class UpperDiggerSystem {
   private occupied(): boolean { return Boolean(this.world.agents.get('charra')?.controller); }
   stage(tick: number): void {
     const journey = this.journey, state = journey?.upperDigger;
-    const body = 'film:upper-digger:body';
+    const body = 'film:upper-digger:body', shaft = 'film:upper-digger:ladder-shaft';
     if (!journey || !state || !state.charraDead && (journey.visiting || !['m3_upper_digger', 'm3_dock_battle', 'm3_gate'].includes(journey.scene))) {
-      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== body); return;
+      this.sandbox().structures = this.sandbox().structures.filter(s => s.id !== body && s.id !== shaft); return;
     }
     if (!this.sandbox().structures.some(s => s.id === body)) this.sandbox().structures.push({ id: body, kind: 'barricade', owner: 'zion', matrix: false, health: 999,
       position: filmPosition('film_zion_hangar', UPPER_DIGGER.machine.x, UPPER_DIGGER.machine.z), film: { scene: 'm3_upper_digger', width: 38, depth: 38, height: 41 } });
+    if (!this.sandbox().structures.some(s => s.id === shaft)) {
+      const { x, z, ...size } = UPPER_DIGGER.shaft;
+      this.sandbox().structures.push({ id: shaft, kind: 'barricade', owner: 'zion', matrix: false, health: 999,
+        position: filmPosition('film_zion_hangar', x, z), film: { scene: 'm3_upper_digger', ...size } });
+    }
     for (const role of ['zee', 'charra'] as const) {
       const actor = this.world.agents.get(role)!;
       if (role === 'charra' && actor.controller || role === 'zee' && (journey.visiting || journey.scene !== 'm3_upper_digger' || journey.actor !== role || !upperDiggerLocked(state))) continue;

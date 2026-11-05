@@ -941,12 +941,26 @@ test('the dock defense stabilizes the moving approach and keeps cockpit light cu
   journey.scene = 'm3_gate'; journey.actor = kid.id; journey.completed.push('m3_dock_battle');
   delete journey.dockGunnery;
   const handoff = sample(kid, -1.55, 0, 6.3, -Math.PI / 2);
-  assert.deepEqual(sample(kid, -5.5, 0, 6.3, Math.PI / 2), handoff);
+  assert.equal(handoff.slots, entrance.slots, 'the hovering Sentinels use the existing dock slots at the handoff');
+  assert.equal(sample(kid, -5.5, 0, 6.3, Math.PI / 2).slots, handoff.slots);
   journey.step = 1;
-  assert.deepEqual(sample(kid, APU_ROUTE.entry.x, 0, APU_ROUTE.entry.z, .12), handoff);
+  assert.equal(sample(kid, APU_ROUTE.entry.x, 0, APU_ROUTE.entry.z, .12).slots, handoff.slots);
+  const signal = (index: number) => {
+    const sentinel = renderer.root.getObjectByName(`zion-gate-sentinel-${index}`)!;
+    assert.equal(sentinel.visible, true, 'the complete Sentinel remains in view');
+    return sentinel.children.find(object => object instanceof THREE.PointLight)!;
+  };
+  const near = sample(kid, 0, 0, -13, Math.PI);
+  assert.equal(near.slots, handoff.slots);
+  assert.ok(near.dockLamps < 6 && signal(1).visible, 'a nearby Sentinel can light the dock');
+  assert.equal(signal(4).visible, false, 'a distant Sentinel retains its emissive optics');
+  assert.equal(sample(kid, 0, 0, -43, Math.PI).slots, handoff.slots);
+  assert.equal(signal(4).visible, true);
   journey.apu = newApuRun();
   sample(kid, 0, APU_RIG.floor + APU_RIG.pilot.y, APU_ROUTE.start, Math.PI);
   assert.equal(renderer.stablePointSlots, false, 'the moving APU keeps its existing culling');
+  renderer.update(kid, sandbox, 0, kid.position, h.camera.position);
+  for (let i = 1; i <= APU_ROUTE.dives.length; i++) assert.equal(signal(i).visible, true);
 });
 
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {

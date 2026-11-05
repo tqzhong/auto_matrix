@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, filmCharacterFates, filmPosition, newDiggers, newUpperDigger,
+import { FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, filmCharacterFates, filmPosition, newDiggers, newUpperDigger, playerBlocked,
   stepUpperDigger, upperDiggerRoot, type PlayerInput, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -141,6 +141,24 @@ test('leaving the dock removes the second drill collision together with its scen
   assert.ok(h.sandbox.state.structures.some(s => s.id === 'film:upper-digger:body'));
   h.state().scene = 'm3_emp'; h.sandbox.life.film.upperDigger.stage(h.tick());
   assert.ok(!h.sandbox.state.structures.some(s => s.id === 'film:upper-digger:body'), 'an invisible drill cannot block a later visit');
+});
+
+test('the maintenance shaft is solid and restored from an older save without blocking the ladder', () => {
+  const h = game(), id = 'film:upper-digger:ladder-shaft';
+  const wall = filmPosition('film_zion_hangar', -48.2, 28), ladder = filmPosition('film_zion_hangar', UPPER_DIGGER.ladder.x, UPPER_DIGGER.ladder.z);
+  const verify = () => {
+    assert.equal(h.sandbox.state.structures.filter(s => s.id === id).length, 1);
+    assert.ok(playerBlocked(wall, false, .2, h.sandbox.state.structures));
+    assert.ok(!playerBlocked(ladder, false, .7, h.sandbox.state.structures));
+  };
+  verify();
+  const old = structuredClone(h.sandbox.state);
+  old.structures = old.structures.filter(s => s.id !== id);
+  h.sandbox.restore(old);
+  h.sandbox.life.film.upperDigger.stage(h.tick());
+  verify();
+  h.state().scene = 'm3_emp'; h.sandbox.life.film.upperDigger.stage(h.tick());
+  assert.ok(!h.sandbox.state.structures.some(s => s.id === id));
 });
 
 test('the two shooters turn back into the service channel instead of snapping through a half turn', () => {

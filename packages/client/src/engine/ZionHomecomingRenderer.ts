@@ -42,12 +42,13 @@ export class ZionHomecomingRenderer {
   private gateRescue?: DockGateRescueRenderer;
   private gunnery?: DockGunneryRenderer;
   private cannons: THREE.Group[] = [];
-  private sentinelDives: THREE.Group[] = [];
+  private sentinelDives: { body: THREE.Group; signal: THREE.PointLight }[] = [];
   private ammoCart?: THREE.Group;
   private loader?: THREE.Group;
   private reloadBox?: THREE.Group;
   private reloadCable?: THREE.Mesh;
   private reloadLatch?: THREE.Mesh;
+  private loaderLight?: THREE.PointLight;
   private muzzleFlashes: THREE.Mesh[] = [];
   private dockElectrical?: { lights: [THREE.Light, number][]; lit: THREE.MeshStandardMaterial; engines: THREE.MeshStandardMaterial };
   private templeDefense?: TempleDefenseRenderer;
@@ -229,9 +230,8 @@ export class ZionHomecomingRenderer {
     this.pipe(iron, [.9, 1, 1.5], [.9, 1, 3.3], .12, this.ammoCart);
     this.loader = new THREE.Group(); this.loader.name = 'zion-apu-loader'; this.moving.add(this.loader);
     const brass = this.material(0xb49b61, .48, .72);
-    const workLight = new THREE.PointLight(0xe3d4b4, 24, 11, 2);
-    workLight.name = 'apu-loader-work-light'; workLight.position.set(-.95, 5.9, 17.6);
-    this.loader.add(workLight); this.lights.add(workLight);
+    this.loaderLight = this.glow(0xe3d4b4, 24, 11, -.95, 5.9, 17.6);
+    this.loaderLight.name = 'apu-loader-work-light';
     this.box(joint, -.95, 6.02, 17.6, .7, .15, .28, this.loader);
     this.box(lit, -.95, 5.91, 17.6, .54, .035, .2, this.loader);
     this.pipe(joint, [-2, 5.65, 15.65], [-.95, 6.12, 17.6], .055, this.loader);
@@ -279,7 +279,7 @@ export class ZionHomecomingRenderer {
           this.pipe(joint, [side * (.55 + arm * .25), -.25, .4], [side * (1.4 + arm * .65), -1.3 - arm * .35, 1.8 + arm * 1.15], .09, sentinel);
       }
       const signal = new THREE.PointLight(0xff5d3e, 130, 17, 2); signal.position.set(0, -.1, -1.5); sentinel.add(signal); this.lights.add(signal);
-      this.sentinelDives.push(sentinel);
+      this.sentinelDives.push({ body: sentinel, signal });
     }
   }
   private council(): void {
@@ -397,12 +397,6 @@ export class ZionHomecomingRenderer {
   update(journey: FilmJourney | undefined, elapsed: number, cameraPosition?: Vector3, camera?: THREE.Camera): void {
     for (const light of this.culledLights) light.visible = true;
     this.culledLights.length = 0;
-    if (this.dockLamps.length) {
-      const viewer = cameraPosition ? this.group.worldToLocal(new THREE.Vector3().copy(cameraPosition)) : new THREE.Vector3();
-      // The emissive fixtures remain visible. Only nearby bulbs need a full PBR light loop.
-      const nearest = [...this.dockLamps].sort((a, b) => a.position.distanceToSquared(viewer) - b.position.distanceToSquared(viewer)).slice(0, 6);
-      for (const light of this.dockLamps) light.visible = nearest.includes(light);
-    }
     const departure = journey?.scene === 'm2_departure' && !journey.visiting;
     const ship = this.moving.getObjectByName('zion-docked-nebuchadnezzar'); if (ship) {
       ship.position.y = ZION_BOARDING.y + (departure ? 0 : Math.sin(elapsed * .45) * .24);
@@ -480,11 +474,22 @@ export class ZionHomecomingRenderer {
     this.muzzleFlashes.forEach((flash, index) => flash.visible = journey?.scene === 'm3_dock_battle'
       && (lastStand ? lastShots >= 0 && index === lastShots % 2 : Boolean(gunner?.lastShot && gunner.elapsed - gunner.lastShot.at < .16) && index === shots % 2)
       || journey?.scene === 'm3_gate' && Boolean(journey.dockGate?.lastShot && journey.dockGate.total - journey.dockGate.lastShot.at < .1 && index === journey.dockGate.shots % 2));
-    for (const [index, sentinel] of this.sentinelDives.entries()) {
+    for (const [index, { body: sentinel, signal }] of this.sentinelDives.entries()) {
       sentinel.visible = journey?.scene === 'm3_gate' && !journey.visiting && (journey.apu?.phase === 'riding' || journey.apu === undefined) && !((journey.apu?.dives ?? 0) & (1 << index));
       sentinel.position.x = APU_ROUTE.dives[index].x;
       sentinel.position.z = APU_ROUTE.dives[index].z;
       sentinel.position.y = 11 + Math.sin(elapsed * 3 + index) * 1.3;
+      signal.visible = true;
+    }
+    if (this.dockLamps.length) {
+      // Before the APU moves, hovering Sentinels share the dock's six nearby slots.
+      // Fixtures and optics remain emissive regardless of which bulbs light the view.
+      const approach = journey?.scene === 'm3_gate' && !journey.visiting && !journey.apu;
+      const lights = approach ? [...this.dockLamps, ...this.sentinelDives.map(({ signal }) => signal)] : this.dockLamps;
+      const position = new THREE.Vector3(), viewer = cameraPosition ?? this.group.getWorldPosition(new THREE.Vector3());
+      const nearest = lights.map(light => ({ light, distance: light.getWorldPosition(position).distanceToSquared(viewer) }))
+        .sort((a, b) => a.distance - b.distance);
+      nearest.forEach(({ light }, index) => { light.visible = index < 6; });
     }
     this.templeDefense?.update(journey);
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
@@ -498,6 +503,7 @@ export class ZionHomecomingRenderer {
     if (this.dockElectrical) {
       const offline = dockPowerOffline(journey);
       for (const [light, power] of this.dockElectrical.lights) light.intensity = offline ? power * .08 : journey?.scene === 'm3_diggers' ? power * .35 : power;
+      if (this.loaderLight && !this.loader?.visible) this.loaderLight.intensity = 0;
       this.dockElectrical.lit.emissiveIntensity = offline ? .05 : 2;
       if (offline) this.dockElectrical.engines.emissiveIntensity = .05;
     }

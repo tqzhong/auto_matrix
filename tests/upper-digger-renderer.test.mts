@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { UPPER_DIGGER, newDiggers, newUpperDigger, upperDiggerRoot, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, UPPER_DIGGER, filmEntry, newDiggers, newDockGunnery, newUpperDigger, upperDiggerRoot, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { DiggersRenderer } from '../packages/client/src/engine/DiggersRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -38,6 +40,99 @@ test('a later dock visit still renders Charra’s platform and the two drill bod
     assert.equal(root.getObjectByName('digger-defense-duct')?.visible, false, 'do not reconstruct the old firing enclosure');
     for (let i = 0; i < 3; i++) assert.equal(root.getObjectByName(`upper-digger-sentinel-${i}`)?.visible, false);
   } finally { renderer.dispose(); }
+});
+
+test('the continuous dock handoffs retain their scenery and update the active props', t => {
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const sets = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => sets.dispose());
+  const journey: FilmJourney = { version: 1, scene: 'm3_diggers', actor: 'charra', step: 1, completed: ['m3_diggers'],
+    enteredAt: 0, checkpoint: filmEntry(FILM_SCENE_BY_ID.m3_diggers), reflections: {}, lastText: '',
+    diggers: { ...newDiggers(1), phase: 'done', damage: 3 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const enter = (id: string) => {
+    const chapter = FILM_SCENE_BY_ID[id], actor = world.agents.get(chapter.actor)!;
+    Object.assign(journey, { scene: id, actor: actor.id, step: id === 'm3_diggers' ? 1 : 0 });
+    Object.assign(actor, { isInMatrix: false, position: filmEntry(chapter), currentLocation: chapter.set });
+    sets.update(actor, sandbox, 0);
+  };
+  const prop = (name: string) => sets.root.getObjectByName(name)!;
+  enter('m3_diggers');
+  const dock = prop('zion-homecoming-set'), wreck = prop('digger-wreck'), upper = prop('zion-upper-digger'), apu = prop('zion-kid-apu');
+  assert.equal(upper.visible, false);
+  assert.equal(apu.visible, false);
+  journey.upperDigger = newUpperDigger();
+  enter('m3_upper_digger');
+  assert.ok(prop(dock.name) === dock && prop(wreck.name) === wreck, 'both shots use the same dock and wreck');
+  assert.equal(upper.visible, true);
+  assert.equal(prop('digger-defense-duct').visible, false);
+  Object.assign(journey.upperDigger, { phase: 'done', charraDead: true });
+  journey.completed.push('m3_upper_digger');
+  journey.dockGunnery = newDockGunnery(0);
+  enter('m3_dock_battle');
+  assert.ok(prop(upper.name) === upper && prop(apu.name) === apu, 'the climb and gunnery share the same physical assets');
+  assert.equal(apu.visible, true);
+  assert.equal(prop('zion-ammo-cart').visible, true);
+  journey.completed.push('m3_dock_battle');
+  enter('m3_gate');
+  assert.ok(prop(dock.name) === dock && prop(apu.name) === apu, 'Kid drives the APU already in the scene');
+  assert.equal(apu.visible, true);
+  assert.equal(prop('zion-ammo-cart').visible, false);
+  assert.equal(prop('zion-apu-gunnery').visible, false);
+  sets.update(undefined, undefined, 0);
+  assert.equal(dock.parent, null, 'leaving the dock releases its renderer');
+});
+
+test('the maintenance shaft backs the whole climb and attaches both rails without closing the hatch', t => {
+  const root = new THREE.Group(), renderer = new DiggersRenderer(root);
+  t.after(() => renderer.dispose());
+  renderer.update({ scene: 'm3_upper_digger', completed: ['m3_diggers'], diggers: { ...newDiggers(1), phase: 'done', damage: 3 },
+    upperDigger: newUpperDigger() } as unknown as FilmJourney);
+  root.updateMatrixWorld(true);
+  const shaft = root.getObjectByName('upper-digger-ladder-shaft');
+  assert.ok(shaft?.visible, 'the rails need a visible shaft rather than hanging in the cavern');
+  for (const y of [1.1, 11.5, 22.5, 33.5, 44.9]) {
+    const origin = new THREE.Vector3(UPPER_DIGGER.rungs.x, y, UPPER_DIGGER.ladder.z);
+    const backing = new THREE.Raycaster(origin, new THREE.Vector3(-1, 0, 0), 0, 5).intersectObject(shaft, true)[0];
+    assert.ok(backing && backing.distance > 1.8, `the shaft must back the ladder with space for hands at ${y}`);
+  }
+  for (const z of [26.65, 29.35]) {
+    for (const y of [6.5, 23, 39.5]) {
+      const origin = new THREE.Vector3(UPPER_DIGGER.rungs.x + .2, y, z);
+      const support = new THREE.Raycaster(origin, new THREE.Vector3(-1, 0, 0), 0, .3).intersectObject(shaft, true)[0];
+      assert.ok(support, `the rail at ${z} must meet a mounting bracket at ${y}`);
+    }
+  }
+  const aperture = new THREE.Vector3(UPPER_DIGGER.ladder.x, UPPER_DIGGER.height + 2, UPPER_DIGGER.ladder.z);
+  assert.equal(new THREE.Raycaster(aperture, new THREE.Vector3(0, -1, 0), 0, 3).intersectObject(shaft, true).length, 0);
+});
+
+test('the upper pipe and APU work lights keep the same slots across the three dock approaches', t => {
+  const root = new THREE.Group(), renderer = new ZionHomecomingRenderer(root, 'film_zion_hangar', 'm3_diggers');
+  t.after(() => renderer.dispose());
+  const journey = { scene: 'm3_diggers', completed: [], diggers: { ...newDiggers(1), phase: 'done', damage: 3 } } as unknown as FilmJourney;
+  const lights = () => {
+    const active: THREE.PointLight[] = [];
+    root.traverseVisible(object => { if (object instanceof THREE.PointLight) active.push(object); });
+    return active;
+  };
+  renderer.update(journey, 0);
+  const first = lights();
+  const loader = first.find(light => light.name === 'apu-loader-work-light');
+  const pipe = first.find(light => light.name === 'upper-digger-work-light');
+  assert.ok(loader && pipe, 'both fixtures reserve their slots before the handoff');
+  assert.equal(loader.intensity, 0);
+  assert.equal(pipe.intensity, 0);
+  journey.scene = 'm3_upper_digger'; journey.upperDigger = newUpperDigger();
+  renderer.update(journey, 0);
+  assert.ok(lights().length === first.length && lights().every(light => first.includes(light)));
+  assert.equal(loader.intensity, 0);
+  assert.equal(pipe.intensity, 550);
+  journey.scene = 'm3_dock_battle'; journey.dockGunnery = newDockGunnery(0);
+  renderer.update(journey, 0);
+  assert.ok(lights().length === first.length && lights().every(light => first.includes(light)));
+  assert.equal(loader.intensity, 24);
+  assert.equal(pipe.intensity, 550);
 });
 
 test('Zee actually reaches Charra’s support belt and both shooters remain above the channel floor', t => {

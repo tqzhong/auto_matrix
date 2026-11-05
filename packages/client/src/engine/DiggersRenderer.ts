@@ -160,7 +160,7 @@ export class DiggersRenderer {
     }
     const chip = new THREE.BoxGeometry(.22, .11, .34); this.geometry.add(chip);
     this.chips = new THREE.InstancedMesh(chip, steel, 60); this.chips.name = 'digger-joint-fragments'; this.chips.frustumCulled = false; this.group.add(this.chips);
-    this.upper = new UpperDiggerRenderer(this.group, this.wreck, this.sentinel);
+    this.upper = new UpperDiggerRenderer(this.group, this.wreck, this.sentinel, concrete);
     this.group.visible = false;
   }
   private material(color: number, metalness: number, roughness: number): THREE.MeshStandardMaterial {

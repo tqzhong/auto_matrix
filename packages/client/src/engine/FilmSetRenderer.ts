@@ -881,6 +881,11 @@ export class FilmSetRenderer {
       this.currentScene === 'm1_dejavu' && sceneId === 'm1_wetwall'
       || this.currentScene === 'm1_wetwall' && sceneId === 'm1_wall_exposed'
       || this.currentScene === 'm1_wall_exposed' && sceneId === 'm1_bathroom')) this.currentScene = sceneId;
+    // The drills, APU and gate continue in the same battle-damaged hangar.
+    if (this.zion?.set === 'film_zion_hangar' && set?.id === 'film_zion_hangar' && !journey?.visiting && (
+      this.currentScene === 'm3_diggers' && sceneId === 'm3_upper_digger'
+      || this.currentScene === 'm3_upper_digger' && sceneId === 'm3_dock_battle'
+      || this.currentScene === 'm3_dock_battle' && sceneId === 'm3_gate')) this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
       && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
     // Both chapters continue on the same damaged avenue and reflection pass.

@@ -10,10 +10,11 @@ export class UpperDiggerRenderer {
   private flashes: { group: THREE.Group; flare: THREE.Sprite; smoke: THREE.Sprite; sparks: THREE.InstancedMesh }[] = [];
   private blastTexture: THREE.DataTexture;
   private hatch = new THREE.Group();
+  private workLight = new THREE.PointLight(0xb5cce4, 0, 26, 2);
   private geometry = new Set<THREE.BufferGeometry>();
   private materials: THREE.Material[] = [];
   private scratch = new THREE.Object3D();
-  constructor(parent: THREE.Group, drill: THREE.Group, sentinel: THREE.Group) {
+  constructor(parent: THREE.Group, drill: THREE.Group, sentinel: THREE.Group, lining: THREE.MeshStandardMaterial) {
     this.group.name = 'zion-upper-digger'; parent.add(this.group);
     this.machine = drill.clone(true); this.machine.name = 'second-digger'; this.group.add(this.machine);
     this.machine.position.set(UPPER_DIGGER.machine.x - DIGGERS.center.x, 0, UPPER_DIGGER.machine.z - DIGGERS.center.z);
@@ -69,7 +70,21 @@ export class UpperDiggerRenderer {
     this.pipe(brass, [.6, .2, 0], [1.5, .2, 0], .08, this.hatch);
     this.hatch.rotation.z = 1.6;
     batchStaticGeometry(fixed, new Set()).forEach(geometry => this.geometry.add(geometry));
-    const fill = new THREE.PointLight(0xb5cce4, 550, 26, 2); fill.position.set(-28, 51, 28); this.group.add(fill);
+    const shaft = new THREE.Group(); shaft.name = 'upper-digger-ladder-shaft'; this.group.add(shaft);
+    const wall = UPPER_DIGGER.shaft, face = wall.x + wall.width / 2;
+    const backing = this.box(lining, wall.x, 1 + wall.height / 2, wall.z, wall.width, wall.height, wall.depth, shaft);
+    const uv = backing.geometry.getAttribute('uv');
+    for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * 5.5);
+    for (let y = 6.5; y < wall.height; y += 5.5) {
+      this.box(dark, face, y, wall.z, .19, .37, wall.depth, shaft);
+      for (const z of [26.65, 29.35]) {
+        this.box(dark, (face + rungs.x) / 2, y, z, rungs.x - face + .14, .24, .34, shaft);
+        this.pipe(steel, [face, y - 1.25, z], [rungs.x - .2, y - .08, z], .1, shaft);
+        this.box(steel, rungs.x, y, z, .25, .32, .32, shaft);
+      }
+    }
+    batchStaticGeometry(shaft, new Set()).forEach(geometry => this.geometry.add(geometry));
+    this.workLight.name = 'upper-digger-work-light'; this.workLight.position.set(-28, 51, 28); parent.add(this.workLight);
     for (let i = 0; i < 3; i++) {
       const machine = sentinel.clone(true); machine.name = `upper-digger-sentinel-${i}`; this.group.add(machine); this.sentinels.push(machine);
       if (i === 2) continue;
@@ -102,6 +117,7 @@ export class UpperDiggerRenderer {
   update(journey?: FilmJourney): void {
     const state = journey?.upperDigger;
     this.group.visible = Boolean(state && (state.charraDead || !journey?.visiting && ['m3_upper_digger', 'm3_dock_battle', 'm3_gate'].includes(journey!.scene)));
+    this.workLight.intensity = this.group.visible ? 550 : 0;
     if (!state || !this.group.visible) return;
     this.machine.getObjectByName('second-digger-cutting-crown')!.rotation.y = state.total * .65;
     const shot = upperDiggerShot(), firing = state.phase === 'shot', t = state.elapsed;
@@ -162,6 +178,7 @@ export class UpperDiggerRenderer {
     }
   }
   dispose(): void {
+    this.workLight.removeFromParent(); this.workLight.dispose();
     this.group.removeFromParent(); this.group.traverse(object => { if (object instanceof THREE.Light || object instanceof THREE.InstancedMesh) object.dispose(); });
     this.geometry.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.blastTexture.dispose(); this.group.clear();
   }

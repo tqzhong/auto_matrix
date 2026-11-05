@@ -3,6 +3,7 @@ import type { FilmJourney } from './film-story.js';
 export const UPPER_DIGGER = {
   ladder: { x: -43, z: 28 }, height: 44, crawlStart: -41, crawlLength: 26,
   rungs: { x: -44, first: .4, spacing: .55, count: 85, radius: .065 }, climbSpeed: 1.65,
+  shaft: { x: -48.2, z: 28, width: .7, depth: 12, height: 44 },
   edge: -11.2, pipes: [23.4, 32.6], machine: { x: 70, z: 39 },
   mount: 3.2, brace: 2.4, shot: 2.8, attack: 3.2, escapeLimit: 18,
 } as const;
