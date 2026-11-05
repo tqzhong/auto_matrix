@@ -3,6 +3,33 @@ import { FILM_SETS, dockArrivalPoint, dockDepartureFoot, dockReunionFoot, dockRe
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
+const departureRayMeshes = new WeakMap<THREE.SkinnedMesh, { mesh: THREE.SkinnedMesh; sampled: Uint8Array }>();
+
+function departureRayMesh(source: THREE.SkinnedMesh): THREE.SkinnedMesh {
+  let cache = departureRayMeshes.get(source);
+  const count = source.geometry.getAttribute('position').count;
+  if (!cache || cache.mesh.geometry !== source.geometry || cache.sampled.length !== count) {
+    const mesh = new THREE.SkinnedMesh(source.geometry, source.material), sampled = new Uint8Array(count);
+    let vertices: Float64Array | undefined;
+    // Adjacent indexed triangles share vertices. Keep the stock intersection
+    // and the current pose, with one skin evaluation per vertex in this ray.
+    mesh.getVertexPosition = (index, target) => {
+      const positions = vertices ??= new Float64Array(count * 3);
+      if (sampled[index]) return target.fromArray(positions, index * 3);
+      source.getVertexPosition(index, target).toArray(positions, index * 3);
+      sampled[index] = 1;
+      return target;
+    };
+    cache = { mesh, sampled }; departureRayMeshes.set(source, cache);
+  }
+  const { mesh, sampled } = cache;
+  sampled.fill(0);
+  mesh.material = source.material;
+  mesh.boundingBox = source.boundingBox; mesh.boundingSphere = source.boundingSphere;
+  mesh.layers.mask = source.layers.mask; mesh.matrixWorld.copy(source.matrixWorld);
+  return mesh;
+}
+
 /** The partner's delivered clothing supplies the back contact, rather than a guessed wrist location. */
 export function reunionBackContact(rig: CharacterRig, left: boolean): THREE.Vector3 {
   const anchor = rig.hero?.bones.get('chest') ?? rig.torso;
@@ -94,7 +121,16 @@ export function departureSupportContact(rig: CharacterRig, shoulder: boolean): T
   const direction = new THREE.Vector3(shoulder ? -1 : 1, 0, 0).applyQuaternion(rig.torso.getWorldQuaternion(new THREE.Quaternion()));
   const meshes: THREE.Mesh[] = [];
   const source = rig.detail.getObjectByName('roland-detailed-body') ?? rig.torso;
-  source.traverseVisible(object => { if (object instanceof THREE.Mesh) { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); meshes.push(object); } });
+  source.traverseVisible(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    if (object instanceof THREE.SkinnedMesh) {
+      object.skeleton.update();
+      if (object.boundingSphere && object.raycast === THREE.SkinnedMesh.prototype.raycast) {
+        meshes.push(departureRayMesh(object)); return;
+      }
+    }
+    meshes.push(object);
+  });
   const hit = new THREE.Raycaster(origin, direction, 0, 1.8).intersectObjects(meshes, false)[0];
   return hit?.point.addScaledVector(direction, -.025) ?? rig.torso.localToWorld(new THREE.Vector3(shoulder ? .52 : -.4, shoulder ? 1.39 : .45, .04));
 }

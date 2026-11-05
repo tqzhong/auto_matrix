@@ -166,6 +166,39 @@ for (const forward of [false, true]) test(`Roland’s delivered palm reaches Col
   }
 });
 
+test('one support ray skins each vertex once and still hits the moving garment', async t => {
+  const h = await fixture(t), rig = h.crew.roland;
+  const body = rig.detail.getObjectByName('roland-detailed-body')!;
+  const meshes: THREE.Mesh[] = [];
+  body.traverseVisible(object => { if (object instanceof THREE.Mesh) meshes.push(object); });
+  const seen = new Map<THREE.Mesh, Set<number>>();
+  let repeated = 0;
+  for (const mesh of meshes) {
+    if (!(mesh instanceof THREE.SkinnedMesh)) continue;
+    const skin = mesh.getVertexPosition;
+    mesh.getVertexPosition = (index: number, target: THREE.Vector3) => {
+      const indices = seen.get(mesh);
+      if (indices?.has(index)) repeated++;
+      indices?.add(index);
+      return skin.call(mesh, index, target);
+    };
+    t.after(() => { mesh.getVertexPosition = skin; });
+  }
+  for (const [elapsed, forward] of [[0, false], [17.2, true], [22.5, true], [26.2, false]] as const) {
+    seen.clear(); h.poseDeparture(elapsed, forward); rig.root.updateMatrixWorld(true);
+    const origin = rig.torso.localToWorld(new THREE.Vector3(-1.4, .45, .04));
+    const direction = new THREE.Vector3(1, 0, 0).applyQuaternion(rig.torso.getWorldQuaternion(new THREE.Quaternion()));
+    const hit = new THREE.Raycaster(origin, direction, 0, 1.8).intersectObjects(meshes, false)[0];
+    assert.ok(hit?.object instanceof THREE.SkinnedMesh, 'the test must hit the delivered body');
+    for (const mesh of meshes) if (mesh instanceof THREE.SkinnedMesh) seen.set(mesh, new Set());
+    repeated = 0;
+    const contact = departureSupportContact(rig, false);
+    assert.ok(contact.distanceTo(hit.point.addScaledVector(direction, -.025)) < 1e-9);
+    assert.ok([...seen.values()].some(vertices => vertices.size > 0), 'the posed mesh must still supply the contact');
+    assert.equal(repeated, 0, 'adjacent faces must share the skin result within the same ray');
+  }
+});
+
 function handPoints(rig: CharacterRig, left: boolean) {
   const points: THREE.Vector3[] = [];
   rig.detail.traverseVisible(object => {

@@ -1,8 +1,10 @@
 import type { FilmJourney } from './film-story.js';
 
-const machines = Array.from({ length: 60 }, (_, index) => ({
-  x: (index % 2 ? 1 : -1) * (25 + Math.floor(index / 2) % 3 * 7), z: -48 + Math.floor(index / 6) * 10.5,
-})).filter(point => !(point.x === -25 && point.z > -42 && point.z < -5) && !(point.x === 25 && point.z > -10));
+const machines = Array.from({ length: 60 }, (_, index) => {
+  const x = (index % 2 ? 1 : -1) * (25 + Math.floor(index / 2) % 3 * 7), z = -48 + Math.floor(index / 6) * 10.5;
+  // Keep the trailing arms clear of the route from the Hammer to Zee.
+  return { x: x === 32 && z === 15 ? 48 : x, z };
+}).filter(point => !(point.x === -25 && point.z > -42 && point.z < -5) && !(point.x === 25 && point.z > -10));
 export const DOCK_EMP = { seconds: 9, count: machines.length, source: { x: 12, y: 20, z: 14 }, waveSpeed: 92 } as const;
 export interface DockEmp { firedAt: number; elapsed?: number }
 export const EMP_OPERATOR = {

@@ -356,6 +356,7 @@ export class FilmSetRenderer {
       || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(this.currentScene ?? '')
       || this.currentScene === 'm3_farewell' && Boolean(this.logosWreck)
       || id === 'film_zion_hangar' && (this.currentScene === 'm2_departure' || this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
+      || id === 'film_zion_command_bunker' && this.currentScene === 'm3_shaft_seal'
       || this.currentScene === 'm3_emp' && Boolean(this.empDock?.group.visible)
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
       || this.currentScene === 'm1_dejavu' && Boolean(this.ambush);
@@ -911,6 +912,9 @@ export class FilmSetRenderer {
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
         && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion.renderer : undefined;
       if (preparedZion) this.preparedZion = undefined;
+      const reunionExterior = journey?.scene === 'm3_dock_reunion' && !journey.visiting && Boolean(journey.emp);
+      const retainedEmpDock = reunionExterior ? this.empDock : undefined;
+      if (retainedEmpDock) this.empDock = undefined;
       const preparedSecondOracle = this.preparedSecondOracle && set?.id === this.preparedSecondOracle.room.current?.id
         && sceneId === this.preparedSecondOracle.scene && !journey?.visiting ? this.preparedSecondOracle : undefined;
       if (preparedSecondOracle) this.preparedSecondOracle = undefined;
@@ -929,6 +933,7 @@ export class FilmSetRenderer {
         this.crosscutDeck.root.removeFromParent(); this.neb = undefined;
       }
       this.clear(keepCrosscut); this.current = set; this.currentScene = sceneId;
+      this.empDock = retainedEmpDock;
       if (set) this.root.position.set(set.center.x, set.center.y - 1, set.center.z);
       // LifeInteriors owns the persistent city apartment, even while another actor plays a remote chapter.
       if (set && set.id !== 'film_anderson_flat') {
@@ -959,6 +964,7 @@ export class FilmSetRenderer {
         else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') this.baneCopy = new BaneCopyRenderer(this.root);
         else if (['film_zion_dock_exit', 'film_zion_command_bunker'].includes(set.id)) this.dockEvacuation = new DockEvacuationRenderer(this.root, set.id === 'film_zion_command_bunker');
         else if (set.id === 'film_zion_personnel') this.dockBriefing = new DockBriefingRenderer(this.root);
+        else if (set.id === 'film_zion_hangar' && reunionExterior) this.empDock ??= new DockEmpRenderer(this.scene);
         else if (['film_zion_hangar', 'film_zion_council', 'film_zion_residences', 'film_zion_temple', 'film_zion_bedroom', 'film_zion_engineering'].includes(set.id)) {
           this.zion = preparedZion ?? new ZionHomecomingRenderer(this.root, set.id, sceneId);
           if (preparedZion) this.root.add(preparedZion.group);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { DOCK_EMP, FILM_SETS, dockEmpSentinel, filmPosition, newDockGate, newDiggers, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { DOCK_EMP, DOCK_REUNION, FILM_SETS, dockEmpSentinel, dockReunionRoot, filmPosition, newDockGate, newDiggers, type DockReunion, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { DockEmpRenderer } from '../packages/client/src/engine/DockEmpRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -154,8 +154,72 @@ test('switching back inside the Hammer restores the cabin with its CRTs powered 
   assert.ok(glyphs.length > 0 && glyphs.every(material => !material.visible), 'powered screen text must disappear too');
   renderer.update(link, sandbox, 1, link.position);
   assert.equal(renderer.root.visible, false);
+
+  const wreck = exterior.getObjectByName('emp-sentinel-shells') as THREE.Mesh;
+  let released = 0;
+  wreck.geometry.addEventListener('dispose', () => { released++; });
+  Object.assign(journey, { scene: 'm3_dock_reunion', step: 0, emp: { firedAt: 12, elapsed: 9 },
+    dockReunion: { phase: 'ready', elapsed: 0, floor: 1, departure: 0, forward: true } });
+  Object.assign(link, { position: filmPosition('film_zion_hangar', 20, 20), currentLocation: 'film_zion_hangar', currentAction: null });
+  renderer.update(link, sandbox, 2, link.position);
+  assert.ok(scene.getObjectByName('hammer-emp-dock') === exterior, 'Link must exit into the exterior already used by the EMP');
+  assert.equal(exterior.visible, true);
+  assert.ok(!renderer.root.getObjectByName('zion-homecoming-set'), 'only the visible blackout dock needs to exist');
+  assert.equal(released, 0);
+  renderer.update(undefined, undefined, 3);
+  assert.equal(exterior.parent, null);
+  assert.equal(released, 1);
 });
 
+test('a cold reunion builds one blackout dock and still supports older saves without EMP state', t => {
+  const scene = new THREE.Scene(), renderer = new FilmSetRenderer(scene);
+  t.after(() => renderer.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const link = world.agents.get('link')!, journey = saved(9);
+  Object.assign(journey, { scene: 'm3_dock_reunion', step: 0, dockReunion: { phase: 'ready', elapsed: 0, floor: 0 } });
+  Object.assign(link, { position: filmPosition('film_zion_hangar', 20, 38), isInMatrix: false, currentLocation: 'film_zion_hangar' });
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  renderer.update(link, sandbox, 0, link.position);
+  assert.ok(scene.getObjectByName('hammer-emp-dock')?.visible);
+  assert.ok(!renderer.root.getObjectByName('zion-homecoming-set'), 'a cold load cannot allocate two complete docks');
+  renderer.update(undefined, undefined, 1);
+  delete journey.emp;
+  renderer.update(link, sandbox, 2, link.position);
+  assert.ok(renderer.root.getObjectByName('zion-homecoming-set'));
+  assert.equal(renderer.root.visible, true);
+});
+
+test('settled Sentinels leave the walk from the Hammer to Zee clear of feet', t => {
+  const root = new THREE.Group(), renderer = new DockEmpRenderer(root);
+  t.after(() => renderer.dispose());
+  for (const forward of [false, true]) {
+    const reunion: DockReunion = { phase: 'embrace', elapsed: 1.9, floor: 1, departure: DOCK_REUNION.departure.seconds, forward };
+    const journey = { ...saved(DOCK_EMP.seconds), scene: 'm3_dock_reunion', dockReunion: reunion,
+      diggers: { ...newDiggers(1), phase: 'done', damage: 3 } };
+    renderer.update(journey);
+    const start = dockReunionRoot({ ...reunion, phase: 'exiting', elapsed: DOCK_REUNION.exitSeconds }, 'link');
+    const end = dockReunionRoot(reunion, 'link'), zee = dockReunionRoot(reunion, 'zee');
+    const steps = Array.from({ length: 17 }, (_, i) => new THREE.Vector3().copy(start).lerp(end, i / 16));
+    const half = new THREE.Vector3(.64, 0, .64);
+    const passage = [...steps, new THREE.Vector3().copy(zee)].map(point => new THREE.Box3(
+      point.clone().sub(half), point.clone().add(half).add(new THREE.Vector3(0, .42, 0))));
+    for (const name of ['emp-sentinel-shells', 'emp-sentinel-faces', 'emp-sentinel-tails']) {
+      const mesh = root.getObjectByName(name) as THREE.InstancedMesh;
+      assert.equal(mesh.count, DOCK_EMP.count * (name.endsWith('tails') ? 72 : 1));
+      assert.equal(mesh.visible, true);
+      mesh.geometry.computeBoundingBox();
+      const matrix = new THREE.Matrix4(), bounds = new THREE.Box3();
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        bounds.copy(mesh.geometry.boundingBox!).applyMatrix4(matrix);
+        const nearby = passage.filter(box => box.intersectsBox(bounds));
+        if (!nearby.length) continue;
+        assert.ok(!vertices(mesh, i).some(point => nearby.some(box => box.containsPoint(point))),
+          `${name} instance ${i} crosses the ${forward ? 'forward' : 'legacy'} reunion route`);
+      }
+    }
+  }
+});
 
 test('fuel fires light the disabled dock without restoring powered fixtures, and resume at the saved frame', t => {
   const root = new THREE.Group(), renderer = new DockEmpRenderer(root), state = saved(9);

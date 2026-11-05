@@ -963,6 +963,43 @@ test('the dock defense stabilizes the moving approach and keeps cockpit light cu
   for (let i = 1; i <= APU_ROUTE.dives.length; i++) assert.equal(signal(i).visible, true);
 });
 
+test('the command bunker retains its demolition flash slot through ignition and settling', t => {
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); });
+  const chapter = FILM_SCENE_BY_ID.m3_shaft_seal, center = FILM_SETS[chapter.set].center;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const operator = world.agents.get('citizen_15')!;
+  Object.assign(operator, { position: filmStepPosition(chapter, chapter.steps[1]), currentLocation: chapter.set, isInMatrix: false });
+  h.camera.position.set(center.x, center.y + 3, center.z + 8);
+  h.camera.lookAt(center.x, center.y + 3, center.z - 13);
+  const journey: FilmJourney = { version: 1, scene: chapter.id, actor: operator.id, step: 1, completed: [], enteredAt: 0,
+    checkpoint: operator.position, reflections: {}, lastText: '', shaftSeal: { phase: 'armed', elapsed: 0, turn: .5 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = () => {
+    renderer.update(operator, sandbox, 0, operator.position, h.camera.position, undefined, false, 12000, h.camera);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    const slots: { id: number; color: number; power: number }[] = [];
+    h.before();
+    try {
+      h.scene.traverseVisible(object => {
+        if (object instanceof THREE.PointLight) slots.push({ id: object.id, color: object.color.getHex(), power: object.intensity });
+      });
+    } finally { h.after(); }
+    return slots;
+  };
+  const ready = sample(), flash = (slots: ReturnType<typeof sample>) => slots.find(light => light.color === 0xffc889);
+  assert.equal(flash(ready)?.power, 0);
+  Object.assign(journey.shaftSeal!, { phase: 'detonating', elapsed: .06, turn: 1, firedAt: 4 });
+  const ignition = sample();
+  assert.deepEqual(ignition.map(light => light.id), ready.map(light => light.id));
+  assert.ok(flash(ignition)!.power > 0);
+  Object.assign(journey.shaftSeal!, { phase: 'done', elapsed: 7.2 });
+  journey.step = 2;
+  const settled = sample();
+  assert.deepEqual(settled.map(light => light.id), ready.map(light => light.id));
+  assert.equal(flash(settled)?.power, 0);
+});
+
 test('the old building stair pursuit keeps one point-light layout until the pipe wall scene', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const h = view(), renderer = new FilmSetRenderer(h.scene);
