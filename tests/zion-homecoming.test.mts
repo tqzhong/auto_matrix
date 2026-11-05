@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SCENE_BY_ID, FILM_SETS, ZION_CAST, ZION_HOMECOMING, ZION_OBSTACLES, filmEntry, filmPosition, filmStepPosition, playerBlocked, type AgentState, type WorldEvent } from '@auto_matrix/shared';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -76,6 +77,103 @@ test('dock and resident actions save concrete supplies and both requests through
   assert.equal(h.sandbox.state.neoLife!.choices.zion_residents_contacted, 'both');
   const saved = structuredClone(h.sandbox.state); h.sandbox.restore(saved);
   assert.equal(h.sandbox.state.neoLife!.choices.zion_residents_contacted, 'both');
+});
+
+function baneLoft() {
+  const h = game(); const scene = FILM_SCENE_BY_ID.m2_bane_copy;
+  h.state().scene = 'm2_room'; h.state().step = FILM_SCENE_BY_ID.m2_room.steps.length;
+  h.command('next');
+  assert.equal(h.state().scene, scene.id);
+  assert.equal(h.actor().id, 'bane');
+  const at = (step: number) => { h.actor().position = filmStepPosition(scene, scene.steps[step]); };
+  const use = (step: number) => {
+    assert.equal(h.state().step, step); at(step); h.command('act');
+    h.advance((scene.steps[step].seconds ?? 3) * 2);
+    assert.equal(h.state().step, step + 1);
+  };
+  at(0); h.advance(1);
+  return { ...h, scene, use, malachi: h.world.agents.get('malachi')! };
+}
+
+test('both loft phone exits return the correct bodies to Zion', () => {
+  const h = baneLoft(); const life = h.sandbox.state.neoLife!; const bane = h.actor();
+  h.malachi.health = 57;
+  h.use(1);
+  assert.equal(life.choices.oracle_disk_carrier, 'malachi');
+  assert.equal(h.malachi.isInMatrix, false);
+  assert.equal(h.malachi.currentLocation, 'film_zion_hangar');
+  assert.equal(h.malachi.health, 57);
+  assert.equal(bane.isInMatrix, true);
+  h.use(2);
+  assert.equal(bane.faction, 'machines'); assert.equal(bane.isInMatrix, true);
+  h.use(3);
+  assert.equal(bane.isInMatrix, true);
+  assert.equal(life.choices.bane_returned, undefined);
+  const handoff = h.sandbox.life.film.handoff;
+  h.sandbox.life.film.handoff = () => false;
+  assert.match(h.command('next'), /进度已保留/);
+  assert.equal(bane.isInMatrix, true);
+  assert.equal(life.choices.bane_returned, undefined);
+  h.sandbox.life.film.handoff = handoff;
+  h.command('next');
+  assert.equal(h.state().scene, 'm2_hamann'); assert.equal(h.actor().id, 'neo');
+  assert.equal(life.choices.bane_returned, 'yes');
+  assert.equal(bane.isInMatrix, false);
+  assert.equal(bane.currentLocation, 'film_zion_hangar');
+  assert.equal(bane.faction, 'machines');
+  assert(life.journal.some(item => item.title.startsWith('旁观片段') && item.text.includes('不是 Neo')));
+});
+
+test('old completed loft checkpoints repair the two stranded bodies without replaying the infection', () => {
+  const h = baneLoft(); const life = h.sandbox.state.neoLife!; const bane = h.actor();
+  Object.assign(life.choices, { oracle_disk_carrier: 'malachi', bane_infected: 'smith', bane_returned: 'yes' });
+  h.state().step = h.scene.steps.length; h.state().completed.push(h.scene.id);
+  h.players.release('p', 12);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.equal(h.malachi.isInMatrix, false);
+  assert.equal(bane.isInMatrix, false); assert.equal(bane.faction, 'machines');
+  assert.deepEqual(h.state().checkpoint, bane.position);
+  assert.equal(h.state().completed.filter(id => id === h.scene.id).length, 1);
+  const settled = structuredClone(bane.position);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(bane.position, settled);
+});
+
+test('Zion handoffs adopt the detached set and discard an abandoned preparation', t => {
+  const h = game(), scene = new THREE.Scene(), sets = new FilmSetRenderer(scene);
+  t.after(() => sets.dispose());
+  const neo = h.actor(), morpheus = h.world.agents.get('morpheus')!, journey = h.state();
+  Object.assign(journey, { scene: 'm2_lock', step: 1, actor: 'morpheus' });
+  morpheus.position = filmEntry(FILM_SCENE_BY_ID.m2_lock); morpheus.isInMatrix = false;
+  sets.update(morpheus, h.sandbox.state, 0);
+  const camera = new THREE.PerspectiveCamera();
+  const lightSlots = (root: THREE.Scene) => {
+    let count = 0; root.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; }); return count;
+  };
+  let preview: THREE.Scene | undefined;
+  const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
+    setRenderTarget() {}, properties: { get: () => ({}) }, compile(_subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) { preview = target; } } as unknown as THREE.WebGLRenderer;
+  const prepare = () => sets.prepareZionHomecoming(graphics, camera, journey, () => undefined);
+  for (let frame = 0; frame < 10; frame++) prepare();
+  const residences = preview?.getObjectByName('zion-homecoming-set');
+  assert.ok(residences && residences !== scene.getObjectByName(residences.name));
+  const preparedSlots = lightSlots(preview!);
+  Object.assign(journey, { scene: 'm2_residents', step: 0, actor: 'neo' });
+  neo.position = filmEntry(FILM_SCENE_BY_ID.m2_residents); neo.isInMatrix = false;
+  sets.update(neo, h.sandbox.state, 1);
+  assert.ok(scene.getObjectByName(residences.name) === residences);
+  assert.equal(sets.stablePointSlots, true); assert.equal(lightSlots(scene), preparedSlots);
+
+  Object.assign(journey, { scene: 'm2_hamann', step: 2 });
+  neo.position = filmEntry(FILM_SCENE_BY_ID.m2_hamann); sets.update(neo, h.sandbox.state, 2);
+  preview = undefined;
+  for (let frame = 0; frame < 10; frame++) prepare();
+  const door = preview?.getObjectByName('zion-bedroom-door');
+  assert.ok(door instanceof THREE.Mesh);
+  let disposed = 0; door.geometry.addEventListener('dispose', () => disposed++);
+  sets.update(undefined, h.sandbox.state, 3);
+  assert.equal(disposed, 1);
+  assert.equal(scene.getObjectByName('zion-bedroom-door'), undefined);
 });
 
 test('Zion supplies reach Mifune at the later dock defense only once', () => {

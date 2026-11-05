@@ -5834,9 +5834,19 @@ export class FilmStorySystem {
     }
     if (this.state.scene === 'm2_bane_copy' && this.state.step === 2 && this.state.started === undefined && this.state.baneCopy)
       this.state.baneCopy.progress = 0;
+    const loft = this.state.scene === 'm2_bane_copy' ? this.state : undefined;
+    const loftDone = this.state.completed.includes('m2_bane_copy');
+    const malachi = this.world.agents.get('malachi');
+    if (!this.state.visiting && (loftDone || (loft?.step ?? 0) > 1) && malachi && !malachi.controller
+      && malachi.currentLocation === 'film_industrial_loft') this.returnFromBaneLoft(malachi);
     const bane = this.world.agents.get('bane');
     if (bane) {
-      const infected = Boolean(this.sandbox().neoLife?.choices.bane_infected || this.state.completed.includes('m2_bane_copy'));
+      if (!this.state.visiting && loftDone && (!loft || this.sandbox().neoLife?.choices.bane_returned === 'yes')
+        && !bane.controller && bane.currentLocation === 'film_industrial_loft') {
+        this.returnFromBaneLoft(bane);
+        if (loft) loft.checkpoint = { ...bane.position };
+      }
+      const infected = Boolean(this.sandbox().neoLife?.choices.bane_infected || loftDone);
       bane.faction = infected ? 'machines' : 'zion';
       bane.currentGoal = infected ? 'Find Neo without revealing Smith' : 'Return to Zion';
       bane.alertness = infected ? 8 : 3;
@@ -6629,6 +6639,10 @@ export class FilmStorySystem {
       })) return '先在高台前等 Morpheus 和 Seraph 跟上，再一起与 Merovingian 交涉。';
       const road = handoff ? newTruckRoad(handoff.truck, roadRoot('morpheus'), roadRoot('keymaker'), this.world.agents.get('morpheus')!.health) : undefined;
       if (!this.changeActor(agent, next.actor, tick)) return '下一段的角色正在由另一位玩家控制，进度已保留。';
+      if (state.scene === 'm2_bane_copy') {
+        if (agent.isInMatrix) this.returnFromBaneLoft(agent);
+        life.choices.bane_returned = 'yes';
+      }
       if (state.scene === 'm1_wake_up' && next.id === 'm1_club') {
         this.elapse(this.world.timeOfDay >= 6000 && this.world.timeOfDay < 20500 ? (20500 - this.world.timeOfDay) * .06 : 20, tick);
       } else if (state.scene === 'm1_club' && next.id === 'm1_morning') this.elapse(20, tick);
@@ -7324,6 +7338,12 @@ export class FilmStorySystem {
     this.sealResetFacade();
     agent.position = { ...position }; agent.isInMatrix = FILM_SETS[scene.set].world === 'matrix'; agent.currentLocation = scene.set;
     agent.rotation = Math.PI; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null; agent.targetPosition = null; agent.currentPath = [];
+  }
+  private returnFromBaneLoft(agent: AgentState): void {
+    const dock = FILM_SCENE_BY_ID.m2_departure;
+    const { x, z, yaw } = ZION_CAST.m2_departure.bane;
+    this.place(agent, dock, filmPosition(dock.set, agent.id === 'bane' ? x : -x, z));
+    agent.rotation = agent.id === 'bane' ? yaw : -yaw;
   }
   private prepareOracleRescue(): void {
     const life = this.sandbox().neoLife!; const answer = life.choices.oracle_first;
@@ -8099,15 +8119,18 @@ export class FilmStorySystem {
     if (state.scene === 'm2_temple' && state.step === 1) life.choices.zion_truth_spoken = '72h';
     if (state.scene === 'm2_room' && state.step === 1) life.choices.zion_dream_shared = 'trinity';
     if (state.scene === 'm2_bane_copy' && state.step === 1) {
+      const malachi = this.world.agents.get('malachi');
+      if (malachi?.controller) {
+        delete state.started; state.lastText = 'Malachi 正由另一位玩家控制，磁盘交接暂停。'; return;
+      }
       life.choices.oracle_disk_carrier = 'malachi';
-      const malachi = this.world.agents.get('malachi'); if (malachi && !malachi.controller) malachi.position = filmPosition(this.scene!.set, -34, 32);
+      if (malachi) this.returnFromBaneLoft(malachi);
       const smith = this.world.agents.get('smith'); if (smith && !smith.controller) { smith.position = filmPosition(this.scene!.set, 3, -20); smith.rotation = 2.8; }
     }
     if (state.scene === 'm2_bane_copy' && state.step === 2) {
       life.choices.bane_infected = 'smith'; if (state.baneCopy) state.baneCopy.progress = 1;
       agent.faction = 'machines'; agent.currentGoal = 'Find Neo without revealing Smith'; agent.alertness = 8;
     }
-    if (state.scene === 'm2_bane_copy' && state.step === 3) life.choices.bane_returned = 'yes';
     if (state.scene === 'm2_hamann' && state.step === 2) life.choices.zion_backup_balanced = 'yes';
     if (state.scene === 'm2_oracle_message' && state.step === 0) {
       const ballard = this.world.agents.get('ballard'); if (ballard && !ballard.controller) ballard.position = filmPosition(this.scene!.set, 2, 11);
