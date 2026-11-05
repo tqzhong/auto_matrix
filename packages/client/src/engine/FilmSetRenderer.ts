@@ -150,6 +150,7 @@ type LafayettePreparation = {
   programs: LafayetteProgram[];
   room?: FilmSetRenderer;
   roomSteps?: Generator<void>;
+  skin?: { texture: THREE.Texture; version: number; gpu: THREE.WebGLRenderer['properties'] };
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -367,7 +368,7 @@ export class FilmSetRenderer {
     this.preparedOffice?.renderer.dispose();
     this.preparedOffice = undefined;
   }
-  prepareLafayette(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group): void {
+  prepareLafayette(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey?: FilmJourney, actor?: THREE.Group, morpheus?: THREE.Group): void {
     if (!this.meeting || journey?.scene !== 'm1_bug' || journey.visiting || journey.meeting?.phase !== 'outside') return;
     const prepared = this.preparedLafayette ??= { lights: this.lafayetteRoomLights(), meshes: [], programs: [] };
     const set = FILM_SETS.film_lafayette, { x, y, z } = set.center;
@@ -401,6 +402,15 @@ export class FilmSetRenderer {
     if (ready >= 0) {
       const [program] = prepared.programs.splice(ready, 1);
       program.getUniforms();
+      return;
+    }
+    // The room's key light uses this map in the depth pass before Morpheus appears in the main view.
+    const face = morpheus?.getObjectByName('Anatomical_head_and_hands');
+    const texture = face instanceof THREE.Mesh && face.material instanceof THREE.MeshStandardMaterial ? face.material.map : null;
+    const skin = prepared.skin;
+    if (texture?.image && texture.version > 0 && (skin?.texture !== texture || skin.version !== texture.version || skin.gpu !== renderer.properties)) {
+      renderer.initTexture(texture);
+      prepared.skin = { texture, version: texture.version, gpu: renderer.properties };
     }
   }
   private *lafayetteRoomSteps(set: FilmSet, lights: LafayetteRoomLights): Generator<void> {

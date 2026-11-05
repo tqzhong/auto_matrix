@@ -98,6 +98,17 @@ test('changed skin bindings cannot reuse a field from an unrelated arm', t => {
   h.arms[1].shoulder.rotation.y = -.4; h.surface.update(); h.reference(); h.seams();
 });
 
+test('a revised skin binding invalidates unchanged-pose normals', t => {
+  const h = wrists(); t.after(() => h.dispose());
+  h.arms[1].shoulder.rotation.y = .65; h.surface.update();
+  const version = h.normal.version;
+  const index = h.hand.geometry.getAttribute('skinIndex') as THREE.BufferAttribute;
+  index.setX(1, 3); index.needsUpdate = true;
+  h.surface.update();
+  assert.ok(h.normal.version > version, 'a new joint assignment must refresh a stationary skin seam');
+  h.reference(); h.seams();
+});
+
 test('wrist shading only reads bone frames for nonzero normalized skin influences', t => {
   const h = wrists(); t.after(() => h.dispose());
   let indexReads = 0, activeInfluences = 0;

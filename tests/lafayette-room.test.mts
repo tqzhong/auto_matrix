@@ -27,15 +27,23 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   t.after(() => { geometry.dispose(); material.dispose(); });
   for (let i = 0; i < 6; i++) actor.add(new THREE.Mesh(geometry, material));
   const hidden = new THREE.Mesh(geometry, material); hidden.visible = false; actor.add(hidden);
+  const morpheus = new THREE.Group(), skin = new THREE.Texture({ width: 2048, height: 2048 });
+  skin.needsUpdate = true;
+  const skinMaterial = new THREE.MeshStandardMaterial({ map: skin });
+  const face = new THREE.Mesh(geometry, skinMaterial); face.name = 'Anatomical_head_and_hands'; morpheus.add(face);
+  t.after(() => { skin.dispose(); skinMaterial.dispose(); });
   const eye = new THREE.PerspectiveCamera(), batches: THREE.Object3D[][] = [];
   const children = [...scene.children];
   let key: THREE.SpotLight | undefined;
   let firstReady = false;
   const bindings: number[] = [];
+  const uploads: THREE.Texture[] = [];
   const programs: { isReady: () => boolean; getUniforms: () => void }[] = [];
   const webgl = {
     info: { programs },
+    properties: {},
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
+    initTexture: (texture: THREE.Texture) => uploads.push(texture),
     compile(subject: THREE.Object3D, _eye: THREE.Camera, target: THREE.Scene) {
       const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
       target.traverseVisible(object => { if (object instanceof THREE.SpotLight && object.intensity === 1900) key = object; });
@@ -47,8 +55,9 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
       );
     },
   } as unknown as THREE.WebGLRenderer;
+  const prepare = () => renderer.prepareLafayette(webgl, eye, lighting, journey, actor, morpheus);
   for (let i = 0; i < 4; i++) {
-    renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
+    prepare();
     assert.deepEqual(scene.children, children, 'preparation cannot light the street');
   }
   assert.deepEqual(batches.map(batch => batch.length), [4, 4, 4, 4]);
@@ -56,11 +65,14 @@ test('Lafayette prepares the visible actor in batches with the room lights that 
   assert.ok(batches.flat().slice(6).every(object => renderer.root.getObjectById(object.id) === object),
     'street and hotel materials compile from the live scene meshes');
   for (let frame = 0; frame < 180 && !bindings.length; frame++)
-    renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
+    prepare();
   assert.deepEqual(bindings, [2], 'only a program with completed linking can prepare its binding locations');
   firstReady = true;
-  renderer.prepareLafayette(webgl, eye, lighting, journey, actor);
+  prepare();
   assert.deepEqual(bindings, [2, 1]);
+  assert.deepEqual(uploads, []);
+  prepare(); prepare();
+  assert.ok(uploads.length === 1 && uploads[0] === skin, 'upload the retained face map once, on a frame without shader work');
   neo.position = filmPosition('film_lafayette', 0, 29); neo.position.y -= LAFAYETTE.upper;
   assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
   assert.ok(key && renderer.root.getObjectByProperty('uuid', key.uuid) === key);

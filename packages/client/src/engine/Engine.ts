@@ -234,7 +234,8 @@ export class Engine {
     this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');
-      this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo);
+      this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo,
+        meeting.scene === 'm1_bug' ? this.agentRenderer.getAgentHero('morpheus') : undefined);
       if (meeting.scene === 'm1_pills' && avatarPosition) {
         const actors = [neo, this.agentRenderer.getAgentHero('trinity')] as const;
         this.filmSets.prepareLafayetteGround(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
