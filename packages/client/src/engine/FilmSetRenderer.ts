@@ -523,8 +523,10 @@ export class FilmSetRenderer {
     if (this.mobil && set?.id === 'film_mobil_station') this.currentScene = sceneId;
     if (this.helStandoff && set?.id === 'film_club_hel' && this.currentScene === 'm3_hel_entry' && sceneId === 'm3_hel_bargain')
       this.currentScene = sceneId;
-    // The lower hotel is already visible from the curb before Neo confirms the entrance.
-    if (this.hotel && set?.id === 'film_lafayette' && this.currentScene === 'm1_bug' && sceneId === 'm1_pills') this.currentScene = sceneId;
+    // The curb, pill meeting and mirror route use the same hotel.
+    if (this.hotel && set?.id === 'film_lafayette'
+      && (this.currentScene === 'm1_bug' && sceneId === 'm1_pills'
+        || this.currentScene === 'm1_pills' && sceneId === 'm1_mirror' && !journey?.visiting)) this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
       && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
     // Both chapters continue on the same damaged avenue and reflection pass.

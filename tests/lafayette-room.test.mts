@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, LAFAYETTE, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import type { Reflector } from 'three/addons/objects/Reflector.js';
+import { FILM_SETS, LAFAYETTE, MIRROR_TIMING, PILL_ROOM, filmBlocked, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
@@ -303,7 +304,7 @@ test('Lafayette windows, fireplace and tracking passage have matching visible ge
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
-test('crossing the Lafayette entrance keeps the already visible hotel and street resources', t => {
+test('Lafayette keeps the already visible hotel, street and reflector through the live mirror handoff', t => {
   const pending: { url: string; texture: THREE.Texture; finish: () => void }[] = [];
   t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad?: (texture: THREE.Texture) => void) => {
     const texture = new THREE.Texture();
@@ -332,6 +333,7 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
     const staging = renderer as unknown as {
       meeting?: { hotel?: { root: THREE.Group } };
       hotel?: { root: THREE.Group };
+      mirror?: Reflector;
       preparedLafayette?: { room?: FilmSetRenderer; roomSteps?: Generator<void> };
     };
     const preview = staging.meeting?.hotel;
@@ -385,9 +387,24 @@ test('crossing the Lafayette entrance keeps the already visible hotel and street
     journey.scene = 'm1_pills'; journey.step = 0; journey.hotel = { progress: 0 }; delete journey.meeting;
     assert.equal(renderer.update(neo, sandbox, 0)?.id, 'film_lafayette');
     assert.ok(children.every((child, index) => renderer.root.children[index] === child), 'confirming the entrance must keep the already rendered set');
+    const mirror = staging.mirror;
+    assert.ok(mirror);
+    const reflection = mirror.getRenderTarget();
+    let reflectionDisposals = 0; reflection.addEventListener('dispose', () => reflectionDisposals++);
+    neo.position = filmPosition('film_lafayette', 0, 0);
+    journey.scene = 'm1_mirror'; journey.awakening = { kind: 'mirror', elapsed: MIRROR_TIMING.touch + .2 };
+    assert.equal(renderer.update(neo, sandbox, 0, neo.position)?.id, 'film_lafayette');
+    assert.ok(staging.mirror === mirror, 'the live handoff must keep the existing mirror');
+    assert.ok(mirror.getRenderTarget() === reflection && staging.hotel === preview);
+    assert.ok(children.every((child, index) => renderer.root.children[index] === child));
+    assert.equal(reflectionDisposals, 0);
+    const shader = mirror.material as THREE.ShaderMaterial;
+    assert.equal(shader.uniforms.healProgress.value, 1);
+    assert.ok(shader.uniforms.liquidTime.value > 0);
     renderer.update(undefined, undefined, 0);
     assert.equal(renderer.root.children.length, 0);
     assert.equal(disposals, 1, 'leaving the combined street and hotel must release the road once');
+    assert.equal(reflectionDisposals, 1);
     assert.ok([...before.values()].every(count => count === 1));
     assert.ok(roomDisposals > 0, 'the adopted room releases its geometry when leaving');
     neo.position = curb; journey.scene = 'm1_bug'; journey.step = 2; journey.meeting = meeting; delete journey.hotel;
