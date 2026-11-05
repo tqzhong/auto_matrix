@@ -31,7 +31,16 @@ test('first-film Oracle has continuous anatomy, a waist apron, and all five arti
     const source = url.endsWith('oracle-first-body.glb') ? body : url.endsWith('oracle-park-hands.glb') ? hands : undefined;
     return source ? Promise.resolve({ ...source, scene: clone(source.scene) }) : new Promise(() => {});
   });
-  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  let finishTextile: (() => void) | undefined;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string, onLoad?: (texture: THREE.Texture) => void) => {
+    const texture = new THREE.Texture();
+    if (url.endsWith('oracle-first-fabrics.png')) finishTextile = () => {
+      texture.image = { width: 2, height: 1 };
+      texture.needsUpdate = true;
+      onLoad?.(texture);
+    };
+    return texture;
+  });
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) } as unknown as Document;
   const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const models = new CharacterModels();
@@ -44,6 +53,14 @@ test('first-film Oracle has continuous anatomy, a waist apron, and all five arti
     const apron = rig.root.getObjectByName('oracle-first-waist-apron') as THREE.SkinnedMesh;
     const blouse = rig.root.getObjectByName('oracle-first-floral-blouse') as THREE.SkinnedMesh;
     assert.ok(anatomy?.isSkinnedMesh && apron?.isSkinnedMesh && blouse?.isSkinnedMesh);
+    const textileMaps = () => [blouse, apron].map(mesh => (mesh.material as THREE.MeshStandardMaterial).map);
+    assert.ok(finishTextile, 'the textile was requested');
+    assert.deepEqual(textileMaps(), [null, null], 'the blouse and apron must wait for the texture image');
+    finishTextile();
+    const [blouseMap, apronMap] = textileMaps();
+    assert.ok(apronMap?.image && blouseMap?.image);
+    assert.ok(apronMap !== blouseMap && apronMap.image === blouseMap.image);
+    assert.deepEqual([blouseMap.repeat.x, apronMap.repeat.x, blouseMap.offset.x, apronMap.offset.x], [.5, .5, 0, .5]);
     const apronBox = new THREE.Box3().setFromObject(apron, true);
     assert.ok(apronBox.max.y < 2.7 && apronBox.min.y < 1.2, `waist apron must not cover the chest: ${apronBox.min.y}..${apronBox.max.y}`);
     assert.equal(rig.root.getObjectByName('oracle-apron-group')!.visible, false);

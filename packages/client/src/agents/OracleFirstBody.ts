@@ -75,14 +75,13 @@ export class OracleFirstBodies {
       }
       bone.matrixAutoUpdate = false; drivers.push({ bone, joint, offset });
     }
-    const textile = new THREE.TextureLoader().load('/assets/characters/oracle-first-fabrics.png');
-    textile.colorSpace = THREE.SRGBColorSpace; textile.flipY = false; textile.anisotropy = 8; this.textures.add(textile);
     const skinMap = new THREE.TextureLoader().load('/assets/characters/oracle-first-face-reference.png');
     const sample = asset.parser.json.extras.neckSample as number[];
     skinMap.colorSpace = THREE.SRGBColorSpace; skinMap.flipY = false; skinMap.anisotropy = 8;
     skinMap.repeat.set(.035, .012); skinMap.offset.set(sample[0] - .0175, sample[1]); this.textures.add(skinMap);
     entry.firstSkin = entry.skin.clone(); entry.firstSkin.name = 'Oracle first skin'; entry.firstSkin.map = skinMap; entry.firstSkin.color.setHex(0xffffff);
     entry.firstSkin.roughness = .78; entry.firstSkin.bumpScale = .0006; this.materials.add(entry.firstSkin);
+    const fabrics = new Set<THREE.MeshStandardMaterial>();
     model.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       this.geometries.add(object.geometry); object.castShadow = object.receiveShadow = true;
@@ -90,15 +89,20 @@ export class OracleFirstBodies {
       if (material.name === 'Oracle first skin') object.material = entry.firstSkin;
       else {
         material.bumpMap = entry.fabric; material.bumpScale = .0014;
-        if (material.name === 'Oracle floral' || material.name === 'Oracle apron') {
-          const map = textile.clone(); map.repeat.set(.5, 1); map.offset.x = material.name === 'Oracle floral' ? 0 : .5;
-          map.needsUpdate = true;
-          this.textures.add(map); material.map = map; material.color.setHex(0xffffff);
-        }
+        if (material.name === 'Oracle floral' || material.name === 'Oracle apron') fabrics.add(material);
       }
       if (object instanceof THREE.SkinnedMesh) this.skeletons.add(object.skeleton);
     });
     if (this.disposed) { this.release(); return; }
+    const textile = new THREE.TextureLoader().load('/assets/characters/oracle-first-fabrics.png', loaded => {
+      if (this.disposed) return;
+      loaded.colorSpace = THREE.SRGBColorSpace; loaded.flipY = false; loaded.anisotropy = 8;
+      for (const material of fabrics) {
+        const map = loaded.clone(); map.repeat.set(.5, 1); map.offset.x = material.name === 'Oracle floral' ? 0 : .5;
+        this.textures.add(map); material.map = map; material.color.setHex(0xffffff); material.needsUpdate = true;
+      }
+    });
+    this.textures.add(textile);
     entry.model = model; rig.oracleFirstBody = model; rig.detail.add(model);
     const inverse = new THREE.Matrix4(), matrix = new THREE.Matrix4(), center = new THREE.Vector3();
     const sync = () => {

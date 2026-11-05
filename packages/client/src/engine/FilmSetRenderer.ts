@@ -532,6 +532,8 @@ export class FilmSetRenderer {
     if (this.hotel && set?.id === 'film_lafayette'
       && (this.currentScene === 'm1_bug' && sceneId === 'm1_pills'
         || this.currentScene === 'm1_pills' && sceneId === 'm1_mirror' && !journey?.visiting)) this.currentScene = sceneId;
+    if (set?.id === 'film_oracle_home' && this.current?.id === set.id && !journey?.visiting
+      && this.currentScene === 'm1_spoon' && sceneId === 'm1_oracle') this.currentScene = sceneId;
     if (this.logosFlight && set?.id === this.current?.id && ['m3_defense', 'm3_sun'].includes(sceneId ?? '')
       && ['m3_defense', 'm3_sun'].includes(this.currentScene ?? '')) this.currentScene = sceneId;
     // Both chapters continue on the same damaged avenue and reflection pass.

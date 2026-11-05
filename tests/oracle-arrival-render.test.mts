@@ -44,6 +44,40 @@ test('the real Oracle doorway blocks sight when closed and opens onto a grounded
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
+test('the kitchen handoff keeps the apartment and matches a direct kitchen load', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = document; });
+  const carried = new FilmSetRenderer(new THREE.Scene()), direct = new FilmSetRenderer(new THREE.Scene());
+  t.after(() => { carried.dispose(); direct.dispose(); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!;
+  neo.position = filmPosition('film_oracle_home', 0, -8); neo.isInMatrix = true;
+  const arrival: OracleArrival = { phase: 'done', elapsed: 0, hostess: 0, morpheus: 0, seating: 0 };
+  const journey = { scene: 'm1_spoon', actor: 'neo', step: 1, oracle: { arrival, waitingTime: 3, vase: 2.4 } } as FilmJourney;
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  carried.update(neo, sandbox, 0);
+  const door = carried.root.getObjectByName('oracle-apartment-door')!;
+  const geometry = (door.children[0] as THREE.Mesh).geometry;
+  let released = 0;
+  geometry.addEventListener('dispose', () => released++);
+  journey.scene = 'm1_oracle'; journey.step = 0;
+  carried.update(neo, sandbox, 1); direct.update(neo, sandbox, 1);
+  assert.ok(carried.root.getObjectByName(door.name) === door, 'walking to the kitchen must retain the existing apartment');
+  assert.equal(released, 0);
+  const snapshot = (root: THREE.Group) => {
+    const state: unknown[] = [];
+    root.traverse(object => state.push([object.name, object.type, object.visible, object.position.toArray(), object.rotation.toArray(),
+      object.scale.toArray(), object instanceof THREE.Light ? [object.color.getHex(), object.intensity] : undefined]));
+    return state;
+  };
+  assert.deepEqual(snapshot(carried.root), snapshot(direct.root), 'door, kitchen props, shards and lights must match a cold load');
+  carried.update(undefined, undefined, 2);
+  assert.equal(released, 1, 'leaving the apartment releases the original door geometry');
+});
+
 test('a paused opening save restores the hostess facing the knob without waiting for animation time', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
