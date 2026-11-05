@@ -3,6 +3,7 @@ import { FILM_SETS, ITEMS, RECIPES, SKILLS, MISSIONS, NEO_MISSIONS, LOCATIONS, M
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
 import { NeoLifeSystem } from '../story/NeoLifeSystem.js';
+import { approachBurlyCopy, displaceBurlyCopy, restoreBurlyCopyPositions } from '../story/BurlyMovement.js';
 import { CityTrafficSystem } from './CityTrafficSystem.js';
 
 export class SandboxSystem {
@@ -92,7 +93,11 @@ export class SandboxSystem {
     if (journey) this.life.film.theOneFrame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.reloaded.frame(this.world.agents.get(journey.actor)!, { x: 0, focus: false }, 0, this.world.simulationTick);
     if (journey) this.life.film.catch.frame(this.world.agents.get(journey.actor)!, { x: 0, z: 0, focus: false }, 0, this.world.simulationTick);
-    if (journey?.scene === 'm2_burly') this.life.film.restoreBurlyPose(this.world.agents.get(journey.actor)!, this.world.simulationTick);
+    if (journey?.scene === 'm2_burly') {
+      const actor = this.world.agents.get(journey.actor)!;
+      this.life.film.restoreBurlyPose(actor, this.world.simulationTick);
+      restoreBurlyCopyPositions(this.state.threats, this.state.structures, actor.position);
+    }
     if (journey) this.life.film.lobby.frame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey?.scene === 'm3_bane') {
       const actor = this.world.agents.get(journey.actor);
@@ -286,7 +291,7 @@ export class SandboxSystem {
     if (!parried) {
       target.attackAt = undefined;
       target.stunUntil = training ? Math.max(target.stunUntil, tick + (combo === 2 ? 2 : 1)) : tick + (combo === 2 ? 2 : 1);
-      target.position = combatDisplace(target.position, direction, strike.push, target.matrix, this.state.structures);
+      this.displaceThreat(target, direction, strike.push);
     }
     this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: bathroom || matrixEscape || theOne ? damage : training ? target.health <= 0 ? damage : 0 : health - target.health, combo,
       matrix: agent.isInMatrix, downed: target.health <= 0 }, tick);
@@ -317,9 +322,14 @@ export class SandboxSystem {
     const dx = target.position.x - agent.position.x; const dz = target.position.z - agent.position.z; const length = Math.max(.01, Math.hypot(dx, dz));
     const direction = { x: dx / length, y: 0, z: dz / length }; const health = target.health;
     this.hit(agent, target, damage, tick);
-    target.position = combatDisplace(target.position, direction, push, target.matrix, this.state.structures);
+    this.displaceThreat(target, direction, push);
     this.onImpact?.({ source: agent.id, target: target.id, position, direction, damage: health - target.health, combo: 2,
       matrix: agent.isInMatrix, downed: target.health <= 0 }, tick);
+  }
+  private displaceThreat(threat: SandboxThreat, direction: Vector3, amount: number): void {
+    threat.position = threat.scene === 'm2_burly' && threat.health > 0
+      ? displaceBurlyCopy(threat, direction, amount, this.state.threats, this.state.structures)
+      : combatDisplace(threat.position, direction, amount, threat.matrix, this.state.structures);
   }
   private hit(agent: AgentState, threat: SandboxThreat, damage: number, tick: number): void {
     if (threat.scene === 'm2_seraph' && threat.character === 'seraph') return;
@@ -570,7 +580,8 @@ export class SandboxSystem {
       const barrier = this.state.structures.find(s => s.kind === 'barricade' && !s.film && s.matrix === threat.matrix && distance(s.position, next) < 8);
       if (barrier) { if (tick % 4 === 0) barrier.health -= 8; }
       else if (length > 2.7) {
-        if (Math.abs(next.y - threat.position.y) <= (threat.scene === 'm2_chateau' ? 1.2 : Infinity) && !playerBlocked(next, threat.matrix, 1.1, this.state.structures)) threat.position = next;
+        if (threat.scene === 'm2_burly') threat.position = approachBurlyCopy(threat, target, approach, this.state.threats, this.state.structures);
+        else if (Math.abs(next.y - threat.position.y) <= (threat.scene === 'm2_chateau' ? 1.2 : Infinity) && !playerBlocked(next, threat.matrix, 1.1, this.state.structures)) threat.position = next;
         else {
           const sideX = { ...threat.position, x: next.x };
           if (threat.scene === 'm2_chateau') sideX.y = groundHeight(sideX, true);

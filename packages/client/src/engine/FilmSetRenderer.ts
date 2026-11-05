@@ -171,6 +171,8 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_departure: { scene: 'm2_seraph', step: 4 },
   m2_seraph: { scene: 'm2_backdoors', step: 1 },
   m2_backdoors: { scene: 'm2_bench', step: 1 },
+  m2_burly: { scene: 'm2_merovingian', step: 1 },
+  m2_persephone: { scene: 'm2_library', step: 3 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -329,7 +331,7 @@ export class FilmSetRenderer {
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting'
       || id === 'film_seraph_teahouse' || id === 'film_backdoor_hall'
-      || id === 'film_oracle_courtyard'
+      || id === 'film_oracle_courtyard' || id === 'film_le_vrai' || id === 'film_keymaker_workshop'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
@@ -674,6 +676,8 @@ export class FilmSetRenderer {
     this.oracleLetter = room.oracleLetter;
     this.courtyardStaff = room.courtyardStaff;
     this.courtyardBirds = room.courtyardBirds;
+    this.exileDessert = room.exileDessert;
+    this.bookDoor = room.bookDoor;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -776,6 +780,8 @@ export class FilmSetRenderer {
       && this.currentScene === 'm1_spoon' && sceneId === 'm1_oracle') this.currentScene = sceneId;
     if (set?.id === 'film_oracle_courtyard' && this.current?.id === set.id && !journey?.visiting
       && this.currentScene === 'm2_bench' && sceneId === 'm2_burly') this.currentScene = sceneId;
+    if (set?.id === 'film_le_vrai' && this.current?.id === set.id && !journey?.visiting
+      && this.currentScene === 'm2_merovingian' && sceneId === 'm2_persephone') this.currentScene = sceneId;
     if (this.theOne?.setId === 'film_heart_hotel' && set?.id === 'film_heart_hotel' && !journey?.visiting
       && this.currentScene === 'm1_death' && sceneId === 'm1_return') this.currentScene = sceneId;
     if (this.ambush && set?.id === 'film_ambush_house' && !journey?.visiting && (
@@ -2594,7 +2600,7 @@ export class FilmSetRenderer {
         for (let dx = -width / 2 + .55; dx < width / 2 - .2; dx += .7) for (let y = 2.4; y < 12; y += 2.4)
           this.box(this.mat(Math.round(dx * 10 + y * 3) % 3 ? 0x615445 : 0x303d38), x + dx, y, -17.55, .58, 2.1, .4);
       }
-      const bookDoor = new THREE.Group(); bookDoor.userData.dynamic = true; this.root.add(bookDoor);
+      const bookDoor = new THREE.Group(); bookDoor.userData.dynamic = true; bookDoor.name = 'keymaker-book-door'; this.root.add(bookDoor);
       const start = this.root.children.length;
       this.box(this.wood, EXILES.bookshelf.x, 6.5, EXILES.bookshelf.z, 5, 13, .55);
       for (let y = 1.3; y < 13; y += 2.4) this.box(this.brass, EXILES.bookshelf.x, y, -17.6, 5, .12, .2);

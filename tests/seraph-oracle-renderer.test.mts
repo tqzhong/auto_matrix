@@ -12,7 +12,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 
 test('the second Oracle route adopts prepared sets and keeps their interactive props live', t => {
   const previous = globalThis.document;
-  const context = { fillRect() {}, strokeRect() {}, fillText() {} };
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} };
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
   t.after(() => { globalThis.document = previous; });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, complete: true }));
@@ -87,6 +87,27 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
   assert.ok(scene.getObjectByName(lead.name) === lead, 'Smith arrives in the existing courtyard');
   assert.equal(sets.stablePointSlots, true);
   assert.equal(lead.visible, false);
+
+  preview = undefined; prepare(); assert.ok(!preview, 'the restaurant waits until the flight exit opens');
+  enter('m2_burly', 1);
+  const dessert = warm('causality-dessert');
+  const restaurantSlots = pointSlots(preview!);
+  enter('m2_merovingian', 0);
+  assert.ok(scene.getObjectByName(dessert.name) === dessert);
+  assert.equal(pointSlots(scene), restaurantSlots);
+  assert.equal(dessert.visible, false);
+  enter('m2_merovingian', 2); assert.equal(dessert.visible, true);
+  enter('m2_persephone', 0);
+  assert.ok(scene.getObjectByName(dessert.name) === dessert, 'the washroom is in the existing restaurant');
+  assert.equal(dessert.visible, false);
+  enter('m2_persephone', 4);
+  const bookshelf = warm('keymaker-book-door');
+  const librarySlots = pointSlots(preview!);
+  enter('m2_library', 0);
+  assert.ok(scene.getObjectByName(bookshelf.name) === bookshelf);
+  assert.equal(pointSlots(scene), librarySlots);
+  assert.equal(bookshelf.position.x, 0);
+  enter('m2_library', 3); assert.equal(bookshelf.position.x, -5.8);
 
   enter('m2_departure', 4);
   const abandoned = warm('m2_seraph-keyed-door') as THREE.Mesh;

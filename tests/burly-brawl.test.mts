@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, filmPosition, filmStepPosition, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, distance, filmPosition, filmStepPosition, playerBlocked, type SandboxThreat, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -190,6 +190,90 @@ test('the first volley of Smith copies leaves Neo time to break the encirclement
   for (let i = 0; i < 4; i++) h.sandbox.life.film.burlyContact(h.neo, h.tick());
   assert.equal(h.journey.burly?.phase, 'swarm');
   assert.equal(h.journey.burly?.assimilation, 48);
+});
+
+function assertCopySpacing(copies: SandboxThreat[]) {
+  for (const [index, copy] of copies.entries()) {
+    for (const other of copies.slice(0, index)) {
+      assert.ok(distance(copy.position, other.position) >= 1.8 - .001, 'Smith copies need room for both bodies');
+    }
+  }
+}
+
+test('Smith copies pursue around each other and can still reach Neo', () => {
+  const h = setup(); h.command('act'); h.advance(2.5); h.players.act('neo-player', 'dodge', h.tick());
+  h.neo.position = filmPosition(h.scene.set, 0, 0);
+  h.journey.burly!.nextCopyAt = h.tick() + 20;
+  const copies = h.sandbox.state.threats;
+  const positions = [[0, -2.7], [0, -5.4], [-1.9, -9], [1.9, -9]];
+  for (const [index, copy] of copies.entries()) {
+    const [x, z] = positions[index];
+    Object.assign(copy, { position: filmPosition(h.scene.set, x, z), stunUntil: 0, lastStrike: 0 });
+  }
+  const health = h.neo.health;
+  for (let tick = 0; tick < 4; tick++) {
+    h.advance(.5);
+    assertCopySpacing(copies);
+  }
+  assert.ok(copies.filter(copy => distance(copy.position, h.neo.position) <= 3.3).length >= 2);
+  assert.ok(h.neo.health < health && h.journey.burly!.assimilation > 0);
+});
+
+test('a replacement Smith uses a free entry when a copy still occupies its preferred one', () => {
+  const h = setup(); h.command('act'); h.advance(2.5); h.players.act('neo-player', 'dodge', h.tick());
+  const occupied = filmPosition(h.scene.set, -14, -10);
+  Object.assign(h.sandbox.state.threats[0], { position: occupied, stunUntil: h.tick() + 10 });
+  h.sandbox.state.serial = 800;
+  h.journey.burly!.nextCopyAt = h.tick() + 1;
+  h.advance(.5);
+  const replacement = h.sandbox.state.threats.find(copy => copy.id === 'film:801');
+  assert.ok(replacement);
+  assert.ok(distance(replacement.position, occupied) >= 1.8);
+  assert.ok(!playerBlocked(replacement.position, true, 1.1, h.sandbox.state.structures));
+});
+
+test('knockback cannot drive one Smith through another copy', () => {
+  const h = setup(); h.command('act'); h.advance(2.5); h.players.act('neo-player', 'dodge', h.tick());
+  h.neo.position = filmPosition(h.scene.set, 0, 0); h.neo.rotation = Math.PI;
+  const copies = h.sandbox.state.threats;
+  const positions = [[0, -2.7], [0, -5.1], [-14, -10], [14, -10]];
+  for (const [index, copy] of copies.entries()) {
+    const [x, z] = positions[index]; copy.position = filmPosition(h.scene.set, x, z);
+  }
+  h.sandbox.skill(h.neo, 'crushing_palm', h.tick());
+  assert.equal(copies[0].health, 9);
+  assert.ok(copies[0].position.z < h.neo.position.z - 2.7, 'the struck copy still reels back');
+  assert.ok(copies[0].position.z > copies[1].position.z);
+  assertCopySpacing(copies);
+});
+
+test('a paused staff save with overlapping Smith copies repairs only their positions', () => {
+  const h = setup(); h.command('act'); h.advance(2.5); h.players.act('neo-player', 'dodge', h.tick());
+  Object.assign(h.journey.burly!, { phase: 'staff', repelled: 3, staffSwings: 1, assimilation: 40 });
+  const neoPosition = filmPosition(h.scene.set, 10.59, -12.82);
+  h.neo.position = neoPosition;
+  const positions = [[7.62, -12], [5.46, -12.2], [6.91, -11.37], [-.49, -4.79], [11.28, 3.99], [7.92, -12.42], [-14, -10]];
+  const copies = h.sandbox.state.threats;
+  h.sandbox.state.threats = positions.map(([x, z], index) => ({
+    ...copies[index % copies.length], id: `film:${index + 800}`, position: filmPosition(h.scene.set, x, z),
+  }));
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state));
+  h.sandbox.restore(saved);
+  const repaired = h.sandbox.state;
+  assertCopySpacing(repaired.threats);
+  assert.ok(repaired.threats.every(copy => !playerBlocked(copy.position, true, 1.1, repaired.structures)));
+  const withoutPositions = (threats: SandboxThreat[]) => threats.map(({ position, ...copy }) => copy);
+  assert.deepEqual(withoutPositions(repaired.threats), withoutPositions(saved.threats));
+  assert.deepEqual(repaired.neoLife!.journey!.burly, saved.neoLife.journey.burly);
+  assert.deepEqual(h.neo.position, neoPosition);
+  h.sandbox.restore(repaired);
+  assert.deepEqual(h.sandbox.state.threats, repaired.threats, 'a second cold restore keeps valid positions');
+
+  h.neo.position = filmPosition(h.scene.set, -36, -40.3);
+  for (const copy of saved.threats) copy.position = filmPosition(h.scene.set, -36, -43);
+  h.sandbox.restore(saved);
+  assertCopySpacing(h.sandbox.state.threats);
+  assert.ok(h.sandbox.state.threats.every(copy => !playerBlocked(copy.position, true, 1.1, repaired.structures)));
 });
 
 test('failed assimilation clears the pending volley before another copy can kill Neo', () => {

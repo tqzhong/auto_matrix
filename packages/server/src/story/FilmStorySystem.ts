@@ -105,6 +105,7 @@ import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirResc
 import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
 import { BURLY, burlyLocked, burlyText, savedBurlyFailedIdle, type BurlyEncounter } from '@auto_matrix/shared';
+import { burlyCopyOccupied } from './BurlyMovement.js';
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
@@ -5049,12 +5050,16 @@ export class FilmStorySystem {
   }
   private spawnBurlyCopies(agent: AgentState, tick: number, count: number): void {
     const state = this.state!; const encounter = this.burlyEncounter(tick);
+    const sandbox = this.sandbox();
     const positions = [[-14, -10], [14, -10], [-14, 10], [14, 10], [0, -26], [-18, 25], [18, 25], [0, 20]];
     for (let i = 0; i < count; i++) {
-      const index = (encounter.repelled + this.sandbox().serial + i) % positions.length;
-      const [x, z] = positions[index]; let position = filmPosition(this.scene!.set, x, z);
-      if (playerBlocked(position, true, 1.1, this.sandbox().structures)) position = filmPosition(this.scene!.set, 0, -12 - i * 3);
-      this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`, scene: state.scene, kind: 'smith', position, matrix: true,
+      const index = (encounter.repelled + sandbox.serial + i) % positions.length;
+      const position = [...positions.slice(index), ...positions.slice(0, index), [0, -12 - i * 3]]
+        .map(([x, z]) => filmPosition(this.scene!.set, x, z))
+        .find(point => distance(point, agent.position) >= 2.7 && !burlyCopyOccupied(point, sandbox.threats)
+          && !playerBlocked(point, true, 1.1, sandbox.structures));
+      if (!position) continue;
+      sandbox.threats.push({ id: `film:${++sandbox.serial}`, scene: state.scene, kind: 'smith', position, matrix: true,
         health: 64, maxHealth: 64, target: agent.id, stunUntil: tick + 2, lastStrike: tick + i * 2 });
     }
   }

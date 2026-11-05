@@ -18,12 +18,13 @@ export function dodgeDirection(x: number, z: number, yaw: number): Vector3 {
     : { x: -Math.sin(yaw), y: 0, z: -Math.cos(yaw) };
 }
 
-export function combatDisplace(position: Vector3, direction: Vector3, amount: number, matrix: boolean, structures: WorldStructure[] = []): Vector3 {
+export function combatDisplace(position: Vector3, direction: Vector3, amount: number, matrix: boolean, structures: WorldStructure[] = [],
+  occupied?: (position: Vector3) => boolean): Vector3 {
   let result = { ...position };
   const steps = Math.ceil(Math.abs(amount) / .2);
   for (let i = 0; i < steps; i++) {
     const next = { ...result, x: result.x + direction.x * amount / steps, z: result.z + direction.z * amount / steps };
-    if (playerBlocked(next, matrix, 1.1, structures)) break;
+    if (occupied?.(next) || playerBlocked(next, matrix, 1.1, structures)) break;
     result = next;
   }
   return result;
