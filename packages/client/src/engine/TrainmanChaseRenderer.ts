@@ -19,10 +19,24 @@ export class TrainmanChaseRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private disposed = false;
-  constructor(root: THREE.Group) {
+  private construction?: Generator<void>;
+  constructor(root: THREE.Group, staged = false) {
     this.group.name = 'trainman-stellma-station'; this.car.name = 'trainman-carriage';
     this.passing.name = 'trainman-passing-train'; this.scenery.userData.dynamic = this.passing.userData.dynamic = true;
     this.group.add(this.fixed, this.car, this.scenery, this.passing); root.add(this.group);
+    this.headlight = new THREE.PointLight(0xfff0c9, 0, 24, 2);
+    this.headlight.name = 'trainman-passing-headlight'; this.group.add(this.headlight);
+    this.shot = this.mesh(this.group, this.own(new THREE.CylinderGeometry(.024, .024, 1, 6)),
+      this.material(new THREE.MeshBasicMaterial({ color: 0xffd4a0, toneMapped: false })), 0, 0, 0); this.shot.name = 'trainman-shot'; this.shot.visible = false; this.shot.castShadow = false;
+    this.construction = this.build();
+    if (!staged) while (!this.prepareStep()) { /* Finish the set on direct entry. */ }
+  }
+  prepareStep(): boolean {
+    if (this.construction && !this.construction.next().done) return false;
+    this.construction = undefined;
+    return true;
+  }
+  private *build(): Generator<void> {
     const cream = this.surface(0xd4d6c1, .24), green = this.surface(0x394b3b, .56), steel = this.surface(0x8e9890, .25, .78);
     const dark = this.surface(0x26302b, .76), floor = this.surface(0x707e70, .32), seat = this.surface(0x5d6851, .62);
     const enamel = this.surface(0xc2ccc2, .26, .18), black = this.surface(0x101916, .88), red = this.surface(0x643c30, .57);
@@ -40,6 +54,7 @@ export class TrainmanChaseRenderer {
     this.box(tunnel, cream, 37.25, 9, -63, 10.5, .35, 16);
     this.platform(this.fixed, floor, 0, -21.5, 44, 11, 'trainman-ticket-hall', TRAINMAN_CHASE.upper);
     this.stairs(-17, floor, cream, steel, 'trainman-stairs-1'); this.stairs(17, floor, cream, steel, 'trainman-stairs-2');
+    yield;
     this.box(this.fixed, glazed, -12.35, 4.4, 21.75, .45, 8.8, 55.5);
     this.box(this.fixed, glazed, 10.55, 4.4, -28.5, .45, 8.8, 53);
     this.box(this.fixed, glazed, 42.25, 4.4, -28.5, .45, 8.8, 53);
@@ -84,6 +99,7 @@ export class TrainmanChaseRenderer {
       this.box(this.fixed, steel, x, y, z, 4.8, .25, .85, .04); this.box(this.fixed, glow, x, y - .15, z, 4.4, .055, .55);
       const lamp = new THREE.PointLight(0xe1e6c8, 65, 23, 2); lamp.position.set(x, y - .4, z); this.group.add(lamp);
     }
+    yield;
     this.platform(this.car, dark, -30, 28, 8.4, 36, 'trainman-car-floor');
     this.box(this.car, enamel, -30, 6.75, 28, 8.4, .25, 36, .1);
     const glass = this.material(new THREE.MeshPhysicalMaterial({ color: 0xadb9ae, roughness: .13, metalness: .1, transparent: true, opacity: .27, depthWrite: false }));
@@ -130,6 +146,7 @@ export class TrainmanChaseRenderer {
     this.box(this.handle, red, -.14, 0, 0, .24, .1, .48, .04);
     this.sign(this.car, 'EMERGENCY  /  PULL', -25.98, 4.85, 20, 1.6, .36, -Math.PI / 2, '#ae3a30');
     const carLamp = new THREE.PointLight(0xe6eedc, 100, 28, 2); carLamp.position.set(-30, 5.9, 27); this.group.add(carLamp);
+    yield;
     for (let z = -30; z < 75; z += 12) {
       this.box(this.scenery, black, -35, 3.4, z, .2, 6.8, 11.5);
       this.box(this.scenery, glow, -34.85, 4.1, z, .05, .7, 1.2);
@@ -152,14 +169,14 @@ export class TrainmanChaseRenderer {
     this.box(this.passing, black, 0, 4.1, 30.2, 5.8, 2.3, .1, .15);
     for (const x of [-2.2, 2.2]) this.box(this.passing, glow, x, 1.2, 30.24, .62, .62, .08, .2);
     this.sign(this.passing, 'NOT IN SERVICE', 0, 6.1, 30.25, 3.8, .45);
-    this.headlight = new THREE.PointLight(0xfff0c9, 0, 24, 2); this.headlight.position.set(0, 2.3, 32); this.passing.add(this.headlight);
-    this.shot = this.mesh(this.group, this.own(new THREE.CylinderGeometry(.024, .024, 1, 6)),
-      this.material(new THREE.MeshBasicMaterial({ color: 0xffd4a0, toneMapped: false })), 0, 0, 0); this.shot.name = 'trainman-shot'; this.shot.visible = false; this.shot.castShadow = false;
     for (let i = 0; i < 12; i++) {
       const mark = this.mesh(this.group, this.own(new THREE.SphereGeometry(.12, 8, 6)), dark, 0, 0, 0);
       mark.name = 'trainman-bullet-chip'; mark.visible = false; mark.castShadow = false; this.marks.push(mark);
     }
-    for (const fixed of [this.fixed, this.car, this.scenery, this.passing]) batchStaticGeometry(fixed, new Set()).forEach(geometry => this.geometries.add(geometry));
+    for (const fixed of [this.fixed, this.car, this.scenery, this.passing]) {
+      yield;
+      batchStaticGeometry(fixed, new Set()).forEach(geometry => this.geometries.add(geometry));
+    }
     for (const name of ['trainman-stairs-1', 'trainman-stairs-2']) this.fixed.getObjectByName(name)!.traverse(object => {
       if (object instanceof THREE.Mesh && object.material === floor) object.userData.trainmanSupport = true;
     });
@@ -170,7 +187,10 @@ export class TrainmanChaseRenderer {
     this.doors.forEach((door, i) => { door.position.z = 20 + (i ? 1 : -1) * (1.1 + car.doors * 2.1); });
     this.handle.rotation.x = !state || state.phase === 'ready' ? 0 : state.phase === 'confronting' ? -Math.max(0, state.elapsed - 5.5) * 1.9 : -.95;
     this.scenery.position.z = car.speed ? -((state?.age ?? 0) * 12 % 12) : 0;
-    this.passing.visible = passing.visible; this.passing.position.set(28, 0, passing.z); this.headlight.intensity = passing.headlight * 230;
+    this.passing.visible = passing.visible; this.passing.position.set(28, 0, passing.z);
+    // Keep the light's shader slot when the passing train is hidden.
+    this.headlight.position.set(28, 2.3, passing.z + 32);
+    this.headlight.intensity = passing.visible ? passing.headlight * 230 : 0;
     this.shot.visible = Boolean(state?.shot && state.shot.age < .085);
     if (state?.shot) {
       const center = this.group.getWorldPosition(new THREE.Vector3()), from = new THREE.Vector3(state.shot.from.x, state.shot.from.y, state.shot.from.z).sub(center);
@@ -224,6 +244,7 @@ export class TrainmanChaseRenderer {
   }
   dispose(): void {
     if (this.disposed) return; this.disposed = true;
+    this.construction = undefined;
     this.group.traverse(object => { if (object instanceof THREE.Light) object.dispose(); }); this.group.removeFromParent();
     this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose()); this.textures.forEach(texture => texture.dispose());
   }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BURLY, FILM_SCENE_BY_ID, filmEntry, newCatch, newGarageEscape, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { BURLY, FILM_SCENE_BY_ID, filmEntry, newCatch, newGarageEscape, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -11,9 +11,9 @@ import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.j
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-test('the second Oracle route adopts prepared sets and keeps their interactive props live', async t => {
+test('the Oracle routes adopt prepared sets and keep their interactive props live', async t => {
   const previous = globalThis.document;
-  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {} };
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, stroke() {}, fill() {}, ellipse() {} };
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;
   t.after(() => { globalThis.document = previous; });
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, complete: true }));
@@ -226,6 +226,49 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
     delete journey.catch;
     let disposals = 0; pane.geometry.addEventListener('dispose', () => disposals++);
     enter('m2_departure', 4);
+    assert.equal(disposals, 1);
+  });
+  await t.test('Mobil prepares the Oracle apartment with its open entrance and intact vase', () => {
+    enter('m3_trainman', 2); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m3_trainman', 3);
+    const door = warm('oracle-apartment-door');
+    const slots = pointSlots(preview!);
+    let vase: THREE.Mesh | undefined;
+    preview!.traverseVisible(object => {
+      if (object instanceof THREE.Mesh && object.geometry instanceof THREE.LatheGeometry) vase = object;
+    });
+    assert.ok(vase);
+    let disposals = 0; vase.geometry.addEventListener('dispose', () => disposals++);
+    enter('m3_oracle_request', 0);
+    assert.equal(scene.getObjectByName(door.name), door);
+    assert.equal(door.rotation.y, Math.PI / 2);
+    assert.equal(scene.getObjectById(vase.id), vase);
+    assert.equal(scene.getObjectByName('oracle-floating-alphabet-blocks')!.visible, false);
+    assert.equal(pointSlots(scene), slots);
+    assert.equal(disposals, 0);
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
+  await t.test('following Seraph prepares the chase carriage and its live braking doors', () => {
+    enter('m3_oracle_request', 2); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m3_oracle_request', 3);
+    const carriage = warm('trainman-carriage');
+    const slots = pointSlots(preview!);
+    const door = carriage.getObjectByName('trainman-car-door-0')!, closed = door.position.z;
+    const floor = carriage.getObjectByName('trainman-car-floor') as THREE.Mesh;
+    let disposals = 0; floor.geometry.addEventListener('dispose', () => disposals++);
+    const chase = newTrainmanChase();
+    journey.helChase = { phase: 'sighting', elapsed: 0, lastTick: 0, performance: chase };
+    enter('m3_trainman_chase', 0);
+    assert.equal(scene.getObjectByName(carriage.name), carriage);
+    assert.equal(door.position.z, closed);
+    assert.equal(pointSlots(scene), slots);
+    assert.equal(disposals, 0);
+    Object.assign(chase, { phase: 'braking', elapsed: 3.2 });
+    enter('m3_trainman_chase', 1);
+    assert.ok(Math.abs(door.position.z - closed) > 1.7);
+    delete journey.helChase;
+    enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });
   enter('m2_departure', 4);

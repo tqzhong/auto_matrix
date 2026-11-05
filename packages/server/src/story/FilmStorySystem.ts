@@ -5856,6 +5856,12 @@ export class FilmStorySystem {
   }
   reconcileCast(): void {
     if (!this.state) return;
+    const child = this.scene?.film === 3 ? this.world.agents.get('spoon_boy') : undefined;
+    if (child?.currentLocation === 'film_oracle_home' && !child.controller) {
+      const home = CHARACTERS.spoon_boy.initialLocation;
+      child.currentLocation = home; child.position = locationEntrance(home); child.isInMatrix = LOCATIONS[home].world === 'matrix';
+      child.currentAction = null; child.targetPosition = null; child.currentPath = []; child.velocity = { x: 0, y: 0, z: 0 };
+    }
     this.diggers.stage(this.world.simulationTick);
     this.dockReload.stage(this.world.simulationTick);
     this.sealResetFacade();

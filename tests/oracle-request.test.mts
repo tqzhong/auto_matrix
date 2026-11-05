@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, ORACLE_REQUEST, oracleRequestRoot, filmReflections, filmPosition, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { CHARACTERS, FILM_SCENE_BY_ID, FILM_SETS, ORACLE_REQUEST, oracleRequestRoot, filmReflections, filmPosition, locationEntrance, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -8,6 +8,12 @@ import { PlayerController } from '../packages/server/src/player/PlayerController
 import type { ConversationEngine } from '../packages/server/src/agents/ConversationEngine.js';
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
+
+function stageFirstVisitChild(world: WorldState) {
+  const child = world.agents.get('spoon_boy')!;
+  Object.assign(child, { currentLocation: 'film_oracle_home', position: filmPosition('film_oracle_home', -9, 8) });
+  return child;
+}
 
 function setup() {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -20,6 +26,7 @@ function setup() {
   let tick = 0;
   const command = (target: string) => players.sandboxAction('request-player', { kind: 'life', target: `film:${target}` }, ++tick);
   command('continue');
+  stageFirstVisitChild(world);
   Object.assign(sandbox.life.film.state!, { scene: 'm3_trainman', actor: 'neo', step: FILM_SCENE_BY_ID.m3_trainman.steps.length });
   command('next');
   const actor = world.agents.get('trinity')!, state = () => sandbox.life.film.state!;
@@ -33,6 +40,30 @@ test('Revolutions rescue visitors meet the seated Oracle in the living room, lea
   assert.ok(h.world.agents.get('oracle')!.position.z > center.z + 8, 'this visit belongs beside the living-room sofa, not the kitchen');
   assert.ok(FILM_SCENE_BY_ID.m3_oracle_request.steps[0].z > 8, 'the playable question must target the actual visitors');
   assert.ok(FILM_SCENE_BY_ID.m3_oracle_last.steps[0].z < 0, 'Neo returns to the kitchen later');
+});
+
+test('the third-film Oracle visit releases the spoon boy left in the apartment by the first visit', () => {
+  const h = setup(), child = h.world.agents.get('spoon_boy')!;
+  const home = CHARACTERS.spoon_boy.initialLocation;
+  assert.equal(child.currentLocation, home);
+  assert.deepEqual(child.position, locationEntrance(home));
+  assert.equal(h.world.agents.get('morpheus')!.currentLocation, 'film_oracle_home');
+});
+
+test('restoring an old third-film Oracle save clears the stale child without moving a controlled actor', () => {
+  const h = setup(), child = stageFirstVisitChild(h.world), saved = structuredClone(h.sandbox.state);
+  child.health = 19;
+  child.controller = 'player';
+  const occupied = { ...child.position };
+  h.sandbox.restore(structuredClone(saved));
+  assert.deepEqual(child.position, occupied);
+  assert.equal(child.currentLocation, 'film_oracle_home');
+  child.controller = null;
+  h.sandbox.restore(structuredClone(saved));
+  assert.deepEqual(child.position, locationEntrance(CHARACTERS.spoon_boy.initialLocation));
+  assert.equal(child.health, 19);
+  assert.equal(child.currentAction, null);
+  assert.deepEqual(h.state().oracleRequest, saved.neoLife!.journey!.oracleRequest);
 });
 
 test('an interrupted answer restores its exact clock and does not heal or take over a visitor', () => {

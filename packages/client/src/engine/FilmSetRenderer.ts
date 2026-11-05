@@ -180,6 +180,8 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_backup: { scene: 'm2_key_door', step: 1 },
   m2_key_door: { scene: 'm2_architect', step: 4 },
   m2_architect: { scene: 'm2_catch', step: 3 },
+  m3_trainman: { scene: 'm3_oracle_request', step: 3 },
+  m3_oracle_request: { scene: 'm3_trainman_chase', step: 3 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -335,7 +337,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
-      || Boolean(this.basement || this.architectRoom || this.catchSet)
+      || Boolean(this.basement || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting'
@@ -543,7 +545,9 @@ export class FilmSetRenderer {
       // PBR maps are attached after decoding. Compile the mapped variants.
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
-      const colors = this.colorPreparation(room.root, [], { includeBasic: Boolean(room.architectRoom || room.catchSet) });
+      const colors = this.colorPreparation(room.root, [], {
+        includeBasic: Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor),
+      });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
     }
@@ -711,6 +715,11 @@ export class FilmSetRenderer {
       this.catchSet.update();
       return;
     }
+    if (set.id === 'film_trainman_subway') {
+      this.trainmanChase = new TrainmanChaseRenderer(this.root, true);
+      while (!this.trainmanChase.prepareStep()) yield;
+      return;
+    }
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
   }
@@ -743,6 +752,10 @@ export class FilmSetRenderer {
     this.sourceDoor = room.sourceDoor; room.sourceDoor = undefined;
     this.architectRoom = room.architectRoom; room.architectRoom = undefined;
     this.catchSet = room.catchSet; room.catchSet = undefined;
+    this.oracleDoor = room.oracleDoor;
+    this.oracleBlocks = room.oracleBlocks;
+    this.oracleVase = room.oracleVase; room.oracleVase = undefined;
+    this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -913,7 +926,7 @@ export class FilmSetRenderer {
         else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck') this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
         else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck') this.hammerBriefing = new HammerBriefingRenderer(this.root);
         else if (set.id === 'film_zion_defense_council') this.zionDeployment = new ZionDeploymentRenderer(this.root);
-        else if (set.id === 'film_trainman_subway') this.trainmanChase = new TrainmanChaseRenderer(this.root);
+        else if (set.id === 'film_trainman_subway' && !preparedSecondOracle) this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage') this.helGarage = new HelGarageRenderer(this.root, player!);
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform') {
           this.matrixEscape = preparedSubway ?? new MatrixEscapeRenderer(this.root, set.id);
@@ -2394,6 +2407,7 @@ export class FilmSetRenderer {
       const paper = new THREE.MeshStandardMaterial({ map, roughness: .95 }); this.materials.add(paper);
       for (const o of filmObstacles(set).filter(o => !ORACLE_FURNITURE.includes(o) && !Object.values(ORACLE_WAITING_FURNITURE).includes(o) && o.z < 0)) this.lafayetteSurface(paper, o.x, o.height / 2, o.z, o.width, o.height, o.depth, 4);
       this.oracleWaitingRoom(paper, cream);
+      yield;
       this.lafayetteSurface(paper, 0, 3.9, -29.8, 24, 7.8, .4, 4);
       for (const side of [-1, 1]) {
         this.box(cream, side * 12.25, .22, -19, .3, .44, 21.6); this.box(cream, side * 12.25, 7.4, -19, .3, .22, 21.6);

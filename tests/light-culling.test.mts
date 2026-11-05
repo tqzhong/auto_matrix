@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newUpperDigger, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
+import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -651,6 +651,56 @@ test('the subway keeps one point-light layout on the platform and tracks', t => 
   journey.matrixEscape!.phase = 'train_window'; journey.matrixEscape!.elapsed = 2.4;
   assert.deepEqual(sample(16, -7, Math.PI), platform);
   assert.deepEqual(sample(16, -7, Math.PI / 2), platform);
+});
+
+test('the Trainman chase keeps its light slots as the passing train appears and leaves', t => {
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const h = view(), renderer = new FilmSetRenderer(h.scene);
+  t.after(() => { h.culling.dispose(); renderer.dispose(); globalThis.document = previous; });
+  const scene = FILM_SCENE_BY_ID.m3_trainman_chase;
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const actor = world.agents.get(scene.actor)!;
+  Object.assign(actor, { isInMatrix: true, currentLocation: scene.set, position: filmEntry(scene) });
+  const chase = newTrainmanChase();
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: actor.id, step: 0, completed: [], enteredAt: 0,
+    checkpoint: actor.position, reflections: {}, lastText: '', helChase: { phase: 'sighting', elapsed: 0, lastTick: 0, performance: chase } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const sample = (x: number, z: number, targetX: number, targetZ: number, height = 0) => {
+    actor.position = filmPosition(scene.set, x, z);
+    actor.position.y += height;
+    const target = filmPosition(scene.set, targetX, targetZ);
+    h.camera.position.set(actor.position.x, actor.position.y + 3, actor.position.z);
+    h.camera.lookAt(target.x, actor.position.y + 2, target.z);
+    assert.equal(renderer.update(actor, sandbox, 0, actor.position)?.id, scene.set);
+    h.culling.stablePointSlots = renderer.stablePointSlots;
+    h.before();
+    try {
+      const lights: THREE.PointLight[] = [];
+      h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights.push(object); });
+      return lights.map(light => ({ id: light.id, intensity: light.intensity }));
+    } finally { h.after(); }
+  };
+
+  const car = sample(-30, 36, -30, 18);
+  assert.equal(car.length, 8, 'five station lights, the carriage, the objective and the passing headlamp');
+  const ids = car.map(light => light.id);
+  const headlamp = h.scene.getObjectByName('trainman-passing-headlight') as THREE.PointLight;
+  assert.equal(headlamp.intensity, 0);
+  assert.equal(h.scene.getObjectByName('trainman-passing-train')!.visible, false);
+  journey.step = 1;
+  chase.phase = 'vaulting';
+  assert.deepEqual(sample(-3.2, -21.5, 15, -21.5, TRAINMAN_CHASE.upper).map(light => light.id), ids);
+  Object.assign(chase, { phase: 'crossing', elapsed: 1 });
+  const crossing = sample(21.1, -35.5, 28, -50);
+  assert.deepEqual(crossing.map(light => light.id), ids);
+  assert.equal(crossing.find(light => light.id === headlamp.id)?.intensity, 230);
+  assert.deepEqual(headlamp.position.toArray(), [28, 2.3, trainmanPassingTrain(chase).z + 32]);
+  Object.assign(chase, { phase: 'escaped', elapsed: 8 });
+  journey.step = 2;
+  assert.deepEqual(sample(17, -31, 17, -20).map(light => light.id), ids);
+  assert.equal(headlamp.intensity, 0);
+  assert.equal(h.scene.getObjectByName('trainman-passing-train')!.visible, false);
 });
 
 test('the Sentinel pursuit keeps its light slots while Neo runs, turns and shuts down the machines', t => {
