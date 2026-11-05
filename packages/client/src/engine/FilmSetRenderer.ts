@@ -182,6 +182,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
   m2_architect: { scene: 'm2_catch', step: 3 },
   m3_trainman: { scene: 'm3_oracle_request', step: 3 },
   m3_oracle_request: { scene: 'm3_trainman_chase', step: 3 },
+  m3_zion_prepare: { scene: 'm3_maggie_discovery', step: 3 },
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
@@ -347,6 +348,7 @@ export class FilmSetRenderer {
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
       || Boolean(this.interrogation || this.baneInquiry || this.hammerRoute || this.smithFinale)
+      || Boolean(this.zionDeployment || this.maggieDiscovery)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_mountain_range' && this.currentScene === 'm2_mountain'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
@@ -546,12 +548,17 @@ export class FilmSetRenderer {
       for (const texture of prepared.room.textures) if (!texture.image) return;
       const room = prepared.room;
       const colors = this.colorPreparation(room.root, [], {
-        includeBasic: Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor),
+        includeBasic: Boolean(room.architectRoom || room.catchSet || room.trainmanChase || room.oracleDoor || room.maggieDiscovery),
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
     }
-    if (prepared.colors) this.prepareCastColors(renderer, camera, prepared.colors, [next.actor, ...next.cast], actor);
+    if (prepared.colors) {
+      const cast = [next.actor, ...next.cast];
+      // The infirmary shares the Hammer deck with the rest of the crew. Bane is still staged there until the call.
+      if (next.id === 'm3_maggie_discovery') cast.push('ak', 'niobe', 'ghost', 'bane');
+      this.prepareCastColors(renderer, camera, prepared.colors, cast, actor);
+    }
   }
   private prepareCastColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, colors: CastColorPreparation,
     cast: readonly string[], actor: (id: string) => THREE.Group | undefined): void {
@@ -720,6 +727,10 @@ export class FilmSetRenderer {
       while (!this.trainmanChase.prepareStep()) yield;
       return;
     }
+    if (set.id === 'film_hammer_deck' && this.currentScene === 'm3_maggie_discovery') {
+      this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
+      return;
+    }
     yield* this.buildSteps(set, lights, true);
     yield* this.batchSteps(true);
   }
@@ -756,6 +767,7 @@ export class FilmSetRenderer {
     this.oracleBlocks = room.oracleBlocks;
     this.oracleVase = room.oracleVase; room.oracleVase = undefined;
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
+    this.maggieDiscovery = room.maggieDiscovery; room.maggieDiscovery = undefined;
     room.dispose();
   }
   private cancelLafayettePreparation(): void {
@@ -923,7 +935,7 @@ export class FilmSetRenderer {
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
         else if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') { this.logosBane = new LogosBaneRenderer(this.root); void this.logosBane.ready.catch(error => console.error('金色 Smith 加载失败', error)); }
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck') this.baneInquiry = new BaneInquiryRenderer(this.root);
-        else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck') this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
+        else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
         else if (sceneId === 'm3_logos_plan' && set.id === 'film_hammer_deck') this.hammerBriefing = new HammerBriefingRenderer(this.root);
         else if (set.id === 'film_zion_defense_council') this.zionDeployment = new ZionDeploymentRenderer(this.root);
         else if (set.id === 'film_trainman_subway' && !preparedSecondOracle) this.trainmanChase = new TrainmanChaseRenderer(this.root);

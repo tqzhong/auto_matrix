@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BURLY, FILM_SCENE_BY_ID, filmEntry, newCatch, newGarageEscape, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { BURLY, FILM_SCENE_BY_ID, FILM_SETS, filmEntry, newCatch, newGarageEscape, newMaggieDiscovery, newTrainmanChase, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -38,10 +38,10 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   const enter = (id: string, step: number) => {
     const beat = FILM_SCENE_BY_ID[id];
     Object.assign(journey, { scene: id, step });
-    Object.assign(neo, { position: filmEntry(beat), isInMatrix: id !== 'm2_departure', currentLocation: beat.set });
+    Object.assign(neo, { position: filmEntry(beat), isInMatrix: FILM_SETS[beat.set].world === 'matrix', currentLocation: beat.set });
     sets.update(neo, sandbox, 0);
   };
-  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith', 'trinity'].includes(id) ? cast : undefined);
+  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith', 'trinity', 'roland'].includes(id) ? cast : undefined);
   const warm = (name: string) => {
     preview = undefined; castCompiled = false; compiled.clear();
     for (let i = 0; i < 120; i++) prepare();
@@ -268,6 +268,25 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
     enter('m3_trainman_chase', 1);
     assert.ok(Math.abs(door.position.z - closed) > 1.7);
     delete journey.helChase;
+    enter('m2_departure', 0);
+    assert.equal(disposals, 1);
+  });
+  await t.test('the council prepares the Hammer infirmary and preserves the physical medical door', () => {
+    enter('m3_zion_prepare', 2); preview = undefined; prepare(); assert.ok(!preview);
+    enter('m3_zion_prepare', 3);
+    const room = warm('hammer-discovery-infirmary');
+    const slots = pointSlots(preview!);
+    const door = room.getObjectByName('discovery-medical-door') as THREE.Mesh, closed = door.position.x;
+    let disposals = 0; door.geometry.addEventListener('dispose', () => disposals++);
+    enter('m3_maggie_discovery', 0);
+    assert.equal(scene.getObjectByName(room.name), room);
+    assert.equal(door.position.x, closed);
+    assert.equal(pointSlots(scene), slots);
+    assert.equal(sets.stablePointSlots, true);
+    journey.maggieDiscovery = { ...newMaggieDiscovery(0, 100), phase: 'calling', elapsed: .6, incident: true };
+    enter('m3_maggie_discovery', 0);
+    assert.ok(Math.abs(door.position.x) > Math.abs(closed), 'the saved call opens the same door');
+    delete journey.maggieDiscovery;
     enter('m2_departure', 0);
     assert.equal(disposals, 1);
   });

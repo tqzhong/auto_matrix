@@ -10,6 +10,7 @@ export class MaggieDiscoveryRenderer {
   private textures = new Set<THREE.Texture>();
   private lights = new Set<THREE.Light>();
   private sheet: THREE.Mesh;
+  private sheetProgress = -1;
   private medicalScreens: THREE.MeshBasicMaterial[] = [];
   private intercom: THREE.MeshBasicMaterial;
   private doors: THREE.Mesh[] = [];
@@ -101,17 +102,23 @@ export class MaggieDiscoveryRenderer {
     const door = MAGGIE_DISCOVERY.door, opening = maggieDiscoveryDoor(state);
     this.doors.forEach((panel, i) => { panel.position.x = (i ? 1 : -1) * (door.width / 4 + opening * door.width / 2); });
     this.sheet.visible = Boolean(state?.incident);
-    const f = THREE.MathUtils.smoothstep(state?.cover ?? 0, 0, MAGGIE_DISCOVERY.coverSeconds), front = THREE.MathUtils.lerp(-.25, -2.75, f);
-    const positions = this.sheet.geometry.attributes.position;
-    for (let i = 0; i < positions.count; i++) {
-      const column = i % 49, row = Math.floor(i / 49), x = (column / 48 - .5) * 3.6, z = front + row / 64 * (2.75 - front);
-      const center = Math.max(0, 1 - (x / 1.35) ** 2), head = Math.exp(-(((z + 1.65) / .72) ** 2));
-      const body = Math.max(.84 * Math.exp(-(((z + .65) / 1.2) ** 2)), .80 * Math.exp(-(((z - .55) / 1.4) ** 2)), .86 * Math.exp(-(((z - 2.2) / .65) ** 2)));
-      const y = HAMMER_MEDICAL.mattressTop + .06 + center * Math.max(body, .75 * head) - Math.max(0, Math.abs(x) - 1.35) * 1.22 - Math.max(0, z - 2.45) * 1.2
-        + .012 * Math.sin(x * 21 + z * 8) + .008 * Math.sin(x * 33 - z * 17);
-      positions.setXYZ(i, x, y, z);
+    const f = THREE.MathUtils.smoothstep(state?.cover ?? 0, 0, MAGGIE_DISCOVERY.coverSeconds);
+    if (f !== this.sheetProgress) {
+      const front = THREE.MathUtils.lerp(-.25, -2.75, f);
+      // Start the hanging edges outside the frame and rails, keeping the grasping edge on the same path.
+      const side = HAMMER_MEDICAL.width / 2 + .05, foot = HAMMER_MEDICAL.length / 2 + .03;
+      const positions = this.sheet.geometry.attributes.position;
+      for (let i = 0; i < positions.count; i++) {
+        const column = i % 49, row = Math.floor(i / 49), x = (column / 48 - .5) * 3.6, z = front + row / 64 * (foot + .3 - front);
+        const center = Math.max(0, 1 - (x / 1.35) ** 2), head = Math.exp(-(((z + 1.65) / .72) ** 2));
+        const body = Math.max(.84 * Math.exp(-(((z + .65) / 1.2) ** 2)), .80 * Math.exp(-(((z - .55) / 1.4) ** 2)), .86 * Math.exp(-(((z - 2.2) / .65) ** 2)));
+        const y = HAMMER_MEDICAL.mattressTop + .06 + center * Math.max(body, .75 * head) - Math.max(0, Math.abs(x) - side) * 3.66 - Math.max(0, z - foot) * 1.2
+          + .012 * Math.sin(x * 21 + z * 8) + .008 * Math.sin(x * 33 - z * 17);
+        positions.setXYZ(i, x, y, z);
+      }
+      positions.needsUpdate = true; this.sheet.geometry.computeVertexNormals(); this.sheet.geometry.computeBoundingSphere();
+      this.sheetProgress = f;
     }
-    positions.needsUpdate = true; this.sheet.geometry.computeVertexNormals(); this.sheet.geometry.computeBoundingSphere();
     this.intercom.color.setHex(state?.phase === 'call' ? 0xd69f4a : 0x40505a);
     this.medicalScreens[0].color.setHex(state?.incident ? 0x53636b : 0x879cab); this.medicalScreens[1].color.setHex(0x586873);
   }

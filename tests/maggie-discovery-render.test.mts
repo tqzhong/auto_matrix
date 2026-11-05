@@ -116,6 +116,38 @@ test('the moving cover stays above sampled delivered body surfaces throughout th
   }
 });
 
+test('the saved linen pull drapes over the actual gurney without going through its frame or rails', () => {
+  const root = new THREE.Group(), room = new MaggieDiscoveryRenderer(root);
+  try {
+    const sheet = root.getObjectByName('maggie-body-sheet') as THREE.Mesh;
+    const hardware: { name: string; bounds: THREE.Box3 }[] = [];
+    root.updateMatrixWorld(true);
+    root.getObjectByName('maggie-medical-bed')!.traverse(object => {
+      if (['discovery-gurney-frame', 'gurney-rail', 'gurney-panel'].includes(object.name)) {
+        hardware.push({ name: object.name, bounds: new THREE.Box3().setFromObject(object) });
+      }
+    });
+    assert.equal(hardware.length, 5);
+    const triangle = new THREE.Triangle(), indices = sheet.geometry.getIndex()!;
+    for (const cover of [0, .7, 1.7, 2.7, MAGGIE_DISCOVERY.coverSeconds]) {
+      const state = { ...newMaggieDiscovery(2, 100), incident: true, cover };
+      room.update(state);
+      assert.equal(sheet.visible, true);
+      const position = sheet.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const version = position.version;
+      room.update({ ...state, elapsed: state.elapsed + .1 });
+      assert.equal(position.version, version, 'a stationary hem does not reupload its vertices during dialogue');
+      const points = Array.from({ length: sheet.geometry.attributes.position.count }, (_, i) =>
+        sheet.localToWorld(sheet.getVertexPosition(i, new THREE.Vector3())));
+      assert.ok(points.some(point => point.x < MAGGIE_DISCOVERY.corpse.x - HAMMER_MEDICAL.width / 2 && point.y < 1.7), 'the side hem still hangs below the rail');
+      for (let i = 0; i < indices.count; i += 3) {
+        triangle.set(points[indices.getX(i)], points[indices.getX(i + 1)], points[indices.getX(i + 2)]);
+        for (const { name, bounds } of hardware) assert.ok(!bounds.intersectsTriangle(triangle), `${cover}: linen goes through ${name}`);
+      }
+    }
+  } finally { room.dispose(); }
+});
+
 test('the saved emergency call opens the real door and a paused opening stays fixed', () => {
   const root = new THREE.Group(), room = new MaggieDiscoveryRenderer(root);
   try {
