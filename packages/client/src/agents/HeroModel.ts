@@ -135,6 +135,7 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
   private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress', Promise<GLTF>>();
+  private smithGlassesFits = new Map<GLTF, Map<string, THREE.Group>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
@@ -347,13 +348,14 @@ export class HeroModels {
     this.forearms.attach(root, bones, rest);
     if (id === 'trinity' && !support && asset.parser.json.extras.trinityShoulderSupport?.version === 1)
       this.shoulders.attach(root, bones, rest);
-    if (guard) root.traverse(object => {
+    const guardFace = guard === 'agent_jones' ? 'narrow' : guard ? 'wide' : undefined;
+    if (guardFace) root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !object.name.includes('Anatomical')) return;
       object.geometry = object.geometry.clone(); this.geometries.add(object.geometry);
       const position = object.geometry.attributes.position;
       for (let i = 0; i < position.count; i++) if (position.getY(i) > 3.78) {
-        position.setX(i, position.getX(i) * (guard === 'agent_jones' ? .93 : 1.08));
-        position.setY(i, 3.78 + (position.getY(i) - 3.78) * (guard === 'agent_jones' ? 1.03 : .96));
+        position.setX(i, position.getX(i) * (guardFace === 'narrow' ? .93 : 1.08));
+        position.setY(i, 3.78 + (position.getY(i) - 3.78) * (guardFace === 'narrow' ? 1.03 : .96));
       }
       position.needsUpdate = true; object.geometry.computeVertexNormals();
     });
@@ -377,7 +379,16 @@ export class HeroModels {
     }
     const glasses = new THREE.Group(); head.add(glasses);
     const glassesId = support === 'mouse' ? 'mouse' : id;
-    if (glassesId === 'smith') this.smithGlasses(glasses, eye, root);
+    if (glassesId === 'smith') {
+      let fits = this.smithGlassesFits.get(asset);
+      if (!fits) this.smithGlassesFits.set(asset, fits = new Map());
+      const face = guardFace ?? 'smith', fitted = fits.get(face);
+      if (fitted) glasses.add(...fitted.children.map(part => part.clone()));
+      else {
+        this.smithGlasses(glasses, eye, root);
+        fits.set(face, glasses.clone());
+      }
+    }
     else if (glassesId === 'morpheus' && !support) this.morpheusGlasses(glasses, eye, root);
     else this.glasses(glasses, eye, glassesId, metadata.glassesTemples);
     if (support === 'courier' || police) {
@@ -1837,6 +1848,7 @@ export class HeroModels {
     this.skinContinuity.forEach(surfaces => surfaces.forEach(skin => skin.dispose())); this.skinContinuity.clear();
     this.forearms.dispose();
     this.shoulders.dispose();
+    this.smithGlassesFits.clear();
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();

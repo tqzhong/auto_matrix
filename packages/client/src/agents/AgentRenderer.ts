@@ -195,8 +195,8 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
-  createBurlyCopy(base: AgentState) {
-    const rig = this.models.create({ ...base, id: 'smith' });
+  createThreatActor(state: AgentState) {
+    const rig = this.models.create(state);
     return { rig, animate: (delta: number, input: MotionInput, distance: number) => this.models.animate(rig, delta, input, distance) };
   }
   takeDojoOpponent(): DojoOpponent | undefined {

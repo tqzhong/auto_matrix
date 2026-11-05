@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SETS, filmStepPosition, officeOccluded, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FILM_SETS, OFFICE_AGENT_ROLES, filmStepPosition, officeOccluded, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -43,6 +47,26 @@ test('agents arrive through the elevator during the call, before the escape obje
   assert.ok(h.guards().some(guard => !officeOccluded({ ...h.neo.position, y: h.neo.position.y + 3 }, { ...guard.position, y: guard.position.y + 2.9 }, center)), 'looking towards the elevator reveals an agent');
   assert.equal(h.state().office?.alert, 0, 'the phone-locked player cannot be captured while receiving the instructions');
   assert.equal(h.neo.health, 100);
+});
+
+test('the office patrol shares the world cast asset without borrowing the existing bodies', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const load = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const h = setup(), scene = new THREE.Scene(), actors = new AgentRenderer(scene), enemies = new SandboxRenderer(scene, actors);
+  t.after(() => { enemies.dispose(); actors.dispose(); globalThis.document = document; });
+  for (const id of OFFICE_AGENT_ROLES) actors.updateAgent(id, h.world.agents.get(id)!);
+  const parents = OFFICE_AGENT_ROLES.map(id => actors.getAgentBody(id)!.parent);
+  const smithLoads = () => load.mock.calls.filter(call => call.arguments[0] === '/assets/characters/smith.glb').length;
+  assert.equal(smithLoads(), 1);
+  h.command('act'); h.frame(.1);
+  enemies.sync(h.sandbox.state, Object.fromEntries(h.world.agents));
+  assert.equal(h.guards().length, 3);
+  assert.equal(smithLoads(), 1, 'answering must not load a second copy of the existing Smith asset');
+  assert.deepEqual(OFFICE_AGENT_ROLES.map(id => actors.getAgentBody(id)!.parent), parents);
 });
 
 test('arrival keeps its positions across pause, disconnect, save and the start of patrol', () => {

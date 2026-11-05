@@ -8,6 +8,32 @@ import { advanceMotion, newMotion, type MotionInput } from '../packages/client/s
 const tube = (mesh: THREE.Object3D): mesh is THREE.Mesh<THREE.TubeGeometry> =>
   mesh instanceof THREE.Mesh && mesh.geometry instanceof THREE.TubeGeometry;
 
+test('Smith and each guard face reuse a fitted frame with separate materials and poses', async t => {
+  const { models, rig } = await actor('smith'); t.after(() => models.dispose());
+  const copy = (await models.create('smith'))!;
+  const jones = (await models.create('smith', 'agent_jones'))!;
+  const jonesCopy = (await models.create('smith', 'agent_jones'))!;
+  const brown = (await models.create('smith', 'agent_brown'))!;
+  const jackson = (await models.create('smith', 'agent_jackson'))!;
+  const parts = (group: THREE.Group) => group.children.filter((part): part is THREE.Mesh => part instanceof THREE.Mesh);
+  for (const [first, second] of [[rig, copy], [jones, jonesCopy], [brown, jackson]]) {
+    const original = parts(first.glasses), duplicate = parts(second.glasses);
+    assert.equal(original.length, 7);
+    assert.deepEqual(duplicate.map(mesh => mesh.name), original.map(mesh => mesh.name));
+    original.forEach((mesh, i) => {
+      assert.ok(mesh.geometry === duplicate[i].geometry, 'a duplicate face must reuse the fitted frame geometry');
+      assert.ok(mesh.material !== duplicate[i].material, 'frame materials belong to their actor');
+      assert.ok(mesh !== duplicate[i] && mesh.parent !== duplicate[i].parent);
+    });
+    assert.ok(first.bones.get('head') !== second.bones.get('head'));
+  }
+  const temple = (group: THREE.Group) => group.getObjectByName('smith-glasses-temple-1') as THREE.Mesh;
+  assert.notDeepEqual(temple(jones.glasses).geometry.attributes.position.array, temple(brown.glasses).geometry.attributes.position.array);
+  assert.notDeepEqual(temple(jones.glasses).geometry.attributes.position.array, temple(rig.glasses).geometry.attributes.position.array);
+  copy.glasses.visible = false;
+  assert.equal(rig.glasses.visible, true);
+});
+
 function faces(mesh: THREE.Mesh, space: THREE.Matrix4, above = -Infinity) {
   if (mesh instanceof THREE.SkinnedMesh) mesh.skeleton.update();
   const points = Array.from({ length: mesh.geometry.attributes.position.count }, (_, id) =>
