@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { BURLY, FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState, type SandboxThreat } from '@auto_matrix/shared';
+import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
+import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -35,7 +39,7 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
     Object.assign(neo, { position: filmEntry(beat), isInMatrix: id !== 'm2_departure', currentLocation: beat.set });
     sets.update(neo, sandbox, 0);
   };
-  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => id === 'neo' ? cast : undefined);
+  const prepare = () => sets.prepareSecondOracle(graphics, camera, journey, id => ['neo', 'smith'].includes(id) ? cast : undefined);
   const warm = (name: string) => {
     preview = undefined; castCompiled = false;
     for (let i = 0; i < 120; i++) prepare();
@@ -76,6 +80,13 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
   assert.equal(lead.visible, true);
   enter('m2_bench', 4);
   assert.equal(lead.visible, false);
+  castCompiled = false;
+  prepare();
+  assert.equal(castCompiled, true, 'Smith is prepared while the Oracle is leaving');
+  enter('m2_burly', 0);
+  assert.ok(scene.getObjectByName(lead.name) === lead, 'Smith arrives in the existing courtyard');
+  assert.equal(sets.stablePointSlots, true);
+  assert.equal(lead.visible, false);
 
   enter('m2_departure', 4);
   const abandoned = warm('m2_seraph-keyed-door') as THREE.Mesh;
@@ -86,4 +97,47 @@ test('the second Oracle route adopts prepared sets and keeps their interactive p
   const restored = scene.getObjectByName(teaDoor.name);
   assert.ok(restored && restored !== abandoned);
   assert.ok(restored.parent!.position.x > 5);
+});
+
+test('the first Smith copies reuse the actor model cache and take their prepared rigs from the pool', t => {
+  const previous = globalThis.document;
+  const context = { fillRect() {}, strokeRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const created: { owner: CharacterModels; rig: CharacterRig }[] = [];
+  t.mock.method(CharacterModels.prototype, 'create', function (this: CharacterModels) {
+    const rig = { root: new THREE.Group(), motion: newMotion() } as CharacterRig;
+    created.push({ owner: this, rig }); return rig;
+  });
+  const animated: CharacterModels[] = [];
+  t.mock.method(CharacterModels.prototype, 'animate', function (this: CharacterModels) { animated.push(this); });
+  const scene = new THREE.Scene(), agents = new AgentRenderer(scene), sandbox = new SandboxRenderer(scene, agents);
+  t.after(() => { sandbox.dispose(); agents.dispose(); });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const smith = world.agents.get('smith')!, neo = world.agents.get('neo')!;
+  agents.updateAgent('smith', smith);
+  const host = created[0].rig.root.parent;
+  const journey = { scene: 'm2_burly', burly: { phase: 'ready' } } as FilmJourney;
+  const sync = (threats: SandboxThreat[]) => sandbox.sync({ threats, nodes: [], structures: [], incidents: [], missions: {}, neoLife: { journey } } as SandboxState, { smith, neo });
+  sync([]);
+  sandbox.prepareBurlyCopies(); sandbox.prepareBurlyCopies();
+  assert.equal(created.length, 2, 'wait for a prepared copy before creating another');
+  for (let i = 0; i < BURLY.initialCopies; i++) {
+    created.at(-1)!.rig.hero = { root: new THREE.Group() } as CharacterRig['hero'];
+    sandbox.prepareBurlyCopies();
+  }
+  assert.equal(created.length, BURLY.initialCopies + 1);
+  assert.ok(created.every(item => item.owner === created[0].owner));
+  assert.ok(created.slice(1).every(item => !item.rig.root.parent?.parent), 'prepared copies stay outside the live scene');
+  journey.burly!.phase = 'swarm';
+  sync(Array.from({ length: BURLY.initialCopies }, (_, i) => ({ id: `copy-${i}`, scene: journey.scene, kind: 'smith', matrix: true,
+    position: { ...smith.position, x: smith.position.x + i }, health: 64, maxHealth: 64, target: 'neo', stunUntil: 0, lastStrike: 0 })));
+  assert.equal(created.length, BURLY.initialCopies + 1);
+  assert.ok(created[0].rig.root.parent === host);
+  assert.ok(created.slice(1).every(item => item.rig.root.parent?.parent === scene));
+  sandbox.update(.02, new THREE.PerspectiveCamera(), true, 0, true);
+  assert.equal(animated.length, BURLY.initialCopies);
+  assert.ok(animated.every(owner => owner === created[0].owner));
 });

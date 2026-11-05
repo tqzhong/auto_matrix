@@ -58,6 +58,17 @@ function setup() {
   return { world, manager, sandbox, players, command, advance, attacked, actor: () => players.getAgent('film-player')!, tick: () => tick };
 }
 
+function finishSecondOracleDeparture(h: ReturnType<typeof setup>) {
+  const oracle = h.world.agents.get('oracle')!;
+  assert.match(h.command('next'), /先知正在离开/);
+  assert.equal(h.sandbox.life.film.state?.scene, 'm2_bench');
+  for (let i = 0; i < 20 && oracle.targetPosition; i++) {
+    h.manager.updateAgentState(oracle.id, h.tick() + 1);
+    h.advance();
+  }
+  assert.equal(oracle.targetPosition, null);
+}
+
 function completePrimary(h: ReturnType<typeof setup>, nextSequence: () => number) {
   const state = h.sandbox.life.film.state!, scene = FILM_SCENE_BY_ID.m2_power;
   const frames = (count: number, focus = false) => {
@@ -2733,6 +2744,7 @@ test('the keyed doors must be reached, and the Oracle leaves a saved Keymaker le
   const restored = h.sandbox.life.film.state!;
   assert.equal(restored.step, bench.steps.length); assert.equal(restored.reflections['m2_bench:2'], 'agency');
   assert.equal(h.sandbox.state.neoLife!.choices.oracle_second_lead, 'le_vrai');
+  finishSecondOracleDeparture(h);
   h.command('next'); assert.equal(restored.scene, 'm2_burly');
   assert.notEqual(h.world.agents.get('oracle')!.currentLocation, bench.set, 'the Oracle has left before Smith arrives');
   const oldCode = h.sandbox.state.profiles.neo.inventory.code;
@@ -4965,6 +4977,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
+    if (scene.id === 'm2_bench') finishSecondOracleDeparture(h);
     if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());
   }

@@ -533,6 +533,25 @@ test('real restarts preserve paused pill action clocks and progress for both per
   }
 });
 
+test('a paused courtyard escape failure keeps the north checkpoint and idle action on server startup', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm2_burly'), journey = f.checkpoint.sandbox.neoLife.journey;
+  const position = filmPosition('film_oracle_courtyard', 0, -28);
+  const burly = { phase: 'failed', elapsed: 0, attempt: 3, repelled: 7, staffSwings: 3, assimilation: 100, nextCopyAt: 1345 };
+  const idle = { type: 'idle', parameters: { player: true, resolved: true, crouching: false, burly: { ...burly, role: 'neo' } }, startedAt: 1343, duration: 1, progress: 0 };
+  Object.assign(journey, { actor: 'neo', step: 1, checkpoint: position, burly });
+  Object.assign(f.checkpoint.agents.neo, { position, currentAction: idle });
+  f.checkpoint.simulation = { running: false, speed: 1 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
+  const client = await controls(t, server);
+  const world = await client.world();
+  assert.equal(world.simulation.running, false);
+  assert.deepEqual(world.sandbox?.neoLife?.journey?.burly, burly);
+  assert.deepEqual(world.agents.neo.position, position);
+  assert.deepEqual(world.agents.neo.currentAction, idle);
+  await server.stop();
+});
+
 test('paused awakening checkpoints reconstruct their saved performance before any player reconnects', { timeout: 60000 }, async t => {
   const cases: { scene: string; step?: number; beat?: AwakeningBeat }[] = [
     { scene: 'm1_pod' },

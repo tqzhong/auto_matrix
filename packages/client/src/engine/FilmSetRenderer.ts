@@ -203,6 +203,7 @@ export class FilmSetRenderer {
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; actor?: THREE.Group; city?: THREE.Group };
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
+  private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; fourSlots: boolean };
   private preparedLafayetteLanding?: ColorMesh[];
   private club?: ClubSetRenderer;
@@ -328,7 +329,7 @@ export class FilmSetRenderer {
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting'
       || id === 'film_seraph_teahouse' || id === 'film_backdoor_hall'
-      || id === 'film_oracle_courtyard' && this.currentScene === 'm2_bench'
+      || id === 'film_oracle_courtyard'
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
@@ -472,6 +473,12 @@ export class FilmSetRenderer {
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id === 'film_oracle_courtyard' && journey?.scene === 'm2_bench' && !journey.visiting && journey.step >= 1
+      && renderer.extensions.has('KHR_parallel_shader_compile')) {
+      const colors = this.courtyardCastColors ??= { ...this.colorPreparation(new THREE.Group(), []), actors: new Set() };
+      this.prepareCastColors(renderer, camera, colors, ['smith'], actor);
+      return;
+    }
     const cut = journey && SECOND_ORACLE_CUTS[journey.scene];
     if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
       || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
@@ -767,6 +774,8 @@ export class FilmSetRenderer {
         || this.currentScene === 'm1_pills' && sceneId === 'm1_mirror' && !journey?.visiting)) this.currentScene = sceneId;
     if (set?.id === 'film_oracle_home' && this.current?.id === set.id && !journey?.visiting
       && this.currentScene === 'm1_spoon' && sceneId === 'm1_oracle') this.currentScene = sceneId;
+    if (set?.id === 'film_oracle_courtyard' && this.current?.id === set.id && !journey?.visiting
+      && this.currentScene === 'm2_bench' && sceneId === 'm2_burly') this.currentScene = sceneId;
     if (this.theOne?.setId === 'film_heart_hotel' && set?.id === 'film_heart_hotel' && !journey?.visiting
       && this.currentScene === 'm1_death' && sceneId === 'm1_return') this.currentScene = sceneId;
     if (this.ambush && set?.id === 'film_ambush_house' && !journey?.visiting && (
@@ -1240,7 +1249,7 @@ export class FilmSetRenderer {
       });
     }
     if (this.courtyardBirds.length) {
-      const startled = sceneId === 'm2_burly' && !journey?.visiting && journey?.burly?.phase !== 'ready';
+      const startled = sceneId === 'm2_burly' && !journey?.visiting;
       if (startled && this.courtyardDisturbedAt === undefined) this.courtyardDisturbedAt = elapsed;
       if (!startled) this.courtyardDisturbedAt = undefined;
       const time = startled ? elapsed - this.courtyardDisturbedAt! : 0;
@@ -3381,6 +3390,7 @@ export class FilmSetRenderer {
     this.cancelOneDeckPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
+    this.courtyardCastColors = undefined;
     this.preparedMeetingHall?.renderer.dispose(); this.preparedMeetingHall = undefined;
     this.preparedMeetingAgents = undefined;
     this.preparedLafayetteGround = undefined;

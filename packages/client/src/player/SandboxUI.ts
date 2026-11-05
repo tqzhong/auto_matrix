@@ -1210,7 +1210,7 @@ export class SandboxUI {
       const encounter = journey.burly; const phase = encounter.phase;
       const staffPosition = filmPosition(scene.set, BURLY.staff.x, BURLY.staff.z);
       const destination = phase === 'staff_ready' ? staffPosition : phase === 'flight_ready' ? filmStepPosition(scene, scene.steps[1]) : undefined;
-      const close = destination ? distance(player.position, destination) <= 4 : distance(player.position, filmStepPosition(scene, scene.steps[0])) <= 4;
+      const close = destination ? distance(player.position, destination) <= 4 : filmStepNear(scene, scene.steps[0], player.position, player.isInMatrix, journey);
       const ready = ['ready', 'staff_ready', 'flight_ready'].includes(phase) && close || phase === 'failed' || phase === 'done';
       this.el('film-sequence').classList.remove('hidden');
       this.el('film-sequence').classList.toggle('urgent', phase === 'grapple' || phase === 'failed' || encounter.assimilation >= 60);
@@ -1222,10 +1222,10 @@ export class SandboxUI {
         : phase === 'staff' ? `F 长杆横扫 · 有效挥击 ${encounter.staffSwings}/${BURLY.escapeAfterSwings} · X 闪避同化`
         : phase === 'flight_ready' ? '冲向北侧空地 · G 起飞脱离 · Smith 不会被清空'
         : phase === 'flight' ? 'Neo 正冲出包围 · V 切换视角 · 进度自动保存'
-        : phase === 'failed' ? 'G 从庭院入口重新面对 Smith · 已完成的故事线索保留'
-        : phase === 'done' ? 'G 继续追查先知的线索' : '走近 Smith · G 开始对峙';
+        : phase === 'failed' ? journey.step === 1 ? 'G 从北侧继续撤离 · 长杆进度已保存' : 'G 从庭院入口重新面对 Smith · 已完成的故事线索保留'
+        : phase === 'done' ? 'G 继续追查先知的线索' : '站到长椅前 · G 面对 Smith';
       this.el('sandbox-interact').classList.toggle('hidden', !ready);
-      this.el('sandbox-nearby').textContent = phase === 'staff_ready' ? '抽出松动栏杆' : phase === 'flight_ready' ? '飞离包围' : phase === 'failed' ? '从入口重试'
+      this.el('sandbox-nearby').textContent = phase === 'staff_ready' ? '抽出松动栏杆' : phase === 'flight_ready' ? '飞离包围' : phase === 'failed' ? journey.step === 1 ? '从北侧重试' : '从入口重试'
         : phase === 'done' ? '继续追查钥匙匠' : '面对 Smith';
       const actions = this.el('film-training-actions'); const dodge = actions.querySelector<HTMLButtonElement>('[data-combat="dodge"]')!;
       const attack = actions.querySelector<HTMLButtonElement>('[data-combat="attack"]')!;

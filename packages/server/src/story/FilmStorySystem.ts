@@ -104,7 +104,7 @@ import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, ty
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
 import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
-import { BURLY, burlyLocked, burlyText, type BurlyEncounter } from '@auto_matrix/shared';
+import { BURLY, burlyLocked, burlyText, savedBurlyFailedIdle, type BurlyEncounter } from '@auto_matrix/shared';
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, type ChateauEncounter } from '@auto_matrix/shared';
 import { MOUNTAIN, type MountainFlight, type PlayerInput } from '@auto_matrix/shared';
@@ -5003,13 +5003,19 @@ export class FilmStorySystem {
       encounter.phase = 'grapple'; encounter.elapsed = 0;
     }
     if (encounter.phase === 'approaching' || encounter.phase === 'grapple') {
+      const set = this.scene!.set;
+      const neo = encounter.faceoff?.neo ?? filmPosition(set, 0, 0);
+      const from = encounter.faceoff?.smith ?? filmPosition(set, 0, -8);
+      const dx = neo.x - from.x, dz = neo.z - from.z;
+      const progress = encounter.phase === 'approaching' ? encounter.elapsed / BURLY.approach : 1;
+      const approach = progress * (1 - 2 / Math.max(2, Math.hypot(dx, dz)));
       const smith = this.world.agents.get('smith');
       if (smith && !smith.controller) {
-        const z = encounter.phase === 'approaching' ? -8 + 6 * Math.min(1, encounter.elapsed / BURLY.approach) : -2;
-        smith.position = filmPosition(this.scene!.set, 0, z); smith.rotation = 0;
+        smith.position = { x: from.x + dx * approach, y: from.y, z: from.z + dz * approach };
+        smith.rotation = Math.atan2(dx, dz);
         smith.currentAction = { type: 'move_to', parameters: { resolved: true, burly: { ...encounter, role: 'smith' } }, startedAt: tick, duration: 1, progress: 0 };
       }
-      agent.position = filmPosition(this.scene!.set, 0, 0); agent.rotation = Math.PI;
+      agent.position = { ...neo }; agent.rotation = Math.atan2(from.x - neo.x, from.z - neo.z);
       if (encounter.phase === 'grapple' && encounter.elapsed >= BURLY.grapple) { this.burlyFailed(agent, tick); return true; }
     } else if (encounter.phase === 'flight') {
       const from = encounter.flightFrom!; const progress = Math.min(1, encounter.elapsed / BURLY.flight); const drift = progress * progress * (3 - 2 * progress);
@@ -5030,6 +5036,7 @@ export class FilmStorySystem {
     const state = this.state, encounter = state?.burly;
     if (state?.scene !== 'm2_burly' || state.visiting || !this.controls(agent) || !encounter) return false;
     if (burlyLocked(state)) return this.burlyFrame(agent, 0, tick);
+    if (encounter.phase === 'failed') return savedBurlyFailedIdle(state, agent.currentAction);
     if (!['staff', 'flight_ready'].includes(encounter.phase) && !(encounter.assimilation > 0 && ['swarm', 'staff_ready'].includes(encounter.phase))) return false;
     agent.velocity = { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crouching: false }, startedAt: tick, duration: 1, progress: 0 };
@@ -5063,11 +5070,13 @@ export class FilmStorySystem {
   }
   private burlyAct(agent: AgentState, target: string, tick: number): string {
     const state = this.state!; const encounter = this.burlyEncounter(tick);
-    if (target !== 'act') return burlyText(encounter);
+    if (target !== 'act') return burlyText(encounter, state.step);
     if (encounter.phase === 'failed') return this.retryBurly(agent, tick);
     if (encounter.phase === 'ready') {
-      if (!this.near(agent, this.scene!.steps[0])) return '走近庭院中央的 Smith，再按 G 面对他。';
-      if (this.world.agents.get('smith')?.controller) return 'Smith 正由另一位玩家控制，庭院对峙停在这里。';
+      if (!this.near(agent, this.scene!.steps[0])) return '站到长椅前的标记旁，再按 G 面对 Smith。';
+      const smith = this.world.agents.get('smith'), set = this.scene!.set;
+      if (smith?.controller) return 'Smith 正由另一位玩家控制，庭院对峙停在这里。';
+      encounter.faceoff = { neo: { ...agent.position }, smith: smith?.currentLocation === set ? { ...smith.position } : filmPosition(set, 0, -8) };
       encounter.phase = 'approaching'; encounter.elapsed = 0; state.fighting = true;
       this.burlyFrame(agent, 0, tick); return state.lastText;
     }
@@ -5086,6 +5095,7 @@ export class FilmStorySystem {
     const state = this.state;
     if (state?.scene !== 'm2_burly' || !this.controls(agent) || state.visiting || state.burly?.phase !== 'grapple') return undefined;
     const encounter = state.burly; encounter.phase = 'swarm'; encounter.elapsed = 0; encounter.assimilation = 0; encounter.nextCopyAt = tick + BURLY.copyInterval;
+    delete encounter.faceoff;
     const smith = this.world.agents.get('smith'); if (smith && !smith.controller) smith.currentAction = { type: 'idle', parameters: { filmDuel: true }, startedAt: tick, duration: 100000, progress: 0 };
     this.spawnBurlyCopies(agent, tick, BURLY.initialCopies);
     state.lastText = 'Neo 挣脱了按进胸口的手；黑色代码退去，四周的 Smith 却继续复制。';
@@ -5119,17 +5129,19 @@ export class FilmStorySystem {
     const state = this.state;
     if (state?.scene !== 'm2_burly' || !this.controls(agent) || !state.burly || state.burly.phase === 'done') return false;
     const encounter = state.burly; encounter.phase = 'failed'; encounter.elapsed = 0; encounter.attempt++;
+    delete encounter.faceoff;
     this.clearThreats(); delete state.fighting;
     agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
-    agent.position = filmPosition(this.scene!.set, 0, 10); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
-    state.checkpoint = { ...agent.position }; state.lastText = burlyText(encounter); this.stageCast();
+    agent.position = filmPosition(this.scene!.set, 0, state.step === 1 ? BURLY.retryZ.escape : BURLY.retryZ.entrance);
+    agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    state.checkpoint = { ...agent.position }; state.lastText = burlyText(encounter, state.step); this.stageCast();
     return true;
   }
   private retryBurly(agent: AgentState, tick: number): string {
     const state = this.state!; const old = this.burlyEncounter(tick);
     const escape = state.step === 1 || old.phase === 'flight' || old.phase === 'flight_ready';
     this.clearThreats(); agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
-    agent.position = filmPosition(this.scene!.set, 0, escape ? -28 : 10); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+    agent.position = filmPosition(this.scene!.set, 0, escape ? BURLY.retryZ.escape : BURLY.retryZ.entrance); agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
     state.step = escape ? 1 : 0; state.burly = { phase: escape ? 'flight_ready' : 'ready', elapsed: 0, attempt: old.attempt + 1,
       repelled: escape ? old.repelled : 0, staffSwings: escape ? old.staffSwings : 0, assimilation: 0, nextCopyAt: tick + BURLY.copyInterval };
     state.checkpoint = { ...agent.position }; state.lastText = burlyText(state.burly); delete state.fighting;
@@ -6613,6 +6625,10 @@ export class FilmStorySystem {
       if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'connected') return '信号已经断开。卡车撞过电话亭后再继续 Neo 的故事。';
       if (state.scene === 'm2_seraph' && !this.near(agent, this.scene.steps.at(-1)!)) return '走近茶馆后门，再跟 Seraph 穿过那把钥匙打开的门。';
       if (state.scene === 'm2_backdoors' && !this.near(agent, this.scene.steps.at(-1)!)) return '走到白色走廊尽头的庭院门，再按 G 通过。';
+      if (state.scene === 'm2_bench') {
+        const oracle = this.world.agents.get('oracle');
+        if (oracle?.currentLocation === this.scene.set && !oracle.controller && oracle.targetPosition) return '先知正在离开庭院，等她走远后再继续。';
+      }
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured' && !this.near(agent, this.scene.steps[2])) return '先回到已打开的窗口旁，再按 G 前往窄台。';
       if (state.scene === 'm1_office_escape' && state.office?.outcome !== 'captured') {
         state.office ??= { alert: 0, suspicion: [], waypoints: [], lastTick: tick, guide: '' };
@@ -6666,6 +6682,7 @@ export class FilmStorySystem {
       const sameRoom = state.scene === 'm1_morning' && next.id === 'm1_commute' || state.scene === 'm1_commute' && next.id === 'm1_boss' || state.scene === 'm1_pills' && next.id === 'm1_mirror' || state.scene === 'm2_merovingian' && next.id === 'm2_persephone'
         || state.scene === 'm1_dejavu' && next.id === 'm1_wetwall' || state.scene === 'm1_wetwall' && next.id === 'm1_wall_exposed'
         || state.scene === 'm1_spoon' && next.id === 'm1_oracle' || state.scene === 'm1_death' && next.id === 'm1_return'
+        || state.scene === 'm2_bench' && next.id === 'm2_burly'
         || state.scene === 'm3_mobil' && next.id === 'm3_family' || state.scene === 'm3_family' && next.id === 'm3_trainman'
         || state.scene === 'm3_rain' && next.id === 'm3_surrender'
         || state.scene === 'm3_dock_battle' && next.id === 'm3_gate'

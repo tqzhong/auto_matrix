@@ -4,12 +4,12 @@ import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/Char
 import { newMotion, type MotionInput } from '../agents/CharacterMotion.js';
 import type { AgentRenderer, DojoOpponent } from '../agents/AgentRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
-import { FILM_SETS, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
+import { BURLY, FILM_SETS, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
 import { mouseRoomGuard, MOUSE_ROOM_RETURN, ambushShotRecoil } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
 interface Prop { group: THREE.Group; label: THREE.Sprite; data: WorldObject; accent: THREE.Mesh; }
-interface Enemy { group: THREE.Group; rig?: CharacterRig; dojoOpponent?: DojoOpponent; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; gasClock?: BasementDropPlayback; }
+interface Enemy { group: THREE.Group; rig?: CharacterRig; dojoOpponent?: DojoOpponent; burlyCopy?: ReturnType<AgentRenderer['createBurlyCopy']>; kind: SandboxThreat['kind'] | 'escort'; character?: string; scene?: string; style?: ChateauWeapon; bornAt: number; replicate: THREE.Mesh; health: THREE.Mesh; label: THREE.Sprite; target: THREE.Vector3; telegraph: THREE.Mesh; aimLine: THREE.Line; hit?: number; impact?: number; shot?: number; fallen?: number; facing: number; ambushGuide?: { from: number; to: number; progress: number; elapsed: number }; gasClock?: BasementDropPlayback; }
 
 export class SandboxRenderer {
   private state?: SandboxState;
@@ -127,6 +127,78 @@ export class SandboxRenderer {
     if (!enemy.dojoOpponent) return;
     enemy.dojoOpponent.release(); enemy.dojoOpponent = undefined; enemy.rig = undefined;
   }
+  private createEnemy(kind: Enemy['kind'], agents: Record<string, AgentState>, character?: string, scene?: string, style?: ChateauWeapon): Enemy | undefined {
+    const dojo = kind === 'training' && scene === 'm1_dojo' && character === 'morpheus';
+    const group = new THREE.Group(); let rig: CharacterRig | undefined;
+    let burlyCopy: Enemy['burlyCopy'];
+    if (kind === 'sentinel') {
+      this.mesh(group, this.orb, this.metal, [0, 3.5, 0], [1.8, 1.2, 2.3]);
+      for (let i = 0; i < 5; i++) this.mesh(group, this.orb, this.red, [(i - 2) * .45, 3.6, 2], [.16, .16, .16]);
+      for (let i = 0; i < 6; i++) {
+        const angle = i / 6 * Math.PI * 2;
+        const points = [new THREE.Vector3(Math.cos(angle), 3, Math.sin(angle)), new THREE.Vector3(Math.cos(angle) * 2, 1.3, -2), new THREE.Vector3(Math.cos(angle) * 3, .5, -4)];
+        this.mesh(group, this.geometry(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 8, .13, 5, false)), this.metal, [0, 0, 0], [1, 1, 1]);
+      }
+    } else if (!dojo) {
+      const guardBase = style === 'sword' ? 'cain' : style === 'mace' ? 'abel_mero' : style === 'spear' ? 'citizen_10' : 'citizen_13';
+      const base = agents[character ?? (scene === 'm2_chateau' ? guardBase : kind === 'escort' ? 'keymaker' : 'smith')] ?? agents.neo;
+      if (!base) return;
+      if (scene === 'm2_burly' && kind === 'smith' && !character) burlyCopy = this.agentRenderer?.createBurlyCopy(base);
+      rig = burlyCopy?.rig ?? this.models.create({ ...base, id: scene === 'm2_chateau' ? `chateau_guard_${style ?? 'unarmed'}` : character ?? (kind === 'soldier' ? 'film_soldier' : kind === 'escort' ? 'keymaker' : 'smith'),
+        faction: scene === 'm2_chateau' ? 'merovingian' : scene === 'm1_basement' ? 'civilians' : base.faction,
+        appearance: scene === 'm2_chateau' ? { ...base.appearance, clothing: style === 'axe' ? '#473d31' : style === 'spear' ? '#2e3b3b' : style === 'mace' ? '#52493e' : '#302d31' }
+          : scene === 'm1_room303' ? { ...base.appearance, clothing: '#222c36' }
+          : kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance }); rig.root.position.y = -1; group.add(rig.root);
+      if (scene === 'm1_room303') {
+        this.mesh(rig.head, this.cylinder, this.dark, [0, .26, -.04], [.34, .16, .31]);
+        this.mesh(rig.head, this.box, this.dark, [0, .16, .21], [.7, .06, .3]);
+        this.mesh(rig.head, this.box, this.metal, [0, .3, .245], [.12, .12, .04]);
+        this.mesh(rig.torso, this.box, this.dark, [0, .81, .35], [.76, .13, .1]);
+        this.mesh(rig.torso, this.box, this.metal, [-.23, 1.18, .42], [.16, .21, .055]);
+        this.mesh(rig.torso, this.box, this.dark, [0, .38, .4], [.75, .12, .14]);
+      }
+      if (kind === 'soldier' && scene !== 'm1_room303') {
+        this.mesh(rig.head, this.orb, this.dark, [0, .12, -.03], [.32, .3, .28]);
+        this.mesh(rig.head, this.orb, this.dark, [0, -.18, .20], [.22, .13, .08]);
+        this.mesh(rig.torso, this.box, this.dark, [0, .8, .29], [.9, .95, .25]);
+        for (const x of [-.28, 0, .28]) this.mesh(rig.torso, this.box, this.metal, [x, .58, .44], [.2, .34, .09]);
+      }
+      if (scene === 'm1_basement') {
+        const mask=new THREE.Group();mask.name='basement-gas-mask';rig.head.add(mask);
+        this.mesh(mask,this.orb,this.dark,[0,-.065,.24],[.27,.24,.15]);
+        for(const side of [-1,1]) {
+          this.mesh(mask,this.orb,this.metal,[side*.11,.015,.354],[.095,.065,.027]);
+          this.mesh(mask,this.orb,this.dark,[side*.11,.015,.379],[.071,.047,.018]);
+          this.mesh(mask,this.cylinder,this.dark,[side*.25,-.18,.255],[.115,.15,.115]).rotation.z=Math.PI/2;
+        }
+        this.mesh(mask,this.cylinder,this.metal,[0,-.15,.4],[.09,.12,.09]).rotation.x=Math.PI/2;
+      }
+      if (kind === 'smith' && !character) rig.root.scale.multiplyScalar(1.18);
+    }
+    const bar = this.mesh(group, this.box, kind === 'escort' ? this.green : this.red, [0, 6.4, 0], [4, .15, .15]);
+    const label = this.label(scene === 'm1_room303' ? '303 / 警员' : scene === 'm2_chateau' ? `城堡守卫 · ${{ sword: '长剑', spear: '长矛', axe: '战斧', mace: '重锤' }[style ?? 'sword']}`
+      : character ? `${agents[character]?.name ?? character}${kind === 'training' ? ' · 对练' : ''}` : scene === 'm2_burly' ? 'SMITH / 复制体' : ({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', soldier: '武装警卫', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
+    label.position.y = 7.1; group.add(label);
+    const telegraph = this.mesh(group, this.warningRing, this.warning, [0, -.94, 0], [2.8, 2.8, 2.8]); telegraph.rotation.x = -Math.PI / 2; telegraph.visible = false;
+    const replicate = this.mesh(group, this.warningRing, this.green, [0, -.91, 0], [2.8, 2.8, 2.8]); replicate.rotation.x = -Math.PI / 2; replicate.visible = false;
+    const aimLine = new THREE.Line(this.geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])), this.aimMaterial); aimLine.visible = false; group.add(aimLine);
+    return { group, rig, burlyCopy, kind, character, scene, style, bornAt: this.elapsed, replicate, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
+  }
+  prepareBurlyCopies(): void {
+    const journey = this.state?.neoLife?.journey;
+    if (!this.agentRenderer || !journey || journey.visiting) return;
+    const staging = journey.scene === 'm2_bench' && journey.step >= 3
+      || journey.scene === 'm2_burly' && ['ready', 'approaching', 'grapple'].includes(journey.burly?.phase ?? 'ready');
+    if (!staging) return;
+    let prepared = 0;
+    for (const enemy of this.pool) if (enemy.scene === 'm2_burly') {
+      if (!enemy.rig?.hero) return;
+      prepared++;
+    }
+    if (prepared >= BURLY.initialCopies) return;
+    const enemy = this.createEnemy('smith', this.actors, undefined, 'm2_burly');
+    if (enemy) this.pool.push(enemy);
+  }
   private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string, scene?: string): void {
     let enemy = this.enemies.get(id);
     const dojo = kind === 'training' && scene === 'm1_dojo' && character === 'morpheus';
@@ -134,60 +206,8 @@ export class SandboxRenderer {
       const style = scene === 'm2_chateau' ? this.state?.threats.find(threat => threat.id === id)?.weapon : undefined;
       const reuse = this.pool.findIndex(entry => entry.kind === kind && entry.character === character && entry.scene === scene && entry.style === style);
       if (reuse >= 0) enemy = this.pool.splice(reuse, 1)[0];
-      else {
-        const group = new THREE.Group(); let rig: CharacterRig | undefined;
-        if (kind === 'sentinel') {
-          this.mesh(group, this.orb, this.metal, [0, 3.5, 0], [1.8, 1.2, 2.3]);
-          for (let i = 0; i < 5; i++) this.mesh(group, this.orb, this.red, [(i - 2) * .45, 3.6, 2], [.16, .16, .16]);
-          for (let i = 0; i < 6; i++) {
-            const angle = i / 6 * Math.PI * 2;
-            const points = [new THREE.Vector3(Math.cos(angle), 3, Math.sin(angle)), new THREE.Vector3(Math.cos(angle) * 2, 1.3, -2), new THREE.Vector3(Math.cos(angle) * 3, .5, -4)];
-            this.mesh(group, this.geometry(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 8, .13, 5, false)), this.metal, [0, 0, 0], [1, 1, 1]);
-          }
-        } else if (!dojo) {
-          const guardBase = style === 'sword' ? 'cain' : style === 'mace' ? 'abel_mero' : style === 'spear' ? 'citizen_10' : 'citizen_13';
-          const base = agents[character ?? (scene === 'm2_chateau' ? guardBase : kind === 'escort' ? 'keymaker' : 'smith')] ?? agents.neo;
-          if (!base) return;
-          rig = this.models.create({ ...base, id: scene === 'm2_chateau' ? `chateau_guard_${style ?? 'unarmed'}` : character ?? (kind === 'soldier' ? 'film_soldier' : kind === 'escort' ? 'keymaker' : 'smith'),
-            faction: scene === 'm2_chateau' ? 'merovingian' : scene === 'm1_basement' ? 'civilians' : base.faction,
-            appearance: scene === 'm2_chateau' ? { ...base.appearance, clothing: style === 'axe' ? '#473d31' : style === 'spear' ? '#2e3b3b' : style === 'mace' ? '#52493e' : '#302d31' }
-              : scene === 'm1_room303' ? { ...base.appearance, clothing: '#222c36' }
-              : kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance }); rig.root.position.y = -1; group.add(rig.root);
-          if (scene === 'm1_room303') {
-            this.mesh(rig.head, this.cylinder, this.dark, [0, .26, -.04], [.34, .16, .31]);
-            this.mesh(rig.head, this.box, this.dark, [0, .16, .21], [.7, .06, .3]);
-            this.mesh(rig.head, this.box, this.metal, [0, .3, .245], [.12, .12, .04]);
-            this.mesh(rig.torso, this.box, this.dark, [0, .81, .35], [.76, .13, .1]);
-            this.mesh(rig.torso, this.box, this.metal, [-.23, 1.18, .42], [.16, .21, .055]);
-            this.mesh(rig.torso, this.box, this.dark, [0, .38, .4], [.75, .12, .14]);
-          }
-          if (kind === 'soldier' && scene !== 'm1_room303') {
-            this.mesh(rig.head, this.orb, this.dark, [0, .12, -.03], [.32, .3, .28]);
-            this.mesh(rig.head, this.orb, this.dark, [0, -.18, .20], [.22, .13, .08]);
-            this.mesh(rig.torso, this.box, this.dark, [0, .8, .29], [.9, .95, .25]);
-            for (const x of [-.28, 0, .28]) this.mesh(rig.torso, this.box, this.metal, [x, .58, .44], [.2, .34, .09]);
-          }
-          if (scene === 'm1_basement') {
-            const mask=new THREE.Group();mask.name='basement-gas-mask';rig.head.add(mask);
-            this.mesh(mask,this.orb,this.dark,[0,-.065,.24],[.27,.24,.15]);
-            for(const side of [-1,1]) {
-              this.mesh(mask,this.orb,this.metal,[side*.11,.015,.354],[.095,.065,.027]);
-              this.mesh(mask,this.orb,this.dark,[side*.11,.015,.379],[.071,.047,.018]);
-              this.mesh(mask,this.cylinder,this.dark,[side*.25,-.18,.255],[.115,.15,.115]).rotation.z=Math.PI/2;
-            }
-            this.mesh(mask,this.cylinder,this.metal,[0,-.15,.4],[.09,.12,.09]).rotation.x=Math.PI/2;
-          }
-          if (kind === 'smith' && !character) rig.root.scale.multiplyScalar(1.18);
-        }
-        const bar = this.mesh(group, this.box, kind === 'escort' ? this.green : this.red, [0, 6.4, 0], [4, .15, .15]);
-        const label = this.label(scene === 'm1_room303' ? '303 / 警员' : scene === 'm2_chateau' ? `城堡守卫 · ${{ sword: '长剑', spear: '长矛', axe: '战斧', mace: '重锤' }[style ?? 'sword']}`
-          : character ? `${agents[character]?.name ?? character}${kind === 'training' ? ' · 对练' : ''}` : scene === 'm2_burly' ? 'SMITH / 复制体' : ({ agent: '追踪特工', sentinel: '乌贼', smith: 'SMITH / 病毒核心', training: '武术训练程序', soldier: '武装警卫', escort: '钥匙匠 · 留在附近护送' })[kind], kind === 'escort' ? '#c9e8ad' : '#f2aa99');
-        label.position.y = 7.1; group.add(label);
-        const telegraph = this.mesh(group, this.warningRing, this.warning, [0, -.94, 0], [2.8, 2.8, 2.8]); telegraph.rotation.x = -Math.PI / 2; telegraph.visible = false;
-        const replicate = this.mesh(group, this.warningRing, this.green, [0, -.91, 0], [2.8, 2.8, 2.8]); replicate.rotation.x = -Math.PI / 2; replicate.visible = false;
-        const aimLine = new THREE.Line(this.geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])), this.aimMaterial); aimLine.visible = false; group.add(aimLine);
-        enemy = { group, rig, kind, character, scene, style, bornAt: this.elapsed, replicate, health: bar, label, target: new THREE.Vector3(), telegraph, aimLine, facing: 0 };
-      }
+      else enemy = this.createEnemy(kind, agents, character, scene, style);
+      if (!enemy) return;
       if (dojo && !enemy.rig) this.attachDojoOpponent(enemy, agents.morpheus ?? agents.neo);
       enemy.group.position.set(position.x, position.y, position.z); enemy.group.rotation.set(0, 0, 0); enemy.group.scale.setScalar(1);
       enemy.fallen = undefined; enemy.hit = enemy.impact = enemy.shot = undefined; enemy.health.visible = character !== 'seraph'; enemy.bornAt = this.elapsed;
@@ -265,6 +285,7 @@ export class SandboxRenderer {
           attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: room ? undefined : enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: room ? undefined : enemy.hit, impact: room ? undefined : enemy.impact, chateauWeapon: threat?.weapon,
           dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' };
         if (enemy.dojoOpponent) enemy.dojoOpponent.animate(dt, input, dist);
+        else if (enemy.burlyCopy) enemy.burlyCopy.animate(dt, input, dist);
         else this.models.animate(enemy.rig, dt, input, dist);
       }
       if (room && enemy.rig?.weapons?.[0] && actor) {

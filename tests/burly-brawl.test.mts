@@ -48,6 +48,25 @@ test('Smith grapple needs an intentional escape; clearing copies alone cannot fi
   assert.ok(h.sandbox.state.threats.some(t => t.scene === h.scene.id), 'copies spread into the cleared space');
 });
 
+test('Smith approaches the actual stance beside the bench through the courtyard handoff', () => {
+  const h = setup(), bench = FILM_SCENE_BY_ID.m2_bench;
+  h.journey.scene = bench.id; h.journey.step = bench.steps.length; h.journey.completed.push(bench.id);
+  const position = filmPosition(bench.set, -6.3, -15.2), yaw = .4;
+  h.neo.position = position; h.neo.rotation = yaw;
+  h.command('next');
+  assert.equal(h.journey.scene, h.scene.id);
+  assert.deepEqual(h.neo.position, position);
+  assert.equal(h.neo.rotation, yaw);
+  const smith = h.world.agents.get('smith')!, before = { ...smith.position };
+  assert.match(h.command('act'), /Smith/);
+  assert.deepEqual(h.neo.position, position);
+  assert.deepEqual(smith.position, before, 'Smith starts from his visible position');
+  h.advance(2.4);
+  assert.equal(h.journey.burly?.phase, 'grapple');
+  assert.deepEqual(h.neo.position, position);
+  assert.ok(Math.abs(Math.hypot(smith.position.x - position.x, smith.position.z - position.z) - 2) < .001);
+});
+
 test('a paused grapple reconstructs both actors before and after possession', () => {
   const h = setup(); h.command('act'); h.advance(3.2);
   assert.equal(h.journey.burly?.phase, 'grapple');
@@ -67,6 +86,20 @@ test('a paused grapple reconstructs both actors before and after possession', ()
   assert.deepEqual(smith.currentAction, smithPose);
   assert.deepEqual(h.sandbox.life.film.state!.burly, saved.neoLife!.journey!.burly);
   assert.match(h.players.act('neo-player', 'dodge', h.tick()), /挣脱/);
+});
+
+test('a saved grapple without faceoff coordinates keeps the original centered pose', () => {
+  const h = setup(); h.command('act'); h.advance(3.2);
+  const saved = structuredClone(h.sandbox.state), encounter = saved.neoLife!.journey!.burly!;
+  delete encounter.faceoff;
+  h.world.simulationTick = h.tick();
+  h.sandbox.restore(saved);
+  const smith = h.world.agents.get('smith')!;
+  assert.deepEqual(h.neo.position, filmPosition(h.scene.set, 0, 0));
+  assert.deepEqual(smith.position, filmPosition(h.scene.set, 0, -2));
+  assert.equal(h.neo.rotation, Math.PI);
+  assert.equal(smith.rotation, 0);
+  assert.equal(h.sandbox.life.film.state!.burly?.elapsed, encounter.elapsed);
 });
 
 test('staff swings create a flight opening, and the escape survives save/retry without skipping it', () => {
@@ -123,6 +156,33 @@ test('missed grapple resets the encounter without killing Neo', () => {
   h.neo.position = filmStepPosition(h.scene, h.scene.steps[0]);
   h.command('act');
   assert.equal(h.journey.burly?.phase, 'approaching');
+});
+
+test('assimilation after the staff exchange preserves the northern escape checkpoint', () => {
+  const h = setup(); h.command('act');
+  Object.assign(h.journey.burly!, { phase: 'flight_ready', staffSwings: 3, repelled: 4, assimilation: 99 });
+  h.journey.step = 1;
+  assert.equal(h.sandbox.life.film.burlyContact(h.neo, h.tick()), true);
+  assert.equal(h.journey.burly?.phase, 'failed');
+  const checkpoint = filmPosition(h.scene.set, 0, -28);
+  assert.deepEqual(h.neo.position, checkpoint);
+  assert.deepEqual(h.journey.checkpoint, checkpoint);
+  assert.match(h.journey.lastText, /北侧/);
+  h.players.step(.1, true, h.tick());
+  const idle = structuredClone(h.neo.currentAction);
+  assert.equal((idle?.parameters.burly as { phase?: string } | undefined)?.phase, 'failed');
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('neo-player', h.tick());
+  assert.deepEqual(h.neo.currentAction, idle);
+  h.sandbox.restore(saved);
+  h.players.possess('neo-player', 'neo', h.tick());
+  assert.deepEqual(h.neo.currentAction, idle);
+  h.command('act');
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.step, 1);
+  assert.equal(restored.burly?.phase, 'flight_ready');
+  assert.equal(restored.burly?.staffSwings, 3);
+  assert.deepEqual(h.neo.position, checkpoint);
 });
 
 test('the first volley of Smith copies leaves Neo time to break the encirclement', () => {
