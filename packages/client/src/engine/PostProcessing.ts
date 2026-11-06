@@ -13,6 +13,7 @@ export class WorldOcclusionPass extends GTAOPass {
   private inPlace = false;
   private suppressed: THREE.Object3D[] = [];
   private reflections = new Map<THREE.Object3D, THREE.Object3D['onBeforeRender']>();
+  private lightLayers = new Map<THREE.Light, number>();
   private skipReflection = (): void => {};
   private scalar = false;
   constructor(...args: ConstructorParameters<typeof GTAOPass>) {
@@ -56,6 +57,12 @@ export class WorldOcclusionPass extends GTAOPass {
     this.scene.traverseVisible(object => {
       // A mirror may have selected another detail level in the color pass.
       if (object instanceof THREE.LOD && object.autoUpdate) object.update(this.camera);
+      // Three includes light counts in the normal shader's cache key. Layers
+      // exclude the light without hiding geometry attached beneath it.
+      if (object instanceof THREE.Light && object.layers.mask !== 0) {
+        this.lightLayers.set(object, object.layers.mask);
+        object.layers.disableAll();
+      }
       // Keep the reflecting plane in the normal/depth image. Its reflected
       // world was already drawn for color and contributes no normals here.
       if (object instanceof Reflector) {
@@ -67,6 +74,8 @@ export class WorldOcclusionPass extends GTAOPass {
     });
   }
   restoreVisibility(): void {
+    for (const [light, mask] of this.lightLayers) light.layers.mask = mask;
+    this.lightLayers.clear();
     for (const [mirror, callback] of this.reflections) mirror.onBeforeRender = callback;
     this.reflections.clear();
     for (const object of this.suppressed) object.visible = true;

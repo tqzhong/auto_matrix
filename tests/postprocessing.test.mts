@@ -142,6 +142,38 @@ test('the normals pass reuses this frame\'s matrices and shadows, then restores 
   } finally { pass.dispose(); }
 });
 
+test('normal and depth rendering leaves light counts out of the shader while retaining attached geometry', t => {
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+  const point = new THREE.PointLight(), spot = new THREE.SpotLight();
+  point.layers.enable(7); spot.layers.enable(11);
+  const fixture = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  spot.add(fixture); scene.add(point, spot);
+  const masks = [point.layers.mask, spot.layers.mask];
+  const pass = new WorldOcclusionPass(scene, camera, 64, 64);
+  const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
+  const read = new THREE.WebGLRenderTarget(64, 64), write = read.clone();
+  let fail = false;
+  t.mock.method(GTAOPass.prototype, 'renderOverride', () => {
+    const lights: THREE.Light[] = [], meshes: THREE.Mesh[] = [];
+    scene.traverseVisible(object => {
+      if (!object.layers.test(camera.layers)) return;
+      if (object instanceof THREE.Light) lights.push(object);
+      if (object instanceof THREE.Mesh) meshes.push(object);
+    });
+    assert.equal(lights.length, 0, 'lights should not create a new shader variant in the normal pass');
+    assert.deepEqual(meshes, [fixture], 'excluding a light must keep its visible fixture in the normal image');
+    if (fail) throw new Error('normal draw failed');
+  });
+  t.mock.method(GTAOPass.prototype, 'renderPass', () => {});
+  try {
+    pass.render(renderer, write, read, 0, false);
+    assert.deepEqual([point.layers.mask, spot.layers.mask], masks);
+    fail = true;
+    assert.throws(() => pass.render(renderer, write, read, 0, false), /normal draw failed/);
+    assert.deepEqual([point.layers.mask, spot.layers.mask], masks, 'a failed frame must restore the original color-pass layers');
+  } finally { pass.dispose(); read.dispose(); write.dispose(); fixture.geometry.dispose(); fixture.material.dispose(); }
+});
+
 test('the normals pass draws mirror planes without rendering their reflected world and restores color reflections', t => {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
   const mirror = new Reflector(new THREE.PlaneGeometry());
