@@ -86,7 +86,7 @@ import { OfficeCustodySystem } from './OfficeCustodySystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot, type InterrogationGesture } from '@auto_matrix/shared';
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter, type MeetingGesture } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
-import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText, type OfficeWorkdayGesture } from '@auto_matrix/shared';
+import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText, type OfficeWorkday, type OfficeWorkdayGesture } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentComputerPose, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
@@ -130,6 +130,12 @@ import { nebEscapeLocked } from '@auto_matrix/shared';
 const BATHROOM_ROLES = ['neo', 'trinity', 'switch', 'apoc'] as const;
 const UNPLUGGED_ROLES = ['tank', 'cypher', 'dozer', 'apoc', 'switch', 'neo', 'trinity'] as const;
 const DOJO_COUNTER_TICKS = DOJO_COMBO_WINDOW * 2;
+
+export function savedWorkdayIdle(workday: OfficeWorkday | undefined, action: AgentState['currentAction']): boolean {
+  if (!workday || action?.type !== 'idle') return false;
+  const saved = action.parameters.workday as OfficeWorkdayGesture | undefined;
+  return saved?.role === 'neo' && saved.phase === workday.phase && saved.elapsed === workday.elapsed;
+}
 
 export class FilmStorySystem {
   private helElevatorFrames = false;
@@ -1936,9 +1942,7 @@ export class FilmStorySystem {
     if (locked) {
       const root = workday.phase === 'signing' ? officeRecipientRoot(workday) : OFFICE_WORKDAY.neo;
       agent.position = filmPosition('film_metacortex_floor', root.x, root.z); agent.rotation = root.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
-      const savedWorkday = agent.currentAction?.parameters.workday as OfficeWorkdayGesture | undefined;
-      const restoring = dt === 0 && agent.currentAction?.type === 'idle' && savedWorkday?.role === 'neo'
-        && savedWorkday.phase === workday.phase && savedWorkday.elapsed === workday.elapsed;
+      const restoring = dt === 0 && savedWorkdayIdle(workday, agent.currentAction);
       if (!restoring) agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, workday: { ...workday, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
     }

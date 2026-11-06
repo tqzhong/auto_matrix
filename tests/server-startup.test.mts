@@ -264,6 +264,33 @@ test('a first startup without a world checkpoint still saves a usable new world'
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
 });
 
+for (const savedAction of ['matching', 'missing', 'stale'] as const) {
+  test(`a cold office briefing restores a ${savedAction} action before input`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_boss', 'workday'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
+    journey.workday = { phase: 'briefing', elapsed: 3.8 };
+    const recovered = { type: 'idle', parameters: { player: true, resolved: true, workday: { ...journey.workday, role: 'neo' } },
+      startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    const saved = { ...recovered, startedAt: f.checkpoint.tick - 1 };
+    actor.currentAction = savedAction === 'matching' ? saved : null;
+    if (savedAction === 'stale') {
+      actor.currentAction = { ...saved, parameters: { ...saved.parameters, workday: { ...saved.parameters.workday, elapsed: 2 } } };
+      actor.targetPosition = { ...actor.position, z: actor.position.z + 2 };
+      actor.currentPath = [actor.targetPosition];
+    }
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.workday, journey.workday);
+      assert.deepEqual(state.agents.neo.currentAction, savedAction === 'matching' ? saved : recovered);
+      assert.deepEqual(state.agents.neo.position, actor.position); assert.equal(state.agents.neo.rotation, actor.rotation);
+      assert.equal(state.agents.neo.targetPosition, null); assert.deepEqual(state.agents.neo.currentPath, []);
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    await server.stop();
+  });
+}
+
 for (const [phase, elapsed] of [['pickup', .8], ['ready', 0], ['answering', 3.3], ['connected', 11]] as const) {
   test(`real restarts retain the paused ${phase} office phone action and clock`, { timeout: 30000 }, async t => {
     const f = await fixture(t, 'm1_boss', 'phone'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
