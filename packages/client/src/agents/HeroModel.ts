@@ -33,7 +33,7 @@ import { FarewellAppearance } from './FarewellAppearance.js';
 import { ConstructSuitAppearance } from './ConstructSuitAppearance.js';
 import { AmbushWardrobeAppearance } from './AmbushWardrobeAppearance.js';
 import { RegularCoatTails } from './RegularCoatTails.js';
-import { PHONE_HAND } from './PhoneModel.js';
+import { PHONE_HAND, PHONE_SPEAKER } from './PhoneModel.js';
 import { ForearmTwist } from './ForearmTwist.js';
 import { ShoulderSupport } from './ShoulderSupport.js';
 import { FightingHands } from './FightingHands.js';
@@ -870,30 +870,46 @@ export class HeroModels {
     const smooth = (value: number) => { const t = THREE.MathUtils.clamp(value, 0, 1); return t * t * (3 - 2 * t); };
     rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get('shoulder_R')!; const elbow = rig.bones.get('elbow_R')!; const wrist = rig.bones.get('wrist_R')!;
-    const head = rig.bones.get('head')!;
-    const ready = new THREE.Vector3(-.38, 2.98, .8); const pickup = new THREE.Vector3(-.5, 2.635, 1.2);
-    const rest = rig.root.worldToLocal(wrist.getWorldPosition(new THREE.Vector3()));
-    const ear = rig.root.worldToLocal(head.localToWorld(new THREE.Vector3(-.43, -.25, .17)));
-    const target = phone.phase === 'pickup' ? phone.elapsed < .65 ? rest.lerp(pickup, smooth(phone.elapsed / .65)) : pickup.lerp(ready, smooth((phone.elapsed - .65) / 1.15))
-      : phone.phase === 'ready' ? ready : ready.lerp(ear, phone.phase === 'connected' ? 1 : smooth((phone.elapsed - .35) / 1.1));
-    const flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, Math.PI));
     const facing = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0));
-    const calling = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, -.55));
-    const rotation = phone.phase === 'pickup' ? flat.slerp(facing, smooth((phone.elapsed - .65) / 1.15)) : phone.phase === 'ready' ? facing
-      : facing.slerp(calling, phone.phase === 'connected' ? 1 : smooth((phone.elapsed - .35) / 1.1));
+    const ready = new THREE.Vector3(-.38, 2.98, .8);
+    let target = ready, rotation = facing;
+    if (phone.phase === 'pickup') {
+      const pickup = new THREE.Vector3(-.5, 2.635, 1.2), blend = smooth((phone.elapsed - .65) / 1.15);
+      target = phone.elapsed < .65 ? rig.root.worldToLocal(wrist.getWorldPosition(new THREE.Vector3())).lerp(pickup, smooth(phone.elapsed / .65))
+        : pickup.lerp(ready, blend);
+      rotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, Math.PI)).slerp(facing, blend);
+    }
     const previousGrip = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI)).invert();
     const grip = PHONE_HAND.rotation.clone().invert();
-    // Preserve the handset's world trajectory while turning the palm so
-    // the four fingers can wrap one edge, rather than splitting sideways.
+    const wristOffset = (turn: THREE.Quaternion) => PHONE_HAND.position.clone().applyQuaternion(turn.clone().multiply(grip));
+    // Keep the desk and waiting positions authored for the original grip.
     target.add(new THREE.Vector3(.14, -.19, 0).applyQuaternion(rotation.clone().multiply(previousGrip)))
-      .sub(PHONE_HAND.position.clone().applyQuaternion(rotation.clone().multiply(grip)));
+      .sub(wristOffset(rotation));
+    const start = shoulder.getWorldPosition(new THREE.Vector3());
+    const bend = new THREE.Vector3(-.3, -1, .2);
+    const lift = phone.phase === 'connected' ? 1 : phone.phase === 'answering' ? smooth((phone.elapsed - .35) / 1.1) : 0;
+    if (lift > 0) {
+      const head = rig.bones.get('head')!;
+      const calling = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, -1.05))
+        .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), .48));
+      const atEar = rig.root.worldToLocal(head.localToWorld(new THREE.Vector3(-.25, .11, -.027)))
+        .sub(PHONE_SPEAKER.clone().applyQuaternion(calling)).sub(wristOffset(calling));
+      const pivot = rig.root.worldToLocal(start.clone());
+      target.sub(pivot); atEar.sub(pivot);
+      // Lift around the shoulder. A straight line to the ear passes too
+      // close to the joint and folds the forearm back through the shirt.
+      const reach = THREE.MathUtils.lerp(target.length(), atEar.length(), lift);
+      target.normalize().lerp(atEar.normalize(), lift).normalize().multiplyScalar(reach).add(pivot);
+      rotation.slerp(calling, lift);
+      bend.lerp(new THREE.Vector3(-.92, -.55, .46), THREE.MathUtils.smoothstep(lift, 0, .24));
+    }
     rig.root.localToWorld(target);
-    const start = shoulder.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
+    const direction = target.clone().sub(start);
     const upper = elbow.position.length(); const lower = wrist.position.length();
     const reach = THREE.MathUtils.clamp(direction.length(), .02, upper + lower - .001); direction.normalize();
     const along = (upper * upper - lower * lower + reach * reach) / (2 * reach);
     const rootRotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
-    const bend = new THREE.Vector3(-.3, -1, .2).applyQuaternion(rootRotation);
+    bend.applyQuaternion(rootRotation);
     bend.addScaledVector(direction, -bend.dot(direction)).normalize();
     const hinge = start.clone().addScaledVector(direction, along).addScaledVector(bend, Math.sqrt(Math.max(0, upper * upper - along * along)));
     const aim = (joint: THREE.Bone, child: THREE.Bone, point: THREE.Vector3) => {

@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, OFFICE_LADDER, officeCrossingPose } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import type { MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
+import { PHONE_SPEAKER } from '../packages/client/src/agents/PhoneModel.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -25,6 +26,46 @@ async function loadGeometry(id: string) {
   return new GLTFLoader().parseAsync(result.buffer.slice(result.byteOffset, result.byteOffset + result.byteLength), '');
 }
 
+function longestSleeveCrossing(mesh: THREE.SkinnedMesh, skin?: THREE.SkinnedMesh): number {
+  const elbow = mesh.skeleton.bones.findIndex(bone => bone.name === 'elbow_R');
+  const bindElbow = new THREE.Vector3().setFromMatrixPosition(mesh.skeleton.boneInverses[elbow].clone().invert())
+    .applyMatrix4(mesh.bindMatrix.clone().invert());
+  const facesNearElbow = (part: THREE.SkinnedMesh) => {
+    const { position } = part.geometry.attributes, index = part.geometry.index!;
+    const rest = Array.from({ length: position.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(position, i));
+    const keys = rest.map(vertex => vertex.toArray().map(axis => Math.round(axis * 1e6)).join(','));
+    const points = rest.map((_, i) => part.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(part.matrixWorld));
+    const faces = [];
+    for (let i = 0; i < index.count; i += 3) {
+      const ids = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+      // The skin probe also covers the middle of the forearm inside the sleeve.
+      if (!ids.some(id => rest[id].distanceTo(bindElbow) < (skin ? .55 : .35))) continue;
+      const vertices = ids.map(id => points[id]) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
+      faces.push({ keys: ids.map(id => keys[id]), vertices, bounds: new THREE.Box3().setFromPoints(vertices),
+        normal: new THREE.Triangle(...vertices).getNormal(new THREE.Vector3()) });
+    }
+    return faces;
+  };
+  const faces = facesNearElbow(mesh), other = skin ? facesNearElbow(skin) : faces;
+  const ray = new THREE.Ray(), first = new THREE.Vector3(), hit = new THREE.Vector3();
+  let longest = 0;
+  for (const [i, a] of faces.entries()) for (let j = 0; j < (skin ? other.length : i); j++) {
+    const b = other[j];
+    if (!a.bounds.intersectsBox(b.bounds) || !skin && a.keys.some(key => b.keys.includes(key)) || Math.abs(a.normal.dot(b.normal)) > .9995) continue;
+    let found = false;
+    for (const [from, to] of [[a.vertices, b.vertices], [b.vertices, a.vertices]]) for (let k = 0; k < 3; k++) {
+      ray.origin.copy(from[k]);
+      const length = ray.direction.subVectors(from[(k + 1) % 3], from[k]).length();
+      if (length < 1e-8) continue;
+      ray.direction.divideScalar(length);
+      if (!ray.intersectTriangle(...to, false, hit) || hit.distanceTo(ray.origin) > length + 1e-7) continue;
+      if (found) longest = Math.max(longest, first.distanceTo(hit));
+      else { first.copy(hit); found = true; }
+    }
+  }
+  return longest;
+}
+
 test('the shipped office hand clears the handset casing while lifting, listening, crouching and crossing the window', async t => {
   const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
   t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets.get(url.split('/').at(-1)!.replace('.glb', ''))!);
@@ -42,17 +83,36 @@ test('the shipped office hand clears the handset casing while lifting, listening
     const poses: Partial<MotionInput>[] = [
       ...[.65, 1.1, 1.7, 2.2].map(elapsed => ({ phone: { phase: 'pickup' as const, elapsed } })),
       { phone: { phase: 'ready', elapsed: 0 } },
-      ...[.35, .7, 1.3, 2, 8].map(elapsed => ({ phone: { phase: 'answering' as const, elapsed } })),
+      ...[.35, .55, .65, .7, .76, .82, .95, 1.1, 1.25, 1.45, 2, 8].map(elapsed => ({ phone: { phase: 'answering' as const, elapsed } })),
       { phone: { phase: 'connected', elapsed: 11 } },
       { speed: 1.6, turn: .6, crouching: true, phone: { phase: 'connected', elapsed: 11 } },
       ...[.8, 1.7, 2.7, 3.5, 5.4].map(crossing => ({ crossing, phone: { phase: 'connected' as const, elapsed: 11 } })),
     ];
     const point = new THREE.Vector3(); let checked = 0;
+    const readyHandset = new THREE.Matrix4();
+    const sleeve = rig.hero.root.getObjectByName('Office_shirt') as THREE.SkinnedMesh;
+    const wristSkin = rig.hero.root.getObjectByName('Anatomical_wrist_skin') as THREE.SkinnedMesh;
     for (const pose of poses) {
       const crossing = pose.crossing === undefined ? undefined : officeCrossingPose(pose.crossing);
       rig.root.position.set(crossing?.x ?? 0, crossing?.y ?? 0, crossing?.z ?? 0); rig.root.rotation.y = crossing?.yaw ?? 0;
       models.animate(rig, .05, { ...input, ...pose }, 0); rig.root.updateMatrixWorld(true);
       assert.ok(rig.phone?.root.visible, 'the normal renderer must attach and show the handset');
+      if (pose.phone?.phase === 'ready') readyHandset.copy(rig.phone.root.matrixWorld);
+      if (pose.phone?.phase === 'answering') {
+        assert.ok(sleeve.visible && sleeve.geometry.index!.count > 18000, 'keep the actual full office shirt');
+        const length = longestSleeveCrossing(sleeve);
+        assert.ok(length < .08, `the right sleeve crosses itself for ${length} model units at ${pose.phone.elapsed}s`);
+        if (pose.phone.elapsed === .35) assert.ok(rig.phone.root.matrixWorld.elements.every((value, i) =>
+          Math.abs(value - readyHandset.elements[i]) < 1e-7), 'the lift must start at the existing waiting pose');
+        if (pose.phone.elapsed >= 1.45) {
+          assert.ok(wristSkin.visible, 'retain the continuous skin below the cuff');
+          const exposure = longestSleeveCrossing(sleeve, wristSkin);
+          assert.ok(exposure < .025, `the wrist skin crosses the closed sleeve for ${exposure} model units`);
+          const speaker = rig.phone.root.localToWorld(PHONE_SPEAKER.clone());
+          const ear = rig.hero.bones.get('head')!.localToWorld(new THREE.Vector3(-.213, .11, -.027));
+          assert.ok(speaker.distanceTo(ear) < .055, 'the actual speaker grille stays close to the outer ear');
+        }
+      }
       const indexBase = rig.hero.bones.get('finger2-1_R')!.getWorldPosition(new THREE.Vector3());
       const littleBase = rig.hero.bones.get('finger5-1_R')!.getWorldPosition(new THREE.Vector3());
       const acrossPalm = indexBase.sub(littleBase).normalize();

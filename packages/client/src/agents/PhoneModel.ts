@@ -4,6 +4,7 @@ export const PHONE_HAND = {
   position: new THREE.Vector3(.132, -.165, .015),
   rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, Math.PI / 2)),
 };
+export const PHONE_SPEAKER = new THREE.Vector3(0, .175, .04);
 
 /** Curved 1996 handset with the film prop's sliding microphone cover. */
 export class PhoneModel {
@@ -17,7 +18,10 @@ export class PhoneModel {
     const shell = this.mat(0x1a1e20, .46); const seam = this.mat(0x050708, .8); const rubber = this.mat(0x454b4b, .85);
     const body = this.rounded(.142, .424, .026, .052); this.mesh(this.root, body, shell);
     const back = this.rounded(.144, .418, .025, .008); this.mesh(this.root, back, seam).position.z = -.03;
-    for (let i = -2; i <= 2; i++) this.mesh(this.root, new THREE.BoxGeometry(.039, .003, .003), seam).position.set(0, .175 + i * .008, .04);
+    for (let i = -2; i <= 2; i++) {
+      const grille = this.mesh(this.root, new THREE.BoxGeometry(.039, .003, .003), seam);
+      grille.position.copy(PHONE_SPEAKER); grille.position.y += i * .008;
+    }
     this.mesh(this.root, new THREE.BoxGeometry(.108, .104, .008), seam).position.set(0, .085, .044);
     this.screens = ['INCOMING', 'CONNECTED'].map(label => {
       const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 160;
