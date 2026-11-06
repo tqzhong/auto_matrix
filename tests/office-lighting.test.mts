@@ -664,3 +664,99 @@ test('the office stages manager textures and the nearby street hair cutout one a
   assert.equal(hero.parent, detail);
   assert.equal(detail.visible, false);
 });
+
+test('the office publishes shared cast textures only after the last strip and releases interrupted uploads', t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const originalBitmap = globalThis.ImageBitmap, document = globalThis.document;
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), fillRect() {}, putImageData() {},
+  }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const scene = new THREE.Scene(), agents = new AgentRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => {
+    agents.dispose(); lighting.dispose(); globalThis.document = document;
+    if (originalBitmap) globalThis.ImageBitmap = originalBitmap;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
+  const camera = new THREE.PerspectiveCamera(), manager = new THREE.Group(), hero = new THREE.Group();
+  scene.add(manager); manager.add(hero);
+  const [skin, coat, hair] = Array.from({ length: 3 }, () => {
+    const texture = new THREE.Texture(new Bitmap());
+    texture.flipY = false; texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; texture.needsUpdate = true;
+    hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: texture })));
+    return texture;
+  });
+  t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : null);
+  t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : undefined);
+
+  type Backing = { image: Bitmap; rows: number; mipmaps: boolean };
+  const bySource = new Map<THREE.Source, Backing>();
+  const gpu = new Map<THREE.Texture, { __version: number; __webglTexture: Backing }>();
+  const allocations: { texture: THREE.Texture; backing: Backing }[] = [], released: THREE.Texture[] = [];
+  let bound: Backing | undefined, unpackRow = 0;
+  const gl = {
+    TEXTURE_2D: 0x0de1, UNPACK_SKIP_ROWS: 0x0cf3, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+    pixelStorei(_parameter: number, row: number) { unpackRow = row; },
+    texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+      _format: number, _type: number, image: Bitmap) {
+      assert.ok(bound);
+      assert.equal(image, bound.image); assert.equal(width, 2048); assert.equal(height, 256);
+      assert.equal(row, unpackRow); assert.equal(row, bound.rows);
+      bound.rows += height;
+    },
+    generateMipmap() { assert.ok(bound); assert.equal(bound.rows, 2048); bound.mipmaps = true; },
+  };
+  const renderer = {
+    info: { programs: [] }, capabilities: { maxTextureSize: 4096 },
+    properties: { get: (texture: THREE.Texture) => gpu.get(texture) ?? {} }, getContext: () => gl,
+    state: { bindTexture: (_target: number, backing: Backing) => { bound = backing; }, unbindTexture: () => { bound = undefined; } },
+    initTexture(texture: THREE.Texture) {
+      let backing = bySource.get(texture.source);
+      if (!backing) {
+        backing = { image: texture.image, rows: texture.source.dataReady ? 2048 : 0, mipmaps: texture.source.dataReady };
+        bySource.set(texture.source, backing); allocations.push({ texture, backing });
+      }
+      gpu.set(texture, { __version: texture.version, __webglTexture: backing });
+      texture.addEventListener('dispose', () => { released.push(texture); gpu.delete(texture); });
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => agents.prepareOfficeCast(renderer, camera, lighting, 'lift');
+  const skinSource = skin.source, coatSource = coat.source;
+  assert.equal(prepare(), true);
+  assert.equal(gpu.has(skin), false, 'the original texture must stay available for an ordinary first draw');
+  const stagedSkin = allocations[0];
+  assert.equal(stagedSkin.texture.anisotropy, skin.anisotropy);
+  assert.equal(stagedSkin.texture.colorSpace, skin.colorSpace);
+  for (let rows = 256; rows < 2048; rows += 256) {
+    assert.equal(skin.source, skinSource);
+    assert.equal(stagedSkin.backing.rows, rows);
+    assert.equal(stagedSkin.backing.mipmaps, false);
+    assert.equal(prepare(), true);
+  }
+  assert.equal(gpu.get(skin)?.__webglTexture, stagedSkin.backing);
+  assert.equal(stagedSkin.backing.mipmaps, true);
+  assert.deepEqual(released, [stagedSkin.texture]);
+  assert.equal(allocations.length, 1, 'publication adopts the populated allocation');
+
+  assert.equal(prepare(), true);
+  const stagedCoat = allocations.at(-1)!;
+  assert.equal(coat.source, coatSource);
+  renderer.initTexture(coat); // A normal color or shadow draw reaches this material first.
+  const drawnCoat = gpu.get(coat)?.__webglTexture;
+  assert.equal(drawnCoat?.rows, 2048);
+  assert.equal(prepare(), true);
+  assert.equal(released.at(-1), stagedCoat.texture);
+  assert.equal(gpu.get(coat)?.__webglTexture, drawnCoat);
+  assert.equal(coat.source, coatSource);
+
+  const stagedHair = allocations.at(-1)!;
+  assert.equal(stagedHair.backing.image, hair.image);
+  agents.cancelOfficeCastTexture();
+  assert.equal(released.at(-1), stagedHair.texture);
+  assert.equal(gpu.has(hair), false);
+  assert.equal(prepare(), true, 'a return to the office can prepare the cancelled texture again');
+  assert.equal(allocations.at(-1)?.backing.rows, 256);
+  assert.equal(bound, undefined); assert.equal(unpackRow, 0);
+});

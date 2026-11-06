@@ -36,6 +36,7 @@ import { poseAmbushCallPair } from './AmbushCallPerformance.js';
 import { prepareSkinnedMaterial } from './SkinnedPrecision.js';
 import type { LightCulling } from '../engine/LightCulling.js';
 import { cacheReadyProgramLocations } from '../engine/PrepareShaderProgram.js';
+import { bitmapUploadImage, uploadBitmapRows } from '../engine/BitmapTextureRows.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -94,6 +95,15 @@ export class AgentRenderer {
     textures: THREE.Texture[];
     approachCompiled: boolean;
     floorPrograms?: OfficeColorProgram[];
+  };
+  private officeTextureUpload?: {
+    texture: THREE.Texture;
+    staging: THREE.Texture;
+    source: THREE.Source;
+    image: ImageBitmap;
+    version: number;
+    gpu: THREE.WebGLRenderer['properties'];
+    row: number;
   };
   private officeStreetShadows = {
     frustum: new THREE.Frustum(), projection: new THREE.Matrix4(), direction: new THREE.Vector3(), lightPosition: new THREE.Vector3(),
@@ -273,6 +283,7 @@ export class AgentRenderer {
     hidden.length = 0;
   }
   prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
+    if (this.continueOfficeTexture(renderer)) return true;
     if (this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
     if (stage !== 'lift') return false;
     // The nearby street cast can enter the office's shadow map before its first color draw.
@@ -286,7 +297,7 @@ export class AgentRenderer {
       const image = texture?.image as { complete?: boolean } | null | undefined;
       if (!texture?.version || !image || image.complete === false) continue;
       const uploaded = renderer.properties.get(texture) as { __version?: number };
-      if (uploaded.__version !== texture.version) { renderer.initTexture(texture); return true; }
+      if (uploaded.__version !== texture.version) { this.prepareOfficeTexture(renderer, texture); return true; }
     }
     return false;
   }
@@ -317,7 +328,7 @@ export class AgentRenderer {
     for (let texture = prepared.textures.shift(); texture; texture = prepared.textures.shift()) {
       const uploaded = renderer.properties.get(texture) as { __version?: number };
       if (uploaded.__version !== texture.version) {
-        renderer.initTexture(texture);
+        this.prepareOfficeTexture(renderer, texture);
         return true;
       }
     }
@@ -338,6 +349,54 @@ export class AgentRenderer {
       target.dispose();
     }
     return true;
+  }
+  private prepareOfficeTexture(renderer: THREE.WebGLRenderer, texture: THREE.Texture): void {
+    const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
+    const image = !__webglTexture && bitmapUploadImage(renderer, texture);
+    if (!image) { renderer.initTexture(texture); return; }
+
+    // The shared cast can enter a color or shadow pass before all rows are ready.
+    const staging = new THREE.Texture(image, undefined, texture.wrapS, texture.wrapT, texture.magFilter,
+      texture.minFilter, THREE.RGBAFormat, THREE.UnsignedByteType, texture.anisotropy, texture.colorSpace);
+    staging.name = texture.name; staging.internalFormat = texture.internalFormat;
+    staging.generateMipmaps = texture.generateMipmaps; staging.flipY = false; staging.unpackAlignment = texture.unpackAlignment;
+    staging.needsUpdate = true;
+    this.officeTextureUpload = { texture, staging, image, source: texture.source, version: texture.version, gpu: renderer.properties, row: 0 };
+    if (!this.continueOfficeTexture(renderer)) renderer.initTexture(texture);
+  }
+  private continueOfficeTexture(renderer: THREE.WebGLRenderer): boolean {
+    const upload = this.officeTextureUpload;
+    if (!upload) return false;
+    const { texture, staging, image, row } = upload;
+    const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
+    if (__webglTexture || upload.gpu !== renderer.properties || texture.version !== upload.version
+      || texture.source !== upload.source || texture.image !== image) {
+      this.cancelOfficeCastTexture();
+      return false;
+    }
+    try {
+      const end = uploadBitmapRows(renderer, staging, image, row);
+      if (end === undefined) { this.cancelOfficeCastTexture(); return false; }
+      if (end < image.height) { upload.row = end; return true; }
+
+      // Register the original texture with the finished source and sampler before releasing the staging reference.
+      texture.source = staging.source;
+      renderer.initTexture(texture);
+    } catch (error) {
+      if (texture.source === staging.source) texture.needsUpdate = true;
+      this.cancelOfficeCastTexture();
+      throw error;
+    }
+    this.officeTextureUpload = undefined;
+    staging.dispose();
+    return true;
+  }
+  cancelOfficeCastTexture(): void {
+    const upload = this.officeTextureUpload;
+    if (!upload) return;
+    this.officeTextureUpload = undefined;
+    upload.staging.dispose();
+    this.preparedOfficeManager = undefined;
   }
   prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
     this.smithEnding?.prepareEntrance(renderer, camera, this.scene);
@@ -1289,6 +1348,7 @@ export class AgentRenderer {
     this.agents.delete(id);
   }
   dispose(): void {
+    this.cancelOfficeCastTexture();
     this.preparedOfficeManager = undefined;
     this.smithEnding?.dispose(); this.smithEnding = undefined;
     this.oracleSmith?.dispose(); this.oracleSmith = undefined;

@@ -8,12 +8,12 @@ import { PhoneModel } from '../agents/PhoneModel.js';
 import { OfficeWorkdayRenderer } from './OfficeWorkdayRenderer.js';
 import { VisibleGroup } from './VisibleGroup.js';
 import { prepareOpaqueShadowDepth } from './OpaqueShadowDepth.js';
+import { bitmapUploadImage, uploadBitmapRows } from './BitmapTextureRows.js';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 
 export const OFFICE_POINT_SLOTS = 6; // The city lights and goal marker share this layout indoors and on the ledge.
 const CLEANER_PLATFORM_X = -29.35;
 const CLEANER_BAYS = [25, 28.4] as const;
-const CLEANER_TEXTURE_ROWS = 256;
 // Allow room for the two rigs, the tools and the full reach across both window bays.
 const CLEANER_WORK_AREA = new THREE.Box3(
   new THREE.Vector3(CLEANER_PLATFORM_X - 4, -2, CLEANER_BAYS[0] - 4),
@@ -105,15 +105,9 @@ export class OfficeSetRenderer {
       const uploaded = renderer.properties.get(texture) as { __version?: number };
       if (uploaded.__version === texture.version) continue;
       // Only detached maps can stay partially uploaded between frames.
-      if (!this.root.parent && typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap
-        && image.width >= 2048 && image.height >= 2048 && Math.max(image.width, image.height) <= renderer.capabilities.maxTextureSize
-        && texture.format === THREE.RGBAFormat && texture.type === THREE.UnsignedByteType
-        && !texture.flipY && !texture.premultiplyAlpha && texture.mipmaps?.length === 0 && !texture.onUpdate && texture.source.dataReady) {
-        const upload = this.cleanerUpload = { texture, image, properties: renderer.properties, row: 0 };
-        const source = texture.source;
-        source.dataReady = false;
-        try { renderer.initTexture(texture); }
-        finally { source.dataReady = true; }
+      const bitmap = !this.root.parent ? bitmapUploadImage(renderer, texture) : undefined;
+      if (bitmap) {
+        const upload = this.cleanerUpload = { texture, image: bitmap, properties: renderer.properties, row: 0 };
         this.copyCleanerTextureRows(renderer, upload);
       } else renderer.initTexture(texture);
       return true;
@@ -122,22 +116,10 @@ export class OfficeSetRenderer {
   }
   private copyCleanerTextureRows(renderer: THREE.WebGLRenderer, upload: CleanerTextureUpload): void {
     const { texture, image, row } = upload;
-    const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
-    if (!__webglTexture) {
+    const end = uploadBitmapRows(renderer, texture, image, row);
+    if (end === undefined) {
       this.cancelCleanerTextureUpload();
       return;
-    }
-    const gl = renderer.getContext() as WebGL2RenderingContext;
-    const end = Math.min(row + CLEANER_TEXTURE_ROWS, image.height);
-    renderer.state.bindTexture(gl.TEXTURE_2D, __webglTexture);
-    try {
-      // The renderer keeps the unpack row offset at zero between uploads.
-      gl.pixelStorei(gl.UNPACK_SKIP_ROWS, row);
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, row, image.width, end - row, gl.RGBA, gl.UNSIGNED_BYTE, image);
-      if (end === image.height && texture.generateMipmaps) gl.generateMipmap(gl.TEXTURE_2D);
-    } finally {
-      gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0);
-      renderer.state.unbindTexture();
     }
     if (end === image.height) this.cleanerUpload = undefined;
     else upload.row = end;
