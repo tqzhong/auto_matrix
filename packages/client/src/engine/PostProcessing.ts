@@ -114,7 +114,9 @@ export class PostProcessing {
     this.composer.addPass(this.bloom);
     this.output = new OutputPass();
     this.composer.addPass(this.output);
-    this.antialias = new ShaderPass(FXAAShader); this.composer.addPass(this.antialias);
+    this.antialias = new ShaderPass(FXAAShader);
+    this.antialias.material.depthTest = this.antialias.material.depthWrite = false;
+    this.composer.addPass(this.antialias);
     for (const [i, name] of ['scene', 'occlusion', 'bloom', 'output', 'antialias'].entries()) {
       const pass = this.composer.passes[i]; const render = pass.render.bind(pass);
       pass.render = (...args) => {

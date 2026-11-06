@@ -103,7 +103,8 @@ export class Engine {
   constructor(container: HTMLElement) {
     this.scene.background = new THREE.Color(0x071410);
     this.scene.fog = new THREE.FogExp2(0x0b2018, 0.00125);
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    // Scene depth lives in the compositor targets. The canvas only receives the final FXAA triangle.
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, depth: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(graphicsPixelRatio(this.quality, window.innerWidth, window.innerHeight, window.devicePixelRatio));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;

@@ -29,6 +29,21 @@ test('changing render quality resizes both compositor buffers, occlusion and ant
   } finally { occlusion.dispose(); antialias.dispose(); composer.dispose(); }
 });
 
+test('the final FXAA pass writes only color while the scene keeps its offscreen depth', () => {
+  const previousWindow = globalThis.window;
+  globalThis.window = { innerWidth: 1920, innerHeight: 1080 } as Window & typeof globalThis;
+  const renderer = { getPixelRatio: () => 1, getSize: (size: THREE.Vector2) => size.set(1920, 1080) } as THREE.WebGLRenderer;
+  let post: PostProcessing | undefined;
+  try {
+    post = new PostProcessing(renderer, new THREE.Scene(), new THREE.PerspectiveCamera());
+    const composer = post['composer'], fxaa = post['antialias'];
+    assert.equal(composer.passes.at(-1), fxaa);
+    assert.deepEqual([fxaa.material.depthTest, fxaa.material.depthWrite], [false, false]);
+    assert.equal(composer.readBuffer.depthBuffer && composer.writeBuffer.depthBuffer, true);
+    assert.equal(post['occlusion'].normalRenderTarget.depthBuffer, true);
+  } finally { post?.dispose(); globalThis.window = previousWindow; }
+});
+
 test('default occlusion multiplies the existing color without copying or swapping it', t => {
   const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 64, 64);
   const renderer = { shadowMap: { autoUpdate: true, needsUpdate: false } } as THREE.WebGLRenderer;
