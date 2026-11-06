@@ -73,6 +73,9 @@ export interface DojoOpponent {
   release(): void;
 }
 
+type OfficeCastStage = 'approach' | 'lift' | 'floor';
+type OfficeColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
+
 export class AgentRenderer {
   private agents = new Map<string, Entry>();
   private oracleSmith?: OracleSmithAppearance;
@@ -84,7 +87,13 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
-  private preparedOfficeManager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties']; textures: THREE.Texture[]; programs: boolean };
+  private preparedOfficeManager?: {
+    root: THREE.Group;
+    gpu: THREE.WebGLRenderer['properties'];
+    textures: THREE.Texture[];
+    approachCompiled: boolean;
+    floorPrograms?: OfficeColorProgram[];
+  };
   private smithEnding?: SmithEndingAppearance;
   private meetingFrustum = new THREE.Frustum();
   private meetingProjection = new THREE.Matrix4();
@@ -222,8 +231,8 @@ export class AgentRenderer {
       if (entry?.state.currentLocation === 'film_extraction_car') entry.group.visible = false;
     }
   }
-  prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, riding: boolean): void {
-    if (this.prepareOfficeManager(renderer, camera, lighting, !riding) || !riding) return;
+  prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): void {
+    if (this.prepareOfficeManager(renderer, camera, lighting, stage) || stage !== 'lift') return;
     // The nearby street cast can enter the office's shadow map before its first color draw.
     const pedestrian = this.getAgent('citizen_2');
     if (!pedestrian?.visible || pedestrian.position.distanceToSquared(camera.position) > 130 ** 2) return;
@@ -238,7 +247,7 @@ export class AgentRenderer {
       if (uploaded.__version !== texture.version) { renderer.initTexture(texture); return; }
     }
   }
-  private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, compileColors: boolean): boolean {
+  private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
     // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
     if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return false;
@@ -251,11 +260,27 @@ export class AgentRenderer {
           if (map?.image && map.version > 0) textures.add(map);
         }
       });
-      this.preparedOfficeManager = prepared = { root: hero, gpu: renderer.properties, textures: [...textures], programs: false };
+      this.preparedOfficeManager = prepared = { root: hero, gpu: renderer.properties, textures: [...textures], approachCompiled: false };
     }
-    const texture = prepared.textures.shift();
-    if (texture) { renderer.initTexture(texture); return true; }
-    if (!compileColors || prepared.programs || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
+    const programs = renderer.info.programs;
+    if (stage === 'floor' && prepared.floorPrograms?.length) {
+      // Finish one linked program per frame before the call camera turns toward the manager.
+      const ready = prepared.floorPrograms.findIndex(program => programs?.includes(program) && program.isReady());
+      if (ready >= 0) {
+        prepared.floorPrograms.splice(ready, 1)[0].getUniforms();
+        return true;
+      }
+    }
+    for (let texture = prepared.textures.shift(); texture; texture = prepared.textures.shift()) {
+      const uploaded = renderer.properties.get(texture) as { __version?: number };
+      if (uploaded.__version !== texture.version) {
+        renderer.initTexture(texture);
+        return true;
+      }
+    }
+    const compiled = stage === 'floor' ? prepared.floorPrograms !== undefined : prepared.approachCompiled;
+    if (stage === 'lift' || compiled || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
+    const start = programs?.length ?? 0;
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);
@@ -263,7 +288,8 @@ export class AgentRenderer {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
       lighting.compileSubject(renderer, camera, hero);
-      prepared.programs = true;
+      if (stage === 'floor') prepared.floorPrograms = (programs?.slice(start) ?? []) as OfficeColorProgram[];
+      else prepared.approachCompiled = true;
     } finally {
       renderer.setRenderTarget(previous);
       target.dispose();

@@ -289,8 +289,14 @@ test('the office stages manager textures and the nearby street hair cutout one a
   const renderTarget = new THREE.WebGLRenderTarget(2, 2);
   let target: THREE.WebGLRenderTarget | null = renderTarget;
   const uploaded = new Map<THREE.Texture, number>();
+  let floorProgramsReady = false;
+  const floorPrograms = ['floor-uniforms-1', 'floor-uniforms-2'].map(name => ({
+    isReady: () => floorProgramsReady, getUniforms: () => calls.push(name),
+  }));
+  const programs: typeof floorPrograms = [];
   lighting.minimumPointSlots = 4;
   const renderer = {
+    info: { programs },
     properties: { get: (texture: THREE.Texture) => ({ __version: uploaded.get(texture) }) }, extensions: { has: () => true },
     initTexture: (texture: THREE.Texture) => { calls.push(texture); uploaded.set(texture, texture.version); },
     getRenderTarget: () => target,
@@ -299,11 +305,12 @@ test('the office stages manager textures and the nearby street hair cutout one a
       assert.equal(subject, hero); assert.equal(eye, camera); assert.equal(litScene, scene);
       assert.ok(target && target !== renderTarget);
       let points = 0; scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
-      assert.equal(points, 4);
-      calls.push('compile');
+      assert.equal(points, lighting.minimumPointSlots);
+      if (points === 6) programs.push(...floorPrograms);
+      calls.push(points === 6 ? 'compile-floor' : 'compile');
     },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = (compileColors = true) => agents.prepareOfficeCast(renderer, camera, lighting, !compileColors);
+  const prepare = (compileColors = true) => agents.prepareOfficeCast(renderer, camera, lighting, compileColors ? 'approach' : 'lift');
   prepare(); assert.deepEqual(calls, []);
   camera.position.z = 120;
   for (const expected of [skin, hair, coat]) {
@@ -322,4 +329,21 @@ test('the office stages manager textures and the nearby street hair cutout one a
   assert.deepEqual(calls, [skin, hair, coat, 'compile', cutout], 'resident hair and opaque street textures add no uploads');
   assert.equal(streetHair.material.map, cutout);
   assert.equal(streetHair.castShadow, true);
+
+  manager.visible = true;
+  lighting.minimumPointSlots = 6;
+  const floor = () => agents.prepareOfficeCast(renderer, camera, lighting, 'floor');
+  const beforeFloor = calls.length;
+  floor();
+  assert.deepEqual(calls.slice(beforeFloor), ['compile-floor'], 'the live floor needs its own lighting variant after the commute');
+  floor();
+  assert.deepEqual(calls.slice(beforeFloor), ['compile-floor'], 'wait for parallel compilation');
+  floorProgramsReady = true;
+  floor();
+  assert.deepEqual(calls.slice(beforeFloor), ['compile-floor', 'floor-uniforms-1']);
+  floor(); floor();
+  assert.deepEqual(calls.slice(beforeFloor), ['compile-floor', 'floor-uniforms-1', 'floor-uniforms-2']);
+  assert.equal(target, renderTarget);
+  assert.equal(hero.parent, detail);
+  assert.equal(detail.visible, false);
 });
