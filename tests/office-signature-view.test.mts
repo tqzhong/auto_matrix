@@ -108,6 +108,41 @@ test('first-person signing draws the player body only for the actual signing per
   } finally { renderer.dispose(); globalThis.document = previous; }
 });
 
+test('the courier cap encloses the delivered scalp during the handoff and signing', async t => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office'].map(async id => [id, await geometry(id)] as const)));
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  (models as unknown as { load: (id: string) => Promise<NonNullable<ReturnType<typeof assets.get>>> }).load = async id => assets.get(id)!;
+  t.after(() => models.dispose());
+  const rig = (await models.create('neo', undefined, 'courier'))!, head = rig.bones.get('head')!;
+  const crown = head.children.find((part): part is THREE.Mesh<THREE.SphereGeometry> =>
+    part instanceof THREE.Mesh && part.geometry instanceof THREE.SphereGeometry && part.geometry.parameters.thetaLength === Math.PI / 2)!;
+  const eye = head.userData.cameraEye as THREE.Vector3;
+  assert.ok(crown.position.y > eye.y, 'the rim stays above the eyes');
+  const scalp = rig.wardrobe.map(part => part.hair || part.mesh.name === 'Anatomical_head_and_hands' ? part.mesh : undefined)
+    .filter((mesh): mesh is THREE.SkinnedMesh => mesh instanceof THREE.SkinnedMesh);
+  const point = new THREE.Vector3(), headInverse = new THREE.Matrix4(), toHead = new THREE.Matrix4();
+  const phases = [['delivery', .8], ['signature', 0], ['signing', 1.8], ['delivered', .2]] as const;
+  for (const [phase, elapsed] of phases) {
+    const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, workday: { phase, elapsed, role: 'courier' as const } };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
+    headInverse.copy(head.matrixWorld).invert();
+    let samples = 0, outermost = 0;
+    for (const mesh of scalp) {
+      assert.ok(mesh.visible, 'the skin and hair remain in the scene');
+      mesh.skeleton.update(); toHead.multiplyMatrices(headInverse, mesh.matrixWorld);
+      for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+        mesh.getVertexPosition(i, point).applyMatrix4(toHead);
+        if (point.y < crown.position.y + .002 || Math.abs(point.x) > .5 || Math.abs(point.z) > .5) continue;
+        samples++;
+        point.sub(crown.position).divide(crown.scale);
+        outermost = Math.max(outermost, point.length() / crown.geometry.parameters.radius);
+      }
+    }
+    assert.ok(samples > 50000, 'measure the scalp and the delivered hair strands');
+    assert.ok(outermost < .983, `${phase}: scalp reaches ${outermost.toFixed(3)} of the crown radius, including room for the polygon edges`);
+  }
+});
+
 test('the saved stylus stroke lies on an electronic screen and is retained while the pad is withdrawn', t => {
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } as unknown as Document;

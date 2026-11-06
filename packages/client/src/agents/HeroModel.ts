@@ -393,7 +393,13 @@ export class HeroModels {
     else this.glasses(glasses, eye, glassesId, metadata.glassesTemples);
     if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
-      this.mesh(head, new THREE.SphereGeometry(.285, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), uniform).position.set(0, .11, -.01);
+      const crown = this.mesh(head, new THREE.SphereGeometry(.285, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), uniform);
+      crown.position.set(0, .11, -.01);
+      if (support === 'courier') {
+        // Fit the delivery cap over the actual scalp and groom above the brim.
+        crown.position.z = .015;
+        crown.scale.set(1, .31 / .285, .31 / .285);
+      }
       const brim = this.mesh(head, new THREE.SphereGeometry(.28, 24, 12), uniform); brim.scale.set(1, .055, .7); brim.position.set(0, .12, .23);
     }
     const pelvis = bones.get('pelvis')!;
