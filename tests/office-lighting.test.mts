@@ -525,12 +525,34 @@ test('office exits prepare the existing materials in separate frames', t => {
   });
   const body = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); body.name = 'Red_dress_anatomy';
   street.add(body, ...visibleClimb); scene.add(street);
-  t.after(() => { for (const mesh of [body, ...visibleClimb]) { mesh.geometry.dispose(); mesh.material.dispose(); } });
+  const sign = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: grain, emissiveMap: grain }));
+  lobby.add(sign);
+  const jackson = new THREE.Group(), officer = new THREE.Group(), driver = new THREE.Group();
+  const glasses = new THREE.Mesh(undefined, new THREE.MeshPhysicalMaterial()); glasses.name = 'smith-glasses-lens--1';
+  const streetHair = hair.clone();
+  const cap = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); cap.name = 'office-uniform-cap';
+  const skin = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial()); skin.name = 'Anatomical_head_and_hands';
+  const cloth = new THREE.MeshPhysicalMaterial({ bumpMap: grain });
+  const sleeve = new THREE.SkinnedMesh(undefined, cloth), torso = new THREE.Mesh(undefined, cloth);
+  jackson.add(glasses, streetHair); officer.add(cap, skin); driver.add(sleeve, torso); driver.visible = false;
+  scene.add(jackson, officer, driver);
+  t.after(() => {
+    for (const mesh of [body, ...visibleClimb, sign, glasses, cap, skin, sleeve]) { mesh.geometry.dispose(); mesh.material.dispose(); }
+    torso.geometry.dispose();
+  });
+  const cast = new Map([['citizen_2', street], ['agent_jackson', jackson], ['citizen_4', officer], ['citizen_11', driver]]);
+  const prepareDescent = () => film.prepareOfficeDescent(renderer, camera, culling, city, id => cast.get(id));
   const beforeDescent = tasks.length;
-  for (let i = 0; i < 3; i++) film.prepareOfficeDescent?.(renderer, camera, culling, street);
-  assert.deepEqual(tasks.slice(beforeDescent), ['compile', 'locations']);
-  assert.deepEqual(batches.at(-1), visibleClimb);
+  for (let i = 0; i < 5; i++) prepareDescent();
+  assert.deepEqual(tasks.slice(beforeDescent), ['compile', 'locations', 'compile', 'locations']);
+  assert.deepEqual(batches.at(-2), [sign, ...visibleClimb]);
+  assert.deepEqual(batches.at(-1), [glasses, streetHair, cap, skin]);
+  driver.visible = true;
+  for (let i = 0; i < 3; i++) prepareDescent();
+  assert.deepEqual(tasks.slice(beforeDescent + 4), ['compile', 'locations']);
+  assert.deepEqual(batches.at(-1), [sleeve, torso]);
   assert(visibleClimb.every(mesh => mesh.parent === street));
+  assert.equal(sleeve.parent, driver); assert.equal(sign.parent, lobby); assert.equal(target, null);
 });
 
 test('the upper ladder has a clear passage to the ledge between two graspable rails', t => {

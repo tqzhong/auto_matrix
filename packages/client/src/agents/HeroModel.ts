@@ -394,6 +394,7 @@ export class HeroModels {
     if (support === 'courier' || police) {
       const uniform = new THREE.MeshStandardMaterial({ color: 0x273d4e, roughness: .92 });
       const crown = this.mesh(head, new THREE.SphereGeometry(.285, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), uniform);
+      crown.name = 'office-uniform-cap';
       crown.position.set(0, .11, -.01);
       if (support === 'courier') {
         // Fit the delivery cap over the actual scalp and groom above the brim.

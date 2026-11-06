@@ -164,6 +164,11 @@ type ColorPreparation = {
   textures: Set<THREE.Texture>;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
+const OFFICE_DESCENT_ACTORS = [
+  ['citizen_2', ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes']],
+  ['agent_jackson', ['smith-glasses-lens--1', 'short04']],
+  ['citizen_4', ['office-uniform-cap', 'Anatomical_head_and_hands']],
+] as const;
 const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_dock: { scene: 'm2_lock', step: 2 },
   m2_lock: { scene: 'm2_residents', step: 1 },
@@ -220,7 +225,7 @@ export class FilmSetRenderer {
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
-  private preparedOfficeDescent?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; pedestrian: THREE.Group };
+  private preparedOfficeDescent?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; city: THREE.Group };
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
@@ -757,13 +762,30 @@ export class FilmSetRenderer {
     }
     this.prepareColorFrame(renderer, camera, prepared, lighting);
   }
-  prepareOfficeDescent(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, pedestrian?: THREE.Group): void {
-    if (!pedestrian || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+  prepareOfficeDescent(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group,
+    actor: (id: string) => THREE.Group | undefined): void {
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     let prepared = this.preparedOfficeDescent;
-    if (!prepared || prepared.gpu !== renderer.properties || prepared.pedestrian !== pedestrian) {
-      // These color variants first enter the view a few rungs below the ledge.
-      const meshes = this.colorMeshes([pedestrian]).filter(mesh => ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'].includes(mesh.name));
-      this.preparedOfficeDescent = prepared = { scene: this.scene, gpu: renderer.properties, pedestrian, meshes, programs: [], textures: new Set() };
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.city !== city) {
+      const lobby = city.getObjectByName('metacortex-city-lobby');
+      const sign = lobby instanceof THREE.Group ? this.colorMeshes([lobby]).find(({ material }) =>
+        material instanceof THREE.MeshStandardMaterial && material.map && material.emissiveMap) : undefined;
+      this.preparedOfficeDescent = prepared = { scene: this.scene, gpu: renderer.properties, city, actors: new Set(),
+        meshes: sign ? [sign] : [], programs: [], textures: new Set() };
+    }
+    // Prepare the color variants that enter view as the camera lowers past the ledge.
+    for (const [id, names] of OFFICE_DESCENT_ACTORS) {
+      const root = actor(id);
+      if (!root || prepared.actors.has(root)) continue;
+      const meshes = this.colorMeshes([root]).filter(mesh => names.some(name => name === mesh.name));
+      if (meshes.length) { prepared.actors.add(root); prepared.meshes.push(...meshes); }
+    }
+    const driver = actor('citizen_11');
+    if (driver && !prepared.actors.has(driver)) {
+      const clothes = this.colorMeshes([driver]).filter(({ material }) => material instanceof THREE.MeshPhysicalMaterial && material.bumpMap);
+      const sleeve = clothes.find(mesh => mesh instanceof THREE.SkinnedMesh);
+      const torso = clothes.find(mesh => !(mesh instanceof THREE.SkinnedMesh));
+      if (sleeve && torso) { prepared.actors.add(driver); prepared.meshes.push(sleeve, torso); }
     }
     this.prepareColorFrame(renderer, camera, prepared, lighting);
   }

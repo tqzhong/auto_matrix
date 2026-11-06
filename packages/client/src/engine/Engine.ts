@@ -301,7 +301,8 @@ export class Engine {
     } else if (!preparingOffice && filmSet?.id === 'film_office_ledge'
       && (liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge')) {
       if (!this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'ledge'))
-        this.filmSets.prepareOfficeDescent(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getNearbyOfficePedestrian(this.camera));
+        this.filmSets.prepareOfficeDescent(this.renderer, this.camera, this.lightCulling, this.voxelRenderer.matrix,
+          id => this.agentRenderer.getNearbyOfficeActor(id, this.camera));
     } else if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
       && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice)) {
       this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, lift?.passenger ? 'lift' : 'approach');
