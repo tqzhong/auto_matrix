@@ -4,8 +4,8 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 
-const root=new URL('../',import.meta.url);
-test('the published core cast contains every pinned model, editable master, runtime and review dependency',async()=>{
+const root=new URL('../../',import.meta.url);
+test('the local core cast review archive contains every pinned model, editable master, runtime and review dependency',async()=>{
  const manifest=JSON.parse(await readFile(new URL('docs/core-cast-delivery-2026-10-30.json',root),'utf8'));
  assert.deepEqual(manifest.actors.map((actor:any)=>actor.id).sort(),['morpheus','neo','smith','trinity']);
  const files=new Map(manifest.files.map((file:any)=>[file.path,file]));
