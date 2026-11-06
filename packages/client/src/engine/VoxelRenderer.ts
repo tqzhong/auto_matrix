@@ -10,6 +10,21 @@ import { prepareOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 
 const lowerShaft = { bottom: 10, top: METACORTEX.upper - .4 };
 
+function facadeBox(width: number, height: number, depth: number): THREE.BoxGeometry {
+  const box = new THREE.BoxGeometry(width, height, depth);
+  const index = box.index!;
+  // BoxGeometry puts its two Y faces between the X and Z faces.
+  const capStart = box.groups[2].start, capEnd = box.groups[4].start;
+  const caps = index.array.slice(capStart, capEnd);
+  const wallCount = index.count - caps.length;
+  index.array.copyWithin(capStart, capEnd);
+  index.array.set(caps, wallCount);
+  box.clearGroups();
+  box.addGroup(0, wallCount, 0);
+  box.addGroup(wallCount, caps.length, 1);
+  return box;
+}
+
 export class VoxelRenderer {
   readonly matrix = new VisibleGroup();
   readonly real = new VisibleGroup();
@@ -66,7 +81,7 @@ export class VoxelRenderer {
       const side = this.materials.facade(variant);
       const top = new THREE.MeshStandardMaterial({ color: 0x444b44, roughness: 0.9 });
       const filtered = lots.filter(l => l.variant === variant);
-      const towers = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), [side, side, top, top, side, side], filtered.length);
+      const towers = new THREE.InstancedMesh(facadeBox(1, 1, 1), [side, top], filtered.length);
       const roofs = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), top, filtered.length);
       filtered.forEach((lot, i) => {
         this.transform.position.set(lot.x, lot.h / 2, lot.z);
@@ -272,7 +287,7 @@ export class VoxelRenderer {
           // The streamed office supplies its own 0.4-unit floor slab.
           for (const [bottom, top] of [[lowerShaft.bottom, lowerShaft.top], [METACORTEX.upper + 10, height]]) {
             for (const [x, z, width, depth] of [[-15.3, 0, 23.4, 66], [15.3, 0, 23.4, 66], [0, 3.7, 7.2, 58.6]]) {
-              const block = new THREE.Mesh(new THREE.BoxGeometry(width, top - bottom, depth), [mat, mat, roof, roof, mat, mat]);
+              const block = new THREE.Mesh(facadeBox(width, top - bottom, depth), [mat, roof]);
               block.position.set(centerX + x, (bottom + top) / 2, METACORTEX.center.z + z); block.castShadow = block.receiveShadow = true;
               prepareOpaqueShadowDepth(block); this.matrix.add(block);
             }
@@ -281,7 +296,7 @@ export class VoxelRenderer {
           this.officeShell.position.set(centerX, METACORTEX.upper + 4.8, METACORTEX.center.z); this.officeShell.castShadow = true;
           prepareOpaqueShadowDepth(this.officeShell); this.matrix.add(this.officeShell);
         } else {
-          const building = new THREE.Mesh(new THREE.BoxGeometry(max.x - min.x, height - base, max.z - min.z), [mat, mat, roof, roof, mat, mat]);
+          const building = new THREE.Mesh(facadeBox(max.x - min.x, height - base, max.z - min.z), [mat, roof]);
           building.position.set(centerX, base + (height - base) / 2, centerZ);
           building.castShadow = true;
           building.receiveShadow = true;

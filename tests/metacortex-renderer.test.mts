@@ -91,6 +91,23 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
         material instanceof THREE.MeshStandardMaterial && material.map === facadeMap));
     assert.ok(facades.some(mesh => mesh.position.x === 1210 && mesh.position.y === 18 && mesh.position.z === 690),
       'the actual Neo apartment exterior is an opaque facade caster');
+    for (const mesh of [...towers, ...facades.filter(mesh => Array.isArray(mesh.material))]) {
+      assert.ok(mesh.geometry instanceof THREE.BoxGeometry && Array.isArray(mesh.material));
+      assert.equal(mesh.geometry.groups.length, 2, 'the renderer submits one wall batch and one roof batch per box');
+      assert.equal(mesh.material.length, 2);
+      const { width, height, depth } = mesh.geometry.parameters;
+      const box = new THREE.BoxGeometry(width, height, depth);
+      try {
+        const triangles = (geometry: THREE.BoxGeometry, groups: number[]) => groups.flatMap(i => {
+          const { start, count } = geometry.groups[i];
+          return Array.from(geometry.index!.array.slice(start, start + count));
+        });
+        assert.deepEqual(mesh.geometry.groups.map(group => group.materialIndex), [0, 1]);
+        assert.deepEqual(triangles(mesh.geometry, [0]), triangles(box, [0, 1, 4, 5]));
+        assert.deepEqual(triangles(mesh.geometry, [1]), triangles(box, [2, 3]));
+        for (const name of ['position', 'normal', 'uv']) assert.deepEqual(mesh.geometry.attributes[name].array, box.attributes[name].array);
+      } finally { box.dispose(); }
+    }
     const officeSurfaces: THREE.Mesh[] = [];
     renderer.root.traverse(object => {
       if (object instanceof THREE.Mesh && object.castShadow && object.material instanceof THREE.MeshStandardMaterial && object.material.map)
