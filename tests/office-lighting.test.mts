@@ -210,6 +210,67 @@ test('the occupied lift prepares the hidden office and city materials with the a
   assert.ok(scene.getObjectByName('office-window-glass') === windows[1]);
 });
 
+test('a cold office floor prepares the existing park color program before turning toward it', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  t.after(() => { film.dispose(); culling.dispose(); globalThis.document = document; });
+  const city = new THREE.Group(), canopy = new THREE.InstancedMesh(new THREE.SphereGeometry(), new THREE.MeshStandardMaterial(), 1);
+  canopy.name = 'central-park-canopy'; canopy.setColorAt(0, new THREE.Color(0x52694a));
+  city.add(canopy, new THREE.Mesh()); scene.add(city);
+  const position = metacortexPosition(0, -23, 1);
+  const player = { id: 'neo', position, isInMatrix: true } as AgentState;
+  const journey: FilmJourney = { version: 1, scene: 'm1_boss', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, checkpoint: position, lastText: '' };
+  const sandbox = { threats: [], neoLife: { journey } } as unknown as SandboxState;
+  const camera = new THREE.PerspectiveCamera();
+  camera.position.set(position.x, position.y + 4, position.z);
+  culling.minimumPointSlots = 6;
+  film.update(player, sandbox, 0);
+  assert.equal(film.active?.id, 'film_metacortex_floor');
+  let ready = false, compiles = 0, queries = 0;
+  const program = { isReady: () => ready, getUniforms: () => { queries++; } };
+  const properties = { get: (material: THREE.Material) => {
+    assert.equal(material, canopy.material);
+    return { currentProgram: program };
+  } };
+  let target: THREE.WebGLRenderTarget | null = null;
+  const gpu = {
+    properties, info: { programs: [program] },
+    extensions: { has: () => true },
+    getRenderTarget: () => target,
+    setRenderTarget: (next: typeof target) => { target = next; },
+    compile: (subject: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      const objects: THREE.Object3D[] = [];
+      subject.traverse(object => objects.push(object));
+      assert.deepEqual(objects, [canopy]);
+      assert.equal(canopy.parent, city);
+      assert.equal(eye, camera);
+      assert.ok(litScene.getObjectByName('office-window-glass'));
+      assert.equal(target?.width, 1);
+      compiles++;
+    },
+  };
+  const renderer = gpu as unknown as THREE.WebGLRenderer;
+  const prepare = (save = sandbox) => film.prepareOffice(renderer, camera, culling, player, save, undefined, city);
+  assert.equal(prepare({ ...sandbox, neoLife: { ...sandbox.neoLife, journey: { ...journey, visiting: 'm1_boss' } } }), false);
+  assert.equal(compiles, 0);
+  assert.equal(prepare(), true, 'a loaded floor still needs the city program without an elevator ride');
+  assert.equal(prepare(), false, 'an unfinished shader leaves the frame free');
+  assert.equal(queries, 0);
+  ready = true;
+  assert.equal(prepare(), true);
+  assert.equal(queries, 1, 'finish the matching program even when another mesh has already linked it');
+  assert.equal(prepare(), false);
+  assert.equal(compiles, 1);
+  assert.equal(target, null);
+  gpu.properties = { ...properties };
+  assert.equal(prepare(), true, 'a recreated GPU context prepares its own color program');
+  assert.equal(compiles, 2);
+});
+
 test('the upper ladder has a clear passage to the ledge between two graspable rails', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;

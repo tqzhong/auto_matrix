@@ -213,6 +213,7 @@ export class FilmSetRenderer {
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[]; actor?: THREE.Group; city?: THREE.Group };
+  private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
   private courtyardCastColors?: CastColorPreparation;
@@ -625,9 +626,11 @@ export class FilmSetRenderer {
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState,
     sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh): boolean {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
-    if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting
+    const live = player?.isInMatrix && player.id === journey?.actor && !journey.visiting;
+    if (this.office || !live || journey.scene !== 'm1_commute'
       || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
       this.cancelOfficePreparation();
+      if (this.office && live && city?.visible) return this.prepareOfficeCanopy(renderer, camera, lighting, city);
       return false;
     }
     const set = FILM_SETS.film_metacortex_floor;
@@ -674,6 +677,24 @@ export class FilmSetRenderer {
       renderer.setRenderTarget(previous);
       target.dispose();
     }
+    return true;
+  }
+  private prepareOfficeCanopy(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group): boolean {
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return false;
+    const prepared = this.preparedOfficeCanopy, gpu = renderer.properties;
+    if (prepared?.gpu === gpu && prepared.city === city) {
+      const program = prepared.program;
+      if (!program || !renderer.info.programs?.includes(program) || !program.isReady()) return false;
+      prepared.program = undefined;
+      program.getUniforms();
+      return true;
+    }
+    // A save on the floor bypasses the elevator's preparation of the street.
+    const canopy = city.getObjectByName('central-park-canopy');
+    if (!(canopy instanceof THREE.InstancedMesh) || !(canopy.material instanceof THREE.MeshStandardMaterial)) return false;
+    this.compileColorBatch(renderer, [canopy], subject => lighting.compileSubject(renderer, camera, subject));
+    const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
+    this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
   }
   private cancelOfficePreparation(): void {
@@ -3542,6 +3563,7 @@ export class FilmSetRenderer {
       this.crosscutTv = undefined; this.crosscutDeck = undefined;
     }
     this.cancelOfficePreparation();
+    this.preparedOfficeCanopy = undefined;
     this.cancelLafayettePreparation();
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();

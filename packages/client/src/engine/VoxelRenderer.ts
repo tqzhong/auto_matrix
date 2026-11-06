@@ -235,6 +235,7 @@ export class VoxelRenderer {
         for (const trees of blocks.values()) {
           const branches = new THREE.InstancedMesh(branchGeometry, bark, trees.length * 7);
           const foliage = new THREE.InstancedMesh(leafGeometry, leaves, trees.length * 288);
+          foliage.name = 'central-park-canopy';
           let branchIndex = 0; let leafIndex = 0;
           for (const { i, x, z } of trees) {
             const height = 7 + noise(i, 3) * 3;

@@ -287,7 +287,7 @@ export class Engine {
         this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
       }
     }
-    if (liveMatrixJourney?.scene === 'm1_boss' && filmSet?.id === 'film_metacortex_floor')
+    if (!preparingOffice && liveMatrixJourney?.scene === 'm1_boss' && filmSet?.id === 'film_metacortex_floor')
       this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'floor');
     else if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
       && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice))
