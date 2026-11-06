@@ -17,7 +17,7 @@ export class OfficeWorkdayPerformance {
     return this.rig.root.worldToLocal(new THREE.Vector3(center.x + point.x, center.y - 1 + point.y, center.z + point.z));
   }
   private hand(side: 'R' | 'L', point: THREE.Vector3, blend = 1, writing = false): void {
-    const root = this.rig.root; root.updateWorldMatrix(true, true);
+    const root = this.rig.root;
     const upper = this.bone('shoulder_' + side); const lower = this.bone('elbow_' + side); const wrist = this.bone('wrist_' + side);
     const rootRotation = root.getWorldQuaternion(new THREE.Quaternion());
     const desired = writing
@@ -40,10 +40,9 @@ export class OfficeWorkdayPerformance {
     if (writing) for (const f of [1, 2]) {
       const chain = [1, 2, 3].map(s => this.bone(`finger${f}-${s}_${side}`));
       const tip = chain[2].position.clone().normalize().multiplyScalar(.04);
-      root.updateWorldMatrix(true, true);
       const target = wrist.localToWorld(offset.clone().add(new THREE.Vector3(f === 1 ? .018 : -.018, 0, 0)));
+      // The coordinate conversions refresh the affected ancestor chain at each iteration.
       for (let iteration = 0; iteration < 8; iteration++) for (const joint of [...chain].reverse()) {
-        root.updateWorldMatrix(true, true);
         joint.quaternion.multiply(new THREE.Quaternion().setFromUnitVectors(joint.worldToLocal(chain[2].localToWorld(tip.clone())).normalize(), joint.worldToLocal(target.clone()).normalize()));
       }
     }

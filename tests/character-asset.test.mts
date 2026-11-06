@@ -1831,7 +1831,7 @@ test('the club shoulders and wrists stay welded to Trinity’s finished skin dur
   } finally { models.dispose(); }
 });
 
-test('the office rigs reach the keyboard, clipboard and the signature on the delivered form', async () => {
+test('the office rigs reach the keyboard, clipboard and the signature on the delivered form', async t => {
   const [neo, smith, office] = await Promise.all([loadGeometry(), loadGeometry('smith'), loadGeometry('neo-office')]);
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
   (models as unknown as { load: (id: string) => Promise<typeof neo> }).load = async id => id === 'neo-office' ? office : id === 'smith' ? smith : neo;
@@ -1839,13 +1839,17 @@ test('the office rigs reach the keyboard, clipboard and the signature on the del
   try {
     for (const role of ['neo', 'rhineheart', 'courier'] as const) {
       const rig = (await models.create(role === 'rhineheart' ? 'smith' : 'neo', undefined, role === 'neo' ? undefined : role))!;
+      const updateWorld = t.mock.method(rig.root, 'updateWorldMatrix');
       for (const elapsed of [1.05, 1.4, 1.9, 2.5, 3.4]) {
         const gesture = { phase: role === 'rhineheart' ? 'briefing' as const : 'signing' as const, elapsed, role };
         const position = role === 'rhineheart' ? OFFICE_WORKDAY.manager : role === 'courier' ? officeCourierRoot(gesture) : officeRecipientRoot(gesture);
         rig.root.position.copy(origin).add(new THREE.Vector3(position.x, 0, position.z)); rig.root.rotation.y = position.yaw;
         const motion = newMotion(); const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, officeShirt: role === 'neo', workday: gesture };
+        updateWorld.mock.resetCalls();
         models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); rig.root.updateMatrixWorld(true);
         if (role === 'neo' && elapsed < 2.55) {
+          const wholeRigUpdates = updateWorld.mock.calls.filter(call => call.arguments[1]).length;
+          assert.ok(wholeRigUpdates <= 8, `signing visited the whole rig ${wholeRigUpdates} times at ${elapsed}`);
           const pen = rig.root.getObjectByName('delivery-signature-pen')!; assert.ok(pen.visible);
           const target = officePenPoint(gesture); const nib = pen.getWorldPosition(new THREE.Vector3());
           assert.ok(nib.distanceTo(origin.clone().add(new THREE.Vector3(target.x, target.y, target.z))) < .06, `Neo's pen misses the form at ${elapsed}: ${nib.toArray()}`);
