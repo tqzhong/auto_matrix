@@ -228,9 +228,10 @@ test('the upper ladder has a clear passage to the ledge between two graspable ra
   }
 });
 
-test('office visits and cold escapes skip the cleaners while the live workday loads them once', t => {
+test('office visits skip the cleaners and the live workday culls them after their first color draw', async t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
-  const load = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  let resolveAsset!: (asset: { scene: THREE.Group }) => void;
+  const load = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(resolve => { resolveAsset = resolve; }));
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
   t.after(() => { globalThis.document = document; });
@@ -246,13 +247,52 @@ test('office visits and cold escapes skip the cleaners while the live workday lo
   escape.update({ ...workday, scene: 'm1_ledge' });
   assert.equal(load.mock.callCount(), 0, 'a cold load on the ledge skips the earlier background performance');
 
-  const live = new OfficeSetRenderer(new THREE.Group(), floor);
+  const parent = new THREE.Group();
+  parent.position.set(floor.center.x, floor.center.y - 1, floor.center.z);
+  const live = new OfficeSetRenderer(parent, floor);
   t.after(() => live.dispose());
   live.update({ ...workday, scene: 'm1_commute' });
   live.update(workday);
   live.update(workday);
   assert.deepEqual(load.mock.calls.map(call => call.arguments), [['/assets/characters/club-male.glb']]);
-  assert.equal(live.root.getObjectByName('office-window-cleaners')?.visible, true);
+  const asset = new THREE.Group();
+  const source = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial());
+  source.name = 'cleaner-test-surface'; asset.add(source);
+  for (const name of ['shoulder_R', 'elbow_R', 'shoulder_L', 'elbow_L', 'head', 'wrist_R']) {
+    const bone = new THREE.Bone(); bone.name = name; asset.add(bone);
+  }
+  resolveAsset({ scene: asset });
+  await Promise.resolve();
+  const cleaners = live.root.getObjectByName('office-window-cleaners')!;
+  const surface = cleaners.getObjectByName('cleaner-test-surface') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
+  assert.equal(cleaners.children.length, 6);
+
+  const camera = new THREE.PerspectiveCamera(55, 16 / 9, .1, 300);
+  const colorScene = new THREE.Scene(), normalScene = new THREE.Scene();
+  normalScene.overrideMaterial = new THREE.MeshNormalMaterial();
+  const gpu = { properties: {} };
+  const renderer = gpu as unknown as THREE.WebGLRenderer;
+  const draw = (scene: THREE.Scene) => surface.onAfterRender(renderer, scene, camera, surface.geometry, surface.material, null);
+  const update = () => live.update(workday, camera.position, undefined, undefined, 2, 12000, camera);
+  camera.position.copy(parent.position).add(new THREE.Vector3(-12, 4.8, 25));
+  camera.lookAt(camera.position.x + 10, camera.position.y, camera.position.z);
+  update();
+  assert.equal(cleaners.visible, true, 'a cold view keeps the initial material and texture draw');
+  draw(normalScene); update();
+  assert.equal(cleaners.visible, true, 'drawing only the normals does not prepare the color materials');
+  draw(colorScene); update();
+  assert.equal(cleaners.visible, false);
+
+  camera.lookAt(camera.position.x - 10, camera.position.y, camera.position.z);
+  update();
+  assert.equal(cleaners.visible, true);
+  camera.lookAt(camera.position.x + 10, camera.position.y, camera.position.z);
+  gpu.properties = {};
+  update();
+  assert.equal(cleaners.visible, true, 'a restored GPU context gets its own first draw');
+  draw(colorScene); update();
+  assert.equal(cleaners.visible, false);
+  assert.equal(load.mock.callCount(), 1, 'turning back into view does not reload the cast');
 });
 
 test('the office stages manager textures and the nearby street hair cutout one at a time', t => {

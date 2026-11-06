@@ -1147,7 +1147,7 @@ export class FilmSetRenderer {
       this.approach.root.visible = (playerPosition?.y ?? 1) < LAFAYETTE_THIRD_FLOOR_Y;
       if (this.approach.root.visible) this.approach.renderer.update(journey, elapsed, { phase: 'parked', elapsed: 0, role: 'neo', bugged: false });
     }
-    this.office?.update(journey, cameraPosition, playerPosition, workday, elapsed, timeOfDay);
+    this.office?.update(journey, cameraPosition, playerPosition, workday, elapsed, timeOfDay, camera);
     if (this.hotel303Door && this.hotel303Glass && this.hotel303Shards) {
       const hotel = sceneId === 'm1_room303' && !journey?.visiting ? journey?.openingHotel : undefined;
       const opening = hotel?.phase === 'breach' ? Math.min(1, hotel.elapsed / OPENING_HOTEL.breachSeconds) : hotel?.phase === 'trace' || !hotel ? 0 : 1;

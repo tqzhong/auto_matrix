@@ -6,9 +6,17 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { OFFICE_DESKS, OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_CONTACT, OFFICE_WINDOW, OFFICE_LEDGE_OFFSET, officeWindowPose, officeParcelPoint, type FilmSet, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { PhoneModel } from '../agents/PhoneModel.js';
 import { OfficeWorkdayRenderer } from './OfficeWorkdayRenderer.js';
+import { VisibleGroup } from './VisibleGroup.js';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 
 export const OFFICE_POINT_SLOTS = 6; // The city lights and goal marker share this layout indoors and on the ledge.
+const CLEANER_PLATFORM_X = -29.35;
+const CLEANER_BAYS = [25, 28.4] as const;
+// Allow room for the two rigs, the tools and the full reach across both window bays.
+const CLEANER_WORK_AREA = new THREE.Box3(
+  new THREE.Vector3(CLEANER_PLATFORM_X - 4, -2, CLEANER_BAYS[0] - 4),
+  new THREE.Vector3(CLEANER_PLATFORM_X + 5, 9, CLEANER_BAYS[1] + 4),
+);
 
 /** Office cover is drawn from the same dimensions used by movement and guard sight. */
 export class OfficeSetRenderer {
@@ -24,7 +32,10 @@ export class OfficeSetRenderer {
   private sash?: THREE.Group;
   private latch?: THREE.Group;
   private windowMaterials: { material: THREE.MeshStandardMaterial; opacity: number; depthWrite: boolean }[] = [];
-  private cleaners = new THREE.Group();
+  private cleaners = new VisibleGroup();
+  private cleanerFrustum = new THREE.Frustum();
+  private cleanerProjection = new THREE.Matrix4();
+  private cleanerDraw?: { renderer: THREE.WebGLRenderer; properties: THREE.WebGLRenderer['properties'] };
   private cleanerActors: { root: THREE.Group; bones: Map<string, THREE.Bone>; blade: THREE.Mesh; handle: THREE.Mesh; z: number }[] = [];
   private cleanerSkeletons: THREE.Skeleton[] = [];
   private cleanersRequested = false;
@@ -65,7 +76,7 @@ export class OfficeSetRenderer {
       for (const texture of [material.map, material.normalMap]) if (texture) this.textures.push(texture);
     });
     const rubber = this.mat(0x1e2727, .9); const steel = this.mat(0x7c8986, .32, .65);
-    for (const [i, z] of [25, 28.4].entries()) {
+    for (const [i, z] of CLEANER_BAYS.entries()) {
       const root = clone(asset.scene) as THREE.Group; root.name = `window-cleaner-${i + 1}`;
       const bones = new Map<string, THREE.Bone>();
       root.traverse(object => {
@@ -79,13 +90,26 @@ export class OfficeSetRenderer {
           object.material = material; this.materials.push(material);
         }
       });
-      root.position.set(-29.35, 0, z); root.rotation.y = Math.PI / 2; root.scale.setScalar(i ? .88 : .92); this.cleaners.add(root);
+      root.position.set(CLEANER_PLATFORM_X, 0, z); root.rotation.y = Math.PI / 2; root.scale.setScalar(i ? .88 : .92); this.cleaners.add(root);
       const blade = new THREE.Mesh(new THREE.BoxGeometry(.09, .08, .94), rubber); blade.name = `window-squeegee-${i + 1}`; this.cleaners.add(blade);
       const handle = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 1, 8), steel); this.cleaners.add(handle);
       this.cleanerActors.push({ root, bones, blade, handle, z });
     }
+    const surface = this.cleaners.getObjectByProperty('isMesh', true);
+    if (surface) surface.onAfterRender = (renderer, scene) => {
+      if (!scene.overrideMaterial && this.cleanerDraw?.properties !== renderer.properties)
+        this.cleanerDraw = { renderer, properties: renderer.properties };
+    };
   }
-  private updateCleaners(time: number, visible: boolean): void {
+  private updateCleaners(time: number, visible: boolean, camera?: THREE.Camera): void {
+    const draw = this.cleanerDraw;
+    // Keep the initial draw at load time so the call camera cannot trigger a cold color program.
+    if (visible && camera && draw && draw.renderer.properties === draw.properties) {
+      this.root.updateWorldMatrix(true, false);
+      camera.updateWorldMatrix(true, false);
+      this.cleanerProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).multiply(this.root.matrixWorld);
+      visible = this.cleanerFrustum.setFromProjectionMatrix(this.cleanerProjection).intersectsBox(CLEANER_WORK_AREA);
+    }
     this.cleaners.visible = visible;
     if (!visible) return;
     const up = new THREE.Vector3(0, 1, 0);
@@ -146,7 +170,7 @@ export class OfficeSetRenderer {
     const label = new THREE.Mesh(new THREE.PlaneGeometry(.72, .85), ink); label.rotation.x = -Math.PI / 2; label.position.set(0, .012, .62); flap.add(label);
     this.phone = new PhoneModel(); this.phone.root.name = 'parcel-phone'; this.phone.root.position.set(0, .215, 0); this.phone.root.rotation.x = -Math.PI / 2; group.add(this.phone.root);
   }
-  update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3, clock?: OfficeWorkday, time = 0, timeOfDay = 12000): void {
+  update(journey: FilmJourney | undefined, cameraPosition?: Vector3, playerPosition?: Vector3, clock?: OfficeWorkday, time = 0, timeOfDay = 12000, camera?: THREE.Camera): void {
     if (this.windowLight) this.windowLight.intensity = 500 * Math.max(0, Math.sin((timeOfDay / 24000 - .25) * Math.PI * 2));
     if (journey?.scene === 'm1_boss' && !journey.visiting && clock) journey = { ...journey, workday: clock };
     this.workday?.update(journey);
@@ -155,7 +179,7 @@ export class OfficeSetRenderer {
       this.cleanersRequested = true;
       void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
     }
-    this.updateCleaners(time, liveScene === 'm1_boss');
+    this.updateCleaners(time, liveScene === 'm1_boss', camera);
     if (this.sash && this.latch) {
       const time = journey?.office?.window ?? (journey?.completed.includes('m1_office_escape') && journey.office?.outcome !== 'captured' ? OFFICE_WINDOW.seconds : 0);
       const pose = officeWindowPose(time); this.sash.rotation.z = pose.angle; this.latch.rotation.x = pose.latch;
