@@ -85,26 +85,44 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
     const gpu = { properties: {} } as THREE.WebGLRenderer;
     const towers = exterior.filter(mesh => mesh.castShadow && Array.isArray(mesh.material));
     assert.equal(towers.length, 4);
+    const facades = streetDetails.filter((object): object is THREE.Mesh =>
+      object instanceof THREE.Mesh && !(object instanceof THREE.InstancedMesh) && object.castShadow &&
+      (Array.isArray(object.material) ? object.material : [object.material]).some(material =>
+        material instanceof THREE.MeshStandardMaterial && material.map === facadeMap));
+    assert.ok(facades.some(mesh => mesh.position.x === 1210 && mesh.position.y === 18 && mesh.position.z === 690),
+      'the actual Neo apartment exterior is an opaque facade caster');
+    const officeSurfaces: THREE.Mesh[] = [];
+    renderer.root.traverse(object => {
+      if (object instanceof THREE.Mesh && object.castShadow && object.material instanceof THREE.MeshStandardMaterial && object.material.map)
+        officeSurfaces.push(object);
+    });
+    assert.ok(officeSurfaces.some(mesh => (mesh.material as THREE.MeshStandardMaterial).color.getHex() === 0x687671),
+      'the batched carpet still casts a shadow');
     const depth = new THREE.MeshDepthMaterial({ map: facadeMap, alphaMap: opacityMap, displacementMap, depthPacking: THREE.RGBADepthPacking });
     t.after(() => depth.dispose());
     const group = new THREE.Group();
-    const shadowInputs = (tower: THREE.InstancedMesh) => {
-      const args = [gpu, scene, camera, camera, tower.geometry, depth, group] as const;
-      tower.onBeforeShadow(...args);
+    const shadowInputs = (mesh: THREE.Mesh) => {
+      const args = [gpu, scene, camera, camera, mesh.geometry, depth, group] as const;
+      mesh.onBeforeShadow(...args);
       try { return [depth.map, depth.alphaMap, depth.displacementMap]; }
-      finally { tower.onAfterShadow(...args); }
+      finally { mesh.onAfterShadow(...args); }
     };
-    for (const tower of towers) {
-      assert.deepEqual(shadowInputs(tower), [null, null, displacementMap], 'opaque tower shadows only need their depth and displacement');
+    for (const mesh of [...towers, ...facades, ...officeSurfaces]) {
+      const surface = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.MeshStandardMaterial;
+      const colorMap = surface.map;
+      assert.ok(colorMap);
+      assert.deepEqual(shadowInputs(mesh), [null, null, displacementMap], 'opaque shadows only need their depth and displacement');
       assert.equal(depth.map, facadeMap);
       assert.equal(depth.alphaMap, opacityMap);
-      assert.equal((tower.material as THREE.MeshStandardMaterial[])[0].map, facadeMap, 'color still samples the original facade');
+      assert.equal(surface.map, colorMap, 'the color pass retains its original texture');
     }
-    depth.alphaTest = .42;
-    assert.deepEqual(shadowInputs(towers[0]), [facadeMap, opacityMap, displacementMap], 'a masked shadow retains its silhouette');
-    depth.alphaTest = 0; towers[0].customDepthMaterial = depth;
-    assert.deepEqual(shadowInputs(towers[0]), [facadeMap, opacityMap, displacementMap], 'an authored depth material retains its inputs');
-    towers[0].customDepthMaterial = undefined;
+    for (const mesh of [towers[0], facades[0], officeSurfaces[0]]) {
+      depth.alphaTest = .42;
+      assert.deepEqual(shadowInputs(mesh), [facadeMap, opacityMap, displacementMap], 'a masked shadow retains its silhouette');
+      depth.alphaTest = 0; mesh.customDepthMaterial = depth;
+      assert.deepEqual(shadowInputs(mesh), [facadeMap, opacityMap, displacementMap], 'an authored depth material retains its inputs');
+      mesh.customDepthMaterial = undefined;
+    }
     const drawExterior = () => {
       for (const mesh of exterior) {
         const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;

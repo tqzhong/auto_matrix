@@ -273,28 +273,33 @@ export class VoxelRenderer {
           for (const [bottom, top] of [[lowerShaft.bottom, lowerShaft.top], [METACORTEX.upper + 10, height]]) {
             for (const [x, z, width, depth] of [[-15.3, 0, 23.4, 66], [15.3, 0, 23.4, 66], [0, 3.7, 7.2, 58.6]]) {
               const block = new THREE.Mesh(new THREE.BoxGeometry(width, top - bottom, depth), [mat, mat, roof, roof, mat, mat]);
-              block.position.set(centerX + x, (bottom + top) / 2, METACORTEX.center.z + z); block.castShadow = block.receiveShadow = true; this.matrix.add(block);
+              block.position.set(centerX + x, (bottom + top) / 2, METACORTEX.center.z + z); block.castShadow = block.receiveShadow = true;
+              prepareOpaqueShadowDepth(block); this.matrix.add(block);
             }
           }
           this.officeShell = new THREE.Mesh(new THREE.BoxGeometry(54, 10.4, 66), mat);
-          this.officeShell.position.set(centerX, METACORTEX.upper + 4.8, METACORTEX.center.z); this.officeShell.castShadow = true; this.matrix.add(this.officeShell);
+          this.officeShell.position.set(centerX, METACORTEX.upper + 4.8, METACORTEX.center.z); this.officeShell.castShadow = true;
+          prepareOpaqueShadowDepth(this.officeShell); this.matrix.add(this.officeShell);
         } else {
           const building = new THREE.Mesh(new THREE.BoxGeometry(max.x - min.x, height - base, max.z - min.z), [mat, mat, roof, roof, mat, mat]);
           building.position.set(centerX, base + (height - base) / 2, centerZ);
           building.castShadow = true;
           building.receiveShadow = true;
+          prepareOpaqueShadowDepth(building);
           this.matrix.add(building);
         }
         if (room) {
           const backDepth = max.z - min.z - room.depth;
           if (backDepth > 0) {
             const back = new THREE.Mesh(new THREE.BoxGeometry(max.x - min.x, 10, backDepth), mat);
-            back.position.set(centerX, 5, min.z + backDepth / 2); back.castShadow = true; this.matrix.add(back);
+            back.position.set(centerX, 5, min.z + backDepth / 2); back.castShadow = true;
+            prepareOpaqueShadowDepth(back); this.matrix.add(back);
           }
           const sideWidth = (max.x - min.x - room.width) / 2;
           if (sideWidth > 0) for (const sign of [-1, 1]) {
             const side = new THREE.Mesh(new THREE.BoxGeometry(sideWidth, 10, room.depth), mat);
-            side.position.set(centerX + sign * (room.width / 2 + sideWidth / 2), 5, max.z - room.depth / 2); side.castShadow = true; this.matrix.add(side);
+            side.position.set(centerX + sign * (room.width / 2 + sideWidth / 2), 5, max.z - room.depth / 2); side.castShadow = true;
+            prepareOpaqueShadowDepth(side); this.matrix.add(side);
           }
         }
         if (location.id === 'metacortex_office') this.sign('METACORTEX', new THREE.Vector3(centerX, height + 7, centerZ), 54, '#b5e8bd', this.matrix);

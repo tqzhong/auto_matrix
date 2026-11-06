@@ -7,6 +7,7 @@ import { OFFICE_DESKS, OFFICE_OBSTACLES, OFFICE_LADDER, OFFICE_CONTACT, OFFICE_W
 import { PhoneModel } from '../agents/PhoneModel.js';
 import { OfficeWorkdayRenderer } from './OfficeWorkdayRenderer.js';
 import { VisibleGroup } from './VisibleGroup.js';
+import { prepareOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 import type { OfficeWorkday } from '@auto_matrix/shared';
 
 export const OFFICE_POINT_SLOTS = 6; // The city lights and goal marker share this layout indoors and on the ledge.
@@ -65,6 +66,10 @@ export class OfficeSetRenderer {
     yield;
     this.workday = new OfficeWorkdayRenderer(this.root);
     this.parcel(); this.openingWindow();
+    this.root.traverse(object => {
+      if (object instanceof THREE.Mesh && object.castShadow && object.material instanceof THREE.MeshStandardMaterial
+        && (object.material.map || object.material.alphaMap)) prepareOpaqueShadowDepth(object);
+    });
     this.cleaners.name = 'office-window-cleaners'; this.root.add(this.cleaners);
     yield;
   }
