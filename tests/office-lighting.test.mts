@@ -125,7 +125,8 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   culling.minimumPointSlots = 4;
   const lamp = new THREE.PointLight(0xffffff, 8, 10);
   const landing = new THREE.SpotLight(0xffffff, 0); landing.castShadow = true;
-  const city = new THREE.Group(), street = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshPhysicalMaterial(), 1);
+  const city = new THREE.Group(), street = new THREE.InstancedMesh(new THREE.BoxGeometry(), [new THREE.MeshPhysicalMaterial()], 1);
+  street.castShadow = true;
   const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.Texture(), transparent: true, depthWrite: false, opacity: .9 }));
   const otherSign = new THREE.Sprite(sign.material.clone());
   sign.visible = false;
@@ -147,6 +148,7 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   const windows: THREE.Mesh[] = [];
   const neo = new THREE.Group(); scene.add(neo);
   let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0;
+  const shadowCompiles: { points: number; spots: number }[] = [];
   let ready = false;
   const uniformQueries: string[] = [];
   const uniformChecks: boolean[] = [];
@@ -158,7 +160,7 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   const programs: ReturnType<typeof program>[] = [];
   const versions = new Map<THREE.Texture, number>(), uploads: THREE.Texture[] = [];
   const renderer = {
-    info: { programs }, debug,
+    info: { programs }, debug, shadowMap: { enabled: true },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: (handle: { linked: boolean }, parameter: number) => {
       assert.equal(parameter, 0x8b82); return handle.linked;
     } }),
@@ -167,14 +169,28 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
     initTexture: (texture: THREE.Texture) => { uploads.push(texture); versions.set(texture, texture.version); },
     getRenderTarget: () => target,
     setRenderTarget: (next: typeof target) => { target = next; },
-    compile: (root: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+    compile: (root: THREE.Object3D, eye: THREE.Camera, litScene: THREE.Scene) => {
       assert.ok(target);
       assert.equal(eye.position.y, 70);
-      let points = 0, spots = 0;
+      let points = 0, spots = 0, casters = 0;
       for (const group of root === neo ? [litScene] : [root, litScene]) group.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
         if (object instanceof THREE.SpotLight) spots++;
+        if (object instanceof THREE.Light && object.castShadow) casters++;
       });
+      if (root instanceof THREE.InstancedMesh && root.material instanceof THREE.MeshDepthMaterial) {
+        assert.equal(root.geometry, street.geometry);
+        assert.equal(root.parent, null);
+        assert.equal(root.count, 0, 'preparation must not draw a second city');
+        assert.equal(root.material.depthPacking, THREE.RGBADepthPacking);
+        assert.equal(root.material.side, THREE.BackSide);
+        assert.equal(root.material.map, null);
+        assert.equal(litScene.fog, null);
+        assert.ok(casters > 0, 'both variants are used while shadows are enabled');
+        shadowCompiles.push({ points, spots });
+        programs.push(program(points === 0 ? 'zero-light depth' : 'office depth'));
+        return;
+      }
       assert.deepEqual({ points, spots }, { points: 6, spots: 5 });
       if (root === neo) {
         assert.ok(litScene.getObjectByName('office-window-glass'));
@@ -220,6 +236,7 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
   assert.equal(cityCompiles, 1);
+  assert.deepEqual(shadowCompiles, [{ points: 0, spots: 0 }, { points: 6, spots: 5 }]);
   assert.deepEqual(uniformQueries, [], 'an unfinished program must not stall the lift');
   programs.splice(1, 1);
   ready = true;
@@ -230,6 +247,9 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
   assert.deepEqual(uniformChecks, [false, true], 'failed links keep the normal error reporting');
+  assert.equal(prepare(), true);
+  assert.equal(prepare(), true);
+  assert.deepEqual(uniformQueries.slice(-2), ['zero-light depth', 'office depth']);
   assert.equal(prepare(), false, 'the idle preparation slot can upload one actor texture');
   const skin = new THREE.Texture({ width: 2048, height: 2048 }); skin.needsUpdate = true;
   const hair = new THREE.Texture({ width: 2048, height: 2048 }); hair.needsUpdate = true;

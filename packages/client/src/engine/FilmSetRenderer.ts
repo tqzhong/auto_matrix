@@ -215,6 +215,7 @@ export class FilmSetRenderer {
   private office?: OfficeSetRenderer;
   private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[]; actor?: THREE.Group; city?: THREE.Group; cleaners?: THREE.Group };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private officeTowerDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
   private courtyardCastColors?: CastColorPreparation;
@@ -642,6 +643,7 @@ export class FilmSetRenderer {
     const cleaners = prepared.renderer.requestWindowCleaners();
     const programs = renderer.info.programs;
     let subject = prepared.renderer.root;
+    let shadowGeometry: THREE.BufferGeometry | undefined;
     if (!prepared.ready) {
       if (!prepared.renderer.prepareStep()) return true;
       prepared.ready = true;
@@ -652,6 +654,8 @@ export class FilmSetRenderer {
       prepared.city = city;
       subject = new THREE.Group();
       const sign = city.children.find(object => object instanceof THREE.Sprite);
+      const tower = city.children.find(object => object instanceof THREE.InstancedMesh && object.castShadow && Array.isArray(object.material));
+      if (tower instanceof THREE.InstancedMesh) shadowGeometry = tower.geometry;
       // Compile the existing street meshes. Their lights are already in the target scene.
       subject.traverse = visit => {
         for (const object of city.children) if (object.visible && object instanceof THREE.Mesh) visit(object);
@@ -682,7 +686,14 @@ export class FilmSetRenderer {
       if (subject === actor) subject.traverse(object => {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
-      lighting.compileSubject(renderer, eye, subject, prepared.renderer.root);
+      let shadow: THREE.InstancedMesh | undefined;
+      if (shadowGeometry && renderer.shadowMap.enabled) {
+        const material = this.officeTowerDepth ??= new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.BackSide });
+        // Match the shared depth material after the skinned cast has used it.
+        prepareSkinnedMaterial(material);
+        shadow = new THREE.InstancedMesh(shadowGeometry, material, 0);
+      }
+      lighting.compileSubject(renderer, eye, subject, prepared.renderer.root, shadow);
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
       lighting.minimumPointSlots = liftSlots;
@@ -3664,5 +3675,5 @@ export class FilmSetRenderer {
     this.root.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.materialCache.clear(); this.moving = [];
   }
-  dispose(): void { this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); }
+  dispose(): void { this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); }
 }

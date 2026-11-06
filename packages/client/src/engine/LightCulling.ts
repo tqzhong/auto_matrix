@@ -107,7 +107,8 @@ export class LightCulling {
     while (this.depth > 0) this.restoreSelection(this.frames[--this.depth]);
   }
 
-  compileSubject(renderer: THREE.WebGLRenderer, camera: THREE.Camera, subject: THREE.Object3D, detachedLights?: THREE.Object3D): void {
+  compileSubject(renderer: THREE.WebGLRenderer, camera: THREE.Camera, subject: THREE.Object3D, detachedLights?: THREE.Object3D,
+    shadow?: THREE.InstancedMesh): void {
     const depth = this.depth;
     if (detachedLights) this.scene.add(detachedLights);
     try {
@@ -117,6 +118,16 @@ export class LightCulling {
       // compile gathers lights from both roots. Keep the office in only one of them.
       if (subject === detachedLights) detachedLights.removeFromParent();
       renderer.compile(subject, camera, this.scene);
+      if (shadow) {
+        const depthScene = new THREE.Scene();
+        // The normal pass leaves zero light counts, while the next draw still has shadows.
+        const caster = new THREE.AmbientLight(0xffffff, 0);
+        caster.castShadow = true; depthScene.add(caster);
+        renderer.compile(shadow, camera, depthScene);
+        // Shadow programs use the selected lights but no scene fog.
+        depthScene.traverseVisible = visit => this.scene.traverseVisible(visit);
+        renderer.compile(shadow, camera, depthScene);
+      }
     } finally {
       detachedLights?.removeFromParent();
       if (this.depth > depth) this.finishSelection();
