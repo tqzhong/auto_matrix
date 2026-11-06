@@ -24,6 +24,14 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
   };
   try {
     const car = scene.getObjectByName('metacortex-elevator-car')!; assert.ok(car);
+    const corridor = new THREE.Vector3(1141.3, 71, 831);
+    const enclosure = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0)]
+      .map(direction => hits(corridor, direction, 30).find(hit => hit.object.parent === renderer.root)?.object);
+    assert.equal(new Set(enclosure.filter(Boolean)).size, 3, 'the corridor has distinct wall, ceiling and floor batches');
+    assert.ok(enclosure[0] && enclosure[0].renderOrder < 0, 'the opaque office walls draw before the city');
+    assert.ok(enclosure.slice(1).every(surface => surface?.renderOrder === 0), 'the ceiling and floor keep their draw order');
+    const windows = renderer.root.children.filter(object => object instanceof THREE.Mesh && !Array.isArray(object.material) && object.material.transparent);
+    assert.ok(windows.length && windows.every(window => window.renderOrder === 0), 'transparent office surfaces retain depth sorting');
     const streetDetails = city.matrix.children;
     const curbs = streetDetails.filter(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.BoxGeometry
       && object.geometry.parameters.width === 38 && object.geometry.parameters.height === .28);
