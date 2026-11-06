@@ -38,6 +38,7 @@ export class OfficeSetRenderer {
   private cleanerDraw?: { renderer: THREE.WebGLRenderer; properties: THREE.WebGLRenderer['properties'] };
   private cleanerActors: { root: THREE.Group; bones: Map<string, THREE.Bone>; blade: THREE.Mesh; handle: THREE.Mesh; z: number }[] = [];
   private cleanerSkeletons: THREE.Skeleton[] = [];
+  private cleanerTextures = new Set<THREE.Texture>();
   private cleanersRequested = false;
   private disposed = false;
   private construction?: Generator<void>;
@@ -67,13 +68,32 @@ export class OfficeSetRenderer {
     this.cleaners.name = 'office-window-cleaners'; this.root.add(this.cleaners);
     yield;
   }
+  requestWindowCleaners(): THREE.Group | undefined {
+    if (!this.cleanersRequested) {
+      this.cleanersRequested = true;
+      void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
+    }
+    return this.cleanerActors.length ? this.cleaners : undefined;
+  }
+  prepareWindowCleanerTexture(renderer: THREE.WebGLRenderer): boolean {
+    for (const texture of this.cleanerTextures) {
+      const image = texture.image as { width?: number; complete?: boolean } | null;
+      if (!texture.version || !image || (image.width ?? 0) < 1024 || image.complete === false) continue;
+      const uploaded = renderer.properties.get(texture) as { __version?: number };
+      if (uploaded.__version !== texture.version) {
+        renderer.initTexture(texture);
+        return true;
+      }
+    }
+    return false;
+  }
   private async loadCleaners(): Promise<void> {
     const asset = await new GLTFLoader().loadAsync('/assets/characters/club-male.glb');
     if (this.disposed) return;
     asset.scene.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
       const material = object.material as THREE.MeshStandardMaterial; this.materials.push(material);
-      for (const texture of [material.map, material.normalMap]) if (texture) this.textures.push(texture);
+      for (const texture of [material.map, material.normalMap]) if (texture) this.cleanerTextures.add(texture);
     });
     const rubber = this.mat(0x1e2727, .9); const steel = this.mat(0x7c8986, .32, .65);
     for (const [i, z] of CLEANER_BAYS.entries()) {
@@ -175,10 +195,7 @@ export class OfficeSetRenderer {
     if (journey?.scene === 'm1_boss' && !journey.visiting && clock) journey = { ...journey, workday: clock };
     this.workday?.update(journey);
     const liveScene = journey?.visiting ? undefined : journey?.scene;
-    if (!this.cleanersRequested && (liveScene === 'm1_commute' || liveScene === 'm1_boss')) {
-      this.cleanersRequested = true;
-      void this.loadCleaners().catch(error => console.error('窗外清洁工模型加载失败', error));
-    }
+    if (liveScene === 'm1_commute' || liveScene === 'm1_boss') this.requestWindowCleaners();
     this.updateCleaners(time, liveScene === 'm1_boss', camera);
     if (this.sash && this.latch) {
       const time = journey?.office?.window ?? (journey?.completed.includes('m1_office_escape') && journey.office?.outcome !== 'captured' ? OFFICE_WINDOW.seconds : 0);
@@ -443,6 +460,7 @@ export class OfficeSetRenderer {
       if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose();
     });
     this.cleanerSkeletons.forEach(skeleton => skeleton.dispose());
+    this.cleanerTextures.forEach(texture => texture.dispose());
     this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }
 }

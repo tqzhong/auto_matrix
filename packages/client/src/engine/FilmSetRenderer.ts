@@ -212,7 +212,7 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
-  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[]; actor?: THREE.Group; city?: THREE.Group };
+  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[]; actor?: THREE.Group; city?: THREE.Group; cleaners?: THREE.Group };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
@@ -630,16 +630,21 @@ export class FilmSetRenderer {
     if (this.office || !live || journey.scene !== 'm1_commute'
       || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
       this.cancelOfficePreparation();
-      if (this.office && live && city?.visible) return this.prepareOfficeCanopy(renderer, camera, lighting, city);
+      if (this.office && live) {
+        if (city?.visible && this.prepareOfficeCanopy(renderer, camera, lighting, city)) return true;
+        if (journey.scene === 'm1_commute') return this.office.prepareWindowCleanerTexture(renderer);
+      }
       return false;
     }
     const set = FILM_SETS.film_metacortex_floor;
     const prepared = this.preparedOffice ??= { renderer: new OfficeSetRenderer(undefined, set), ready: false, programs: [] };
+    const cleaners = prepared.renderer.requestWindowCleaners();
     const programs = renderer.info.programs;
     let subject = prepared.renderer.root;
     if (!prepared.ready) {
       if (!prepared.renderer.prepareStep()) return true;
       prepared.ready = true;
+      prepared.cleaners = cleaners;
     } else if (actor && actor !== prepared.actor) {
       prepared.actor = subject = actor;
     } else if (city?.visible && city !== prepared.city) {
@@ -651,10 +656,12 @@ export class FilmSetRenderer {
         // One resident mesh covers the vertex-colored program shared by distant characters.
         if (distantActor) visit(distantActor);
       };
+    } else if (cleaners && cleaners !== prepared.cleaners) {
+      prepared.cleaners = subject = cleaners;
     } else {
       // Linking alone leaves uniform and attribute queries for the first draw.
       const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
-      if (ready < 0) return prepared.programs.some(program => programs?.includes(program));
+      if (ready < 0) return prepared.renderer.prepareWindowCleanerTexture(renderer) || prepared.programs.some(program => programs?.includes(program));
       prepared.programs.splice(ready, 1)[0].getUniforms();
       return true;
     }

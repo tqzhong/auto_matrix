@@ -114,9 +114,10 @@ test('office keycaps share one draw geometry at the authored desk positions', t 
   assert.equal(released, true, 'leaving the office releases the instance buffer');
 });
 
-test('the occupied lift prepares the hidden office and city materials with the arrival lights', t => {
+test('the occupied lift prepares the hidden office, city and window cleaners with the arrival lights', async t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
-  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  let resolveCleaners!: (asset: { scene: THREE.Group }) => void;
+  const cleanerLoad = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(resolve => { resolveCleaners = resolve; }));
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
@@ -140,13 +141,16 @@ test('the occupied lift prepares the hidden office and city materials with the a
   let target: THREE.WebGLRenderTarget | null = null;
   const windows: THREE.Mesh[] = [];
   const neo = new THREE.Group(); scene.add(neo);
-  let neoCompiles = 0, cityCompiles = 0;
+  let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0;
   let ready = false;
   const uniformQueries: string[] = [];
   const programs: { isReady(): boolean; getUniforms(): void }[] = [];
+  const versions = new Map<THREE.Texture, number>(), uploads: THREE.Texture[] = [];
   const renderer = {
     info: { programs },
     extensions: { has: () => true },
+    properties: { get: (texture: THREE.Texture) => ({ __version: versions.get(texture) }) },
+    initTexture: (texture: THREE.Texture) => { uploads.push(texture); versions.set(texture, texture.version); },
     getRenderTarget: () => target,
     setRenderTarget: (next: typeof target) => { target = next; },
     compile: (root: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
@@ -161,6 +165,13 @@ test('the occupied lift prepares the hidden office and city materials with the a
       if (root === neo) {
         assert.ok(litScene.getObjectByName('office-window-glass'));
         neoCompiles++;
+        return;
+      }
+      if (root.name === 'office-window-cleaners') {
+        assert.equal(litScene.getObjectByName(root.name), root, 'the cleaners compile against the actual detached floor lights');
+        assert.equal(root.children.length, 6, 'prepare the two complete actors and their tools');
+        cleanerCompiles++;
+        programs.push({ isReady: () => ready, getUniforms: () => { uniformQueries.push('cleaners'); } });
         return;
       }
       const materials: THREE.Object3D[] = [];
@@ -184,6 +195,8 @@ test('the occupied lift prepares the hidden office and city materials with the a
   film.update(player, sandbox, 0);
   const prepare = () => film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city, distant);
   assert.equal(prepare(), true, 'building the detached floor uses this frame');
+  assert.deepEqual(cleanerLoad.mock.calls.map(call => call.arguments), [['/assets/characters/club-male.glb']],
+    'request the window cleaners during the lift before the floor attaches');
   for (let i = 1; i < 9; i++) prepare();
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
@@ -196,15 +209,36 @@ test('the occupied lift prepares the hidden office and city materials with the a
   assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
   assert.equal(prepare(), false, 'the idle preparation slot can upload one actor texture');
+  const skin = new THREE.Texture({ width: 2048, height: 2048 }); skin.needsUpdate = true;
+  const hair = new THREE.Texture({ width: 2048, height: 2048 }); hair.needsUpdate = true;
+  const cleaner = new THREE.Group();
+  cleaner.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: skin })),
+    new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map: hair })));
+  resolveCleaners({ scene: cleaner });
+  await Promise.resolve();
+  assert.equal(prepare(), true);
+  assert.equal(cleanerCompiles, 1);
+  assert.deepEqual(uploads, []);
+  assert.equal(prepare(), true);
+  assert.equal(uniformQueries.at(-1), 'cleaners');
+  assert.equal(prepare(), true);
+  assert.deepEqual(uploads, [skin]);
+  assert.equal(prepare(), true);
+  assert.deepEqual(uploads, [skin, hair], 'one existing shared map is uploaded per frame');
+  assert.equal(prepare(), false);
+  assert.equal(scene.getObjectByName('office-window-cleaners'), undefined);
   assert.equal(scene.getObjectByName('office-window-glass'), undefined);
   assert.equal(lamp.intensity, 8);
   assert.equal(culling.minimumPointSlots, 4, 'the elevator keeps its own light layout while the office is prepared');
   assert.equal(target, null);
   assert.deepEqual(sandbox, before);
   let released = false;
+  const releasedMaps: THREE.Texture[] = [];
+  for (const map of [skin, hair]) map.addEventListener('dispose', () => { releasedMaps.push(map); });
   windows[0].geometry.addEventListener('dispose', () => { released = true; });
   film.prepareOffice(renderer, camera, culling, undefined, sandbox);
   assert.equal(released, true, 'leaving the lift releases the detached office');
+  assert.deepEqual(releasedMaps, [skin, hair], 'leaving the lift releases both prepared shared maps');
   for (let i = 0; i < 6; i++) film.prepareOffice(renderer, camera, culling, player, sandbox);
   player.position = metacortexPosition(0, -29, 1);
   film.update(player, sandbox, 0);
