@@ -144,10 +144,19 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0;
   let ready = false;
   const uniformQueries: string[] = [];
-  const programs: { isReady(): boolean; getUniforms(): void }[] = [];
+  const uniformChecks: boolean[] = [];
+  const debug = { checkShaderErrors: true };
+  const program = (name: string, linked = true) => ({
+    program: { linked }, isReady: () => ready,
+    getUniforms: () => { uniformQueries.push(name); uniformChecks.push(debug.checkShaderErrors); },
+  });
+  const programs: ReturnType<typeof program>[] = [];
   const versions = new Map<THREE.Texture, number>(), uploads: THREE.Texture[] = [];
   const renderer = {
-    info: { programs },
+    info: { programs }, debug,
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: (handle: { linked: boolean }, parameter: number) => {
+      assert.equal(parameter, 0x8b82); return handle.linked;
+    } }),
     extensions: { has: () => true },
     properties: { get: (texture: THREE.Texture) => ({ __version: versions.get(texture) }) },
     initTexture: (texture: THREE.Texture) => { uploads.push(texture); versions.set(texture, texture.version); },
@@ -171,7 +180,7 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
         assert.equal(litScene.getObjectByName(root.name), root, 'the cleaners compile against the actual detached floor lights');
         assert.equal(root.children.length, 6, 'prepare the two complete actors and their tools');
         cleanerCompiles++;
-        programs.push({ isReady: () => ready, getUniforms: () => { uniformQueries.push('cleaners'); } });
+        programs.push(program('cleaners'));
         return;
       }
       const materials: THREE.Object3D[] = [];
@@ -189,7 +198,7 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
       assert.equal(root.parent, null);
       windows.push(root.getObjectByName('office-window-glass') as THREE.Mesh);
       for (const material of ['glass', 'fluorescent shade', 'carpet'])
-        programs.push({ isReady: () => ready, getUniforms: () => { uniformQueries.push(material); } });
+        programs.push(program(material, material !== 'carpet'));
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
@@ -206,8 +215,11 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   ready = true;
   assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass'], 'one ready program is prepared per frame');
+  assert.deepEqual(uniformChecks, [false], 'successful links cache their locations without querying diagnostics');
+  assert.equal(debug.checkShaderErrors, true);
   assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
+  assert.deepEqual(uniformChecks, [false, true], 'failed links keep the normal error reporting');
   assert.equal(prepare(), false, 'the idle preparation slot can upload one actor texture');
   const skin = new THREE.Texture({ width: 2048, height: 2048 }); skin.needsUpdate = true;
   const hair = new THREE.Texture({ width: 2048, height: 2048 }); hair.needsUpdate = true;
@@ -267,14 +279,19 @@ test('a cold office floor prepares the existing park color program before turnin
   film.update(player, sandbox, 0);
   assert.equal(film.active?.id, 'film_metacortex_floor');
   let ready = false, compiles = 0, queries = 0;
-  const program = { isReady: () => ready, getUniforms: () => { queries++; } };
+  const debug = { checkShaderErrors: true };
+  const program = { program: {}, isReady: () => ready, getUniforms: () => {
+    assert.equal(debug.checkShaderErrors, false, 'the linked canopy program skips the diagnostics query');
+    queries++;
+  } };
   const properties = { get: (material: THREE.Material) => {
     assert.equal(material, canopy.material);
     return { currentProgram: program };
   } };
   let target: THREE.WebGLRenderTarget | null = null;
   const gpu = {
-    properties, info: { programs: [program] },
+    properties, info: { programs: [program] }, debug,
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
     extensions: { has: () => true },
     getRenderTarget: () => target,
     setRenderTarget: (next: typeof target) => { target = next; },
@@ -299,6 +316,7 @@ test('a cold office floor prepares the existing park color program before turnin
   ready = true;
   assert.equal(prepare(), true);
   assert.equal(queries, 1, 'finish the matching program even when another mesh has already linked it');
+  assert.equal(debug.checkShaderErrors, true);
   assert.equal(prepare(), false);
   assert.equal(compiles, 1);
   assert.equal(target, null);
@@ -473,13 +491,18 @@ test('the office stages manager textures and the nearby street hair cutout one a
   let target: THREE.WebGLRenderTarget | null = renderTarget;
   const uploaded = new Map<THREE.Texture, number>();
   let floorProgramsReady = false;
+  const debug = { checkShaderErrors: true };
   const floorPrograms = ['floor-uniforms-1', 'floor-uniforms-2'].map(name => ({
-    isReady: () => floorProgramsReady, getUniforms: () => calls.push(name),
+    program: {}, isReady: () => floorProgramsReady, getUniforms: () => {
+      assert.equal(debug.checkShaderErrors, false, 'the linked manager program skips the diagnostics query');
+      calls.push(name);
+    },
   }));
   const programs: typeof floorPrograms = [];
   lighting.minimumPointSlots = 4;
   const renderer = {
-    info: { programs },
+    info: { programs }, debug,
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
     properties: { get: (texture: THREE.Texture) => ({ __version: uploaded.get(texture) }) }, extensions: { has: () => true },
     initTexture: (texture: THREE.Texture) => { calls.push(texture); uploaded.set(texture, texture.version); },
     getRenderTarget: () => target,
@@ -526,6 +549,7 @@ test('the office stages manager textures and the nearby street hair cutout one a
   assert.deepEqual(calls.slice(beforeFloor), ['compile-floor', 'floor-uniforms-1']);
   floor(); floor();
   assert.deepEqual(calls.slice(beforeFloor), ['compile-floor', 'floor-uniforms-1', 'floor-uniforms-2']);
+  assert.equal(debug.checkShaderErrors, true);
   assert.equal(target, renderTarget);
   assert.equal(hero.parent, detail);
   assert.equal(detail.visible, false);

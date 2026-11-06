@@ -50,6 +50,7 @@ import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
 import type { LightCulling } from './LightCulling.js';
+import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
 import { newFreewayPickup } from '@auto_matrix/shared';
@@ -662,7 +663,7 @@ export class FilmSetRenderer {
       // Linking alone leaves uniform and attribute queries for the first draw.
       const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
       if (ready < 0) return prepared.renderer.prepareWindowCleanerTexture(renderer) || prepared.programs.some(program => programs?.includes(program));
-      prepared.programs.splice(ready, 1)[0].getUniforms();
+      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
       return true;
     }
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return true;
@@ -693,7 +694,7 @@ export class FilmSetRenderer {
       const program = prepared.program;
       if (!program || !renderer.info.programs?.includes(program) || !program.isReady()) return false;
       prepared.program = undefined;
-      program.getUniforms();
+      cacheReadyProgramLocations(renderer, program);
       return true;
     }
     // A save on the floor bypasses the elevator's preparation of the street.

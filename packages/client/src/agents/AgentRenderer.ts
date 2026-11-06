@@ -35,6 +35,7 @@ import { poseOracleExamination } from './OracleExaminationPerformance.js';
 import { poseAmbushCallPair } from './AmbushCallPerformance.js';
 import { prepareSkinnedMaterial } from './SkinnedPrecision.js';
 import type { LightCulling } from '../engine/LightCulling.js';
+import { cacheReadyProgramLocations } from '../engine/PrepareShaderProgram.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -309,7 +310,7 @@ export class AgentRenderer {
       // Finish one linked program per frame before the call camera turns toward the manager.
       const ready = prepared.floorPrograms.findIndex(program => programs?.includes(program) && program.isReady());
       if (ready >= 0) {
-        prepared.floorPrograms.splice(ready, 1)[0].getUniforms();
+        cacheReadyProgramLocations(renderer, prepared.floorPrograms.splice(ready, 1)[0]);
         return true;
       }
     }
