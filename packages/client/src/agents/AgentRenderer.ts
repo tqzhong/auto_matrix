@@ -195,6 +195,7 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
+  getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
   createThreatActor(state: AgentState) {
     const rig = this.models.create(state);
     return { rig, animate: (delta: number, input: MotionInput, distance: number) => this.models.animate(rig, delta, input, distance) };
@@ -221,10 +222,26 @@ export class AgentRenderer {
       if (entry?.state.currentLocation === 'film_extraction_car') entry.group.visible = false;
     }
   }
-  prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, compileColors = true): void {
+  prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, riding: boolean): void {
+    if (this.prepareOfficeManager(renderer, camera, lighting, !riding) || !riding) return;
+    // The nearby street cast can enter the office's shadow map before its first color draw.
+    const pedestrian = this.getAgent('citizen_2');
+    if (!pedestrian?.visible || pedestrian.position.distanceToSquared(camera.position) > 130 ** 2) return;
+    const hair = this.getAgentHero('citizen_2')?.getObjectByName('Red_dress_hair');
+    if (!(hair instanceof THREE.SkinnedMesh) || !hair.visible || !hair.castShadow || !(hair.material instanceof THREE.MeshStandardMaterial)) return;
+    const { material } = hair;
+    if (!material.alphaTest && !material.alphaHash && !material.alphaToCoverage) return;
+    for (const texture of [material.map, material.alphaMap]) {
+      const image = texture?.image as { complete?: boolean } | null | undefined;
+      if (!texture?.version || !image || image.complete === false) continue;
+      const uploaded = renderer.properties.get(texture) as { __version?: number };
+      if (uploaded.__version !== texture.version) { renderer.initTexture(texture); return; }
+    }
+  }
+  private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, compileColors: boolean): boolean {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
     // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
-    if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return;
+    if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return false;
     let prepared = this.preparedOfficeManager;
     if (prepared?.root !== hero || prepared.gpu !== renderer.properties) {
       const textures = new Set<THREE.Texture>();
@@ -237,8 +254,8 @@ export class AgentRenderer {
       this.preparedOfficeManager = prepared = { root: hero, gpu: renderer.properties, textures: [...textures], programs: false };
     }
     const texture = prepared.textures.shift();
-    if (texture) { renderer.initTexture(texture); return; }
-    if (!compileColors || prepared.programs || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (texture) { renderer.initTexture(texture); return true; }
+    if (!compileColors || prepared.programs || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);
@@ -251,6 +268,7 @@ export class AgentRenderer {
       renderer.setRenderTarget(previous);
       target.dispose();
     }
+    return true;
   }
   prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
     this.smithEnding?.prepareEntrance(renderer, camera, this.scene);

@@ -140,6 +140,7 @@ export class Engine {
     this.scene.add(this.rain);
     this.eventRing = new THREE.Mesh(new THREE.RingGeometry(10, 10.7, 64), new THREE.MeshBasicMaterial({ color: 0x9ff0b0, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
     this.eventRing.rotation.x = -Math.PI / 2;
+    this.eventRing.visible = false;
     this.scene.add(this.eventRing);
     window.addEventListener('resize', this.resize);
   }
@@ -223,11 +224,14 @@ export class Engine {
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined, this.sandbox?.traffic);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
-    const reserveCommuteLights = Boolean(this.matrix && meeting && !meeting.visiting && player?.id === meeting.actor
-      && (meeting.scene === 'm1_morning' || meeting.scene === 'm1_commute'));
+    const liveMatrixJourney = this.matrix && meeting && !meeting.visiting && player?.id === meeting.actor ? meeting : undefined;
+    const reserveCommuteLights = liveMatrixJourney?.scene === 'm1_morning' || liveMatrixJourney?.scene === 'm1_commute';
+    // Keep the prepared office lighting layout through the handoff and escape.
+    const reserveLandingSlot = reserveCommuteLights || liveMatrixJourney?.scene === 'm1_boss'
+      || liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge';
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
       ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
-    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveCommuteLights);
+    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveLandingSlot);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
@@ -266,7 +270,8 @@ export class Engine {
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();
-    const preparingOffice = this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
+    const preparingOffice = this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox,
+      this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix, this.agentRenderer.getAgentDistant('neo'));
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');
       this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo,
@@ -280,7 +285,7 @@ export class Engine {
     const lift = this.sandbox?.neoLife?.lift;
     if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
       && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice))
-      this.agentRenderer.prepareOfficeManager(this.renderer, this.camera, this.lightCulling, !lift?.passenger);
+      this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, Boolean(lift?.passenger));
     if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
     if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
@@ -301,8 +306,10 @@ export class Engine {
     }
     this.rain.geometry.attributes.position.needsUpdate = true;
     this.eventAge += delta;
-    this.eventRing.scale.setScalar(1 + this.eventAge * 3);
-    (this.eventRing.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.7 - this.eventAge * 0.15);
+    const ringOpacity = Math.max(0, 0.7 - this.eventAge * 0.15);
+    this.eventRing.visible = ringOpacity > 0;
+    if (this.eventRing.visible) this.eventRing.scale.setScalar(1 + this.eventAge * 3);
+    (this.eventRing.material as THREE.MeshBasicMaterial).opacity = ringOpacity;
     measure?.('effects');
     this.pillReflection.update(meeting, this.agentRenderer.getAgentBody('morpheus'), this.agentRenderer.getAgentBody(meeting?.actor ?? 'neo'));
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.

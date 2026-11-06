@@ -69,7 +69,7 @@ test('static office batching copies existing rounded solids without generating a
   }
 });
 
-test('identical office keycaps share construction buffers within each scene build', t => {
+test('office keycaps share one draw geometry at the authored desk positions', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const original = globalThis.document, copy = THREE.BufferGeometry.prototype.copy;
@@ -86,15 +86,30 @@ test('identical office keycaps share construction buffers within each scene buil
     return copy.call(this, source);
   });
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  let office: OfficeSetRenderer | undefined;
+  let released = false;
   try {
     const manager = new OfficeWorkdayRenderer(new THREE.Group()); manager.dispose(); build++;
-    const office = new OfficeSetRenderer(new THREE.Group(), FILM_SETS.film_metacortex_floor); office.dispose();
+    office = new OfficeSetRenderer(new THREE.Group(), FILM_SETS.film_metacortex_floor);
     assert.deepEqual(managerKeys.map(keys => keys.length), [52, 52], 'both full keyboards remain in the scene builds');
-    assert.equal(officeKeys.length, OFFICE_DESKS.length * 52, 'every workstation keeps all of its keycaps');
     assert.deepEqual(managerKeys.map(keys => new Set(keys).size), [1, 1]);
-    assert.equal(new Set(officeKeys).size, 1, 'identical workstation keys only generate one solid');
     assert.notEqual(managerKeys[0][0], managerKeys[1][0], 'disposed scene templates must not be retained for the next scene');
-  } finally { managerKey.dispose(); officeKey.dispose(); globalThis.document = original; }
+    const keys = office.root.children.find(object => object instanceof THREE.InstancedMesh && positions(object.geometry).equals(positions(officeKey)));
+    assert.ok(keys instanceof THREE.InstancedMesh, 'every workstation draws the same key geometry');
+    assert.equal(officeKeys.length, 0, 'the material batch does not duplicate key vertices');
+    assert.equal(keys.count, OFFICE_DESKS.length * 52);
+    assert.equal(keys.castShadow && keys.receiveShadow, true);
+    for (const attribute of ['normal', 'uv']) assert.deepEqual(keys.geometry.getAttribute(attribute).array, officeKey.getAttribute(attribute).array);
+    const matrix = new THREE.Matrix4(), position = new THREE.Vector3();
+    let index = 0;
+    for (const { x, z } of OFFICE_DESKS) for (let row = 0; row < 4; row++) for (let col = 0; col < 13; col++) {
+      keys.getMatrixAt(index++, matrix);
+      position.setFromMatrixPosition(matrix);
+      assert.ok(position.distanceToSquared(new THREE.Vector3(x + .4 - 1.11 + col * .183, 2.686, z - 1.24 + row * .17)) < 1e-10);
+    }
+    keys.addEventListener('dispose', () => { released = true; });
+  } finally { office?.dispose(); managerKey.dispose(); officeKey.dispose(); globalThis.document = original; }
+  assert.equal(released, true, 'leaving the office releases the instance buffer');
 });
 
 test('the occupied lift prepares the hidden office and city materials with the arrival lights', t => {
@@ -108,6 +123,8 @@ test('the occupied lift prepares the hidden office and city materials with the a
   const lamp = new THREE.PointLight(0xffffff, 8, 10);
   const landing = new THREE.SpotLight(0xffffff, 0); landing.castShadow = true;
   const city = new THREE.Group(), street = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshPhysicalMaterial(), 1);
+  const streetCast = new THREE.Group(), distant = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true }));
+  distant.visible = false; streetCast.add(distant); scene.add(streetCast);
   const hidden = new THREE.Mesh(); hidden.visible = false;
   city.add(lamp, street, hidden); scene.add(city, landing);
   const position = { ...metacortexPosition(0, -29), y: 21 };
@@ -147,8 +164,10 @@ test('the occupied lift prepares the hidden office and city materials with the a
       const materials: THREE.Object3D[] = [];
       root.traverse(object => { if (object instanceof THREE.Mesh) materials.push(object); });
       if (materials.includes(street)) {
-        assert.deepEqual(materials, [street]);
+        assert.deepEqual(materials.map(object => object.id), [street.id, distant.id], 'the city batch includes the shared distant-character color program');
         assert.equal(street.parent, city);
+        assert.equal(distant.parent, streetCast);
+        assert.equal(distant.visible, false);
         assert.equal(lamp.parent, city);
         assert.ok(litScene.getObjectByName('office-window-glass'));
         cityCompiles++;
@@ -161,19 +180,20 @@ test('the occupied lift prepares the hidden office and city materials with the a
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
-  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), true, 'building the detached floor uses this frame');
-  for (let i = 1; i < 9; i++) film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
+  const prepare = () => film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city, distant);
+  assert.equal(prepare(), true, 'building the detached floor uses this frame');
+  for (let i = 1; i < 9; i++) prepare();
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
   assert.equal(cityCompiles, 1);
   assert.deepEqual(uniformQueries, [], 'an unfinished program must not stall the lift');
   programs.splice(1, 1);
   ready = true;
-  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), true);
+  assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass'], 'one ready program is prepared per frame');
-  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), true);
+  assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
-  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), false, 'the idle preparation slot can upload one actor texture');
+  assert.equal(prepare(), false, 'the idle preparation slot can upload one actor texture');
   assert.equal(scene.getObjectByName('office-window-glass'), undefined);
   assert.equal(lamp.intensity, 8);
   assert.equal(culling.minimumPointSlots, 4, 'the elevator keeps its own light layout while the office is prepared');
@@ -217,7 +237,7 @@ test('office visits and cold escapes skip the cleaners while the live workday lo
   assert.equal(live.root.getObjectByName('office-window-cleaners')?.visible, true);
 });
 
-test('the approaching player gets staged manager texture uploads and a single color compile before the detailed body is visible', t => {
+test('the office stages manager textures and the nearby street hair cutout one at a time', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   const gradient = { addColorStop() {} };
@@ -238,15 +258,23 @@ test('the approaching player gets staged manager texture uploads and a single co
   hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: hair, bumpMap: hair })));
   hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: coat })));
   const hidden = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: hiddenMap })); hidden.visible = false; hero.add(hidden);
-  t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : null);
-  t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : undefined);
+  const pedestrian = new THREE.Group(), streetHero = new THREE.Group();
+  const image = { width: 2048, height: 2048, complete: false };
+  const cutout = new THREE.Texture(image); cutout.needsUpdate = true;
+  const streetHair = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial({ map: cutout, alphaTest: .5 }));
+  streetHair.name = 'Red_dress_hair'; streetHair.castShadow = true;
+  streetHero.add(streetHair, new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: hiddenMap })));
+  pedestrian.add(streetHero); scene.add(pedestrian);
+  t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : id === 'citizen_2' ? pedestrian : null);
+  t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : id === 'citizen_2' ? streetHero : undefined);
   const calls: (THREE.Texture | string)[] = [];
   const renderTarget = new THREE.WebGLRenderTarget(2, 2);
   let target: THREE.WebGLRenderTarget | null = renderTarget;
+  const uploaded = new Map<THREE.Texture, number>();
   lighting.minimumPointSlots = 4;
   const renderer = {
-    properties: {}, extensions: { has: () => true },
-    initTexture: (texture: THREE.Texture) => calls.push(texture),
+    properties: { get: (texture: THREE.Texture) => ({ __version: uploaded.get(texture) }) }, extensions: { has: () => true },
+    initTexture: (texture: THREE.Texture) => { calls.push(texture); uploaded.set(texture, texture.version); },
     getRenderTarget: () => target,
     setRenderTarget: (value: typeof target) => { target = value; },
     compile: (subject: THREE.Object3D, eye: THREE.Camera, litScene: THREE.Scene) => {
@@ -257,7 +285,7 @@ test('the approaching player gets staged manager texture uploads and a single co
       calls.push('compile');
     },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = (compileColors = true) => agents.prepareOfficeManager(renderer, camera, lighting, compileColors);
+  const prepare = (compileColors = true) => agents.prepareOfficeCast(renderer, camera, lighting, !compileColors);
   prepare(); assert.deepEqual(calls, []);
   camera.position.z = 120;
   for (const expected of [skin, hair, coat]) {
@@ -268,4 +296,12 @@ test('the approaching player gets staged manager texture uploads and a single co
   prepare(false); assert.deepEqual(calls, [skin, hair, coat], 'riding only needs the textures, while the destination prepares its own lighting');
   prepare(); assert.equal(calls.at(-1), 'compile');
   prepare(); assert.deepEqual(calls, [skin, hair, coat, 'compile']);
+  image.complete = true;
+  manager.visible = false;
+  prepare(false);
+  assert.equal(calls.at(-1), cutout, 'the first cutout upload takes an empty lift frame even if the manager is absent');
+  prepare(false);
+  assert.deepEqual(calls, [skin, hair, coat, 'compile', cutout], 'resident hair and opaque street textures add no uploads');
+  assert.equal(streetHair.material.map, cutout);
+  assert.equal(streetHair.castShadow, true);
 });

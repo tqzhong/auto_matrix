@@ -622,7 +622,8 @@ export class FilmSetRenderer {
       }
     }
   }
-  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group): boolean {
+  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState,
+    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh): boolean {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting
       || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
@@ -644,6 +645,8 @@ export class FilmSetRenderer {
       // Compile the existing street meshes. Their lights are already in the target scene.
       subject.traverse = visit => {
         for (const object of city.children) if (object.visible && object instanceof THREE.Mesh) visit(object);
+        // One resident mesh covers the vertex-colored program shared by distant characters.
+        if (distantActor) visit(distantActor);
       };
     } else {
       // Linking alone leaves uniform and attribute queries for the first draw.

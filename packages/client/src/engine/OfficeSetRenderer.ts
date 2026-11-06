@@ -315,6 +315,10 @@ export class OfficeSetRenderer {
     }
     const monitor = this.workstationScreen(), report = this.documentPage();
     const led = this.mat(0x66884e, .5); led.emissive.setHex(0x50783c); led.emissiveIntensity = .4;
+    const keyRows = 4, keyColumns = 13;
+    const keys = new THREE.InstancedMesh(new RoundedBoxGeometry(.145, .05, .132, 2, .01), paper, OFFICE_DESKS.length * keyRows * keyColumns);
+    keys.name = 'office-keyboard-keys'; keys.castShadow = keys.receiveShadow = true;
+    const keyMatrix = new THREE.Matrix4(); let keyIndex = 0;
     for (const { x, z } of OFFICE_DESKS) {
       const screenX = x + .35, keyboardX = x + .4, mouseX = x + 2.05, phoneX = x + 3.2;
       this.box(beige, screenX, 2.59, z - 2.6, 1.45, .18, 1.2, .08);
@@ -327,7 +331,8 @@ export class OfficeSetRenderer {
       for (let i = 0; i < 8; i++) this.box(frame, screenX + .915, 3.21 + i * .1, z - 2.75, .012, .031, .71);
       for (const dx of [-.65, -.45, -.25]) this.box(frame, screenX + dx, 2.85, z - 1.799, .1, .025, .02);
       this.box(beige, keyboardX, 2.58, z - .98, 2.6, .16, .82, .04);
-      for (let row = 0; row < 4; row++) for (let col = 0; col < 13; col++) this.box(paper, keyboardX - 1.11 + col * .183, 2.686, z - 1.24 + row * .17, .145, .05, .132, .01);
+      for (let row = 0; row < keyRows; row++) for (let col = 0; col < keyColumns; col++)
+        keys.setMatrixAt(keyIndex++, keyMatrix.makeTranslation(keyboardX - 1.11 + col * .183, 2.686, z - 1.24 + row * .17));
       this.box(black, mouseX, 2.513, z - 1.08, .7, .018, .85, .018);
       this.box(beige, mouseX, 2.62, z - 1.11, .35, .2, .57, .09);
       this.cable(black, [new THREE.Vector3(mouseX, 2.57, z - 1.37), new THREE.Vector3(mouseX + .1, 2.54, z - 2.65), new THREE.Vector3(screenX + .8, 2.55, z - 3.24)]);
@@ -354,6 +359,7 @@ export class OfficeSetRenderer {
         this.box(black, x + Math.sin(angle), .13, z + 1.1 + Math.cos(angle), .23, .23, .2, .09);
       }
     }
+    keys.computeBoundingSphere(); this.root.add(keys);
     this.sign('METACORTEX', 0, 8, -32.4, 12, '#344c43', '#b5b5a5');
     this.sign('PERSONNEL / AUTHORIZED ACCESS', 0, 6.1, 32.6, 11);
     // Broad downward lobes approximate the three banks of fluorescent panels.
@@ -390,7 +396,7 @@ export class OfficeSetRenderer {
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); this.root.updateMatrixWorld(true);
     for (const child of [...this.root.children]) {
-      if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) continue;
+      if (!(child instanceof THREE.Mesh) || child instanceof THREE.InstancedMesh || Array.isArray(child.material)) continue;
       const source = new THREE.BufferGeometry().copy(child.geometry).applyMatrix4(child.matrix); const geometry = source.index ? source.toNonIndexed() : source;
       if (source !== geometry) source.dispose();
       const group = batches.get(child.material) ?? []; group.push(geometry); batches.set(child.material, group);
@@ -408,7 +414,10 @@ export class OfficeSetRenderer {
     this.roundedBoxes = undefined;
     this.workday?.dispose();
     this.phone?.dispose();
-    this.root.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); if (object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose(); });
+    this.root.traverse(object => {
+      if (object instanceof THREE.Mesh) object.geometry.dispose();
+      if (object instanceof THREE.InstancedMesh || object instanceof THREE.PointLight || object instanceof THREE.SpotLight) object.dispose();
+    });
     this.cleanerSkeletons.forEach(skeleton => skeleton.dispose());
     this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();
   }
