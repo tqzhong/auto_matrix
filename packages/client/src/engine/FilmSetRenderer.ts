@@ -213,7 +213,11 @@ export class FilmSetRenderer {
   private glow!: THREE.MeshBasicMaterial;
   private lobby?: LobbySetRenderer;
   private office?: OfficeSetRenderer;
-  private preparedOffice?: { renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[]; actor?: THREE.Group; city?: THREE.Group; cleaners?: THREE.Group };
+  private preparedOffice?: {
+    renderer: OfficeSetRenderer; ready: boolean; programs: ColorProgram[];
+    actor?: THREE.Group; city?: THREE.Group; cleaners?: THREE.Group;
+    manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
+  };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
@@ -626,7 +630,7 @@ export class FilmSetRenderer {
     }
   }
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState,
-    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh): boolean {
+    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh, manager?: THREE.Group): boolean {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     const live = player?.isInMatrix && player.id === journey?.actor && !journey.visiting;
     if (this.office || !live || journey.scene !== 'm1_commute'
@@ -667,6 +671,9 @@ export class FilmSetRenderer {
       };
     } else if (cleaners && cleaners !== prepared.cleaners) {
       prepared.cleaners = subject = cleaners;
+    } else if (manager && (prepared.manager?.root !== manager || prepared.manager.gpu !== renderer.properties)) {
+      prepared.manager = { root: manager, gpu: renderer.properties };
+      subject = manager;
     } else {
       // Linking alone leaves uniform and attribute queries for the first draw.
       const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
@@ -683,7 +690,7 @@ export class FilmSetRenderer {
     try {
       lighting.minimumPointSlots = OFFICE_POINT_SLOTS;
       renderer.setRenderTarget(target);
-      if (subject === actor) subject.traverse(object => {
+      if (subject === actor || subject === manager) subject.traverse(object => {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
       let shadow: THREE.InstancedMesh | undefined;

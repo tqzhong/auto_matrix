@@ -114,7 +114,7 @@ test('office keycaps share one draw geometry at the authored desk positions', t 
   assert.equal(released, true, 'leaving the office releases the instance buffer');
 });
 
-test('the occupied lift prepares the hidden office, city and window cleaners with the arrival lights', async t => {
+test('the occupied lift prepares the hidden office, city, cleaners and manager with the arrival lights', async t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   let resolveCleaners!: (asset: { scene: THREE.Group }) => void;
   const cleanerLoad = t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(resolve => { resolveCleaners = resolve; }));
@@ -147,7 +147,10 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   let target: THREE.WebGLRenderTarget | null = null;
   const windows: THREE.Mesh[] = [];
   const neo = new THREE.Group(); scene.add(neo);
-  let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0;
+  const manager = new THREE.Group(), managerParent = new THREE.Group();
+  managerParent.visible = false; managerParent.add(manager); scene.add(managerParent);
+  let managerLoaded = false;
+  let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0, managerCompiles = 0;
   const shadowCompiles: { points: number; spots: number }[] = [];
   let ready = false;
   const uniformQueries: string[] = [];
@@ -197,6 +200,14 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
         neoCompiles++;
         return;
       }
+      if (root === manager) {
+        assert.ok(litScene.getObjectByName('office-window-glass'));
+        assert.equal(manager.parent, managerParent);
+        assert.equal(managerParent.visible, false);
+        managerCompiles++;
+        programs.push(program('manager'));
+        return;
+      }
       if (root.name === 'office-window-cleaners') {
         assert.equal(litScene.getObjectByName(root.name), root, 'the cleaners compile against the actual detached floor lights');
         assert.equal(root.children.length, 6, 'prepare the two complete actors and their tools');
@@ -228,7 +239,7 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
-  const prepare = () => film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city, distant);
+  const prepare = () => film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city, distant, managerLoaded ? manager : undefined);
   assert.equal(prepare(), true, 'building the detached floor uses this frame');
   assert.deepEqual(cleanerLoad.mock.calls.map(call => call.arguments), [['/assets/characters/club-male.glb']],
     'request the window cleaners during the lift before the floor attaches');
@@ -268,6 +279,13 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   assert.equal(prepare(), true);
   assert.deepEqual(uploads, [skin, hair], 'one existing shared map is uploaded per frame');
   assert.equal(prepare(), false);
+  managerLoaded = true;
+  assert.equal(prepare(), true, 'link the manager when the hero becomes available inside the lift');
+  assert.equal(managerCompiles, 1);
+  assert.equal(prepare(), true, 'prepare the linked locations in a subsequent lift frame');
+  assert.equal(uniformQueries.at(-1), 'manager');
+  assert.equal(prepare(), false);
+  assert.equal(managerCompiles, 1);
   assert.equal(scene.getObjectByName('office-window-cleaners'), undefined);
   assert.equal(scene.getObjectByName('office-window-glass'), undefined);
   assert.equal(lamp.intensity, 8);
