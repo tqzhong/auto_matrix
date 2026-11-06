@@ -75,7 +75,7 @@ export interface DojoOpponent {
   release(): void;
 }
 
-type OfficeCastStage = 'approach' | 'lift' | 'floor';
+type OfficeCastStage = 'approach' | 'lift' | 'floor' | 'ledge';
 type OfficeColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 
 export class AgentRenderer {
@@ -284,16 +284,23 @@ export class AgentRenderer {
   }
   prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
     if (this.continueOfficeTexture(renderer)) return true;
-    if (this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
-    if (stage !== 'lift') return false;
+    if (stage !== 'ledge' && this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
+    if (stage !== 'lift' && stage !== 'ledge') return false;
     // The nearby street cast can enter the office's shadow map before its first color draw.
     const pedestrian = this.getAgent('citizen_2');
     if (!pedestrian?.visible || pedestrian.position.distanceToSquared(camera.position) > 130 ** 2) return false;
-    const hair = this.getAgentHero('citizen_2')?.getObjectByName('Red_dress_hair');
-    if (!(hair instanceof THREE.SkinnedMesh) || !hair.visible || !hair.castShadow || !(hair.material instanceof THREE.MeshStandardMaterial)) return false;
-    const { material } = hair;
-    if (!material.alphaTest && !material.alphaHash && !material.alphaToCoverage) return false;
-    for (const texture of [material.map, material.alphaMap]) {
+    const hero = this.getAgentHero('citizen_2'), hair = hero?.getObjectByName('Red_dress_hair');
+    const textures: (THREE.Texture | null)[] = [];
+    if (stage === 'ledge') {
+      const body = hero?.getObjectByName('Red_dress_anatomy');
+      if (body instanceof THREE.SkinnedMesh && body.visible && body.material instanceof THREE.MeshStandardMaterial)
+        textures.push(body.material.map);
+    }
+    if (hair instanceof THREE.SkinnedMesh && hair.visible && hair.castShadow && hair.material instanceof THREE.MeshStandardMaterial) {
+      const { material } = hair;
+      if (material.alphaTest || material.alphaHash || material.alphaToCoverage) textures.push(material.map, material.alphaMap);
+    }
+    for (const texture of textures) {
       const image = texture?.image as { complete?: boolean } | null | undefined;
       if (!texture?.version || !image || image.complete === false) continue;
       const uploaded = renderer.properties.get(texture) as { __version?: number };
@@ -301,7 +308,7 @@ export class AgentRenderer {
     }
     return false;
   }
-  private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
+  private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: Exclude<OfficeCastStage, 'ledge'>): boolean {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
     // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
     if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return false;

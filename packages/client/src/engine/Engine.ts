@@ -289,11 +289,14 @@ export class Engine {
         this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
       }
     }
-    // The floor lights are already active as the car arrives, before the workday handoff.
+    // The same floor lights and shared cast remain active through the window approach.
     if (!preparingOffice && filmSet?.id === 'film_metacortex_floor'
-      && (liveMatrixJourney?.scene === 'm1_commute' || liveMatrixJourney?.scene === 'm1_boss')) {
+      && (liveMatrixJourney?.scene === 'm1_commute' || liveMatrixJourney?.scene === 'm1_boss' || liveMatrixJourney?.scene === 'm1_office_escape')) {
       if (!this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'floor') && liveMatrixJourney.scene === 'm1_boss')
         this.sandboxRenderer.prepareOfficePatrols();
+    } else if (!preparingOffice && filmSet?.id === 'film_office_ledge'
+      && (liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge')) {
+      this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'ledge');
     } else if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
       && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice)) {
       this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, lift?.passenger ? 'lift' : 'approach');

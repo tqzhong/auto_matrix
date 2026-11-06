@@ -584,7 +584,7 @@ test('the office drops street shadow rays outside the view and retains the other
   assert.ok(casting(), 'an off-camera caster can still project a shadow into the view');
 });
 
-test('the office stages manager textures and the nearby street hair cutout one at a time', t => {
+test('the office stages the manager and nearby street cast textures one at a time', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   const gradient = { addColorStop() {} };
@@ -610,7 +610,10 @@ test('the office stages manager textures and the nearby street hair cutout one a
   const cutout = new THREE.Texture(image); cutout.needsUpdate = true;
   const streetHair = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial({ map: cutout, alphaTest: .5 }));
   streetHair.name = 'Red_dress_hair'; streetHair.castShadow = true;
-  streetHero.add(streetHair, new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: hiddenMap })));
+  const streetSkin = new THREE.Texture({ width: 2048, height: 2048 }); streetSkin.needsUpdate = true;
+  const streetBody = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial({ map: streetSkin }));
+  streetBody.name = 'Red_dress_anatomy';
+  streetHero.add(streetHair, streetBody);
   pedestrian.add(streetHero); scene.add(pedestrian);
   t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : id === 'citizen_2' ? pedestrian : null);
   t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : id === 'citizen_2' ? streetHero : undefined);
@@ -681,6 +684,15 @@ test('the office stages manager textures and the nearby street hair cutout one a
   assert.equal(target, renderTarget);
   assert.equal(hero.parent, detail);
   assert.equal(detail.visible, false);
+
+  const beforeLedge = calls.length;
+  uploaded.delete(cutout);
+  const ledge = () => agents.prepareOfficeCast(renderer, camera, lighting, 'ledge');
+  assert.equal(ledge(), true);
+  assert.deepEqual(calls.slice(beforeLedge), [streetSkin]);
+  assert.equal(ledge(), true);
+  assert.equal(ledge(), false);
+  assert.deepEqual(calls.slice(beforeLedge), [streetSkin, cutout]);
 });
 
 test('the office publishes shared cast textures only after the last strip and releases interrupted uploads', t => {
