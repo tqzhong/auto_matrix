@@ -2636,10 +2636,12 @@ export class FilmStorySystem {
   }
   restorePhoneFrame(agent: AgentState, tick: number): boolean {
     const state = this.state;
-    if (!state || state.scene !== 'm1_boss' || state.visiting || !this.controls(agent) || !state.phone) return false;
-    const phone = agent.currentAction?.parameters.phone as typeof state.phone | undefined;
-    if (phone?.phase !== state.phone.phase || phone.elapsed !== state.phone.elapsed) {
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, phone: { ...state.phone } }, startedAt: tick, duration: 1, progress: 0 };
+    const phone = state && heldPhone(state);
+    if (!state || !phone || !this.controls(agent) || windowOpening(state) || windowCrossing(state)) return false;
+    const saved = agent.currentAction?.parameters.phone as typeof phone | undefined;
+    if (agent.currentAction?.type !== 'idle' || saved?.phase !== phone.phase || saved.elapsed !== phone.elapsed) {
+      agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, phone: { ...phone } }, startedAt: tick, duration: 1, progress: 0 };
     }
     return true;
   }

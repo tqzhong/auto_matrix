@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, windowOpening, windowCrossing, interrogationLocked, meetingLocked, truthLocked, savedBurlyFailedIdle } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, heldPhone, windowOpening, windowCrossing, interrogationLocked, meetingLocked, truthLocked, savedBurlyFailedIdle } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -351,7 +351,7 @@ async function main(): Promise<void> {
         || truthLocked(journey) && agent.state.currentAction?.parameters.truth
         || lafayetteKnocking(journey) && agent.state.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.state.currentAction?.parameters.welcome
-        || journey.scene === 'm1_boss' && !journey.visiting && journey.phone && agent.state.currentAction?.parameters.phone
+        || heldPhone(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.phone
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined
         || windowCrossing(journey) && agent.state.currentAction?.parameters.crossing !== undefined
         || savedMatrixEscapeIdle(journey, agent.state.currentAction)

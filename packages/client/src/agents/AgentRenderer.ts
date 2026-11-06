@@ -94,6 +94,10 @@ export class AgentRenderer {
     approachCompiled: boolean;
     floorPrograms?: OfficeColorProgram[];
   };
+  private officeStreetShadows = {
+    frustum: new THREE.Frustum(), projection: new THREE.Matrix4(), direction: new THREE.Vector3(), lightPosition: new THREE.Vector3(),
+    bounds: new THREE.Sphere(new THREE.Vector3(), 9), hidden: [] as THREE.Mesh[],
+  };
   private smithEnding?: SmithEndingAppearance;
   private meetingFrustum = new THREE.Frustum();
   private meetingProjection = new THREE.Matrix4();
@@ -230,6 +234,42 @@ export class AgentRenderer {
       const entry = this.agents.get(id);
       if (entry?.state.currentLocation === 'film_extraction_car') entry.group.visible = false;
     }
+  }
+  cullOfficeStreetShadows(camera: THREE.Camera, sun: THREE.DirectionalLight): void {
+    if (!sun.castShadow) return;
+    const { frustum, projection, direction, lightPosition, bounds, hidden } = this.officeStreetShadows;
+    camera.updateWorldMatrix(true, false);
+    frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    sun.target.getWorldPosition(direction).sub(sun.getWorldPosition(lightPosition));
+    const otherViews: THREE.Frustum[] = [];
+    let unboundedShadow = false;
+    this.scene.traverseVisible(object => {
+      if (!(object instanceof THREE.Light) || object === sun || !object.castShadow || !object.shadow) return;
+      if (!object.shadow.autoUpdate && !object.shadow.needsUpdate) return;
+      if (object instanceof THREE.SpotLight || object instanceof THREE.DirectionalLight) {
+        object.updateWorldMatrix(true, false); object.target.updateWorldMatrix(true, false);
+        object.shadow.updateMatrices(object);
+        otherViews.push(object.shadow.getFrustum());
+      } else unboundedShadow = true;
+    });
+    if (unboundedShadow) return;
+    for (const { group, state } of this.agents.values()) {
+      if (!group.visible || !state.id.startsWith('citizen_') || state.currentLocation !== 'downtown' || state.controller || group.position.y > 15) continue;
+      // Enclose the regular pedestrian rigs, with room for the shadow filter at the edge of the view.
+      group.getWorldPosition(bounds.center).y += 2;
+      // If the entire caster starts outside a plane and its shadow goes farther out, no visible receiver can use it.
+      if (!frustum.planes.some(plane => plane.normal.dot(direction) <= 0 && plane.distanceToPoint(bounds.center) < -bounds.radius)
+        || otherViews.some(view => view.intersectsSphere(bounds))) continue;
+      group.traverseVisible(object => {
+        if (!(object instanceof THREE.Mesh) || !object.castShadow) return;
+        hidden.push(object); object.castShadow = false;
+      });
+    }
+  }
+  restoreOfficeStreetShadows(): void {
+    const { hidden } = this.officeStreetShadows;
+    for (const mesh of hidden) mesh.castShadow = true;
+    hidden.length = 0;
   }
   prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): void {
     if (this.prepareOfficeManager(renderer, camera, lighting, stage) || stage !== 'lift') return;

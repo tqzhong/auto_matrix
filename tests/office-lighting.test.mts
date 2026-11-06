@@ -9,6 +9,8 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
 test('office luminaires illuminate desks without scorching the ceiling above them', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
@@ -354,6 +356,52 @@ test('office visits skip the cleaners and the live workday culls them after thei
   draw(colorScene); update();
   assert.equal(cleaners.visible, false);
   assert.equal(load.mock.callCount(), 1, 'turning back into view does not reload the cast');
+});
+
+test('the office drops street shadow rays outside the view and retains the other lights', t => {
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const gradient = { addColorStop() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createRadialGradient: () => gradient, createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+    fillRect() {}, fillText() {}, strokeRect() {}, putImageData() {},
+  }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), agents = new AgentRenderer(scene);
+  t.after(() => { agents.dispose(); globalThis.document = document; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const citizen = { ...world.agents.get('citizen_2')!, currentLocation: 'downtown', position: { x: 1113, y: 1, z: 916 } };
+  agents.updateAgent(citizen.id, citizen);
+  const group = agents.getAgent(citizen.id)!, casters: THREE.Mesh[] = [];
+  group.traverseVisible(object => { if (object instanceof THREE.Mesh && object.castShadow) casters.push(object); });
+  assert.ok(casters.length > 0);
+  const sun = new THREE.DirectionalLight(), camera = new THREE.PerspectiveCamera(57, 16/9, .1, 600);
+  sun.castShadow = true; sun.position.set(1097, 194, 901); sun.target.position.set(1125, 65, 856);
+  scene.add(sun, sun.target);
+  camera.position.set(1125.4, 69.6, 858);
+  camera.lookAt(1116, 67, 852.3);
+  const cull = () => agents.cullOfficeStreetShadows(camera, sun);
+  const casting = () => casters.every(object => object.castShadow);
+  cull();
+  assert.ok(casters.every(object => !object.castShadow && object.visible), 'the invisible street shadow leaves its visible body state intact');
+  agents.restoreOfficeStreetShadows();
+  assert.ok(casting(), 'the next pass starts with the original shadows');
+
+  const landing = new THREE.SpotLight(0xffffff, 1, 20, .8);
+  landing.castShadow = true; landing.position.set(1113, 12, 916); landing.target.position.copy(group.position);
+  scene.add(landing, landing.target);
+  cull();
+  assert.ok(casting(), 'another active shadow camera still needs this caster');
+  landing.position.set(1210, 8.3, 706); landing.target.position.set(1210, 0, 700);
+  camera.lookAt(1113, 3, 916);
+  cull();
+  assert.ok(casting(), 'looking down at the street preserves the shadow');
+
+  group.position.set(0, 1, 15);
+  camera.position.set(0, 4, 0); camera.lookAt(0, 4, -20);
+  sun.position.set(0, 34, 40); sun.target.position.set(0, 0, -40);
+  cull();
+  assert.ok(casting(), 'an off-camera caster can still project a shadow into the view');
 });
 
 test('the office stages manager textures and the nearby street hair cutout one at a time', t => {

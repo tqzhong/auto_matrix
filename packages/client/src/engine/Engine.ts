@@ -321,9 +321,12 @@ export class Engine {
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
     try {
       if (liveMatrixJourney?.scene === 'm1_commute') this.voxelRenderer.cullExteriorInClosedLift(this.renderer, this.camera, lift, carHeight);
+      if (filmSet?.id === 'film_metacortex_floor' && (liveMatrixJourney?.scene === 'm1_boss' || liveMatrixJourney?.scene === 'm1_office_escape'))
+        this.agentRenderer.cullOfficeStreetShadows(this.camera, this.lightingSystem.directionalLight);
       this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
     } finally {
       this.voxelRenderer.restoreLiftExterior();
+      this.agentRenderer.restoreOfficeStreetShadows();
       this.lightCulling.restore();
     }
     measure?.('render');

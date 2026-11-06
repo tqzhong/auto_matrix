@@ -287,6 +287,44 @@ for (const [phase, elapsed] of [['pickup', .8], ['ready', 0], ['answering', 3.3]
   });
 }
 
+for (const [scene, savedType] of [
+  ['m1_office_escape', 'idle'],
+  ['m1_ledge', 'idle'],
+  ['m1_office_escape', 'move_to'],
+  ['m1_office_escape', null],
+] as const) {
+  test(`a paused ${scene} save with ${savedType ?? 'no action'} restores the held phone before input`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, scene, scene === 'm1_office_escape' ? 'crossing' : undefined);
+    const journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
+    journey.phone = { phase: 'connected', elapsed: 11 };
+    assert.equal(journey.step, scene === 'm1_office_escape' ? 3 : 0);
+    assert.equal(journey.office.crossing, undefined);
+    const stopped = { x: 0, y: 0, z: 0 };
+    const idle = { type: 'idle', parameters: { player: true, resolved: true, phone: { ...journey.phone } },
+      startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    const saved = { ...idle, type: savedType, parameters: { ...idle.parameters, crouching: scene === 'm1_office_escape' },
+      startedAt: 1341, progress: .37 };
+    actor.currentAction = savedType ? saved : null;
+    actor.velocity = savedType === 'move_to' ? { x: -2, y: 0, z: 0 } : stopped;
+    f.checkpoint.agents.citizen_5.currentAction = { ...saved, type: 'idle' };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.office, journey.office);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.phone, journey.phone);
+      assert.deepEqual(state.agents.neo.currentAction, savedType === 'idle' ? saved : idle);
+      assert.deepEqual(state.agents.neo.position, actor.position); assert.equal(state.agents.neo.rotation, actor.rotation);
+      assert.deepEqual(state.agents.neo.velocity, stopped);
+      assert.equal(state.agents.citizen_5.currentAction, null);
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100));
+    const released = await client.world(); assert.equal(released.agents.neo.controller, undefined); check(released);
+    await server.stop();
+  });
+}
+
 test('real restarts retain the paused office window contact and resume its remaining motion', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_office_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.neo;
   journey.step = 2; journey.phone = { phase: 'connected', elapsed: 11 };
