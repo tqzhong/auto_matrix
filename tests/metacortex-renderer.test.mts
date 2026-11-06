@@ -10,7 +10,9 @@ import { UrbanMaterials } from '../packages/client/src/engine/UrbanMaterials.js'
 test('the shared tower has an unobstructed lobby, moving car, open upper floor and a real city beyond the escape window', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
-  t.mock.method(UrbanMaterials.prototype, 'facade', () => new THREE.MeshStandardMaterial());
+  const facadeMap = new THREE.Texture(), opacityMap = new THREE.Texture(), displacementMap = new THREE.Texture();
+  t.after(() => [facadeMap, opacityMap, displacementMap].forEach(map => map.dispose()));
+  t.mock.method(UrbanMaterials.prototype, 'facade', () => new THREE.MeshStandardMaterial({ map: facadeMap }));
   const original = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
   const scene = new THREE.Scene(), city = new VoxelRenderer(scene); city.init();
@@ -73,6 +75,28 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
     city.interiors.update(9500, { x: 1140, y: 33.5, z: 798 }, { lift: olderLift } as never, undefined, undefined, undefined, false, 32.5);
     assert.equal(car.position.y, 32.5, 'the rendered car must use the same passenger height as the view when its lift snapshot arrives late');
     const gpu = { properties: {} } as THREE.WebGLRenderer;
+    const towers = exterior.filter(mesh => mesh.castShadow && Array.isArray(mesh.material));
+    assert.equal(towers.length, 4);
+    const depth = new THREE.MeshDepthMaterial({ map: facadeMap, alphaMap: opacityMap, displacementMap, depthPacking: THREE.RGBADepthPacking });
+    t.after(() => depth.dispose());
+    const group = new THREE.Group();
+    const shadowInputs = (tower: THREE.InstancedMesh) => {
+      const args = [gpu, scene, camera, camera, tower.geometry, depth, group] as const;
+      tower.onBeforeShadow(...args);
+      try { return [depth.map, depth.alphaMap, depth.displacementMap]; }
+      finally { tower.onAfterShadow(...args); }
+    };
+    for (const tower of towers) {
+      assert.deepEqual(shadowInputs(tower), [null, null, displacementMap], 'opaque tower shadows only need their depth and displacement');
+      assert.equal(depth.map, facadeMap);
+      assert.equal(depth.alphaMap, opacityMap);
+      assert.equal((tower.material as THREE.MeshStandardMaterial[])[0].map, facadeMap, 'color still samples the original facade');
+    }
+    depth.alphaTest = .42;
+    assert.deepEqual(shadowInputs(towers[0]), [facadeMap, opacityMap, displacementMap], 'a masked shadow retains its silhouette');
+    depth.alphaTest = 0; towers[0].customDepthMaterial = depth;
+    assert.deepEqual(shadowInputs(towers[0]), [facadeMap, opacityMap, displacementMap], 'an authored depth material retains its inputs');
+    towers[0].customDepthMaterial = undefined;
     const drawExterior = () => {
       for (const mesh of exterior) {
         const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;

@@ -6,6 +6,7 @@ import { UrbanMaterials } from './UrbanMaterials.js';
 import { LifeInteriors } from './LifeInteriors.js';
 import { VisibleGroup } from './VisibleGroup.js';
 import { METACORTEX_CAR_INTERIOR } from './MetacortexRenderer.js';
+import { prepareOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 
 const lowerShaft = { bottom: 10, top: METACORTEX.upper - .4 };
 
@@ -79,6 +80,7 @@ export class VoxelRenderer {
       });
       towers.castShadow = true;
       towers.receiveShadow = true;
+      prepareOpaqueShadowDepth(towers);
       this.matrix.add(towers, roofs);
     }
   }
