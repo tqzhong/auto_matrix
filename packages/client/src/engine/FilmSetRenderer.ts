@@ -198,7 +198,7 @@ export class FilmSetRenderer {
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
   private materialCache = new Map<string, THREE.MeshStandardMaterial>();
-  private marker: THREE.Mesh;
+  private marker: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   private markerLight: THREE.PointLight;
   private moving: { object: THREE.Object3D; update: (time: number) => void }[] = [];
   private metal!: THREE.MeshStandardMaterial;
@@ -219,6 +219,8 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
+  private preparedOfficeDescent?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; pedestrian: THREE.Group };
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
@@ -604,17 +606,21 @@ export class FilmSetRenderer {
       }
     }
   }
-  private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation): void {
+  private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting?: LightCulling): void {
     const programs = renderer.info.programs;
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
       const [program] = prepared.programs.splice(ready, 1);
-      program.getUniforms();
+      if (lighting) cacheReadyProgramLocations(renderer, program);
+      else program.getUniforms();
       return;
     }
     const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
     if (batch.length) {
-      this.compileColorBatch(renderer, batch, subject => renderer.compile(subject, camera, prepared.scene));
+      this.compileColorBatch(renderer, batch, subject => {
+        if (lighting) lighting.compileSubject(renderer, camera, subject);
+        else renderer.compile(subject, camera, prepared.scene);
+      });
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
       return;
     }
@@ -726,6 +732,40 @@ export class FilmSetRenderer {
     const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
+  }
+  prepareOfficeWindow(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
+    city: THREE.Group, courier?: THREE.Group, patrol?: THREE.Group): void {
+    if (!this.office || journey.scene !== 'm1_office_escape' || journey.visiting || (journey.step !== 2 && journey.step !== 3)
+      || journey.office?.window === undefined || journey.office.crossing !== undefined || journey.office.outcome) {
+      this.preparedOfficeWindow = undefined;
+      return;
+    }
+    if (!courier || !patrol || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedOfficeWindow;
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.courier !== courier || prepared.patrol !== patrol) {
+      const lobby = city.getObjectByName('metacortex-city-lobby');
+      const meshes = lobby instanceof THREE.Group ? this.colorMeshes([lobby]) : [];
+      const hair = this.colorMeshes([patrol]).find(mesh => mesh.name === 'short04');
+      if (hair) meshes.push(hair);
+      meshes.push(...this.colorMeshes([courier], true));
+      const desk = this.colorMeshes([this.office.root]).find(mesh => mesh.material.name === 'metacortex-manager-desk');
+      if (desk) meshes.push(desk);
+      meshes.push(this.marker);
+      const textures = new Set<THREE.Texture>();
+      if (desk?.material.map) textures.add(desk.material.map);
+      this.preparedOfficeWindow = prepared = { scene: this.scene, gpu: renderer.properties, courier, patrol, meshes, programs: [], textures };
+    }
+    this.prepareColorFrame(renderer, camera, prepared, lighting);
+  }
+  prepareOfficeDescent(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, pedestrian?: THREE.Group): void {
+    if (!pedestrian || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedOfficeDescent;
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.pedestrian !== pedestrian) {
+      // These color variants first enter the view a few rungs below the ledge.
+      const meshes = this.colorMeshes([pedestrian]).filter(mesh => ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'].includes(mesh.name));
+      this.preparedOfficeDescent = prepared = { scene: this.scene, gpu: renderer.properties, pedestrian, meshes, programs: [], textures: new Set() };
+    }
+    this.prepareColorFrame(renderer, camera, prepared, lighting);
   }
   private cancelOfficePreparation(): void {
     this.preparedOffice?.renderer.dispose();
@@ -3594,6 +3634,8 @@ export class FilmSetRenderer {
     }
     this.cancelOfficePreparation();
     this.preparedOfficeCanopy = undefined;
+    this.preparedOfficeWindow = undefined;
+    this.preparedOfficeDescent = undefined;
     this.cancelLafayettePreparation();
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();

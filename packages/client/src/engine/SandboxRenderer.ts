@@ -217,6 +217,9 @@ export class SandboxRenderer {
       return;
     }
   }
+  getOfficeSmithHero(): THREE.Group | undefined {
+    return this.enemies.get(`office:${OFFICE_AGENT_ROLES.indexOf('smith')}`)?.rig?.hero?.root;
+  }
   private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string, scene?: string): void {
     let enemy = this.enemies.get(id);
     const dojo = kind === 'training' && scene === 'm1_dojo' && character === 'morpheus';

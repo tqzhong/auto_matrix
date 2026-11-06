@@ -220,6 +220,10 @@ export class AgentRenderer {
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  getNearbyOfficePedestrian(camera: THREE.Camera): THREE.Group | undefined {
+    const pedestrian = this.getAgent('citizen_2');
+    if (pedestrian?.visible && pedestrian.position.distanceToSquared(camera.position) <= 130 ** 2) return this.getAgentHero('citizen_2');
+  }
   createThreatActor(state: AgentState) {
     const rig = this.models.create(state);
     return { rig, animate: (delta: number, input: MotionInput, distance: number) => this.models.animate(rig, delta, input, distance) };
@@ -287,9 +291,7 @@ export class AgentRenderer {
     if (stage !== 'ledge' && this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
     if (stage !== 'lift' && stage !== 'ledge') return false;
     // The nearby street cast can enter the office's shadow map before its first color draw.
-    const pedestrian = this.getAgent('citizen_2');
-    if (!pedestrian?.visible || pedestrian.position.distanceToSquared(camera.position) > 130 ** 2) return false;
-    const hero = this.getAgentHero('citizen_2'), hair = hero?.getObjectByName('Red_dress_hair');
+    const hero = this.getNearbyOfficePedestrian(camera), hair = hero?.getObjectByName('Red_dress_hair');
     const textures: (THREE.Texture | null)[] = [];
     if (stage === 'ledge') {
       const body = hero?.getObjectByName('Red_dress_anatomy');

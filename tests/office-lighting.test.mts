@@ -453,6 +453,86 @@ test('a cold office floor prepares the existing park color program before turnin
   assert.equal(compiles, 2);
 });
 
+test('office exits prepare the existing materials in separate frames', t => {
+  const grain = new THREE.Texture({ width: 1024, height: 1024, complete: true }); grain.needsUpdate = true;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => url.includes('old_wood_floor') ? grain : new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  const position = metacortexPosition(-25, -27, 1), camera = new THREE.PerspectiveCamera();
+  const city = new THREE.Group(), lobby = new THREE.Group(), courier = new THREE.Group(), patrol = new THREE.Group();
+  const lobbyMeshes = Array.from({ length: 5 }, () => new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()));
+  const hair = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); hair.name = 'short04';
+  const courierMeshes = [new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()), new THREE.Mesh(undefined, new THREE.MeshBasicMaterial())];
+  lobby.name = 'metacortex-city-lobby'; lobby.add(...lobbyMeshes); city.add(lobby);
+  courier.add(...courierMeshes); patrol.add(hair); scene.add(city, courier, patrol);
+  t.after(() => {
+    film.dispose(); culling.dispose(); grain.dispose(); globalThis.document = document;
+    for (const mesh of [...lobbyMeshes, ...courierMeshes, hair]) { mesh.geometry.dispose(); mesh.material.dispose(); }
+  });
+  const player = { id: 'neo', position, isInMatrix: true } as AgentState;
+  const journey: FilmJourney = { version: 1, scene: 'm1_office_escape', actor: 'neo', step: 2, completed: [], enteredAt: 0,
+    reflections: {}, checkpoint: position, lastText: '', office: { alert: 0, waypoints: [], suspicion: [], lastTick: 0, guide: '', window: .9 } };
+  const sandbox = { threats: [], neoLife: { journey } } as unknown as SandboxState;
+  film.update(player, sandbox, 0);
+  culling.minimumPointSlots = 6;
+  const batches: THREE.Object3D[][] = [], tasks: string[] = [], debug = { checkShaderErrors: true };
+  let ready = false, target: THREE.WebGLRenderTarget | null = null;
+  const properties = { get: () => ({}) };
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const gpu = {
+    properties, info: { programs }, debug,
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    extensions: { has: () => true }, getRenderTarget: () => target,
+    setRenderTarget: (next: typeof target) => { target = next; },
+    initTexture: (texture: THREE.Texture) => { assert.equal(texture, grain); tasks.push('upload'); },
+    compile: (subject: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(eye, camera); assert.equal(litScene, scene); assert.equal(target?.width, 1);
+      const meshes: THREE.Object3D[] = []; subject.traverse(mesh => meshes.push(mesh));
+      batches.push(meshes); tasks.push('compile');
+      programs.push({ program: {}, isReady: () => ready, getUniforms: () => {
+        assert.equal(debug.checkShaderErrors, false); tasks.push('locations');
+      } });
+    },
+  };
+  const renderer = gpu as unknown as THREE.WebGLRenderer;
+  const prepare = (stage = journey) => film.prepareOfficeWindow?.(renderer, camera, culling, stage, city, courier, patrol);
+  prepare({ ...journey, step: 1 });
+  assert.deepEqual(tasks, []);
+  prepare();
+  assert.deepEqual(tasks, ['compile']);
+  assert.deepEqual(batches[0], lobbyMeshes.slice(0, 4));
+  ready = true;
+  for (let i = 0; i < 8; i++) prepare();
+  assert.deepEqual(tasks, ['compile', 'locations', 'compile', 'locations', 'compile', 'locations', 'upload']);
+  assert.deepEqual(batches[1], [lobbyMeshes[4], hair, ...courierMeshes]);
+  assert.equal((batches[2][0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material.map, grain);
+  assert.equal(batches[2][1], film['marker']);
+  assert.equal(lobbyMeshes[0].parent, lobby); assert.equal(hair.parent, patrol); assert.equal(courierMeshes[0].parent, courier);
+  assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
+
+  gpu.properties = { ...properties };
+  prepare();
+  assert.equal(batches.length, 4);
+  prepare({ ...journey, step: 3, office: { ...journey.office!, crossing: 0 } });
+  assert.equal(tasks.at(-1), 'compile');
+  assert.equal(film['preparedOfficeWindow'], undefined);
+
+  const street = new THREE.Group();
+  const visibleClimb = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'].map(name => {
+    const mesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); mesh.name = name; return mesh;
+  });
+  const body = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); body.name = 'Red_dress_anatomy';
+  street.add(body, ...visibleClimb); scene.add(street);
+  t.after(() => { for (const mesh of [body, ...visibleClimb]) { mesh.geometry.dispose(); mesh.material.dispose(); } });
+  const beforeDescent = tasks.length;
+  for (let i = 0; i < 3; i++) film.prepareOfficeDescent?.(renderer, camera, culling, street);
+  assert.deepEqual(tasks.slice(beforeDescent), ['compile', 'locations']);
+  assert.deepEqual(batches.at(-1), visibleClimb);
+  assert(visibleClimb.every(mesh => mesh.parent === street));
+});
+
 test('the upper ladder has a clear passage to the ledge between two graspable rails', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;

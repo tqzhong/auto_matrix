@@ -15,7 +15,7 @@ export class OfficeWorkdayRenderer {
     parent.add(this.root);
     const metal = this.mat(0x68716c, .28, .72); const dark = this.mat(0x272f2d, .7);
     const beige = this.mat(0xbdbeb0, .64); const paper = this.mat(0xe2dfcd, .93);
-    const wood = this.mat(0x776550, .57);
+    const wood = this.mat(0x776550, .57); wood.name = 'metacortex-manager-desk';
     const grain = new THREE.TextureLoader().load('/assets/film-materials/old_wood_floor-color.jpg');
     grain.colorSpace = THREE.SRGBColorSpace; grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.repeat.set(.3, .3); grain.anisotropy = 8; wood.map = grain; this.textures.add(grain);
     const glass = new THREE.MeshStandardMaterial({ color: 0x9eb3ad, transparent: true, opacity: .12, depthWrite: false, roughness: .18, metalness: .3 }); this.materials.add(glass);
