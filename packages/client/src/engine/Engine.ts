@@ -266,7 +266,7 @@ export class Engine {
     this.filmSets.prepareSecondOracle(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     if (filmSet?.id === 'film_oracle_courtyard' && player?.id === meeting?.actor) this.sandboxRenderer.prepareBurlyCopies();
-    this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
+    const preparingOffice = this.filmSets.prepareOffice(this.renderer, this.camera, this.lightCulling, player ?? undefined, this.sandbox, this.agentRenderer.getAgentHero('neo'), this.voxelRenderer.matrix);
     if (meeting && player?.id === meeting.actor) {
       const neo = this.agentRenderer.getAgentHero('neo');
       this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo,
@@ -277,8 +277,10 @@ export class Engine {
         this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
       }
     }
-    if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet && !this.sandbox?.neoLife?.lift?.passenger)
-      this.agentRenderer.prepareOfficeManager(this.renderer, this.camera, this.lightCulling);
+    const lift = this.sandbox?.neoLife?.lift;
+    if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
+      && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice))
+      this.agentRenderer.prepareOfficeManager(this.renderer, this.camera, this.lightCulling, !lift?.passenger);
     if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
     if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);

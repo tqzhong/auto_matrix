@@ -221,7 +221,7 @@ export class AgentRenderer {
       if (entry?.state.currentLocation === 'film_extraction_car') entry.group.visible = false;
     }
   }
-  prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling): void {
+  prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, compileColors = true): void {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
     // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
     if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return;
@@ -238,7 +238,7 @@ export class AgentRenderer {
     }
     const texture = prepared.textures.shift();
     if (texture) { renderer.initTexture(texture); return; }
-    if (prepared.programs || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!compileColors || prepared.programs || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);

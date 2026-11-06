@@ -73,6 +73,8 @@ export function prepareSkinnedPrecision(mesh: THREE.SkinnedMesh): void {
   const before = mesh.onBeforeRender, after = mesh.onAfterRender, beforeShadow = mesh.onBeforeShadow, afterShadow = mesh.onAfterShadow;
   const inverse = new THREE.Matrix4(), translation = new THREE.Matrix4(), origin = new THREE.Vector3();
   let source: THREE.Skeleton;
+  let opaqueDepth: THREE.MeshDepthMaterial | undefined;
+  let depthMap: THREE.Texture | null = null, depthAlpha: THREE.Texture | null = null;
   const begin = (material: THREE.Material) => {
     prepareSkinnedMaterial(material); source = mesh.skeleton; inverse.copy(mesh.bindMatrixInverse);
     origin.setFromMatrixPosition(mesh.matrixWorld);
@@ -82,6 +84,23 @@ export function prepareSkinnedPrecision(mesh: THREE.SkinnedMesh): void {
   const end = () => { mesh.skeleton = source; mesh.bindMatrixInverse.copy(inverse); };
   mesh.onBeforeRender = function(...args) { before.apply(this, args); begin(args[4]); };
   mesh.onAfterRender = function(...args) { end(); after.apply(this, args); };
-  mesh.onBeforeShadow = function(...args) { beforeShadow.apply(this, args); begin(args[5]); };
-  mesh.onAfterShadow = function(...args) { end(); afterShadow.apply(this, args); };
+  mesh.onBeforeShadow = function(...args) {
+    beforeShadow.apply(this, args);
+    const material = args[5];
+    if (material instanceof THREE.MeshDepthMaterial && material.depthPacking === THREE.RGBADepthPacking
+      && !mesh.customDepthMaterial && material.alphaTest === 0 && !material.alphaHash && !material.alphaToCoverage
+      && (material.map || material.alphaMap)) {
+      // Opaque packed depth uses the original vertices without sampling colour or opacity.
+      opaqueDepth = material; depthMap = material.map; depthAlpha = material.alphaMap;
+      material.map = material.alphaMap = null;
+    }
+    begin(material);
+  };
+  mesh.onAfterShadow = function(...args) {
+    if (opaqueDepth) {
+      opaqueDepth.map = depthMap; opaqueDepth.alphaMap = depthAlpha;
+      opaqueDepth = undefined; depthMap = depthAlpha = null;
+    }
+    end(); afterShadow.apply(this, args);
+  };
 }

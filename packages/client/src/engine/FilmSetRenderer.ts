@@ -622,19 +622,19 @@ export class FilmSetRenderer {
       }
     }
   }
-  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group): void {
+  prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState, sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group): boolean {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     if (this.office || !player?.isInMatrix || player.id !== journey?.actor || journey.scene !== 'm1_commute' || journey.visiting
       || !lift?.passenger || lift.target !== 1 || !['closing', 'travel'].includes(lift.phase)) {
       this.cancelOfficePreparation();
-      return;
+      return false;
     }
     const set = FILM_SETS.film_metacortex_floor;
     const prepared = this.preparedOffice ??= { renderer: new OfficeSetRenderer(undefined, set), ready: false, programs: [] };
     const programs = renderer.info.programs;
     let subject = prepared.renderer.root;
     if (!prepared.ready) {
-      if (!prepared.renderer.prepareStep()) return;
+      if (!prepared.renderer.prepareStep()) return true;
       prepared.ready = true;
     } else if (actor && actor !== prepared.actor) {
       prepared.actor = subject = actor;
@@ -648,10 +648,11 @@ export class FilmSetRenderer {
     } else {
       // Linking alone leaves uniform and attribute queries for the first draw.
       const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
-      if (ready >= 0) prepared.programs.splice(ready, 1)[0].getUniforms();
-      return;
+      if (ready < 0) return prepared.programs.some(program => programs?.includes(program));
+      prepared.programs.splice(ready, 1)[0].getUniforms();
+      return true;
     }
-    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return true;
     const start = programs?.length ?? 0;
     const eye = camera.clone();
     eye.position.y += set.center.y - player.position.y;
@@ -670,6 +671,7 @@ export class FilmSetRenderer {
       renderer.setRenderTarget(previous);
       target.dispose();
     }
+    return true;
   }
   private cancelOfficePreparation(): void {
     this.preparedOffice?.renderer.dispose();

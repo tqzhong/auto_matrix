@@ -128,3 +128,25 @@ test('GPU textures are reused between materials and disposed with the source ske
     h.skeleton.dispose(); assert.equal(disposed, 1);
   } finally { h.dispose(); }
 });
+
+test('opaque skinned shadows draw depth without binding colour or opacity textures', () => {
+  const h = fixture(), map = new THREE.Texture(), alphaMap = new THREE.Texture();
+  const depth = new THREE.MeshDepthMaterial({ map, alphaMap, depthPacking: THREE.RGBADepthPacking });
+  h.material.map = map;
+  const shadowMaps = () => {
+    const args = [renderer, scene, camera, camera, h.geometry, depth, group] as const;
+    h.mesh.onBeforeShadow(...args);
+    try { return [depth.map, depth.alphaMap]; }
+    finally { h.mesh.onAfterShadow(...args); }
+  };
+  try {
+    assert.deepEqual(shadowMaps().map(Boolean), [false, false], 'ordinary opaque depth does not use either texture');
+    assert.equal(depth.map, map); assert.equal(depth.alphaMap, alphaMap); assert.equal(h.material.map, map);
+    depth.alphaTest = .42;
+    assert.deepEqual(shadowMaps(), [map, alphaMap], 'masked hair still needs both maps for its shadow silhouette');
+    depth.alphaTest = 0; h.mesh.customDepthMaterial = depth;
+    assert.deepEqual(shadowMaps(), [map, alphaMap], 'custom shadow shaders keep their inputs');
+    h.mesh.customDepthMaterial = undefined; depth.alphaHash = true;
+    assert.deepEqual(shadowMaps(), [map, alphaMap], 'hashed shadow cutouts keep their inputs');
+  } finally { depth.dispose(); map.dispose(); alphaMap.dispose(); h.dispose(); }
+});

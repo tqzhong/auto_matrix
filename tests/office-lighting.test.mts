@@ -161,17 +161,19 @@ test('the occupied lift prepares the hidden office and city materials with the a
     },
   } as unknown as THREE.WebGLRenderer;
   film.update(player, sandbox, 0);
-  for (let i = 0; i < 9; i++) film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
+  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), true, 'building the detached floor uses this frame');
+  for (let i = 1; i < 9; i++) film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
   assert.equal(cityCompiles, 1);
   assert.deepEqual(uniformQueries, [], 'an unfinished program must not stall the lift');
   programs.splice(1, 1);
   ready = true;
-  film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
+  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), true);
   assert.deepEqual(uniformQueries, ['glass'], 'one ready program is prepared per frame');
-  film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city);
+  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
+  assert.equal(film.prepareOffice(renderer, camera, culling, player, sandbox, neo, city), false, 'the idle preparation slot can upload one actor texture');
   assert.equal(scene.getObjectByName('office-window-glass'), undefined);
   assert.equal(lamp.intensity, 8);
   assert.equal(culling.minimumPointSlots, 4, 'the elevator keeps its own light layout while the office is prepared');
@@ -255,13 +257,15 @@ test('the approaching player gets staged manager texture uploads and a single co
       calls.push('compile');
     },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => agents.prepareOfficeManager(renderer, camera, lighting);
+  const prepare = (compileColors = true) => agents.prepareOfficeManager(renderer, camera, lighting, compileColors);
   prepare(); assert.deepEqual(calls, []);
   camera.position.z = 120;
-  for (const expected of [skin, hair, coat, 'compile']) {
-    prepare(); assert.equal(calls.at(-1), expected);
+  for (const expected of [skin, hair, coat]) {
+    prepare(false); assert.equal(calls.at(-1), expected);
     assert.equal(detail.visible, false); assert.equal(hidden.visible, false); assert.equal(hero.parent, detail);
     assert.equal(target, renderTarget);
   }
+  prepare(false); assert.deepEqual(calls, [skin, hair, coat], 'riding only needs the textures, while the destination prepares its own lighting');
+  prepare(); assert.equal(calls.at(-1), 'compile');
   prepare(); assert.deepEqual(calls, [skin, hair, coat, 'compile']);
 });
