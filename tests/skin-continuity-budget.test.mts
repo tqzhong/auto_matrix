@@ -131,3 +131,19 @@ test('wrist shading only reads bone frames for nonzero normalized skin influence
   assert.equal(indexReads, activeInfluences, 'zero-weight influences must not read a bone frame');
   h.reference(); h.seams();
 });
+
+test('wrist shading writes each component once after blending interleaved influences', t => {
+  const h = wrists(); t.after(() => h.dispose());
+  const index = new THREE.InterleavedBufferAttribute(new THREE.InterleavedBuffer(new Uint16Array([2, 0, 3, 1, 99]), 5), 4, 0);
+  const weight = new THREE.InterleavedBufferAttribute(new THREE.InterleavedBuffer(new Uint8Array([31, 80, 112, 32, 99]), 5), 4, 0, true);
+  const frames = [.17, .41, -.32, .66].map(angle => new THREE.Matrix3().getNormalMatrix(new THREE.Matrix4()
+    .makeRotationX(angle).multiply(new THREE.Matrix4().makeRotationY(angle * 2)).scale(new THREE.Vector3(1.3, .8, 1.1))));
+  const expected = Array.from({ length: 9 }, (_, component) => [2, 0, 3, 1].reduce((value, bone, slot) =>
+    value + frames[bone].elements[component] * weight.getComponent(0, slot), 0));
+  const linear = h.surface['linear'];
+  let writes = 0;
+  linear.elements = new Proxy(linear.elements, { set(elements, key, value) { writes++; return Reflect.set(elements, key, value); } });
+  const binding = { index, weight, indexVersion: index.data.version, weightVersion: weight.data.version };
+  assert.deepEqual(h.surface['blend'](binding, frames, 0).elements, expected);
+  assert.equal(writes, 9, 'each matrix component is stored only once');
+});

@@ -97,14 +97,18 @@ export class SkinContinuity {
   private blend(binding: SkinBinding, frames: THREE.Matrix3[], vertex: number): THREE.Matrix3 {
     const { index, weight: attribute, indices, weights } = binding;
     const indexStart = vertex * index.itemSize, weightStart = vertex * attribute.itemSize;
-    const values = this.linear.elements; values.fill(0);
+    let m11 = 0, m21 = 0, m31 = 0;
+    let m12 = 0, m22 = 0, m32 = 0;
+    let m13 = 0, m23 = 0, m33 = 0;
     for (let k = 0; k < 4; k++) {
       const weight = weights ? weights[weightStart + k] : attribute.getComponent(vertex, k);
       if (weight === 0) continue;
       const frame = frames[indices ? indices[indexStart + k] : index.getComponent(vertex, k)].elements;
-      for (let i = 0; i < 9; i++) values[i] += frame[i] * weight;
+      m11 += frame[0] * weight; m21 += frame[1] * weight; m31 += frame[2] * weight;
+      m12 += frame[3] * weight; m22 += frame[4] * weight; m32 += frame[5] * weight;
+      m13 += frame[6] * weight; m23 += frame[7] * weight; m33 += frame[8] * weight;
     }
-    return this.linear;
+    return this.linear.set(m11, m12, m13, m21, m22, m23, m31, m32, m33);
   }
 
   private upload(): void {
