@@ -204,32 +204,45 @@ export class VoxelRenderer {
         const park = new THREE.Mesh(new THREE.BoxGeometry(max.x - min.x, 0.6, max.z - min.z), new THREE.MeshStandardMaterial({ color: 0x5b7442, roughness: 1 }));
         park.position.set(centerX, 0, centerZ);
         this.matrix.add(park);
-        const branches = new THREE.InstancedMesh(new THREE.CylinderGeometry(.7, 1, 1, 7), new THREE.MeshStandardMaterial({ color: 0x353b2f, roughness: 1 }), 35 * 7);
-        const foliage = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 4), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .95 }), 35 * 288);
-        let branchIndex = 0; let leafIndex = 0;
-        const up = new THREE.Vector3(0, 1, 0);
+        // Street-sized bounds let the renderer cull the rest of the park independently.
+        const blocks = new Map<string, { i: number; x: number; z: number }[]>();
         for (let i = 0; i < 35; i++) {
           const x = min.x + 12 + noise(i, 1) * (max.x - min.x - 24); const z = min.z + 12 + noise(i, 2) * (max.z - min.z - 24);
-          const height = 7 + noise(i, 3) * 3;
-          this.transform.position.set(x, height / 2, z); this.transform.rotation.set(0, 0, 0); this.transform.scale.set(.35, height, .35); this.transform.updateMatrix();
-          branches.setMatrixAt(branchIndex++, this.transform.matrix);
-          for (let b = 0; b < 6; b++) {
-            const angle = b * 2.4 + i; const start = new THREE.Vector3(x, height * .45 + b * .35, z);
-            const tip = new THREE.Vector3(x + Math.cos(angle) * 3.1, height - .8 + noise(i, b + 5) * 2, z + Math.sin(angle) * 3.1);
-            const direction = tip.clone().sub(start);
-            this.transform.position.copy(start).addScaledVector(direction, .5); this.transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
-            this.transform.scale.set(.13, direction.length(), .13); this.transform.updateMatrix(); branches.setMatrixAt(branchIndex++, this.transform.matrix);
-            for (let leaf = 0; leaf < 48; leaf++) {
-              const a = leaf * 2.4 + angle; const radius = Math.sqrt(noise(leaf, i + b + 8)) * 1.65;
-              this.transform.position.set(tip.x + Math.cos(a) * radius, tip.y + noise(leaf, b + 18) * 2 - .9, tip.z + Math.sin(a) * radius);
-              this.transform.rotation.set(noise(leaf, i + 20) * Math.PI, a, noise(leaf, b + 25) * Math.PI);
-              this.transform.scale.set(.32, .55 + noise(leaf, i) * .25, .045); this.transform.updateMatrix(); foliage.setMatrixAt(leafIndex, this.transform.matrix);
-              foliage.setColorAt(leafIndex++, new THREE.Color(0x253e29).lerp(new THREE.Color(0x52694a), noise(leaf, b + 29)));
+          const cell = `${Math.floor((x - min.x) / STREET_SPACING)},${Math.floor((z - min.z) / STREET_SPACING)}`;
+          const trees = blocks.get(cell) ?? [];
+          trees.push({ i, x, z });
+          blocks.set(cell, trees);
+        }
+        const branchGeometry = new THREE.CylinderGeometry(.7, 1, 1, 7), leafGeometry = new THREE.SphereGeometry(1, 6, 4);
+        const bark = new THREE.MeshStandardMaterial({ color: 0x353b2f, roughness: 1 }), leaves = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .95 });
+        const up = new THREE.Vector3(0, 1, 0);
+        for (const trees of blocks.values()) {
+          const branches = new THREE.InstancedMesh(branchGeometry, bark, trees.length * 7);
+          const foliage = new THREE.InstancedMesh(leafGeometry, leaves, trees.length * 288);
+          let branchIndex = 0; let leafIndex = 0;
+          for (const { i, x, z } of trees) {
+            const height = 7 + noise(i, 3) * 3;
+            this.transform.position.set(x, height / 2, z); this.transform.rotation.set(0, 0, 0); this.transform.scale.set(.35, height, .35); this.transform.updateMatrix();
+            branches.setMatrixAt(branchIndex++, this.transform.matrix);
+            for (let b = 0; b < 6; b++) {
+              const angle = b * 2.4 + i; const start = new THREE.Vector3(x, height * .45 + b * .35, z);
+              const tip = new THREE.Vector3(x + Math.cos(angle) * 3.1, height - .8 + noise(i, b + 5) * 2, z + Math.sin(angle) * 3.1);
+              const direction = tip.clone().sub(start);
+              this.transform.position.copy(start).addScaledVector(direction, .5); this.transform.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+              this.transform.scale.set(.13, direction.length(), .13); this.transform.updateMatrix(); branches.setMatrixAt(branchIndex++, this.transform.matrix);
+              for (let leaf = 0; leaf < 48; leaf++) {
+                const a = leaf * 2.4 + angle; const radius = Math.sqrt(noise(leaf, i + b + 8)) * 1.65;
+                this.transform.position.set(tip.x + Math.cos(a) * radius, tip.y + noise(leaf, b + 18) * 2 - .9, tip.z + Math.sin(a) * radius);
+                this.transform.rotation.set(noise(leaf, i + 20) * Math.PI, a, noise(leaf, b + 25) * Math.PI);
+                this.transform.scale.set(.32, .55 + noise(leaf, i) * .25, .045); this.transform.updateMatrix(); foliage.setMatrixAt(leafIndex, this.transform.matrix);
+                foliage.setColorAt(leafIndex++, new THREE.Color(0x253e29).lerp(new THREE.Color(0x52694a), noise(leaf, b + 29)));
+              }
             }
           }
+          branches.castShadow = branches.receiveShadow = foliage.castShadow = foliage.receiveShadow = true;
+          this.matrix.add(branches, foliage);
         }
-        branches.castShadow = branches.receiveShadow = foliage.castShadow = foliage.receiveShadow = true;
-        this.matrix.add(branches, foliage); this.transform.rotation.set(0, 0, 0); this.transform.scale.set(1, 1, 1);
+        this.transform.rotation.set(0, 0, 0); this.transform.scale.set(1, 1, 1);
       } else if (location.isInterior && location.id !== 'subway_station') {
         const height = location.id === 'metacortex_office' ? 110 : location.id === 'architects_chamber' ? 160 : Math.max(12, max.y - min.y);
         const mat = this.materials.facade(Math.floor(centerX));
@@ -503,6 +516,7 @@ export class VoxelRenderer {
     for (const group of [this.matrix, this.real]) {
       this.scene.remove(group);
       group.traverse(object => {
+        if (object instanceof THREE.InstancedMesh) object.dispose();
         if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) object.geometry.dispose();
         if ('material' in object) {
           const materials = (object as THREE.Mesh).material;

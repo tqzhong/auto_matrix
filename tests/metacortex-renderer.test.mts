@@ -56,6 +56,16 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
     city.interiors.update(9500, { x: 1140, y: 33.5, z: 798 }, { lift } as never);
     assert.equal(car.position.y, 32.5);
     assert.ok(hits(new THREE.Vector3(1140, 35, 798), new THREE.Vector3(0, 0, 1), 6).length, 'closed car doors enclose the moving passenger');
+    const canopy = streetDetails.filter((object): object is THREE.InstancedMesh => object instanceof THREE.InstancedMesh
+      && object.geometry instanceof THREE.SphereGeometry && object.material instanceof THREE.MeshStandardMaterial
+      && object.material.roughness === .95 && object.instanceColor !== null);
+    assert.equal(canopy.reduce((count, mesh) => count + mesh.count, 0), 35 * 288, 'all original park leaves remain');
+    assert.ok(canopy.every(mesh => mesh.castShadow && mesh.receiveShadow));
+    const camera = new THREE.PerspectiveCamera(80, 1920 / 1080, .5, 5000);
+    camera.position.set(1140, 35, 800.8); camera.lookAt(1140, 34.25, 798.2); camera.updateMatrixWorld(true);
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    const submitted = canopy.filter(mesh => frustum.intersectsObject(mesh)).reduce((count, mesh) => count + mesh.count, 0);
+    assert.ok(submitted < 35 * 288 / 2, `the moving lift submits ${submitted} park leaves`);
     lift.floor = 1; lift.phase = 'idle'; lift.elapsed = 0;
     city.interiors.update(9500, { x: 1140, y: 66, z: 798 }, { lift } as never);
     assert.equal(car.position.y, METACORTEX.upper);
