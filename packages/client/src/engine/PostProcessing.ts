@@ -18,6 +18,8 @@ export class WorldOcclusionPass extends GTAOPass {
   private scalar = false;
   constructor(...args: ConstructorParameters<typeof GTAOPass>) {
     super(...args);
+    // These fullscreen intermediates write color only. The normal pass owns scene depth.
+    this.gtaoRenderTarget.depthBuffer = this.pdRenderTarget.depthBuffer = false;
     // AO is grayscale. Keep every sample and its half-float precision while
     // storing only red; normals and the scene color remain full RGB.
     this.pdMaterial.fragmentShader = this.pdMaterial.fragmentShader.replaceAll('sampleTexel.rgb', 'sampleTexel.rrr').replaceAll('texel.rgb', 'texel.rrr');

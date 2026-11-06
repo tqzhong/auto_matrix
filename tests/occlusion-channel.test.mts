@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 
-test('occlusion stores one half-float channel without reducing normal precision or image dimensions', () => {
+test('occlusion intermediates store one half-float color channel and leave depth to the normal pass', () => {
   const pass = new WorldOcclusionPass(new THREE.Scene(), new THREE.PerspectiveCamera(), 1920, 1080);
   try {
     for (const [width, height] of [[1920, 1080], [647, 1005], [960, 540]]) {
@@ -12,10 +12,13 @@ test('occlusion stores one half-float channel without reducing normal precision 
       for (const target of [pass.gtaoRenderTarget, pass.pdRenderTarget]) {
         assert.equal(target.texture.format, THREE.RedFormat, 'the grayscale intermediates need one stored channel');
         assert.equal(target.texture.type, THREE.HalfFloatType, 'keep the original occlusion precision');
+        assert.equal(target.depthBuffer, false, 'fullscreen occlusion and denoise only write color');
         assert.equal(target.width, width); assert.equal(target.height, height);
       }
       assert.equal(pass.normalTexture.format, THREE.RGBAFormat, 'normals must retain their distinct vector components');
       assert.equal(pass.normalTexture.type, THREE.HalfFloatType);
+      assert.equal(pass.normalRenderTarget.depthBuffer, true, 'the normal pass still renders the scene depth');
+      assert.equal(pass.normalRenderTarget.depthTexture, pass.depthTexture);
       assert.deepEqual(pass.gtaoMaterial.uniforms.resolution.value.toArray(), [width, height]);
       assert.deepEqual(pass.pdMaterial.uniforms.resolution.value.toArray(), [width, height]);
     }
