@@ -224,6 +224,7 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private preparedOfficePhone?: { smith: THREE.Group; gpu: THREE.WebGLRenderer['properties']; depth: THREE.MeshDepthMaterial; programs: ColorProgram[] };
   private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
   private preparedOfficeDescent?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; city: THREE.Group };
   private officeTowerDepth?: THREE.MeshDepthMaterial;
@@ -738,6 +739,32 @@ export class FilmSetRenderer {
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
   }
+  prepareOfficePhone(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group, smith: THREE.Group): boolean {
+    if (!renderer.shadowMap.enabled || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
+    const prepared = this.preparedOfficePhone, gpu = renderer.properties, programs = renderer.info.programs;
+    if (prepared?.gpu === gpu && prepared.smith === smith) {
+      const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
+      if (ready < 0) return false;
+      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      return true;
+    }
+    const sign = city.children.find(object => object instanceof THREE.Sprite);
+    const eyes = this.colorMeshes([smith]).find(mesh => mesh instanceof THREE.SkinnedMesh && mesh.castShadow
+      && mesh.material.map?.name === 'smith-eyes.png' && mesh.material.side === THREE.DoubleSide);
+    if (!sign || !eyes) return false;
+    const { map, alphaMap, alphaTest, shadowSide } = eyes.material;
+    // The alpha cutout is part of the shadow silhouette. Compile the same packed depth variant.
+    const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking,
+      side: shadowSide ?? THREE.DoubleSide, map, alphaMap, alphaTest });
+    prepareSkinnedMaterial(depth);
+    const shadow = new THREE.SkinnedMesh(eyes.geometry, depth);
+    const start = programs?.length ?? 0;
+    this.compileColorBatch(renderer, [sign], subject => lighting.compileSubject(renderer, camera, subject, undefined, shadow));
+    const linked = (programs?.slice(start) ?? []) as ColorProgram[];
+    prepared?.depth.dispose();
+    this.preparedOfficePhone = { smith, gpu, depth, programs: linked };
+    return true;
+  }
   prepareOfficeWindow(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
     city: THREE.Group, courier?: THREE.Group, patrol?: THREE.Group): void {
     if (!this.office || journey.scene !== 'm1_office_escape' || journey.visiting || (journey.step !== 2 && journey.step !== 3)
@@ -964,7 +991,7 @@ export class FilmSetRenderer {
     });
     return meshes;
   }
-  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: ColorMesh[], compile: (subject: THREE.Group) => void): void {
+  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: (ColorMesh | THREE.Sprite)[], compile: (subject: THREE.Group) => void): void {
     if (!batch.length) return;
     const subject = new THREE.Group();
     subject.traverse = visit => batch.forEach(visit);
@@ -3661,6 +3688,7 @@ export class FilmSetRenderer {
     }
     this.cancelOfficePreparation();
     this.preparedOfficeCanopy = undefined;
+    this.preparedOfficePhone?.depth.dispose(); this.preparedOfficePhone = undefined;
     this.preparedOfficeWindow = undefined;
     this.preparedOfficeDescent = undefined;
     this.cancelLafayettePreparation();

@@ -293,7 +293,8 @@ export class Engine {
     if (!preparingOffice && filmSet?.id === 'film_metacortex_floor'
       && (liveMatrixJourney?.scene === 'm1_commute' || liveMatrixJourney?.scene === 'm1_boss' || liveMatrixJourney?.scene === 'm1_office_escape')) {
       if (!this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'floor')) {
-        if (liveMatrixJourney.scene === 'm1_boss') this.sandboxRenderer.prepareOfficePatrols();
+        if (liveMatrixJourney.scene === 'm1_boss') this.sandboxRenderer.prepareOfficePatrols(smith =>
+          this.filmSets.prepareOfficePhone(this.renderer, this.camera, this.lightCulling, this.voxelRenderer.matrix, smith));
         else if (liveMatrixJourney.scene === 'm1_office_escape')
           this.filmSets.prepareOfficeWindow(this.renderer, this.camera, this.lightCulling, liveMatrixJourney,
             this.voxelRenderer.matrix, this.agentRenderer.getAgentHero('courier'), this.sandboxRenderer.getOfficeSmithHero());

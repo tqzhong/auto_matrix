@@ -96,6 +96,10 @@ test('the office prepares one patrol rig at a time and activates those same rigs
     assert.equal(created[index].id, id);
     assert.equal(created[index].rig.root.parent?.parent, null, 'the prepared actor is outside the scene before answering');
     created[index].rig.hero = { root: new THREE.Group() } as CharacterRig['hero'];
+    if (index === 0) {
+      enemies.prepareOfficePatrols(hero => { assert.equal(hero, created[index].rig.hero!.root); return true; });
+      assert.equal(created.length, 1, 'preparing Smith shaders uses the frame before the next rig');
+    }
     enemies.prepareOfficePatrols();
   }
   assert.equal(created.length, OFFICE_AGENT_ROLES.length);

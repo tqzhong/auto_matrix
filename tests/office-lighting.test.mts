@@ -453,6 +453,55 @@ test('a cold office floor prepares the existing park color program before turnin
   assert.equal(compiles, 2);
 });
 
+test('the office prepares the city sign and masked Smith shadow before answering', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const camera = new THREE.PerspectiveCamera(), city = new THREE.Group(), smith = new THREE.Group();
+  const sign = new THREE.Sprite(); city.add(sign); scene.add(city);
+  const map = new THREE.Texture(); map.name = 'smith-eyes.png';
+  const eyes = new THREE.SkinnedMesh(undefined, new THREE.MeshPhysicalMaterial({ map, alphaTest: .42, side: THREE.DoubleSide }));
+  eyes.castShadow = true; smith.add(eyes);
+  t.after(() => { film.dispose(); lighting.dispose(); sign.material.dispose(); eyes.geometry.dispose(); eyes.material.dispose(); map.dispose(); });
+
+  const tasks: string[] = [], debug = { checkShaderErrors: true };
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let ready = false, target: THREE.WebGLRenderTarget | null = null, depth: THREE.MeshDepthMaterial | undefined;
+  const program = (name: string) => ({ program: {}, isReady: () => ready, getUniforms: () => {
+    assert.equal(debug.checkShaderErrors, false); tasks.push(name);
+  } });
+  const gpu = {
+    properties: {}, info: { programs }, debug, shadowMap: { enabled: true }, extensions: { has: () => true },
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile: (subject: THREE.Object3D, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(eye, camera); assert.equal(target?.width, 1);
+      if (subject instanceof THREE.SkinnedMesh) {
+        assert.notEqual(litScene, scene); assert.equal(subject.geometry, eyes.geometry);
+        const material = subject.material;
+        assert(material instanceof THREE.MeshDepthMaterial);
+        assert.equal(material.map, map); assert.equal(material.alphaTest, .42);
+        assert.equal(material.side, THREE.DoubleSide); assert.equal(material.depthPacking, THREE.RGBADepthPacking);
+        assert.match(material.customProgramCacheKey(), /actor-local-skin-v1$/);
+        if (!depth) { depth = material; programs.push(program('shadow locations')); }
+        tasks.push('shadow');
+      } else {
+        const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+        assert.deepEqual(batch, [sign]); assert.equal(litScene, scene);
+        tasks.push('sign'); programs.push(program('sign locations'));
+      }
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => film.prepareOfficePhone?.(gpu, camera, lighting, city, smith);
+  assert.equal(prepare(), true);
+  assert.deepEqual(tasks, ['sign', 'shadow', 'shadow']);
+  assert.equal(prepare(), false);
+  ready = true;
+  assert.equal(prepare(), true); assert.deepEqual(tasks.slice(3), ['sign locations']);
+  assert.equal(prepare(), true); assert.deepEqual(tasks.slice(3), ['sign locations', 'shadow locations']);
+  assert.equal(prepare(), false);
+  assert.equal(eyes.material.map, map); assert.equal(eyes.customDepthMaterial, undefined); assert.equal(sign.parent, city);
+  assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
+});
+
 test('office exits prepare the existing materials in separate frames', t => {
   const grain = new THREE.Texture({ width: 1024, height: 1024, complete: true }); grain.needsUpdate = true;
   t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => url.includes('old_wood_floor') ? grain : new THREE.Texture());
