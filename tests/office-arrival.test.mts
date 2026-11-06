@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SETS, OFFICE_AGENT_ROLES, filmStepPosition, officeOccluded, playerBlocked, type WorldEvent } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -67,6 +69,49 @@ test('the office patrol shares the world cast asset without borrowing the existi
   assert.equal(h.guards().length, 3);
   assert.equal(smithLoads(), 1, 'answering must not load a second copy of the existing Smith asset');
   assert.deepEqual(OFFICE_AGENT_ROLES.map(id => actors.getAgentBody(id)!.parent), parents);
+});
+
+test('the office prepares one patrol rig at a time and activates those same rigs on answer', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const h = setup(), scene = new THREE.Scene(), actors = new AgentRenderer(scene), enemies = new SandboxRenderer(scene, actors);
+  t.after(() => { enemies.dispose(); actors.dispose(); globalThis.document = document; });
+  const created: { id: string; rig: CharacterRig }[] = [];
+  t.mock.method(actors, 'createThreatActor', state => {
+    const rig = { root: new THREE.Group(), motion: newMotion() } as CharacterRig;
+    created.push({ id: state.id, rig });
+    return { rig, animate() {} };
+  });
+  const agents = Object.fromEntries(h.world.agents), waiting = structuredClone(h.sandbox.state);
+  const visit = structuredClone(waiting); visit.neoLife!.journey!.visiting = 'm1_boss';
+  enemies.sync(visit, agents); enemies.prepareOfficePatrols();
+  assert.equal(created.length, 0, 'office visits do not prepare a live patrol');
+
+  enemies.sync(waiting, agents); enemies.prepareOfficePatrols(); enemies.prepareOfficePatrols();
+  assert.deepEqual(created.map(entry => entry.id), ['smith'], 'the next creation waits for the first detailed rig');
+  for (const [index, id] of OFFICE_AGENT_ROLES.entries()) {
+    assert.equal(created[index].id, id);
+    assert.equal(created[index].rig.root.parent?.parent, null, 'the prepared actor is outside the scene before answering');
+    created[index].rig.hero = { root: new THREE.Group() } as CharacterRig['hero'];
+    enemies.prepareOfficePatrols();
+  }
+  assert.equal(created.length, OFFICE_AGENT_ROLES.length);
+
+  h.command('act'); h.frame(.1);
+  const answering = structuredClone(h.sandbox.state);
+  enemies.sync(answering, agents); enemies.prepareOfficePatrols();
+  assert.equal(created.length, OFFICE_AGENT_ROLES.length, 'the answer reuses every prepared body');
+  for (const [index, guard] of h.guards().entries()) {
+    const group = created[index].rig.root.parent!;
+    assert.equal(group.parent, scene);
+    assert.deepEqual(group.position.toArray(), [guard.position.x, guard.position.y, guard.position.z]);
+  }
+  enemies.sync(waiting, agents); enemies.prepareOfficePatrols();
+  enemies.sync(answering, agents);
+  assert.equal(created.length, OFFICE_AGENT_ROLES.length, 'removing and reintroducing the patrol keeps the pool bounded');
 });
 
 test('arrival keeps its positions across pause, disconnect, save and the start of patrol', () => {

@@ -271,21 +271,23 @@ export class AgentRenderer {
     for (const mesh of hidden) mesh.castShadow = true;
     hidden.length = 0;
   }
-  prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): void {
-    if (this.prepareOfficeManager(renderer, camera, lighting, stage) || stage !== 'lift') return;
+  prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
+    if (this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
+    if (stage !== 'lift') return false;
     // The nearby street cast can enter the office's shadow map before its first color draw.
     const pedestrian = this.getAgent('citizen_2');
-    if (!pedestrian?.visible || pedestrian.position.distanceToSquared(camera.position) > 130 ** 2) return;
+    if (!pedestrian?.visible || pedestrian.position.distanceToSquared(camera.position) > 130 ** 2) return false;
     const hair = this.getAgentHero('citizen_2')?.getObjectByName('Red_dress_hair');
-    if (!(hair instanceof THREE.SkinnedMesh) || !hair.visible || !hair.castShadow || !(hair.material instanceof THREE.MeshStandardMaterial)) return;
+    if (!(hair instanceof THREE.SkinnedMesh) || !hair.visible || !hair.castShadow || !(hair.material instanceof THREE.MeshStandardMaterial)) return false;
     const { material } = hair;
-    if (!material.alphaTest && !material.alphaHash && !material.alphaToCoverage) return;
+    if (!material.alphaTest && !material.alphaHash && !material.alphaToCoverage) return false;
     for (const texture of [material.map, material.alphaMap]) {
       const image = texture?.image as { complete?: boolean } | null | undefined;
       if (!texture?.version || !image || image.complete === false) continue;
       const uploaded = renderer.properties.get(texture) as { __version?: number };
-      if (uploaded.__version !== texture.version) { renderer.initTexture(texture); return; }
+      if (uploaded.__version !== texture.version) { renderer.initTexture(texture); return true; }
     }
+    return false;
   }
   private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');

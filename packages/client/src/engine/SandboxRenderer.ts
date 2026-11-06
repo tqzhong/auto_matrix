@@ -201,6 +201,22 @@ export class SandboxRenderer {
     const enemy = this.createEnemy('smith', this.actors, undefined, 'm2_burly');
     if (enemy) this.pool.push(enemy);
   }
+  prepareOfficePatrols(): void {
+    const journey = this.state?.neoLife?.journey;
+    if (!this.agentRenderer || journey?.scene !== 'm1_boss' || journey.visiting || journey.step !== 1
+      || journey.phone?.phase === 'answering' || journey.phone?.phase === 'connected') return;
+    for (const character of OFFICE_AGENT_ROLES) {
+      const prepared = this.pool.find(enemy => enemy.scene === 'm1_boss' && enemy.kind === 'agent' && enemy.character === character);
+      if (prepared) {
+        if (!prepared.rig?.hero) return;
+        continue;
+      }
+      if (!this.actors[character]) return;
+      const enemy = this.createEnemy('agent', this.actors, character, 'm1_boss');
+      if (enemy) this.pool.push(enemy);
+      return;
+    }
+  }
   private updateEnemy(id: string, kind: Enemy['kind'], position: Vector3, health: number, agents: Record<string, AgentState>, character?: string, scene?: string): void {
     let enemy = this.enemies.get(id);
     const dojo = kind === 'training' && scene === 'm1_dojo' && character === 'morpheus';
