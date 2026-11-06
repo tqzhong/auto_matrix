@@ -52,6 +52,20 @@ test('fullscreen color passes keep depth only on the scene and normal targets', 
   } finally { post?.dispose(); globalThis.window = previousWindow; }
 });
 
+test('disposing the compositor releases the occlusion and bloom filter materials', t => {
+  const previousWindow = globalThis.window;
+  globalThis.window = { innerWidth: 64, innerHeight: 64 } as Window & typeof globalThis;
+  const renderer = { getPixelRatio: () => 1, getSize: (size: THREE.Vector2) => size.set(64, 64) } as THREE.WebGLRenderer;
+  try {
+    const post = new PostProcessing(renderer, new THREE.Scene(), new THREE.PerspectiveCamera());
+    const occlusion = post['occlusion'], bloom = post['bloom'];
+    const materials = [occlusion.gtaoMaterial, occlusion.blendMaterial, bloom.materialHighPassFilter];
+    const disposals = materials.map(material => t.mock.method(material, 'dispose'));
+    post.dispose();
+    assert.deepEqual(disposals.map(dispose => dispose.mock.callCount()), [1, 1, 1]);
+  } finally { globalThis.window = previousWindow; }
+});
+
 test('the scene starts on the same depth target after the occlusion comparison path swaps buffers', t => {
   const previousWindow = globalThis.window;
   globalThis.window = { innerWidth: 1920, innerHeight: 1080 } as Window & typeof globalThis;

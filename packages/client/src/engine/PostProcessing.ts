@@ -93,6 +93,11 @@ export class WorldOcclusionPass extends GTAOPass {
     try { super.renderOverride(...args); }
     finally { shadows.autoUpdate = autoUpdate; shadows.needsUpdate = needsUpdate; this.scene.matrixWorldAutoUpdate = matrices; }
   }
+  dispose(): void {
+    super.dispose();
+    this.gtaoMaterial.dispose();
+    this.blendMaterial.dispose();
+  }
 }
 
 export class PostProcessing {
@@ -161,5 +166,12 @@ export class PostProcessing {
     if (this.pixelRatio !== pixelRatio) { this.pixelRatio = pixelRatio; this.composer.setPixelRatio(pixelRatio); }
     this.composer.setSize(w, h); this.antialias.uniforms.resolution.value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
   }
-  dispose(): void { this.bloom.dispose(); this.output.dispose(); this.occlusion.dispose(); this.antialias.dispose(); this.composer.dispose(); }
+  dispose(): void {
+    this.bloom.materialHighPassFilter.dispose();
+    this.bloom.dispose();
+    this.output.dispose();
+    this.occlusion.dispose();
+    this.antialias.dispose();
+    this.composer.dispose();
+  }
 }
