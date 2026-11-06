@@ -1239,6 +1239,30 @@ test('the office ladder camera looks along the city canyon while Neo descends', 
   assert.ok(game.camera.position.z < game.state.position.z - 7, 'switching back restores the exterior third-person shot');
 });
 
+for (const key of ['KeyW', 'ArrowDown']) {
+  test(`the office ladder consumes held ${key} through the step back onto solid ground`, t => {
+    const game = setup(t, Math.PI / 2), descending = key === 'KeyW';
+    const depth = descending ? OFFICE_LADDER.depth - .2 : 0;
+    game.state.currentLocation = 'film_office_ledge';
+    game.state.position = filmPosition('film_office_ledge', OFFICE_LADDER.x, OFFICE_LADDER.z);
+    game.state.position.y -= depth;
+    game.state.currentAction = { type: 'move_to', parameters: { climbing: true, officeLadder: { depth } }, startedAt: 0, duration: 1, progress: 0 };
+    game.controls.possess(game.state); game.controls.climbing = true;
+    game.key(key); game.step(.2);
+    const climbing = game.sent.at(-1)!;
+    assert.equal(climbing.climb, descending ? 1 : -1);
+    game.state.currentAction = null; game.controls.climbing = false;
+    game.step(.15);
+    game.key(key, true, true); game.step(.15);
+    const landed = game.sent.at(-1)!;
+    assert.equal(Math.hypot(landed.x, landed.z), 0, 'the held key and its repeat must not walk the player across the ladder');
+    assert.equal(Math.hypot(climbing.x, climbing.z), 0, 'climb packets must contain no walking input');
+    game.key(key, false); game.key(key); game.step(.15);
+    assert.ok(Math.hypot(game.sent.at(-1)!.x, game.sent.at(-1)!.z) > .9, 'a fresh press must still walk on the platform');
+    assert.equal(game.sent.at(-1)!.climb, 0);
+  });
+}
+
 test('the interrogation entrance keeps Smith visible beside Neo in a narrow third-person view', t => {
   const room = FILM_SETS.film_agent_interrogation;
   const entry = filmPosition(room.id, 0, room.depth * .32);

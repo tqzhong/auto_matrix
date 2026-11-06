@@ -37,24 +37,36 @@ test('Rhineheart waits for Anderson to answer and the phone cannot appear before
   h.act(); h.frame(3); assert.equal(h.state().phone?.phase, 'ready');
 });
 
-test('reprimand and signing preserve their exact clock through pause, disconnect, restore and retry', () => {
-  for (const signing of [false, true]) {
+for (const phase of ['briefing', 'answer', 'signing'] as const) {
+  test(`paused office ${phase} preserves the saved action through disconnect, restore and retry`, () => {
     const h = setup(); h.goal(); h.act();
-    if (signing) { h.frame(10); h.act(); h.goal(); h.act(); h.frame(11); h.act(); }
-    h.frame(1.5); const expected = structuredClone(h.state().workday); const position = { ...h.neo.position };
+    if (phase === 'signing') { h.frame(10); h.act(); h.goal(); h.act(); h.frame(11); h.act(); }
+    h.frame(phase === 'answer' ? 12 : 1.5);
+    assert.equal(h.state().workday?.phase, phase);
+    const expected = structuredClone(h.state().workday);
+    const motion = () => structuredClone({ action: h.neo.currentAction, position: h.neo.position, rotation: h.neo.rotation, velocity: h.neo.velocity });
+    const saved = motion();
     const courier = { ...h.world.agents.get('courier')!.position };
-    h.frame(2, false); assert.deepEqual(h.state().workday, expected);
-    h.players.release('player', h.tick()); h.frame(2); assert.deepEqual(h.state().workday, expected);
+    h.frame(2, false); assert.deepEqual(motion(), saved);
+    h.players.release('player', h.tick() + 1);
+    assert.deepEqual(motion(), saved, 'disconnect must preserve the saved action at a later world tick');
+    h.frame(2); assert.deepEqual(h.state().workday, expected);
     h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
-    h.players.possess('player', 'neo', h.tick());
-    assert.deepEqual(h.state().workday, expected); assert.deepEqual(h.neo.position, position);
+    assert.deepEqual(motion(), saved, 'loading the world must keep the original action');
+    h.players.possess('player', 'neo', h.tick() + 2);
+    assert.deepEqual(motion(), saved, 're-entry must keep the original action');
+    assert.deepEqual(h.state().workday, expected);
     assert.deepEqual(h.world.agents.get('courier')!.position, courier);
     h.neo.status = 'dead'; h.act('retry'); assert.equal(h.neo.status, 'alive');
-    assert.deepEqual(h.state().workday, expected); assert.deepEqual(h.neo.position, position);
-    h.frame(12); assert.equal(h.state().workday?.phase, signing ? 'delivered' : 'answer');
+    assert.deepEqual(h.state().workday, expected); assert.deepEqual(motion(), saved);
+    h.neo.currentAction = null;
+    h.sandbox.restore(structuredClone(h.sandbox.state));
+    assert.deepEqual(motion().action?.parameters.workday, { ...expected, role: 'neo' });
+    assert.deepEqual(h.neo.position, saved.position);
+    h.frame(12); assert.equal(h.state().workday?.phase, phase === 'signing' ? 'delivered' : 'answer');
     assert.equal(h.state().phone, undefined);
-  }
-});
+  });
+}
 
 test('the workday waits for an occupied actor without taking control of them', () => {
   const h = setup(); h.players.possess('manager-player', 'rhineheart', h.tick());

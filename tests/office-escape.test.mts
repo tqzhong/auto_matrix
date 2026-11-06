@@ -527,6 +527,19 @@ test('escaping requires descending the ladder; stopping, climbing up, pause and 
   h.climb(.1, 0); assert.ok(h.neo().position.y < FILM_SETS.film_office_ledge.center.y - 30, 'the lower platform must support the body');
 });
 
+test('a stale office ladder packet cannot move Neo through the rungs after landing', () => {
+  const h = setup(); h.office(); h.finish(); h.crossWindow(); h.goal(); h.advance(); h.command('escape:climb');
+  h.climb(7.9);
+  const { x, z } = h.neo().position;
+  h.players.receiveInput('neo-player', { x: 1, z: 0, yaw: Math.PI / 2, sprint: false, jump: false, climb: 1, sequence: 1000 });
+  for (let i = 0; i < 10; i++) h.players.step(.05, true, h.tick());
+  assert.equal(h.state().office?.outcome, 'escaped');
+  assert.equal(h.neo().position.x, x, 'the delayed climb packet must not turn into forward walking');
+  h.players.receiveInput('neo-player', { x: 0, z: -1, yaw: Math.PI / 2, sprint: false, jump: false, climb: 0, sequence: 1001 });
+  h.players.step(.1, true, h.tick());
+  assert.ok(h.neo().position.z < z, 'ground movement becomes available on the platform');
+});
+
 for (const phase of ['crossing', 'climbing'] as const) {
   const performance = () => {
     const h = setup(); h.office(); h.finish();

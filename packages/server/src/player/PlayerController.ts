@@ -161,7 +161,8 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    const restoredPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
+    const restoredPose = this.sandbox?.life.film.workdayFrame(agent, 0, tick)
+      || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
       || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
@@ -188,7 +189,6 @@ export class PlayerController {
     this.sandbox?.life.film.trainingFrame(agent, 0, tick);
     this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
     this.sandbox?.life.film.hotelFrame(agent, 0, tick);
-    this.sandbox?.life.film.workdayFrame(agent, 0, tick);
     this.sandbox?.life.film.office.phoneFrame(tick, this.world.agents);
     this.sandbox?.life.film.custody.frame(agent, 0, tick);
     this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
@@ -261,7 +261,8 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const restoredPose = this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
+      const restoredPose = this.sandbox?.life.film.workdayFrame(agent, 0, tick)
+        || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
         || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
@@ -284,7 +285,6 @@ export class PlayerController {
       if (agent.status === 'alive') this.sandbox?.life.film.trainingFrame(agent, 0, tick);
       this.sandbox?.life.film.interrogationFrame(agent, 0, tick);
       this.sandbox?.life.film.hotelFrame(agent, 0, tick);
-      this.sandbox?.life.film.workdayFrame(agent, 0, tick);
       this.sandbox?.life.film.custody.frame(agent, 0, tick);
       this.sandbox?.life.film.apartmentFrame(agent, 0, tick);
       this.sandbox?.life.computerFrame(agent, 0, tick);
@@ -625,6 +625,8 @@ export class PlayerController {
       if (this.sandbox?.life.film.climbFrame(agent, input.climb ?? 0, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; continue;
       }
+      // A packet sent before the office ladder finished still describes a climb.
+      if (agent.currentLocation === 'film_office_ledge' && input.climb) input = { ...input, x: 0, z: 0, jump: false };
       if (this.sandbox?.life.film.hammerGunnerFrame(agent, input, dt, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined; session.input.jump = false; continue;
       }

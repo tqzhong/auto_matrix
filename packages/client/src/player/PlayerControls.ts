@@ -70,6 +70,7 @@ export class PlayerControls {
   private recoveryRoll = 0;
   private truthYaw: number | undefined;
   private keys = new Set<string>();
+  private consumedOfficeClimbKeys = new Set<string>();
   private yaw = 0;
   private movementYaw = 0;
   private movementForward = 0;
@@ -240,7 +241,7 @@ export class PlayerControls {
     this.gardenLook = { yaw: 0, pitch: 0 };
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
     // A retry can accept input before its acknowledgement reaches this client.
-    if (changedActor) this.keys.clear();
+    if (changedActor) { this.keys.clear(); this.consumedOfficeClimbKeys.clear(); this.motion.officeLadder = undefined; }
     else for (const key of this.keys) if (!HELD_INPUT_KEYS.has(key)) this.keys.delete(key);
     this.lastSent = 0;
     this.firing = false; this.lastShot = -1000;
@@ -293,7 +294,9 @@ export class PlayerControls {
       event.preventDefault(); this.keys.add(event.code); return;
     }
     if (HELD_INPUT_KEYS.has(event.code) || event.code === 'Space') {
-      event.preventDefault(); this.keys.add(event.code);
+      event.preventDefault();
+      if (!event.repeat) this.consumedOfficeClimbKeys.delete(event.code);
+      if (!this.consumedOfficeClimbKeys.has(event.code)) this.keys.add(event.code);
     }
     if (!event.repeat) {
       if (event.code === 'Space') { this.localJump = this.motion.theOne?.phase !== 'takeoff_ready'; this.networkJump = true; }
@@ -364,7 +367,7 @@ export class PlayerControls {
       }
     }
   };
-  private keyUp = (event: KeyboardEvent): void => { this.keys.delete(event.code); if (event.code === 'KeyT') this.firing = false; };
+  private keyUp = (event: KeyboardEvent): void => { this.keys.delete(event.code); this.consumedOfficeClimbKeys.delete(event.code); if (event.code === 'KeyT') this.firing = false; };
   private blur = (): void => { this.keys.clear(); this.firing = false; this.dragging = false; this.dragPoint = undefined; this.localJump = false; this.networkJump = false; this.attackQueuedUntil = 0; if (this.id) this.send(this.input(false)); };
   private visibility = (): void => { if (document.hidden) this.blur(); };
   private mouseDown = (event: MouseEvent): void => {
@@ -537,13 +540,14 @@ export class PlayerControls {
     // A new direction uses the current view; mouse steering still turns both.
     if (forward !== this.movementForward || right !== this.movementRight) this.movementYaw = this.yaw;
     this.movementForward = forward; this.movementRight = right;
-    let x = Math.sin(this.movementYaw) * forward - Math.cos(this.movementYaw) * right;
-    let z = Math.cos(this.movementYaw) * forward + Math.sin(this.movementYaw) * right;
+    const officeClimb = this.authoritative?.currentLocation === 'film_office_ledge' && (this.climbing || this.motion.officeLadder !== undefined);
+    let x = officeClimb ? 0 : Math.sin(this.movementYaw) * forward - Math.cos(this.movementYaw) * right;
+    let z = officeClimb ? 0 : Math.cos(this.movementYaw) * forward + Math.sin(this.movementYaw) * right;
     const length = Math.hypot(x, z);
     if (length > 1) { x /= length; z /= length; }
     const attacking = (performance.now() - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
     const carrying = this.motion.dockEvacuation?.phase === 'carrying';
-    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, location: this.authoritative?.currentLocation, pitch: this.pitch, sprint: !carrying && !this.motion.officeCustody && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')), crouch: !carrying && !this.motion.officeCustody && this.keys.has('KeyZ'), jump: !carrying && !this.motion.officeCustody && jump,
+    return { x, z, yaw: attacking ? this.attackYaw : this.yaw, location: this.authoritative?.currentLocation, pitch: this.pitch, sprint: !carrying && !this.motion.officeCustody && (this.keys.has('ShiftLeft') || this.keys.has('ShiftRight')), crouch: !carrying && !this.motion.officeCustody && this.keys.has('KeyZ'), jump: !officeClimb && !carrying && !this.motion.officeCustody && jump,
       firstPerson: this.firstPerson,
       drive: this.ride || this.motion.truckHood || this.motion.freewayHandoff || this.motion.freewayPickup && ['mounted', 'launching', 'merging'].includes(this.motion.freewayPickup.phase) ? { throttle: this.enabled ? Math.max(0, forward) : 0, steer: this.enabled ? right : 0, brake: forward < 0 || !this.enabled,
         ...(this.motion.hammerPilot?.flight.maneuver ? { lift: this.enabled ? Number(this.keys.has('Space')) - Number(this.keys.has('KeyC')) : 0,
@@ -1199,8 +1203,13 @@ export class PlayerControls {
     this.motion.mobilStation = state.currentLocation === 'film_mobil_station';
     this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
     const shaftRole = this.motion.tvExit?.phase === 'emerging' ? tvExitEmergingRole(this.motion.tvExit) : undefined;
+    const officeLadder = state.currentAction?.parameters.officeLadder as MotionInput['officeLadder'];
+    if (this.motion.officeLadder && !officeLadder && state.currentLocation === 'film_office_ledge') {
+      // A direction held on the ladder requires a fresh press on the ground.
+      for (const key of ['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown']) if (this.keys.delete(key)) this.consumedOfficeClimbKeys.add(key);
+    }
+    this.motion.officeLadder = officeLadder;
     this.motion.climbing = dropRoot ? undefined : this.motion.wetwall?.hanging ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : shaftRole !== undefined && shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
-    this.motion.officeLadder = state.currentAction?.parameters.officeLadder as MotionInput['officeLadder'];
     if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }

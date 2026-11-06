@@ -86,7 +86,7 @@ import { OfficeCustodySystem } from './OfficeCustodySystem.js';
 import { INTERROGATION_CAST, INTERROGATION_ROOM, INTERROGATION_TIMING, interrogationLocked, interrogationRoot, type InterrogationGesture } from '@auto_matrix/shared';
 import { BRIDGE_TAIL, BRIDGE_ARRIVAL_SECONDS, MEETING_CAR, MEETING_CAST, MEETING_DRIVE_SECONDS, MEETING_TIMING, bridgeArrivalPose, meetingBoardPoint, meetingCarPose, meetingLocked, meetingRollRoadTime, meetingRoot, type MeetingEncounter, type MeetingGesture } from '@auto_matrix/shared';
 import { LAFAYETTE, LAFAYETTE_WELCOME, LAFAYETTE_KNOCK_SECONDS, HOTEL_ROUTE_LENGTH, HOTEL_DOOR_PROGRESS, hotelRoutePose, hotelRouteProgress, lafayetteKnocking, lafayetteKnockRoot, lafayetteWelcomeLocked, lafayetteWelcomeRoot, filmSetAt } from '@auto_matrix/shared';
-import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText } from '@auto_matrix/shared';
+import { OFFICE_WORKDAY, OFFICE_DELIVERY_SECONDS, officeCourierRoot, officeRecipientRoot, workdayLocked, workdayText, type OfficeWorkdayGesture } from '@auto_matrix/shared';
 import { APARTMENT, WAKE_CALL, apartmentAfter, apartmentDoor, apartmentLocked, apartmentComputerPose, apartmentText, wakeCallDoor, wakeCallLocked, wakeCallRoot, wakeCallText, lifeRoomCenter, insideLifeRoom, type ApartmentPhase, type WakeCallPhase } from '@auto_matrix/shared';
 import { CLUB, clubLocked, clubRoot, clubText, type ClubPhase } from '@auto_matrix/shared';
 import { MORNING, morningLocked, morningRoot, morningWakePose, morningText } from '@auto_matrix/shared';
@@ -1907,13 +1907,13 @@ export class FilmStorySystem {
     }
     return state.lastText;
   }
-  workdayFrame(agent: AgentState, dt: number, tick: number): void {
+  workdayFrame(agent: AgentState, dt: number, tick: number): boolean {
     const state = this.state;
-    if (!state || state.scene !== 'm1_boss' || state.visiting || !this.controls(agent)) return;
+    if (!state || state.scene !== 'm1_boss' || state.visiting || !this.controls(agent)) return false;
     const workday = state.workday ??= { phase: state.step === 0 ? 'waiting' : 'delivered', elapsed: 0 };
     const manager = this.world.agents.get('rhineheart')!; const courier = this.world.agents.get('courier')!;
     const busy = ['waiting', 'briefing', 'answer'].includes(workday.phase) ? manager.controller : courier.controller;
-    if (busy) { state.lastText = '当前人物正由另一位玩家控制；交谈和快递停在原处，等待对方结束。'; return; }
+    if (busy) { state.lastText = '当前人物正由另一位玩家控制；交谈和快递停在原处，等待对方结束。'; return workdayLocked(state); }
     if (workday.phase === 'released' && this.near(agent, this.step!) && dt > 0) { workday.phase = 'delivery'; workday.elapsed = 0; }
     const duration = workday.phase === 'briefing' ? OFFICE_WORKDAY.briefing : workday.phase === 'signing' ? OFFICE_WORKDAY.signing
       : ['delivery', 'delivered'].includes(workday.phase) ? OFFICE_DELIVERY_SECONDS : 0;
@@ -1932,13 +1932,18 @@ export class FilmStorySystem {
       if (!restoring) actor.currentAction = { type: 'idle', parameters: { resolved: true, seated: actor === manager,
         workday: { ...workday, role: actor.id } }, startedAt: tick, duration: 1, progress: 0 };
     }
-    if (workdayLocked(state)) {
+    const locked = workdayLocked(state);
+    if (locked) {
       const root = workday.phase === 'signing' ? officeRecipientRoot(workday) : OFFICE_WORKDAY.neo;
       agent.position = filmPosition('film_metacortex_floor', root.x, root.z); agent.rotation = root.yaw; agent.velocity = { x: 0, y: 0, z: 0 };
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, workday: { ...workday, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+      const savedWorkday = agent.currentAction?.parameters.workday as OfficeWorkdayGesture | undefined;
+      const restoring = dt === 0 && agent.currentAction?.type === 'idle' && savedWorkday?.role === 'neo'
+        && savedWorkday.phase === workday.phase && savedWorkday.elapsed === workday.elapsed;
+      if (!restoring) agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, workday: { ...workday, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
       state.checkpoint = { ...agent.position };
     }
     if (!state.phone) state.lastText = workdayText(workday);
+    return locked;
   }
   private workdayAct(agent: AgentState, tick: number): string {
     const state = this.state!; this.workdayFrame(agent, 0, tick); const workday = state.workday!;
