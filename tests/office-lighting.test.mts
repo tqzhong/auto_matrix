@@ -126,10 +126,15 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   const lamp = new THREE.PointLight(0xffffff, 8, 10);
   const landing = new THREE.SpotLight(0xffffff, 0); landing.castShadow = true;
   const city = new THREE.Group(), street = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshPhysicalMaterial(), 1);
+  const sign = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.Texture(), transparent: true, depthWrite: false, opacity: .9 }));
+  const otherSign = new THREE.Sprite(sign.material.clone());
+  sign.visible = false;
+  const marker = scene.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.TorusGeometry);
+  assert.ok(marker);
   const streetCast = new THREE.Group(), distant = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true }));
   distant.visible = false; streetCast.add(distant); scene.add(streetCast);
   const hidden = new THREE.Mesh(); hidden.visible = false;
-  city.add(lamp, street, hidden); scene.add(city, landing);
+  city.add(lamp, street, hidden, sign, otherSign); scene.add(city, landing);
   const position = { ...metacortexPosition(0, -29), y: 21 };
   const player = { id: 'neo', position, isInMatrix: true } as AgentState;
   const sandbox = { threats: [], neoLife: {
@@ -184,10 +189,15 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
         return;
       }
       const materials: THREE.Object3D[] = [];
-      root.traverse(object => { if (object instanceof THREE.Mesh) materials.push(object); });
+      root.traverse(object => { if (object instanceof THREE.Mesh || object instanceof THREE.Sprite) materials.push(object); });
       if (materials.includes(street)) {
-        assert.deepEqual(materials.map(object => object.id), [street.id, distant.id], 'the city batch includes the shared distant-character color program');
+        assert.deepEqual(materials.map(object => object.id), [street.id, sign.id, marker.id, distant.id],
+          'the city batch includes one sign, the exit marker, and the shared distant-character color program');
         assert.equal(street.parent, city);
+        assert.equal(sign.parent, city);
+        assert.equal(sign.visible, false);
+        assert.equal(marker.parent, scene);
+        assert.equal(marker.visible, false);
         assert.equal(distant.parent, streetCast);
         assert.equal(distant.visible, false);
         assert.equal(lamp.parent, city);

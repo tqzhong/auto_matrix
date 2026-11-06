@@ -651,9 +651,13 @@ export class FilmSetRenderer {
     } else if (city?.visible && city !== prepared.city) {
       prepared.city = city;
       subject = new THREE.Group();
+      const sign = city.children.find(object => object instanceof THREE.Sprite);
       // Compile the existing street meshes. Their lights are already in the target scene.
       subject.traverse = visit => {
         for (const object of city.children) if (object.visible && object instanceof THREE.Mesh) visit(object);
+        // One sprite covers the city signs, and the goal ring becomes visible at the exit.
+        if (sign) visit(sign);
+        visit(this.marker);
         // One resident mesh covers the vertex-colored program shared by distant characters.
         if (distantActor) visit(distantActor);
       };
