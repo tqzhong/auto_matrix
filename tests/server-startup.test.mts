@@ -11,6 +11,7 @@ import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, c
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CONSTRUCT, constructGuidePose, truthRoot, truthText, type TruthRecovery } from '@auto_matrix/shared';
+import { metacortexLiftPose, metacortexPosition, type MetacortexLift } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -263,6 +264,37 @@ test('a first startup without a world checkpoint still saves a usable new world'
   const restored = start(t, f.directory, 'normal'); await restored.waitFor('Restored world at tick 0');
   await restored.waitFor('STARTUP_LISTENING'); await restored.stop();
 });
+
+for (const [mode, phase] of [['commute', 'travel'], ['daily', 'closing'], ['legacy', 'opening']] as const) {
+  test(`a cold ${mode} lift save preserves or recovers its passenger action`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_commute'), life = f.checkpoint.sandbox.neoLife, actor = f.checkpoint.agents.neo;
+    const { x, z } = metacortexPosition(.1, -29);
+    const lift: MetacortexLift = { floor: phase === 'opening' ? 1 : 0, target: 1, phase, elapsed: phase === 'travel' ? 2.36 : .4, passenger: { x, z } };
+    life.lift = lift;
+    actor.position = { x, y: 1 + metacortexLiftPose(lift).height, z }; actor.currentLocation = 'metacortex_office';
+    if (mode === 'daily') delete life.journey;
+    else { life.journey.step = 1; life.journey.checkpoint = { ...actor.position }; }
+    const recovered = { type: 'idle', parameters: { player: true, resolved: true, metacortexLift: true },
+      startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    const saved = { ...recovered, startedAt: f.checkpoint.tick - 1 };
+    actor.currentAction = mode === 'legacy' ? null : saved;
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+      assert.deepEqual(state.sandbox!.neoLife!.lift, lift);
+      assert.deepEqual(state.agents.neo.position, actor.position);
+      assert.deepEqual(state.agents.neo.currentAction, mode === 'legacy' ? recovered : saved);
+    };
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+    client.socket.disconnect();
+    const deadline = Date.now() + 5000;
+    while ((await client.world()).agents.neo.controller) {
+      assert.ok(Date.now() < deadline, 'the paused passenger was not released'); await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    check(await client.world()); await server.stop();
+  });
+}
 
 for (const savedAction of ['matching', 'missing', 'stale'] as const) {
   test(`a cold office briefing restores a ${savedAction} action before input`, { timeout: 30000 }, async t => {

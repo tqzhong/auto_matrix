@@ -25,6 +25,7 @@ import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
 import { savedWorkdayIdle } from './story/FilmStorySystem.js';
+import { savedMetacortexLiftIdle } from './story/NeoLifeSystem.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const eventBus = new EventBus();
@@ -346,7 +347,8 @@ async function main(): Promise<void> {
       Object.assign(agent.state, saved);
       delete agent.state.controller;
       const journey = checkpoint.sandbox?.neoLife?.journey;
-      const savedPerformanceAction = journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
+      const savedPerformanceAction = savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+        || journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
         || interrogationLocked(journey) && agent.state.currentAction?.parameters.interrogation
         || meetingLocked(journey) && agent.state.currentAction?.parameters.meeting
         || truthLocked(journey) && agent.state.currentAction?.parameters.truth

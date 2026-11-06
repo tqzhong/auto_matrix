@@ -3,12 +3,18 @@ import { LIFE_ACTIONS, LIFE_DESTINATIONS, NEO_ANOMALIES, NEO_CAST, NEO_CHAPTERS,
   type AgentState, type NeoLifeState, type SandboxState, type Vector3, type Philosophy } from '@auto_matrix/shared';
 import { FilmStorySystem } from './FilmStorySystem.js';
 import { updateMetacortexDoors } from './MetacortexDoors.js';
-import { METACORTEX, metacortexFloor, metacortexLiftPose, metacortexLiftLocked, nearMetacortexLift } from '@auto_matrix/shared';
+import { METACORTEX, metacortexFloor, metacortexLiftPose, metacortexLiftLocked, nearMetacortexLift, officeCustodyActive } from '@auto_matrix/shared';
 import { APARTMENT_NETWORK, APARTMENT_ROOM, computerCheckLocked } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 import type { WorldDynamics } from './WorldDynamics.js';
 
 const clamp = (n: number): number => Math.max(0, Math.min(100, n));
+
+export function savedMetacortexLiftIdle(life: NeoLifeState | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction, journey = life?.journey;
+  return agent.id === 'neo' && action?.type === 'idle' && action.parameters.metacortexLift === true
+    && metacortexLiftLocked(life?.lift) && !(journey?.actor === agent.id && officeCustodyActive(journey));
+}
 
 export class NeoLifeSystem {
   readonly film: FilmStorySystem;
@@ -158,9 +164,10 @@ export class NeoLifeSystem {
   }
 
   liftFrame(agent: AgentState, dt: number, tick: number): boolean {
-    if (agent.id !== 'neo' || !this.state) return false;
+    const life = this.state;
+    if (agent.id !== 'neo' || !life) return false;
     if (this.film.custody.active(agent)) return false;
-    const lift = this.state.lift;
+    const lift = life.lift;
     const carrying = metacortexLiftLocked(lift);
     if (lift && lift.phase !== 'idle' && agent.controller) {
       const seconds = lift.phase === 'travel' ? METACORTEX.travelSeconds : METACORTEX.doorSeconds;
@@ -174,7 +181,8 @@ export class NeoLifeSystem {
     if (lift?.passenger) {
       agent.position = { x: lift.passenger.x, y: 1 + pose.height, z: lift.passenger.z };
       agent.velocity = { x: 0, y: 0, z: 0 }; agent.targetPosition = null; agent.currentPath = [];
-      agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, metacortexLift: true }, startedAt: tick, duration: 1, progress: 0 };
+      if (dt !== 0 || !savedMetacortexLiftIdle(life, agent))
+        agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, metacortexLift: true }, startedAt: tick, duration: 1, progress: 0 };
       if (this.film.state?.scene === 'm1_commute') this.film.state.checkpoint = { ...agent.position };
       if (lift.phase === 'idle') { delete lift.passenger; agent.currentAction = null; }
     }

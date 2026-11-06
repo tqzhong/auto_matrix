@@ -65,9 +65,16 @@ test('commuting preserves the city walk, rides upward continuously, survives pau
   assert.equal(life.lift!.phase, 'travel'); assert.ok(h.neo.position.y > 5 && h.neo.position.y < 60);
   assert.match(h.command('film:act'), /正在运行/, 'repeated interaction explains the ongoing ride');
   const snapshot = structuredClone(life.lift), paused = { ...h.neo.position };
+  const action = structuredClone(h.neo.currentAction);
+  assert.equal(action?.parameters.metacortexLift, true);
   h.frames(5, false); assert.deepEqual(life.lift, snapshot); assert.deepEqual(h.neo.position, paused);
-  h.players.release('commuter', 1); h.frames(5); assert.deepEqual(life.lift, snapshot);
-  h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('commuter', 'neo', 1);
+  h.players.release('commuter', 1);
+  assert.deepEqual(h.neo.currentAction, action, 'disconnect retains the saved passenger action');
+  h.frames(5); assert.deepEqual(life.lift, snapshot);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.neo.currentAction, action, 'restoring the sandbox retains the saved passenger action');
+  h.players.possess('commuter', 'neo', 1);
+  assert.deepEqual(h.neo.currentAction, action, 're-entry retains the saved passenger action');
   h.command('film:retry'); h.frames(10);
   const restored = h.sandbox.life.state!;
   assert.equal(h.neo.position.y, 66); assert.equal(restored.lift!.phase, 'idle'); assert.equal(restored.journey!.step, 2);

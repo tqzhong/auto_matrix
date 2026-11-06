@@ -7,6 +7,7 @@ import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
 import type { ActionExecutor } from '../agents/ActionExecutor.js';
 import type { WorldDynamics } from '../story/WorldDynamics.js';
+import { savedMetacortexLiftIdle } from '../story/NeoLifeSystem.js';
 import { INTERROGATION_CAST, interrogationLocked } from '@auto_matrix/shared';
 import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
@@ -168,7 +169,8 @@ export class PlayerController {
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
       || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick);
-    if (!restoredPose && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
+    if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
+      && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
       || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
@@ -268,7 +270,8 @@ export class PlayerController {
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
         || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick);
-      if (!restoredPose && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
+      if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
+        && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
