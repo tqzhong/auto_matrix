@@ -111,6 +111,11 @@ export class PostProcessing {
     this.occlusion.blendIntensity = .65;
     this.composer.addPass(this.occlusion);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.22, 0.35, 1.05);
+    // Every bloom filter fills its target with a fullscreen triangle.
+    for (const target of [this.bloom.renderTargetBright, ...this.bloom.renderTargetsHorizontal, ...this.bloom.renderTargetsVertical])
+      target.depthBuffer = false;
+    for (const material of [this.bloom.materialHighPassFilter, ...this.bloom.separableBlurMaterials, this.bloom.compositeMaterial])
+      material.depthTest = material.depthWrite = false;
     this.composer.addPass(this.bloom);
     this.output = new OutputPass();
     this.composer.addPass(this.output);
