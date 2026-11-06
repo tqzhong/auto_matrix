@@ -604,6 +604,28 @@ test('office exits prepare the existing materials in separate frames', t => {
   assert.deepEqual(batches.at(-1), [sleeve, torso]);
   assert(visibleClimb.every(mesh => mesh.parent === street));
   assert.equal(sleeve.parent, driver); assert.equal(sign.parent, lobby); assert.equal(target, null);
+
+  const connectionMeshes = ['Anatomical_head_and_hands', 'shoes01', 'office-uniform-cap'].map(name => {
+    const mesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); mesh.name = name; return mesh;
+  });
+  courier.add(...connectionMeshes);
+  t.after(() => { for (const mesh of connectionMeshes) { mesh.geometry.dispose(); mesh.material.dispose(); } });
+  const signature = film['office']!.root.getObjectByName('delivery-signature-stroke');
+  assert(signature instanceof THREE.Line);
+  const call: FilmJourney = { ...journey, scene: 'm1_boss', step: 1, phone: { phase: 'answering', elapsed: 2 } };
+  const prepareConnection = (stage = call) => film.prepareOfficeConnection?.(renderer, camera, culling, stage, courier, patrol);
+  const beforeConnection = tasks.length;
+  prepareConnection({ ...call, phone: { phase: 'ready', elapsed: 0 } });
+  film.prepareOfficeConnection?.(renderer, camera, culling, call, courier);
+  assert.equal(tasks.length, beforeConnection);
+  for (let i = 0; i < 5; i++) prepareConnection();
+  assert.deepEqual(tasks.slice(beforeConnection), ['compile', 'locations', 'compile', 'locations']);
+  assert.deepEqual(batches.at(-2), [...connectionMeshes, hair]);
+  assert.deepEqual(batches.at(-1), [signature]);
+  prepareConnection({ ...call, step: 2, phone: { phase: 'connected', elapsed: 11 } });
+  assert.equal(tasks.length, beforeConnection + 4);
+  assert.equal(film['preparedOfficeConnection'], undefined);
+  assert(connectionMeshes.every(mesh => mesh.parent === courier));
 });
 
 test('the upper ladder has a clear passage to the ledge between two graspable rails', t => {

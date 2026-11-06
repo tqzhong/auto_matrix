@@ -147,6 +147,7 @@ const palettes = {
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
 type ColorMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>;
+type ColorSubject = ColorMesh | THREE.Sprite | THREE.Line;
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type LafayettePreparation = {
   lights: LafayetteRoomLights;
@@ -159,7 +160,7 @@ type LafayettePreparation = {
 };
 type ColorPreparation = {
   scene: THREE.Scene;
-  meshes: ColorMesh[];
+  meshes: ColorSubject[];
   programs: ColorProgram[];
   textures: Set<THREE.Texture>;
 };
@@ -225,6 +226,7 @@ export class FilmSetRenderer {
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedOfficePhone?: { smith: THREE.Group; gpu: THREE.WebGLRenderer['properties']; depth: THREE.MeshDepthMaterial; programs: ColorProgram[] };
+  private preparedOfficeConnection?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; smith: THREE.Group };
   private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
   private preparedOfficeDescent?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; city: THREE.Group };
   private officeTowerDepth?: THREE.MeshDepthMaterial;
@@ -765,6 +767,25 @@ export class FilmSetRenderer {
     this.preparedOfficePhone = { smith, gpu, depth, programs: linked };
     return true;
   }
+  prepareOfficeConnection(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
+    courier?: THREE.Group, smith?: THREE.Group): void {
+    if (!this.office || journey.scene !== 'm1_boss' || journey.visiting || journey.step !== 1 || journey.phone?.phase !== 'answering') {
+      this.preparedOfficeConnection = undefined;
+      return;
+    }
+    if (!courier || !smith || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedOfficeConnection;
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.courier !== courier || prepared.smith !== smith) {
+      const meshes = [courier.getObjectByName('Anatomical_head_and_hands'), courier.getObjectByName('shoes01'),
+        courier.getObjectByName('office-uniform-cap'), smith.getObjectByName('short04')]
+        .filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial);
+      const signature = this.office.root.getObjectByName('delivery-signature-stroke');
+      if (meshes.length !== 4 || !(signature instanceof THREE.Line)) return;
+      this.preparedOfficeConnection = prepared = { scene: this.scene, gpu: renderer.properties, courier, smith,
+        meshes: [...meshes, signature], programs: [], textures: new Set() };
+    }
+    this.prepareColorFrame(renderer, camera, prepared, lighting);
+  }
   prepareOfficeWindow(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
     city: THREE.Group, courier?: THREE.Group, patrol?: THREE.Group): void {
     if (!this.office || journey.scene !== 'm1_office_escape' || journey.visiting || (journey.step !== 2 && journey.step !== 3)
@@ -991,7 +1012,7 @@ export class FilmSetRenderer {
     });
     return meshes;
   }
-  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: (ColorMesh | THREE.Sprite)[], compile: (subject: THREE.Group) => void): void {
+  private compileColorBatch(renderer: THREE.WebGLRenderer, batch: ColorSubject[], compile: (subject: THREE.Group) => void): void {
     if (!batch.length) return;
     const subject = new THREE.Group();
     subject.traverse = visit => batch.forEach(visit);
@@ -3689,6 +3710,7 @@ export class FilmSetRenderer {
     this.cancelOfficePreparation();
     this.preparedOfficeCanopy = undefined;
     this.preparedOfficePhone?.depth.dispose(); this.preparedOfficePhone = undefined;
+    this.preparedOfficeConnection = undefined;
     this.preparedOfficeWindow = undefined;
     this.preparedOfficeDescent = undefined;
     this.cancelLafayettePreparation();
