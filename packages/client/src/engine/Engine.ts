@@ -3,7 +3,7 @@ import { dockGateActive, dockLastStandActive, dockLastStandLocked } from '@auto_
 import { dockReloadActive, dockReloadLocked } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked, BASEMENT_ROLES } from '@auto_matrix/shared';
 import { mirrorTime } from '@auto_matrix/shared';
-import { metacortexLiftLocked } from '@auto_matrix/shared';
+import { METACORTEX, metacortexLiftLocked } from '@auto_matrix/shared';
 import { officeCustodyActive, officeCustodyLocked } from '@auto_matrix/shared';
 import { arrestCarPose } from '@auto_matrix/shared';
 import { spoonLessonBend } from '@auto_matrix/shared';
@@ -224,18 +224,23 @@ export class Engine {
     measure?.('agents');
     this.voxelRenderer.update(this.elapsed, this.playerControls?.id ? this.camera : undefined, this.sandbox?.traffic);
     const player = this.playerControls?.id ? this.agentRenderer.getAgentState(this.playerControls.id) : undefined;
+    const avatarPosition = player ? this.agentRenderer.getAgent(player.id)?.position : undefined;
     const liveMatrixJourney = this.matrix && meeting && !meeting.visiting && player?.id === meeting.actor ? meeting : undefined;
+    const lift = this.sandbox?.neoLife?.lift;
+    // The fast player snapshot can arrive before the lift clock in the world snapshot.
+    const carHeight = avatarPosition && liveMatrixJourney?.scene === 'm1_commute' && lift?.phase === 'travel'
+      && lift.passenger && player?.currentAction?.parameters.metacortexLift === true
+      ? avatarPosition.y - METACORTEX.center.y : undefined;
     const reserveCommuteLights = liveMatrixJourney?.scene === 'm1_morning' || liveMatrixJourney?.scene === 'm1_commute';
     // Keep the prepared office lighting layout through the handoff and escape.
     const reserveLandingSlot = reserveCommuteLights || liveMatrixJourney?.scene === 'm1_boss'
       || liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge';
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
       ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
-    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveLandingSlot);
+    this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveLandingSlot, carHeight);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
     const previousSet = this.filmSets.active;
-    const avatarPosition = player ? this.agentRenderer.getAgent(player.id)?.position : undefined;
     const filmSet = this.filmSets.update(player ?? undefined, this.sandbox, this.elapsed, avatarPosition, this.camera.position, workday, this.playerControls?.firstPerson ?? false, this.timeOfDay, this.camera, this.tick, garageCar);
     this.lightCulling.stablePointSlots = this.filmSets.stablePointSlots;
     if (this.filmSets.lafayetteStreetHidden) this.agentRenderer.hideLafayetteStreetCast();
@@ -282,7 +287,6 @@ export class Engine {
         this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
       }
     }
-    const lift = this.sandbox?.neoLife?.lift;
     if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
       && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice))
       this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, Boolean(lift?.passenger));
@@ -313,8 +317,13 @@ export class Engine {
     measure?.('effects');
     this.pillReflection.update(meeting, this.agentRenderer.getAgentBody('morpheus'), this.agentRenderer.getAgentBody(meeting?.actor ?? 'neo'));
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
-    try { this.postProcessing.render(filmSet?.id !== 'film_extraction_car'); }
-    finally { this.lightCulling.restore(); }
+    try {
+      if (liveMatrixJourney?.scene === 'm1_commute') this.voxelRenderer.cullExteriorInClosedLift(this.renderer, this.camera, lift, carHeight);
+      this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
+    } finally {
+      this.voxelRenderer.restoreLiftExterior();
+      this.lightCulling.restore();
+    }
     measure?.('render');
     this.onRendered?.();
     measure?.('capture');

@@ -122,7 +122,8 @@ export class LifeInteriors {
       leaf.rotation.set(.4, i * 2.4, .5);
     }
   }
-  update(time: number, player: Vector3 | undefined, life?: NeoLifeState, camera?: Vector3, subject?: THREE.Object3D, check?: ComputerInvestigation, reserveLandingSlot = false): void {
+  update(time: number, player: Vector3 | undefined, life?: NeoLifeState, camera?: Vector3, subject?: THREE.Object3D,
+    check?: ComputerInvestigation, reserveLandingSlot = false, carHeight?: number): void {
     for (const group of this.rooms) {
       const nearby = (position?: Vector3) => position && Math.hypot(position.x - group.position.x, position.z - group.position.z) < 120;
       group.visible = !player && !camera || Boolean(nearby(player) || nearby(camera));
@@ -133,7 +134,7 @@ export class LifeInteriors {
     for (const entry of this.lights) entry.light.visible = entry.location === room;
     for (const hand of this.clocks) hand.rotation.z = -time / 1000 * Math.PI * 2 + (life?.anomaly?.id === 'clock' ? Math.sin(time * 3) * .2 : 0);
     const office = lifeRoomCenter('metacortex_office')!;
-    this.metacortex.update(life?.lift, Boolean(player && Math.hypot(player.x - office.x, player.z - office.z) < 70), officeCustodyActive(life?.journey) ? life?.journey?.office?.custody : undefined, subject);
+    this.metacortex.update(life?.lift, Boolean(player && Math.hypot(player.x - office.x, player.z - office.z) < 70), officeCustodyActive(life?.journey) ? life?.journey?.office?.custody : undefined, subject, carHeight);
     this.cats.visible = life?.anomaly?.id === 'cat';
     if (life?.anomaly) this.cats.position.set(life.anomaly.position.x - 2, 0, life.anomaly.position.z - 4);
   }

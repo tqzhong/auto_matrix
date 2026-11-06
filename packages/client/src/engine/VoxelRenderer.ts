@@ -1,10 +1,13 @@
-import { METACORTEX, CITY_TRAFFIC_ROUTES, cityTrafficPose, cityTrafficSignal, type CityTrafficState } from '@auto_matrix/shared';
+import { METACORTEX, metacortexLiftPose, CITY_TRAFFIC_ROUTES, cityTrafficPose, cityTrafficSignal, type CityTrafficState, type MetacortexLift } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FILM_SETS, LOCATIONS, LIFE_ROOMS, STREET_SPACING, locationEntrance, CITY_BUILDINGS, cityNoise as noise } from '@auto_matrix/shared';
 import { UrbanMaterials } from './UrbanMaterials.js';
 import { LifeInteriors } from './LifeInteriors.js';
 import { VisibleGroup } from './VisibleGroup.js';
+import { METACORTEX_CAR_INTERIOR } from './MetacortexRenderer.js';
+
+const lowerShaft = { bottom: 10, top: METACORTEX.upper - .4 };
 
 export class VoxelRenderer {
   readonly matrix = new VisibleGroup();
@@ -20,6 +23,12 @@ export class VoxelRenderer {
   private markers: THREE.Mesh[] = [];
   private signs: { sprite: THREE.Sprite; width: number }[] = [];
   private transform = new THREE.Object3D();
+  private liftViewOrigin = new THREE.Vector3();
+  private liftViewPoint = new THREE.Vector3();
+  private exteriorBatches: THREE.InstancedMesh[] = [];
+  private drawnExterior = new WeakMap<THREE.InstancedMesh, THREE.WebGLRenderer['properties']>();
+  private hiddenLiftExterior: THREE.InstancedMesh[] = [];
+  private drawingLiftView = false;
 
   constructor(private scene: THREE.Scene) {
     scene.add(this.matrix, this.real);
@@ -41,6 +50,13 @@ export class VoxelRenderer {
     this.buildRealWorld();
     this.buildTrilogySites();
     this.buildTraffic();
+    for (const object of this.matrix.children) {
+      if (!(object instanceof THREE.InstancedMesh)) continue;
+      this.exteriorBatches.push(object);
+      object.onAfterRender = (renderer, scene) => {
+        if (this.drawingLiftView && scene === this.scene && !scene.overrideMaterial) this.drawnExterior.set(object, renderer.properties);
+      };
+    }
   }
 
   private buildBuildings(): void {
@@ -251,7 +267,7 @@ export class VoxelRenderer {
         if (location.id === 'metacortex_office') {
           // Leave the inhabited office and the entire lift shaft hollow.
           // The streamed office supplies its own 0.4-unit floor slab.
-          for (const [bottom, top] of [[10, METACORTEX.upper - .4], [METACORTEX.upper + 10, height]]) {
+          for (const [bottom, top] of [[lowerShaft.bottom, lowerShaft.top], [METACORTEX.upper + 10, height]]) {
             for (const [x, z, width, depth] of [[-15.3, 0, 23.4, 66], [15.3, 0, 23.4, 66], [0, 3.7, 7.2, 58.6]]) {
               const block = new THREE.Mesh(new THREE.BoxGeometry(width, top - bottom, depth), [mat, mat, roof, roof, mat, mat]);
               block.position.set(centerX + x, (bottom + top) / 2, METACORTEX.center.z + z); block.castShadow = block.receiveShadow = true; this.matrix.add(block);
@@ -508,6 +524,34 @@ export class VoxelRenderer {
   }
 
   showOfficeInterior(active: boolean): void { if (this.officeShell) this.officeShell.visible = !active; }
+
+  cullExteriorInClosedLift(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lift?: MetacortexLift, carHeight?: number): void {
+    if (!lift?.passenger || lift.phase !== 'travel') return;
+    const height = carHeight ?? metacortexLiftPose(lift).height;
+    // Keep the car and its transom entirely inside the solid shaft between landings.
+    if (height < lowerShaft.bottom || height + 8 > lowerShaft.top) return;
+    const origin = this.liftViewOrigin.set(METACORTEX.center.x, height, METACORTEX.center.z);
+    const point = this.liftViewPoint;
+    camera.updateWorldMatrix(true, false);
+    if (!METACORTEX_CAR_INTERIOR.containsPoint(point.setFromMatrixPosition(camera.matrixWorld).sub(origin))) return;
+    // A near plane that clips through a wall can still see the street.
+    for (let x = -1; x <= 1; x += 2) for (let y = -1; y <= 1; y += 2) {
+      if (!METACORTEX_CAR_INTERIOR.containsPoint(point.set(x, y, -1).unproject(camera).sub(origin))) return;
+    }
+    // Warm the shaft's own color and shadow layout before hiding its exterior batches.
+    this.drawingLiftView = true;
+    for (const object of this.exteriorBatches) {
+      if (!object.visible || this.drawnExterior.get(object) !== renderer.properties) continue;
+      this.hiddenLiftExterior.push(object);
+      object.visible = false;
+    }
+  }
+
+  restoreLiftExterior(): void {
+    for (const object of this.hiddenLiftExterior) object.visible = true;
+    this.hiddenLiftExterior.length = 0;
+    this.drawingLiftView = false;
+  }
 
   updateVisibility(_x: number, _z: number): void { /* Instanced city uses renderer frustum culling. */ }
 

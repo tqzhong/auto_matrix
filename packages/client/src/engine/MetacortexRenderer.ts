@@ -3,6 +3,15 @@ import { METACORTEX, METACORTEX_LOBBY, OFFICE_CUSTODY_CAR, metacortexLiftPose, t
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { CustodyStreetRenderer } from './CustodyStreetRenderer.js';
 
+const carSide = { x: 2.98, width: .14 };
+const carBack = { z: -32.05, depth: .18 };
+const carDoor = { z: -26, height: 6.8, depth: .1 };
+const insideSide = carSide.x - carSide.width / 2;
+export const METACORTEX_CAR_INTERIOR = new THREE.Box3(
+  new THREE.Vector3(-insideSide, 0, carBack.z + carBack.depth / 2),
+  new THREE.Vector3(insideSide, carDoor.height, carDoor.z - carDoor.depth / 2),
+).expandByScalar(-.01);
+
 /** Lobby and moving car stay in the city while the office is streamed above. */
 export class MetacortexRenderer {
   private root = new THREE.Group();
@@ -64,13 +73,13 @@ export class MetacortexRenderer {
     this.car.name = 'metacortex-elevator-car'; this.root.add(this.car);
     this.box(this.car, 0, -.13, -29, 6, .26, 6.4, dark);
     this.box(this.car, 0, 7.3, -29, 6, .3, 6.4, metal);
-    this.box(this.car, 0, 3.6, -32.05, 6, 7.2, .18, metal);
+    this.box(this.car, 0, 3.6, carBack.z, 6, 7.2, carBack.depth, metal);
     this.box(this.car, 0, 3.5, -31.93, 4.5, 3.2, .04, 0x96a6a0);
     this.label(this.car, 'METACORTEX', 0, 5.7, -31.8, 4.4);
     for (const side of [-1, 1]) {
-      this.box(this.car, side * 2.98, 3.6, -29, .14, 7.2, 6.2, metal);
+      this.box(this.car, side * carSide.x, 3.6, -29, carSide.width, 7.2, 6.2, metal);
       this.box(this.car, side * 2.8, 2.5, -29, .1, .15, 4.8, brass);
-      const door = this.box(this.car, side * 1.5, 3.4, -26, 3, 6.8, .1, metal);
+      const door = this.box(this.car, side * 1.5, carDoor.height / 2, carDoor.z, 3, carDoor.height, carDoor.depth, metal);
       this.doors.push({ mesh: door, side });
     }
     this.box(this.car, 0, 7.1, -29, 4.8, .12, 4.8, 0xece1c7);
@@ -97,18 +106,20 @@ export class MetacortexRenderer {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, display ? .7 : width / 8), material); mesh.position.set(x, y, z); parent.add(mesh);
     if (display) this.displays.push({ canvas, texture });
   }
-  update(lift?: MetacortexLift, nearby = false, custody?: OfficeCustody, subject?: THREE.Object3D): void {
+  update(lift?: MetacortexLift, nearby = false, custody?: OfficeCustody, subject?: THREE.Object3D, carHeight?: number): void {
     if (custody?.lift && !this.street) this.street = new CustodyStreetRenderer(this.root);
     if (!custody && this.street) { this.street.dispose(); this.street = undefined; }
     this.street?.update(custody, subject);
-    const pose = metacortexLiftPose(lift); this.car.position.y = pose.height;
+    const pose = metacortexLiftPose(lift);
+    const height = lift?.phase === 'travel' ? carHeight ?? pose.height : pose.height;
+    this.car.position.y = height;
     const pressing = custody?.phase === 'selecting' && (custody.transportElapsed ?? 0) >= .65 && (custody.transportElapsed ?? 0) <= 1.1;
     this.lobbyButton.position.x = OFFICE_CUSTODY_CAR.button.x + .02 + (pressing ? .015 : 0);
     for (const door of this.doors) {
-      const open = door.floor === undefined || Math.abs(pose.height - door.floor * METACORTEX.upper) < .01 ? pose.door : 0;
+      const open = door.floor === undefined || Math.abs(height - door.floor * METACORTEX.upper) < .01 ? pose.door : 0;
       door.mesh.position.x = door.side * (1.5 + open * 3.1);
     }
-    const text = `${lift?.phase === 'travel' ? lift.target ? 'UP' : 'DOWN' : 'FLOOR'}  ${pose.height < .1 ? 'G' : String(Math.max(1, Math.round(pose.height / METACORTEX.upper * 7) + 1)).padStart(2, '0')}`;
+    const text = `${lift?.phase === 'travel' ? lift.target ? 'UP' : 'DOWN' : 'FLOOR'}  ${height < .1 ? 'G' : String(Math.max(1, Math.round(height / METACORTEX.upper * 7) + 1)).padStart(2, '0')}`;
     if (text !== this.display) {
       this.display = text;
       for (const { canvas, texture } of this.displays) {

@@ -66,6 +66,43 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
     const frustum = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     const submitted = canopy.filter(mesh => frustum.intersectsObject(mesh)).reduce((count, mesh) => count + mesh.count, 0);
     assert.ok(submitted < 35 * 288 / 2, `the moving lift submits ${submitted} park leaves`);
+    const exterior = streetDetails.filter(object => object instanceof THREE.InstancedMesh);
+    exterior[0].visible = false;
+    const visibility = exterior.map(mesh => mesh.visible);
+    const olderLift = { ...lift, elapsed: 1.5 };
+    city.interiors.update(9500, { x: 1140, y: 33.5, z: 798 }, { lift: olderLift } as never, undefined, undefined, undefined, false, 32.5);
+    assert.equal(car.position.y, 32.5, 'the rendered car must use the same passenger height as the view when its lift snapshot arrives late');
+    const gpu = { properties: {} } as THREE.WebGLRenderer;
+    const drawExterior = () => {
+      for (const mesh of exterior) {
+        const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+        mesh.onAfterRender(gpu, scene, camera, mesh.geometry, material, null);
+      }
+    };
+    drawExterior();
+    city.cullExteriorInClosedLift(gpu, camera, olderLift, 32.5);
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'a city overview draw cannot warm the shader used in the lift');
+    drawExterior();
+    city.restoreLiftExterior();
+    city.cullExteriorInClosedLift(gpu, camera, olderLift, 32.5);
+    assert.ok(exterior.every(mesh => !mesh.visible), 'the enclosed view should not submit outdoor batches');
+    assert.equal(car.visible, true, 'the real moving car must remain in the render');
+    city.restoreLiftExterior();
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'outside draws and prior hidden state return after the pass');
+    city.cullExteriorInClosedLift({ properties: {} } as THREE.WebGLRenderer, camera, lift);
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'a new WebGL context needs its own first draws');
+    camera.position.set(1142.7, 35, 798); camera.lookAt(1144, 35, 798);
+    city.cullExteriorInClosedLift(gpu, camera, lift);
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'an eye inside the car cannot cull if the near plane crosses a wall');
+    camera.position.set(1140, 35, 800.8); camera.lookAt(1140, 34.25, 798.2);
+    city.cullExteriorInClosedLift(gpu, camera, { ...lift, passenger: undefined });
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'the view must belong to a passenger');
+    camera.position.y += 32.5; camera.lookAt(1140, 66.75, 798.2);
+    city.cullExteriorInClosedLift(gpu, camera, { ...lift, phase: 'opening' });
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'opening the door must expose the actual destination again');
+    city.cullExteriorInClosedLift(gpu, camera, { ...lift, elapsed: METACORTEX.travelSeconds });
+    assert.deepEqual(exterior.map(mesh => mesh.visible), visibility, 'restore the exterior before the car reaches the landing');
+    exterior[0].visible = true;
     lift.floor = 1; lift.phase = 'idle'; lift.elapsed = 0;
     city.interiors.update(9500, { x: 1140, y: 66, z: 798 }, { lift } as never);
     assert.equal(car.position.y, METACORTEX.upper);
