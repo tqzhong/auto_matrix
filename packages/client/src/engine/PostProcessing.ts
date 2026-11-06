@@ -105,6 +105,7 @@ export class PostProcessing {
   private pixelRatio: number;
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     this.composer = new EffectComposer(renderer);
+    this.composer.renderTarget1.depthBuffer = false;
     this.composer.addPass(new RenderPass(scene, camera));
     this.occlusion = new WorldOcclusionPass(scene, camera, window.innerWidth, window.innerHeight);
     this.occlusion.updateGtaoMaterial({ radius: 1.8, thickness: 1, scale: .8, samples: 8, distanceFallOff: 1 });
@@ -118,6 +119,7 @@ export class PostProcessing {
       material.depthTest = material.depthWrite = false;
     this.composer.addPass(this.bloom);
     this.output = new OutputPass();
+    this.output.material.depthTest = this.output.material.depthWrite = false;
     this.composer.addPass(this.output);
     this.antialias = new ShaderPass(FXAAShader);
     this.antialias.material.depthTest = this.antialias.material.depthWrite = false;
@@ -143,7 +145,14 @@ export class PostProcessing {
     }
     this.pixelRatio = renderer.getPixelRatio(); this.resize(window.innerWidth, window.innerHeight);
   }
-  render(occlusion = true): void { this.occlusion.enabled = occlusion; this.composer.render(); }
+  render(occlusion = true): void {
+    this.occlusion.enabled = occlusion;
+    // The comparison AO path can swap the buffers. Always start the scene
+    // on the depth-capable target, regardless of the previous frame's swaps.
+    this.composer.readBuffer = this.composer.renderTarget2;
+    this.composer.writeBuffer = this.composer.renderTarget1;
+    this.composer.render();
+  }
   get occlusionInPlace(): boolean { return this.occlusion.compositeInPlace; }
   set occlusionInPlace(value: boolean) { this.occlusion.compositeInPlace = value; }
   get occlusionSingleChannel(): boolean { return this.occlusion.singleChannel; }

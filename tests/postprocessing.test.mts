@@ -29,7 +29,7 @@ test('changing render quality resizes both compositor buffers, occlusion and ant
   } finally { occlusion.dispose(); antialias.dispose(); composer.dispose(); }
 });
 
-test('bloom and FXAA write only color while the scene keeps its offscreen depth', () => {
+test('fullscreen color passes keep depth only on the scene and normal targets', () => {
   const previousWindow = globalThis.window;
   globalThis.window = { innerWidth: 1920, innerHeight: 1080 } as Window & typeof globalThis;
   const renderer = { getPixelRatio: () => 1, getSize: (size: THREE.Vector2) => size.set(1920, 1080) } as THREE.WebGLRenderer;
@@ -40,16 +40,40 @@ test('bloom and FXAA write only color while the scene keeps its offscreen depth'
     assert.equal(composer.passes.at(-1), fxaa);
     assert.deepEqual([fxaa.material.depthTest, fxaa.material.depthWrite], [false, false]);
     const bloomTargets = [bloom.renderTargetBright, ...bloom.renderTargetsHorizontal, ...bloom.renderTargetsVertical];
-    const bloomMaterials = [bloom.materialHighPassFilter, ...bloom.separableBlurMaterials, bloom.compositeMaterial, bloom.blendMaterial];
-    for (const material of bloomMaterials) assert.deepEqual([material.depthTest, material.depthWrite], [false, false]);
+    const colorMaterials = [bloom.materialHighPassFilter, ...bloom.separableBlurMaterials, bloom.compositeMaterial, bloom.blendMaterial, post['output'].material];
+    for (const material of colorMaterials) assert.deepEqual([material.depthTest, material.depthWrite], [false, false]);
     for (const size of [[1920, 1080], [1280, 720]] as const) {
       post.resize(...size);
       assert.deepEqual([bloomTargets[0].width, bloomTargets[0].height], [size[0] / 2, size[1] / 2]);
       assert.ok(bloomTargets.every(target => !target.depthBuffer));
+      assert.deepEqual([composer.readBuffer.depthBuffer, composer.writeBuffer.depthBuffer], [true, false]);
     }
-    assert.equal(composer.readBuffer.depthBuffer && composer.writeBuffer.depthBuffer, true);
     assert.equal(post['occlusion'].normalRenderTarget.depthBuffer, true);
   } finally { post?.dispose(); globalThis.window = previousWindow; }
+});
+
+test('the scene starts on the same depth target after the occlusion comparison path swaps buffers', t => {
+  const previousWindow = globalThis.window;
+  globalThis.window = { innerWidth: 1920, innerHeight: 1080 } as Window & typeof globalThis;
+  const renderer = { getPixelRatio: () => 1, getSize: (size: THREE.Vector2) => size.set(1920, 1080),
+    shadowMap: { autoUpdate: true, needsUpdate: false },
+    getRenderTarget: () => null, setRenderTarget: () => {} } as unknown as THREE.WebGLRenderer;
+  const post = new PostProcessing(renderer, new THREE.Scene(), new THREE.PerspectiveCamera());
+  try {
+    const composer = post['composer'], [scene, , bloom, output, fxaa] = composer.passes;
+    const sceneTargets: THREE.WebGLRenderTarget[] = [];
+    t.mock.method(scene, 'render', (_renderer, _write, read) => { sceneTargets.push(read); });
+    t.mock.method(GTAOPass.prototype, 'renderOverride', () => {});
+    t.mock.method(GTAOPass.prototype, 'renderPass', () => {});
+    for (const pass of [bloom, output, fxaa]) t.mock.method(pass, 'render', () => {});
+    post.occlusionInPlace = false;
+    post.render();
+    post.render();
+    post.occlusionInPlace = true;
+    post.render(false);
+    assert.equal(sceneTargets.length, 3);
+    assert.ok(sceneTargets.every(target => target === composer.renderTarget2));
+  } finally { post.dispose(); globalThis.window = previousWindow; }
 });
 
 test('default occlusion multiplies the existing color without copying or swapping it', t => {

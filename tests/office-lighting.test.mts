@@ -96,12 +96,17 @@ test('office keycaps share one draw geometry at the authored desk positions', t 
     assert.deepEqual(managerKeys.map(keys => keys.length), [52, 52], 'both full keyboards remain in the scene builds');
     assert.deepEqual(managerKeys.map(keys => new Set(keys).size), [1, 1]);
     assert.notEqual(managerKeys[0][0], managerKeys[1][0], 'disposed scene templates must not be retained for the next scene');
-    const keys = office.root.children.find(object => object instanceof THREE.InstancedMesh && positions(object.geometry).equals(positions(officeKey)));
+    const keys = office.root.getObjectByName('office-keyboard-keys');
     assert.ok(keys instanceof THREE.InstancedMesh, 'every workstation draws the same key geometry');
     assert.equal(officeKeys.length, 0, 'the material batch does not duplicate key vertices');
     assert.equal(keys.count, OFFICE_DESKS.length * 52);
     assert.equal(keys.castShadow && keys.receiveShadow, true);
-    for (const attribute of ['normal', 'uv']) assert.deepEqual(keys.geometry.getAttribute(attribute).array, officeKey.getAttribute(attribute).array);
+    assert.equal(keys.geometry.index?.count, officeKey.attributes.position.count, 'the complete beveled surface uses shared vertices');
+    assert.ok(keys.geometry.attributes.position.count < officeKey.attributes.position.count / 3);
+    const expanded = keys.geometry.toNonIndexed();
+    try {
+      for (const name of ['position', 'normal', 'uv']) assert.deepEqual(expanded.getAttribute(name).array, officeKey.getAttribute(name).array);
+    } finally { expanded.dispose(); }
     const matrix = new THREE.Matrix4(), position = new THREE.Vector3();
     let index = 0;
     for (const { x, z } of OFFICE_DESKS) for (let row = 0; row < 4; row++) for (let col = 0; col < 13; col++) {

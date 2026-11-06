@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -400,7 +400,11 @@ export class OfficeSetRenderer {
     const monitor = this.workstationScreen(), report = this.documentPage();
     const led = this.mat(0x66884e, .5); led.emissive.setHex(0x50783c); led.emissiveIntensity = .4;
     const keyRows = 4, keyColumns = 13;
-    const keys = new THREE.InstancedMesh(new RoundedBoxGeometry(.145, .05, .132, 2, .01), paper, OFFICE_DESKS.length * keyRows * keyColumns);
+    const key = new RoundedBoxGeometry(.145, .05, .132, 2, .01);
+    // The indexing utility clones its input. Reuse the generated attributes without rebuilding the rounded box.
+    const keySource = new THREE.BufferGeometry(); keySource.attributes = key.attributes; keySource.groups = key.groups;
+    const keys = new THREE.InstancedMesh(mergeVertices(keySource, 1e-6), paper, OFFICE_DESKS.length * keyRows * keyColumns);
+    keySource.dispose(); key.dispose();
     keys.name = 'office-keyboard-keys'; keys.castShadow = keys.receiveShadow = true;
     const keyMatrix = new THREE.Matrix4(); let keyIndex = 0;
     for (const { x, z } of OFFICE_DESKS) {
