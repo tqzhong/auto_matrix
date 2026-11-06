@@ -747,6 +747,15 @@ test('the office drops street shadow rays outside the view and retains the other
   agents.restoreOfficeStreetShadows();
   assert.ok(casting(), 'the next pass starts with the original shadows');
 
+  agents.updateAgent(citizen.id, { ...citizen, currentLocation: 'metacortex_office' });
+  cull();
+  assert.ok(casters.every(object => !object.castShadow && object.visible), 'a street-level pedestrian can carry the office location');
+  agents.restoreOfficeStreetShadows();
+  group.position.y = metacortexPosition(0, 0, 1).y;
+  cull();
+  assert.ok(casting(), 'the street optimization preserves upper-floor casters');
+  group.position.y = citizen.position.y;
+
   const landing = new THREE.SpotLight(0xffffff, 1, 20, .8);
   landing.castShadow = true; landing.position.set(1113, 12, 916); landing.target.position.copy(group.position);
   scene.add(landing, landing.target);

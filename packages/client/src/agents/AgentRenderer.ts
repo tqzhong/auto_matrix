@@ -270,7 +270,9 @@ export class AgentRenderer {
     });
     if (unboundedShadow) return;
     for (const { group, state } of this.agents.values()) {
-      if (!group.visible || !state.id.startsWith('citizen_') || state.currentLocation !== 'downtown' || state.controller || group.position.y > 15) continue;
+      if (!group.visible || !state.id.startsWith('citizen_') || state.controller || group.position.y > 15) continue;
+      // Street-level pedestrians at the tower entrance can have the office location.
+      if (state.currentLocation !== 'downtown' && state.currentLocation !== 'metacortex_office') continue;
       // Enclose the regular pedestrian rigs, with room for the shadow filter at the edge of the view.
       group.getWorldPosition(bounds.center).y += 2;
       // If the entire caster starts outside a plane and its shadow goes farther out, no visible receiver can use it.
