@@ -667,7 +667,8 @@ export class CharacterModels {
       face = this.material(new THREE.MeshStandardMaterial({ color: look.skin, roughness: 0.67, bumpMap: this.fabric, bumpScale: 0.0008 }));
       this.atlasMaterial(face, [.5, .5], [(look.face % 2) * .5, look.face < 2 ? .5 : 0]);
     }
-    this.mesh(head, this.headGeometry(look.width), [face, skin], [0, 0, 0]);
+    const headSurface = this.mesh(head, this.headGeometry(look.width), [face, skin], [0, 0, 0]);
+    if (state.id === 'citizen_11') headSurface.name = 'office-driver-head';
     for (const side of [-1, 1]) {
       this.mesh(head, this.sphere, skin, [side * 0.267 * look.width, -0.08, -0.035], [0.040, 0.09, 0.028]);
     }

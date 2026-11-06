@@ -147,7 +147,7 @@ const palettes = {
 
 type LafayetteRoomLights = { shell: THREE.Group; fixtures: THREE.Group };
 type ColorMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial | THREE.MeshBasicMaterial>;
-type ColorSubject = ColorMesh | THREE.Sprite | THREE.Line;
+type ColorSubject = THREE.Mesh | THREE.Sprite | THREE.Line;
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type LafayettePreparation = {
   lights: LafayetteRoomLights;
@@ -835,10 +835,16 @@ export class FilmSetRenderer {
     }
     const driver = actor('citizen_11');
     if (driver && !prepared.actors.has(driver)) {
-      const clothes = this.colorMeshes([driver]).filter(({ material }) => material instanceof THREE.MeshPhysicalMaterial && material.bumpMap);
+      // The nearby driver can still be on the distant model. Prepare the detailed meshes in place.
+      const head = driver.getObjectByName('office-driver-head');
+      const clothes = this.colorMeshes(driver.children).filter(({ material }) => material instanceof THREE.MeshPhysicalMaterial && material.bumpMap);
       const sleeve = clothes.find(mesh => mesh instanceof THREE.SkinnedMesh);
       const torso = clothes.find(mesh => !(mesh instanceof THREE.SkinnedMesh));
-      if (sleeve && torso) { prepared.actors.add(driver); prepared.meshes.push(sleeve, torso); }
+      if (sleeve && torso) {
+        prepared.actors.add(driver);
+        if (head instanceof THREE.Mesh) prepared.meshes.push(head);
+        prepared.meshes.push(sleeve, torso);
+      }
     }
     this.prepareColorFrame(renderer, camera, prepared, lighting);
   }
@@ -1004,7 +1010,7 @@ export class FilmSetRenderer {
       hotel.updateLights(height - 1);
     }
   }
-  private colorMeshes(roots: THREE.Group[], includeBasic = false): ColorMesh[] {
+  private colorMeshes(roots: THREE.Object3D[], includeBasic = false): ColorMesh[] {
     const meshes: ColorMesh[] = [];
     for (const root of roots) root.traverseVisible(object => {
       if (object instanceof THREE.Mesh && (object.material instanceof THREE.MeshStandardMaterial
@@ -1016,7 +1022,10 @@ export class FilmSetRenderer {
     if (!batch.length) return;
     const subject = new THREE.Group();
     subject.traverse = visit => batch.forEach(visit);
-    for (const object of batch) if (object instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(object.material);
+    for (const object of batch) if (object instanceof THREE.SkinnedMesh) {
+      if (Array.isArray(object.material)) object.material.forEach(prepareSkinnedMaterial);
+      else prepareSkinnedMaterial(object.material);
+    }
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
     try {
       renderer.setRenderTarget(target);

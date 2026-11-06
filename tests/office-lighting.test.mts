@@ -590,23 +590,27 @@ test('office exits prepare the existing materials in separate frames', t => {
   const skin = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial()); skin.name = 'Anatomical_head_and_hands';
   const cloth = new THREE.MeshPhysicalMaterial({ bumpMap: grain });
   const sleeve = new THREE.SkinnedMesh(undefined, cloth), torso = new THREE.Mesh(undefined, cloth);
-  jackson.add(glasses, streetHair); officer.add(cap, skin); driver.add(sleeve, torso); driver.visible = false;
+  const face = new THREE.MeshStandardMaterial({ bumpMap: grain }), scalp = face.clone();
+  const driverHead = new THREE.Mesh(undefined, [face, scalp]); driverHead.name = 'office-driver-head';
+  jackson.add(glasses, streetHair); officer.add(cap, skin); driver.add(driverHead, sleeve, torso); driver.visible = false;
   scene.add(jackson, officer, driver);
   t.after(() => {
     for (const mesh of [body, ...visibleClimb, sign, glasses, cap, skin, sleeve]) { mesh.geometry.dispose(); mesh.material.dispose(); }
-    torso.geometry.dispose();
+    torso.geometry.dispose(); driverHead.geometry.dispose(); face.dispose(); scalp.dispose();
   });
-  const cast = new Map([['citizen_2', street], ['agent_jackson', jackson], ['citizen_4', officer], ['citizen_11', driver]]);
+  const cast = new Map([['citizen_2', street], ['agent_jackson', jackson], ['citizen_4', officer]]);
   const prepareDescent = () => film.prepareOfficeDescent(renderer, camera, culling, city, id => cast.get(id));
   const beforeDescent = tasks.length;
   for (let i = 0; i < 5; i++) prepareDescent();
   assert.deepEqual(tasks.slice(beforeDescent), ['compile', 'locations', 'compile', 'locations']);
   assert.deepEqual(batches.at(-2), [sign, ...visibleClimb]);
   assert.deepEqual(batches.at(-1), [glasses, streetHair, cap, skin]);
-  driver.visible = true;
+  cast.set('citizen_11', driver);
   for (let i = 0; i < 3; i++) prepareDescent();
   assert.deepEqual(tasks.slice(beforeDescent + 4), ['compile', 'locations']);
-  assert.deepEqual(batches.at(-1), [sleeve, torso]);
+  assert.deepEqual(batches.at(-1), [driverHead, sleeve, torso], 'prepare both head materials before the driver switches to the near model');
+  assert.equal(driver.visible, false);
+  assert.equal(driverHead.parent, driver);
   assert(visibleClimb.every(mesh => mesh.parent === street));
   assert.equal(sleeve.parent, driver); assert.equal(sign.parent, lobby); assert.equal(target, null);
 
