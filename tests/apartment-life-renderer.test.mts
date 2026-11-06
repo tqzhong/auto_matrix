@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { APARTMENT_CHAIR, filmPosition, lifeRoomCenter, groundHeight, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_CHAIR, MORNING, filmPosition, lifeRoomCenter, groundHeight, playerBlocked, type FilmJourney, type NeoLifeState, type SandboxState } from '@auto_matrix/shared';
 import { LifeInteriors } from '../packages/client/src/engine/LifeInteriors.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -63,6 +63,36 @@ test('the physical bedside clock shows world time, flashes while ringing and dep
     journey.morning = { phase: 'stopping', elapsed: .6 }; renderer.update(journey, 9250); assert.ok(button.position.y < height);
     journey.morning = { phase: 'rising', elapsed: .2 }; renderer.update(journey, 9267); assert.equal(button.position.y, height);
     assert.ok(text.includes('09:16'));
+  } finally { renderer.dispose(); globalThis.document = original; }
+});
+
+test('the rendered blanket covers the mattress and hangs clear of both sides', t => {
+  const original = globalThis.document;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, fillText() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const root = new THREE.Group(), renderer = new ApartmentSetRenderer(root); root.updateMatrixWorld(true);
+  try {
+    const surfaces = new Map<number, THREE.Mesh>();
+    root.traverse(object => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial)
+        surfaces.set(object.material.color.getHex(), object);
+    });
+    const blanket = surfaces.get(0x3c4a43), mattress = surfaces.get(0x777c69);
+    assert.ok(blanket && mattress);
+    const ray = new THREE.Raycaster();
+    let clearance = Infinity;
+    for (let x = -3; x <= 3; x += .15) for (let z = -9.9; z <= -4.4; z += .15) {
+      ray.set(new THREE.Vector3(APARTMENT.bed.x + x, 3, z), new THREE.Vector3(0, -1, 0));
+      const cloth = ray.intersectObject(blanket)[0], top = ray.intersectObject(mattress)[0];
+      assert.ok(cloth && top, 'the blanket must cover the mattress in the visible area');
+      clearance = Math.min(clearance, cloth.point.y - top.point.y);
+    }
+    assert.ok(clearance > .005, `the visible mattress breaks through the blanket by ${-clearance}`);
+    for (const side of [-1, 1]) {
+      ray.set(new THREE.Vector3(APARTMENT.bed.x + side * 4, MORNING.mattressY - .2, -7.5), new THREE.Vector3(-side, 0, 0));
+      const cloth = ray.intersectObject(blanket)[0], edge = ray.intersectObject(mattress)[0];
+      assert.ok(cloth && edge && cloth.distance < edge.distance, 'the hanging blanket must clear the mattress edge');
+    }
   } finally { renderer.dispose(); globalThis.document = original; }
 });
 

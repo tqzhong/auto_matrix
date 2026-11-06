@@ -160,12 +160,23 @@ export class ApartmentSetRenderer {
     for (let i = 0; i < 5; i++) { const a = i * Math.PI * .4; this.tube([[APARTMENT_CHAIR.x, .3, APARTMENT_CHAIR.z], [APARTMENT_CHAIR.x + Math.sin(a), .15, APARTMENT_CHAIR.z + Math.cos(a)]], metal, .045); }
     // Mattress and creased blanket; the book has an actual hollow cavity.
     const sheet = this.mat(0x777c69, .98); const blanket = this.mat(0x3c4a43, .99);
+    const mattressHalfWidth = 3.025, mattressRadius = .2;
     this.box(walnut, 10.2, .45, -9, 6.2, .75, 10, .05);
-    this.box(sheet, 10.2, MORNING.mattressY - .295, -9, 6.05, .59, 9.85, .2);
+    this.box(sheet, 10.2, MORNING.mattressY - .295, -9, mattressHalfWidth * 2, .59, 9.85, mattressRadius);
     const cloth = new THREE.PlaneGeometry(6.18, 7.2, 28, 34); cloth.rotateX(-Math.PI / 2);
     const folds = cloth.attributes.position;
-    for (let i = 0; i < folds.count; i++) { const x = folds.getX(i); const z = folds.getZ(i); folds.setY(i, .055 * Math.sin(x * 6 + z * 1.7) + .035 * Math.sin(z * 9) - Math.max(0, Math.abs(x) - 2.65) * .95); }
-    cloth.computeVertexNormals(); blanket.side = THREE.DoubleSide; this.mesh(cloth, blanket, 10.2, 1.44, -7.5);
+    for (let i = 0; i < folds.count; i++) {
+      const x = folds.getX(i), z = folds.getZ(i);
+      const crease = .055 * Math.sin(x * 6 + z * 1.7) + .035 * Math.sin(z * 9);
+      if (Math.abs(x) > mattressHalfWidth) {
+        folds.setY(i, -.39 + crease * .3);
+      } else {
+        // Start the hanging strip outside the widest part of the mattress.
+        if (Math.abs(x) > mattressHalfWidth - mattressRadius) folds.setX(i, Math.sign(x) * (mattressHalfWidth + .025));
+        folds.setY(i, .015 + (.09 + crease) * .7);
+      }
+    }
+    cloth.computeVertexNormals(); blanket.side = THREE.DoubleSide; this.mesh(cloth, blanket, 10.2, MORNING.mattressY, -7.5);
     this.box(sheet, MORNING.bedX, 1.49, -10.75, 1.65, .22, 1.5, .11).rotation.y = -.06;
     // The clock sits on an actual cabinet within the reclining actor's reach.
     this.box(walnut, 6.35, .79, -10.75, 1.45, 1.58, 1.1, .05);
