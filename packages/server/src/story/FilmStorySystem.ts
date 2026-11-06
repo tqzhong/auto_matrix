@@ -5338,13 +5338,14 @@ export class FilmStorySystem {
   climbFrame(agent: AgentState, direction: number, dt: number, tick: number): boolean {
     if (this.openingHotel.climbFrame(agent, direction, dt, tick)) return true;
     if (!this.climbing(agent)) return false;
-    if (dt === 0 && agent.currentAction?.parameters.climbing === true) return true;
     const state = this.state!; const office = state.office!;
     const retreat = officeRetreat(state);
+    const contact = agent.currentAction?.parameters.officeLadder as { depth: number; exit?: number } | undefined;
+    if (dt === 0 && agent.currentAction?.parameters.climbing === true && contact?.depth === office.climbed && contact?.exit === retreat?.ladderExit) return true;
     if (retreat && (retreat.ladderExit !== undefined || office.climbed === 0 && direction < 0)) {
       const exit = retreat.ladderExit = Math.min(1, (retreat.ladderExit ?? 0) + Math.max(0, -direction) * Math.min(.1, dt) / .9);
       const step = exit * exit * (3 - 2 * exit);
-      agent.position = filmPosition(this.scene!.set, OFFICE_LADDER.x + 1.8 * step, OFFICE_LADDER.z);
+      agent.position = filmPosition(this.scene!.set, OFFICE_LADDER.x + OFFICE_LADDER.stepOff * step, OFFICE_LADDER.z);
       agent.rotation = Math.PI / 2; agent.velocity = { x: 0, y: 0, z: 0 };
       agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0, officeLadder: { depth: 0, exit } }, startedAt: tick, duration: 1, progress: 0 };
       if (exit === 1) {
@@ -5360,7 +5361,8 @@ export class FilmStorySystem {
     agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction, officeLadder: { depth: office.climbed } }, startedAt: tick, duration: 1, progress: 0 };
     if (office.climbed >= OFFICE_LADDER.depth) {
       office.outcome = 'escaped'; office.bugged = false; delete office.climbed;
-      agent.position.x = FILM_SETS[this.scene!.set].center.x; agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
+      // The lower platform extends under the climber on this side of the rungs.
+      agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
       this.sandbox().neoLife!.choices.office_escape = 'escaped';
       this.advance('你沿维修梯抵达安全楼层，摆脱搜索。Morpheus 会再次联系，安排桥下接头。', agent, tick);
     }

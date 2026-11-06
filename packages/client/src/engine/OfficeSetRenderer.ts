@@ -374,7 +374,7 @@ export class OfficeSetRenderer {
   }
   private ledge(): void {
     const concrete = this.mat(0x939a95, .87); const metal = this.mat(0x6d7778, .35, .75); const glass = this.mat(0x657e87, .17, .6);
-    const x = OFFICE_LEDGE_OFFSET; const z = OFFICE_LADDER.z;
+    const x = OFFICE_LEDGE_OFFSET; const { z, depth, rung, rail } = OFFICE_LADDER;
     this.box(concrete, x, -.3, 0, 4.8, .6, 76);
     for (const [bottom, top] of [[-65, -.7], [9.5, 44]]) {
       this.box(concrete, -26.85, (bottom + top) / 2, 0, .6, top - bottom, 76);
@@ -384,14 +384,14 @@ export class OfficeSetRenderer {
       }
     }
     for (const dz of [-3, 2]) for (const dx of [-1.7, 1.7]) this.cylinder(metal, x + dx, -18, z + dz, .09, 39);
-    this.box(concrete, x - 1, -OFFICE_LADDER.depth - .15, z, 7, .3, 6);
-    for (const dz of [-.82, .82]) this.box(metal, x - 2.5, -13.7, z + dz, .12, OFFICE_LADDER.depth + 4.6, .12);
-    for (let y = -OFFICE_LADDER.depth; y <= 4.6; y += .55) this.box(metal, x - 2.5, y, z, .1, .09, 1.65);
+    this.box(concrete, x - 1, -depth - .15, z, 7, .3, 6);
+    for (const side of [-1, 1]) this.box(metal, x + rung.x, (rail.top - depth) / 2, z + side * rail.offset, rail.width, depth + rail.top, rail.width);
+    for (let y = -depth; y <= rung.top; y += rung.spacing) this.box(metal, x + rung.x, y, z, rung.width, rung.height, rung.span);
     for (let y = -30; y <= 0; y += 6) {
       this.box(metal, x, y, z - 3, 4, .12, .12); this.box(metal, x, y, z + 2, 4, .12, .12);
       this.box(metal, x - 1.7, y, z - .5, .12, .12, 5);
     }
-    this.box(metal, x - 4.4, -OFFICE_LADDER.depth + 1.5, z, .1, 3, 6);
+    this.box(metal, x - 4.4, -depth + 1.5, z, .1, 3, 6);
   }
   private batch(): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); this.root.updateMatrixWorld(true);

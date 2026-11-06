@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FILM_SETS, OFFICE_DESKS, metacortexPosition, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_DESKS, OFFICE_LADDER, metacortexPosition, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
@@ -208,6 +208,24 @@ test('the occupied lift prepares the hidden office and city materials with the a
   film.update(player, sandbox, 0);
   assert.equal(film.active?.id, 'film_metacortex_floor');
   assert.ok(scene.getObjectByName('office-window-glass') === windows[1]);
+});
+
+test('the upper ladder has a clear passage to the ledge between two graspable rails', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  const parent = new THREE.Group();
+  const office = new OfficeSetRenderer(parent, FILM_SETS.film_office_ledge);
+  t.after(() => { office.dispose(); globalThis.document = document; });
+  parent.updateMatrixWorld(true);
+  const x = OFFICE_LADDER.rung.x, z = OFFICE_LADDER.z, direction = new THREE.Vector3(1, 0, 0);
+  const hits = (y: number, offset = 0) => new THREE.Raycaster(new THREE.Vector3(x - .16, y, z + offset), direction, 0, .23).intersectObject(parent, true);
+  assert.ok(hits(-.1).length, 'there is a real last rung below the landing');
+  for (let row = 0; row < 8; row++) {
+    const y = .45 + row * .55;
+    assert.equal(hits(y).length, 0, `the torso must not pass through a crossbar at height ${y}`);
+    for (const side of [-1, 1]) assert.ok(hits(y, side * .82).length, 'both handrails continue above the exit');
+  }
 });
 
 test('office visits and cold escapes skip the cleaners while the live workday loads them once', t => {

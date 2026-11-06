@@ -523,6 +523,7 @@ test('escaping requires descending the ladder; stopping, climbing up, pause and 
   assert.match(h.command('next'), /先完成/);
   h.climb(8); assert.equal(h.state().office?.outcome, 'escaped'); assert.equal(h.neo().status, 'alive');
   assert.equal(h.state().step, 2); assert.ok(h.neo().position.y < FILM_SETS.film_office_ledge.center.y - 30);
+  assert.equal(h.neo().position.x, position.x, 'Neo lands on the same side of the ladder instead of crossing through the rungs');
   h.climb(.1, 0); assert.ok(h.neo().position.y < FILM_SETS.film_office_ledge.center.y - 30, 'the lower platform must support the body');
 });
 
@@ -549,7 +550,12 @@ for (const phase of ['crossing', 'climbing'] as const) {
     h.players.release('neo-player', h.tick()); actor.currentAction = null;
     h.sandbox.restore(structuredClone(h.sandbox.state));
     if (phase === 'crossing') assert.equal(actor.currentAction?.parameters.crossing, office!.crossing);
-    else assert.equal(actor.currentAction?.parameters.climbing, true);
+    else {
+      assert.equal(actor.currentAction?.parameters.climbing, true);
+      delete actor.currentAction!.parameters.officeLadder;
+      h.sandbox.restore(structuredClone(h.sandbox.state));
+      assert.deepEqual(actor.currentAction?.parameters.officeLadder, { depth: office!.climbed });
+    }
     assert.deepEqual(actor.position, position); assert.deepEqual(h.state().office, office);
   });
 }

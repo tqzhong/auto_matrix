@@ -62,6 +62,7 @@ import { OracleFirstBodies } from './OracleFirstBody.js';
 import { OracleParkHands, connectGardenWrists, type OracleParkHand } from './OracleParkHands.js';
 import { SpoonBoyHands } from './SpoonBoyHands.js';
 import { poseWetwall } from './WetwallPerformance.js';
+import { poseOfficeLadder } from './OfficeLadderPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
 import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerformance.js';
@@ -1251,6 +1252,7 @@ export class CharacterModels {
       poseOracleDeparture(rig, input.oracleDeparture, input.interlude);
       poseOracleArrival(rig, input.oracleArrival);
       poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
+      poseOfficeLadder(rig, input.officeLadder);
       poseSixthFloor(rig, input.sixth);
       poseBathroom(rig, input.bathroom, input.sixth);
       poseBasement(rig, input.basement);
@@ -1385,6 +1387,7 @@ export class CharacterModels {
     poseDockEvacuation(rig, input.dockEvacuation); poseShaftSeal(rig, input.shaftSeal);
     poseTempleDefense(rig, input.templeDefense);
     poseWetwall(rig, input.wetwall, input.speed < .05 && Math.abs(input.climbing ?? 0) < .05);
+    poseOfficeLadder(rig, input.officeLadder);
     poseSixthFloor(rig, input.sixth);
     poseBasement(rig, input.basement);
     poseBasementLauncher(rig, input.basementGas);

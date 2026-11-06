@@ -128,7 +128,11 @@ export interface OfficeEncounter {
   retreat?: { from?: Vector3 & { yaw: number }; ladderExit?: number };
 }
 export interface OfficeSearch { position: Vector3; remaining: number; source: 'sight' | 'sound'; facing?: number }
-export const OFFICE_LADDER = { x: -3.45, z: 26, depth: 32, speed: 4 };
+export const OFFICE_LADDER = {
+  x: -3.45, z: 26, depth: 32, speed: 4, stepOff: 1.8,
+  rung: { x: -2.5, top: 0, spacing: .55, width: .1, height: .09, span: 1.65 },
+  rail: { top: 4.6, offset: .82, width: .12 },
+};
 
 export function officeOccluded(from: Vector3, to: Vector3, center: Vector3): boolean {
   const length = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);

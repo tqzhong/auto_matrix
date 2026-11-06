@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { officeCrossingPose } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_LADDER, officeCrossingPose } from '@auto_matrix/shared';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
 import type { MotionInput } from '../packages/client/src/agents/CharacterMotion.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -122,4 +122,76 @@ test('the shipped office hand clears the handset casing while lifting, listening
     for (const [name, bone] of rig.hero.bones) if (/^finger\d-\d_R$/.test(name))
       assert.ok(bone.quaternion.angleTo(cold.hero.bones.get(name)!.quaternion) < 1e-7, 'putting the phone away must not retain the grip');
   } finally { models.dispose(); globalThis.document = document; }
+});
+
+test('Neo keeps three contacts on the office ladder while changing rungs, stopping and reversing', async t => {
+  const assets = new Map(await Promise.all(['neo', 'neo-office', 'neo-tracking'].map(async id => [id, await loadGeometry(id)] as const)));
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async (url: string) => assets.get(url.split('/').at(-1)!.replace('.glb', ''))!);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const document = globalThis.document;
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    fillRect() {}, fillText() {}, strokeRect() {},
+    createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
+  }) }) } as unknown as Document;
+  const models = new CharacterModels(), world = new WorldState();
+  t.after(() => { models.dispose(); globalThis.document = document; });
+  new AgentManager(world).initializeAllAgents();
+  const neo = world.agents.get('neo')!, rig = models.create(neo), restored = models.create(neo);
+  const center = FILM_SETS.film_office_ledge.center, floor = center.y - 1;
+  const draw = (actor: typeof rig, depth: number, climbing: number, exit?: number) => {
+    const step = (exit ?? 0) ** 2 * (3 - 2 * (exit ?? 0));
+    actor.root.position.set(center.x + OFFICE_LADDER.x + OFFICE_LADDER.stepOff * step, floor - depth, center.z + OFFICE_LADDER.z);
+    actor.root.rotation.y = Math.PI / 2;
+    models.animate(actor, 0, { speed: 0, grounded: false, verticalVelocity: 0, turn: 0, officeShirt: true, climbing, officeLadder: { depth, exit } }, 1);
+    actor.root.updateMatrixWorld(true);
+    const hero = actor.hero;
+    if (!hero) return [0, 1].flatMap(i => [
+      actor.elbows[i].localToWorld(new THREE.Vector3(0, -.79, .055)),
+      actor.ankles[i].localToWorld(new THREE.Vector3(0, -.155, .13)),
+    ]);
+    return ['R', 'L'].flatMap((side, index) => [
+      hero.bones.get('wrist_' + side)!.localToWorld(new THREE.Vector3(index ? -.085 : .085, -.23, 0)),
+      hero.bones.get('ankle_' + side)!.localToWorld(new THREE.Vector3(0, -hero.footHeight, .23)),
+    ]);
+  };
+  const rungX = center.x - 2.5, base = floor - OFFICE_LADDER.depth, rungZ = center.z + OFFICE_LADDER.z;
+  const supported = (point: THREE.Vector3, hand: boolean) => {
+    const y = point.y - (hand ? 0 : .045), rung = base + Math.round((y - base) / .55) * .55;
+    if (hand && y > floor && Math.abs(Math.abs(point.z - rungZ) - .82) < .045)
+      return y < floor + 4.6 && Math.abs(point.x - rungX + .06) < .025;
+    return rung >= base && rung <= floor + 4.6 && Math.abs(y - rung) < .025
+      && Math.abs(point.x - rungX + (hand ? .05 : 0)) < .035 && Math.abs(point.z - rungZ) < .825;
+  };
+  const fallback = draw(rig, 0, 0);
+  assert.ok(fallback.filter((point, i) => supported(point, i % 2 === 0)).length >= 3,
+    `the procedural body must also hold the ladder while the model loads: ${fallback.map(point => point.toArray())}`);
+  await new Promise<void>(resolve => setImmediate(resolve));
+  assert.ok(rig.hero && restored.hero);
+  for (const start of [0, 1.1, 2.2, 3.3, 4.4, 15, 30.8]) {
+    let previous: THREE.Vector3[] | undefined;
+    for (let sample = 0; sample <= 29; sample++) {
+      const depth = start + sample * .04, points = draw(rig, depth, 1);
+      assert.ok(points.filter((point, i) => supported(point, i % 2 === 0)).length >= 3,
+        `lost rung contacts at depth ${depth}: ${points.map(point => point.toArray())}`);
+      if (previous) for (const [i, point] of points.entries())
+        assert.ok(point.distanceTo(previous[i]) < .4, `limb ${i} jumped between rungs at depth ${depth}`);
+      previous = points;
+    }
+  }
+  for (const depth of [0, 4.12, 16.31, 31.91]) {
+    const down = draw(rig, depth, 1), held = draw(rig, depth, 0), up = draw(restored, depth, -1);
+    for (const [i, point] of down.entries()) {
+      assert.ok(point.distanceTo(held[i]) < 1e-6, 'releasing the key must keep the same support points');
+      assert.ok(point.distanceTo(up[i]) < 1e-6, 'a newly loaded body and the reverse direction use the same support points');
+    }
+  }
+  const onLedge = (point: THREE.Vector3) => point.x >= center.x - 2.4 && Math.abs(point.y - floor) < .025;
+  for (const exit of [0, .2, .4, .5, .6, .8, .98]) {
+    const points = draw(rig, 0, 0, exit);
+    assert.ok([points[1], points[3]].some(foot => onLedge(foot) || supported(foot, false)), `both feet are unsupported during the step off at ${exit}`);
+    const loaded = draw(restored, 0, 0, exit);
+    points.forEach((point, i) => assert.ok(point.distanceTo(loaded[i]) < 1e-6, 'cold load must retain the partial step off the ladder'));
+  }
+  const last = draw(rig, 0, 0, .999);
+  assert.ok([last[1], last[3]].every(onLedge), 'both shoes must be on the platform before free walking resumes');
 });
