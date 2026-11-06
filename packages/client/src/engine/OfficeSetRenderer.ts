@@ -13,11 +13,18 @@ import type { OfficeWorkday } from '@auto_matrix/shared';
 export const OFFICE_POINT_SLOTS = 6; // The city lights and goal marker share this layout indoors and on the ledge.
 const CLEANER_PLATFORM_X = -29.35;
 const CLEANER_BAYS = [25, 28.4] as const;
+const CLEANER_TEXTURE_ROWS = 256;
 // Allow room for the two rigs, the tools and the full reach across both window bays.
 const CLEANER_WORK_AREA = new THREE.Box3(
   new THREE.Vector3(CLEANER_PLATFORM_X - 4, -2, CLEANER_BAYS[0] - 4),
   new THREE.Vector3(CLEANER_PLATFORM_X + 5, 9, CLEANER_BAYS[1] + 4),
 );
+type CleanerTextureUpload = {
+  texture: THREE.Texture;
+  image: ImageBitmap;
+  properties: THREE.WebGLRenderer['properties'];
+  row: number;
+};
 
 /** Office cover is drawn from the same dimensions used by movement and guard sight. */
 export class OfficeSetRenderer {
@@ -40,6 +47,7 @@ export class OfficeSetRenderer {
   private cleanerActors: { root: THREE.Group; bones: Map<string, THREE.Bone>; blade: THREE.Mesh; handle: THREE.Mesh; z: number }[] = [];
   private cleanerSkeletons: THREE.Skeleton[] = [];
   private cleanerTextures = new Set<THREE.Texture>();
+  private cleanerUpload?: CleanerTextureUpload;
   private cleanersRequested = false;
   private disposed = false;
   private construction?: Generator<void>;
@@ -54,6 +62,7 @@ export class OfficeSetRenderer {
     return true;
   }
   attach(parent: THREE.Group, set: FilmSet): void {
+    this.cancelCleanerTextureUpload();
     this.root.position.set(set.id === 'film_office_ledge' ? -OFFICE_LEDGE_OFFSET : 0, 0, 0);
     parent.add(this.root);
     while (!this.prepareStep()) { /* Finish any work left by a late restore. */ }
@@ -81,16 +90,63 @@ export class OfficeSetRenderer {
     return this.cleanerActors.length ? this.cleaners : undefined;
   }
   prepareWindowCleanerTexture(renderer: THREE.WebGLRenderer): boolean {
+    const upload = this.cleanerUpload;
+    if (upload) {
+      const uploaded = renderer.properties.get(upload.texture) as { __version?: number };
+      if (!this.root.parent && upload.properties === renderer.properties && uploaded.__version === upload.texture.version) {
+        this.copyCleanerTextureRows(renderer, upload);
+        return true;
+      }
+      this.cancelCleanerTextureUpload();
+    }
     for (const texture of this.cleanerTextures) {
       const image = texture.image as { width?: number; complete?: boolean } | null;
       if (!texture.version || !image || (image.width ?? 0) < 1024 || image.complete === false) continue;
       const uploaded = renderer.properties.get(texture) as { __version?: number };
-      if (uploaded.__version !== texture.version) {
-        renderer.initTexture(texture);
-        return true;
-      }
+      if (uploaded.__version === texture.version) continue;
+      // Only detached maps can stay partially uploaded between frames.
+      if (!this.root.parent && typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap
+        && image.width >= 2048 && image.height >= 2048 && Math.max(image.width, image.height) <= renderer.capabilities.maxTextureSize
+        && texture.format === THREE.RGBAFormat && texture.type === THREE.UnsignedByteType
+        && !texture.flipY && !texture.premultiplyAlpha && texture.mipmaps?.length === 0 && !texture.onUpdate && texture.source.dataReady) {
+        const upload = this.cleanerUpload = { texture, image, properties: renderer.properties, row: 0 };
+        const source = texture.source;
+        source.dataReady = false;
+        try { renderer.initTexture(texture); }
+        finally { source.dataReady = true; }
+        this.copyCleanerTextureRows(renderer, upload);
+      } else renderer.initTexture(texture);
+      return true;
     }
     return false;
+  }
+  private copyCleanerTextureRows(renderer: THREE.WebGLRenderer, upload: CleanerTextureUpload): void {
+    const { texture, image, row } = upload;
+    const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
+    if (!__webglTexture) {
+      this.cancelCleanerTextureUpload();
+      return;
+    }
+    const gl = renderer.getContext() as WebGL2RenderingContext;
+    const end = Math.min(row + CLEANER_TEXTURE_ROWS, image.height);
+    renderer.state.bindTexture(gl.TEXTURE_2D, __webglTexture);
+    try {
+      // The renderer keeps the unpack row offset at zero between uploads.
+      gl.pixelStorei(gl.UNPACK_SKIP_ROWS, row);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, row, image.width, end - row, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      if (end === image.height && texture.generateMipmaps) gl.generateMipmap(gl.TEXTURE_2D);
+    } finally {
+      gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0);
+      renderer.state.unbindTexture();
+    }
+    if (end === image.height) this.cleanerUpload = undefined;
+    else upload.row = end;
+  }
+  private cancelCleanerTextureUpload(): void {
+    if (!this.cleanerUpload) return;
+    // The next draw or attached preparation must upload the complete original image.
+    this.cleanerUpload.texture.needsUpdate = true;
+    this.cleanerUpload = undefined;
   }
   private async loadCleaners(): Promise<void> {
     const asset = await new GLTFLoader().loadAsync('/assets/characters/club-male.glb');
@@ -461,6 +517,7 @@ export class OfficeSetRenderer {
   dispose(): void {
     this.disposed = true;
     this.construction = undefined;
+    this.cleanerUpload = undefined;
     this.roundedBoxes = undefined;
     this.workday?.dispose();
     this.phone?.dispose();

@@ -288,6 +288,86 @@ test('the occupied lift prepares the hidden office, city and window cleaners wit
   assert.ok(scene.getObjectByName('office-window-glass') === windows[1]);
 });
 
+test('window cleaner maps upload one strip per lift frame and finish normally after an early arrival', async t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const originalBitmap = globalThis.ImageBitmap, document = globalThis.document;
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const skinImage = new Bitmap(), hairImage = new Bitmap();
+  const skin = new THREE.Texture(skinImage), hair = new THREE.Texture(hairImage);
+  const scene = new THREE.Group();
+  for (const map of [skin, hair]) {
+    map.flipY = false; map.needsUpdate = true;
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map })));
+  }
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => ({ scene }));
+  const set = FILM_SETS.film_metacortex_floor, office = new OfficeSetRenderer(undefined, set);
+  t.after(() => {
+    office.dispose(); globalThis.document = document;
+    if (originalBitmap) globalThis.ImageBitmap = originalBitmap;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
+  const versions = new Map<THREE.Texture, number>();
+  const allocations: { texture: THREE.Texture; dataReady: boolean }[] = [];
+  const copies: { texture: THREE.Texture; start: number; end: number; mipmaps: boolean }[] = [];
+  let unpackRow = 0, boundTexture: THREE.Texture | undefined;
+  const gl = {
+    TEXTURE_2D: 0x0de1, UNPACK_SKIP_ROWS: 0x0cf3, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+    pixelStorei(parameter: number, row: number) {
+      assert.equal(parameter, this.UNPACK_SKIP_ROWS);
+      unpackRow = row;
+    },
+    texSubImage2D(target: number, level: number, x: number, row: number, width: number, height: number,
+      format: number, type: number, image: Bitmap) {
+      assert.deepEqual([target, level, x, width, format, type], [this.TEXTURE_2D, 0, 0, 2048, this.RGBA, this.UNSIGNED_BYTE]);
+      assert.equal(unpackRow, row);
+      assert.ok(boundTexture);
+      assert.equal(image, boundTexture.image, 'reuse the original image as the upload source');
+      copies.push({ texture: boundTexture, start: row, end: row + height, mipmaps: false });
+    },
+    generateMipmap(target: number) {
+      assert.equal(target, this.TEXTURE_2D);
+      copies.at(-1)!.mipmaps = true;
+    },
+  };
+  const renderer = {
+    capabilities: { maxTextureSize: 4096 },
+    getContext: () => gl,
+    properties: { get: (texture: THREE.Texture) => ({ __version: versions.get(texture), __webglTexture: versions.has(texture) ? texture : undefined }) },
+    state: {
+      bindTexture: (target: number, texture: THREE.Texture) => { assert.equal(target, gl.TEXTURE_2D); boundTexture = texture; },
+      unbindTexture: () => { boundTexture = undefined; },
+    },
+    initTexture: (texture: THREE.Texture) => {
+      allocations.push({ texture, dataReady: texture.source.dataReady });
+      versions.set(texture, texture.version);
+    },
+    copyTextureToTexture: () => assert.fail('upload rows without the synchronous unpack-state reads'),
+  } as unknown as THREE.WebGLRenderer;
+  office.requestWindowCleaners();
+  await Promise.resolve();
+  for (let row = 0; row < 2048; row += 256) {
+    assert.equal(office.prepareWindowCleanerTexture(renderer), true);
+    assert.deepEqual(allocations, [{ texture: skin, dataReady: false }], 'allocate without uploading the full image');
+    assert.equal(copies.length, row / 256 + 1);
+    assert.deepEqual(copies.at(-1), { texture: skin, start: row, end: row + 256, mipmaps: row + 256 === 2048 });
+    assert.equal(unpackRow, 0); assert.equal(boundTexture, undefined);
+    assert.equal(skin.generateMipmaps, true);
+    assert.equal(skin.source.dataReady, true);
+  }
+  assert.equal(office.prepareWindowCleanerTexture(renderer), true);
+  assert.deepEqual(copies.at(-1), { texture: hair, start: 0, end: 256, mipmaps: false });
+  const stagedVersion = hair.version;
+  office.attach(new THREE.Group(), set);
+  assert.ok(hair.version > stagedVersion, 'an interrupted texture must be uploaded again before drawing');
+  assert.equal(office.prepareWindowCleanerTexture(renderer), true);
+  assert.deepEqual(allocations.slice(1), [{ texture: hair, dataReady: false }, { texture: hair, dataReady: true }]);
+  assert.equal(office.prepareWindowCleanerTexture(renderer), false);
+  assert.equal(copies.length, 9);
+  assert.equal(skin.image, skinImage); assert.equal(hair.image, hairImage);
+});
+
 test('a cold office floor prepares the existing park color program before turning toward it', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
