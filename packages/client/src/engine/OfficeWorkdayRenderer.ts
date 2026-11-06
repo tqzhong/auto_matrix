@@ -34,7 +34,7 @@ export class OfficeWorkdayRenderer {
     for (const x of [0, 3.96]) this.box(door, metal, x, 3.55, 0, .11, 7.1, .13);
     for (const y of [.1, 7.1]) this.box(door, metal, 1.98, y, 0, 4.07, .12, .13);
     this.box(door, metal, 3.55, 3.25, .17, .07, .7, .07);
-    this.label('RHINEHEART', 'DEPARTMENT MANAGER', 2.5, .64, this.root, -17.5, 4.9, 22.02, 0);
+    this.label('RHINEHEART', 'DEPARTMENT MANAGER', 2.5, .64, this.root, -17.5, 4.9, 22.02, 0).material.name = 'metacortex-manager-sign';
     const desk = OFFICE_WORKDAY.desk;
     this.box(this.root, wood, desk.x, desk.height - .1, desk.z, desk.width, .2, desk.depth, .06).name = 'manager-desk';
     this.box(this.root, wood, desk.x + .9, 1.25, desk.z, .12, 2.25, desk.depth - .45);

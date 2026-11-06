@@ -331,7 +331,7 @@ export class OfficeSetRenderer {
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = background; ctx.fillRect(0, 0, 1024, 256);
     ctx.fillStyle = color; ctx.font = '54px monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText(text, 512, 128, 940);
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.push(map);
-    const material = new THREE.MeshBasicMaterial({ map }); this.materials.push(material);
+    const material = new THREE.MeshBasicMaterial({ map, name: 'metacortex-floor-sign' }); this.materials.push(material);
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 4), material); mesh.position.set(x, y, z); this.root.add(mesh);
   }
   private office(): THREE.Material {

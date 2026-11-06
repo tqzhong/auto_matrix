@@ -753,9 +753,14 @@ export class FilmSetRenderer {
       const hair = this.colorMeshes([patrol]).find(mesh => mesh.name === 'short04');
       if (hair) meshes.push(hair);
       meshes.push(...this.colorMeshes([courier], true));
-      const desk = this.colorMeshes([this.office.root]).find(mesh => mesh.material.name === 'metacortex-manager-desk');
+      const officeMeshes = this.colorMeshes([this.office.root], true);
+      const desk = officeMeshes.find(mesh => mesh.material.name === 'metacortex-manager-desk');
       if (desk) meshes.push(desk);
       meshes.push(this.marker);
+      for (const name of ['metacortex-floor-sign', 'metacortex-manager-sign']) {
+        const sign = officeMeshes.find(mesh => mesh.material.name === name);
+        if (sign) meshes.push(sign);
+      }
       const textures = new Set<THREE.Texture>();
       if (desk?.material.map) textures.add(desk.material.map);
       this.preparedOfficeWindow = prepared = { scene: this.scene, gpu: renderer.properties, courier, patrol, meshes, programs: [], textures };

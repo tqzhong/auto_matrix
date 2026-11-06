@@ -509,6 +509,8 @@ test('office exits prepare the existing materials in separate frames', t => {
   assert.deepEqual(batches[1], [lobbyMeshes[4], hair, ...courierMeshes]);
   assert.equal((batches[2][0] as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material.map, grain);
   assert.equal(batches[2][1], film['marker']);
+  assert.deepEqual(batches[2].slice(2).map(mesh => (mesh as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.name),
+    ['metacortex-floor-sign', 'metacortex-manager-sign']);
   assert.equal(lobbyMeshes[0].parent, lobby); assert.equal(hair.parent, patrol); assert.equal(courierMeshes[0].parent, courier);
   assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
 
