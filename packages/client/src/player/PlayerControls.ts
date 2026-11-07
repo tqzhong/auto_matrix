@@ -1006,7 +1006,9 @@ export class PlayerControls {
     this.motion.floorSeated = state.currentAction?.parameters.floorSeated === true;
     this.motion.weaponStyle = state.currentAction?.parameters.weaponStyle as MotionInput['weaponStyle'] ?? (this.firearm ? this.weaponStyle : undefined);
     const pausedEscape = !running && escapeGesture && state.currentAction?.type === 'idle';
-    this.motion.crouching = farewell?.role === 'neo' || !custody && (pausedEscape
+    const pausedPlayerAction = !running && state.currentAction?.parameters.player === true
+      && state.currentAction.parameters.resolved === true && ['idle', 'move_to'].includes(state.currentAction.type);
+    this.motion.crouching = farewell?.role === 'neo' || !custody && (pausedEscape || pausedPlayerAction
       ? state.currentAction?.parameters.crouching === true : this.enabled && !this.performing && this.keys.has('KeyZ'));
     this.motion.riding = Boolean(this.ride || this.gunner);
     if (logosPilot && this.logosPilotYaw === undefined) { this.yaw = this.movementYaw = state.rotation; this.pitch = .08; this.cameraReady = false; }
@@ -3093,13 +3095,13 @@ export class PlayerControls {
       const pivot = this.cameraTarget.clone().add(shoulder);
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
       const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
-      const officeEscort = state.currentLocation === 'film_metacortex_floor' && Boolean(this.motion.officeCustody);
-      const closeFollow = lafayetteWalking || dojoWalking || officeEscort;
+      const officeFollow = state.currentLocation === 'film_metacortex_floor';
+      const closeFollow = lafayetteWalking || dojoWalking || officeFollow;
       if (closeFollow) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
       const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
       const cameraCeiling = (point: THREE.Vector3) => {
-        if (officeEscort) {
+        if (officeFollow) {
           const tangent = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
           const lens = this.camera.near * Math.hypot(1, tangent, tangent * this.camera.aspect);
           return FILM_SETS.film_metacortex_floor.center.y - 1 + 9.1 - lens - .05;
@@ -3155,13 +3157,13 @@ export class PlayerControls {
         // and jumps, before the follow interpolation has reached its new height.
         if (dojoWalking && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 1.5)
           this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 4.15);
-        // The window can compress the escort view into Neo and the adjacent guard.
-        if (officeEscort && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 4.5)
+        // The window can compress either walking view into Neo and nearby people.
+        if (officeFollow && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 4.5)
           this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 5.3);
       }
       this.camera.position.y = Math.min(this.camera.position.y, cameraCeiling(this.camera.position));
-      const lookAhead = officeEscort ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
-      this.camera.lookAt((wreckCabin || officeEscort ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08, Math.cos(this.yaw) * lookAhead)));
+      const lookAhead = officeFollow ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
+      this.camera.lookAt((wreckCabin || officeFollow ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08, Math.cos(this.yaw) * lookAhead)));
     }
     this.impactAge += delta;
     if (this.impactAge < .18) {

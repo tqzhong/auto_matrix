@@ -20,7 +20,7 @@ import { WorldDynamics } from './story/WorldDynamics.js';
 import { LLMClient } from './llm/LLMClient.js';
 import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
-import { PlayerController, savedMatrixEscapeIdle, savedOfficeCustodyAction } from './player/PlayerController.js';
+import { PlayerController, savedMatrixEscapeIdle, savedOfficeCustodyAction, savedOfficeCrouchAction } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
@@ -348,7 +348,9 @@ async function main(): Promise<void> {
       Object.assign(agent.state, saved);
       delete agent.state.controller;
       const journey = checkpoint.sandbox?.neoLife?.journey;
-      const savedPerformanceAction = savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+      const savedCrouch = checkpoint.simulation?.running === false && savedOfficeCrouchAction(journey, agent.state);
+      if (savedCrouch) agent.state.velocity = { x: 0, y: 0, z: 0 };
+      const savedPerformanceAction = savedCrouch || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
         || journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
         || interrogationLocked(journey) && agent.state.currentAction?.parameters.interrogation
         || meetingLocked(journey) && agent.state.currentAction?.parameters.meeting

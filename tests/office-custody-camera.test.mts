@@ -101,3 +101,29 @@ test('the near-wall escort view still allows the restrained walk', t => {
   assert.ok(game.group.position.distanceTo(start) > .5 && game.group.position.distanceTo(start) < 1.6);
   assert.ok(game.inputs.some(input => input.z !== 0 || input.x !== 0), 'normal movement input must still reach the server');
 });
+
+test('ordinary paused crouching at the office window survives re-entry and V without cutting into the body', t => {
+  const game = setup(t);
+  for (const type of ['idle', 'move_to'] as const) for (const aspect of [16 / 9, .65]) {
+    game.state.currentAction = { type, parameters: { player: true, resolved: true, crouching: true, phone: { phase: 'connected', elapsed: 11 } }, startedAt: 4, duration: 1, progress: .27 };
+    game.controls.phone = { phase: 'connected', elapsed: 11 }; game.camera.aspect = aspect;
+    game.controls.possess(game.state); const before = structuredClone(game.state); game.step();
+    assert.equal(game.controls.motion.crouching, true, 'a paused restored crouch must not require a held key');
+    clearLens(game, `ordinary/${type}/${aspect}`);
+    game.key('KeyV'); game.key('KeyV', false); game.step();
+    assert.equal(game.controls.firstPerson, true); assert.equal(game.controls.motion.crouching, true);
+    assert.ok(game.camera.position.distanceTo(game.group.position.clone().add(new THREE.Vector3(0, 1.89, 0))) < .05);
+    game.key('KeyV'); game.key('KeyV', false); game.step(); clearLens(game, `ordinary-return/${type}/${aspect}`);
+    assert.deepEqual(game.state, before);
+  }
+});
+
+test('resuming a restored crouch follows fresh crouch input without replaying saved movement', t => {
+  const game = setup(t);
+  game.state.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, crouching: true }, startedAt: 4, duration: 1, progress: .27 };
+  game.controls.possess(game.state); game.step(); assert.equal(game.controls.motion.crouching, true);
+  const start = game.group.position.clone(); game.step(30, true);
+  assert.equal(game.controls.motion.crouching, false); assert.ok(game.group.position.distanceTo(start) < .01);
+  game.key('KeyZ'); game.step(30, true); assert.equal(game.controls.motion.crouching, true);
+  game.key('KeyZ', false); game.step(30, true); assert.equal(game.controls.motion.crouching, false);
+});

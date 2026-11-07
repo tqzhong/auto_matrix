@@ -1,5 +1,5 @@
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
-import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive } from '@auto_matrix/shared';
+import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
@@ -39,6 +39,13 @@ export function savedOfficeCustodyAction(journey: FilmJourney | undefined, agent
   const action = agent.currentAction;
   return Boolean(officeCustodyActive(journey) && journey?.actor === agent.id
     && (action?.type === 'idle' || action?.type === 'move_to') && action.parameters.officeCustody);
+}
+
+export function savedOfficeCrouchAction(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction;
+  return Boolean(journey?.scene === 'm1_office_escape' && journey.actor === agent.id && !journey.visiting && !journey.office?.outcome
+    && !windowOpening(journey) && !windowCrossing(journey) && agent.status === 'alive' && (action?.type === 'idle' || action?.type === 'move_to')
+    && action.parameters.player === true && action.parameters.resolved === true && action.parameters.crouching === true);
 }
 
 export class PlayerController {
@@ -170,7 +177,7 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    const restoredPose = !this.running && savedOfficeCustodyAction(this.sandbox?.life.film.state, agent)
+    const restoredPose = !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
       || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
       || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
       || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
@@ -272,7 +279,7 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const restoredPose = !this.running && savedOfficeCustodyAction(journey, agent)
+      const restoredPose = !this.running && (savedOfficeCustodyAction(journey, agent) || savedOfficeCrouchAction(journey, agent))
         || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
         || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
         || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)

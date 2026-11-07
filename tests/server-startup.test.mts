@@ -371,7 +371,7 @@ for (const [scene, savedType] of [
       assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
       assert.deepEqual(state.sandbox!.neoLife!.journey!.office, journey.office);
       assert.deepEqual(state.sandbox!.neoLife!.journey!.phone, journey.phone);
-      assert.deepEqual(state.agents.neo.currentAction, savedType === 'idle' ? saved : idle);
+      assert.deepEqual(state.agents.neo.currentAction, savedType === 'idle' || savedType === 'move_to' && scene === 'm1_office_escape' ? saved : idle);
       assert.deepEqual(state.agents.neo.position, actor.position); assert.equal(state.agents.neo.rotation, actor.rotation);
       assert.deepEqual(state.agents.neo.velocity, stopped);
       assert.equal(state.agents.citizen_5.currentAction, null);

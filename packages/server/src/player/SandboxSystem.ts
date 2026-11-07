@@ -5,6 +5,7 @@ import type { WorldDynamics } from '../story/WorldDynamics.js';
 import { NeoLifeSystem } from '../story/NeoLifeSystem.js';
 import { approachBurlyCopy, displaceBurlyCopy, restoreBurlyCopyPositions } from '../story/BurlyMovement.js';
 import { CityTrafficSystem } from './CityTrafficSystem.js';
+import { savedOfficeCrouchAction } from './PlayerController.js';
 
 export class SandboxSystem {
   state: SandboxState;
@@ -84,7 +85,10 @@ export class SandboxSystem {
       delete journey.started;
       this.life.film.workdayFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     }
-    if (journey) this.life.film.restorePhoneFrame(this.world.agents.get(journey.actor)!, this.world.simulationTick);
+    if (journey) {
+      const actor = this.world.agents.get(journey.actor)!;
+      if (!savedOfficeCrouchAction(journey, actor)) this.life.film.restorePhoneFrame(actor, this.world.simulationTick);
+    }
     if (journey) this.life.film.betrayalFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.rescueFrame(this.world.agents.get(journey.actor)!, 0, this.world.simulationTick);
     if (journey) this.life.film.governmentFrame(this.world.agents.get(journey.actor)!, false, 0, this.world.simulationTick);
