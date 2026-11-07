@@ -881,7 +881,6 @@ export class HeroModels {
 
   private holdPhone(rig: HeroRig, phone: NonNullable<MotionInput['phone']>): void {
     const smooth = (value: number) => { const t = THREE.MathUtils.clamp(value, 0, 1); return t * t * (3 - 2 * t); };
-    rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get('shoulder_R')!; const elbow = rig.bones.get('elbow_R')!; const wrist = rig.bones.get('wrist_R')!;
     const facing = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI, 0));
     const ready = new THREE.Vector3(-.38, 2.98, .8);
@@ -978,7 +977,6 @@ export class HeroModels {
 
   private openWindow(rig: HeroRig, elapsed: number): void {
     const pose = officeWindowPose(elapsed); if (!pose.reach) return;
-    rig.root.updateWorldMatrix(true, true);
     const shoulder = rig.bones.get('shoulder_L')!; const elbow = rig.bones.get('elbow_L')!; const wrist = rig.bones.get('wrist_L')!;
     const grip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
       .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), pose.angle))
@@ -1011,7 +1009,6 @@ export class HeroModels {
     const rotation = rig.root.getWorldQuaternion(new THREE.Quaternion());
     const local = (point: { x: number; y: number; z: number }) => new THREE.Vector3(point.x - pose.x, point.y - pose.y, point.z - pose.z).applyAxisAngle(new THREE.Vector3(0, 1, 0), -pose.yaw);
     const solve = (upper: THREE.Bone, lower: THREE.Bone, end: THREE.Bone, contact: THREE.Vector3, pole: THREE.Vector3, blend: number) => {
-      rig.root.updateWorldMatrix(true, true);
       const target = rig.root.worldToLocal(end.getWorldPosition(new THREE.Vector3())).lerp(contact, blend); rig.root.localToWorld(target);
       const start = upper.getWorldPosition(new THREE.Vector3()); const direction = target.clone().sub(start);
       const a = lower.position.length(); const b = end.position.length();
