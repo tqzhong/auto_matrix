@@ -12,7 +12,7 @@ export class MouseAppearance {
   private skin: THREE.SkinnedMesh;
   private masked: THREE.BufferGeometry;
 
-  constructor(private rig: HeroRig, asset: GLTF, eye: THREE.Vector3) {
+  constructor(private rig: HeroRig, asset: Pick<GLTF, 'scene'> & { parser: Pick<GLTF['parser'], 'json'> }, eye: THREE.Vector3) {
     const head = rig.bones.get('head')!;
     this.model = asset.scene.clone(true); this.model.name = 'mouse-detailed-head';
     this.skin = rig.root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;

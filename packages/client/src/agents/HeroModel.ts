@@ -132,10 +132,14 @@ function addMirrorArrival(mesh: THREE.Mesh): void {
   geometry.setAttribute('_mirrorArrival', new THREE.BufferAttribute(arrival, 1));
 }
 
+type HeroAsset = Pick<GLTF, 'scene' | 'animations'> & {
+  parser: Pick<GLTF['parser'], 'json' | 'getDependency'>;
+};
+
 // The inspector and world share these exact skinned assets and motion solver.
 export class HeroModels {
-  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress', Promise<GLTF>>();
-  private smithGlassesFits = new Map<GLTF, Map<string, THREE.Group>>();
+  private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress', Promise<HeroAsset>>();
+  private smithGlassesFits = new Map<HeroAsset, Map<string, THREE.Group>>();
   private disposed = false;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
@@ -193,9 +197,10 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
-  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress'): Promise<GLTF> {
+  private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress'): Promise<HeroAsset> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(async asset => {
+      const extras = asset.parser.json.extras;
       asset.scene.traverse(object => {
         if (!(object instanceof THREE.Mesh)) return;
         this.geometries.add(object.geometry);
@@ -203,7 +208,7 @@ export class HeroModels {
         const material = object.material as THREE.MeshStandardMaterial;
         this.materials.add(material);
         for (const map of [material.map, material.normalMap]) if (map) { map.anisotropy = 8; this.textures.add(map); }
-        if (material.name === 'Skin' && !asset.parser.json.extras.skinBaked) {
+        if (material.name === 'Skin' && !extras.skinBaked) {
           material.onBeforeCompile = shader => {
             shader.uniforms.portraitAtlas = { value: this.portrait };
             shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>
@@ -239,7 +244,7 @@ export class HeroModels {
           material.bumpMap = this.fabric; material.bumpScale = .001;
         }
       });
-      const albedo = asset.parser.json.extras.skinAlbedoOverride as { mesh: string; texture: number; attachments?: string[] } | undefined;
+      const albedo = extras.skinAlbedoOverride as { mesh: string; texture: number; attachments?: string[] } | undefined;
       if (albedo) {
         const texture = await asset.parser.getDependency('texture', albedo.texture) as THREE.Texture;
         texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8; texture.needsUpdate = true;
@@ -248,8 +253,15 @@ export class HeroModels {
           applySkinAlbedo((asset.scene.getObjectByName(name) as THREE.Mesh).material as THREE.MeshStandardMaterial, texture);
         }
       }
+      const lookups = new Map<number, THREE.Texture>();
+      for (const eye of (extras.irisRefraction as IrisRefractionData | undefined)?.eyes ?? []) {
+        const texture = await asset.parser.getDependency('texture', eye.texture) as THREE.Texture;
+        lookups.set(eye.texture, texture); this.textures.add(texture);
+      }
       if (this.disposed) this.release();
-      return asset;
+      // Reusing the scene and clips must not keep the parser's raw GLB buffers.
+      return { scene: asset.scene, animations: asset.animations,
+        parser: { json: { extras }, getDependency: async (_type: string, index: number) => lookups.get(index) } };
     });
     this.assets.set(id, promise); return promise;
   }
