@@ -339,11 +339,12 @@ export class Engine {
     this.pillReflection.update(meeting, this.agentRenderer.getAgentBody('morpheus'), this.agentRenderer.getAgentBody(meeting?.actor ?? 'neo'));
     // The cabin has its own lighting; GTAO redraws its actors and seats for little visible gain.
     try {
-      if (liveMatrixJourney?.scene === 'm1_commute') this.voxelRenderer.cullExteriorInClosedLift(this.renderer, this.camera, lift, carHeight);
+      const enclosedLiftFloor = liveMatrixJourney?.scene === 'm1_commute'
+        ? this.voxelRenderer.cullExteriorInClosedLift(this.renderer, this.camera, lift, carHeight) : undefined;
       // Once Neo grabs the ladder, let the street shadows draw before the camera descends.
-      if (officeSet && (liveMatrixJourney?.scene === 'm1_boss' || liveMatrixJourney?.scene === 'm1_office_escape'
+      if (enclosedLiftFloor !== undefined || officeSet && (liveMatrixJourney?.scene === 'm1_boss' || liveMatrixJourney?.scene === 'm1_office_escape'
         || (liveMatrixJourney?.scene === 'm1_ledge' && liveMatrixJourney.office?.climbed === undefined)))
-        this.agentRenderer.cullOfficeStreetShadows(this.camera, this.lightingSystem.directionalLight);
+        this.agentRenderer.cullOfficeStreetShadows(this.camera, this.lightingSystem.directionalLight, enclosedLiftFloor);
       this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
     } finally {
       this.voxelRenderer.restoreLiftExterior();

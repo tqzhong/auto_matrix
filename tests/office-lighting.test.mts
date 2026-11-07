@@ -791,6 +791,32 @@ test('the office drops street shadow rays outside the view and retains the other
   sun.position.set(0, 34, 40); sun.target.position.set(0, 0, -40);
   cull();
   assert.ok(casting(), 'an off-camera caster can still project a shadow into the view');
+
+  const [courier, manager] = ['courier', 'rhineheart'].map((id, i) => {
+    agents.updateAgent(id, { ...world.agents.get(id)!, currentLocation: 'metacortex_office', position: { x: 0, y: 1, z: 30 + i * 10 } });
+    const actor = agents.getAgent(id)!, shadows: THREE.Mesh[] = [];
+    actor.traverseVisible(object => { if (object instanceof THREE.Mesh && object.castShadow) shadows.push(object); });
+    assert.ok(shadows.length);
+    return { actor, shadows };
+  });
+  const liftCasters = [...casters, ...courier.shadows, ...manager.shadows];
+  const cullBelowCar = (floor = 32.5) => agents.cullOfficeStreetShadows(camera, sun, floor);
+  cullBelowCar(11);
+  assert.ok(liftCasters.every(mesh => mesh.castShadow), 'keep any caster whose bounds reach the lift floor');
+  cullBelowCar();
+  assert.ok(liftCasters.every(mesh => !mesh.castShadow && mesh.visible), 'street cast below the closed car cannot shadow its interior');
+  agents.restoreOfficeStreetShadows();
+  assert.ok(liftCasters.every(mesh => mesh.castShadow));
+
+  manager.actor.position.y = metacortexPosition(0, 0, 1).y;
+  landing.position.set(0, 12, 30); landing.target.position.copy(courier.actor.position);
+  cullBelowCar();
+  assert.ok(manager.shadows.every(mesh => mesh.castShadow), 'keep upper-floor cast');
+  assert.ok(courier.shadows.every(mesh => mesh.castShadow), 'keep casters needed by the second shadow light');
+  agents.restoreOfficeStreetShadows();
+  sun.position.y = -34;
+  cullBelowCar();
+  assert.ok(liftCasters.every(mesh => mesh.castShadow), 'do not reject low casters for upward light rays');
 });
 
 test('the office stages the manager and nearby street cast textures one at a time', t => {

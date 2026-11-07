@@ -251,12 +251,15 @@ export class AgentRenderer {
       if (entry?.state.currentLocation === 'film_extraction_car') entry.group.visible = false;
     }
   }
-  cullOfficeStreetShadows(camera: THREE.Camera, sun: THREE.DirectionalLight): void {
+  cullOfficeStreetShadows(camera: THREE.Camera, sun: THREE.DirectionalLight, enclosedLiftFloor?: number): void {
     if (!sun.castShadow) return;
     const { frustum, projection, direction, lightPosition, bounds, hidden } = this.officeStreetShadows;
-    camera.updateWorldMatrix(true, false);
-    frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    if (enclosedLiftFloor === undefined) {
+      camera.updateWorldMatrix(true, false);
+      frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    }
     sun.target.getWorldPosition(direction).sub(sun.getWorldPosition(lightPosition));
+    if (enclosedLiftFloor !== undefined && direction.y >= 0) return;
     const otherViews: THREE.Frustum[] = [];
     let unboundedShadow = false;
     this.scene.traverseVisible(object => {
@@ -270,14 +273,17 @@ export class AgentRenderer {
     });
     if (unboundedShadow) return;
     for (const { group, state } of this.agents.values()) {
-      if (!group.visible || !state.id.startsWith('citizen_') || state.controller || group.position.y > 15) continue;
+      if (!group.visible || state.controller || group.position.y > 15) continue;
+      if (!state.id.startsWith('citizen_') && (enclosedLiftFloor === undefined || (state.id !== 'courier' && state.id !== 'rhineheart'))) continue;
       // Street-level pedestrians at the tower entrance can have the office location.
       if (state.currentLocation !== 'downtown' && state.currentLocation !== 'metacortex_office') continue;
       // Enclose the regular pedestrian rigs, with room for the shadow filter at the edge of the view.
       group.getWorldPosition(bounds.center).y += 2;
-      // If the entire caster starts outside a plane and its shadow goes farther out, no visible receiver can use it.
-      if (!frustum.planes.some(plane => plane.normal.dot(direction) <= 0 && plane.distanceToPoint(bounds.center) < -bounds.radius)
-        || otherViews.some(view => view.intersectsSphere(bounds))) continue;
+      // Shadows travel away from the receivers above the car floor or inside the camera frustum.
+      const missesView = enclosedLiftFloor === undefined
+        ? frustum.planes.some(plane => plane.normal.dot(direction) <= 0 && plane.distanceToPoint(bounds.center) < -bounds.radius)
+        : bounds.center.y + bounds.radius < enclosedLiftFloor;
+      if (!missesView || otherViews.some(view => view.intersectsSphere(bounds))) continue;
       group.traverseVisible(object => {
         if (!(object instanceof THREE.Mesh) || !object.castShadow) return;
         hidden.push(object); object.castShadow = false;

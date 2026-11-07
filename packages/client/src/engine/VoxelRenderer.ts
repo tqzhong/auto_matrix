@@ -548,7 +548,7 @@ export class VoxelRenderer {
 
   showOfficeInterior(active: boolean): void { if (this.officeShell) this.officeShell.visible = !active; }
 
-  cullExteriorInClosedLift(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lift?: MetacortexLift, carHeight?: number): void {
+  cullExteriorInClosedLift(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, lift?: MetacortexLift, carHeight?: number): number | undefined {
     if (!lift?.passenger || lift.phase !== 'travel') return;
     const height = carHeight ?? metacortexLiftPose(lift).height;
     // Keep the car and its transom entirely inside the solid shaft between landings.
@@ -568,6 +568,8 @@ export class VoxelRenderer {
       this.hiddenLiftExterior.push(object);
       object.visible = false;
     }
+    // Let the initial draw prepare the exterior cast shadows as well.
+    return this.hiddenLiftExterior.length ? height : undefined;
   }
 
   restoreLiftExterior(): void {
