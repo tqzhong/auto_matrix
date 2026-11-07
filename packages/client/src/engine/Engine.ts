@@ -307,8 +307,8 @@ export class Engine {
       if (!this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, 'ledge'))
         this.filmSets.prepareOfficeDescent(this.renderer, this.camera, this.lightCulling, this.voxelRenderer.matrix,
           id => this.agentRenderer.getNearbyOfficeActor(id, this.camera));
-    } else if (reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
-      && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel' && !preparingOffice)) {
+    } else if (!preparingOffice && reserveCommuteLights && meeting?.scene === 'm1_commute' && !filmSet
+      && (!lift?.passenger || lift.target === 1 && lift.phase === 'travel')) {
       const preparingCast = this.agentRenderer.prepareOfficeCast(this.renderer, this.camera, this.lightCulling, lift?.passenger ? 'lift' : 'approach');
       if (!lift?.passenger && !preparingCast)
         this.filmSets.prepareOfficeStreetColors(this.renderer, this.camera, this.lightCulling, this.agentRenderer.getNearbyOfficeActor('citizen_2', this.camera));

@@ -657,6 +657,8 @@ export class FilmSetRenderer {
         if (city?.visible && this.prepareOfficeCanopy(renderer, camera, lighting, city)) return true;
         if (journey.scene === 'm1_commute') return this.office.prepareWindowCleanerTexture(renderer);
       }
+      if (live && !this.current && journey.scene === 'm1_commute' && !lift?.passenger && city?.visible)
+        return this.prepareOfficeCanopy(renderer, camera, lighting, city);
       return false;
     }
     const set = FILM_SETS.film_metacortex_floor;
@@ -746,7 +748,7 @@ export class FilmSetRenderer {
     // A save on the floor bypasses the elevator's preparation of the street.
     const canopy = city.getObjectByName('central-park-canopy');
     if (!(canopy instanceof THREE.InstancedMesh) || !(canopy.material instanceof THREE.MeshStandardMaterial)) return false;
-    this.compileColorBatch(renderer, [canopy], subject => lighting.compileSubject(renderer, camera, subject));
+    this.compileColorBatch(renderer, [canopy], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
     const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;

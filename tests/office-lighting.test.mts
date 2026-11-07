@@ -424,26 +424,27 @@ test('window cleaner maps upload one strip per lift frame and finish normally af
   assert.equal(skin.image, skinImage); assert.equal(hair.image, hairImage);
 });
 
-test('a cold office floor prepares the existing park color program before turning toward it', t => {
+for (const street of [true, false]) test(`a cold ${street ? 'commute street' : 'office floor'} prepares the existing park color program before turning toward it`, t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
-  t.after(() => { film.dispose(); culling.dispose(); globalThis.document = document; });
+  const environment = new THREE.Texture(); scene.environment = environment; scene.fog = new THREE.FogExp2(0x071410, .00125);
+  t.after(() => { film.dispose(); culling.dispose(); environment.dispose(); globalThis.document = document; });
   const city = new THREE.Group(), canopy = new THREE.InstancedMesh(new THREE.SphereGeometry(), new THREE.MeshStandardMaterial(), 1);
   canopy.name = 'central-park-canopy'; canopy.setColorAt(0, new THREE.Color(0x52694a));
   city.add(canopy, new THREE.Mesh()); scene.add(city);
-  const position = metacortexPosition(0, -23, 1);
+  const position = street ? { x: 1200, y: 1, z: 820 } : metacortexPosition(0, -23, 1);
   const player = { id: 'neo', position, isInMatrix: true } as AgentState;
-  const journey: FilmJourney = { version: 1, scene: 'm1_boss', actor: 'neo', step: 0, completed: [], enteredAt: 0,
+  const journey: FilmJourney = { version: 1, scene: street ? 'm1_commute' : 'm1_boss', actor: 'neo', step: 0, completed: [], enteredAt: 0,
     reflections: {}, checkpoint: position, lastText: '' };
   const sandbox = { threats: [], neoLife: { journey } } as unknown as SandboxState;
   const camera = new THREE.PerspectiveCamera();
   camera.position.set(position.x, position.y + 4, position.z);
-  culling.minimumPointSlots = 6;
+  culling.minimumPointSlots = street ? 4 : 6;
   film.update(player, sandbox, 0);
-  assert.equal(film.active?.id, 'film_metacortex_floor');
+  assert.equal(film.active?.id, street ? undefined : 'film_metacortex_floor');
   let ready = false, compiles = 0, queries = 0;
   const debug = { checkShaderErrors: true };
   const program = { program: {}, isReady: () => ready, getUniforms: () => {
@@ -467,7 +468,14 @@ test('a cold office floor prepares the existing park color program before turnin
       assert.deepEqual(objects, [canopy]);
       assert.equal(canopy.parent, city);
       assert.equal(eye, camera);
-      assert.ok(litScene.getObjectByName('office-window-glass'));
+      assert.notEqual(litScene, scene, 'preparation must not change the live render state used by the next shadow pass');
+      assert.equal(litScene.environment, environment); assert.equal(litScene.fog, scene.fog);
+      const visible: THREE.Object3D[] = [], actualLights: THREE.PointLight[] = [];
+      litScene.traverseVisible(object => visible.push(object));
+      scene.traverseVisible(object => { if (object instanceof THREE.PointLight) actualLights.push(object); });
+      assert.equal(visible.some(object => object.name === 'office-window-glass'), !street);
+      assert.deepEqual(visible.filter(object => object instanceof THREE.PointLight), actualLights);
+      assert.ok(actualLights.length >= culling.minimumPointSlots);
       assert.equal(target?.width, 1);
       compiles++;
     },
@@ -476,7 +484,7 @@ test('a cold office floor prepares the existing park color program before turnin
   const prepare = (save = sandbox) => film.prepareOffice(renderer, camera, culling, player, save, undefined, city);
   assert.equal(prepare({ ...sandbox, neoLife: { ...sandbox.neoLife, journey: { ...journey, visiting: 'm1_boss' } } }), false);
   assert.equal(compiles, 0);
-  assert.equal(prepare(), true, 'a loaded floor still needs the city program without an elevator ride');
+  assert.equal(prepare(), true, 'prepare the existing park before the street turn or a direct office load');
   assert.equal(prepare(), false, 'an unfinished shader leaves the frame free');
   assert.equal(queries, 0);
   ready = true;
