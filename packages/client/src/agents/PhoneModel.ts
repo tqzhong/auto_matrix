@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const PHONE_HAND = {
   position: new THREE.Vector3(.132, -.165, .015),
@@ -49,6 +50,23 @@ export class PhoneModel {
     for (let i = -1; i <= 1; i++) this.mesh(this.slider, new THREE.BoxGeometry(.036, .002, .004), seam).position.set(0, -.065 + i * .008, .077);
     const aerial = this.mesh(this.root, new THREE.CylinderGeometry(.012, .017, .082, 12), shell); aerial.position.set(.047, .237, -.008);
     this.root.name = 'held-phone';
+    this.batch(this.root); this.batch(this.slider);
+  }
+  private batch(parent: THREE.Group): void {
+    const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+    for (const child of [...parent.children]) {
+      if (!(child instanceof THREE.Mesh) || child.name || Array.isArray(child.material) || child.material.transparent) continue;
+      child.updateMatrix();
+      const source = child.geometry.clone().applyMatrix4(child.matrix), geometry = source.index ? source.toNonIndexed() : source;
+      if (geometry !== source) source.dispose();
+      const parts = batches.get(child.material) ?? []; parts.push(geometry); batches.set(child.material, parts);
+      child.geometry.dispose(); child.removeFromParent();
+    }
+    for (const [material, parts] of batches) {
+      const geometry = mergeGeometries(parts); parts.forEach(part => part.dispose());
+      if (!geometry) throw new Error('Phone geometry could not be merged');
+      this.mesh(parent, geometry, material);
+    }
   }
   private texture(canvas: HTMLCanvasElement): THREE.Texture {
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.maps.push(texture); return texture;
