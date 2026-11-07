@@ -612,6 +612,75 @@ test('the commute prepares the three first-draw street programs with the live li
   prepare(); assert.equal(tasks.at(-1), 'compile Red_dress_satin', 'rebuild the queue after the graphics context changes');
 });
 
+test('street preparation includes the driver LOD and both shared-material skinning variants', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const camera = new THREE.PerspectiveCamera(), driver = new THREE.Group(), actor = new THREE.Group();
+  const environment = new THREE.Texture(); scene.environment = environment; scene.fog = new THREE.FogExp2(0x071410, .00125);
+  driver.visible = false; scene.add(driver, actor);
+  const skin = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); skin.name = 'driver skin';
+  const shared = new THREE.MeshPhysicalMaterial(), rigid = new THREE.Mesh(undefined, shared), skinned = new THREE.SkinnedMesh(undefined, shared);
+  rigid.name = 'rigid cloth'; skinned.name = 'skinned cloth';
+  const duplicate = new THREE.Mesh(undefined, shared); duplicate.name = 'second rigid cloth';
+  const hidden = new THREE.Group(), hiddenMesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial());
+  hidden.visible = false; hidden.add(hiddenMesh); driver.add(skin, rigid, skinned, duplicate, hidden);
+  const red = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'].map(name => {
+    const mesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); mesh.name = name; return mesh;
+  });
+  t.after(() => {
+    film.dispose(); lighting.dispose(); environment.dispose();
+    for (const mesh of [skin, rigid, skinned, duplicate, hiddenMesh, ...red]) mesh.geometry.dispose();
+    for (const material of new Set([skin.material, shared, hiddenMesh.material, ...red.map(mesh => mesh.material)])) material.dispose();
+  });
+  const tasks: string[] = [], debug = { checkShaderErrors: true };
+  let ready = false, target: THREE.WebGLRenderTarget | null = null;
+  const newProgram = (name: string) => ({ program: {}, isReady: () => ready, getUniforms() {
+    assert.equal(debug.checkShaderErrors, false); tasks.push('locations ' + name);
+  } });
+  const existing = newProgram(skin.name), programs = [existing], variants = new Map([[skin.material.id + ':false', existing]]);
+  const current = new Map<THREE.Material, typeof existing>();
+  const gpu = {
+    info: { programs }, debug, extensions: { has: () => true },
+    properties: { get: (material: THREE.Material) => ({ currentProgram: current.get(material) }) },
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile: (subject: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(eye, camera); assert.equal(target?.width, 1); assert.notEqual(litScene, scene);
+      assert.equal(litScene.environment, environment); assert.equal(litScene.fog, scene.fog);
+      let lights = 0; litScene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights++; });
+      assert.equal(lights, 4);
+      const objects: THREE.Object3D[] = []; subject.traverse(object => objects.push(object));
+      assert.equal(objects.length, 1);
+      const mesh = objects[0]; assert(mesh instanceof THREE.Mesh && !Array.isArray(mesh.material));
+      assert.notEqual(mesh, hiddenMesh);
+      assert.match(shared.customProgramCacheKey(), /actor-local-skin-v1$/, 'initialize the shared material before its rigid variant links');
+      const key = mesh.material.id + ':' + (mesh instanceof THREE.SkinnedMesh);
+      let program = variants.get(key);
+      if (!program) { program = newProgram(mesh.name); variants.set(key, program); programs.push(program); }
+      current.set(mesh.material, program); tasks.push('compile ' + mesh.name);
+    },
+  };
+  lighting.minimumPointSlots = 4;
+  const prepare = () => film.prepareOfficeStreetColors(gpu as unknown as THREE.WebGLRenderer, camera, lighting, actor, driver);
+  prepare(); assert.deepEqual(tasks, ['compile driver skin'], 'the procedural driver need not wait for the red dress asset');
+  actor.add(...red);
+  for (const mesh of [...red, rigid, skinned]) {
+    const before = tasks.length; prepare(); assert.deepEqual(tasks.slice(before), ['compile ' + mesh.name]);
+  }
+  assert.equal(tasks.length, 6, 'link at most one mesh per frame, retaining both skinning variants');
+  ready = true;
+  for (const name of [skin.name, ...red.map(mesh => mesh.name), rigid.name, skinned.name]) {
+    const before = tasks.length; prepare(); assert.deepEqual(tasks.slice(before), ['locations ' + name]);
+  }
+  prepare(); assert.equal(tasks.at(-1), 'compile second rigid cloth');
+  prepare(); assert.equal(tasks.length, 13, 'a repeated rigid variant must not repeat the uniform-location work');
+  assert.equal(variants.size, 6); assert.equal(driver.visible, false); assert.equal(hidden.visible, false);
+  assert([skin, rigid, skinned, duplicate, hidden].every(object => object.parent === driver));
+  assert.equal(hiddenMesh.parent, hidden); assert(red.every(mesh => mesh.parent === actor));
+  assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
+  gpu.properties = { ...gpu.properties };
+  ready = false; prepare(); assert.equal(tasks.at(-1), 'compile Red_dress_satin', 'a new context prepares both actors again');
+});
+
 test('office exits prepare the existing materials in separate frames', t => {
   const grain = new THREE.Texture({ width: 1024, height: 1024, complete: true }); grain.needsUpdate = true;
   t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => url.includes('old_wood_floor') ? grain : new THREE.Texture());

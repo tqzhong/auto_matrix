@@ -226,7 +226,10 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
-  private preparedOfficeStreet?: { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[]; programs: ColorProgram[] };
+  private preparedOfficeStreet?: {
+    actor?: THREE.Group; driver?: THREE.Group; gpu: THREE.WebGLRenderer['properties'];
+    meshes: ColorMesh[]; programs: ColorProgram[]; warmed: Set<ColorProgram>;
+  };
   private preparedOfficePhone?: { smith: THREE.Group; gpu: THREE.WebGLRenderer['properties']; depth: THREE.MeshDepthMaterial; programs: ColorProgram[] };
   private preparedOfficeConnection?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; smith: THREE.Group };
   private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
@@ -753,18 +756,34 @@ export class FilmSetRenderer {
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
   }
-  prepareOfficeStreetColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, actor?: THREE.Group): void {
-    if (!actor || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+  prepareOfficeStreetColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, actor?: THREE.Group, driver?: THREE.Group): void {
+    if ((!actor && !driver) || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
     const gpu = renderer.properties;
     let prepared = this.preparedOfficeStreet;
-    if (!prepared || prepared.gpu !== gpu || prepared.actor !== actor) {
+    if (!prepared || prepared.gpu !== gpu)
+      this.preparedOfficeStreet = prepared = { gpu, meshes: [], programs: [], warmed: new Set() };
+    if (actor && prepared.actor !== actor) {
       const meshes = this.colorMeshes([actor]).filter(mesh => OFFICE_STREET_COLOR_MESHES.some(name => mesh.name === name));
-      if (meshes.length !== OFFICE_STREET_COLOR_MESHES.length) return;
-      this.preparedOfficeStreet = prepared = { actor, gpu, meshes, programs: [] };
+      if (meshes.length === OFFICE_STREET_COLOR_MESHES.length) {
+        prepared.actor = actor;
+        prepared.meshes.unshift(...meshes);
+      }
+    }
+    if (driver && prepared.driver !== driver) {
+      // Prepare the near model before its LOD root is visible, preserving hidden parts.
+      const meshes = this.colorMeshes(driver.children);
+      if (meshes.length) {
+        // Rigid and skinned cloth share a material; stabilize its key before either links.
+        for (const mesh of meshes) if (mesh instanceof THREE.SkinnedMesh) prepareSkinnedMaterial(mesh.material);
+        prepared.driver = driver;
+        prepared.meshes.push(...meshes);
+      }
     }
     const ready = prepared.programs.findIndex(program => renderer.info.programs?.includes(program) && program.isReady());
     if (ready >= 0) {
-      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      const program = prepared.programs.splice(ready, 1)[0];
+      cacheReadyProgramLocations(renderer, program);
+      prepared.warmed.add(program);
       return;
     }
     const mesh = prepared.meshes.shift();
@@ -772,7 +791,7 @@ export class FilmSetRenderer {
     this.compileColorBatch(renderer, [mesh], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
     // The exact material variants may include programs already linked by another preparation.
     const { currentProgram } = gpu.get(mesh.material) as { currentProgram?: ColorProgram };
-    if (currentProgram && !prepared.programs.includes(currentProgram)) prepared.programs.push(currentProgram);
+    if (currentProgram && !prepared.warmed.has(currentProgram) && !prepared.programs.includes(currentProgram)) prepared.programs.push(currentProgram);
   }
   prepareOfficePhone(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group, smith: THREE.Group): boolean {
     if (!renderer.shadowMap.enabled || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
