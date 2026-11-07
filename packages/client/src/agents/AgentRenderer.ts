@@ -274,10 +274,11 @@ export class AgentRenderer {
     if (unboundedShadow) return;
     for (const { group, state } of this.agents.values()) {
       if (!group.visible || state.controller || group.position.y > 15) continue;
-      if (!state.id.startsWith('citizen_') && (enclosedLiftFloor === undefined || (state.id !== 'courier' && state.id !== 'rhineheart'))) continue;
+      if (!state.id.startsWith('citizen_') && !state.id.startsWith('agent_')
+        && !['smith', 'courier', 'rhineheart'].includes(state.id)) continue;
       // Street-level pedestrians at the tower entrance can have the office location.
       if (state.currentLocation !== 'downtown' && state.currentLocation !== 'metacortex_office') continue;
-      // Enclose the regular pedestrian rigs, with room for the shadow filter at the edge of the view.
+      // Enclose the regular street cast, with room for the shadow filter at the edge of the view.
       group.getWorldPosition(bounds.center).y += 2;
       // Shadows travel away from the receivers above the car floor or inside the camera frustum.
       const missesView = enclosedLiftFloor === undefined

@@ -976,6 +976,29 @@ test('the office drops street shadow rays outside the view and retains the other
   agents.restoreOfficeStreetShadows();
   assert.ok(casting(), 'the next pass starts with the original shadows');
 
+  for (const id of ['courier', 'rhineheart', 'smith', 'agent_jones', 'agent_brown', 'agent_johnson', 'agent_jackson', 'agent_thompson']) {
+    const state = { ...world.agents.get(id)!, currentLocation: 'downtown', position: { ...citizen.position } };
+    agents.updateAgent(id, state);
+    const actor = agents.getAgent(id)!, shadows: THREE.Mesh[] = [];
+    actor.traverseVisible(object => { if (object instanceof THREE.Mesh && object.castShadow) shadows.push(object); });
+    assert.ok(shadows.length, `${id} has street shadow casters`);
+    cull();
+    assert.ok(shadows.every(mesh => !mesh.castShadow && mesh.visible), `${id}'s shadow cannot reach the office view`);
+    assert.equal(actor.visible, true, `${id}'s body remains visible`);
+    agents.restoreOfficeStreetShadows();
+    assert.ok(shadows.every(mesh => mesh.castShadow), `${id}'s original shadows return`);
+    actor.position.y = metacortexPosition(0, 0, 1).y;
+    cull();
+    assert.ok(shadows.every(mesh => mesh.castShadow), `${id} still casts shadows upstairs`);
+    agents.restoreOfficeStreetShadows();
+    actor.position.set(state.position.x, state.position.y, state.position.z);
+    agents.updateAgent(id, { ...state, controller: 'shadow-review' });
+    cull();
+    assert.ok(shadows.every(mesh => mesh.castShadow), `${id} retains shadows while player-controlled`);
+    agents.restoreOfficeStreetShadows();
+    agents.removeAgent(id);
+  }
+
   agents.updateAgent(citizen.id, { ...citizen, currentLocation: 'metacortex_office' });
   cull();
   assert.ok(casters.every(object => !object.castShadow && object.visible), 'a street-level pedestrian can carry the office location');
