@@ -3093,11 +3093,17 @@ export class PlayerControls {
       const pivot = this.cameraTarget.clone().add(shoulder);
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
       const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
-      const closeFollow = lafayetteWalking || dojoWalking;
+      const officeEscort = state.currentLocation === 'film_metacortex_floor' && Boolean(this.motion.officeCustody);
+      const closeFollow = lafayetteWalking || dojoWalking || officeEscort;
       if (closeFollow) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
       const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
       const cameraCeiling = (point: THREE.Vector3) => {
+        if (officeEscort) {
+          const tangent = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+          const lens = this.camera.near * Math.hypot(1, tangent, tangent * this.camera.aspect);
+          return FILM_SETS.film_metacortex_floor.center.y - 1 + 9.1 - lens - .05;
+        }
         if (dojoWalking) {
           const room = FILM_SETS.film_kungfu_dojo, tangent = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
           const lens = this.camera.near * Math.hypot(1, tangent, tangent * this.camera.aspect);
@@ -3149,9 +3155,13 @@ export class PlayerControls {
         // and jumps, before the follow interpolation has reached its new height.
         if (dojoWalking && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 1.5)
           this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 4.15);
+        // The window can compress the escort view into Neo and the adjacent guard.
+        if (officeEscort && Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z) < 4.5)
+          this.camera.position.y = Math.max(this.camera.position.y, this.position.y + 5.3);
       }
       this.camera.position.y = Math.min(this.camera.position.y, cameraCeiling(this.camera.position));
-      this.camera.lookAt((wreckCabin ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * 2, -.08, Math.cos(this.yaw) * 2)));
+      const lookAhead = officeEscort ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
+      this.camera.lookAt((wreckCabin || officeEscort ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08, Math.cos(this.yaw) * lookAhead)));
     }
     this.impactAge += delta;
     if (this.impactAge < .18) {
