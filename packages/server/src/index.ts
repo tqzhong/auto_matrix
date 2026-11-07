@@ -20,7 +20,7 @@ import { WorldDynamics } from './story/WorldDynamics.js';
 import { LLMClient } from './llm/LLMClient.js';
 import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
-import { PlayerController, savedMatrixEscapeIdle } from './player/PlayerController.js';
+import { PlayerController, savedMatrixEscapeIdle, savedOfficeCustodyAction } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
@@ -224,8 +224,9 @@ sockets.getIO().on('connection', async socket => {
       sockets.sendFullState(socket.id, snapshot(), simLoop.getTick());
       return;
     }
-    if (type === 'pause') simLoop.stop();
-    else if (type === 'resume') simLoop.start();
+    // Freeze input before saving or releasing the player in this same event turn.
+    if (type === 'pause') { simLoop.stop(); players.step(0, false, simLoop.getTick()); }
+    else if (type === 'resume') { simLoop.start(); players.setRunning(true); }
     else if (type === 'set_speed') {
       if (![0.5, 1, 2, 4, 8].includes(data?.speed ?? 0)) return;
       speed = data!.speed!;
@@ -358,6 +359,7 @@ async function main(): Promise<void> {
         || heldPhone(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.phone
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined
         || windowCrossing(journey) && agent.state.currentAction?.parameters.crossing !== undefined
+        || checkpoint.simulation?.running === false && savedOfficeCustodyAction(journey, agent.state)
         || savedMatrixEscapeIdle(journey, agent.state.currentAction)
         || savedBurlyFailedIdle(journey, agent.state.currentAction)
         || journey.scene === 'm1_ledge' && !journey.visiting && journey.step === 1 && journey.office?.climbed !== undefined && agent.state.currentAction?.parameters.climbing
@@ -383,6 +385,7 @@ async function main(): Promise<void> {
   // Publish the initial street geometry before a paused snapshot or save can race the player timer.
   if (!sandbox.state.traffic) sandbox.traffic.restore();
   evolution.evaluate(simLoop.getTick(), [...world.agents.values()], world.globalEvents);
+  players.setRunning(checkpoint?.simulation?.running !== false);
   worldReady = true;
   if (cloudSave) {
     // Publish the initial POST before accepting players if this is a new world.

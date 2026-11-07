@@ -1,5 +1,5 @@
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
-import { OFFICE_CUSTODY, PLAYER_WALK_SPEED } from '@auto_matrix/shared';
+import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
@@ -35,6 +35,12 @@ export function savedMatrixEscapeIdle(journey: FilmJourney, action: AgentState['
   return Boolean(journey.matrixEscape && !journey.visiting && action?.type === 'idle' && action.parameters.matrixEscape);
 }
 
+export function savedOfficeCustodyAction(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction;
+  return Boolean(officeCustodyActive(journey) && journey?.actor === agent.id
+    && (action?.type === 'idle' || action?.type === 'move_to') && action.parameters.officeCustody);
+}
+
 export class PlayerController {
   private running = true;
   private sessions = new Map<string, PlayerSession>();
@@ -54,6 +60,8 @@ export class PlayerController {
     const session = this.sessions.get(socketId);
     return session ? this.world.agents.get(session.agentId) : undefined;
   }
+
+  setRunning(running: boolean): void { this.running = running; }
 
   possess(socketId: string, id: string, tick: number, takeover = false, newCycle = false): { agentId?: string; error?: string } {
     const agent = this.world.agents.get(id);
@@ -162,7 +170,8 @@ export class PlayerController {
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
     if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    const restoredPose = this.sandbox?.life.film.workdayFrame(agent, 0, tick)
+    const restoredPose = !this.running && savedOfficeCustodyAction(this.sandbox?.life.film.state, agent)
+      || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
       || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
       || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
@@ -263,7 +272,8 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const restoredPose = this.sandbox?.life.film.workdayFrame(agent, 0, tick)
+      const restoredPose = !this.running && savedOfficeCustodyAction(journey, agent)
+        || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
         || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
         || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
