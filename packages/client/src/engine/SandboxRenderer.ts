@@ -37,6 +37,9 @@ export class SandboxRenderer {
   private actors: Record<string, AgentState> = {};
 
   constructor(private scene: THREE.Scene, private agentRenderer?: AgentRenderer) {}
+  getPhoneColorMesh(): THREE.Mesh | undefined {
+    for (const prop of this.props.values()) if (prop.data.kind === 'phone' && prop.data.position.y >= 0) return prop.accent;
+  }
   private geometry<T extends THREE.BufferGeometry>(value: T): T { this.geometries.push(value); return value; }
   private mesh(group: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, position: number[], scale: number[]): THREE.Mesh {
     const mesh = new THREE.Mesh(geometry, material); mesh.position.set(position[0], position[1], position[2]); mesh.scale.set(scale[0], scale[1], scale[2]);

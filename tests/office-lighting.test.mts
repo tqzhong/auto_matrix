@@ -9,6 +9,7 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { OfficeSetRenderer } from '../packages/client/src/engine/OfficeSetRenderer.js';
 import { OfficeWorkdayRenderer } from '../packages/client/src/engine/OfficeWorkdayRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
+import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -142,6 +143,8 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, fillText() {}, strokeRect() {} }) }) } as unknown as Document;
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  const environment = new THREE.Texture(); scene.environment = environment; scene.fog = new THREE.FogExp2(0x071410, .00125);
+  t.after(() => environment.dispose());
   t.after(() => { film.dispose(); culling.dispose(); globalThis.document = document; });
   culling.minimumPointSlots = 4;
   const lamp = new THREE.PointLight(0xffffff, 8, 10);
@@ -152,7 +155,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   const otherSign = new THREE.Sprite(sign.material.clone());
   sign.visible = false;
   const marker = scene.children.find(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.TorusGeometry);
-  assert.ok(marker);
+  assert.ok(marker instanceof THREE.Mesh && marker.material instanceof THREE.MeshBasicMaterial);
   const streetCast = new THREE.Group(), distant = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true }));
   distant.visible = false; streetCast.add(distant); scene.add(streetCast);
   const limb = new THREE.SkinnedMesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ side: THREE.DoubleSide }));
@@ -171,6 +174,10 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   let target: THREE.WebGLRenderTarget | null = null;
   const windows: THREE.Mesh[] = [];
   const neo = new THREE.Group(); scene.add(neo);
+  const unlit = new THREE.MeshBasicMaterial(), lit = new THREE.MeshStandardMaterial();
+  const mixed = new THREE.Mesh(new THREE.BoxGeometry(), [unlit, lit]); neo.add(mixed);
+  t.after(() => { mixed.geometry.dispose(); unlit.dispose(); lit.dispose(); });
+  const versionsBefore = [unlit.version, lit.version, marker.material.version, sign.material.version];
   const manager = new THREE.Group(), managerParent = new THREE.Group();
   managerParent.visible = false; managerParent.add(manager); scene.add(managerParent);
   let managerLoaded = false;
@@ -231,14 +238,19 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
         programs.push(...['depth', 'street skin', 'street depth'].map(key => program(`${light} ${key}`)));
         return;
       }
+      assert.notEqual(litScene, scene, 'office preparation must leave the live street light state for the next shadow pass');
+      assert.equal(litScene.environment, environment); assert.equal(litScene.fog, scene.fog);
+      const objects: THREE.Object3D[] = [];
+      litScene.traverseVisible(object => objects.push(object));
+      const officeWindow = objects.find(object => object.name === 'office-window-glass');
       assert.deepEqual({ points, spots }, { points: 6, spots: 5 });
       if (root === neo) {
-        assert.ok(litScene.getObjectByName('office-window-glass'));
+        assert.ok(officeWindow);
         neoCompiles++;
         return;
       }
       if (root === manager) {
-        assert.ok(litScene.getObjectByName('office-window-glass'));
+        assert.ok(officeWindow);
         assert.equal(manager.parent, managerParent);
         assert.equal(managerParent.visible, false);
         managerCompiles++;
@@ -246,7 +258,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
         return;
       }
       if (root.name === 'office-window-cleaners') {
-        assert.equal(litScene.getObjectByName(root.name), root, 'the cleaners compile against the actual detached floor lights');
+        assert.ok(objects.includes(root), 'the cleaners compile against the actual detached floor lights');
         assert.equal(root.children.length, 6, 'prepare the two complete actors and their tools');
         cleanerCompiles++;
         programs.push(program('cleaners'));
@@ -265,7 +277,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
         assert.equal(distant.parent, streetCast);
         assert.equal(distant.visible, false);
         assert.equal(lamp.parent, city);
-        assert.ok(litScene.getObjectByName('office-window-glass'));
+        assert.ok(officeWindow);
         cityCompiles++;
         return;
       }
@@ -285,6 +297,10 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   assert.equal(neoCompiles, 1);
   assert.equal(cityCompiles, 1);
   assert.deepEqual(shadowCompiles, [{ points: 0, spots: 0 }, { points: 6, spots: 5 }]);
+  assert.ok(unlit.version > versionsBefore[0], 'unlit actor materials must reselect the live program after arrival preparation');
+  assert.equal(lit.version, versionsBefore[1], 'lit materials already reselect on light-state changes');
+  assert.ok(marker.material.version > versionsBefore[2], 'the live marker must reselect its street program');
+  assert.ok(sign.material.version > versionsBefore[3], 'the city sprite must reselect its street program');
   assert.deepEqual(uniformQueries, [], 'an unfinished program must not stall the lift');
   programs.splice(1, 1);
   ready = true;
@@ -679,6 +695,41 @@ test('street preparation includes the driver LOD and both shared-material skinni
   assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
   gpu.properties = { ...gpu.properties };
   ready = false; prepare(); assert.equal(tasks.at(-1), 'compile Red_dress_satin', 'a new context prepares both actors again');
+});
+
+test('street preparation caches the existing Matrix phone accent before the lift reveals it', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const original = globalThis.document;
+  const context = { fillRect() {}, fillText() {}, putImageData() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), sandbox = new SandboxRenderer(scene), lighting = new LightCulling(scene);
+  t.after(() => { film.dispose(); sandbox.dispose(); lighting.dispose(); globalThis.document = original; });
+  sandbox.sync({ nodes: [
+    { id: 'real-phone', kind: 'phone', name: 'Real phone', position: { x: 0, y: -100, z: 0 } },
+    { id: 'matrix-phone', kind: 'phone', name: 'Matrix phone', position: { x: 1228, y: 1, z: 727 } },
+  ], structures: [], incidents: [], threats: [], missions: {} } as unknown as SandboxState, {});
+  const phone = sandbox['props'].get('matrix-phone')!.accent, parent = phone.parent;
+  const camera = new THREE.PerspectiveCamera(), tasks: string[] = [], debug = { checkShaderErrors: true };
+  let target: THREE.WebGLRenderTarget | null = null;
+  const program = { program: {}, isReady: () => true, getUniforms() { assert.equal(debug.checkShaderErrors, false); tasks.push('locations'); } };
+  const gpu = {
+    info: { programs: [program] }, debug, extensions: { has: () => true },
+    properties: { get: (material: THREE.Material) => { assert.equal(material, phone.material); return { currentProgram: program }; } },
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile: (subject: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(eye, camera); assert.notEqual(litScene, scene); assert.equal(target?.width, 1);
+      const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object));
+      assert.deepEqual(meshes, [phone]); tasks.push('compile');
+    },
+  };
+  const prepare = () => film.prepareOfficeStreetPhone(gpu as unknown as THREE.WebGLRenderer, camera, lighting, phone);
+  prepare(); assert.deepEqual(tasks, ['compile'], 'a hidden phone accent must not wait for nearby character assets');
+  prepare(); assert.deepEqual(tasks, ['compile', 'locations']);
+  prepare(); assert.equal(tasks.length, 2);
+  assert.equal(sandbox.getPhoneColorMesh(), phone, 'prepare the existing Matrix accent rather than the real-world phone');
+  assert.equal(phone.parent, parent); assert.equal(phone.visible, true); assert.equal(target, null);
 });
 
 test('office exits prepare the existing materials in separate frames', t => {

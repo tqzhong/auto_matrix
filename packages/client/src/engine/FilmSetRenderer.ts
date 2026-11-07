@@ -226,6 +226,7 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private preparedOfficeStreetPhone?: { phone: THREE.Mesh; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
   private preparedOfficeStreet?: {
     actor?: THREE.Group; driver?: THREE.Group; gpu: THREE.WebGLRenderer['properties'];
     meshes: ColorMesh[]; programs: ColorProgram[]; warmed: Set<ColorProgram>;
@@ -729,7 +730,14 @@ export class FilmSetRenderer {
           shadow = new THREE.Group().add(shadow, new THREE.SkinnedMesh(limb.geometry, depth), new THREE.Mesh(limb.geometry, depth));
         }
       }
-      lighting.compileSubject(renderer, eye, subject, prepared.renderer.root, shadow);
+      lighting.compileSubject(renderer, eye, subject, prepared.renderer.root, shadow, 'isolated');
+      // Unlit materials do not reselect on light changes. The live draw must
+      // return to its cached street variant while the arrival program links.
+      subject.traverse(object => {
+        if (!(object instanceof THREE.Mesh || object instanceof THREE.Sprite)) return;
+        for (const material of Array.isArray(object.material) ? object.material : [object.material])
+          if (material instanceof THREE.MeshBasicMaterial || material instanceof THREE.SpriteMaterial) material.needsUpdate = true;
+      });
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
       lighting.minimumPointSlots = liftSlots;
@@ -754,6 +762,21 @@ export class FilmSetRenderer {
     this.compileColorBatch(renderer, [canopy], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
     const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
+    return true;
+  }
+  prepareOfficeStreetPhone(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, phone?: THREE.Mesh): boolean {
+    if (!phone || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
+    const prepared = this.preparedOfficeStreetPhone, gpu = renderer.properties;
+    if (prepared?.gpu === gpu && prepared.phone === phone) {
+      const program = prepared.program;
+      if (!program || !renderer.info.programs?.includes(program) || !program.isReady()) return false;
+      cacheReadyProgramLocations(renderer, program);
+      prepared.program = undefined;
+      return true;
+    }
+    this.compileColorBatch(renderer, [phone], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
+    const { currentProgram } = gpu.get(phone.material) as { currentProgram?: ColorProgram };
+    this.preparedOfficeStreetPhone = { phone, gpu, program: currentProgram };
     return true;
   }
   prepareOfficeStreetColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, actor?: THREE.Group, driver?: THREE.Group): void {
@@ -3771,6 +3794,7 @@ export class FilmSetRenderer {
     this.cancelOfficePreparation();
     this.preparedOfficeCanopy = undefined;
     this.preparedOfficeStreet = undefined;
+    this.preparedOfficeStreetPhone = undefined;
     this.preparedOfficePhone?.depth.dispose(); this.preparedOfficePhone = undefined;
     this.preparedOfficeConnection = undefined;
     this.preparedOfficeWindow = undefined;
