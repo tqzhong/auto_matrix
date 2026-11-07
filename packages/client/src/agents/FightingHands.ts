@@ -8,7 +8,7 @@ interface MaterialPoint { id: number; amount: number; interval: number; u: numbe
 interface Finger { joints: number[]; radius: number[]; rest: HandCurve; vertices: MaterialPoint[]; metacarpal?: THREE.Vector3 }
 interface Hand {
   side: string; wrist: number; cacheable: boolean; pistolCacheable: boolean; bones: number[][]; caps: number[][]; axes: THREE.Vector3[][];
-  vertices: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[]; palm: number[];
+  vertices: number[]; ranges: { start: number; count: number }[]; influences: number[]; faces: number[][]; offsets: Map<number, number>; triangles: Uint32Array; fingers: Finger[]; palm: number[];
   opposition?: { nail: THREE.Vector3; pad: THREE.Vector3; radial: THREE.Vector3; clearance: number };
 }
 interface Binding { attributes: Attributes; hands: Hand[]; groups: number[]; groupCount: number }
@@ -206,6 +206,15 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
       const radius = Math.max(...caps[0].map(id => Math.abs(point(id).sub(center).dot(nail))));
       opposition = { nail, pad: center.sub(tip), radial, clearance: indexRadius + radius + .002 };
     }
+    const ranges: Hand['ranges'] = [];
+    for (const id of [...vertices].sort((a, b) => a - b)) {
+      const last = ranges.at(-1);
+      if (last && last.start + last.count === id) last.count++;
+      else ranges.push({ start: id, count: 1 });
+    }
+    const influences = new Set([wrist, ...bones.flat()]);
+    for (const weights of [source, a]) for (const id of vertices) for (let k = 0; k < 4; k++)
+      if (weights.skinWeight.getComponent(id, k) !== 0) influences.add(weights.skinIndex.getComponent(id, k));
     const offsets = new Map(vertices.map((id, i) => [id, i]));
     const roots = bones.slice(1).map(joints => {
       const points = joints.slice(0, 2).map(j => new THREE.Vector3().setFromMatrixPosition(skin.skeleton.boneInverses[j].clone().invert()).applyMatrix4(inverse));
@@ -231,7 +240,7 @@ function bind(skin: THREE.SkinnedMesh, rig: HeroRig): Binding {
       const id = faces[face][corner], at = face * 6 + corner * 2;
       triangles[at] = offsets.get(id)! * 15 + 3; triangles[at + 1] = normalGroups[id] * 3;
     }
-    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, faces, offsets, triangles, fingers, palm, opposition };
+    return { side, wrist, cacheable, pistolCacheable, bones, caps, axes, vertices, ranges, influences: [...influences], faces, offsets, triangles, fingers, palm, opposition };
   });
   return { attributes: a, hands, groups: normalGroups, groupCount: normalKeys.size };
 }
@@ -257,6 +266,7 @@ export class FightingHands {
   private pistol = false;
   private amounts = [0, 0];
   private previous: (string | undefined)[] = [];
+  private previousFrames: number[][] = [[], []];
   private scratch: Float64Array;
   private normals: Float64Array;
   private shapes = new Map<Hand, { key: string; delta: Float64Array }>();
@@ -399,10 +409,20 @@ export class FightingHands {
       return this.authored || current.every((v, i) => v === this.snapshots[which][i])
         ? [...pose, ...wrist.quaternion.toArray(), ...wrist.position.toArray(), ...wrist.scale.toArray()].join(',') : undefined;
     });
-    if (keys.some((v, i) => v !== this.previous[i]) || this.previous.length === 0) {
-      for (const name of attributes) (this.output[name].array as Float32Array).set(this.base[name].array);
+    const changed = keys.map((key, which) => key !== this.previous[which] || this.previous.length === 0);
+    if (changed.some(Boolean)) {
       this.rig.root.updateMatrixWorld(true);
-      for (const [which, hand] of this.binding.hands.entries()) if (keys[which] !== undefined) this.deform(hand);
+      for (const [which, hand] of this.binding.hands.entries()) {
+        const frame = [...this.skin.matrixWorld.elements];
+        for (const joint of hand.influences) frame.push(...this.skin.skeleton.bones[joint].matrixWorld.elements);
+        if (!changed[which] && frame.every((value, i) => value === this.previousFrames[which][i])) continue;
+        for (const name of attributes) for (const range of hand.ranges) {
+          const output = this.output[name], start = range.start * output.itemSize, end = start + range.count * output.itemSize;
+          (output.array as Float32Array).set(this.base[name].array.subarray(start, end), start);
+        }
+        if (keys[which] !== undefined) this.deform(hand);
+        this.previousFrames[which] = frame;
+      }
       for (const name of attributes) this.output[name].needsUpdate = true;
       this.previous = keys;
     }
