@@ -230,6 +230,7 @@ export class FilmSetRenderer {
   private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
   private preparedOfficeDescent?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; city: THREE.Group };
   private officeTowerDepth?: THREE.MeshDepthMaterial;
+  private officeStreetDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
   private courtyardCastColors?: CastColorPreparation;
@@ -644,7 +645,7 @@ export class FilmSetRenderer {
     }
   }
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState,
-    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh, manager?: THREE.Group): boolean {
+    sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh, manager?: THREE.Group, streetCaster?: THREE.Group): boolean {
     const journey = sandbox?.neoLife?.journey, lift = sandbox?.neoLife?.lift;
     const live = player?.isInMatrix && player.id === journey?.actor && !journey.visiting;
     if (this.office || !live || journey.scene !== 'm1_commute'
@@ -707,12 +708,19 @@ export class FilmSetRenderer {
       if (subject === actor || subject === manager) subject.traverse(object => {
         if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
       });
-      let shadow: THREE.InstancedMesh | undefined;
+      let shadow: THREE.Object3D | undefined;
       if (shadowGeometry && renderer.shadowMap.enabled) {
         const material = this.officeTowerDepth ??= new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.BackSide });
         // Match the shared depth material after the skinned cast has used it.
         prepareSkinnedMaterial(material);
         shadow = new THREE.InstancedMesh(shadowGeometry, material, 0);
+        const limb = streetCaster?.getObjectByProperty('type', 'SkinnedMesh');
+        if (limb instanceof THREE.SkinnedMesh) {
+          // The restored street cast has both rigid and skinned double-sided clothing.
+          const depth = this.officeStreetDepth ??= new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
+          prepareSkinnedMaterial(depth);
+          shadow = new THREE.Group().add(shadow, new THREE.SkinnedMesh(limb.geometry, depth), new THREE.Mesh(limb.geometry, depth));
+        }
       }
       lighting.compileSubject(renderer, eye, subject, prepared.renderer.root, shadow);
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
@@ -3810,5 +3818,5 @@ export class FilmSetRenderer {
     this.root.clear(); this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.materialCache.clear(); this.moving = [];
   }
-  dispose(): void { this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); }
+  dispose(): void { this.clear(); this.root.removeFromParent(); this.marker.removeFromParent(); this.markerLight.removeFromParent(); this.marker.geometry.dispose(); (this.marker.material as THREE.Material).dispose(); this.markerLight.dispose(); this.officeTowerDepth?.dispose(); this.officeStreetDepth?.dispose(); }
 }

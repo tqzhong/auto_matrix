@@ -108,7 +108,7 @@ export class LightCulling {
   }
 
   compileSubject(renderer: THREE.WebGLRenderer, camera: THREE.Camera, subject: THREE.Object3D, detachedLights?: THREE.Object3D,
-    shadow?: THREE.Mesh): void {
+    shadow?: THREE.Object3D): void {
     const depth = this.depth;
     if (detachedLights) this.scene.add(detachedLights);
     try {
