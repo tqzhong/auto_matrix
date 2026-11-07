@@ -7,6 +7,7 @@ export class GameplayRecorder {
   private canvas = document.createElement('canvas');
   private context = this.canvas.getContext('2d')!;
   private recorder?: MediaRecorder;
+  private busy = false;
   private ui?: HTMLImageElement;
   private updatingUI = false;
   private startedAt = 0;
@@ -52,39 +53,53 @@ export class GameplayRecorder {
   }
 
   private async start(): Promise<void> {
-    this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
-    this.id = `neo-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-    this.saved = Promise.resolve(); this.failed = false; this.markers = []; this.frames = 0; this.bytes = 0; this.renderAt = 0; this.frameTimes = [];
-    const stream = this.canvas.captureStream(30);
-    const audio = await this.engine.audio.recordingAudio(); this.audio = Boolean(audio);
-    if (audio) for (const track of audio.getAudioTracks()) stream.addTrack(track.clone());
-    const mimeType = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus'].find(type => MediaRecorder.isTypeSupported(type));
-    if (!mimeType) throw new Error('浏览器不支持 WebM 录制');
-    this.recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
-    this.recorder.ondataavailable = event => {
-      this.bytes += event.data.size;
-      if (event.data.size) this.saved = this.saved.then(() => this.write('webm', event.data)).catch(error => this.error(error));
-    };
-    this.recorder.onstop = () => { void this.finish(stream); };
-    this.recorder.onerror = () => this.error('浏览器编码器中断');
-    await this.captureUI();
-    this.startedAt = performance.now(); this.frameAt = 0;
-    this.engine.onRendered = () => {
-      const now = performance.now();
-      // Measure every rendered frame before the recorder's 30 fps cap. These
-      // timings include capture overhead and are not an unrecorded benchmark.
-      if (this.renderAt) this.frameTimes.push(now - this.renderAt);
-      this.renderAt = now;
-      if (now - this.frameAt < 1000 / 30) return;
-      this.frameAt = now;
-      this.context.drawImage(this.engine.renderer.domElement, 0, 0, this.canvas.width, this.canvas.height);
-      if (this.ui) this.context.drawImage(this.ui, 0, 0, this.canvas.width, this.canvas.height);
-      if (++this.frames % 30 === 0) this.status(`● ${Math.round((now - this.startedAt) / 1000)} 秒 · ${this.frames} 帧 · ${(this.bytes / 1048576).toFixed(1)} MB${this.audio ? '' : ' · 无音轨'}`);
-    };
-    this.uiTimer = window.setInterval(() => { void this.captureUI().catch(error => this.error(error)); }, 500);
-    this.recorder.start(5000);
-    this.toolbar.querySelector('[data-record]')!.textContent = '结束并保存录像';
-    this.status('● 正在录制');
+    if (this.busy) return;
+    this.busy = true;
+    const button = this.toolbar.querySelector<HTMLButtonElement>('[data-record]')!;
+    button.disabled = true; button.textContent = '正在准备录制…';
+    let stream: MediaStream | undefined, rendered: (() => void) | undefined;
+    try {
+      this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
+      this.id = `neo-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      this.saved = Promise.resolve(); this.failed = false; this.markers = []; this.frames = 0; this.bytes = 0; this.renderAt = 0; this.frameTimes = [];
+      const recordingStream = this.canvas.captureStream(30); stream = recordingStream;
+      const audio = await this.engine.audio.recordingAudio(); this.audio = Boolean(audio);
+      if (audio) for (const track of audio.getAudioTracks()) stream.addTrack(track.clone());
+      const mimeType = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus'].find(type => MediaRecorder.isTypeSupported(type));
+      if (!mimeType) throw new Error('浏览器不支持 WebM 录制');
+      this.recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
+      this.recorder.ondataavailable = event => {
+        this.bytes += event.data.size;
+        if (event.data.size) this.saved = this.saved.then(() => this.write('webm', event.data)).catch(error => this.error(error));
+      };
+      this.recorder.onstop = () => { void this.finish(recordingStream); };
+      this.recorder.onerror = () => this.error('浏览器编码器中断');
+      await this.captureUI();
+      this.startedAt = performance.now(); this.frameAt = 0;
+      this.engine.onRendered = rendered = () => {
+        const now = performance.now();
+        // Measure every rendered frame before the recorder's 30 fps cap. These
+        // timings include capture overhead and are not an unrecorded benchmark.
+        if (this.renderAt) this.frameTimes.push(now - this.renderAt);
+        this.renderAt = now;
+        if (now - this.frameAt < 1000 / 30) return;
+        this.frameAt = now;
+        this.context.drawImage(this.engine.renderer.domElement, 0, 0, this.canvas.width, this.canvas.height);
+        if (this.ui) this.context.drawImage(this.ui, 0, 0, this.canvas.width, this.canvas.height);
+        if (++this.frames % 30 === 0) this.status(`● ${Math.round((now - this.startedAt) / 1000)} 秒 · ${this.frames} 帧 · ${(this.bytes / 1048576).toFixed(1)} MB${this.audio ? '' : ' · 无音轨'}`);
+      };
+      this.uiTimer = window.setInterval(() => { void this.captureUI().catch(error => this.error(error)); }, 500);
+      this.recorder.start(5000);
+      button.textContent = '结束并保存录像'; button.disabled = false;
+      this.status('● 正在录制');
+    } catch (error) {
+      window.clearInterval(this.uiTimer);
+      if (this.engine.onRendered === rendered) this.engine.onRendered = undefined;
+      stream?.getTracks().forEach(track => track.stop());
+      this.recorder = undefined; this.busy = false;
+      button.textContent = '开始录制'; button.disabled = false;
+      throw error;
+    }
   }
 
   private async captureUI(): Promise<void> {
@@ -133,15 +148,20 @@ export class GameplayRecorder {
     window.clearInterval(this.uiTimer); this.engine.onRendered = undefined;
     const duration = (performance.now() - this.startedAt) / 1000;
     stream.getTracks().forEach(track => track.stop());
-    this.toolbar.querySelector('[data-record]')!.textContent = '开始录制';
-    await this.saved;
-    if (this.failed) return;
-    if (!this.bytes) { this.error(`未产生视频数据（${this.frames} 帧）`); return; }
+    const button = this.toolbar.querySelector<HTMLButtonElement>('[data-record]')!;
+    button.textContent = '正在保存录像…'; button.disabled = true;
     try {
+      await this.saved;
+      if (this.failed) return;
+      if (!this.bytes) { this.error(`未产生视频数据（${this.frames} 帧）`); return; }
       const times = [...this.frameTimes].sort((a, b) => a - b);
       const rendering = times.length ? { frames: times.length + 1, fps: 1000 * times.length / times.reduce((a, b) => a + b, 0), p95FrameMs: times[Math.ceil(times.length * .95) - 1], includesRecordingOverhead: true } : undefined;
       await this.write('json', JSON.stringify({ file: `${this.id}.webm`, duration, width: this.canvas.width, height: this.canvas.height, audio: this.audio, frames: this.frames, rendering, markers: this.markers }, null, 2));
       this.status(`已保存 ${Math.round(duration)} 秒 · output/gameplay/neo-longplay-2026-09-20`);
     } catch (error) { this.error(error); }
+    finally {
+      this.recorder = undefined; this.busy = false; this.ui = undefined; this.frameTimes = [];
+      button.textContent = '开始录制'; button.disabled = false;
+    }
   }
 }
