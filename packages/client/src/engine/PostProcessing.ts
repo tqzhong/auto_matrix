@@ -16,8 +16,19 @@ export class WorldOcclusionPass extends GTAOPass {
   private lightLayers = new Map<THREE.Light, number>();
   private skipReflection = (): void => {};
   private scalar = false;
+  private normalScene = new THREE.Scene();
+  private normalSource?: THREE.Scene;
   constructor(...args: ConstructorParameters<typeof GTAOPass>) {
     super(...args);
+    this.normalScene.matrixWorldAutoUpdate = false;
+    this.normalScene.onBeforeRender = (...args) => {
+      const source = this.normalSource!; args[1] = source;
+      source.onBeforeRender(...args);
+    };
+    this.normalScene.onAfterRender = (...args) => {
+      const source = this.normalSource!; args[1] = source;
+      source.onAfterRender(...args);
+    };
     // These fullscreen intermediates write color only. The normal pass owns scene depth.
     this.gtaoRenderTarget.depthBuffer = this.pdRenderTarget.depthBuffer = false;
     // AO is grayscale. Keep every sample and its half-float precision while
@@ -86,12 +97,26 @@ export class WorldOcclusionPass extends GTAOPass {
   renderOverride(...args: Parameters<GTAOPass['renderOverride']>): void {
     const shadows = args[0].shadowMap;
     const autoUpdate = shadows.autoUpdate; const needsUpdate = shadows.needsUpdate;
-    const matrices = this.scene.matrixWorldAutoUpdate;
+    const source = this.scene, view = this.normalScene;
+    const matrices = source.matrixWorldAutoUpdate, override = source.overrideMaterial;
     // RenderPass immediately precedes this pass. Reuse its transforms; the
     // normal material does not sample shadows and must not redraw their maps.
-    shadows.autoUpdate = false; shadows.needsUpdate = false; this.scene.matrixWorldAutoUpdate = false;
+    shadows.autoUpdate = false; shadows.needsUpdate = false; source.matrixWorldAutoUpdate = false;
+    // Three stores its light layout per scene. Keep the zero-light normal view
+    // separate so it cannot invalidate the color materials every frame.
+    this.normalSource = source; view.children = source.children;
+    view.visible = source.visible; view.layers.mask = source.layers.mask; view.matrixWorld.copy(source.matrixWorld);
+    view.background = source.background; view.backgroundBlurriness = source.backgroundBlurriness;
+    view.backgroundIntensity = source.backgroundIntensity; view.backgroundRotation.copy(source.backgroundRotation);
+    view.environment = source.environment; view.environmentIntensity = source.environmentIntensity;
+    view.environmentRotation.copy(source.environmentRotation); view.fog = source.fog;
+    source.overrideMaterial = args[1]; this.scene = view;
     try { super.renderOverride(...args); }
-    finally { shadows.autoUpdate = autoUpdate; shadows.needsUpdate = needsUpdate; this.scene.matrixWorldAutoUpdate = matrices; }
+    finally {
+      this.scene = source; source.overrideMaterial = override; source.matrixWorldAutoUpdate = matrices;
+      view.children = []; view.overrideMaterial = null; view.background = view.environment = view.fog = null;
+      this.normalSource = undefined; shadows.autoUpdate = autoUpdate; shadows.needsUpdate = needsUpdate;
+    }
   }
   dispose(): void {
     super.dispose();

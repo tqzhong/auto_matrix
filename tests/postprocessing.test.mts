@@ -6,6 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { WebGLRenderStates } from 'three/src/renderers/webgl/WebGLRenderStates.js';
 import { Engine } from '../packages/client/src/engine/Engine.js';
 import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
@@ -202,6 +203,73 @@ test('the occlusion pass skips hidden worlds and restores only the overlays it s
   } finally {
     pass.dispose(); solid.geometry.dispose(); solid.material.dispose(); overlay.geometry.dispose(); overlay.material.dispose();
   }
+});
+
+test('normal rendering preserves the color lighting cache and the original scene callbacks and ownership', () => {
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
+  scene.background = new THREE.Color(0x14231b); scene.environment = new THREE.Texture();
+  scene.fog = new THREE.FogExp2(0x284334, .002);
+  scene.environmentIntensity = .7; scene.backgroundRotation.set(.1, .2, .3); scene.environmentRotation.set(.3, .2, .1);
+  scene.position.set(3, 4, 5);
+  const light = new THREE.PointLight(), solid = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  scene.add(light, solid); scene.updateMatrixWorld(true);
+  const pass = new WorldOcclusionPass(scene, camera, 64, 64);
+  const states = new WebGLRenderStates({ has: () => false });
+  const drawScenes: THREE.Scene[] = [];
+  let fail = false, before = 0, after = 0;
+  scene.onBeforeRender = (_renderer, view) => { assert.equal(view, scene); if (scene.overrideMaterial) before++; };
+  scene.onAfterRender = (_renderer, view) => { assert.equal(view, scene); if (scene.overrideMaterial) after++; };
+  const renderer = {
+    shadowMap: { autoUpdate: true, needsUpdate: true }, autoClear: true,
+    getClearColor: (color: THREE.Color) => color.set(0), getClearAlpha: () => 1,
+    setRenderTarget() {}, setClearColor() {}, setClearAlpha() {}, clear() {},
+    render(view: THREE.Scene, viewCamera: THREE.Camera) {
+      view.onBeforeRender(this as unknown as THREE.WebGLRenderer, view, viewCamera, null!);
+      const state = states.get(view); state.init(viewCamera);
+      view.traverseVisible(object => {
+        if (object instanceof THREE.Light && object.layers.test(viewCamera.layers)) state.pushLight(object);
+      });
+      state.setupLights();
+      if (view.overrideMaterial) {
+        drawScenes.push(view);
+        assert.equal(view.overrideMaterial, pass.normalMaterial);
+        assert.equal(scene.overrideMaterial, pass.normalMaterial, 'callbacks inspecting the original scene still see the normal pass');
+        assert.equal(view.children, scene.children); assert.equal(solid.parent, scene);
+        assert.deepEqual(view.matrixWorld.elements, scene.matrixWorld.elements);
+        assert.equal(view.background, scene.background); assert.equal(view.environment, scene.environment); assert.equal(view.fog, scene.fog);
+        assert.equal(view.environmentIntensity, scene.environmentIntensity);
+        assert.deepEqual(view.backgroundRotation, scene.backgroundRotation); assert.deepEqual(view.environmentRotation, scene.environmentRotation);
+        assert.equal(state.state.lights.state.point.length, 0, 'the normal program still excludes unused lights');
+        if (fail) throw new Error('normal draw failed');
+      }
+      view.onAfterRender(this as unknown as THREE.WebGLRenderer, view, viewCamera);
+    },
+  } as unknown as THREE.WebGLRenderer;
+  const drawNormals = () => {
+    pass.overrideVisibility();
+    try { pass.renderOverride(renderer, pass.normalMaterial, null); }
+    finally { pass.restoreVisibility(); }
+  };
+  try {
+    renderer.render(scene, camera);
+    const colorState = states.get(scene).state.lights.state, version = colorState.version;
+    assert.equal(colorState.point.length, 1);
+    drawNormals();
+    assert.equal(colorState.version, version, 'excluding normal-pass lights must not invalidate every color material on the next frame');
+    assert.equal(colorState.point.length, 1, 'color uniforms keep their live light array');
+    assert.deepEqual([before, after], [1, 1]);
+    assert.equal(drawScenes[0].children.length, 0, 'the auxiliary view does not retain the active world between passes');
+    assert.equal(pass.scene, scene); assert.equal(scene.overrideMaterial, null); assert.equal(solid.parent, scene);
+    scene.background = new THREE.Color(0x345345); scene.fog = new THREE.FogExp2(0x748276, .001);
+    scene.position.set(6, 7, 8); scene.updateMatrixWorld(true);
+    drawNormals();
+    fail = true;
+    assert.throws(drawNormals, /normal draw failed/);
+    assert.equal(colorState.version, version); assert.equal(colorState.point.length, 1);
+    assert.equal(pass.scene, scene); assert.equal(scene.overrideMaterial, null); assert.equal(scene.matrixWorldAutoUpdate, true);
+    assert.equal(drawScenes.at(-1)!.children.length, 0);
+    assert.deepEqual([renderer.shadowMap.autoUpdate, renderer.shadowMap.needsUpdate, before, after], [true, true, 3, 2]);
+  } finally { pass.dispose(); solid.geometry.dispose(); solid.material.dispose(); scene.environment.dispose(); }
 });
 
 test('the normals pass reuses this frame\'s matrices and shadows, then restores renderer settings', t => {
