@@ -1,11 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import lightFragmentSource from 'three/src/renderers/shaders/ShaderChunk/lights_fragment_begin.glsl.js';
 import { APU_RIG, APU_ROUTE, BANE_INQUIRY, BASEMENT, DIGGERS, DOCK_GUNNERY, FILM_SCENE_BY_ID, FILM_SETS, TRAINMAN_CHASE, UPPER_DIGGER, airRescueRoot, filmEntry, filmPosition, filmStepPosition, hammerCrewRoot, newAmbushEscape, newApuRun, newBaneInquiry, newDiggers, newDockGunnery, newGarageEscape, newHammerFlight, newHammerGunnery, newSmithFinale, newTrainmanChase, newUpperDigger, trainmanPassingTrain, type AirRescueEncounter, type BasementEncounter, type FilmJourney, type SandboxState, type SmithFinaleEncounter } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
+
+test('zero-energy point slots skip the light body without changing the compiled layout', () => {
+  const assignment = 'pointLight = pointLights[ i ];';
+  const start = lightFragmentSource.indexOf(assignment) + assignment.length;
+  const end = lightFragmentSource.indexOf('\n\t}\n\t#pragma unroll_loop_end', start);
+  assert.ok(start >= assignment.length && end > start);
+  const before = lightFragmentSource.slice(0, start);
+  const body = lightFragmentSource.slice(start, end);
+  const after = lightFragmentSource.slice(end);
+  const expected = before + '\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {' + body + '\n\t\t}' + after;
+  const normalize = (source: string) => source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '').replace(/\s+/g, '');
+  assert.ok(normalize(THREE.ShaderChunk.lights_fragment_begin) === normalize(expected),
+    'guard the point-light attenuation, shadow and shading while preserving every light slot and the active formulas');
+});
 
 function view() {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, .1, 100);

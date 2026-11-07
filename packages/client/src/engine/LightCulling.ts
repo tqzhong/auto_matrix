@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 
+// Keep the same shader slots without evaluating attenuation and shading for zero-energy point lights.
+THREE.ShaderChunk.lights_fragment_begin = THREE.ShaderChunk.lights_fragment_begin.replace(
+  /(pointLight = pointLights\[ i \];)(\s+getPointLightInfo\([\s\S]*?)(\n\t}\n\t#pragma unroll_loop_end)/,
+  '$1\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {$2\n\t\t}$3',
+);
+
 export const POINT_SLOT_FLOOR = 4;
 type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; intensities: number[]; fill: number };
 
