@@ -71,6 +71,22 @@ test('static office batching copies existing rounded solids without generating a
   }
 });
 
+test('office batches fill depth with the walls and solid furniture ahead of the exterior', () => {
+  const office = new OfficeSetRenderer(undefined, FILM_SETS.film_metacortex_floor);
+  const walls = new THREE.MeshStandardMaterial(), floor = new THREE.MeshStandardMaterial(), ceiling = new THREE.MeshStandardMaterial();
+  const furniture = new THREE.MeshStandardMaterial();
+  const materials = [walls, floor, ceiling, furniture, new THREE.MeshStandardMaterial({ transparent: true, opacity: .3 }),
+    new THREE.MeshStandardMaterial({ depthWrite: false }), new THREE.MeshStandardMaterial({ depthTest: false }),
+    new THREE.MeshStandardMaterial({ alphaTest: .5 }), new THREE.MeshPhysicalMaterial({ transmission: .8 })];
+  try {
+    office.root.add(...materials.map(material => new THREE.Mesh(new THREE.BoxGeometry(), material)));
+    office['batch'](walls, [floor, ceiling]);
+    assert.deepEqual(office.root.children.map(mesh => mesh.renderOrder), [-1, 0, 0, -.5, 0, 0, 0, 0, 0]);
+  } finally {
+    office.dispose(); materials.forEach(material => material.dispose());
+  }
+});
+
 test('office keycaps share one draw geometry at the authored desk positions', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));

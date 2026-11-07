@@ -68,9 +68,9 @@ export class OfficeSetRenderer {
     while (!this.prepareStep()) { /* Finish any work left by a late restore. */ }
   }
   private *build(): Generator<void> {
-    const walls = this.office();
+    const { walls, floor, ceiling } = this.office();
     yield;
-    this.ledge(); this.batch(walls);
+    this.ledge(); this.batch(walls, [floor, ceiling]);
     this.roundedBoxes = undefined;
     yield;
     this.workday = new OfficeWorkdayRenderer(this.root);
@@ -334,7 +334,7 @@ export class OfficeSetRenderer {
     const material = new THREE.MeshBasicMaterial({ map, name: 'metacortex-floor-sign' }); this.materials.push(material);
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 4), material); mesh.position.set(x, y, z); this.root.add(mesh);
   }
-  private office(): THREE.Material {
+  private office(): { walls: THREE.Material; floor: THREE.Material; ceiling: THREE.Material } {
     const wall = this.mat(0xa4aca4, .94); const ceiling = this.mat(0xb5bcb2, .98); const frame = this.mat(0x59645e, .48, .35); const partition = this.mat(0x747e78, 1);
     // Small baked bounce from the fluorescent banks, without another global light.
     ceiling.emissive.setHex(0x5a6254); ceiling.emissiveIntensity = .28;
@@ -459,7 +459,7 @@ export class OfficeSetRenderer {
     const window = this.windowLight = new THREE.SpotLight(0xd0dce0, 500, 58, 1.1, .85, 2);
     window.name = 'office-window-light'; window.position.set(-25.6, 7.7, 2); window.target.position.set(4, 1.2, -3);
     this.root.add(window, window.target);
-    return wall;
+    return { walls: wall, floor: carpet, ceiling };
   }
   private ledge(): void {
     const concrete = this.mat(0x939a95, .87); const metal = this.mat(0x6d7778, .35, .75); const glass = this.mat(0x657e87, .17, .6);
@@ -482,7 +482,7 @@ export class OfficeSetRenderer {
     }
     this.box(metal, x - 4.4, -depth + 1.5, z, .1, 3, 6);
   }
-  private batch(walls: THREE.Material): void {
+  private batch(walls: THREE.Material, horizontalSurfaces: readonly THREE.Material[]): void {
     const batches = new Map<THREE.Material, THREE.BufferGeometry[]>(); this.root.updateMatrixWorld(true);
     for (const child of [...this.root.children]) {
       if (!(child instanceof THREE.Mesh) || child instanceof THREE.InstancedMesh || Array.isArray(child.material)) continue;
@@ -495,8 +495,11 @@ export class OfficeSetRenderer {
       const geometry = mergeGeometries(geometries); geometries.forEach(g => g.dispose());
       if (!geometry) throw new Error('Office geometry could not be merged');
       const mesh = new THREE.Mesh(geometry, material); mesh.castShadow = mesh.receiveShadow = !material.transparent;
-      // Fill depth with the opaque walls before shading the city behind them.
+      // Keep the walls first and preserve the floor and ceiling order.
       if (material === walls) mesh.renderOrder = -1;
+      else if (!horizontalSurfaces.includes(material) && !material.transparent && material.depthTest && material.depthWrite && material.alphaTest === 0
+        && material.blending === THREE.NormalBlending
+        && !(material instanceof THREE.MeshPhysicalMaterial && material.transmission > 0)) mesh.renderOrder = -.5;
       this.root.add(mesh);
     }
   }
