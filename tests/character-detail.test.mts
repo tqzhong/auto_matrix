@@ -3,6 +3,8 @@ import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js';
+import { poseOracleLast } from '../packages/client/src/agents/OracleLastPerformance.js';
+import { newOracleLast } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -20,6 +22,26 @@ function setup(t: TestContext) {
 }
 
 const idle = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0 };
+
+test('unrelated near characters do not search the full body for Oracle hands and kitchen props', t => {
+  const { models, world } = setup(t);
+  for (const id of ['neo', 'rhineheart', 'courier', 'citizen_2', 'sati']) {
+    const rig = models.create(world.agents.get(id)!);
+    const lookup = t.mock.method(rig.root, 'getObjectByName');
+    for (let frame = 0; frame < 20; frame++) models.animate(rig, 1 / 60, idle, 1);
+    const unrelated = lookup.mock.calls.map(call => call.arguments[0]).filter(name => /^oracle-(?:hand-[RL]|last-)/.test(name));
+    assert.deepEqual(unrelated, [], `${id} cannot traverse its full model for another character's inactive props`);
+    assert.equal(rig.detail.visible, true, 'the optimization retains the full near character');
+  }
+});
+
+test('a visiting Neo still receives the saved Oracle conversation gesture', t => {
+  const { models, world } = setup(t), rig = models.create(world.agents.get('neo')!);
+  const head = new THREE.Bone();
+  rig.hero = { bones: new Map([['head', head]]) } as NonNullable<typeof rig.hero>;
+  poseOracleLast(rig, { ...newOracleLast(0, 61), phase: 'responding', role: 'neo' });
+  assert.equal(head.rotation.x, .035, 'a participant without Oracle clothes still receives the active head gesture');
+});
 
 test('distant characters do not traverse the hidden detailed body each frame', t => {
   const { models, world } = setup(t), rig = models.create(world.agents.get('sati')!);

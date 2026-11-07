@@ -963,7 +963,7 @@ export class CharacterModels {
     const near = distance < 100 || Boolean(input.oracleRestored);
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
-    for (const side of ['R', 'L']) rig.root.getObjectByName(`oracle-hand-${side}`)?.quaternion.identity();
+    if (rig.oracleClothing) for (const side of ['R', 'L']) rig.root.getObjectByName(`oracle-hand-${side}`)?.quaternion.identity();
     if (rig.detail.userData.oracleLastPose && !input.oracleLast && !input.oracleAbsorption) {
       delete rig.detail.userData.oracleLastPose;
       rig.hips.forEach((hip, i) => { hip.position.x = (i ? 1 : -1) * .225; hip.position.z = 0; });

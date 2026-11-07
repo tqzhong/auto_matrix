@@ -13,6 +13,7 @@ function palm(rig: CharacterRig, index: number, hand: THREE.Object3D, point: THR
 
 /** Saved kneading, hand washing, seating and bowl carrying; no browser clock. */
 export function poseOracleLast(rig: CharacterRig, gesture?: OracleLastGesture): void {
+  if (!gesture && !rig.oracleClothing) return;
   const dress = rig.root.getObjectByName('oracle-last-dress') as THREE.Mesh<THREE.CylinderGeometry> | undefined;
   if (dress) dress.visible = gesture?.role === 'oracle';
   for (const name of ['oracle-last-candy', 'oracle-last-cigarette', 'oracle-last-necklace']) {
