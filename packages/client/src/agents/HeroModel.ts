@@ -267,6 +267,7 @@ export class HeroModels {
   }
 
   async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
+    if (this.disposed) return;
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
     const police = support === 'citizen_4' || support === 'citizen_14';
@@ -1885,5 +1886,5 @@ export class HeroModels {
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();
   }
-  dispose(): void { this.disposed = true; this.release(); }
+  dispose(): void { this.disposed = true; this.assets.clear(); this.release(); }
 }
