@@ -10,6 +10,34 @@ import { prepareOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 
 const lowerShaft = { bottom: 10, top: METACORTEX.upper - .4 };
 
+function insideMetacortex(x: number, z: number): boolean {
+  return Math.abs(x - METACORTEX.center.x) < METACORTEX.width / 2 && Math.abs(z - METACORTEX.center.z) < METACORTEX.depth / 2;
+}
+
+function roadOutsideLobby(geometry: THREE.PlaneGeometry, matrix: THREE.Matrix4): THREE.BufferGeometry {
+  const inverse = matrix.clone().invert(), { width, height } = geometry.parameters;
+  const a = new THREE.Vector3(METACORTEX.center.x - METACORTEX.width / 2, 0, METACORTEX.center.z - METACORTEX.depth / 2).applyMatrix4(inverse);
+  const b = new THREE.Vector3(METACORTEX.center.x + METACORTEX.width / 2, 0, METACORTEX.center.z + METACORTEX.depth / 2).applyMatrix4(inverse);
+  const left = Math.max(-width / 2, Math.min(a.x, b.x)), right = Math.min(width / 2, Math.max(a.x, b.x));
+  const bottom = Math.max(-height / 2, Math.min(a.y, b.y)), top = Math.min(height / 2, Math.max(a.y, b.y));
+  if (left >= right || bottom >= top) return geometry;
+  const parts: THREE.PlaneGeometry[] = [];
+  for (const [x0, x1, y0, y1] of [
+    [-width / 2, left, -height / 2, height / 2], [right, width / 2, -height / 2, height / 2],
+    [left, right, -height / 2, bottom], [left, right, top, height / 2],
+  ]) {
+    if (x0 >= x1 || y0 >= y1) continue;
+    const part = new THREE.PlaneGeometry(x1 - x0, y1 - y0); part.translate((x0 + x1) / 2, (y0 + y1) / 2, 0);
+    const positions = part.attributes.position, uv = part.attributes.uv;
+    // Keep the original road's texture origin and scale across the cut edges.
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (positions.getX(i) + width / 2) / width, (positions.getY(i) + height / 2) / height);
+    parts.push(part);
+  }
+  const clipped = mergeGeometries(parts)!;
+  parts.forEach(part => part.dispose()); geometry.dispose();
+  return clipped;
+}
+
 function facadeBox(width: number, height: number, depth: number): THREE.BoxGeometry {
   const box = new THREE.BoxGeometry(width, height, depth);
   const index = box.index!;
@@ -195,17 +223,19 @@ export class VoxelRenderer {
     const asphalt = this.materials.surface('asphalt_02', 17, 2000, 8);
     for (let n = 240; n <= 2000; n += STREET_SPACING) {
       for (let direction = 0; direction < 2; direction++) {
-        const road = new THREE.Mesh(new THREE.PlaneGeometry(17, 2000), asphalt);
+        const plane = new THREE.PlaneGeometry(17, 2000), road = new THREE.Mesh<THREE.BufferGeometry>(plane, asphalt);
         road.rotation.x = -Math.PI / 2;
         road.rotation.z = direction * Math.PI / 2;
         road.position.set(direction ? 1160 : n, 0, direction ? n : 1120);
+        road.updateMatrix(); road.geometry = roadOutsideLobby(plane, road.matrix);
         road.receiveShadow = true;
         this.matrix.add(road);
       }
     }
     const lines: number[] = [];
     for (let n = 240; n <= 2000; n += STREET_SPACING) for (let p = 200; p < 2060; p += 22) {
-      lines.push(n, 0.08, p, n, 0.08, p + 9, p, 0.08, n, p + 9, 0.08, n);
+      if (!insideMetacortex(n, p + 4.5)) lines.push(n, 0.08, p, n, 0.08, p + 9);
+      if (!insideMetacortex(p + 4.5, n)) lines.push(p, 0.08, n, p + 9, 0.08, n);
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(lines, 3));
@@ -354,6 +384,7 @@ export class VoxelRenderer {
       matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix)); this.matrix.add(mesh);
     };
     for (let x = 800; x <= 1440; x += 80) for (let z = 640; z <= 1200; z += 80) {
+      if (insideMetacortex(x, z)) continue;
       for (let line = 0; line < 6; line++) {
         roadMarkings.push(placement(x - 6 + line * 2.4, .13, z + 16));
       }

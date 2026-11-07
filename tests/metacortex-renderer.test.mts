@@ -24,6 +24,21 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
   };
   try {
     const car = scene.getObjectByName('metacortex-elevator-car')!; assert.ok(car);
+    for (const x of [-2.4, -1.2, .4, 1.6, 2.4]) for (const z of [-31.4, -30, -29, -27, -26.5]) {
+      const surfaces = hits(new THREE.Vector3(METACORTEX.center.x + x, .6, METACORTEX.center.z + z), new THREE.Vector3(0, -1, 0), 1)
+        .filter(hit => hit.point.y >= -.00001);
+      assert.ok(surfaces.length && surfaces.every(hit => hit.object.parent === car && Math.abs(hit.point.y) < .00001),
+        'only the car floor may occupy its ground-level footprint; asphalt, lobby tiles and grout must not overlap it');
+    }
+    const lobby = scene.getObjectByName('metacortex-city-lobby')!;
+    for (const [x, z] of [[1140, 811], [1123.6, 816], [1126, 812]]) {
+      const surfaces = hits(new THREE.Vector3(x, .6, z), new THREE.Vector3(0, -1, 0), 1).filter(hit => hit.point.y >= -.00001);
+      assert.ok(surfaces.length && surfaces.every(hit => hit.object.parent === lobby), 'street curbs, crossings and wet-road reflections must stay outside the lobby');
+    }
+    const laneRay = new THREE.Raycaster(new THREE.Vector3(1120, .6, 800), new THREE.Vector3(0, -1, 0), 0, 1);
+    laneRay.params.Line!.threshold = .001;
+    const laneMarks = city.matrix.children.filter(object => object instanceof THREE.LineSegments);
+    assert.equal(laneRay.intersectObjects(laneMarks, false).length, 0, 'a road center line must not cross the lobby floor');
     const corridor = new THREE.Vector3(1141.3, 71, 831);
     const enclosure = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0)]
       .map(direction => hits(corridor, direction, 30).find(hit => hit.object.parent === renderer.root)?.object);
@@ -33,6 +48,22 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
     const windows = renderer.root.children.filter(object => object instanceof THREE.Mesh && !Array.isArray(object.material) && object.material.transparent);
     assert.ok(windows.length && windows.every(window => window.renderOrder === 0), 'transparent office surfaces retain depth sorting');
     const streetDetails = city.matrix.children;
+    for (const [n, direction, points] of [
+      [800, 1, [[1140, 792], [1200, 800], [1100, 800]]],
+      [1120, 0, [[1120, 780], [1120, 880], [1112, 820]]],
+    ] as const) {
+      const road = streetDetails.find(object => object instanceof THREE.Mesh && object.rotation.x === -Math.PI / 2
+        && object.position.x === (direction ? 1160 : n) && object.position.z === (direction ? n : 1120));
+      assert.ok(road instanceof THREE.Mesh);
+      for (const [x, z] of points) {
+        const hit = new THREE.Raycaster(new THREE.Vector3(x, .6, z), new THREE.Vector3(0, -1, 0), 0, 1).intersectObject(road, false)[0];
+        assert.ok(hit?.uv, 'the road outside the building must remain continuous');
+        const u = ((direction ? n - z : x - n) + 8.5) / 17;
+        const v = ((direction ? 1160 - x : 1120 - z) + 1000) / 2000;
+        assert.ok(Math.abs(hit.uv.x - u) < .000001 && Math.abs(hit.uv.y - v) < .000001,
+          'cutting out the indoor road must retain the exterior texture scale and origin');
+      }
+    }
     const curbs = streetDetails.filter(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.BoxGeometry
       && object.geometry.parameters.width === 38 && object.geometry.parameters.height === .28);
     const bins = streetDetails.filter(object => object instanceof THREE.Mesh && object.geometry instanceof THREE.CylinderGeometry
@@ -43,11 +74,16 @@ test('the shared tower has an unobstructed lobby, moving car, open upper floor a
     assert.equal(bins.length, 1, 'repeated street bins should submit as one instanced draw');
     assert.equal(reflections.length, 1, 'subtle wet-road reflections should submit as one transparent draw');
     const curb = curbs[0] as THREE.InstancedMesh;
-    assert.equal(curb.count, 72);
+    assert.equal(curb.count, 71, 'retain every outdoor curb while excluding the one generated inside the lobby');
+    assert.equal((reflections[0] as THREE.InstancedMesh).count, 71, 'wet-road reflections also stay outside the lobby');
+    const crossings = streetDetails.find(object => object instanceof THREE.InstancedMesh && object.geometry instanceof THREE.BoxGeometry
+      && object.geometry.parameters.width === 1.1 && object.geometry.parameters.height === .03);
+    assert.ok(crossings instanceof THREE.InstancedMesh);
+    assert.equal(crossings.count, 426, 'the six indoor crossing stripes are excluded, preserving all outdoor crossings');
     const matrix = new THREE.Matrix4(), position = new THREE.Vector3();
     curb.getMatrixAt(0, matrix); position.setFromMatrixPosition(matrix);
     assert.ok(position.distanceTo(new THREE.Vector3(828, .05, 651)) < .001, 'first curb stays at its original street corner');
-    curb.getMatrixAt(71, matrix); position.setFromMatrixPosition(matrix);
+    curb.getMatrixAt(70, matrix); position.setFromMatrixPosition(matrix);
     assert.ok(position.distanceTo(new THREE.Vector3(1468, .05, 1211)) < .001, 'last curb stays at its original street corner');
     const floor = hits(new THREE.Vector3(1150.73, 68, 832.19), new THREE.Vector3(0, -1, 0), 4)
       .filter(hit => Math.abs(hit.point.y - METACORTEX.upper) < .001);

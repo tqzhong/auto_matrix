@@ -28,9 +28,14 @@ export class MetacortexRenderer {
   constructor(parent: THREE.Group) {
     this.root.name = 'metacortex-city-lobby'; parent.add(this.root);
     const stone = 0xc9c5b5, metal = 0x686e69, dark = 0x303a36, brass = 0x9e8d5e;
-    this.box(this.root, 0, -.15, 0, 54, .3, 66, 0x8f948e);
-    for (let x = -24; x <= 24; x += 6) this.box(this.root, x, .012, 0, .045, .016, 66, 0x606c65);
-    for (let z = -30; z <= 30; z += 6) this.box(this.root, 0, .014, z, 54, .016, .045, 0x606c65);
+    // Leave the car's six-by-6.4 footprint clear of fixed lobby tiles and grout.
+    for (const [x, z, width, depth] of [[-15, 0, 24, 66], [15, 0, 24, 66], [0, 3.6, 6, 58.8], [0, -32.6, 6, .8]]) {
+      this.box(this.root, x, -.15, z, width, .3, depth, 0x8f948e);
+      for (let tileX = -24; tileX <= 24; tileX += 6)
+        if (Math.abs(tileX - x) < width / 2) this.box(this.root, tileX, .012, z, .045, .016, depth, 0x606c65);
+      for (let tileZ = -30; tileZ <= 30; tileZ += 6)
+        if (Math.abs(tileZ - z) < depth / 2) this.box(this.root, x, .014, tileZ, width, .016, .045, 0x606c65);
+    }
     for (const side of [-1, 1]) {
       this.box(this.root, side * 27, 5, 0, .6, 10, 66, stone);
       this.box(this.root, side * 16, 5, 33, 22, 10, .4, 0x738d90);
