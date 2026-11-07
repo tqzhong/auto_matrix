@@ -6,6 +6,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { Engine } from '../packages/client/src/engine/Engine.js';
 import { PostProcessing, WorldOcclusionPass } from '../packages/client/src/engine/PostProcessing.js';
 import { MachineCityRenderer } from '../packages/client/src/engine/MachineCityRenderer.js';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
@@ -64,6 +65,25 @@ test('disposing the compositor releases the occlusion and bloom filter materials
     post.dispose();
     assert.deepEqual(disposals.map(dispose => dispose.mock.callCount()), [1, 1, 1]);
   } finally { globalThis.window = previousWindow; }
+});
+
+test('engine teardown releases the environment before retiring the renderer and its WebGL context', t => {
+  const previousWindow = globalThis.window, previousCancel = globalThis.cancelAnimationFrame;
+  const calls: string[] = [];
+  globalThis.window = new EventTarget() as Window & typeof globalThis;
+  globalThis.cancelAnimationFrame = () => { calls.push('cancel frame'); };
+  t.after(() => { globalThis.window = previousWindow; globalThis.cancelAnimationFrame = previousCancel; });
+  const resource = { dispose() {} };
+  const mesh = { geometry: resource, material: resource };
+  const engine = Object.assign(Object.create(Engine.prototype), {
+    animationId: 1, resize() {}, rain: mesh, eventRing: mesh,
+    environment: { dispose: () => calls.push('environment') },
+    renderer: { dispose: () => calls.push('renderer'), forceContextLoss: () => calls.push('context') },
+  });
+  for (const name of ['pillReflection', 'filmSets', 'voxelRenderer', 'sandboxRenderer', 'agentRenderer', 'cameraController',
+    'combatEffects', 'audio', 'lightCulling', 'lightingSystem', 'particleSystem', 'postProcessing']) engine[name] = resource;
+  engine.dispose();
+  assert.deepEqual(calls, ['cancel frame', 'environment', 'renderer', 'context']);
 });
 
 test('the scene starts on the same depth target after the occlusion comparison path swaps buffers', t => {

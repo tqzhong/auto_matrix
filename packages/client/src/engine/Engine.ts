@@ -749,7 +749,8 @@ export class Engine {
     this.lightCulling.dispose(); this.lightingSystem.dispose(); this.particleSystem.dispose(); this.postProcessing.dispose();
     this.rain.geometry.dispose(); (this.rain.material as THREE.Material).dispose();
     this.eventRing.geometry.dispose(); (this.eventRing.material as THREE.Material).dispose();
-    this.renderer.dispose();
     this.environment.dispose();
+    this.renderer.dispose();
+    this.renderer.forceContextLoss();
   }
 }
