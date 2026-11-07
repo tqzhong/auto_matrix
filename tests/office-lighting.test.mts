@@ -540,6 +540,70 @@ test('the office prepares the city sign and masked Smith shadow before answering
   assert.equal(target, null); assert.equal(debug.checkShaderErrors, true);
 });
 
+test('the commute prepares the three first-draw street programs with the live lights', t => {
+  const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), lighting = new LightCulling(scene);
+  const camera = new THREE.PerspectiveCamera(), detail = new THREE.Group(), actor = new THREE.Group();
+  const environment = new THREE.Texture(); scene.environment = environment; scene.fog = new THREE.FogExp2(0x071410, .00125);
+  detail.visible = false; detail.add(actor); scene.add(detail);
+  const meshes = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes', 'Red_dress_anatomy'].map(name => {
+    const mesh = new THREE.Mesh(undefined, new THREE.MeshStandardMaterial()); mesh.name = name; actor.add(mesh); return mesh;
+  });
+  t.after(() => {
+    film.dispose(); lighting.dispose(); environment.dispose();
+    for (const mesh of meshes) { mesh.geometry.dispose(); mesh.material.dispose(); }
+  });
+  const debug = { checkShaderErrors: true }, target = new THREE.WebGLRenderTarget(2, 2);
+  t.after(() => target.dispose());
+  let renderTarget: THREE.WebGLRenderTarget | null = target, ready = false, parallel = false;
+  const tasks: string[] = [];
+  const newProgram = (name: string) => ({ program: {}, isReady: () => ready, getUniforms() {
+    assert.equal(debug.checkShaderErrors, false); tasks.push(name);
+  } });
+  const cached = newProgram('existing skirt');
+  const programs = [cached], byMaterial = new Map([[meshes[0].material, cached]]);
+  const gpu = {
+    info: { programs }, debug,
+    extensions: { has: () => parallel },
+    properties: { get: (material: THREE.MeshStandardMaterial) => ({ currentProgram: byMaterial.get(material) }) },
+    getRenderTarget: () => renderTarget,
+    setRenderTarget: (value: typeof renderTarget) => { renderTarget = value; },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    compile: (subject: THREE.Group, eye: THREE.Camera, litScene: THREE.Scene) => {
+      assert.equal(eye, camera); assert.equal(renderTarget?.width, 1);
+      assert.notEqual(litScene, scene, 'color preparation must leave the live shadow render state alone');
+      assert.equal(litScene.environment, scene.environment); assert.equal(litScene.fog, scene.fog);
+      const subjects: THREE.Object3D[] = []; subject.traverse(mesh => subjects.push(mesh));
+      assert.equal(subjects.length, 1);
+      const mesh = meshes.slice(0, 3).find(candidate => candidate === subjects[0]);
+      assert.ok(mesh);
+      let lights = 0; litScene.traverseVisible(object => { if (object instanceof THREE.PointLight) lights++; });
+      assert.equal(lights, 4);
+      if (!byMaterial.has(mesh.material)) {
+        const program = newProgram(mesh.name); programs.push(program); byMaterial.set(mesh.material, program);
+      }
+      tasks.push('compile ' + mesh.name);
+    },
+  };
+  lighting.minimumPointSlots = 4;
+  const prepare = (root = actor) => film.prepareOfficeStreetColors?.(gpu as unknown as THREE.WebGLRenderer, camera, lighting, root);
+  prepare(); assert.deepEqual(tasks, [], 'leave unsupported contexts on the ordinary draw path');
+  parallel = true;
+  prepare(new THREE.Group()); assert.deepEqual(tasks, [], 'wait for the actual meshes');
+  for (const { name } of meshes.slice(0, 3)) {
+    const before = tasks.length; prepare(); assert.deepEqual(tasks.slice(before), ['compile ' + name]);
+  }
+  prepare(); assert.equal(tasks.length, 3, 'wait for the submitted programs to link');
+  ready = true;
+  for (const name of ['existing skirt', 'Red_dress_hair', 'Red_dress_eyes']) {
+    const before = tasks.length; prepare(); assert.deepEqual(tasks.slice(before), [name]);
+  }
+  prepare(); assert.equal(tasks.length, 6);
+  assert.equal(renderTarget, target); assert.equal(debug.checkShaderErrors, true);
+  assert.equal(detail.visible, false); assert(meshes.every(mesh => mesh.parent === actor));
+  gpu.properties = { ...gpu.properties };
+  prepare(); assert.equal(tasks.at(-1), 'compile Red_dress_satin', 'rebuild the queue after the graphics context changes');
+});
+
 test('office exits prepare the existing materials in separate frames', t => {
   const grain = new THREE.Texture({ width: 1024, height: 1024, complete: true }); grain.needsUpdate = true;
   t.mock.method(THREE.TextureLoader.prototype, 'load', (url: string) => url.includes('old_wood_floor') ? grain : new THREE.Texture());

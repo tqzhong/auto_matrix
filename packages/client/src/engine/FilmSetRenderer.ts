@@ -165,8 +165,9 @@ type ColorPreparation = {
   textures: Set<THREE.Texture>;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
+const OFFICE_STREET_COLOR_MESHES = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'] as const;
 const OFFICE_DESCENT_ACTORS = [
-  ['citizen_2', ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes']],
+  ['citizen_2', OFFICE_STREET_COLOR_MESHES],
   ['agent_jackson', ['smith-glasses-lens--1', 'short04']],
   ['citizen_4', ['office-uniform-cap', 'Anatomical_head_and_hands']],
 ] as const;
@@ -225,6 +226,7 @@ export class FilmSetRenderer {
     manager?: { root: THREE.Group; gpu: THREE.WebGLRenderer['properties'] };
   };
   private preparedOfficeCanopy?: { city: THREE.Group; gpu: THREE.WebGLRenderer['properties']; program?: ColorProgram };
+  private preparedOfficeStreet?: { actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedOfficePhone?: { smith: THREE.Group; gpu: THREE.WebGLRenderer['properties']; depth: THREE.MeshDepthMaterial; programs: ColorProgram[] };
   private preparedOfficeConnection?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; smith: THREE.Group };
   private preparedOfficeWindow?: ColorPreparation & { gpu: THREE.WebGLRenderer['properties']; courier: THREE.Group; patrol: THREE.Group };
@@ -748,6 +750,27 @@ export class FilmSetRenderer {
     const { currentProgram } = gpu.get(canopy.material) as { currentProgram?: ColorProgram };
     this.preparedOfficeCanopy = { city, gpu, program: currentProgram };
     return true;
+  }
+  prepareOfficeStreetColors(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, actor?: THREE.Group): void {
+    if (!actor || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const gpu = renderer.properties;
+    let prepared = this.preparedOfficeStreet;
+    if (!prepared || prepared.gpu !== gpu || prepared.actor !== actor) {
+      const meshes = this.colorMeshes([actor]).filter(mesh => OFFICE_STREET_COLOR_MESHES.some(name => mesh.name === name));
+      if (meshes.length !== OFFICE_STREET_COLOR_MESHES.length) return;
+      this.preparedOfficeStreet = prepared = { actor, gpu, meshes, programs: [] };
+    }
+    const ready = prepared.programs.findIndex(program => renderer.info.programs?.includes(program) && program.isReady());
+    if (ready >= 0) {
+      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      return;
+    }
+    const mesh = prepared.meshes.shift();
+    if (!mesh) return;
+    this.compileColorBatch(renderer, [mesh], subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
+    // The exact material variants may include programs already linked by another preparation.
+    const { currentProgram } = gpu.get(mesh.material) as { currentProgram?: ColorProgram };
+    if (currentProgram && !prepared.programs.includes(currentProgram)) prepared.programs.push(currentProgram);
   }
   prepareOfficePhone(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, city: THREE.Group, smith: THREE.Group): boolean {
     if (!renderer.shadowMap.enabled || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
@@ -3726,6 +3749,7 @@ export class FilmSetRenderer {
     }
     this.cancelOfficePreparation();
     this.preparedOfficeCanopy = undefined;
+    this.preparedOfficeStreet = undefined;
     this.preparedOfficePhone?.depth.dispose(); this.preparedOfficePhone = undefined;
     this.preparedOfficeConnection = undefined;
     this.preparedOfficeWindow = undefined;

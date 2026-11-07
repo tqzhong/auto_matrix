@@ -114,7 +114,7 @@ export class LightCulling {
   }
 
   compileSubject(renderer: THREE.WebGLRenderer, camera: THREE.Camera, subject: THREE.Object3D, detachedLights?: THREE.Object3D,
-    shadow?: THREE.Object3D): void {
+    shadow?: THREE.Object3D, colorState: 'live' | 'isolated' = 'live'): void {
     const depth = this.depth;
     if (detachedLights) this.scene.add(detachedLights);
     try {
@@ -123,7 +123,14 @@ export class LightCulling {
       this.select(camera);
       // compile gathers lights from both roots. Keep the office in only one of them.
       if (subject === detachedLights) detachedLights.removeFromParent();
-      renderer.compile(subject, camera, this.scene);
+      const colorScene = colorState === 'isolated' ? new THREE.Scene() : this.scene;
+      if (colorScene !== this.scene) {
+        // A compile on the live scene would leave its light counts in the next shadow pass.
+        colorScene.environment = this.scene.environment;
+        colorScene.fog = this.scene.fog;
+        colorScene.traverseVisible = visit => this.scene.traverseVisible(visit);
+      }
+      renderer.compile(subject, camera, colorScene);
       if (shadow) {
         const depthScene = new THREE.Scene();
         // The normal pass leaves zero light counts, while the next draw still has shadows.
