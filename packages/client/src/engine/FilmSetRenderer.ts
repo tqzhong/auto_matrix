@@ -721,16 +721,26 @@ export class FilmSetRenderer {
         const material = this.officeTowerDepth ??= new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.BackSide });
         // Match the shared depth material after the skinned cast has used it.
         prepareSkinnedMaterial(material);
-        shadow = new THREE.InstancedMesh(shadowGeometry, material, 0);
+        shadow = new THREE.Group().add(new THREE.InstancedMesh(shadowGeometry, material, 0), new THREE.Mesh(shadowGeometry, material));
+        // The floor has rigid casters, and Neo's head and clothes have their own skin/morph layouts.
+        actor?.traverseVisible(object => {
+          if (object instanceof THREE.SkinnedMesh && object.castShadow && !object.customDepthMaterial)
+            shadow!.add(new THREE.SkinnedMesh(object.geometry, material));
+        });
         const limb = streetCaster?.getObjectByProperty('type', 'SkinnedMesh');
         if (limb instanceof THREE.SkinnedMesh) {
           // The restored street cast has both rigid and skinned double-sided clothing.
           const depth = this.officeStreetDepth ??= new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
           prepareSkinnedMaterial(depth);
-          shadow = new THREE.Group().add(shadow, new THREE.SkinnedMesh(limb.geometry, depth), new THREE.Mesh(limb.geometry, depth));
+          shadow.add(new THREE.SkinnedMesh(limb.geometry, depth), new THREE.Mesh(limb.geometry, depth));
         }
       }
       lighting.compileSubject(renderer, eye, subject, prepared.renderer.root, shadow, 'isolated');
+      if (shadow) {
+        // The shaft opens onto the street light layout before the office lights attach.
+        lighting.minimumPointSlots = liftSlots;
+        lighting.compileSubject(renderer, camera, new THREE.Group(), undefined, shadow, 'isolated');
+      }
       // Unlit materials do not reselect on light changes. The live draw must
       // return to its cached street variant while the arrival program links.
       subject.traverse(object => {

@@ -177,12 +177,20 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   const unlit = new THREE.MeshBasicMaterial(), lit = new THREE.MeshStandardMaterial();
   const mixed = new THREE.Mesh(new THREE.BoxGeometry(), [unlit, lit]); neo.add(mixed);
   t.after(() => { mixed.geometry.dispose(); unlit.dispose(); lit.dispose(); });
+  const headGeometry = new THREE.BoxGeometry(), trousersGeometry = new THREE.BoxGeometry(), skinSurface = new THREE.MeshStandardMaterial();
+  headGeometry.morphAttributes.position = [headGeometry.attributes.position.clone()];
+  const head = new THREE.SkinnedMesh(headGeometry, skinSurface), trousers = new THREE.SkinnedMesh(trousersGeometry, skinSurface);
+  head.castShadow = trousers.castShadow = true;
+  const hiddenSkin = new THREE.SkinnedMesh(trousersGeometry, skinSurface); hiddenSkin.castShadow = true; hiddenSkin.visible = false;
+  neo.add(head, trousers, hiddenSkin);
+  t.after(() => { headGeometry.dispose(); trousersGeometry.dispose(); skinSurface.dispose(); });
   const versionsBefore = [unlit.version, lit.version, marker.material.version, sign.material.version];
   const manager = new THREE.Group(), managerParent = new THREE.Group();
   managerParent.visible = false; managerParent.add(manager); scene.add(managerParent);
   let managerLoaded = false;
   let neoCompiles = 0, cityCompiles = 0, cleanerCompiles = 0, managerCompiles = 0;
   const shadowCompiles: { points: number; spots: number }[] = [];
+  const depthPrograms = new Set<string>();
   let ready = false;
   const uniformQueries: string[] = [];
   const uniformChecks: boolean[] = [];
@@ -205,7 +213,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
     setRenderTarget: (next: typeof target) => { target = next; },
     compile: (root: THREE.Object3D, eye: THREE.Camera, litScene: THREE.Scene) => {
       assert.ok(target);
-      assert.equal(eye.position.y, 70);
+      assert.equal(eye.position.y, eye === camera ? position.y + 4 : 70);
       let points = 0, spots = 0, casters = 0;
       for (const group of root === neo ? [litScene] : [root, litScene]) group.traverseVisible(object => {
         if (object instanceof THREE.PointLight) points++;
@@ -216,12 +224,20 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
       root.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshDepthMaterial) depths.push(object); });
       if (depths.length) {
         assert.equal(root.parent, null);
-        assert.equal(depths.length, 3, 'prepare the tower and both double-sided street depth variants');
-        const [tower, skinned, rigid] = depths;
+        assert.equal(depths.length, 6, 'prepare the tower, rigid office, actual skinned actor and both street depth variants');
+        const [tower, fixed, face, pants, skinned, rigid] = depths;
         assert.ok(tower instanceof THREE.InstancedMesh);
         assert.equal(tower.geometry, street.geometry);
         assert.equal(tower.count, 0, 'preparation must not draw a second city');
         assert.equal(tower.material.side, THREE.BackSide);
+        assert.ok(!(fixed instanceof THREE.InstancedMesh) && !(fixed instanceof THREE.SkinnedMesh));
+        assert.equal(fixed.geometry, street.geometry);
+        assert.equal(fixed.material, tower.material);
+        assert.ok(face instanceof THREE.SkinnedMesh && pants instanceof THREE.SkinnedMesh);
+        assert.equal(face.geometry, headGeometry); assert.equal(pants.geometry, trousersGeometry);
+        assert.deepEqual(face.morphTargetInfluences, head.morphTargetInfluences, 'prepare the authored head morph layout');
+        assert.equal(face.material, tower.material); assert.equal(pants.material, tower.material);
+        assert.equal(head.parent, neo); assert.equal(trousers.parent, neo);
         assert.ok(skinned instanceof THREE.SkinnedMesh);
         assert.ok(!(rigid instanceof THREE.SkinnedMesh));
         assert.equal(skinned.geometry, limb.geometry);
@@ -234,12 +250,16 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
         assert.equal(litScene.fog, null);
         assert.ok(casters > 0, 'both variants are used while shadows are enabled');
         shadowCompiles.push({ points, spots });
-        const light = points === 0 ? 'zero-light' : 'office';
-        programs.push(...['depth', 'street skin', 'street depth'].map(key => program(`${light} ${key}`)));
+        const light = points === 0 ? 'zero-light' : points === 4 ? 'street' : 'office';
+        for (const key of ['depth', 'fixed depth', 'face depth', 'pants depth', 'street skin', 'street depth']) {
+          const name = `${light} ${key}`;
+          if (!depthPrograms.has(name)) { programs.push(program(name)); depthPrograms.add(name); }
+        }
         return;
       }
       assert.notEqual(litScene, scene, 'office preparation must leave the live street light state for the next shadow pass');
       assert.equal(litScene.environment, environment); assert.equal(litScene.fog, scene.fog);
+      if (root !== manager && root.children.length === 0 && root.traverse === THREE.Object3D.prototype.traverse) return;
       const objects: THREE.Object3D[] = [];
       litScene.traverseVisible(object => objects.push(object));
       const officeWindow = objects.find(object => object.name === 'office-window-glass');
@@ -296,7 +316,7 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   assert.equal(windows.length, 1);
   assert.equal(neoCompiles, 1);
   assert.equal(cityCompiles, 1);
-  assert.deepEqual(shadowCompiles, [{ points: 0, spots: 0 }, { points: 6, spots: 5 }]);
+  assert.deepEqual(shadowCompiles, [{ points: 0, spots: 0 }, { points: 6, spots: 5 }, { points: 0, spots: 0 }, { points: 4, spots: 1 }]);
   assert.ok(unlit.version > versionsBefore[0], 'unlit actor materials must reselect the live program after arrival preparation');
   assert.equal(lit.version, versionsBefore[1], 'lit materials already reselect on light-state changes');
   assert.ok(marker.material.version > versionsBefore[2], 'the live marker must reselect its street program');
@@ -311,9 +331,9 @@ test('the occupied lift prepares the hidden office, city, cleaners and manager w
   assert.equal(prepare(), true);
   assert.deepEqual(uniformQueries, ['glass', 'carpet'], 'a released program is skipped');
   assert.deepEqual(uniformChecks, [false, true], 'failed links keep the normal error reporting');
-  for (const location of ['zero-light depth', 'zero-light street skin', 'zero-light street depth', 'office depth', 'office street skin', 'office street depth']) {
+  for (const light of ['zero-light', 'office', 'street']) for (const key of ['depth', 'fixed depth', 'face depth', 'pants depth', 'street skin', 'street depth']) {
     assert.equal(prepare(), true);
-    assert.equal(uniformQueries.at(-1), location, 'cache the locations of one ready shadow program per frame');
+    assert.equal(uniformQueries.at(-1), `${light} ${key}`, 'cache the locations of one ready shadow program per frame');
   }
   assert.equal(prepare(), false, 'the idle preparation slot can upload one actor texture');
   const skin = new THREE.Texture({ width: 2048, height: 2048 }); skin.needsUpdate = true;
