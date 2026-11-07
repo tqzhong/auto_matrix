@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 
-// Keep the same shader slots without evaluating attenuation and shading for zero-energy point lights.
+// Keep the same slots; skip unlit slots and shading once distance attenuation removes all energy.
 THREE.ShaderChunk.lights_fragment_begin = THREE.ShaderChunk.lights_fragment_begin.replace(
   /(pointLight = pointLights\[ i \];)(\s+getPointLightInfo\([\s\S]*?)(\n\t}\n\t#pragma unroll_loop_end)/,
-  '$1\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {$2\n\t\t}$3',
+  (_match, assignment, body: string, end) => assignment + '\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {'
+    + body.replace(/(\t\t)(RE_Direct\([^;]+;)/, '$1if ( directLight.visible ) {\n$1\t$2\n$1}') + '\n\t\t}' + end,
 );
 
 export const POINT_SLOT_FLOOR = 4;

@@ -8,7 +8,7 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-test('zero-energy point slots skip the light body without changing the compiled layout', () => {
+test('zero-energy point slots and fully attenuated fragments skip shading without changing the compiled layout', () => {
   const assignment = 'pointLight = pointLights[ i ];';
   const start = lightFragmentSource.indexOf(assignment) + assignment.length;
   const end = lightFragmentSource.indexOf('\n\t}\n\t#pragma unroll_loop_end', start);
@@ -16,10 +16,13 @@ test('zero-energy point slots skip the light body without changing the compiled 
   const before = lightFragmentSource.slice(0, start);
   const body = lightFragmentSource.slice(start, end);
   const after = lightFragmentSource.slice(end);
-  const expected = before + '\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {' + body + '\n\t\t}' + after;
+  const shade = 'RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );';
+  assert.ok(body.includes(shade));
+  const expected = before + '\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {'
+    + body.replace(shade, 'if ( directLight.visible ) { ' + shade + ' }') + '\n\t\t}' + after;
   const normalize = (source: string) => source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '').replace(/\s+/g, '');
   assert.ok(normalize(THREE.ShaderChunk.lights_fragment_begin) === normalize(expected),
-    'guard the point-light attenuation, shadow and shading while preserving every light slot and the active formulas');
+    'guard zero-energy slots and fully attenuated shading while preserving every light slot, shadow and active formula');
 });
 
 function view() {
