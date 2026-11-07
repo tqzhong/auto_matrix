@@ -912,6 +912,7 @@ test('the office stages the manager and nearby street cast textures one at a tim
   prepare(); assert.deepEqual(calls, [skin, hair, coat, 'compile']);
   image.complete = true;
   manager.visible = false;
+  assert.equal(prepare(), false, 'the street approach must leave unsupported full uploads to the normal draw');
   prepare(false);
   assert.equal(calls.at(-1), cutout, 'the first cutout upload takes an empty lift frame even if the manager is absent');
   prepare(false);
@@ -970,8 +971,17 @@ test('the office publishes shared cast textures only after the last strip and re
     hero.add(new THREE.Mesh(undefined, new THREE.MeshStandardMaterial({ map: texture })));
     return texture;
   });
-  t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : null);
-  t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : undefined);
+  const pedestrian = new THREE.Group(), streetDetail = new THREE.Group(), streetHero = new THREE.Group();
+  scene.add(pedestrian); pedestrian.add(streetDetail); streetDetail.add(streetHero);
+  streetDetail.visible = false;
+  const streetMaps = ['Red_dress_anatomy', 'Red_dress_hair'].map(name => {
+    const texture = new THREE.Texture(new Bitmap()); texture.flipY = false; texture.needsUpdate = true;
+    const mesh = new THREE.SkinnedMesh(undefined, new THREE.MeshStandardMaterial({ map: texture })); mesh.name = name;
+    streetHero.add(mesh);
+    return texture;
+  });
+  t.mock.method(agents, 'getAgent', (id: string) => id === 'rhineheart' ? manager : id === 'citizen_2' ? pedestrian : null);
+  t.mock.method(agents, 'getAgentHero', (id: string) => id === 'rhineheart' ? hero : id === 'citizen_2' ? streetHero : undefined);
 
   type Backing = { image: Bitmap; rows: number; mipmaps: boolean };
   const bySource = new Map<THREE.Source, Backing>();
@@ -1041,4 +1051,27 @@ test('the office publishes shared cast textures only after the last strip and re
   assert.equal(prepare(), true, 'a return to the office can prepare the cancelled texture again');
   assert.equal(allocations.at(-1)?.backing.rows, 256);
   assert.equal(bound, undefined); assert.equal(unpackRow, 0);
+
+  agents.cancelOfficeCastTexture();
+  manager.visible = false;
+  pedestrian.position.z = 131;
+  const approach = () => agents.prepareOfficeCast(renderer, camera, lighting, 'approach');
+  assert.equal(approach(), false, 'the preload range must stay bounded');
+  pedestrian.position.z = 120;
+  manager.visible = true;
+  for (const texture of streetMaps) {
+    const firstAllocation = allocations.length, source = texture.source;
+    for (let rows = 256; rows <= 2048; rows += 256) {
+      assert.equal(approach(), true, 'prepare the street actor while it still draws the distant model');
+      assert.equal(allocations.length, firstAllocation + 1);
+      const backing = allocations[firstAllocation].backing;
+      assert.equal(backing.image, texture.image, 'street color maps take priority before the first approach draw');
+      assert.equal(backing.rows, rows, 'submit exactly one strip per frame');
+      if (rows < 2048) { assert.equal(texture.source, source); assert.equal(gpu.has(texture), false); }
+      else assert.equal(gpu.get(texture)?.__webglTexture, backing);
+    }
+  }
+  assert.equal(streetDetail.visible, false);
+  assert.equal(approach(), true, 'continue the existing manager preparation after the street maps');
+  assert.equal(allocations.at(-1)?.backing.image, hair.image);
 });

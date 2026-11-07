@@ -297,27 +297,31 @@ export class AgentRenderer {
   }
   prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
     if (this.continueOfficeTexture(renderer)) return true;
-    if (stage !== 'ledge' && this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
-    if (stage !== 'lift' && stage !== 'ledge') return false;
-    // The nearby street cast can enter the office's shadow map before its first color draw.
+    if (stage === 'floor') return this.prepareOfficeManager(renderer, camera, lighting, stage);
+    if (stage === 'lift' && this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
+    // The street approach prepares the pedestrian's color maps before the detailed model draws.
     const hero = this.getNearbyOfficeActor('citizen_2', camera), hair = hero?.getObjectByName('Red_dress_hair');
     const textures: (THREE.Texture | null)[] = [];
-    if (stage === 'ledge') {
+    if (stage !== 'lift') {
       const body = hero?.getObjectByName('Red_dress_anatomy');
       if (body instanceof THREE.SkinnedMesh && body.visible && body.material instanceof THREE.MeshStandardMaterial)
         textures.push(body.material.map);
     }
-    if (hair instanceof THREE.SkinnedMesh && hair.visible && hair.castShadow && hair.material instanceof THREE.MeshStandardMaterial) {
+    if (hair instanceof THREE.SkinnedMesh && hair.visible && hair.material instanceof THREE.MeshStandardMaterial) {
       const { material } = hair;
-      if (material.alphaTest || material.alphaHash || material.alphaToCoverage) textures.push(material.map, material.alphaMap);
+      if (stage === 'approach' || (hair.castShadow && (material.alphaTest || material.alphaHash || material.alphaToCoverage)))
+        textures.push(material.map, material.alphaMap);
     }
     for (const texture of textures) {
       const image = texture?.image as { complete?: boolean } | null | undefined;
       if (!texture?.version || !image || image.complete === false) continue;
-      const uploaded = renderer.properties.get(texture) as { __version?: number };
-      if (uploaded.__version !== texture.version) { this.prepareOfficeTexture(renderer, texture); return true; }
+      const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
+      if (uploaded.__version === texture.version) continue;
+      if (stage === 'approach' && (uploaded.__webglTexture || !bitmapUploadImage(renderer, texture))) continue;
+      this.prepareOfficeTexture(renderer, texture);
+      return true;
     }
-    return false;
+    return stage === 'approach' && this.prepareOfficeManager(renderer, camera, lighting, stage);
   }
   private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: Exclude<OfficeCastStage, 'ledge'>): boolean {
     const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
