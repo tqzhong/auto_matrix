@@ -13,7 +13,7 @@ import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/shared';
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
-import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type FilmJourney } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -35,10 +35,11 @@ export function savedMatrixEscapeIdle(journey: FilmJourney, action: AgentState['
   return Boolean(journey.matrixEscape && !journey.visiting && action?.type === 'idle' && action.parameters.matrixEscape);
 }
 
-export function savedMirrorIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
-  return Boolean(journey.scene === 'm1_mirror' && !journey.visiting && journey.awakening?.kind === 'mirror'
+export function savedAwakeningIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
+  return Boolean(awakeningLocked(journey)
     && action?.type === 'idle' && action.parameters.player === true && action.parameters.resolved === true
-    && action.parameters.filmPose === 'touch' && action.parameters.mirrorBeat === mirrorTime(journey.awakening));
+    && action.parameters.filmPose === awakeningPose(journey.awakening).pose
+    && (journey.awakening?.kind !== 'mirror' || action.parameters.mirrorBeat === mirrorTime(journey.awakening)));
 }
 
 export function savedOfficeCustodyAction(journey: FilmJourney | undefined, agent: AgentState): boolean {
@@ -195,7 +196,7 @@ export class PlayerController {
       && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
-      || savedMirrorIdle(interlude, agent.currentAction)
+      || savedAwakeningIdle(interlude, agent.currentAction)
       || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
       || savedMatrixEscapeIdle(interlude, agent.currentAction)))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
@@ -298,7 +299,7 @@ export class PlayerController {
         && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
-        || savedMirrorIdle(journey, agent.currentAction)
+        || savedAwakeningIdle(journey, agent.currentAction)
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
         || savedMatrixEscapeIdle(journey, agent.currentAction)))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };

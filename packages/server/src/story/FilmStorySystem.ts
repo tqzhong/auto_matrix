@@ -4541,7 +4541,8 @@ export class FilmStorySystem {
       const index = this.sandbox().structures.findIndex(item => item.id === doorId);
       if (index < 0) this.sandbox().structures.push(door); else this.sandbox().structures[index] = door;
     }
-    const savedMirrorActions = dt === 0 && beat?.kind === 'mirror' ? [agent.currentAction, trinity?.currentAction] : undefined;
+    const savedActions = dt === 0 ? [agent, trinity, morpheus, ...bedside.map(id => this.world.agents.get(id))]
+      .filter((actor): actor is AgentState => Boolean(actor)).map(actor => ({ actor, action: actor.currentAction })) : undefined;
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
     agent.rotation = pose.yaw ?? (beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).yaw : beat?.kind === 'core' ? CABIN.chair.yaw
@@ -4558,10 +4559,6 @@ export class FilmStorySystem {
       reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'mirror' && trinity && !trinity.controller)
       trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: mirrorTime(beat) }, startedAt: tick, duration: 1, progress: 0 };
-    if (savedMirrorActions) for (const [index, actor] of [agent, trinity].entries()) {
-      const action = savedMirrorActions[index];
-      if (actor && action?.type === 'idle' && JSON.stringify(action.parameters) === JSON.stringify(actor.currentAction?.parameters)) actor.currentAction = action;
-    }
     if (beat?.kind === 'rescue') for (const role of ['morpheus', 'trinity'] as const) {
       const crew = this.world.agents.get(role); if (!crew || crew.controller) continue;
       const gesture = { elapsed: beat.elapsed, role, ...(beat.kind === 'rescue' ? { boarding: true } : {}) };
@@ -4591,6 +4588,10 @@ export class FilmStorySystem {
       morpheus.currentLocation = this.scene!.set; morpheus.isInMatrix = FILM_SETS[this.scene!.set].world === 'matrix';
       morpheus.currentAction = { type: 'idle', parameters: { resolved: true, filmPose: pose.pose, seated: true,
         reveal: { kind: beat.kind, elapsed: beat.elapsed, role: 'morpheus' } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+    if (savedActions) for (const { actor, action } of savedActions) {
+      if (actor.currentAction && action?.type === actor.currentAction.type
+        && JSON.stringify(action.parameters) === JSON.stringify(actor.currentAction.parameters)) actor.currentAction = action;
     }
     state.lastText = occupied ? `${beat?.kind === 'rescue' ? '救援' : '恢复'}暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
       : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
