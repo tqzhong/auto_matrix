@@ -261,6 +261,7 @@ export class FilmSetRenderer {
   private mountain?: MountainSetRenderer;
   private preparedMountain?: { root: THREE.Group; renderer: MountainSetRenderer; colors?: CastColorPreparation };
   private training?: TrainingSetRenderer;
+  private preparedDojo?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private currentScene?: string;
   private dockApuApproach = false;
   private mirror?: Reflector;
@@ -365,6 +366,7 @@ export class FilmSetRenderer {
   get active(): FilmSet | undefined { return this.current; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
+    if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
   }
@@ -503,6 +505,36 @@ export class FilmSetRenderer {
     for (const id of ['neo', 'trinity', 'morpheus', 'tank', 'dozer']) {
       const group = actor(id); if (!group || colors.actors.has(group)) continue;
       const meshes = this.colorMeshes([group]); if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
+      || journey.training?.kind !== 'download' || !journey.training.started || journey.training.elapsed < .5) {
+      this.cancelDojoPreparation(); return;
+    }
+    if (!this.preparedDojo) {
+      const root = new THREE.Group(); this.preparedDojo = { root, renderer: new TrainingSetRenderer(root, 'm1_dojo') };
+    }
+    const prepared = this.preparedDojo;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
+      // The dojo owns the shadow sun; keep the world's two colour-light slots.
+      for (const light of prepared.colors.scene.children) if (light instanceof THREE.DirectionalLight) light.castShadow = false;
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'morpheus']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group]);
+      group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.userData.dojoCostume && object.material instanceof THREE.MeshStandardMaterial && !meshes.includes(object)) meshes.push(object);
+      });
+      if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
@@ -1284,6 +1316,8 @@ export class FilmSetRenderer {
       if (preparedOneDeck) this.preparedOneDeck = undefined;
       const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === 'm1_truth_return' && !journey?.visiting ? this.preparedTruthReturn : undefined;
       if (preparedTruthReturn) { this.preparedTruthReturn = undefined; preparedTruthReturn.lighting?.dispose(); preparedTruthReturn.root.removeFromParent(); }
+      const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
+      if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -1394,7 +1428,10 @@ export class FilmSetRenderer {
         else if (set.id === 'film_smith_avenue') this.smithFinale = new SmithFinaleRenderer(this.root);
         else if (set.id === 'film_sunrise_garden') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
         else if (sceneId === 'm3_reset' && set.id === 'film_escape_streets') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'reset');
-        else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) this.training = new TrainingSetRenderer(this.root, sceneId!);
+        else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) {
+          this.training = preparedDojo?.renderer ?? new TrainingSetRenderer(this.root, sceneId!);
+          if (preparedDojo) this.root.add(preparedDojo.root);
+        }
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') {
@@ -3888,6 +3925,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedTruthReturn; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedTruthReturn = undefined;
   }
+  private cancelDojoPreparation(): void {
+    const prepared = this.preparedDojo; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedDojo = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -3921,6 +3962,7 @@ export class FilmSetRenderer {
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();
     this.cancelTruthReturnPreparation();
+    this.cancelDojoPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();
