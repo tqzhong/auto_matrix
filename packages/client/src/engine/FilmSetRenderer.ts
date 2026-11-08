@@ -378,6 +378,8 @@ export class FilmSetRenderer {
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
     if (this.ambush) return AMBUSH_POINT_SLOTS;
+    // The screen, three loadouts and objective share one layout throughout the reveal.
+    if (this.current?.id === 'film_white_construct' && this.currentScene === 'm1_guns') return 5;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
