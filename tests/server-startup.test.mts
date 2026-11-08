@@ -738,18 +738,21 @@ test('a paused moving cabin guide keeps his saved walk across startup and reconn
   client.socket.disconnect(); await server.stop();
 });
 
-test('a paused Construct arrival keeps the moving guide across startup and reconnect', { timeout: 15000 }, async t => {
+test('a paused Construct arrival keeps both performers action clocks across startup and reconnect', { timeout: 15000 }, async t => {
   const f = await fixture(t, 'm1_construct'), journey = f.checkpoint.sandbox.neoLife.journey;
   const set = FILM_SCENE_BY_ID.m1_construct.set, { neo, morpheus } = f.checkpoint.agents;
   const arrival = { phase: 'image' as const, elapsed: 3.4 };
   f.checkpoint.simulation = { running: false, speed: 1 };
   journey.constructArrival = arrival;
   neo.position = filmPosition(set, CONSTRUCT.arrival.x, CONSTRUCT.arrival.z);
+  neo.rotation = CONSTRUCT.arrival.yaw; neo.velocity = { x: 0, y: 0, z: 0 };
+  neo.currentAction = { type: 'idle', parameters: { player: true, resolved: true, seated: false, construct: { ...arrival, role: 'neo' } },
+    startedAt: 1300, duration: 1, progress: .37 };
   const root = constructGuidePose(arrival.elapsed), previous = constructGuidePose(arrival.elapsed - .05);
   morpheus.position = filmPosition(set, root.x, root.z); morpheus.rotation = root.yaw;
   morpheus.velocity = { x: (root.x - previous.x) / .05, y: 0, z: (root.z - previous.z) / .05 };
   morpheus.currentAction = { type: 'move_to', parameters: { resolved: true, construct: { ...arrival, role: 'morpheus' }, seated: false },
-    startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+    startedAt: 1301, duration: 1, progress: .64 };
   await writeFile(f.file, JSON.stringify(f.checkpoint));
   const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING');
   const client = await controls(t, server);
@@ -759,6 +762,7 @@ test('a paused Construct arrival keeps the moving guide across startup and recon
     assert.deepEqual(guide.position, morpheus.position);
     assert.deepEqual(guide.velocity, morpheus.velocity);
     assert.deepEqual(guide.currentAction, morpheus.currentAction);
+    assert.deepEqual(state.agents.neo.currentAction, neo.currentAction);
     assert.equal(state.simulation!.tick, f.checkpoint.tick);
   };
   check(await client.world());

@@ -13,7 +13,7 @@ import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/shared';
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
-import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type ConstructGesture, type FilmJourney } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -36,10 +36,13 @@ export function savedMatrixEscapeIdle(journey: FilmJourney, action: AgentState['
 }
 
 export function savedAwakeningIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
+  const construct = action?.parameters.construct as ConstructGesture | undefined;
   return Boolean(awakeningLocked(journey)
     && action?.type === 'idle' && action.parameters.player === true && action.parameters.resolved === true
-    && action.parameters.filmPose === awakeningPose(journey.awakening).pose
-    && (journey.awakening?.kind !== 'mirror' || action.parameters.mirrorBeat === mirrorTime(journey.awakening)));
+    && (journey.scene === 'm1_construct' && journey.constructArrival
+      ? construct?.role === 'neo' && construct.phase === journey.constructArrival.phase && construct.elapsed === journey.constructArrival.elapsed
+      : action.parameters.filmPose === awakeningPose(journey.awakening).pose
+        && (journey.awakening?.kind !== 'mirror' || action.parameters.mirrorBeat === mirrorTime(journey.awakening))));
 }
 
 export function savedOfficeCustodyAction(journey: FilmJourney | undefined, agent: AgentState): boolean {

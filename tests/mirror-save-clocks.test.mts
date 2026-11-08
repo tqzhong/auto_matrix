@@ -96,3 +96,28 @@ test('awakening clock preservation does not retain an unrelated player action or
   const daily = fixture(5.57, 'disconnect'); delete daily.sandbox.state.neoLife!.journey;
   daily.players.release('mirror-player', 1451); assert.equal(daily.neo.currentAction, null);
 });
+
+test('Construct arrival and residual-image actions retain saved metadata across paused reconnects', () => {
+  for (const [phase, elapsed] of [['ready', 0], ['image', 3.2]] as const) {
+    const h = fixture(0, 'construct'), state = h.sandbox.life.film.state!;
+    delete state.awakening; state.constructArrival = { phase, elapsed }; h.sandbox.life.film.awakeningFrame(h.neo, 0, 1400);
+    for (const [index, actor] of h.performers.entries()) { actor.currentAction!.startedAt = 1300 + index; actor.currentAction!.progress = index ? 1 : .37; }
+    const before = h.actions(), saved = structuredClone(h.sandbox.state);
+    h.players.release('mirror-player', 1451); assert.deepEqual(h.actions(), before, phase + ': release preserves both actions');
+    h.sandbox.restore(saved); h.players.possess('mirror-player', 'neo', 1452); h.players.step(0, false, 1453);
+    assert.deepEqual(h.actions(), before, phase + ': cold re-entry preserves both actions');
+    if (phase === 'ready') h.players.sandboxAction('mirror-player', { kind: 'life', target: 'film:act' }, 1454);
+    else h.sandbox.life.film.awakeningFrame(h.neo, .1, 1454);
+    assert.equal(h.sandbox.life.film.state!.constructArrival!.phase, 'image');
+    assert.ok(h.actions().every(action => action?.startedAt === 1454 && action.progress === 0), 'a new phase or live frame still creates current actions');
+  }
+});
+
+test('Construct arrival rebuilds missing, stale and wrong-role player gestures', () => {
+  const h = fixture(0, 'construct'), state = h.sandbox.life.film.state!; delete state.awakening; state.constructArrival = { phase: 'image', elapsed: 3.2 };
+  h.sandbox.life.film.awakeningFrame(h.neo, 0, 1400); const expected = structuredClone(h.neo.currentAction!.parameters);
+  for (const gesture of [undefined, { role: 'morpheus', phase: 'image', elapsed: 3.2 }, { role: 'neo', phase: 'ready', elapsed: 0 }]) {
+    if (gesture) h.neo.currentAction!.parameters = { player: true, resolved: true, seated: false, construct: gesture }; else h.neo.currentAction = null;
+    h.sandbox.life.film.awakeningFrame(h.neo, 0, 1450); assert.deepEqual(h.neo.currentAction?.parameters, expected); assert.equal(h.neo.currentAction?.startedAt, 1450);
+  }
+});

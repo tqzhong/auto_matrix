@@ -4493,10 +4493,13 @@ export class FilmStorySystem {
           construct: { ...arrival, role: 'morpheus' }, seated: root.seated > 0 }, startedAt: tick, duration: 1, progress: 0 };
       }
       if (arrival.phase !== 'approach') {
+        const savedAction = dt === 0 ? agent.currentAction : undefined;
         agent.position = filmPosition('film_white_construct', CONSTRUCT.arrival.x, CONSTRUCT.arrival.z); agent.rotation = CONSTRUCT.arrival.yaw;
         agent.velocity = { x: 0, y: 0, z: 0 };
         agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, seated: false,
           construct: { ...arrival, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
+        if (savedAction?.type === agent.currentAction.type && JSON.stringify(savedAction.parameters) === JSON.stringify(agent.currentAction.parameters))
+          agent.currentAction = savedAction;
       }
       state.lastText = guide.controller ? 'Morpheus 正由另一位玩家控制。观察与引路进度会保留。' : constructArrivalText(arrival);
       return arrival.phase !== 'approach';
