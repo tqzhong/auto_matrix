@@ -307,7 +307,7 @@ export class FilmSetRenderer {
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
-  private preparedGovernment?: { root: THREE.Group; renderer: GovernmentSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_helicopter'; root: THREE.Group; renderer: GovernmentSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedSubway?: { renderer: MatrixEscapeRenderer; colors?: ColorPreparation };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation };
@@ -543,26 +543,34 @@ export class FilmSetRenderer {
   }
   prepareGovernment(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
-    if (this.current?.id !== 'film_government_lobby' || journey?.scene !== 'm1_lobby' || journey.visiting || journey.lobby?.phase !== 'cleared') {
+    const questioning = this.current?.id === 'film_government_lobby' && journey?.scene === 'm1_lobby' && journey.lobby?.phase === 'cleared';
+    const helicopter = this.current?.id === 'film_government_roof' && journey?.scene === 'm1_bullet_dodge'
+      && ['download_ready', 'downloading', 'done'].includes(journey.government?.phase ?? '');
+    if (!journey || journey.visiting || !questioning && !helicopter) {
       this.cancelGovernmentPreparation(); return;
     }
-    if (!this.preparedGovernment) {
+    const scene = helicopter ? 'm1_helicopter' : 'm1_smith_question';
+    if (this.preparedGovernment?.scene !== scene) {
+      this.cancelGovernmentPreparation();
       const root = new THREE.Group();
-      this.preparedGovernment = { root, renderer: new GovernmentSetRenderer(root, 'film_government_office') };
+      const office = new GovernmentSetRenderer(root, 'film_government_office');
+      if (helicopter) office.update({ ...journey, scene, airRescue: { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0, suppression: 0, bursts: 0 } }, 0);
+      this.preparedGovernment = { scene, root, renderer: office };
     }
     const prepared = this.preparedGovernment;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
-      // The questioning entrance has no objective light, even while the lobby elevator does.
+      // Both entrances hide the objective light, unlike the preceding elevator or cockpit.
       for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.intensity = 0;
       prepared.colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(prepared.colors.scene);
+      prepared.lighting.stablePointSlots = helicopter;
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
-    for (const id of ['morpheus', ...FILM_SCENE_BY_ID.m1_smith_question.cast]) {
+    for (const id of [helicopter ? 'neo' : 'morpheus', ...FILM_SCENE_BY_ID[scene].cast]) {
       for (const group of [body(id), hero(id)]) {
         if (!group || colors.actors.has(group)) continue;
         const collected: ColorMesh[] = [];
@@ -1683,7 +1691,7 @@ export class FilmSetRenderer {
       if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
       if (preparedLobby) { this.preparedLobby = undefined; preparedLobby.lighting?.dispose(); preparedLobby.root.removeFromParent(); }
-      const preparedGovernment = set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && !journey?.visiting ? this.preparedGovernment : undefined;
+      const preparedGovernment = set?.id === 'film_government_office' && sceneId === this.preparedGovernment?.scene && !journey?.visiting ? this.preparedGovernment : undefined;
       if (preparedGovernment) { this.preparedGovernment = undefined; preparedGovernment.lighting?.dispose(); preparedGovernment.root.removeFromParent(); }
       const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
       if (preparedSubway) this.preparedSubway = undefined;
