@@ -265,6 +265,7 @@ export class FilmSetRenderer {
   private preparedJump?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedRedDress?: { root: THREE.Group; renderer: TrainingSetRenderer; assetsReady: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedSentinel?: { root: THREE.Group; renderer: SentinelSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedConsole?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private currentScene?: string;
   private dockApuApproach = false;
   private mirror?: Reflector;
@@ -373,6 +374,8 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
+    // Keep the console lamp and objective slots when turning toward Cypher.
+    if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
   }
@@ -642,6 +645,38 @@ export class FilmSetRenderer {
       group.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
           && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareConsole(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    if (this.current?.id !== 'film_service_tunnels' || this.currentScene !== 'm1_sentinels' || journey?.scene !== 'm1_sentinels' || journey.visiting
+      || !['clear', 'verify', 'confirming', 'done'].includes(journey.sentinel?.phase ?? '') || journey.sentinel?.phase === 'clear' && journey.sentinel.elapsed < .5) {
+      this.cancelConsolePreparation(); return;
+    }
+    if (!this.preparedConsole) {
+      const root = new THREE.Group(), deck = new NebDeckRenderer(root);
+      deck.update({ ...journey, scene: 'm1_cypher_console', interlude: { kind: 'console', phase: 'ready', elapsed: 0 } }, 0);
+      this.preparedConsole = { root, deck };
+    }
+    const prepared = this.preparedConsole;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'cypher', 'apoc', 'switch']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group]);
+      group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+          && (object.userData.logosCostume || object.userData.hammerBriefingCostume || object.userData.cypherCostume) && !meshes.includes(object)) meshes.push(object);
       });
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
@@ -1435,6 +1470,8 @@ export class FilmSetRenderer {
       if (preparedRedDress) { this.preparedRedDress = undefined; preparedRedDress.lighting?.dispose(); preparedRedDress.root.removeFromParent(); }
       const preparedSentinel = set?.id === 'film_service_tunnels' && sceneId === 'm1_sentinels' && !journey?.visiting ? this.preparedSentinel : undefined;
       if (preparedSentinel) { this.preparedSentinel = undefined; preparedSentinel.lighting?.dispose(); preparedSentinel.root.removeFromParent(); }
+      const preparedConsole = set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' && !journey?.visiting ? this.preparedConsole : undefined;
+      if (preparedConsole) { this.preparedConsole = undefined; preparedConsole.lighting?.dispose(); preparedConsole.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -1509,6 +1546,8 @@ export class FilmSetRenderer {
         else if (set.id === 'film_neb_deck') {
           if (preparedTruthReturn) {
             this.root.add(preparedTruthReturn.root); this.neb = preparedTruthReturn.deck;
+          } else if (preparedConsole) {
+            this.root.add(preparedConsole.root); this.neb = preparedConsole.deck;
           } else if (preparedOneDeck) {
             this.root.add(preparedOneDeck.root); this.neb = preparedOneDeck.deck; this.theOne = preparedOneDeck.overlay;
           } else if (keepCrosscut) {
@@ -4063,6 +4102,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedSentinel; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedSentinel = undefined;
   }
+  private cancelConsolePreparation(): void {
+    const prepared = this.preparedConsole; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedConsole = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -4100,6 +4143,7 @@ export class FilmSetRenderer {
     this.cancelJumpPreparation();
     this.cancelRedDressPreparation();
     this.cancelSentinelPreparation();
+    this.cancelConsolePreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();
