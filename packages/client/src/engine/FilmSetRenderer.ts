@@ -252,7 +252,7 @@ export class FilmSetRenderer {
   private pods?: PodSetRenderer;
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
-  private preparedTruthReturn?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedTruthReturn?: { scene: 'm1_truth_return' | 'm1_jump_return'; root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private sourceBriefing?: SourceBriefingRenderer;
   private primaryDemolition?: PrimaryDemolitionRenderer;
   private trinityTerminal?: TrinityTerminalRenderer;
@@ -263,6 +263,7 @@ export class FilmSetRenderer {
   private training?: TrainingSetRenderer;
   private preparedDojo?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedJump?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedRedDress?: { root: THREE.Group; renderer: TrainingSetRenderer; assetsReady: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private currentScene?: string;
   private dockApuApproach = false;
   private mirror?: Reflector;
@@ -369,6 +370,8 @@ export class FilmSetRenderer {
   get minimumPointSlots(): number {
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
+    if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
+    if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // The training jack and objective can overlap the fifteen deck fixtures.
     return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
   }
@@ -485,20 +488,26 @@ export class FilmSetRenderer {
     if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer'], actor);
   }
   prepareTruthReturn(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
-    if (this.current?.id !== 'film_white_construct' || this.currentScene !== 'm1_truth_exit' || journey?.scene !== 'm1_truth_exit' || journey.visiting) {
+    const truthReturn = this.current?.id === 'film_white_construct' && this.currentScene === 'm1_truth_exit' && journey?.scene === 'm1_truth_exit';
+    const jumpReturn = this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump' && journey?.scene === 'm1_jump'
+      && journey.training?.kind === 'jump_fall' && journey.training.elapsed >= .5;
+    if (!journey || journey.visiting || !truthReturn && !jumpReturn) {
       this.cancelTruthReturnPreparation(); return;
     }
+    const scene = jumpReturn ? 'm1_jump_return' : 'm1_truth_return';
+    if (this.preparedTruthReturn && this.preparedTruthReturn.scene !== scene) this.cancelTruthReturnPreparation();
     if (!this.preparedTruthReturn) {
       const root = new THREE.Group(), deck = new NebDeckRenderer(root);
-      deck.update({ ...journey, scene: 'm1_truth_return', truthRecovery: { phase: 'unplug', elapsed: 0 } }, 0);
-      this.preparedTruthReturn = { root, deck };
+      deck.update(jumpReturn ? { ...journey, scene, training: { kind: 'jump_return', elapsed: 0, started: false } }
+        : { ...journey, scene, truthRecovery: { phase: 'unplug', elapsed: 0 } }, 0);
+      this.preparedTruthReturn = { scene, root, deck };
     }
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     const prepared = this.preparedTruthReturn;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
-      prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      if (scene === 'm1_truth_return') prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       prepared.colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
       prepared.gpu = renderer.properties;
@@ -506,7 +515,12 @@ export class FilmSetRenderer {
     const colors = prepared.colors;
     for (const id of ['neo', 'trinity', 'morpheus', 'tank', 'dozer']) {
       const group = actor(id); if (!group || colors.actors.has(group)) continue;
-      const meshes = this.colorMeshes([group]); if (!meshes.length) continue;
+      const meshes = this.colorMeshes([group]);
+      if (jumpReturn) group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+          && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
+      });
+      if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
@@ -563,6 +577,37 @@ export class FilmSetRenderer {
       const meshes: ColorMesh[] = [];
       group.traverse(object => {
         // Ordinary clothes are hidden by the dojo outfit until the program changes.
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareRedDress(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_jump_return' || journey?.scene !== 'm1_jump_return' || journey.visiting
+      || journey.training?.kind !== 'jump_return' || !journey.training.started || journey.training.elapsed < .5) {
+      this.cancelRedDressPreparation(); return;
+    }
+    if (!this.preparedRedDress) {
+      const root = new THREE.Group(), prepared = { root, renderer: new TrainingSetRenderer(root, 'm1_red_dress'), assetsReady: false };
+      this.preparedRedDress = prepared;
+      void prepared.renderer.ready.then(() => { prepared.assetsReady = true; }, () => { prepared.assetsReady = true; });
+    }
+    const prepared = this.preparedRedDress;
+    if (!prepared.assetsReady || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
+      for (const light of prepared.colors.scene.children) if (light instanceof THREE.DirectionalLight) light.castShadow = false;
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'morpheus', 'mouse', 'citizen_1', 'citizen_2', 'smith']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes: ColorMesh[] = [];
+      group.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
       });
       if (!meshes.length) continue;
@@ -1347,12 +1392,14 @@ export class FilmSetRenderer {
       if (preparedSubway) this.preparedSubway = undefined;
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
       if (preparedOneDeck) this.preparedOneDeck = undefined;
-      const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === 'm1_truth_return' && !journey?.visiting ? this.preparedTruthReturn : undefined;
+      const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === this.preparedTruthReturn?.scene && !journey?.visiting ? this.preparedTruthReturn : undefined;
       if (preparedTruthReturn) { this.preparedTruthReturn = undefined; preparedTruthReturn.lighting?.dispose(); preparedTruthReturn.root.removeFromParent(); }
       const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
       if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const preparedJump = set?.id === 'film_jump_roofs' && sceneId === 'm1_jump' && !journey?.visiting ? this.preparedJump : undefined;
       if (preparedJump) { this.preparedJump = undefined; preparedJump.lighting?.dispose(); preparedJump.root.removeFromParent(); }
+      const preparedRedDress = set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' && !journey?.visiting ? this.preparedRedDress : undefined;
+      if (preparedRedDress) { this.preparedRedDress = undefined; preparedRedDress.lighting?.dispose(); preparedRedDress.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -1464,9 +1511,10 @@ export class FilmSetRenderer {
         else if (set.id === 'film_sunrise_garden') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'dawn');
         else if (sceneId === 'm3_reset' && set.id === 'film_escape_streets') this.trilogyEpilogue = new TrilogyEpilogueRenderer(this.root, 'reset');
         else if (['m1_dojo', 'm1_jump', 'm1_red_dress'].includes(sceneId ?? '')) {
-          this.training = preparedDojo?.renderer ?? preparedJump?.renderer ?? new TrainingSetRenderer(this.root, sceneId!);
+          this.training = preparedDojo?.renderer ?? preparedJump?.renderer ?? preparedRedDress?.renderer ?? new TrainingSetRenderer(this.root, sceneId!);
           if (preparedDojo) this.root.add(preparedDojo.root);
           if (preparedJump) this.root.add(preparedJump.root);
+          if (preparedRedDress) this.root.add(preparedRedDress.root);
         }
         else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
@@ -3969,6 +4017,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedJump; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedJump = undefined;
   }
+  private cancelRedDressPreparation(): void {
+    const prepared = this.preparedRedDress; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedRedDress = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -4004,6 +4056,7 @@ export class FilmSetRenderer {
     this.cancelTruthReturnPreparation();
     this.cancelDojoPreparation();
     this.cancelJumpPreparation();
+    this.cancelRedDressPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();

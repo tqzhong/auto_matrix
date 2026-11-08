@@ -7,6 +7,7 @@ import { batchStaticGeometry } from './StaticGeometry.js';
 /** Film-one training programs share a clean simulation language, but each
  * space has its own physical set and lighting rather than the generic atlas. */
 export class TrainingSetRenderer {
+  readonly ready: Promise<void>;
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -33,6 +34,7 @@ export class TrainingSetRenderer {
     if (sceneId === 'm1_dojo') this.dojo();
     else if (sceneId === 'm1_jump') this.rooftops();
     else this.plaza();
+    this.ready = this.pedestrians?.ready ?? Promise.resolve();
   }
 
   private material<T extends THREE.Material>(value: T): T { this.materials.add(value); return value; }
