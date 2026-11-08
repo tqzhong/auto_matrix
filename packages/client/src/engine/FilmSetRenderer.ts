@@ -242,6 +242,9 @@ export class FilmSetRenderer {
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[]; pointSlots: 8 | 4 | 16 };
   private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
+  private preparedLafayetteUpper?: ColorPreparation & {
+    gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; fourMeshes?: ColorMesh[];
+  };
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
@@ -621,7 +624,8 @@ export class FilmSetRenderer {
       }
     }
   }
-  private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting?: LightCulling): void {
+  private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting?: LightCulling,
+    colorState: 'live' | 'isolated' = 'live'): void {
     const programs = renderer.info.programs;
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
@@ -633,7 +637,7 @@ export class FilmSetRenderer {
     const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
     if (batch.length) {
       this.compileColorBatch(renderer, batch, subject => {
-        if (lighting) lighting.compileSubject(renderer, camera, subject);
+        if (lighting) lighting.compileSubject(renderer, camera, subject, undefined, undefined, colorState);
         else renderer.compile(subject, camera, prepared.scene);
       });
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
@@ -1107,6 +1111,38 @@ export class FilmSetRenderer {
     } finally {
       street.visible = true;
       hotel.updateLights(height - 1);
+    }
+  }
+  prepareLafayetteUpper(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
+    height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
+    if (!this.hotel || this.current?.id !== 'film_lafayette' || journey.scene !== 'm1_pills' || journey.visiting
+      || height < LAFAYETTE_THIRD_FLOOR_Y) { this.preparedLafayetteUpper = undefined; return; }
+    const [neo, trinity] = actors;
+    if (!neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    let prepared = this.preparedLafayetteUpper;
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.neo !== neo || prepared.trinity !== trinity) {
+      // Room PBR maps attach together after decoding. Prepare the mapped variants.
+      for (const texture of this.textures) if (!texture.image) return;
+      const meshes = this.colorMeshes([neo, trinity, this.root], true), textures = new Set<THREE.Texture>();
+      this.queueColorTextures(textures, meshes);
+      this.preparedLafayetteUpper = prepared = { scene: this.scene, gpu: renderer.properties, neo, trinity,
+        meshes, fourMeshes: meshes.slice(), programs: [], textures };
+    }
+    if (!prepared.meshes.length && !prepared.programs.length && prepared.fourMeshes) {
+      prepared.meshes = prepared.fourMeshes; prepared.fourMeshes = undefined;
+    }
+    // The street has retired; upper stair turns still alternate between eight and four slots.
+    const slots = prepared.fourMeshes ? 8 : 4, pointLights: THREE.PointLight[] = [];
+    this.scene.traverseVisible(object => { if (object instanceof THREE.PointLight && !object.castShadow) pointLights.push(object); });
+    if (pointLights.length < slots) return;
+    const hidden = pointLights.slice(slots), enabled = lighting.enabled;
+    try {
+      for (const light of hidden) light.visible = false;
+      lighting.enabled = false;
+      this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated');
+    } finally {
+      lighting.enabled = enabled;
+      for (const light of hidden) light.visible = true;
     }
   }
   private colorMeshes(roots: THREE.Object3D[], includeBasic = false): ColorMesh[] {
@@ -3836,6 +3872,7 @@ export class FilmSetRenderer {
     this.preparedMeetingAgents = undefined;
     this.preparedLafayetteGround = undefined;
     this.preparedLafayetteLanding = undefined;
+    this.preparedLafayetteUpper = undefined;
     this.helPerformers?.dispose(); this.helPerformers = undefined;
     this.club?.dispose(); this.club = undefined;
     this.approach?.renderer.dispose(); this.approach = undefined;

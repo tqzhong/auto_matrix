@@ -289,6 +289,7 @@ export class Engine {
         const actors = [neo, this.agentRenderer.getAgentHero('trinity')] as const;
         this.filmSets.prepareLafayetteGround(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
         this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
+        this.filmSets.prepareLafayetteUpper(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
       }
     }
     // The same floor lights and shared cast remain active through the window approach.
