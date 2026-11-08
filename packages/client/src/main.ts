@@ -225,7 +225,7 @@ const socket = new SocketClient({
 
 const controls = new PlayerControls(engine.renderer.domElement, engine.camera,
   input => socket.send('player_input', input), kind => {
-    if (kind === 'interact') sandboxUI.interact();
+    if (kind === 'interact') { update(true); sandboxUI.interact(); }
     else if (kind === 'talk' && controls.id === 'neo' && sandbox?.neoLife) sandboxUI.open('journal');
     else if (['medkit', 'emp'].includes(kind)) socket.send('sandbox_action', { kind: 'use', target: kind });
     else if (['beacon', 'barricade'].includes(kind)) socket.send('sandbox_action', { kind: 'build', target: kind });

@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
 import { runInNewContext } from 'node:vm';
-import type { SimulationState, WorldStateFull } from '@auto_matrix/shared';
+import type { SimulationState, WorldStateFull, AgentState, SandboxState } from '@auto_matrix/shared';
 import type { SocketCallbacks } from '../packages/client/src/network/SocketClient.js';
 
 async function game() {
   const bundled = await build({ entryPoints: ['packages/client/src/main.ts'], bundle: true, platform: 'node', format: 'cjs', write: false,
     define: { 'import.meta.env.DEV': 'false' }, loader: { '.css': 'empty' }, logLevel: 'silent',
     plugins: [{ name: 'headless-game-surfaces', setup(build) {
-      build.onResolve({ filter: /\/(Engine|SocketClient|PlayerControls|PlayerExperience|CharacterViewer|SandboxUI|AudioPanel)\.js$/ }, () => ({ path: 'surfaces', namespace: 'headless' }));
-      build.onLoad({ filter: /.*/, namespace: 'headless' }, () => ({ contents: `
+      build.onResolve({ filter: /\/(Engine|SocketClient|PlayerControls|PlayerExperience|CharacterViewer|SandboxUI|AudioPanel|GraphicsPanel)\.js$/ }, () => ({ path: 'surfaces', namespace: 'headless' }));
+      build.onLoad({ filter: /.*/, namespace: 'headless' }, () => ({ resolveDir: process.cwd(), contents: `
+        import { SandboxUI as ActualSandboxUI } from './packages/client/src/player/SandboxUI.ts';
         export class Engine {
           renderer = { domElement: { addEventListener() {} } }; camera = {};
           cameraController = { overview() {} }; agentRenderer = { setPlayer() {} };
@@ -21,14 +22,24 @@ async function game() {
           isConnected = true;
           constructor(callbacks) { globalThis.harness.callbacks = callbacks; }
           connect() { globalThis.harness.callbacks.onConnection(true); }
+          send(type, data) { globalThis.harness.sent.push(structuredClone({ type, data })); }
         }
-        export class PlayerControls { id = null; }
+        export class PlayerControls {
+          id = null;
+          constructor(_canvas, _camera, _send, action) { globalThis.harness.controls = this; globalThis.harness.action = action; }
+        }
         export class PlayerExperience {
           update(agents, simulation) { globalThis.harness.playerStates.push(structuredClone(simulation)); }
         }
         export class CharacterViewer {}
-        export class SandboxUI { update() {} }
+        export class SandboxUI {
+          constructor(send) { this.send = send; }
+          update(player, state) { this.player = player; this.state = state; }
+          interact = ActualSandboxUI.prototype.interact;
+          open(panel) { globalThis.harness.opened.push(panel); }
+        }
         export class AudioPanel {}
+        export class GraphicsPanel {}
       ` }));
     } }],
   });
@@ -42,7 +53,9 @@ async function game() {
     } as any);
     return elements.get(id)!;
   };
-  const harness = { callbacks: undefined as unknown as SocketCallbacks, playerStates: [] as SimulationState[] };
+  const harness = { callbacks: undefined as unknown as SocketCallbacks, playerStates: [] as SimulationState[],
+    controls: undefined as unknown as { id: string | null }, action: undefined as unknown as (kind: string) => void,
+    sent: [] as { type: string; data: unknown }[], opened: [] as string[] };
   let clock = 1000;
   runInNewContext(bundled.outputFiles[0].text, { harness, structuredClone, console,
     performance: { now: () => clock }, document: { getElementById: element },
@@ -92,4 +105,20 @@ test('speed and day changes render immediately while ordinary simulation ticks s
   assert.equal(h.harness.playerStates.length, rendered, 'routine network ticks must not force repeated DOM work');
   h.time(1150); h.delta({ ...h.simulation, speed: 4, day: 4, tick: 4478 });
   assert.equal(h.element('#latest-tick').textContent, 'T + 004478');
+});
+
+test('G after answering a reflection uses the received next step inside the HUD throttle interval', async () => {
+  const h = await game(); h.harness.controls.id = 'neo';
+  const neo = { id: 'neo', status: 'alive', isInMatrix: true, position: { x: 4378, y: 1, z: 4303 } } as AgentState;
+  const sandbox = { structures: [], threats: [], neoLife: { journey: { scene: 'm1_bug', actor: 'neo', step: 1,
+    completed: [], reflections: {}, meeting: { phase: 'done', elapsed: 0, bugged: true, roadTime: 22 } } } } as SandboxState;
+  h.harness.callbacks.onWorldStateFull({ ...h.full(), agents: { neo }, sandbox }, h.simulation.tick);
+  const rendered = h.harness.playerStates.length;
+  h.time(1050);
+  const next = { ...sandbox, neoLife: { ...sandbox.neoLife!, journey: { ...sandbox.neoLife!.journey!, step: 2 } } };
+  h.harness.callbacks.onWorldStateDelta({ agents: {}, dirtyChunks: {}, events: [], sandbox: next }, h.simulation.tick);
+  assert.equal(h.harness.playerStates.length, rendered, 'the ordinary network update still shares the DOM throttle');
+  h.harness.action('interact');
+  assert.deepEqual(h.harness.sent, [{ type: 'sandbox_action', data: { kind: 'life', target: 'film:act' } }]);
+  assert.deepEqual(h.harness.opened, [], 'a received answer must not reopen the previous reflection');
 });
