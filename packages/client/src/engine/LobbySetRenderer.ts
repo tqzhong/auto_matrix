@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LOBBY_COLUMNS, LOBBY_ENTRY, type FilmJourney, type FilmSet, type CombatImpact } from '@auto_matrix/shared';
 
+export const LOBBY_POINT_SLOTS = 9; // Six fixtures, the goal marker and two overlapping muzzle flashes.
+
 /** Authored from the ASC lobby reference frames in references/matrix/lobby. */
 export class LobbySetRenderer {
   private root = new THREE.Group();

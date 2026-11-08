@@ -17,6 +17,7 @@ import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast, FilmJourney } from '@auto_matrix/shared';
 import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, mirrorSilver, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, airRescueLocked, matrixEscapeLocked, theOneLocked, baneLocked, helElevatorLocked, helDanceDoorLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS, HEL_COATCHECK } from '@auto_matrix/shared';
 import { FilmSetRenderer } from './FilmSetRenderer.js';
+import { LOBBY_POINT_SLOTS } from './LobbySetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
 import { SandboxRenderer } from './SandboxRenderer.js';
@@ -35,8 +36,6 @@ import { SUBWAY_POINT_SLOTS } from './MatrixEscapeRenderer.js';
 import { OFFICE_POINT_SLOTS } from './OfficeSetRenderer.js';
 import { PillReflection } from './PillReflection.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
-
-const LOBBY_POINT_SLOTS = 9; // Six fixtures, the goal marker and two overlapping muzzle flashes.
 
 export interface FrameProfile {
   at: number;
@@ -269,6 +268,8 @@ export class Engine {
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareBasement(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
+    this.filmSets.prepareLobby(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
+      id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id), this.lightingSystem.directionalLight);
     if (this.running && meeting?.scene === 'm1_rooftop_rescue' && player?.id === meeting.actor)
       this.filmSets.prepareSubway(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     if ((meeting?.scene === 'm1_death' || meeting?.scene === 'm1_return') && player?.id === meeting.actor)
