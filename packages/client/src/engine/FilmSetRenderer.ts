@@ -264,6 +264,7 @@ export class FilmSetRenderer {
   private preparedDojo?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedJump?: { root: THREE.Group; renderer: TrainingSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedRedDress?: { root: THREE.Group; renderer: TrainingSetRenderer; assetsReady: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedSentinel?: { root: THREE.Group; renderer: SentinelSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private currentScene?: string;
   private dockApuApproach = false;
   private mirror?: Reflector;
@@ -609,6 +610,38 @@ export class FilmSetRenderer {
       const meshes: ColorMesh[] = [];
       group.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareSentinel(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    if (this.current?.id !== 'film_red_dress_plaza' || this.currentScene !== 'm1_red_dress' || journey?.scene !== 'm1_red_dress' || journey.visiting
+      || journey.training?.kind !== 'red_dress' || !['frozen', 'done'].includes(journey.training.attention?.phase ?? '') || journey.training.elapsed < 6.3) {
+      this.cancelSentinelPreparation(); return;
+    }
+    if (!this.preparedSentinel) {
+      const root = new THREE.Group(), cockpit = new SentinelSetRenderer(root);
+      cockpit.update({ ...journey, scene: 'm1_sentinels', sentinel: { phase: 'ready', elapsed: 0, noise: 0, attempt: 0 } }, 0);
+      this.preparedSentinel = { root, renderer: cockpit };
+    }
+    const prepared = this.preparedSentinel;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'morpheus', 'trinity', 'tank', 'dozer']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group]);
+      group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+          && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
       });
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
@@ -1400,6 +1433,8 @@ export class FilmSetRenderer {
       if (preparedJump) { this.preparedJump = undefined; preparedJump.lighting?.dispose(); preparedJump.root.removeFromParent(); }
       const preparedRedDress = set?.id === 'film_red_dress_plaza' && sceneId === 'm1_red_dress' && !journey?.visiting ? this.preparedRedDress : undefined;
       if (preparedRedDress) { this.preparedRedDress = undefined; preparedRedDress.lighting?.dispose(); preparedRedDress.root.removeFromParent(); }
+      const preparedSentinel = set?.id === 'film_service_tunnels' && sceneId === 'm1_sentinels' && !journey?.visiting ? this.preparedSentinel : undefined;
+      if (preparedSentinel) { this.preparedSentinel = undefined; preparedSentinel.lighting?.dispose(); preparedSentinel.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -1516,7 +1551,10 @@ export class FilmSetRenderer {
           if (preparedJump) this.root.add(preparedJump.root);
           if (preparedRedDress) this.root.add(preparedRedDress.root);
         }
-        else if (sceneId === 'm1_sentinels') this.sentinel = new SentinelSetRenderer(this.root);
+        else if (sceneId === 'm1_sentinels') {
+          this.sentinel = preparedSentinel?.renderer ?? new SentinelSetRenderer(this.root);
+          if (preparedSentinel) this.root.add(preparedSentinel.root);
+        }
         else if (set.id === 'film_ambush_house' && sceneId === 'm1_basement') this.basement = new BasementSetRenderer(this.root);
         else if (set.id === 'film_ambush_house') {
           this.ambush = preparedAmbush ?? new AmbushSetRenderer();
@@ -4021,6 +4059,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedRedDress; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedRedDress = undefined;
   }
+  private cancelSentinelPreparation(): void {
+    const prepared = this.preparedSentinel; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedSentinel = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -4057,6 +4099,7 @@ export class FilmSetRenderer {
     this.cancelDojoPreparation();
     this.cancelJumpPreparation();
     this.cancelRedDressPreparation();
+    this.cancelSentinelPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();
