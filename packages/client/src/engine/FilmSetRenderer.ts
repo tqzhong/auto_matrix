@@ -365,7 +365,7 @@ export class FilmSetRenderer {
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
-    return id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
+    return id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
       || Boolean(this.basement || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
@@ -1815,7 +1815,7 @@ export class FilmSetRenderer {
       this.marker.scale.setScalar(1 + Math.sin(elapsed * 2) * .07); this.markerLight.position.copy(this.marker.position).y += 1.5;
     }
     // The marker is dark during the Sentinel scan, so the two lights can share a slot.
-    this.markerLight.visible = this.marker.visible || (this.stablePointSlots && !empExterior && !this.sentinel?.scanActive);
+    this.markerLight.visible = this.marker.visible || (this.stablePointSlots && !this.pods && !empExterior && !this.sentinel?.scanActive);
     this.markerLight.intensity = this.marker.visible ? 5 : 0;
     for (const item of this.moving) item.update(elapsed);
     return set;

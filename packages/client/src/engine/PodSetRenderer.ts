@@ -123,6 +123,7 @@ export class PodSetRenderer {
       }
     });
     const culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    culling.stablePointSlots = true;
     target.texture.name = 'pod-color-preparation';
     const pending: ColorProgram[] = [];
     try {

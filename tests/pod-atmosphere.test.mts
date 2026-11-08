@@ -14,6 +14,9 @@ test('the enclosed pod set limits outdoor reflections and restores the next set 
     assert.equal(sets.active?.id, id); return sets.atmosphere();
   };
   assert.deepEqual(enter('film_power_plant_pods'), { color: 0xb2cdd7, ambient: .4, sun: .35 });
+  assert.equal(sets.stablePointSlots, true, 'the ten-fixture pod rig must keep its program layout when the camera falls toward the water');
+  let pointLights = 0; scene.traverseVisible(object => { if (object instanceof THREE.PointLight) pointLights++; });
+  assert.equal(pointLights, 10, 'the locked pod has no visible objective marker and must not add its zero-energy light slot');
   assert.equal(scene.environmentIntensity, .04, 'an enclosed industrial pool must not reflect the outdoor sky at daylight strength');
   assert.deepEqual(enter('film_real_desert'), { color: 0xb3c2d4, ambient: .58, sun: .3 });
   assert.equal(scene.environmentIntensity, .38, 'leaving the pod must restore the next set reflection exposure');

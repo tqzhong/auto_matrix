@@ -67,7 +67,7 @@ test('pod entry prepares a late patient and hidden body without changing the mir
       if (batch.includes(head) || batch.includes(patient)) {
         for (const mesh of [head, patient]) if (batch.includes(mesh)) assert.match(mesh.material.customProgramCacheKey(), /actor-local-skin-v1$/);
         let points = 0, spots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; if (object instanceof THREE.SpotLight) spots++; });
-        assert.equal(points, 8); assert.equal(spots, 1);
+        assert.equal(points, 10, 'offstage preparation must retain the same ten slots as the live pod and water views'); assert.equal(spots, 1);
       }
       assert.equal(pod.root.parent, null); assert.equal(target.width, 1);
     },
