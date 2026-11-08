@@ -1157,6 +1157,7 @@ test('the office stages the manager and nearby street cast textures one at a tim
 
   manager.visible = true;
   lighting.minimumPointSlots = 6;
+  streetHero.visible = false;
   const floor = () => agents.prepareOfficeCast(renderer, camera, lighting, 'floor');
   const beforeFloor = calls.length;
   floor();
@@ -1174,6 +1175,7 @@ test('the office stages the manager and nearby street cast textures one at a tim
   assert.equal(detail.visible, false);
 
   const beforeLedge = calls.length;
+  streetHero.visible = true;
   uploaded.delete(cutout);
   const ledge = () => agents.prepareOfficeCast(renderer, camera, lighting, 'ledge');
   assert.equal(ledge(), true);

@@ -12,7 +12,7 @@ import { freewayPickupRoot, freewayDriverRoot, freewayRideRoot } from '@auto_mat
 import { garageRiderPose, type GarageCarPose } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import { hammerCrewRoot, hammerShipPose, logosCrewRoot, logosShipPose, logosFlightSet } from '@auto_matrix/shared';
-import { CONNECTED_ROLES, BETRAYAL, AMBUSH_ESCAPE, AMBUSH_DOFF, MOUSE_ROOM_SHOTS, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
+import { CONNECTED_ROLES, OFFICE_AGENT_ROLES, BETRAYAL, AMBUSH_ESCAPE, AMBUSH_DOFF, MOUSE_ROOM_SHOTS, crosscutActive, type CrosscutGesture, FILM_SETS, groundHeight, mirrorGuidePose, ambushRouteRoot, ambushRetreatRoot, wetwallPose, sixthPose, bathroomFightRoot, basementDropPose, basementDropRoot, basementDropPlayback, CLUB, clubRoot, oracleCookieOwner, oracleReceptionRoot, officeClothing, type AmbushEscort, type AgentState, type CombatImpact, type FilmJourney, type WetwallPhase, type BasementDropPlayback, type ClubPhase } from '@auto_matrix/shared';
 import { trackingContact } from './TrackingContact.js';
 import { CharacterModels, weaponMuzzle, type CharacterRig } from './CharacterModel.js';
 import { newMotion, type MotionInput } from './CharacterMotion.js';
@@ -89,13 +89,12 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
-  private preparedOfficeManager?: {
-    root: THREE.Group;
+  private preparedOfficeActors?: WeakMap<THREE.Group, {
     gpu: THREE.WebGLRenderer['properties'];
     textures: THREE.Texture[];
     approachCompiled: boolean;
     floorPrograms?: OfficeColorProgram[];
-  };
+  }>;
   private officeTextureUpload?: {
     texture: THREE.Texture;
     staging: THREE.Texture;
@@ -219,6 +218,7 @@ export class AgentRenderer {
   getAgent(id: string): THREE.Group | null { return this.agents.get(id)?.group ?? null; }
   getAgentBody(id: string): THREE.Group | undefined { return this.agents.get(id)?.body; }
   getAgentHero(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.hero?.root; }
+  getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
   getNearbyOfficeActor(id: string, camera: THREE.Camera): THREE.Group | undefined {
     const group = this.getAgent(id);
@@ -298,8 +298,12 @@ export class AgentRenderer {
   }
   prepareOfficeCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: OfficeCastStage): boolean {
     if (this.continueOfficeTexture(renderer)) return true;
-    if (stage === 'floor') return this.prepareOfficeManager(renderer, camera, lighting, stage);
-    if (stage === 'lift' && this.prepareOfficeManager(renderer, camera, lighting, stage)) return true;
+    if (stage === 'floor') {
+      for (const id of ['rhineheart', 'citizen_1', 'citizen_2', ...OFFICE_AGENT_ROLES])
+        if (this.prepareOfficeActor(renderer, camera, lighting, stage, id)) return true;
+      return false;
+    }
+    if (stage === 'lift' && this.prepareOfficeActor(renderer, camera, lighting, stage)) return true;
     // The street approach prepares the pedestrian's color maps before the detailed model draws.
     const hero = this.getNearbyOfficeActor('citizen_2', camera), hair = hero?.getObjectByName('Red_dress_hair');
     const textures: (THREE.Texture | null)[] = [];
@@ -322,26 +326,33 @@ export class AgentRenderer {
       this.prepareOfficeTexture(renderer, texture);
       return true;
     }
-    return stage === 'approach' && this.prepareOfficeManager(renderer, camera, lighting, stage);
+    return stage === 'approach' && this.prepareOfficeActor(renderer, camera, lighting, stage);
   }
-  private prepareOfficeManager(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: Exclude<OfficeCastStage, 'ledge'>): boolean {
-    const manager = this.getAgent('rhineheart'), hero = this.getAgentHero('rhineheart');
+  private prepareOfficeActor(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, stage: Exclude<OfficeCastStage, 'ledge'>, id = 'rhineheart'): boolean {
+    const actor = this.getAgent(id), model = this.getAgentHero(id), hero = model ?? this.getAgentDetail(id);
     // Detailed actors start rendering at 100 units. Leave room for several uploads on the approach.
-    if (!manager?.visible || !hero || manager.position.distanceToSquared(camera.position) > 130 ** 2) return false;
-    let prepared = this.preparedOfficeManager;
-    if (prepared?.root !== hero || prepared.gpu !== renderer.properties) {
+    if (!actor?.visible || !hero || model && !model.visible || actor.position.distanceToSquared(camera.position) > 130 ** 2) return false;
+    const cache = this.preparedOfficeActors ??= new WeakMap();
+    let prepared = cache.get(hero);
+    if (!prepared || prepared.gpu !== renderer.properties) {
       const textures = new Set<THREE.Texture>();
-      hero.traverseVisible(object => {
-        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
-        for (const map of [object.material.map, object.material.bumpMap]) {
-          if (map?.image && map.version > 0) textures.add(map);
-        }
-      });
-      this.preparedOfficeManager = prepared = { root: hero, gpu: renderer.properties, textures: [...textures], approachCompiled: false };
+      const visible = hero.visible; hero.visible = true;
+      try {
+        hero.traverseVisible(object => {
+          if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+          const material = object.material;
+          for (const map of [material.map, material.normalMap, material.bumpMap, material.alphaMap,
+            material.roughnessMap, material.metalnessMap, material.emissiveMap, material.aoMap]) {
+            if (map?.image && map.version > 0) textures.add(map);
+          }
+        });
+      } finally { hero.visible = visible; }
+      prepared = { gpu: renderer.properties, textures: [...textures], approachCompiled: false };
+      cache.set(hero, prepared);
     }
     const programs = renderer.info.programs;
     if (stage === 'floor' && prepared.floorPrograms?.length) {
-      // Finish one linked program per frame before the call camera turns toward the manager.
+      // Finish one linked program per frame before the actor first enters the view.
       const ready = prepared.floorPrograms.findIndex(program => programs?.includes(program) && program.isReady());
       if (ready >= 0) {
         cacheReadyProgramLocations(renderer, prepared.floorPrograms.splice(ready, 1)[0]);
@@ -359,6 +370,7 @@ export class AgentRenderer {
     if (stage === 'lift' || compiled || !renderer.extensions.has('KHR_parallel_shader_compile')) return false;
     const start = programs?.length ?? 0;
     const previous = renderer.getRenderTarget(), target = new THREE.WebGLRenderTarget(1, 1);
+    const visible = hero.visible; hero.visible = true;
     try {
       renderer.setRenderTarget(target);
       hero.traverse(object => {
@@ -368,6 +380,7 @@ export class AgentRenderer {
       if (stage === 'floor') prepared.floorPrograms = (programs?.slice(start) ?? []) as OfficeColorProgram[];
       else prepared.approachCompiled = true;
     } finally {
+      hero.visible = visible;
       renderer.setRenderTarget(previous);
       target.dispose();
     }
@@ -419,7 +432,7 @@ export class AgentRenderer {
     if (!upload) return;
     this.officeTextureUpload = undefined;
     upload.staging.dispose();
-    this.preparedOfficeManager = undefined;
+    this.preparedOfficeActors = undefined;
   }
   prepareSmithEntrance(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
     this.smithEnding?.prepareEntrance(renderer, camera, this.scene);
@@ -1372,7 +1385,7 @@ export class AgentRenderer {
   }
   dispose(): void {
     this.cancelOfficeCastTexture();
-    this.preparedOfficeManager = undefined;
+    this.preparedOfficeActors = undefined;
     this.smithEnding?.dispose(); this.smithEnding = undefined;
     this.oracleSmith?.dispose(); this.oracleSmith = undefined;
     this.custody.dispose();
