@@ -49,7 +49,7 @@ import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
-import type { LightCulling } from './LightCulling.js';
+import { LightCulling } from './LightCulling.js';
 import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
@@ -252,6 +252,7 @@ export class FilmSetRenderer {
   private pods?: PodSetRenderer;
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
+  private preparedTruthReturn?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private sourceBriefing?: SourceBriefingRenderer;
   private primaryDemolition?: PrimaryDemolitionRenderer;
   private trinityTerminal?: TrinityTerminalRenderer;
@@ -363,6 +364,10 @@ export class FilmSetRenderer {
   }
   get active(): FilmSet | undefined { return this.current; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
+  get minimumPointSlots(): number {
+    // The training jack and objective can overlap the fifteen deck fixtures.
+    return this.current?.id === 'film_neb_deck' && (this.currentScene === 'm1_truth_return' || this.currentScene === 'm1_download') ? 17 : 0;
+  }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
@@ -474,6 +479,33 @@ export class FilmSetRenderer {
     }
     const colors = this.preparedOneDeck.colors;
     if (colors) this.prepareCastColors(renderer, camera, colors, ['neo', 'trinity', 'morpheus', 'tank', 'cypher', 'dozer'], actor);
+  }
+  prepareTruthReturn(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id !== 'film_white_construct' || this.currentScene !== 'm1_truth_exit' || journey?.scene !== 'm1_truth_exit' || journey.visiting) {
+      this.cancelTruthReturnPreparation(); return;
+    }
+    if (!this.preparedTruthReturn) {
+      const root = new THREE.Group(), deck = new NebDeckRenderer(root);
+      deck.update({ ...journey, scene: 'm1_truth_return', truthRecovery: { phase: 'unplug', elapsed: 0 } }, 0);
+      this.preparedTruthReturn = { root, deck };
+    }
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    const prepared = this.preparedTruthReturn;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'trinity', 'morpheus', 'tank', 'dozer']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group]); if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareCaptainsMeeting(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
     const encounter = journey.reloaded;
@@ -1203,6 +1235,8 @@ export class FilmSetRenderer {
     if (this.office && set && ['film_metacortex_floor', 'film_office_ledge'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.meeting && set && ['film_adams_bridge', 'film_extraction_car'].includes(set.id)) { this.current = set; this.currentScene = sceneId; }
     if (this.mobil && set?.id === 'film_mobil_station') this.currentScene = sceneId;
+    if (this.neb && set?.id === 'film_neb_deck' && !journey?.visiting
+      && this.currentScene === 'm1_truth_return' && sceneId === 'm1_download') this.currentScene = sceneId;
     if (this.helStandoff && set?.id === 'film_club_hel' && this.currentScene === 'm3_hel_entry' && sceneId === 'm3_hel_bargain')
       this.currentScene = sceneId;
     // The curb, pill meeting and mirror route use the same hotel.
@@ -1248,6 +1282,8 @@ export class FilmSetRenderer {
       if (preparedSubway) this.preparedSubway = undefined;
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
       if (preparedOneDeck) this.preparedOneDeck = undefined;
+      const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === 'm1_truth_return' && !journey?.visiting ? this.preparedTruthReturn : undefined;
+      if (preparedTruthReturn) { this.preparedTruthReturn = undefined; preparedTruthReturn.lighting?.dispose(); preparedTruthReturn.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -1320,7 +1356,9 @@ export class FilmSetRenderer {
           this.pods.attach(this.root);
         }
         else if (set.id === 'film_neb_deck') {
-          if (preparedOneDeck) {
+          if (preparedTruthReturn) {
+            this.root.add(preparedTruthReturn.root); this.neb = preparedTruthReturn.deck;
+          } else if (preparedOneDeck) {
             this.root.add(preparedOneDeck.root); this.neb = preparedOneDeck.deck; this.theOne = preparedOneDeck.overlay;
           } else if (keepCrosscut) {
             if (!this.crosscutDeck) {
@@ -3846,6 +3884,10 @@ export class FilmSetRenderer {
     if (!prepared) return;
     prepared.root.removeFromParent(); prepared.overlay.dispose(); prepared.deck.dispose(); this.preparedOneDeck = undefined;
   }
+  private cancelTruthReturnPreparation(): void {
+    const prepared = this.preparedTruthReturn; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedTruthReturn = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -3878,6 +3920,7 @@ export class FilmSetRenderer {
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();
+    this.cancelTruthReturnPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();

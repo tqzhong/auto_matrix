@@ -3,6 +3,7 @@ import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
@@ -79,4 +80,39 @@ test('the later Trinity relay still uses her live socket and Link’s live hand 
   const socket = h.avatars.get('trinity')!.getObjectByName('cervical-interface')!.getWorldPosition(new THREE.Vector3()); socket.x -= .25;
   assert.equal(plug.visible, true); assert.ok(plug.getWorldPosition(new THREE.Vector3()).distanceTo(socket) < 1e-6);
   assert.ok(h.liveCalls.includes('trinity') && h.liveCalls.includes('link')); assert.equal(h.physicalCalls.length, 0);
+});
+
+test('the bedside answer reuses the physical deck and resets its props for training', t => {
+  const h = fixture(t); h.draw('m1_truth_return', { truthRecovery: { phase: 'rest', elapsed: 6.6 } });
+  const names = ['neb-cabin-door', 'neb-core-chair-neo', 'neb-training-disk', 'neb-truth-bedside-stool'];
+  const before = names.map(name => h.renderer.root.getObjectByName(name)!);
+  assert.equal(before[3].visible, true);
+  h.draw('m1_download', { training: { kind: 'download', elapsed: 0, started: false } });
+  assert.ok(names.every((name, index) => h.renderer.root.getObjectByName(name) === before[index]), 'answering must not destroy and rebuild the same ship');
+  assert.equal(before[3].visible, false, 'the bedside stool leaves with the conversation');
+  assert.equal(before[2].parent!.visible, true, 'the existing download rig becomes available');
+  h.draw('m1_meal'); assert.notEqual(h.renderer.root.getObjectByName(names[0]), before[0], 'unrelated scene lifecycles stay unchanged');
+});
+
+test('truth return and the download keep seventeen light slots across the core and cabin views', t => {
+  const h = fixture(t), scene = h.renderer.root.parent as THREE.Scene, lighting = new LightCulling(scene);
+  t.after(() => lighting.dispose()); const camera = new THREE.PerspectiveCamera(65, 16 / 9, .1, 200), counts: number[] = [];
+  const gpu = { compile: (_root: THREE.Object3D, _camera: THREE.Camera, view: THREE.Scene) => {
+    let count = 0; view.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; }); counts.push(count);
+  } } as unknown as THREE.WebGLRenderer;
+  for (const phase of ['unplug', 'rest', 'question', 'walk', 'download']) {
+    h.draw(phase === 'download' || phase === 'walk' ? 'm1_download' : 'm1_truth_return', phase === 'download' || phase === 'walk'
+      ? { training: { kind: 'download', elapsed: phase === 'walk' ? 0 : 3, started: phase !== 'walk' },
+        downloadSetup: { phase: phase === 'walk' ? 'walk' : 'ready', elapsed: 0, progress: 0 } }
+      : { truthRecovery: { phase: phase as 'unplug' | 'rest' | 'question', elapsed: 6.6 } });
+    assert.equal(h.renderer.minimumPointSlots, 17);
+    lighting.minimumPointSlots = h.renderer.minimumPointSlots;
+    for (const z of [-5, -34]) {
+      const center = FILM_SETS.film_neb_deck.center;
+      camera.position.set(center.x + 8, center.y + 7, center.z + z + 7); camera.lookAt(center.x + 6, center.y + 2, center.z + z);
+      lighting.compileSubject(gpu, camera, h.renderer.root);
+    }
+  }
+  assert.deepEqual(counts, Array(10).fill(17), 'moving between rooms must reuse the colour layout');
+  h.draw('m1_meal'); assert.equal(h.renderer.minimumPointSlots, 0, 'other ship chapters keep their existing light policies');
 });
