@@ -72,11 +72,14 @@ for (const visit of [false, true]) test(`the intercut reuses both rooms and rele
   renderer.update(neo, sandbox, 0);
   const shop = renderer.root.getObjectByName('franklin-erie-tv-repair')!;
   const shopMesh = shop.getObjectsByProperty('type', 'Mesh')[0] as THREE.Mesh;
-  let shopDisposals = 0, deckDisposals = 0, shadowDisposals = 0;
+  let shopDisposals = 0, deckDisposals = 0, shadowDisposals = 0, sunShadowDisposals = 0;
   shopMesh.geometry.addEventListener('dispose', () => shopDisposals++);
   const daylight = shop.getObjectsByProperty('type', 'SpotLight')[0] as THREE.SpotLight;
   daylight.shadow.map = new THREE.WebGLRenderTarget(1, 1);
   daylight.shadow.map.addEventListener('dispose', () => shadowDisposals++);
+  const sun = shop.getObjectsByProperty('type', 'DirectionalLight')[0] as THREE.DirectionalLight;
+  sun.shadow.map = new THREE.WebGLRenderTarget(1, 1);
+  sun.shadow.map.addEventListener('dispose', () => sunShadowDisposals++);
   const cut = state.tvExit!.crosscut!;
   state.actor = tank.id; cut.view = 'ship'; cut.elapsed = 6;
   renderer.update(tank, sandbox, 1);
@@ -104,8 +107,10 @@ for (const visit of [false, true]) test(`the intercut reuses both rooms and rele
   state.scene = 'm1_unplugged'; renderer.update(tank, sandbox, 24);
   assert.ok(renderer.root.getObjectByName(deck.name) === deck, 'Tank takes over on the retained ship');
   assert.equal(shopDisposals, 0); assert.equal(deckDisposals, 0); assert.equal(shadowDisposals, 0);
+  assert.equal(sunShadowDisposals, 0, 'the retained daylight shadow must survive each intercut');
   if (visit) state.visiting = 'm1_unplugged';
   else { state.scene = 'm1_rescue_decision'; delete state.tvExit; }
   renderer.update(tank, sandbox, 25);
   assert.equal(shopDisposals, 1); assert.equal(deckDisposals, 1); assert.equal(shadowDisposals, 1);
+  assert.equal(sunShadowDisposals, 1, 'leaving the intercut must release the retained daylight shadow once');
 });

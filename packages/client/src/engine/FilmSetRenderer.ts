@@ -390,7 +390,7 @@ export class FilmSetRenderer {
   get stablePointSlots(): boolean {
     const id = this.current?.id;
     return id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
-      || Boolean(this.basement || this.architectRoom || this.catchSet || this.trainmanChase)
+      || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && this.currentScene === 'm1_construct'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'

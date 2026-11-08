@@ -110,7 +110,7 @@ export class TvRepairRenderer {
     for(let i=0;i<96;i++){const t=i/95,point=from.clone().lerp(to,t);point.y-=Math.sin(t*Math.PI)*.42;point.x+=Math.sin(t*Math.PI*48)*.035;point.z+=Math.cos(t*Math.PI*48)*.035;position.setXYZ(i,point.x,point.y,point.z);}position.needsUpdate=true;
   }
   dispose(){
-    this.root.traverse(object=>{if(object instanceof THREE.PointLight||object instanceof THREE.SpotLight)object.dispose();});
+    this.root.traverse(object=>{if(object instanceof THREE.PointLight||object instanceof THREE.SpotLight||object instanceof THREE.DirectionalLight)object.dispose();});
     this.root.removeFromParent();this.handset.dispose();
     this.geometries.forEach(geometry=>geometry.dispose());
     this.materials.forEach(material=>material.dispose());
