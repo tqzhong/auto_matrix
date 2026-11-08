@@ -267,6 +267,8 @@ export class Engine {
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
     if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
+    this.filmSets.prepareBasement(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
+      id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     if (this.running && meeting?.scene === 'm1_rooftop_rescue' && player?.id === meeting.actor)
       this.filmSets.prepareSubway(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     if ((meeting?.scene === 'm1_death' || meeting?.scene === 'm1_return') && player?.id === meeting.actor)

@@ -14,7 +14,7 @@ import { SandboxRenderer } from '../packages/client/src/engine/SandboxRenderer.j
 
 async function models(t: test.TestContext) {
   const assets = new Map();
-  for (const name of ['neo', 'trinity', 'smith', 'morpheus', 'neo-office', 'neo-tracking', 'trinity-club', 'choi']) {
+  for (const name of ['neo', 'trinity', 'smith', 'morpheus', 'neo-office', 'neo-tracking', 'trinity-club', 'choi', 'cypher-reality']) {
     const glb = await readFile(new URL(`../packages/client/public/assets/characters/${name}.glb`, import.meta.url));
     const length = glb.readUInt32LE(12), source = JSON.parse(glb.subarray(20, 20 + length).toString());
     for (const material of source.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
@@ -33,7 +33,9 @@ async function models(t: test.TestContext) {
   globalThis.document = Object.assign(new InputTarget(), { pointerLockElement: null, hidden: false, exitPointerLock() {},
     createElement: () => ({ getContext: () => ({ createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
       createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {} }) }) }) as unknown as Document;
-  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const characters = new CharacterModels();
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  for (const role of BASEMENT_ROLES) world.agents.get(role)!.isInMatrix = true;
+  const characters = new CharacterModels();
   t.after(() => { characters.dispose(); globalThis.document = previousDocument; globalThis.window = previousWindow; });
   return { world, characters, canvas: new InputTarget() as unknown as HTMLCanvasElement };
 }

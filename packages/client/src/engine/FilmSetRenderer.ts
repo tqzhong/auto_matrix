@@ -294,6 +294,7 @@ export class FilmSetRenderer {
   private ambush?: AmbushSetRenderer;
   private basement?: BasementSetRenderer;
   private basementFrame?: number;
+  private basementColors?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private tvRepair?: TvRepairRenderer;
   private crosscutTv?: TvRepairRenderer;
   private crosscutDeck?: { root: THREE.Group; renderer: NebDeckRenderer };
@@ -471,6 +472,33 @@ export class FilmSetRenderer {
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareBasement(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney | undefined,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
+    if (!this.basement || journey?.scene !== 'm1_basement' || journey.visiting) { this.basementColors = undefined; return; }
+    // The camera first exposes the other cast below the ceiling; give the fall its frame budget.
+    if (!['ready', 'descending'].includes(journey.basement?.phase ?? '') || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (this.basementColors?.gpu !== renderer.properties) {
+      const meshes = this.colorMeshes([this.root], true), textures = new Set<THREE.Texture>();
+      this.queueColorTextures(textures, meshes);
+      this.basementColors = { scene: this.scene, meshes, textures, programs: [], actors: new Set(), gpu: renderer.properties };
+    }
+    const colors = this.basementColors, meshes = new Set<ColorMesh>();
+    for (const id of [journey.actor, ...FILM_SCENE_BY_ID.m1_basement.cast, 'morpheus', 'smith', 'mouse']) {
+      const detailed = hero(id);
+      for (const group of [body(id), detailed]) {
+        if (!group || colors.actors.has(group)) continue;
+        const collected: ColorMesh[] = [];
+        if (group === detailed) group.traverse(object => {
+          if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) collected.push(object);
+        });
+        else collected.push(...this.colorMeshes([group]));
+        if (!collected.length) continue;
+        colors.actors.add(group); collected.forEach(mesh => meshes.add(mesh));
+      }
+    }
+    colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, lighting, 'isolated');
   }
   prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
     const phase = journey.airRescue?.phase;
@@ -4307,7 +4335,7 @@ export class FilmSetRenderer {
     this.pillGlass = undefined;
     this.cancelAmbushPreparation();
     this.ambush?.dispose(); this.ambush = undefined;
-    this.basement?.dispose(); this.basement = undefined; this.basementFrame = undefined;
+    this.basement?.dispose(); this.basement = undefined; this.basementFrame = undefined; this.basementColors = undefined;
     this.tvRepair?.dispose(); this.tvRepair = undefined;
     this.oracleVase?.dispose(); this.oracleVase = undefined;
     this.oracleBlocks = undefined;
