@@ -10,6 +10,7 @@ import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
+import { steakAge } from '@auto_matrix/shared';
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
 import { ReloadedCatchRenderer } from './ReloadedCatchRenderer.js';
 import { ReloadedFinaleRenderer } from './ReloadedFinaleRenderer.js';
@@ -266,6 +267,8 @@ export class FilmSetRenderer {
   private preparedRedDress?: { root: THREE.Group; renderer: TrainingSetRenderer; assetsReady: boolean; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedSentinel?: { root: THREE.Group; renderer: SentinelSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedConsole?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedRestaurant?: { root: THREE.Group; renderer: CypherRestaurantRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedMeal?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private currentScene?: string;
   private dockApuApproach = false;
   private mirror?: Reflector;
@@ -677,6 +680,72 @@ export class FilmSetRenderer {
       group.traverse(object => {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
           && (object.userData.logosCostume || object.userData.hammerBriefingCostume || object.userData.cypherCostume) && !meshes.includes(object)) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareRestaurant(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    const encounter = journey?.interlude;
+    if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_cypher_console' || journey?.scene !== 'm1_cypher_console' || journey.visiting
+      || encounter?.kind !== 'console' || !(encounter.phase === 'done' || encounter.phase === 'responding' && encounter.elapsed >= .5)) {
+      this.cancelRestaurantPreparation(); return;
+    }
+    if (!this.preparedRestaurant) {
+      const root = new THREE.Group(), restaurant = new CypherRestaurantRenderer(root);
+      restaurant.update({ ...journey, scene: 'm1_steak', interlude: { kind: 'steak', phase: 'ready', elapsed: 0 } }, 0);
+      this.preparedRestaurant = { root, renderer: restaurant };
+    }
+    const prepared = this.preparedRestaurant;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['smith', 'cypher']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes: ColorMesh[] = [];
+      group.traverse(object => {
+        // The ship outfit currently hides the ordinary Matrix clothes.
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareMeal(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    const encounter = journey?.interlude;
+    if (this.current?.id !== 'film_cypher_restaurant' || this.currentScene !== 'm1_steak' || journey?.scene !== 'm1_steak' || journey.visiting
+      || encounter?.kind !== 'steak' || !['performing', 'done'].includes(encounter.phase) || steakAge(encounter) < 13) {
+      this.cancelMealPreparation(); return;
+    }
+    if (!this.preparedMeal) {
+      const root = new THREE.Group(), deck = new NebDeckRenderer(root);
+      deck.update({ ...journey, scene: 'm1_meal', interlude: { kind: 'meal', phase: 'ready', elapsed: 0 } }, 0);
+      this.preparedMeal = { root, deck };
+    }
+    const prepared = this.preparedMeal;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'tank', 'mouse', 'dozer', 'apoc', 'switch']) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const meshes = this.colorMeshes([group]);
+      group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+          && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
       });
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
@@ -1472,6 +1541,10 @@ export class FilmSetRenderer {
       if (preparedSentinel) { this.preparedSentinel = undefined; preparedSentinel.lighting?.dispose(); preparedSentinel.root.removeFromParent(); }
       const preparedConsole = set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' && !journey?.visiting ? this.preparedConsole : undefined;
       if (preparedConsole) { this.preparedConsole = undefined; preparedConsole.lighting?.dispose(); preparedConsole.root.removeFromParent(); }
+      const preparedRestaurant = set?.id === 'film_cypher_restaurant' && sceneId === 'm1_steak' && !journey?.visiting ? this.preparedRestaurant : undefined;
+      if (preparedRestaurant) { this.preparedRestaurant = undefined; preparedRestaurant.lighting?.dispose(); preparedRestaurant.root.removeFromParent(); }
+      const preparedMeal = set?.id === 'film_neb_deck' && sceneId === 'm1_meal' && !journey?.visiting ? this.preparedMeal : undefined;
+      if (preparedMeal) { this.preparedMeal = undefined; preparedMeal.lighting?.dispose(); preparedMeal.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
       if (preparedMeeting) this.preparedMeetingHall = undefined;
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
@@ -1548,6 +1621,8 @@ export class FilmSetRenderer {
             this.root.add(preparedTruthReturn.root); this.neb = preparedTruthReturn.deck;
           } else if (preparedConsole) {
             this.root.add(preparedConsole.root); this.neb = preparedConsole.deck;
+          } else if (preparedMeal) {
+            this.root.add(preparedMeal.root); this.neb = preparedMeal.deck;
           } else if (preparedOneDeck) {
             this.root.add(preparedOneDeck.root); this.neb = preparedOneDeck.deck; this.theOne = preparedOneDeck.overlay;
           } else if (keepCrosscut) {
@@ -1567,7 +1642,10 @@ export class FilmSetRenderer {
           this.resetMirrorFrame = showMirrorSubject(this.mobil.reflection, () => this.mirrorSubject);
         }
         else if (set.id === 'film_backup_station') this.trinityTerminal = new TrinityTerminalRenderer(this.root);
-        else if (set.id === 'film_cypher_restaurant') this.restaurant = new CypherRestaurantRenderer(this.root);
+        else if (set.id === 'film_cypher_restaurant') {
+          this.restaurant = preparedRestaurant?.renderer ?? new CypherRestaurantRenderer(this.root);
+          if (preparedRestaurant) this.root.add(preparedRestaurant.root);
+        }
         else if (set.id === 'film_white_construct') this.construct = new ConstructRenderer(this.root, sceneId);
         else if (set.id === 'film_real_desert') {
           this.desert = previewDesert ?? new DesertRenderer(this.root);
@@ -4106,6 +4184,14 @@ export class FilmSetRenderer {
     const prepared = this.preparedConsole; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedConsole = undefined;
   }
+  private cancelRestaurantPreparation(): void {
+    const prepared = this.preparedRestaurant; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedRestaurant = undefined;
+  }
+  private cancelMealPreparation(): void {
+    const prepared = this.preparedMeal; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedMeal = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -4144,6 +4230,8 @@ export class FilmSetRenderer {
     this.cancelRedDressPreparation();
     this.cancelSentinelPreparation();
     this.cancelConsolePreparation();
+    this.cancelRestaurantPreparation();
+    this.cancelMealPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();
