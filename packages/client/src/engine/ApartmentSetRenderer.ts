@@ -1,9 +1,13 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, lifeRoomCenter, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
 import { apartmentDisc } from '../agents/ApartmentDisc.js';
 import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHandset.js';
+import { LightCulling } from './LightCulling.js';
+import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
+
+type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -33,7 +37,8 @@ export class ApartmentSetRenderer {
   private windowGlass: THREE.MeshStandardMaterial;
   private windowLights: THREE.PointLight[] = [];
   private roomLights: THREE.Light[] = [];
-  constructor(parent: THREE.Group, cityLights?: THREE.Group) {
+  private returnPreparation?: { gpu: THREE.WebGLRenderer['properties']; actor: THREE.Group; points: number; steps?: Generator<void> };
+  constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
     const wood = this.mat(0x82765b, .88, 0, 'old_wood_floor');
     const plaster = this.mat(0x8a8b73, .94, 0, 'white_plaster_02');
@@ -240,6 +245,75 @@ export class ApartmentSetRenderer {
     this.root.traverse(object => { if (object instanceof THREE.Light && object !== light) this.roomLights.push(object); });
     this.batch(); this.update();
   }
+  prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group): void {
+    if (journey?.scene !== 'm1_pills' || journey.visiting || journey.pills?.phase !== 'taking' || journey.pills.choice !== 'blue'
+      || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) { this.cancelReturnPreparation(); return; }
+    const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
+    if (this.returnPreparation?.gpu !== renderer.properties || this.returnPreparation.actor !== actor || this.returnPreparation.points !== points) {
+      this.cancelReturnPreparation();
+      this.returnPreparation = { gpu: renderer.properties, actor, points, steps: this.prepareReturnSteps(renderer, camera, scene, actor) };
+    }
+    const prepared = this.returnPreparation;
+    if (prepared.steps?.next().done) prepared.steps = undefined;
+  }
+  private cancelReturnPreparation(): void {
+    this.returnPreparation?.steps?.return(undefined); this.returnPreparation = undefined;
+  }
+  private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor: THREE.Group): Generator<void> {
+    const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
+    for (const light of scene.children) {
+      if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
+    }
+    const fixtures = [...this.roomLights, this.landingLight,
+      ...this.cityLights?.children.filter((light): light is THREE.PointLight => light instanceof THREE.PointLight) ?? []];
+    for (const source of fixtures) {
+      const light = source.clone(); light.visible = true; source.getWorldPosition(light.position); lights.add(light);
+    }
+    const center = lifeRoomCenter('neo_apartment')!, eye = camera.clone();
+    eye.position.set(center.x - .8, center.y + 6, center.z - 11.2); eye.lookAt(center.x - .8, center.y + 2.8, center.z);
+    eye.fov = 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
+    const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
+    const meshes = new Set<THREE.Mesh | THREE.Line>(), textures = new Set<THREE.Texture>();
+    const collect = (object: THREE.Object3D) => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) meshes.add(object); };
+    this.root.traverseVisible(collect); actor.traverseVisible(collect);
+    // These existing parts become visible again after the pill performance ends.
+    for (const name of ['Tracking_arms', 'Tracking_shirt']) { const part = actor.getObjectByName(name); if (part) collect(part); }
+    for (const object of this.cityLights?.children ?? []) {
+      if (!object.visible || !(object instanceof THREE.Mesh || object instanceof THREE.Line)) continue;
+      object.updateWorldMatrix(true, false);
+      if (!object.frustumCulled || frustum.intersectsObject(object)) collect(object);
+    }
+    for (const mesh of meshes) {
+      const material = mesh.material;
+      const maps = material instanceof THREE.MeshStandardMaterial ? [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]
+        : material instanceof THREE.MeshBasicMaterial ? [material.map, material.alphaMap] : [];
+      for (const map of maps) if (map) textures.add(map);
+    }
+    const queue = [...meshes], pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    target.texture.name = 'apartment-return-preparation';
+    try {
+      while (queue.length || pending.length || textures.size) {
+        const programs = renderer.info.programs, ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
+        if (ready >= 0) cacheReadyProgramLocations(renderer, pending.splice(ready, 1)[0]);
+        else if (queue.length) {
+          const batch = queue.splice(0, 4), subject = new THREE.Group(), previous = renderer.getRenderTarget(), start = programs?.length ?? 0;
+          subject.traverse = visit => batch.forEach(visit);
+          try { renderer.setRenderTarget(target); culling.compileSubject(renderer, eye, subject); }
+          finally { renderer.setRenderTarget(previous); }
+          if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+        } else {
+          for (const texture of textures) {
+            const image = texture.image as { width?: number; complete?: boolean } | null;
+            if (!texture.version || !image || image.complete === false) continue;
+            textures.delete(texture);
+            const uploaded = renderer.properties.get(texture) as { __version?: number };
+            if ((image.width ?? 0) >= 1024 && uploaded.__version !== texture.version) { renderer.initTexture(texture); break; }
+          }
+        }
+        yield;
+      }
+    } finally { culling.dispose(); target.dispose(); }
+  }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material);
     if (source) for (const [key, suffix] of [['map', 'color'], ['normalMap', 'normal'], ['roughnessMap', 'roughness']] as const) {
@@ -365,6 +439,7 @@ export class ApartmentSetRenderer {
     for (const geo of this.geometries) if (!live.has(geo)) { geo.dispose(); this.geometries.delete(geo); }
   }
   dispose(): void {
+    this.cancelReturnPreparation();
     this.roomLights.forEach(light => light.dispose());
     this.landingLight.dispose(); this.landingLight.removeFromParent(); this.landingLight.target.removeFromParent();
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose()); this.root.removeFromParent();

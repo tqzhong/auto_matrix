@@ -17,6 +17,10 @@ export class LifeInteriors {
   private materials = new Map<string, THREE.MeshStandardMaterial>();
   private apartment!: ApartmentSetRenderer;
 
+  prepareApartmentReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, life?: NeoLifeState, actor?: THREE.Group): void {
+    this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor);
+  }
+
   constructor(parent: THREE.Group) {
     for (const [id, room] of Object.entries(LIFE_ROOMS)) {
       const center = lifeRoomCenter(id)!; const group = new THREE.Group(); group.position.set(center.x, 0, center.z); parent.add(group);
