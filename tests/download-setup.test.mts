@@ -23,6 +23,20 @@ function setup(beforeDownload?: (world: WorldState) => void) {
   return { world, sandbox, players, act, frames, neo: world.agents.get('neo')!, state: () => sandbox.life.film.state! };
 }
 
+test('download restore preserves the saved desk and traffic collider order', () => {
+  const h = setup(); h.sandbox.restore(structuredClone(h.sandbox.state));
+  const desk = h.sandbox.state.structures.find(item => item.id === 'film:download:desk')!;
+  h.sandbox.state.structures = h.sandbox.state.structures.filter(item => item !== desk);
+  h.sandbox.traffic.restore(); h.sandbox.state.structures.push(desk);
+  const saved = structuredClone(h.sandbox.state);
+  assert.ok(saved.structures.some(item => item.id.startsWith('traffic:')));
+  for (let restart = 0; restart < 2; restart++) {
+    h.sandbox.restore(saved);
+    assert.deepEqual(h.sandbox.state.structures, saved.structures, 'a cold load must not move the desk ahead of the saved city colliders');
+    assert.deepEqual(h.sandbox.state.traffic, saved.traffic);
+  }
+});
+
 test('the next morning clears the previous unplugging crew from Tank’s connection workspace, including old saves', () => {
   const h = setup(world => {
     for (const id of ['trinity', 'dozer']) {

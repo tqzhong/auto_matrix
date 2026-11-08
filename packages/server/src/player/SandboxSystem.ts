@@ -46,7 +46,7 @@ export class SandboxSystem {
     const defaults = this.state;
     this.state = structuredClone(saved);
     const scene = saved.neoLife?.journey?.scene;
-    const savedStructureOrder = scene === 'm2_architect' || scene === 'm1_wall_exposed'
+    const savedStructureOrder = scene === 'm2_architect' || scene === 'm1_wall_exposed' || scene === 'm1_download'
       || scene === 'm3_dock_briefing' || scene === 'm3_dock_evacuation'
       ? new Map(saved.structures.map((structure, index) => [structure.id, index])) : undefined;
     for (const node of defaults.nodes) if (!this.state.nodes.some(n => n.id === node.id)) this.state.nodes.push(node);
