@@ -319,6 +319,9 @@ export class Engine {
     if (this.running) this.filmSets.prepareSmithCrater(this.renderer, this.camera, meeting);
     if (filmSet?.id === 'film_smith_avenue' && meeting?.scene === 'm3_rain' && !meeting.visiting && meeting.smithFinale?.phase === 'approach')
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
+    const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
+      && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
+    this.postProcessing.prepareNormals(this.renderer, preparingLafayetteNormals ? this.agentRenderer.getAgentHero('neo') : undefined);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);

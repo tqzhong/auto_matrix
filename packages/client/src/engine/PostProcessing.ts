@@ -7,8 +7,12 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
+
+type NormalProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 
 export class WorldOcclusionPass extends GTAOPass {
+  declare normalRenderTarget: THREE.WebGLRenderTarget;
   compositeInPlace = true;
   private inPlace = false;
   private suppressed: THREE.Object3D[] = [];
@@ -18,6 +22,10 @@ export class WorldOcclusionPass extends GTAOPass {
   private scalar = false;
   private normalScene = new THREE.Scene();
   private normalSource?: THREE.Scene;
+  private preparedNormals?: {
+    actor: THREE.Group; gpu: THREE.WebGLRenderer['properties']; seen: WeakSet<THREE.Mesh>;
+    meshes: THREE.Mesh[]; programs: NormalProgram[]; street: boolean;
+  };
   constructor(...args: ConstructorParameters<typeof GTAOPass>) {
     super(...args);
     this.normalScene.matrixWorldAutoUpdate = false;
@@ -118,7 +126,49 @@ export class WorldOcclusionPass extends GTAOPass {
       this.normalSource = undefined; shadows.autoUpdate = autoUpdate; shadows.needsUpdate = needsUpdate;
     }
   }
+  prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group): void {
+    if (!actor?.visible || !renderer.extensions.has('KHR_parallel_shader_compile')) { this.preparedNormals = undefined; return; }
+    if (this.preparedNormals?.actor !== actor || this.preparedNormals.gpu !== renderer.properties)
+      this.preparedNormals = { actor, gpu: renderer.properties, seen: new WeakSet(), meshes: [], programs: [], street: false };
+    const prepared = this.preparedNormals, programs = renderer.info.programs ?? [];
+    prepared.programs = prepared.programs.filter(program => programs.includes(program));
+    const ready = prepared.programs.findIndex(program => program.isReady());
+    if (ready >= 0) { prepared.programs[ready].getUniforms(); prepared.programs.splice(ready, 1); return; }
+    const include = (object: THREE.Object3D) => {
+      if (!(object instanceof THREE.Mesh) || prepared.seen.has(object) || object.userData.distantBackdrop
+        || !Array.isArray(object.material) && !object.material.depthWrite) return;
+      prepared.seen.add(object); prepared.meshes.push(object);
+    };
+    actor.traverseVisible(include);
+    if (!prepared.street) this.scene.traverseVisible(object => {
+      if (prepared.street || !(object instanceof THREE.Mesh) || object instanceof THREE.SkinnedMesh
+        || object.geometry.hasAttribute('uv1') || !object.geometry.hasAttribute('normal') || !object.visible) return;
+      const before = prepared.meshes.length; include(object);
+      if (prepared.meshes.length > before) prepared.street = true;
+    });
+    const mesh = prepared.meshes[0];
+    if (!mesh) return;
+    if (!mesh.visible) { prepared.seen.delete(mesh); prepared.meshes.shift(); return; }
+    // Use the same material, output space and zero-light view as the later AO draw.
+    // compile() ignores scene.overrideMaterial, so restore the surface material explicitly.
+    prepareSkinnedMaterial(this.normalMaterial);
+    const material = mesh.material, target = renderer.getRenderTarget(), view = this.normalScene;
+    const fog = view.fog, environment = view.environment;
+    const subject = new THREE.Group(); subject.traverse = visit => { visit(mesh); };
+    try {
+      mesh.material = this.normalMaterial; view.fog = this.scene.fog; view.environment = this.scene.environment;
+      renderer.setRenderTarget(this.normalRenderTarget);
+      const start = programs.length;
+      renderer.compile(subject, this.camera, view);
+      prepared.programs.push(...programs.slice(start) as NormalProgram[]);
+      prepared.meshes.shift();
+    } finally {
+      mesh.material = material; view.fog = fog; view.environment = environment;
+      renderer.setRenderTarget(target);
+    }
+  }
   dispose(): void {
+    this.preparedNormals = undefined;
     super.dispose();
     this.gtaoMaterial.dispose();
     this.blendMaterial.dispose();
@@ -183,6 +233,7 @@ export class PostProcessing {
     this.composer.writeBuffer = this.composer.renderTarget1;
     this.composer.render();
   }
+  prepareNormals(renderer: THREE.WebGLRenderer, actor?: THREE.Group): void { this.occlusion.prepareNormals(renderer, actor); }
   get occlusionInPlace(): boolean { return this.occlusion.compositeInPlace; }
   set occlusionInPlace(value: boolean) { this.occlusion.compositeInPlace = value; }
   get occlusionSingleChannel(): boolean { return this.occlusion.singleChannel; }
