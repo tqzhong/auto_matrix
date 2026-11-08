@@ -222,18 +222,20 @@ export class EpilogueHeads {
       const toHead = skin.skeleton.boneInverses[headIndex].clone().multiply(skin.bindMatrix), point = new THREE.Vector3();
       const reference = (rig.hero!.root.getObjectByName('cypher-reality-neck-reference') as THREE.SkinnedMesh).geometry;
       const sourceJoints = reference.attributes.skinIndex, sourceWeights = reference.attributes.skinWeight;
-      const referenceIndex = reference.index!, neck: { triangle: THREE.Triangle; vertices: number[] }[] = [];
-      const candidates = new Map<number, THREE.Vector3>();
+      const referenceIndex = reference.index!, neck: { triangle: THREE.Triangle; vertices: number[]; minHeight: number; maxHeight: number }[] = [];
+      const candidates = new Map<number, THREE.Vector3>(), heights = new Map<number, number>();
       for (let i = 0; i < reference.attributes.position.count; i++) {
         point.fromBufferAttribute(reference.attributes.position, i).applyMatrix4(toHead);
         // Include triangles across the whole fitted band, including neighbours
         // above its fade; a fixed body-space cut leaves gaps between rings.
         if (point.y < offset.y - .65 * scale || point.y > offset.y - .24 * scale) continue;
         candidates.set(i, new THREE.Vector3().fromBufferAttribute(reference.attributes.position, i));
+        heights.set(i, point.y);
       }
       for (let i = 0; i < referenceIndex.count; i += 3) {
         const vertices = [0, 1, 2].map(j => referenceIndex.getX(i + j)), triangle = vertices.map(v => candidates.get(v));
-        if (triangle.every(Boolean)) neck.push({ triangle: new THREE.Triangle(...triangle as [THREE.Vector3, THREE.Vector3, THREE.Vector3]), vertices });
+        if (triangle.every(Boolean)) neck.push({ triangle: new THREE.Triangle(...triangle as [THREE.Vector3, THREE.Vector3, THREE.Vector3]), vertices,
+          minHeight: Math.min(...vertices.map(v => heights.get(v)!)), maxHeight: Math.max(...vertices.map(v => heights.get(v)!)) });
       }
       geometry.applyMatrix4(transform);
       const indices: number[] = [], weights: number[] = [];
@@ -244,10 +246,13 @@ export class EpilogueHeads {
         if (rest.getY(i) < -.32) {
           point.fromBufferAttribute(geometry.attributes.position, i);
           sample.copy(point).applyMatrix4(toHead);
+          const height = sample.y;
           ray.origin.set(0, sample.y, 0).applyMatrix4(fromHead);
           ray.direction.set(sample.x, 0, sample.z).applyMatrix3(direction).normalize();
           let nearest: typeof neck[number] | undefined, distance = Infinity;
           for (const source of neck) {
+            // The radial ray stays at one head-space height. Keep a conservative rounding margin.
+            if (height < source.minHeight - 1e-6 || height > source.maxHeight + 1e-6) continue;
             if (!ray.intersectTriangle(source.triangle.a, source.triangle.b, source.triangle.c, false, sample)) continue;
             const d = ray.origin.distanceToSquared(sample);
             if (d < distance) { nearest = source; distance = d; closest.copy(sample); }

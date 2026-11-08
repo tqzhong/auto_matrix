@@ -243,7 +243,8 @@ export class FilmSetRenderer {
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[]; pointSlots: 8 | 4 | 16 };
   private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedLafayetteUpper?: ColorPreparation & {
-    gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; eightMeshes?: ColorMesh[]; fourMeshes?: ColorMesh[];
+    gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; sceneId: FilmJourney['scene'];
+    crew: readonly (THREE.Group | undefined)[]; eightMeshes?: ColorMesh[]; fourMeshes?: ColorMesh[];
   };
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
@@ -1114,20 +1115,26 @@ export class FilmSetRenderer {
     }
   }
   prepareLafayetteUpper(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
-    height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
-    if (!this.hotel || this.current?.id !== 'film_lafayette' || journey.scene !== 'm1_pills' || journey.visiting
+    height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined], crew: readonly (THREE.Group | undefined)[] = []): void {
+    if (!this.hotel || this.current?.id !== 'film_lafayette' || !['m1_pills', 'm1_mirror'].includes(journey.scene) || journey.visiting
       || height < LAFAYETTE_THIRD_FLOOR_Y) { this.preparedLafayetteUpper = undefined; return; }
     const [neo, trinity] = actors;
     if (!neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
     let prepared = this.preparedLafayetteUpper;
-    if (!prepared || prepared.gpu !== renderer.properties || prepared.neo !== neo || prepared.trinity !== trinity) {
+    if (!prepared || prepared.gpu !== renderer.properties || prepared.neo !== neo || prepared.trinity !== trinity
+      || prepared.sceneId !== journey.scene || prepared.crew.length !== crew.length || prepared.crew.some((actor, index) => actor !== crew[index])) {
       // Room PBR maps attach together after decoding. Prepare the mapped variants.
       for (const texture of this.textures) if (!texture.image) return;
-      const meshes = this.colorMeshes([neo, trinity, this.root], true), textures = new Set<THREE.Texture>();
+      const meshes = this.colorMeshes([neo, trinity, ...crew.filter((actor): actor is THREE.Group => actor !== undefined), this.root], true), textures = new Set<THREE.Texture>();
+      if (journey.scene === 'm1_mirror') for (const name of ['Tracking_arms', 'Tracking_shirt']) {
+        const part = neo.getObjectByName(name);
+        if (part instanceof THREE.Mesh && part.material instanceof THREE.MeshStandardMaterial && !meshes.includes(part)) meshes.push(part);
+      }
       meshes.push(this.marker);
       this.queueColorTextures(textures, meshes);
       this.preparedLafayetteUpper = prepared = { scene: this.scene, gpu: renderer.properties, neo, trinity,
-        meshes, eightMeshes: meshes.slice(), fourMeshes: meshes.slice(), programs: [], textures };
+        sceneId: journey.scene, crew: crew.slice(), meshes, eightMeshes: journey.scene === 'm1_pills' ? meshes.slice() : undefined,
+        fourMeshes: meshes.slice(), programs: [], textures };
     }
     if (!prepared.meshes.length && !prepared.programs.length) {
       if (prepared.eightMeshes) { prepared.meshes = prepared.eightMeshes; prepared.eightMeshes = undefined; }

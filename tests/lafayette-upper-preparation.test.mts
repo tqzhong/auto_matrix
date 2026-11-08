@@ -25,7 +25,7 @@ function fixture() {
   }) as FilmSetRenderer;
   const lighting = new LightCulling(scene), camera = new THREE.PerspectiveCamera();
   const journey = { scene: 'm1_pills' } as FilmJourney;
-  const work: string[] = [], batches: { slots: number; meshes: THREE.Object3D[] }[] = [];
+  const work: string[] = [], batches: { slots: number; meshes: THREE.Object3D[] }[] = [], crew: (THREE.Group | undefined)[] = [];
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
@@ -50,14 +50,15 @@ function fixture() {
   } as unknown as THREE.WebGLRenderer;
   const prepare = (height = 15) => {
     const before = work.length;
-    film.prepareLafayetteUpper(renderer, camera, lighting, journey, height, actors);
+    film.prepareLafayetteUpper(renderer, camera, lighting, journey, height, actors, crew);
     assert.ok(work.length - before <= 1, 'one compile, binding or texture upload per frame');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(lighting.enabled, true);
     assert.ok(lights.every(light => light.visible && light.intensity === 10)); assert.equal(off.visible, false);
     assert.equal(marker.visible, false); assert.equal(off.intensity, 0);
     assert.equal(renderer.debug.checkShaderErrors, true);
   };
-  return { scene, root, marker, actors, film, renderer, lighting, journey, texture, work, batches, prepare,
+  return { scene, root, marker, actors, crew, film, renderer, lighting, journey, texture, work, batches, prepare,
+    mesh: (name: string) => { const mesh = new THREE.Mesh(geometry, material); mesh.name = name; return mesh; },
     ready: () => { ready = true; },
     replaceGpu: () => { uploaded = new WeakMap(); renderer.properties = properties() as THREE.WebGLRenderer['properties']; },
     dispose: () => { lighting.dispose(); geometry.dispose(); material.dispose(); markerMaterial.dispose(); texture.dispose(); environment.dispose(); },
@@ -89,5 +90,32 @@ test('upper preparation waits for the right phase and decoded room maps, then re
   h.replaceGpu(); for (let i = 0; i < 40; i++) h.prepare();
   assert.equal(h.work.filter(v => v === 'texture').length, 2);
   assert.equal(h.batches.length, 24);
-  const count = h.work.length; h.journey.scene = 'm1_mirror'; h.prepare(); assert.equal(h.work.length, count);
+  const count = h.work.length; h.journey.scene = 'm1_pod'; h.prepare(); assert.equal(h.work.length, count);
+});
+
+test('a cold mirror save prepares eight and four light programs and the future tracking clothes', t => {
+  const h = fixture(); t.after(h.dispose); h.journey.scene = 'm1_mirror';
+  const future = ['Tracking_arms', 'Tracking_shirt'].map(name => h.mesh(name));
+  for (const mesh of future) { mesh.visible = false; h.actors[0].add(mesh); }
+  h.ready(); for (let i = 0; i < 80; i++) h.prepare();
+  assert.deepEqual(h.batches.map(batch => batch.slots), [8, 8, 8, 8, 8, 4, 4, 4, 4, 4]);
+  for (const begin of [0, 5]) for (const mesh of future) assert.ok(h.batches.slice(begin, begin + 5).some(batch => batch.meshes.includes(mesh)));
+  assert.ok(future.every(mesh => !mesh.visible && mesh.parent === h.actors[0]));
+  const count = h.work.length; for (let i = 0; i < 16; i++) h.prepare(); assert.equal(h.work.length, count);
+});
+
+test('red drinking prepares newly loaded room cast before entry and a mirror or GPU change rebuilds it', t => {
+  const h = fixture(); t.after(h.dispose); h.ready();
+  h.journey.pills = { phase: 'taking', elapsed: 6, choice: 'red' }; h.crew.push(undefined);
+  for (let i = 0; i < 80; i++) h.prepare(); const before = h.batches.length;
+  const parent = new THREE.Group(), cypher = new THREE.Group(); parent.visible = false; parent.add(cypher); h.scene.add(parent);
+  const face = h.mesh('cypher-face'); cypher.add(face); h.crew[0] = cypher;
+  for (let i = 0; i < 80; i++) h.prepare();
+  assert.ok(h.batches.slice(before).some(batch => batch.slots === 8 && batch.meshes.includes(face)));
+  assert.equal(parent.visible, false); assert.equal(cypher.parent, parent);
+  const pills = h.batches.length; h.journey.scene = 'm1_mirror';
+  for (let i = 0; i < 80; i++) h.prepare();
+  assert.ok(h.batches.length > pills); assert.ok(h.batches.slice(pills).every(batch => batch.slots === 8 || batch.slots === 4));
+  const mirror = h.batches.length; h.replaceGpu(); for (let i = 0; i < 80; i++) h.prepare();
+  assert.equal(h.batches.length - mirror, mirror - pills); assert.equal(parent.visible, false);
 });

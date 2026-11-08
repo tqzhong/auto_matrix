@@ -287,11 +287,15 @@ export class Engine {
       const neo = this.agentRenderer.getAgentHero('neo');
       this.filmSets.prepareLafayette(this.renderer, this.camera, this.lightCulling, meeting, neo,
         meeting.scene === 'm1_bug' ? this.agentRenderer.getAgentHero('morpheus') : undefined);
-      if (meeting.scene === 'm1_pills' && avatarPosition) {
+      if ((meeting.scene === 'm1_pills' || meeting.scene === 'm1_mirror') && avatarPosition) {
         const actors = [neo, this.agentRenderer.getAgentHero('trinity')] as const;
-        this.filmSets.prepareLafayetteGround(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
-        this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
-        this.filmSets.prepareLafayetteUpper(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
+        if (meeting.scene === 'm1_pills') {
+          this.filmSets.prepareLafayetteGround(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
+          this.filmSets.prepareLafayetteLanding(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors);
+        }
+        const roomCast = meeting.scene === 'm1_mirror' || meeting.pills?.phase === 'taking' && meeting.pills.choice === 'red'
+          ? ['apoc', 'switch', 'cypher'].map(id => this.agentRenderer.getAgentHero(id)) : [];
+        this.filmSets.prepareLafayetteUpper(this.renderer, this.camera, this.lightCulling, meeting, avatarPosition.y, actors, roomCast);
       }
     }
     // The same floor lights and shared cast remain active through the window approach.

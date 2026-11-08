@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -45,6 +46,28 @@ async function fixture(t: TestContext) {
   t.after(() => { models.dispose(); globalThis.document = previous; });
   return { cypher, choi, draw, assets, models, world, settle };
 }
+
+test('Cypher neck binding avoids disjoint height bands and preserves every delivered geometry buffer', async t => {
+  const h = await fixture(t), original = THREE.Ray.prototype.intersectTriangle; let intersections = 0;
+  THREE.Ray.prototype.intersectTriangle = function(a, b, c, backfaceCulling, target) {
+    intersections++; return original.call(this, a, b, c, backfaceCulling, target);
+  };
+  t.after(() => { THREE.Ray.prototype.intersectTriangle = original; });
+  await h.draw(false);
+  const face = h.cypher.root.getObjectByName('cypher-anatomical-head') as THREE.SkinnedMesh, hash = createHash('sha256');
+  const add = (name: string, attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute) => {
+    assert.ok(attribute instanceof THREE.BufferAttribute); hash.update(name);
+    hash.update(Buffer.from(attribute.array.buffer, attribute.array.byteOffset, attribute.array.byteLength));
+  };
+  for (const name of Object.keys(face.geometry.attributes).sort()) add(name, face.geometry.attributes[name]);
+  for (const name of Object.keys(face.geometry.morphAttributes).sort())
+    face.geometry.morphAttributes[name].forEach((attribute, index) => add(`${name}:${index}`, attribute));
+  if (face.geometry.index) add('index', face.geometry.index);
+  // Capture of the exhaustive binding: attributes, morph targets and index, before height culling.
+  assert.equal(hash.digest('hex'), 'c9a636e66406ed5332042c93d6126acdcdf21ab0355129abc7f63bd4057107e8');
+  assert.ok(intersections <= 431616, `neck binding must eliminate at least 90% of the original 4,316,160 triangle checks; got ${intersections}`);
+  t.diagnostic(`neck binding triangle checks: ${intersections}`);
+});
 
 test('Cypher has an anatomical jaw deformation and separate upper teeth, lower teeth and tongue', async t => {
   const h = await fixture(t); await h.draw(false);
