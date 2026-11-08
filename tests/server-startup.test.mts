@@ -12,6 +12,7 @@ import { PersistentMemoryManager } from '../packages/server/src/memory/Persisten
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CONSTRUCT, constructGuidePose, truthRoot, truthText, type TruthRecovery } from '@auto_matrix/shared';
 import { metacortexLiftPose, metacortexPosition, type MetacortexLift } from '@auto_matrix/shared';
+import { MIRROR_TRINITY, MIRROR_TIMING, mirrorTime, mirrorSilver } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -1029,3 +1030,35 @@ test('invalid saved NPC dialogue is rejected without replacing the recoverable w
     await assert.rejects(store.load(), /Unsupported world checkpoint/); assert.equal(await readFile(f.file, 'utf8'), data);
   }
 });
+
+for (const elapsed of [.879, 12]) {
+  test(`real restarts preserve both paused mirror actions at ${elapsed}s through release and re-entry`, { timeout: 30000 }, async t => {
+    const f = await fixture(t, 'm1_mirror'), journey = f.checkpoint.sandbox.neoLife.journey;
+    const beat: AwakeningBeat = { kind: 'mirror', elapsed, chairMotion: 'stepping', approach: { x: -6.8, z: -14, yaw: -2.68 } };
+    journey.awakening = beat; journey.step = 0;
+    const clock = mirrorTime(beat), pose = awakeningPose(beat), neo = f.checkpoint.agents.neo, trinity = f.checkpoint.agents.trinity;
+    neo.position = filmPosition('film_lafayette', pose.x, pose.z); neo.position.y += pose.y; neo.rotation = pose.yaw ?? Math.PI;
+    neo.velocity = { x: 0, y: 0, z: 0 }; neo.currentLocation = 'film_lafayette'; neo.isInMatrix = true;
+    neo.currentAction = { type: 'idle', parameters: { player: true, resolved: true, filmPose: pose.pose,
+      mirror: mirrorSilver(clock), mirrorBeat: clock, mirrorEntry: { ...beat }, seated: clock >= MIRROR_TIMING.sit },
+      startedAt: 1300, duration: 1, progress: .37 };
+    trinity.position = filmPosition('film_lafayette', MIRROR_TRINITY.x, MIRROR_TRINITY.z); trinity.rotation = MIRROR_TRINITY.yaw;
+    trinity.velocity = { x: 0, y: 0, z: 0 }; trinity.currentLocation = 'film_lafayette'; trinity.isInMatrix = true;
+    trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: clock }, startedAt: 1301, duration: 1, progress: 1 };
+    f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', parameters: { player: true, mirrorBeat: clock }, startedAt: 1340, duration: 1, progress: .2 };
+    f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+    const check = (state: WorldStateFull) => {
+      assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, 1343);
+      assert.deepEqual(state.sandbox!.neoLife!.journey!.awakening, beat);
+      for (const id of ['neo', 'trinity']) for (const key of ['currentAction', 'position', 'rotation', 'velocity'] as const)
+        assert.deepEqual(state.agents[id][key], f.checkpoint.agents[id][key], `${id}: ${key}`);
+      assert.equal(state.agents.citizen_5.currentAction, null, 'unrelated player attacks still clear');
+    };
+    for (let restart = 0; restart < 2; restart++) {
+      const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+      check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+      check(await client.command('leave_character', {}, state => !state.agents.neo.controller));
+      client.socket.disconnect(); await server.stop();
+    }
+  });
+}

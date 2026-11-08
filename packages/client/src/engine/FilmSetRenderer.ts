@@ -243,7 +243,7 @@ export class FilmSetRenderer {
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[]; pointSlots: 8 | 4 | 16 };
   private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedLafayetteUpper?: ColorPreparation & {
-    gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; fourMeshes?: ColorMesh[];
+    gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; eightMeshes?: ColorMesh[]; fourMeshes?: ColorMesh[];
   };
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
@@ -1124,25 +1124,32 @@ export class FilmSetRenderer {
       // Room PBR maps attach together after decoding. Prepare the mapped variants.
       for (const texture of this.textures) if (!texture.image) return;
       const meshes = this.colorMeshes([neo, trinity, this.root], true), textures = new Set<THREE.Texture>();
+      meshes.push(this.marker);
       this.queueColorTextures(textures, meshes);
       this.preparedLafayetteUpper = prepared = { scene: this.scene, gpu: renderer.properties, neo, trinity,
-        meshes, fourMeshes: meshes.slice(), programs: [], textures };
+        meshes, eightMeshes: meshes.slice(), fourMeshes: meshes.slice(), programs: [], textures };
     }
-    if (!prepared.meshes.length && !prepared.programs.length && prepared.fourMeshes) {
-      prepared.meshes = prepared.fourMeshes; prepared.fourMeshes = undefined;
+    if (!prepared.meshes.length && !prepared.programs.length) {
+      if (prepared.eightMeshes) { prepared.meshes = prepared.eightMeshes; prepared.eightMeshes = undefined; }
+      else if (prepared.fourMeshes) { prepared.meshes = prepared.fourMeshes; prepared.fourMeshes = undefined; }
     }
-    // The street has retired; upper stair turns still alternate between eight and four slots.
-    const slots = prepared.fourMeshes ? 8 : 4, pointLights: THREE.PointLight[] = [];
-    this.scene.traverseVisible(object => { if (object instanceof THREE.PointLight && !object.castShadow) pointLights.push(object); });
-    if (pointLights.length < slots) return;
-    const hidden = pointLights.slice(slots), enabled = lighting.enabled;
+    if (!prepared.meshes.length && !prepared.programs.length && !prepared.textures.size) return;
+    // The chair marker adds a ninth slot after the greeting. Prepare it without displaying it early.
+    const slots = prepared.eightMeshes ? 9 : prepared.fourMeshes ? 8 : 4;
+    const visible = this.markerLight.visible, enabled = lighting.enabled, hidden: THREE.PointLight[] = [];
     try {
+      if (slots === 9) this.markerLight.visible = true;
+      const pointLights: THREE.PointLight[] = [];
+      this.scene.traverseVisible(object => { if (object instanceof THREE.PointLight && !object.castShadow) pointLights.push(object); });
+      if (pointLights.length < slots) return;
+      hidden.push(...pointLights.slice(slots));
       for (const light of hidden) light.visible = false;
       lighting.enabled = false;
       this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated');
     } finally {
       lighting.enabled = enabled;
       for (const light of hidden) light.visible = true;
+      this.markerLight.visible = visible;
     }
   }
   private colorMeshes(roots: THREE.Object3D[], includeBasic = false): ColorMesh[] {

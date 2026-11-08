@@ -17,9 +17,11 @@ function fixture() {
   }
   const hidden = new THREE.Mesh(geometry, material); hidden.visible = false; root.add(hidden);
   const lights = Array.from({ length: 8 }, () => new THREE.PointLight(0xffffff, 10, 20));
-  const off = new THREE.PointLight(); off.visible = false; scene.add(...lights, off);
+  const off = new THREE.PointLight(0xf6d99c, 0, 5); off.visible = false; scene.add(...lights, off);
+  const markerMaterial = new THREE.MeshBasicMaterial();
+  const marker = new THREE.Mesh(geometry, markerMaterial); marker.visible = false; scene.add(marker);
   const film = Object.assign(Object.create(FilmSetRenderer.prototype), {
-    scene, root, hotel: { root }, current: FILM_SETS.film_lafayette, textures: new Set([texture]),
+    scene, root, marker, markerLight: off, hotel: { root }, current: FILM_SETS.film_lafayette, textures: new Set([texture]),
   }) as FilmSetRenderer;
   const lighting = new LightCulling(scene), camera = new THREE.PerspectiveCamera();
   const journey = { scene: 'm1_pills' } as FilmJourney;
@@ -37,6 +39,8 @@ function fixture() {
       const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object));
       let slots = 0; colorScene.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
       assert.ok(meshes.length > 0 && meshes.length <= 4); assert.ok(!meshes.includes(hidden));
+      assert.equal(marker.visible, false, 'preparing the marker material must not display its ring');
+      assert.equal(off.intensity, 0, 'preparation must not turn on the chair light');
       batches.push({ slots, meshes }); work.push('compile');
       programs.push({ program: {}, isReady: () => ready, getUniforms: () => {
         assert.equal(renderer.debug.checkShaderErrors, false); work.push('bindings');
@@ -50,28 +54,30 @@ function fixture() {
     assert.ok(work.length - before <= 1, 'one compile, binding or texture upload per frame');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(lighting.enabled, true);
     assert.ok(lights.every(light => light.visible && light.intensity === 10)); assert.equal(off.visible, false);
+    assert.equal(marker.visible, false); assert.equal(off.intensity, 0);
     assert.equal(renderer.debug.checkShaderErrors, true);
   };
-  return { scene, root, actors, film, renderer, lighting, journey, texture, work, batches, prepare,
+  return { scene, root, marker, actors, film, renderer, lighting, journey, texture, work, batches, prepare,
     ready: () => { ready = true; },
     replaceGpu: () => { uploaded = new WeakMap(); renderer.properties = properties() as THREE.WebGLRenderer['properties']; },
-    dispose: () => { lighting.dispose(); geometry.dispose(); material.dispose(); texture.dispose(); environment.dispose(); },
+    dispose: () => { lighting.dispose(); geometry.dispose(); material.dispose(); markerMaterial.dispose(); texture.dispose(); environment.dispose(); },
   };
 }
 
-test('upper Lafayette prepares both light layouts and maps before a stair turn, one operation per frame', t => {
+test('upper Lafayette prepares the future chair light and both stair layouts, one operation per frame', t => {
   const h = fixture(); t.after(h.dispose);
   for (let i = 0; i < 4; i++) h.prepare();
-  assert.deepEqual(h.batches.map(batch => batch.slots), [8, 8, 8, 8]);
+  assert.deepEqual(h.batches.map(batch => batch.slots), [9, 9, 9, 9]);
   assert.equal(h.work.includes('bindings'), false, 'unfinished links never query binding locations');
   h.ready(); for (let i = 0; i < 32; i++) h.prepare();
-  assert.deepEqual(h.batches.map(batch => batch.slots), [8, 8, 8, 8, 4, 4, 4, 4]);
-  const expected = [...h.actors, h.root].flatMap(group => group.children.filter(object => object.visible));
-  assert.deepEqual(h.batches.slice(0, 4).flatMap(batch => batch.meshes), expected);
-  assert.deepEqual(h.batches.slice(4).flatMap(batch => batch.meshes), expected);
-  assert.equal(h.work.filter(v => v === 'bindings').length, 8);
+  assert.deepEqual(h.batches.map(batch => batch.slots), [9, 9, 9, 9, 8, 8, 8, 8, 4, 4, 4, 4]);
+  const expected = [...h.actors, h.root].flatMap(group => group.children.filter(object => object.visible)).concat(h.marker);
+  for (const start of [0, 4, 8]) assert.deepEqual(h.batches.slice(start, start + 4).flatMap(batch => batch.meshes), expected);
+  assert.equal(h.work.filter(v => v === 'bindings').length, 12);
   assert.equal(h.work.filter(v => v === 'texture').length, 1);
-  const count = h.work.length; for (let i = 0; i < 8; i++) h.prepare(); assert.equal(h.work.length, count);
+  const count = h.work.length;
+  t.mock.method(h.scene, 'traverseVisible', () => assert.fail('completed preparation must stop traversing the scene'));
+  for (let i = 0; i < 8; i++) h.prepare(); assert.equal(h.work.length, count);
 });
 
 test('upper preparation waits for the right phase and decoded room maps, then rebuilds for a new GPU', t => {
@@ -82,6 +88,6 @@ test('upper preparation waits for the right phase and decoded room maps, then re
   assert.equal(h.work.filter(v => v === 'texture').length, 1);
   h.replaceGpu(); for (let i = 0; i < 40; i++) h.prepare();
   assert.equal(h.work.filter(v => v === 'texture').length, 2);
-  assert.equal(h.batches.length, 16);
+  assert.equal(h.batches.length, 24);
   const count = h.work.length; h.journey.scene = 'm1_mirror'; h.prepare(); assert.equal(h.work.length, count);
 });

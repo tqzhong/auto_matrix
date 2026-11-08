@@ -4541,6 +4541,7 @@ export class FilmStorySystem {
       const index = this.sandbox().structures.findIndex(item => item.id === doorId);
       if (index < 0) this.sandbox().structures.push(door); else this.sandbox().structures[index] = door;
     }
+    const savedMirrorActions = dt === 0 && beat?.kind === 'mirror' ? [agent.currentAction, trinity?.currentAction] : undefined;
     const pose = awakeningPose(beat); const previous = agent.position;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
     agent.rotation = pose.yaw ?? (beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).yaw : beat?.kind === 'core' ? CABIN.chair.yaw
@@ -4557,6 +4558,10 @@ export class FilmStorySystem {
       reveal: reveal ? { kind: beat.kind, elapsed: beat.elapsed, role: 'neo' } : undefined }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'mirror' && trinity && !trinity.controller)
       trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: mirrorTime(beat) }, startedAt: tick, duration: 1, progress: 0 };
+    if (savedMirrorActions) for (const [index, actor] of [agent, trinity].entries()) {
+      const action = savedMirrorActions[index];
+      if (actor && action?.type === 'idle' && JSON.stringify(action.parameters) === JSON.stringify(actor.currentAction?.parameters)) actor.currentAction = action;
+    }
     if (beat?.kind === 'rescue') for (const role of ['morpheus', 'trinity'] as const) {
       const crew = this.world.agents.get(role); if (!crew || crew.controller) continue;
       const gesture = { elapsed: beat.elapsed, role, ...(beat.kind === 'rescue' ? { boarding: true } : {}) };
