@@ -110,6 +110,7 @@ import { trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { TrilogyEpilogueRenderer } from './TrilogyEpilogueRenderer.js';
 
 const outdoor = new Set(['rooftop', 'plaza', 'bridge', 'street', 'courtyard', 'freeway', 'machine', 'rain', 'garden', 'desert', 'pods', 'mountain']);
+const AMBUSH_POINT_SLOTS = 17;
 
 export function showMirrorSubject(mirror: Reflector, subject: () => THREE.Object3D | undefined, attachments: () => THREE.Object3D[] = () => []): () => void {
   const renderReflection = mirror.onBeforeRender.bind(mirror);
@@ -374,8 +375,8 @@ export class FilmSetRenderer {
   get active(): FilmSet | undefined { return this.current; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
-    // Reserve the scripted muzzle flash alongside the room and objective lights.
-    if (this.ambush && this.currentScene === 'm1_dejavu') return 12;
+    // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
+    if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
@@ -449,7 +450,8 @@ export class FilmSetRenderer {
     if (!prepared.colors) {
       prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0);
       prepared.colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true }), actors: new Set() };
-      prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      for (; points < AMBUSH_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
