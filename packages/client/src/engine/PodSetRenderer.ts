@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FILM_SETS, POD_WATER_DROP, POD_RESCUE, POD_BREATHER, AWAKENING_SECONDS, awakeningPose, podRescuePose, podBreatherPose, type FilmJourney } from '@auto_matrix/shared';
 import { podThirdPersonCamera } from '../player/PodCamera.js';
+import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { PodMembraneRenderer } from './PodMembraneRenderer.js';
@@ -24,6 +25,8 @@ export class PodSetRenderer {
   private construction?: Generator<void>;
   private colorPreparation?: Generator<void>;
   private colorProgramsReady = false;
+  private colorActor?: THREE.Group;
+  private colorGpu?: THREE.WebGLRenderer['properties'];
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Map<string, THREE.Texture>();
@@ -74,9 +77,14 @@ export class PodSetRenderer {
     this.stopPreparingColors();
     parent.add(this.root);
   }
-  prepareColorPrograms(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene): void {
-    if (this.construction || this.colorProgramsReady || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    this.colorPreparation ??= this.prepareColors(renderer, camera, scene);
+  prepareColorPrograms(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor?: THREE.Group): void {
+    if (this.construction || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (this.colorActor !== actor || this.colorGpu !== renderer.properties) {
+      this.stopPreparingColors(); this.colorProgramsReady = false;
+      this.colorActor = actor; this.colorGpu = renderer.properties;
+    }
+    if (this.colorProgramsReady) return;
+    this.colorPreparation ??= this.prepareColors(renderer, camera, scene, actor);
     if (this.colorPreparation.next().done) {
       this.colorPreparation = undefined;
       this.colorProgramsReady = true;
@@ -85,7 +93,7 @@ export class PodSetRenderer {
   private stopPreparingColors(): void {
     this.colorPreparation?.return(undefined); this.colorPreparation = undefined;
   }
-  private *prepareColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene): Generator<void> {
+  private *prepareColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor?: THREE.Group): Generator<void> {
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog?.clone() ?? null;
     for (const light of scene.children) {
       if (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight) lights.add(light.clone());
@@ -99,6 +107,14 @@ export class PodSetRenderer {
     this.root.updateMatrixWorld(true);
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
     const meshes: THREE.Object3D[] = [];
+    // The patient body is still hidden during the mirror; compile its next view without changing that pose.
+    actor?.traverse(object => {
+      if (object instanceof THREE.Mesh && (object.userData.patientBody || object.userData.oralSurface
+        || /^neo-(teeth|tongue)/.test(object.name) || !Array.isArray(object.material) && ['Skin', 'Eyes', 'Eyes cornea'].includes(object.material.name))) {
+        if (object instanceof THREE.SkinnedMesh && !Array.isArray(object.material)) prepareSkinnedMaterial(object.material);
+        meshes.push(object);
+      }
+    });
     this.root.traverseVisible(object => {
       if (object instanceof THREE.Light) {
         const light = object.clone(); object.getWorldPosition(light.position); lights.add(light);

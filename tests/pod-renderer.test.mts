@@ -48,6 +48,47 @@ test('pod color programs prepare offstage and query only ready programs', () => 
   } finally { pod.dispose(); previous.dispose(); scene.environment.dispose(); }
 });
 
+test('pod entry prepares a late patient and hidden body without changing the mirror appearance, and rebuilds for a new GPU', t => {
+  const pod = new PodSetRenderer(), scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(58, 16 / 9, .1, 400);
+  const parent = new THREE.Group(), actor = new THREE.Group(), geometry = new THREE.BoxGeometry(); parent.visible = false; parent.add(actor);
+  const skin = new THREE.MeshStandardMaterial({ name: 'Skin' }), clothes = new THREE.MeshStandardMaterial({ name: 'Tracking shirt' });
+  const patientSkin = new THREE.MeshStandardMaterial({ name: 'Tracking skin' });
+  const head = new THREE.SkinnedMesh(geometry, skin), patient = new THREE.SkinnedMesh(geometry, patientSkin), shirt = new THREE.SkinnedMesh(geometry, clothes);
+  patient.userData.patientBody = true; patient.visible = false; actor.add(head, patient, shirt);
+  scene.add(parent, new THREE.DirectionalLight(), new THREE.DirectionalLight());
+  const previous = new THREE.WebGLRenderTarget(12, 16); let target = previous, actorReady = false;
+  const batches: THREE.Object3D[][] = [];
+  const renderer = {
+    properties: {}, extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => target,
+    setRenderTarget: (value: THREE.WebGLRenderTarget) => { target = value; },
+    compile(subject: THREE.Group, _camera: THREE.Camera, lights: THREE.Scene) {
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+      assert.ok(batch.length >= 1 && batch.length <= 4); batches.push(batch);
+      if (batch.includes(head) || batch.includes(patient)) {
+        for (const mesh of [head, patient]) if (batch.includes(mesh)) assert.match(mesh.material.customProgramCacheKey(), /actor-local-skin-v1$/);
+        let points = 0, spots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; if (object instanceof THREE.SpotLight) spots++; });
+        assert.equal(points, 8); assert.equal(spots, 1);
+      }
+      assert.equal(pod.root.parent, null); assert.equal(target.width, 1);
+    },
+  };
+  t.after(() => { pod.dispose(); previous.dispose(); geometry.dispose(); skin.dispose(); patientSkin.dispose(); clothes.dispose(); });
+  for (let i = 0; i < 40; i++) pod.prepareStep();
+  const frames = () => { for (let i = 0; i < 160; i++) {
+    const before = batches.length; pod.prepareColorPrograms(renderer as unknown as THREE.WebGLRenderer, camera, scene, actorReady ? actor : undefined);
+    assert.ok(batches.length - before <= 1); assert.equal(target, previous);
+    assert.equal(parent.visible, false); assert.equal(patient.visible, false); assert.equal(shirt.visible, true);
+    assert.equal(actor.parent, parent); assert.equal(patient.parent, actor); assert.equal(head.material, skin); assert.equal(patient.material, patientSkin);
+  } };
+  frames(); assert.ok(batches.every(batch => !batch.includes(head)));
+  actorReady = true; frames();
+  assert.equal(batches.filter(batch => batch.includes(head)).length, 1);
+  assert.equal(batches.filter(batch => batch.includes(patient)).length, 1);
+  assert.ok(batches.every(batch => !batch.includes(shirt)));
+  const count = batches.length; frames(); assert.equal(batches.length, count, 'completed preparation has bounded work');
+  renderer.properties = {}; frames(); assert.equal(batches.filter(batch => batch.includes(patient)).length, 2);
+});
+
 test('the rescue bay has an open passage for the body and closes below it after boarding', () => {
   const root = new THREE.Group(); const set = new PodSetRenderer(root);
   try {

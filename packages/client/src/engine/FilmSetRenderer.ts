@@ -408,8 +408,8 @@ export class FilmSetRenderer {
     if (['approach', 'entrance', 'building', 'relaunch', 'sky_grapple'].includes(phase) || phase === 'descent' && elapsed < .8)
       this.smithFinale.prepareCrater(renderer, camera, this.scene);
   }
-  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera): void {
-    this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene);
+  preparePodColors(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, actor?: THREE.Group): void {
+    this.preparedPods?.prepareColorPrograms(renderer, camera, this.scene, actor);
   }
   prepareAmbush(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
