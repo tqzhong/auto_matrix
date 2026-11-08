@@ -31,7 +31,7 @@ export interface MotionInput {
   bathroom?: import('@auto_matrix/shared').BathroomGesture;
   basement?: import('@auto_matrix/shared').BasementGesture;
   basementGas?: import('@auto_matrix/shared').BasementLauncherGesture;
-  tvExit?: import('@auto_matrix/shared').TvExitGesture;
+  tvExit?: import('@auto_matrix/shared').TvExitGesture | import('@auto_matrix/shared').SubwayExitGesture;
   crosscut?: import('@auto_matrix/shared').CrosscutGesture;
   shot?: number;
   crouching?: boolean;

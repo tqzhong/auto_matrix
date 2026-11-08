@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MATRIX_ESCAPE, matrixEscapeRoot, type FilmJourney } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
+import { HardlineHandset } from '../agents/HardlineHandset.js';
 
 export const SUBWAY_POINT_SLOTS = 12; // Nine fixtures, the headlight, the goal light and the phone gunshot.
 
@@ -12,6 +13,8 @@ export class MatrixEscapeRenderer {
   private materials = new Set<THREE.Material>();
   private lights = new Set<THREE.Light>();
   private phoneDebris?: THREE.Group;
+  private subwayHandset?: HardlineHandset;
+  private subwayCord?: THREE.Line;
   private wallBreak?: THREE.Group;
   private train?: THREE.Group;
   private trainLight?: THREE.PointLight;
@@ -41,7 +44,9 @@ export class MatrixEscapeRenderer {
   constructor(root: THREE.Group, readonly setId: 'film_subway_platform' | 'film_escape_streets') {
     this.group.name = 'matrix-escape-set'; this.attach(root);
     if (setId === 'film_subway_platform') this.buildSubway(); else this.buildCity();
-    batchStaticGeometry(this.group, new Set()).forEach(geometry => this.geometries.add(geometry));
+    const dynamic = new Set<THREE.Mesh>();
+    this.subwayHandset?.root.traverse(object => { if (object instanceof THREE.Mesh) dynamic.add(object); });
+    batchStaticGeometry(this.group, dynamic).forEach(geometry => this.geometries.add(geometry));
     const usedGeometries = new Set<THREE.BufferGeometry>();
     this.group.traverse(object => { if (object instanceof THREE.Mesh) usedGeometries.add(object.geometry); });
     for (const geometry of this.geometries) if (!usedGeometries.has(geometry)) {
@@ -106,7 +111,7 @@ export class MatrixEscapeRenderer {
       const sign = new THREE.Group(); sign.position.set(-5, 9.2, z); platform.add(sign);
       this.box(sign, this.black, 0, 0, 0, 11, 2.2, .28); this.box(sign, this.tile, 0, 0, -.17, 9.8, 1.35, .04);
       for (const x of [-3.7, -1.25, 1.25, 3.7]) this.box(sign, this.tileDark, x, 0, -.21, 1.45, .18, .03);
-      const bench = new THREE.Group(); bench.position.set(-8, 0, z + 5); platform.add(bench);
+      const bench = new THREE.Group(); bench.position.set(-8, 0, z === 25 ? 27 : z + 5); platform.add(bench);
       this.box(bench, this.wood, 0, 1.25, 0, 8.5, .28, 1.1); this.box(bench, this.wood, 0, 2.25, .48, 8.5, 1.8, .22);
       for (const x of [-3.4, 3.4]) this.line(bench, this.steel, new THREE.Vector3(x, 0, -.35), new THREE.Vector3(x, 1.3, 0), .09);
     }
@@ -119,8 +124,11 @@ export class MatrixEscapeRenderer {
 
     const phone = new THREE.Group(); phone.name = 'matrix-subway-phone'; phone.position.set(-7, 0, 32); platform.add(phone);
     this.box(phone, this.tileDark, 0, 2.6, .45, 2.3, 5.2, .5); this.box(phone, this.black, 0, 3.25, .08, 1.45, 1.65, .4);
-    this.box(phone, this.green, 0, 4.35, .02, 1.3, .55, .06); this.box(phone, this.black, -.52, 3.15, -.28, .28, 1.22, .24);
-    this.line(phone, this.black, new THREE.Vector3(-.52, 2.58, -.25), new THREE.Vector3(-.3, 1.75, .08), .035);
+    this.box(phone, this.green, 0, 4.35, .02, 1.3, .55, .06);
+    this.subwayHandset = new HardlineHandset(); this.subwayHandset.root.position.copy(MATRIX_ESCAPE.subway.receiver); this.group.add(this.subwayHandset.root);
+    const cord = new THREE.BufferGeometry(); cord.setAttribute('position', new THREE.BufferAttribute(new Float32Array(64 * 3), 3)); this.geometries.add(cord);
+    const rubber = new THREE.LineBasicMaterial({ color: 0x121611 }); this.materials.add(rubber);
+    this.subwayCord = new THREE.Line(cord, rubber); this.subwayCord.name = 'matrix-subway-phone-cord'; this.subwayCord.frustumCulled = false; this.group.add(this.subwayCord);
     const debris = new THREE.Group(); debris.name = 'matrix-subway-phone-debris'; debris.visible = false; debris.position.set(-7, .1, 31.5); platform.add(debris); this.phoneDebris = debris;
     for (let i = 0; i < 18; i++) {
       const shard = this.mesh(new THREE.TetrahedronGeometry(.08 + i % 4 * .04), i % 3 ? this.black : this.glass, debris);
@@ -249,11 +257,27 @@ export class MatrixEscapeRenderer {
     return group;
   }
 
-  update(journey: FilmJourney | undefined, _elapsed: number): void {
+  update(journey: FilmJourney | undefined, _elapsed: number, subject?: THREE.Object3D): void {
     const encounter = journey?.matrixEscape;
     if (!encounter) return;
     if (encounter.kind === 'subway') {
-      if (this.phoneDebris) this.phoneDebris.visible = Boolean(encounter.phoneBroken) || !['ready', 'phone_shot'].includes(encounter.phase);
+      if (this.phoneDebris) this.phoneDebris.visible = Boolean(encounter.phoneBroken) || !['ready', 'crew_exit', 'phone_shot'].includes(encounter.phase);
+      const pickup = encounter.phase === 'crew_exit' && encounter.crewExit
+        ? encounter.crewExit.elapsed - MATRIX_ESCAPE.subway.crewApproach : -1;
+      const held = pickup >= .8;
+      if (this.subwayHandset) this.subwayHandset.root.visible = !held;
+      if (this.subwayCord && this.subwayHandset) {
+        this.group.updateWorldMatrix(true, true);
+        const receiver = held ? subject?.getObjectByName('hardline-handset') : undefined;
+        const to = receiver ? this.group.worldToLocal(receiver.getWorldPosition(new THREE.Vector3())) : this.subwayHandset.root.position;
+        const from = new THREE.Vector3(-7.3, 2.6, 32.08), position = this.subwayCord.geometry.attributes.position;
+        for (let i = 0; i < position.count; i++) {
+          const t = i / (position.count - 1), point = from.clone().lerp(to, t);
+          point.y -= Math.sin(t * Math.PI) * .42; point.x += Math.sin(t * Math.PI * 48) * .035;
+          position.setXYZ(i, point.x, point.y, point.z);
+        }
+        position.needsUpdate = true;
+      }
       if (this.wallBreak) {
         this.wallBreak.visible = Boolean(encounter.wallBroken) || ['wall_break', 'tracks', 'train_window', 'train_escape', 'body_swap', 'done'].includes(encounter.phase);
         const progress = encounter.phase === 'wall_break' ? Math.min(1, encounter.elapsed / MATRIX_ESCAPE.subway.wallBreak) : this.wallBreak.visible ? 1 : 0;
@@ -309,6 +333,7 @@ export class MatrixEscapeRenderer {
   }
 
   dispose(): void {
+    this.subwayHandset?.dispose();
     this.group.removeFromParent(); this.group.clear(); this.geometries.forEach(geometry => geometry.dispose()); this.materials.forEach(material => material.dispose());
     this.lights.forEach(light => light.dispose()); this.geometries.clear(); this.materials.clear(); this.lights.clear();
   }

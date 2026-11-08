@@ -102,7 +102,7 @@ import { newBathroomFight, stepBathroomFight, bathroomFightAction } from '@auto_
 import { RESCUE, rescueDuration, rescueLocked, rescueRoot, rescueText, type RescueLoadout, type RescuePreparation, type RescueRole } from '@auto_matrix/shared';
 import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, type GovernmentRescueEncounter, type GovernmentRescueRole } from '@auto_matrix/shared';
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
-import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
+import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, subwayCrewRoot, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
 import { BURLY, burlyLocked, burlyText, savedBurlyFailedIdle, type BurlyEncounter } from '@auto_matrix/shared';
 import { burlyCopyOccupied } from './BurlyMovement.js';
@@ -3570,11 +3570,52 @@ export class FilmStorySystem {
     encounter.checkpoint ??= encounter.kind === 'subway' && state.step > 0 ? 'tracks' : encounter.kind === 'subway' ? 'duel' : 'street';
     encounter.hits ??= 0; encounter.dodges ??= 0; encounter.pursuit ??= 0; encounter.segment ??= state.step;
     encounter.possessions ??= 0; encounter.resolved ??= [];
+    // Old ready saves also need the missing physical exits. Later fight saves
+    // retain their checkpoint; the corrected route starts before the phone.
+    if (kind === 'subway' && encounter.phase === 'ready' && !encounter.crewExit && state.step === 0) {
+      const roles = (['morpheus', 'trinity'] as const).filter(id => {
+        const actor = this.world.agents.get(id);
+        return actor?.status === 'alive' && actor.health > 0 && actor.isInMatrix
+          && ['film_government_roof', 'film_subway_platform'].includes(actor.currentLocation);
+      });
+      if (roles.length) { encounter.crewExit = { roles, index: 0, elapsed: 0 }; encounter.phase = 'crew_exit'; encounter.elapsed = 0; }
+    }
     return encounter;
   }
   private matrixEscapeOccupied(encounter: MatrixEscapeEncounter): AgentState | undefined {
     const ids = encounter.kind === 'subway' ? ['smith', 'citizen_13'] : ['smith', 'citizen_13', 'citizen_14'];
+    if (encounter.phase === 'crew_exit') ids.push(...encounter.crewExit!.roles.slice(encounter.crewExit!.index));
     return ids.map(id => this.world.agents.get(id)).find(actor => actor?.controller);
+  }
+  private stageSubwayCrew(encounter: MatrixEscapeEncounter, dt: number, tick: number): void {
+    const exit = encounter.crewExit!;
+    for (let index = exit.index; index < exit.roles.length; index++) {
+      const role = exit.roles[index], actor = this.world.agents.get(role)!;
+      if (actor.controller || actor.status !== 'alive' || actor.health <= 0) continue;
+      const elapsed = index === exit.index ? exit.elapsed : 0, root = subwayCrewRoot(role, elapsed), before = actor.position;
+      actor.position = filmPosition('film_subway_platform', root.x, root.z); actor.rotation = root.yaw;
+      actor.currentLocation = 'film_subway_platform'; actor.isInMatrix = true; actor.targetPosition = null; actor.currentPath = [];
+      actor.velocity = dt > 0 ? { x: (actor.position.x - before.x) / dt, y: 0, z: (actor.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, subwayExit: true,
+        tvExit: { phase: elapsed < MATRIX_ESCAPE.subway.crewApproach ? 'ready' : 'pickup',
+          elapsed: Math.max(0, elapsed - MATRIX_ESCAPE.subway.crewApproach), role, subway: true } }, startedAt: tick, duration: 1, progress: 0 };
+    }
+  }
+  private subwayCrewFrame(encounter: MatrixEscapeEncounter, dt: number, tick: number): void {
+    const exit = encounter.crewExit!, role = exit.roles[exit.index], actor = this.world.agents.get(role);
+    if (actor?.status === 'alive' && actor.health > 0) {
+      exit.elapsed = Math.min(MATRIX_ESCAPE.subway.crewApproach + MATRIX_ESCAPE.subway.crewPickup, exit.elapsed + dt);
+      this.stageSubwayCrew(encounter, dt, tick);
+      if (exit.elapsed < MATRIX_ESCAPE.subway.crewApproach + MATRIX_ESCAPE.subway.crewPickup) { encounter.elapsed = exit.elapsed; return; }
+      // The avatar disappears only after walking to and holding the real line.
+      const root = role === 'morpheus' ? { x: -1.2, z: -8, yaw: .65 } : { x: 2.8, z: -5, yaw: Math.PI / 2 };
+      actor.position = filmPosition('film_neb_deck', root.x, root.z); actor.rotation = root.yaw;
+      actor.currentLocation = 'film_neb_deck'; actor.isInMatrix = false; actor.velocity = { x: 0, y: 0, z: 0 };
+      actor.currentAction = { type: 'idle', parameters: { resolved: true }, startedAt: tick, duration: 1e9, progress: 0 };
+    }
+    exit.index++; exit.elapsed = 0; encounter.elapsed = 0;
+    if (exit.index === exit.roles.length) { encounter.phase = 'ready'; this.clearMatrixEscapeActions(); }
+    else this.stageSubwayCrew(encounter, 0, tick);
   }
   private clearMatrixEscapeActions(): void {
     for (const actor of this.world.agents.values()) if (actor.currentAction?.parameters.matrixEscape) {
@@ -3686,7 +3727,11 @@ export class FilmStorySystem {
       // Keep the later possession host at its authored waiting position. Scene
       // entry otherwise leaves it near the track camera before the body swap.
       this.stageMatrixEscapeActor('citizen_13', encounter, dt, tick);
-      if (encounter.phase === 'phone_shot') {
+      if (encounter.phase === 'crew_exit') {
+        this.stageMatrixEscapeActor('neo', encounter, delta, tick); this.stageMatrixEscapeActor('smith', encounter, delta, tick);
+        this.subwayCrewFrame(encounter, delta, tick);
+        if (encounter.crewExit!.index === encounter.crewExit!.roles.length) this.matrixEscapeAction(agent, tick);
+      } else if (encounter.phase === 'phone_shot') {
         const before = encounter.elapsed; encounter.elapsed = Math.min(MATRIX_ESCAPE.subway.phoneShot, encounter.elapsed + delta);
         if (!encounter.phoneBroken && before < .62 && encounter.elapsed >= .62) { encounter.phoneBroken = true; this.matrixEscapeImpact('smith', 'subway-phone', encounter, tick); }
         for (const role of ['neo', 'smith'] as MatrixEscapeRole[]) this.stageMatrixEscapeActor(role, encounter, dt, tick);
@@ -3785,7 +3830,9 @@ export class FilmStorySystem {
     if (previous.kind === 'subway') {
       const tracks = previous.checkpoint === 'tracks' || state.step > 0; state.step = tracks ? 1 : 0;
       state.matrixEscape = { kind: 'subway', phase: tracks ? 'tracks' : 'ready', elapsed: 0, attempt, checkpoint: tracks ? 'tracks' : 'duel',
-        hits: 0, dodges: 0, pursuit: 0, segment: state.step, possessions: tracks ? previous.possessions : 0, resolved: [], phoneBroken: tracks || previous.phoneBroken, wallBroken: tracks };
+        hits: 0, dodges: 0, pursuit: 0, segment: state.step, possessions: tracks ? previous.possessions : 0, resolved: [], phoneBroken: tracks || previous.phoneBroken, wallBroken: tracks,
+        crewExit: previous.crewExit };
+      if (previous.crewExit && previous.crewExit.index < previous.crewExit.roles.length) state.matrixEscape.phase = 'crew_exit';
     } else {
       state.matrixEscape = { ...previous, phase: 'running', elapsed: 0, attempt, checkpoint: 'street', pursuit: .12, segment: state.step,
         hits: 0, dodges: previous.dodges, resolved: [...previous.resolved] };

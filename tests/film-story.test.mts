@@ -4216,6 +4216,16 @@ test('the entire film route completes through interactions, driving and real com
       if (scene.id === 'm1_subway') {
         if (index === 0) {
           h.command('act');
+          if (state.matrixEscape?.phase === 'crew_exit') {
+            const health = ['morpheus', 'trinity'].map(id => h.world.agents.get(id)!.health);
+            for (let frame = 0; frame < 180 && state.matrixEscape?.phase === 'crew_exit'; frame++) h.players.step(.1, true, h.tick());
+            assert.equal(state.matrixEscape?.phase, 'ready'); assert.equal(state.matrixEscape?.crewExit?.index, 2);
+            for (const [member, id] of ['morpheus', 'trinity'].entries()) {
+              const crew = h.world.agents.get(id)!;
+              assert.equal(crew.isInMatrix, false); assert.equal(crew.currentLocation, 'film_neb_deck'); assert.equal(crew.health, health[member]);
+            }
+            h.command('act');
+          }
           for (let frame = 0; frame < 45 && state.matrixEscape?.phase !== 'duel'; frame++) h.players.step(.1, true, h.tick());
           assert.equal(state.matrixEscape?.phase, 'duel');
           const target = h.sandbox.state.threats.find(threat => threat.scene === scene.id)!;

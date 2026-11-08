@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, TV_EXIT, basementDropPose, basementGasLaunch, basementHatchPoint, type BasementGesture, type BasementLauncherGesture, type TvExitGesture } from '@auto_matrix/shared';
+import { FILM_SETS, TV_EXIT, MATRIX_ESCAPE, basementDropPose, basementGasLaunch, basementHatchPoint, type BasementGesture, type BasementLauncherGesture, type TvExitGesture, type SubwayExitGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { groundCharacter } from './GroundContact.js';
@@ -89,7 +89,7 @@ export function poseBasementLauncher(rig: CharacterRig, gesture?: BasementLaunch
   }
 }
 
-export function poseHardline(rig: CharacterRig, gesture?: TvExitGesture): void {
+export function poseHardline(rig: CharacterRig, gesture?: TvExitGesture | SubwayExitGesture): void {
   if (rig.handset) rig.handset.root.visible = false;
   if (!rig.hero || !gesture) return;
   if (gesture.phase === 'emerging') {
@@ -154,8 +154,9 @@ export function poseHardline(rig: CharacterRig, gesture?: TvExitGesture): void {
   if (!rig.handset || gesture.phase === 'ready' || gesture.phase === 'done') return;
   const returning = gesture.phase === 'calling' ? THREE.MathUtils.smoothstep(gesture.elapsed, 5.3, 6.6) : 0;
   const pickup = gesture.phase === 'pickup' ? THREE.MathUtils.smoothstep(gesture.elapsed, .8, 1.8) : 1;
-  const center = FILM_SETS.film_tv_repair.center, phone = TV_EXIT.phone;
-  const base = new THREE.Vector3(center.x + phone.x + .26, center.y - 1 + phone.y, center.z + phone.z + .28);
+  const subway = 'subway' in gesture, center = FILM_SETS[subway ? 'film_subway_platform' : 'film_tv_repair'].center;
+  const phone = subway ? MATRIX_ESCAPE.subway.receiver : TV_EXIT.phone;
+  const base = new THREE.Vector3(center.x + phone.x + (subway ? 0 : .26), center.y - 1 + phone.y, center.z + phone.z + (subway ? 0 : .28));
   rig.root.updateWorldMatrix(true, true);
   const ear = rig.hero.bones.get('head')!.localToWorld(new THREE.Vector3(.23, -.08, .13));
   const target = base.lerp(ear, pickup * (1 - returning));

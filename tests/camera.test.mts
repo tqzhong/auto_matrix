@@ -48,7 +48,7 @@ import { TRAINMAN_CHASE, trainmanVaultLift, trainmanVaultProgress } from '@auto_
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { DOCK_EVACUATION, SHAFT_SEAL, dockEvacuationRoot, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
-import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
+import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, subwayCrewRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
 test('observer camera releases drag and ignores pointer capture while a character controls the view', () => {
   let captures = 0;
@@ -1420,6 +1420,39 @@ test('roof rope camera holds Neo and dangling Trinity through shocks, impact and
   for (const [index, point] of pullPoints.entries()) {
     const screen = point.project(game.camera); assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1, `roof pull crop: ${screen.toArray().join(',')}`);
     if (index < 2) assert.ok(screen.x > -.65, `Neo and Trinity cannot be reduced to the left edge during the crash: ${screen.toArray().join(',')}`);
+  }
+});
+
+test('the subway crew exit camera shows the phone and companions in both views and aspect ratios', t => {
+  const game = setup(t), center = FILM_SETS.film_subway_platform.center;
+  game.state.currentLocation = 'film_subway_platform';
+  for (const aspect of [16 / 9, .72]) for (const index of [0, 1]) for (const elapsed of [1, 6]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+    const encounter = { kind: 'subway' as const, phase: 'crew_exit' as const, elapsed, attempt: 0, checkpoint: 'duel' as const,
+      hits: 0, dodges: 0, pursuit: 0, segment: 0, possessions: 0, resolved: [],
+      crewExit: { roles: ['morpheus', 'trinity'] as ('morpheus' | 'trinity')[], index, elapsed } };
+    const neo = matrixEscapeRoot(encounter, 'neo'), companion = subwayCrewRoot(encounter.crewExit.roles[index], elapsed);
+    game.state.position = filmPosition('film_subway_platform', neo.x, neo.z); game.state.rotation = neo.yaw;
+    game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+    if (game.controls.firstPerson) { game.key('KeyV'); game.key('KeyV', false); }
+    game.controls.possess(game.state); game.step(.5);
+    assert.equal(game.controls.performing, true);
+    for (const point of [new THREE.Vector3(center.x - 7.52, center.y + 2.15, center.z + 31.72),
+      new THREE.Vector3(center.x + companion.x, center.y + 3.5, center.z + companion.z),
+      new THREE.Vector3(center.x + neo.x, center.y + 2.1, center.z + neo.z)]) {
+      const screen = point.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+        `the actual exit must stay visible at aspect ${aspect}, member ${index}, time ${elapsed}`);
+    }
+    const hook = new THREE.Vector3(center.x - 7.52, center.y + 2.15, center.z + 31.72);
+    const backing = new THREE.Box3(new THREE.Vector3(center.x - 8.15, center.y - 1, center.z + 32.2),
+      new THREE.Vector3(center.x - 5.85, center.y + 4.2, center.z + 32.7));
+    const blocked = new THREE.Ray(game.camera.position, hook.clone().sub(game.camera.position).normalize()).intersectBox(backing, new THREE.Vector3());
+    assert.ok(!blocked || blocked.distanceTo(game.camera.position) >= hook.distanceTo(game.camera.position), 'the phone backing must not hide the receiver');
+    game.key('KeyV'); game.key('KeyV', false); game.step(.2);
+    assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .02);
+    const seen = new THREE.Vector3(center.x + companion.x, center.y + 2.25, center.z + companion.z).project(game.camera);
+    assert.ok(Math.abs(seen.x) < .1 && Math.abs(seen.y) < .1 && seen.z > -1 && seen.z < 1, 'V must look at the exiting companion');
   }
 });
 

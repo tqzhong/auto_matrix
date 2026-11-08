@@ -115,6 +115,7 @@ export class PlayerController {
     const airRoles = interlude?.airRescue?.kind === 'office' ? ['neo', 'trinity', 'morpheus', 'smith', 'agent_brown', 'agent_jones'] : ['neo', 'trinity', 'morpheus'];
     if (interlude && airRescueLocked(interlude) && id !== interlude.actor && airRoles.includes(id)) return { error: '这个角色正在参与直升机营救片段，当前动作结束后可以接入。' };
     const escapeRoles = interlude?.matrixEscape?.kind === 'subway' ? ['neo', 'smith', 'citizen_13'] : ['neo', 'smith', 'citizen_13', 'citizen_14'];
+    if (interlude?.matrixEscape?.phase === 'crew_exit') escapeRoles.push(...interlude.matrixEscape.crewExit!.roles.slice(interlude.matrixEscape.crewExit!.index));
     if (interlude?.matrixEscape && !['failed', 'done'].includes(interlude.matrixEscape.phase) && id !== interlude.actor && escapeRoles.includes(id)) return { error: '这个角色正在参与地铁与街巷追逐片段，当前撤离结束后可以接入。' };
     if (interlude?.reloaded && !interlude.visiting && interlude.reloaded.phase !== 'done' && id !== interlude.actor && (RELOADED.cast as readonly string[]).includes(id)) return { error: '这个角色正在参与第二部的预感与升级特工片段，结束后可以接入。' };
     if (interlude?.scene === 'm2_catch' && !interlude.visiting && interlude.catch && interlude.catch.phase !== 'done' && id !== interlude.actor && ['trinity', 'agent_johnson'].includes(id)) return { error: '这个角色正在参与 Neo 的高空营救，片段结束后可以接入。' };

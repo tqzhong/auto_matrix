@@ -1,10 +1,13 @@
 import type { FilmJourney } from './film-story.js';
 
 export type MatrixEscapeKind = 'subway' | 'city';
-export type MatrixEscapePhase = 'ready' | 'phone_shot' | 'stance' | 'duel' | 'wall_break' | 'tracks' | 'train_window'
+export type MatrixEscapePhase = 'ready' | 'crew_exit' | 'phone_shot' | 'stance' | 'duel' | 'wall_break' | 'tracks' | 'train_window'
   | 'train_escape' | 'body_swap' | 'briefing' | 'running' | 'phone_failure' | 'truck_warning' | 'truck_window'
   | 'possession' | 'door_ready' | 'door' | 'failed' | 'done';
 export type MatrixEscapeRole = 'neo' | 'smith' | 'citizen_13' | 'citizen_14';
+export type SubwayExitRole = 'morpheus' | 'trinity';
+export interface SubwayCrewExit { roles: SubwayExitRole[]; index: number; elapsed: number }
+export interface SubwayExitGesture { phase: 'ready' | 'pickup'; elapsed: number; role: SubwayExitRole; subway: true }
 
 export interface MatrixEscapeEncounter {
   kind: MatrixEscapeKind;
@@ -23,12 +26,16 @@ export interface MatrixEscapeEncounter {
   wallBroken?: boolean;
   trainHit?: boolean;
   truckHit?: boolean;
+  crewExit?: SubwayCrewExit;
 }
 
 export type MatrixEscapeGesture = MatrixEscapeEncounter & { role: MatrixEscapeRole };
 
 export const MATRIX_ESCAPE = {
   subway: {
+    crewApproach: 4,
+    crewPickup: 4.4,
+    receiver: { x: -7.52, y: 3.15, z: 31.72 },
     phoneShot: 1.8,
     stance: 1.8,
     requiredHits: 4,
@@ -65,7 +72,7 @@ const pulse = (time: number, center: number, radius: number): number => smooth(1
 export function matrixEscapePhaseLocked(encounter?: MatrixEscapeEncounter): boolean {
   if (!encounter) return false;
   return encounter.kind === 'city' && encounter.phase === 'done'
-    || ['phone_shot', 'stance', 'wall_break', 'tracks', 'train_window', 'train_escape', 'body_swap', 'briefing',
+    || ['crew_exit', 'phone_shot', 'stance', 'wall_break', 'tracks', 'train_window', 'train_escape', 'body_swap', 'briefing',
     'phone_failure', 'truck_warning', 'truck_window', 'possession', 'door'].includes(encounter.phase);
 }
 
@@ -77,6 +84,7 @@ export function matrixEscapeLocked(journey: FilmJourney): boolean {
 
 export function matrixEscapeDuration(encounter: MatrixEscapeEncounter): number {
   if (encounter.kind === 'subway') return ({
+    crew_exit: MATRIX_ESCAPE.subway.crewApproach + MATRIX_ESCAPE.subway.crewPickup,
     phone_shot: MATRIX_ESCAPE.subway.phoneShot,
     stance: MATRIX_ESCAPE.subway.stance,
     wall_break: MATRIX_ESCAPE.subway.wallBreak,
@@ -97,6 +105,10 @@ export function matrixEscapeDuration(encounter: MatrixEscapeEncounter): number {
 
 export function matrixEscapeText(encounter: MatrixEscapeEncounter): string {
   if (encounter.kind === 'subway') {
+    if (encounter.phase === 'crew_exit') {
+      const role = encounter.crewExit?.roles[encounter.crewExit.index];
+      return `${role === 'trinity' ? 'Trinity' : 'Morpheus'} 正在${(encounter.crewExit?.elapsed ?? 0) < MATRIX_ESCAPE.subway.crewApproach ? '走向出口电话' : '拿起听筒，返回飞船'}。Neo 留在站台掩护；等同伴撤离后再按 G 接听。`;
+    }
     if (encounter.phase === 'ready') return '出口电话就在身后。按 G 接听线路；Smith 已经走上站台。';
     if (encounter.phase === 'phone_shot') return 'Smith 开枪击碎出口电话。线路中断，站台只剩列车风和脚步声。';
     if (encounter.phase === 'stance') return 'Neo 停住脚步，转身面对 Smith。这一次不再逃跑。';
@@ -126,6 +138,8 @@ export function matrixEscapeText(encounter: MatrixEscapeEncounter): string {
 
 export function matrixEscapeRoot(encounter: MatrixEscapeEncounter, role: MatrixEscapeRole) {
   if (encounter.kind === 'subway') {
+    if (encounter.phase === 'crew_exit') return role === 'neo' ? { x: -.5, y: 0, z: 31.1, yaw: -Math.PI / 2 }
+      : role === 'smith' ? { x: 1.5, y: 0, z: 16, yaw: 0 } : { x: -8, y: 0, z: -27, yaw: 0 };
     if (encounter.phase === 'phone_shot') {
       const shot = smooth(encounter.elapsed / MATRIX_ESCAPE.subway.phoneShot);
       return role === 'neo' ? { x: -7, y: 0, z: 31.5 - shot * 2, yaw: 0 }
@@ -186,6 +200,19 @@ export function matrixEscapeRoot(encounter: MatrixEscapeEncounter, role: MatrixE
       : { x: 4, y: 0, z: -35, yaw: Math.PI };
   }
   return role === 'neo' ? { x: 0, y: 0, z: 35, yaw: Math.PI } : { x: -10, y: 0, z: 24, yaw: 0 };
+}
+
+/** The approach passes the right side of the phone base, then turns in front of it. */
+export function subwayCrewRoot(role: SubwayExitRole, elapsed: number) {
+  const start = role === 'morpheus' ? { x: -2.5, z: 37 } : { x: .5, z: 37 };
+  const corner = { x: -3, z: 30.7 }, end = { x: -6.65, z: 30.7 };
+  const first = Math.hypot(corner.x - start.x, corner.z - start.z), last = corner.x - end.x;
+  const progress = clamp(elapsed / MATRIX_ESCAPE.subway.crewApproach) * (first + last);
+  const turning = smooth((elapsed - MATRIX_ESCAPE.subway.crewApproach + .35) / .35);
+  const yaw = -Math.PI / 2 + turning * (Math.atan2(MATRIX_ESCAPE.subway.receiver.x - end.x, MATRIX_ESCAPE.subway.receiver.z - end.z) + Math.PI / 2);
+  if (progress < first) return { x: start.x + (corner.x - start.x) * progress / first, y: 0,
+    z: start.z + (corner.z - start.z) * progress / first, yaw: Math.atan2(corner.x - start.x, corner.z - start.z) };
+  return { x: corner.x - (progress - first), y: 0, z: end.z, yaw };
 }
 
 export function matrixEscapePose(gesture: MatrixEscapeGesture) {

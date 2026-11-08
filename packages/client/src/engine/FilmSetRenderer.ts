@@ -2097,7 +2097,8 @@ export class FilmSetRenderer {
     this.basementFrame = elapsed;
     this.tvRepair?.update(journey, journey?.tvExit?.crosscut ? this.phoneBodies?.(crosscutPhoneRole(journey.tvExit.crosscut) ?? 'neo') : this.recoverySubject);
     this.government?.update(journey, elapsed);
-    this.matrixEscape?.update(journey, elapsed);
+    const subwayExit = journey?.matrixEscape?.phase === 'crew_exit' ? journey.matrixEscape.crewExit : undefined;
+    this.matrixEscape?.update(journey, elapsed, subwayExit ? this.phoneBodies?.(subwayExit.roles[subwayExit.index]) : undefined);
     this.theOne?.update(journey, elapsed);
     this.reloaded?.update(journey);
     this.catchSet?.update(journey, this.phoneBodies?.('trinity'));

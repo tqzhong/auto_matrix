@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BASEMENT, BASEMENT_ROLES, FILM_SETS, TV_EXIT, WETWALL, WETWALL_SHAFT, basementDropPose, basementDropRoot, basementGasLaunch, basementLauncherRoot, basementHatchPoint, basementLifterRoot, type BasementGesture, type WetwallGesture, type AgentState } from '@auto_matrix/shared';
+import { BASEMENT, BASEMENT_ROLES, FILM_SETS, TV_EXIT, MATRIX_ESCAPE, subwayCrewRoot, WETWALL, WETWALL_SHAFT, basementDropPose, basementDropRoot, basementGasLaunch, basementLauncherRoot, basementHatchPoint, basementLifterRoot, type BasementGesture, type WetwallGesture, type AgentState } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { CharacterModels, type CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
@@ -118,6 +118,33 @@ test('Neo holds one real receiver through the dead line and returns it before th
   }
   h.characters.animate(rig,0,{speed:0,grounded:true,verticalVelocity:0,turn:0,tvExit:{role:'neo',phase:'calling',elapsed:6.7}} as any,4);
   assert.equal(rig.root.getObjectByName('hardline-handset')!.visible,false);
+});
+
+test('both subway survivors lift the actual receiver from its hook to their own ear', async t => {
+  const h = await models(t), center = FILM_SETS.film_subway_platform.center;
+  for (const role of ['morpheus', 'trinity'] as const) {
+    const actor = h.world.agents.get(role)!; actor.isInMatrix = true;
+    const rig = h.characters.create(actor); await new Promise(resolve => setImmediate(resolve));
+    const root = subwayCrewRoot(role, MATRIX_ESCAPE.subway.crewApproach);
+    rig.root.position.set(center.x + root.x, center.y - 1, center.z + root.z); rig.root.rotation.y = root.yaw;
+    for (const elapsed of [.8, 1.2, 1.8, 3.8]) {
+      h.characters.animate(rig, 0, { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+        tvExit: { role, phase: 'pickup', elapsed, subway: true } }, 4);
+      const receiver = rig.root.getObjectByName('hardline-handset');
+      assert.ok(receiver?.visible, `${role} must carry one physical receiver`);
+      const palm = rig.hero!.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(0, -.19, .035));
+      assert.ok(receiver.getWorldPosition(new THREE.Vector3()).distanceTo(palm) < .16);
+      if (elapsed === .8) {
+        const hook = new THREE.Vector3(center.x + MATRIX_ESCAPE.subway.receiver.x, center.y - 1 + MATRIX_ESCAPE.subway.receiver.y,
+          center.z + MATRIX_ESCAPE.subway.receiver.z);
+        assert.ok(palm.distanceTo(hook) < .16, `${role} misses the real hook: ${palm.distanceTo(hook)}`);
+      }
+      if (elapsed >= 1.8) {
+        const ear = rig.hero!.bones.get('head')!.localToWorld(new THREE.Vector3(.23, -.08, .13));
+        assert.ok(palm.distanceTo(ear) < .16, `${role} misses their own ear: ${palm.distanceTo(ear)}`);
+      }
+    }
+  }
 });
 
 test('gas-masked launcher bodies hold both grips and fire from the exact shared muzzle',async t=>{
