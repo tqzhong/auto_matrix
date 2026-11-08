@@ -108,31 +108,59 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   };
   const groundLights = pointLights();
   const groundBatches: number[] = [];
+  const bindings: number[] = [], debug = { checkShaderErrors: true };
+  let firstReady = false, secondReady = false;
+  const program = (id: number, ready: () => boolean) => ({
+    program: {}, isReady: ready,
+    getUniforms() { assert.equal(debug.checkShaderErrors, false); bindings.push(id); },
+  });
+  const programs: ReturnType<typeof program>[] = [];
+  const getContext = () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true });
   const groundWebgl = {
+    info: { programs }, debug, getContext,
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
-    compile(subject: THREE.Object3D) {
+    compile(subject: THREE.Object3D, _camera: THREE.Camera, target: THREE.Scene) {
+      assert.ok(target !== scene, 'color preparation must not replace the live scene light state used by shadows');
+      assert.equal(target.fog, scene.fog);
+      assert.equal(target.environment, scene.environment);
       assert.equal(approach.root.visible, true);
       let count = 0; subject.traverse(() => count++);
       assert.ok(count > 0 && count <= 4);
       groundBatches.push(pointLights().length);
+      if (!programs.length) programs.push(program(1, () => firstReady), program(2, () => secondReady));
     },
   } as unknown as THREE.WebGLRenderer;
   renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 8, actors);
   assert.deepEqual(groundBatches, []);
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 1, actors);
     assert.deepEqual(pointLights(), groundLights);
     assert.equal(lighting.enabled, true);
   }
-  assert.deepEqual(groundBatches, [8, 4]);
+  assert.deepEqual(groundBatches, [8, 4, 16], 'the second-floor turn can also expose the full sixteen-light layout');
+  assert.deepEqual(bindings, [], 'unfinished programs must not block the frame');
+  secondReady = true;
+  renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 1, actors);
+  assert.deepEqual(bindings, [2], 'the ground pass prepares a completed program even if the first is unfinished');
+  firstReady = true;
+  renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 1, actors);
+  assert.deepEqual(bindings, [2, 1], 'only one binding preparation runs in a frame');
+  assert.deepEqual(groundBatches, [8, 4, 16], 'binding preparation occupies its own frame');
+  assert.equal(debug.checkShaderErrors, true);
   const batches: THREE.Object3D[][] = [];
+  let landingReady = false;
   const webgl = {
+    info: { programs }, debug, getContext,
     extensions: { has: () => true }, getRenderTarget: () => null, setRenderTarget() {},
-    compile(subject: THREE.Object3D, camera: THREE.Camera) {
+    compile(subject: THREE.Object3D, camera: THREE.Camera, target: THREE.Scene) {
+      assert.ok(target !== scene, 'the next-floor layout must also use a separate render state');
+      assert.equal(target.fog, scene.fog);
+      assert.equal(target.environment, scene.environment);
       assert.equal(approach.root.visible, false);
       assert.equal(camera.position.y, eye.position.y + LAFAYETTE.rise);
       assert.equal(hotel.lights[0].position.y, before[0][1] + LAFAYETTE.rise);
       const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
+      if (batches.length === 1) programs.push(program(3, () => landingReady), program(4, () => landingReady));
     },
   } as unknown as THREE.WebGLRenderer;
   renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, 7.9, actors);
@@ -144,6 +172,15 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   }
   assert.deepEqual(batches.map(batch => batch.length), [4, 4]);
   assert.deepEqual(batches.flat().slice(0, 6), actors.flatMap(actor => actor.children));
+  landingReady = true;
+  for (const expected of [[2, 1, 3], [2, 1, 3, 4]]) {
+    renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
+    assert.deepEqual(bindings, expected);
+    assert.equal(debug.checkShaderErrors, true);
+    assert.equal(approach.root.visible, true);
+    assert.deepEqual(hotel.lights.map(light => light.position.toArray()), before);
+  }
+  assert.equal(batches.length, 2, 'landing binding preparation also runs without a compile');
   neo.position.y = 15; renderer.update(neo, sandbox, 0, neo.position);
   assert.equal(renderer.lafayetteStreetHidden, true);
   renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);

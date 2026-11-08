@@ -240,8 +240,8 @@ export class FilmSetRenderer {
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
   private courtyardCastColors?: CastColorPreparation;
-  private preparedLafayetteGround?: { meshes: ColorMesh[]; fourSlots: boolean };
-  private preparedLafayetteLanding?: ColorMesh[];
+  private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[]; pointSlots: 8 | 4 | 16 };
+  private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private club?: ClubSetRenderer;
   private freeway?: FreewaySetRenderer;
   private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
@@ -1055,41 +1055,55 @@ export class FilmSetRenderer {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height >= LAFAYETTE_SECOND_FLOOR_Y
       || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    const prepared = this.preparedLafayetteGround ??= { meshes: this.colorMeshes([neo, trinity, hotel.root, street]), fourSlots: false };
+    const prepared = this.preparedLafayetteGround ??= { meshes: this.colorMeshes([neo, trinity, hotel.root, street]), programs: [], pointSlots: 8 };
+    const programs = renderer.info.programs;
+    const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
+    if (ready >= 0) {
+      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      return;
+    }
     const batch = prepared.meshes.slice(0, 4);
     if (!batch.length) return;
-    // Turns after the rear entrance reuse either variant. Keep frustum selection in the actual render.
-    const slots = prepared.fourSlots ? 4 : 8;
+    // Turns at the entrance and second floor can use all three layouts. Keep live frustum selection.
+    const slots = prepared.pointSlots;
     const pointLights: THREE.PointLight[] = [];
     this.scene.traverseVisible(object => {
       if (object instanceof THREE.PointLight && !object.castShadow) pointLights.push(object);
     });
     if (pointLights.length < slots) return;
-    const hidden = pointLights.slice(slots), enabled = lighting.enabled;
+    const hidden = pointLights.slice(slots), enabled = lighting.enabled, start = programs?.length ?? 0;
     try {
       for (const light of hidden) light.visible = false;
       lighting.enabled = false;
-      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject));
+      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
+      if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
       lighting.enabled = enabled;
       for (const light of hidden) light.visible = true;
     }
-    if (prepared.fourSlots) prepared.meshes.splice(0, batch.length);
-    prepared.fourSlots = !prepared.fourSlots;
+    if (slots === 16) prepared.meshes.splice(0, batch.length);
+    prepared.pointSlots = slots === 8 ? 4 : slots === 4 ? 16 : 8;
   }
   prepareLafayetteLanding(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
     height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height < LAFAYETTE_SECOND_FLOOR_Y
       || height >= LAFAYETTE_THIRD_FLOOR_Y || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    this.preparedLafayetteLanding ??= this.colorMeshes([neo, trinity, hotel.root]);
-    const batch = this.preparedLafayetteLanding.splice(0, 4);
+    const prepared = this.preparedLafayetteLanding ??= { meshes: this.colorMeshes([neo, trinity, hotel.root]), programs: [] };
+    const programs = renderer.info.programs;
+    const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
+    if (ready >= 0) {
+      cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
+      return;
+    }
+    const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
     if (!batch.length) return;
     const eye = camera.clone(); eye.position.y += LAFAYETTE.rise;
     try {
       street.visible = false;
       hotel.updateLights(height - 1 + LAFAYETTE.rise);
-      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, eye, subject));
+      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, eye, subject, undefined, undefined, 'isolated'));
+      if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
       street.visible = true;
       hotel.updateLights(height - 1);
