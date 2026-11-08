@@ -307,6 +307,7 @@ export class FilmSetRenderer {
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
+  private preparedGovernment?: { root: THREE.Group; renderer: GovernmentSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedSubway?: { renderer: MatrixEscapeRenderer; colors?: ColorPreparation };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation };
@@ -539,6 +540,41 @@ export class FilmSetRenderer {
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareGovernment(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
+    if (this.current?.id !== 'film_government_lobby' || journey?.scene !== 'm1_lobby' || journey.visiting || journey.lobby?.phase !== 'cleared') {
+      this.cancelGovernmentPreparation(); return;
+    }
+    if (!this.preparedGovernment) {
+      const root = new THREE.Group();
+      this.preparedGovernment = { root, renderer: new GovernmentSetRenderer(root, 'film_government_office') };
+    }
+    const prepared = this.preparedGovernment;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      // The questioning entrance has no objective light, even while the lobby elevator does.
+      for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.intensity = 0;
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene);
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors, meshes = new Set<ColorMesh>();
+    for (const id of ['morpheus', ...FILM_SCENE_BY_ID.m1_smith_question.cast]) {
+      for (const group of [body(id), hero(id)]) {
+        if (!group || colors.actors.has(group)) continue;
+        const collected: ColorMesh[] = [];
+        group.traverse(object => {
+          if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) collected.push(object);
+        });
+        if (!collected.length) continue;
+        colors.actors.add(group); collected.forEach(mesh => meshes.add(mesh));
+      }
+    }
+    colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
     const phase = journey.airRescue?.phase;
@@ -1647,6 +1683,8 @@ export class FilmSetRenderer {
       if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
       if (preparedLobby) { this.preparedLobby = undefined; preparedLobby.lighting?.dispose(); preparedLobby.root.removeFromParent(); }
+      const preparedGovernment = set?.id === 'film_government_office' && sceneId === 'm1_smith_question' && !journey?.visiting ? this.preparedGovernment : undefined;
+      if (preparedGovernment) { this.preparedGovernment = undefined; preparedGovernment.lighting?.dispose(); preparedGovernment.root.removeFromParent(); }
       const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
       if (preparedSubway) this.preparedSubway = undefined;
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
@@ -1702,7 +1740,10 @@ export class FilmSetRenderer {
           prepared?.attach(this.root, set);
         }
         else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
-        else if (set.id === 'film_government_office' || set.id === 'film_government_roof') this.government = new GovernmentSetRenderer(this.root, set.id);
+        else if (set.id === 'film_government_office' || set.id === 'film_government_roof') {
+          this.government = preparedGovernment?.renderer ?? new GovernmentSetRenderer(this.root, set.id);
+          if (preparedGovernment) this.root.add(preparedGovernment.root);
+        }
         else if (sceneId === 'm3_bane' && set.id === 'film_logos_deck') { this.logosBane = new LogosBaneRenderer(this.root); void this.logosBane.ready.catch(error => console.error('金色 Smith 加载失败', error)); }
         else if (sceneId === 'm3_bane_questions' && set.id === 'film_hammer_deck') this.baneInquiry = new BaneInquiryRenderer(this.root);
         else if (sceneId === 'm3_maggie_discovery' && set.id === 'film_hammer_deck' && !preparedSecondOracle) this.maggieDiscovery = new MaggieDiscoveryRenderer(this.root);
@@ -4321,6 +4362,10 @@ export class FilmSetRenderer {
     const prepared = this.preparedLobby; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedLobby = undefined;
   }
+  private cancelGovernmentPreparation(): void {
+    const prepared = this.preparedGovernment; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedGovernment = undefined;
+  }
   private cancelAmbushPreparation(): void {
     this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
   }
@@ -4366,6 +4411,7 @@ export class FilmSetRenderer {
     this.cancelRestaurantPreparation();
     this.cancelMealPreparation();
     this.cancelLobbyPreparation();
+    this.cancelGovernmentPreparation();
     this.cancelZionPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();
