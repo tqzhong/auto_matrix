@@ -14,7 +14,7 @@ const set = FILM_SETS.film_ambush_house;
 const route = [[-5.5, 30.8], [-5.5, 14.5], [5.5, 14.5], [5.5, 31.8], [11, 31.8], [11, 8], [0, 8], [0, -8]];
 
 function setup(stairCat = false) {
-  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const world = new WorldState(), manager = new AgentManager(world); manager.initializeAllAgents();
   const dynamics = { record: (event: Omit<WorldEvent, 'id'>) => world.addWorldEvent(event) } as WorldDynamics;
   const sandbox = new SandboxSystem(world, dynamics, 42);
   const players = new PlayerController(world, { interrupt() {}, isAgentInConversation: () => false } as unknown as ConversationEngine,
@@ -35,8 +35,22 @@ function setup(stairCat = false) {
     players.receiveInput('company-player', { x, z, yaw: Math.atan2(x, z), jump: false, sprint, sequence: ++sequence }); frame();
   };
   const cast = () => roles.map(id => world.agents.get(id)!);
-  return { world, sandbox, players, actor, state, command, frame, move, cast, tick: () => tick };
+  return { world, manager, sandbox, players, actor, state, command, frame, move, cast, tick: () => tick };
 }
+
+test('pausing after a generic agent tick keeps all five companion action clocks stable through restoration', () => {
+  const h = setup(true); Object.assign(h.state().ambushApproach!, { doorwayCat: true }); h.frame();
+  const tick = h.tick() + 1; h.world.simulationTick = tick;
+  for (const actor of h.cast()) h.manager.updateAgentState(actor.id, tick);
+  assert.ok(h.cast().every(actor => actor.currentAction?.progress === 1), 'the actual agent update reproduces the completed idle metadata');
+  const route = structuredClone(h.state().ambushApproach), positions = h.cast().map(actor => ({ ...actor.position })), velocities = h.cast().map(actor => ({ ...actor.velocity }));
+  h.players.step(0, false, tick);
+  assert.ok(h.cast().every(actor => actor.currentAction?.progress === 0 && actor.currentAction.startedAt === tick), 'pause must refresh the authored companion actions before saving');
+  const actions = structuredClone(h.cast().map(actor => actor.currentAction));
+  assert.deepEqual(h.cast().map(actor => actor.position), positions); assert.deepEqual(h.cast().map(actor => actor.velocity), velocities); assert.deepEqual(h.state().ambushApproach, route);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.cast().map(actor => actor.currentAction), actions); assert.deepEqual(h.state().ambushApproach, route);
+});
 
 test('the old-building arrival contains Neo and all five companions on its actual lower stairs', () => {
   const h = setup();

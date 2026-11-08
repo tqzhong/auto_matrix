@@ -202,7 +202,7 @@ const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
 export class FilmSetRenderer {
   readonly root = new THREE.Group();
   private current?: FilmSet;
-  private preparedAmbush?: { renderer: AmbushSetRenderer; colors?: ColorPreparation };
+  private preparedAmbush?: { renderer: AmbushSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
@@ -436,18 +436,36 @@ export class FilmSetRenderer {
     body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined): void {
     const phase = journey.oracle?.departure?.phase;
     if (this.current?.id !== 'film_oracle_home' || journey.scene !== 'm1_oracle' || journey.visiting
-      || !phase || !['talking', 'bite_ready', 'biting', 'leaving', 'done'].includes(phase)) return;
+      || !phase || !['talking', 'bite_ready', 'biting', 'leaving', 'done'].includes(phase)) {
+      this.cancelAmbushPreparation(); return;
+    }
     const prepared = this.preparedAmbush ??= { renderer: new AmbushSetRenderer() };
     if (!prepared.renderer.prepareStep() || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
+    }
     if (!prepared.colors) {
       prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0);
-      const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_dejavu.cast];
-      const bodies = cast.map(body).filter((root): root is THREE.Group => Boolean(root));
-      const heroes = cast.map(hero).filter((root): root is THREE.Group => Boolean(root));
-      // A distant actor's detailed model can have a hidden parent in the apartment.
-      prepared.colors = this.colorPreparation(prepared.renderer.root, bodies, { textureActors: heroes });
+      prepared.colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
     }
-    this.prepareColorFrame(renderer, camera, prepared.colors);
+    const colors = prepared.colors, meshes = new Set<ColorMesh>();
+    for (const id of [journey.actor, ...FILM_SCENE_BY_ID.m1_dejavu.cast]) {
+      const detailed = hero(id);
+      for (const group of [body(id), detailed]) {
+        if (!group || colors.actors.has(group)) continue;
+        const collected: ColorMesh[] = [];
+        if (group === detailed) group.traverse(object => {
+          // The old-building coat and shirt are hidden during the Oracle visit.
+          if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) collected.push(object);
+        });
+        else collected.push(...this.colorMeshes([group]));
+        if (!collected.length) continue;
+        colors.actors.add(group); collected.forEach(mesh => meshes.add(mesh));
+      }
+    }
+    colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
     const phase = journey.airRescue?.phase;
@@ -948,16 +966,20 @@ export class FilmSetRenderer {
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
       return;
     }
-    for (const texture of prepared.textures) {
+    this.prepareColorTexture(renderer, prepared.textures);
+  }
+  private prepareColorTexture(renderer: THREE.WebGLRenderer, textures: Set<THREE.Texture>): boolean {
+    for (const texture of textures) {
       const image = texture.image as { width?: number; complete?: boolean } | null;
       if (!texture.version || !image || image.complete === false) continue;
-      prepared.textures.delete(texture);
+      textures.delete(texture);
       const uploaded = renderer.properties.get(texture) as { __version?: number };
       if ((image.width ?? 0) >= 1024 && uploaded.__version !== texture.version) {
         renderer.initTexture(texture);
-        return;
+        return true;
       }
     }
+    return false;
   }
   prepareOffice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, player?: AgentState,
     sandbox?: SandboxState, actor?: THREE.Group, city?: THREE.Group, distantActor?: THREE.Mesh, manager?: THREE.Group, streetCaster?: THREE.Group): boolean {
@@ -1549,7 +1571,7 @@ export class FilmSetRenderer {
       const preparedPods = set?.architecture === 'pods' && sceneId === 'm1_pod' && !journey?.visiting ? this.preparedPods : undefined;
       if (preparedPods) this.preparedPods = undefined;
       const preparedAmbush = set?.id === 'film_ambush_house' && sceneId === 'm1_dejavu' && !journey?.visiting ? this.preparedAmbush?.renderer : undefined;
-      if (preparedAmbush) this.preparedAmbush = undefined;
+      if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
       const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
       if (preparedSubway) this.preparedSubway = undefined;
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
@@ -4217,6 +4239,9 @@ export class FilmSetRenderer {
     const prepared = this.preparedMeal; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedMeal = undefined;
   }
+  private cancelAmbushPreparation(): void {
+    this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
+  }
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
@@ -4275,7 +4300,7 @@ export class FilmSetRenderer {
     this.meeting?.dispose(); this.meeting = undefined;
     this.interrogation?.dispose(); this.interrogation = undefined;
     this.pillGlass = undefined;
-    this.preparedAmbush?.renderer.dispose(); this.preparedAmbush = undefined;
+    this.cancelAmbushPreparation();
     this.ambush?.dispose(); this.ambush = undefined;
     this.basement?.dispose(); this.basement = undefined; this.basementFrame = undefined;
     this.tvRepair?.dispose(); this.tvRepair = undefined;

@@ -17,6 +17,8 @@ function fixture(t: TestContext) {
   const solids: { bounds: THREE.Box3; inverse: THREE.Matrix4; half: THREE.Vector3 }[] = [];
   const prototype = AmbushSetRenderer.prototype as unknown as { batch(): void }, batch = prototype.batch;
   t.mock.method(prototype, 'batch', function(this: { root: THREE.Group }) {
+    // Incremental construction batches before attach; measure these walls under their real world parent.
+    root.add(this.root);
     this.root.updateWorldMatrix(true, true);
     this.root.traverse(object => {
       if (!(object instanceof THREE.Mesh) || !(object.geometry instanceof THREE.BoxGeometry)) return;

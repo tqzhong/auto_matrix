@@ -265,7 +265,7 @@ export class Engine {
     this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife,
       player?.id === meeting?.actor ? this.agentRenderer.getAgentHero('neo') : undefined);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
-    if (this.running && meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
+    if (meeting?.scene === 'm1_oracle' && player?.id === meeting.actor)
       this.filmSets.prepareAmbush(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentBody(id), id => this.agentRenderer.getAgentHero(id));
     if (this.running && meeting?.scene === 'm1_rooftop_rescue' && player?.id === meeting.actor)
       this.filmSets.prepareSubway(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));

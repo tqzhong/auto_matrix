@@ -64,7 +64,8 @@ test('the Oracle exit prepares the old building with the same lights used at the
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null, setRenderTarget() {},
     properties: { get: () => ({}) }, initTexture(texture: THREE.Texture) { uploads.push(texture); },
     compile(_subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
-      preparedLights = pointLights(target); preparedDoor = target.getObjectByName('mouse-room-door');
+      preparedLights = pointLights(target);
+      target.traverseVisible(object => { if (object.name === 'mouse-room-door') preparedDoor = object; });
     } } as unknown as THREE.WebGLRenderer;
   const camera = new THREE.PerspectiveCamera();
   const prepare = () => sets.prepareAmbush(graphics, camera, journey, id => id === 'neo' ? body : undefined,
