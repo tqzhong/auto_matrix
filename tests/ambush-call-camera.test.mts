@@ -209,7 +209,7 @@ test('the initial wide and narrow player views can see the actual transferred ph
     phone.traverseVisible(object => {
       if (!(object instanceof THREE.Mesh)) return;
       const positions = object.geometry.attributes.position;
-      for (let i = 0; i < positions.count; i += Math.ceil(positions.count / 3)) {
+      for (let i = 0; i < positions.count; i += Math.ceil(positions.count / 12)) {
         const point = new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld), ndc = point.clone().project(h.camera);
         if (Math.abs(ndc.x) > 1 || Math.abs(ndc.y) > 1 || ndc.z < -1 || ndc.z > 1) continue;
         checked++;

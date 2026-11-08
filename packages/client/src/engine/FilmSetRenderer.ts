@@ -374,6 +374,8 @@ export class FilmSetRenderer {
   get active(): FilmSet | undefined { return this.current; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
+    // Reserve the scripted muzzle flash alongside the room and objective lights.
+    if (this.ambush && this.currentScene === 'm1_dejavu') return 12;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
@@ -447,6 +449,7 @@ export class FilmSetRenderer {
     if (!prepared.colors) {
       prepared.renderer.update({ ...journey, scene: 'm1_dejavu', step: 0 }, [], 0);
       prepared.colors = { ...this.colorPreparation(prepared.renderer.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();

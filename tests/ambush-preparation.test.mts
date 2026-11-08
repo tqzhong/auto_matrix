@@ -31,7 +31,7 @@ function fixture(t: TestContext) {
     getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) {
       assert.notEqual(lights, scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog); assert.equal(eye, camera); assert.equal(target?.width, 1);
-      let slots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; }); assert.equal(slots, 11);
+      let slots = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; }); assert.equal(slots, 12);
       let spots = 0; lights.traverseVisible(object => { if (object instanceof THREE.SpotLight) spots++; }); assert.equal(spots, 1);
       let room: THREE.Object3D | undefined;
       lights.traverseVisible(object => { if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName('mouse-room-door')) room = object; });

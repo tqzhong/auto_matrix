@@ -81,7 +81,8 @@ test('the Oracle exit prepares the old building with the same lights used at the
   journey.scene = 'm1_dejavu'; journey.step = 0;
   neo.position = filmPosition('film_ambush_house', -5.5, 32);
   sets.update(neo, sandbox, 1);
-  assert.equal(preparedLights.length, pointLights(scene).length, 'the closed shaft must stay unlit during shader preparation');
+  assert.equal(pointLights(scene).length, 11, 'the closed shaft must stay unlit after the handoff');
+  assert.equal(preparedLights.length, sets.minimumPointSlots, 'preparation includes the same zero-energy flash reserve used for the live draw');
   assert.ok(scene.getObjectByName('mouse-room-door') === preparedDoor);
 });
 
