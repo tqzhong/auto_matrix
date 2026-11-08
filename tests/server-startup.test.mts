@@ -99,6 +99,43 @@ async function replayed(client: Awaited<ReturnType<typeof controls>>, records: C
   }
 }
 
+test('real restarts retain the completed spoon lesson prop while Neo follows the hostess', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_spoon'), journey = f.checkpoint.sandbox.neoLife.journey, neo = f.checkpoint.agents.neo;
+  journey.step = 1; journey.oracle = { spoon: 1, spoonLesson: { phase: 'done', elapsed: 0 },
+    arrival: { phase: 'done', elapsed: 0, hostess: 25.5, morpheus: 31.7, seating: 2.2 },
+    reception: { phase: 'guiding', progress: 9.529, elapsed: 2.2 }, waitingTime: 68.113 };
+  neo.position = filmPosition('film_oracle_home', -2, 10.8); neo.velocity = { x: 0, y: 0, z: 0 };
+  neo.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crouching: false, spoon: 1 }, startedAt: 1341, duration: 1, progress: 0 };
+  journey.checkpoint = { ...neo.position }; f.checkpoint.simulation = { running: false, speed: 1 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  const check = (state: WorldStateFull) => {
+    assert.deepEqual(state.agents.neo.currentAction, neo.currentAction, 'cold startup must preserve the held spoon and original clock');
+    assert.deepEqual(state.agents.neo.position, neo.position); assert.deepEqual(state.agents.neo.velocity, neo.velocity);
+    assert.deepEqual(state.sandbox!.neoLife!.journey!.oracle, journey.oracle);
+  };
+  check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+  client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+});
+
+test('real restarts preserve the complete waiting farewell action after the Oracle answer', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_oracle'), journey = f.checkpoint.sandbox.neoLife.journey, neo = f.checkpoint.agents.neo;
+  const departure = { phase: 'waiting', elapsed: 0, rise: 0 };
+  journey.step = 2; journey.oracle = { vase: 4.5, consultation: { phase: 'done', elapsed: 4.2, answer: 'agency' },
+    reception: { phase: 'ready', progress: 27.894304217630726, elapsed: 0 }, departure, waitingTime: 120.7 };
+  neo.position = filmPosition('film_oracle_home', -4.35, -22); neo.velocity = { x: 0, y: 0, z: 0 };
+  neo.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crouching: false, oracleDeparture: { ...departure, role: 'neo' } }, startedAt: 1341, duration: 1, progress: 0 };
+  journey.checkpoint = { ...neo.position }; f.checkpoint.simulation = { running: false, speed: 1 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  const check = (state: WorldStateFull) => {
+    assert.deepEqual(state.agents.neo.currentAction, neo.currentAction);
+    assert.deepEqual(state.agents.neo.position, neo.position); assert.deepEqual(state.sandbox!.neoLife!.journey!.oracle, journey.oracle);
+  };
+  check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+  client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+});
+
 for (const [phase, elapsed] of [['file', 1.2], ['response', 0], ['coercion', 9.25], ['done', 24]] as const) {
   test(`real restarts preserve all four paused ${phase} interrogation actions and clocks`, { timeout: 30000 }, async t => {
     const f = await fixture(t, 'm1_interrogation'), journey = f.checkpoint.sandbox.neoLife.journey;

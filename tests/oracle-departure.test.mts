@@ -122,3 +122,17 @@ test('a current old Oracle ending resumes its missing farewell without reopening
   assert.ok(h.state().completed.includes('m1_room303'), 'the departure migration must preserve earlier completed scenes');
   h.command('next'); assert.equal(h.state().scene, 'm1_oracle');
 });
+
+for (const phase of ['waiting', 'guiding', 'ready', 'talking', 'bite_ready', 'biting', 'leaving', 'done'] as const) {
+  test(`the paused ${phase} farewell keeps its accepted cookie action through release and reconnect`, () => {
+    const h = setup(); h.departure().phase = phase; h.departure().elapsed = ['talking', 'biting'].includes(phase) ? 1 : 0;
+    h.departure().rise = phase === 'waiting' ? 0 : 3.8; h.frame(1, false);
+    const action = structuredClone(h.actor.currentAction), position = { ...h.actor.position }, departure = structuredClone(h.departure());
+    if (!['talking', 'biting'].includes(phase)) assert.equal(h.actor.currentAction?.parameters.crouching, false, 'free walking retains ordinary-input metadata');
+    assert.equal((h.actor.currentAction?.parameters.oracleDeparture as { role: string }).role, 'neo');
+    h.players.release('departure-player', h.tick());
+    assert.deepEqual(h.actor.currentAction, action, 'disconnect must preserve the exact prop action and clock');
+    h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('departure-player', 'neo', h.tick());
+    assert.deepEqual(h.actor.currentAction, action); assert.deepEqual(h.actor.position, position); assert.deepEqual(h.departure(), departure);
+  });
+}

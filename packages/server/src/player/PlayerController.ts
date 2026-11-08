@@ -13,7 +13,7 @@ import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/shared';
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
-import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type ConstructGesture, type FilmJourney } from '@auto_matrix/shared';
+import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type ConstructGesture, type FilmJourney, type OracleDepartureGesture } from '@auto_matrix/shared';
 
 interface PlayerSession {
   agentId: string;
@@ -56,6 +56,17 @@ export function savedOfficeCrouchAction(journey: FilmJourney | undefined, agent:
   return Boolean(journey?.scene === 'm1_office_escape' && journey.actor === agent.id && !journey.visiting && !journey.office?.outcome
     && !windowOpening(journey) && !windowCrossing(journey) && agent.status === 'alive' && (action?.type === 'idle' || action?.type === 'move_to')
     && action.parameters.player === true && action.parameters.resolved === true && action.parameters.crouching === true);
+}
+
+export function savedOraclePropAction(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const action = agent.currentAction, departure = journey?.oracle?.departure;
+  const gesture = action?.parameters.oracleDeparture as OracleDepartureGesture | undefined;
+  return Boolean(journey && journey.actor === agent.id && !journey.visiting
+    && (action?.type === 'idle' || action?.type === 'move_to') && action.parameters.player === true && action.parameters.resolved === true
+    && (journey.scene === 'm1_spoon' && journey.oracle?.spoonLesson?.phase === 'done' && journey.oracle.spoon !== undefined
+      && action.parameters.spoon === journey.oracle.spoon
+      || journey.scene === 'm1_oracle' && journey.oracle?.consultation?.phase === 'done' && departure && gesture?.role === 'neo'
+        && gesture.phase === departure.phase && gesture.elapsed === departure.elapsed && gesture.rise === departure.rise));
 }
 
 export class PlayerController {
@@ -200,6 +211,7 @@ export class PlayerController {
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
       || lafayetteWelcomeLocked(interlude) && agent.currentAction?.parameters.welcome
       || savedAwakeningIdle(interlude, agent.currentAction)
+      || !this.running && savedOraclePropAction(interlude, agent)
       || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
       || savedMatrixEscapeIdle(interlude, agent.currentAction)))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
@@ -303,6 +315,7 @@ export class PlayerController {
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.currentAction?.parameters.welcome
         || savedAwakeningIdle(journey, agent.currentAction)
+        || !this.running && savedOraclePropAction(journey, agent)
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
         || savedMatrixEscapeIdle(journey, agent.currentAction)))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
@@ -485,6 +498,7 @@ export class PlayerController {
       if (!running || agent.status !== 'alive') this.sandbox?.life.film.nebEscape.frame(agent, 0, tick);
       if (!running && agent.status === 'alive') {
         this.sandbox?.life.film.trainingFrame(agent, 0, tick);
+        this.sandbox?.life.film.oracleFrame(agent, false, 0, tick);
         this.sandbox?.life.film.truckFrame(agent, 0, tick);
         this.sandbox?.life.film.pauseMobilPassengers(agent);
         if (this.sandbox?.life.film.state?.scene === 'm2_stop_sentinels') this.sandbox.life.film.finaleFrame(agent, false, agent.rotation, 0, tick);

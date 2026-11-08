@@ -10,7 +10,7 @@ import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
-import { steakAge } from '@auto_matrix/shared';
+import { steakAge, crewMealAge } from '@auto_matrix/shared';
 import { ReloadedOpeningRenderer } from './ReloadedOpeningRenderer.js';
 import { ReloadedCatchRenderer } from './ReloadedCatchRenderer.js';
 import { ReloadedFinaleRenderer } from './ReloadedFinaleRenderer.js';
@@ -180,6 +180,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
 };
 const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
+  m1_meal: { scene: 'm1_spoon', step: 0 },
   m2_departure: { scene: 'm2_seraph', step: 4 },
   m2_seraph: { scene: 'm2_backdoors', step: 1 },
   m2_backdoors: { scene: 'm2_bench', step: 1 },
@@ -239,7 +240,7 @@ export class FilmSetRenderer {
   private officeTowerDepth?: THREE.MeshDepthMaterial;
   private officeStreetDepth?: THREE.MeshDepthMaterial;
   private preparedLafayette?: LafayettePreparation;
-  private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation };
+  private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private courtyardCastColors?: CastColorPreparation;
   private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[]; pointSlots: 8 | 4 | 16 };
   private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
@@ -829,11 +830,13 @@ export class FilmSetRenderer {
       return;
     }
     const cut = journey && SECOND_ORACLE_CUTS[journey.scene];
+    const firstOracle = journey?.scene === 'm1_meal', meal = journey?.interlude;
     const flight = journey?.mountain;
     const approachingGarage = journey?.scene !== 'm2_mountain' || flight?.phase === 'arrived'
       || flight?.phase === 'flying' && flight.z <= MOUNTAIN.launch.z - 30;
     if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
-      || !approachingGarage || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
+      || !approachingGarage || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set
+      || firstOracle && (meal?.kind !== 'meal' || !['performing', 'accepting', 'done'].includes(meal.phase) || crewMealAge(meal) < 8.2)) {
       this.cancelSecondOraclePreparation(); return;
     }
     if (journey.scene === 'm2_backup' && journey.step === 1 && journey.trinityTerminal?.phase === 'ready' && !this.preparedSecondOracle) return;
@@ -850,6 +853,9 @@ export class FilmSetRenderer {
       if (prepared.steps.next().done) prepared.steps = undefined;
       return;
     }
+    if (firstOracle && prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
+    }
     if (!prepared.colors && renderer.extensions.has('KHR_parallel_shader_compile')) {
       // PBR maps are attached after decoding. Compile the mapped variants.
       for (const texture of prepared.room.textures) if (!texture.image) return;
@@ -859,9 +865,27 @@ export class FilmSetRenderer {
       });
       for (const texture of room.architectRoom?.screenTextures ?? []) colors.textures.add(texture);
       prepared.colors = { ...colors, actors: new Set() };
+      if (firstOracle) {
+        colors.meshes.push(this.marker);
+        prepared.lighting = new LightCulling(colors.scene); prepared.lighting.enabled = false;
+      }
     }
     if (prepared.colors) {
       const cast = [next.actor, ...next.cast];
+      if (firstOracle) {
+        const colors = prepared.colors;
+        for (const id of cast) {
+          const group = actor(id); if (!group || colors.actors.has(group)) continue;
+          const meshes: ColorMesh[] = [];
+          group.traverse(object => {
+            // The returning visitors still wear ship clothes in the current view.
+            if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
+          });
+          if (!meshes.length) continue;
+          colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+        }
+        this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated'); return;
+      }
       // The infirmary shares the Hammer deck with the rest of the crew. Bane is still staged there until the call.
       if (next.id === 'm3_maggie_discovery') cast.push('ak', 'niobe', 'ghost', 'bane');
       this.prepareCastColors(renderer, camera, prepared.colors, cast, actor);
@@ -1325,6 +1349,7 @@ export class FilmSetRenderer {
     this.oracleDoor = room.oracleDoor;
     this.oracleBlocks = room.oracleBlocks;
     this.oracleVase = room.oracleVase; room.oracleVase = undefined;
+    this.oracleVase?.moveTo(this.root);
     this.trainmanChase = room.trainmanChase; room.trainmanChase = undefined;
     this.maggieDiscovery = room.maggieDiscovery; room.maggieDiscovery = undefined;
     room.dispose();
@@ -1555,7 +1580,7 @@ export class FilmSetRenderer {
       if (retainedEmpDock) this.empDock = undefined;
       const preparedSecondOracle = this.preparedSecondOracle && set?.id === this.preparedSecondOracle.room.current?.id
         && sceneId === this.preparedSecondOracle.scene && !journey?.visiting ? this.preparedSecondOracle : undefined;
-      if (preparedSecondOracle) this.preparedSecondOracle = undefined;
+      if (preparedSecondOracle) { this.preparedSecondOracle = undefined; preparedSecondOracle.lighting?.dispose(); }
       const preparedMountain = set?.id === 'film_mountain_range' && sceneId === 'm2_mountain' && !journey?.visiting ? this.preparedMountain : undefined;
       if (preparedMountain) this.preparedMountain = undefined;
       const preparedFreeway = set?.id === 'film_freeway_101' && sceneId === 'm2_freeway' && !journey?.visiting ? this.preparedFreeway?.renderer : undefined;
@@ -4196,6 +4221,7 @@ export class FilmSetRenderer {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
   private cancelSecondOraclePreparation(): void {
+    this.preparedSecondOracle?.lighting?.dispose();
     this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
   }
   private cancelFreewayPreparation(): void {

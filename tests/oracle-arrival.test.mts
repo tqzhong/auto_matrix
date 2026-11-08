@@ -138,3 +138,34 @@ test('retry preserves an ongoing arrival, while a legacy waiting-room save conti
   assert.equal(playerBlocked(filmPosition('film_oracle_home', 0, 29.8), true, 1.1, h.sandbox.state.structures), false);
   assert.equal(playerBlocked(filmPosition('film_oracle_home', -2.4, 27.4), true), true, 'legacy and third-film visits retain the opened leaf footprint');
 });
+
+test('pausing the approaching hostess clears residual velocity without advancing the saved invitation', () => {
+  const h = setup(), story = h.sandbox.life.film, oracle = h.state().oracle!;
+  oracle.arrival!.phase = 'done'; oracle.spoonLesson = { phase: 'understood', elapsed: 0 }; oracle.spoon = 1;
+  oracle.reception = { phase: 'approaching', progress: 0, elapsed: 0 };
+  story.oracleReceptionFrame(h.actor, 0, h.tick()); story.oracleReceptionFrame(h.actor, .1, h.tick());
+  const hostess = h.world.agents.get('oracle_priestess')!;
+  assert.ok(Math.abs(hostess.velocity.z - 2.6) < 1e-8, 'the reproduction starts during real path movement');
+  const position = { ...hostess.position }, progress = oracle.reception.progress, waitingTime = oracle.waitingTime;
+  h.frame(1, false);
+  assert.deepEqual(hostess.velocity, { x: 0, y: 0, z: 0 }, 'a paused save must not retain moving velocity that reload clears');
+  assert.deepEqual(hostess.position, position); assert.equal(oracle.reception.progress, progress); assert.equal(oracle.waitingTime, waitingTime);
+  story.oracleReceptionFrame(h.actor, .1, h.tick());
+  assert.ok(Math.abs(oracle.reception.progress - progress - .26) < 1e-8, 'resuming advances the route exactly once');
+});
+
+for (const moving of [false, true]) test(`the completed spoon lesson retains its held prop through paused ${moving ? 'walking' : 'idle'} release and reconnect`, () => {
+  const h = setup(), oracle = h.state().oracle!;
+  h.state().step = 1; oracle.arrival!.phase = 'done'; oracle.spoonLesson = { phase: 'done', elapsed: 0 }; oracle.spoon = 1;
+  oracle.reception = { phase: 'guiding', progress: 9.529, elapsed: 2.2 };
+  h.actor.position = filmPosition('film_oracle_home', -2, 10.8); h.move(moving ? 1 : 0, 0); h.frame(1, false);
+  assert.equal(h.actor.currentAction?.parameters.spoon, 1);
+  assert.equal(h.actor.currentAction?.type, moving ? 'move_to' : 'idle');
+  const action = structuredClone(h.actor.currentAction), position = { ...h.actor.position }, saved = structuredClone(h.sandbox.state);
+  h.players.release('arrival-player', h.tick());
+  assert.deepEqual(h.actor.currentAction, action, 'disconnect must retain the carried spoon and original action clock');
+  h.sandbox.restore(saved); h.players.possess('arrival-player', 'neo', h.tick());
+  assert.deepEqual(h.actor.currentAction, action); assert.deepEqual(h.actor.position, position);
+  h.frame(); assert.deepEqual(h.actor.position, position, 'reconnecting must not replay old walking input');
+  h.players.release('arrival-player', h.tick()); assert.equal(h.actor.currentAction, null, 'a running release still clears ordinary player input');
+});

@@ -32,6 +32,11 @@ export class OracleVase {
       const angle = i * 2.4 + band; this.shards.push({ mesh: fragment, direction: new THREE.Vector3(Math.cos(angle) * (1.1 + band * .25), 1.8 + i % 3 * .35, Math.sin(angle) * (1 + band * .25)), spin: new THREE.Vector3(i * .7, band + i, i * .4) });
     }
   }
+  moveTo(parent: THREE.Group): void {
+    for (const object of [this.intact, ...this.shards.map(shard => shard.mesh)]) if (object.parent !== parent) parent.add(object);
+    if (this.petals.parent === this.parent) parent.add(this.petals);
+    this.parent = parent;
+  }
   update(elapsed: number | undefined): void {
     const t = elapsed ?? 0; const tilt = THREE.MathUtils.clamp((t - 1.2) / .4, 0, 1);
     const falling = Math.max(0, t - 1.6); const broken = t >= 2.02;

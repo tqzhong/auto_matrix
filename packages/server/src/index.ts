@@ -20,7 +20,7 @@ import { WorldDynamics } from './story/WorldDynamics.js';
 import { LLMClient } from './llm/LLMClient.js';
 import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
-import { PlayerController, savedMatrixEscapeIdle, savedAwakeningIdle, savedOfficeCustodyAction, savedOfficeCrouchAction } from './player/PlayerController.js';
+import { PlayerController, savedMatrixEscapeIdle, savedAwakeningIdle, savedOfficeCustodyAction, savedOfficeCrouchAction, savedOraclePropAction } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
@@ -358,6 +358,7 @@ async function main(): Promise<void> {
         || lafayetteKnocking(journey) && agent.state.currentAction?.parameters.knock !== undefined
         || lafayetteWelcomeLocked(journey) && agent.state.currentAction?.parameters.welcome
         || savedAwakeningIdle(journey, agent.state.currentAction)
+        || checkpoint.simulation?.running === false && savedOraclePropAction(journey, agent.state)
         || workdayLocked(journey) && savedWorkdayIdle(journey.workday, agent.state.currentAction)
         || heldPhone(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.phone
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined
