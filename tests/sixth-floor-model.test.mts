@@ -175,6 +175,7 @@ test('the free sixth-floor holdout camera keeps Morpheus coat away from the cent
   const center = FILM_SETS.film_ambush_house.center, camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000), group = new THREE.Group();
   group.add(rig.root); rig.root.position.y = -1;
   actor.position = { x: center.x - 15.5, y: center.y + WETWALL_SHAFT.sixth, z: center.z - 27.2 }; actor.rotation = 0; actor.currentLocation = 'film_ambush_house';
+  actor.isInMatrix = true;
   actor.currentAction = { type: 'idle', parameters: { player: true, resolved: true }, startedAt: 0, duration: 1, progress: 0 };
   const controls = new PlayerControls(h.canvas, camera, () => {}, () => {});
   try {

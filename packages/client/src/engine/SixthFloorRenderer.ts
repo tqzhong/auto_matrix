@@ -50,7 +50,8 @@ export class SixthFloorRenderer {
     const used = new Set<THREE.BufferGeometry>(); this.root.traverse(object => { if (object instanceof THREE.Mesh) used.add(object.geometry); });
     for (const geometry of source) if (!used.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
     for (const role of ['citizen_4', 'citizen_14'] as const) {
-      const light = new THREE.SpotLight(0xdde5d4, 95, 15, .27, .45, 2); light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.normalBias = .045;
+      const light = new THREE.SpotLight(0xdde5d4, 0, 15, .27, .45, 2); light.castShadow = true; light.shadow.mapSize.set(512, 512); light.shadow.normalBias = .045;
+      light.shadow.autoUpdate = false;
       this.root.add(light, light.target); this.lights.push({ role, light });
     }
     this.root.add(this.rubble, this.rifle);
@@ -81,8 +82,11 @@ export class SixthFloorRenderer {
       piece.rotation.set(age * .8, age + i, age * 1.2);
     }
     for (const { role, light } of this.lights) {
-      light.visible = active && (role === 'citizen_14' || ['ready', 'searching', 'firing', 'cover'].includes(encounter!.phase));
-      light.intensity = encounter && ['rushing', 'grapple', 'breach', 'done'].includes(encounter.phase) ? 18 : 95;
+      // Keep the shadow-light layout prepared; dormant lamps must not allocate or draw shadow maps.
+      const enabled = active && (role === 'citizen_14' || ['ready', 'searching', 'firing', 'cover'].includes(encounter!.phase));
+      light.intensity = enabled ? encounter && ['rushing', 'grapple', 'breach', 'done'].includes(encounter.phase) ? 18 : 95 : 0;
+      light.shadow.autoUpdate = enabled;
+      if (!enabled) light.shadow.needsUpdate = false;
       if (!active || !encounter!.starts[role]) continue;
       const root = sixthPose({ ...encounter!, role, start: encounter!.starts[role] });
       light.position.set(root.x + Math.sin(root.yaw) * 1.85, root.y + 3, root.z + Math.cos(root.yaw) * 1.85);

@@ -8,18 +8,19 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-test('zero-energy point slots and fully attenuated fragments skip shading without changing the compiled layout', () => {
-  const assignment = 'pointLight = pointLights[ i ];';
-  const start = lightFragmentSource.indexOf(assignment) + assignment.length;
-  const end = lightFragmentSource.indexOf('\n\t}\n\t#pragma unroll_loop_end', start);
-  assert.ok(start >= assignment.length && end > start);
-  const before = lightFragmentSource.slice(0, start);
-  const body = lightFragmentSource.slice(start, end);
-  const after = lightFragmentSource.slice(end);
+test('zero-energy point and spot slots and fully attenuated fragments skip shading without changing the compiled layout', () => {
   const shade = 'RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );';
-  assert.ok(body.includes(shade));
-  const expected = before + '\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {'
-    + body.replace(shade, 'if ( directLight.visible ) { ' + shade + ' }') + '\n\t\t}' + after;
+  let expected = lightFragmentSource;
+  for (const kind of ['point', 'spot']) {
+    const assignment = `${kind}Light = ${kind}Lights[ i ];`;
+    const start = expected.indexOf(assignment) + assignment.length;
+    const end = expected.indexOf('\n\t}\n\t#pragma unroll_loop_end', start);
+    assert.ok(start >= assignment.length && end > start);
+    const body = expected.slice(start, end);
+    assert.ok(body.includes(shade));
+    expected = expected.slice(0, start) + `\n\t\tif ( ${kind}Light.color != vec3( 0.0 ) ) {`
+      + body.replace(shade, 'if ( directLight.visible ) { ' + shade + ' }') + '\n\t\t}' + expected.slice(end);
+  }
   const normalize = (source: string) => source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '').replace(/\s+/g, '');
   assert.ok(normalize(THREE.ShaderChunk.lights_fragment_begin) === normalize(expected),
     'guard zero-energy slots and fully attenuated shading while preserving every light slot, shadow and active formula');

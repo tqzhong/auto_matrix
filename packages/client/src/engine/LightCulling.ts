@@ -6,6 +6,11 @@ THREE.ShaderChunk.lights_fragment_begin = THREE.ShaderChunk.lights_fragment_begi
   (_match, assignment, body: string, end) => assignment + '\n\t\tif ( pointLight.color != vec3( 0.0 ) ) {'
     + body.replace(/(\t\t)(RE_Direct\([^;]+;)/, '$1if ( directLight.visible ) {\n$1\t$2\n$1}') + '\n\t\t}' + end,
 );
+THREE.ShaderChunk.lights_fragment_begin = THREE.ShaderChunk.lights_fragment_begin.replace(
+  /(spotLight = spotLights\[ i \];)(\s+getSpotLightInfo\([\s\S]*?)(\n\t}\n\t#pragma unroll_loop_end)/,
+  (_match, assignment, body: string, end) => assignment + '\n\t\tif ( spotLight.color != vec3( 0.0 ) ) {'
+    + body.replace(/(\t\t)(RE_Direct\([^;]+;)/, '$1if ( directLight.visible ) {\n$1\t$2\n$1}') + '\n\t\t}' + end,
+);
 
 export const POINT_SLOT_FLOOR = 4;
 type LightSelection = { hidden: THREE.PointLight[]; muted: THREE.PointLight[]; intensities: number[]; fill: number };

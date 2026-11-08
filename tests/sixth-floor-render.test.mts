@@ -2,12 +2,56 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SETS, WETWALL_SHAFT, filmPosition, playerBlocked, type FilmJourney, type SandboxState, type SixthEncounter } from '@auto_matrix/shared';
+import { FILM_SETS, WETWALL_SHAFT, filmPosition, playerBlocked, sixthPose, type FilmJourney, type SandboxState, type SixthEncounter } from '@auto_matrix/shared';
 import { WetwallRenderer } from '../packages/client/src/engine/WetwallRenderer.js';
+import { SixthFloorRenderer } from '../packages/client/src/engine/SixthFloorRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+
+test('sixth-floor flashlights retain shadow slots through the approach and replacement without lighting or rendering dormant shadows', () => {
+  const root = new THREE.Group(), material = new THREE.MeshStandardMaterial();
+  const renderer = new SixthFloorRenderer(root, { plaster: material, wood: material, iron: material, trim: material });
+  const lights: THREE.SpotLight[] = []; root.traverse(object => { if (object instanceof THREE.SpotLight) lights.push(object); });
+  const roles = ['citizen_4', 'citizen_14'] as const;
+  const encounter = { phase: 'ready', elapsed: 0, starts: {
+    citizen_4: { x: -17.5, y: WETWALL_SHAFT.sixth, z: -20.6, yaw: Math.PI },
+    citizen_14: { x: -19.2, y: WETWALL_SHAFT.sixth, z: -19.5, yaw: Math.PI },
+  } } as SixthEncounter;
+  const cases: [FilmJourney['scene'], SixthEncounter['phase'], number, number[]][] = [
+    ['m1_dejavu', 'ready', 0, [0, 0]], ['m1_wetwall', 'ready', 0, [0, 0]],
+    ['m1_wall_exposed', 'ready', 0, [95, 95]], ['m1_wall_exposed', 'searching', 3, [95, 95]],
+    ['m1_wall_exposed', 'firing', .3, [95, 95]], ['m1_wall_exposed', 'cover', 1, [95, 95]],
+    ['m1_wall_exposed', 'replacing', .8, [0, 95]], ['m1_wall_exposed', 'replacing', 1.5, [0, 95]],
+    ['m1_wall_exposed', 'rushing', .6, [0, 18]], ['m1_wall_exposed', 'grapple', .9, [0, 18]],
+    ['m1_wall_exposed', 'breach', 1, [0, 18]], ['m1_wall_exposed', 'done', 0, [0, 18]],
+    ['m1_bathroom', 'done', 0, [0, 18]], ['m1_wall_exposed', 'failed', 0, [0, 95]],
+    ['m1_wetwall', 'done', 0, [0, 0]],
+  ];
+  try {
+    assert.equal(lights.length, 2);
+    for (const [scene, phase, elapsed, energies] of cases) {
+      encounter.phase = phase; encounter.elapsed = elapsed;
+      lights.forEach(light => { light.shadow.needsUpdate = true; });
+      renderer.update({ scene, wallExposure: encounter } as FilmJourney);
+      const visible: THREE.SpotLight[] = []; root.traverseVisible(object => { if (object instanceof THREE.SpotLight) visible.push(object); });
+      assert.deepEqual(visible.map(light => light.id), lights.map(light => light.id), 'dormant flashlights must retain their shader slots');
+      for (const [index, light] of lights.entries()) {
+        assert.equal(light.castShadow, true); assert.equal(light.intensity, energies[index]);
+        assert.equal(light.shadow.autoUpdate, energies[index] > 0);
+        if (!energies[index]) assert.equal(light.shadow.needsUpdate, false, 'a dormant shadow must not allocate or render a map');
+        assert.deepEqual(light.shadow.mapSize.toArray(), [512, 512]); assert.equal(light.shadow.normalBias, .045);
+        assert.equal(light.color.getHex(), 0xdde5d4); assert.equal(light.distance, 15); assert.equal(light.angle, .27); assert.equal(light.penumbra, .45); assert.equal(light.decay, 2);
+        if (scene === 'm1_wall_exposed' || scene === 'm1_bathroom') {
+          const pose = sixthPose({ ...encounter, role: roles[index], start: encounter.starts[roles[index]] });
+          assert.deepEqual(light.position.toArray(), [pose.x + Math.sin(pose.yaw) * 1.85, pose.y + 3, pose.z + Math.cos(pose.yaw) * 1.85]);
+          assert.deepEqual(light.target.position.toArray(), [pose.x + Math.sin(pose.yaw) * 5, pose.y + 2.9, pose.z + Math.cos(pose.yaw) * 5]);
+        }
+      }
+    }
+  } finally { renderer.dispose(); material.dispose(); }
+});
 
 test('room 608 has solid plaster before discovery, a visible gunfire hole, and a real opening for Morpheus after breach', () => {
   const root = new THREE.Group(), material = new THREE.MeshStandardMaterial();
