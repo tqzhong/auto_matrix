@@ -1456,6 +1456,28 @@ test('the subway crew exit camera shows the phone and companions in both views a
   }
 });
 
+test('the city phone camera shows the caller beside the opaque box in landscape and portrait', t => {
+  const game = setup(t), center = FILM_SETS.film_escape_streets.center;
+  game.state.currentLocation = 'film_escape_streets';
+  const encounter = { kind: 'city' as const, phase: 'phone_failure' as const, elapsed: .9, attempt: 0, checkpoint: 'street' as const,
+    hits: 0, dodges: 0, pursuit: .2, segment: 0, possessions: 0, resolved: [] };
+  const neo = matrixEscapeRoot(encounter, 'neo');
+  game.state.position = filmPosition('film_escape_streets', neo.x, neo.z); game.state.rotation = neo.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { matrixEscape: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  const box = new THREE.Box3(new THREE.Vector3(center.x - 8.55, center.y - 1, center.z + 16.65),
+    new THREE.Vector3(center.x - 5.45, center.y + 5.8, center.z + 19.35));
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state); game.step(.5);
+    for (const dx of [-.6, .6]) for (const y of [1, 2.1, 3.2]) {
+      const target = new THREE.Vector3(center.x + neo.x + dx, center.y + y, center.z + neo.z);
+      const blocked = new THREE.Ray(game.camera.position, target.clone().sub(game.camera.position).normalize()).intersectBox(box, new THREE.Vector3());
+      assert.ok(!blocked || blocked.distanceTo(game.camera.position) >= target.distanceTo(game.camera.position), 'the booth must not hide the caller’s body');
+      const screen = target.project(game.camera);
+      assert.ok(Math.abs(screen.x) < .9 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1);
+    }
+  }
+});
+
 test('the subway train window owns a readable camera and V looks from Neo toward Smith on the rails', t => {
   const game = setup(t, Math.PI / 2); const center = FILM_SETS.film_subway_platform.center;
   game.camera.aspect = .72; game.camera.updateProjectionMatrix(); game.state.currentLocation = 'film_subway_platform';

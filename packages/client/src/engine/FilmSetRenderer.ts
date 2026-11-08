@@ -605,6 +605,12 @@ export class FilmSetRenderer {
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      const debris: ColorMesh[] = [];
+      prepared.root.getObjectByName('matrix-subway-phone-debris')?.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) debris.push(object);
+      });
+      prepared.colors.meshes.push(...debris);
+      this.queueColorTextures(prepared.colors.textures, debris);
       let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
       for (; points < SUBWAY_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
       prepared.colors.meshes.push(this.marker);

@@ -31,8 +31,9 @@ interface PlayerSession {
 }
 const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, pitch: 0, sprint: false, jump: false, sequence: 0 });
 
-export function savedMatrixEscapeIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
-  return Boolean(journey.matrixEscape && !journey.visiting && action?.type === 'idle' && action.parameters.matrixEscape);
+export function savedFilmCombatAction(journey: FilmJourney, action: AgentState['currentAction'], paused: boolean): boolean {
+  return Boolean(!journey.visiting && action && (action.type === 'idle' || paused && action.type === 'move_to')
+    && (journey.matrixEscape && action.parameters.matrixEscape || journey.theOne && action.parameters.theOne));
 }
 
 export function savedAwakeningIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
@@ -214,7 +215,7 @@ export class PlayerController {
       || savedAwakeningIdle(interlude, agent.currentAction)
       || !this.running && savedOraclePropAction(interlude, agent)
       || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
-      || savedMatrixEscapeIdle(interlude, agent.currentAction)))) agent.currentAction = null;
+      || savedFilmCombatAction(interlude, agent.currentAction, !this.running)))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
     if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
     this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
@@ -318,7 +319,7 @@ export class PlayerController {
         || savedAwakeningIdle(journey, agent.currentAction)
         || !this.running && savedOraclePropAction(journey, agent)
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
-        || savedMatrixEscapeIdle(journey, agent.currentAction)))) agent.currentAction = null;
+        || savedFilmCombatAction(journey, agent.currentAction, !this.running)))) agent.currentAction = null;
       if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);

@@ -88,3 +88,41 @@ for (const mode of ['roof', 'subway'] as const) {
     h.film.update(undefined, undefined, 0); assert.equal(disposed, 1); h.film.dispose(); assert.equal(disposed, 1);
   });
 }
+
+test('subway phone debris is prepared while hidden without changing its physical material or visibility', t => {
+  const h = fixture(t, 'subway'); h.ready(); h.drain();
+  const root = [...h.roots][0], debris = root.getObjectByName('matrix-subway-phone-debris')!;
+  assert.ok(debris); assert.equal(debris.visible, false);
+  const shards: THREE.Mesh[] = []; debris.traverse(object => { if (object instanceof THREE.Mesh) shards.push(object); });
+  assert.equal(shards.length, 7, 'six glass meshes and one existing opaque batch');
+  for (const shard of shards) assert.ok(h.batches.flat().includes(shard), 'the hidden shard must link before its first visible phone impact');
+  const glass = shards.filter(shard => shard.material instanceof THREE.MeshPhysicalMaterial);
+  assert.equal(glass.length, 6);
+  for (const shard of glass) {
+    const material = shard.material as THREE.MeshPhysicalMaterial;
+    assert.equal(material.side, THREE.DoubleSide); assert.equal(material.forceSinglePass, false);
+    assert.equal(material.transmission, .84 - .32); assert.equal(material.thickness, .14);
+    assert.equal(shard.visible, true); assert.ok(shard.parent === debris);
+  }
+  const count = h.work.length; h.drain(); assert.equal(h.work.length, count);
+});
+
+test('subway phone debris preparation restarts for a new GPU without duplicating the hidden effect', t => {
+  const h = fixture(t, 'subway'); h.ready(); h.drain();
+  const root = [...h.roots][0], debris = root.getObjectByName('matrix-subway-phone-debris')!;
+  const shard = debris.children.find(object => object instanceof THREE.Mesh)!;
+  assert.ok(h.batches.flat().includes(shard));
+  const count = h.batches.length; h.newGpu(); h.drain();
+  assert.ok(h.batches.slice(count).flat().includes(shard));
+  assert.equal(h.roots.size, 1); assert.equal(debris.visible, false); assert.ok(root.getObjectByName(debris.name) === debris);
+});
+
+test('subway phone debris preparation cancels and disposes each actual shard once', t => {
+  const h = fixture(t, 'subway'); h.ready(); h.drain();
+  const root = [...h.roots][0], debris = root.getObjectByName('matrix-subway-phone-debris')!;
+  const shard = debris.children.find(object => object instanceof THREE.Mesh) as THREE.Mesh;
+  assert.ok(h.batches.flat().includes(shard));
+  let disposed = 0; shard.geometry.addEventListener('dispose', () => disposed++);
+  h.journey.scene = 'm1_guns'; h.prepare(); h.prepare();
+  assert.equal(disposed, 1); assert.equal(root.parent, null);
+});

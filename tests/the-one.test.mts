@@ -57,6 +57,25 @@ function setup(sceneId: SceneId) {
   return { world, sandbox, players, actor: neo, scene, command, frames, impacts, tick: () => tick };
 }
 
+for (const crouch of [false, true]) test(`room 303 retains the complete paused ${crouch ? 'crouched' : 'standing'} action on reconnect`, () => {
+  const h = setup('m1_death'); h.frames(.1);
+  const tick = h.tick() + 1;
+  h.players.receiveInput('one-player', { x: 0, z: 0, yaw: h.actor.rotation, jump: false, sprint: false, crouch, sequence: 100 });
+  h.players.step(.1, true, tick); h.players.step(.1, false, tick);
+  h.players.setRunning(false); h.world.simulationTick = tick;
+  const action = structuredClone(h.actor.currentAction), position = { ...h.actor.position };
+  const clock = structuredClone(h.sandbox.life.film.state!.theOne);
+  assert.equal(action?.parameters.crouching, crouch); assert.ok(action?.parameters.theOne);
+  h.players.release('one-player', tick); assert.deepEqual(h.actor.currentAction, action);
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.players.possess('returned-player', 'neo', tick), { agentId: 'neo' });
+  assert.deepEqual(h.actor.currentAction, action); assert.deepEqual(h.actor.position, position);
+  assert.deepEqual(h.sandbox.life.film.state!.theOne, clock);
+  h.players.setRunning(true);
+  h.players.receiveInput('returned-player', { x: 0, z: 0, yaw: h.actor.rotation, jump: false, sprint: false, crouch: false, sequence: 1 });
+  h.players.step(.1, true, tick + 1); assert.equal(h.actor.currentAction?.parameters.crouching, false, 'live input takes over on resume');
+});
+
 test('room 303 ambush cuts to the real body and only Trinity voice focus restores Neo', () => {
   const h = setup('m1_death'); const state = h.sandbox.life.film.state!; const encounter = state.theOne!;
   h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.frames(.2);

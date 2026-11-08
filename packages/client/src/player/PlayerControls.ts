@@ -1758,7 +1758,7 @@ export class PlayerControls {
         } else if (gesture.phase === 'briefing') {
           ideal = new THREE.Vector3(portrait ? 17 : 13, 6, 43); focus = new THREE.Vector3(0, 2.8, 29);
         } else if (gesture.phase === 'phone_failure') {
-          ideal = new THREE.Vector3(portrait ? 15 : 11, 4.8, 27); focus = new THREE.Vector3(-3, 2.6, 17);
+          ideal = new THREE.Vector3(portrait ? 15 : 11, 4.8, 9); focus = new THREE.Vector3(-3, 2.6, 17);
         } else if (citySwap) {
           ideal = new THREE.Vector3(portrait ? -19 : -14, 4.6, -18); focus = new THREE.Vector3(-5, 2.6, -27);
         } else if (gesture.phase === 'door' || gesture.phase === 'done') {

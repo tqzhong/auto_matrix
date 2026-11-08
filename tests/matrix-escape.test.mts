@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import {
   FILM_SCENE_BY_ID,
+  FILM_SETS,
   MATRIX_ESCAPE,
   filmEntry,
   filmPosition,
@@ -23,6 +24,7 @@ import type { ConversationEngine } from '../packages/server/src/agents/Conversat
 import type { ActionExecutor } from '../packages/server/src/agents/ActionExecutor.js';
 import type { WorldDynamics } from '../packages/server/src/story/WorldDynamics.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
+import { MatrixEscapeRenderer } from '../packages/client/src/engine/MatrixEscapeRenderer.js';
 
 function setup(sceneId: 'm1_subway' | 'm1_city_chase') {
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
@@ -214,6 +216,58 @@ test('city pursuit and truck impact each fail at a saved street checkpoint', () 
   truck.frames(MATRIX_ESCAPE.city.truckWarning + MATRIX_ESCAPE.city.truckDuration + .3);
   assert.equal(state.matrixEscape!.phase, 'failed'); assert.equal(truck.actor.status, 'dead');
   truck.command('retry'); assert.equal(state.step, 1); assert.equal(state.matrixEscape!.phase, 'running'); assert.equal(state.matrixEscape!.segment, 1);
+});
+
+test('the failed city phone leaves Neo outside the actual opaque phone body', t => {
+  const h = setup('m1_city_chase'); h.command('act'); h.frames(MATRIX_ESCAPE.city.briefing + .2);
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.frames(.2);
+  assert.equal(h.sandbox.life.film.state!.matrixEscape!.phase, 'phone_failure');
+  const root = new THREE.Group(), center = FILM_SETS.film_escape_streets.center;
+  root.position.set(center.x, center.y - 1, center.z);
+  const renderer = new MatrixEscapeRenderer(root, 'film_escape_streets'); t.after(() => renderer.dispose());
+  root.updateMatrixWorld(true);
+  const phone = root.getObjectByName('matrix-city-phone-0')!; assert.ok(phone);
+  const body = new THREE.Box3().setFromObject(phone).expandByVector(new THREE.Vector3(.55, 0, .55));
+  assert.equal(body.containsPoint(new THREE.Vector3(h.actor.position.x, h.actor.position.y, h.actor.position.z)), false,
+    'the phone cinematic must not put Neo inside the visible steel enclosure');
+  assert.equal(h.actor.rotation, 0, 'Neo faces the front telephone panel');
+});
+
+test('the failed city line is hit on the phone panel instead of on the caller', () => {
+  const h = setup('m1_city_chase'); h.command('act'); h.frames(MATRIX_ESCAPE.city.briefing + .2);
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.frames(.8);
+  const impact = h.impacts.find(impact => impact.target === 'city-phone'); assert.ok(impact);
+  const center = FILM_SETS.film_escape_streets.center;
+  assert.ok(Math.abs(impact.position.x - center.x + 7) < .02);
+  assert.ok(Math.abs(impact.position.y - (center.y - 1 + 3.35)) < .02);
+  assert.ok(Math.abs(impact.position.z - center.z - 16.46) < .02);
+  assert.ok(Math.hypot(impact.position.x - h.actor.position.x, impact.position.z - h.actor.position.z) > .55,
+    'a failed exit phone must not strike Neo in place of its own front panel');
+});
+
+test('a paused sprint into the hotel checkpoint retains its complete escape action across release and restore', () => {
+  const h = setup('m1_city_chase'); h.command('act'); h.frames(MATRIX_ESCAPE.city.briefing + .2);
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[0]); h.frames(MATRIX_ESCAPE.city.phoneFailure + .4);
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[1]); h.frames(MATRIX_ESCAPE.city.truckWarning + .2);
+  const state = h.sandbox.life.film.state!;
+  h.frames(MATRIX_ESCAPE.city.truckBeat - state.matrixEscape!.elapsed);
+  h.players.act('escape-player', 'dodge', h.tick()); h.frames(MATRIX_ESCAPE.city.possession + .2);
+  assert.equal(state.step, 2); assert.equal(state.matrixEscape!.phase, 'running');
+  const goal = filmStepPosition(h.scene, h.scene.steps[2]);
+  for (let i = 0; i < 100 && state.matrixEscape!.phase === 'running'; i++) {
+    const dx = goal.x - h.actor.position.x, dz = goal.z - h.actor.position.z, gap = Math.hypot(dx, dz);
+    h.frames(.1, { x: dx / gap, z: dz / gap, sprint: true });
+  }
+  assert.equal(state.matrixEscape!.phase, 'door_ready'); assert.equal(h.actor.currentAction?.type, 'move_to');
+  h.frames(.1, {}, false); h.players.setRunning(false); h.world.simulationTick = h.tick();
+  const action = structuredClone(h.actor.currentAction), clock = structuredClone(state.matrixEscape), position = { ...h.actor.position };
+  assert.ok(action?.parameters.matrixEscape); assert.equal(action.type, 'move_to');
+  h.players.release('escape-player', h.tick());
+  assert.deepEqual(h.actor.currentAction, action, 'disconnect must retain the actual saved sprint action');
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.players.possess('returned-player', 'neo', h.tick()), { agentId: 'neo' });
+  assert.deepEqual(h.actor.currentAction, action); assert.deepEqual(h.actor.position, position);
+  assert.deepEqual(h.sandbox.life.film.state!.matrixEscape, clock);
 });
 
 test('escape poses distinguish phone fire, wall impact, rail struggle, code possession and door entry', () => {

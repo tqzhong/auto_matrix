@@ -3650,7 +3650,7 @@ export class FilmStorySystem {
     if (smith && !smith.controller) smith.currentAction = { type: 'idle', parameters: { filmDuel: true }, startedAt: tick, duration: 100000, progress: 0 };
   }
   private matrixEscapeImpact(source: string, target: string, encounter: MatrixEscapeEncounter, tick: number, downed = false): void {
-    const root = matrixEscapeRoot(encounter, target === 'smith' ? 'smith' : 'neo');
+    const root = target === 'city-phone' ? { x: -7, y: .35, z: 16.46 } : matrixEscapeRoot(encounter, target === 'smith' ? 'smith' : 'neo');
     const position = filmPosition(this.scene!.set, root.x, root.z); position.y += root.y + 2;
     const from = encounter.kind === 'subway' ? filmPosition(this.scene!.set, 16.4, 18) : filmPosition(this.scene!.set, 7, 18);
     from.y += 2; const length = Math.max(.001, distance(from, position));

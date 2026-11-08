@@ -181,7 +181,7 @@ export function matrixEscapeRoot(encounter: MatrixEscapeEncounter, role: MatrixE
   }
 
   if (encounter.phase === 'briefing') return role === 'neo' ? { x: 0, y: 0, z: 35, yaw: Math.PI } : { x: -12, y: 0, z: 23, yaw: 0 };
-  if (encounter.phase === 'phone_failure') return role === 'neo' ? { x: -7, y: 0, z: 18, yaw: Math.PI }
+  if (encounter.phase === 'phone_failure') return role === 'neo' ? { x: -7, y: 0, z: 15.6, yaw: 0 }
     : role === 'citizen_13' ? { x: 3.5, y: 0, z: 15, yaw: -.7 } : { x: 7, y: 0, z: 10, yaw: 0 };
   if (encounter.phase === 'truck_warning' || encounter.phase === 'truck_window') return role === 'neo'
     ? { x: 7, y: 0, z: -12, yaw: Math.PI } : { x: -5, y: 0, z: -22, yaw: 0 };

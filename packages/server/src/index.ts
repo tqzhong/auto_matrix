@@ -20,7 +20,7 @@ import { WorldDynamics } from './story/WorldDynamics.js';
 import { LLMClient } from './llm/LLMClient.js';
 import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
-import { PlayerController, savedMatrixEscapeIdle, savedAwakeningIdle, savedOfficeCustodyAction, savedOfficeCrouchAction, savedOraclePropAction } from './player/PlayerController.js';
+import { PlayerController, savedFilmCombatAction, savedAwakeningIdle, savedOfficeCustodyAction, savedOfficeCrouchAction, savedOraclePropAction } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
@@ -364,7 +364,7 @@ async function main(): Promise<void> {
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined
         || windowCrossing(journey) && agent.state.currentAction?.parameters.crossing !== undefined
         || checkpoint.simulation?.running === false && savedOfficeCustodyAction(journey, agent.state)
-        || savedMatrixEscapeIdle(journey, agent.state.currentAction)
+        || savedFilmCombatAction(journey, agent.state.currentAction, checkpoint.simulation?.running === false)
         || savedBurlyFailedIdle(journey, agent.state.currentAction)
         || journey.scene === 'm1_ledge' && !journey.visiting && journey.step === 1 && journey.office?.climbed !== undefined && agent.state.currentAction?.parameters.climbing
         || journey.scene === 'm1_room303' && !journey.visiting && ['breach', 'dive', 'ladder_ready', 'climbing'].includes(journey.openingHotel?.phase ?? '')
