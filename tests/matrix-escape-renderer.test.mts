@@ -40,6 +40,7 @@ test('the subway batches opaque wall tiles', t => {
 
 test('the rooftop prepares one detached subway and reuses it with the entry light layout', t => {
   const scene = new THREE.Scene(), sets = new FilmSetRenderer(scene);
+  const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun);
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const neo = world.agents.get('neo')!;
   neo.position = filmPosition('film_government_roof'); neo.isInMatrix = true;
@@ -64,13 +65,15 @@ test('the rooftop prepares one detached subway and reuses it with the entry ligh
   const graphics = { extensions: { has: () => true }, info: { programs: [] }, getRenderTarget: () => null,
     setRenderTarget() {}, properties: { get: () => ({}) }, initTexture(texture: THREE.Texture) { uploads.push(texture); },
     compile(subject: THREE.Group, _camera: THREE.Camera, target: THREE.Scene) {
-      preparedScene = target;
+      target.traverseVisible(object => {
+        if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName('matrix-escape-set')) preparedScene = object.parent;
+      });
       let count = 0;
       subject.traverse(object => { count++; if (object === smith.children[0]) compiledSmith = true; });
       assert.ok(count <= 4);
     } } as unknown as THREE.WebGLRenderer;
   const camera = new THREE.PerspectiveCamera();
-  const prepare = () => sets.prepareSubway(graphics, camera, roof, id => id === 'smith' ? smith : undefined);
+  const prepare = () => sets.prepareSubway(graphics, camera, roof, id => id === 'smith' ? smith : undefined, () => undefined, sun);
   prepare(); assert.equal(preparedScene, undefined, 'keep shader preparation outside the playable brace windows');
   roof.airRescue!.phase = 'pulling';
   prepare();

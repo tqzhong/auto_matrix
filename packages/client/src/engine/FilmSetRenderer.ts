@@ -91,7 +91,7 @@ import { CypherRestaurantRenderer } from './CypherRestaurantRenderer.js';
 import { betrayalLocked, rescueLocked } from '@auto_matrix/shared';
 import { governmentLocked, airRescueLocked } from '@auto_matrix/shared';
 import { GovernmentSetRenderer } from './GovernmentSetRenderer.js';
-import { MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
+import { SUBWAY_POINT_SLOTS, MatrixEscapeRenderer } from './MatrixEscapeRenderer.js';
 import { TheOneRenderer } from './TheOneRenderer.js';
 import { MountainSetRenderer } from './MountainSetRenderer.js';
 import { MOUNTAIN, garageCarPose, type GarageCarPose } from '@auto_matrix/shared';
@@ -307,9 +307,9 @@ export class FilmSetRenderer {
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
-  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_helicopter'; root: THREE.Group; renderer: GovernmentSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_helicopter' | 'm1_rooftop_rescue'; root: THREE.Group; renderer: GovernmentSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private matrixEscape?: MatrixEscapeRenderer;
-  private preparedSubway?: { renderer: MatrixEscapeRenderer; colors?: ColorPreparation };
+  private preparedSubway?: { root: THREE.Group; renderer: MatrixEscapeRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation };
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
@@ -546,15 +546,18 @@ export class FilmSetRenderer {
     const questioning = this.current?.id === 'film_government_lobby' && journey?.scene === 'm1_lobby' && journey.lobby?.phase === 'cleared';
     const helicopter = this.current?.id === 'film_government_roof' && journey?.scene === 'm1_bullet_dodge'
       && ['download_ready', 'downloading', 'done'].includes(journey.government?.phase ?? '');
-    if (!journey || journey.visiting || !questioning && !helicopter) {
+    const rooftop = this.current?.id === 'film_government_office' && journey?.scene === 'm1_helicopter'
+      && ['catching', 'done'].includes(journey.airRescue?.phase ?? '');
+    if (!journey || journey.visiting || !questioning && !helicopter && !rooftop) {
       this.cancelGovernmentPreparation(); return;
     }
-    const scene = helicopter ? 'm1_helicopter' : 'm1_smith_question';
+    const scene = rooftop ? 'm1_rooftop_rescue' : helicopter ? 'm1_helicopter' : 'm1_smith_question';
     if (this.preparedGovernment?.scene !== scene) {
       this.cancelGovernmentPreparation();
       const root = new THREE.Group();
-      const office = new GovernmentSetRenderer(root, 'film_government_office');
+      const office = new GovernmentSetRenderer(root, rooftop ? 'film_government_roof' : 'film_government_office');
       if (helicopter) office.update({ ...journey, scene, airRescue: { kind: 'office', phase: 'ready', elapsed: 0, attempt: 0, suppression: 0, bursts: 0 } }, 0);
+      if (rooftop) office.update({ ...journey, scene, airRescue: { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] } }, 0);
       this.preparedGovernment = { scene, root, renderer: office };
     }
     const prepared = this.preparedGovernment;
@@ -562,15 +565,15 @@ export class FilmSetRenderer {
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
-      // Both entrances hide the objective light, unlike the preceding elevator or cockpit.
+      // These entrances hide the objective light, unlike the preceding elevator or cockpit.
       for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.intensity = 0;
       prepared.colors.meshes.push(this.marker);
       prepared.lighting = new LightCulling(prepared.colors.scene);
-      prepared.lighting.stablePointSlots = helicopter;
+      prepared.lighting.stablePointSlots = !questioning;
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
-    for (const id of [helicopter ? 'neo' : 'morpheus', ...FILM_SCENE_BY_ID[scene].cast]) {
+    for (const id of [FILM_SCENE_BY_ID[scene].actor, ...FILM_SCENE_BY_ID[scene].cast]) {
       for (const group of [body(id), hero(id)]) {
         if (!group || colors.actors.has(group)) continue;
         const collected: ColorMesh[] = [];
@@ -584,7 +587,8 @@ export class FilmSetRenderer {
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
-  prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined): void {
+  prepareSubway(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney,
+    body: (id: string) => THREE.Group | undefined, hero: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
     const phase = journey.airRescue?.phase;
     if (this.currentScene !== 'm1_rooftop_rescue' || this.current?.id !== 'film_government_roof'
       || journey.scene !== 'm1_rooftop_rescue' || journey.visiting || (phase !== 'pulling' && phase !== 'done')) {
@@ -594,15 +598,33 @@ export class FilmSetRenderer {
     if (!this.preparedSubway) {
       const root = new THREE.Group();
       const subway = new MatrixEscapeRenderer(root, 'film_subway_platform');
-      this.preparedSubway = { renderer: subway };
-      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
-        const cast = [journey.actor, ...FILM_SCENE_BY_ID.m1_subway.cast];
-        const actors = cast.map(actor).filter((group): group is THREE.Group => Boolean(group));
-        this.preparedSubway.colors = this.colorPreparation(root, actors);
-        this.preparedSubway.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      this.preparedSubway = { root, renderer: subway };
+    }
+    const prepared = this.preparedSubway;
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.lighting?.dispose();
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
+      let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
+      for (; points < SUBWAY_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
+      prepared.colors.meshes.push(this.marker);
+      prepared.lighting = new LightCulling(prepared.colors.scene); prepared.lighting.enabled = false;
+      prepared.gpu = renderer.properties;
+    }
+    const colors = prepared.colors, meshes = new Set<ColorMesh>();
+    for (const id of ['neo', ...FILM_SCENE_BY_ID.m1_subway.cast, 'morpheus', 'trinity']) {
+      for (const group of [body(id), hero(id)]) {
+        if (!group || colors.actors.has(group)) continue;
+        const collected: ColorMesh[] = [];
+        group.traverse(object => {
+          if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) collected.push(object);
+        });
+        if (!collected.length) continue;
+        colors.actors.add(group); collected.forEach(mesh => meshes.add(mesh));
       }
     }
-    if (this.preparedSubway.colors) this.prepareColorFrame(renderer, camera, this.preparedSubway.colors);
+    colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareOneDeck(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney, actor: (id: string) => THREE.Group | undefined, position: Vector3): void {
     const encounter = journey.theOne;
@@ -1691,10 +1713,10 @@ export class FilmSetRenderer {
       if (preparedAmbush) { this.preparedAmbush?.lighting?.dispose(); this.preparedAmbush = undefined; }
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
       if (preparedLobby) { this.preparedLobby = undefined; preparedLobby.lighting?.dispose(); preparedLobby.root.removeFromParent(); }
-      const preparedGovernment = set?.id === 'film_government_office' && sceneId === this.preparedGovernment?.scene && !journey?.visiting ? this.preparedGovernment : undefined;
+      const preparedGovernment = set?.id === this.preparedGovernment?.renderer.setId && sceneId === this.preparedGovernment?.scene && !journey?.visiting ? this.preparedGovernment : undefined;
       if (preparedGovernment) { this.preparedGovernment = undefined; preparedGovernment.lighting?.dispose(); preparedGovernment.root.removeFromParent(); }
       const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
-      if (preparedSubway) this.preparedSubway = undefined;
+      if (preparedSubway) { this.preparedSubway?.lighting?.dispose(); this.preparedSubway?.root.removeFromParent(); this.preparedSubway = undefined; }
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
       if (preparedOneDeck) this.preparedOneDeck = undefined;
       const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === this.preparedTruthReturn?.scene && !journey?.visiting ? this.preparedTruthReturn : undefined;
@@ -4327,7 +4349,8 @@ export class FilmSetRenderer {
     this.preparedPods?.dispose(); this.preparedPods = undefined;
   }
   private cancelSubwayPreparation(): void {
-    this.preparedSubway?.renderer.dispose(); this.preparedSubway = undefined;
+    const prepared = this.preparedSubway; if (!prepared) return;
+    prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedSubway = undefined;
   }
   private cancelOneDeckPreparation(): void {
     const prepared = this.preparedOneDeck;
