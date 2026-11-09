@@ -67,6 +67,7 @@ import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
 import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerformance.js';
 import { poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
+import { poseTheOneBody } from './TheOnePerformance.js';
 import { HardlineHandset } from './HardlineHandset.js';
 import { advanceMotion, newMotion, type MotionInput, type MotionState } from './CharacterMotion.js';
 import { HERO_IDS, HeroModels, type HeroId, type HeroRig, type HeroSupport } from './HeroModel.js';
@@ -1261,6 +1262,7 @@ export class CharacterModels {
       poseCrosscut(rig, input.crosscut);
       if (input.crosscut?.body) this.heroes.crosscutInterfaces(rig.hero);
       poseCrosscutContact(rig, input.crosscut);
+      poseTheOneBody(rig, input.theOne);
       if (input.tvExit && input.tvExit.phase !== 'emerging' && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
       poseHardline(rig, input.tvExit);
       if (holdsStaff) {

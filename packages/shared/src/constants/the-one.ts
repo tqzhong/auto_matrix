@@ -115,7 +115,9 @@ export function theOneRoot(encounter: TheOneEncounter, role: TheOneRole): TheOne
       if (role === 'trinity') {
         const near = encounter.phase === 'kiss' ? smooth(encounter.elapsed / .95)
           : encounter.phase === 'revive' ? 1 : 0;
-        return ship(2.8 + 2.25 * near, 0, -5, Math.PI / 2);
+        const side = encounter.phase === 'kiss' ? smooth(encounter.elapsed / .5) : encounter.phase === 'revive' ? 1 : 0;
+        const x = 2.8 + 3.55 * near, z = -5 - 1.95 * side;
+        return ship(x, 0, z, Math.atan2(6.5 - x, -5 - z));
       }
       if (role === 'morpheus') return ship(-1.2, 0, -8, .65);
       if (role === 'tank') return ship(10.5, 0, 1.5, -2.6);
@@ -134,7 +136,7 @@ export function theOneRoot(encounter: TheOneEncounter, role: TheOneRole): TheOne
   }
   if (encounter.kind === 'return') {
     if (role === 'neo') {
-      if (encounter.phase === 'emp' || encounter.phase === 'done') return ship(encounter.phase === 'emp' ? 6.5 : 4.6, 0, -5, -Math.PI / 2);
+      if (encounter.phase === 'emp' || encounter.phase === 'done') return ship(encounter.phase === 'emp' ? 6.5 : 4.6, 0, encounter.phase === 'emp' ? -5 : -8.4, -Math.PI / 2);
       const { burstZ, exitApproachZ, dive } = THE_ONE.return, { revivalZ } = THE_ONE.death;
       if (encounter.phase === 'dive') {
         const p = smooth(encounter.elapsed / dive);

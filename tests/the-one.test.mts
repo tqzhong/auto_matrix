@@ -7,6 +7,7 @@ import {
   filmPosition,
   filmSetAt,
   filmStepPosition,
+  playerBlocked,
   theOneLocked,
   theOnePose,
   theOneRoot,
@@ -178,6 +179,22 @@ test('answering the exit lets Morpheus fire EMP only after Neo is out', () => {
   assert.equal(encounter.empFired, undefined);
   h.frames(THE_ONE.return.emp + .3); assert.equal(encounter.empFired, true); assert.equal(encounter.phase, 'done');
   assert.ok(state.completed.includes('m1_return')); assert.equal(h.actor.isInMatrix, false);
+});
+
+test('completed EMP leaves Neo clear of the chair and keeps his position on reconnect', () => {
+  const h = setup('m1_return'), state = h.sandbox.life.film.state!, encounter = state.theOne!;
+  state.step = 2;
+  Object.assign(encounter, { phase: 'exit_run', checkpoint: 'exit', hits: 3, blocks: 1, smithBurst: true, deadline: 2 });
+  h.actor.position = filmStepPosition(h.scene, h.scene.steps[2]); h.frames(.2); h.command('act');
+  h.frames(THE_ONE.return.exitPhone + THE_ONE.return.emp + .5);
+  assert.equal(encounter.phase, 'done');
+  assert.equal(playerBlocked(h.actor.position, false, 1.1, h.sandbox.state.structures), false, 'the released body must stand outside the connection chair');
+  const position = { ...h.actor.position };
+  h.players.setRunning(false); h.players.release('one-player', h.tick());
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual(h.players.possess('returned-player', 'neo', h.tick()), { agentId: 'neo' });
+  assert.deepEqual(h.actor.position, position, 'reconnecting after EMP cannot send Neo back to the deck entrance');
+  assert.equal(h.sandbox.life.film.state!.theOne!.empFired, true);
 });
 
 test('the final call waits for reflection, then Space launches a steerable first flight', () => {

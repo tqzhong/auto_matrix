@@ -1,5 +1,6 @@
 import { poseReloadedCatchContact } from './ReloadedCatchPerformance.js';
 import { crosscutPalm } from './CrosscutPerformance.js';
+import { poseResurrectionPair } from './TheOnePerformance.js';
 import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
@@ -1186,6 +1187,9 @@ export class AgentRenderer {
     }
     const reunion = (this.playerId === 'link' ? this.playerMotion?.dockReunion : reunionLink?.state.currentAction?.parameters.dockReunion) as MotionInput['dockReunion'];
     const reunionNeo = this.agents.get('neo'), reunionTrinity = this.agents.get('trinity');
+    if (reunionNeo && reunionTrinity && reunionNeo.state.currentAction?.parameters.theOne
+      && reunionTrinity.state.currentAction?.parameters.theOne && !reunionTrinity.state.controller)
+      poseResurrectionPair(reunionNeo.rig, reunionTrinity.rig, reunionNeo.state.currentAction.parameters.theOne as MotionInput['theOne']);
     const mobilReunion = (this.playerId === 'neo' ? this.playerMotion?.mobilReunion : reunionNeo?.state.currentAction?.parameters.mobilReunion) as MotionInput['mobilReunion'];
     if (reunionNeo && reunionTrinity && mobilReunion?.reunion.phase === 'embracing'
       && reunionNeo.state.status === 'alive' && reunionTrinity.state.status === 'alive' && !reunionTrinity.state.controller)
