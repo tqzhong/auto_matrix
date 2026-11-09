@@ -66,7 +66,7 @@ interface Entry {
   logosPilot?: boolean;
   basementDropClock?: BasementDropPlayback;
   mouseFloor?: { model: THREE.Object3D; roll: number; offset: number };
-  dojoBorrowed?: boolean;
+  combatBorrowed?: boolean;
 }
 
 export interface DojoOpponent {
@@ -231,16 +231,23 @@ export class AgentRenderer {
     return { rig, animate: (delta: number, input: MotionInput, distance: number) => this.models.animate(rig, delta, input, distance) };
   }
   takeDojoOpponent(): DojoOpponent | undefined {
-    const entry = this.agents.get('morpheus');
-    if (!entry || entry.dojoBorrowed) return;
-    const available = () => this.agents.get('morpheus') === entry && entry.state.currentLocation === 'film_kungfu_dojo'
-      && entry.state.isInMatrix && entry.state.status === 'alive' && !entry.state.controller;
+    return this.takeFilmOpponent('morpheus');
+  }
+  takeTheOneOpponent(): DojoOpponent | undefined {
+    return this.takeFilmOpponent('smith');
+  }
+  private takeFilmOpponent(id: 'morpheus' | 'smith'): DojoOpponent | undefined {
+    const entry = this.agents.get(id), one = id === 'smith';
+    if (!entry || entry.combatBorrowed) return;
+    const available = () => this.agents.get(id) === entry && entry.state.currentLocation === (one ? 'film_heart_hotel' : 'film_kungfu_dojo')
+      && entry.state.isInMatrix && entry.state.status === 'alive' && !entry.state.controller
+      && (!one || entry.state.currentAction?.parameters.filmDuel === true);
     if (!available()) return;
     const { rig, group } = entry, { root, motion } = rig;
     const position = root.position.clone(), rotation = root.quaternion.clone(), visible = root.visible;
-    entry.dojoBorrowed = true; group.visible = false; root.visible = true;
+    entry.combatBorrowed = true; group.visible = false; root.visible = true;
     return { rig, available, animate: (delta, input, distance) => this.models.animate(rig, delta, input, distance), release: () => {
-      entry.dojoBorrowed = false;
+      entry.combatBorrowed = false;
       group.add(root); root.position.copy(position); root.quaternion.copy(rotation); root.visible = visible;
       rig.motion = motion;
       group.visible = entry.state.isInMatrix === this.matrix && this.bodyPresent(entry.state);
@@ -541,7 +548,7 @@ export class AgentRenderer {
         currentAction: { type: 'idle', parameters: { seated: true, crosscut: { ...cut, role, body: true } }, startedAt: tick, duration: 1e9, progress: 0 } });
     }
     for (const [id, entry] of this.agents) {
-      if (entry.dojoBorrowed) { entry.group.visible = false; continue; }
+      if (entry.combatBorrowed) { entry.group.visible = false; continue; }
       let state = entry.state; const physical = id.startsWith('body:');
       const disarmRole = disarmClock && HEL_TRIO.includes(id as typeof HEL_TRIO[number]) && (!state.controller || id === this.playerId)
         && state.status === 'alive' && state.currentLocation === 'film_club_hel' ? id as typeof HEL_TRIO[number] : undefined;
