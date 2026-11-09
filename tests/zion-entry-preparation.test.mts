@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { FILM_SETS, FILM_SCENE_BY_ID, filmEntry, filmPosition, newReloaded, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
@@ -86,4 +87,40 @@ test('dock preparation queries only ready programs and disposes the detached set
   h.sets.prepareZionHomecoming({} as THREE.WebGLRenderer, h.camera, undefined, () => undefined);
   assert.equal(disposed, once, 'abandoning a preparation twice cannot dispose it twice');
   assert.equal(h.scene.getObjectByName('zion-docked-nebuchadnezzar'), undefined);
+});
+
+test('the arrival dock keeps thirteen light slots while approaching Kid, turning and finishing the objectives', t => {
+  const h = setup(t), culling = new LightCulling(h.scene), graphics = {} as THREE.WebGLRenderer;
+  t.after(() => culling.dispose());
+  Object.assign(h.journey, { scene: 'm2_dock', step: 0 }); delete h.journey.reloaded;
+  h.neo.currentLocation = 'film_zion_hangar'; h.neo.isInMatrix = false;
+  const sandbox = { neoLife: { journey: h.journey } } as SandboxState;
+  for (const step of [0, 1, 2, 3]) for (const [x, z] of [[0, 44.16], [0, -24.2], [-1.3, -25.1], [8, -16.3]])
+    for (const first of [false, true]) for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      h.journey.step = step; h.neo.position = filmPosition('film_zion_hangar', x, z);
+      h.camera.position.copy(h.neo.position).add(new THREE.Vector3(first ? 0 : .8, first ? 3.2 : 6, first ? 0 : -Math.cos(yaw) * 10.5));
+      h.camera.lookAt(h.neo.position.x + Math.sin(yaw) * 10, h.neo.position.y + 2.6, h.neo.position.z + Math.cos(yaw) * 10);
+      h.camera.updateMatrixWorld(true);
+      h.sets.update(h.neo, sandbox, 0, h.neo.position, h.camera.position, undefined, first, 12000, h.camera);
+      culling.stablePointSlots = h.sets.stablePointSlots; culling.minimumPointSlots = h.sets.minimumPointSlots;
+      h.scene.updateMatrixWorld(true);
+      const original: { light: THREE.PointLight; intensity: number; visible: boolean; position: THREE.Vector3 }[] = [];
+      h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) original.push({ light: object, intensity: object.intensity, visible: object.visible, position: object.getWorldPosition(new THREE.Vector3()) }); });
+      h.scene.onBeforeRender(graphics, h.scene, h.camera, null);
+      try {
+        let slots = 0; h.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) slots++; });
+        assert.equal(slots, 13, `step ${step}, position ${x}/${z}, ${first ? 'eye' : 'follow'}, yaw ${yaw}: turning cannot recompile the dock`);
+        for (const x of [-.65, 0, .65]) for (const y of [-.65, 0, .65]) for (const z of [.5, .9, .98, .995]) {
+          const point = new THREE.Vector3(x, y, z).unproject(h.camera);
+          for (const item of original) if (item.intensity > 0 && (!item.light.distance || point.distanceTo(item.position) < item.light.distance)) {
+            assert.equal(item.light.visible, true, 'a light reaching the visible scene cannot be removed');
+            assert.equal(item.light.intensity, item.intensity, 'stable slots cannot dim a contributing lamp');
+          }
+        }
+      } finally { h.scene.onAfterRender(graphics, h.scene, h.camera); }
+      for (const item of original) {
+        assert.equal(item.light.intensity, item.intensity); assert.equal(item.light.visible, item.visible);
+        assert.ok(item.light.getWorldPosition(new THREE.Vector3()).equals(item.position));
+      }
+    }
 });

@@ -415,7 +415,7 @@ export class FilmSetRenderer {
       || Boolean(this.zion && ['m2_lock', 'm2_residents', 'm2_hamann', 'm2_oracle_message'].includes(this.currentScene ?? ''))
       || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(this.currentScene ?? '')
       || this.currentScene === 'm3_farewell' && Boolean(this.logosWreck)
-      || id === 'film_zion_hangar' && (this.currentScene === 'm2_departure' || this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
+      || id === 'film_zion_hangar' && (this.currentScene === 'm2_dock' || this.currentScene === 'm2_departure' || this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)
       || id === 'film_zion_command_bunker' && this.currentScene === 'm3_shaft_seal'
       || this.currentScene === 'm3_emp' && Boolean(this.empDock?.group.visible)
       || Boolean(this.government) && (this.currentScene === 'm1_helicopter' || this.currentScene === 'm1_rooftop_rescue')
