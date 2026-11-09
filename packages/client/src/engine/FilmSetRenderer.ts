@@ -174,6 +174,7 @@ const OFFICE_DESCENT_ACTORS = [
   ['citizen_4', ['office-uniform-cap', 'Anatomical_head_and_hands']],
 ] as const;
 const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
+  m2_meeting: { scene: 'm2_dock', step: 4 },
   m2_dock: { scene: 'm2_lock', step: 2 },
   m2_lock: { scene: 'm2_residents', step: 1 },
   m2_bane_copy: { scene: 'm2_hamann', step: 3 },
@@ -958,7 +959,21 @@ export class FilmSetRenderer {
         this.preparedZion.colors = { ...this.colorPreparation(target.group, []), actors: new Set() };
     }
     const colors = this.preparedZion.colors;
-    if (colors) this.prepareCastColors(renderer, camera, colors, [next.actor, ...next.cast], actor);
+    if (!colors) return;
+    for (const id of [next.actor, ...next.cast]) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      // The next scene's detailed LOD can still be hidden by distance.
+      const visible = group.visible; let meshes: ColorMesh[];
+      try { group.visible = true; meshes = this.colorMeshes([group]); }
+      finally { group.visible = visible; }
+      group.traverse(object => {
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+          && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors);
   }
   prepareSecondOracle(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {

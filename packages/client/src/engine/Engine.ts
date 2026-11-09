@@ -279,7 +279,7 @@ export class Engine {
     if (meeting?.scene === 'm2_meeting' && player?.id === meeting.actor)
       this.filmSets.prepareCaptainsMeeting(this.renderer, this.camera, meeting, id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareZionHomecoming(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id));
     this.filmSets.prepareTruthReturn(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
     this.filmSets.prepareDojo(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
