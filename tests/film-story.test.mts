@@ -4279,6 +4279,14 @@ test('the entire film route completes through interactions, driving and real com
         }
         actor.position = filmStepPosition(scene, step); h.players.step(.1, true, h.tick());
       }
+      else if (scene.id === 'm2_bane_copy' && index === 0) {
+        const malachi = h.world.agents.get('malachi')!;
+        for (let tick = 0; tick < 100 && malachi.position.z > filmPosition(scene.set, -5, -28).z + .01; tick++) {
+          actor.position = { ...malachi.position, x: malachi.position.x + 5, z: malachi.position.z - 2 }; h.advance();
+        }
+        assert.deepEqual(malachi.position, filmPosition(scene.set, -5, -28));
+        actor.position = filmStepPosition(scene, step); h.advance();
+      }
       else if (scene.id === 'm1_spoon' && index === 1) {
         for (let frame = 0; frame < 300 && state.oracle?.reception?.phase !== 'ready'; frame++) {
           const guide = h.world.agents.get('oracle_priestess')!;

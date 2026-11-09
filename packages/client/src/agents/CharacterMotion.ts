@@ -173,6 +173,7 @@ export interface MotionInput {
   inspecting?: boolean;
   vase?: number;
   realWorld?: boolean;
+  smithProjection?: boolean;
   dojoOutfit?: 'neo' | 'morpheus';
   dojoSparring?: boolean;
   glasses?: boolean;

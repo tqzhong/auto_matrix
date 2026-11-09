@@ -27,6 +27,15 @@ function game() {
   return { world, sandbox, players, command, advance, actor: () => players.getAgent('p')!, state: () => sandbox.life.film.state! };
 }
 
+function escortMalachi(h: ReturnType<typeof game>) {
+  const scene = FILM_SCENE_BY_ID.m2_bane_copy, malachi = h.world.agents.get('malachi')!;
+  for (let tick = 0; tick < 100 && malachi.position.z > filmPosition(scene.set, -5, -28).z + .01; tick++) {
+    h.actor().position = { ...malachi.position, x: malachi.position.x + 5, z: malachi.position.z - 2 }; h.advance(1);
+  }
+  assert.deepEqual(malachi.position, filmPosition(scene.set, -5, -28));
+  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance(1); assert.equal(h.state().step, 1);
+}
+
 test('Reloaded homecoming preserves the filmed room, infection, engineering and Oracle-message order', () => {
   const order = ['m2_temple', 'm2_room', 'm2_bane_copy', 'm2_hamann', 'm2_oracle_message', 'm2_departure'];
   const indexes = order.map(id => FILM_SCENES.findIndex(scene => scene.id === id));
@@ -48,7 +57,8 @@ test('Bane passes the disk out first; infection survives reload but stays outsid
   h.command('next'); assert.equal(state.scene, 'm2_bane_copy'); assert.equal(h.actor().id, 'bane');
   assert.equal(h.actor().faction, 'zion');
   assert.deepEqual(h.world.agents.get('smith')!.position, filmPosition(scene.set, 33, -38));
-  for (const [step, ticks] of [[0, 1], [1, 7], [2, 11], [3, 7]] as const) {
+  escortMalachi(h);
+  for (const [step, ticks] of [[1, 7], [2, 11], [3, 7]] as const) {
     h.actor().position = filmStepPosition(scene, scene.steps[step]);
     if (step > 0) h.command('act');
     h.advance(ticks);
@@ -76,7 +86,7 @@ test('leaving the Smith copy clears only the interrupted effect and permits a cl
   state.scene = 'm2_room'; state.actor = 'neo'; state.step = FILM_SCENE_BY_ID.m2_room.steps.length;
   h.command('next'); assert.equal(h.state().scene, scene.id);
   const bane = h.actor();
-  bane.position = filmStepPosition(scene, scene.steps[0]); h.advance(1);
+  escortMalachi(h);
   bane.position = filmStepPosition(scene, scene.steps[1]); h.command('act'); h.advance(7);
   bane.position = filmStepPosition(scene, scene.steps[2]); h.command('act'); h.advance(3);
   const started = h.state().started;

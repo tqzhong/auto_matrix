@@ -214,7 +214,7 @@ export interface FilmJourney {
   matrixEscape?: import('./matrix-escape.js').MatrixEscapeEncounter;
   theOne?: import('./the-one.js').TheOneEncounter;
   reloaded?: import('./reloaded-opening.js').ReloadedOpening;
-  baneCopy?: { progress: number };
+  baneCopy?: { progress: number; escort?: { progress: number } };
   seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
   burly?: import('./burly.js').BurlyEncounter;
   persephone?: import('./exiles.js').PersephoneEncounter;

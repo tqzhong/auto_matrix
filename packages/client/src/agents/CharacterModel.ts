@@ -148,6 +148,7 @@ export interface CharacterRig {
   medicalCrew?: boolean;
   logosBaneBody?: boolean;
   zionVariant?: { hero?: HeroRig; fallback: THREE.Object3D[]; realWorld: boolean };
+  smithProjection?: { hero?: HeroRig; loading: boolean; visible: boolean; fallback: Map<THREE.Object3D, boolean> };
   weapons?: THREE.Group[];
   spoon?: SpoonModel;
   dockCargo?: DockCargoModel;
@@ -859,6 +860,7 @@ export class CharacterModels {
     if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.epilogueHeads.track(rig, state.id);
     if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
     enableSkinnedCulling(detail);
+    if (state.id === 'bane') rig.smithProjection = { loading: false, visible: false, fallback: new Map() };
     return rig;
   }
 
@@ -957,11 +959,33 @@ export class CharacterModels {
   }
 
   animate(rig: CharacterRig, delta: number, input: MotionInput, distance: number): void {
+    if (rig.smithProjection) {
+      const projection = rig.smithProjection;
+      if (!input.realWorld && !projection.loading) {
+        projection.loading = true;
+        this.heroes.create('smith').then(model => {
+          if (!model) return;
+          projection.hero = model; model.root.visible = false; rig.detail.add(model.root);
+        }).catch(error => console.warn('Bane Smith projection could not load; retaining the human body.', error));
+      }
+      const visible = Boolean(input.smithProjection && !input.realWorld && projection.hero);
+      if (visible) for (const child of rig.detail.children) {
+        if (child === projection.hero!.root) continue;
+        if (!projection.fallback.has(child)) projection.fallback.set(child, child.visible);
+        child.visible = false;
+      }
+      else if (projection.visible) {
+        projection.fallback.forEach((visible, child) => { child.visible = visible; }); projection.fallback.clear();
+      }
+      rig.hero = visible ? projection.hero : undefined;
+      if (projection.hero) projection.hero.root.visible = visible;
+      projection.visible = visible;
+    }
     if (rig.mouseFrame) {
       rig.mouseFrame = { input, distance };
       if (!rig.hero) rig.head.visible = !input.firstPerson;
     }
-    const near = distance < 100 || Boolean(input.oracleRestored);
+    const near = distance < 100 || Boolean(input.oracleRestored || rig.smithProjection?.visible);
     rig.detail.visible = near; rig.distant.visible = !near;
     if (!near) return;
     if (rig.oracleClothing) for (const side of ['R', 'L']) rig.root.getObjectByName(`oracle-hand-${side}`)?.quaternion.identity();
@@ -1006,7 +1030,7 @@ export class CharacterModels {
       if (!realWorld) this.diggerBodies.update(rig, false);
     }
     this.oracleFirstBodies.update(rig, input);
-    if (rig.hero?.support !== 'cypher') this.epilogueHeads.update(rig, input);
+    if (rig.hero?.support !== 'cypher' && !rig.smithProjection?.visible) this.epilogueHeads.update(rig, input);
     this.oracleParkHands.update(rig, Boolean(input.oracleKitchen || input.oracleVisit?.role === 'oracle' || input.parkOutfit || input.epilogue?.kind === 'dawn'));
     this.spoonBoyHands.reset(rig);
     if (poseOracleRestored(rig, input.oracleRestored)) return;

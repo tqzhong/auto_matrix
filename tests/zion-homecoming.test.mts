@@ -91,7 +91,12 @@ function baneLoft() {
     h.advance((scene.steps[step].seconds ?? 3) * 2);
     assert.equal(h.state().step, step + 1);
   };
-  at(0); h.advance(1);
+  const malachi = h.world.agents.get('malachi')!;
+  for (let tick = 0; tick < 100 && malachi.position.z > filmPosition(scene.set, -5, -28).z + .01; tick++) {
+    h.actor().position = { ...malachi.position, x: malachi.position.x + 5, z: malachi.position.z - 2 }; h.advance(1);
+  }
+  assert.deepEqual(malachi.position, filmPosition(scene.set, -5, -28));
+  at(0); h.advance(1); assert.equal(h.state().step, 1);
   return { ...h, scene, use, malachi: h.world.agents.get('malachi')! };
 }
 

@@ -68,7 +68,7 @@ import { BasementEscapeSystem } from './BasementEscapeSystem.js';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { sixthLocked, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry } from '@auto_matrix/shared';
 import { wetwallLocked } from '@auto_matrix/shared';
-import { newReloaded, reloadedLocked, ZION_BEDROOM_DOOR, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_CAST } from '@auto_matrix/shared';
+import { newReloaded, reloadedLocked, ZION_BEDROOM_DOOR, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_CAST, BANE_COPY_ESCORT } from '@auto_matrix/shared';
 import { CABIN, CABIN_ROUTE_LENGTH, MEDICAL_OPERATOR, cabinBodyPose, cabinGuidePose } from '@auto_matrix/shared';
 import { CONSTRUCT, CONSTRUCT_FURNITURE, constructGuidePose, constructArrivalText, type ConstructGesture } from '@auto_matrix/shared';
 import { catchLocked, newCatch } from '@auto_matrix/shared';
@@ -7474,6 +7474,32 @@ export class FilmStorySystem {
     this.place(agent, dock, filmPosition(dock.set, agent.id === 'bane' ? x : -x, z));
     agent.rotation = agent.id === 'bane' ? yaw : -yaw;
   }
+  private baneEscortTick(agent: AgentState, tick: number): boolean {
+    const state = this.state!, scene = this.scene!, malachi = this.world.agents.get('malachi');
+    if (!malachi || malachi.controller || malachi.status !== 'alive' || malachi.health <= 0
+      || !malachi.isInMatrix || malachi.currentLocation !== scene.set) {
+      state.lastText = 'Malachi 还未抵达电话。确认同伴安全，再继续磁盘交接。'; return false;
+    }
+    const route = BANE_COPY_ESCORT, length = route.startZ - route.phoneZ;
+    const copy = state.baneCopy ??= { progress: 0 };
+    // Older saves already placed him at the phone; continue from his saved position.
+    const escort = copy.escort ??= { progress: Math.max(0, Math.min(length, filmPosition(scene.set, route.x, route.startZ).z - malachi.position.z)) };
+    const waiting = distance(agent.position, malachi.position) > route.range;
+    const progress = waiting ? escort.progress : Math.min(length, escort.progress + route.speed * .5);
+    const next = filmPosition(scene.set, route.x, route.startZ - progress);
+    const blocked = playerBlocked(next, true, .7, this.sandbox().structures);
+    const before = malachi.position;
+    if (!blocked && progress > escort.progress) { malachi.position = next; escort.progress = progress; }
+    malachi.rotation = Math.PI;
+    malachi.velocity = { x: 0, y: 0, z: (malachi.position.z - before.z) * 2 };
+    malachi.currentAction = { type: malachi.velocity.z < -.1 ? 'move_to' : 'idle',
+      parameters: { resolved: true, baneEscort: true }, startedAt: tick, duration: 1, progress: 0 };
+    const arrived = escort.progress >= length && distance(malachi.position, filmPosition(scene.set, route.x, route.phoneZ)) < .1;
+    state.lastText = arrived ? 'Malachi 已走到出口电话旁。把磁盘交给他，让他先离线。'
+      : waiting ? 'Malachi 停下来等你。返回同伴身边，陪他穿过阁楼。'
+        : blocked ? 'Malachi 前方的通道被挡住了。清开通往电话的路线。' : '陪受伤的 Malachi 沿柱子内侧走向出口电话，别落下同伴。';
+    return arrived;
+  }
   private prepareOracleRescue(): void {
     const life = this.sandbox().neoLife!; const answer = life.choices.oracle_first;
     if (!['doubt', 'rescue', 'observe'].includes(answer) || life.choices.oracle_prepared) return;
@@ -7895,7 +7921,7 @@ export class FilmStorySystem {
     if (scene.id === 'm2_catch') { state.catch = newCatch(); this.catch.frame(actor, { x: 0, z: 0, focus: false }, 0, tick); }
     if (scene.id === 'm2_ship_lost') state.shipLoss = { phase: 'briefing', remaining: RELOADED_FINALE.evacuationSeconds, lastTick: tick, attempts: 0 };
     if (scene.id === 'm2_stop_sentinels') state.tunnel = { phase: 'running', remaining: RELOADED_FINALE.sentinelSeconds, focus: 0, lastTick: tick, attempts: 0 };
-    if (scene.id === 'm2_bane_copy') state.baneCopy = { progress: 0 };
+    if (scene.id === 'm2_bane_copy') state.baneCopy = { progress: 0, escort: { progress: 0 } };
     if (scene.id === 'm3_bane') { this.ensureBane(tick); this.banePose(actor, tick); }
     if (scene.id === 'm3_farewell') this.placeFarewell(actor, tick);
     if (['m3_rain', 'm3_surrender'].includes(scene.id)) this.placeSmithFinale(actor, tick);
@@ -7947,6 +7973,7 @@ export class FilmStorySystem {
     scene.cast.forEach((id, i) => {
       const actor = this.world.agents.get(id);
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)
+        || scene.id === 'm2_bane_copy' && id === 'malachi' && (actor.status !== 'alive' || actor.health <= 0)
         || ['m1_jump', 'm1_jump_return', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)) return;
       if (scene.id === 'm2_architect' && actor.status !== 'alive') return;
       if (scene.id === 'm2_ship_lost' && actor.status !== 'alive') return;
@@ -7991,7 +8018,7 @@ export class FilmStorySystem {
       }
       if (!['m2_architect', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && !(scene.id === 'm1_interrogation' && this.state!.office?.outcome === 'captured')) {
         actor.status = 'alive';
-        if (!(scene.id === 'm1_rescue_decision' && id === 'tank')) actor.health = actor.maxHealth;
+        if (!(scene.id === 'm1_rescue_decision' && id === 'tank') && !(scene.id === 'm2_bane_copy' && id === 'malachi')) actor.health = actor.maxHealth;
       }
       if (['m1_spoon', 'm1_oracle'].includes(scene.id)) {
         const pose = ORACLE_WAITING_CAST[id as keyof typeof ORACLE_WAITING_CAST];
@@ -8445,6 +8472,7 @@ export class FilmStorySystem {
       } else delete state.started;
       return;
     }
+    const baneEscortReady = state.scene !== 'm2_bane_copy' || state.step !== 0 || this.baneEscortTick(actor, tick);
     if (state.scene === 'm1_dojo') this.dojoFrame(actor, tick);
     if (state.scene === 'm2_trucks' && !state.trucks)
       state.trucks = { phase: state.step === 0 ? 'duel' : 'collision', elapsed: 0, lastTick: tick, attempt: 0 };
@@ -8637,7 +8665,7 @@ export class FilmStorySystem {
       return;
     }
     if (state.scene === 'm1_spoon' && state.step === 1 && state.oracle?.reception) return;
-    if (step.kind === 'reach' && this.near(actor, step) && !(state.scene === 'm1_cabin' && (state.cabinEscort?.progress ?? 0) < CABIN_ROUTE_LENGTH)) this.advance(step.label, actor, tick);
+    if (step.kind === 'reach' && this.near(actor, step) && baneEscortReady && !(state.scene === 'm1_cabin' && (state.cabinEscort?.progress ?? 0) < CABIN_ROUTE_LENGTH)) this.advance(step.label, actor, tick);
     else if (state.started !== undefined) {
       if (!this.near(actor, step)) {
         delete state.started;
