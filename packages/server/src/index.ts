@@ -1,4 +1,5 @@
 import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
+import { savedPersephoneAction } from './story/PersephonePose.js';
 import { SERAPH_DOOR_ROLES, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
@@ -333,6 +334,10 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => ZION_MESSAGE_ROLES.some(role => role === id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
+  if (current?.scene === 'm2_library' && !current.visiting && current.keymaker && (world.agents.get(current.actor)?.controller || simLoop.isRunning())) {
+    const crew = [...world.agents.entries()].filter(([id]) => id === current.actor || id === 'keymaker');
+    sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
+  }
   const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger || current?.scene === 'm2_trucks' && !current.visiting && current.trucks?.phase === 'rescue' && agent.currentAction?.parameters.truckRescue || (current?.scene === 'm3_rain' || current?.scene === 'm3_surrender') && !current.visiting && ['neo', 'smith'].includes(agent.id) && agent.currentAction?.parameters.smithFinale);
   if (controlled.length || simLoop.isRunning()) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [], traffic: sandbox.state.traffic }, simLoop.getTick());
 }, 50);
@@ -365,6 +370,7 @@ async function main(): Promise<void> {
       if (savedCrouch) agent.state.velocity = { x: 0, y: 0, z: 0 };
       const savedPerformanceAction = savedCrouch || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
         || checkpoint.simulation?.running === false && savedSeraphDoorAction(journey, agent.state)
+        || checkpoint.simulation?.running === false && savedPersephoneAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedZionMessageAction(journey, agent.state)
         || journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
         || interrogationLocked(journey) && agent.state.currentAction?.parameters.interrogation

@@ -1,4 +1,5 @@
 import { SeraphDoorSystem } from './SeraphDoorSystem.js';
+import { savedPersephoneAction } from './PersephonePose.js';
 import { seraphDoorLocked } from '@auto_matrix/shared';
 import { SourcePortalSystem } from './SourcePortalSystem.js';
 import { ZionEngineeringSystem } from './ZionEngineeringSystem.js';
@@ -6078,9 +6079,10 @@ export class FilmStorySystem {
     encounter.elapsed = Math.min(EXILES.exchangeSeconds, encounter.elapsed + Math.max(0, Math.min(.1, dt)));
     const memory = encounter.route === 'memory';
     const neo = filmPosition(this.scene!.set, 22.1, 21.8);
+    const persephone = this.world.agents.get('persephone')!;
+    if (dt <= 0 && savedPersephoneAction(state,agent) && savedPersephoneAction(state,persephone)) return true;
     agent.position = neo; agent.rotation = memory ? .9 : 1.5; agent.velocity = { x: 0, y: 0, z: 0 };
     agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, persephone: { ...encounter, role: 'neo' } }, startedAt: tick, duration: 1, progress: 0 };
-    const persephone = this.world.agents.get('persephone')!;
     if (!persephone.controller) {
       persephone.position = filmPosition(this.scene!.set, 23.4, 22.5); persephone.rotation = -.9;
       persephone.currentAction = { type: 'idle', parameters: { resolved: true, persephone: { ...encounter, role: 'persephone' } }, startedAt: tick, duration: 1, progress: 0 };
@@ -6115,12 +6117,21 @@ export class FilmStorySystem {
     state.lastText = encounter.route === 'memory' ? 'Neo 走近她，Trinity 抬眼看着两人。' : 'Neo 停下，先把选择还给 Persephone。';
     this.persephoneFrame(agent, 0, tick); return state.lastText;
   }
+  private keymakerAvailable(): boolean {
+    const captive = this.world.agents.get('keymaker');
+    return Boolean(captive && !captive.controller && captive.status === 'alive' && captive.health > 0 && captive.currentLocation === this.scene?.set && captive.isInMatrix);
+  }
   keymakerFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm2_library' || state.visiting || !this.controls(agent) || !state.keymaker) return;
     this.sealKeymakerDoor();
     const encounter = state.keymaker; const captive = this.world.agents.get('keymaker')!;
-    if (captive.controller) { state.lastText = '钥匙匠正由另一位玩家控制，营救进度停在原处。'; return; }
+    if (!this.keymakerAvailable()) { state.lastText = '钥匙匠目前无法同行；已打开的暗门和营救进度保留。'; return; }
+    const center = FILM_SETS[this.scene!.set].center;
+    if (dt <= 0 && captive.currentAction?.parameters.keymakerEscort === encounter.phase
+      && Math.hypot(captive.position.x-center.x-encounter.x,captive.position.z-center.z-encounter.z)<1e-8) return;
+    if (dt > 0 && !captive.currentAction?.parameters.keymakerEscort) { encounter.x = captive.position.x-center.x; encounter.z = captive.position.z-center.z; }
+    const previous = captive.position; dt = Math.max(0,Math.min(.1,dt));
     if (encounter.phase === 'following' && dt > 0) {
       const x = agent.position.x - FILM_SETS[this.scene!.set].center.x;
       const z = agent.position.z - FILM_SETS[this.scene!.set].center.z;
@@ -6135,19 +6146,25 @@ export class FilmStorySystem {
         state.lastText = '你走得太远。看守把钥匙匠重新带回工作台；从已打开的暗门再次接应他。';
       } else if (gap > 2.7 && gap <= EXILES.followRange) {
         const length = Math.min(gap - 2.7, EXILES.followSpeed * Math.min(.1, dt));
-        const crossingBookcase = encounter.z < EXILES.bookshelf.z - 1 && z > EXILES.bookshelf.z;
-        const throughDoor = crossingBookcase && Math.hypot(encounter.x - EXILES.bookshelf.x, encounter.z - (EXILES.bookshelf.z - 1)) < 1.3;
-        const goalX = crossingBookcase && !throughDoor ? EXILES.bookshelf.x : x;
-        const goalZ = crossingBookcase && !throughDoor ? EXILES.bookshelf.z - 1 : z;
+        const shelf = EXILES.bookshelf, side = encounter.z <= shelf.z ? -1 : 1, destination = z <= shelf.z ? -1 : 1;
+        const crossing = side !== destination || Math.abs(encounter.z-shelf.z)<1.6 && Math.abs(encounter.x-shelf.x)<2.5;
+        const aligned = Math.abs(encounter.x-shelf.x)<.1 || Math.abs(encounter.z-shelf.z)<1.6;
+        const goalX = crossing ? shelf.x : x;
+        const goalZ = crossing ? shelf.z + (aligned ? destination : side)*1.6 : z;
         const toGoal = Math.hypot(goalX - encounter.x, goalZ - encounter.z);
         const stride = Math.min(length, toGoal);
-        if (toGoal > 0) { encounter.x += (goalX - encounter.x) / toGoal * stride; encounter.z += (goalZ - encounter.z) / toGoal * stride; }
-        captive.rotation = Math.atan2(goalX - encounter.x, goalZ - encounter.z);
+        if (toGoal > 0) {
+          const nextX = encounter.x + (goalX-encounter.x)/toGoal*stride, nextZ = encounter.z + (goalZ-encounter.z)/toGoal*stride;
+          if (!playerBlocked(filmPosition(this.scene!.set,nextX,nextZ),true,.8,this.sandbox().structures)) {
+            encounter.x = nextX; encounter.z = nextZ; captive.rotation = Math.atan2(goalX-previous.x+center.x,goalZ-previous.z+center.z);
+          }
+        }
       }
     }
     captive.position = filmPosition(this.scene!.set, encounter.x, encounter.z);
-    captive.currentLocation = this.scene!.set; captive.isInMatrix = true; captive.status = 'alive'; captive.velocity = { x: 0, y: 0, z: 0 };
-    captive.currentAction = { type: 'idle', parameters: { resolved: true, keymakerEscort: encounter.phase }, startedAt: tick, duration: 1, progress: 0 };
+    captive.targetPosition = null; captive.currentPath = [];
+    captive.velocity = dt && encounter.phase === 'following' ? { x:(captive.position.x-previous.x)/dt,y:0,z:(captive.position.z-previous.z)/dt } : { x:0,y:0,z:0 };
+    captive.currentAction = { type: Math.hypot(captive.velocity.x,captive.velocity.z)>.01 ? 'move_to' : 'idle', parameters: { resolved: true, keymakerEscort: encounter.phase }, startedAt: state.enteredAt, duration: 1, progress: 0 };
   }
   private sealKeymakerDoor(): void {
     const id = 'film:library:bookdoor'; const state = this.state;
@@ -6499,6 +6516,12 @@ export class FilmStorySystem {
         agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
         this.persephoneFrame(agent, 0, tick); return '已接回盥洗室，条件与动作进度均已保留。';
       }
+      if (state.scene === 'm2_library' && state.keymaker) {
+        delete state.visiting; delete state.returnPosition; delete state.started;
+        agent.status = 'alive'; agent.health = agent.maxHealth; agent.activeEffects = [];
+        agent.position = { ...state.checkpoint }; agent.velocity = { x:0,y:0,z:0 }; agent.currentAction = null;
+        this.sealKeymakerDoor(); return state.lastText = '已接回书房检查点；暗门、钥匙匠的位置与伤势、看守的结果均保留。';
+      }
       if (state.theOne && ['m1_death', 'm1_return', 'm1_final_call'].includes(state.scene)) return this.retryTheOne(agent, tick);
       if (state.government && ['m1_smith_question', 'm1_bullet_dodge'].includes(state.scene)) return this.retryGovernment(agent, tick);
       if (state.airRescue && ['m1_helicopter', 'm1_rooftop_rescue'].includes(state.scene)) return this.retryAirRescue(agent, tick);
@@ -6732,6 +6755,7 @@ export class FilmStorySystem {
     this.dockLastStand.stage(tick);
     if (target === 'next') {
       if (this.step) return '先完成当前场景中的目标。';
+      if (state.scene === 'm2_library' && !this.keymakerAvailable()) return '钥匙匠目前无法同行；营救进度保留，等待他回到队伍。';
       if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'connected') return '信号已经断开。卡车撞过电话亭后再继续 Neo 的故事。';
       if (state.scene === 'm2_seraph' && !this.near(agent, this.scene.steps.at(-1)!)) return '走近茶馆后门，再跟 Seraph 穿过那把钥匙打开的门。';
       if (state.scene === 'm2_backdoors' && !this.near(agent, this.scene.steps.at(-1)!)) return '走到白色走廊尽头的庭院门，再按 G 通过。';
@@ -7059,6 +7083,7 @@ export class FilmStorySystem {
     if (state.scene === 'm2_chateau' && state.step === 0) return this.chateauAct(agent, target, tick);
     if (state.scene === 'm2_mountain' && state.step === 2) return state.mountain?.phase === 'failed' && target === 'act' ? this.retryMountain(agent) : '站在山崖起飞点按 Space，随后按住 W 向南飞，A / D 调整航线。';
     if (state.scene === 'm2_persephone' && state.step === 2) return this.persephoneAct(agent, target, tick);
+    if (state.scene === 'm2_library' && state.step === 3 && target === 'act' && !this.keymakerAvailable()) return '钥匙匠目前无法回应；等待他回到队伍后再确认身份。';
     if (state.scene === 'm1_wake_up') return this.apartmentAct(agent, target, tick);
     if (state.scene === 'm1_wake_again' && state.step < this.scene!.steps.length) return this.wakeCallAct(agent, target, tick);
     if (state.scene === 'm1_morning') return this.morningAct(agent, target, tick);
@@ -7996,6 +8021,7 @@ export class FilmStorySystem {
       if (!actor || actor.controller || actor.id === this.state!.actor || this.unavailable(id)
         || scene.id === 'm2_bane_copy' && id === 'malachi' && (actor.status !== 'alive' || actor.health <= 0)
         || id === 'seraph' && ['m2_seraph','m2_backdoors'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)
+        || id === 'keymaker' && ['m2_library','m2_chateau'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)
         || ['m1_jump', 'm1_jump_return', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && (actor.status !== 'alive' || actor.health <= 0)) return;
       if (scene.id === 'm2_architect' && actor.status !== 'alive') return;
       if (scene.id === 'm2_ship_lost' && actor.status !== 'alive') return;
@@ -8040,7 +8066,7 @@ export class FilmStorySystem {
       }
       if (!['m2_architect', 'm2_stop_sentinels', 'm2_medical', 'm3_hel_bargain', 'm3_mobil_release', 'm3_oracle_last', 'm3_bane'].includes(scene.id) && !(scene.id === 'm1_interrogation' && this.state!.office?.outcome === 'captured')) {
         actor.status = 'alive';
-        if (!(scene.id === 'm1_rescue_decision' && id === 'tank') && !(scene.id === 'm2_bane_copy' && id === 'malachi') && !(id === 'seraph' && ['m2_seraph','m2_backdoors'].includes(scene.id))) actor.health = actor.maxHealth;
+        if (!(scene.id === 'm1_rescue_decision' && id === 'tank') && !(scene.id === 'm2_bane_copy' && id === 'malachi') && !(id === 'seraph' && ['m2_seraph','m2_backdoors'].includes(scene.id)) && !(id === 'keymaker' && ['m2_library','m2_chateau'].includes(scene.id))) actor.health = actor.maxHealth;
       }
       if (['m1_spoon', 'm1_oracle'].includes(scene.id)) {
         const pose = ORACLE_WAITING_CAST[id as keyof typeof ORACLE_WAITING_CAST];
@@ -8276,6 +8302,7 @@ export class FilmStorySystem {
       if (state.step === 2) state.keymaker.phase = 'revealed';
       if (state.step === 3) { state.keymaker.phase = 'following'; state.keymaker.separated = 0; }
       if (state.step === 4) { state.keymaker.phase = 'escaped'; life.choices.keymaker_rescued = 'yes'; }
+      this.keymakerFrame(agent,0,tick);
     }
     if (state.scene === 'm2_seraph' && state.step === 0) {
       const seraph = this.world.agents.get('seraph');
@@ -8559,7 +8586,7 @@ export class FilmStorySystem {
     if (state.scene === 'm3_bane' && state.step === 1) return;
     if (state.scene === 'm2_chateau' && state.step === 0) { this.chateauTick(actor, tick); return; }
     if (state.scene === 'm2_library' && state.step === 4) {
-      if (this.world.agents.get('keymaker')?.controller) return;
+      if (!this.keymakerAvailable()) return;
       const escort = state.keymaker;
       if (escort && this.near(actor, this.step!) && Math.hypot(escort.x - EXILES.escape.x, escort.z - EXILES.escape.z) <= EXILES.escapeRange)
         this.advance('钥匙匠跟上了。Morpheus 与 Trinity 接过护送，Neo 留在大厅挡住赶来的守卫。', actor, tick);

@@ -2767,6 +2767,7 @@ test('the château fight requires a chosen weapon, timed parry and a climb befor
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
   Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  Object.assign(h.world.agents.get('keymaker')!, { currentLocation: library.set, isInMatrix: true, position: filmPosition(library.set, 0, 23) });
   h.actor().currentLocation = library.set; h.actor().isInMatrix = true;
   h.command('next'); assert.equal(state.scene, hall.id);
   h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
@@ -2812,6 +2813,7 @@ test('EMP can stagger château guards but cannot bypass their weapon defense', (
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
   Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  Object.assign(h.world.agents.get('keymaker')!, { currentLocation: library.set, isInMatrix: true, position: filmPosition(library.set, 0, 23) });
   h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
   h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
   h.sandbox.state.profiles.neo.inventory.emp = 2;
@@ -2829,6 +2831,7 @@ test('an older château save restarts its unfinished fight without erasing a cle
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
   Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  Object.assign(h.world.agents.get('keymaker')!, { currentLocation: library.set, isInMatrix: true, position: filmPosition(library.set, 0, 23) });
   h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
   h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
   delete state.chateau;
@@ -2849,6 +2852,7 @@ test('a legacy château save inside a stair rail resumes on the same tread with 
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
   Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  Object.assign(h.world.agents.get('keymaker')!, { currentLocation: library.set, isInMatrix: true, position: filmPosition(library.set, 0, 23) });
   h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
   Object.assign(state.chateau!, { phase: 'landing', weapon: 'sword', parries: 2, disarms: 2 });
   const neo = h.actor(), insideRail = filmPosition(hall.set, -19.8, -27.2);
@@ -2866,6 +2870,7 @@ test('upper château guards remain on their floor when Neo retreats below the la
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
   Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  Object.assign(h.world.agents.get('keymaker')!, { currentLocation: library.set, isInMatrix: true, position: filmPosition(library.set, 0, 23) });
   h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
   h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
   h.sandbox.state.threats = h.sandbox.state.threats.filter(t => t.scene !== hall.id);
@@ -2880,6 +2885,7 @@ test('the château guard can wound Neo, and a failed attempt retries without los
   const h = setup(); h.command('continue'); const state = h.sandbox.life.film.state!;
   const library = FILM_SCENE_BY_ID.m2_library; const hall = FILM_SCENE_BY_ID.m2_chateau;
   Object.assign(state, { scene: library.id, actor: 'neo', step: library.steps.length });
+  Object.assign(h.world.agents.get('keymaker')!, { currentLocation: library.set, isInMatrix: true, position: filmPosition(library.set, 0, 23) });
   h.actor().currentLocation = library.set; h.actor().isInMatrix = true; h.command('next');
   h.actor().position = filmStepPosition(hall, hall.steps[0]); h.command('act');
   h.actor().position = filmPosition(hall.set, -29, 17); h.command('act');

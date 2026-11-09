@@ -210,7 +210,7 @@ export class PlayerController {
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
-      || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick);
+      || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
     if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
       && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
@@ -317,7 +317,7 @@ export class PlayerController {
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
-        || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick);
+        || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
       if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
         && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
