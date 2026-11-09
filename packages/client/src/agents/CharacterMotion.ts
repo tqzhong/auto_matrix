@@ -175,6 +175,7 @@ export interface MotionInput {
   realWorld?: boolean;
   smithProjection?: boolean;
   prepareZionCast?: boolean;
+  engineering?: import('@auto_matrix/shared').EngineeringEncounter;
   dojoOutfit?: 'neo' | 'morpheus';
   dojoSparring?: boolean;
   glasses?: boolean;

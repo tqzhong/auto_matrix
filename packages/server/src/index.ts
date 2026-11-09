@@ -26,6 +26,7 @@ import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/S
 import { SandboxSystem } from './player/SandboxSystem.js';
 import { savedWorkdayIdle } from './story/FilmStorySystem.js';
 import { savedMetacortexLiftIdle } from './story/NeoLifeSystem.js';
+import { savedEngineeringAction } from './story/ZionEngineeringSystem.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const eventBus = new EventBus();
@@ -359,6 +360,7 @@ async function main(): Promise<void> {
         || lafayetteWelcomeLocked(journey) && agent.state.currentAction?.parameters.welcome
         || savedAwakeningIdle(journey, agent.state.currentAction)
         || checkpoint.simulation?.running === false && savedOraclePropAction(journey, agent.state)
+        || checkpoint.simulation?.running === false && savedEngineeringAction(journey, agent.state)
         || workdayLocked(journey) && savedWorkdayIdle(journey.workday, agent.state.currentAction)
         || heldPhone(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.phone
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined

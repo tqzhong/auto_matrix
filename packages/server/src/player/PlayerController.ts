@@ -207,7 +207,7 @@ export class PlayerController {
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
-      || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick);
+      || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick);
     if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
       && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
@@ -285,6 +285,7 @@ export class PlayerController {
     this.sandbox?.life.film.helDisarmFrame(agent, 0, tick);
     this.sandbox?.life.film.helBargainFrame(agent, tick);
     this.sandbox?.life.film.sourceBriefing.frame(agent, 0, tick);
+    this.sandbox?.life.film.engineering.frame(agent, 0, tick);
     this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
     this.sandbox?.life.film.templeDefense.frame(agent, 0, tick);
     this.sandbox?.life.film.restoreGaragePose(agent, tick);
@@ -311,7 +312,7 @@ export class PlayerController {
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
-        || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick);
+        || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick);
       if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
         && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
@@ -481,6 +482,11 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.sourceBriefing.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
+        session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.engineering.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
+        now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true,
+        now - session.lastInput <= 300 && (Math.hypot(session.input.x, session.input.z) > .1 || session.input.jump))) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.primaryDemolition.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,

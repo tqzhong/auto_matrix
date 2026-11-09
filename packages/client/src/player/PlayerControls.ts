@@ -46,6 +46,7 @@ import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
 import { podThirdPersonCamera } from './PodCamera.js';
 import type { MotionInput } from '../agents/CharacterMotion.js';
+import { ZION_ENGINEERING } from '@auto_matrix/shared';
 import { upperDiggerEye, upperDiggerLookBack } from '../agents/UpperDiggerPerformance.js';
 import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
@@ -237,7 +238,7 @@ export class PlayerControls {
     this.logosPilotYaw = undefined; this.motion.logosPilot = undefined;
     this.elevatorAim = false; this.elevatorViewAction = undefined; this.doorAim = false; this.doorViewOpening = false;
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
-    this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
+    this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.engineering = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
     this.gardenLook = { yaw: 0, pitch: 0 };
     this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
     // A retry can accept input before its acknowledgement reaches this client.
@@ -997,6 +998,14 @@ export class PlayerControls {
     const logosPilot = typeof state.currentAction?.parameters.logosPilot === 'object'
       ? state.currentAction.parameters.logosPilot as MotionInput['logosPilot'] : undefined;
     if (logosPilot) this.performing = true;
+    const engineering = state.currentAction?.parameters.engineering as MotionInput['engineering'];
+    if (this.motion.engineering && !engineering) { this.performing = false; this.cameraReady = false; }
+    if (engineering) {
+      if (!this.motion.engineering) { this.pitch = .36; this.cameraReady = false; }
+      this.performing = true;
+      if (engineering.elapsed < ZION_ENGINEERING.approachSeconds) this.yaw = this.movementYaw = state.rotation;
+    }
+    this.motion.engineering = engineering;
     if (this.wasPerforming && !this.performing && !(this.firstPerson && this.motion.download?.role === 'neo' && ['greeting', 'waking'].includes(this.motion.download.phase))) this.yaw = this.movementYaw = this.facing;
     if (redPillEnded) this.yaw = this.movementYaw = this.facing = state.rotation;
     if (bridgeCaptureStarting) this.yaw = this.movementYaw = Math.atan2(bridgeCaught!.x - state.position.x, bridgeCaught!.z - state.position.z);
@@ -1276,7 +1285,7 @@ export class PlayerControls {
       this.position = { ...state.position }; this.facing = state.rotation;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (this.ride || this.climbing || this.performing || this.motion.dockGunnery || this.motion.truckRoad) {
-      const blend = this.motion.roofExit || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.helDisarm || this.motion.helBreakout?.phase === 'catching' || this.motion.helDoorPush || this.motion.helElevator || helGarageLocked(this.motion.helGarage) || trainmanChaseLocked(this.motion.trainmanChase) || this.motion.architect || this.motion.sourcePortal || this.motion.trinityTerminal || this.motion.trinityRelay || primaryLocked(this.motion.primaryDemolition) || this.motion.truckRoad || this.motion.freewayPickup || this.motion.freewayRide || templeDefenseGestureLocked(this.motion.templeDefense) || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGunnery || upperDiggerLocked(this.motion.upperDigger) || diggersLocked(this.motion.diggers) || this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || computerCheckLocked(computerCheck) || this.motion.contact || inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.farewell || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || this.motion.mirrorEntry || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
+      const blend = this.motion.engineering || this.motion.roofExit || this.motion.mobilReunion?.reunion.phase === 'embracing' || this.motion.helDisarm || this.motion.helBreakout?.phase === 'catching' || this.motion.helDoorPush || this.motion.helElevator || helGarageLocked(this.motion.helGarage) || trainmanChaseLocked(this.motion.trainmanChase) || this.motion.architect || this.motion.sourcePortal || this.motion.trinityTerminal || this.motion.trinityRelay || primaryLocked(this.motion.primaryDemolition) || this.motion.truckRoad || this.motion.freewayPickup || this.motion.freewayRide || templeDefenseGestureLocked(this.motion.templeDefense) || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || this.motion.dockGunnery || upperDiggerLocked(this.motion.upperDigger) || diggersLocked(this.motion.diggers) || this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || computerCheckLocked(computerCheck) || this.motion.contact || inOfficeLift || this.motion.officeCustody?.street || this.motion.truckPassenger || this.motion.farewell || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.training || this.motion.workday || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || catchCinematic || deusPactLocked(this.motion.deusPact) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || this.motion.mirrorEntry || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-20 * delta);
       this.position.x += (state.position.x - this.position.x) * blend; this.position.y += (state.position.y - this.position.y) * blend; this.position.z += (state.position.z - this.position.z) * blend;
       this.vy = 0; this.planar = { x: 0, z: 0 }; this.localJump = false;
     } else if (running && this.enabled && state.status === 'alive') {
@@ -1310,7 +1319,7 @@ export class PlayerControls {
     if ((mirrorStarting && !this.motion.mirrorEntry || mirrorSitting) && this.firstPerson && now - this.lastLook > 900) this.aimAtMirror();
     if (hardlineStarting && this.firstPerson) this.aimAtHardline();
     const dx = this.position.x - previous.x; const dz = this.position.z - previous.z;
-    this.motion.speed = this.motion.truckRoad ? running && this.enabled && state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0 : dropRoot ? dropRoot.speed : basement?.crawling || wall && !hanging ? Math.hypot(dx, dz) / Math.max(delta, .001) : this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
+    this.motion.speed = this.motion.engineering ? (running ? Math.hypot(state.velocity.x, state.velocity.z) : 0) : this.motion.truckRoad ? running && this.enabled && state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0 : dropRoot ? dropRoot.speed : basement?.crawling || wall && !hanging ? Math.hypot(dx, dz) / Math.max(delta, .001) : this.ride || this.climbing || this.performing ? 0 : Math.hypot(dx, dz) / Math.max(delta, .001);
     if (this.motion.spoonLesson?.phase === 'sitting' && this.motion.spoonLesson.elapsed < 1.1) this.motion.speed = Math.hypot(state.velocity.x, state.velocity.z);
     if (this.motion.roofExit) this.motion.speed = this.motion.hotel303 ? 0 : Math.hypot(state.velocity.x, state.velocity.z);
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
@@ -3104,7 +3113,7 @@ export class PlayerControls {
       const officeFollow = state.currentLocation === 'film_metacortex_floor';
       const closeFollow = lafayetteWalking || dojoWalking || officeFollow;
       if (closeFollow) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
-      const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' || state.currentLocation === 'film_zion_bedroom' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = wreckCabin || doorwayView ? 4.2 : this.motion.engineering ? 6 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' || state.currentLocation === 'film_zion_bedroom' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
       const cameraCeiling = (point: THREE.Vector3) => {
         if (officeFollow) {

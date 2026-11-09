@@ -1,5 +1,6 @@
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
+import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
 import { TRAINMAN_CHASE, trainmanChaseTarget, trainmanFloor, trainmanChaseLocked } from './trainman-chase.js';
 import { HEL_GARAGE, helGarageTarget } from './hel-garage.js';
 import { HEL_ELEVATOR, helElevatorFloor, type HelElevatorEncounter } from './hel-elevator.js';
@@ -215,6 +216,7 @@ export interface FilmJourney {
   theOne?: import('./the-one.js').TheOneEncounter;
   reloaded?: import('./reloaded-opening.js').ReloadedOpening;
   baneCopy?: { progress: number; escort?: { progress: number } };
+  engineering?: EngineeringEncounter;
   seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
   burly?: import('./burly.js').BurlyEncounter;
   persephone?: import('./exiles.js').PersephoneEncounter;
@@ -366,7 +368,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_temple', 2, 'zion_temple', 'morpheus', '洞窟里的集会', 'zion', 'zion', 'Hamann 召集居民。Morpheus 必须亲自说明机器正在逼近，随后鼓声才会响起。', [walk('走到神庙讲台', 0, -35), use('向居民公开三天的威胁', 'Morpheus 没有隐瞒攻击的规模。人群从沉默中开始回应，决定一起守住锡安。', 0, -35, 6), use('把讲台交还给鼓声与人群', '舞蹈开始。人们让彼此看见自己仍然活着，守城准备在另一边继续。', 0, -26, 5)], ['niobe', 'lock', 'hamann']),
   scene('m2_room', 2, 'zion_bedroom', 'neo', '房间里的两个人', 'zion', 'oracle', 'Neo 与 Trinity 离开喧闹的集会，回到岩壁中的小房间。梦中的坠落仍困扰他。', [walk('走进岩壁里的卧室', 0, 1), use('把反复出现的梦告诉 Trinity', 'Trinity 听完梦的内容，也说出自己的决定：她会参与即将到来的行动。', 0, -8), think('预感是否会支配现在？', '珍惜眼前的人，与试图控制她的未来，不是同一种责任。', 0, -8)], ['trinity']),
   scene('m2_bane_copy', 2, 'industrial_loft', 'bane', '被带出矩阵的感染', 'zion', 'infiltration', '在锡安的夜里，Bane 与受伤的 Malachi 逃进有破碎天窗的工业阁楼。出口电话已响；这是观众视角，Neo 此时不知道。', [walk('护送 Malachi 穿过碎玻璃抵达电话', 0, -23), use('把先知的磁盘交给 Malachi，让他先离线', 'Malachi 带着给 Neo 的讯息离开。Bane 独自留下，Smith 从破碎天窗的阴影里落下。', 0, -29, 3), use('面对 Smith 的复制', '黑色程序从胸口覆盖 Bane 的身体和面容。另一个 Smith 从他的眼睛里看向出口电话。', 0, -23, 5), use('以被覆盖的身份接起出口电话', 'Bane 把听筒贴到耳边，硬线已经接通。继续后切回锡安。', 0, -29, 3)], ['malachi', 'smith']),
-  scene('m2_hamann', 2, 'zion_engineering', 'neo', '维持生命的机器', 'zion', 'oracle', 'Hamann 带 Neo 到工业核心。风、水和热由这些人类制造的机器维持。', [walk('沿栈桥走到生命维持机旁', 0, -24), use('检查空气与回收水的读数', '空气循环、供水与照明都连在同一片设备上。关闭其中一段会立刻影响居住层。', -9, -24), use('调整备用循环阀', '维护回路恢复平衡。机器仍在运转，而人们对它的依赖变得具体可见。', 9, -24, 5), think('相互依赖是否排除自由？', '能够关闭机器，并不意味着可以不承担关闭之后的后果。', 0, -24)], ['hamann']),
+  scene('m2_hamann', 2, 'zion_engineering', 'neo', '维持生命的机器', 'zion', 'oracle', 'Hamann 带 Neo 到工业核心。风、水和热由这些人类制造的机器维持。', [walk('沿栈桥走到生命维持机旁', 0, -24), use('在左侧控制台检查空气与回收水读数', '空气循环、供水与照明都连在同一片设备上。关闭其中一段会立刻影响居住层。', ZION_ENGINEERING.readings.x, ZION_ENGINEERING.readings.z), use('按住 G 转动右侧备用循环阀', '维护回路恢复平衡。机器仍在运转，而人们对它的依赖变得具体可见。', ZION_ENGINEERING.valve.x, ZION_ENGINEERING.valve.z, 5), think('相互依赖是否排除自由？', '能够关闭机器，并不意味着可以不承担关闭之后的后果。', 0, -24)], ['hamann']),
   scene('m2_oracle_message', 2, 'zion_bedroom', 'neo', '先知托来的磁盘', 'oracle_second', 'oracle', 'Hamann 谈话后的清晨，Ballard 和受伤的 Malachi 来到卧室门口。Bane 没有与他们同行。', [use('回应卧室铁门的敲击', 'Trinity 打开门。Ballard 带着船员来到门口，Malachi 的伤口还未痊愈。', 0, 13, 2), use('从 Ballard 手中接过先知的磁盘', '讯息终于抵达 Neo 手里。他知道该去见先知了。', 0, 9, 3)], ['trinity', 'ballard', 'malachi']),
   scene('m2_departure', 2, 'zion_hangar', 'neo', '离港前的道别', 'oracle_second', 'zion', '尼布甲尼撒号获准离港。Link 要和 Zee 道别；Bane 隐在通往船坞的路上，Kid 带来一件出自先知等候室的礼物。', [use('见证 Link 和 Zee 的道别', 'Zee 把贴身的护身符交给 Link。他不相信预言，却答应会带着它回来。', 0, 32, 4), use('留意 Bane 的异常道别', 'Bane 的手上有伤，眼神陌生。他说只是来祝好运；Neo 只察觉到一瞬不安，并不知道感染。', 0, 20, 3), use('从 Kid 手中接过勺子', '孩子托 Kid 把勺子送给 Neo。这件小礼物让他想起矩阵的规则可以改变。', -3, 10, 3), use('核对 Hamann 的放行与 Lock 的守城异议', 'Hamann 放行了尼布甲尼撒号；Lock 仍认为守城需要每一艘船。', 0, -2, 2), walk('沿接驳桥走进尼布甲尼撒号', ZION_BOARDING.x, ZION_BOARDING.z)], ['morpheus', 'trinity', 'link', 'zee', 'bane', 'kid']),
   scene('m2_seraph', 2, 'seraph_teahouse', 'neo', '认识一个人的方法', 'oracle_second', 'training', '白天的茶馆里，Seraph 要求先交手。观察两次起手，用 X 避开，再靠近以 F 反击；蛮打只会被挡开。', [fight('读懂 Seraph 的两次攻势', 1, 'training', 'seraph'), use('跟 Seraph 走到茶馆后门', 'Seraph 用颈间的钥匙打开旧门。门后并不是来时的街巷。', SERAPH_ORACLE.tea.door.x, SERAPH_ORACLE.tea.door.z, 2)], ['seraph']),
@@ -731,7 +733,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     const root = logosCrewRoot(flight, 'trinity'), center = FILM_SETS[logosFlightSet(flight)].center;
     return !matrix && distance(position, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }) <= 1.6;
   }
-  const radius = scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+  const radius = scene.id === 'm2_hamann' && (step === scene.steps[1] || step === scene.steps[2]) ? ZION_ENGINEERING.radius : scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
     : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm2_departure' && step.kind === 'reach' ? 1.15

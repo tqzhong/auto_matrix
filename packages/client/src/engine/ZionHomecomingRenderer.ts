@@ -14,6 +14,7 @@ import { dockGateAim, dockGatePose } from '@auto_matrix/shared';
 import { DOCK_RELOAD, dockReloadBox } from '@auto_matrix/shared';
 import { TempleDefenseRenderer } from './TempleDefenseRenderer.js';
 import { ZionCrowdRenderer } from './ZionCrowdRenderer.js';
+import { ZION_ENGINEERING, engineeringProgress, engineeringReadings } from '@auto_matrix/shared';
 
 /** Six authored Zion interiors share rock, metal and service-light materials, not a generic cave layout. */
 export class ZionHomecomingRenderer {
@@ -25,6 +26,8 @@ export class ZionHomecomingRenderer {
   private lights = new Set<THREE.Light>();
   private moving = new THREE.Group();
   private signals: THREE.MeshStandardMaterial[] = [];
+  private engineeringControls?: { wheel: THREE.Group; industrial: THREE.Group; screen: THREE.Mesh; status: THREE.MeshStandardMaterial;
+    canvas?: HTMLCanvasElement; texture?: THREE.CanvasTexture; text?: string };
   private messageDisk?: THREE.Group;
   private messageDoor?: THREE.Group;
   private boarding?: { closedRail: THREE.Mesh; bridge: THREE.Mesh; bay: THREE.Group };
@@ -148,8 +151,8 @@ export class ZionHomecomingRenderer {
     for (let z = zCenter - depth / 2; z <= zCenter + depth / 2; z += 2) this.box(steel, 0, -.12, z, width, .11, .12);
     for (let x = -width / 2; x <= width / 2; x += 1.4) this.box(steel, x, -.1, zCenter, .06, .06, depth);
   }
-  private obstacles(mat: THREE.Material): void {
-    for (const o of ZION_OBSTACLES[this.set] ?? []) this.box(mat, o.x, o.height / 2, o.z, o.width, o.height, o.depth,
+  private obstacles(mat: THREE.Material, layout = ZION_OBSTACLES[this.set] ?? []): void {
+    for (const o of layout) this.box(mat, o.x, o.height / 2, o.z, o.width, o.height, o.depth,
       this.set === 'film_zion_hangar' && o.x > 0 ? this.moving.getObjectByName('zion-drill-cargo')! : this.static);
   }
   private dock(civilian: boolean): void {
@@ -356,14 +359,15 @@ export class ZionHomecomingRenderer {
   private engineering(): void {
     const stone = this.surface('damaged_plaster', 0x6b6558, 4), steel = this.surface('metal_plate', 0x717974, 3);
     const iron = this.material(0x252f2e, .45, .7), water = this.material(0x42645e, .3, .42, 0x2c5f59, .5);
-    const ready = this.material(0xb6dda6, .28, .15, 0x75d89b, 1.5); this.signals.push(ready);
+    const ready = this.material(0xb6dda6, .28, .15, 0x75d89b, 1.5);
     this.rockShell(56, 90, 24, stone); this.grating(17, 82, steel);
     for (const side of [-1, 1]) {
       this.box(iron, side * 9, 1.2, 0, .5, 2.4, 83);
       for (const x of [side * 14, side * 23]) for (const y of [4, 12, 19]) this.pipe(steel, [x, y, -43], [x, y, 43], .32 + y * .009);
       for (let z = -38; z <= 38; z += 13) { this.pipe(steel, [side * 14, 4, z], [side * 23, 4, z], .2); this.pipe(iron, [side * 10, 1, z], [side * 10, 21, z], .16); }
     }
-    this.obstacles(iron);
+    // Rails and narrow control pedestals have their authored geometry.
+    this.obstacles(iron, ZION_OBSTACLES[this.set].filter(obstacle => obstacle.width >= 1));
     for (const side of [-1, 1]) {
       const x = side * 17; this.cylinder(steel, x, 6, 15, 4.8, 11, 22); this.cylinder(iron, x, 12, 15, 4.2, 1, 22);
       for (let i = 0; i < 7; i++) this.box(water, x - 2.5 + i * .75, 7, side * 15 + 3, .24, 5, .12);
@@ -373,11 +377,53 @@ export class ZionHomecomingRenderer {
     for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; this.pipe(iron, [0, 0, 0], [0, Math.sin(a) * 7, Math.cos(a) * 7], .27, wheel); }
     this.cylinder(steel, 0, 14, -39, 1.1, 2.2);
     this.box(iron, -17, 5.2, -25, 8.4, .4, 5.4); this.box(water, -17, 5.43, -25, 7.8, .12, 4.7);
-    const valve = this.mesh(new THREE.TorusGeometry(2.3, .23, 10, 28), steel); valve.position.set(17, 4.4, -25); valve.rotation.x = Math.PI / 2;
-    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; this.pipe(iron, [17, 4.4, -25], [17 + Math.cos(a) * 2.2, 4.4 + Math.sin(a) * 2.2, -25], .1); }
+    const industrial = new THREE.Group(); industrial.name = 'zion-industrial-backup-valve'; industrial.position.set(17, 4.4, -25); this.moving.add(industrial);
+    this.mesh(new THREE.TorusGeometry(2.3, .23, 10, 28), steel, industrial);
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; this.pipe(iron, [0, 0, 0], [Math.cos(a) * 2.2, Math.sin(a) * 2.2, 0], .1, industrial); }
     this.box(ready, 17, 5.7, -28.3, 2.4, .4, .12, this.static, 'zion-backup-status');
+    const console = new THREE.Group(); console.name = 'zion-air-water-console'; this.moving.add(console);
+    const left = ZION_ENGINEERING.readings.control; console.position.set(left.x, left.y, left.z);
+    this.box(iron, 0, -(left.y + .55) / 2, 0, .28, left.y - .55, left.depth, console);
+    this.box(steel, 0, 0, 0, .18, 1.1, left.depth, console);
+    const display = this.material(0xe0f4d8, .7, .05, 0x90b18c, .6);
+    let canvas: HTMLCanvasElement | undefined, texture: THREE.CanvasTexture | undefined;
+    if (typeof document !== 'undefined') {
+      canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 192;
+      texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.add(texture);
+      display.map = display.emissiveMap = texture;
+    }
+    const screen = this.mesh(new THREE.PlaneGeometry(1.2, .9), display, console); screen.name = 'zion-engineering-screen';
+    screen.position.x = .1; screen.rotation.y = Math.PI / 2; screen.castShadow = screen.receiveShadow = false;
+    const button = this.mesh(new THREE.SphereGeometry(.07, 12, 8), ready, console); button.name = 'zion-engineering-button'; button.position.set(.15, 0, ZION_ENGINEERING.readings.buttonZ);
+    const right = ZION_ENGINEERING.valve.control, handwheel = new THREE.Group(); handwheel.name = 'zion-backup-handwheel';
+    handwheel.position.set(right.x, right.y, right.z); this.moving.add(handwheel);
+    this.box(iron, right.x + .25, right.y / 2, right.z, .28, right.y, right.depth);
+    const handwheelRim = this.mesh(new THREE.TorusGeometry(ZION_ENGINEERING.valve.radius, .065, 10, 24), steel, handwheel); handwheelRim.rotation.y = Math.PI / 2;
+    for (let i = 0; i < 6; i++) { const angle = i / 6 * Math.PI * 2; this.pipe(iron, [0, 0, 0], [0, Math.sin(angle) * .42, Math.cos(angle) * .42], .035, handwheel); }
+    for (const side of [-1, 1]) {
+      const grip = this.mesh(new THREE.SphereGeometry(.075, 12, 8), side > 0 ? ready : steel, handwheel);
+      grip.name = `zion-handwheel-grip-${side > 0 ? 'R' : 'L'}`; grip.position.set(-.1, 0, side * .42);
+    }
+    this.pipe(iron, [right.x, right.y, right.z], [17, right.y, right.z], .11);
+    this.pipe(iron, [17, right.y, right.z], [17, 4.4, -25], .11);
+    this.engineeringControls = { wheel: handwheel, industrial, screen, status: ready, canvas, texture };
     this.sign('AIR / WATER / HEAT', 0, 8, -43, 15); this.lamp(-8, -23, 12, 90); this.lamp(8, -23, 12, 90);
     this.glow(0x8ca9a0, 200, 49, 0, 18, -34);
+  }
+  private updateEngineering(journey?: FilmJourney): void {
+    const controls = this.engineeringControls; if (!controls) return;
+    const state = engineeringProgress(journey), values = engineeringReadings(state.valve);
+    controls.wheel.rotation.x = controls.industrial.rotation.z = state.valve * ZION_ENGINEERING.valve.turn;
+    controls.status.color.setHex(state.valve >= 1 ? 0xb6dda6 : 0xcaa15c); controls.status.emissive.setHex(state.valve >= 1 ? 0x75d89b : 0xb17b28); controls.status.emissiveIntensity = 1.5;
+    controls.screen.userData.readings = { ...values, backup: Math.round(state.valve * 100) };
+    const text = `${values.air}/${values.water}/${values.heat}/${Math.round(state.valve * 100)}/${Math.round(state.readings * 100)}`;
+    if (controls.text === text) return;
+    controls.text = text;
+    const ctx = controls.canvas?.getContext('2d'); if (!ctx) return;
+    ctx.fillStyle = '#10211b'; ctx.fillRect(0, 0, 256, 192); ctx.fillStyle = '#d7efc8'; ctx.font = 'bold 22px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    for (const [index, label] of [`AIR FLOW  ${values.air}%`, `WATER     ${values.water}%`, `HEAT      ${values.heat}%`, state.valve >= 1 ? 'BACKUP BALANCED' : `BACKUP    ${Math.round(state.valve * 100)}%`].entries()) ctx.fillText(label, 9, 10 + index * 36, 238);
+    ctx.fillStyle = '#426255'; ctx.fillRect(9, 166, 238, 12); ctx.fillStyle = '#b8d79c'; ctx.fillRect(9, 166, 238 * state.readings, 12);
+    if (controls.texture) controls.texture.needsUpdate = true;
   }
   private batch(): void {
     this.group.updateMatrixWorld(true); const inverse = this.static.matrixWorld.clone().invert();
@@ -494,6 +540,7 @@ export class ZionHomecomingRenderer {
     }
     this.templeDefense?.update(journey);
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
+    this.updateEngineering(journey);
     if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step === 0 && !journey.visiting ? 0 : ZION_BEDROOM_DOOR.openYaw;
     if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;
     if (this.departureGifts) {
