@@ -179,7 +179,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_lock: { scene: 'm2_residents', step: 1 },
   m2_residents: { scene: 'm2_temple', step: 3 },
   m2_temple: { scene: 'm2_room', step: 2 },
-  m2_bane_copy: { scene: 'm2_hamann', step: 3 },
+  m2_bane_copy: { scene: 'm2_hamann', step: 2 },
   m2_hamann: { scene: 'm2_oracle_message', step: 2 },
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
 };
@@ -321,7 +321,7 @@ export class FilmSetRenderer {
   private catchSet?: ReloadedCatchRenderer;
   private finale?: ReloadedFinaleRenderer;
   private zion?: ZionHomecomingRenderer;
-  private preparedZion?: { scene: string; renderer: ZionHomecomingRenderer; colors?: CastColorPreparation };
+  private preparedZion?: { scene: string; renderer: ZionHomecomingRenderer; colors?: CastColorPreparation & { seen: Set<ColorMesh> } };
   private baneCopy?: BaneCopyRenderer;
   private preparedBaneCopy?: { renderer: BaneCopyRenderer; colors?: CastColorPreparation };
   private logosBane?: LogosBaneRenderer;
@@ -951,6 +951,7 @@ export class FilmSetRenderer {
     this.prepareBaneCopy(renderer, camera, journey, actor);
     const cut = journey && ZION_CUTS[journey.scene];
     if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
+      || journey.scene === 'm2_bane_copy' && journey.step === 2 && (journey.baneCopy?.progress ?? 0) < .2
       || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
       this.cancelZionPreparation(); return;
     }
@@ -960,7 +961,7 @@ export class FilmSetRenderer {
       target.update({ ...journey, scene: next.id, step: 0 }, 0);
       this.preparedZion = { scene: next.id, renderer: target };
       if (renderer.extensions.has('KHR_parallel_shader_compile')) {
-        const colors = this.preparedZion.colors = { ...this.colorPreparation(target.group, []), actors: new Set<THREE.Group>() };
+        const colors = this.preparedZion.colors = { ...this.colorPreparation(target.group, []), actors: new Set<THREE.Group>(), seen: new Set<ColorMesh>() };
         const initial = new Set(colors.meshes);
         const crowdLoaded = () => {
           if (this.preparedZion?.renderer !== target) return;
@@ -973,7 +974,7 @@ export class FilmSetRenderer {
     const colors = this.preparedZion.colors;
     if (!colors) return;
     for (const id of [next.actor, ...next.cast]) {
-      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const group = actor(id); if (!group) continue;
       // The next scene's detailed LOD can still be hidden by distance.
       const visible = group.visible; let meshes: ColorMesh[];
       try { group.visible = true; meshes = this.colorMeshes([group]); }
@@ -982,7 +983,9 @@ export class FilmSetRenderer {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
           && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
       });
+      meshes = meshes.filter(mesh => !colors.seen.has(mesh));
       if (!meshes.length) continue;
+      meshes.forEach(mesh => colors.seen.add(mesh));
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
     this.prepareColorFrame(renderer, camera, colors);

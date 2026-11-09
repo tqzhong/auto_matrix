@@ -987,6 +987,9 @@ export class CharacterModels {
     }
     const near = distance < 100 || Boolean(input.oracleRestored || rig.smithProjection?.visible);
     rig.detail.visible = near; rig.distant.visible = !near;
+    if (!near && input.prepareZionCast) {
+      this.epilogueHeads.update(rig, input); this.diggerBodies.update(rig);
+    }
     if (!near) return;
     if (rig.oracleClothing) for (const side of ['R', 'L']) rig.root.getObjectByName(`oracle-hand-${side}`)?.quaternion.identity();
     if (rig.detail.userData.oracleLastPose && !input.oracleLast && !input.oracleAbsorption) {

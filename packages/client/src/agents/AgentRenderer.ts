@@ -980,6 +980,8 @@ export class AgentRenderer {
       }
       input.oracleAbsorption = state.currentAction?.parameters.oracleAbsorption as MotionInput['oracleAbsorption'];
       input.smithProjection = id === 'bane' && state.isInMatrix && state.faction === 'machines';
+      input.prepareZionCast = id === 'hamann' && this.playerId === journey?.actor && journey?.scene === 'm2_bane_copy'
+        && !journey.visiting && (journey.step > 2 || journey.step === 2 && (journey.baneCopy?.progress ?? 0) >= .2);
       input.trainmanChase = state.currentAction?.parameters.trainmanChase as MotionInput['trainmanChase'];
       input.helGarage = state.currentAction?.parameters.helGarage as MotionInput['helGarage'];
       input.helElevator = typeof state.currentAction?.parameters.helElevator === 'object' ? state.currentAction.parameters.helElevator as MotionInput['helElevator'] : undefined;

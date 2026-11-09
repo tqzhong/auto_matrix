@@ -174,6 +174,7 @@ export interface MotionInput {
   vase?: number;
   realWorld?: boolean;
   smithProjection?: boolean;
+  prepareZionCast?: boolean;
   dojoOutfit?: 'neo' | 'morpheus';
   dojoSparring?: boolean;
   glasses?: boolean;
