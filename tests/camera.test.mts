@@ -7,6 +7,7 @@ import type { AgentState, PlayerInput } from '@auto_matrix/shared';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { CameraController } from '../packages/client/src/engine/CameraController.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { TheOneRenderer } from '../packages/client/src/engine/TheOneRenderer.js';
 import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
@@ -3577,6 +3578,36 @@ test('stopped bullets and Smith destruction hold every body in the hotel composi
     for (const root of [neo, smith]) {
       const screen = new THREE.Vector3(center.x + root.x, center.y + root.y + 2, center.z + root.z).project(game.camera);
       assert.ok(Math.abs(screen.x) < .88 && Math.abs(screen.y) < .88 && screen.z > -1 && screen.z < 1, `${phase} crop`);
+    }
+  }
+});
+
+test('room 303 open door leaves the actual counter camera a clear view of Smith', t => {
+  const game = setup(t, Math.PI), center = FILM_SETS.film_heart_hotel.center;
+  const encounter = oneEncounter('return', 'counter', 0), neo = theOneRoot(encounter, 'neo');
+  game.state.currentLocation = neo.set; game.state.position = filmPosition(neo.set, neo.x, neo.z); game.state.rotation = neo.yaw;
+  game.state.currentAction = { type: 'idle', parameters: { theOne: { ...encounter, role: 'neo' } }, startedAt: 0, duration: 1, progress: 0 };
+  const root = new THREE.Group(); root.position.set(center.x, center.y - 1, center.z);
+  const set = new TheOneRenderer(root, 'film_heart_hotel'); t.after(() => set.dispose());
+  const story = { version: 1, scene: 'm1_return', actor: 'neo', step: 1, completed: [], enteredAt: 0, reflections: {}, lastText: '',
+    checkpoint: game.state.position, theOne: encounter } as FilmJourney;
+  const castRay = (x: number, z: number, height: number) => {
+    const target = new THREE.Vector3(center.x + x, center.y - 1 + height, center.z + z), direction = target.clone().sub(game.camera.position);
+    const meshes: THREE.Mesh[] = [];
+    root.traverseVisible(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.Material && !object.material.transparent) meshes.push(object); });
+    return new THREE.Raycaster(game.camera.position, direction.clone().normalize(), game.camera.near, direction.length() - .15).intersectObjects(meshes, false);
+  };
+  for (const first of [false, true]) {
+    if (game.controls.firstPerson !== first) { game.key('KeyV'); game.key('KeyV', false); }
+    game.controls.possess(game.state); game.step(.4); game.camera.updateMatrixWorld(true);
+    set.update({ ...story, theOne: oneEncounter('death', 'ready', 0) }, 0); root.updateMatrixWorld(true);
+    assert.ok(castRay(0, -20.7, 2.6).some(hit => hit.object.name === 'one-room-303-door'), 'the closed door must still block the shooter');
+    set.update(story, 0); root.updateMatrixWorld(true);
+    for (const x of [-.6, 0, .6]) for (const z of [-20.7, -18.6]) for (const height of [1.8, 2.6, 3.5]) {
+      const screen = new THREE.Vector3(center.x + x, center.y - 1 + height, center.z + z).project(game.camera);
+      assert.ok(Math.abs(screen.x) < 1 && Math.abs(screen.y) < 1 && screen.z > -1 && screen.z < 1, 'the tested body point must be in the actual frame');
+      const hits = castRay(x, z, height);
+      assert.equal(hits.length, 0, `${first ? 'eye' : 'follow'} view at ${x}/${z}/${height} is blocked by ${hits[0]?.object.name || hits[0]?.object.type}`);
     }
   }
 });

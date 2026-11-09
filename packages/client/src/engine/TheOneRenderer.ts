@@ -230,7 +230,7 @@ export class TheOneRenderer {
     if (this.setId === 'film_heart_hotel') {
       const death = encounter.kind === 'death';
       const open = encounter.phase === 'ready' && death ? 0 : encounter.phase === 'ambush' ? THREE.MathUtils.smoothstep(encounter.elapsed, 0, .8) : 1;
-      if (this.door) this.door.rotation.y = -open * 1.18;
+      if (this.door) this.door.rotation.y = -open * Math.PI / 2;
       if (this.phoneGlow) this.phoneGlow.emissiveIntensity = encounter.kind === 'return' && ['exit_run', 'exit_ready', 'exit_phone'].includes(encounter.phase)
         ? 1.8 + Math.sin(encounter.deadline * 7) * .7 : .25;
       if (this.gunfire && this.muzzleLight) {

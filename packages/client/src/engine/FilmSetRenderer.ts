@@ -385,6 +385,8 @@ export class FilmSetRenderer {
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
     if (this.current?.id === 'film_jump_roofs' && this.currentScene === 'm1_jump') return 2;
     if (this.current?.id === 'film_red_dress_plaza' && this.currentScene === 'm1_red_dress') return 1;
+    // Five dream fixtures, the objective and one real muzzle flash share one layout.
+    if (this.current?.id === 'film_trinity_roof' && this.currentScene === 'm2_dream') return 7;
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_jump_return') return 16;
     // Keep the console lamp and objective slots when turning toward Cypher.
     if (this.current?.id === 'film_neb_deck' && this.currentScene === 'm1_cypher_console') return 17;
@@ -398,7 +400,7 @@ export class FilmSetRenderer {
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && this.currentScene === 'm1_construct'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
-      || this.reloaded?.set === 'film_captains_meeting'
+      || this.reloaded?.set === 'film_captains_meeting' || this.reloaded?.set === 'film_trinity_roof'
       || id === 'film_seraph_teahouse' || id === 'film_backdoor_hall'
       || id === 'film_oracle_courtyard' || id === 'film_le_vrai' || id === 'film_keymaker_workshop'
       || this.matrixEscape?.setId === 'film_subway_platform'
