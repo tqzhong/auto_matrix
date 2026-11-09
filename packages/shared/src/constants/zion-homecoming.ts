@@ -2,7 +2,7 @@ import { ZION_ENGINEERING } from './zion-engineering.js';
 
 // Physical anchors shared by the six homecoming sets, collision and cast staging.
 export const ZION_HOMECOMING = ['m2_dock', 'm2_lock', 'm2_residents', 'm2_temple', 'm2_room', 'm2_hamann'] as const;
-export const ZION_BEDROOM_DOOR = { z: 17.6, hingeX: -2.5, width: 4.2, depth: .35, height: 8.8, openYaw: -Math.PI / 2 };
+export const ZION_BEDROOM_DOOR = { z: 17.6, hingeX: -2.5, width: 4.2, depth: .35, height: 8.8, openYaw: Math.PI / 2 };
 export const BANE_COPY_ESCORT = { x: -5, startZ: 30, phoneZ: -28, speed: 3.1, range: 8 };
 export const ZION_BOARDING = { x: 20, y: 11, z: 17, hatchX: 16.75, depth: 6.5, clearance: 5.3 };
 export const ZION_BOARDING_RAILS = [
@@ -33,6 +33,6 @@ export const ZION_CAST: Record<string, Record<string, { x: number; z: number; ya
   m2_room: { trinity: { x: 2, z: -8, yaw: -1 } },
   m2_bane_copy: { malachi: { x: BANE_COPY_ESCORT.x, z: BANE_COPY_ESCORT.startZ, yaw: Math.PI }, smith: { x: 33, z: -38, yaw: -1 } },
   m2_hamann: { hamann: { x: -3, z: -26, yaw: 1 } },
-  m2_oracle_message: { trinity: { x: 2, z: 12, yaw: 0 }, ballard: { x: 2, z: 19, yaw: Math.PI }, malachi: { x: -2, z: 19, yaw: Math.PI } },
+  m2_oracle_message: { trinity: { x: 2, z: 12, yaw: 0 }, ballard: { x: 1.1, z: 19, yaw: Math.PI }, malachi: { x: -1.1, z: 19.2, yaw: Math.PI } },
   m2_departure: { morpheus: { x: -4, z: -13, yaw: .5 }, trinity: { x: 5, z: -14, yaw: -.5 }, link: { x: 3, z: 32, yaw: 1 }, zee: { x: -3, z: 32, yaw: -1 }, bane: { x: 5, z: 20, yaw: -.6 }, kid: { x: -5, z: 10, yaw: .7 } },
 };

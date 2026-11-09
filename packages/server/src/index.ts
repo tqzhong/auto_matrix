@@ -27,6 +27,8 @@ import { SandboxSystem } from './player/SandboxSystem.js';
 import { savedWorkdayIdle } from './story/FilmStorySystem.js';
 import { savedMetacortexLiftIdle } from './story/NeoLifeSystem.js';
 import { savedEngineeringAction } from './story/ZionEngineeringSystem.js';
+import { savedZionMessageAction } from './story/ZionMessageSystem.js';
+import { ZION_MESSAGE_ROLES, zionMessageActive } from '@auto_matrix/shared';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const eventBus = new EventBus();
@@ -321,6 +323,10 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => TEMPLE_DEFENSE.cast.some(role => role === id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
+  if (zionMessageActive(current) && (world.agents.get(current!.actor)?.controller || simLoop.isRunning())) {
+    const crew = [...world.agents.entries()].filter(([id]) => ZION_MESSAGE_ROLES.some(role => role === id));
+    sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
+  }
   const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger || current?.scene === 'm2_trucks' && !current.visiting && current.trucks?.phase === 'rescue' && agent.currentAction?.parameters.truckRescue || (current?.scene === 'm3_rain' || current?.scene === 'm3_surrender') && !current.visiting && ['neo', 'smith'].includes(agent.id) && agent.currentAction?.parameters.smithFinale);
   if (controlled.length || simLoop.isRunning()) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [], traffic: sandbox.state.traffic }, simLoop.getTick());
 }, 50);
@@ -352,6 +358,7 @@ async function main(): Promise<void> {
       const savedCrouch = checkpoint.simulation?.running === false && savedOfficeCrouchAction(journey, agent.state);
       if (savedCrouch) agent.state.velocity = { x: 0, y: 0, z: 0 };
       const savedPerformanceAction = savedCrouch || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+        || checkpoint.simulation?.running === false && savedZionMessageAction(journey, agent.state)
         || journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
         || interrogationLocked(journey) && agent.state.currentAction?.parameters.interrogation
         || meetingLocked(journey) && agent.state.currentAction?.parameters.meeting

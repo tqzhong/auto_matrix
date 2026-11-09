@@ -2,6 +2,7 @@ import { DiggersRenderer } from './DiggersRenderer.js';
 import { ApuModel } from './ApuModel.js';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import * as THREE from 'three';
+import { ZION_MESSAGE, zionMessageAngle, zionMessageDisk, zionMessageProgress } from '@auto_matrix/shared';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { APU_RIG, APU_ROUTE, DOCK_GUNNERY, ZION_BEDROOM_DOOR, ZION_BOARDING, ZION_BOARDING_BAY_WALLS, ZION_BOARDING_RAILS, ZION_OBSTACLES, dockPowerOffline, type FilmJourney, type Vector3 } from '@auto_matrix/shared';
 import { dockLastStandPose } from '@auto_matrix/shared';
@@ -351,9 +352,11 @@ export class ZionHomecomingRenderer {
     const door = ZION_BEDROOM_DOOR;
     this.messageDoor = new THREE.Group(); this.messageDoor.position.set(door.hingeX, 0, door.z); this.moving.add(this.messageDoor);
     this.box(this.material(0x302d29, .55, .58), -door.hingeX, 4.8, 0, door.width, door.height, door.depth, this.messageDoor, 'zion-bedroom-door');
-    const disk = new THREE.Group(); disk.name = 'oracle-message-disk'; disk.position.set(2.5, 2.3, 10.8); this.moving.add(disk);
-    this.mesh(new THREE.CylinderGeometry(.38, .38, .035, 24), metal, disk);
-    this.mesh(new THREE.CylinderGeometry(.09, .09, .045, 16), warm, disk).position.y = .04;
+    const handle = ZION_MESSAGE.handle, knob = this.mesh(new THREE.SphereGeometry(handle.radius, 12, 8), metal, this.messageDoor);
+    knob.name = 'zion-message-door-handle'; knob.position.set(handle.x, handle.y, handle.z);
+    const disk = new THREE.Group(); disk.name = 'oracle-message-disk'; this.moving.add(disk);
+    this.mesh(new THREE.CylinderGeometry(ZION_MESSAGE.diskRadius, ZION_MESSAGE.diskRadius, .018, 24), metal, disk);
+    this.mesh(new THREE.CylinderGeometry(.035, .035, .022, 16), warm, disk).position.y = .012;
     this.messageDisk = disk;
   }
   private engineering(): void {
@@ -541,8 +544,12 @@ export class ZionHomecomingRenderer {
     this.templeDefense?.update(journey);
     const wheel = this.moving.getObjectByName('zion-recycler-flywheel'); if (wheel) wheel.rotation.x = elapsed * .3;
     this.updateEngineering(journey);
-    if (this.messageDoor) this.messageDoor.rotation.y = journey?.scene === 'm2_oracle_message' && journey.step === 0 && !journey.visiting ? 0 : ZION_BEDROOM_DOOR.openYaw;
-    if (this.messageDisk) this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && journey.step < 2;
+    if (this.messageDoor && this.messageDisk) {
+      const message = zionMessageProgress(journey);
+      this.messageDoor.rotation.y = zionMessageAngle(message.door);
+      this.messageDisk.visible = journey?.scene === 'm2_oracle_message' && message.owner !== 'stowed';
+      const point = zionMessageDisk(message); this.messageDisk.position.set(point.x, point.y, point.z);
+    }
     if (this.departureGifts) {
       this.departureGifts.charm.visible = departure && journey.step < 1;
       this.departureGifts.spoon.visible = departure && journey.step >= 2 && journey.step < 3;

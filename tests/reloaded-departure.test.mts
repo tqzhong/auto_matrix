@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { BANE_LOFT_OBSTACLES, FILM_SCENES, FILM_SCENE_BY_ID, ZION_CAST, filmEntry, filmPosition, filmStepPosition, playerBlocked, playerSkills, type WorldEvent } from '@auto_matrix/shared';
+import { BANE_LOFT_OBSTACLES, FILM_SCENES, FILM_SCENE_BY_ID, ZION_CAST, ZION_MESSAGE, filmEntry, filmPosition, filmStepPosition, playerBlocked, playerSkills, type WorldEvent } from '@auto_matrix/shared';
 import { BaneCopyRenderer } from '../packages/client/src/engine/BaneCopyRenderer.js';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -24,7 +24,13 @@ function game() {
   let tick = 1;
   const command = (target: string) => players.sandboxAction('p', { kind: 'life', target: `film:${target}` }, ++tick);
   const advance = (count: number) => { for (let i = 0; i < count; i++) sandbox.tick(++tick); };
-  return { world, sandbox, players, command, advance, actor: () => players.getAgent('p')!, state: () => sandbox.life.film.state! };
+  return { world, sandbox, players, command, advance, tick: () => tick, actor: () => players.getAgent('p')!, state: () => sandbox.life.film.state! };
+}
+
+function messageFrames(h: ReturnType<typeof game>, step: number) {
+  for (let frame = 0; frame < 200 && h.state().step === step; frame++) {
+    h.players.step(.1, true, h.tick()); if (frame % 5 === 4) h.advance(1);
+  }
 }
 
 function escortMalachi(h: ReturnType<typeof game>) {
@@ -122,14 +128,15 @@ test('Ballard delivers the Oracle disk before Zee, Bane, Kid and the takeoff cle
   state.scene = 'm2_hamann'; state.actor = 'neo'; state.step = FILM_SCENE_BY_ID.m2_hamann.steps.length;
   h.command('next'); assert.equal(state.scene, 'm2_oracle_message');
   assert.equal(h.actor().rotation, 0);
-  assert.deepEqual(h.world.agents.get('ballard')!.position, filmPosition('film_zion_bedroom', 2, 19));
+  assert.deepEqual(h.world.agents.get('ballard')!.position, filmPosition('film_zion_bedroom', ZION_CAST.m2_oracle_message.ballard.x, ZION_CAST.m2_oracle_message.ballard.z));
   const door = filmPosition('film_zion_bedroom', 0, 17.6);
   assert.equal(playerBlocked(door, false, .5, h.sandbox.state.structures), true, 'the closed door blocks Neo');
-  for (const [step, ticks] of [[0, 5], [1, 7]] as const) {
+  for (const step of [0, 1] as const) {
     h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m2_oracle_message, FILM_SCENE_BY_ID.m2_oracle_message.steps[step]);
-    h.command('act'); h.advance(ticks); assert.equal(state.step, step + 1);
+    h.command('act'); messageFrames(h, step); assert.equal(state.step, step + 1);
     if (step === 0) {
-      assert.deepEqual(h.world.agents.get('ballard')!.position, filmPosition('film_zion_bedroom', 2, 11));
+      const point = ZION_MESSAGE.ballardRoute.at(-1)!;
+      assert.deepEqual(h.world.agents.get('ballard')!.position, filmPosition('film_zion_bedroom', point.x, point.z));
       assert.equal(playerBlocked(door, false, .5, h.sandbox.state.structures), false, 'the opened door releases the threshold');
     }
   }
@@ -204,7 +211,7 @@ test('the closed bedroom door blocks its frame and both sides, then clears the c
     assert.equal(blocked(x), true, `closed threshold at ${x}`);
     assert.ok(ray(x).length, `the collision at ${x} has visible stone or iron`);
   }
-  h.actor().position = filmPosition(room, 0, 13); h.command('act'); h.advance(5);
+  h.actor().position = filmStepPosition(FILM_SCENE_BY_ID.m2_oracle_message, FILM_SCENE_BY_ID.m2_oracle_message.steps[0]); h.command('act'); messageFrames(h, 0);
   renderer.update(state, 0);
   assert.equal(state.step, 1);
   assert.equal(blocked(0), false); assert.equal(ray(0).length, 0);
@@ -222,7 +229,7 @@ test('a legacy save beyond the locked bedroom wall resumes on the room side', ()
   assert.ok(neo.position.z < filmPosition(room, 0, 16).z);
   assert.equal(playerBlocked(neo.position, false, 1.1, h.sandbox.state.structures), false);
   assert.equal(h.players.possess('p', 'neo', 5).agentId, 'neo');
-  h.command('act'); h.advance(5); assert.equal(h.state().step, 1);
+  h.command('act'); messageFrames(h, 0); assert.equal(h.state().step, 1);
 });
 
 test('the departure hangar keeps the gangway and gifts without allocating hidden battle props', t => {

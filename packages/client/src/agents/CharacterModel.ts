@@ -34,6 +34,7 @@ import { poseSourcePortal, SourcePortalProps } from './SourcePortalPerformance.j
 import { poseArchitect } from './ArchitectPerformance.js';
 import { poseTrinityTerminal } from './TrinityTerminalPerformance.js';
 import { poseZionEngineering } from './ZionEngineeringPerformance.js';
+import { poseZionMessage } from './ZionMessagePerformance.js';
 import { DockCargoModel } from './DockCargoModel.js';
 import { poseDockEvacuation, poseShaftSeal } from './DockEvacuationPerformance.js';
 import { poseTempleDefense } from './TempleDefensePerformance.js';
@@ -1265,6 +1266,7 @@ export class CharacterModels {
       poseTrinityRelay(rig, input.trinityRelay);
       poseTrinityTerminal(rig, input.trinityTerminal);
       poseZionEngineering(rig, input.engineering);
+      poseZionMessage(rig, input.zionMessage);
       poseSourcePortal(rig, input.sourcePortal);
       poseArchitect(rig, input.architect, delta);
       poseReloadedCatch(rig, input.catch);

@@ -176,6 +176,7 @@ export interface MotionInput {
   smithProjection?: boolean;
   prepareZionCast?: boolean;
   engineering?: import('@auto_matrix/shared').EngineeringEncounter;
+  zionMessage?: import('@auto_matrix/shared').ZionMessageGesture;
   dojoOutfit?: 'neo' | 'morpheus';
   dojoSparring?: boolean;
   glasses?: boolean;

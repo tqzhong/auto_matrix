@@ -1,3 +1,4 @@
+import { ZION_MESSAGE, zionMessageLocked } from '@auto_matrix/shared';
 import { maggieDiscoveryActive, maggieDiscoveryText } from '@auto_matrix/shared';
 import { PILL_BELIEFS, pillTalkReady, pillTalkPrompt } from '@auto_matrix/shared';
 import { logosBaneBeat, logosBaneRoot, logosBaneText } from '@auto_matrix/shared';
@@ -884,14 +885,14 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   const close = chairApproach ? journey.downloadSetup!.progress >= CABIN_ROUTE_LENGTH && distance(player.position, stepPosition!) <= 1.8
     : seatedQuestion || truth?.phase === 'ready' || arrival?.phase === 'ready' || (arrival ? Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix))
     : meetingAction || trainingWaiting(journey) || Boolean(stepPosition && player.isInMatrix === (set.world === 'matrix')
-      && distance(player.position, stepPosition) <= (scene.id === 'm2_hamann' && [1, 2].includes(journey.step) ? 1.1 : scene.id === 'm3_hel_entry' && journey.step === 0 ? 1.1 : 4)));
+      && distance(player.position, stepPosition) <= (scene.id === 'm2_oracle_message' ? ZION_MESSAGE.radius : scene.id === 'm2_hamann' && [1, 2].includes(journey.step) ? 1.1 : scene.id === 'm3_hel_entry' && journey.step === 0 ? 1.1 : 4)));
   const current = player.id === journey.actor;
   const windowExit = !step && !journey.visiting && scene.id === 'm1_office_escape' && Boolean(journey.office && !journey.office.outcome);
   const windowClose = !windowExit || filmStepNear(scene, scene.steps[2], player.position, player.isInMatrix);
   const retreat = officeRetreat(journey);
   const retreatHint = retreat && (windowCrossing(journey) ? '正在翻回办公室 · 合上手记观看'
     : journey.office?.climbed !== undefined ? '合上手记，按住 S 回到上层窄台。' : '沿幕墙走回开启的窗口，再按 G 翻入。');
-  const performing = Boolean(journey.trucks?.road && (journey.trucks.road.phase !== 'ready' || journey.trucks.road.paused || journey.trucks.road.unavailable)) || Boolean(truth && truth.phase !== 'ready' && truth.phase !== 'question') || arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening)) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
+  const performing = zionMessageLocked(journey.zionMessage) || Boolean(journey.trucks?.road && (journey.trucks.road.phase !== 'ready' || journey.trucks.road.paused || journey.trucks.road.unavailable)) || Boolean(truth && truth.phase !== 'ready' && truth.phase !== 'question') || arrival?.phase === 'image' || helElevatorLocked(journey) || helDanceDoorLocked(journey) || meetingLocked(journey) && !['ready', 'done', 'parked'].includes(journey.meeting?.phase ?? 'ready') || trainingLocked(journey) || sentinelLocked(journey) || interludeLocked(journey) || rescueLocked(journey) || Boolean(journey.awakening && journey.awakening.elapsed < awakeningDuration(journey.awakening)) || oracleActing(journey) || phoneLocked(journey) || wakeCallLocked(journey) || theOneLocked(journey) || windowOpening(journey) || windowCrossing(journey) || pillLocked(journey) || lafayetteWelcomeLocked(journey) || interrogationLocked(journey) && journey.interrogation?.phase !== 'done';
   const answerPhone = phoneLocked(journey) && journey.phone?.phase === 'ready';
   const answer = answerPhone || awakeningWaiting(journey) || trainingWaiting(journey) || interrogationLocked(journey) && journey.interrogation?.phase === 'response';
   const awakeningAction = journey.awakening?.kind === 'emerge' ? '拔出口部呼吸管 · G' : journey.awakening?.kind === 'breather' ? '检查后颈接口 · G' : journey.awakening?.kind === 'recovery' ? '示意开始恢复肌肉 · G'

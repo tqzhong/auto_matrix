@@ -4294,6 +4294,13 @@ test('the entire film route completes through interactions, driving and real com
           h.players.step(.1, true, h.tick());
         }
       }
+      else if (scene.id === 'm2_oracle_message') {
+        h.command('act');
+        for (let frame = 0; frame < 200 && state.step === index; frame++) {
+          h.players.receiveInput('film-player', { x: 0, z: 0, yaw: actor.rotation, jump: false, sprint: false, sequence: ++sequence });
+          h.players.step(.1, true, h.tick());
+        }
+      }
       else if (scene.id === 'm1_spoon' && index === 1) {
         for (let frame = 0; frame < 300 && state.oracle?.reception?.phase !== 'ready'; frame++) {
           const guide = h.world.agents.get('oracle_priestess')!;
