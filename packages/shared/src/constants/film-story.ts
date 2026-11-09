@@ -1,3 +1,4 @@
+import { seraphDoorZ } from './seraph-door.js';
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
 import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
@@ -219,6 +220,7 @@ export interface FilmJourney {
   baneCopy?: { progress: number; escort?: { progress: number } };
   engineering?: EngineeringEncounter;
   zionMessage?: ZionMessageEncounter;
+  seraphDoor?: import('./seraph-door.js').SeraphDoorEncounter;
   seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
   burly?: import('./burly.js').BurlyEncounter;
   persephone?: import('./exiles.js').PersephoneEncounter;
@@ -621,6 +623,7 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (!journey?.visiting && journey?.scene === scene.id && journey.step >= 2 && (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1]) return filmPosition(scene.set,0,seraphDoorZ(scene.id)+.2);
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
     const flight = journey?.logos ?? journey?.logosEntry ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun');
     const root = logosCrewRoot(flight, 'trinity'), center = FILM_SETS[logosFlightSet(flight)].center;
@@ -735,7 +738,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     const root = logosCrewRoot(flight, 'trinity'), center = FILM_SETS[logosFlightSet(flight)].center;
     return !matrix && distance(position, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }) <= 1.6;
   }
-  const radius = scene.id === 'm2_oracle_message' && (step === scene.steps[0] || step === scene.steps[1]) ? ZION_MESSAGE.radius : scene.id === 'm2_hamann' && (step === scene.steps[1] || step === scene.steps[2]) ? ZION_ENGINEERING.radius : scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+  const radius = (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1] ? 1.2 : scene.id === 'm2_oracle_message' && (step === scene.steps[0] || step === scene.steps[1]) ? ZION_MESSAGE.radius : scene.id === 'm2_hamann' && (step === scene.steps[1] || step === scene.steps[2]) ? ZION_ENGINEERING.radius : scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
     : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm2_departure' && step.kind === 'reach' ? 1.15

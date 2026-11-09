@@ -1,3 +1,4 @@
+import { SERAPH_DOOR, seraphDoorAngle, seraphDoorLocked, seraphDoorProgress } from '@auto_matrix/shared';
 import { logosBaneInjured, logosBaneLocked } from '@auto_matrix/shared';
 import { filmSceneForJourney, logosCloudTop, logosFlightSet, newLogosFlight } from '@auto_matrix/shared';
 import { upperDiggerActive, upperDiggerLocked } from '@auto_matrix/shared';
@@ -2267,8 +2268,7 @@ export class FilmSetRenderer {
     this.architectRoom?.update(journey?.architect, architect?.status === 'alive' && architect.currentLocation === 'film_architect_room'
       && architect.currentAction?.parameters.seated ? architect.rotation : undefined);
     if (this.portalDoor) {
-      const open = journey?.completed.includes(this.portalDoor.scene) || journey?.scene === this.portalDoor.scene && journey.step >= FILM_SCENE_BY_ID[this.portalDoor.scene].steps.length;
-      this.portalDoor.panel.position.x = open ? 5.2 : 0;
+      this.portalDoor.panel.rotation.y = seraphDoorAngle(seraphDoorProgress(journey,this.portalDoor.scene));
     }
     if (this.oracleLetter) this.oracleLetter.visible = sceneId === 'm2_bench' && (journey?.step ?? 0) < FILM_SCENE_BY_ID.m2_bench.steps.length;
     if (this.courtyardStaff) this.courtyardStaff.visible = sceneId === 'm2_bench' || sceneId === 'm2_burly' && !journey?.visiting && !['staff', 'flight_ready', 'flight', 'done'].includes(journey?.burly?.phase ?? 'ready');
@@ -2318,7 +2318,7 @@ export class FilmSetRenderer {
         block.rotation.set(Math.sin(time * .23 + i) * .13, time * .18 + i * .7, Math.cos(time * .31 + i) * .08);
       });
     }
-    const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step];
+    const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step] ?? (!journey?.visiting && journey && ['m2_seraph','m2_backdoors'].includes(journey.scene) && journey.step >= 2 ? scene?.steps[1] : undefined);
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
@@ -2348,6 +2348,7 @@ export class FilmSetRenderer {
     const empExterior = this.currentScene === 'm3_emp' && this.empDock?.group.visible;
     if (empExterior) this.marker.visible = false;
     if (journey?.scene === 'm3_dock_battle' && (journey.dockGunnery?.phase === 'firing' || dockReloadLocked(journey.dockReload) || dockLastStandLocked(journey.dockLastStand))) this.marker.visible = false;
+    if (seraphDoorLocked(journey?.seraphDoor)) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
@@ -2854,10 +2855,11 @@ export class FilmSetRenderer {
     this.box(beyond, 0, 4.1, z + .25, 5.3, 7.6, .08);
     for (const x of [-3.15, 3.15]) this.box(frame, x, 4.1, z + .55, .5, 8.9, .8);
     this.box(frame, 0, 8.45, z + .55, 6.8, .42, .8);
-    const panel = this.box(scene === 'm2_seraph' ? this.wood : this.white, 0, 4.05, z + .68, 5.2, 7.55, .28, .08);
+    const panel = this.box(scene === 'm2_seraph' ? this.wood : this.white, SERAPH_DOOR.width / 2, 4.05, 0, SERAPH_DOOR.width, SERAPH_DOOR.height, SERAPH_DOOR.depth, .08);
     panel.name = `${scene}-keyed-door`;
-    const group = new THREE.Group(); group.userData.dynamic = true; group.add(panel); this.root.add(group);
-    group.add(this.sphere(this.brass, 1.8, 3.65, z + .94, .17));
+    const group = new THREE.Group(); group.userData.dynamic = true; group.position.set(SERAPH_DOOR.hingeX,0,z+.68); group.add(panel); this.root.add(group);
+    const h = SERAPH_DOOR.handle, handle = this.sphere(this.brass,h.x,h.y,h.z,h.radius); handle.name = 'seraph-door-handle'; group.add(handle);
+    const lock = SERAPH_DOOR.lock, hole = this.box(this.black,lock.x,lock.y,lock.z+.01,.045,.12,.015); hole.name = 'seraph-door-keyhole'; group.add(hole);
     this.portalDoor = { scene, panel: group };
   }
   private phone(x: number, z: number, booth = false): void {

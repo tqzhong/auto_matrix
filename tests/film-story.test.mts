@@ -2721,17 +2721,22 @@ test('Seraph leaves a full extra simulation tick to react after a visible windup
 
 test('the keyed doors must be reached, and the Oracle leaves a saved Keymaker lead with a later consequence', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!; const tea = FILM_SCENE_BY_ID.m2_seraph;
-  state.scene = tea.id; state.actor = 'neo'; state.step = tea.steps.length; h.players.possess('film-player', 'neo', h.tick());
+  state.scene = 'm2_departure'; state.actor = 'neo'; state.step = 5; h.players.possess('film-player','neo',h.tick()); h.command('next');
+  state.step = 1; h.actor().position = filmStepPosition(tea,tea.steps[1]); h.command('act');
+  for (let frame=0;frame<1000&&state.step===1;frame++) { h.players.step(.1,true,h.tick()); if(frame%5===0)h.advance(); }
+  assert.equal(state.step,tea.steps.length);
   h.actor().isInMatrix = true; h.actor().currentLocation = tea.set; h.actor().position = filmEntry(tea);
   assert.match(h.command('next'), /后门/); assert.equal(state.scene, tea.id);
-  h.actor().position = filmStepPosition(tea, tea.steps.at(-1)!); h.command('next');
+  h.actor().position = filmStepPosition(tea, tea.steps.at(-1)!,state); h.command('next');
   assert.equal(state.scene, 'm2_backdoors'); assert.equal(h.actor().currentLocation, FILM_SCENE_BY_ID.m2_backdoors.set);
   const hall = FILM_SCENE_BY_ID.m2_backdoors;
-  h.actor().position = filmStepPosition(hall, hall.steps[0]); h.advance();
-  h.actor().position = filmStepPosition(hall, hall.steps[1]); h.command('act'); h.advance((hall.steps[1].seconds ?? 3) * 2 + 1);
+  h.actor().position = filmStepPosition(hall,hall.steps[0]);
+  for(let frame=0;frame<1000&&state.step===0;frame++) { h.players.step(.1,true,h.tick()); if(frame%5===0)h.advance(); }
+  h.actor().position = filmStepPosition(hall,hall.steps[1]); h.command('act');
+  for(let frame=0;frame<1000&&state.step===1;frame++) { h.players.step(.1,true,h.tick()); if(frame%5===0)h.advance(); }
   assert.equal(state.step, hall.steps.length);
   h.actor().position = filmEntry(hall); assert.match(h.command('next'), /庭院/); assert.equal(state.scene, hall.id);
-  h.actor().position = filmStepPosition(hall, hall.steps.at(-1)!); h.command('next');
+  h.actor().position = filmStepPosition(hall,hall.steps.at(-1)!,state); h.command('next');
   assert.equal(state.scene, 'm2_bench');
   const bench = FILM_SCENE_BY_ID.m2_bench;
   h.actor().position = filmStepPosition(bench, bench.steps[0]); h.advance();
@@ -4294,6 +4299,12 @@ test('the entire film route completes through interactions, driving and real com
           h.players.step(.1, true, h.tick());
         }
       }
+      else if (scene.id === 'm2_backdoors' || scene.id === 'm2_seraph' && index === 1) {
+        if(index===1)h.command('act');
+        for(let frame=0;frame<1000&&state.step===index;frame++) {
+          h.players.receiveInput('film-player',{x:0,z:0,yaw:actor.rotation,jump:false,sprint:false,sequence:++sequence}); h.players.step(.1,true,h.tick()); if(frame%5===0)h.advance();
+        }
+      }
       else if (scene.id === 'm2_oracle_message') {
         h.command('act');
         for (let frame = 0; frame < 200 && state.step === index; frame++) {
@@ -5037,6 +5048,7 @@ test('the entire film route completes through interactions, driving and real com
     }
     assert.ok(state.completed.includes(scene.id));
     if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
+    if (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') h.actor().position = filmStepPosition(scene,scene.steps[1],state);
     if (scene.id === 'm2_bench') finishSecondOracleDeparture(h);
     if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id)) h.command('next');
     if (scene.id === 'm1_office_escape' && state.office?.crossing !== undefined) for (let frame = 0; frame < 65; frame++) h.players.step(.1, true, h.tick());

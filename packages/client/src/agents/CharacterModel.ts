@@ -1,3 +1,4 @@
+import { poseSeraphDoor } from './SeraphDoorPerformance.js';
 import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseHammerBriefing } from './HammerBriefingPerformance.js';
@@ -167,6 +168,7 @@ export interface CharacterRig {
   empCharm?: THREE.Group;
   diggerProps?: DiggerProps;
   sourcePortalProps?: SourcePortalProps;
+  seraphKey?: SourcePortalProps;
   architectPen?: THREE.Group;
   architectThumbs?: THREE.Object3D[];
   freewayProps?: FreewayPickupProps;
@@ -861,6 +863,7 @@ export class CharacterModels {
     }
     if (state.id === 'oracle' || state.id === 'sati' || state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.epilogueHeads.track(rig, state.id);
     if (state.id === 'zee' || state.id === 'charra' || state.id === 'niobe' || state.id === 'lock' || state.id === 'roland' || state.id === 'architect' || state.id === 'seraph' || state.id === 'keymaker' || state.id === 'rama_kandra' || state.id === 'kamala' || state.id === 'trainman' || state.id === 'hamann' || state.id === 'west' || state.id === 'dillard' || state.id === 'maggie' || state.id === 'colt' || state.id === 'link' || state.id === 'bane' || state.id === 'mifune' || state.id === 'kid') this.diggerBodies.track(rig, state.id, skin, cloth, trousers);
+    if (state.id === 'seraph') { rig.seraphKey = new SourcePortalProps(rig.detail); rig.seraphKey.key.name = 'seraph-neck-key'; rig.seraphKey.key.visible = false; this.sourcePortalProps.add(rig.seraphKey); }
     enableSkinnedCulling(detail);
     if (state.id === 'bane') rig.smithProjection = { loading: false, visible: false, fallback: new Map() };
     return rig;
@@ -1451,6 +1454,7 @@ export class CharacterModels {
     poseHammerPilot(rig, input.hammerPilot);
     poseLogosPilot(rig, input.logosPilot);
     poseArchitect(rig, input.architect, delta);
+    poseSeraphDoor(rig, input.seraphDoor);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
     if (rig.spoonHands) connectGardenWrists(rig, rig.spoonHands);
     this.oracleFirstBodies.present(rig);

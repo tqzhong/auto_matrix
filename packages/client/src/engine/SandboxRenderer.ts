@@ -33,6 +33,7 @@ export class SandboxRenderer {
   private warningRing = this.geometry(new THREE.RingGeometry(.94, 1, 48));
   private aimMaterial = new THREE.LineBasicMaterial({ color: 0xda9975, transparent: true, opacity: .3, depthWrite: false });
   private elapsed = 0;
+  private overlayPoint = new THREE.Vector3();
   private fallen: Enemy[] = [];
   private actors: Record<string, AgentState> = {};
 
@@ -356,10 +357,16 @@ export class SandboxRenderer {
           new THREE.Vector3(.5, -1, .2).applyQuaternion(rig.root.getWorldQuaternion(new THREE.Quaternion())));
         rig.root.updateWorldMatrix(true, true);
       }
-      enemy.label.visible = enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
+      enemy.label.visible = enemy.scene !== 'm2_burly' && enemy.scene !== 'm1_room303' && !threat?.patrol && dist < (enemy.kind === 'soldier' ? 30 : 65); enemy.label.scale.set(enemy.kind === 'soldier' ? 3 : 5, enemy.kind === 'soldier' ? .56 : .94, 1);
       enemy.health.visible = enemy.scene !== 'm1_room303' && !threat?.patrol;
       enemy.health.quaternion.copy(camera.quaternion);
       enemy.health.scale.y = threat?.attackAt !== undefined ? .28 + Math.sin(this.elapsed * 22) * .06 : .15;
+      if (enemy.scene === 'm2_burly') {
+        camera.updateWorldMatrix(true,false); const depth = -enemy.health.getWorldPosition(this.overlayPoint).applyMatrix4(camera.matrixWorldInverse).z;
+        enemy.health.visible = enemy.health.visible && depth > 1.5;
+        enemy.health.scale.x = Math.min(3,Math.max(0,depth)*.24/camera.projectionMatrix.elements[0]) * Math.max(.01,(threat?.health ?? 0)/(threat?.maxHealth ?? 1));
+        enemy.health.scale.y = Math.min(enemy.health.scale.y,Math.max(0,depth)*.02/camera.projectionMatrix.elements[5]) * (threat?.attackAt !== undefined ? 1.5 : 1);
+      }
       enemy.health.material = threat?.infection ? this.green : threat && threat.stunUntil > tick ? this.blue : enemy.kind === 'escort' ? this.green : this.red;
       enemy.telegraph.visible = threat?.attackAt !== undefined;
       const replicationAge = this.elapsed - enemy.bornAt;

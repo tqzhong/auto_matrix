@@ -65,18 +65,18 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   assert.ok(scene.getObjectByName(teaDoor.name) === teaDoor);
   assert.equal(sets.stablePointSlots, true);
   assert.equal(pointSlots(scene), teaSlots);
-  assert.equal(teaDoor.parent!.position.x, 0);
+  assert.equal(teaDoor.parent!.position.x, -2.6); assert.equal(teaDoor.parent!.rotation.y, 0);
   enter('m2_seraph', 1);
   const hallDoor = warm('m2_backdoors-keyed-door');
   enter('m2_seraph', 2);
-  assert.ok(teaDoor.parent!.position.x > 5);
+  assert.equal(teaDoor.parent!.rotation.y, -Math.PI / 2);
 
   enter('m2_backdoors', 1);
   assert.ok(scene.getObjectByName(hallDoor.name) === hallDoor);
-  assert.equal(hallDoor.parent!.position.x, 0);
+  assert.equal(hallDoor.parent!.position.x, -2.6); assert.equal(hallDoor.parent!.rotation.y, 0);
   const lead = warm('oracle-second-folded-lead');
   enter('m2_backdoors', 2);
-  assert.ok(hallDoor.parent!.position.x > 5);
+  assert.equal(hallDoor.parent!.rotation.y, -Math.PI / 2);
   enter('m2_bench', 0);
   assert.ok(scene.getObjectByName(lead.name) === lead);
   assert.equal(lead.visible, true);
@@ -298,7 +298,7 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   enter('m2_seraph', 2);
   const restored = scene.getObjectByName(teaDoor.name);
   assert.ok(restored && restored !== abandoned);
-  assert.ok(restored.parent!.position.x > 5);
+  assert.equal(restored.parent!.rotation.y, -Math.PI / 2);
 });
 
 test('the first Smith copies reuse the actor model cache and take their prepared rigs from the pool', t => {
@@ -342,4 +342,21 @@ test('the first Smith copies reuse the actor model cache and take their prepared
   sandbox.update(.02, new THREE.PerspectiveCamera(), true, 0, true);
   assert.equal(animated.length, BURLY.initialCopies);
   assert.ok(animated.every(owner => owner === created[0].owner));
+});
+
+test('nearby Smith copies keep readable bounded health bars without repeated name boards covering the fight', t => {
+  const previous = globalThis.document, context = { fillRect() {}, fillText() {}, putImageData() {}, createRadialGradient: () => ({ addColorStop() {} }), createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }) };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document; t.after(() => { globalThis.document = previous; });
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(CharacterModels.prototype, 'create', () => ({ root: new THREE.Group(), motion: newMotion() } as CharacterRig)); t.mock.method(CharacterModels.prototype, 'animate', () => {});
+  const scene = new THREE.Scene(), sandbox = new SandboxRenderer(scene), world = new WorldState(); new AgentManager(world).initializeAllAgents(); t.after(() => sandbox.dispose());
+  const smith = world.agents.get('smith')!, neo = world.agents.get('neo')!, camera = new THREE.PerspectiveCamera(55, 960 / 540, .1, 200); camera.position.set(0, 6.4, 0); camera.updateMatrixWorld(true);
+  const misses: unknown[] = [];
+  for (const depth of [.3, 1, 2, 8, 20]) {
+    sandbox.sync({ threats: [{ id: 'copy', scene: 'm2_burly', kind: 'smith', matrix: true, position: { x: 0, y: 1, z: -depth }, health: 32, maxHealth: 64, target: 'neo', stunUntil: 0, lastStrike: 0 }], nodes: [], structures: [], incidents: [], missions: {} } as unknown as SandboxState, { smith, neo });
+    const enemy = (sandbox as unknown as { enemies: Map<string, { group: THREE.Group; label: THREE.Sprite; health: THREE.Mesh }> }).enemies.get('copy')!; enemy.group.position.z = -depth; sandbox.update(0, camera, true, 0, false); scene.updateMatrixWorld(true);
+    if (enemy.label.visible || depth < 1.5 && enemy.health.visible) misses.push({ depth, nameVisible: enemy.label.visible, healthVisible: enemy.health.visible });
+    if (enemy.health.visible) { const left = enemy.health.localToWorld(new THREE.Vector3(-.5, 0, .5)).project(camera), right = enemy.health.localToWorld(new THREE.Vector3(.5, 0, .5)).project(camera); if (Math.abs(right.x - left.x) > .27) misses.push({ depth, projectedWidth: Math.abs(right.x - left.x) }); }
+  }
+  assert.equal(misses.length, 0, JSON.stringify(misses));
 });

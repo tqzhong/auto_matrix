@@ -1,3 +1,5 @@
+import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
+import { SERAPH_DOOR_ROLES, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -323,6 +325,10 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => TEMPLE_DEFENSE.cast.some(role => role === id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
+  if (seraphDoorActive(current) && (world.agents.get(current!.actor)?.controller || simLoop.isRunning())) {
+    const crew = [...world.agents.entries()].filter(([id]) => SERAPH_DOOR_ROLES.some(role => role === id));
+    sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
+  }
   if (zionMessageActive(current) && (world.agents.get(current!.actor)?.controller || simLoop.isRunning())) {
     const crew = [...world.agents.entries()].filter(([id]) => ZION_MESSAGE_ROLES.some(role => role === id));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
@@ -358,6 +364,7 @@ async function main(): Promise<void> {
       const savedCrouch = checkpoint.simulation?.running === false && savedOfficeCrouchAction(journey, agent.state);
       if (savedCrouch) agent.state.velocity = { x: 0, y: 0, z: 0 };
       const savedPerformanceAction = savedCrouch || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+        || checkpoint.simulation?.running === false && savedSeraphDoorAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedZionMessageAction(journey, agent.state)
         || journey && journey.actor === id && (pillLocked(journey) && agent.state.currentAction?.parameters.pills
         || interrogationLocked(journey) && agent.state.currentAction?.parameters.interrogation
