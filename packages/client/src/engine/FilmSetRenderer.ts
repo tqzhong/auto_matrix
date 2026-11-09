@@ -178,6 +178,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_dock: { scene: 'm2_lock', step: 2 },
   m2_lock: { scene: 'm2_residents', step: 1 },
   m2_residents: { scene: 'm2_temple', step: 3 },
+  m2_temple: { scene: 'm2_room', step: 2 },
   m2_bane_copy: { scene: 'm2_hamann', step: 3 },
   m2_hamann: { scene: 'm2_oracle_message', step: 2 },
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
@@ -413,7 +414,7 @@ export class FilmSetRenderer {
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_mountain_range' && this.currentScene === 'm2_mountain'
       || id === 'film_chateau_garage' && this.currentScene === 'm2_garage'
-      || Boolean(this.zion && ['m2_lock', 'm2_residents', 'm2_hamann', 'm2_oracle_message'].includes(this.currentScene ?? ''))
+      || Boolean(this.zion && ['m2_lock', 'm2_residents', 'm2_room', 'm2_hamann', 'm2_oracle_message'].includes(this.currentScene ?? ''))
       || id === 'film_zion_temple' && ['m2_temple', 'm3_temple_defense', 'm3_temple_breach', 'm3_ceasefire'].includes(this.currentScene ?? '')
       || this.currentScene === 'm3_farewell' && Boolean(this.logosWreck)
       || id === 'film_zion_hangar' && (this.currentScene === 'm2_dock' || this.currentScene === 'm2_departure' || this.currentScene === 'm3_diggers' || this.currentScene === 'm3_upper_digger' || this.dockApuApproach)

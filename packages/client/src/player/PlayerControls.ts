@@ -3104,7 +3104,7 @@ export class PlayerControls {
       const officeFollow = state.currentLocation === 'film_metacortex_floor';
       const closeFollow = lafayetteWalking || dojoWalking || officeFollow;
       if (closeFollow) for (let step = 0; step < 4 && playerBlocked(pivot, state.isInMatrix, .5, this.structures); step++) pivot.lerp(this.cameraTarget, .5);
-      const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
+      const followDistance = wreckCabin || doorwayView ? 4.2 : lafayetteWalking || state.currentLocation === 'film_zion_personnel' || state.currentLocation === 'film_zion_bedroom' ? 6 : this.ride?.mode ? 34 : this.ride ? 22 : this.camera.aspect < .8 ? 13 : 11.5;
       const cabinCenter = state.currentLocation === 'film_neb_deck' ? FILM_SETS.film_neb_deck.center : undefined;
       const cameraCeiling = (point: THREE.Vector3) => {
         if (officeFollow) {
@@ -3460,7 +3460,8 @@ export class PlayerControls {
 
   syncTrainmanChaseCamera(group: THREE.Group, environment?: THREE.Object3D): void {
     const oracleThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_oracle_home';
-    if (!oracleThirdPerson && !this.motion.logosBane && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.maggieDiscovery && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
+    const bedroomThirdPerson = !this.firstPerson && this.authoritative?.currentLocation === 'film_zion_bedroom';
+    if (!oracleThirdPerson && !bedroomThirdPerson && !this.motion.logosBane && !this.motion.baneInquiry && !this.motion.hammerBriefing && !this.motion.maggieDiscovery && !this.motion.zionDeployment && !this.motion.oracleLast && !this.motion.trainmanChase && !this.motion.helGarage && !this.motion.helElevator && !this.motion.helDoorPush && !this.motion.helDisarm && !this.motion.helBreakout) return;
     if (!this.firstPerson) {
       if (!environment) return;
       environment.updateWorldMatrix(true, true);
