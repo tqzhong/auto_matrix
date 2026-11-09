@@ -37,6 +37,13 @@ export function savedBurlyFailedIdle(journey: FilmJourney, action: AgentAction |
     && (action.parameters.burly as BurlyEncounter | undefined)?.phase === 'failed';
 }
 
+export function savedBurlyReadyIdle(journey: FilmJourney, action: AgentAction | null): boolean {
+  const state = journey.burly, saved = action?.parameters.burly as (BurlyEncounter & { role?: string }) | undefined;
+  return journey.scene === 'm2_burly' && !journey.visiting && journey.actor === 'neo' && journey.step === 0 && state?.phase === 'ready'
+    && action?.type === 'idle' && action.parameters.player === true && action.parameters.resolved === true && saved?.role === 'neo'
+    && (['phase', 'elapsed', 'attempt', 'repelled', 'staffSwings', 'assimilation', 'nextCopyAt'] as const).every(key => saved[key] === state[key]);
+}
+
 export function burlyText(encounter: BurlyEncounter, step = 0): string {
   switch (encounter.phase) {
     case 'ready': return '黑鸟从长椅旁惊起。旧特工 Smith 来到庭院。站在长椅前，按 G 面对他。';

@@ -108,7 +108,7 @@ import { GOVERNMENT_RESCUE, governmentLocked, governmentRoot, governmentText, ty
 import { AIR_RESCUE, airRescueLocked, airRescueRoot, airRescueText, type AirRescueEncounter, type AirRescueRole } from '@auto_matrix/shared';
 import { MATRIX_ESCAPE, matrixEscapeLocked, matrixEscapeRoot, matrixEscapeText, subwayCrewRoot, type MatrixEscapeEncounter, type MatrixEscapeRole } from '@auto_matrix/shared';
 import { THE_ONE, theOneLocked, theOneRoot, theOneText, type TheOneEncounter, type TheOneRole } from '@auto_matrix/shared';
-import { BURLY, burlyLocked, burlyText, savedBurlyFailedIdle, type BurlyEncounter } from '@auto_matrix/shared';
+import { BURLY, burlyLocked, burlyText, savedBurlyFailedIdle, savedBurlyReadyIdle, type BurlyEncounter } from '@auto_matrix/shared';
 import { burlyCopyOccupied } from './BurlyMovement.js';
 import { EXILES } from '@auto_matrix/shared';
 import { CHATEAU, chateauRailBlocked, chateauStairTreadAt, type ChateauEncounter } from '@auto_matrix/shared';
@@ -5110,6 +5110,7 @@ export class FilmStorySystem {
     const state = this.state, encounter = state?.burly;
     if (state?.scene !== 'm2_burly' || state.visiting || !this.controls(agent) || !encounter) return false;
     if (burlyLocked(state)) return this.burlyFrame(agent, 0, tick);
+    if (encounter.phase === 'ready') return savedBurlyReadyIdle(state, agent.currentAction);
     if (encounter.phase === 'failed') return savedBurlyFailedIdle(state, agent.currentAction);
     if (!['staff', 'flight_ready'].includes(encounter.phase) && !(encounter.assimilation > 0 && ['swarm', 'staff_ready'].includes(encounter.phase))) return false;
     agent.velocity = { x: 0, y: 0, z: 0 };

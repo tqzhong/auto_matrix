@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, heldPhone, windowOpening, windowCrossing, interrogationLocked, meetingLocked, truthLocked, savedBurlyFailedIdle, workdayLocked } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, heldPhone, windowOpening, windowCrossing, interrogationLocked, meetingLocked, truthLocked, savedBurlyFailedIdle, savedBurlyReadyIdle, workdayLocked } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -375,6 +375,7 @@ async function main(): Promise<void> {
         || checkpoint.simulation?.running === false && savedOfficeCustodyAction(journey, agent.state)
         || savedFilmCombatAction(journey, agent.state.currentAction, checkpoint.simulation?.running === false)
         || savedBurlyFailedIdle(journey, agent.state.currentAction)
+        || checkpoint.simulation?.running === false && savedBurlyReadyIdle(journey, agent.state.currentAction)
         || journey.scene === 'm1_ledge' && !journey.visiting && journey.step === 1 && journey.office?.climbed !== undefined && agent.state.currentAction?.parameters.climbing
         || journey.scene === 'm1_room303' && !journey.visiting && ['breach', 'dive', 'ladder_ready', 'climbing'].includes(journey.openingHotel?.phase ?? '')
           && (agent.state.currentAction?.parameters.hotel303 || agent.state.currentAction?.parameters.climbing));
