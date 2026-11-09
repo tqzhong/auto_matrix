@@ -323,6 +323,7 @@ export class FilmSetRenderer {
   private zion?: ZionHomecomingRenderer;
   private preparedZion?: { scene: string; renderer: ZionHomecomingRenderer; colors?: CastColorPreparation };
   private baneCopy?: BaneCopyRenderer;
+  private preparedBaneCopy?: { renderer: BaneCopyRenderer; colors?: CastColorPreparation };
   private logosBane?: LogosBaneRenderer;
   private logosBanePhase?: string;
   private logosBaneBlind = false;
@@ -409,7 +410,7 @@ export class FilmSetRenderer {
       || this.matrixEscape?.setId === 'film_subway_platform'
       || this.currentScene === 'm2_stop_sentinels' && Boolean(this.finale)
       || id === 'film_oracle_home' && (this.currentScene === 'm3_oracle_request' || this.currentScene === 'm3_oracle_last')
-      || Boolean(this.interrogation || this.baneInquiry || this.hammerRoute || this.smithFinale)
+      || Boolean(this.interrogation || this.baneInquiry || this.baneCopy || this.hammerRoute || this.smithFinale)
       || Boolean(this.zionDeployment || this.maggieDiscovery)
       || id === 'film_chateau_hall' && this.currentScene === 'm2_chateau'
       || id === 'film_mountain_range' && this.currentScene === 'm2_mountain'
@@ -947,6 +948,7 @@ export class FilmSetRenderer {
   }
   prepareZionHomecoming(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined): void {
+    this.prepareBaneCopy(renderer, camera, journey, actor);
     const cut = journey && ZION_CUTS[journey.scene];
     if (!journey || !cut || journey.visiting || journey.step < cut.step || this.currentScene !== journey.scene
       || this.current?.id !== FILM_SCENE_BY_ID[journey.scene].set) {
@@ -980,6 +982,37 @@ export class FilmSetRenderer {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
           && (object.userData.logosCostume || object.userData.hammerBriefingCostume) && !meshes.includes(object)) meshes.push(object);
       });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    this.prepareColorFrame(renderer, camera, colors);
+  }
+  private prepareBaneCopy(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined): void {
+    if (!journey || journey.scene !== 'm2_room' || journey.visiting || journey.step < 1
+      || this.currentScene !== journey.scene || this.current?.id !== 'film_zion_bedroom') {
+      this.cancelBaneCopyPreparation(); return;
+    }
+    if (!this.preparedBaneCopy) {
+      const target = new BaneCopyRenderer(new THREE.Group());
+      target.update({ ...journey, scene: 'm2_bane_copy', step: 0 }, 0);
+      this.preparedBaneCopy = { renderer: target };
+      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
+        const colors = this.preparedBaneCopy.colors = { ...this.colorPreparation(target.group, []), actors: new Set<THREE.Group>() };
+        const wave: ColorMesh[] = [];
+        target.group.getObjectByName('smith-copy-wave')?.traverse(object => {
+          if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial) wave.push(object);
+        });
+        colors.meshes.push(...wave); this.queueColorTextures(colors.textures, wave);
+      }
+    }
+    const colors = this.preparedBaneCopy.colors; if (!colors) return;
+    const next = FILM_SCENE_BY_ID.m2_bane_copy;
+    for (const id of [next.actor, ...next.cast]) {
+      const group = actor(id); if (!group || colors.actors.has(group)) continue;
+      const visible = group.visible; let meshes: ColorMesh[];
+      try { group.visible = true; meshes = this.colorMeshes([group]); }
+      finally { group.visible = visible; }
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
@@ -1773,6 +1806,8 @@ export class FilmSetRenderer {
       const preparedZion = this.preparedZion && set?.id === this.preparedZion.renderer.set
         && sceneId === this.preparedZion.scene && !journey?.visiting ? this.preparedZion.renderer : undefined;
       if (preparedZion) this.preparedZion = undefined;
+      const preparedBaneCopy = set?.id === 'film_industrial_loft' && sceneId === 'm2_bane_copy' && !journey?.visiting ? this.preparedBaneCopy?.renderer : undefined;
+      if (preparedBaneCopy) this.preparedBaneCopy = undefined;
       const reunionExterior = journey?.scene === 'm3_dock_reunion' && !journey.visiting && Boolean(journey.emp);
       const retainedEmpDock = reunionExterior ? this.empDock : undefined;
       if (retainedEmpDock) this.empDock = undefined;
@@ -1825,7 +1860,10 @@ export class FilmSetRenderer {
           if (preparedMeeting) this.root.add(preparedMeeting.group);
         }
         else if (sceneId === 'm2_catch' && set.id === 'film_trinity_roof' && !preparedSecondOracle) this.catchSet = new ReloadedCatchRenderer(this.root);
-        else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') this.baneCopy = new BaneCopyRenderer(this.root);
+        else if (sceneId === 'm2_bane_copy' && set.id === 'film_industrial_loft') {
+          this.baneCopy = preparedBaneCopy ?? new BaneCopyRenderer(this.root);
+          if (preparedBaneCopy) this.root.add(preparedBaneCopy.group);
+        }
         else if (['film_zion_dock_exit', 'film_zion_command_bunker'].includes(set.id)) this.dockEvacuation = new DockEvacuationRenderer(this.root, set.id === 'film_zion_command_bunker');
         else if (set.id === 'film_zion_personnel') this.dockBriefing = new DockBriefingRenderer(this.root);
         else if (set.id === 'film_zion_hangar' && reunionExterior) this.empDock ??= new DockEmpRenderer(this.scene);
@@ -4437,6 +4475,9 @@ export class FilmSetRenderer {
   private cancelZionPreparation(): void {
     this.preparedZion?.renderer.dispose(); this.preparedZion = undefined;
   }
+  private cancelBaneCopyPreparation(): void {
+    this.preparedBaneCopy?.renderer.dispose(); this.preparedBaneCopy = undefined;
+  }
   private cancelSecondOraclePreparation(): void {
     this.preparedSecondOracle?.lighting?.dispose();
     this.preparedSecondOracle?.room.dispose(); this.preparedSecondOracle = undefined;
@@ -4478,6 +4519,7 @@ export class FilmSetRenderer {
     this.cancelLobbyPreparation();
     this.cancelGovernmentPreparation();
     this.cancelZionPreparation();
+    this.cancelBaneCopyPreparation();
     this.cancelSecondOraclePreparation();
     this.cancelFreewayPreparation();
     this.cancelMountainPreparation();
