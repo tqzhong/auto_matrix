@@ -65,6 +65,7 @@ export class ZionHomecomingRenderer {
     this.batch();
     for (const group of [this.dockEast, this.dockRoof]) if (group) batchStaticGeometry(group, new Set()).forEach(g => this.geometries.add(g));
   }
+  get crowdReady(): Promise<void> | undefined { return this.crowd?.ready; }
   private material(color: number, roughness = .85, metalness = .04, emissive = 0, power = 0): THREE.MeshStandardMaterial {
     const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: power });
     this.materials.add(mat); return mat;

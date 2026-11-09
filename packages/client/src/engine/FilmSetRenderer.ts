@@ -177,6 +177,7 @@ const ZION_CUTS: Partial<Record<string, { scene: string; step: number }>> = {
   m2_meeting: { scene: 'm2_dock', step: 4 },
   m2_dock: { scene: 'm2_lock', step: 2 },
   m2_lock: { scene: 'm2_residents', step: 1 },
+  m2_residents: { scene: 'm2_temple', step: 3 },
   m2_bane_copy: { scene: 'm2_hamann', step: 3 },
   m2_hamann: { scene: 'm2_oracle_message', step: 2 },
   m2_oracle_message: { scene: 'm2_departure', step: 1 },
@@ -955,8 +956,16 @@ export class FilmSetRenderer {
       const target = new ZionHomecomingRenderer(new THREE.Group(), next.set, next.id);
       target.update({ ...journey, scene: next.id, step: 0 }, 0);
       this.preparedZion = { scene: next.id, renderer: target };
-      if (renderer.extensions.has('KHR_parallel_shader_compile'))
-        this.preparedZion.colors = { ...this.colorPreparation(target.group, []), actors: new Set() };
+      if (renderer.extensions.has('KHR_parallel_shader_compile')) {
+        const colors = this.preparedZion.colors = { ...this.colorPreparation(target.group, []), actors: new Set<THREE.Group>() };
+        const initial = new Set(colors.meshes);
+        const crowdLoaded = () => {
+          if (this.preparedZion?.renderer !== target) return;
+          const meshes = this.colorMeshes([target.group]).filter(mesh => !initial.has(mesh));
+          colors.meshes.push(...meshes); this.queueColorTextures(colors.textures, meshes);
+        };
+        void target.crowdReady?.then(crowdLoaded, crowdLoaded);
+      }
     }
     const colors = this.preparedZion.colors;
     if (!colors) return;
