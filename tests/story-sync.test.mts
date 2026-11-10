@@ -50,6 +50,12 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror', epil
       Object.assign(checkpoint.agents[role], { position: { x: base.x + pose.x, y: base.y + pose.y, z: base.z + pose.z },
         rotation: pose.yaw, currentLocation: 'film_freeway_trucks', isInMatrix: true });
     }
+  } else if (scene === 'm3_emp') {
+    Object.assign(checkpoint.sandbox.neoLife.journey, { step: 1, emp: { firedAt: 7, elapsed },
+      empOperator: { phase: 'fired', elapsed: 0, approach: { x: -2.8, z: -16 } } });
+    Object.assign(checkpoint.agents.link, { position: filmPosition('film_hammer_deck', 0, -16), health: 73, currentAction: null });
+    delete checkpoint.agents.link.controller;
+    checkpoint.simulation = { running: false, speed: 1 };
   } else if (scene === 'm3_farewell') {
     Object.assign(checkpoint.sandbox.neoLife.journey.farewell, { elapsed, total: 10.4 + elapsed });
     Object.assign(checkpoint.sandbox.neoLife, { day: 7, money: 1320, energy: 47, doubt: 63, philosophy: { agency: 6, care: 8, trust: 5 },
@@ -124,6 +130,24 @@ async function server(t: TestContext, elapsed: number, scene = 'm1_mirror', epil
   const initial = await launch();
   return { ...initial, restart: async () => { await initial.stop(); return launch(); } };
 }
+
+test('repeated paused EMP reconnects deliver the restored pose before ownership acknowledgement', { timeout: 30000 }, async t => {
+  const h = await server(t, .513, 'm3_emp');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const client = await h.connect();
+    assert.equal(client.state().agents.link.currentAction, null, 'a released operator starts without a player action');
+    client.socket.emit('message', { type: 'play_as', data: { agentId: 'link' } });
+    await waitFor(() => client.messages.some(message => message.type === 'player_state' && (message.data as { agentId?: string }).agentId === 'link'), 'Link ownership was not acknowledged');
+    const authoritative = await (await fetch(`${h.base}/api/world`)).json() as WorldStateFull;
+    assert.equal(authoritative.agents.link.currentAction?.parameters.dockEmp, .513);
+    assert.deepEqual(client.state().agents.link.currentAction, authoritative.agents.link.currentAction,
+      `reconnect ${attempt + 1} must receive the saved pose without requesting another full snapshot`);
+    assert.equal(client.state().agents.link.health, 73);
+    assert.equal(client.state().simulation?.running, false);
+    client.socket.disconnect();
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+});
 
 test('fast Hammer handover packets keep Ghost, Morpheus and the saved clock together between world ticks', { timeout: 30000 }, async t => {
   const h = await server(t, 6.5, 'm3_hammer_tunnels'), client = await h.connect();
