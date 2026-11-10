@@ -11,6 +11,7 @@ import { DIGGERS } from './diggers.js';
 import { ZION_OBSTACLES } from './zion-homecoming.js';
 import { NEB_ESCAPE } from './neb-escape.js';
 import { SENTINEL_SIGNAL } from './sentinel-signal.js';
+import { wellsColliderBlocked, wellsColliderFloor, wellsStreetStructures } from './wells-street.js';
 
 export const STREET_SPACING = 80;
 export const CITY_CENTER = { x: 1120, y: 1, z: 920 };
@@ -18,6 +19,12 @@ export { PLAYER_GRAVITY } from './gravity.js';
 export const PLAYER_JUMP_SPEED = 10;
 export const PLAYER_WALK_SPEED = 3.4;
 export const PLAYER_RUN_SPEED = 8.4;
+
+const parkedWells = wellsStreetStructures(FILM_SETS.film_wells_phone.center);
+function wellsColliders(structures: WorldStructure[]): WorldStructure[] {
+  const live = structures.filter(s => s.film?.scene === 'm1_phone_escape' && s.health > 0);
+  return live.length ? live : parkedWells;
+}
 
 // A location's public entrance is also its meeting point. Render and simulation
 // share this position so residents never spawn inside a solid building.
@@ -106,6 +113,10 @@ export interface PlayerInput {
 
 export function groundHeight(position: Vector3, matrix: boolean, structures: WorldStructure[] = []): number {
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_wells_phone') {
+    const road = filmGroundHeight(position, set);
+    return wellsColliders(structures).reduce((floor, solid) => Math.max(floor, wellsColliderFloor(position, solid)), road);
+  }
   if (set?.id === 'film_logos_deck') {
     const hatch = structures.find(s => s.id === 'film:logos-bane:hatch-floor');
     if (hatch?.film && Math.abs(position.x - hatch.position.x) < hatch.film.width / 2 && Math.abs(position.z - hatch.position.z) < hatch.film.depth / 2) return hatch.position.y;
@@ -163,11 +174,14 @@ export function groundHeight(position: Vector3, matrix: boolean, structures: Wor
 
 export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, structures: WorldStructure[] = []): boolean {
   if (structures.some(s => {
+    if (s.film?.scene === 'm1_phone_escape') return false;
     if (!(s.kind === 'barricade' && s.matrix === matrix && s.health > 0 && position.y < s.position.y + (s.film?.height ?? 3) && position.y > s.position.y - 3)) return false;
     const x = position.x - s.position.x, z = position.z - s.position.z, yaw = s.film?.yaw ?? 0, c = Math.cos(yaw), sine = Math.sin(yaw);
     return Math.abs(x*c-z*sine) < (s.film ? s.film.width/2 : 4)+radius && Math.abs(x*sine+z*c) < (s.film ? s.film.depth/2 : 1.2)+radius;
   })) return true;
   const set = filmSetAt(position, matrix);
+  if (set?.id === 'film_wells_phone') return filmBlocked(position, set, radius)
+    || wellsColliders(structures).some(s => wellsColliderBlocked(position, radius, s));
   if (set?.id === 'film_service_tunnels' && structures.some(s => s.id === 'film:sentinel-signal:route'))
     return Math.abs(position.x - set.center.x) > SENTINEL_SIGNAL.halfWidth - radius
       || Math.abs(position.z - set.center.z) > SENTINEL_SIGNAL.halfLength - radius || position.y < set.center.y - .8;
@@ -200,6 +214,16 @@ export function playerBlocked(position: Vector3, matrix: boolean, radius = 1.1, 
   });
 }
 
+/** Saves made before Wells had solids can contain a player inside a prop. */
+export function wellsClearPosition(position: Vector3, structures: WorldStructure[] = []): Vector3 | undefined {
+  for (let distance = .25; distance <= 5; distance += .25) for (let i = 0; i < 24; i++) {
+    const angle = i * Math.PI / 12;
+    const candidate = { x: position.x + distance * Math.sin(angle), y: position.y, z: position.z + distance * Math.cos(angle) };
+    candidate.y = Math.max(candidate.y, groundHeight(candidate, true, structures));
+    if (!playerBlocked(candidate, true, 1.1, structures)) return candidate;
+  }
+}
+
 export function stepPlayer(position: Vector3, verticalVelocity: number, input: PlayerInput, dt: number, matrix: boolean, structures: WorldStructure[] = [], horizontalVelocity?: Pick<Vector3, 'x' | 'z'>, speedScale = 1): { position: Vector3; verticalVelocity: number; horizontalVelocity: Pick<Vector3, 'x' | 'z'> } {
   const next = { ...position };
   const length = Math.hypot(input.x, input.z);
@@ -218,8 +242,9 @@ export function stepPlayer(position: Vector3, verticalVelocity: number, input: P
   if (!playerBlocked(x, matrix, 1.1, structures)) next.x = x.x; else velocity.x = 0;
   const z = { ...next, z: next.z + velocity.z * dt };
   if (!playerBlocked(z, matrix, 1.1, structures)) next.z = z.z; else velocity.z = 0;
-  if (['film_sunrise_garden', 'film_trainman_subway'].includes(filmSetAt(next, matrix)?.id ?? '')) {
-    const support = groundHeight(next, matrix, structures);
+  const set = filmSetAt(next, matrix)?.id;
+  if (set === 'film_wells_phone' || set === 'film_sunrise_garden' || set === 'film_trainman_subway') {
+    const support = groundHeight(set === 'film_wells_phone' && next.y < position.y ? { ...next, y: position.y } : next, matrix, structures);
     const planted = position.y <= floor + .1 && verticalVelocity <= 0 && vy <= 0;
     if (planted || next.y < support) { next.y = support; vy = 0; }
   }

@@ -6,7 +6,11 @@ import { groundCharacter } from './GroundContact.js';
 
 /** The same receiver meets the palm at the cradle and its upper cup meets the ear. */
 export function poseOpeningPhone(rig: Pick<CharacterRig, 'root' | 'hero' | 'handset'>, answer?: OpeningPhoneAnswer, hit?: OpeningPhoneHit): void {
-  if (!answer || !rig.hero || !rig.handset) return;
+  if (!rig.hero) return;
+  if (!answer || !rig.handset) {
+    if (hit && hit.elapsed > 0) poseOpeningHit(rig, hit, false);
+    return;
+  }
   const center = FILM_SETS.film_wells_phone.center, bones = rig.hero.bones;
   const wrist = bones.get('wrist_R')!, elbow = bones.get('elbow_R')!, shoulder = bones.get('shoulder_R')!;
   rig.root.updateWorldMatrix(true, true);

@@ -690,10 +690,10 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
-  if (input.openingAnswer) {
-    const saved = input.openingAnswer, root = openingAnswerPose(saved);
-    Object.assign(state, newMotion(), { time: saved.elapsed + (input.openingHit?.elapsed ?? 0), speed: root.speed, phase: root.travel / 2.8, skill: undefined });
-    input = { ...input, speed: root.speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
+  if (input.openingAnswer || input.openingHit) {
+    const answer = input.openingAnswer, root = answer && openingAnswerPose(answer), speed = root?.speed ?? 0;
+    Object.assign(state, newMotion(), { time: (answer?.elapsed ?? 0) + (input.openingHit?.elapsed ?? 0), speed, phase: (root?.travel ?? 0) / 2.8, skill: undefined });
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.welcome) {

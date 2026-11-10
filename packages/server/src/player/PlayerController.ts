@@ -14,6 +14,7 @@ import { MEETING_CAST, meetingLocked } from '@auto_matrix/shared';
 import { SENTINEL_CAST, sentinelActive } from '@auto_matrix/shared';
 import { INTERLUDE_CAST, interludeKind, interludeLocked } from '@auto_matrix/shared';
 import { deusPactLocked, smithFinaleLocked } from '@auto_matrix/shared';
+import { wellsClearPosition } from '@auto_matrix/shared';
 import { CONSTRUCT, DESERT_REVEAL, filmPosition, mirrorTime, awakeningLocked, awakeningPose, type ConstructGesture, type FilmJourney, type OracleDepartureGesture } from '@auto_matrix/shared';
 
 interface PlayerSession {
@@ -209,11 +210,17 @@ export class PlayerController {
       const chair = DESERT_REVEAL.morpheus, clearance = CONSTRUCT.chair.depth / 2 + 2.35;
       agent.position = filmPosition('film_real_desert', chair.x + Math.sin(chair.yaw) * clearance, chair.z + Math.cos(chair.yaw) * clearance);
     }
-    if (!(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent) && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) agent.position = locationEntrance(agent.currentLocation);
-    const restoredPose = !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
+    const wells = agent.currentLocation === 'film_wells_phone';
+    const restoredWells = wells && this.sandbox?.life.film.restorePhoneFrame(agent, tick);
+    if (!restoredWells && !(agent.id === 'neo' && metacortexLiftLocked(this.sandbox?.state.neoLife?.lift)) && !this.sandbox?.life.film.performing(agent)
+      && playerBlocked(agent.position, agent.isInMatrix, 1.1, this.sandbox?.state.structures)) {
+      const clear = wells ? wellsClearPosition(agent.position, this.sandbox?.state.structures) : undefined;
+      agent.position = clear ?? locationEntrance(agent.currentLocation);
+    }
+    const restoredPose = restoredWells || !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
       || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
       || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
-      || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
+      || !wells && this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)

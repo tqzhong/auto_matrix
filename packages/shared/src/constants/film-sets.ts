@@ -47,6 +47,7 @@ import { trainmanBlocked, trainmanFloor } from './trainman-chase.js';
 import { LOGOS_WRECK_WALLS } from './farewell.js';
 import { STEAK_DINING } from './steak.js';
 import { RED_DRESS_PLAZA, redDressFountainBlocked, redDressFountainFloor } from './red-dress-plaza.js';
+import { WELLS_STREET, streetLamps, wellsSidewalkHeight } from './wells-street.js';
 
 export type FilmArchitecture = 'hotel' | 'apartment' | 'club' | 'office' | 'interrogation' | 'bridge' | 'car' | 'lafayette' | 'pods' | 'ship' | 'construct' | 'desert' | 'dojo' | 'rooftop' | 'plaza' | 'restaurant' | 'oracle' | 'tenement' | 'lobby' | 'subway' | 'street' | 'zion' | 'temple' | 'engineering' | 'teahouse' | 'backdoors' | 'courtyard' | 'chateau' | 'mountain' | 'workshop' | 'garage' | 'freeway' | 'power' | 'architect' | 'mobil' | 'hel' | 'machine' | 'rain' | 'garden';
 export interface FilmSet {
@@ -203,7 +204,11 @@ export const ORACLE_ENTRANCE_WALLS: FilmObstacle[] = [
   { x: 0, z: 50, width: 8, depth: .4, height: 7.8 },
 ];
 export const ORACLE_OPEN_DOOR: FilmObstacle = { x: ORACLE_ENTRANCE.door.x, z: ORACLE_ENTRANCE.door.z - ORACLE_ENTRANCE.door.width / 2, width: ORACLE_ENTRANCE.door.depth, depth: ORACLE_ENTRANCE.door.width, height: ORACLE_ENTRANCE.door.height };
+const wellsLamps = streetLamps(FILM_SETS.film_wells_phone.width, FILM_SETS.film_wells_phone.depth).map(lamp => ({
+  ...lamp, width: 2 * WELLS_STREET.poleRadius, depth: 2 * WELLS_STREET.poleRadius, height: WELLS_STREET.poleHeight,
+}));
 export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOracleDoor = false, oracleLastKitchen = false): FilmObstacle[] {
+  if (set.id === 'film_wells_phone') return wellsLamps;
   if (set.id === 'film_final_phone') {
     const z = THE_ONE.flight.boothZ, height = THE_ONE.flight.boothHeight;
     return [{ x: 0, z: z - 1.38, width: 3.15, depth: .16, height },
@@ -334,6 +339,7 @@ export function filmObstacles(set: FilmSet, movingMeetingCar = false, movingOrac
 }
 
 export function filmBlocked(position: Vector3, set: FilmSet, radius: number, movingMeetingCar = false, movingOracleDoor = false, craterDepth = 0, oracleLastKitchen = false): boolean {
+  if (set.id === 'film_wells_phone') radius = Math.min(radius, WELLS_STREET.bodyRadius);
   const x = position.x - set.center.x; const z = position.z - set.center.z;
   if (set.id === 'film_chateau_hall' && chateauRailBlocked(x, position.y - set.center.y, z, radius)) return true;
   if (set.id === 'film_red_dress_plaza' && redDressFountainBlocked(x, position.y - set.center.y, z, radius)) return true;
@@ -374,6 +380,7 @@ export function filmBlocked(position: Vector3, set: FilmSet, radius: number, mov
 }
 
 export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 0): number {
+  if (set.id === 'film_wells_phone') return set.center.y + wellsSidewalkHeight(set.width, position.x - set.center.x);
   if (set.id === 'film_red_dress_plaza') return set.center.y + redDressFountainFloor(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_real_desert') return set.center.y + desertGroundHeight(position.x - set.center.x, position.z - set.center.z);
   if (set.id === 'film_club_hel' && position.z - set.center.z > HEL_ELEVATOR.doorZ && position.y - set.center.y > HEL_ELEVATOR.upper - 2)

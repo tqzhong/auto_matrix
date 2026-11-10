@@ -30,7 +30,7 @@ export interface OpeningPhoneAnswer {
 }
 
 export interface OpeningPhoneHit {
-  elapsed: number; at: number; origin: Vector3; yaw: number; direction: { x: number; z: number };
+  elapsed: number; at: number; origin: Vector3; yaw: number; direction: { x: number; z: number }; landingY?: number;
 }
 
 /** A failed caller stays at the receiver until the moving truck reaches the body. */
@@ -60,10 +60,12 @@ export function openingHitPose(hit: OpeningPhoneHit) {
   const slideSeconds = OPENING_PHONE.hitSeconds - air, slide = Math.max(0, t - air);
   const travel = OPENING_PHONE.hitSpeed * (Math.min(t, air) + slide - slide * slide / (2 * slideSeconds));
   const flight = Math.min(1, t / air), height = 4 * flight * (1 - flight);
+  const landingY = hit.landingY ?? hit.origin.y, fall = hit.origin.y - landingY;
   const turn = Math.atan2(Math.sin(Math.atan2(hit.direction.x, hit.direction.z) - hit.yaw), Math.cos(Math.atan2(hit.direction.x, hit.direction.z) - hit.yaw));
   const u = Math.min(1, t / .65), blend = u * u * (3 - 2 * u), speed = OPENING_PHONE.hitSpeed * (1 - slide / slideSeconds);
-  return { x: hit.origin.x + hit.direction.x * travel, y: hit.origin.y + height, z: hit.origin.z + hit.direction.z * travel,
-    yaw: hit.yaw + turn * blend, velocity: { x: speed * hit.direction.x, y: t < air ? 4 / air * (1 - 2 * flight) : 0, z: speed * hit.direction.z } };
+  const vertical = hit.landingY === undefined ? 4 / air * (1 - 2 * flight) : (4 * (1 - 2 * flight) - fall) / air;
+  return { x: hit.origin.x + hit.direction.x * travel, y: landingY + fall * (1 - flight) + height, z: hit.origin.z + hit.direction.z * travel,
+    yaw: hit.yaw + turn * blend, velocity: { x: speed * hit.direction.x, y: t < air ? vertical : 0, z: speed * hit.direction.z } };
 }
 
 /** Local roots and gait share the saved pickup clock, including a cold first frame. */

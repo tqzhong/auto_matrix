@@ -730,8 +730,8 @@ export class SandboxUI {
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = phone.phase === 'running' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · Shift 奔跑 · 到电话亭按 G`
         : phone.phase === 'answering' ? `取筒接听中 · 卡车撞击前 ${phone.remaining.toFixed(1)} 秒`
-        : failed ? '电话亭已毁 · J 手记重试' : phone.phase === 'connected' ? '连接成功 · 卡车正在撞击' : 'Trinity 已安全撤离 · G 继续';
-      document.getElementById('game-objective-copy')!.textContent = failed ? '线路中断 · J 打开手记重试'
+        : failed ? `${phone.hit && !phone.answer ? 'Trinity 遭卡车撞击' : '撤离失败'} · J 手记重试` : phone.phase === 'connected' ? '连接成功 · 卡车正在撞击' : 'Trinity 已安全撤离 · G 继续';
+      document.getElementById('game-objective-copy')!.textContent = failed ? '撤离失败 · J 打开手记重试'
         : approaching ? `卡车将在 ${phone.remaining.toFixed(1)} 秒后撞击电话亭` : 'Trinity 已断开连接';
     }
     if (!journey.visiting && scene.id === 'm3_hel_entry' && journey.step === 0) {

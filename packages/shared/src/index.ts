@@ -22,6 +22,7 @@ export * from './constants/neb-escape.js';
 export * from './constants/primary-demolition.js';
 export * from './constants/trinity-relay.js';
 export * from './constants/opening-escape.js';
+export * from './constants/wells-street.js';
 export * from './constants/opening-hotel.js';
 export * from './constants/film-outcomes.js';
 export * from './constants/film-dialogue.js';
