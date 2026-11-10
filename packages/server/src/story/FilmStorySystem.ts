@@ -1,4 +1,5 @@
 import { SeraphDoorSystem } from './SeraphDoorSystem.js';
+import { savedChateauAction, savedMountainAction } from './ChateauMountainPose.js';
 import { BookDoorSystem } from './BookDoorSystem.js';
 import { bookDoorLocked } from '@auto_matrix/shared';
 import { savedPersephoneAction } from './PersephonePose.js';
@@ -5296,9 +5297,10 @@ export class FilmStorySystem {
     const encounter = this.state?.scene === 'm2_chateau' && !this.state.visiting && this.controls(agent) ? this.state.chateau : undefined;
     if (encounter && agent.currentAction) agent.currentAction.parameters.chateauWeapon = encounter.weapon;
   }
-  restoreChateauPose(agent: AgentState, tick: number): boolean {
+  restoreChateauPose(agent: AgentState, tick: number, preserve = true): boolean {
     const state = this.state, weapon = state?.chateau?.weapon;
     if (state?.scene !== 'm2_chateau' || state.visiting || !this.controls(agent) || !weapon || agent.status !== 'alive') return false;
+    if (preserve && savedChateauAction(state, agent)) return true;
     agent.velocity = { x: 0, y: 0, z: 0 };
     if (agent.currentAction?.type !== 'idle' || agent.currentAction.parameters.chateauWeapon !== weapon) {
       agent.currentAction = { type: 'idle', parameters: { player: true, resolved: true, crouching: false, chateauWeapon: weapon },
@@ -5353,6 +5355,7 @@ export class FilmStorySystem {
     agent.position = encounter.wave === 1 ? filmPosition(this.scene!.set, 0, 10) : filmStepPosition(this.scene!, this.scene!.steps[1]);
     agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
     state.checkpoint = { ...agent.position }; state.lastText = '守卫合围，Neo 暂时退回安全位置。按 G 重试当前楼层，已夺取的兵器保留。';
+    this.restoreChateauPose(agent, tick);
     return true;
   }
   private retryChateau(agent: AgentState, tick: number): string {
@@ -5362,6 +5365,7 @@ export class FilmStorySystem {
     agent.velocity = { x: 0, y: 0, z: 0 }; agent.currentAction = null;
     encounter.phase = encounter.wave === 1 ? 'ready' : 'landing'; delete state.fighting;
     state.checkpoint = { ...agent.position }; state.lastText = encounter.wave === 1 ? '再走进大厅中央迎战；兵器架仍在两侧。' : '再上二层平台迎战剩余守卫。';
+    this.restoreChateauPose(agent, tick);
     return state.lastText;
   }
   mountainFrame(agent: AgentState, input: Pick<PlayerInput, 'x' | 'z' | 'yaw' | 'jump' | 'sprint'>, dt: number, tick: number): boolean {
@@ -5369,6 +5373,14 @@ export class FilmStorySystem {
     if (state?.scene !== 'm2_mountain' || state.visiting || !this.controls(agent)) return false;
     const flight = state.mountain;
     if (!flight || state.step !== 2 && flight.phase !== 'arrived') return false;
+    if (dt <= 0) {
+      if (!['takeoff', 'flying', 'arrived'].includes(flight.phase)) return false;
+      if (savedMountainAction(state, agent)) return true;
+      agent.position = { ...filmPosition(this.scene!.set, flight.x, flight.z), y: FILM_SETS[this.scene!.set].center.y + flight.altitude };
+      agent.velocity = { x: 0, y: 0, z: 0 };
+      agent.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, mountainFlight: { ...flight } }, startedAt: tick, duration: 1, progress: 0 };
+      return true;
+    }
     if (flight.phase === 'ready') {
       if (!input.jump || !this.near(agent, this.scene!.steps[2])) return false;
       flight.phase = 'takeoff'; flight.elapsed = 0;

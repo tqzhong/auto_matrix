@@ -1,4 +1,5 @@
 import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
+import { savedChateauAction, savedMountainAction } from './story/ChateauMountainPose.js';
 import { savedBookDoorAction } from './story/BookDoorSystem.js';
 import { savedPersephoneAction } from './story/PersephonePose.js';
 import { SERAPH_DOOR_ROLES, seraphDoorActive } from '@auto_matrix/shared';
@@ -370,6 +371,7 @@ async function main(): Promise<void> {
       const savedCrouch = checkpoint.simulation?.running === false && savedOfficeCrouchAction(journey, agent.state);
       if (savedCrouch) agent.state.velocity = { x: 0, y: 0, z: 0 };
       const savedPerformanceAction = savedCrouch || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+        || checkpoint.simulation?.running === false && (savedChateauAction(journey, agent.state) || savedMountainAction(journey, agent.state))
         || checkpoint.simulation?.running === false && savedBookDoorAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedSeraphDoorAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedPersephoneAction(journey, agent.state)
