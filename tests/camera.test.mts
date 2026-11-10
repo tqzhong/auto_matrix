@@ -1872,8 +1872,8 @@ test('the opening phone camera frames the booth and truck from outside their ren
               `${label}: ${name} leaves the impact frame: ${screen.toArray()}`);
           }
         }
-        const booth = renderer.root.getObjectByName('opening-phone-booth')!;
-        const sign = booth.localToWorld(new THREE.Vector3(-1.95, 7.7, -1.6)), direction = sign.clone().sub(game.camera.position);
+        const roof = renderer.root.getObjectByName('opening-booth-roof')!;
+        const sign = roof.localToWorld(new THREE.Vector3(-1.95, 0, -1.6)), direction = sign.clone().sub(game.camera.position);
         const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .1)
           .intersectObject(renderer.root, true).filter(hit => {
             for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;

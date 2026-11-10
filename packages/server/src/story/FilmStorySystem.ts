@@ -669,22 +669,37 @@ export class FilmStorySystem {
       state.lastText = 'Brown 追上了 Trinity。J 打开手记，从屋顶入口重试。';
     }
   }
+  openingPhoneFrame(actor: AgentState, dt: number, tick: number): void {
+    const state = this.state, phone = state?.openingPhone;
+    if (dt <= 0 || state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone
+      || (phone.impactElapsed ?? 0) >= OPENING_ESCAPE.truckImpactSeconds
+      || !(phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined)) return;
+    const end = Math.max(phone.lastTick, tick) + Math.min(.1, dt) * 2;
+    const elapsed = (end - phone.lastTick) * .5; phone.lastTick = end;
+    this.openingPhoneImpact(elapsed);
+  }
+  private openingPhoneImpact(dt: number): void {
+    const state = this.state, phone = state?.openingPhone;
+    if (!state || !phone || !(phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined)) return;
+    phone.impactElapsed = Math.min(OPENING_ESCAPE.truckImpactSeconds, (phone.impactElapsed ?? 0) + Math.max(0, dt));
+    if (phone.impactElapsed >= OPENING_ESCAPE.truckImpactSeconds) {
+      if (phone.phase === 'connected') phone.phase = 'done';
+      else state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
+    }
+  }
   private openingPhoneTick(tick: number): void {
     const state = this.state!;
     state.openingPhone ??= { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
     const phone = state.openingPhone;
     const dt = Math.min(.5, Math.max(0, tick - phone.lastTick) * .5);
-    phone.lastTick = tick;
+    phone.lastTick = Math.max(phone.lastTick, tick);
     if (phone.phase === 'running') {
       phone.remaining = Math.max(0, phone.remaining - dt);
       if (phone.remaining === 0) {
-        phone.phase = 'failed'; delete state.started;
-        state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
+        phone.phase = 'failed'; phone.impactElapsed = 0; phone.impactFrom = 0; delete state.started;
+        state.lastText = '卡车已冲向电话亭，出口来不及接通。J 打开手记，从街口重试。';
       }
-    } else if (phone.phase === 'connected') {
-      phone.impactElapsed = Math.min(OPENING_ESCAPE.truckImpactSeconds, (phone.impactElapsed ?? 0) + dt);
-      if (phone.impactElapsed >= OPENING_ESCAPE.truckImpactSeconds) phone.phase = 'done';
-    }
+    } else this.openingPhoneImpact(dt);
   }
   private ensureMobil(tick: number): void {
     const state = this.state;

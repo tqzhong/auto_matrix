@@ -274,6 +274,7 @@ const playerTimer = setInterval(() => {
   if (!acceptingPlayers) { lastPlayerStep = now; return; }
   const journey = sandbox.life.film.state;
   const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
+  const phoneImpact = journey?.openingPhone?.impactElapsed;
   players.step(Math.min(0.1, (now - lastPlayerStep) / 1000), simLoop.isRunning(), simLoop.getTick(), now);
   lastPlayerStep = now;
   const scale = players.timeScale();
@@ -283,6 +284,10 @@ const playerTimer = setInterval(() => {
     sockets.broadcastDelta({ agents: {}, dirtyChunks: {}, events: [], simulation: simulationState() }, simLoop.getTick());
   }
   const current = sandbox.life.film.state;
+  if (current?.scene === 'm1_phone_escape' && !current.visiting && current.openingPhone?.impactElapsed !== phoneImpact) {
+    sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, simLoop.getTick());
+    return;
+  }
   if (current?.scene !== scene || current?.step !== step || current?.actor !== actor) {
     // Publish a story boundary with its poses; the next slow simulation tick may never run after a pause.
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());

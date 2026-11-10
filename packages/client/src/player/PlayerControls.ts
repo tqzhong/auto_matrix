@@ -1486,10 +1486,10 @@ export class PlayerControls {
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
     if (phoneExit && state.currentLocation === 'film_wells_phone') {
       const center = FILM_SETS.film_wells_phone.center;
-      this.camera.fov = Math.max(57, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(29)) / this.camera.aspect)));
+      this.camera.fov = Math.max(57, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(35)) / this.camera.aspect)));
       this.camera.near = .1; this.camera.updateProjectionMatrix();
-      this.camera.position.set(center.x - 19, center.y + 7, center.z - 39);
-      this.camera.lookAt(center.x + 3, center.y + 2.5, center.z - 22);
+      this.camera.position.set(center.x - 17, center.y + 7, center.z - 45);
+      this.camera.lookAt(center.x + 3, center.y + 2.5, center.z - 26.5);
     } else if (alarmView) {
       // A separate room view; Neo retains his position, movement and first-person look.
       const center = FILM_SETS.film_ambush_house.center, portrait = this.camera.aspect < .85;

@@ -21,8 +21,10 @@ export interface OpeningPhoneEncounter {
 }
 
 export function openingTruckPose(phone: OpeningPhoneEncounter): { x: number; z: number; yaw: number } {
-  const approach = 1 - Math.max(0, Math.min(1, phone.remaining / OPENING_ESCAPE.phoneSeconds));
-  const impact = phone.phase === 'connected' || phone.phase === 'done'
+  // The countdown ends just short of contact; the saved impact then crosses the booth.
+  const approach = .86 * (1 - Math.max(0, Math.min(1, phone.remaining / OPENING_ESCAPE.phoneSeconds)));
+  const impact = phone.phase === 'done' || phone.phase === 'failed' && phone.impactElapsed === undefined ? 1
+    : phone.phase === 'connected' || phone.phase === 'failed'
     ? Math.max(0, Math.min(1, (phone.impactElapsed ?? 0) / OPENING_ESCAPE.truckImpactSeconds)) : 0;
   const progress = approach + (1 - approach) * impact;
   const turn = Math.pow(progress, 1.55);

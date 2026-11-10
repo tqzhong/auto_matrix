@@ -429,6 +429,7 @@ export class PlayerController {
       if (this.sandbox?.life.film.openingRoofFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
+      this.sandbox?.life.film.openingPhoneFrame(agent, running && agent.status === 'alive' ? dt : 0, tick);
       if (this.sandbox?.life.film.dockEvacuation.frame(agent, running && agent.status === 'alive' ? dt : 0, tick,
         now - session.lastInput <= 300 && (session.input.location === undefined || session.input.location === agent.currentLocation) && session.input.focus === true)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;

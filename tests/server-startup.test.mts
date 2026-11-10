@@ -18,6 +18,29 @@ import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
 
+test('opening impact: fast snapshots deliver the saved moving crash and preserve it through a paused restart', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_phone_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+  journey.step = 2; journey.completed = ['m1_room303', 'm1_roofs', 'm1_phone_escape'];
+  journey.openingPhone = { phase: 'connected', remaining: 8, lastTick: f.checkpoint.tick, attempts: 1, impactElapsed: .2, impactFrom: 8 };
+  actor.position = filmPosition('film_wells_phone', 0, -28); actor.currentAction = null; actor.velocity = { x: 0, y: 0, z: 0 };
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+  const marker = client.messages.length;
+  await client.command('resume', {}, state => state.simulation!.running); await new Promise(resolve => setTimeout(resolve, 250));
+  await client.command('pause', {}, state => !state.simulation!.running);
+  const delivered = client.messages.slice(marker).filter(message => message.type === 'world_state_delta')
+    .map(message => (message.data as { sandbox?: WorldStateFull['sandbox'] }).sandbox?.neoLife?.journey?.openingPhone?.impactElapsed).filter(value => typeof value === 'number');
+  assert.ok(new Set(delivered).size >= 3, 'clients need multiple distinct impact poses inside one half-second story tick');
+  const saved = structuredClone((await client.world()).sandbox!.neoLife!.journey!.openingPhone);
+  await new Promise(resolve => setTimeout(resolve, 150)); assert.deepEqual((await client.world()).sandbox!.neoLife!.journey!.openingPhone, saved);
+  client.socket.disconnect(); await server.stop();
+  const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING'); const next = await controls(t, restored);
+  assert.deepEqual((await next.world()).sandbox!.neoLife!.journey!.openingPhone, saved);
+  await next.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+  assert.deepEqual((await next.world()).sandbox!.neoLife!.journey!.openingPhone, saved); await restored.stop();
+});
+
 test('airborne motion: real paused restarts keep jump velocity while clearing the old player action', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_roofs'), actor = f.checkpoint.agents.trinity, journey = f.checkpoint.sandbox.neoLife.journey;
   journey.step = 1; journey.openingRoof = { phase: 'running', lastTick: 1343, attempts: 2 };

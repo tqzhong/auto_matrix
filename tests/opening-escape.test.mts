@@ -114,7 +114,8 @@ test('the opening roof has a raycastable drop and the phone truck follows saved 
     journey.openingPhone.phase = 'done'; journey.openingPhone.impactElapsed = OPENING_ESCAPE.truckImpactSeconds;
     renderer.update(player, sandbox, 2);
     assert.ok(Math.abs(truck.position.x) < .01);
-    assert.ok(booth.rotation.x < -.4 && glass.visible, 'connected escape is followed by the glass booth impact');
+    const roofPart = renderer.root.getObjectByName('opening-booth-roof')!;
+    assert.ok(roofPart.position.y < 1 && glass.visible, 'connected escape leaves the detached roof and broken glass on the road');
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 

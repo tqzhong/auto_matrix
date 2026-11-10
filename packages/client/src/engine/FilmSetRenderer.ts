@@ -357,6 +357,9 @@ export class FilmSetRenderer {
   private openingTruck?: THREE.Group;
   private openingBooth?: THREE.Group;
   private openingGlass?: THREE.Group;
+  private openingBoothParts: { root: THREE.Group; kind: 'post' | 'phone' | 'roof'; x: number; z: number }[] = [];
+  private openingBoothPanes: THREE.Mesh[] = [];
+  private openingGlassPieces: { mesh: THREE.Mesh; origin: THREE.Vector3; side: number }[] = [];
   private hotel303Door?: THREE.Group;
   private hotel303Glass?: THREE.Group;
   private hotel303Shards?: THREE.Group;
@@ -2082,11 +2085,35 @@ export class FilmSetRenderer {
       const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
       const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
       this.openingTruck.position.set(pose.x, 0, pose.z); this.openingTruck.rotation.y = pose.yaw;
-      const strike = phone?.phase === 'done' || phone?.phase === 'failed' ? 1
-        : phone?.phase === 'connected' ? Math.min(1, (phone.impactElapsed ?? 0) / OPENING_ESCAPE.truckImpactSeconds) : 0;
-      this.openingBooth.rotation.x = -.46 * strike;
-      this.openingGlass.visible = strike > .35;
-      this.openingGlass.scale.setScalar(Math.max(.01, strike));
+      const forwardX = Math.sin(pose.yaw), forwardZ = Math.cos(pose.yaw), boothZ = this.openingBooth.position.z;
+      const penetration = (x: number, z: number) => {
+        const dx = x - pose.x, dz = boothZ + z - pose.z;
+        return Math.abs(forwardZ * dx - forwardX * dz) <= 2.25 ? Math.max(0, forwardX * dx + forwardZ * dz + 7.5) : 0;
+      };
+      let crush = 0;
+      for (const part of this.openingBoothParts) if (part.kind === 'post') crush = Math.max(crush, penetration(part.x, part.z));
+      for (const part of this.openingBoothParts) {
+        if (part.kind === 'roof') {
+          const fall = THREE.MathUtils.smoothstep(crush, .35, 3.5);
+          part.root.position.set(-1.1 * fall, THREE.MathUtils.lerp(7.7, .72, fall) + Math.sin(Math.PI * fall) * .4, -(crush + 3) * fall);
+          part.root.rotation.set(-.12 * fall, .16 * fall, .08 * fall);
+        } else {
+          const phonePart = part.kind === 'phone', push = penetration(part.x, part.z - (phonePart ? .65 : 0));
+          const fall = THREE.MathUtils.smoothstep(push, 0, phonePart ? 2.1 : 1.7), side = Math.sign(part.x);
+          const travel = push + (phonePart ? .45 : .28) * fall;
+          part.root.position.set(part.x - forwardX * travel + side * .65 * fall, (phonePart ? .78 : .16) * fall, part.z - forwardZ * travel);
+          part.root.rotation.set(-(phonePart ? 1.5 : 1.47) * fall, 0, phonePart ? .04 * fall : -side * .12 * fall);
+        }
+      }
+      const broken = crush > .06, scatter = THREE.MathUtils.smoothstep(crush, .06, 4);
+      for (const pane of this.openingBoothPanes) pane.visible = !broken;
+      this.openingGlass.visible = broken;
+      this.openingGlassPieces.forEach(({ mesh, origin, side }, i) => {
+        mesh.position.set(origin.x + side * (1.7 + i % 5 * .35) * scatter,
+          THREE.MathUtils.lerp(origin.y, .08, scatter) + Math.sin(Math.PI * scatter) * (.35 + i % 4 * .18),
+          origin.z - (crush + 2 + i % 7 * .45) * scatter);
+        mesh.rotation.set(Math.sin(Math.PI * scatter) * (i % 3 - 1) * .6, i * 2.399 * scatter, side * Math.PI / 2 * scatter);
+      });
     }
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition, player?.id === 'morpheus' && player.id === journey?.actor
@@ -4219,11 +4246,28 @@ export class FilmSetRenderer {
           for (const [x, z, color] of [[0, -27, 0xb8d9c8], [14, 2, 0xd3ded0]] as const) {
             const streetlight = new THREE.PointLight(color, 650, 46, 2); streetlight.position.set(x, 11, z); this.root.add(streetlight);
           }
-          const boothZ = -d * .32; const start = this.root.children.length;
-          this.phone(0, boothZ, true);
+          const boothZ = -d * .32;
           this.openingBooth = new THREE.Group(); this.openingBooth.name = 'opening-phone-booth'; this.openingBooth.userData.dynamic = true;
-          this.root.children.slice(start).forEach(child => { child.position.z -= boothZ; this.openingBooth!.add(child); });
           this.openingBooth.position.z = boothZ; this.root.add(this.openingBooth);
+          const phoneStart = this.root.children.length; this.phone(0, 0);
+          this.box(this.metal, 0, 3.5, -.65, 1.6, 6.8, .12);
+          const phonePart = new THREE.Group(); phonePart.name = 'opening-booth-phone';
+          this.root.children.slice(phoneStart).forEach(child => phonePart.add(child)); this.openingBooth.add(phonePart);
+          this.openingBoothParts.push({ root: phonePart, kind: 'phone', x: 0, z: 0 });
+          for (const x of [-1.8, 1.8]) for (const z of [-1.4, 1.4]) {
+            const post = new THREE.Group(); post.name = 'opening-booth-post'; post.position.set(x, 0, z);
+            post.add(this.box(this.metal, 0, 3.8, 0, .15, 7.6, .15)); this.openingBooth.add(post);
+            this.openingBoothParts.push({ root: post, kind: 'post', x, z });
+          }
+          for (const x of [-1.8, 1.8]) {
+            const pane = this.box(this.glass, x, 3.8, 0, .06, 7, 2.8); pane.name = 'opening-booth-intact-pane';
+            this.openingBooth.add(pane); this.openingBoothPanes.push(pane);
+          }
+          const roofStart = this.root.children.length;
+          this.box(this.metal, 0, 7.7, 0, 3.8, .5, 3.1); this.label('TELEPHONE', 0, 7.7, 1.57, 3.4);
+          const roof = new THREE.Group(); roof.name = 'opening-booth-roof'; roof.position.y = 7.7;
+          this.root.children.slice(roofStart).forEach(child => { child.position.y -= 7.7; roof.add(child); }); this.openingBooth.add(roof);
+          this.openingBoothParts.push({ root: roof, kind: 'roof', x: 0, z: 0 });
           this.openingTruck = this.car(15, 4, 0x555e58, true);
           this.openingTruck.name = 'opening-garbage-truck'; this.openingTruck.userData.dynamic = true;
           const cargo = this.mat(0x829189, .82, .08);
@@ -4235,10 +4279,13 @@ export class FilmSetRenderer {
           for (const x of [-2.2, 2.2]) this.openingTruck.add(this.box(tail, x, 1.75, 13.68, .3, .48, .08));
           this.openingGlass = new THREE.Group(); this.openingGlass.name = 'opening-shattered-glass'; this.openingGlass.userData.dynamic = true;
           this.openingGlass.visible = false; this.openingGlass.position.z = boothZ; this.root.add(this.openingGlass);
-          for (let i = 0; i < 18; i++) {
-            const angle = i * 2.399; const radius = 1.4 + i % 5 * .47;
-            const shard = this.box(this.glass, Math.cos(angle) * radius, .2 + i % 4 * .13, Math.sin(angle) * radius, .13 + i % 3 * .07, .03, .35 + i % 4 * .13);
-            shard.rotation.y = angle; this.openingGlass.add(shard);
+          for (const side of [-1, 1]) for (let row = 0; row < 4; row++) for (let column = 0; column < 2; column++) for (const triangle of [0, 1]) {
+            const y = .3 + row * 1.75, z = -1.4 + column * 1.4;
+            const points = triangle === 0 ? [[y, z], [y + 1.75, z], [y + 1.75, z + 1.4]] : [[y, z], [y + 1.75, z + 1.4], [y, z + 1.4]];
+            const cy = points.reduce((sum, p) => sum + p[0], 0) / 3, cz = points.reduce((sum, p) => sum + p[1], 0) / 3;
+            const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [0, p[0] - cy, p[1] - cz]), 3)); geometry.computeVertexNormals();
+            const shard = this.mesh(geometry, this.glass, side * 1.8, cy, cz, this.openingGlass); shard.name = 'opening-booth-glass-fragment';
+            this.openingGlassPieces.push({ mesh: shard, origin: shard.position.clone(), side });
           }
         } else if (a !== 'rain') this.phone(0, -d * .32, true);
         if (a === 'rain') {
@@ -4597,6 +4644,7 @@ export class FilmSetRenderer {
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobil?.dispose(); this.mobil = undefined;
     this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;
+    this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;

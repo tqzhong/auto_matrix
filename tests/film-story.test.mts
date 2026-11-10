@@ -871,6 +871,33 @@ test('Trinity must answer the Wells phone before the truck arrives; the countdow
   assert.ok(state.completed.includes(scene.id), 'answering immediately connects without a two-second wait');
 });
 
+test('opening impact: the saved crash clock advances between story ticks without double counting or advancing while paused', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_phone_escape;
+  Object.assign(state, { scene: scene.id, step: 1, checkpoint: filmEntry(scene), openingPhone: { phase: 'running', remaining: 8, lastTick: h.tick(), attempts: 0 } });
+  h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[1]); h.command('act');
+  h.players.step(.02, true, h.tick()); assert.ok(Math.abs(state.openingPhone!.impactElapsed! - .02) < 1e-9, 'the rendered impact cannot wait half a second for its next pose');
+  for (let i = 0; i < 24; i++) h.players.step(.02, true, h.tick());
+  h.advance(); assert.ok(Math.abs(state.openingPhone!.impactElapsed! - .5) < 1e-9, 'the story tick cannot count the same half second twice');
+  const paused = structuredClone(state.openingPhone); for (let i = 0; i < 10; i++) h.players.step(.02, false, h.tick()); assert.deepEqual(state.openingPhone, paused);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!; assert.deepEqual(state.openingPhone, paused);
+  h.players.step(.02, true, h.tick()); assert.ok(Math.abs(state.openingPhone!.impactElapsed! - .52) < 1e-9);
+});
+
+test('opening impact: a missed call saves and pauses the crash before a retry resets only that attempt', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const scene = FILM_SCENE_BY_ID.m1_phone_escape;
+  Object.assign(state, { scene: scene.id, step: 0, checkpoint: filmEntry(scene) }); h.actor().currentLocation = scene.set; h.actor().position = filmEntry(scene);
+  while (state.openingPhone?.phase !== 'failed') h.advance();
+  assert.equal(state.openingPhone.impactElapsed, 0, 'timeout begins the impact rather than teleporting to its final wreck');
+  h.players.release('film-player', h.tick()); h.advance(10); assert.equal(state.openingPhone.impactElapsed, 0);
+  h.players.possess('film-player', 'trinity', h.tick()); h.advance(); assert.equal(state.openingPhone.impactElapsed, .5);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!; assert.equal(state.openingPhone!.impactElapsed, .5);
+  h.advance(3); assert.equal(state.openingPhone!.impactElapsed, OPENING_ESCAPE.truckImpactSeconds); assert.equal(state.openingPhone!.phase, 'failed');
+  h.command('retry'); assert.equal(state.openingPhone!.phase, 'running'); assert.equal(state.openingPhone!.remaining, 15); assert.equal(state.openingPhone!.attempts, 1);
+  assert.equal(state.openingPhone!.impactElapsed, undefined); assert.equal(h.actor().status, 'alive');
+});
+
 test('Brown pursues Trinity across a real rooftop gap and a fall or capture restores the route', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
   const scene = FILM_SCENE_BY_ID.m1_roofs;
