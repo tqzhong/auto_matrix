@@ -7,8 +7,8 @@ import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand } from '@auto_matrix/shared';
-import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, heldPhone, windowOpening, windowCrossing, interrogationLocked, meetingLocked, truthLocked, savedBurlyFailedIdle, savedBurlyReadyIdle, workdayLocked } from '@auto_matrix/shared';
+import type { ServerMessage, SimulationState, WorldStateFull, SandboxCommand, FarewellGesture } from '@auto_matrix/shared';
+import { NEO_CAST, FILM_CAST, TEMPLE_DEFENSE, FAREWELL, cityVehicleBlocked, primaryActive, templeDefenseActive, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, heldPhone, windowOpening, windowCrossing, interrogationLocked, meetingLocked, truthLocked, savedBurlyFailedIdle, savedBurlyReadyIdle, workdayLocked } from '@auto_matrix/shared';
 import { config } from './config.js';
 import { EventBus } from './simulation/EventBus.js';
 import { SimulationLoop } from './simulation/SimulationLoop.js';
@@ -373,7 +373,14 @@ async function main(): Promise<void> {
       const journey = checkpoint.sandbox?.neoLife?.journey;
       const savedCrouch = checkpoint.simulation?.running === false && savedOfficeCrouchAction(journey, agent.state);
       if (savedCrouch) agent.state.velocity = { x: 0, y: 0, z: 0 };
-      const savedPerformanceAction = savedCrouch || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
+      const farewell = agent.state.currentAction?.parameters.farewell as FarewellGesture | undefined;
+      const savedFarewell = checkpoint.simulation?.running === false && id === 'neo'
+        && journey?.completed.includes('m3_farewell') && agent.state.currentLocation === 'film_logos_wreck'
+        && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.duration === 1
+        && agent.state.currentAction.parameters.resolved === true && agent.state.currentAction.parameters.crouching === true
+        && farewell?.role === 'neo' && farewell.phase === 'still'
+        && farewell.elapsed === 0 && farewell.total >= FAREWELL.minimumSeconds;
+      const savedPerformanceAction = savedCrouch || savedFarewell || savedMetacortexLiftIdle(checkpoint.sandbox?.neoLife, agent.state)
         || checkpoint.simulation?.running === false && (savedChateauAction(journey, agent.state) || savedMountainAction(journey, agent.state))
         || checkpoint.simulation?.running === false && savedBookDoorAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedSeraphDoorAction(journey, agent.state)

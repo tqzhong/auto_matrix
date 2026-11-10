@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, CABIN_ROUTE_LENGTH, cabinGuidePose, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, FILM_SCENES, farewellPose, CABIN_ROUTE_LENGTH, cabinGuidePose, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CONSTRUCT, constructGuidePose, truthRoot, truthText, type TruthRecovery } from '@auto_matrix/shared';
@@ -116,6 +116,38 @@ test('real restarts retain the completed spoon lesson prop while Neo follows the
   };
   check(await client.world()); check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
   client.socket.disconnect(); await new Promise(resolve => setTimeout(resolve, 100)); check(await client.world()); await server.stop();
+});
+
+test('paused Lock restarts retain Neo’s completed farewell pose without restoring transient attacks', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm3_temple_breach'), journey = f.checkpoint.sandbox.neoLife.journey;
+  const farewell = { phase: 'still' as const, elapsed: 0, total: 18.54, approach: { x: .33, z: -13.07, yaw: 3.8 } };
+  journey.completed = FILM_SCENES.slice(0, FILM_SCENES.findIndex(scene => scene.id === 'm3_temple_breach')).map(scene => scene.id);
+  delete journey.farewell;
+  const neo = f.checkpoint.agents.neo, trinity = f.checkpoint.agents.trinity, pose = farewellPose(farewell);
+  Object.assign(neo, { position: filmPosition('film_logos_wreck', pose.neo.x, pose.neo.z), rotation: pose.neo.yaw,
+    velocity: { x: 0, y: 0, z: 0 }, currentLocation: 'film_logos_wreck', isInMatrix: false,
+    currentAction: { type: 'idle', parameters: { player: true, resolved: true, crouching: true, farewell: { ...farewell, role: 'neo' } },
+      startedAt: 1342, duration: 1, progress: 1 } });
+  Object.assign(trinity, { position: filmPosition('film_logos_wreck', pose.trinity.x, pose.trinity.z), status: 'dead', health: 0 });
+  f.checkpoint.agents.citizen_5.currentAction = { type: 'attack', target: 'neo', parameters: { player: true }, startedAt: 1342, duration: 1, progress: .4 };
+  f.checkpoint.simulation = { running: false, speed: 1 };
+  await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const check = (state: WorldStateFull) => {
+    assert.equal(state.simulation.running, false);
+    assert.equal(state.sandbox!.neoLife!.journey!.scene, 'm3_temple_breach');
+    assert.equal(state.sandbox!.neoLife!.journey!.farewell, undefined);
+    assert.deepEqual(state.agents.neo.currentAction, neo.currentAction, 'inactive Neo must keep his saved grief pose and original action clock');
+    assert.deepEqual(state.agents.neo.position, neo.position); assert.equal(state.agents.neo.health, 63);
+    assert.equal(state.agents.neo.controller, undefined);
+    assert.equal(state.agents.trinity.status, 'dead'); assert.equal(state.agents.trinity.health, 0);
+    assert.equal(state.agents.citizen_5.currentAction, null, 'unrelated transient player attacks must still clear');
+  };
+  for (let restart = 0; restart < 2; restart++) {
+    const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+    check(await client.world()); check(await client.command('play_as', { agentId: 'lock' }, state => Boolean(state.agents.lock.controller)));
+    check(await client.command('leave_character', {}, state => !state.agents.lock.controller));
+    client.socket.disconnect(); await server.stop();
+  }
 });
 
 test('real restarts preserve the complete waiting farewell action after the Oracle answer', { timeout: 30000 }, async t => {
