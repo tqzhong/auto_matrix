@@ -8525,7 +8525,7 @@ export class FilmStorySystem {
       if (state.helCoatcheck) state.helCoatcheck.rescueLastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.lastTick = tick;
       if (state.helDanceDoor) state.helDanceDoor.allyTick = tick;
-      if (state.templeSeal) state.templeSeal.lastTick = tick;
+      if (state.templeSeal && templeDefenseActive(state)) state.templeSeal.lastTick = tick;
       if (state.dockGunnery) state.dockGunnery.lastTick = tick;
       if (state.helBargain) state.helBargain.lastTick = tick;
       if (actor?.status === 'alive' && state.scene === 'm2_trucks' && state.trucks) {

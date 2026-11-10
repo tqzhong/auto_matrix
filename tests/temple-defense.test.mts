@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENES, FILM_SCENE_BY_ID, TEMPLE_DEFENSE, filmEntry, filmPosition, filmStepPosition, newTempleDefense, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, TEMPLE_DEFENSE, LOGOS_DEFENSE, newLogosFlight, filmEntry, filmPosition, filmStepPosition, newTempleDefense, playerBlocked, stepPlayer, type WorldEvent } from '@auto_matrix/shared';
 import { ZionHomecomingRenderer } from '../packages/client/src/engine/ZionHomecomingRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -184,6 +184,23 @@ test('both manually secured guns stop the setup deadline; returning to the crowd
   assert.ok(state.completed.includes(scene.id)); h.command('next');
   assert.equal(state.scene, 'm3_defense'); assert.equal(state.actor, 'trinity');
   assert.deepEqual(state.templeSeal!.turns, [1, 1]); assert.equal(state.emp!.firedAt, 1);
+});
+
+test('a later Logos crash and retry preserve the complete completed temple record', () => {
+  const h = game(), state = h.state();
+  state.completed.push('m3_temple_defense');
+  Object.assign(state, { scene: 'm3_defense', actor: 'trinity', step: 0,
+    templeSeal: { phase: 'sealed', remaining: 19.63, lastTick: 17, attempts: 1, turns: [1, 1], elapsed: 22.37, waiting: 3.2 } });
+  h.players.possess('p', 'trinity', 20);
+  const saved = structuredClone(state.templeSeal), pilot = h.players.getAgent('p')!;
+  state.logos = { ...newLogosFlight('defense'), z: LOGOS_DEFENSE.finish + .1 };
+  h.sandbox.life.film.driveFrame(pilot, { throttle: 0, steer: 0, brake: false }, .1, 21);
+  assert.equal(state.logos.phase, 'wrecked'); assert.equal(pilot.status, 'dead');
+  h.sandbox.tick(100);
+  assert.deepEqual(state.templeSeal, saved, 'an unrelated dead pilot must not rebase past artillery time');
+  h.command('retry');
+  assert.equal(pilot.status, 'alive'); assert.equal(state.logos, undefined);
+  assert.deepEqual(state.templeSeal, saved, 'retry retains every completed temple field');
 });
 
 test('a timed preparation failure retries only the temple and preserves the spent EMP and past casualties', () => {
