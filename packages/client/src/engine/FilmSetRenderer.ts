@@ -1,3 +1,4 @@
+import { BOOK_DOOR,bookDoorAngle,bookDoorLocked,bookDoorProgress } from '@auto_matrix/shared';
 import { SERAPH_DOOR, seraphDoorAngle, seraphDoorLocked, seraphDoorProgress } from '@auto_matrix/shared';
 import { logosBaneInjured, logosBaneLocked } from '@auto_matrix/shared';
 import { filmSceneForJourney, logosCloudTop, logosFlightSet, newLogosFlight } from '@auto_matrix/shared';
@@ -2277,7 +2278,10 @@ export class FilmSetRenderer {
       this.exileDessert.visible = triggered;
       this.exileDessert.scale.setScalar(1 + Math.sin(elapsed * 4) * .08);
     }
-    if (this.bookDoor) this.bookDoor.position.x = sceneId === 'm2_library' && !journey?.visiting && (journey?.step ?? 0) >= 3 ? -5.8 : 0;
+    if (this.bookDoor) {
+      this.bookDoor.rotation.y = bookDoorAngle(bookDoorProgress(journey));
+      const book = this.bookDoor.getObjectByName('library-book-trigger'); if (book) book.rotation.x = BOOK_DOOR.book.angle * (journey?.scene === 'm2_library' && !journey.visiting ? journey.bookDoor?.book ?? 0 : 0);
+    }
     if (this.chateauVolley) {
       const encounter = sceneId === 'm2_chateau' && !journey?.visiting ? journey?.chateau : undefined;
       const volley = encounter?.phase === 'duel' && encounter.wave === 1 ? encounter.volleyAt : undefined;
@@ -2348,7 +2352,7 @@ export class FilmSetRenderer {
     const empExterior = this.currentScene === 'm3_emp' && this.empDock?.group.visible;
     if (empExterior) this.marker.visible = false;
     if (journey?.scene === 'm3_dock_battle' && (journey.dockGunnery?.phase === 'firing' || dockReloadLocked(journey.dockReload) || dockLastStandLocked(journey.dockLastStand))) this.marker.visible = false;
-    if (seraphDoorLocked(journey?.seraphDoor)) this.marker.visible = false;
+    if (bookDoorLocked(journey?.bookDoor) || seraphDoorLocked(journey?.seraphDoor)) this.marker.visible = false;
     if (journey && pillLocked(journey)) this.marker.visible = false;
     if (journey && interrogationLocked(journey)) this.marker.visible = false;
     if (journey && meetingLocked(journey)) this.marker.visible = false;
@@ -3645,13 +3649,17 @@ export class FilmSetRenderer {
         for (let dx = -width / 2 + .55; dx < width / 2 - .2; dx += .7) for (let y = 2.4; y < 12; y += 2.4)
           this.box(this.mat(Math.round(dx * 10 + y * 3) % 3 ? 0x615445 : 0x303d38), x + dx, y, -17.55, .58, 2.1, .4);
       }
-      const bookDoor = new THREE.Group(); bookDoor.userData.dynamic = true; bookDoor.name = 'keymaker-book-door'; this.root.add(bookDoor);
+      const bookDoor = new THREE.Group(); bookDoor.userData.dynamic = true; bookDoor.name = 'keymaker-book-door'; bookDoor.position.set(BOOK_DOOR.hinge.x,0,BOOK_DOOR.hinge.z); this.root.add(bookDoor);
       const start = this.root.children.length;
-      this.box(this.wood, EXILES.bookshelf.x, 6.5, EXILES.bookshelf.z, 5, 13, .55);
-      for (let y = 1.3; y < 13; y += 2.4) this.box(this.brass, EXILES.bookshelf.x, y, -17.6, 5, .12, .2);
-      for (let dx = -2.1; dx <= 2.1; dx += .7) for (let y = 2.4; y < 12; y += 2.4)
-        this.box(this.mat(Math.round(dx * 10 + y) % 2 ? 0x69513c : 0x3e5049), EXILES.bookshelf.x + dx, y, -17.53, .56, 2.1, .38);
-      this.root.children.slice(start).forEach(object => bookDoor.add(object)); this.bookDoor = bookDoor;
+      this.box(this.wood, BOOK_DOOR.width/2, 6.5, 0, BOOK_DOOR.width, BOOK_DOOR.height, .55).name='library-book-leaf';
+      for (let y = 1.3; y < 13; y += 2.4) { const rail = this.box(this.brass, BOOK_DOOR.width/2, y, .4, BOOK_DOOR.width, .12, .2); if(Math.abs(y-BOOK_DOOR.rail.y)<.01)rail.name='library-book-push-rail'; }
+      for (let dx = -2.1; dx <= 2.1; dx += .7) for (let y = 2.4; y < 12; y += 2.4) {
+        if(Math.abs(BOOK_DOOR.width/2+dx-BOOK_DOOR.book.x)<.01&&Math.abs(y-2.4)<.01)continue;
+        this.box(this.mat(Math.round(dx * 10 + y) % 2 ? 0x69513c : 0x3e5049), BOOK_DOOR.width/2+dx, y, .47, .56, 2.1, .38);
+      }
+      this.root.children.slice(start).forEach(object => bookDoor.add(object));
+      const trigger = new THREE.Group(), b = BOOK_DOOR.book; trigger.name='library-book-trigger';trigger.position.set(b.x,b.y,b.z);bookDoor.add(trigger);
+      const spine = this.box(this.mat(0x69513c),0,b.height/2,0,b.width,b.height,b.depth);spine.name='library-trigger-book';trigger.add(spine);this.bookDoor=bookDoor;
       for (const x of [-15, 15]) { this.loungeChair(x, 6, x < 0 ? Math.PI / 2 : -Math.PI / 2); this.lamp(x, 7, 6, true); }
       this.box(this.black, 0, 5, 8, 9, 6, .35); this.box(this.glass, 0, 5, 8.21, 8.6, 5.6, .04);
       this.label('PRIVATE LIBRARY', 0, 11.5, -17.3, 13, '#c4b38c', '#27382f'); this.door(0, d / 2 - .5);

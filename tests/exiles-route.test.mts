@@ -70,7 +70,8 @@ test('the bookcase is solid until revealed; abandoning the Keymaker fails and a 
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), true);
   h.at(scene.id, 0); h.ticks();
   h.at(scene.id, 1); h.command('act'); h.ticks(7);
-  h.at(scene.id, 2); h.command('act'); h.ticks(7);
+  h.at(scene.id, 2); h.command('act');
+  for(let frame=0;frame<250&&h.journey.step===2;frame++){h.frames(1);if(frame%5===0)h.ticks();}
   assert.equal(playerBlocked(door, true, 1.1, h.sandbox.state.structures), false);
   h.at(scene.id, 3); h.command('act'); h.ticks(7);
   assert.equal(h.journey.keymaker?.phase, 'following');

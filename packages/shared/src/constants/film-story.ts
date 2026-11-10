@@ -1,4 +1,5 @@
 import { seraphDoorZ } from './seraph-door.js';
+import { BOOK_DOOR } from './book-door.js';
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
 import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
@@ -221,6 +222,7 @@ export interface FilmJourney {
   engineering?: EngineeringEncounter;
   zionMessage?: ZionMessageEncounter;
   seraphDoor?: import('./seraph-door.js').SeraphDoorEncounter;
+  bookDoor?: import('./book-door.js').BookDoorEncounter;
   seraph?: { dodges: number; counters: number; attempts: number; counterUntil?: number };
   burly?: import('./burly.js').BurlyEncounter;
   persephone?: import('./exiles.js').PersephoneEncounter;
@@ -381,7 +383,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m2_burly', 2, 'oracle_courtyard', 'neo', '越来越多的 Smith', 'copies', 'swarm', 'Smith 已脱离原来的系统职责。他把复制理解为新的存在方式。', [{ ...fight('突破复制体的围攻', 5), ...SERAPH_ORACLE.yard.bench }, use('从庭院脱离包围', '对手仍在增殖。Neo 飞离庭院，这场交锋无法终结感染。', 0, -35)], ['smith']),
   scene('m2_merovingian', 2, 'le_vrai', 'neo', 'Le Vrai 的因果论', 'keymaker', 'restaurant', '白天的 Le Vrai 俯瞰城市。Merovingian 借一份被改写的甜点宣称人都受原因支配，并拒绝交出钥匙匠。', [walk('穿过餐厅，靠近高台主桌', EXILES.table.x, EXILES.table.z + 8), use('坐下观察被改写的甜点', '甜点的代码改变了客人的感受；Persephone 看见丈夫怎样把他人当成实验。', EXILES.table.x, EXILES.table.z), think('知道原因，就能拥有他人的选择吗？', '对原因的认识不能抹掉被影响者的感受与决定。', EXILES.table.x, EXILES.table.z), use('要求交出钥匙匠', 'Merovingian 拒绝交出钥匙匠，并让守卫送客。', EXILES.table.x, EXILES.table.z), walk('离开主桌，走向升降梯', 0, 17)], ['morpheus', 'trinity', 'merovingian', 'persephone', 'twin1', 'twin2']),
   scene('m2_persephone', 2, 'le_vrai', 'neo', 'Persephone 的条件', 'keymaker', 'oracle', '在餐厅出口，Persephone 主动把三人带进侧面的盥洗室。她愿意带路，但提出一个关于真情的条件。', [walk('跟随 Persephone 进入盥洗室', EXILES.washroom.x, EXILES.washroom.z), use('听清她真正想要的条件', '她想重新确认曾经感受过的爱，而不是再听一套因果论。', EXILES.washroom.x, EXILES.washroom.z), use('回应 Persephone 的条件', '回应会改变她与 Trinity 对你的态度。', EXILES.washroom.x, EXILES.washroom.z), walk('穿过后厨，找到私人办公室', EXILES.kitchen.x, EXILES.kitchen.z), use('请 Persephone 打开伪装成壁橱的门', '钥匙打开的不是壁橱，而是通往城堡的后门。', EXILES.office.x, EXILES.office.z)], ['persephone', 'trinity', 'morpheus']),
-  scene('m2_library', 2, 'keymaker_workshop', 'neo', '书墙后的囚徒', 'keymaker', 'chateau', '众人经过城堡前厅来到书房。两个旧版本流亡程序守着书墙后的囚室；Persephone 的背叛让去见钥匙匠的路打开。', [walk('穿过城堡书房，观察旧程序', EXILES.library.x, EXILES.library.z), use('让 Persephone 应对看守', '一个看守倒下，另一个逃去通风报信。Merovingian 很快会赶来。', EXILES.guard.x, EXILES.guard.z), use('检查书墙后的暗门', '隐藏的书架滑开，露出后面的钥匙工坊。', EXILES.bookshelf.x, EXILES.bookshelf.z), use('亲自确认钥匙匠身份', '钥匙匠承认自己一直在等人打开这扇门。', EXILES.keymaker.x, EXILES.keymaker.z), walk('带钥匙匠到书房侧门', EXILES.escape.x, EXILES.escape.z)], ['keymaker', 'persephone', 'morpheus', 'trinity', 'cain', 'abel_mero']),
+  scene('m2_library', 2, 'keymaker_workshop', 'neo', '书墙后的囚徒', 'keymaker', 'chateau', '众人经过城堡前厅来到书房。两个旧版本流亡程序守着书墙后的囚室；Persephone 的背叛让去见钥匙匠的路打开。', [walk('穿过城堡书房，观察旧程序', EXILES.library.x, EXILES.library.z), use('让 Persephone 应对看守', '一个看守倒下，另一个逃去通风报信。Merovingian 很快会赶来。', EXILES.guard.x, EXILES.guard.z), use('检查书墙后的暗门', 'Persephone 松开书脊暗扣，沿铰链推开书墙，露出后面的钥匙工坊。', EXILES.bookshelf.x, EXILES.bookshelf.z), use('亲自确认钥匙匠身份', '钥匙匠承认自己一直在等人打开这扇门。', EXILES.keymaker.x, EXILES.keymaker.z), walk('带钥匙匠到书房侧门', EXILES.escape.x, EXILES.escape.z)], ['keymaker', 'persephone', 'morpheus', 'trinity', 'cain', 'abel_mero']),
   scene('m2_chateau', 2, 'chateau_hall', 'neo', '双楼梯与古兵器', 'keymaker', 'chateau', 'Morpheus 与 Trinity 护送钥匙匠离开。Neo 留在城堡大厅，先挡住枪火，再利用墙上的古兵器对付 Merovingian 的守卫。', [fight('守住城堡大厅', 4), use('推开通向同伴的门', '门后不是车库，而是遥远的雪山。Neo 必须从远处赶回高速公路。', 0, -38.5)]),
   scene('m2_mountain', 2, 'mountain_range', 'neo', '城堡后门 · 雪山误传', 'keymaker', 'chateau', '城堡后门通向白日里的雪山。同伴已从另一扇门进入车库；Neo 必须弄清位置，亲自飞回城市。', [
     use('试着推回城堡后门', '门已锁死，车库的轮胎声隔在另一侧。', MOUNTAIN.door.x, MOUNTAIN.door.z, 1),
@@ -623,6 +625,7 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm2_library' && step === scene.steps[2]) return filmPosition(scene.set,BOOK_DOOR.anchor.x,BOOK_DOOR.anchor.z);
   if (!journey?.visiting && journey?.scene === scene.id && journey.step >= 2 && (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1]) return filmPosition(scene.set,0,seraphDoorZ(scene.id)+.2);
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
     const flight = journey?.logos ?? journey?.logosEntry ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun');
@@ -738,7 +741,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     const root = logosCrewRoot(flight, 'trinity'), center = FILM_SETS[logosFlightSet(flight)].center;
     return !matrix && distance(position, { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }) <= 1.6;
   }
-  const radius = (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1] ? 1.2 : scene.id === 'm2_oracle_message' && (step === scene.steps[0] || step === scene.steps[1]) ? ZION_MESSAGE.radius : scene.id === 'm2_hamann' && (step === scene.steps[1] || step === scene.steps[2]) ? ZION_ENGINEERING.radius : scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
+  const radius = scene.id === 'm2_library' && step === scene.steps[2] ? BOOK_DOOR.radius : (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1] ? 1.2 : scene.id === 'm2_oracle_message' && (step === scene.steps[0] || step === scene.steps[1]) ? ZION_MESSAGE.radius : scene.id === 'm2_hamann' && (step === scene.steps[1] || step === scene.steps[2]) ? ZION_ENGINEERING.radius : scene.id === 'm3_hel_garage' ? journey?.helGarage?.phase === 'cleared' ? 1.05 : 1.6 : primaryActive(journey) ? .8 : scene.id === 'm2_plan' || scene.id === 'm3_oracle_request' || scene.id === 'm3_oracle_last' || scene.id === 'm3_oracle_absorbed' ? 1.6 : scene.id === 'm1_mirror' && step === scene.steps[0] ? MIRROR_TOUCH.radius
     : scene.id === 'm3_logos_plan' || scene.id === 'm3_zion_prepare' || scene.id === 'm3_maggie_discovery' ? step.kind === 'reach' ? 1.1 : 1.6
     : scene.id === 'm3_bane_questions' ? step === scene.steps[5] ? 1.1 : step === scene.steps[0] ? 1.05 : 1.4
     : scene.id === 'm2_departure' && step.kind === 'reach' ? 1.15

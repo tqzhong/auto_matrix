@@ -1,4 +1,5 @@
 import { poseSeraphDoor } from './SeraphDoorPerformance.js';
+import { poseBookDoor } from './BookDoorPerformance.js';
 import { poseOracleRequest } from './OracleRequestPerformance.js';
 import { poseBaneInquiry } from './BaneInquiryPerformance.js';
 import { poseHammerBriefing } from './HammerBriefingPerformance.js';
@@ -778,7 +779,7 @@ export class CharacterModels {
       if (state.id !== 'sati' && !digger && !sealOperator) this.mesh(elbow, this.cylinder, state.id === 'oracle' ? cloth : seams,
         [0, state.id === 'oracle' ? -.588 : -.56, 0], state.id === 'oracle' ? [.109, .035, .106] : [.13, .045, .14]);
       const handMaterial = look.leather ? black : skin;
-      const parentHand = state.id === 'spoon_boy' || state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'architect', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe'].includes(state.id);
+      const parentHand = state.id === 'spoon_boy' || state.id === 'oracle' || state.id.startsWith('hel_garage_guard_') || council || ['rama_kandra', 'kamala', 'trainman', 'seraph', 'architect', 'bane', 'maggie', 'colt', 'link', 'roland', 'morpheus', 'niobe', 'persephone'].includes(state.id);
       const wristOffset = state.id === 'sati' ? .68 : parentHand ? .65 : 0;
       const hand = wristOffset ? this.joint(elbow, 0, -wristOffset) : elbow;
       if (parentHand) { hand.name = `${state.id === 'oracle' ? 'oracle-hand' : 'mobil-palm'}-${side < 0 ? 'R' : 'L'}`; if (state.id !== 'oracle' && state.id !== 'spoon_boy') mobilWrists.push(hand); }
@@ -801,6 +802,7 @@ export class CharacterModels {
       if (state.id === 'sati') hand.name = `sati-hand-${side}`;
       const palm = this.mesh(hand, this.sphere, handMaterial, [0, -0.75 + wristOffset, 0.005], [0.095, 0.145, 0.055]);
       if (state.id === 'oracle') palm.name = `oracle-palm-${side}`;
+      if (state.id === 'persephone') palm.name = `persephone-palm-${side < 0 ? 'R' : 'L'}`;
       const handFingers: THREE.Group[] = [];
       for (let finger = 0; finger < 4; finger++) {
         const joint = this.joint(hand, -0.063 + finger * 0.041, -.82 + wristOffset, .01);
@@ -1455,6 +1457,7 @@ export class CharacterModels {
     poseLogosPilot(rig, input.logosPilot);
     poseArchitect(rig, input.architect, delta);
     poseSeraphDoor(rig, input.seraphDoor);
+    poseBookDoor(rig, input.bookDoor);
     this.diggerBodies.update(rig, rig.logosBaneBody ? Boolean(input.logosBane) : !rig.medicalCrew || Boolean(input.maggieDiscovery) || input.dockEvacuation?.role === 'colt', Boolean(input.parkOutfit || input.epilogue?.kind === 'dawn'), Boolean(input.hammerBriefing), Boolean(input.dockEvacuation));
     if (rig.spoonHands) connectGardenWrists(rig, rig.spoonHands);
     this.oracleFirstBodies.present(rig);

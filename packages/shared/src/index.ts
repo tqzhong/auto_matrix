@@ -90,6 +90,7 @@ export * from './constants/reloaded-opening.js';
 export * from './constants/zion-homecoming.js';
 export * from './constants/seraph-oracle.js';
 export * from './constants/seraph-door.js';
+export * from './constants/book-door.js';
 export * from './constants/burly.js';
 export * from './constants/exiles.js';
 export * from './constants/chateau.js';

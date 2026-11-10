@@ -108,8 +108,8 @@ test('the Oracle routes adopt prepared sets and keep their interactive props liv
   enter('m2_library', 0);
   assert.ok(scene.getObjectByName(bookshelf.name) === bookshelf);
   assert.equal(pointSlots(scene), librarySlots);
-  assert.equal(bookshelf.position.x, 0);
-  enter('m2_library', 3); assert.equal(bookshelf.position.x, -5.8);
+  assert.equal(bookshelf.position.x, -10.5); assert.equal(bookshelf.rotation.y, 0);
+  enter('m2_library', 3); assert.equal(bookshelf.rotation.y, Math.PI/2);
 
   await t.test('the château keeps one light per chandelier', () => {
     enter('m2_chateau', 0);

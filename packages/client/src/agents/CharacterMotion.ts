@@ -178,6 +178,7 @@ export interface MotionInput {
   engineering?: import('@auto_matrix/shared').EngineeringEncounter;
   zionMessage?: import('@auto_matrix/shared').ZionMessageGesture;
   seraphDoor?: import('@auto_matrix/shared').SeraphDoorGesture;
+  bookDoor?: import('@auto_matrix/shared').BookDoorGesture;
   dojoOutfit?: 'neo' | 'morpheus';
   dojoSparring?: boolean;
   glasses?: boolean;

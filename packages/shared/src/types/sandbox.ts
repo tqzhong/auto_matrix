@@ -29,7 +29,7 @@ export interface WorldStructure {
   position: Vector3;
   matrix: boolean;
   health: number;
-  film?: { scene: string; width: number; depth: number; height: number };
+  film?: { scene: string; width: number; depth: number; height: number; yaw?: number };
 }
 export interface SandboxThreat {
   character?: string;

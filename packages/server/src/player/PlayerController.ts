@@ -1,3 +1,4 @@
+import { bookDoorLocked } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
@@ -96,6 +97,7 @@ export class PlayerController {
     const agent = this.world.agents.get(id);
     if (!agent) return { error: '没有找到这个角色。' };
     const message = this.sandbox?.life.film.state;
+    if (id === 'persephone' && message?.scene === 'm2_library' && !message.visiting && bookDoorLocked(message.bookDoor)) return { error: 'Persephone 正在操作书墙；门道让开后可以接入。' };
     if (id === 'seraph' && message && !message.visiting && ['m2_seraph','m2_backdoors'].includes(message.scene) && message.seraphDoor && !['following','ready','done'].includes(message.seraphDoor.phase)) return { error: 'Seraph 正在开锁与推门；当前动作结束后可以接入。' };
     if (message?.scene === 'm2_oracle_message' && !message.visiting && message.actor !== id && message.zionMessage && !['waiting', 'offer', 'done'].includes(message.zionMessage.phase) && ['trinity', 'ballard', 'malachi'].includes(id)) return { error: '这个角色正在参与开门与磁盘交接；当前动作结束后可以接入。' };
     const hotel = this.sandbox?.life.film.state?.hotel;
@@ -210,7 +212,7 @@ export class PlayerController {
       || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
       || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
       || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
-      || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
+      || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.bookDoor.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
     if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
       && !(interlude && interlude.actor === agent.id && (pillLocked(interlude) && agent.currentAction?.parameters.pills
       || lafayetteKnocking(interlude) && agent.currentAction?.parameters.knock !== undefined
@@ -317,7 +319,7 @@ export class PlayerController {
         || this.sandbox?.life.film.crossingFrame(agent, 0, tick) || this.sandbox?.life.film.climbFrame(agent, 0, 0, tick)
         || this.sandbox?.life.film.interrogationFrame(agent, 0, tick) || this.sandbox?.life.film.restoreBridgeCapture(agent, tick)
         || this.sandbox?.life.film.restoreMeetingFrame(agent, tick) || this.sandbox?.life.film.truthFrame(agent, 0, tick)
-        || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
+        || this.sandbox?.life.film.restoreBurlyPose(agent, tick) || this.sandbox?.life.film.restoreChateauPose(agent, tick) || this.sandbox?.life.film.engineering.frame(agent, 0, tick) || this.sandbox?.life.film.zionMessage.frame(agent, 0, tick) || this.sandbox?.life.film.bookDoor.frame(agent, 0, tick) || this.sandbox?.life.film.seraphDoor.frame(agent, 0, tick) || this.sandbox?.life.film.persephoneFrame(agent, 0, tick);
       if (!restoredPose && !savedMetacortexLiftIdle(this.sandbox?.life.state, agent)
         && !(journey && journey.actor === agent.id && (pillLocked(journey) && agent.currentAction?.parameters.pills
         || lafayetteKnocking(journey) && agent.currentAction?.parameters.knock !== undefined
@@ -488,6 +490,9 @@ export class PlayerController {
       }
       if (this.sandbox?.life.film.sourceBriefing.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
+      }
+      if (this.sandbox?.life.film.bookDoor.frame(agent,running && agent.status === 'alive' ? dt : 0,tick)) {
+        session.vy = 0; session.planar = { x:0,z:0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.seraphDoor.frame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
