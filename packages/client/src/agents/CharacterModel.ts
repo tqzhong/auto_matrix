@@ -70,6 +70,7 @@ import { poseOfficeLadder } from './OfficeLadderPerformance.js';
 import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
 import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerformance.js';
+import { poseOpeningPhone } from './OpeningPhonePerformance.js';
 import { poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
 import { poseTheOneBody } from './TheOnePerformance.js';
 import { HardlineHandset } from './HardlineHandset.js';
@@ -1299,8 +1300,9 @@ export class CharacterModels {
       if (input.crosscut?.body) this.heroes.crosscutInterfaces(rig.hero);
       poseCrosscutContact(rig, input.crosscut);
       poseTheOneBody(rig, input.theOne);
-      if (input.tvExit && input.tvExit.phase !== 'emerging' && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
+      if ((input.openingAnswer || input.tvExit && input.tvExit.phase !== 'emerging') && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
       poseHardline(rig, input.tvExit);
+      poseOpeningPhone(rig, input.openingAnswer);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;

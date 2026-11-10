@@ -10,6 +10,8 @@ import { crosscutActive, crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
+import { HardlineHandset } from '../agents/HardlineHandset.js';
+import { OPENING_PHONE } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
 import { steakAge, crewMealAge } from '@auto_matrix/shared';
@@ -356,6 +358,8 @@ export class FilmSetRenderer {
   private mobil?: MobilStationRenderer;
   private openingTruck?: THREE.Group;
   private openingBooth?: THREE.Group;
+  private openingReceiver?: HardlineHandset;
+  private openingCord?: THREE.Line;
   private openingGlass?: THREE.Group;
   private openingBoothParts: { root: THREE.Group; kind: 'post' | 'phone' | 'roof'; x: number; z: number }[] = [];
   private openingBoothPanes: THREE.Mesh[] = [];
@@ -2114,6 +2118,21 @@ export class FilmSetRenderer {
           origin.z - (crush + 2 + i % 7 * .45) * scatter);
         mesh.rotation.set(Math.sin(Math.PI * scatter) * (i % 3 - 1) * .6, i * 2.399 * scatter, side * Math.PI / 2 * scatter);
       });
+      if (this.openingReceiver && this.openingCord) {
+        const held = Boolean(phone?.answer && phone.answer.elapsed >= OPENING_PHONE.graspSeconds);
+        this.openingReceiver.root.visible = !held;
+        const subject = held && (phone?.phase === 'answering' || phone?.phase === 'failed') ? this.phoneBodies?.('trinity')?.getObjectByName('hardline-handset') : undefined;
+        const parent = this.openingCord.parent!; parent.updateWorldMatrix(true, true);
+        const from = new THREE.Vector3(0, 3.1, .4), to = subject
+          ? parent.worldToLocal(subject.getWorldPosition(new THREE.Vector3())) : new THREE.Vector3(-.75, held ? 2.8 : 3.7, .55);
+        const positions = this.openingCord.geometry.attributes.position, point = new THREE.Vector3();
+        for (let i = 0; i < positions.count; i++) {
+          const t = i / (positions.count - 1); point.copy(from).lerp(to, t); point.y -= Math.sin(t * Math.PI) * .35;
+          point.x += Math.sin(t * Math.PI * 36) * .035; point.z += Math.cos(t * Math.PI * 36) * .035;
+          positions.setXYZ(i, point.x, point.y, point.z);
+        }
+        positions.needsUpdate = true; this.openingCord.geometry.computeBoundingSphere();
+      }
     }
     this.club?.update(elapsed);
     this.freeway?.update(journey, elapsed, playerPosition, player?.id === 'morpheus' && player.id === journey?.actor
@@ -2896,11 +2915,16 @@ export class FilmSetRenderer {
     const lock = SERAPH_DOOR.lock, hole = this.box(this.black,lock.x,lock.y,lock.z+.01,.045,.12,.015); hole.name = 'seraph-door-keyhole'; group.add(hole);
     this.portalDoor = { scene, panel: group };
   }
-  private phone(x: number, z: number, booth = false): void {
+  private phone(x: number, z: number, booth = false, handset?: HardlineHandset): void {
     this.box(this.metal, x, 3.8, z, 1.45, 2.4, .8, .12); this.box(this.black, x, 4.3, z + .43, .75, .7, .08);
     for (let i = 0; i < 12; i++) this.box(this.white, x - .28 + i % 3 * .23, 3.8 - Math.floor(i / 3) * .18, z + .46, .13, .1, .05);
-    this.pipe([[x - .67, 4.5, z + .55], [x - .9, 4.1, z + .7], [x - .65, 3.5, z + .55]], .12, this.black);
-    this.pipe([[x - .7, 3.7, z + .4], [x - .4, 2.7, z + .5], [x, 3.1, z + .4]], .04, this.black);
+    if (handset) {
+      handset.root.position.set(x + OPENING_PHONE.receiver.x, OPENING_PHONE.receiver.y, z + OPENING_PHONE.receiver.z - OPENING_PHONE.boothZ);
+      this.root.add(handset.root);
+    } else {
+      this.pipe([[x - .67, 4.5, z + .55], [x - .9, 4.1, z + .7], [x - .65, 3.5, z + .55]], .12, this.black);
+      this.pipe([[x - .7, 3.7, z + .4], [x - .4, 2.7, z + .5], [x, 3.1, z + .4]], .04, this.black);
+    }
     if (booth) {
       for (const dx of [-1.8, 1.8]) for (const dz of [-1.4, 1.4]) this.box(this.metal, x + dx, 3.8, z + dz, .15, 7.6, .15);
       for (const dx of [-1.8, 1.8]) this.box(this.glass, x + dx, 3.8, z, .06, 7, 2.8);
@@ -4246,14 +4270,20 @@ export class FilmSetRenderer {
           for (const [x, z, color] of [[0, -27, 0xb8d9c8], [14, 2, 0xd3ded0]] as const) {
             const streetlight = new THREE.PointLight(color, 650, 46, 2); streetlight.position.set(x, 11, z); this.root.add(streetlight);
           }
-          const boothZ = -d * .32;
+          const boothZ = OPENING_PHONE.boothZ;
           this.openingBooth = new THREE.Group(); this.openingBooth.name = 'opening-phone-booth'; this.openingBooth.userData.dynamic = true;
           this.openingBooth.position.z = boothZ; this.root.add(this.openingBooth);
-          const phoneStart = this.root.children.length; this.phone(0, 0);
+          const phoneStart = this.root.children.length;
+          this.openingReceiver = new HardlineHandset(); this.openingReceiver.root.name = 'opening-booth-receiver';
+          this.phone(0, 0, false, this.openingReceiver);
           this.box(this.metal, 0, 3.5, -.65, 1.6, 6.8, .12);
           const phonePart = new THREE.Group(); phonePart.name = 'opening-booth-phone';
           this.root.children.slice(phoneStart).forEach(child => phonePart.add(child)); this.openingBooth.add(phonePart);
           this.openingBoothParts.push({ root: phonePart, kind: 'phone', x: 0, z: 0 });
+          const wireGeometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(48 * 3), 3));
+          this.geometries.add(wireGeometry);
+          const wireMaterial = new THREE.LineBasicMaterial({ color: 0x121611 }); this.materials.add(wireMaterial);
+          this.openingCord = new THREE.Line(wireGeometry, wireMaterial); this.openingCord.name = 'opening-phone-cord'; phonePart.add(this.openingCord);
           for (const x of [-1.8, 1.8]) for (const z of [-1.4, 1.4]) {
             const post = new THREE.Group(); post.name = 'opening-booth-post'; post.position.set(x, 0, z);
             post.add(this.box(this.metal, 0, 3.8, 0, .15, 7.6, .15)); this.openingBooth.add(post);
@@ -4644,6 +4674,7 @@ export class FilmSetRenderer {
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobil?.dispose(); this.mobil = undefined;
     this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;
+    this.openingReceiver?.dispose(); this.openingReceiver = undefined; this.openingCord = undefined;
     this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;

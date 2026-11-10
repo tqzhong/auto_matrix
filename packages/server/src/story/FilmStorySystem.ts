@@ -133,7 +133,7 @@ import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
-import { OPENING_ESCAPE, OPENING_HOTEL } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, openingAnswerPose } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
 import { nebEscapeLocked } from '@auto_matrix/shared';
@@ -669,14 +669,42 @@ export class FilmStorySystem {
       state.lastText = 'Brown 追上了 Trinity。J 打开手记，从屋顶入口重试。';
     }
   }
-  openingPhoneFrame(actor: AgentState, dt: number, tick: number): void {
+  openingPhoneFrame(actor: AgentState, dt: number, tick: number): boolean {
     const state = this.state, phone = state?.openingPhone;
-    if (dt <= 0 || state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone
-      || (phone.impactElapsed ?? 0) >= OPENING_ESCAPE.truckImpactSeconds
-      || !(phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined)) return;
-    const end = Math.max(phone.lastTick, tick) + Math.min(.1, dt) * 2;
-    const elapsed = (end - phone.lastTick) * .5; phone.lastTick = end;
-    this.openingPhoneImpact(elapsed);
+    if (state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone) return false;
+    if (dt > 0 && (phone.phase === 'running' || phone.phase === 'answering'
+      || (phone.impactElapsed ?? 0) < OPENING_ESCAPE.truckImpactSeconds && (phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined))) {
+      const end = Math.max(phone.lastTick, tick) + Math.min(.1, dt) * 2;
+      const elapsed = (end - phone.lastTick) * .5; phone.lastTick = end;
+      this.openingPhoneStep(actor, elapsed, tick);
+    }
+    return this.openingPhonePose(actor);
+  }
+  private openingPhonePose(actor: AgentState): boolean {
+    const state = this.state, phone = state?.openingPhone;
+    if (state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone?.answer) return false;
+    const pose = openingAnswerPose(phone.answer);
+    actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.position.y += pose.y; actor.rotation = pose.yaw;
+    actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null;
+    actor.currentAction = { type: 'idle', parameters: { resolved: true, openingAnswer: { ...phone.answer, origin: { ...phone.answer.origin } } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    return true;
+  }
+  private openingPhoneStep(actor: AgentState, dt: number, tick: number): void {
+    const state = this.state!, phone = state.openingPhone!;
+    if (phone.phase !== 'running' && phone.phase !== 'answering') { this.openingPhoneImpact(dt); return; }
+    const answer = phone.phase === 'answering' ? phone.answer : undefined;
+    const elapsed = Math.min(dt, phone.remaining, answer ? Math.max(0, OPENING_PHONE.answerSeconds - answer.elapsed) : dt);
+    phone.remaining = Math.max(0, phone.remaining - elapsed);
+    if (answer) answer.elapsed = Math.min(OPENING_PHONE.answerSeconds, answer.elapsed + elapsed);
+    if (phone.remaining < 1e-9) {
+      phone.remaining = 0; phone.phase = 'failed'; phone.impactElapsed = 0; phone.impactFrom = 0; delete state.started;
+      state.lastText = '卡车已冲向电话亭，出口来不及接通。J 打开手记，从街口重试。';
+    } else if (answer && answer.elapsed >= OPENING_PHONE.answerSeconds - 1e-9) {
+      answer.elapsed = OPENING_PHONE.answerSeconds; phone.phase = 'connected'; phone.impactElapsed = 0; phone.impactFrom = phone.remaining;
+      this.advance('Trinity 将听筒接到耳边，信号随即断开。空车撞进玻璃电话亭。', actor, tick);
+    }
+    if (dt - elapsed > 1e-9 && (phone.phase === 'connected' || phone.phase === 'failed')) this.openingPhoneImpact(dt - elapsed);
+    this.openingPhonePose(actor);
   }
   private openingPhoneImpact(dt: number): void {
     const state = this.state, phone = state?.openingPhone;
@@ -687,19 +715,13 @@ export class FilmStorySystem {
       else state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
     }
   }
-  private openingPhoneTick(tick: number): void {
+  private openingPhoneTick(actor: AgentState, tick: number): void {
     const state = this.state!;
     state.openingPhone ??= { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
     const phone = state.openingPhone;
     const dt = Math.min(.5, Math.max(0, tick - phone.lastTick) * .5);
     phone.lastTick = Math.max(phone.lastTick, tick);
-    if (phone.phase === 'running') {
-      phone.remaining = Math.max(0, phone.remaining - dt);
-      if (phone.remaining === 0) {
-        phone.phase = 'failed'; phone.impactElapsed = 0; phone.impactFrom = 0; delete state.started;
-        state.lastText = '卡车已冲向电话亭，出口来不及接通。J 打开手记，从街口重试。';
-      }
-    } else this.openingPhoneImpact(dt);
+    this.openingPhoneStep(actor, dt, tick);
   }
   private ensureMobil(tick: number): void {
     const state = this.state;
@@ -1699,7 +1721,7 @@ export class FilmStorySystem {
         film: { scene: 'm2_architect', width: ARCHITECT_ROOM.doorWidth, depth: .23, height: ARCHITECT_ROOM.doorHeight } });
     }
   }
-  performing(agent: AgentState): boolean { return this.controls(agent) && (this.bookDoor.active(agent) && bookDoorLocked(this.state?.bookDoor) || this.seraphDoor.active(agent) && seraphDoorLocked(this.state?.seraphDoor) || this.zionMessage.active(agent) && zionMessageLocked(this.state?.zionMessage) || this.engineering.active(agent) && Boolean(this.state?.engineering?.operation) || this.state!.scene === 'm1_roofs' && this.state!.openingRoof?.phase !== 'failed' && Boolean(agent.currentAction?.parameters.roofExit || this.state!.step === 2 && this.state!.started !== undefined) || this.maggieDiscovery.active(agent) && maggieDiscoveryLocked(this.state?.maggieDiscovery) || this.zionDeployment.active(agent) && zionDeploymentLocked(this.state?.zionDeployment) || this.hammerBriefing.active(agent) && hammerBriefingLocked(this.state?.hammerBriefing) || this.baneInquiry.active(agent) && baneInquiryLocked(this.state?.baneInquiry) || this.helGarage.active(agent) && helGarageLocked(this.state?.helGarage) || this.trainmanChase.active(agent) && trainmanChaseLocked(this.state?.helChase?.performance) || this.oracleLast.active(agent) && oracleLastLocked(this.state?.oracleLast) || oracleAbsorptionActive(this.state) && oracleAbsorptionLocked(this.state?.oracleAbsorption) || this.oracleRequest.active(agent) && oracleRequestLocked(this.state?.oracleRequest) || this.state?.scene === 'm3_family' && !this.state.visiting && this.state.mobil?.family?.phase === 'hearing' || this.state?.scene === 'm2_stop_sentinels' && !this.state.visiting && signalLocked(this.state.tunnel) || this.nebEscape.active(agent) && nebEscapeLocked(this.state?.shipLoss) || this.state?.scene === 'm2_architect' && !this.state.visiting && architectDoorLocked(this.state.architect) || this.sourcePortal.active(agent) && sourcePortalLocked(this.state?.keyDoor?.performance) || this.trinityTerminal.active(agent) && trinityTerminalLocked(this.state?.trinityTerminal) || this.trinityRelay.active(agent) && ['hearing', 'connecting', 'connected'].includes(this.state?.trinityRelay?.phase ?? '') || primaryActive(this.state) && primaryLocked(this.state?.primaryDemolition) || this.truckRoad.locked(agent) || this.freewayHandoff.active(agent) || this.freewayPickup.active(agent) || templeDefenseActive(this.state) && templeDefenseLocked(this.state?.templeSeal, this.state?.templeBreach) || dockEvacuationActive(this.state) && dockEvacuationLocked(this.state?.dockEvacuation) || shaftSealActive(this.state) && shaftSealLocked(this.state?.shaftSeal) || dockBriefingActive(this.state) && dockBriefingLocked(this.state?.dockBriefing) || this.state!.scene === 'm3_dock_reunion' && dockReunionLocked(this.state!.dockReunion) || dockEmpLocked(this.state) || upperDiggerActive(this.state) && upperDiggerLocked(this.state?.upperDigger) || diggersActive(this.state) && diggersLocked(this.state?.diggers) || dockGateActive(this.state) || dockLastStandActive(this.state) && dockLastStandLocked(this.state?.dockLastStand) || dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '') || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_hel_bargain' && !this.state!.visiting && (['disarming', 'catching'].includes(this.state!.helBargain?.phase ?? '') || this.state!.helBargain?.phase === 'airborne' && Boolean(this.state!.helBargain.breakout) && this.state!.helBargain.elapsed < HEL_BREAKOUT.recover) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && (this.state!.mobil?.phase === 'refusing' || this.state!.mobil?.luggage?.phase === 'lifting') || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
+  performing(agent: AgentState): boolean { return this.controls(agent) && (this.bookDoor.active(agent) && bookDoorLocked(this.state?.bookDoor) || this.seraphDoor.active(agent) && seraphDoorLocked(this.state?.seraphDoor) || this.zionMessage.active(agent) && zionMessageLocked(this.state?.zionMessage) || this.engineering.active(agent) && Boolean(this.state?.engineering?.operation) || this.state!.scene === 'm1_roofs' && this.state!.openingRoof?.phase !== 'failed' && Boolean(agent.currentAction?.parameters.roofExit || this.state!.step === 2 && this.state!.started !== undefined) || this.maggieDiscovery.active(agent) && maggieDiscoveryLocked(this.state?.maggieDiscovery) || this.zionDeployment.active(agent) && zionDeploymentLocked(this.state?.zionDeployment) || this.hammerBriefing.active(agent) && hammerBriefingLocked(this.state?.hammerBriefing) || this.baneInquiry.active(agent) && baneInquiryLocked(this.state?.baneInquiry) || this.helGarage.active(agent) && helGarageLocked(this.state?.helGarage) || this.trainmanChase.active(agent) && trainmanChaseLocked(this.state?.helChase?.performance) || this.oracleLast.active(agent) && oracleLastLocked(this.state?.oracleLast) || oracleAbsorptionActive(this.state) && oracleAbsorptionLocked(this.state?.oracleAbsorption) || this.oracleRequest.active(agent) && oracleRequestLocked(this.state?.oracleRequest) || this.state?.scene === 'm3_family' && !this.state.visiting && this.state.mobil?.family?.phase === 'hearing' || this.state?.scene === 'm2_stop_sentinels' && !this.state.visiting && signalLocked(this.state.tunnel) || this.nebEscape.active(agent) && nebEscapeLocked(this.state?.shipLoss) || this.state?.scene === 'm2_architect' && !this.state.visiting && architectDoorLocked(this.state.architect) || this.sourcePortal.active(agent) && sourcePortalLocked(this.state?.keyDoor?.performance) || this.trinityTerminal.active(agent) && trinityTerminalLocked(this.state?.trinityTerminal) || this.trinityRelay.active(agent) && ['hearing', 'connecting', 'connected'].includes(this.state?.trinityRelay?.phase ?? '') || primaryActive(this.state) && primaryLocked(this.state?.primaryDemolition) || this.truckRoad.locked(agent) || this.freewayHandoff.active(agent) || this.freewayPickup.active(agent) || templeDefenseActive(this.state) && templeDefenseLocked(this.state?.templeSeal, this.state?.templeBreach) || dockEvacuationActive(this.state) && dockEvacuationLocked(this.state?.dockEvacuation) || shaftSealActive(this.state) && shaftSealLocked(this.state?.shaftSeal) || dockBriefingActive(this.state) && dockBriefingLocked(this.state?.dockBriefing) || this.state!.scene === 'm3_dock_reunion' && dockReunionLocked(this.state!.dockReunion) || dockEmpLocked(this.state) || upperDiggerActive(this.state) && upperDiggerLocked(this.state?.upperDigger) || diggersActive(this.state) && diggersLocked(this.state?.diggers) || dockGateActive(this.state) || dockLastStandActive(this.state) && dockLastStandLocked(this.state?.dockLastStand) || dockReloadActive(this.state) && (this.state!.actor === 'mifune' || dockReloadLocked(this.state!.dockReload)) || basementLocked(this.state) || tvExitLocked(this.state) || sixthLocked(this.state) || wetwallLocked(this.state) || this.state!.scene === 'm1_bridge' && this.state!.bridgeTail?.phase === 'failed' || this.state!.scene === 'm1_room303' && ['breach', 'dive', 'ladder_ready'].includes(this.state!.openingHotel?.phase ?? '') || this.state!.scene === 'm1_phone_escape' && (Boolean(this.state!.openingPhone?.answer) || ['connected', 'done'].includes(this.state!.openingPhone?.phase ?? '')) || helElevatorLocked(this.state!) || helDanceDoorLocked(this.state!) || this.state!.scene === 'm3_hel_bargain' && !this.state!.visiting && (['disarming', 'catching'].includes(this.state!.helBargain?.phase ?? '') || this.state!.helBargain?.phase === 'airborne' && Boolean(this.state!.helBargain.breakout) && this.state!.helBargain.elapsed < HEL_BREAKOUT.recover) || farewellLocked(this.state!.farewell) || deusPactLocked(this.state!.deus) || smithFinaleLocked(this.state!.smithFinale) || trilogyEpilogueLocked(this.state!.epilogue) || this.state!.scene === 'm3_trainman' && (this.state!.mobil?.phase === 'refusing' || this.state!.mobil?.luggage?.phase === 'lifting') || this.state!.trucks?.phase === 'rescue' || this.state!.persephone?.phase === 'enacting' || burlyLocked(this.state!) || clubLocked(this.state!) || apartmentLocked(this.state!) || wakeCallLocked(this.state!) || morningLocked(this.state!) || workdayLocked(this.state!) || awakeningLocked(this.state!) || trainingLocked(this.state!) || sentinelLocked(this.state!) || interludeLocked(this.state!) || oracleActing(this.state!) || betrayalLocked(this.state!) || rescueLocked(this.state!) || governmentLocked(this.state!) || airRescueLocked(this.state!) || matrixEscapeLocked(this.state!) || theOneLocked(this.state!) || reloadedLocked(this.state!) || catchLocked(this.state!.catch) || lobbyLocked(this.state!) || phoneLocked(this.state!) || windowOpening(this.state!) || windowCrossing(this.state!) || pillLocked(this.state!) || interrogationLocked(this.state!) || meetingLocked(this.state!) || lafayetteKnocking(this.state!) || lafayetteWelcomeLocked(this.state!)); }
   morningFrame(agent: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (state?.scene !== 'm1_morning' || state.visiting || !this.controls(agent)) return;
@@ -2669,6 +2691,7 @@ export class FilmStorySystem {
     return true;
   }
   restorePhoneFrame(agent: AgentState, tick: number): boolean {
+    if (this.openingPhoneFrame(agent, 0, tick)) return true;
     const state = this.state;
     const phone = state && heldPhone(state);
     if (!state || !phone || !this.controls(agent) || windowOpening(state) || windowCrossing(state)) return false;
@@ -7335,10 +7358,14 @@ export class FilmStorySystem {
     if (target !== 'act') return '当前没有这个场景操作。';
     if (state.scene === 'm1_phone_escape' && state.step === 1) {
       const phone = state.openingPhone;
+      if (phone?.phase === 'answering') return '正在接起听筒，卡车仍在接近。';
       if (!phone || phone.phase !== 'running' || phone.remaining <= 0) return '线路已经被卡车切断。J 打开手记重试。';
-      phone.phase = 'connected'; phone.impactElapsed = 0; phone.impactFrom = phone.remaining; phone.lastTick = tick;
-      this.advance('Trinity 抢在卡车前接起听筒，连接立即断开。空车撞进玻璃电话亭。', agent, tick);
-      return state.lastText;
+      if (!this.near(agent, this.step!) || Math.abs(agent.velocity.y) > .1) return '先进入电话亭，站稳并走近听筒，再按 G 接起。';
+      const center = FILM_SETS[this.scene!.set].center;
+      phone.phase = 'answering'; phone.lastTick = tick;
+      phone.answer = { elapsed: 0, origin: { x: agent.position.x - center.x, y: agent.position.y - center.y, z: agent.position.z - center.z }, yaw: agent.rotation };
+      this.openingPhonePose(agent);
+      return state.lastText = 'Trinity 转向话机，伸手取下听筒。卡车仍在逼近。';
     }
     if (state.scene === 'm3_hel_bargain') return this.helBargainAct(agent, tick);
     if (state.scene === 'm1_bug' && state.step === 2 && state.meeting?.phase === 'outside') {
@@ -8582,7 +8609,7 @@ export class FilmStorySystem {
     if (dockGateActive(state)) { this.dockGate.frame(actor, 0, tick); return; }
     if (state.scene === 'm1_mirror' && state.mirrorGuide && !state.awakening) this.mirrorGuideFrame(actor, tick);
     if (state.scene === 'm1_roofs') { this.openingRoofTick(actor, tick); if (state.openingRoof?.phase === 'failed' || this.openingRoofFrame(actor, 0, tick)) return; }
-    if (state.scene === 'm1_phone_escape') { this.openingPhoneTick(tick); if (state.openingPhone?.phase === 'failed') return; }
+    if (state.scene === 'm1_phone_escape') { this.openingPhoneTick(actor, tick); if (state.openingPhone?.phase === 'failed') return; }
     if (state.scene === 'm1_room303' && this.openingHotel.tick(actor, tick)) return;
     if (['m3_mobil', 'm3_family', 'm3_trainman', 'm3_mobil_release'].includes(state.scene)) {
       if (this.mobilCastBlocked()) {

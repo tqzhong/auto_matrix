@@ -858,6 +858,9 @@ test('Trinity must answer the Wells phone before the truck arrives; the countdow
   h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
   assert.equal(state.step, 1);
   h.command('act');
+  assert.equal(state.openingPhone?.phase, 'answering');
+  assert.equal(state.completed.includes(scene.id), false, 'the receiver must reach the ear before disconnecting');
+  h.advance(4);
   assert.equal(state.openingPhone?.phase, 'connected');
   assert.equal(h.sandbox.life.film.performing(h.actor()), true, 'the disconnected caller cannot walk into the truck impact');
   const exitedAt = { ...h.actor().position };
@@ -868,14 +871,14 @@ test('Trinity must answer the Wells phone before the truck arrives; the countdow
   assert.equal(h.sandbox.life.film.performing(h.actor()), true, 'the exit lock survives a save');
   h.advance(4); assert.equal(state.openingPhone?.phase, 'done');
   assert.equal(h.sandbox.life.film.performing(h.actor()), true, 'movement remains locked until the next scene');
-  assert.ok(state.completed.includes(scene.id), 'answering immediately connects without a two-second wait');
+  assert.ok(state.completed.includes(scene.id), 'completing the saved pickup connects the hardline');
 });
 
 test('opening impact: the saved crash clock advances between story ticks without double counting or advancing while paused', () => {
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
   const scene = FILM_SCENE_BY_ID.m1_phone_escape;
-  Object.assign(state, { scene: scene.id, step: 1, checkpoint: filmEntry(scene), openingPhone: { phase: 'running', remaining: 8, lastTick: h.tick(), attempts: 0 } });
-  h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[1]); h.command('act');
+  Object.assign(state, { scene: scene.id, step: 2, checkpoint: filmEntry(scene), openingPhone: { phase: 'connected', remaining: 8, lastTick: h.tick(), attempts: 0, impactElapsed: 0, impactFrom: 8 } });
+  h.actor().currentLocation = scene.set; h.actor().position = filmStepPosition(scene, scene.steps[1]);
   h.players.step(.02, true, h.tick()); assert.ok(Math.abs(state.openingPhone!.impactElapsed! - .02) < 1e-9, 'the rendered impact cannot wait half a second for its next pose');
   for (let i = 0; i < 24; i++) h.players.step(.02, true, h.tick());
   h.advance(); assert.ok(Math.abs(state.openingPhone!.impactElapsed! - .5) < 1e-9, 'the story tick cannot count the same half second twice');
@@ -1046,7 +1049,7 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
   h.command('next'); assert.equal(state.scene, phone.id);
   for (let frame = 0; frame < 115 && state.openingPhone?.phase === 'running' && state.step === 0; frame++) move(0, -1);
   assert.equal(state.step, 1, state.lastText);
-  h.command('act'); assert.equal(state.openingPhone?.phase, 'connected');
+  h.command('act'); assert.equal(state.openingPhone?.phase, 'answering'); h.advance(4); assert.equal(state.openingPhone?.phase, 'connected');
   h.advance(4); assert.equal(state.openingPhone?.phase, 'done');
   h.command('next'); assert.equal(state.scene, 'm1_wake_up');
 });
@@ -5078,6 +5081,10 @@ test('the entire film route completes through interactions, driving and real com
       if (scene.id === 'm1_spoon' && index === scene.steps.length - 1) {
         assert.equal(state.scene, 'm1_oracle', 'following the hostess across the kitchen door continues without another command');
         continue;
+      }
+      if (scene.id === 'm1_phone_escape' && index === 1) {
+        assert.equal(state.openingPhone?.phase, 'answering'); h.advance(6);
+        assert.equal(state.openingPhone?.phase, 'done', 'pickup and impact finish before leaving the street');
       }
       assert.equal(state.step, index + 1, `${scene.id}: ${step.label}`);
       if (scene.id === 'm1_jump' && index === 0) {

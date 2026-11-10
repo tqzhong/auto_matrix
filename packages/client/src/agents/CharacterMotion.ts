@@ -2,6 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
+import { openingAnswerPose } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -32,6 +33,7 @@ export interface MotionInput {
   basement?: import('@auto_matrix/shared').BasementGesture;
   basementGas?: import('@auto_matrix/shared').BasementLauncherGesture;
   tvExit?: import('@auto_matrix/shared').TvExitGesture | import('@auto_matrix/shared').SubwayExitGesture;
+  openingAnswer?: import('@auto_matrix/shared').OpeningPhoneAnswer;
   crosscut?: import('@auto_matrix/shared').CrosscutGesture;
   shot?: number;
   crouching?: boolean;
@@ -685,6 +687,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const elapsed = input.roofExit.elapsed, speed = input.hotel303 ? 0 : input.speed;
     Object.assign(state, newMotion(), { time: elapsed, speed, phase: elapsed * speed / 2.8, skill: undefined });
     input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
+    dt = 0;
+  }
+  if (input.openingAnswer) {
+    const saved = input.openingAnswer, root = openingAnswerPose(saved);
+    Object.assign(state, newMotion(), { time: saved.elapsed, speed: root.speed, phase: root.travel / 2.8, skill: undefined });
+    input = { ...input, speed: root.speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.welcome) {

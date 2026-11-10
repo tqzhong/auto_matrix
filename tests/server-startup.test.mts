@@ -18,6 +18,33 @@ import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
 
+test('opening pickup: fast snapshots and real paused restarts retain the actor and the saved handoff clock', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_phone_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+  journey.step = 1; journey.completed = ['m1_room303', 'm1_roofs'];
+  journey.openingPhone = { phase: 'answering', remaining: 8, lastTick: f.checkpoint.tick, attempts: 1,
+    answer: { elapsed: .4, origin: { x: -.4, y: 0, z: -28.3 }, yaw: Math.PI - .4 } };
+  actor.position = filmPosition('film_wells_phone', -.55, -28.85); actor.rotation = Math.PI; actor.velocity = { x: 0, y: 0, z: 0 };
+  actor.currentAction = { type: 'idle', parameters: { resolved: true, openingAnswer: structuredClone(journey.openingPhone.answer) }, startedAt: journey.enteredAt, duration: 1e9, progress: 0 };
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+  const marker = client.messages.length;
+  await client.command('resume', {}, state => state.simulation!.running); await new Promise(resolve => setTimeout(resolve, 250));
+  await client.command('pause', {}, state => !state.simulation!.running);
+  const delivered = client.messages.slice(marker).filter(message => message.type === 'world_state_delta')
+    .map(message => (message.data as { sandbox?: WorldStateFull['sandbox'] }).sandbox?.neoLife?.journey?.openingPhone?.answer?.elapsed).filter(value => typeof value === 'number');
+  assert.ok(new Set(delivered).size >= 3, 'the pickup must reach clients between story ticks');
+  const saved = await client.world(), phone = structuredClone(saved.sandbox!.neoLife!.journey!.openingPhone), pose = structuredClone(saved.agents.trinity.currentAction);
+  assert.equal(phone!.phase, 'answering'); assert.deepEqual(pose!.parameters.openingAnswer, phone!.answer);
+  client.socket.disconnect(); await server.stop();
+  const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING'); const next = await controls(t, restored);
+  for (const state of [await next.world(), await next.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller))]) {
+    assert.deepEqual(state.sandbox!.neoLife!.journey!.openingPhone, phone); assert.deepEqual(state.agents.trinity.currentAction, pose);
+    assert.deepEqual(state.agents.trinity.position, saved.agents.trinity.position); assert.equal(state.agents.trinity.rotation, saved.agents.trinity.rotation);
+  }
+  await restored.stop();
+});
+
 test('opening impact: fast snapshots deliver the saved moving crash and preserve it through a paused restart', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_phone_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
   journey.step = 2; journey.completed = ['m1_room303', 'm1_roofs', 'm1_phone_escape'];

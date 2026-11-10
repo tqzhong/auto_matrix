@@ -1,5 +1,6 @@
 import { seraphDoorZ } from './seraph-door.js';
 import { BOOK_DOOR } from './book-door.js';
+import { OPENING_PHONE } from './opening-escape.js';
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
 import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
@@ -274,7 +275,7 @@ export const FILM_SCENES: FilmScene[] = [
     use('沿消防梯爬上屋顶', 'Trinity 抓住钢梯往上攀，Brown 已在屋顶追来。', 0, -30, 0),
   ]),
   scene('m1_roofs', 1, 'hotel_roofs', 'trinity', '屋顶追逐', 'contact', 'chase', 'Brown 紧追不舍。穿过通风设施，助跑越过楼间空隙，抵达消防梯。', [walk('穿过通风设施', -7, 12), walk('越过楼间空隙', 7, -14), use('沿消防梯撤向电话亭', 'Trinity 穿过对面的窗户，继续赶往 Wells 与 Lake 的出口。', 0, -38)], ['agent_brown']),
-  scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'chase', '出口电话响起。卡车已在路口掉头，必须赶在撞击前接起听筒。', [walk('冲向电话亭', 0, -28), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', 0, -28, 0)]),
+  scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'chase', '出口电话响起。卡车已在路口掉头，必须赶在撞击前接起听筒。', [walk('冲向电话亭', OPENING_PHONE.stand.x, OPENING_PHONE.stand.z), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', OPENING_PHONE.stand.x, OPENING_PHONE.stand.z, 0)]),
   scene('m1_wake_up', 1, 'anderson_flat', 'neo', '屏幕上的来信', 'contact', 'night', 'Thomas Anderson 的公寓里，屏幕上的消息与敲门声打断了日常。', [
     use('查看 CRT，尝试退出异常窗口', '屏幕上的线索没有发送者。', APARTMENT.computer.x, APARTMENT.computer.z),
     use('打开 101 房门', '来客是 Choi 与 Dujour。', APARTMENT.door.x, APARTMENT.door.z),
@@ -735,6 +736,8 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
   return position;
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm1_phone_escape') return matrix && Math.abs(position.y - FILM_SETS[scene.set].center.y) < .12
+    && distance(position, filmStepPosition(scene, step, journey)) <= OPENING_PHONE.radius;
   if (scene.id === 'm2_burly' && step === scene.steps[0] && Math.abs(position.y - FILM_SETS[scene.set].center.y) > .15) return false;
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
     const flight = journey?.logos ?? journey?.logosEntry ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun');
@@ -759,6 +762,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm1_phone_escape' && !journey?.visiting && journey?.openingPhone && journey.openingPhone.phase !== 'running') return false;
   if (scene.id === 'm3_maggie_discovery') return Boolean(journey?.maggieDiscovery && ['call', 'ready', 'empty', 'report', 'return'].includes(journey.maggieDiscovery.phase)
     && !journey.maggieDiscovery.paused && !journey.maggieDiscovery.unavailable && filmStepNear(scene, step, position, matrix, journey));
   if (scene.id === 'm3_zion_prepare') return Boolean(journey?.zionDeployment && ['ready', 'question', 'review', 'hope'].includes(journey.zionDeployment.phase)

@@ -3,6 +3,22 @@ import test from 'node:test';
 import { build } from 'esbuild';
 import { FILM_SCENE_BY_ID, GOVERNMENT_RESCUE, SENTINEL_POWER, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
+test('the Wells journal requires a nearby caller and does not offer another G action during pickup', async () => {
+  const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
+    platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });
+  const module = async (name: string) => import(`data:text/javascript;base64,${Buffer.from(output.outputFiles.find(f => f.path.endsWith(name + '.js'))!.contents).toString('base64')}`);
+  const { SandboxUI } = await module('SandboxUI'), { renderFilmJourney } = await module('FilmJourneyPanel');
+  const scene = FILM_SCENE_BY_ID.m1_phone_escape, player = { id: 'trinity', isInMatrix: true, position: filmPosition(scene.set, 0, -24) } as AgentState;
+  const state = { threats: [], neoLife: { journey: { scene: scene.id, actor: player.id, step: 1, completed: [], reflections: {}, lastText: '',
+    openingPhone: { phase: 'running', remaining: 8, lastTick: 0, attempts: 0 } } } } as SandboxState;
+  assert.match(renderFilmJourney(player, state), /data-target="film:act" disabled/);
+  player.position = filmStepPosition(scene, scene.steps[1]); assert.match(renderFilmJourney(player, state), /data-target="film:act" >/);
+  state.neoLife!.journey!.openingPhone!.phase = 'answering';
+  const markup = renderFilmJourney(player, state); assert.match(markup, /正在取筒接听/); assert.doesNotMatch(markup, /data-target="film:act"/);
+  const calls: unknown[] = [], ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, open: (panel: string) => calls.push(panel), send: (command: unknown) => calls.push(command) });
+  ui.interact(); assert.deepEqual(calls, [], 'another G must not skip the pickup or obscure it with the journal');
+});
+
 test('the interrogation offers a seated decision and leaves G available for resistance', async t => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
     platform: 'node', format: 'esm', write: false, outdir: 'test-output', loader: { '.css': 'empty' }, logLevel: 'silent' });

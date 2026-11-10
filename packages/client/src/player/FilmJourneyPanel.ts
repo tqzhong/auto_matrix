@@ -25,7 +25,7 @@ import { crosscutActive, crosscutAction, crosscutText } from '@auto_matrix/share
 import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shared';
 import { DOCK_GATE, dockGateActive, dockGateText } from '@auto_matrix/shared';
 import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
-import { nearMetacortexLift, filmStepNear, awakeningDuration } from '@auto_matrix/shared';
+import { nearMetacortexLift, filmStepNear, filmStepActionReady, awakeningDuration } from '@auto_matrix/shared';
 import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, ARCHITECT_ROOM, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, officeRetreatReady, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
@@ -598,13 +598,15 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const roof = scene.id === 'm1_roofs'; const chase = journey.openingRoof; const phone = journey.openingPhone;
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;
     const failed = roof ? chase?.phase === 'failed' : phone?.phase === 'failed';
-    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const close = current && Boolean(step && (roof ? filmStepNear(scene, step, player.position, player.isInMatrix, journey)
+      : filmStepActionReady(scene, step, player.position, player.isInMatrix, journey)));
     const action = !current ? button('resume', '接回 Trinity 的视角') : failed ? button('retry', roof ? '从屋顶入口重试' : '从电话街口重试')
+      : phone?.phase === 'answering' ? '<button disabled>正在取筒接听 · 卡车仍在逼近</button>'
       : !step ? phone?.phase === 'connected' ? '<button disabled>线路已断开 · 卡车正在撞击</button>' : button('next', '继续下一段 →')
         : step.kind === 'reach' ? '<p>合上手记，亲自跑到目标。到达后自动记录。</p>' : button('act', `${step.label} · G`, !close);
     const status = roof ? chase?.leap ? 'Brown 正跃过楼间空隙 · 别停下' : 'Brown 就在身后 · Shift 助跑 · 空格越过楼间空隙'
-      : phone?.phase === 'running' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · 到亭内立即按 G` : phone?.phase === 'failed' ? '出口已毁，等待重试' : '连接已断开，Trinity 安全撤离';
-    const progress = !roof && phone?.phase === 'running' ? `<div class="film-progress"><i style="width:${Math.max(0, phone.remaining / OPENING_ESCAPE.phoneSeconds * 100)}%"></i></div>` : '';
+      : phone?.phase === 'running' || phone?.phase === 'answering' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · ${phone.phase === 'answering' ? '接到耳边才算接通' : '到亭内立即按 G'}` : phone?.phase === 'failed' ? '出口已毁，等待重试' : '连接已断开，Trinity 安全撤离';
+    const progress = !roof && (phone?.phase === 'running' || phone?.phase === 'answering') ? `<div class="film-progress"><i style="width:${Math.max(0, phone.remaining / OPENING_ESCAPE.phoneSeconds * 100)}%"></i></div>` : '';
     return `<div class="film-journal"><header class="film-heading"><span>THE MATRIX / 01</span><h3>${scene.title}</h3><p>Trinity 视角 · 路线、追兵与倒计时自动保存</p></header><article class="film-now"><div><h3>${step?.label ?? '撤离完成'}</h3><p>${journey.lastText}</p><p>${status}</p>${progress}<div class="film-controls">${action}<small>${roof ? '穿过通风设施，到楼间空隙前加速起跳；跌落或被追上可从屋顶入口重试。' : '等待不会自动接通。暂停、断线和读档会保留卡车位置与剩余时间。'}</small></div><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></div></article></div>`;
   }
   if (!journey.visiting && scene.id === 'm3_hel_bargain' && journey.helBargain) {
