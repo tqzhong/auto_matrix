@@ -3128,13 +3128,8 @@ export class FilmSetRenderer {
     const soot = this.pbr('damaged_plaster', 0x3b4540, 4);
     const plaster = this.pbr('damaged_plaster', 0x6a7066, 5);
     const carpet = this.mat(0x302d2a, .95);
-    const ember = this.mat(0x1b201e, 1);
     this.box(this.pbr('old_wood_floor', 0x897f72, 5), 0, .04, 12, set.width - 1.6, .07, 25);
     this.box(carpet, 0, .085, 12, 19, .035, 17);
-    for (let i = 0; i < 14; i++) {
-      const x = Math.sin(i * 3.8) * 12; const z = 4 + i * 1.31;
-      const mark = this.box(ember, x, .11, z, 2 + i % 3, .012, 1.4 + i % 4); mark.rotation.y = i * .77;
-    }
     for (const wall of OPENING_HOTEL.walls.slice(0, 2)) {
       this.box(soot, wall.x, set.height / 2, wall.z, wall.width, set.height, wall.depth);
       for (const y of [1.1, 3.8, 8.5]) this.box(plaster, wall.x, y, wall.z + .42, wall.width, .16, .06);
