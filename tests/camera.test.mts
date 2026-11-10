@@ -1846,6 +1846,63 @@ test('the connected phone shot holds the local player at the exit until the next
   game.key('KeyW', false);
 });
 
+test('the opening phone camera frames the booth and truck from outside their rendered geometry', t => {
+  const game = setup(t, Math.PI), film = FILM_SCENE_BY_ID.m1_phone_escape;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  Object.assign(game.state, { id: 'trinity', currentLocation: film.set, position: filmPosition(film.set, 0, -25) });
+  const journey: FilmJourney = { version: 1, scene: film.id, actor: 'trinity', step: 2, completed: [film.id], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: { ...game.state.position },
+    openingPhone: { phase: 'done', remaining: 8, lastTick: 0, attempts: 1, impactElapsed: 1.35, impactFrom: 8 } };
+  const renderer = new FilmSetRenderer(new THREE.Scene()), sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  try {
+    for (const aspect of [16 / 9, .72]) for (const firstPerson of [false, true]) for (const rotation of [Math.PI, 0, Math.PI / 2]) {
+      for (const [phase, elapsed] of [['done', 1.35], ['connected', 0], ['connected', .6], ['connected', 1.35]] as const) {
+        journey.openingPhone!.phase = phase; journey.openingPhone!.impactElapsed = elapsed;
+        game.state.rotation = rotation; game.camera.aspect = aspect;
+        game.controls.possess(game.state); game.controls.firstPerson = firstPerson;
+        game.controls.update(0, game.state, game.group, false, true);
+        renderer.update(game.state, sandbox, 0); renderer.root.updateWorldMatrix(true, true); game.camera.updateWorldMatrix(true, true);
+        const label = `${phase}/${elapsed}, aspect=${aspect}, firstPerson=${firstPerson}, rotation=${rotation}`;
+        for (const name of ['opening-garbage-truck', 'opening-phone-booth']) {
+          const bounds = new THREE.Box3().setFromObject(renderer.root.getObjectByName(name)!);
+          assert.equal(bounds.containsPoint(game.camera.position), false, `${label}: camera is inside ${name}`);
+          for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
+            const screen = new THREE.Vector3(x, y, z).project(game.camera);
+            assert.ok(Math.abs(screen.x) < .98 && Math.abs(screen.y) < .98 && screen.z > -1 && screen.z < 1,
+              `${label}: ${name} leaves the impact frame: ${screen.toArray()}`);
+          }
+        }
+        const booth = renderer.root.getObjectByName('opening-phone-booth')!;
+        const sign = booth.localToWorld(new THREE.Vector3(-1.95, 7.7, -1.6)), direction = sign.clone().sub(game.camera.position);
+        const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .1)
+          .intersectObject(renderer.root, true).filter(hit => {
+            for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+            return true;
+          });
+        assert.equal(hits.length, 0, `${label}: rendered geometry hides the booth sign`);
+      }
+    }
+  } finally { renderer.dispose(); }
+});
+
+test('the opening phone camera restores its paused exterior shot and releases it for an earlier playable save', t => {
+  const game = setup(t, Math.PI); game.state.currentLocation = 'film_wells_phone';
+  game.state.position = filmPosition('film_wells_phone', 0, -25); game.controls.possess(game.state);
+  game.camera.aspect = .72; game.controls.firstPerson = true;
+  game.controls.update(.1, game.state, game.group, false, true);
+  const position = game.camera.position.clone(), rotation = game.camera.quaternion.clone(), fov = game.camera.fov;
+  game.controls.possess(game.state); game.controls.update(0, game.state, game.group, false, true);
+  assert.ok(game.camera.position.distanceTo(position) < 1e-9 && game.camera.quaternion.angleTo(rotation) < 1e-7);
+  assert.equal(game.camera.fov, fov, 'cold entry must not depend on the previous view mode or frame time');
+  game.controls.update(.1, game.state, game.group, false, false);
+  assert.ok(game.camera.position.distanceTo(position) > 2, 'an earlier running checkpoint restores the player camera');
+  game.step(.4, .05, false);
+  const yaw = game.yaw(); game.event(game.canvas, 'mousedown', { button: 2 });
+  game.event(game.document, 'mousemove', { movementX: 100, movementY: 0 });
+  game.step(.3, .05, false);
+  assert.ok(Math.abs(angle(game.yaw(), yaw)) > .08, 'normal mouse look is restored');
+});
+
 test('the club whisper keeps Trinity visible beside Neo and first person can still look around', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_white_rabbit_club.center;
   game.state.currentLocation = 'film_white_rabbit_club'; game.state.position = filmPosition('film_white_rabbit_club', 7, -4);
