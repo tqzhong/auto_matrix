@@ -1,6 +1,7 @@
 import { FILM_SETS, FREEWAY_PICKUP, freewayPickupActive, freewayPickupRoot, freewayPickupText, freewayPursuitVehicles, freewayDriverRoot, freewayRideRoot, newFreewayPickup, newFreewayRide,
   stepFreewayPickup, type AgentState, type PlayerInput, type SandboxState } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
+import { isDeepStrictEqual } from 'node:util';
 
 export class FreewayPickupSystem {
   onAdvance?: (text: string, actor: AgentState, tick: number) => void;
@@ -34,6 +35,12 @@ export class FreewayPickupSystem {
       const member = this.world.agents.get(role);
       if (!member || member.status !== 'alive' || role !== actor.id && member.controller) continue;
       const root = freewayPickupRoot(next, role), previous = member.position;
+      // A zero-time restore must retain the saved motion at the same carrier pose.
+      if (dt <= 0 && member.currentAction?.type === 'idle' && member.currentAction.parameters.resolved === true
+        && member.currentAction.parameters.player === (role === actor.id)
+        && isDeepStrictEqual(member.currentAction.parameters.freewayPickup, { ...next, role, walking: next.paused || next.unavailable ? 0 : next.walking })
+        && member.currentLocation === 'film_freeway_101' && member.isInMatrix && member.rotation === root.yaw
+        && Math.hypot(previous.x - center.x - root.x, previous.y - center.y - root.y, previous.z - center.z - root.z) < 1e-8) continue;
       member.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z }; member.rotation = root.yaw;
       member.velocity = elapsed > 0 ? { x: (member.position.x - previous.x) / elapsed, y: (member.position.y - previous.y) / elapsed, z: (member.position.z - previous.z) / elapsed } : { x: 0, y: 0, z: 0 };
       member.currentLocation = 'film_freeway_101'; member.isInMatrix = true; member.targetPosition = null; member.currentPath = [];
@@ -43,6 +50,11 @@ export class FreewayPickupSystem {
     journey.lastText = freewayPickupText(next);
     if (next.chase && jackson && !jackson.controller && jackson.status === 'alive') {
       const root = freewayDriverRoot(next), previous = jackson.position;
+      if (dt <= 0 && jackson.currentAction?.type === 'idle' && jackson.currentAction.parameters.resolved === true
+        && jackson.currentAction.parameters.seated === true && jackson.currentAction.parameters.riding === true
+        && isDeepStrictEqual(jackson.currentAction.parameters.freewayDriver, { ...next, role: 'agent_jackson' })
+        && jackson.currentLocation === 'film_freeway_101' && jackson.isInMatrix && jackson.rotation === root.yaw
+        && Math.hypot(previous.x - center.x - root.x, previous.y - center.y - root.y, previous.z - center.z - root.z) < 1e-8) return true;
       jackson.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
       jackson.rotation = root.yaw; jackson.velocity = elapsed > 0 ? { x: (jackson.position.x - previous.x) / elapsed, y: 0, z: (jackson.position.z - previous.z) / elapsed } : { x: 0, y: 0, z: 0 };
       jackson.currentLocation = 'film_freeway_101'; jackson.isInMatrix = true; jackson.targetPosition = null; jackson.currentPath = [];

@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { SeraphDoorSystem } from './SeraphDoorSystem.js';
 import { savedChateauAction, savedMountainAction } from './ChateauMountainPose.js';
 import { BookDoorSystem } from './BookDoorSystem.js';
@@ -5895,6 +5896,12 @@ export class FilmStorySystem {
     if (ride.startedAt === undefined && dt > 0) ride.startedAt = tick;
     for (const [member, role] of [[agent, 'trinity'], [passenger, 'keymaker']] as const) {
       const root = freewayRideRoot(ride, role), center = FILM_SETS[this.scene!.set].center;
+      if (dt <= 0 && member.currentAction?.type === 'idle' && member.currentAction.parameters.resolved === true
+        && member.currentAction.parameters.player === (member === agent && Boolean(member.controller))
+        && member.currentAction.parameters.seated === true && member.currentAction.parameters.riding === true
+        && isDeepStrictEqual(member.currentAction.parameters.freewayRide, { ...ride, role })
+        && member.currentLocation === this.scene!.set && member.isInMatrix && member.rotation === root.yaw
+        && Math.hypot(member.position.x - center.x - root.x, member.position.y - center.y - root.y, member.position.z - center.z - root.z) < 1e-8) continue;
       member.position = { x: center.x + root.x, y: center.y + root.y, z: center.z + root.z };
       member.currentLocation = this.scene!.set; member.isInMatrix = true; member.targetPosition = null; member.currentPath = [];
       member.velocity = { x: ride.lateral, y: 0, z: -ride.speed }; member.rotation = root.yaw;
