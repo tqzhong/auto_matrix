@@ -45,10 +45,7 @@ export class SandboxSystem {
     if (saved.version !== 1 || !Array.isArray(saved.nodes) || !saved.profiles || !saved.missions) throw new Error('Unsupported sandbox save');
     const defaults = this.state;
     this.state = structuredClone(saved);
-    const scene = saved.neoLife?.journey?.scene;
-    const savedStructureOrder = scene === 'm2_architect' || scene === 'm2_ship_lost' || scene === 'm1_wall_exposed' || scene === 'm1_download'
-      || scene === 'm3_dock_briefing' || scene === 'm3_dock_evacuation'
-      ? new Map(saved.structures.map((structure, index) => [structure.id, index])) : undefined;
+    const savedStructureOrder = new Map(saved.structures.map((structure, index) => [structure.id, index]));
     for (const node of defaults.nodes) if (!this.state.nodes.some(n => n.id === node.id)) this.state.nodes.push(node);
     for (const [id, progress] of Object.entries(defaults.missions)) this.state.missions[id] ??= progress;
     this.life.film.restoreApartmentSpace();
@@ -108,7 +105,7 @@ export class SandboxSystem {
       if (actor) this.life.film.baneFrame(actor, { focus: false, yaw: actor.rotation }, 0, this.world.simulationTick);
     }
     if (this.state.traffic) this.traffic.restore();
-    if (savedStructureOrder) this.state.structures.sort((a, b) =>
+    this.state.structures.sort((a, b) =>
       (savedStructureOrder.get(a.id) ?? savedStructureOrder.size) - (savedStructureOrder.get(b.id) ?? savedStructureOrder.size));
   }
   missionsFor(agent: AgentState) { return agent.id === 'neo' && this.state.neoLife ? this.state.neoLife.missions : this.state.missions; }
