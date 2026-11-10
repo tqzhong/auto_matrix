@@ -14,6 +14,7 @@ export class OracleSmithAppearance {
   private code = smithCodeUniforms();
   private replacement = smithCodeUniforms();
   private originals: { mesh: THREE.Mesh; material: THREE.Material; depth?: THREE.Material }[] = [];
+  private attached = new WeakSet<THREE.Mesh>();
   private materials = new Set<THREE.Material>();
   private skeletons = new Set<THREE.Skeleton>();
   private view: THREE.Object3D;
@@ -26,7 +27,8 @@ export class OracleSmithAppearance {
   }
   private attach(root: THREE.Object3D, uniforms: ReturnType<typeof smithCodeUniforms>, replica = false): void {
     root.traverse(object => {
-      if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial)) return;
+      if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial) || this.attached.has(object)) return;
+      this.attached.add(object);
       const original = object.material, material = original.clone(); material.onBeforeCompile = original.onBeforeCompile; material.customProgramCacheKey = original.customProgramCacheKey;
       this.originals.push({ mesh: object, material: original, depth: object.customDepthMaterial });
       smithCodeSurface(material, uniforms, replica); object.material = material; this.materials.add(material);
@@ -35,6 +37,8 @@ export class OracleSmithAppearance {
     });
   }
   update(state: OracleAbsorptionGesture, firstPerson: boolean): void {
+    // Detailed heads can finish loading after the replacement was created.
+    this.attach(this.oracle.detail, this.code);
     const replacement = absorptionSmooth(state.coating, .66, 1);
     const center = new THREE.Box3().setFromObject(this.oracle.root.getObjectByName('oracle-daily-blouse')!).getCenter(new THREE.Vector3()); center.z += .3;
     this.code.smithOrigin.value.copy(center); this.replacement.smithOrigin.value.copy(center);
@@ -45,7 +49,9 @@ export class OracleSmithAppearance {
     this.replica.scale.copy(this.smith.root.getWorldScale(new THREE.Vector3()));
     for (const [name, bone] of this.bones) { bone.position.copy(this.rest.get(name)!); bone.quaternion.identity(); }
     const stand = state.phase === 'laughing' ? absorptionSmooth(state.elapsed, .2, 2.6) : state.phase === 'done' ? 1 : 0;
-    const pelvis = this.bones.get('pelvis')!; pelvis.position.y = THREE.MathUtils.lerp(1.50, this.rest.get('pelvis')!.y, stand);
+    // The larger replacement sits at the cushion edge, then clears it as he rises.
+    this.replica.translateZ(.6 + stand);
+    const pelvis = this.bones.get('pelvis')!; pelvis.position.y = THREE.MathUtils.lerp(1.75, this.rest.get('pelvis')!.y, stand);
     this.bones.get('head')!.rotation.x = -(state.phase === 'laughing' ? .27 + Math.sin(state.elapsed * 5) * .025 : 0);
     this.replica.updateWorldMatrix(true, true);
     const orientation = this.replica.getWorldQuaternion(new THREE.Quaternion());

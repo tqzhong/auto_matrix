@@ -9,11 +9,12 @@ import { CharacterModels } from '../packages/client/src/agents/CharacterModel.js
 import { contactOracleAbsorption } from '../packages/client/src/agents/OracleAbsorptionPerformance.js';
 import { OracleSmithAppearance } from '../packages/client/src/agents/OracleSmithAppearance.js';
 import { OracleAbsorptionRenderer } from '../packages/client/src/engine/OracleAbsorptionRenderer.js';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 
-async function geometry() {
-  const glb = await readFile(new URL('../packages/client/public/assets/characters/smith.glb', import.meta.url));
+async function geometry(asset = 'smith') {
+  const glb = await readFile(new URL(`../packages/client/public/assets/characters/${asset}.glb`, import.meta.url));
   const length = glb.readUInt32LE(12), document = JSON.parse(glb.subarray(20, 20 + length).toString());
   for (const material of document.materials) { delete material.pbrMetallicRoughness.baseColorTexture; delete material.normalTexture; }
   document.images = []; document.textures = [];
@@ -210,4 +211,94 @@ test('Smith keeps his wrist aligned with the forearm through the saved reach and
   t.diagnostic(JSON.stringify({ maximumWristBend: bend, maximumTravelPer40ms: jump }));
   assert.ok(bend < 1.15, 'the hand folds sharply across the end of the forearm');
   assert.ok(jump < .09, 'the hand snaps between adjacent saved times');
+});
+
+test('the replacement body clears the actual chair through the saved rise', async t => {
+  const h = await setup(t), renderer = new FilmSetRenderer(new THREE.Scene());
+  renderer.root.position.copy(h.origin);
+  const seat = ORACLE_LAST.chairs[0];
+  (renderer as unknown as { chair(x: number, z: number, yaw: number): void }).chair(seat.x, seat.z, seat.yaw);
+  renderer.root.updateWorldMatrix(true, true);
+  const chair = renderer.root.children.at(-1)!;
+  // Use the solid interiors of the actual rounded cushion and back, avoiding bevel corners.
+  const solids = chair.children.filter(object => object instanceof THREE.Mesh).slice(0, 2)
+    .map(object => new THREE.Box3().setFromObject(object).expandByScalar(-.14));
+  assert.equal(solids.length, 2);
+  assert.ok(solids.every(box => box.getSize(new THREE.Vector3()).toArray().every(size => size > .02)));
+  const table = ORACLE_LAST.table, tableBox = new THREE.Box3(
+    new THREE.Vector3(table.x - table.width / 2, 0, table.z - table.depth / 2).add(h.origin),
+    new THREE.Vector3(table.x + table.width / 2, table.height, table.z + table.depth / 2).add(h.origin));
+  const state = newOracleAbsorption(4, 47); state.phase = 'laughing'; h.frame(state);
+  const appearance = new OracleSmithAppearance(h.rigs.oracle, h.rigs.smith.hero!, new THREE.Scene());
+  t.after(() => { appearance.dispose(); renderer.dispose(); });
+  const failures: string[] = [];
+  for (const elapsed of [...Array.from({ length: 31 }, (_, i) => i / 10), 'done'] as const) {
+    state.phase = elapsed === 'done' ? 'done' : 'laughing'; state.elapsed = elapsed === 'done' ? 0 : elapsed;
+    h.frame(state); appearance.update({ ...state, role: 'oracle' }, false);
+    appearance.replica.updateMatrixWorld(true);
+    appearance.replica.traverse(object => { if (object instanceof THREE.SkinnedMesh) object.skeleton.update(); });
+    let chairDepth = 0, tableDepth = 0, samples = 0;
+    const bodyBounds = new THREE.Box3();
+    appearance.replica.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        const point = object.localToWorld(object.getVertexPosition(i, new THREE.Vector3()));
+        samples++; bodyBounds.expandByPoint(point);
+        for (const [name, boxes] of [['chair', solids], ['table', [tableBox]]] as const) for (const box of boxes) {
+          const depth = Math.min(point.x - box.min.x, box.max.x - point.x, point.y - box.min.y, box.max.y - point.y, point.z - box.min.z, box.max.z - point.z);
+          if (name === 'chair') chairDepth = Math.max(chairDepth, depth);
+          else tableDepth = Math.max(tableDepth, depth);
+        }
+      }
+    });
+    const soleHeight = bodyBounds.min.y - h.origin.y;
+    t.diagnostic(JSON.stringify({ elapsed, chairDepth, tableDepth, samples, soleHeight }));
+    assert.ok(samples > 1000, 'sample the delivered replacement skin and clothing');
+    assert.ok(bodyBounds.getSize(new THREE.Vector3()).toArray().every(size => size < 8), 'sample current rendered skin matrices');
+    assert.ok(soleHeight >= -.02 && soleHeight < .09, 'clearing the chair must keep the actual shoes on the floor');
+    if (chairDepth > .01) failures.push(`${elapsed}: the replacement body penetrates the chair by ${chairDepth}m`);
+    if (tableDepth > .025) failures.push(`${elapsed}: the replacement body penetrates the table by ${tableDepth}m`);
+  }
+  assert.deepEqual(failures, []);
+});
+
+test('late Oracle meshes share the live coating and restore their materials on leaving', async t => {
+  const h = await setup(t), state = newOracleAbsorption(3, 47);
+  state.phase = 'coating'; state.coating = .8; state.elapsed = 4; state.invasion = 44; state.held = 1.8; h.frame(state);
+  const appearance = new OracleSmithAppearance(h.rigs.oracle, h.rigs.smith.hero!, new THREE.Scene());
+  const late = (await geometry('oracle-revolutions-head')).scene;
+  h.rigs.oracle.head.add(late);
+  const surfaces: { mesh: THREE.Mesh; material: THREE.MeshStandardMaterial; depth: THREE.Material | undefined }[] = [];
+  late.traverse(object => { if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial)
+    surfaces.push({ mesh: object, material: object.material, depth: object.customDepthMaterial }); });
+  assert.ok(surfaces.length > 0, 'load the delivered third-film Oracle head after creating the replacement');
+  try {
+    appearance.update({ ...state, role: 'oracle' }, false);
+    const compiled = surfaces.map(({ mesh }) => {
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      const shader = { uniforms: {} as Record<string, { value: unknown }>,
+        vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+      material.onBeforeCompile(shader as never, {} as THREE.WebGLRenderer);
+      assert.equal(shader.uniforms.smithCoating?.value, .8, 'late head must receive the active coating');
+      assert.ok(Number(shader.uniforms.smithReplacement?.value) > 0, 'the late head must dissolve with the replaced body');
+      assert.ok(mesh.customDepthMaterial, 'the late head shadow must use the same dissolve');
+      return { material, uniforms: shader.uniforms };
+    });
+    state.coating = 1; state.elapsed = 5;
+    appearance.update({ ...state, role: 'oracle' }, false);
+    appearance.update({ ...state, role: 'oracle' }, false);
+    for (const [i, { mesh }] of surfaces.entries()) {
+      assert.equal(mesh.material, compiled[i].material, 'later frames cannot keep cloning the same material');
+      assert.equal(compiled[i].uniforms.smithCoating.value, 1);
+      assert.equal(compiled[i].uniforms.smithReplacement.value, 1, 'the late original head must fully disappear');
+    }
+  } finally {
+    appearance.dispose();
+    for (const { mesh, material, depth } of surfaces) {
+      assert.equal(mesh.material, material, 'leaving must restore the original head material');
+      assert.equal(mesh.customDepthMaterial, depth);
+      mesh.geometry.dispose(); material.dispose();
+    }
+    late.removeFromParent();
+  }
 });
