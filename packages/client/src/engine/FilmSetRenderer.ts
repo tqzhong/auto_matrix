@@ -386,6 +386,8 @@ export class FilmSetRenderer {
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
     if (this.ambush) return AMBUSH_POINT_SLOTS;
+    // Seven fixtures, the objective and the player plus four police muzzle flashes.
+    if (this.current?.id === 'film_heart_hotel' && this.currentScene === 'm1_room303') return 13;
     // The screen, three loadouts and objective share one layout throughout the reveal.
     if (this.current?.id === 'film_white_construct' && this.currentScene === 'm1_guns') return 5;
     if (this.current?.id === 'film_kungfu_dojo' && this.currentScene === 'm1_dojo') return 1;
@@ -405,6 +407,7 @@ export class FilmSetRenderer {
       || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && this.currentScene === 'm1_construct'
+      || id === 'film_heart_hotel' && this.currentScene === 'm1_room303'
       || this.theOne?.setId === 'film_heart_hotel' || this.theOne?.setId === 'film_neb_deck'
       || this.reloaded?.set === 'film_captains_meeting' || this.reloaded?.set === 'film_trinity_roof'
       || id === 'film_seraph_teahouse' || id === 'film_backdoor_hall'

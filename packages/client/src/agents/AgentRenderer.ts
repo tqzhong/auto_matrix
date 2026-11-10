@@ -1010,7 +1010,9 @@ export class AgentRenderer {
       if (input.officeShirt) input.homeClothes = false;
       input.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
       input.mobilStation = state.currentLocation === 'film_mobil_station';
-      input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
+      input.glasses = !state.id.startsWith('oracle_') && !input.clubClothes
+        && !(state.id === 'trinity' && ['film_heart_hotel', 'film_hotel_roofs', 'film_wells_phone'].includes(state.currentLocation))
+        && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
       input.ambushCall = state.currentAction?.parameters.ambushCall as MotionInput['ambushCall'];
       if (input.ambushCall) { input.phone = undefined; input.armed = false; }
       if (input.sixth?.role === 'smith' && input.sixth.phase === 'grapple') {

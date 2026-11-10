@@ -1236,7 +1236,9 @@ export class PlayerControls {
     this.motion.realWorld = !state.isInMatrix && state.currentLocation !== 'film_real_desert';
     this.motion.clubClothes = state.currentLocation === 'film_white_rabbit_club' || state.id === 'neo' && state.currentLocation === 'film_white_construct' && !state.currentAction?.parameters.rescue;
     this.motion.mobilStation = state.currentLocation === 'film_mobil_station';
-    this.motion.glasses = !this.motion.clubClothes && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
+    this.motion.glasses = !this.motion.clubClothes
+      && !(state.id === 'trinity' && ['film_heart_hotel', 'film_hotel_roofs', 'film_wells_phone'].includes(state.currentLocation))
+      && (state.id !== 'neo' || state.isAwakened && !['film_oracle_home', 'film_mobil_station', 'film_ambush_house'].includes(state.currentLocation));
     const shaftRole = this.motion.tvExit?.phase === 'emerging' ? tvExitEmergingRole(this.motion.tvExit) : undefined;
     const officeLadder = state.currentAction?.parameters.officeLadder as MotionInput['officeLadder'];
     if (this.motion.officeLadder && !officeLadder && state.currentLocation === 'film_office_ledge') {

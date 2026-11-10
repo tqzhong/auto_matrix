@@ -1,0 +1,88 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import * as THREE from 'three';
+import { FILM_SCENE_BY_ID, filmEntry, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
+import { GunfireEffects } from '../packages/client/src/engine/GunfireEffects.js';
+import type { GameAudio } from '../packages/client/src/engine/GameAudio.js';
+import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { WorldState } from '../packages/server/src/world/WorldState.js';
+
+function setup(t: test.TestContext) {
+  const previous = globalThis.document;
+  const ctx = { fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }) };
+  globalThis.document = { createElement: () => ({ getContext: () => ctx }) } as unknown as Document;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture({ width: 1, height: 1, complete: true }));
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(57, 16 / 9, .5, 5000);
+  const sets = new FilmSetRenderer(scene), culling = new LightCulling(scene);
+  const gunfire = new GunfireEffects(scene, { effects: () => undefined } as unknown as GameAudio);
+  t.after(() => { gunfire.dispose(); culling.dispose(); sets.dispose(); globalThis.document = previous; });
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const actor = world.agents.get('trinity')!;
+  actor.currentLocation = 'film_heart_hotel'; actor.isInMatrix = true;
+  const journey: FilmJourney = { version: 1, scene: 'm1_room303', actor: 'trinity', step: 0, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(FILM_SCENE_BY_ID.m1_room303), openingHotel: { phase: 'trace', elapsed: 0, lastTick: 0, attempts: 0, disarmed: false, ammo: 0, shots: 0 } };
+  const sandbox = { neoLife: { journey } } as SandboxState;
+  const graphics = {} as THREE.WebGLRenderer;
+  const pose = (phase: NonNullable<FilmJourney['openingHotel']>['phase'], elapsed = 0, first = false, yaw = 0) => {
+    Object.assign(journey.openingHotel!, { phase, elapsed });
+    journey.step = phase === 'trace' || phase === 'breach' ? 0 : phase === 'combat' ? 1 : phase === 'phone' ? 2 : ['ladder_ready','climbing','done'].includes(phase) ? 5 : 4;
+    actor.position = ['corridor','dive','ladder_ready','climbing','done'].includes(phase)
+      ? filmPosition('film_heart_hotel',0,-20) : filmEntry(FILM_SCENE_BY_ID.m1_room303);
+    camera.position.set(actor.position.x,actor.position.y+3,actor.position.z);
+    camera.lookAt(actor.position.x+Math.sin(yaw)*20,actor.position.y+2,actor.position.z+Math.cos(yaw)*20);
+    camera.updateMatrixWorld(true);
+    sets.update(actor,sandbox,0,actor.position,camera.position,undefined,first,12000,camera);
+    culling.stablePointSlots=sets.stablePointSlots;culling.minimumPointSlots=sets.minimumPointSlots;
+    scene.updateMatrixWorld(true);
+  };
+  const sample = () => {
+    scene.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+    const original: { light: THREE.PointLight; intensity: number; visible: boolean; position: THREE.Vector3 }[] = [];
+    scene.traverseVisible(object => { if (object instanceof THREE.PointLight) original.push({ light: object, intensity: object.intensity, visible: object.visible, position: object.getWorldPosition(new THREE.Vector3()) }); });
+    scene.onBeforeRender(graphics, scene, camera, null);
+    let count = 0;
+    try {
+      scene.traverseVisible(object => { if (object instanceof THREE.PointLight) count++; });
+      for (const x of [-.7, 0, .7]) for (const y of [-.7, 0, .7]) for (const z of [.5, .9, .98, .995]) {
+        const point = new THREE.Vector3(x, y, z).unproject(camera);
+        for (const item of original) if (item.visible && item.intensity > 0 && point.distanceTo(item.position) < item.light.distance) {
+          assert.equal(item.light.visible, true, 'a potentially contributing fixture or muzzle flash cannot disappear');
+          assert.equal(item.light.intensity, item.intensity, 'fixed slots cannot dim a contributing light');
+        }
+      }
+    } finally { scene.onAfterRender(graphics, scene, camera); }
+    for (const item of original) {
+      assert.equal(item.light.intensity, item.intensity); assert.equal(item.light.visible, item.visible);
+      assert.ok(item.light.getWorldPosition(new THREE.Vector3()).equals(item.position));
+    }
+    return count;
+  };
+  const shot = () => {
+    const from = { ...actor.position, y: actor.position.y + 2.4 };
+    gunfire.shot({ source: 'trinity', target: 'hotel-wall', position: { ...from, y: from.y + 8 },
+      direction: { x: 0, y: 1, z: 0 }, damage: 0, combo: 0, matrix: true, downed: false, shot: { from, surface: 'body' } });
+  };
+  return { sets, culling, gunfire, journey, pose, sample, shot };
+}
+
+test('303 keeps its lighting layout across the room, corridor, camera and saved phases', t => {
+  const h=setup(t);
+  for(const phase of ['trace','breach','combat','phone','corridor','dive','ladder_ready','climbing','done'] as const)
+    for(const first of [false,true]) for(const yaw of [0,Math.PI/2,Math.PI,-Math.PI/2]) {
+      h.pose(phase,.5,first,yaw);assert.equal(h.sample(),13,`${phase}/${first}/${yaw}: room and objective changes must keep the prepared shader layout`);
+    }
+});
+
+test('303 reserves the player and four real police muzzle flashes without losing their light', t => {
+  const h=setup(t);h.pose('combat');assert.equal(h.sample(),13);
+  for(let i=0;i<5;i++){h.shot();assert.equal(h.sample(),13,'a normal overlapping shot must not compile another room layout');}
+  for(const delta of [.035,.035,.02,.03]){h.gunfire.update(delta);assert.equal(h.sample(),13);}
+  assert.equal(h.journey.openingHotel!.elapsed,0,'lighting cannot advance the encounter');
+});
+
+test('an additional real flash keeps its energy, and leaving 303 releases the reservation', t => {
+  const h=setup(t);h.pose('combat');for(let i=0;i<6;i++)h.shot();
+  assert.equal(h.sample(),14,'unexpected extra light must remain visible');h.gunfire.update(.12);assert.equal(h.sample(),13);
+  h.sets.update(undefined,undefined,0);assert.equal(h.sets.minimumPointSlots,0);assert.equal(h.sets.stablePointSlots,false);
+});
