@@ -167,5 +167,13 @@ test('the caller disappears from the booth after the line connects and returns o
     journey.openingPhone!.phase = 'done'; renderer.update(.016, undefined, 1, 0, journey); assert.equal(body.visible, false);
     journey.openingPhone!.phase = 'running'; renderer.update(.016, undefined, 1, 0, journey);
     assert.equal(body.visible, true, 'retry restores a visible playable actor');
+    const answer = { elapsed: 1.1, origin: { x: -.55, y: 0, z: -28.85 }, yaw: Math.PI };
+    journey.openingPhone = { phase: 'failed', remaining: 0, impactElapsed: .1, lastTick: 0, attempts: 0, answer };
+    renderer.setPlayer(caller.id, true); renderer.setPlayerMotion({ speed: 0, grounded: true, verticalVelocity: 0, turn: 0, firstPerson: true, openingAnswer: answer });
+    let renderedFirstPerson: boolean | undefined;
+    t.mock.method((renderer as any).models, 'animate', (_rig: unknown, _delta: number, input: { firstPerson?: boolean }) => { renderedFirstPerson = input.firstPerson; });
+    renderer.update(.016, undefined, 1, 0, journey);
+    assert.equal(renderer.getAgentBody(caller.id)!.visible, true, 'the failed exterior must show the caller even when V selects first person');
+    assert.equal(renderedFirstPerson, false, 'the exterior must draw the complete caller rather than a first person cutout');
   } finally { renderer.dispose(); globalThis.document = originalDocument; }
 });

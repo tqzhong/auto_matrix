@@ -14,9 +14,37 @@ import { CONSTRUCT, constructGuidePose, truthRoot, truthText, type TruthRecovery
 import { metacortexLiftPose, metacortexPosition, type MetacortexLift } from '@auto_matrix/shared';
 import { MIRROR_TRINITY, MIRROR_TIMING, mirrorTime, mirrorSilver } from '@auto_matrix/shared';
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
+import { openingPhoneContact, openingHitPose } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
+
+test('opening hit: fast snapshots continue the falling caller after the truck stops, including a paused real restart', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_phone_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+  journey.step = 1; journey.completed = ['m1_room303', 'm1_roofs'];
+  journey.openingPhone = { phase: 'failed', remaining: 0, lastTick: f.checkpoint.tick, attempts: 1, impactElapsed: 1.35, impactFrom: 0,
+    answer: { elapsed: 1.1, origin: { x: -.55, y: 0, z: -28.85 }, yaw: Math.PI } };
+  const hit = openingPhoneContact(journey.openingPhone)!; assert.ok(hit); journey.openingPhone.hit = hit;
+  const pose = openingHitPose(hit); actor.position = filmPosition('film_wells_phone', pose.x, pose.z); actor.position.y += pose.y; actor.rotation = pose.yaw; actor.velocity = pose.velocity;
+  actor.currentAction = { type: 'idle', parameters: { resolved: true, openingAnswer: structuredClone(journey.openingPhone.answer), openingHit: structuredClone(hit) }, startedAt: journey.enteredAt, duration: 1e9, progress: 0 };
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+  const marker = client.messages.length;
+  await client.command('resume', {}, state => state.simulation!.running); await new Promise(resolve => setTimeout(resolve, 250));
+  await client.command('pause', {}, state => !state.simulation!.running);
+  const delivered = client.messages.slice(marker).filter(message => message.type === 'world_state_delta')
+    .map(message => (message.data as { sandbox?: WorldStateFull['sandbox'] }).sandbox?.neoLife?.journey?.openingPhone).filter(Boolean);
+  assert.ok(new Set(delivered.map(phone => phone!.hit?.elapsed)).size >= 3); assert.ok(delivered.every(phone => phone!.impactElapsed === 1.35));
+  const saved = await client.world(); assert.notDeepEqual(saved.agents.trinity.position, actor.position);
+  client.socket.disconnect(); await server.stop();
+  const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING'); const next = await controls(t, restored);
+  for (const state of [await next.world(), await next.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller))]) {
+    assert.deepEqual(state.sandbox!.neoLife!.journey!.openingPhone, saved.sandbox!.neoLife!.journey!.openingPhone);
+    for (const key of ['currentAction','position','rotation','velocity'] as const) assert.deepEqual(state.agents.trinity[key], saved.agents.trinity[key]);
+  }
+  await restored.stop();
+});
 
 test('opening pickup: fast snapshots and real paused restarts retain the actor and the saved handoff clock', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_phone_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;

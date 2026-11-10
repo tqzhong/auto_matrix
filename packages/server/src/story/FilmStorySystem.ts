@@ -133,7 +133,7 @@ import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
-import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, openingAnswerPose } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, openingAnswerPose, openingPhoneContact, openingHitPose } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
 import { nebEscapeLocked } from '@auto_matrix/shared';
@@ -673,7 +673,8 @@ export class FilmStorySystem {
     const state = this.state, phone = state?.openingPhone;
     if (state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone) return false;
     if (dt > 0 && (phone.phase === 'running' || phone.phase === 'answering'
-      || (phone.impactElapsed ?? 0) < OPENING_ESCAPE.truckImpactSeconds && (phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined))) {
+      || ((phone.impactElapsed ?? 0) < OPENING_ESCAPE.truckImpactSeconds || phone.hit && phone.hit.elapsed < OPENING_PHONE.hitSeconds)
+        && (phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined))) {
       const end = Math.max(phone.lastTick, tick) + Math.min(.1, dt) * 2;
       const elapsed = (end - phone.lastTick) * .5; phone.lastTick = end;
       this.openingPhoneStep(actor, elapsed, tick);
@@ -683,10 +684,12 @@ export class FilmStorySystem {
   private openingPhonePose(actor: AgentState): boolean {
     const state = this.state, phone = state?.openingPhone;
     if (state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone?.answer) return false;
-    const pose = openingAnswerPose(phone.answer);
+    if (!phone.hit) { const contact = openingPhoneContact(phone); if (contact) phone.hit = contact; }
+    const pose = phone.hit ? openingHitPose(phone.hit) : openingAnswerPose(phone.answer);
     actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.position.y += pose.y; actor.rotation = pose.yaw;
-    actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null;
-    actor.currentAction = { type: 'idle', parameters: { resolved: true, openingAnswer: { ...phone.answer, origin: { ...phone.answer.origin } } }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    actor.velocity = phone.hit ? openingHitPose(phone.hit).velocity : { x: 0, y: 0, z: 0 }; actor.targetPosition = null;
+    actor.currentAction = { type: 'idle', parameters: { resolved: true, openingAnswer: { ...phone.answer, origin: { ...phone.answer.origin } },
+      ...(phone.hit ? { openingHit: { ...phone.hit, origin: { ...phone.hit.origin }, direction: { ...phone.hit.direction } } } : {}) }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
     return true;
   }
   private openingPhoneStep(actor: AgentState, dt: number, tick: number): void {
@@ -710,6 +713,7 @@ export class FilmStorySystem {
     const state = this.state, phone = state?.openingPhone;
     if (!state || !phone || !(phone.phase === 'connected' || phone.phase === 'failed' && phone.impactElapsed !== undefined)) return;
     phone.impactElapsed = Math.min(OPENING_ESCAPE.truckImpactSeconds, (phone.impactElapsed ?? 0) + Math.max(0, dt));
+    if (phone.hit) phone.hit.elapsed = Math.min(OPENING_PHONE.hitSeconds, phone.hit.elapsed + Math.max(0, dt));
     if (phone.impactElapsed >= OPENING_ESCAPE.truckImpactSeconds) {
       if (phone.phase === 'connected') phone.phase = 'done';
       else state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
@@ -722,6 +726,7 @@ export class FilmStorySystem {
     const dt = Math.min(.5, Math.max(0, tick - phone.lastTick) * .5);
     phone.lastTick = Math.max(phone.lastTick, tick);
     this.openingPhoneStep(actor, dt, tick);
+    this.openingPhonePose(actor);
   }
   private ensureMobil(tick: number): void {
     const state = this.state;

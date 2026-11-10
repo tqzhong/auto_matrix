@@ -34,6 +34,7 @@ export interface MotionInput {
   basementGas?: import('@auto_matrix/shared').BasementLauncherGesture;
   tvExit?: import('@auto_matrix/shared').TvExitGesture | import('@auto_matrix/shared').SubwayExitGesture;
   openingAnswer?: import('@auto_matrix/shared').OpeningPhoneAnswer;
+  openingHit?: import('@auto_matrix/shared').OpeningPhoneHit;
   crosscut?: import('@auto_matrix/shared').CrosscutGesture;
   shot?: number;
   crouching?: boolean;
@@ -691,7 +692,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   }
   if (input.openingAnswer) {
     const saved = input.openingAnswer, root = openingAnswerPose(saved);
-    Object.assign(state, newMotion(), { time: saved.elapsed, speed: root.speed, phase: root.travel / 2.8, skill: undefined });
+    Object.assign(state, newMotion(), { time: saved.elapsed + (input.openingHit?.elapsed ?? 0), speed: root.speed, phase: root.travel / 2.8, skill: undefined });
     input = { ...input, speed: root.speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }

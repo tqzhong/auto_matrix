@@ -1302,7 +1302,7 @@ export class CharacterModels {
       poseTheOneBody(rig, input.theOne);
       if ((input.openingAnswer || input.tvExit && input.tvExit.phase !== 'emerging') && !rig.handset) { rig.handset = new HardlineHandset(); this.handsets.add(rig.handset); rig.hero.bones.get('wrist_R')!.add(rig.handset.root); }
       poseHardline(rig, input.tvExit);
-      poseOpeningPhone(rig, input.openingAnswer);
+      poseOpeningPhone(rig, input.openingAnswer, input.openingHit);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;
         rig.hero.bones.get('shoulder_L')!.rotation.x -= .55 + staffSweep * .35;

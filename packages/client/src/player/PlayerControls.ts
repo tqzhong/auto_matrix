@@ -1171,6 +1171,7 @@ export class PlayerControls {
     const openingAnswer = state.currentAction?.parameters.openingAnswer as MotionInput['openingAnswer'];
     if (this.motion.openingAnswer && !openingAnswer) this.performing = false;
     this.motion.openingAnswer = openingAnswer;
+    this.motion.openingHit = state.currentAction?.parameters.openingHit as MotionInput['openingHit'];
     if (openingAnswer) this.performing = true;
     this.motion.burly = state.currentAction?.parameters.burly as MotionInput['burly'];
     this.motion.chateauWeapon = state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'];

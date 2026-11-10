@@ -20,10 +20,50 @@ export const OPENING_PHONE = {
   graspSeconds: .75,
   liftSeconds: 1.45,
   answerSeconds: 1.6,
+  hitSeconds: 1.35,
+  hitAirSeconds: .8,
+  hitSpeed: 8,
 } as const;
 
 export interface OpeningPhoneAnswer {
   elapsed: number; origin: Vector3; yaw: number;
+}
+
+export interface OpeningPhoneHit {
+  elapsed: number; at: number; origin: Vector3; yaw: number; direction: { x: number; z: number };
+}
+
+/** A failed caller stays at the receiver until the moving truck reaches the body. */
+export function openingPhoneContact(phone: OpeningPhoneEncounter): OpeningPhoneHit | undefined {
+  if (phone.phase !== 'failed' || !phone.answer || phone.impactElapsed === undefined) return;
+  const root = openingAnswerPose(phone.answer);
+  const contact = (elapsed: number) => {
+    const truck = openingTruckPose({ ...phone, impactElapsed: elapsed });
+    const dx = root.x - truck.x, dz = root.z - truck.z;
+    const relative = root.yaw - truck.yaw, cos = Math.cos(relative), sin = Math.sin(relative);
+    const back = Math.hypot(.4 * cos, .75 * sin), side = Math.hypot(.75 * cos, .4 * sin);
+    return Math.abs(Math.cos(truck.yaw) * dx - Math.sin(truck.yaw) * dz) <= 2.1 + side
+      && Math.sin(truck.yaw) * dx + Math.cos(truck.yaw) * dz + back >= -7.5;
+  };
+  if (!contact(phone.impactElapsed)) return;
+  let before = 0, after = phone.impactElapsed;
+  for (let i = 0; i < 32; i++) { const middle = (before + after) / 2; if (contact(middle)) after = middle; else before = middle; }
+  const truck = openingTruckPose({ ...phone, impactElapsed: after }), sin = Math.sin(truck.yaw), cos = Math.cos(truck.yaw);
+  const side = Math.sign(cos * (root.x - truck.x) - sin * (root.z - truck.z));
+  const x = -sin + side * .75 * cos, z = -cos - side * .75 * sin, length = Math.hypot(x, z);
+  return { elapsed: Math.min(OPENING_PHONE.hitSeconds, phone.impactElapsed - after), at: after,
+    origin: { x: root.x, y: root.y, z: root.z }, yaw: root.yaw, direction: { x: x / length, z: z / length } };
+}
+
+export function openingHitPose(hit: OpeningPhoneHit) {
+  const t = Math.min(OPENING_PHONE.hitSeconds, Math.max(0, hit.elapsed)), air = OPENING_PHONE.hitAirSeconds;
+  const slideSeconds = OPENING_PHONE.hitSeconds - air, slide = Math.max(0, t - air);
+  const travel = OPENING_PHONE.hitSpeed * (Math.min(t, air) + slide - slide * slide / (2 * slideSeconds));
+  const flight = Math.min(1, t / air), height = 4 * flight * (1 - flight);
+  const turn = Math.atan2(Math.sin(Math.atan2(hit.direction.x, hit.direction.z) - hit.yaw), Math.cos(Math.atan2(hit.direction.x, hit.direction.z) - hit.yaw));
+  const u = Math.min(1, t / .65), blend = u * u * (3 - 2 * u), speed = OPENING_PHONE.hitSpeed * (1 - slide / slideSeconds);
+  return { x: hit.origin.x + hit.direction.x * travel, y: hit.origin.y + height, z: hit.origin.z + hit.direction.z * travel,
+    yaw: hit.yaw + turn * blend, velocity: { x: speed * hit.direction.x, y: t < air ? 4 / air * (1 - 2 * flight) : 0, z: speed * hit.direction.z } };
 }
 
 /** Local roots and gait share the saved pickup clock, including a cold first frame. */
@@ -44,6 +84,7 @@ export interface OpeningRoofEncounter {
 export interface OpeningPhoneEncounter {
   phase: 'running' | 'answering' | 'failed' | 'connected' | 'done'; remaining: number; lastTick: number; attempts: number;
   answer?: OpeningPhoneAnswer;
+  hit?: OpeningPhoneHit;
   impactElapsed?: number; impactFrom?: number;
 }
 

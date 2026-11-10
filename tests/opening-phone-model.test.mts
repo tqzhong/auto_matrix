@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
 import * as THREE from 'three';
-import { FILM_SETS, OPENING_PHONE, openingAnswerPose, type OpeningPhoneAnswer } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_PHONE, openingAnswerPose, openingHitPose, openingPhoneContact, type OpeningPhoneAnswer } from '@auto_matrix/shared';
 import { HardlineHandset } from '../packages/client/src/agents/HardlineHandset.js';
 import { poseOpeningPhone } from '../packages/client/src/agents/OpeningPhonePerformance.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
@@ -61,4 +61,40 @@ test('opening handset: the actual right palm reaches the cradle and retains the 
       assert.ok(cup.distanceTo(ear) < 1e-9, 'the upper earpiece must arrive before the caller disappears');
     }
   }
+});
+
+test('opening hit: the delivered body, clothes and carried receiver rebuild exactly during flight, landing and rest', async t => {
+  const warm = await actor('trinity'), cold = await actor('trinity'), history = newMotion();
+  const props = [new HardlineHandset(), new HardlineHandset()], rigs = [warm, cold].map((a, i) => ({ root: a.rig.root, hero: a.rig, handset: props[i] }));
+  [warm, cold].forEach((a, i) => a.rig.bones.get('wrist_R')!.add(props[i].root));
+  t.after(() => { props.forEach(prop => prop.dispose()); warm.models.dispose(); cold.models.dispose(); });
+  const answer = saved(1.1), collision = openingPhoneContact({ phase: 'failed', remaining: 0, impactElapsed: 1.35, lastTick: 0, attempts: 0, answer })!;
+  for (let i = 0; i < 30; i++) advanceMotion(history, { ...idle, speed: 8.4, turn: .8, attack: 2, combo: 1 }, .02);
+  for (const elapsed of [0, .08, .3, .6, .95, 1.35]) {
+    const hit = { ...collision, elapsed }, root = openingHitPose(hit), input = { ...idle, glasses: false, openingAnswer: answer, openingHit: hit };
+    for (const [i, a] of [warm, cold].entries()) {
+      const motion = i ? newMotion() : history;
+      a.rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); a.rig.root.rotation.y = root.yaw;
+      a.models.animate(a.rig, advanceMotion(motion, input, 0), motion, input, 0); poseOpeningPhone(rigs[i], answer, hit);
+      const palm = a.rig.bones.get('wrist_R')!.localToWorld(new THREE.Vector3(0, -.19, .035));
+      assert.ok(palm.distanceTo(props[i].root.getWorldPosition(new THREE.Vector3())) < .015, `${elapsed}: the carried receiver detaches from the palm`);
+    }
+    assert.deepEqual(surface(warm.rig.root), surface(cold.rig.root), `${elapsed}: the saved reaction changes after a cold join`);
+  }
+});
+
+test('opening hit: contact starts from the complete pickup skeleton without snapping the body or receiver', async t => {
+  const a = await actor('trinity'), handset = new HardlineHandset(), rig = { root: a.rig.root, hero: a.rig, handset };
+  a.rig.bones.get('wrist_R')!.add(handset.root); t.after(() => { handset.dispose(); a.models.dispose(); });
+  const answer = saved(1.1), phone = { phase: 'failed' as const, remaining: 0, impactElapsed: .1, lastTick: 0, attempts: 0, answer };
+  assert.equal(openingPhoneContact(phone), undefined, 'the caller cannot fall before the truck reaches the body');
+  phone.impactElapsed = 1.35; const hit = { ...openingPhoneContact(phone)!, elapsed: 0 }, root = openingAnswerPose(answer);
+  const draw = (reacting: boolean) => {
+    a.rig.root.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); a.rig.root.rotation.y = root.yaw;
+    const motion = newMotion(), input = { ...idle, glasses: false, openingAnswer: answer, ...(reacting ? { openingHit: hit } : {}) };
+    a.models.animate(a.rig, advanceMotion(motion, input, 0), motion, input, 0); poseOpeningPhone(rig, answer, reacting ? hit : undefined); a.rig.root.updateMatrixWorld(true);
+    return [...a.rig.bones.values(), handset.root].flatMap(object => [...object.matrixWorld.elements]);
+  };
+  const before = draw(false), after = draw(true);
+  assert.ok(Math.max(...before.map((value, i) => Math.abs(value - after[i]))) < 1e-7, 'the first impact frame must retain every saved joint and the receiver transform');
 });

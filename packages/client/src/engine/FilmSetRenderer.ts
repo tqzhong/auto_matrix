@@ -2121,7 +2121,7 @@ export class FilmSetRenderer {
       if (this.openingReceiver && this.openingCord) {
         const held = Boolean(phone?.answer && phone.answer.elapsed >= OPENING_PHONE.graspSeconds);
         this.openingReceiver.root.visible = !held;
-        const subject = held && (phone?.phase === 'answering' || phone?.phase === 'failed') ? this.phoneBodies?.('trinity')?.getObjectByName('hardline-handset') : undefined;
+        const subject = held && !phone?.hit && (phone?.phase === 'answering' || phone?.phase === 'failed') ? this.phoneBodies?.('trinity')?.getObjectByName('hardline-handset') : undefined;
         const parent = this.openingCord.parent!; parent.updateWorldMatrix(true, true);
         const from = new THREE.Vector3(0, 3.1, .4), to = subject
           ? parent.worldToLocal(subject.getWorldPosition(new THREE.Vector3())) : new THREE.Vector3(-.75, held ? 2.8 : 3.7, .55);
