@@ -144,6 +144,23 @@ test('an exhausted or timed out gunner retries at the gate without replaying the
   h.command('retry', 103); assert.equal(h.journey.dockGate?.remaining, 120);
 });
 
+test('reconnecting the completed gate preserves the saved ending text and journey', () => {
+  const h = setup(); startAiming(h); const target = aim(h.journey.dockGate!);
+  for (let i = 0; i < DOCK_GATE.hits; i++) {
+    h.sandbox.life.film.dockGate.frame(h.kid, .1, 80 + i);
+    h.sandbox.life.film.dockGate.shoot(h.kid, target.yaw, target.pitch, 80 + i);
+  }
+  let tick = 100;
+  while (h.journey.dockGate!.phase !== 'done' && tick < 240) h.sandbox.life.film.dockGate.frame(h.kid, .1, tick++);
+  assert.equal(h.journey.step, 3); assert.ok(h.journey.completed.includes('m3_gate'));
+  assert.match(h.journey.lastText, /Kid 用机炮击断承重缆索/);
+  const saved = structuredClone(h.sandbox.state);
+  h.players.release('p', tick); h.sandbox.restore(saved); h.players.possess('p', 'kid', tick);
+  assert.deepEqual(h.sandbox.life.film.state, saved.neoLife.journey);
+  h.players.step(.1, false, tick);
+  assert.deepEqual(h.sandbox.life.film.state, saved.neoLife.journey);
+});
+
 test('reconciling a gate save does not restart the completed Mifune body action', () => {
   const h = setup(); h.journey.dockLastStand = { phase: 'done', elapsed: 0, total: 19.2 };
   h.journey.completed.push('m3_dock_battle');

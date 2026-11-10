@@ -41,7 +41,8 @@ export class DockGateSystem {
       const eye = dockGateEye(gate), dx = DOCK_GATE.cable.x - 2 - eye.x, dz = DOCK_GATE.cable.z - eye.z;
       gate.yaw = Math.atan2(dx, dz); gate.pitch = -Math.atan2(32 - eye.y, Math.hypot(dx, dz));
     }
-    this.stage(actor, tick); journey.lastText = dockGateText(gate);
+    this.stage(actor, tick);
+    if (!journey.completed.includes(journey.scene)) journey.lastText = dockGateText(gate);
     if (gate.phase === 'done' && journey.step === 2) this.onAdvance?.('Kid 用机炮击断承重缆索，配重牵开三号闸门。Hammer 穿过开口进入船坞，Link 现在可以启动 EMP。', actor, tick);
     return true;
   }
