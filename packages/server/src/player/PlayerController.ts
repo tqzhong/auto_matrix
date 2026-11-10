@@ -2,7 +2,7 @@ import { bookDoorLocked } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
-import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId } from '@auto_matrix/shared';
+import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
 import type { ConversationEngine } from '../agents/ConversationEngine.js';
@@ -31,6 +31,10 @@ interface PlayerSession {
   stagger: number;
 }
 const idleInput = (): PlayerInput => ({ x: 0, z: 0, yaw: 0, pitch: 0, sprint: false, jump: false, sequence: 0 });
+
+export function airbornePlayer(agent: AgentState, structures: WorldStructure[] = []): boolean {
+  return agent.status === 'alive' && (agent.velocity.y > 0 || agent.position.y > groundHeight(agent.position, agent.isInMatrix, structures) + .1);
+}
 
 export function savedFilmCombatAction(journey: FilmJourney, action: AgentState['currentAction'], paused: boolean): boolean {
   return Boolean(!journey.visiting && action && (action.type === 'idle' || paused && action.type === 'move_to')
@@ -177,9 +181,10 @@ export class PlayerController {
       if (!takeover) return { error: '这个角色已在其他页面游玩。点击角色，在当前页面继续原有进度。' };
       this.release(socketId, tick);
       const session = this.sessions.get(owner)!;
+      const airborne = airbornePlayer(agent, this.sandbox?.state.structures);
       session.input = { ...idleInput(), yaw: agent.rotation }; session.lastInput = Date.now();
-      session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined;
-      if (!this.sandbox?.life.film.truthFrame(agent, 0, tick)) agent.velocity = { x: 0, y: session.vy, z: 0 };
+      if (!airborne) session.planar = { x: 0, z: 0 }; session.strike = undefined; session.impulse = undefined; session.palm = undefined;
+      if (!this.sandbox?.life.film.truthFrame(agent, 0, tick) && !airborne) agent.velocity = { x: 0, y: session.vy, z: 0 };
       this.sessions.delete(owner); this.sessions.set(socketId, session); this.owners.set(id, socketId);
       this.onReplaced?.(owner, tick);
       if (agent.status === 'alive') return { agentId: id };
@@ -222,8 +227,10 @@ export class PlayerController {
       || interlude.scene === 'm3_neo_carried' && !interlude.visiting && agent.currentAction?.parameters.finaleComa
       || savedFilmCombatAction(interlude, agent.currentAction, !this.running)))) agent.currentAction = null;
     agent.targetPosition = null; agent.currentPath = [];
-    if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
-    this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: 0, planar: { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
+    const airborne = !restoredPose && airbornePlayer(agent, this.sandbox?.state.structures);
+    if (!restoredPose && !airborne) agent.velocity = { x: 0, y: 0, z: 0 };
+    this.sessions.set(socketId, { agentId: id, input: { ...idleInput(), yaw: agent.rotation }, lastInput: Date.now(), vy: airborne ? agent.velocity.y : 0,
+      planar: airborne ? { x: agent.velocity.x, z: agent.velocity.z } : { x: 0, z: 0 }, lastAttack: 0, combo: 0, stagger: 0 });
     this.owners.set(id, socketId);
     this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.architectFrame(agent, 0, tick);
@@ -328,7 +335,7 @@ export class PlayerController {
         || !this.running && savedOraclePropAction(journey, agent)
         || journey.scene === 'm3_neo_carried' && !journey.visiting && agent.currentAction?.parameters.finaleComa
         || savedFilmCombatAction(journey, agent.currentAction, !this.running)))) agent.currentAction = null;
-      if (!restoredPose) agent.velocity = { x: 0, y: 0, z: 0 };
+      if (!restoredPose && !airbornePlayer(agent, this.sandbox?.state.structures)) agent.velocity = { x: 0, y: 0, z: 0 };
       this.sandbox?.life.film.primaryDemolition.frame(agent, 0, tick);
       this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick);
     this.sandbox?.life.film.freewayHandoff.frame(agent, {}, 0, tick);
@@ -533,7 +540,8 @@ export class PlayerController {
         || this.sandbox?.life.film.truthFrame(agent, 0, tick) || this.sandbox?.life.film.mountainFrame(agent, idleInput(), 0, tick))) {
         session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
-      if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
+      const pausedAirborne = !running && airbornePlayer(agent, this.sandbox?.state.structures);
+      if (!running || agent.status !== 'alive') { this.sandbox?.life.film.sixth.frame(agent, { crouch: false, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.basement.frame(agent, {}, 0, tick); this.sandbox?.life.film.wetwall.frame(agent, { climb: 0, jump: false }, 0, tick); if (!pausedAirborne) agent.velocity = { x: 0, y: 0, z: 0 }; this.sandbox?.life.film.hotelFrame(agent, 0, tick); this.sandbox?.life.film.sentinelFrame(agent, { movement: 0, sprint: false, jump: false }, 0, tick); this.sandbox?.life.film.interludeFrame(agent, 0, tick); this.sandbox?.life.film.betrayalFrame(agent, 0, tick); this.sandbox?.life.film.rescueFrame(agent, 0, tick); this.sandbox?.life.film.governmentFrame(agent, false, 0, tick); this.sandbox?.life.film.airRescueFrame(agent, false, 0, tick); this.sandbox?.life.film.matrixEscapeFrame(agent, { movement: 0, sprint: false }, 0, tick); this.sandbox?.life.film.farewellFrame(agent, 0, tick); this.sandbox?.life.film.deusFrame(agent, false, 0, tick); this.sandbox?.life.film.smithFinaleFrame(agent, { focus: false, x: 0, z: 0, yaw: agent.rotation }, 0, tick); this.sandbox?.life.film.epilogueFrame(agent, 0, tick); this.sandbox?.life.film.theOneFrame(agent, { x: 0, z: 0, sprint: false, jump: false, focus: false }, 0, tick); this.sandbox?.life.film.reloaded.frame(agent, { x: 0, focus: false }, 0, tick); this.sandbox?.life.film.catch.frame(agent, { x: 0, z: 0, focus: false }, 0, tick); this.sandbox?.life.film.mountainFrame(agent, { x: 0, z: 0, yaw: agent.rotation, jump: false, sprint: false }, 0, tick); this.sandbox?.life.film.lobby.frame(agent, 0, tick); if (!pausedAirborne) session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue; }
       session.stagger = Math.max(0, session.stagger - dt);
       const stale = now - session.lastInput > 300;
       const changedLocation = session.input.location !== undefined && session.input.location !== agent.currentLocation;

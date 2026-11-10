@@ -25,7 +25,7 @@ import { WorldDynamics } from './story/WorldDynamics.js';
 import { LLMClient } from './llm/LLMClient.js';
 import { SocketServer } from './network/SocketServer.js';
 import { StateSync } from './network/StateSync.js';
-import { PlayerController, savedFilmCombatAction, savedAwakeningIdle, savedOfficeCustodyAction, savedOfficeCrouchAction, savedOraclePropAction } from './player/PlayerController.js';
+import { PlayerController, airbornePlayer, savedFilmCombatAction, savedAwakeningIdle, savedOfficeCustodyAction, savedOfficeCrouchAction, savedOraclePropAction } from './player/PlayerController.js';
 import { CheckpointStore } from './world/CheckpointStore.js';
 import { SupabaseCheckpointStore, CloudCheckpointConflictError } from './world/SupabaseCheckpointStore.js';
 import { SandboxSystem } from './player/SandboxSystem.js';
@@ -407,8 +407,9 @@ async function main(): Promise<void> {
         || journey.scene === 'm1_room303' && !journey.visiting && ['breach', 'dive', 'ladder_ready', 'climbing'].includes(journey.openingHotel?.phase ?? '')
           && (agent.state.currentAction?.parameters.hotel303 || agent.state.currentAction?.parameters.climbing));
       if (agent.state.currentAction?.type === 'talk_to' && !checkpoint.conversations || agent.state.currentAction?.parameters.player && !savedPerformanceAction) {
+        const airborne = agent.state.currentAction?.parameters.player === true && airbornePlayer(agent.state, checkpoint.sandbox?.structures);
         agent.state.currentAction = null; agent.state.targetPosition = null; agent.state.currentPath = [];
-        agent.state.velocity = { x: 0, y: 0, z: 0 };
+        if (!airborne) agent.state.velocity = { x: 0, y: 0, z: 0 };
       }
     }
     simLoop.restoreTick(checkpoint.tick);

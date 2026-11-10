@@ -192,6 +192,11 @@ export class PlayerControls {
     canvas.addEventListener('click', this.click);
   }
 
+  private restoreMomentum(state: AgentState): void {
+    const airborne = state.status === 'alive' && (state.velocity.y > 0 || state.position.y > groundHeight(state.position, state.isInMatrix, this.structures) + .1);
+    this.vy = airborne ? state.velocity.y : 0;
+    this.planar = airborne ? { x: state.velocity.x, z: state.velocity.z } : { x: 0, z: 0 };
+  }
   possess(state: AgentState): void {
     const changedActor = this.id !== state.id;
     this.recoveryLook = undefined; this.recoveryRoll = 0;
@@ -240,7 +245,7 @@ export class PlayerControls {
     this.motion.dockEvacuation = undefined; this.motion.shaftSeal = undefined;
     this.sealAim = false; this.templeAim = false; this.ceasefireAim = false; this.primaryAim = false; this.primaryViewPhase = undefined; this.motion.primaryDemolition = undefined; this.motion.trinityRelay = undefined; this.motion.trinityTerminal = undefined; this.motion.engineering = undefined; this.motion.zionMessage = undefined; this.motion.seraphDoor = undefined; this.motion.bookDoor = undefined; this.motion.sourcePortal = undefined; this.motion.architect = undefined; this.motion.templeDefense = undefined;
     this.gardenLook = { yaw: 0, pitch: 0 };
-    this.vy = 0; this.planar = { x: 0, z: 0 }; this.authoritative = state; this.firstPerson = false; this.enabled = true;
+    this.restoreMomentum(state); this.authoritative = state; this.firstPerson = false; this.enabled = true;
     // A retry can accept input before its acknowledgement reaches this client.
     if (changedActor) { this.keys.clear(); this.consumedOfficeClimbKeys.clear(); this.motion.officeLadder = undefined; }
     else for (const key of this.keys) if (!HELD_INPUT_KEYS.has(key)) this.keys.delete(key);
@@ -1254,7 +1259,7 @@ export class PlayerControls {
     if (state !== this.authoritative) {
       const difference = Math.hypot(state.position.x - this.position.x, state.position.z - this.position.z);
       if (difference > 12 || state.isInMatrix !== this.authoritative?.isInMatrix || state.status === 'dead') {
-        this.position = { ...state.position }; this.vy = 0; this.planar = { x: 0, z: 0 }; this.cameraReady = false;
+        this.position = { ...state.position }; this.restoreMomentum(state); this.cameraReady = false;
         if (state.currentLocation !== this.authoritative?.currentLocation && (FILM_SETS[state.currentLocation] || FILM_SETS[this.authoritative?.currentLocation ?? ''])) {
           this.yaw = this.facing = this.movementYaw = state.rotation;
           if (state.currentLocation === 'film_agent_interrogation') this.pitch = .12;
