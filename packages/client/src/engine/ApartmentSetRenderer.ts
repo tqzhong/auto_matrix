@@ -38,7 +38,10 @@ export class ApartmentSetRenderer {
   private windowGlass: THREE.MeshStandardMaterial;
   private windowLights: THREE.PointLight[] = [];
   private roomLights: THREE.Light[] = [];
-  private returnPreparation?: { gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; opening: boolean; steps?: Generator<void> };
+  private returnPreparation?: {
+    gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; opening: boolean;
+    steps?: Generator<void>; normalMeshes?: THREE.Mesh[];
+  };
   constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
     const wood = this.mat(0x82765b, .88, 0, 'old_wood_floor');
@@ -246,6 +249,9 @@ export class ApartmentSetRenderer {
     this.root.traverse(object => { if (object instanceof THREE.Light && object !== light) this.roomLights.push(object); });
     this.batch(); this.update();
   }
+  get returnNormalMeshes(): readonly THREE.Mesh[] | undefined {
+    return this.returnPreparation?.steps ? undefined : this.returnPreparation?.normalMeshes;
+  }
   prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group,
     openingObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = []): boolean {
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
@@ -260,7 +266,9 @@ export class ApartmentSetRenderer {
     if (previous?.gpu !== renderer.properties || previous.points !== points || previous.opening !== opening || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
-      this.returnPreparation = { gpu: renderer.properties, subjects, points, opening, steps: this.prepareReturnSteps(renderer, camera, scene, subjects, opening) };
+      const normalMeshes: THREE.Mesh[] | undefined = opening ? [] : undefined;
+      this.returnPreparation = { gpu: renderer.properties, subjects, points, opening, normalMeshes,
+        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, opening, normalMeshes) };
     }
     const prepared = this.returnPreparation!;
     if (prepared.steps?.next().done) prepared.steps = undefined;
@@ -270,7 +278,7 @@ export class ApartmentSetRenderer {
     this.returnPreparation?.steps?.return(undefined); this.returnPreparation = undefined;
   }
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
-    subjects: (THREE.Group | THREE.Mesh)[], opening: boolean): Generator<void> {
+    subjects: (THREE.Group | THREE.Mesh)[], opening: boolean, normalMeshes?: THREE.Mesh[]): Generator<void> {
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
@@ -312,6 +320,7 @@ export class ApartmentSetRenderer {
       if (!object.frustumCulled || frustum.intersectsObject(object)) collect(object);
     }
     for (const mesh of meshes) {
+      if (mesh instanceof THREE.Mesh) normalMeshes?.push(mesh);
       const material = mesh.material;
       const maps = material instanceof THREE.MeshStandardMaterial ? [material.map, material.alphaMap, material.normalMap, material.bumpMap, material.roughnessMap]
         : material instanceof THREE.MeshBasicMaterial ? [material.map, material.alphaMap] : [];

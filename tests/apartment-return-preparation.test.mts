@@ -116,6 +116,7 @@ test('a successful Wells connection prepares the apartment and the guests before
   h.prepare(subjects); assert.deepEqual(h.work, []);
   delete h.journey.visiting;
   assert.equal(h.prepare([choi, undefined, goal, shadow]), true, 'the normals queue must wait while the apartment still has work');
+  assert.equal(h.apartment.returnNormalMeshes, undefined);
   assert.ok(h.work.includes('compile'), 'the actual connected call starts preparation before the cut');
   h.ready(); h.journey.openingPhone.phase = 'done';
   for (let i = 0; i < 80; i++) h.prepare(subjects);
@@ -127,6 +128,8 @@ test('a successful Wells connection prepares the apartment and the guests before
     { facesTheDesk: true, actorLocalSkin: true }, 'the queued programs need the arriving view and the draw-time skin variant');
   const count = h.work.length;
   assert.equal(h.prepare(subjects), false); assert.equal(h.work.length, count);
+  const normals = h.apartment.returnNormalMeshes;
+  assert.ok(normals?.includes(h.street) && normals.includes(model) && normals.includes(h.shirt) && normals.includes(h.root.children[0] as THREE.Mesh));
   h.journey.scene = 'm1_wake_up';
-  h.prepare(subjects); assert.equal(h.work.length, count);
+  h.prepare(subjects); assert.equal(h.work.length, count); assert.equal(h.apartment.returnNormalMeshes, undefined);
 });

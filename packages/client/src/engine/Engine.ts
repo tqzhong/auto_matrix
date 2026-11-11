@@ -270,7 +270,8 @@ export class Engine {
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const neoAtHome = player?.id === meeting?.actor ? this.agentRenderer.getAgentHero('neo') : undefined;
-    const preparingApartment = this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
+    const preparingApartment = openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
+      || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       openingHandoff ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined);
     if (!this.playerControls?.firstPerson) this.filmSets.preparePodColors(this.renderer, this.camera, this.agentRenderer.getAgentHero('neo'));
@@ -359,7 +360,8 @@ export class Engine {
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
     const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
       && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
-    this.postProcessing.prepareNormals(this.renderer, preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined);
+    this.postProcessing.prepareNormals(this.renderer, preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined,
+      this.voxelRenderer.interiors.apartmentReturnNormalMeshes);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);

@@ -323,6 +323,42 @@ test('normal and depth rendering leaves light counts out of the shader while ret
   } finally { pass.dispose(); read.dispose(); write.dispose(); fixture.geometry.dispose(); fixture.material.dispose(); }
 });
 
+test('the Wells handoff prepares the apartment, cast and both instanced normal layouts offstage', t => {
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(), actor = new THREE.Group(), city = new THREE.Group();
+  const pass = new WorldOcclusionPass(scene, camera, 64, 64), geometry = new THREE.BoxGeometry(), surface = new THREE.MeshStandardMaterial();
+  const overlay = new THREE.MeshBasicMaterial({ depthWrite: false });
+  const room = new THREE.Mesh(geometry, surface), towers = new THREE.InstancedMesh(geometry, surface, 1);
+  const signal = new THREE.InstancedMesh(geometry, surface, 1), shirt = new THREE.SkinnedMesh(geometry, surface);
+  const ring = new THREE.Mesh(geometry, overlay), backdrop = new THREE.Mesh(geometry, surface);
+  signal.setColorAt(0, new THREE.Color(0xff0000)); shirt.visible = false; backdrop.userData.distantBackdrop = true;
+  scene.add(city, actor, new THREE.PointLight()); city.add(room, towers, signal, backdrop); actor.add(shirt, ring);
+  city.visible = actor.visible = false;
+  const surfaces = [room, towers, signal, shirt, ring, backdrop];
+  const compiled = new Set<THREE.Object3D>(), programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, steps = 0;
+  const renderer = { properties: {}, info: { programs }, extensions: { has: () => true }, debug: { checkShaderErrors: true },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getRenderTarget: () => target, setRenderTarget: (next: typeof target) => { target = next; },
+    compile(subject: THREE.Object3D, _eye: THREE.Camera, normalScene: THREE.Scene) {
+      assert.equal(target, pass.normalRenderTarget); assert.notEqual(normalScene, scene); assert.deepEqual(normalScene.children, []);
+      subject.traverse(mesh => { assert.equal((mesh as THREE.Mesh).material, pass.normalMaterial); compiled.add(mesh); });
+      programs.push({ program: {}, isReady: () => true, getUniforms: () => { assert.equal(renderer.debug.checkShaderErrors, false); steps++; } });
+      steps++;
+    },
+  } as unknown as THREE.WebGLRenderer;
+  t.after(() => { pass.dispose(); geometry.dispose(); surface.dispose(); overlay.dispose(); });
+  for (let frame = 0; frame < 16; frame++) {
+    const before = steps;
+    pass.prepareNormals(renderer, actor, surfaces);
+    assert.ok(steps - before <= 1);
+    assert.equal(target, null); assert.equal(renderer.debug.checkShaderErrors, true);
+    assert.equal(city.visible || actor.visible || shirt.visible, false);
+    assert.deepEqual(surfaces.map(mesh => mesh.material), [surface, surface, surface, surface, overlay, surface]);
+  }
+  assert.deepEqual(compiled, new Set([room, towers, signal, shirt]));
+  assert.ok(steps > 0 && steps <= 8, 'the destination only needs to be prepared once');
+});
+
 test('the normals pass draws mirror planes without rendering their reflected world and restores color reflections', t => {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();
   const mirror = new Reflector(new THREE.PlaneGeometry());

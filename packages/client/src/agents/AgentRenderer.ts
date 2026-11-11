@@ -88,6 +88,7 @@ export class AgentRenderer {
   private matrix = true;
   private playerMotion?: MotionInput;
   private models = new CharacterModels();
+  private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
   private preparedOfficeActors?: WeakMap<THREE.Group, {
@@ -222,6 +223,17 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  prepareOpeningApartmentActor(): boolean {
+    const neo = this.agents.get('neo'), hero = neo?.rig.hero;
+    if (!neo || !hero || neo.rig.detail.visible || this.preparedOpeningApartment.has(hero.root)) return false;
+    const state = neo.state;
+    if (!state.isInMatrix || state.status !== 'alive' || state.controller || state.currentAction
+      || !['neo_apartment', 'film_anderson_flat'].includes(state.currentLocation)) return false;
+    // Only prepare the loaded offstage rig. The distant representation and actor clock stay live.
+    this.models.prepareApartmentIdle(hero);
+    this.preparedOpeningApartment.add(hero.root);
+    return true;
+  }
   getNearbyOfficeActor(id: string, camera: THREE.Camera): THREE.Group | undefined {
     const group = this.getAgent(id);
     if (group?.visible && group.position.distanceToSquared(camera.position) <= 130 ** 2)

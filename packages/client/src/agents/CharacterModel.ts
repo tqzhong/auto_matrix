@@ -967,6 +967,12 @@ export class CharacterModels {
     const mesh = this.mesh(parent, merged, material, [0, 0, 0]); mesh.visible = false; return mesh;
   }
 
+  prepareApartmentIdle(hero: HeroRig): void {
+    const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, homeClothes: true };
+    const motion = newMotion();
+    this.heroes.animate(hero, advanceMotion(motion, input, 0), motion, input, 0);
+  }
+
   animate(rig: CharacterRig, delta: number, input: MotionInput, distance: number): void {
     if (rig.smithProjection) {
       const projection = rig.smithProjection;
