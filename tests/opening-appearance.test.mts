@@ -11,6 +11,35 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { actor } from './helpers/fighting-hand-fixture.mts';
 
+test('cold hero rigs assemble on separate frames and disposal cancels a queued rig', async t => {
+  const source = await actor('smith'), asset = await source.models['load']('smith');
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  const frames = new Map<number, FrameRequestCallback>();
+  const previous = [globalThis.requestAnimationFrame, globalThis.cancelAnimationFrame];
+  let nextFrame = 0;
+  globalThis.requestAnimationFrame = callback => { frames.set(++nextFrame, callback); return nextFrame; };
+  globalThis.cancelAnimationFrame = id => { frames.delete(id); };
+  t.after(() => {
+    models.dispose(); source.models.dispose();
+    [globalThis.requestAnimationFrame, globalThis.cancelAnimationFrame] = previous;
+  });
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  const attached: string[] = [];
+  const brown = models.create('smith', 'agent_brown', undefined, true).then(rig => { if (rig) attached.push('brown'); return rig; });
+  const jones = models.create('smith', 'agent_jones', undefined, true).then(rig => { if (rig) attached.push('jones'); return rig; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(attached, [], 'ready assets must yield before assembling');
+  assert.equal(frames.size, 1);
+  const [id, draw] = frames.entries().next().value!;
+  frames.delete(id); draw(0);
+  assert.ok(await brown);
+  assert.deepEqual(attached, ['brown']);
+  assert.equal(frames.size, 1, 'the second rig waits for another frame');
+  models.dispose();
+  assert.equal(await jones, undefined);
+  assert.equal(frames.size, 0);
+});
+
 test('matching short hair maps share the texture while a different UV transform keeps its own sampler', async t => {
   const source = await actor('trinity');
   const models = new HeroModels(new THREE.Texture(), new THREE.Texture());

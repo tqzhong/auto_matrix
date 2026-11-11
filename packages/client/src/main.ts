@@ -127,7 +127,7 @@ function update(force = false): void {
     engine.setWorld(inMatrix, false);
     ui.setWorld(inMatrix);
   }
-  engine.updateAgents(agents);
+  engine.updateAgents(agents, sandbox?.neoLife?.journey);
   engine.setSimulation(simulation, timeOfDay);
   engine.audio.update({ player, sandbox, time: timeOfDay, matrix: inMatrix, running: simulation.running });
   if (sandbox) {

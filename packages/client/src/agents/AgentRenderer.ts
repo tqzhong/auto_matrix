@@ -5,6 +5,7 @@ import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
 import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_HOTEL, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -43,6 +44,11 @@ import { prepareMeshBuffers } from '../engine/PrepareMeshBuffers.js';
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
 };
+const openingScenes = ['m1_room303', 'm1_roofs', 'm1_phone_escape', 'm1_wake_up'];
+const openingCast = new Set([
+  ...openingScenes.flatMap(id => { const scene = FILM_SCENE_BY_ID[id]; return [scene.actor, ...scene.cast]; }),
+  ...OPENING_HOTEL.officers.map(officer => officer.id), ...WELLS_AFTERMATH.roles,
+]);
 interface Entry {
   group: THREE.Group;
   body: THREE.Group;
@@ -136,11 +142,12 @@ export class AgentRenderer {
       && state.currentAction?.parameters.finaleComa === true && epilogue?.kind === 'neo_carried' && epilogue.role === 'neo';
   }
 
-  updateAgent(id: string, state: AgentState): void {
+  updateAgent(id: string, state: AgentState, journey?: FilmJourney): void {
     let entry = this.agents.get(id);
     if (!entry) {
       const group = new THREE.Group();
-      const rig = this.models.create(state);
+      const opening = journey && !journey.visiting && openingScenes.includes(journey.scene);
+      const rig = this.models.create(state, opening && id !== journey.actor ? (openingCast.has(id) ? 'staged' : 'deferred') : 'eager');
       const body = rig.root;
       body.position.y = -1;
       const shadow = new THREE.Mesh(this.shadowGeometry, this.shadowMaterial);
@@ -207,8 +214,11 @@ export class AgentRenderer {
 
   setSelected(id: string | null): void { this.selected = id; }
   setPlayer(id: string | null, firstPerson = false): void {
-    const entry = id === 'morpheus' && id !== this.playerId ? this.agents.get(id) : undefined;
-    if (entry && ['film_white_construct', 'film_real_desert'].includes(entry.state.currentLocation)) entry.rig.motion = newMotion();
+    const entry = id ? this.agents.get(id) : undefined;
+    if (entry) {
+      this.models.requestHero(entry.rig);
+      if (id === 'morpheus' && id !== this.playerId && ['film_white_construct', 'film_real_desert'].includes(entry.state.currentLocation)) entry.rig.motion = newMotion();
+    }
     this.playerId = id; this.firstPerson = firstPerson;
   }
   setPlayerMotion(motion: MotionInput): void { this.playerMotion = motion; }
@@ -222,6 +232,14 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  prepareStoryCast(journey: FilmJourney): void {
+    const index = FILM_SCENES.findIndex(scene => scene.id === (journey.visiting ?? journey.scene));
+    if (index < 0) return;
+    for (const scene of FILM_SCENES.slice(index, index + 2)) for (const id of [scene.actor, ...scene.cast]) {
+      const entry = this.agents.get(id);
+      if (entry) this.models.requestHero(entry.rig);
+    }
+  }
   prepareOpeningHotelTextures(renderer: THREE.WebGLRenderer, hotel?: OpeningHotelEncounter): boolean {
     if (!hotel || hotel.phase === 'failed') { this.cancelOpeningHotelTextures(); return false; }
     const pursuit = !['trace', 'breach', 'combat'].includes(hotel.phase);
@@ -849,6 +867,7 @@ export class AgentRenderer {
       const velocity = state.status === 'alive' ? Math.hypot(state.velocity.x, state.velocity.z) : 0;
       entry.body.rotation.z = THREE.MathUtils.lerp(entry.body.rotation.z, state.status === 'dead' && !state.currentAction?.parameters.sourcePortal && !state.currentAction?.parameters.crosscut && !state.currentAction?.parameters.farewell && !state.currentAction?.parameters.dockLastStand && !state.currentAction?.parameters.upperDigger && !state.currentAction?.parameters.logosBane ? Math.PI / 2 : 0, 1 - Math.exp(-7 * delta));
       const dist = camera ? entry.group.position.distanceTo(camera.position) : 0;
+      if (camera && dist < 150 && entry.group.visible) this.models.requestHero(entry.rig);
       const floor = groundHeight(state.position, state.isInMatrix);
       const input: MotionInput = id === this.playerId && this.playerMotion ? this.playerMotion : {
         speed: clubGesture || state.currentAction?.parameters.basement || sixthRoot || entry.mirrorGuide || entry.oracleGuide || entry.ambushGuide || entry.wetwallGuide ? guideSpeed : velocity, grounded: state.currentAction?.parameters.truckRoad ? id !== 'niobe' && !(id === 'agent_johnson' && (state.currentAction.parameters.truckRoad as MotionInput['truckRoad'])?.phase === 'dropping') : dropRoot ? !basementDropPose(basement!.drop!).airborne : Boolean(state.currentAction?.parameters.riding || state.currentAction?.parameters.climbing || state.currentAction?.parameters.wetwall) || state.position.y <= floor + .12, verticalVelocity: dropRoot ? basementDropPose(basement!.drop!).verticalVelocity : state.velocity.y,

@@ -213,6 +213,7 @@ export class CharacterModels {
   private pendingAtlas: (() => void)[] = [];
   private fabric: THREE.CanvasTexture;
   private heroes: HeroModels;
+  private pendingHeroes = new WeakMap<CharacterRig, () => void>();
   private epilogueHeads = new EpilogueHeads();
   private diggerBodies = new DiggerBodies();
   private oracleParkHands = new OracleParkHands();
@@ -344,7 +345,7 @@ export class CharacterModels {
     return this.geometry(geometry);
   }
 
-  create(state: AgentState): CharacterRig {
+  create(state: AgentState, heroLoad: 'eager' | 'staged' | 'deferred' = 'eager'): CharacterRig {
     const apuCrew = state.id === 'mifune' || state.id === 'kid';
     const digger = state.id === 'zee' || state.id === 'charra';
     const captain = ['niobe', 'lock', 'roland'].includes(state.id);
@@ -846,7 +847,8 @@ export class CharacterModels {
     if (state.id === 'mouse') rig.mouseFrame = { input: { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, realWorld: !state.isInMatrix }, distance: 4 };
     const support = state.id === 'switch' || state.id === 'apoc' || state.id === 'rhineheart' || state.id === 'courier' || state.id === 'choi' || state.id === 'dujour' || state.id in reloadedBase ? state.id as HeroSupport : undefined;
     if (HERO_IDS.includes(state.id as HeroId) || guard || support) {
-      this.heroes.create(reloadedBase[state.id] ?? (guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId), guard, support).then(model => {
+      const base = reloadedBase[state.id] ?? (guard || support === 'rhineheart' ? 'smith' : support === 'switch' || support === 'dujour' ? 'trinity' : support === 'apoc' || support === 'courier' || support === 'choi' ? 'neo' : state.id as HeroId);
+      const loadHero = () => this.heroes.create(base, guard, support, heroLoad !== 'eager').then(model => {
         if (!model) return;
         rig.weapons?.forEach(gun => gun.removeFromParent()); rig.weapons = undefined; rig.weaponStyle = undefined;
         if (rig.zionVariant) {
@@ -859,6 +861,8 @@ export class CharacterModels {
         if (rig.staff) { rig.staff.removeFromParent(); rig.staff.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.staff); }
         if (rig.chateauBlade) { rig.chateauBlade.model.removeFromParent(); rig.chateauBlade.model.position.set(0, -.16, .06); model.bones.get('wrist_R')!.add(rig.chateauBlade.model); }
       }).catch(error => console.warn(`${state.id} asset could not load; retaining the procedural character.`, error));
+      if (heroLoad === 'deferred') this.pendingHeroes.set(rig, loadHero);
+      else void loadHero();
     }
     batchStaticGeometry(detail, new Set(clothPanels.map(panel => panel.mesh))).forEach(geometry => this.geometries.add(geometry));
     if (state.id === 'spoon_boy') this.spoonBoyHands.track(rig, skin);
@@ -871,6 +875,13 @@ export class CharacterModels {
     enableSkinnedCulling(detail);
     if (state.id === 'bane') rig.smithProjection = { loading: false, visible: false, fallback: new Map() };
     return rig;
+  }
+
+  requestHero(rig: CharacterRig): void {
+    const loadHero = this.pendingHeroes.get(rig);
+    if (!loadHero) return;
+    this.pendingHeroes.delete(rig);
+    loadHero();
   }
 
   private addHair(head: THREE.Group, look: Look, color: string): void {

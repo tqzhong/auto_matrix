@@ -810,9 +810,11 @@ export class Engine {
     this.eventAge = 0;
     (this.eventRing.material as THREE.MeshBasicMaterial).color.setHex(['death', 'gunfight'].includes(event.type) ? 0xec7964 : 0xa5f3b3);
   }
-  updateAgents(agents: Record<string, AgentState>): void {
-    for (const [id, state] of Object.entries(agents)) this.agentRenderer.updateAgent(id, state);
+  updateAgents(agents: Record<string, AgentState>, journey?: FilmJourney): void {
+    for (const [id, state] of Object.entries(agents)) this.agentRenderer.updateAgent(id, state, journey);
     for (const id of this.agentRenderer.getAgentIds()) if (!agents[id]) this.agentRenderer.removeAgent(id);
+    const previous = this.sandbox?.neoLife?.journey;
+    if (journey && (journey.scene !== previous?.scene || journey.visiting !== previous?.visiting)) this.agentRenderer.prepareStoryCast(journey);
   }
   getAgentRenderer(): AgentRenderer { return this.agentRenderer; }
   getCameraController(): CameraController { return this.cameraController; }

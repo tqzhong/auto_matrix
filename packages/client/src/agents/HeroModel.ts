@@ -142,6 +142,8 @@ export class HeroModels {
   private assets = new Map<HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress', Promise<HeroAsset>>();
   private smithGlassesFits = new Map<HeroAsset, Map<string, THREE.Group>>();
   private disposed = false;
+  private assemblyTurn = Promise.resolve();
+  private cancelAssembly?: () => void;
   private pills = new Map<HeroRig, PillPerformance>();
   private consoleDrinks = new Map<HeroRig, ConsoleDrinkPerformance>();
   private consolePours = new Map<HeroRig, ConsolePourPerformance>();
@@ -197,6 +199,20 @@ export class HeroModels {
     this.patientSkin.name = 'Neo patient skin'; this.patientSkin.colorSpace = THREE.SRGBColorSpace;
     this.patientSkin.wrapS = this.patientSkin.wrapT = THREE.RepeatWrapping; this.patientSkin.repeat.set(2, 3); this.patientSkin.needsUpdate = true;
     this.textures.add(this.patientSkin);
+  }
+
+  private nextAssemblyFrame(): Promise<void> {
+    if (typeof requestAnimationFrame !== 'function') return this.assemblyTurn;
+    // Asset promises can settle together. Let one assembly stage run per frame.
+    this.assemblyTurn = this.assemblyTurn.then(() => {
+      if (this.disposed) return;
+      return new Promise<void>(resolve => {
+        const finish = () => { this.cancelAssembly = undefined; resolve(); };
+        const frame = requestAnimationFrame(finish);
+        this.cancelAssembly = () => { cancelAnimationFrame(frame); finish(); };
+      });
+    });
+    return this.assemblyTurn;
   }
 
   private shortHairMap(parser: GLTF['parser'], map: THREE.Texture): THREE.Texture {
@@ -285,7 +301,8 @@ export class HeroModels {
     this.assets.set(id, promise); return promise;
   }
 
-  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport): Promise<HeroRig | undefined> {
+  async create(id: HeroId, guard?: 'agent_jones' | 'agent_brown' | 'agent_johnson' | 'agent_jackson' | 'agent_thompson', support?: HeroSupport,
+    staged = false): Promise<HeroRig | undefined> {
     if (this.disposed) return;
     const apartmentRole = support === 'choi' || support === 'dujour' ? support : undefined;
     const oracleStaff = support === 'oracle_priestess' || support === 'oracle_attendant';
@@ -298,6 +315,7 @@ export class HeroModels {
       support === 'cypher' ? this.load('cypher-reality') : undefined,
       support === 'mouse' ? this.load('mouse-ship') : undefined,
       support === 'mouse' ? this.load('mouse-head') : undefined]);
+    if (staged) await this.nextAssemblyFrame();
     if (this.disposed) return;
     const root = clone(asset.scene) as THREE.Group;
     if (support === 'tank') prepareTankMaterials(root).forEach(texture => this.textures.add(texture));
@@ -617,14 +635,28 @@ export class HeroModels {
     if (apartmentRole) this.apartments.set(rig, new ApartmentPerformance(rig));
     if (id === 'neo' && !support) this.recoveries.set(rig, new RecoveryPerformance(rig));
     if ((id === 'neo' || id === 'trinity' || id === 'morpheus') && !support) this.farewellAppearances.set(rig, new FarewellAppearance(rig, id, eye));
-    if (id === 'morpheus' && !support) this.constructSuits.set(rig, new ConstructSuitAppearance(rig, this.fabric));
-    if (id === 'morpheus' && !support) this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
-    if (id === 'morpheus' && !support) this.regularCoatTails.set(rig, new RegularCoatTails(rig));
-    if (mouseHead) this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
+    if (id === 'morpheus' && !support) {
+      if (staged) await this.nextAssemblyFrame();
+      if (this.disposed) return;
+      this.constructSuits.set(rig, new ConstructSuitAppearance(rig, this.fabric));
+      if (staged) await this.nextAssemblyFrame();
+      if (this.disposed) return;
+      this.ambushWardrobes.set(rig, new AmbushWardrobeAppearance(rig, this.fabric));
+      this.regularCoatTails.set(rig, new RegularCoatTails(rig));
+    }
+    if (mouseHead) {
+      if (staged) await this.nextAssemblyFrame();
+      if (this.disposed) return;
+      this.mice.set(rig, new MouseAppearance(rig, mouseHead, eye));
+    }
     if (!support && !guard) {
       const skin = root.getObjectByName('Anatomical_head_and_hands') as THREE.SkinnedMesh;
       if (skin.geometry.hasAttribute('_nail_detail')) applyNailSurface(skin.material as THREE.MeshStandardMaterial);
-      if (this.pose === 'animated') this.fightingHands.set(rig, new FightingHands(rig, skin));
+      if (this.pose === 'animated') {
+        if (staged) await this.nextAssemblyFrame();
+        if (this.disposed) return;
+        this.fightingHands.set(rig, new FightingHands(rig, skin));
+      }
     }
     if (id === 'neo' && !support) this.geometries.add(prepareConstructSleeves(rig));
     if (!support && !guard && this.pose === 'animated') this.skinContinuity.set(rig, wardrobe
@@ -1912,5 +1944,5 @@ export class HeroModels {
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();
     this.sharedShortHair.clear();
   }
-  dispose(): void { this.disposed = true; this.assets.clear(); this.release(); }
+  dispose(): void { this.disposed = true; this.cancelAssembly?.(); this.assets.clear(); this.release(); }
 }
