@@ -286,7 +286,7 @@ export class Engine {
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const neoAtHome = player?.id === meeting?.actor ? this.agentRenderer.getAgentHero('neo') : undefined;
-    const preparingApartment = this.agentRenderer.prepareWellsCastTextures(this.renderer, openingPhone)
+    const preparingApartment = this.agentRenderer.prepareWellsCast(this.renderer, this.camera, openingPhone)
       || openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       openingHandoff ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),

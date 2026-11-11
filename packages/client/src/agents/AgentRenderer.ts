@@ -38,6 +38,7 @@ import { prepareSkinnedMaterial } from './SkinnedPrecision.js';
 import type { LightCulling } from '../engine/LightCulling.js';
 import { cacheReadyProgramLocations } from '../engine/PrepareShaderProgram.js';
 import { bitmapUploadImage, stageBitmapTexture } from '../engine/BitmapTextureRows.js';
+import { prepareMeshBuffers } from '../engine/PrepareMeshBuffers.js';
 
 export const FACTION_COLORS: Record<string, string> = {
   zion: '#90d7b1', civilians: '#d0c8a3', machines: '#ee8773', oracle: '#c6b1e7', merovingian: '#cda96c', exiles: '#88b5c5', smith_virus: '#f07565',
@@ -90,7 +91,7 @@ export class AgentRenderer {
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
-  private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; hero: THREE.Group; steps?: Generator<void> };
+  private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; heroes: THREE.Group[]; steps?: Generator<void> };
   private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
   private preparedOfficeActors?: WeakMap<THREE.Group, {
@@ -242,19 +243,28 @@ export class AgentRenderer {
     this.hotelCastPreparation?.steps?.return(undefined);
     this.hotelCastPreparation = undefined;
   }
-  prepareWellsCastTextures(renderer: THREE.WebGLRenderer, phone?: OpeningPhoneEncounter): boolean {
+  prepareWellsCast(renderer: THREE.WebGLRenderer, camera: THREE.Camera, phone?: OpeningPhoneEncounter): boolean {
     const beforeCast = phone?.phase === 'answering' || phone?.phase === 'connected' || phone?.phase === 'done' && !phone.aftermath;
-    const hero = beforeCast ? this.getAgentHero('agent_jones') : undefined;
-    if (!hero) { this.cancelWellsCastPreparation(); return false; }
+    const heroes = beforeCast ? WELLS_AFTERMATH.roles.map(id => this.getAgentHero(id)).filter((hero): hero is THREE.Group => hero !== undefined) : [];
+    if (!heroes.length) { this.cancelWellsCastPreparation(); return false; }
     const gpu = renderer.properties;
-    if (this.wellsCastPreparation?.gpu !== gpu || this.wellsCastPreparation.hero !== hero) {
+    let prepared = this.wellsCastPreparation;
+    if (!prepared || prepared.gpu !== gpu || prepared.heroes.length !== heroes.length
+      || prepared.heroes.some((hero, index) => hero !== heroes[index])) {
       this.cancelWellsCastPreparation();
-      // Jones arrives first and shares these textures with Smith and Brown.
-      this.wellsCastPreparation = { gpu, hero, steps: this.prepareCastMaps(renderer, [hero], ['Anatomical_head_and_hands', 'Tailored_coat_upper']) };
+      this.wellsCastPreparation = prepared = { gpu, heroes, steps: this.prepareWellsCastAssets(renderer, camera, heroes) };
     }
-    const prepared = this.wellsCastPreparation;
     if (prepared.steps?.next().done) prepared.steps = undefined;
     return prepared.steps !== undefined;
+  }
+  private *prepareWellsCastAssets(renderer: THREE.WebGLRenderer, camera: THREE.Camera, heroes: THREE.Group[]): Generator<void> {
+    yield* this.prepareCastMaps(renderer, heroes, ['Anatomical_head_and_hands', 'Tailored_coat_upper', 'short04']);
+    const meshes: THREE.Mesh[] = [], geometries = new Set<THREE.BufferGeometry>();
+    for (const hero of heroes) for (const child of hero.children) child.traverseVisible(object => {
+      if (!(object instanceof THREE.Mesh) || geometries.has(object.geometry)) return;
+      meshes.push(object); geometries.add(object.geometry);
+    });
+    yield* prepareMeshBuffers(renderer, camera, meshes);
   }
   private *prepareCastMaps(renderer: THREE.WebGLRenderer, heroes: THREE.Group[], names: string[], normalMaps = false): Generator<void> {
     for (const hero of heroes) for (const name of names) {

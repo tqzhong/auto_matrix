@@ -8,6 +8,7 @@ import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
 import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
+import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
@@ -349,9 +350,7 @@ export class ApartmentSetRenderer {
     const depthQueue = shadows && casters.length ? [
       { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },
     ] : [];
-    const bufferView = opening ? new THREE.Scene() : undefined;
-    const hidden = opening ? new THREE.MeshBasicMaterial({ visible: false }) : undefined;
-    if (bufferView) bufferView.matrixWorldAutoUpdate = false;
+    const uploadBuffers = prepareMeshBuffers(renderer, eye, buffers, target);
     target.texture.name = 'apartment-return-preparation';
     const compile = (batch: (THREE.Mesh | THREE.Line)[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth') => {
       const subject = new THREE.Group(), previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
@@ -375,30 +374,8 @@ export class ApartmentSetRenderer {
           const depth = depthQueue[0];
           compile(depth.meshes.splice(0, 4), depth.lights, depth.eye, 'depth');
           if (!depth.meshes.length) depthQueue.shift();
-        } else if (bufferView && hidden && buffers.length) {
-          const batch = buffers.splice(0, 4);
-          const previous = renderer.getRenderTarget(), face = renderer.getActiveCubeFace(), mip = renderer.getActiveMipmapLevel();
-          const { autoClear, sortObjects } = renderer;
-          const saved = batch.map(mesh => ({ mesh, material: mesh.material, children: mesh.children,
-            visible: mesh.visible, frustumCulled: mesh.frustumCulled }));
-          try {
-            // Three uploads vertex and instance attributes before testing material visibility.
-            for (const mesh of batch) {
-              mesh.material = hidden; mesh.children = []; mesh.visible = true; mesh.frustumCulled = false;
-            }
-            bufferView.children = batch;
-            renderer.autoClear = renderer.sortObjects = false;
-            renderer.setRenderTarget(target);
-            renderer.render(bufferView, eye);
-          } finally {
-            for (const { mesh, material, children, visible, frustumCulled } of saved) {
-              mesh.material = material; mesh.children = children; mesh.visible = visible; mesh.frustumCulled = frustumCulled;
-            }
-            bufferView.children = [];
-            renderer.autoClear = autoClear; renderer.sortObjects = sortObjects;
-            renderer.setRenderTarget(previous, face, mip);
-          }
-        } else {
+        } else if (buffers.length) uploadBuffers.next();
+        else {
           for (const texture of textures) {
             const image = texture.image as { width?: number; complete?: boolean } | null;
             if (!texture.version || !image || image.complete === false) continue;
@@ -415,7 +392,7 @@ export class ApartmentSetRenderer {
         }
         yield;
       }
-    } finally { culling.dispose(); target.dispose(); hidden?.dispose(); }
+    } finally { uploadBuffers.return(undefined); culling.dispose(); target.dispose(); }
   }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material);

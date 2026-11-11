@@ -268,22 +268,27 @@ test('an early cut finishes the Wells booth without waiting for parallel shader 
   assert.deepEqual(h.work, []);
 });
 
-test('Wells prepares the investigating cast maps during the answer and releases a failed attempt', t => {
+test('Wells prepares the investigating cast maps and buffers during the answer and releases a failed attempt', t => {
   class Bitmap { width = 2048; height = 2048; }
   const previous = globalThis.ImageBitmap;
   globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
-  const hero = new THREE.Group(), geometry = new THREE.BoxGeometry();
-  const [skin, suit] = ['Anatomical_head_and_hands', 'Tailored_coat_upper'].map(name => {
+  const hero = new THREE.Group(), geometry = new THREE.BoxGeometry(), camera = new THREE.PerspectiveCamera();
+  const [skin, suit, hair] = ['Anatomical_head_and_hands', 'Tailored_coat_upper', 'short04'].map(name => {
     const texture = new THREE.Texture(new Bitmap()); texture.flipY = false; texture.needsUpdate = true;
     const mesh = new THREE.SkinnedMesh(geometry, new THREE.MeshStandardMaterial({ map: texture }));
     mesh.name = name; hero.add(mesh); return texture;
   });
   hero.visible = false;
-  const agents = Object.assign(Object.create(AgentRenderer.prototype), { getAgentHero: (id: string) => id === 'agent_jones' ? hero : undefined }) as AgentRenderer;
+  const smith = new THREE.Group(), brown = new THREE.Group();
+  const smithMesh = new THREE.Mesh(new THREE.BoxGeometry()), brownMesh = new THREE.Mesh(new THREE.BoxGeometry());
+  smith.add(smithMesh); brown.add(brownMesh);
+  const actors = new Map([['agent_jones', hero], ['smith', smith], ['agent_brown', brown]]);
+  const agents = Object.assign(Object.create(AgentRenderer.prototype), { getAgentHero: (id: string) => actors.get(id) }) as AgentRenderer;
   const phone: OpeningPhoneEncounter = { phase: 'running', remaining: 7, lastTick: 0, attempts: 0 };
-  const prepare = () => agents.prepareWellsCastTextures(renderer, phone);
+  const prepare = () => agents.prepareWellsCast(renderer, camera, phone);
   t.after(() => {
-    agents.prepareWellsCastTextures(renderer); geometry.dispose(); skin.dispose(); suit.dispose();
+    agents.prepareWellsCast(renderer, camera); geometry.dispose(); skin.dispose(); suit.dispose(); hair.dispose();
+    for (const mesh of [smithMesh, brownMesh]) { mesh.geometry.dispose(); mesh.material.dispose(); }
     hero.children.forEach(mesh => (mesh as THREE.Mesh<THREE.BufferGeometry, THREE.Material>).material.dispose());
     if (previous) globalThis.ImageBitmap = previous;
     else Reflect.deleteProperty(globalThis, 'ImageBitmap');
@@ -291,6 +296,10 @@ test('Wells prepares the investigating cast maps during the answer and releases 
   type Upload = { texture: THREE.Texture; rows: number; mipmaps: boolean };
   const allocations: Upload[] = [], disposed: THREE.Texture[] = [], bySource = new Map<THREE.Source, Upload>();
   const gpu = new Map<THREE.Texture, { __webglTexture: Upload }>();
+  const staged = new Set<THREE.BufferGeometry>();
+  const target = new THREE.WebGLRenderTarget(32, 32);
+  let activeTarget: THREE.WebGLRenderTarget | null = target;
+  t.after(() => target.dispose());
   let bound: Upload | undefined, skipRows = 0;
   const gl = {
     TEXTURE_2D: 0x0de1, UNPACK_SKIP_ROWS: 0x0cf3, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
@@ -304,6 +313,18 @@ test('Wells prepares the investigating cast maps during the answer and releases 
     generateMipmap() { assert.ok(bound); assert.equal(bound.rows, 2048); bound.mipmaps = true; },
   };
   const renderer = { capabilities: { maxTextureSize: 4096 }, getContext: () => gl,
+    autoClear: true, sortObjects: true, getRenderTarget: () => activeTarget,
+    getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
+    setRenderTarget: (next: typeof activeTarget) => { activeTarget = next; },
+    render(view: THREE.Scene) {
+      assert.equal(activeTarget?.width, 1);
+      assert.ok(view.children.length <= 4);
+      for (const mesh of view.children) {
+        assert.ok(mesh instanceof THREE.Mesh && mesh.material.visible === false);
+        assert.equal(mesh.frustumCulled, false);
+        staged.add(mesh.geometry);
+      }
+    },
     properties: { get: (texture: THREE.Texture) => gpu.get(texture) ?? {} },
     state: { bindTexture: (_target: number, upload: Upload) => { bound = upload; }, unbindTexture: () => { bound = undefined; } },
     initTexture(texture: THREE.Texture) {
@@ -336,7 +357,16 @@ test('Wells prepares the investigating cast maps during the answer and releases 
     assert.equal(prepare(), true); assert.equal(allocations[2].rows, 256 * (i + 1));
   }
   assert.equal(allocations[2].mipmaps, true); assert.equal(gpu.get(suit)?.__webglTexture, allocations[2]);
+  for (let i = 0; i < 8; i++) {
+    assert.equal(prepare(), true); assert.equal(allocations[3].rows, 256 * (i + 1));
+  }
+  assert.equal(allocations[3].mipmaps, true); assert.equal(gpu.get(hair)?.__webglTexture, allocations[3]);
+  const material = smithMesh.material;
+  for (let frame = 0; frame < 15 && prepare(); frame++);
+  assert.deepEqual(staged, new Set([geometry, smithMesh.geometry, brownMesh.geometry]));
+  assert.equal(smithMesh.material, material); assert.equal(smithMesh.parent, smith);
+  assert.equal(activeTarget, target); assert.equal(renderer.autoClear, true); assert.equal(renderer.sortObjects, true);
   assert.deepEqual(disposed, allocations.map(upload => upload.texture));
-  assert.equal(prepare(), false); assert.equal(allocations.length, 3); assert.equal(hero.visible, false);
+  assert.equal(prepare(), false); assert.equal(allocations.length, 4); assert.equal(hero.visible, false);
   assert.equal(bound, undefined); assert.equal(skipRows, 0);
 });
