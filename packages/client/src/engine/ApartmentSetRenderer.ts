@@ -365,8 +365,12 @@ export class ApartmentSetRenderer {
     try {
       while (queue.length || pending.length || depthQueue.length || buffers.length || textures.size) {
         const programs = renderer.info.programs, ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
-        if (ready >= 0) cacheReadyProgramLocations(renderer, pending.splice(ready, 1)[0]);
-        else if (queue.length) {
+        if (ready >= 0) {
+          const [program] = pending.splice(ready, 1);
+          // Give the completed Wells handoff program a frame before reflecting its uniforms.
+          if (opening) yield;
+          if (renderer.info.programs?.includes(program)) cacheReadyProgramLocations(renderer, program);
+        } else if (queue.length) {
           const batch = queue.splice(0, 4);
           if (opening) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
             if (Array.isArray(mesh.material)) mesh.material.forEach(prepareSkinnedMaterial);

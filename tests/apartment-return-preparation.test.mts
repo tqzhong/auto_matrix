@@ -139,6 +139,19 @@ test('a successful Wells connection prepares the apartment and the guests before
   h.prepare(subjects); assert.equal(h.work.length, count); assert.equal(h.apartment.returnNormalMeshes, undefined);
 });
 
+test('Wells leaves a frame between shader completion and reading its bindings', t => {
+  const h = fixture(); t.after(h.dispose);
+  h.journey.scene = 'm1_phone_escape';
+  h.journey.openingPhone = { phase: 'connected', remaining: 7, lastTick: 0, attempts: 0 };
+  assert.equal(h.prepare(), true);
+  assert.deepEqual(h.work, ['compile']);
+  h.ready();
+  assert.equal(h.prepare(), true);
+  assert.deepEqual(h.work, ['compile'], 'the completion check must yield before it reads bindings');
+  assert.equal(h.prepare(), true);
+  assert.deepEqual(h.work, ['compile', 'bindings']);
+});
+
 test('Wells stages the original room, outfit and street buffers without drawing or changing the live scene', t => {
   const h = fixture(), { renderer, root, street, shirt, journey } = h;
   const shirtGeometry = shirt.geometry.clone(), shirtMaterial = shirt.material;
