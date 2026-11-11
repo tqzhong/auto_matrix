@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CITY_BUILDINGS, groundHeight, playerBlocked, stepPlayer, lifeRoomCenter, locationEntrance, type WorldEvent } from '@auto_matrix/shared';
+import { CITY_BUILDINGS, OPENING_ESCAPE, PLAYER_RUN_SPEED, filmPosition, groundHeight, playerBlocked, stepPlayer, lifeRoomCenter, locationEntrance, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
@@ -122,6 +122,27 @@ test('player cannot walk through rendered buildings and jumps land on the ground
   assert.ok(peak > 2.3 && peak < 2.9);
   assert.equal(position.y, groundHeight(position, true));
   assert.equal(playerBlocked(locationEntrance('mobil_ave'), true), false);
+});
+
+test('the opening roof accepts a jump on the first unsupported step near the edge', () => {
+  const sprint = { ...input, x: 0, z: -1, yaw: Math.PI, sprint: true };
+  const roof = filmPosition('film_hotel_roofs', 7, OPENING_ESCAPE.roofGapNear + .24);
+  const edge = stepPlayer(roof, 0, sprint, .05, true, [], { x: 0, z: -PLAYER_RUN_SPEED });
+  assert.equal(edge.position.y, roof.y);
+  assert.ok(groundHeight(edge.position, true) < roof.y);
+  const jump = { ...sprint, jump: true };
+  let crossing = stepPlayer(edge.position, edge.verticalVelocity, jump, .05, true, [], edge.horizontalVelocity);
+  assert.ok(crossing.verticalVelocity > 0, 'accept a late packet while the player is still at roof height');
+  for (let frame = 0; frame < 15; frame++) {
+    crossing = stepPlayer(crossing.position, crossing.verticalVelocity, sprint, .05, true, [], crossing.horizontalVelocity);
+  }
+  assert.ok(crossing.position.z < filmPosition('film_hotel_roofs', 7, OPENING_ESCAPE.roofGapFar).z);
+  assert.equal(crossing.position.y, roof.y);
+
+  const falling = stepPlayer(edge.position, edge.verticalVelocity, sprint, .02, true, [], edge.horizontalVelocity);
+  assert.ok(stepPlayer(falling.position, falling.verticalVelocity, jump, .05, true).verticalVelocity < 0);
+  const gap = filmPosition('film_hotel_roofs', 7, (OPENING_ESCAPE.roofGapNear + OPENING_ESCAPE.roofGapFar) / 2);
+  assert.ok(stepPlayer(gap, 0, jump, .05, true).verticalVelocity < 0);
 });
 
 test('locomotion accelerates, brakes and removes velocity into a wall', () => {

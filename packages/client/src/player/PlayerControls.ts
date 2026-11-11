@@ -313,7 +313,14 @@ export class PlayerControls {
       if (!this.consumedOfficeClimbKeys.has(event.code)) this.keys.add(event.code);
     }
     if (!event.repeat) {
-      if (event.code === 'Space') { this.localJump = this.motion.theOne?.phase !== 'takeoff_ready'; this.networkJump = true; }
+      if (event.code === 'Space') {
+        this.localJump = this.motion.theOne?.phase !== 'takeoff_ready';
+        this.networkJump = true;
+        // A slow frame can carry Trinity past the roof edge before the next movement packet.
+        if (this.running && !this.performing && this.motion.grounded && this.authoritative?.currentLocation === 'film_hotel_roofs' && this.authoritative.status === 'alive') {
+          this.send(this.input(true)); this.networkJump = false; this.lastSent = performance.now();
+        }
+      }
       if (event.code === 'KeyE') this.action('talk');
       if (event.code === 'KeyF') this.triggerCombat('attack');
       if (event.code === 'KeyH') this.onHUD?.();

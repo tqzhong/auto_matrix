@@ -39,3 +39,22 @@ test('airborne motion: a large authoritative camera correction restores velocity
   h.controls.update(0, h.actor, h.group, false);
   assert.deepEqual(h.controls.position, h.actor.position); assert.equal(h.controls.motion.verticalVelocity, h.actor.velocity.y);
 });
+
+test('a rooftop jump sends input even when the next movement frame is delayed', t => {
+  const h = fixture(t, 0, 1);
+  let now = 100;
+  t.mock.method(performance, 'now', () => now);
+  h.controls.possess(h.actor); h.controls.update(0, h.actor, h.group, true);
+  h.sent.length = 0;
+
+  now += 10;
+  const space = (repeat: boolean) => window.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { code: 'Space', repeat }));
+  space(false);
+  assert.deepEqual(h.sent.map(input => input.jump), [true], 'send the jump before the next animation frame');
+  space(true);
+
+  now += 130;
+  h.controls.update(.05, h.actor, h.group, true);
+  assert.ok(h.controls.position.y > h.actor.position.y, 'the next frame still predicts takeoff');
+  assert.deepEqual(h.sent.map(input => input.jump), [true, false], 'do not repeat the jump in the regular movement packet');
+});

@@ -11,6 +11,7 @@ import { DIGGERS } from './diggers.js';
 import { ZION_OBSTACLES } from './zion-homecoming.js';
 import { NEB_ESCAPE } from './neb-escape.js';
 import { SENTINEL_SIGNAL } from './sentinel-signal.js';
+import { OPENING_ESCAPE } from './opening-escape.js';
 import { wellsColliderBlocked, wellsColliderFloor, wellsStreetStructures } from './wells-street.js';
 
 export const STREET_SPACING = 80;
@@ -230,7 +231,13 @@ export function stepPlayer(position: Vector3, verticalVelocity: number, input: P
   const speed = (input.crouch ? PLAYER_WALK_SPEED * .48 : input.sprint ? PLAYER_RUN_SPEED : PLAYER_WALK_SPEED) * speedScale;
   const floor = groundHeight(position, matrix, structures);
   let vy = verticalVelocity;
-  if (input.jump && !input.crouch && position.y <= floor + 0.1 && verticalVelocity <= 0) vy = PLAYER_JUMP_SPEED;
+  if (input.jump && !input.crouch && verticalVelocity <= 0) {
+    const roof = FILM_SETS.film_hotel_roofs, localZ = position.z - roof.center.z;
+    // The first step past the lip can still be at roof height when a jump packet arrives.
+    const justOffRoof = verticalVelocity === 0 && position.y === roof.center.y && floor === roof.center.y - OPENING_ESCAPE.roofDrop
+      && filmSetAt(position, matrix) === roof && Math.min(OPENING_ESCAPE.roofGapNear - localZ, localZ - OPENING_ESCAPE.roofGapFar) <= .5;
+    if (position.y <= floor + .1 || justOffRoof) vy = PLAYER_JUMP_SPEED;
+  }
   const nextY = next.y + vy * dt - .5 * PLAYER_GRAVITY * dt * dt;
   vy -= PLAYER_GRAVITY * dt;
   if (nextY < floor) { next.y = floor; vy = 0; } else next.y = nextY;
