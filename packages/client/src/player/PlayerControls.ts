@@ -55,7 +55,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelTraceTime, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -1513,9 +1513,25 @@ export class PlayerControls {
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
     const hotel = FILM_SETS.film_heart_hotel;
     const hotelOutside = this.openingHotel?.phase === 'dive' && this.position.z < hotel.center.z + OPENING_HOTEL.window.paneZ - .3;
-    if (openingTrace !== undefined && openingTrace >= OPENING_HOTEL.trace.room - .45) {
+    const hall = openingHotelHallTime(this.openingHotel, openingTrace), timing = openingHotelTraceTiming(this.openingHotel);
+    if (hall !== undefined) {
+      const { center } = hotel, portrait = this.camera.aspect < .85;
+      if (hall >= 2.75) {
+        const push = THREE.MathUtils.smoothstep(hall, 2.75, OPENING_HOTEL.trace.hallSeconds);
+        this.camera.position.set(center.x + 1.65 - push * .55, center.y + 5.62, center.z - 5.75 + push * .85);
+        this.camera.lookAt(center.x, center.y + 5.2, center.z + OPENING_HOTEL.doorZ - .2);
+        this.camera.fov = portrait ? 58 : 42;
+      } else {
+        const push = THREE.MathUtils.smoothstep(hall, 0, 2.75);
+        this.camera.position.set(center.x - 4.8 + push * 2.05 + (portrait ? 1.65 : 0),
+          center.y + 3.05 + push * .55, center.z - 21.7 + push * 8.4 - (portrait ? 2.9 : .8));
+        this.camera.lookAt(center.x + .6, center.y + 2.45 + push * .7, center.z - 7.3 + push * 7.8);
+        this.camera.fov = portrait ? 76 : 56;
+      }
+      this.camera.near = .12; this.camera.updateProjectionMatrix();
+    } else if (openingTrace !== undefined && (this.openingHotel?.traceHall || openingTrace >= timing.room - .45)) {
       const { center } = hotel;
-      const push = THREE.MathUtils.smoothstep(openingTrace, OPENING_HOTEL.trace.room, OPENING_HOTEL.trace.end);
+      const push = THREE.MathUtils.smoothstep(openingTrace, timing.room, timing.end);
       this.camera.position.set(center.x - 2.5 - push * 1.1, center.y + 4.7 - push * .4, center.z + 25 - push * 2.2);
       this.camera.lookAt(center.x - 4.35, center.y + 2.55, center.z + 8.5);
       this.camera.fov = this.camera.aspect < .85 ? 76 : 50;

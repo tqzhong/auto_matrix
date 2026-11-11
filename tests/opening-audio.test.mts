@@ -55,6 +55,20 @@ test('the 303 trace phone uses the fast saved clock and skips cues already past 
   assert.deepEqual(cold.frame(trace, { trace: 12.6 }), []);
 });
 
+test('303 trace phone handoff plays corridor steps from the saved clock once', () => {
+  const h = fixture(), j = journey('m1_room303');
+  const trace = { ...j, openingHotel: { phase: 'trace' as const, traceElapsed: 0, traceHall: true as const,
+    elapsed: 0, lastTick: 20, attempts: 0, disarmed: false, ammo: 0, shots: 0 } };
+  const hall = OPENING_HOTEL.trace.room;
+  assert.deepEqual(h.frame(trace, { trace: hall + .35 }), []);
+  assert.deepEqual(h.frame(trace, { trace: hall + .78 }), ['hall-step']);
+  assert.deepEqual(h.frame(trace, { trace: hall + .78 }), []);
+  assert.deepEqual(h.frame(trace, { trace: hall + 1.1, running: false }), []);
+  const cold = fixture();
+  assert.deepEqual(cold.frame(trace, { trace: hall + 1.1 }), []);
+  assert.deepEqual(cold.frame(trace, { trace: hall + 1.35 }), ['hall-step']);
+});
+
 test('303 sounds follow the line, door, glass and climb through pauses and retries', () => {
   const h = fixture(), j = journey('m1_room303');
   const hotel = (phase: OpeningHotelEncounter['phase'], elapsed = 0, attempts = 0) =>

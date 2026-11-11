@@ -1,4 +1,4 @@
-import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, openingHotelTraceLine, openingHotelTraceTime, playerBlocked, rayBox,
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, openingHotelTraceLine, openingHotelTraceTime, openingHotelTraceTiming, playerBlocked, rayBox,
   type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -24,6 +24,7 @@ export class OpeningHotelSystem {
   }
   startTrace(actor: AgentState): void {
     this.state!.traceElapsed = 0;
+    this.state!.traceHall = true;
     this.frame(actor);
   }
   clear(): void {
@@ -282,17 +283,19 @@ export class OpeningHotelSystem {
   frame(actor: AgentState, dt = 0, tick = this.state?.lastTick ?? 0): void {
     const state = this.state; if (!state) return;
     if (this.journey!.step === 0 && state.phase === 'trace' && state.traceElapsed !== undefined) {
-      const trace = OPENING_HOTEL.trace, elapsed = state.traceElapsed + Math.max(0, Math.min(.1, dt));
+      const trace = OPENING_HOTEL.trace, timing = openingHotelTraceTiming(state);
+      const elapsed = state.traceElapsed + Math.max(0, Math.min(.1, dt));
       actor.velocity = { x: 0, y: 0, z: 0 };
-      if (elapsed >= trace.end - 1e-6 && dt > 0) {
-        delete state.traceElapsed; actor.currentAction = null;
+      if (elapsed >= timing.end - 1e-6 && dt > 0) {
+        delete state.traceElapsed; delete state.traceHall; actor.currentAction = null;
         this.journey!.lastText = '线路已被定位。走到桌前按 G 挂断电话。'; return;
       }
       state.traceElapsed = elapsed;
       if (actor.currentAction?.parameters.openingTrace !== elapsed)
         actor.currentAction = { type: 'idle', parameters: { resolved: true, openingTrace: elapsed }, startedAt: this.journey!.enteredAt, duration: 1, progress: 0 };
       const line = openingHotelTraceLine(elapsed);
-      this.journey!.lastText = line ? `${line.speaker} · ${line.text}` : elapsed >= trace.room ? 'Heart O’ the City Hotel · 303' : elapsed >= trace.located ? '线路已定位。' : '电话响起。';
+      this.journey!.lastText = line ? `${line.speaker} · ${line.text}` : elapsed >= timing.room ? 'Heart O’ the City Hotel · 303'
+        : elapsed >= trace.room ? '走廊里传来脚步声。' : elapsed >= trace.located ? '线路已定位。' : '电话响起。';
     } else if (state.phase === 'breach') {
       if (dt > 0 && state.breachYaw === undefined) {
         // A paused save from before staging can resume from its existing clock.

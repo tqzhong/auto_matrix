@@ -51,7 +51,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken, type OpeningPursuitCast } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelHallOfficer, openingHotelHallTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken, type OpeningPursuitCast } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -406,6 +406,8 @@ export class FilmSetRenderer {
   private hotel303Shards?: THREE.Group;
   private hotel303Pistol?: THREE.Group;
   private hotel303DeskLight?: THREE.PointLight;
+  private hotel303HallLight?: THREE.PointLight;
+  private hotel303Beam?: THREE.Mesh;
   private hotel303Receiver?: HardlineHandset;
   private hotel303Cord?: THREE.Line;
   private openingRoofGlass?: THREE.Group;
@@ -1910,6 +1912,7 @@ export class FilmSetRenderer {
     this.adoptRoomGeometry(room);
     this.hotel303Door = room.hotel303Door; this.hotel303Glass = room.hotel303Glass; this.hotel303Shards = room.hotel303Shards;
     this.hotel303Pistol = room.hotel303Pistol; this.hotel303DeskLight = room.hotel303DeskLight;
+    this.hotel303HallLight = room.hotel303HallLight; this.hotel303Beam = room.hotel303Beam;
     this.hotel303Receiver = room.hotel303Receiver; this.hotel303Cord = room.hotel303Cord;
     this.openingRoofGlass = room.openingRoofGlass; this.openingRoofShards = room.openingRoofShards;
     this.wellsStreet = room.wellsStreet; room.wellsStreet = undefined;
@@ -2437,7 +2440,9 @@ export class FilmSetRenderer {
     this.office?.update(journey, cameraPosition, playerPosition, workday, elapsed, timeOfDay, camera);
     if (this.hotel303Door && this.hotel303Glass && this.hotel303Shards) {
       const hotel = sceneId === 'm1_room303' && !journey?.visiting ? journey?.openingHotel : undefined;
-      this.hotel303Door.rotation.y = openingHotelDoorAngle(hotel, openingHotelBreachTime(hotel, player?.id === journey?.actor ? player : undefined));
+      const actor = player?.id === journey?.actor ? player : undefined;
+      this.hotel303Door.rotation.y = openingHotelDoorAngle(hotel, openingHotelBreachTime(hotel, actor));
+      this.updateHotel303Hall(actor && openingHotelHallTime(hotel, openingHotelTraceTime(hotel, actor)));
       const broken = openingHotelGlassBroken(hotel);
       this.hotel303Glass.visible = !broken; this.hotel303Shards.visible = broken;
       if (broken && hotel) {
@@ -2987,7 +2992,12 @@ export class FilmSetRenderer {
       return { color: 0xf1f1e9, ambient: .95, sun: .08 };
     }
     if (this.theOne && this.current.id === 'film_heart_hotel') { fog.density = .0023; fog.color.setHex(0x151e1b); this.scene.environmentIntensity = .48; return { color: 0xd9dfbc, ambient: .55, sun: .08 }; }
-    if (this.currentScene === 'm1_room303') { fog.density = .003; fog.color.setHex(0x121a18); this.scene.environmentIntensity = .36; return { color: 0xb9c8bb, ambient: .35, sun: .05 }; }
+    if (this.currentScene === 'm1_room303') {
+      const hall = this.hotel303Beam?.visible;
+      fog.density = hall ? .008 : .003; fog.color.setHex(0x121a18);
+      this.scene.environmentIntensity = hall ? .23 : .36;
+      return { color: 0xb9c8bb, ambient: hall ? .19 : .35, sun: .05 };
+    }
     if (this.theOne && this.current.id === 'film_final_phone') { fog.density = .0012; fog.color.setHex(0xaebfc0); this.scene.environmentIntensity = .9; return { color: 0xffe5be, ambient: .96, sun: 1.7 }; }
     if (this.hotel) { fog.density = .001; this.scene.environmentIntensity = .36; return { color: 0xc8ceba, ambient: .4, sun: .06 }; }
     if (this.ambush) { this.scene.environmentIntensity = .4; return { color: 0xd4ddbe, ambient: .52, sun: .15 }; }
@@ -3094,10 +3104,10 @@ export class FilmSetRenderer {
     const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(p[0], p[1], p[2])));
     return this.mesh(new THREE.TubeGeometry(curve, 20, radius, 8, false), material, 0, 0, 0);
   }
-  private label(text: string, x: number, y: number, z: number, width = 10, color = '#dadace', background = '#182422'): THREE.Mesh {
+  private label(text: string, x: number, y: number, z: number, width = 10, color = '#dadace', background = '#182422', fontSize = 46): THREE.Mesh {
     const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 192;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = background; ctx.fillRect(0, 0, 1024, 192);
-    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.strokeRect(16, 16, 992, 160); ctx.fillStyle = color; ctx.font = '46px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 512, 98, 942);
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.strokeRect(16, 16, 992, 160); ctx.fillStyle = color; ctx.font = `${fontSize}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 512, 98, 942);
     const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace; this.textures.add(map);
     const material = new THREE.MeshStandardMaterial({ map, roughness: .72 }); this.materials.add(material);
     return this.mesh(new THREE.PlaneGeometry(width, width * 192 / 1024), material, x, y, z);
@@ -3640,18 +3650,25 @@ export class FilmSetRenderer {
     const carpet = this.mat(0x302d2a, .95);
     this.box(this.pbr('old_wood_floor', 0x897f72, 5), 0, .04, 12, set.width - 1.6, .07, 25);
     this.box(carpet, 0, .085, 12, 19, .035, 17);
+    this.box(carpet, 0, .024, -11.9, 8.8, .035, 24.2);
+    this.box(soot, 0, 10.28, -12.3, set.width - .65, .35, 25.9).castShadow = false;
     for (const wall of OPENING_HOTEL.walls.slice(0, 2)) {
       this.box(soot, wall.x, set.height / 2, wall.z, wall.width, set.height, wall.depth);
       for (const y of [1.1, 3.8, 8.5]) this.box(plaster, wall.x, y, wall.z + .42, wall.width, .16, .06);
     }
-    this.box(soot, 0, 10, OPENING_HOTEL.doorZ, 6.7, 4, .65);
+    this.box(soot, 0, 10, OPENING_HOTEL.doorZ, 7.12, 4, .65);
     const door = new THREE.Group(); door.name = 'hotel-303-door'; door.userData.dynamic = true;
     door.position.set(-3.23, 0, OPENING_HOTEL.doorZ); this.root.add(door); this.hotel303Door = door;
     door.add(this.box(this.wood, 3.23, 3.95, 0, 6.35, 7.9, .3, .1));
     door.add(this.box(this.metal, 5.8, 3.7, .24, .35, .18, .17));
     this.box(this.metal, 0, 8.1, OPENING_HOTEL.doorZ, 7.2, .34, .65);
-    for (const x of [-3.55, 3.55]) this.box(this.metal, x, 4, OPENING_HOTEL.doorZ, .3, 8, .65);
-    this.label('303', 0, 8.8, OPENING_HOTEL.doorZ + .45, 2.1, '#d8d0b6', '#34413e');
+    for (const x of [-3.55, 3.55]) {
+      this.box(this.metal, x, 4, OPENING_HOTEL.doorZ, .3, 8, .65);
+      this.box(soot, x * .925, 4, OPENING_HOTEL.doorZ + .16, .32, 8, .32);
+    }
+    const plaque = this.label('303', 0, 8.8, OPENING_HOTEL.doorZ + .45, 2.1, '#d8d0b6', '#34413e', 108).clone();
+    plaque.name = 'hotel-303-hall-number'; plaque.position.set(3.23, 6.2, -.18);
+    plaque.scale.set(1.18, 1.65, 1); plaque.rotation.y = Math.PI; door.add(plaque);
 
     const desk = OPENING_HOTEL.computer;
     this.table(-11, desk.z, 3, 2.2, this.metal, 2.75);
@@ -3665,7 +3682,14 @@ export class FilmSetRenderer {
     this.hotel303Pistol.add(this.box(this.brass, .35, .33, 0, .13, .12, .16));
     this.hotel303DeskLight = new THREE.PointLight(0x8fcbb3, 180, 18, 2);
     this.hotel303DeskLight.position.set(-9.5, 4.8, desk.z); this.root.add(this.hotel303DeskLight);
-    const corridorLight = new THREE.PointLight(0xc3b89a, 125, 30, 2); corridorLight.position.set(0, 9, -12); this.root.add(corridorLight);
+    const corridorLight = this.hotel303HallLight = new THREE.PointLight(0xc3b89a, 125, 30, 2);
+    corridorLight.position.set(0, 9, -12); this.root.add(corridorLight);
+    const beamMaterial = new THREE.MeshBasicMaterial({ color: 0xc4dacb, transparent: true, opacity: .034, blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
+    this.materials.add(beamMaterial);
+    const beam = this.hotel303Beam = this.mesh(new THREE.CylinderGeometry(.95, .035, 1, 16, 1, true), beamMaterial, 0, 0, 0);
+    beam.name = 'hotel-303-hall-flashlight'; beam.userData.dynamic = true;
+    beam.visible = beam.castShadow = beam.receiveShadow = false;
     for (const z of [-20, -12, -4]) {
       this.box(plaster, -set.width / 2 + .65, 4.6, z, .18, 8.6, 7.2);
       this.box(plaster, set.width / 2 - .65, 4.6, z, .18, 8.6, 7.2);
@@ -3726,6 +3750,27 @@ export class FilmSetRenderer {
     this.box(this.glow, fixtureX, 9.61, fixtureZ - .12, .64, .06, .35);
     const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2);
     escapeLight.position.set(fixtureX, 9.48, fixtureZ - .4); this.root.add(escapeLight);
+  }
+  private updateHotel303Hall(elapsed?: number): void {
+    const beam = this.hotel303Beam, light = this.hotel303HallLight;
+    if (!beam || !light) return;
+    if (elapsed === undefined) {
+      if (beam.visible) {
+        beam.visible = false; light.position.set(0, 9, -12);
+        light.color.setHex(0xc3b89a); light.intensity = 125; light.distance = 30;
+      }
+      return;
+    }
+    const lead = openingHotelHallOfficer(0, elapsed);
+    const focus = THREE.MathUtils.smoothstep(elapsed, 1.35, 2.7);
+    const from = new THREE.Vector3(lead.x + .33, 2.85, lead.z + .45);
+    const toward = new THREE.Vector3((-3.35 + Math.sin(elapsed * 2.8) * .7) * (1 - focus),
+      THREE.MathUtils.lerp(3.25, 6.2, focus), OPENING_HOTEL.doorZ - .33).sub(from);
+    beam.visible = true; beam.position.copy(from).addScaledVector(toward, .5);
+    beam.scale.y = toward.length();
+    light.position.copy(from).addScaledVector(toward, .69);
+    light.color.setHex(0xdbe9d9); light.intensity = 110 - focus * 70; light.distance = 13;
+    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), toward.normalize());
   }
   private hotelPhone(): void {
     const { x, z, width, depth, height, receiver } = OPENING_HOTEL.phone;
@@ -5172,7 +5217,7 @@ export class FilmSetRenderer {
     this.openingReceiver?.dispose(); this.openingReceiver = undefined; this.openingCord = undefined;
     this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
-    this.hotel303DeskLight = undefined;
+    this.hotel303DeskLight = undefined; this.hotel303HallLight = undefined; this.hotel303Beam = undefined;
     this.hotel303Receiver?.dispose(); this.hotel303Receiver = undefined; this.hotel303Cord = undefined;
     this.preparedHotelPolice = undefined;
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;

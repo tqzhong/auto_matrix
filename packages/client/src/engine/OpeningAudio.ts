@@ -1,5 +1,5 @@
 import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, openingBoothCrush,
-  openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelTraceTime, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
+  openingHotelDoorHit, openingHotelGlassBroken, openingHotelHallOfficer, openingHotelLanded, openingHotelTraceTime, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
@@ -103,6 +103,12 @@ export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioS
     if (before.trace < beats.ring && trace >= beats.ring) audio.landlineSound('ring');
     if (before.trace < beats.pickup && trace >= beats.pickup) audio.landlineSound('pickup');
     if (before.trace < beats.located && trace >= beats.located) audio.phoneSound(true);
+    if (hotel?.traceHall && trace >= beats.room) {
+      const from = openingHotelHallOfficer(0, before.trace - beats.room).travel;
+      const to = openingHotelHallOfficer(0, trace - beats.room).travel;
+      // The staged gait advances one footfall per half stride.
+      if (Math.floor(to / 1.6) > Math.floor(from / 1.6)) audio.governmentSound('hall-step');
+    }
   }
   if (hotel && old.openingHotel) hotelSounds(audio, old.openingHotel, hotel);
   if (roof && old.openingRoof) roofSounds(audio, before, next);

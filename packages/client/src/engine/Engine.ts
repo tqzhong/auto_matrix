@@ -11,7 +11,7 @@ import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelAlleyGuard, openingHotelTraceTime } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelAlleyGuard, openingHotelHallTime, openingHotelTraceTime } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
@@ -286,6 +286,7 @@ export class Engine {
       .filter((group): group is THREE.Group => group !== undefined) : openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
     if (!this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel))
       this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice);
+    this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
     const resumeRoof = this.matrix && !this.playerControls?.id && meeting?.scene === 'm1_roofs'
       && !meeting.visiting && document.body.classList.contains('landing');
     this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney ?? (resumeRoof ? meeting : undefined),

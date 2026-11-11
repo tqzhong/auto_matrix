@@ -59,7 +59,7 @@ function setup() {
 }
 
 function finishHotelTrace(h: ReturnType<typeof setup>) {
-  for (let frame = 0; frame < 160 && h.sandbox.life.film.state?.openingHotel?.traceElapsed !== undefined; frame++)
+  for (let frame = 0; frame < 210 && h.sandbox.life.film.state?.openingHotel?.traceElapsed !== undefined; frame++)
     h.players.step(.1, true, h.tick());
 }
 
@@ -738,6 +738,27 @@ test('a new 303 opening preserves the trace call and then waits for the player t
   assert.deepEqual(actor.position, origin);
   actor.position = filmStepPosition(FILM_SCENE_BY_ID.m1_room303, FILM_SCENE_BY_ID.m1_room303.steps[0]);
   h.command('act'); assert.equal(resumed.openingHotel?.phase, 'breach');
+});
+
+test('a new 303 opening keeps the corridor on its saved clock until Trinity can hang up', () => {
+  const h = setup(); h.command('start');
+  const actor = h.actor(), state = h.sandbox.life.film.state!, origin = { ...actor.position };
+  for (let frame = 0; frame < 155; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(state.openingHotel!.traceElapsed! > OPENING_HOTEL.trace.end, 'fresh openings must still be in the corridor past the original room cut');
+  assert.equal(state.step, 0);
+  assert.equal(h.sandbox.state.threats.length, 0);
+  assert.deepEqual(actor.position, origin);
+  const saved = structuredClone(h.sandbox.state), action = structuredClone(actor.currentAction);
+  h.players.release('film-player', h.tick());
+  h.sandbox.restore(structuredClone(saved));
+  h.players.possess('film-player', 'trinity', h.tick());
+  assert.deepEqual(h.sandbox.life.film.state, saved.neoLife!.journey);
+  assert.deepEqual(actor.currentAction, action);
+  assert.equal(h.command('act'), h.sandbox.life.film.state!.lastText);
+  assert.equal(h.sandbox.state.threats.length, 0);
+  finishHotelTrace(h);
+  assert.equal(h.sandbox.life.film.state!.openingHotel?.traceElapsed, undefined);
+  assert.deepEqual(actor.position, origin);
 });
 
 test('303 breach stages the four officers through the doorway before handing back control', () => {

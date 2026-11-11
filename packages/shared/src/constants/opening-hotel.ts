@@ -1,7 +1,7 @@
 import type { AgentState, Vector3 } from '../types/agent.js';
 
 export const OPENING_HOTEL = {
-  trace: { ring: .28, pickup: 1.35, located: 11.85, room: 13.1, end: 15.3 },
+  trace: { ring: .28, pickup: 1.35, located: 11.85, room: 13.1, end: 15.3, hallSeconds: 3.4 },
   computer: { x: -8, z: 12 },
   phone: { x: -11, z: 18, width: 2.4, depth: 1.55, height: 2.85,
     stand: { x: -8.6, z: 18 }, receiver: { x: -10.07, y: 3.17, z: 18.15 }, radius: 1.4,
@@ -45,7 +45,7 @@ export interface OpeningHotelEncounter {
   phase: 'trace' | 'breach' | 'combat' | 'phone' | 'answering' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
-  reloadAt?: number; climbed?: number; breachYaw?: number; traceElapsed?: number;
+  reloadAt?: number; climbed?: number; breachYaw?: number; traceElapsed?: number; traceHall?: true;
   callFrom?: { position: Vector3; yaw: number };
   diveFrom?: { position: Vector3; yaw: number };
   pursuit?: OpeningPursuitCast;
@@ -55,6 +55,19 @@ export function openingHotelTraceTime(hotel?: OpeningHotelEncounter, actor?: Age
   if (hotel?.phase !== 'trace' || hotel.traceElapsed === undefined) return;
   const elapsed = actor?.currentAction?.parameters.openingTrace;
   return typeof elapsed === 'number' ? elapsed : hotel.traceElapsed;
+}
+
+const traceWithHall = { room: OPENING_HOTEL.trace.room + OPENING_HOTEL.trace.hallSeconds, end: OPENING_HOTEL.trace.end + OPENING_HOTEL.trace.hallSeconds };
+
+export function openingHotelTraceTiming(hotel?: OpeningHotelEncounter): { room: number; end: number } {
+  return hotel?.traceHall ? traceWithHall : OPENING_HOTEL.trace;
+}
+
+export function openingHotelHallTime(hotel: OpeningHotelEncounter | undefined, elapsed: number | undefined): number | undefined {
+  const trace = OPENING_HOTEL.trace;
+  // Prepare the first hall view while the last trace frame still covers it.
+  if (hotel?.traceHall && elapsed !== undefined && elapsed >= trace.located && elapsed < traceWithHall.room)
+    return Math.max(0, elapsed - trace.room);
 }
 
 const traceLines = [
@@ -109,6 +122,13 @@ export function openingHotelBreachOfficer(index: number, elapsed: number) {
   const impact = index === 0 ? ease(elapsed, .18, OPENING_HOTEL.breachImpact - .025) * (1 - ease(elapsed, OPENING_HOTEL.breachImpact + .01, .61)) : 0;
   return { x: x + (endX - x) * fan, z: startZ + entryLength * approach + (endZ - throughZ) * fan,
     travel, speed: (nextTravel - travel) * 1000, impact, faceRoom: ease(elapsed, through - .18, through + .36) };
+}
+
+export function openingHotelHallOfficer(index: number, elapsed: number) {
+  const { x, z } = openingHotelBreachOfficer(index, 0);
+  const start = .06 + index * .12, end = start + 2.44, length = 8.2;
+  const travel = length * ease(elapsed, start, end);
+  return { x, z: z - length + travel, travel, speed: (length * ease(elapsed + .001, start, end) - travel) * 1000, impact: 0 };
 }
 
 export function openingHotelBreachTime(hotel?: OpeningHotelEncounter, actor?: AgentState): number | undefined {
