@@ -92,10 +92,12 @@ export class SandboxUI {
   private selectedFilm = 1;
   private nearest = '';
   private previousFilmScene?: string;
+  private visitLoading?: AbortController;
   private waypoint: { position: Vector3; matrix: boolean; name: string } | null = null;
 
   constructor(private send: (command: SandboxCommand) => void, private menu: (open: boolean) => void,
-    private combat: (kind: 'attack' | 'dodge', combo?: number) => void, private desertPreview: () => string | undefined) {
+    private combat: (kind: 'attack' | 'dodge', combo?: number) => void, private desertPreview: () => string | undefined,
+    private prepareVisit?: (scene: string, signal: AbortSignal) => Promise<boolean> | undefined) {
     this.root.id = 'sandbox-overlay'; this.root.className = 'hidden';
     this.root.innerHTML = `
       <div id="film-blackout" class="film-blackout" aria-hidden="true"></div>
@@ -121,6 +123,7 @@ export class SandboxUI {
         <header><div><span class="eyebrow">YOUR LIFE INSIDE THE MATRIX</span><h2 id="sandbox-panel-title"></h2><p>世界仍在运行。附近有追兵时，请先寻找安全位置。</p></div><button data-close aria-label="关闭沙盒菜单">×</button></header>
         <nav><button data-panel="inventory">背包与制作</button><button data-panel="journal">三部曲日志</button><button data-panel="map">世界地图</button></nav>
         <div id="sandbox-panel-body" class="sandbox-panel-body"></div>
+        <p id="sandbox-visit-status" class="sandbox-help hidden" role="status"></p>
         <footer><span id="sandbox-profile"></span><span>Esc 返回世界 · Tab 切换角色</span></footer>
       </div></section>`;
     document.body.appendChild(this.root);
@@ -142,15 +145,45 @@ export class SandboxUI {
       if (!button.dataset.action) return;
       if (button.dataset.action === 'interact' && !button.dataset.target && (this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) { this.interact(); return; }
       if (button.dataset.action === 'track') this.waypoint = null;
-      this.send({ kind: button.dataset.action as SandboxCommand['kind'], target: button.dataset.target ?? (button.dataset.action === 'interact' ? this.nearest : undefined) });
+      const command = { kind: button.dataset.action as SandboxCommand['kind'], target: button.dataset.target ?? (button.dataset.action === 'interact' ? this.nearest : undefined) };
+      if (this.startVisit(command)) return;
+      this.send(command);
       if (button.dataset.action === 'life' && (button.dataset.target?.startsWith('film:') || button.dataset.target?.startsWith('go:') || button.dataset.target?.startsWith('computer:') || button.dataset.target === 'anomaly:test' || LIFE_ACTIONS.some(a => a.id === button.dataset.target))) this.close();
       if (button.dataset.action === 'interact' && (this.player?.id === 'neo' || this.player?.id === this.state?.neoLife?.journey?.actor) && this.state?.neoLife) this.close();
       if (['build', 'transit', 'track'].includes(button.dataset.action)) this.close();
     });
   }
   private el(id: string): HTMLElement { return this.root.querySelector(`#${id}`)!; }
+  private startVisit(command: SandboxCommand): boolean {
+    if (command.kind !== 'life' || !command.target?.startsWith('film:visit:') || !this.prepareVisit) return false;
+    const scene = command.target.slice('film:visit:'.length);
+    const controller = new AbortController(), ready = this.prepareVisit(scene, controller.signal);
+    if (!ready) return false;
+    this.visitLoading = controller;
+    this.showVisitStatus(`正在准备回访「${FILM_SCENE_BY_ID[scene]?.title ?? ''}」…`);
+    void ready.then(enter => {
+      if (this.visitLoading !== controller) return;
+      this.visitLoading = undefined;
+      this.showVisitStatus();
+      if (enter) { this.send(command); this.close(); }
+      else { this.signature = ''; this.renderPanel(); }
+    });
+    return true;
+  }
+  private showVisitStatus(text?: string): void {
+    const status = this.el('sandbox-visit-status');
+    status.textContent = text ?? '';
+    status.classList.toggle('hidden', !text);
+    this.el('sandbox-panel-body').classList.toggle('hidden', Boolean(text));
+  }
+  private cancelVisit(): void {
+    if (!this.visitLoading) return;
+    this.visitLoading.abort(); this.visitLoading = undefined;
+    this.showVisitStatus();
+  }
   open(panel: Panel): void {
     if (!this.player || !this.state) return;
+    this.cancelVisit();
     if (panel === 'journal' && this.panel !== 'journal') this.selectedFilm = MISSIONS.find(m => m.id === this.state!.profiles[this.player!.id].trackedMission)?.film ?? this.selectedFilm;
     this.panel = panel; this.signature = ''; this.menu(true);
     if (document.pointerLockElement) document.exitPointerLock();
@@ -210,6 +243,7 @@ export class SandboxUI {
   }
   close(): boolean {
     if (!this.panel) return false;
+    this.cancelVisit();
     this.panel = null; this.el('sandbox-panel').classList.add('hidden'); this.menu(false); return true;
   }
   update(player: AgentState | undefined, state: SandboxState | undefined, time: number, tick: number, day?: number): void {
@@ -2417,7 +2451,7 @@ export class SandboxUI {
   }
 
   private renderPanel(): void {
-    if (!this.panel || !this.player || !this.state) return;
+    if (!this.panel || !this.player || !this.state || this.visitLoading) return;
     const player = this.player; const state = this.state; const profile = state.profiles[player.id];
     const life = player.id === 'neo' || player.id === state.neoLife?.journey?.actor ? state.neoLife : undefined;
     const stableJournal = life && (helGarageActive(life.journey) || life.journey?.scene === 'm1_bridge' && life.journey.bridgeTail?.phase === 'failed') && (this.panel === 'journal' || this.panel === 'map')

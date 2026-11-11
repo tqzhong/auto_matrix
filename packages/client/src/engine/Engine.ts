@@ -17,7 +17,8 @@ import * as THREE from 'three';
 import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
 import type { AgentState, WorldEvent, SimulationState, SandboxState, CombatImpact, SkillCast, FilmJourney } from '@auto_matrix/shared';
 import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pillLocked, lafayetteKnocking, lafayetteWelcomeLocked, awakeningLocked, mirrorSilver, oracleActing, phoneLocked, heldPhone, wakeCallLocked, sentinelLocked, interludeLocked, rescueLocked, lobbyLocked, governmentLocked, airRescueLocked, matrixEscapeLocked, theOneLocked, baneLocked, helElevatorLocked, helDanceDoorLocked, rescueLoadout, windowOpening, windowCrossing, OFFICE_CONTACT, LOBBY_ENTRY, GOVERNMENT_RESCUE, FILM_SETS, HEL_COATCHECK } from '@auto_matrix/shared';
-import { FilmSetRenderer } from './FilmSetRenderer.js';
+import { FilmSetRenderer, openingVisitScene } from './FilmSetRenderer.js';
+import { filmEntry, FILM_SCENE_BY_ID } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS } from './LobbySetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
@@ -95,6 +96,7 @@ export class Engine {
   private weather: SandboxState['weather'] = 'clear';
   private sandbox?: SandboxState;
   private sandboxPlayer?: string | null;
+  private stopOpeningVisit?: () => void;
   suspended = false;
   onRendered?: () => void;
   onProfile?: (frame: FrameProfile) => void;
@@ -801,9 +803,59 @@ export class Engine {
   getAgentRenderer(): AgentRenderer { return this.agentRenderer; }
   getCameraController(): CameraController { return this.cameraController; }
   getParticleSystem(): ParticleSystem { return this.particleSystem; }
+  prepareOpeningVisit(scene: string, signal: AbortSignal): Promise<boolean> | undefined {
+    const origin = this.sandbox?.neoLife?.journey, actor = this.playerControls?.id;
+    if (!openingVisitScene(scene) || !this.running || !origin || !actor || origin.actor !== actor
+      || origin.visiting === scene || !origin.completed.includes(scene)) return;
+    this.stopOpeningVisit?.();
+    const entry = filmEntry(FILM_SCENE_BY_ID[scene]);
+    const cast: THREE.Object3D[] = [];
+    for (const id of this.agentRenderer.getAgentIds()) {
+      const member = this.agentRenderer.getAgentState(id);
+      if (!member || id !== actor && (!member.isInMatrix || member.status === 'disconnected')) continue;
+      const distance = Math.hypot(entry.x - member.position.x, entry.y - member.position.y, entry.z - member.position.z);
+      const model = id === actor || distance < 115 ? this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id)
+        : distance < 200 ? this.agentRenderer.getAgentDistant(id) : undefined;
+      if (model) cast.push(model);
+    }
+    const shadow = this.agentRenderer.getAgentShadow(actor);
+    if (shadow) cast.push(shadow);
+    const visit = this.filmSets.beginOpeningVisit(this.renderer, this.camera, scene, actor, cast, this.lightCulling, this.lightingSystem.directionalLight);
+    return new Promise(resolve => {
+      let frame = 0;
+      const finish = (ready: boolean) => {
+        cancelAnimationFrame(frame);
+        signal.removeEventListener('abort', abort);
+        this.stopOpeningVisit = undefined;
+        if (!ready) visit.cancel();
+        resolve(ready);
+      };
+      const abort = () => finish(false);
+      const advance = () => {
+        const current = this.sandbox?.neoLife?.journey;
+        if (this.suspended || !this.running || !current || this.playerControls?.id !== actor || current.actor !== actor
+          || current.scene !== origin.scene || current.step !== origin.step || current.enteredAt !== origin.enteredAt
+          || current.visiting !== origin.visiting || this.agentRenderer.getAgentState(actor)?.status !== 'alive') { abort(); return; }
+        try {
+          const ready = visit.step();
+          if (ready === undefined) abort();
+          else if (ready) finish(true);
+          else frame = requestAnimationFrame(advance);
+        } catch (error) {
+          console.warn('Opening visit preparation failed.', error);
+          visit.cancel(); finish(true);
+        }
+      };
+      if (signal.aborted) { abort(); return; }
+      this.stopOpeningVisit = abort;
+      signal.addEventListener('abort', abort, { once: true });
+      frame = requestAnimationFrame(advance);
+    });
+  }
   start(): void { this.animate(); }
   dispose(): void {
     cancelAnimationFrame(this.animationId);
+    this.stopOpeningVisit?.();
     window.removeEventListener('resize', this.resize);
     this.pillReflection.dispose();
     this.filmSets.dispose(); this.voxelRenderer.dispose(); this.sandboxRenderer.dispose();

@@ -11,6 +11,7 @@ import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { WellsStreetRenderer } from './WellsStreetRenderer.js';
+import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
 import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
@@ -172,6 +173,18 @@ type ColorPreparation = {
   textures: Set<THREE.Texture>;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
+const OPENING_VISITS = ['m1_room303', 'm1_roofs', 'm1_phone_escape'] as const;
+type OpeningVisitScene = typeof OPENING_VISITS[number];
+export function openingVisitScene(scene: string): scene is OpeningVisitScene {
+  return OPENING_VISITS.some(id => id === scene);
+}
+type OpeningVisitPreparation = {
+  scene: OpeningVisitScene;
+  actor: string;
+  room: FilmSetRenderer;
+  steps?: Generator<void>;
+  release?: ReturnType<typeof setTimeout>;
+};
 type OpeningPreparation = {
   scene: 'm1_roofs' | 'm1_phone_escape';
   room: FilmSetRenderer;
@@ -373,6 +386,7 @@ export class FilmSetRenderer {
   private garageGhosts: THREE.Group[] = [];
   private mobil?: MobilStationRenderer;
   private preparedOpening?: OpeningPreparation;
+  private preparedOpeningVisit?: OpeningVisitPreparation;
   private preparedHotelPolice?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
@@ -1180,8 +1194,97 @@ export class FilmSetRenderer {
     }
     this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated');
   }
+  private openingRoom(scene: OpeningVisitScene, camera: THREE.Camera) {
+    const next = FILM_SCENE_BY_ID[scene], set = FILM_SETS[next.set], { x, y, z } = set.center;
+    const room = new FilmSetRenderer(new THREE.Scene()), eye = camera.clone(), entry = filmEntry(next);
+    room.current = set; room.currentScene = scene; room.root.position.set(x, y - 1, z);
+    eye.position.set(entry.x, entry.y + 6, entry.z + 11); eye.lookAt(entry.x, entry.y + 2, entry.z - 2);
+    return { room, eye, steps: room.prepareRoomSteps(set) };
+  }
+  beginOpeningVisit(renderer: THREE.WebGLRenderer, camera: THREE.Camera, scene: OpeningVisitScene, actor: string,
+    cast: THREE.Object3D[], sourceLights: LightCulling, sun: THREE.DirectionalLight) {
+    this.cancelOpeningVisit();
+    this.cancelOpeningPreparation();
+    const { room, eye, steps } = this.openingRoom(scene, camera);
+    const visit: OpeningVisitPreparation = { scene, actor, room,
+      steps: this.prepareOpeningVisitSteps(renderer, camera, room, eye, steps, cast, sourceLights, sun) };
+    this.preparedOpeningVisit = visit;
+    const cancel = () => { if (this.preparedOpeningVisit === visit) this.cancelOpeningVisit(); };
+    return {
+      step: () => {
+        if (this.preparedOpeningVisit !== visit) return undefined;
+        if (visit.steps?.next().done) {
+          visit.steps = undefined;
+          // A declined or interrupted visit has no set change to release its room.
+          visit.release = setTimeout(cancel, 5000);
+        }
+        return visit.steps === undefined;
+      },
+      cancel,
+    };
+  }
+  private *prepareOpeningVisitSteps(renderer: THREE.WebGLRenderer, camera: THREE.Camera, room: FilmSetRenderer, eye: THREE.Camera,
+    build: Generator<void>, cast: THREE.Object3D[], sourceLights: LightCulling, sun: THREE.DirectionalLight): Generator<void> {
+    yield* build;
+    const deadline = performance.now() + 5000, gpu = renderer.properties;
+    while ([...room.textures].some(texture => !texture.image) && performance.now() < deadline) yield;
+    const colors = this.colorPreparation(room.root, [], { includeBasic: true, shadowSun: sun });
+    const marker = colors.scene.children.find((light): light is THREE.PointLight => light instanceof THREE.PointLight)!;
+    marker.visible = room.stablePointSlots; marker.intensity = 0;
+    for (const root of cast) {
+      const visible = root.visible;
+      root.visible = true;
+      try { colors.meshes.push(...this.colorMeshes([root], true)); }
+      finally { root.visible = visible; }
+    }
+    this.queueColorTextures(colors.textures, colors.meshes.filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh));
+    if (room.openingCord) colors.meshes.push(room.openingCord);
+    const lights = new LightCulling(colors.scene);
+    lights.minimumPointSlots = room.minimumPointSlots; lights.stablePointSlots = room.stablePointSlots;
+    const compile = renderer.extensions.has('KHR_parallel_shader_compile');
+    const depthMaterials = new Set<THREE.MeshDepthMaterial>();
+    const casters = compile && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+      ? shadowCasterProxies(colors.meshes, depthMaterials) : [];
+    depthMaterials.forEach(material => room.materials.add(material));
+    const shadows = casters.length ? [{ lighting: sourceLights, eye: camera, meshes: casters.slice() }, { lighting: lights, eye, meshes: casters }] : [];
+    const upload = this.prepareOpeningVisitTextures(renderer, colors.textures);
+    let uploaded = false;
+    try {
+      while (renderer.properties === gpu && performance.now() < deadline) {
+        if (compile && this.prepareColorProgram(renderer, eye, colors, lights, 'isolated')) { yield; continue; }
+        const shadow = shadows[0];
+        if (shadow) {
+          const programs = renderer.info.programs, start = programs?.length ?? 0;
+          this.compileColorBatch(renderer, shadow.meshes.splice(0, 4),
+            subject => shadow.lighting.compileSubject(renderer, shadow.eye, subject, undefined, undefined, 'depth'));
+          if (programs) colors.programs.push(...programs.slice(start) as ColorProgram[]);
+          if (!shadow.meshes.length) shadows.shift();
+        } else {
+          if (!uploaded) uploaded = Boolean(upload.next().done);
+          if (uploaded && (!compile || !colors.programs.some(program => renderer.info.programs?.includes(program)))) return;
+        }
+        yield;
+      }
+    } finally { upload.return(undefined); lights.dispose(); }
+  }
+  private *prepareOpeningVisitTextures(renderer: THREE.WebGLRenderer, textures: Set<THREE.Texture>): Generator<void> {
+    while (textures.size) {
+      for (const texture of textures) {
+        const image = texture.image as { complete?: boolean } | undefined;
+        if (!texture.version || !image || image.complete === false) continue;
+        textures.delete(texture);
+        const uploaded = renderer.properties.get(texture) as { __version?: number };
+        if (uploaded.__version === texture.version) continue;
+        const bitmap = bitmapUploadImage(renderer, texture);
+        if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap))) renderer.initTexture(texture);
+        break;
+      }
+      yield;
+    }
+  }
   prepareOpening(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh): void {
+    if (this.preparedOpeningVisit) return;
     let scene: OpeningPreparation['scene'] | undefined;
     if (journey && !journey.visiting && this.currentScene === journey.scene) {
       if (this.current?.id === 'film_heart_hotel' && journey.scene === 'm1_room303'
@@ -1193,11 +1296,7 @@ export class FilmSetRenderer {
     const next = FILM_SCENE_BY_ID[scene];
     if (this.preparedOpening?.scene !== scene) {
       this.cancelOpeningPreparation();
-      const set = FILM_SETS[next.set], { x, y, z } = set.center;
-      const room = new FilmSetRenderer(new THREE.Scene()), eye = camera.clone(), entry = filmEntry(next);
-      room.current = set; room.currentScene = scene; room.root.position.set(x, y - 1, z);
-      eye.position.set(entry.x, entry.y + 6, entry.z + 11); eye.lookAt(entry.x, entry.y + 2, entry.z - 2);
-      this.preparedOpening = { scene, room, steps: room.prepareRoomSteps(set), eye };
+      this.preparedOpening = { scene, ...this.openingRoom(scene, camera) };
     }
     const prepared = this.preparedOpening;
     if (prepared.steps) {
@@ -1319,15 +1418,19 @@ export class FilmSetRenderer {
   }
   private prepareColorFrame(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting?: LightCulling,
     colorState: 'live' | 'isolated' = 'live'): void {
+    if (!this.prepareColorProgram(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
+  }
+  private prepareColorProgram(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
+    colorState: 'live' | 'isolated'): boolean {
     const programs = renderer.info.programs;
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
       const [program] = prepared.programs.splice(ready, 1);
       if (lighting) cacheReadyProgramLocations(renderer, program);
       else program.getUniforms();
-      return;
+      return true;
     }
-    if (!this.linkColorBatch(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
+    return this.linkColorBatch(renderer, camera, prepared, lighting, colorState);
   }
   private linkColorBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
     colorState: 'live' | 'isolated'): boolean {
@@ -1721,6 +1824,8 @@ export class FilmSetRenderer {
   }
   private adoptOpeningRoom(room: FilmSetRenderer): void {
     this.adoptRoomGeometry(room);
+    this.hotel303Door = room.hotel303Door; this.hotel303Glass = room.hotel303Glass; this.hotel303Shards = room.hotel303Shards;
+    this.hotel303Pistol = room.hotel303Pistol; this.hotel303DeskLight = room.hotel303DeskLight;
     this.openingRoofGlass = room.openingRoofGlass; this.openingRoofShards = room.openingRoofShards;
     this.wellsStreet = room.wellsStreet; room.wellsStreet = undefined;
     this.openingReceiver = room.openingReceiver; room.openingReceiver = undefined;
@@ -1945,6 +2050,10 @@ export class FilmSetRenderer {
       && this.currentScene === 'm3_rain' && sceneId === 'm3_surrender') this.currentScene = sceneId;
     const keepCrosscut = crosscutActive(journey) && (set?.id === 'film_tv_repair' || set?.id === 'film_neb_deck');
     if (set?.id !== this.current?.id || sceneId !== this.currentScene || !keepCrosscut && Boolean(this.crosscutTv || this.crosscutDeck)) {
+      const visit = this.preparedOpeningVisit;
+      const preparedVisit = visit && !visit.steps && visit.scene === journey?.visiting && visit.actor === player?.id
+        && visit.room.current?.id === set?.id ? visit : undefined;
+      if (preparedVisit) { this.preparedOpeningVisit = undefined; clearTimeout(preparedVisit.release); }
       const preparedOpening = this.preparedOpening && set?.id === this.preparedOpening.room.current?.id
         && sceneId === this.preparedOpening.scene && !journey?.visiting ? this.preparedOpening : undefined;
       if (preparedOpening) { this.preparedOpening = undefined; preparedOpening.lighting?.dispose(); }
@@ -2133,7 +2242,8 @@ export class FilmSetRenderer {
         else if (sceneId === 'm2_stop_sentinels' && set.id === 'film_service_tunnels') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else if (sceneId === 'm2_medical' && set.id === 'film_hammer_deck') this.finale = new ReloadedFinaleRenderer(this.root, sceneId);
         else {
-          if (preparedOpening) {
+          if (preparedVisit) this.adoptOpeningRoom(preparedVisit.room);
+          else if (preparedOpening) {
             if (preparedOpening.steps) for (const _ of preparedOpening.steps) { /* Finish an early handoff. */ }
             this.adoptOpeningRoom(preparedOpening.room);
           } else if (lafayetteRoom?.room) {
@@ -4760,6 +4870,12 @@ export class FilmSetRenderer {
     this.preparedOpening = undefined;
     prepared.lighting?.dispose(); prepared.steps?.return(undefined); prepared.room.dispose();
   }
+  private cancelOpeningVisit(): void {
+    const visit = this.preparedOpeningVisit;
+    if (!visit) return;
+    this.preparedOpeningVisit = undefined;
+    clearTimeout(visit.release); visit.steps?.return(undefined); visit.room.dispose();
+  }
   private cancelSubwayPreparation(): void {
     const prepared = this.preparedSubway; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedSubway = undefined;
@@ -4846,6 +4962,7 @@ export class FilmSetRenderer {
     this.preparedOfficeDescent = undefined;
     this.cancelLafayettePreparation();
     this.cancelOpeningPreparation();
+    this.cancelOpeningVisit();
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();

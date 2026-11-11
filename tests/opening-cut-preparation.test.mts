@@ -8,7 +8,7 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', deferRoofMaps = false) {
+function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', deferRoofMaps = false, visiting = false) {
   const roofs = destination === 'm1_roofs', next = FILM_SCENE_BY_ID[destination];
   const landmark = roofs ? 'opening-roof-window-glass' : 'wells-asphalt';
   const previous = globalThis.document;
@@ -27,9 +27,9 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const sun = new THREE.DirectionalLight(); sun.castShadow = true;
   scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
-  const player = world.agents.get('trinity')!, from = FILM_SCENE_BY_ID[roofs ? 'm1_room303' : 'm1_roofs'];
+  const player = world.agents.get('trinity')!, from = FILM_SCENE_BY_ID[visiting ? 'm1_wake_up' : roofs ? 'm1_room303' : 'm1_roofs'];
   Object.assign(player, { position: filmEntry(from), currentLocation: from.set, isInMatrix: true });
-  const journey: FilmJourney = { version: 1, scene: from.id, actor: 'trinity', step: roofs ? 6 : 2, completed: [], enteredAt: 0,
+  const journey: FilmJourney = { version: 1, scene: from.id, actor: 'trinity', step: visiting ? 0 : roofs ? 6 : 2, completed: visiting ? [destination] : [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(from),
     ...(roofs ? { openingHotel: { phase: 'climbing', elapsed: 0, lastTick: 0, attempts: 0, disarmed: true, ammo: 0, shots: 0, climbed: 2 } }
       : { openingRoof: { phase: 'running', lastTick: 0, attempts: 0, crossed: true } }),
@@ -94,7 +94,9 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const drain = () => { for (let frame = 0; frame < 250; frame++) prepare(); };
   const enter = () => {
     Object.assign(player, { position: filmEntry(next), currentLocation: next.set });
-    Object.assign(journey, { scene: next.id, step: 0 }); film.update(player, sandbox, 0);
+    if (visiting) journey.visiting = next.id;
+    else Object.assign(journey, { scene: next.id, step: 0 });
+    film.update(player, sandbox, 0);
   };
   const livePointSlots = () => {
     film.update(player, sandbox, 0);
@@ -115,9 +117,39 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   };
   t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
   return { film, journey, gpu, skin, shadow, material, work, meshes, roots, depths, mapped, prepare, drain, enter, nextMesh, livePointSlots,
+    requestVisit: () => {
+      hero.visible = skin.visible = true;
+      return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
+    },
     decodeRoofMaps: () => { defer = false; pendingImages.splice(0).forEach(ready => ready()); },
     replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
+
+test('a requested opening revisit adopts its prepared room and releases a cancelled visit', t => {
+  const h = fixture(t, 'm1_phone_escape', false, true), saved = structuredClone(h.journey);
+  const finish = () => {
+    const request = h.requestVisit();
+    for (let frame = 0; frame < 350; frame++) {
+      const before = h.work.length, ready = request.step();
+      assert.ok(h.work.length - before <= 1);
+      assert.deepEqual(h.journey, saved);
+      if (ready) return request;
+    }
+    assert.fail('the requested scene should finish preparation');
+  };
+  const cancelled = finish(), abandoned = h.nextMesh()!;
+  let disposals = 0; abandoned.geometry.addEventListener('dispose', () => disposals++);
+  cancelled.cancel(); cancelled.cancel(); assert.equal(disposals, 1);
+  assert.equal(h.film.currentScene, 'm1_wake_up');
+  h.roots.clear(); finish(); const staged = h.nextMesh()!;
+  assert.notEqual(staged, abandoned);
+  let releases = 0; staged.geometry.addEventListener('dispose', () => releases++);
+  h.enter();
+  assert.equal(h.film.root.getObjectByName('wells-asphalt'), staged);
+  assert.equal(h.journey.scene, saved.scene); assert.deepEqual(h.journey.completed, saved.completed);
+  assert.equal(releases, 0);
+  h.film.update(undefined, undefined, 0); assert.equal(releases, 1);
+});
 
 for (const next of ['m1_roofs', 'm1_phone_escape'] as const) {
   test(`${next} builds and prepares the real room and entering cast before adopting them`, t => {
