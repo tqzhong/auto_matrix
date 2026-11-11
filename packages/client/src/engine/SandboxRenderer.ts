@@ -4,7 +4,7 @@ import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/Char
 import { newMotion, type MotionInput } from '../agents/CharacterMotion.js';
 import type { AgentRenderer, DojoOpponent } from '../agents/AgentRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
-import { BURLY, FILM_SETS, OFFICE_AGENT_ROLES, OPENING_HOTEL, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
+import { BURLY, FILM_SETS, OFFICE_AGENT_ROLES, OPENING_HOTEL, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, openingHotelBreachOfficer, openingHotelBreachTime, type BasementDropPlayback } from '@auto_matrix/shared';
 import { mouseRoomGuard, MOUSE_ROOM_RETURN, ambushShotRecoil } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
@@ -222,8 +222,10 @@ export class SandboxRenderer {
     const journey = this.state?.neoLife?.journey;
     if (journey?.scene !== 'm1_room303' || journey.visiting || !['trace', 'breach'].includes(journey.openingHotel?.phase ?? '')) return;
     const groups: THREE.Group[] = [];
+    const active = [...this.enemies.values()];
     for (const character of OPENING_HOTEL.combatOfficers) {
-      const enemy = this.pool.find(entry => entry.scene === 'm1_room303' && entry.character === character);
+      const staged = active.find(entry => entry.scene === 'm1_room303' && entry.character === character);
+      const enemy = staged ?? this.pool.find(entry => entry.scene === 'm1_room303' && entry.character === character);
       if (!enemy) {
         const created = this.actors[character] && this.createEnemy('soldier', this.actors, character, 'm1_room303');
         if (created) this.pool.push(created);
@@ -231,7 +233,7 @@ export class SandboxRenderer {
       }
       const rig = enemy.rig;
       if (!rig || !rig.hero && OPENING_HOTEL.officers.some(officer => officer.id === character)) continue;
-      if (!this.posedHotelPolice.has(enemy)) {
+      if (!staged && !this.posedHotelPolice.has(enemy)) {
         const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true, weaponStyle: 'hel_pistol' };
         if (enemy.sharedActor) enemy.sharedActor.animate(0, input, 4);
         else this.models.animate(rig, 0, input, 4);
@@ -288,7 +290,7 @@ export class SandboxRenderer {
     if (source) source.impact = performance.now();
     if (source && hit.shot) source.shot = performance.now();
   }
-  update(delta: number, camera: THREE.Camera, matrix: boolean, tick: number, running: boolean): void {
+  update(delta: number, camera: THREE.Camera, matrix: boolean, tick: number, running: boolean, player?: AgentState | null): void {
     if (running) this.elapsed += delta;
     if (!this.state) return;
     for (const prop of this.props.values()) {
@@ -301,6 +303,9 @@ export class SandboxRenderer {
       const width = Math.min(12, Math.max(3, dist * .14)); prop.label.scale.set(width, width / 5.33, 1);
       if (prop.accent.geometry === this.diamond) prop.accent.rotation.y = this.elapsed * .65;
     }
+    const journey = this.state.neoLife?.journey;
+    const hotelTime = journey?.scene === 'm1_room303' && !journey.visiting
+      ? openingHotelBreachTime(journey.openingHotel, player?.id === journey.actor ? player : undefined) : undefined;
     for (const [id, enemy] of this.enemies) {
       const threat = this.state.threats.find(t => t.id === id);
       if (enemy.dojoOpponent && !enemy.dojoOpponent.available()) {
@@ -321,7 +326,13 @@ export class SandboxRenderer {
       const previous = enemy.group.position.clone();
       let gas = threat?.basementGas, gasSpeed: number | undefined;
       const room = threat?.mouseRoom;
-      if (room) {
+      const officer = hotelTime !== undefined && enemy.scene === 'm1_room303' ? OPENING_HOTEL.combatOfficers.findIndex(id => id === enemy.character) : -1;
+      const breach = officer >= 0 ? openingHotelBreachOfficer(officer, hotelTime!) : undefined;
+      if (breach) {
+        const center = FILM_SETS.film_heart_hotel.center;
+        enemy.group.position.set(center.x + breach.x, center.y, center.z + breach.z);
+        enemy.facing = aim ? Math.atan2(aim.x - enemy.group.position.x, aim.z - enemy.group.position.z) * breach.faceRoom : 0;
+      } else if (room) {
         const root = mouseRoomGuard(room.index, room.time), center = FILM_SETS.film_ambush_house.center;
         enemy.group.position.set(center.x + root.x, center.y + root.y, center.z + root.z); enemy.facing = root.yaw;
         if (enemy.rig) {
@@ -343,14 +354,15 @@ export class SandboxRenderer {
       else enemy.group.position.lerp(enemy.target, running ? 1 - Math.exp(-8 * delta) : 0);
       if (enemy.rig) {
         const turn = Math.atan2(Math.sin(enemy.facing - enemy.rig.root.rotation.y), Math.cos(enemy.facing - enemy.rig.root.rotation.y));
-        enemy.rig.root.rotation.y += turn * (room || threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
+        if (breach) enemy.rig.root.rotation.y = enemy.facing;
+        else enemy.rig.root.rotation.y += turn * (room || threat?.basementGas || enemy.ambushGuide && delta === 0 ? 1 : 1 - Math.exp(-12 * delta));
       }
       const dist = enemy.group.position.distanceTo(camera.position);
       if (enemy.rig) {
         const dt = room || gas?.entry ? 0 : running ? delta : 0;
         const input: MotionInput = { speed: room ? mouseRoomGuard(room.index, room.time).speed : gasSpeed ?? Math.min(8.4, previous.distanceTo(enemy.group.position) / Math.max(.001, delta)), grounded: true, verticalVelocity: 0, turn: 0,
           attack: enemy.kind !== 'soldier' && threat && tick - threat.lastStrike < 3 ? threat.lastStrike : undefined, armed: enemy.kind === 'soldier', weaponStyle: enemy.scene === 'm1_room303' ? 'hel_pistol' : enemy.scene === 'm1_basement' ? 'gas_launcher' : undefined, basementGas: gas, shot: room ? undefined : enemy.shot, combo: threat?.combo ?? 0, windingUp: threat?.attackAt !== undefined, hit: room ? undefined : enemy.hit, impact: room ? undefined : enemy.impact, chateauWeapon: threat?.weapon,
-          dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' };
+          hotelBreach: breach, dojoOutfit: enemy.scene === 'm1_dojo' && enemy.character === 'morpheus' ? 'morpheus' : undefined, dojoSparring: enemy.scene === 'm1_dojo' };
         if (enemy.dojoOpponent) enemy.dojoOpponent.animate(dt, input, dist);
         else if (enemy.theOneOpponent) enemy.theOneOpponent.animate(dt, input, dist);
         else if (enemy.sharedActor) enemy.sharedActor.animate(dt, input, dist);

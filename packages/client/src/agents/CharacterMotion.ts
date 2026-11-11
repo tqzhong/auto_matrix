@@ -122,6 +122,7 @@ export interface MotionInput {
   catch?: CatchGesture;
   hotel303?: { phase: 'surrender' | 'dive' | 'answer'; elapsed: number; from?: OpeningHotelEncounter['callFrom'] };
   hotelPursuit?: OpeningPursuitGesture;
+  hotelBreach?: { travel: number; speed: number; impact: number };
   hotelLookPitch?: number;
   roofExit?: { elapsed: number; origin: { x: number; y: number; z: number } };
   openingRoofLeap?: number;
@@ -688,10 +689,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     input = { ...input, armed: false, turn: 0 };
     dt = 0;
   }
-  if (input.hotelPursuit) {
-    const { travel, speed } = input.hotelPursuit;
+  const hotelGait = input.hotelBreach ?? input.hotelPursuit;
+  if (hotelGait) {
+    const { travel, speed } = hotelGait;
     Object.assign(state, newMotion(), { time: travel / OPENING_HOTEL.pursuit.speed, speed, phase: travel / 3.2 });
-    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: input.hotelBreach && input.armed, seated: false };
     dt = 0;
   }
   if (input.roofExit) {
@@ -715,7 +717,11 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
       climbing: input.hotelClimb < OPENING_HOTEL.ladderHeight ? 0 : undefined };
     dt = 0;
   }
-  if (input.hotel303?.phase === 'answer') {
+  if (input.hotel303?.phase === 'surrender') {
+    Object.assign(state, newMotion(), { time: input.hotel303.elapsed });
+    input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
+    dt = 0;
+  } else if (input.hotel303?.phase === 'answer') {
     const { elapsed, from } = input.hotel303, pose = openingHotelPhonePose(elapsed, from);
     const speed = (openingHotelPhonePose(elapsed + .001, from).travel - pose.travel) * 1000;
     Object.assign(state, newMotion(), { time: elapsed, speed, phase: pose.travel / 2.8 });
@@ -1386,8 +1392,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     legs[i].knee = mix(.45 + Math.sin(clock * 1.8 + i * Math.PI) * .15 * scull, i ? .3 : .18, held);
   }
   if (input.hotel303?.phase === 'surrender') for (let i = 0; i < 2; i++) {
-    arms[i].shoulder = -2.55; arms[i].elbow = -.45; arms[i].outward = (i ? 1 : -1) * .42; arms[i].grip = .1;
-    legs[i].hip = 0; legs[i].knee = .12;
+    const elapsed = input.hotel303.elapsed;
+    const raise = smooth(clamp((elapsed - .48 - i * .05) / .62)) * smooth(clamp((OPENING_HOTEL.breachSeconds - elapsed) / .28));
+    arms[i].shoulder = mix(arms[i].shoulder, -2.55, raise); arms[i].elbow = mix(arms[i].elbow, -.86, raise);
+    arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .52, raise); arms[i].grip = mix(arms[i].grip, .1, raise);
+  }
+  if (input.hotelBreach?.impact) {
+    const weight = input.hotelBreach.impact, leg = legs[0];
+    leg.hip = mix(leg.hip, -.95, weight); leg.knee = mix(leg.knee, .38, weight); leg.ankle = mix(leg.ankle, -.38, weight);
   }
   if (hotelDive) for (let i = 0; i < 2; i++) {
     const { cover, brace } = hotelDive;

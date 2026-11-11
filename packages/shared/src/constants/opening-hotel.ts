@@ -14,14 +14,14 @@ export const OPENING_HOTEL = {
   ladderRails: { x: .8, top: 9.65, endOffsetZ: -2.24 },
   landing: { offsetZ: -3.5, stepOffsetZ: -2.12, width: 5.4, depth: 4.3, thickness: .24 },
   climbSpeed: 2.4,
-  breachSeconds: 1.5,
+  breachSeconds: 2.5,
+  breachImpact: .42,
   diveSeconds: 1.6,
   roomDive: { launch: .33, glass: .344, land: 1.6, reach: 1.81, ready: 2.24 },
   pursuit: { triggerZ: -4, startZ: 6.8, stopZ: -23.9, spacing: 6.2, speed: 6.2 },
   officers: [{ id: 'citizen_4', x: -1.6, behind: 3.2 }, { id: 'citizen_14', x: 1.65, behind: 6.3 }],
   alley: { y: -8, x: 3.6, z: -38.8, front: -26, back: -42, width: 27 },
   magazine: 8,
-  police: [[0, -1.5], [-5, -5], [5, -6], [0, -10]] as [number, number][],
   combatOfficers: ['citizen_4', 'citizen_14', 'citizen_10', 'citizen_13'],
   walls: [
     { x: -10.25, z: 1, width: 13.5, depth: .65, height: 12 },
@@ -44,7 +44,7 @@ export interface OpeningHotelEncounter {
   phase: 'trace' | 'breach' | 'combat' | 'phone' | 'answering' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
-  reloadAt?: number; climbed?: number;
+  reloadAt?: number; climbed?: number; breachYaw?: number;
   callFrom?: { position: Vector3; yaw: number };
   diveFrom?: { position: Vector3; yaw: number };
   pursuit?: OpeningPursuitCast;
@@ -69,6 +69,40 @@ export function openingHotelLanded(hotel?: OpeningHotelEncounter): boolean {
 function ease(value: number, start: number, end: number): number {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);
+}
+
+// Each actor clears the jamb before fanning out into the room.
+const breachTracks = [
+  { x: 1.05, startZ: -1, throughZ: 3.5, endX: -4.5, endZ: 9.55, start: .48, through: 1.13, end: 2.33 },
+  { x: 1.65, startZ: -3.3, throughZ: 2.85, endX: 4.4, endZ: 5.6, start: .63, through: 1.57, end: 2.36 },
+  { x: -.95, startZ: -5.55, throughZ: 2.8, endX: -.85, endZ: 5.85, start: .88, through: 1.85, end: 2.43 },
+  { x: 1.5, startZ: -8, throughZ: 2.6, endX: 2.12, endZ: 3.6, start: 1.05, through: 2.1, end: OPENING_HOTEL.breachSeconds },
+] as const;
+
+export function openingHotelBreachOfficer(index: number, elapsed: number) {
+  const { x, startZ, throughZ, endX, endZ, start, through, end } = breachTracks[index];
+  const approach = ease(elapsed, start, through), fan = ease(elapsed, through, end);
+  const entryLength = throughZ - startZ, roomLength = Math.hypot(endX - x, endZ - throughZ);
+  const travel = entryLength * approach + roomLength * fan;
+  const nextTravel = entryLength * ease(elapsed + .001, start, through) + roomLength * ease(elapsed + .001, through, end);
+  const impact = index === 0 ? ease(elapsed, .18, OPENING_HOTEL.breachImpact - .025) * (1 - ease(elapsed, OPENING_HOTEL.breachImpact + .01, .61)) : 0;
+  return { x: x + (endX - x) * fan, z: startZ + entryLength * approach + (endZ - throughZ) * fan,
+    travel, speed: (nextTravel - travel) * 1000, impact, faceRoom: ease(elapsed, through - .18, through + .36) };
+}
+
+export function openingHotelBreachTime(hotel?: OpeningHotelEncounter, actor?: AgentState): number | undefined {
+  if (hotel?.phase !== 'breach') return;
+  const action = actor?.currentAction?.parameters.hotel303 as { phase: string; elapsed: number } | undefined;
+  return action?.phase === 'surrender' ? Math.max(hotel.elapsed, action.elapsed) : hotel.elapsed;
+}
+
+export function openingHotelDoorHit(hotel?: OpeningHotelEncounter): boolean {
+  return Boolean(hotel && hotel.phase !== 'trace' && (hotel.phase !== 'breach' || hotel.elapsed >= OPENING_HOTEL.breachImpact));
+}
+
+export function openingHotelDoorAngle(hotel?: OpeningHotelEncounter, elapsed = hotel?.elapsed ?? 0): number {
+  if (hotel?.phase === 'breach') return -1.56 * ease(elapsed, OPENING_HOTEL.breachImpact, .74) - .09 * (ease(elapsed, .67, .79) - ease(elapsed, .79, 1.02));
+  return openingHotelDoorHit(hotel) ? -1.56 : 0;
 }
 
 const hotelPhoneLines = [

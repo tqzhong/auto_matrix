@@ -1,5 +1,5 @@
 import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_BOOTH, openingBoothCrush,
-  openingHotelGlassBroken, openingHotelLanded, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
+  openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
@@ -16,9 +16,8 @@ export type OpeningAudioState = {
 };
 
 function hotelSounds(audio: OpeningSounds, previous: OpeningHotelEncounter, hotel: OpeningHotelEncounter): void {
-  if (previous.phase === 'trace' && hotel.phase === 'breach') {
-    audio.landlineSound('hangup'); audio.meetingSound('door');
-  }
+  if (previous.phase === 'trace' && hotel.phase === 'breach') audio.landlineSound('hangup');
+  if (previous.phase === 'breach' && !openingHotelDoorHit(previous) && openingHotelDoorHit(hotel)) audio.meetingSound('door');
   const phone = OPENING_HOTEL.phone;
   const before = previous.phase === 'answering' ? previous.elapsed : 0;
   if (hotel.phase === 'answering' && before < phone.grasp && hotel.elapsed >= phone.grasp) audio.landlineSound('pickup');

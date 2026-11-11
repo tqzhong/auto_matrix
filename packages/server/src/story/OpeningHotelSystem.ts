@@ -1,4 +1,4 @@
-import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, playerBlocked, rayBox,
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, playerBlocked, rayBox,
   type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -104,7 +104,7 @@ export class OpeningHotelSystem {
     if (this.journey?.scene !== 'm1_room303' || this.journey.visiting) { this.clear(); return; }
     const barriers: { barrier: { x: number; z: number; width: number; depth: number; height: number }; index: number }[] =
       OPENING_HOTEL.walls.map((barrier, index) => ({ barrier, index }));
-    if (this.state?.phase === 'trace') barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.doorZ, width: 6.7, depth: .65, height: 8 }, index: 3 });
+    if (!openingHotelDoorHit(this.state)) barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.doorZ, width: 6.7, depth: .65, height: 8 }, index: 3 });
     if (!openingHotelGlassBroken(this.state))
       barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.window.paneZ, width: 7.6, depth: .45, height: 8 }, index: 4 });
     const phone = OPENING_HOTEL.phone, actor = this.world.agents.get(this.journey.actor);
@@ -134,15 +134,21 @@ export class OpeningHotelSystem {
     this.ensure(tick);
     if (this.state?.phase !== 'trace') return this.journey!.lastText;
     this.state.phase = 'breach'; this.state.elapsed = 0; this.state.lastTick = tick;
+    this.state.breachYaw = actor.rotation;
+    this.spawn(actor.id, tick, 0);
+    this.frame(actor);
     this.sync();
-    this.onAdvance?.('屏幕上的追踪完成。门外脚步停住，Trinity 挂断线路、举起双手；警员撞开 303 的门。', actor, tick);
+    this.onAdvance?.('Trinity 挂断被追踪的线路。门外的脚步停住了。', actor, tick);
     return this.journey!.lastText;
   }
-  private spawn(actorId: string, tick: number): void {
-    OPENING_HOTEL.police.forEach(([x, z], index) => this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`,
-      scene: 'm1_room303', kind: 'soldier', character: OPENING_HOTEL.combatOfficers[index], position: filmPosition(SET.id, x, z), matrix: true,
+  private spawn(actorId: string, tick: number, elapsed: number = OPENING_HOTEL.breachSeconds): void {
+    OPENING_HOTEL.combatOfficers.forEach((character, index) => {
+      const { x, z } = openingHotelBreachOfficer(index, elapsed);
+      this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`,
+      scene: 'm1_room303', kind: 'soldier', character, position: filmPosition(SET.id, x, z), matrix: true,
       health: index === 0 ? 42 : 44, maxHealth: index === 0 ? 42 : 44, target: actorId,
-      stunUntil: tick + (index === 0 ? 1 : 3), lastStrike: tick + index }));
+      stunUntil: tick + (index === 0 ? 1 : 3), lastStrike: tick + index });
+    });
   }
   copDown(position: Vector3): void {
     const state = this.state;
@@ -271,6 +277,35 @@ export class OpeningHotelSystem {
   frame(actor: AgentState, dt = 0, tick = this.state?.lastTick ?? 0): void {
     const state = this.state; if (!state) return;
     if (state.phase === 'breach') {
+      if (dt > 0 && state.breachYaw === undefined) {
+        // A paused save from before staging can resume from its existing clock.
+        state.breachYaw = actor.rotation;
+        if (!this.enemies.length) this.spawn(actor.id, tick, state.elapsed);
+      }
+      if (state.breachYaw !== undefined) {
+        const doorHit = openingHotelDoorHit(state);
+        state.elapsed = Math.min(OPENING_HOTEL.breachSeconds, state.elapsed + Math.max(0, Math.min(.1, dt)));
+        const look = Math.atan2(SET.center.x - actor.position.x, SET.center.z + OPENING_HOTEL.doorZ - actor.position.z);
+        const turn = Math.atan2(Math.sin(look - state.breachYaw), Math.cos(look - state.breachYaw));
+        const weight = Math.max(0, Math.min(1, (state.elapsed - .14) / .61));
+        actor.rotation = state.breachYaw + turn * weight * weight * (3 - 2 * weight);
+        const finished = state.elapsed >= OPENING_HOTEL.breachSeconds - 1e-6 && dt > 0;
+        this.enemies.forEach((enemy, index) => {
+          const { x, z } = openingHotelBreachOfficer(index, finished ? OPENING_HOTEL.breachSeconds : state.elapsed);
+          enemy.position = filmPosition(SET.id, x, z);
+          if (finished) { enemy.stunUntil = tick + (index === 0 ? 1 : 3); enemy.lastStrike = tick + index; }
+        });
+        if (!doorHit && openingHotelDoorHit(state)) {
+          this.sync();
+          this.journey!.lastText = '警员撞开房门。Trinity 转过身，慢慢举起双手。';
+        }
+        if (finished) {
+          state.phase = 'combat'; state.elapsed = 0; delete state.breachYaw;
+          this.journey!.fighting = true; actor.currentAction = null;
+          this.journey!.lastText = '领头警员走近。F 反击、X 躲开瞄准，击倒一人后按 G 夺枪。';
+          return;
+        }
+      }
       actor.velocity = { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'surrender', elapsed: state.elapsed } }, startedAt: state.lastTick, duration: 1, progress: 0 };
     } else if (state.phase === 'answering') {
@@ -320,18 +355,8 @@ export class OpeningHotelSystem {
     this.ensure(tick);
     this.sync();
     const state = this.state!;
-    const dt = Math.min(.5, Math.max(0, tick - state.lastTick) * .5);
     state.lastTick = tick;
-    if (state.phase === 'dive' || state.phase === 'answering') return true;
-    if (state.phase === 'breach') {
-      state.elapsed += dt; this.frame(actor);
-      if (state.elapsed >= OPENING_HOTEL.breachSeconds) {
-        state.phase = 'combat'; state.elapsed = 0; this.journey.fighting = true;
-        actor.currentAction = null; this.spawn(actor.id, tick);
-        this.journey.lastText = '四名警员冲进 303。领头警员伸手铐人：F 反击、X 躲开瞄准，击倒一人后按 G 夺枪。';
-      }
-      return true;
-    }
+    if (state.phase === 'breach' || state.phase === 'dive' || state.phase === 'answering') return true;
     if (state.phase === 'ladder_ready' || state.phase === 'climbing' || state.phase === 'done') { this.frame(actor); return true; }
     if (state.phase === 'failed') return true;
     if (state.phase !== 'combat') return false;
