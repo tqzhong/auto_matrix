@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test, type TestContext } from 'node:test';
-import { FILM_SCENE_BY_ID, NEO_CHAPTERS, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, NEO_CHAPTERS, openingBoothCrush, openingTruckPose, type FilmJourney, type OpeningPhoneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -228,6 +228,30 @@ function audioHarness(t: TestContext, saved?: string, Audio = GameAudio) {
   const respond = async (index: number, ok = true) => { await flush(); requests[index].resolve({ ok, status: ok ? 200 : 503, arrayBuffer: async () => new ArrayBuffer(8) } as Response); await flush(); };
   return { audio, contexts, requests, window, document, storage, legacyStorage, flush, respond };
 }
+
+test('the Wells score leaves a gap between the line cut and physical impact', async t => {
+  const h = audioHarness(t), game = scene();
+  game.player!.id = 'trinity'; game.player!.currentLocation = FILM_SCENE_BY_ID.m1_phone_escape.set;
+  const phone: OpeningPhoneEncounter = { phase: 'answering', remaining: 6, lastTick: 0, attempts: 0 };
+  const journey = game.sandbox!.neoLife!.journey = { scene: 'm1_phone_escape', actor: 'trinity', openingPhone: phone } as FilmJourney;
+  h.audio.update(game); await h.audio.resume(); await h.respond(0);
+  const { gains, sources } = h.contexts[0], music = gains[0].gain, effects = gains[1].gain;
+  assert.equal(music.value, .48);
+  phone.phase = 'connected'; phone.impactElapsed = 0;
+  h.audio.update(game); assert.equal(music.value, 0);
+  assert.equal(effects.value, .8, 'the line cut and the impact keep their effects gain');
+  game.running = false; h.audio.update(game); assert.equal(music.value, 0);
+  game.running = true;
+  const impact = Array.from({ length: 27 }, (_, i) => (i + 1) * .05)
+    .find(impactElapsed => openingBoothCrush(openingTruckPose({ ...phone, impactElapsed })) > 0);
+  assert.ok(impact);
+  phone.impactElapsed = impact;
+  h.audio.update(game); assert.equal(music.value, .48);
+  assert.equal(sources[0].starts, 1); assert.equal(sources[0].stopAt, undefined);
+  phone.impactElapsed = 0; phone.phase = 'failed'; h.audio.update(game); assert.equal(music.value, .48);
+  phone.phase = 'connected'; journey.visiting = 'm1_phone_escape'; h.audio.update(game); assert.equal(music.value, .48);
+  delete journey.visiting; game.player!.id = 'neo'; h.audio.update(game); assert.equal(music.value, .48);
+});
 
 test('the Wells investigation ducks the score only while its dialogue captions are active', async t => {
   const h = audioHarness(t), game = scene();

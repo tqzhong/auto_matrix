@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, OPENING_PHONE, filmEntry, openingBoothCrush, openingTruckPose,
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, OPENING_PHONE, WELLS_AFTERMATH, filmEntry, openingBoothCrush, openingTruckPose,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { Engine } from '../packages/client/src/engine/Engine.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -33,7 +33,7 @@ function fixture() {
     Engine.prototype.setSandbox.call(engine, { ...sandbox.state, neoLife: { ...sandbox.state.neoLife!, journey } }, { trinity: actor, neo });
     return sounds.splice(0);
   }
-  return { frame };
+  return { frame, truck: () => engine.openingAudio?.truck };
 }
 
 function journey(scene: string): FilmJourney {
@@ -101,12 +101,21 @@ test('Wells rings until grasp, disconnects on success and sounds the physical bo
     h.frame({ ...j, enteredAt: openingPhone.phase === 'connected' || openingPhone.phase === 'done' ? 27 : j.enteredAt, openingPhone }, options);
   assert.deepEqual(push(running, { running: false }), []);
   assert.deepEqual(push(running), ['ring']);
+  assert.deepEqual(push({ ...running, remaining: 11 }), []);
+  assert.deepEqual(push({ ...running, remaining: 9 }), ['truck-turn']);
+  assert.deepEqual(push({ ...running, remaining: 8 }), []);
+  assert.ok(h.truck(), 'the truck is audible through the approach');
+  assert.deepEqual(fixture().frame({ ...j, openingPhone: { ...running, remaining: 8 } }), ['ring'], 'cold recovery after the turn plays no historical skid');
   const reaching = { ...running, phase: 'answering' as const, remaining: 7, answer };
   assert.deepEqual(push(reaching), []);
   assert.deepEqual(push({ ...reaching, answer: { ...answer, elapsed: OPENING_PHONE.graspSeconds } }), ['pickup']);
   assert.deepEqual(push({ ...reaching, answer: { ...answer, elapsed: 1.5 } }, { tick: 27 }), []);
   const connected = { ...reaching, phase: 'connected' as const, answer: { ...answer, elapsed: OPENING_PHONE.answerSeconds }, impactElapsed: 0 };
   assert.deepEqual(push(connected), ['line-cut']);
+  assert.equal(h.truck(), undefined, 'the successful cut stops the engine under the crash');
+  assert.deepEqual(push(connected, { running: false }), []);
+  assert.deepEqual(push(connected), [], 'resuming the gap does not replay the line cut');
+  assert.equal(h.truck(), undefined);
   const samples = Array.from({ length: 135 }, (_, index) => ({ ...connected, impactElapsed: (index + 1) / 100 }));
   const impact = samples.find(phone => openingBoothCrush(openingTruckPose(phone)) > .06)!;
   assert.ok(impact);
@@ -117,6 +126,9 @@ test('Wells rings until grasp, disconnects on success and sounds the physical bo
   assert.deepEqual(push(done), []);
   assert.deepEqual(push(aftermath(.38)), []);
   assert.deepEqual(push(aftermath(.5)), ['door']);
+  assert.deepEqual(push(aftermath(WELLS_AFTERMATH.firstFoot - .01)), []);
+  assert.deepEqual(push(aftermath(WELLS_AFTERMATH.firstFoot)), ['truck-step']);
+  assert.deepEqual(push(aftermath(WELLS_AFTERMATH.firstFoot + .1)), []);
   assert.deepEqual(push(aftermath(3.4)), []);
   assert.deepEqual(push(aftermath(3.45)), ['door']);
   assert.deepEqual(fixture().frame({ ...j, openingPhone: aftermath(9) }), []);

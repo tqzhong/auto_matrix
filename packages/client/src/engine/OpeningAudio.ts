@@ -1,4 +1,4 @@
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_BOOTH, openingBoothCrush,
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, openingBoothCrush,
   openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
@@ -39,6 +39,9 @@ function roofSounds(audio: OpeningSounds, previous: OpeningAudioState, current: 
 }
 
 function wellsSounds(audio: OpeningSounds, previous: OpeningPhoneEncounter, phone: OpeningPhoneEncounter): void {
+  const turnYaw = 1.35;
+  if ((phone.phase === 'running' || phone.phase === 'answering') && previous.remaining !== phone.remaining
+    && openingTruckPose(previous).yaw > turnYaw && openingTruckPose(phone).yaw <= turnYaw) audio.matrixEscapeSound('truck-turn');
   if (phone.answer && (previous.answer?.elapsed ?? 0) < OPENING_PHONE.graspSeconds && phone.answer.elapsed >= OPENING_PHONE.graspSeconds)
     audio.landlineSound('pickup');
   if (previous.phase === 'answering' && phone.phase === 'connected') audio.phoneSound(true);
@@ -52,12 +55,13 @@ function wellsSounds(audio: OpeningSounds, previous: OpeningPhoneEncounter, phon
   if (elapsed !== undefined && elapsed > (earlier ?? 0)) {
     const door = wellsAftermathDoor(elapsed), oldDoor = wellsAftermathDoor(earlier);
     if ((door === 0) !== (oldDoor === 0)) audio.meetingSound('door');
+    if ((earlier ?? 0) < WELLS_AFTERMATH.firstFoot && elapsed >= WELLS_AFTERMATH.firstFoot) audio.matrixEscapeSound('truck-step');
   }
 }
 
 function truckEngine(phone: OpeningPhoneEncounter, actor: AgentState): OpeningAudioState['truck'] {
   const approaching = phone.phase === 'running' || phone.phase === 'answering' || phone.phase === 'failed' && phone.remaining > 0;
-  const colliding = (phone.phase === 'connected' || phone.phase === 'failed') && phone.impactElapsed !== undefined
+  const colliding = phone.phase === 'failed' && phone.impactElapsed !== undefined
     && phone.impactElapsed < OPENING_ESCAPE.truckImpactSeconds;
   if (!approaching && !colliding) return;
   const { center } = FILM_SETS.film_wells_phone, truck = openingTruckPose(phone);

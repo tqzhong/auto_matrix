@@ -1,6 +1,6 @@
 import { MUSIC, MusicDirector, isActionMusic, type MusicCue, type MusicScene } from './Soundtrack.js';
 import { FILM_MUSIC, filmCredit, type FilmTrack } from './OriginalScore.js';
-import { openingHotelPhoneLine, wellsAftermathDialogue } from '@auto_matrix/shared';
+import { openingBoothCrush, openingHotelPhoneLine, openingTruckPose, wellsAftermathDialogue } from '@auto_matrix/shared';
 
 type Channel = 'music' | 'effects';
 export interface AudioSettings { music: number; effects: number; musicMuted: boolean; effectsMuted: boolean }
@@ -34,6 +34,7 @@ export class GameAudio {
   private failed = false;
   private disposed = false;
   private reading = new Set<string>();
+  private wellsPreImpact = false;
   private running = true;
   private playing = false;
   private mixValues = new Map<GainNode, number>();
@@ -93,8 +94,10 @@ export class GameAudio {
     if (journey?.scene === 'm1_room303' && !journey.visiting && scene.player?.id === journey.actor
       && journey.openingHotel?.phase === 'answering' && openingHotelPhoneLine(journey.openingHotel.elapsed)) this.reading.add('hotel-conversation');
     else this.reading.delete('hotel-conversation');
-    if (journey?.scene === 'm1_phone_escape' && !journey.visiting && scene.player?.id === journey.actor
-      && journey.openingPhone?.phase === 'done' && wellsAftermathDialogue(journey.openingPhone.aftermath?.elapsed ?? 0)) this.reading.add('wells-conversation');
+    const wells = scene.matrix && journey?.scene === 'm1_phone_escape' && !journey.visiting && scene.player?.id === journey.actor
+      && scene.player.currentLocation === 'film_wells_phone' ? journey.openingPhone : undefined;
+    this.wellsPreImpact = wells?.phase === 'connected' && openingBoothCrush(openingTruckPose(wells)) === 0;
+    if (wells?.phase === 'done' && wellsAftermathDialogue(wells.aftermath?.elapsed ?? 0)) this.reading.add('wells-conversation');
     else this.reading.delete('wells-conversation');
     this.sceneCue = this.director.update(scene, performance.now());
     this.select(this.preview ?? this.sceneCue);
@@ -357,7 +360,7 @@ export class GameAudio {
     }
     for (let i = 0; i < 8; i++) { const start = at + i * .085; noise(start, .15, 82 + i % 2 * 35, .085, 2.6, 'lowpass'); tone(start, 58, 42, .12, .018, 'triangle'); }
   }
-  matrixEscapeSound(kind: 'phone-shot' | 'stance' | 'wall' | 'tracks' | 'train' | 'escape' | 'train-impact' | 'code' | 'earpiece' | 'truck' | 'truck-impact' | 'door'): void {
+  matrixEscapeSound(kind: 'phone-shot' | 'stance' | 'wall' | 'tracks' | 'train' | 'escape' | 'train-impact' | 'code' | 'earpiece' | 'truck' | 'truck-turn' | 'truck-impact' | 'truck-step' | 'door'): void {
     if (kind === 'phone-shot') { this.governmentSound('gunfire'); this.phoneSound(true); return; }
     if (kind === 'wall') { this.governmentSound('crash'); return; }
     if (kind === 'tracks') { this.governmentSound('body'); return; }
@@ -381,6 +384,8 @@ export class GameAudio {
       source.connect(filter); filter.connect(gain); gain.connect(output); source.start(start);
       source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
     };
+    if (kind === 'truck-turn') { noise(at, .58, 1480, .1, 'bandpass'); tone(at, 1220, 610, .54, .032, 'triangle'); return; }
+    if (kind === 'truck-step') { noise(at, .17, 520, .115, 'bandpass'); tone(at, 168, 82, .12, .037, 'triangle'); return; }
     if (kind === 'stance') { tone(at, 78, 39, .9, .045, 'sawtooth'); noise(at, .7, 210, .05, 'lowpass'); return; }
     if (kind === 'code') {
       for (let i = 0; i < 9; i++) tone(at + i * .045, 180 + i * 95, 720 + i * 130, .19, .014, i % 2 ? 'square' : 'triangle');
@@ -486,14 +491,14 @@ export class GameAudio {
   };
   private mix(immediate = false): void {
     if (!this.context) return;
-    const duck = !this.running ? .3 : this.reading.size ? .42 : this.playing ? 1 : .65;
+    const duck = this.wellsPreImpact ? 0 : !this.running ? .3 : this.reading.size ? .42 : this.playing ? 1 : .65;
     const values: [GainNode | undefined, number][] = [[this.musicBus, this.settings.musicMuted ? 0 : this.settings.music * duck],
       [this.effectsBus, this.settings.effectsMuted ? 0 : this.settings.effects], [this.master, document.hidden ? 0 : .9]];
     for (const [node, value] of values) {
       if (!node || this.mixValues.get(node) === value) continue;
       this.mixValues.set(node, value);
       if (immediate) node.gain.value = value;
-      else node.gain.setTargetAtTime(value, this.context.currentTime, node === this.master ? .025 : .25);
+      else node.gain.setTargetAtTime(value, this.context.currentTime, node === this.master ? .025 : node === this.musicBus && this.wellsPreImpact ? .015 : .25);
     }
   }
   private ensureMusic(): void {
