@@ -50,7 +50,8 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const work: string[] = [], meshes = new Set<THREE.Object3D>(), roots = new Set<THREE.Object3D>();
   const depths = new Map<number, THREE.Mesh[]>(), mapped = new Set<THREE.Mesh>();
-  const roofRetry = () => journey.scene === 'm1_roofs' && !journey.visiting && journey.openingRoof?.phase === 'failed';
+  const roofRetry = () => film.active?.id === 'film_hotel_roofs' && journey.scene === 'm1_roofs'
+    && !journey.visiting && journey.openingRoof?.phase === 'failed';
   let target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
@@ -91,10 +92,10 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     },
     initTexture(map: THREE.Texture) { uploaded.set(map, map.version); work.push('texture'); },
   } as unknown as THREE.WebGLRenderer;
-  const prepare = () => {
+  const prepare = (resumeRoof = false) => {
     const before = work.length, live = film.root.children.slice();
-    film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting);
-    assert.ok(work.length - before <= (roofRetry() ? 2 : 1), 'preparation budgets GPU work per frame');
+    film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting, undefined, resumeRoof);
+    assert.ok(work.length - before <= (roofRetry() || resumeRoof ? 2 : 1), 'preparation budgets GPU work per frame');
     assert.deepEqual(film.root.children, live); assert.equal(target, null); assert.equal(gpu.debug.checkShaderErrors, true);
     assert.equal(hero.parent, scene); assert.equal(skin.visible || hero.visible || shadow.visible, false);
   };
@@ -287,6 +288,23 @@ test('the roof keeps its shader light count when the exit removes the objective'
   assert.equal(h.livePointSlots(), 4);
   h.journey.step = 3; h.journey.openingRoof!.phase = 'escaped';
   assert.equal(h.livePointSlots(), 4, 'the three real floods must keep the same layout after the goal light goes out');
+});
+
+test('a saved roof prepares the set before taking control and adopts that same set on entry', t => {
+  const h = fixture(t, 'm1_roofs');
+  h.skin.name = 'short04';
+  h.journey.scene = 'm1_roofs'; h.journey.step = 1;
+  h.journey.openingRoof = { phase: 'failed', lastTick: 0, attempts: 1 };
+  const sandbox = { neoLife: { journey: h.journey }, structures: [] } as unknown as SandboxState;
+  h.film.update(undefined, sandbox, 0);
+  h.prepare(true);
+  assert.deepEqual(h.work, ['texture'], 'the shared hair map can start uploading as the set is built');
+  for (let frame = 0; frame < 250; frame++) h.prepare(true);
+  const pane = h.nextMesh();
+  assert.ok(pane && h.meshes.has(h.skin), 'prepare the actual roof and pursuit materials before possession');
+  assert.equal(h.film.active, undefined);
+  h.enter(); assert.equal(h.film.root.getObjectById(pane.id), pane);
+  assert.equal(h.journey.openingRoof.phase, 'failed');
 });
 
 test('an early cut finishes the Wells booth without waiting for parallel shader support', t => {

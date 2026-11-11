@@ -173,6 +173,7 @@ export class HeroModels {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private textures = new Set<THREE.Texture>();
+  private sharedShortHair = new Map<string, THREE.Texture>();
   private skeletons = new Set<THREE.Skeleton>();
   private point = new THREE.Vector3();
   private local = new THREE.Vector3();
@@ -198,6 +199,22 @@ export class HeroModels {
     this.textures.add(this.patientSkin);
   }
 
+  private shortHairMap(parser: GLTF['parser'], map: THREE.Texture): THREE.Texture {
+    if (map.name !== 'short04-hair.png' || !map.image || map.constructor !== THREE.Texture
+      || typeof map.onUpdate === 'function' || map.mipmaps?.length || !map.matrixAutoUpdate) return map;
+    const index = parser.associations?.get(map)?.textures;
+    const texture = index === undefined ? undefined : parser.json.textures?.[index];
+    if (!texture || texture.extensions || parser.json.images?.[texture.source]?.uri !== map.name) return map;
+    const key = [map.image.width, map.image.height, map.mapping, map.channel, map.wrapS, map.wrapT,
+      map.magFilter, map.minFilter, map.format, map.internalFormat, map.type, map.colorSpace,
+      map.generateMipmaps, map.premultiplyAlpha, map.flipY, map.unpackAlignment,
+      map.offset.x, map.offset.y, map.repeat.x, map.repeat.y, map.center.x, map.center.y, map.rotation].join(':');
+    const shared = this.sharedShortHair.get(key);
+    if (shared) return shared;
+    this.sharedShortHair.set(key, map);
+    return map;
+  }
+
   private load(id: HeroId | 'neo-office' | 'neo-tracking' | 'trinity-club' | 'choi' | 'dujour' | 'club-male' | 'club-female' | 'cypher-reality' | 'mouse' | 'mouse-ship' | 'mouse-head' | 'tank' | 'red-dress'): Promise<HeroAsset> {
     const existing = this.assets.get(id); if (existing) return existing;
     const promise = new GLTFLoader().loadAsync(`/assets/characters/${id}.glb`).then(async asset => {
@@ -208,6 +225,7 @@ export class HeroModels {
         if (object instanceof THREE.SkinnedMesh) this.skeletons.add(object.skeleton);
         const material = object.material as THREE.MeshStandardMaterial;
         this.materials.add(material);
+        if (material.name === 'Hair cards' && material.map) material.map = this.shortHairMap(asset.parser, material.map);
         for (const map of [material.map, material.normalMap]) if (map) { map.anisotropy = 8; this.textures.add(map); }
         if (material.name === 'Skin' && !extras.skinBaked) {
           material.onBeforeCompile = shader => {
@@ -1892,6 +1910,7 @@ export class HeroModels {
     this.geometries.forEach(value => value.dispose()); this.materials.forEach(value => value.dispose());
     this.textures.forEach(value => value.dispose()); this.skeletons.forEach(value => value.dispose());
     this.geometries.clear(); this.materials.clear(); this.textures.clear(); this.skeletons.clear();
+    this.sharedShortHair.clear();
   }
   dispose(): void { this.disposed = true; this.assets.clear(); this.release(); }
 }

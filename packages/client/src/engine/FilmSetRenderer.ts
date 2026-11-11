@@ -196,6 +196,7 @@ type OpeningPreparation = {
   eye: THREE.Camera;
   roofFirstColors?: ColorSubject[];
   roofMapsReady?: boolean;
+  roofEntryTexturesReady?: boolean;
   roofShadows?: {
     materials: Set<THREE.MeshDepthMaterial>;
     layouts: { lighting: LightCulling; eye: THREE.Camera; meshes: THREE.Mesh[] }[];
@@ -1291,14 +1292,16 @@ export class FilmSetRenderer {
     }
   }
   prepareOpening(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh): void {
-    const roof = this.currentScene === 'm1_roofs' && journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
+    actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh, resumeRoof = false): void {
+    const roof = this.current?.id === 'film_hotel_roofs' && this.currentScene === 'm1_roofs'
+      && journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     if (!this.preparedOpeningVisit && lighting && roof?.phase === 'failed')
       this.prepareOpeningRoofRetry(renderer, camera, lighting, actor, roof.pursuit, shadow);
     else this.cancelOpeningRoofRetry();
     if (this.preparedOpeningVisit) return;
     let scene: OpeningPreparation['scene'] | undefined;
     if (journey && !journey.visiting && this.currentScene === journey.scene) {
+      if (resumeRoof && !this.current && journey.scene === 'm1_roofs') scene = 'm1_roofs';
       if (this.current?.id === 'film_heart_hotel' && journey.scene === 'm1_room303'
         && ['dive', 'ladder_ready', 'climbing', 'done'].includes(journey.openingHotel?.phase ?? '')) scene = 'm1_roofs';
       if (this.current?.id === 'film_hotel_roofs' && journey.scene === 'm1_roofs' && journey.step >= 2
@@ -1311,11 +1314,6 @@ export class FilmSetRenderer {
       this.preparedOpening = { scene, ...this.openingRoom(scene, camera) };
     }
     const prepared = this.preparedOpening;
-    if (prepared.steps) {
-      if (prepared.steps.next().done) prepared.steps = undefined;
-      return;
-    }
-    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (prepared.gpu !== renderer.properties) {
       prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
@@ -1323,7 +1321,14 @@ export class FilmSetRenderer {
         material.dispose(); prepared.room.materials.delete(material);
       }
       prepared.roofShadows = undefined; prepared.roofMapsReady = undefined; prepared.roofFirstColors = undefined;
+      prepared.roofEntryTexturesReady = undefined;
     }
+    if (resumeRoof) this.prepareOpeningRoofEntryTextures(renderer, prepared, actor);
+    if (prepared.steps) {
+      if (prepared.steps.next().done) prepared.steps = undefined;
+      return;
+    }
+    if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors) {
       if (scene !== 'm1_roofs' && [...prepared.room.textures].some(texture => !texture.image)) return;
       const colors = this.colorPreparation(prepared.room.root, [], { includeBasic: true });
@@ -1381,10 +1386,23 @@ export class FilmSetRenderer {
       colors.meshes = [...new Set([...mapped, ...colors.meshes])];
       this.queueColorTextures(colors.textures, mapped);
     }
-    if (this.prepareOpeningColorTexture(renderer, prepared, colors.textures)) return;
+    if (!resumeRoof && this.prepareOpeningColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
       && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
     this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+  }
+  private prepareOpeningRoofEntryTextures(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation,
+    actor: (id: string) => THREE.Group | undefined): void {
+    if (prepared.roofEntryTexturesReady) return;
+    const trinity = actor('trinity');
+    const hair = trinity?.getObjectByName('short04') ?? actor('agent_brown')?.getObjectByName('short04');
+    const textures = new Set<THREE.Texture>();
+    for (const mesh of [hair, trinity?.getObjectByName('Anatomical_head_and_hands')]) {
+      if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map?.image)
+        textures.add(mesh.material.map);
+    }
+    const ready = textures.size === 2;
+    if (!this.prepareOpeningColorTexture(renderer, prepared, textures)) prepared.roofEntryTexturesReady = ready;
   }
   private prepareOpeningRoofRetry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
     actor: (id: string) => THREE.Group | undefined, pursuit?: OpeningPursuitCast, shadow?: THREE.Mesh): void {

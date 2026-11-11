@@ -286,9 +286,11 @@ export class Engine {
       .filter((group): group is THREE.Group => group !== undefined) : openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
     if (!this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel))
       this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice);
-    this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney,
+    const resumeRoof = this.matrix && !this.playerControls?.id && meeting?.scene === 'm1_roofs'
+      && !meeting.visiting && document.body.classList.contains('landing');
+    this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney ?? (resumeRoof ? meeting : undefined),
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.agentRenderer.getAgentShadow('trinity'),
-      this.lightCulling, this.agentRenderer.getAgentDistant('neo'));
+      this.lightCulling, this.agentRenderer.getAgentDistant('neo'), resumeRoof);
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';

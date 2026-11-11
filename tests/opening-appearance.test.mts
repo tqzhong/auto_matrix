@@ -1,14 +1,52 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
+import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { actor } from './helpers/fighting-hand-fixture.mts';
+
+test('matching short hair maps share the texture while a different UV transform keeps its own sampler', async t => {
+  const source = await actor('trinity');
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  t.after(() => { models.dispose(); source.models.dispose(); });
+  const hairMaterial = (root: THREE.Group) => (root.getObjectByName('short04') as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>).material;
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async url => {
+    const name = String(url).split('/').pop()!.replace('.glb', '');
+    assert(name === 'trinity' || name === 'smith' || name === 'choi' || name === 'trinity-club');
+    const asset = await source.models['load'](name) as GLTF;
+    if (name === 'trinity' || name === 'smith' || name === 'choi') {
+      const map = new THREE.Texture({ width: 2048, height: 2048 });
+      map.name = 'short04-hair.png'; map.colorSpace = THREE.SRGBColorSpace;
+      map.wrapS = map.wrapT = THREE.RepeatWrapping; map.flipY = false;
+      if (name === 'choi') map.repeat.x = 2;
+      map.needsUpdate = true;
+      hairMaterial(asset.scene).map = map;
+      const { parser } = asset;
+      parser.json.images = [{ uri: map.name }]; parser.json.textures = [{ source: 0 }];
+      parser.associations.set(map, { textures: 0 });
+    }
+    return asset;
+  });
+  const [trinity, brown, choi] = await Promise.all([
+    models.create('trinity'), models.create('smith', 'agent_brown'), models.create('smith', undefined, 'choi'),
+  ]);
+  const a = hairMaterial(trinity!.root), b = hairMaterial(brown!.root), c = hairMaterial(choi!.root);
+  assert.equal(a.map, b.map);
+  assert.equal(a.bumpMap, a.map); assert.equal(b.bumpMap, a.map);
+  assert.notEqual(c.map, a.map);
+  assert.equal(a.map!.repeat.x, 1); assert.equal(c.map!.repeat.x, 2);
+  let sharedDisposals = 0, alternateDisposals = 0;
+  a.map!.addEventListener('dispose', () => sharedDisposals++);
+  c.map!.addEventListener('dispose', () => alternateDisposals++);
+  models.dispose();
+  assert.deepEqual([sharedDisposals, alternateDisposals], [1, 1]);
+});
 
 for (const controlled of [false, true]) test(`the ${controlled ? 'controlled' : 'autonomous'} Trinity keeps her opening bare eyes through cold scenes and restores her later sunglasses`, async t => {
   const source = await actor('trinity'), pending: Promise<unknown>[] = [];
