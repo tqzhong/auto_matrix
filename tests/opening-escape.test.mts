@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createHash } from 'node:crypto';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { OpeningHotelSystem } from '../packages/server/src/story/OpeningHotelSystem.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
 import { actor } from './helpers/fighting-hand-fixture.mts';
 
@@ -145,6 +146,40 @@ test('303 broken glass stays broken while Trinity climbs the visible fire escape
     renderer.update(player, sandbox, 1);
     assert.equal(glass.visible, false); assert.equal(shards.visible, true);
   } finally { renderer.dispose(); globalThis.document = document; }
+});
+
+test('Trinity’s visible climb clears the 303 platform up to the standing pose', async t => {
+  const { models, rig } = await actor('trinity'); t.after(() => models.dispose());
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const trinity = world.agents.get('trinity')!, scene = FILM_SCENE_BY_ID.m1_room303;
+  const { center } = FILM_SETS[scene.set], { ladderHeight, ladderZ, landing } = OPENING_HOTEL;
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: trinity.id, step: 5, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(scene), openingHotel: { phase: 'climbing', elapsed: 0, lastTick: 0, attempts: 0, disarmed: true, ammo: 0, shots: 0 } };
+  const system = new OpeningHotelSystem(() => ({ neoLife: { journey } }) as unknown as SandboxState);
+  const body = new THREE.Group(); body.rotation.y = Math.PI; body.add(rig.root);
+  const deck = new THREE.Box3(new THREE.Vector3(-landing.width / 2 + .02, ladderHeight + .02, ladderZ + landing.offsetZ - landing.depth / 2 + .02),
+    new THREE.Vector3(landing.width / 2 - .02, ladderHeight + landing.thickness - .02, ladderZ + landing.offsetZ + landing.depth / 2 - .02));
+  const point = new THREE.Vector3();
+  for (const climbed of [0, 2.1, 3.55, 4.2, 4.8, 5.3, 5.8, 6, 6.25, 6.5, 6.75, 6.95, ladderHeight]) {
+    journey.openingHotel!.phase = climbed === ladderHeight ? 'done' : 'climbing';
+    journey.openingHotel!.climbed = climbed; system.frame(trinity);
+    body.position.set(trinity.position.x - center.x, trinity.position.y - center.y, trinity.position.z - center.z);
+    const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, climbing: climbed === ladderHeight ? undefined : 0, hotelClimb: climbed };
+    models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); body.updateMatrixWorld(true);
+    let inspected = 0, inside = 0, soles = Infinity;
+    rig.root.traverseVisible(mesh => {
+      if (!(mesh instanceof THREE.SkinnedMesh)) return;
+      mesh.skeleton.update();
+      for (let vertex = 0; vertex < mesh.geometry.attributes.position.count; vertex++) {
+        mesh.localToWorld(mesh.getVertexPosition(vertex, point)); inspected++;
+        if (deck.containsPoint(point)) inside++;
+        soles = Math.min(soles, point.y);
+      }
+    });
+    assert.ok(inspected > 1000);
+    assert.equal(inside, 0, `${climbed}: Trinity intersects the upper deck at ${inside} rendered vertices`);
+    if (climbed === ladderHeight) assert.ok(Math.abs(soles - ladderHeight - landing.thickness) < .05, 'the finished shoes must meet the deck');
+  }
 });
 
 test('the caller disappears from the booth after the line connects and returns on retry', t => {

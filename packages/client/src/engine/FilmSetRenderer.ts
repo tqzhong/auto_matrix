@@ -3312,11 +3312,14 @@ export class FilmSetRenderer {
       for (const z of [-set.depth / 2 - 8, -set.depth / 2 - 5, -set.depth / 2 - 2]) this.box(this.metal, x, 2.4, z, .18, .14, .18);
     }
     const ladder = new THREE.Group(); ladder.name = 'hotel-303-fire-escape-ladder'; this.root.add(ladder);
-    for (const x of [-.8, .8]) ladder.add(this.box(this.metal, x, OPENING_HOTEL.ladderHeight / 2, OPENING_HOTEL.ladderZ - .4, .16, OPENING_HOTEL.ladderHeight + .6, .18));
-    for (let y = .35; y < OPENING_HOTEL.ladderHeight; y += .65) ladder.add(this.box(this.metal, 0, y, OPENING_HOTEL.ladderZ - .4, 1.75, .12, .16));
-    const { landing } = OPENING_HOTEL;
-    ladder.add(this.box(this.metal, 0, OPENING_HOTEL.ladderHeight + landing.thickness / 2,
-      OPENING_HOTEL.ladderZ + landing.offsetZ, landing.width, landing.thickness, landing.depth));
+    const { ladderZ, ladderHeight, landing } = OPENING_HOTEL;
+    const railZ = ladderZ - .4, deckZ = ladderZ + landing.offsetZ, edge = deckZ + landing.depth / 2;
+    for (const x of [-.8, .8]) {
+      ladder.add(this.box(this.metal, x, ladderHeight / 2, railZ, .16, ladderHeight + .6, .18));
+      ladder.add(this.box(this.metal, x, ladderHeight + .06, (railZ + edge) / 2, .16, .18, railZ - edge + .12));
+    }
+    for (let y = .35; y < ladderHeight; y += .65) ladder.add(this.box(this.metal, 0, y, railZ, 1.75, .12, .16));
+    ladder.add(this.box(this.metal, 0, ladderHeight + landing.thickness / 2, deckZ, landing.width, landing.thickness, landing.depth));
     const exterior = this.pbr('damaged_plaster', 0x73746e, 6);
     this.box(exterior, 0, 8, -42, 27, 16, .5);
     for (const x of [-9, -3, 3, 9]) {
@@ -3325,7 +3328,11 @@ export class FilmSetRenderer {
       this.box(this.black, x, 9.5, -41.5, .12, 4.8, .1);
       this.box(this.black, x, 9.5, -41.5, 2.9, .12, .1);
     }
-    const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2); escapeLight.position.set(0, 8, -32); this.root.add(escapeLight);
+    const fixtureX = -3.4, fixtureZ = -set.depth / 2 - .62;
+    this.box(this.metal, fixtureX, 9.9, fixtureZ, .85, .55, .6);
+    this.box(this.glow, fixtureX, 9.61, fixtureZ - .12, .64, .06, .35);
+    const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2);
+    escapeLight.position.set(fixtureX, 9.48, fixtureZ - .4); this.root.add(escapeLight);
   }
   private *domestic(set: FilmSet): Generator<void> {
     const { architecture: a, width: w, depth: d } = set;

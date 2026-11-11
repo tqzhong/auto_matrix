@@ -2,7 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
-import { openingAnswerPose, wellsAftermathPose } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, wellsAftermathPose } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -54,6 +54,7 @@ export interface MotionInput {
   freewayHandoff?: import('@auto_matrix/shared').FreewayHandoff & { role: import('@auto_matrix/shared').FreewayHandoffRole };
   freewayRide?: import('@auto_matrix/shared').FreewayRide & { role: 'trinity' | 'keymaker' };
   climbing?: number;
+  hotelClimb?: number;
   officeLadder?: { depth: number; exit?: number };
   performance?: AwakeningPose;
   podWake?: number;
@@ -691,6 +692,14 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
+  const hotelClimb = input.hotelClimb === undefined ? undefined : openingHotelClimbPose(input.hotelClimb);
+  if (input.hotelClimb !== undefined) {
+    const time = input.hotelClimb / OPENING_HOTEL.climbSpeed;
+    Object.assign(state, newMotion(), { time, climbPhase: time * 5 });
+    input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false,
+      climbing: input.hotelClimb < OPENING_HOTEL.ladderHeight ? 0 : undefined };
+    dt = 0;
+  }
   if (input.openingAnswer || input.openingHit) {
     const answer = input.openingAnswer, root = answer && openingAnswerPose(answer), speed = root?.speed ?? 0;
     Object.assign(state, newMotion(), { time: (answer?.elapsed ?? 0) + (input.openingHit?.elapsed ?? 0), speed, phase: (root?.travel ?? 0) / 2.8, skill: undefined });
@@ -916,7 +925,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.riding) for (const arm of arms) { arm.shoulder = -.9; arm.elbow = -.65; arm.grip = .8; }
   if (input.climbing !== undefined) for (let i = 0; i < 2; i++) {
     const pull = Math.sin(state.climbPhase + i * Math.PI);
-    const grip = 1 - smooth(input.officeLadder?.exit ?? 0);
+    const grip = 1 - (hotelClimb?.transfer ?? smooth(input.officeLadder?.exit ?? 0));
     legs[i].hip = mix(legs[i].hip, -.75 + pull * .4, grip); legs[i].knee = mix(legs[i].knee, 1.1 - pull * .6, grip); legs[i].ankle = mix(legs[i].ankle, -.2, grip);
     arms[i].shoulder = mix(arms[i].shoulder, -2.2 - pull * .55, grip); arms[i].elbow = mix(arms[i].elbow, -.65 + pull * .5, grip); arms[i].grip = mix(arms[i].grip, 1, grip);
   }

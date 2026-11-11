@@ -176,6 +176,7 @@ export class Engine {
       const group = this.agentRenderer.getAgent(this.playerControls.id);
       if (state && group) {
         const phone = meeting?.scene === 'm1_phone_escape' && !meeting.visiting && meeting.actor === state.id ? meeting.openingPhone : undefined;
+        this.playerControls.openingHotel = meeting?.scene === 'm1_room303' && !meeting.visiting && meeting.actor === state.id ? meeting.openingHotel : undefined;
         this.playerControls.update(delta, state, group, this.running, phone?.phase === 'connected' || phone?.phase === 'done'
           || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed);
       }

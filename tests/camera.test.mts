@@ -9,6 +9,7 @@ import { CameraController } from '../packages/client/src/engine/CameraController
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { TheOneRenderer } from '../packages/client/src/engine/TheOneRenderer.js';
 import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { OPENING_HOTEL, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
@@ -48,6 +49,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { TRAINMAN_CHASE, trainmanVaultLift, trainmanVaultProgress } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
+import { OpeningHotelSystem } from '../packages/server/src/story/OpeningHotelSystem.js';
 import { DOCK_EVACUATION, SHAFT_SEAL, dockEvacuationRoot, shaftSealLever, type DockEvacuation } from '@auto_matrix/shared';
 import { APARTMENT, playerBlocked, apartmentComputerPose, newFreewayRide, filmPosition, officeCrossingPose, OFFICE_LADDER, INTERROGATION_ROOM, pillRoot, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, POD_WATER_DROP, meetingRoot, meetingCarPose, MEETING_CAR, FILM_SETS, MOUNTAIN, ORACLE_VISIT, RESCUE, TV_EXIT, airRescueRoot, matrixEscapeRoot, subwayCrewRoot, theOneRoot, tvExitEmergeRoot, wakeCallRoot, sentinelMachinePose, type TheOneEncounter } from '@auto_matrix/shared';
 
@@ -1238,6 +1240,53 @@ test('the office ladder camera looks along the city canyon while Neo descends', 
     'the authored first-person starting direction must still allow the player to look around');
   game.key('KeyV'); game.key('KeyV', false); game.step(.5);
   assert.ok(game.camera.position.z < game.state.position.z - 7, 'switching back restores the exterior third-person shot');
+});
+
+test('the 303 fire escape camera sees Trinity over the full climb and upper landing', t => {
+  const game = setup(t, Math.PI), scene = FILM_SCENE_BY_ID.m1_room303;
+  const { ladderHeight } = OPENING_HOTEL;
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  const hotel: OpeningHotelEncounter = { phase: 'ladder_ready', elapsed: 0, lastTick: 0, attempts: 0, disarmed: true, ammo: 0, shots: 0 };
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: 'trinity', step: 5, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(scene), openingHotel: hotel };
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  const system = new OpeningHotelSystem(() => sandbox);
+  Object.assign(game.state, { id: 'trinity', currentLocation: scene.set });
+  try {
+    for (const aspect of [16 / 9, .65]) for (const climbed of [ladderHeight, 0, 1.3, 3.6, 5.6, ladderHeight - .1]) {
+      const top = climbed === ladderHeight;
+      hotel.phase = top ? 'done' : climbed === 0 ? 'ladder_ready' : 'climbing';
+      hotel.climbed = climbed; journey.step = top ? scene.steps.length : 5;
+      game.camera.aspect = aspect; game.camera.updateProjectionMatrix();
+      system.frame(game.state);
+      game.controls.possess(game.state); game.controls.openingHotel = hotel;
+      game.controls.climbing = hotel.phase === 'climbing'; game.controls.performing = hotel.phase !== 'climbing';
+      renderer.update(game.state, sandbox, 0); renderer.root.updateMatrixWorld(true);
+      game.step(.5, 1 / 60, false); game.camera.updateWorldMatrix(true, false);
+      for (const height of [-.7, 1.2, 3.1]) {
+        const { x, y, z } = game.state.position, point = new THREE.Vector3(x, y + height, z), direction = point.clone().sub(game.camera.position);
+        const projected = point.clone().project(game.camera);
+        assert.ok(Math.abs(projected.x) < .92 && Math.abs(projected.y) < .92 && projected.z > -1 && projected.z < 1,
+          `Trinity must be in frame at ${aspect}/${climbed}/${height}: ${projected.toArray()}`);
+        const hits = new THREE.Raycaster(game.camera.position, direction.clone().normalize(), 0, direction.length() - .14)
+          .intersectObject(renderer.root, true).filter(hit => {
+            for (let object: THREE.Object3D | null = hit.object; object; object = object.parent) if (!object.visible) return false;
+            return hit.object instanceof THREE.Mesh && hit.object.castShadow && !hit.object.material.transparent;
+          });
+        assert.equal(hits.length, 0, `a set mesh blocks Trinity at ${aspect}/${climbed}/${height}: ${hits.map(hit => hit.point.toArray())}`);
+      }
+    }
+    game.key('KeyV'); game.key('KeyV', false); game.step(.1);
+    assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .05);
+    const ahead = game.camera.getWorldDirection(new THREE.Vector3());
+    game.event(game.canvas, 'mousedown', { button: 2 });
+    game.event(game.document, 'mousemove', { movementX: 100, movementY: -65 });
+    game.step(1);
+    assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(ahead) > .2, 'first-person look must stay free on the ladder');
+    game.key('KeyW'); game.step(.1); assert.equal(game.sent.at(-1)?.climb, 1);
+    game.key('KeyW', false); game.key('KeyS'); game.step(.1); assert.equal(game.sent.at(-1)?.climb, -1);
+  } finally { renderer.dispose(); }
 });
 
 for (const key of ['KeyW', 'ArrowDown']) {

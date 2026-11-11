@@ -55,7 +55,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { WELLS_AFTERMATH, wellsAftermathPose } from '@auto_matrix/shared';
+import { WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -148,6 +148,7 @@ export class PlayerControls {
   ride?: Pick<FreewayRide, 'speed'> & { mode?: 'defense' | 'sun' };
   gunner = false;
   hammerPreparation?: HammerHandover;
+  openingHotel?: OpeningHotelEncounter;
   climbing = false;
   performing = false;
   private phoneExit = false;
@@ -1165,6 +1166,8 @@ export class PlayerControls {
     this.motion.reloaded = reloadedGesture;
     this.motion.catch = catchGesture;
     this.motion.hotel303 = state.currentAction?.parameters.hotel303 as MotionInput['hotel303'];
+    const hotelClimb = state.currentLocation === 'film_heart_hotel' ? openingHotelClimbed(this.openingHotel) : undefined;
+    this.motion.hotelClimb = hotelClimb;
     const roofExit = state.currentAction?.parameters.roofExit as MotionInput['roofExit'];
     if (this.motion.roofExit && !roofExit) this.performing = false;
     this.motion.roofExit = roofExit;
@@ -1374,12 +1377,12 @@ export class PlayerControls {
       : this.motion.dockGunnery ? Math.PI : this.ride || this.climbing || this.performing ? state.rotation : attacking ? this.attackYaw : this.firearm ? this.yaw : this.motion.speed > .1 ? walkingHeading : this.facing;
     const turn = Math.atan2(Math.sin(heading - this.facing), Math.cos(heading - this.facing));
     this.facing += turn * (this.motion.openingAnswer || this.motion.openingHit || this.motion.roofExit || this.motion.freewayPickup || this.motion.freewayRide || dockEvacuationLocked(this.motion.dockEvacuation) || shaftSealLocked(this.motion.shaftSeal) || dockBriefingLocked(this.motion.dockBriefing) || dockReunionLocked(this.motion.dockReunion) || this.motion.empOperator || upperDiggerLocked(this.motion.upperDigger) || diggersLocked(this.motion.diggers) || this.motion.dockGate || dockLastStandLocked(this.motion.dockLastStand) || dockReloadLocked(this.motion.dockReload) || smithFinaleLocked(this.motion.smithFinale) || trilogyEpilogueLocked(this.motion.epilogue) || deusPactLocked(this.motion.deusPact) || this.motion.farewell || mirrorYaw !== undefined || chairYaw !== undefined || computerCheckLocked(computerCheck) || dropRoot || this.motion.officeCustody?.street || this.motion.pills || this.motion.interrogation || this.motion.meeting || this.motion.welcome || this.motion.knock !== undefined || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry ? 1 : 1 - Math.exp(-14 * delta)); this.motion.turn = turn * 8;
-    if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && state.currentLocation === 'film_office_ledge') && !this.dragging && performance.now() - this.lastLook > 900) {
+    if (running && this.enabled && !this.motion.wetwall && (this.motion.speed > .1 || this.ride || this.climbing) && !(this.firstPerson && this.climbing && (state.currentLocation === 'film_office_ledge' || hotelClimb !== undefined)) && !this.dragging && performance.now() - this.lastLook > 900) {
       const cameraTurn = Math.atan2(Math.sin(this.facing - this.yaw), Math.cos(this.facing - this.yaw));
       this.yaw += cameraTurn * (1 - Math.exp(-5 * delta));
     }
     const body = group.children[0];
-    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance))) body.rotation.y = this.motion.dockGunnery || this.motion.apuDriving ? Math.PI : this.firstPerson && !this.performing ? this.yaw : this.facing;
+    if (body && !(state.currentLocation === 'film_power_plant_pods' && this.motion.performance !== undefined && ['pod', 'fall', 'float', 'lift'].includes(this.motion.performance))) body.rotation.y = this.motion.dockGunnery || this.motion.apuDriving ? Math.PI : this.firstPerson && !this.performing && hotelClimb === undefined ? this.yaw : this.facing;
     const sprint = this.motion.speed > PLAYER_WALK_SPEED * 1.6 || Boolean(this.ride && this.ride.speed > 20);
     const interviewWide = !this.firstPerson && this.motion.interrogation && (this.motion.interrogation.phase === 'file' || this.motion.interrogation.phase === 'coercion' && this.motion.interrogation.elapsed > 5.3 && this.motion.interrogation.elapsed < 14);
     const interviewApproach = !this.firstPerson && state.currentLocation === 'film_agent_interrogation' && !this.motion.interrogation;
@@ -1491,7 +1494,16 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (phoneExit && state.currentLocation === 'film_wells_phone') {
+    if (!this.firstPerson && hotelClimb !== undefined) {
+      const { center, depth } = FILM_SETS.film_heart_hotel;
+      const { transfer } = openingHotelClimbPose(hotelClimb);
+      // Keep the lens outside the window and on Trinity's side of the ladder.
+      this.camera.position.set(center.x + 4.15, this.position.y + 1.7, center.z - depth / 2 - 1.25);
+      this.camera.lookAt(this.position.x, this.position.y + THREE.MathUtils.lerp(1.52, 1.15, transfer), this.position.z);
+      this.camera.fov = this.camera.aspect < .85 ? 66 : 62;
+      this.camera.near = .12;
+      this.camera.updateProjectionMatrix();
+    } else if (phoneExit && state.currentLocation === 'film_wells_phone') {
       const { center, width, depth } = FILM_SETS.film_wells_phone;
       this.camera.fov = Math.max(57, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(35)) / this.camera.aspect)));
       this.camera.near = .1; this.camera.updateProjectionMatrix();

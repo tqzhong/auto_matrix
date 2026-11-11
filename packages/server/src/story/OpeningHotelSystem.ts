@@ -1,4 +1,4 @@
-import { FILM_SETS, OPENING_HOTEL, distance, filmPosition, playerBlocked, rayBox,
+import { FILM_SETS, OPENING_HOTEL, distance, filmPosition, openingHotelClimbPose, openingHotelClimbed, playerBlocked, rayBox,
   type AgentState, type CombatImpact, type OpeningHotelEncounter, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 
 const SET = FILM_SETS.film_heart_hotel;
@@ -148,9 +148,10 @@ export class OpeningHotelSystem {
     if (this.journey?.scene !== 'm1_room303' || this.journey.visiting || this.journey.actor !== actor.id || !state) return false;
     if (state.phase === 'done') { this.frame(actor); return true; }
     if (state.phase !== 'climbing') return false;
-    state.climbed = Math.max(0, Math.min(OPENING_HOTEL.ladderHeight, (state.climbed ?? 0) + direction * Math.min(.1, dt) * OPENING_HOTEL.climbSpeed));
+    const seconds = Math.min(.1, dt), previous = actor.position;
+    state.climbed = Math.max(0, Math.min(OPENING_HOTEL.ladderHeight, (state.climbed ?? 0) + direction * seconds * OPENING_HOTEL.climbSpeed));
     this.frame(actor);
-    actor.velocity = { x: 0, y: direction * OPENING_HOTEL.climbSpeed, z: 0 };
+    if (seconds > 0) actor.velocity = { x: 0, y: (actor.position.y - previous.y) / seconds, z: (actor.position.z - previous.z) / seconds };
     actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction }, startedAt: tick, duration: 1, progress: 0 };
     if (state.climbed >= OPENING_HOTEL.ladderHeight) {
       state.phase = 'done'; this.frame(actor);
@@ -167,7 +168,12 @@ export class OpeningHotelSystem {
       ? gesture?.phase === (state.phase === 'breach' ? 'surrender' : 'dive') && gesture.elapsed === state.elapsed
       : state.phase !== 'done' && action?.parameters.climbing === true;
     if (!saved) this.frame(actor);
+    else if (state.phase === 'ladder_ready' || state.phase === 'climbing') this.placeClimber(actor, state.climbed ?? 0);
     return true;
+  }
+  private placeClimber(actor: AgentState, climbed: number): void {
+    const pose = openingHotelClimbPose(climbed);
+    actor.position = { x: SET.center.x, y: SET.center.y + pose.y, z: SET.center.z + pose.z };
   }
   frame(actor: AgentState): void {
     const state = this.state; if (!state) return;
@@ -180,19 +186,14 @@ export class OpeningHotelSystem {
       actor.position.y = SET.center.y + Math.sin(progress * Math.PI) * 1.1 - progress * .35;
       actor.velocity = { x: 0, y: -.35 / OPENING_HOTEL.diveSeconds, z: -6 / OPENING_HOTEL.diveSeconds };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'dive', elapsed: state.elapsed } }, startedAt: state.lastTick, duration: 1, progress: 0 };
-    } else if (state.phase === 'ladder_ready' || state.phase === 'climbing') {
-      actor.position = filmPosition(SET.id, 0, OPENING_HOTEL.ladderZ);
-      actor.position.y = SET.center.y - .35 + (state.climbed ?? 0);
+    } else {
+      const climbed = openingHotelClimbed(state);
+      if (climbed === undefined) return;
+      this.placeClimber(actor, climbed);
       actor.rotation = Math.PI;
       actor.velocity = { x: 0, y: 0, z: 0 };
-      actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0 }, startedAt: state.lastTick, duration: 1, progress: 0 };
-    } else if (state.phase === 'done') {
-      const { ladderHeight, ladderZ, landing } = OPENING_HOTEL;
-      actor.position = filmPosition(SET.id, 0, ladderZ + landing.offsetZ);
-      actor.position.y += ladderHeight + landing.thickness;
-      actor.rotation = Math.PI;
-      actor.velocity = { x: 0, y: 0, z: 0 };
-      actor.currentAction = null;
+      actor.currentAction = state.phase === 'done' ? null
+        : { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0 }, startedAt: state.lastTick, duration: 1, progress: 0 };
     }
   }
   tick(actor: AgentState, tick: number): boolean {

@@ -7,7 +7,7 @@ export const OPENING_HOTEL = {
   window: { x: 0, z: -23 },
   ladderZ: -30,
   ladderHeight: 7,
-  landing: { offsetZ: -1.2, width: 5.4, depth: 4.3, thickness: .24 },
+  landing: { offsetZ: -3.5, stepOffsetZ: -2.12, width: 5.4, depth: 4.3, thickness: .24 },
   climbSpeed: 2.4,
   breachSeconds: 1.5,
   diveSeconds: 1.6,
@@ -25,4 +25,23 @@ export interface OpeningHotelEncounter {
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
   reloadAt?: number; climbed?: number;
+}
+
+export function openingHotelClimbed(hotel?: OpeningHotelEncounter): number | undefined {
+  if (hotel?.phase === 'done') return OPENING_HOTEL.ladderHeight;
+  if (hotel?.phase === 'ladder_ready' || hotel?.phase === 'climbing') return hotel.climbed ?? 0;
+}
+
+export function openingHotelClimbPose(climbed: number) {
+  const { ladderHeight, ladderZ, landing } = OPENING_HOTEL;
+  const pullUp = 4, stepOntoDeck = 5.8;
+  const ease = (from: number, to: number) => {
+    const t = Math.max(0, Math.min(1, (climbed - from) / (to - from)));
+    return t * t * (3 - 2 * t);
+  };
+  // Raise the feet above the plate before advancing into its footprint.
+  const lift = ease(pullUp, stepOntoDeck), transfer = ease(stepOntoDeck, ladderHeight);
+  const rung = Math.min(stepOntoDeck, Math.max(0, climbed)) - .35;
+  const deck = ladderHeight + landing.thickness + .24 * (1 - transfer);
+  return { y: rung * (1 - lift) + deck * lift, z: ladderZ + landing.stepOffsetZ * transfer, transfer };
 }

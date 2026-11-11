@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, filmEntry, filmPosition, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, filmEntry, filmPosition, openingHotelClimbPose, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { GunfireEffects } from '../packages/client/src/engine/GunfireEffects.js';
@@ -72,6 +72,22 @@ test('303 keeps its lighting layout across the room, corridor, camera and saved 
     for(const first of [false,true]) for(const yaw of [0,Math.PI/2,Math.PI,-Math.PI/2]) {
       h.pose(phase,.5,first,yaw);assert.equal(h.sample(),13,`${phase}/${first}/${yaw}: room and objective changes must keep the prepared shader layout`);
     }
+});
+
+test('the 303 exterior fixture clears the performer throughout the ladder route', t => {
+  const h = setup(t), set = FILM_SETS.film_heart_hotel;
+  h.pose('climbing');
+  const fixtures: THREE.PointLight[] = [];
+  h.sets.root.traverse(object => {
+    if (object instanceof THREE.PointLight && object.getWorldPosition(new THREE.Vector3()).z < set.center.z - set.depth / 2) fixtures.push(object);
+  });
+  assert.equal(fixtures.length, 1);
+  const point = fixtures[0].getWorldPosition(new THREE.Vector3());
+  for (const climbed of [0, 3.55, 5.8, 6.3, OPENING_HOTEL.ladderHeight]) {
+    const pose = openingHotelClimbPose(climbed), y = set.center.y + pose.y;
+    const body = new THREE.Vector3(set.center.x, THREE.MathUtils.clamp(point.y, y - 1, y + 3.9), set.center.z + pose.z);
+    assert.ok(point.distanceTo(body) >= 3.3, `${climbed}: the bare light is inside the performer's path`);
+  }
 });
 
 test('303 reserves the player and four real police muzzle flashes without losing their light', t => {
