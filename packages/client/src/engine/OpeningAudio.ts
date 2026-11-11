@@ -1,0 +1,98 @@
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_PHONE, WELLS_BOOTH, openingBoothCrush,
+  openingHotelGlassBroken, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
+  type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
+import type { GameAudio } from './GameAudio.js';
+
+type OpeningSounds = Pick<GameAudio, 'landlineSound' | 'meetingSound' | 'governmentSound' | 'matrixEscapeSound'
+  | 'interludeSound' | 'phoneSound' | 'windowSound' | 'dialogue'>;
+
+export type OpeningAudioState = {
+  journey: FilmJourney;
+  tick: number;
+  height: number;
+  roofExit?: number;
+  lastRing?: number;
+  truck?: { speed: number; level: number };
+};
+
+function hotelSounds(audio: OpeningSounds, previous: OpeningHotelEncounter, hotel: OpeningHotelEncounter): void {
+  if (previous.phase === 'trace' && hotel.phase === 'breach') {
+    audio.landlineSound('hangup'); audio.meetingSound('door');
+  }
+  if (previous.phase === 'phone' && hotel.phase === 'corridor') {
+    audio.landlineSound('pickup'); audio.dialogue();
+  }
+  if (!openingHotelGlassBroken(previous) && openingHotelGlassBroken(hotel)) audio.governmentSound('glass');
+  if (previous.phase === 'dive' && hotel.phase === 'ladder_ready') audio.governmentSound('body');
+  if (previous.phase === 'ladder_ready' && hotel.phase === 'climbing' || previous.phase === 'climbing' && hotel.phase === 'done')
+    audio.interludeSound('keys');
+}
+
+function roofSounds(audio: OpeningSounds, previous: OpeningAudioState, current: OpeningAudioState): void {
+  const roof = current.journey.openingRoof, old = previous.journey.openingRoof;
+  const floor = FILM_SETS.film_hotel_roofs.center.y;
+  if (roof?.phase === 'running' && current.roofExit === undefined && previous.roofExit === undefined
+    && previous.height > floor + .12 && current.height >= floor - .1 && current.height <= floor + .08) audio.governmentSound('body');
+  if (roof?.phase === 'running' && roof.crossed && old?.leap && !old.crossed) audio.governmentSound('body');
+  if (!openingRoofGlassBroken(old, previous.roofExit) && openingRoofGlassBroken(roof, current.roofExit)) audio.governmentSound('glass');
+}
+
+function wellsSounds(audio: OpeningSounds, previous: OpeningPhoneEncounter, phone: OpeningPhoneEncounter): void {
+  if (phone.answer && (previous.answer?.elapsed ?? 0) < OPENING_PHONE.graspSeconds && phone.answer.elapsed >= OPENING_PHONE.graspSeconds)
+    audio.landlineSound('pickup');
+  if (previous.phase === 'answering' && phone.phase === 'connected') audio.phoneSound(true);
+  if (phone.hit && !previous.hit) audio.governmentSound('body');
+  if (phone.impactElapsed !== previous.impactElapsed || phone.phase !== previous.phase) {
+    const before = openingBoothCrush(openingTruckPose(previous)), crush = openingBoothCrush(openingTruckPose(phone));
+    if (before === 0 && crush > 0) audio.matrixEscapeSound('truck-impact');
+    if (before <= WELLS_BOOTH.glassBreakCrush && crush > WELLS_BOOTH.glassBreakCrush) audio.governmentSound('glass');
+  }
+  const elapsed = phone.aftermath?.elapsed, earlier = previous.aftermath?.elapsed;
+  if (elapsed !== undefined && elapsed > (earlier ?? 0)) {
+    const door = wellsAftermathDoor(elapsed), oldDoor = wellsAftermathDoor(earlier);
+    if ((door === 0) !== (oldDoor === 0)) audio.meetingSound('door');
+  }
+}
+
+function truckEngine(phone: OpeningPhoneEncounter, actor: AgentState): OpeningAudioState['truck'] {
+  const approaching = phone.phase === 'running' || phone.phase === 'answering' || phone.phase === 'failed' && phone.remaining > 0;
+  const colliding = (phone.phase === 'connected' || phone.phase === 'failed') && phone.impactElapsed !== undefined
+    && phone.impactElapsed < OPENING_ESCAPE.truckImpactSeconds;
+  if (!approaching && !colliding) return;
+  const { center } = FILM_SETS.film_wells_phone, truck = openingTruckPose(phone);
+  const distance = Math.hypot(actor.position.x - center.x - truck.x, actor.position.z - center.z - truck.z);
+  return { speed: approaching ? 4 + 7 * (1 - phone.remaining / OPENING_ESCAPE.phoneSeconds) : 16, level: 7 / Math.max(7, distance) };
+}
+
+export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioState | undefined, journey: FilmJourney | undefined,
+  actor: AgentState | undefined, running: boolean, tick: number): OpeningAudioState | undefined {
+  if (!journey || journey.visiting || !actor?.isInMatrix || actor.id !== journey.actor
+    || !['m1_room303', 'm1_roofs', 'm1_phone_escape'].includes(journey.scene)
+    || actor.currentLocation !== FILM_SCENE_BY_ID[journey.scene].set) return;
+  const hotel = journey.scene === 'm1_room303' ? journey.openingHotel : undefined;
+  const roof = journey.scene === 'm1_roofs' ? journey.openingRoof : undefined;
+  const phone = journey.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
+  // Completion refreshes enteredAt before the camera leaves the scene.
+  const before = previous?.journey.scene === journey.scene && previous.journey.actor === journey.actor && tick >= previous.tick ? previous : undefined;
+  const old = before?.journey;
+  const sameAttempt = old && (!hotel || hotel.attempts === old.openingHotel?.attempts)
+    && (!roof || roof.attempts === old.openingRoof?.attempts) && (!phone || phone.attempts === old.openingPhone?.attempts);
+  const exit = roof ? actor.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
+  const next: OpeningAudioState = { journey, tick, height: actor.position.y, roofExit: exit?.elapsed };
+  if (hotel?.phase === 'phone' || phone?.phase === 'running'
+    || phone?.phase === 'answering' && (phone.answer?.elapsed ?? 0) < OPENING_PHONE.graspSeconds) {
+    next.lastRing = sameAttempt ? before?.lastRing : undefined;
+    if (running && (next.lastRing === undefined || tick - next.lastRing >= 7)) {
+      next.lastRing = tick; audio.landlineSound('ring');
+    }
+  }
+  // Paused and first-delivered states establish the baseline for one-shot cues.
+  if (!running) return next;
+  if (phone) next.truck = truckEngine(phone, actor);
+  if (roof?.phase === 'running' && previous?.journey.scene === 'm1_room303') audio.windowSound(true);
+  if (!sameAttempt || !before || !old) return next;
+  if (hotel && old.openingHotel) hotelSounds(audio, old.openingHotel, hotel);
+  if (roof && old.openingRoof) roofSounds(audio, before, next);
+  if (phone && old.openingPhone) wellsSounds(audio, old.openingPhone, phone);
+  return next;
+}

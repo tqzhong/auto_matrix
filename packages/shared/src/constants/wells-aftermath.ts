@@ -39,8 +39,12 @@ export function wellsAftermathReady(phone: OpeningPhoneEncounter | undefined): b
   return phone?.phase === 'done' && (phone.aftermath?.elapsed ?? 0) >= WELLS_AFTERMATH.seconds;
 }
 
+export function wellsAftermathDialogue(elapsed: number) {
+  return dialogue.find(line => elapsed >= line.from && elapsed < line.to);
+}
+
 export function wellsAftermathCaption(elapsed: number): string {
-  return dialogue.find(line => elapsed >= line.from && elapsed < line.to)?.text
+  return wellsAftermathDialogue(elapsed)?.text
     ?? (elapsed >= 11.85 ? '特工找到了下一个目标，Neo。' : elapsed >= 2.4 ? 'Smith 走到被撞毁的电话亭旁。' : 'Smith 推开卡车驾驶室的门。');
 }
 
@@ -63,7 +67,7 @@ export function wellsAftermathPose({ elapsed, role }: WellsAftermathGesture) {
   const arrive = transition(elapsed, stop - .7, stop + .45);
   const facing = smith ? 2.02 : jones ? 2.84 : 1.22;
   const turn = Math.atan2(Math.sin(facing - heading), Math.cos(facing - heading));
-  const line = dialogue.find(beat => elapsed >= beat.from && elapsed < beat.to);
+  const line = wellsAftermathDialogue(elapsed);
   const attention = line ? transition(elapsed, line.from, line.from + .24) * (1 - transition(elapsed, line.to - .3, line.to)) : 0;
   const listen = line && line.role !== role ? (line.role === 'agent_brown' ? .32 : -.25) * attention : 0;
   const inspect = smith ? transition(elapsed, 4.18, 5.05) * (1 - transition(elapsed, 5.75, 6.53)) : 0;

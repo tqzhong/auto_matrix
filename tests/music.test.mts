@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test, type TestContext } from 'node:test';
-import { NEO_CHAPTERS, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, NEO_CHAPTERS, type FilmJourney, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { SandboxSystem } from '../packages/server/src/player/SandboxSystem.js';
@@ -40,6 +40,23 @@ test('the return home shifts from the film night cue to ordinary morning music a
   life.journey.morning!.phase = 'alarm'; assert.equal(musicForScene(game), 'ordinary');
   life.journey.morning!.phase = 'ready'; game.player!.currentLocation = 'downtown';
   assert.equal(musicForScene(game), 'ordinary', 'the morning continues while Neo walks out to the city street');
+});
+
+test('the three opening scenes share the first film recording through action and the cut to Neo', () => {
+  const game = scene(), director = new MusicDirector(), life = game.sandbox!.neoLife!;
+  const player = game.player!; player.id = 'trinity';
+  let now = 0;
+  for (const id of ['m1_room303', 'm1_roofs', 'm1_phone_escape']) {
+    player.currentLocation = FILM_SCENE_BY_ID[id].set;
+    life.journey = { scene: id, actor: player.id } as FilmJourney;
+    const cue = director.update(game, now++);
+    assert.equal(FILM_MUSIC[cue].title, 'Trinity Infinity');
+    director.impact(now++);
+    assert.equal(director.update(game, now++), cue);
+  }
+  player.id = 'neo'; player.currentLocation = FILM_SCENE_BY_ID.m1_wake_up.set;
+  life.journey = { scene: 'm1_wake_up', actor: 'neo' } as FilmJourney;
+  assert.equal(director.update(game, now), 'night');
 });
 
 test('anomaly music needs a nearby anomaly in the player location, and stops after it is resolved', () => {
@@ -211,6 +228,35 @@ function audioHarness(t: TestContext, saved?: string, Audio = GameAudio) {
   const respond = async (index: number, ok = true) => { await flush(); requests[index].resolve({ ok, status: ok ? 200 : 503, arrayBuffer: async () => new ArrayBuffer(8) } as Response); await flush(); };
   return { audio, contexts, requests, window, document, storage, legacyStorage, flush, respond };
 }
+
+test('the Wells investigation ducks the score only while its dialogue captions are active', async t => {
+  const h = audioHarness(t), game = scene();
+  game.player!.id = 'trinity'; game.player!.currentLocation = FILM_SCENE_BY_ID.m1_phone_escape.set;
+  const aftermath = { elapsed: 4.79 };
+  game.sandbox!.neoLife!.journey = { scene: 'm1_phone_escape', actor: 'trinity', openingPhone: { phase: 'done', aftermath } } as FilmJourney;
+  h.audio.update(game); await h.audio.resume(); await h.respond(0);
+  const music = h.contexts[0].gains[0].gain;
+  assert.equal(music.value, .48);
+  aftermath.elapsed = 4.8; h.audio.update(game); assert.equal(music.value, .48 * .42);
+  aftermath.elapsed = 11.84; h.audio.update(game); assert.equal(music.value, .48 * .42);
+  aftermath.elapsed = 11.85; h.audio.update(game); assert.equal(music.value, .48);
+  aftermath.elapsed = 7; h.audio.update(game); assert.equal(music.value, .48 * .42);
+  game.player!.id = 'neo'; h.audio.update(game); assert.equal(music.value, .48);
+});
+
+test('the engine loop uses listener distance and stops while muted', async t => {
+  const h = audioHarness(t, '{"musicMuted":true}'); await h.audio.resume();
+  const ctx = h.contexts[0];
+  h.audio.carEngine(10, .25);
+  const gain = ctx.gains.at(-1)!.gain;
+  assert.equal(gain.value, (.025 + 10 * .0012) * .25);
+  const events = gain.events.length;
+  h.audio.carEngine(10, .25); assert.equal(gain.events.length, events);
+  h.audio.carEngine(10, .5); assert.equal(gain.value, (.025 + 10 * .0012) * .5);
+  assert.equal(ctx.sources.length, 1); assert.equal(ctx.oscillators.length, 1);
+  h.audio.toggle('effects'); h.audio.carEngine(10, .5);
+  assert.equal(ctx.sources[0].stopAt, 0); assert.equal(ctx.oscillators[0].stopAt, 0);
+});
 
 test('development startup stays silent after gestures even with saved unmuted settings', async t => {
   const bundle = await build({ entryPoints: [fileURLToPath(new URL('../packages/client/src/engine/GameAudio.ts', import.meta.url))],

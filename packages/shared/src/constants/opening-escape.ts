@@ -84,6 +84,10 @@ export interface OpeningRoofEncounter {
   crossed?: boolean;
 }
 
+export function openingRoofGlassBroken(roof?: OpeningRoofEncounter, exitElapsed = 0): boolean {
+  return exitElapsed >= 1.68 || roof?.phase === 'escaped';
+}
+
 export interface OpeningPhoneEncounter {
   phase: 'running' | 'answering' | 'failed' | 'connected' | 'done'; remaining: number; lastTick: number; attempts: number;
   answer?: OpeningPhoneAnswer;

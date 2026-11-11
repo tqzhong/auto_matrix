@@ -27,6 +27,10 @@ export interface OpeningHotelEncounter {
   reloadAt?: number; climbed?: number;
 }
 
+export function openingHotelGlassBroken(hotel?: OpeningHotelEncounter): boolean {
+  return hotel?.phase === 'dive' ? hotel.elapsed > .35 : hotel?.phase === 'ladder_ready' || hotel?.phase === 'climbing' || hotel?.phase === 'done';
+}
+
 export function openingHotelClimbed(hotel?: OpeningHotelEncounter): number | undefined {
   if (hotel?.phase === 'done') return OPENING_HOTEL.ladderHeight;
   if (hotel?.phase === 'ladder_ready' || hotel?.phase === 'climbing') return hotel.climbed ?? 0;

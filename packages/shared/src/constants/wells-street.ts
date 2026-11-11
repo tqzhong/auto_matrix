@@ -30,6 +30,7 @@ export function wellsSidewalkHeight(width: number, x: number): number {
 }
 
 export const WELLS_BOOTH = {
+  glassBreakCrush: .06,
   post: { y: 3.8, width: .15, height: 7.6, depth: .15 },
   pane: { y: 3.8, width: .06, height: 7, depth: 2.8 },
   cabinet: { x: 0, y: 3.8, z: 0, width: 1.45, height: 2.4, depth: .8 },
@@ -110,7 +111,7 @@ export function wellsStreetStructures(center: Vector3, phone?: OpeningPhoneEncou
   add('roof', boothPartBox({ ...WELLS_BOOTH.roof, x: 0, y: 0, z: 0 }, openingBoothPartPose('roof', 0, 0, truck, crush)));
   WELLS_BOOTH.posts.forEach(({ x, z }, i) =>
     add(`post:${i}`, boothPartBox({ ...WELLS_BOOTH.post, x: 0, z: 0 }, openingBoothPartPose('post', x, z, truck, crush))));
-  if (crush <= .06) WELLS_BOOTH.panes.forEach((x, i) => add(`pane:${i}`, { ...WELLS_BOOTH.pane, x, z: OPENING_PHONE.boothZ }));
+  if (crush <= WELLS_BOOTH.glassBreakCrush) WELLS_BOOTH.panes.forEach((x, i) => add(`pane:${i}`, { ...WELLS_BOOTH.pane, x, z: OPENING_PHONE.boothZ }));
   return result;
 }
 

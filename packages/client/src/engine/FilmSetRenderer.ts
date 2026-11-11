@@ -50,7 +50,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelGlassBroken, openingRoofGlassBroken } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -2223,8 +2223,8 @@ export class FilmSetRenderer {
       const hotel = sceneId === 'm1_room303' && !journey?.visiting ? journey?.openingHotel : undefined;
       const opening = hotel?.phase === 'breach' ? Math.min(1, hotel.elapsed / OPENING_HOTEL.breachSeconds) : hotel?.phase === 'trace' || !hotel ? 0 : 1;
       this.hotel303Door.rotation.y = -opening * 1.35;
-      const broken = hotel?.phase === 'dive' && hotel.elapsed > .35 || ['ladder_ready', 'climbing', 'done'].includes(hotel?.phase ?? '');
-      this.hotel303Glass.visible = !broken; this.hotel303Shards.visible = Boolean(broken);
+      const broken = openingHotelGlassBroken(hotel);
+      this.hotel303Glass.visible = !broken; this.hotel303Shards.visible = broken;
       if (this.hotel303Pistol) {
         this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
         if (hotel?.fallen) this.hotel303Pistol.position.set(hotel.fallen.x - this.current!.center.x, .12, hotel.fallen.z - this.current!.center.z);
@@ -2232,7 +2232,7 @@ export class FilmSetRenderer {
     }
     if (this.openingRoofGlass && this.openingRoofShards) {
       const exit = sceneId === 'm1_roofs' && !journey?.visiting ? player?.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
-      const broken = Boolean(exit && exit.elapsed >= 1.68 || journey?.scene === 'm1_roofs' && !journey.visiting && journey.openingRoof?.phase === 'escaped');
+      const broken = openingRoofGlassBroken(journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined, exit?.elapsed);
       this.openingRoofGlass.visible = !broken; this.openingRoofShards.visible = broken;
     }
     if (this.wellsStreet && this.openingBooth && this.openingGlass) {
@@ -2245,7 +2245,7 @@ export class FilmSetRenderer {
         part.root.position.set(placed.x, placed.y, placed.z);
         part.root.rotation.set(placed.pitch, placed.yaw, placed.roll);
       }
-      const broken = crush > .06, scatter = THREE.MathUtils.smoothstep(crush, .06, 4);
+      const broken = crush > WELLS_BOOTH.glassBreakCrush, scatter = THREE.MathUtils.smoothstep(crush, WELLS_BOOTH.glassBreakCrush, 4);
       for (const pane of this.openingBoothPanes) pane.visible = !broken;
       this.openingGlass.visible = broken;
       this.openingGlassPieces.forEach(({ mesh, origin, side }, i) => {

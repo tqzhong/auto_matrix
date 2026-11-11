@@ -20,6 +20,7 @@ import { FilmSetRenderer } from './FilmSetRenderer.js';
 import { LOBBY_POINT_SLOTS } from './LobbySetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
+import { updateOpeningAudio, type OpeningAudioState } from './OpeningAudio.js';
 import { SandboxRenderer } from './SandboxRenderer.js';
 import { VoxelRenderer } from './VoxelRenderer.js';
 import { AgentRenderer } from '../agents/AgentRenderer.js';
@@ -239,8 +240,11 @@ export class Engine {
     // Keep the prepared office lighting layout through the handoff and escape.
     const reserveLandingSlot = reserveCommuteLights || liveMatrixJourney?.scene === 'm1_boss'
       || liveMatrixJourney?.scene === 'm1_office_escape' || liveMatrixJourney?.scene === 'm1_ledge';
+    const truck = liveMatrixJourney?.scene === 'm1_phone_escape' ? this.openingAudio?.truck : undefined;
     this.audio.carEngine(this.running && player?.id === meeting?.actor && !meeting?.visiting
-      ? meeting?.meeting ? meetingCarPose(meeting.meeting).speed : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined : undefined);
+      ? truck?.speed ?? (meeting?.meeting ? meetingCarPose(meeting.meeting).speed
+        : meeting?.office?.custody?.street?.phase === 'departing' && !meeting.office.custody.paused ? arrestCarPose(meeting.office.custody.street).speed : undefined)
+      : undefined, truck?.level);
     this.voxelRenderer.interiors.update(this.timeOfDay, player?.position, this.sandbox?.neoLife, this.camera.position, this.agentRenderer.getAgentBody('neo'), this.agentRenderer.getAgentState('neo')?.currentAction?.parameters.computerCheck as ComputerInvestigation | undefined, reserveLandingSlot, carHeight);
     measure?.('city');
     const workday = this.agentRenderer.getAgentState('courier')?.currentAction?.parameters.workday as OfficeWorkday | undefined;
@@ -414,8 +418,11 @@ export class Engine {
     this.updateAtmosphere();
   }
   private phoneRingAt = -10000;
+  private openingAudio?: OpeningAudioState;
   setSandbox(state: SandboxState, agents: Record<string, AgentState>): void {
     const before = this.sandbox?.neoLife?.journey; const after = state.neoLife?.journey;
+    this.openingAudio = updateOpeningAudio(this.audio, this.openingAudio, after,
+      after && after.actor === this.playerControls?.id ? agents[after.actor] : undefined, this.running, this.tick);
     if (after?.scene === 'm1_tv_exit' && !after.visiting && after.actor === this.playerControls?.id && this.running && !after.tvExit?.paused) {
       const current = after.tvExit, previous = before?.scene === after.scene ? before.tvExit : undefined;
       if (current?.phase === 'pickup' && previous?.phase === 'pickup' && previous.elapsed < .8 && current.elapsed >= .8) this.audio.landlineSound('pickup');

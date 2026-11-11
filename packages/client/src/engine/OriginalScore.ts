@@ -9,7 +9,7 @@ const track = (title: string): FilmTrack => manifest.tracks.find(item => item.ti
 // Every scene must resolve to one of these original recordings, including quiet daily life.
 export const FILM_MUSIC: Record<MusicCue, FilmTrack> = {
   ordinary: track('Niaiserie'), office: track('Niaiserie'), cafe: track('Niaiserie'),
-  club: track('Niaiserie'), restaurant: track('Niaiserie'), contact: track('Trinity Infinity'),
+  club: track('Niaiserie'), restaurant: track('Niaiserie'), contact: track('Trinity Infinity'), opening: track('Trinity Infinity'),
   night: track('The Logos Location'), anomaly: track('Unable to Speak'),
   awakening: track('The Lafayette Mirror'), the_one: track('Anything is Possible'),
   matrix: track('Trinity Infinity'), oracle: track('Neovision'),

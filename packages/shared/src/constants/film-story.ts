@@ -63,7 +63,7 @@ import { BASEMENT, basementRouteRoot, basementRouteLength, basementTunnelRoot, B
 import { THE_ONE } from './the-one.js';
 import { RELOADED } from './reloaded-opening.js';
 
-export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn';
+export type FilmCue = 'night' | 'contact' | 'office' | 'club' | 'awakening' | 'training' | 'oracle' | 'infiltration' | 'combat' | 'the_one' | 'zion' | 'swarm' | 'restaurant' | 'chateau' | 'chase' | 'source' | 'mobil' | 'siege' | 'bane' | 'farewell' | 'final' | 'dawn' | 'opening';
 export interface FilmStep {
   kind: 'reach' | 'interact' | 'fight' | 'reflect' | 'drive'; label: string; x: number; z: number;
   text?: string; seconds?: number; enemies?: number; enemy?: 'agent' | 'smith' | 'sentinel' | 'training' | 'soldier'; opponent?: string;
@@ -266,7 +266,7 @@ const scene = (id: string, film: 1 | 2 | 3, set: string, actor: string, title: s
 // Released-film narrative beats, authored as game objectives, not screenplay quotations.
 // Perspective changes follow the people actually present; the ordinary-life prologue is a game extension.
 export const FILM_SCENES: FilmScene[] = [
-  scene('m1_room303', 1, 'heart_hotel', 'trinity', '追踪中的房间 303', 'contact', 'infiltration', '线路被追踪。四名警员正在 303 门外，Trinity 必须脱身、联系 Morpheus，再从走廊破窗离开。', [
+  scene('m1_room303', 1, 'heart_hotel', 'trinity', '追踪中的房间 303', 'contact', 'opening', '线路被追踪。四名警员正在 303 门外，Trinity 必须脱身、联系 Morpheus，再从走廊破窗离开。', [
     use('挂断被追踪的线路', '警员破门而入，Trinity 举手等待近身机会。', -8, 12, 0),
     fight('反击警员，夺下手枪', 4, 'soldier'),
     use('接通房间电话，询问安全出口', 'Morpheus 确认硬线已被切断；Wells 与 Lake 的电话是新的出口。', -10, 18, 0),
@@ -274,8 +274,8 @@ export const FILM_SCENES: FilmScene[] = [
     use('跃出破窗，登上消防梯', 'Trinity 穿过碎玻璃，落到窗外消防梯。', 0, -23, 0),
     use('沿消防梯爬上屋顶', 'Trinity 抓住钢梯往上攀，Brown 已在屋顶追来。', 0, -30, 0),
   ]),
-  scene('m1_roofs', 1, 'hotel_roofs', 'trinity', '屋顶追逐', 'contact', 'chase', 'Brown 紧追不舍。穿过通风设施，助跑越过楼间空隙，抵达消防梯。', [walk('穿过通风设施', -7, 12), walk('越过楼间空隙', 7, -14), use('沿消防梯撤向电话亭', 'Trinity 穿过对面的窗户，继续赶往 Wells 与 Lake 的出口。', 0, -38)], ['agent_brown']),
-  scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'chase', '出口电话响起。卡车已在路口掉头，必须赶在撞击前接起听筒。', [walk('冲向电话亭', OPENING_PHONE.stand.x, OPENING_PHONE.stand.z), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', OPENING_PHONE.stand.x, OPENING_PHONE.stand.z, 0)]),
+  scene('m1_roofs', 1, 'hotel_roofs', 'trinity', '屋顶追逐', 'contact', 'opening', 'Brown 紧追不舍。穿过通风设施，助跑越过楼间空隙，抵达消防梯。', [walk('穿过通风设施', -7, 12), walk('越过楼间空隙', 7, -14), use('沿消防梯撤向电话亭', 'Trinity 穿过对面的窗户，继续赶往 Wells 与 Lake 的出口。', 0, -38)], ['agent_brown']),
+  scene('m1_phone_escape', 1, 'wells_phone', 'trinity', '卡车前的电话', 'contact', 'opening', '出口电话响起。卡车已在路口掉头，必须赶在撞击前接起听筒。', [walk('冲向电话亭', OPENING_PHONE.stand.x, OPENING_PHONE.stand.z), use('接起出口电话', '连接及时中断。卡车撞毁电话亭，Trinity 已返回飞船。', OPENING_PHONE.stand.x, OPENING_PHONE.stand.z, 0)]),
   scene('m1_wake_up', 1, 'anderson_flat', 'neo', '屏幕上的来信', 'contact', 'night', 'Thomas Anderson 的公寓里，屏幕上的消息与敲门声打断了日常。', [
     use('查看 CRT，尝试退出异常窗口', '屏幕上的线索没有发送者。', APARTMENT.computer.x, APARTMENT.computer.z),
     use('打开 101 房门', '来客是 Choi 与 Dujour。', APARTMENT.door.x, APARTMENT.door.z),

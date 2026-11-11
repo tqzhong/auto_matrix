@@ -10,6 +10,7 @@ export const MUSIC = {
   night: { mood: '深夜与休息 · 孤独与悬念', level: .4 },
   anomaly: { mood: '现实的裂缝 · 异常出现时的不安', level: .65 },
   contact: { mood: '初见崔尼蒂 · 神秘访客带来线索', level: .6 },
+  opening: { mood: '序章 · Trinity 逃离 303 和 Wells 街口', level: .72 },
   awakening: { mood: '红蓝药丸与觉醒 · 镜面崩解，认识真实', level: .7 },
   matrix: { mood: '矩阵探索 · 潜藏的追踪与危险', level: .65 },
   training: { mood: '道场 · 学会面对规则', level: .8 },
@@ -52,7 +53,7 @@ const MISSION_MUSIC: Record<string, MusicCue> = {
   bane_encounter: 'bane', machine_pact: 'source', smith_final: 'final',
 };
 export function isActionMusic(cue: MusicCue): boolean {
-  return ['combat', 'training', 'chateau', 'chase', 'swarm', 'siege', 'bane', 'final'].includes(cue);
+  return ['opening', 'combat', 'training', 'chateau', 'chase', 'swarm', 'siege', 'bane', 'final'].includes(cue);
 }
 
 export function musicForScene({ player, sandbox, time, matrix }: MusicScene): MusicCue {

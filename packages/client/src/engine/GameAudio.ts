@@ -1,5 +1,6 @@
 import { MUSIC, MusicDirector, isActionMusic, type MusicCue, type MusicScene } from './Soundtrack.js';
 import { FILM_MUSIC, filmCredit, type FilmTrack } from './OriginalScore.js';
+import { wellsAftermathDialogue } from '@auto_matrix/shared';
 
 type Channel = 'music' | 'effects';
 export interface AudioSettings { music: number; effects: number; musicMuted: boolean; effectsMuted: boolean }
@@ -37,7 +38,7 @@ export class GameAudio {
   private playing = false;
   private mixValues = new Map<GainNode, number>();
   private dialogueTimer = 0;
-  private engineSound?: { source: OscillatorNode; noise: AudioBufferSourceNode; filter: BiquadFilterNode; gain: GainNode };
+  private engineSound?: { source: OscillatorNode; noise: AudioBufferSourceNode; filter: BiquadFilterNode; gain: GainNode; speed?: number; level?: number };
   readonly settings: AudioSettings;
   onChange?: () => void;
 
@@ -88,6 +89,10 @@ export class GameAudio {
     if (club) this.reading.add('club-conversation'); else this.reading.delete('club-conversation');
     const crosscut = scene.player?.currentAction?.parameters.crosscut as import('@auto_matrix/shared').CrosscutGesture | undefined;
     if (crosscut?.phase === 'call') this.reading.add('cypher-call'); else this.reading.delete('cypher-call');
+    const journey = scene.sandbox?.neoLife?.journey;
+    if (journey?.scene === 'm1_phone_escape' && !journey.visiting && scene.player?.id === journey.actor
+      && journey.openingPhone?.phase === 'done' && wellsAftermathDialogue(journey.openingPhone.aftermath?.elapsed ?? 0)) this.reading.add('wells-conversation');
+    else this.reading.delete('wells-conversation');
     this.sceneCue = this.director.update(scene, performance.now());
     this.select(this.preview ?? this.sceneCue);
     this.mix(); this.ensureMusic();
@@ -445,7 +450,7 @@ export class GameAudio {
     }
     source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); };
   }
-  carEngine(speed?: number): void {
+  carEngine(speed?: number, level = 1): void {
     const bus = this.effects();
     if (speed === undefined || !bus) {
       if (this.engineSound) { const sound = this.engineSound; sound.source.stop(); sound.noise.stop(); sound.source.disconnect(); sound.noise.disconnect(); sound.filter.disconnect(); sound.gain.disconnect(); this.engineSound = undefined; }
@@ -462,8 +467,11 @@ export class GameAudio {
       source.connect(filter); noise.connect(filter); filter.connect(gain); gain.connect(output); source.start(); noise.start();
       this.engineSound = { source, noise, filter, gain };
     }
-    this.engineSound.source.frequency.setTargetAtTime(42 + speed * 1.15, ctx.currentTime, .12);
-    this.engineSound.gain.gain.setTargetAtTime(.025 + speed * .0012, ctx.currentTime, .12);
+    const sound = this.engineSound;
+    if (sound.speed === speed && sound.level === level) return;
+    sound.speed = speed; sound.level = level;
+    sound.source.frequency.setTargetAtTime(42 + speed * 1.15, ctx.currentTime, .12);
+    sound.gain.gain.setTargetAtTime((.025 + speed * .0012) * level, ctx.currentTime, .12);
   }
   async recordingAudio(): Promise<MediaStream | undefined> {
     await this.resume(); return this.context?.state === 'running' ? this.recording?.stream : undefined;
