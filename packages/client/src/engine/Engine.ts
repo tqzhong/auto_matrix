@@ -20,6 +20,7 @@ import { insideLifeRoom, meetingLocked, meetingCarPose, interrogationLocked, pil
 import { FilmSetRenderer, openingVisitScene } from './FilmSetRenderer.js';
 import { filmEntry, FILM_SCENE_BY_ID } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS } from './LobbySetRenderer.js';
+import { APARTMENT_OPENING_POINT_SLOTS } from './ApartmentSetRenderer.js';
 import { CombatEffects } from './CombatEffects.js';
 import { GameAudio } from './GameAudio.js';
 import { updateOpeningAudio, type OpeningAudioState } from './OpeningAudio.js';
@@ -261,9 +262,11 @@ export class Engine {
     const officeSet = filmSet?.id === 'film_metacortex_floor' || filmSet?.id === 'film_office_ledge';
     this.voxelRenderer.showOfficeInterior(officeSet || Boolean(this.sandbox?.neoLife?.lift?.passenger));
     const cinematicSet = filmSet && !officeSet && filmSet.id !== 'film_anderson_flat' ? filmSet : undefined;
+    const openingApartment = liveMatrixJourney?.scene === 'm1_wake_up' && liveMatrixJourney.contact?.chairMotion === 'seated';
     this.lightCulling.minimumPointSlots = filmSet?.id === 'film_government_lobby' ? LOBBY_POINT_SLOTS
       : filmSet?.id === 'film_subway_platform' ? SUBWAY_POINT_SLOTS
       : officeSet ? OFFICE_POINT_SLOTS
+      : openingApartment ? APARTMENT_OPENING_POINT_SLOTS
       : this.filmSets.minimumPointSlots || (reserveCommuteLights && !cinematicSet ? POINT_SLOT_FLOOR : 0);
     if (!cinematicSet && previousSet?.id !== filmSet?.id) this.updateAtmosphere();
     this.voxelRenderer.matrix.visible = this.matrix && !cinematicSet; this.voxelRenderer.real.visible = !this.matrix && !cinematicSet;

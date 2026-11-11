@@ -59,6 +59,37 @@ test('Wells aftermath: watch the inspection and all three agents before taking o
   assert.deepEqual(h.cast(), before, 'leaving the street releases the agents back to their original state');
 });
 
+test('Wells aftermath: Neo wakes at the computer and resumes the saved take before trying the keyboard', () => {
+  const h = setup(); h.crash(); h.frame(270); h.command('next');
+  const neo = h.players.getAgent('caller')!;
+  assert.equal(h.state().scene, 'm1_wake_up');
+  assert.equal(h.state().contact?.phase, 'arrival');
+  assert.deepEqual(neo.position, filmPosition(neo.currentLocation, -9, -8.8));
+  h.frame(18);
+  const contact = structuredClone(h.state().contact), action = structuredClone(neo.currentAction);
+  h.frame(40, false);
+  h.players.release('caller', 9);
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  h.players.possess('caller', 'neo', 9);
+  assert.deepEqual(h.state().contact, contact);
+  assert.deepEqual(neo.currentAction, action);
+  h.command('act');
+  assert.equal(h.state().contact?.phase, 'arrival');
+  for (let i = 0; i < 80 && h.state().contact?.phase === 'arrival'; i++) h.frame();
+  assert.equal(h.state().contact?.phase, 'signal');
+  assert.deepEqual(neo.position, filmPosition(neo.currentLocation, -9, -8.8));
+  h.command('act');
+  assert.equal(h.state().contact?.phase, 'signal');
+  h.frame(180);
+  assert.equal(h.state().contact?.phase, 'reply');
+  assert.equal(h.state().step, 0);
+  h.command('act');
+  assert.equal(h.state().contact?.phase, 'knocking');
+  h.frame(90);
+  assert.equal(h.state().contact?.phase, 'door');
+  assert.equal(h.state().step, 1);
+});
+
 test('Wells aftermath: a paused or released take cold-restores the current pose and caption', () => {
   const h = setup(); h.crash(); h.frame(100);
   const phone = structuredClone(h.phone()), agents = structuredClone(h.cast()), line = h.state().lastText;

@@ -1,7 +1,8 @@
 import type { FilmJourney } from './film-story.js';
+import type { AgentState } from '../types/agent.js';
 
-export type ApartmentPhase = 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
-export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean; chairMotion?: 'stepping'; propMotion?: 'minidisc' }
+export type ApartmentPhase = 'arrival' | 'idle' | 'signal' | 'reply' | 'knocking' | 'door' | 'opening' | 'book' | 'retrieving' | 'disk' | 'handover' | 'invitation' | 'inspecting' | 'noticed' | 'accepted';
+export interface ApartmentContact { phase: ApartmentPhase; elapsed: number; paid?: boolean; chairMotion?: 'stepping' | 'seated'; propMotion?: 'minidisc' }
 export interface ApartmentGesture extends ApartmentContact { role: 'neo' | 'choi' | 'dujour' }
 export interface ComputerInvestigation { phase: 'reading' | 'unplugging' | 'offline' | 'evidence' | 'saved' | 'replugging'; elapsed: number }
 export const APARTMENT_NETWORK = { screen: { x: -9, y: 3.33, z: -11.595 }, screenApproach: { x: -11.6, z: -8.8 }, approach: { x: -6.65, z: -9.15, yaw: Math.PI }, plug: { x: -6.9, y: 2.65, z: -10.09 }, gripHeight: .17, seconds: 1.8, echoSeconds: 4.2 } as const;
@@ -35,7 +36,7 @@ export const APARTMENT = {
   choi: { x: 0, z: 13, yaw: Math.PI },
   dujour: { x: -1.1, z: 14.5, yaw: Math.PI - .4 },
   doorZ: 12, doorWidth: 3.8,
-  signal: 8, knocking: 4, opening: 2.4, retrieving: 3.2, handover: 4.5,
+  arrival: 2.8, signal: 8, knocking: 4, opening: 2.4, retrieving: 3.2, handover: 4.5,
 } as const;
 export const WAKE_CALL = { waking: 5.6, grasp: .85, pickup: 2.2, listening: 8.6, reply: 4.2, leaving: 4.4 } as const;
 export function computerInvestigationStep(check?: ComputerInvestigation) {
@@ -58,7 +59,21 @@ export const APARTMENT_FURNITURE = [
   { x: -9.5, z: 12, width: 15, depth: .4, height: 8.8 },
   { x: 9.5, z: 12, width: 15, depth: .4, height: 8.8 },
 ];
-const phases: ApartmentPhase[] = ['idle', 'signal', 'reply', 'knocking', 'door', 'opening', 'book', 'retrieving', 'disk', 'handover', 'invitation', 'inspecting', 'noticed', 'accepted'];
+const phases: ApartmentPhase[] = ['arrival', 'idle', 'signal', 'reply', 'knocking', 'door', 'opening', 'book', 'retrieving', 'disk', 'handover', 'invitation', 'inspecting', 'noticed', 'accepted'];
+export function apartmentAtComputer(phase?: ApartmentPhase): boolean {
+  return phase === 'arrival' || phase === 'signal' || phase === 'reply' || phase === 'knocking';
+}
+export function apartmentSleepWeight(contact: ApartmentContact): number {
+  if (contact.chairMotion !== 'seated') return 0;
+  if (contact.phase === 'arrival') return 1;
+  return contact.phase === 'signal' ? 1 - smooth(Math.max(0, Math.min(1, (contact.elapsed - .55) / 1.05))) : 0;
+}
+export function savedSeatedApartmentAction(contact: ApartmentContact | undefined, action: AgentState['currentAction'], role: string): boolean {
+  if (contact?.chairMotion !== 'seated' || !apartmentAtComputer(contact.phase) || action?.type !== 'idle') return false;
+  const saved = action.parameters.contact as ApartmentGesture | undefined;
+  return saved?.role === role && saved.phase === contact.phase && saved.elapsed === contact.elapsed
+    && saved.chairMotion === contact.chairMotion && saved.propMotion === contact.propMotion;
+}
 function computerFoot(t: number, side: 'R' | 'L') {
   const sign = side === 'R' ? 1 : -1;
   let x = APARTMENT.computer.x + sign * .276, z = APARTMENT.computer.z, yaw = Math.PI, lift = 0;
@@ -73,11 +88,12 @@ function computerFoot(t: number, side: 'R' | 'L') {
 }
 export function apartmentComputerPose(contact: ApartmentContact) {
   const t = contact.elapsed;
-  if (contact.chairMotion === 'stepping') {
-    const stepTime = contact.phase === 'signal' ? Math.min(1.72, t) : contact.phase === 'knocking' ? Math.max(0, Math.min(1.72, 3.97 - t)) : 1.72;
+  if (contact.chairMotion) {
+    const sittingDown = contact.phase === 'signal' && contact.chairMotion === 'stepping';
+    const stepTime = sittingDown ? Math.min(1.72, t) : contact.phase === 'knocking' ? Math.max(0, Math.min(1.72, 3.97 - t)) : 1.72;
     const feet = { R: computerFoot(stepTime, 'R'), L: computerFoot(stepTime, 'L') };
     if (contact.phase === 'knocking') for (const foot of Object.values(feet)) foot.yaw = Math.PI * 2 - foot.yaw;
-    const seated = contact.phase === 'signal' ? smooth(Math.max(0, Math.min(1, (t - 1.85) / 1.2)))
+    const seated = sittingDown ? smooth(Math.max(0, Math.min(1, (t - 1.85) / 1.2)))
       : contact.phase === 'knocking' ? 1 - smooth(Math.max(0, Math.min(1, (t - 1.4) / .8))) : 1;
     const approach = smooth(Math.max(0, Math.min(1, stepTime / 1.72)));
     const turn = smooth(Math.max(0, Math.min(1, stepTime / .32))) * (1 - smooth(Math.max(0, Math.min(1, (stepTime - 1.1) / .5))));
@@ -101,7 +117,10 @@ export function apartmentDoor(contact?: ApartmentContact): number {
   return contact.phase === 'opening' ? Math.min(1, contact.elapsed / APARTMENT.opening) : 1;
 }
 export function apartmentLocked(journey: FilmJourney): boolean {
-  return journey.scene === 'm1_wake_up' && !journey.visiting && ['signal', 'reply', 'knocking', 'opening', 'retrieving', 'handover', 'inspecting'].includes(journey.contact?.phase ?? '');
+  return journey.scene === 'm1_wake_up' && !journey.visiting && apartmentContactLocked(journey.contact);
+}
+export function apartmentContactLocked(contact?: ApartmentContact): boolean {
+  return apartmentAtComputer(contact?.phase) || ['opening', 'retrieving', 'handover', 'inspecting'].includes(contact?.phase ?? '');
 }
 export function wakeCallLocked(journey: FilmJourney): boolean {
   return journey.scene === 'm1_wake_again' && !journey.visiting && ['waking', 'pickup', 'listening', 'decision', 'reply', 'leaving'].includes(journey.wakeCall?.phase ?? '');
@@ -198,6 +217,7 @@ export function wakeCallText(call: WakeCall): string {
 }
 export function apartmentText(contact: ApartmentContact): string {
   switch (contact.phase) {
+    case 'arrival': return 'Neo 趴在电脑前睡着了，屏幕仍在搜索 Morpheus。';
     case 'idle': return '电脑还开着，电缆缠绕在桌脚。走到显示器旁，按 G 查看刚才的异常。';
     case 'signal': return contact.elapsed < 3 ? 'CRT 上的工作窗口消失了。光标自行输入你的另一个名字。' : contact.elapsed < 5.8 ? '没有发送者，没有聊天程序。有人声称你正生活在一个被安排好的系统中。' : '屏幕只留下一条陌生的指示：寻找白兔。';
     case 'reply': return '光标还在闪烁。按 G 尝试用键盘退出这个窗口。';

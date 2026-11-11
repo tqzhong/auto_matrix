@@ -10,6 +10,8 @@ import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShader
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { prepareMeshBuffers } from './PrepareMeshBuffers.js';
 
+export const APARTMENT_OPENING_POINT_SLOTS = 10;
+
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
 
@@ -346,6 +348,7 @@ export class ApartmentSetRenderer {
       for (const map of maps) if (map) textures.add(map);
     }
     const queue = [...meshes], pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    if (opening) culling.minimumPointSlots = APARTMENT_OPENING_POINT_SLOTS;
     const casters = shadows ? shadowCasterProxies(meshes, shadows.materials) : [];
     const depthQueue = shadows && casters.length ? [
       { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },

@@ -1,4 +1,4 @@
-import { WELLS_AFTERMATH, bookDoorLocked } from '@auto_matrix/shared';
+import { WELLS_AFTERMATH, bookDoorLocked, savedSeatedApartmentAction } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
@@ -220,7 +220,8 @@ export class PlayerController {
       const clear = wells ? wellsClearPosition(agent.position, this.sandbox?.state.structures) : undefined;
       agent.position = clear ?? locationEntrance(agent.currentLocation);
     }
-    const restoredPose = restoredWells || !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
+    const restoredPose = restoredWells || interlude?.actor === id && savedSeatedApartmentAction(interlude.contact, agent.currentAction, id)
+      || !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
       || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
       || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
       || !wells && this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)
@@ -329,7 +330,8 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const restoredPose = !this.running && (savedOfficeCustodyAction(journey, agent) || savedOfficeCrouchAction(journey, agent))
+      const restoredPose = journey?.actor === agent.id && savedSeatedApartmentAction(journey.contact, agent.currentAction, agent.id)
+        || !this.running && (savedOfficeCustodyAction(journey, agent) || savedOfficeCrouchAction(journey, agent))
         || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
         || this.sandbox?.life.film.openingHotel.restoreFrame(agent) || this.sandbox?.life.film.openingRoofFrame(agent, 0, tick)
         || this.sandbox?.life.film.restorePhoneFrame(agent, tick) || this.sandbox?.life.film.windowFrame(agent, 0, tick)

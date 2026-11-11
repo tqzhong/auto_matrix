@@ -52,7 +52,7 @@ import { ambushCompanyStep } from '@auto_matrix/shared';
 import { AIR_RESCUE, governmentPose, airRescuePose, airRescueRoot, interrogationPose, meetingPose, meetingCarPose, meetingCarPoint, MEETING_TIMING } from '@auto_matrix/shared';
 import { officeClothing } from '@auto_matrix/shared';
 import { officeClipboardPoint } from '@auto_matrix/shared';
-import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
+import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
@@ -225,7 +225,10 @@ export class PlayerControls {
     this.motion.computerCheck = undefined;
     this.cableAim = this.bookAim = this.morningAim = this.signingAim = this.catchAim = this.reloadAim = false;
     this.podView = undefined;
-    if (changedActor) this.pitch = .24;
+    if (changedActor) {
+      this.pitch = .24;
+      this.motion.openingAnswer = this.motion.openingHit = undefined;
+    }
     else if (this.cablePitch !== undefined) this.pitch = this.cablePitch;
     this.cablePitch = undefined;
     this.lastAttack = -1000; this.attackQueuedUntil = 0; this.attackCombo = 0;
@@ -699,7 +702,7 @@ export class PlayerControls {
     const custody = state.currentAction?.parameters.officeCustody as MotionInput['officeCustody'];
     if (custody) this.performing = custody.locked ?? (custody.phase === 'securing' || Boolean(custody.paused));
     if (this.motion.contact && !state.currentAction?.parameters.contact) this.performing = false;
-    if (state.currentAction?.parameters.contact) this.performing = ['signal', 'reply', 'knocking', 'opening', 'retrieving', 'handover', 'inspecting'].includes((state.currentAction.parameters.contact as NonNullable<MotionInput['contact']>).phase);
+    if (state.currentAction?.parameters.contact) this.performing = apartmentContactLocked(state.currentAction.parameters.contact as MotionInput['contact']);
     const computerCheck = state.currentAction?.parameters.computerCheck as MotionInput['computerCheck'];
     const computerStarting = Boolean(computerCheck && !this.motion.computerCheck);
     if (this.motion.computerCheck && !computerCheckLocked(computerCheck)) {
@@ -1122,7 +1125,7 @@ export class PlayerControls {
     const floorBookStarting = this.motion.contact?.phase !== 'retrieving' && (state.currentAction?.parameters.contact as MotionInput['contact'])?.phase === 'retrieving';
     this.motion.contact = state.currentAction?.parameters.contact as MotionInput['contact'];
     if (floorBookStarting && this.firstPerson && this.motion.contact?.propMotion === 'minidisc') this.bookAim = true;
-    const chairYaw = this.motion.contact?.chairMotion === 'stepping' && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase) ? state.rotation : undefined;
+    const chairYaw = this.motion.contact?.chairMotion && apartmentAtComputer(this.motion.contact.phase) ? state.rotation : undefined;
     if (chairYaw !== undefined && this.chairYaw !== undefined && this.firstPerson) {
       const turn = Math.atan2(Math.sin(chairYaw - this.chairYaw), Math.cos(chairYaw - this.chairYaw));
       this.yaw += turn; this.movementYaw += turn;
@@ -1461,7 +1464,7 @@ export class PlayerControls {
     }
     if (!this.firstPerson && this.motion.mobilRefusal) target.y -= mobilRefusalPose(this.motion.mobilRefusal.elapsed).down * 1.8;
     if (this.motion.diggers) target.y += 1;
-    if (this.motion.contact && ['signal', 'reply', 'knocking'].includes(this.motion.contact.phase)) target.y -= .65 * apartmentComputerPose(this.motion.contact).seated;
+    if (this.motion.contact && apartmentAtComputer(this.motion.contact.phase)) target.y -= .65 * apartmentComputerPose(this.motion.contact).seated;
     if (this.firstPerson && this.motion.contact?.propMotion === 'minidisc') target.y -= 2.6 * apartmentBookCrouch(this.motion.contact);
     if (this.motion.wakeCall?.phase === 'waking') target.y -= (1 - THREE.MathUtils.smoothstep(this.motion.wakeCall.elapsed, 1.3, 3.1)) * 1.35;
     if (this.firstPerson && this.motion.morning && this.motion.wakeCall) {
@@ -2016,23 +2019,38 @@ export class PlayerControls {
       if (resetCamera || call.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-7 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.contact && this.performing && !this.firstPerson) {
-      const phase = this.motion.contact.phase; const center = FILM_SETS.film_anderson_flat.center;
-      const computer = ['signal', 'reply', 'knocking'].includes(phase); const book = phase === 'retrieving';
+      const contact = this.motion.contact, { phase, elapsed } = contact; const center = FILM_SETS.film_anderson_flat.center;
+      const computer = apartmentAtComputer(phase); const book = phase === 'retrieving';
       const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
       const ideal = (computer ? new THREE.Vector3(-6.6, 4.7, -7.1) : book ? new THREE.Vector3(9.3, 4.9, 3.1) : new THREE.Vector3(4.2, 5.4, 7.4)).add(origin);
       const focus = (computer ? new THREE.Vector3(-9, 2.9, -11.8) : book ? new THREE.Vector3(6, 2.1, 6) : new THREE.Vector3(0, 3.5, 12.3)).add(origin);
-      if (computer && this.motion.contact.chairMotion === 'stepping') {
-        const pose = apartmentComputerPose(this.motion.contact);
+      if (computer && contact.chairMotion) {
+        const pose = apartmentComputerPose(contact);
         ideal.lerp(new THREE.Vector3(-16, 5.6, -8.8).add(origin), 1 - pose.seated);
         focus.lerp(new THREE.Vector3(pose.x, 1.6, pose.z).add(origin), 1 - pose.seated);
       }
-      if (book && this.motion.contact.propMotion === 'minidisc') {
-        const crouch = apartmentBookCrouch(this.motion.contact);
+      if (contact.chairMotion === 'seated' && computer) {
+        const portrait = this.camera.aspect < .85;
+        const desk = phase === 'knocking' ? 1 - THREE.MathUtils.smoothstep(elapsed, 1.4, 2.2) : 1;
+        ideal.lerp(new THREE.Vector3(-5.8, 3.95, -9.25).add(origin), desk);
+        focus.lerp(new THREE.Vector3(-9.05, 2.95, -10.3).add(origin), desk);
+        const reveal = phase === 'arrival' ? THREE.MathUtils.smoothstep(elapsed, .65, 2.45) : 1;
+        if (phase === 'arrival') {
+          const screen = APARTMENT_NETWORK.screen;
+          ideal.lerp(new THREE.Vector3(screen.x, screen.y + .11, screen.z + 1.9).add(origin), 1 - reveal);
+          focus.lerp(new THREE.Vector3(screen.x, screen.y, screen.z).add(origin), 1 - reveal);
+        }
+        const screenFov = Math.max(40, THREE.MathUtils.radToDeg(2 * Math.atan(.62 / this.camera.aspect)));
+        this.camera.fov = THREE.MathUtils.lerp(screenFov, portrait ? 72 : 57, reveal);
+        this.camera.updateProjectionMatrix();
+      }
+      if (book && contact.propMotion === 'minidisc') {
+        const crouch = apartmentBookCrouch(contact);
         ideal.copy(new THREE.Vector3(this.camera.aspect < .85 ? 2 : 2.8, 4.6, -3.5).lerp(new THREE.Vector3(this.camera.aspect < .85 ? 2.8 : 3.6, 2.6, -3.6), crouch).add(origin));
         focus.copy(new THREE.Vector3(5.8, 2, -6.35).lerp(new THREE.Vector3(5.8, .75, -5.95), crouch).add(origin));
       }
       if (phase === 'inspecting') { ideal.copy(origin).add(new THREE.Vector3(-1.45, 4, 12.7)); focus.copy(origin).add(new THREE.Vector3(-.65, 3.42, 14.38)); }
-      if (resetCamera || this.motion.contact.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
+      if (resetCamera || phase === 'arrival' || elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
       this.camera.lookAt(focus);
     } else if (this.motion.workday?.role === 'neo' && this.motion.workday.phase === 'signing' && this.firstPerson) {
       const head = group.getObjectByName('head'); group.updateWorldMatrix(true, true);
@@ -3442,7 +3460,10 @@ export class PlayerControls {
       this.camera.lookAt(center.x + aim[0], center.y + aim[1], center.z + aim[2]);
     };
     if (elapsed >= receiverShot) {
-      setShot([-6.5, -.05, -38.75], [receiver.x, receiver.y - 1, receiver.z], 28, 24);
+      const close = THREE.MathUtils.smoothstep(elapsed, receiverShot, WELLS_AFTERMATH.seconds);
+      const { lerp } = THREE.MathUtils;
+      setShot([lerp(-6.5, receiver.x + .045, close), lerp(-.05, receiver.y - .59, close), lerp(-38.75, receiver.z + .17, close)],
+        [receiver.x + .12 * close, receiver.y - 1 + .13 * close, receiver.z + .285 * close], 28, 24);
     } else if (elapsed >= conversationShot) {
       setShot([portrait ? -15.85 : -15.1, 4.2, -35.2], [-5.65, 1.12, -34.75], 47, 65);
     } else if (elapsed >= streetShot) {

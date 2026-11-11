@@ -127,6 +127,7 @@ test('a successful Wells connection prepares the apartment and the guests before
   const meshes = h.batches.flat();
   for (const mesh of [model, otherModel, h.arms, h.shirt, h.street]) assert.ok(meshes.includes(mesh), 'all three actors and the home need prepared materials');
   assert.ok(meshes.includes(goal) && meshes.includes(shadow), 'prepare the goal ring and contact shadow while they are still hidden');
+  assert.ok(h.slots.every(slots => slots === 10), 'prepare the same point-light slots used through the CRT cut and the knock');
   assert.equal(goal.visible || shadow.visible, false);
   assert.deepEqual({ facesTheDesk: h.views.every(z => z < 0), actorLocalSkin: material.customProgramCacheKey().endsWith(':actor-local-skin-v1') },
     { facesTheDesk: true, actorLocalSkin: true }, 'the queued programs need the arriving view and the draw-time skin variant');

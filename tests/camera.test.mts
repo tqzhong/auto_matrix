@@ -21,7 +21,7 @@ import { WETWALL, WETWALL_SHAFT, WETWALL_ROLES, wetwallEntry, wetwallPose, type 
 import { truthRoot, TRUTH_BEDSIDE, type TruthGesture } from '@auto_matrix/shared';
 import { trainingRoot, redDressAttention } from '@auto_matrix/shared';
 import { awakeningPose, podRescuePose, recoveryBodyPose, recoveryCrewPose, mirrorEntryPose, mirrorTime } from '@auto_matrix/shared';
-import { MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
+import { APARTMENT_NETWORK, MORNING, morningRoot, morningWakePose } from '@auto_matrix/shared';
 import { metacortexPosition, OFFICE_CUSTODY } from '@auto_matrix/shared';
 import { SPOON_LESSON, spoonLessonSeat, type SpoonLesson } from '@auto_matrix/shared';
 import { gardenPose, newTrilogyEpilogue } from '@auto_matrix/shared';
@@ -2006,6 +2006,27 @@ test('the club whisper keeps Trinity visible beside Neo and first person can sti
   game.event(game.document, 'mousemove', { movementX: 80, movementY: 0 }); game.step(.1);
   assert.ok(Math.abs(angle(game.yaw(), initial)) > .08);
   game.state.currentAction = null; game.step(.1); assert.equal(game.controls.performing, false);
+});
+
+test('the Wells handoff frames the CRT on Neo’s first rendered update', t => {
+  const { controls, camera, group, state } = setup(t, Math.PI);
+  const position = filmPosition('film_wells_phone', -.55, -28.85);
+  const trinity: AgentState = { ...state, id: 'trinity', currentLocation: 'film_wells_phone', position,
+    currentAction: { type: 'idle', parameters: { openingAnswer: { elapsed: 1.6, origin: { x: -.55, y: 0, z: -28.85 }, yaw: Math.PI } }, startedAt: 0, duration: 1, progress: 0 } };
+  const flat = FILM_SETS.film_anderson_flat.center, screen = APARTMENT_NETWORK.screen;
+  state.currentLocation = 'film_anderson_flat'; state.position = filmPosition(state.currentLocation, -9, -8.8);
+  state.currentAction = { type: 'idle', parameters: { contact: { role: 'neo', phase: 'arrival', elapsed: 0, chairMotion: 'seated' } }, startedAt: 0, duration: 1, progress: 0 };
+  for (const aspect of [16 / 9, .648]) {
+    camera.aspect = aspect;
+    controls.possess(trinity); controls.update(0, trinity, group, false, true, 12.5);
+    controls.possess(state); controls.update(0, state, group, false);
+    assert.equal(controls.performing, true, 'the incoming computer performance is active on the cut');
+    camera.updateWorldMatrix(true, false);
+    for (const x of [-1, 1]) for (const y of [-.63, .63]) {
+      const corner = new THREE.Vector3(flat.x + screen.x + x, flat.y - 1 + screen.y + y, flat.z + screen.z).project(camera);
+      assert.ok(Math.abs(corner.x) < .98 && Math.abs(corner.y) < .98 && corner.z > -1 && corner.z < 1, `CRT outside the first frame at ${aspect}: ${corner.toArray()}`);
+    }
+  }
 });
 
 test('the first-person computer view lowers with the seated body and stays steerable while paused', t => {

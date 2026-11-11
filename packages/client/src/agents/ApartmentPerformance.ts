@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentComputerPose, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
+import { FILM_SETS, APARTMENT_BOOK, APARTMENT_NETWORK, computerCheckLocked, computerNetworkPull, apartmentAfter, apartmentDoor, apartmentAtComputer, apartmentComputerPose, apartmentSleepWeight, apartmentBookCrouch, type ApartmentGesture, type ComputerInvestigation } from '@auto_matrix/shared';
 import { apartmentDisc } from './ApartmentDisc.js';
 import type { HeroRig } from './HeroModel.js';
 
@@ -115,8 +115,10 @@ export class ApartmentPerformance {
       || role === 'choi' && (phase === 'handover' && t >= 2.3 || apartmentAfter(gesture, 'invitation')));
     const diskSide = role === 'choi' ? 'L' : 'R', cashSide = role === 'choi' ? 'R' : 'L';
     if (ownsDisk && phase !== 'retrieving') this.hand(diskSide, new THREE.Vector3(diskSide === 'R' ? -.5 : .5, 2.5, .38), 1, true);
-    if (role === 'neo' && ['signal', 'reply', 'knocking'].includes(phase)) {
+    if (role === 'neo' && apartmentAtComputer(phase)) {
       const pose = apartmentComputerPose(gesture), { seated, walking } = pose;
+      const sleep = apartmentSleepWeight(gesture);
+      const reading = gesture.chairMotion === 'seated' ? (1 - sleep) * (phase === 'knocking' ? 1 - smooth(t, 0, .3) : 1) : 0;
       const pelvis = this.bone('pelvis'); pelvis.position.copy(this.rig.rest.get('pelvis')!); pelvis.position.y = THREE.MathUtils.lerp(pelvis.position.y - .25 * walking, pose.feet ? 1.65 : 1.6, seated);
       if (pose.feet) {
         pelvis.rotation.set(0, 0, 0);
@@ -127,9 +129,14 @@ export class ApartmentPerformance {
         }
       }
       this.feet(seated, pose.feet);
-      this.bone('spine').rotation.x += .16 * seated; this.bone('chest').rotation.x += .2 * seated; this.bone('head').rotation.x += .12 * seated;
+      this.bone('spine').rotation.x += .16 * seated + .4 * sleep;
+      this.bone('chest').rotation.x += .2 * seated + .19 * sleep;
+      this.bone('head').rotation.x += .12 * seated + .32 * sleep - .5 * reading;
+      this.bone('head').rotation.z += .2 * sleep;
       root.updateWorldMatrix(true, true);
-      for (const side of ['R', 'L'] as const) this.hand(side, this.local(-9 + (side === 'R' ? .6 : -.6), 2.65 + .45 * Math.sin(Math.PI * seated) + (phase === 'knocking' && t < .6 ? Math.sin(t * 28) * .025 : 0), -10.49 + .6 * (1 - seated)), seated, true);
+      for (const side of ['R', 'L'] as const) this.hand(side, this.local(-9 + (side === 'R' ? .6 : -.6) * (1 + .28 * sleep),
+        2.65 + .45 * Math.sin(Math.PI * seated) + (phase === 'knocking' && t < .6 ? Math.sin(t * 28) * .025 : 0),
+        -10.49 + .6 * (1 - seated) - .22 * sleep), seated, true);
     } else if (role === 'neo' && phase === 'opening') {
       const angle = apartmentDoor(gesture) * 1.42; const hold = smooth(t, 0, .3) * (1 - smooth(t, 1.1, 1.6));
       this.bone('chest').rotation.y -= angle * .12;

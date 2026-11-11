@@ -2,7 +2,7 @@ import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
 import { savedChateauAction, savedMountainAction } from './story/ChateauMountainPose.js';
 import { savedBookDoorAction } from './story/BookDoorSystem.js';
 import { savedPersephoneAction } from './story/PersephonePose.js';
-import { SERAPH_DOOR_ROLES, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, seraphDoorActive } from '@auto_matrix/shared';
+import { SERAPH_DOOR_ROLES, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, savedSeatedApartmentAction, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -274,6 +274,7 @@ const playerTimer = setInterval(() => {
   if (!acceptingPlayers) { lastPlayerStep = now; return; }
   const journey = sandbox.life.film.state;
   const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
+  const contactPhase = journey?.contact?.phase;
   const hotelGlass = openingHotelGlassBroken(journey?.openingHotel), hotelLanded = openingHotelLanded(journey?.openingHotel);
   const hotelDoor = openingHotelDoorHit(journey?.openingHotel), hotelBreach = journey?.openingHotel?.breachYaw !== undefined;
   const hotelCall = journey?.openingHotel?.phase === 'answering' ? journey.openingHotel.elapsed : undefined, hotelText = journey?.lastText;
@@ -298,6 +299,7 @@ const playerTimer = setInterval(() => {
     return;
   }
   if (current?.scene !== scene || current?.step !== step || current?.actor !== actor
+    || current?.scene === 'm1_wake_up' && !current.visiting && current.contact?.chairMotion === 'seated' && current.contact.phase !== contactPhase
     || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded
       || openingHotelDoorHit(current.openingHotel) !== hotelDoor || (current.openingHotel?.breachYaw !== undefined) !== hotelBreach
       || openingHotelPhoneHeld(hotelAnswer) !== openingHotelPhoneHeld(hotelCall) || hotelAnswer !== undefined && current.lastText !== hotelText)) {
@@ -414,6 +416,7 @@ async function main(): Promise<void> {
         || checkpoint.simulation?.running === false && savedOraclePropAction(journey, agent.state)
         || checkpoint.simulation?.running === false && savedEngineeringAction(journey, agent.state)
         || workdayLocked(journey) && savedWorkdayIdle(journey.workday, agent.state.currentAction)
+        || savedSeatedApartmentAction(journey.contact, agent.state.currentAction, id)
         || heldPhone(journey) && agent.state.currentAction?.type === 'idle' && agent.state.currentAction.parameters.phone
         || windowOpening(journey) && agent.state.currentAction?.parameters.window !== undefined
         || windowCrossing(journey) && agent.state.currentAction?.parameters.crossing !== undefined
