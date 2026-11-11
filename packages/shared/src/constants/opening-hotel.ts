@@ -7,6 +7,8 @@ export const OPENING_HOTEL = {
   window: { x: 0, z: -23 },
   ladderZ: -30,
   ladderHeight: 7,
+  ladderRungs: { bottom: .35, spacing: .65, offsetZ: -.4, width: 1.75, height: .12, depth: .16 },
+  ladderRails: { x: .8, top: 9.65, endOffsetZ: -2.24 },
   landing: { offsetZ: -3.5, stepOffsetZ: -2.12, width: 5.4, depth: 4.3, thickness: .24 },
   climbSpeed: 2.4,
   breachSeconds: 1.5,

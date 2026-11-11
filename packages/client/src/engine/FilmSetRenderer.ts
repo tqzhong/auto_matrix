@@ -3462,13 +3462,17 @@ export class FilmSetRenderer {
       for (const z of [-set.depth / 2 - 8, -set.depth / 2 - 5, -set.depth / 2 - 2]) this.box(this.metal, x, 2.4, z, .18, .14, .18);
     }
     const ladder = new THREE.Group(); ladder.name = 'hotel-303-fire-escape-ladder'; this.root.add(ladder);
-    const { ladderZ, ladderHeight, landing } = OPENING_HOTEL;
-    const railZ = ladderZ - .4, deckZ = ladderZ + landing.offsetZ, edge = deckZ + landing.depth / 2;
-    for (const x of [-.8, .8]) {
-      ladder.add(this.box(this.metal, x, ladderHeight / 2, railZ, .16, ladderHeight + .6, .18));
+    const { ladderZ, ladderHeight, ladderRungs, ladderRails, landing } = OPENING_HOTEL;
+    const railZ = ladderZ + ladderRungs.offsetZ, deckZ = ladderZ + landing.offsetZ, edge = deckZ + landing.depth / 2;
+    const railEnd = ladderZ + ladderRails.endOffsetZ, deckTop = ladderHeight + landing.thickness;
+    for (const x of [-ladderRails.x, ladderRails.x]) {
+      ladder.add(this.box(this.metal, x, (ladderRails.top - .3) / 2, railZ, ladderRungs.height, ladderRails.top + .3, ladderRungs.depth));
       ladder.add(this.box(this.metal, x, ladderHeight + .06, (railZ + edge) / 2, .16, .18, railZ - edge + .12));
+      ladder.add(this.box(this.metal, x, ladderRails.top, (railZ + railEnd) / 2, ladderRungs.depth, ladderRungs.height, railZ - railEnd + ladderRungs.height));
+      ladder.add(this.box(this.metal, x, (ladderRails.top + deckTop) / 2, railEnd, ladderRungs.height, ladderRails.top - deckTop, ladderRungs.depth));
     }
-    for (let y = .35; y < ladderHeight; y += .65) ladder.add(this.box(this.metal, 0, y, railZ, 1.75, .12, .16));
+    for (let y = ladderRungs.bottom; y < ladderHeight; y += ladderRungs.spacing)
+      ladder.add(this.box(this.metal, 0, y, railZ, ladderRungs.width, ladderRungs.height, ladderRungs.depth));
     ladder.add(this.box(this.metal, 0, ladderHeight + landing.thickness / 2, deckZ, landing.width, landing.thickness, landing.depth));
     const exterior = this.pbr('damaged_plaster', 0x73746e, 6);
     this.box(exterior, 0, 8, -42, 27, 16, .5);

@@ -22,6 +22,7 @@ import { WakeCallPerformance } from './WakeCallPerformance.js';
 import { enableSkinnedCulling } from './SkinnedBounds.js';
 import { placeTrackingFeet, poseTrackingHand, wireTrackingElectrode } from './TrackingContact.js';
 import { placeHotelFeet } from './HotelFootPlacement.js';
+import { placeOpeningHotelClimber } from './OpeningHotelContact.js';
 import { prepareTankMaterials } from './TankMaterials.js';
 import { AMBUSH_STAIRS, AMBUSH_STOREYS, ambushFloor, ambushShotRecoil, mouseRoomGuard } from '@auto_matrix/shared';
 import { placePodBody } from './PodLandingContact.js';
@@ -1694,6 +1695,7 @@ export class HeroModels {
     if (input.training?.role === 'neo' && ['jump_fall', 'jump_return'].includes(input.training.kind) && !this.jumps.has(rig)) this.jumps.set(rig, new JumpPerformance(rig, fightingHands));
     this.jumps.get(rig)?.pose(input.training);
     rig.root.updateWorldMatrix(true, true);
+    if (input.hotelClimb !== undefined) placeOpeningHotelClimber(rig, input.hotelClimb);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);
     if (input.training?.kind !== 'jump_fall' && !input.truckHood && input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && !(input.training && ['download', 'jump_fall', 'jump_return'].includes(input.training.kind) && input.training.role === 'neo') && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;

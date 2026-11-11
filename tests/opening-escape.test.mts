@@ -9,7 +9,7 @@ import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { OpeningHotelSystem } from '../packages/server/src/story/OpeningHotelSystem.js';
 import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
-import { actor } from './helpers/fighting-hand-fixture.mts';
+import { actor, fingerGroups } from './helpers/fighting-hand-fixture.mts';
 
 test('the complete Trinity exit surfaces remain identical after a cold join', async t => {
   const warm = await actor('trinity'), cold = await actor('trinity'); t.after(() => { warm.models.dispose(); cold.models.dispose(); });
@@ -141,6 +141,10 @@ test('303 broken glass stays broken while Trinity climbs the visible fire escape
     const rung = new THREE.Raycaster(new THREE.Vector3(center.x, center.y + 1.3, center.z - 28), new THREE.Vector3(0, 0, -1))
       .intersectObjects(renderer.root.children, true)[0];
     assert.ok(rung && rung.point.z - center.z < -29 && rung.point.z - center.z > -31, 'the ladder rungs are part of the playable set');
+    const { ladderZ, ladderRails } = OPENING_HOTEL;
+    const rail = new THREE.Raycaster(new THREE.Vector3(center.x + ladderRails.x, center.y - 1 + ladderRails.top, center.z + ladderZ + .1), new THREE.Vector3(0, 0, -1), 0, .75)
+      .intersectObjects(renderer.root.children, true);
+    assert.ok(rail.length > 0, 'the upper handrail must be part of the visible ladder');
     assert.equal(glass.visible, false); assert.equal(shards.visible, true);
     journey.openingHotel!.phase = 'ladder_ready'; journey.step = 5;
     renderer.update(player, sandbox, 1);
@@ -148,38 +152,83 @@ test('303 broken glass stays broken while Trinity climbs the visible fire escape
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
-test('Trinity’s visible climb clears the 303 platform up to the standing pose', async t => {
+test('Trinity’s visible climb holds the 303 rungs and clears the upper platform', async t => {
   const { models, rig } = await actor('trinity'); t.after(() => models.dispose());
   const world = new WorldState(); new AgentManager(world).initializeAllAgents();
   const trinity = world.agents.get('trinity')!, scene = FILM_SCENE_BY_ID.m1_room303;
-  const { center } = FILM_SETS[scene.set], { ladderHeight, ladderZ, landing } = OPENING_HOTEL;
+  const { center } = FILM_SETS[scene.set], { ladderHeight, ladderZ, ladderRungs, ladderRails, landing } = OPENING_HOTEL;
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: trinity.id, step: 5, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(scene), openingHotel: { phase: 'climbing', elapsed: 0, lastTick: 0, attempts: 0, disarmed: true, ammo: 0, shots: 0 } };
   const system = new OpeningHotelSystem(() => ({ neoLife: { journey } }) as unknown as SandboxState);
+  const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
   const body = new THREE.Group(); body.rotation.y = Math.PI; body.add(rig.root);
   const deck = new THREE.Box3(new THREE.Vector3(-landing.width / 2 + .02, ladderHeight + .02, ladderZ + landing.offsetZ - landing.depth / 2 + .02),
     new THREE.Vector3(landing.width / 2 - .02, ladderHeight + landing.thickness - .02, ladderZ + landing.offsetZ + landing.depth / 2 - .02));
+  const rungs: THREE.Box3[] = [];
+  const halfRung = new THREE.Vector3(ladderRungs.width, ladderRungs.height, ladderRungs.depth).multiplyScalar(.5);
+  for (let y = ladderRungs.bottom; y < ladderHeight; y += ladderRungs.spacing) {
+    const center = new THREE.Vector3(0, y, ladderZ + ladderRungs.offsetZ);
+    rungs.push(new THREE.Box3(center.clone().sub(halfRung), center.add(halfRung)));
+  }
+  const railZ = ladderZ + ladderRungs.offsetZ, railEnd = ladderZ + ladderRails.endOffsetZ;
+  const handrails = [-ladderRails.x, ladderRails.x].flatMap(x => [
+    new THREE.Box3(new THREE.Vector3(x - halfRung.y, ladderHeight, railZ - halfRung.z), new THREE.Vector3(x + halfRung.y, ladderRails.top, railZ + halfRung.z)),
+    new THREE.Box3(new THREE.Vector3(x - halfRung.z, ladderRails.top - halfRung.y, railEnd - halfRung.y), new THREE.Vector3(x + halfRung.z, ladderRails.top + halfRung.y, railZ + halfRung.y)),
+  ]);
+  const hands = ['R', 'L'].map(side => fingerGroups(rig, side));
+  const shoes = rig.root.getObjectByName('shoes01') as THREE.SkinnedMesh;
   const point = new THREE.Vector3();
-  for (const climbed of [0, 2.1, 3.55, 4.2, 4.8, 5.3, 5.8, 6, 6.25, 6.5, 6.75, 6.95, ladderHeight]) {
+  const nearestRung = (height: number) => rungs[THREE.MathUtils.clamp(Math.round((height - ladderRungs.bottom) / ladderRungs.spacing), 0, rungs.length - 1)];
+  const overlaps: string[] = [];
+  for (const climbed of [0, .18, .32, .51, .65, .94, 1.3, 1.62, 2.1, 2.6, 3.25, 3.55, 4.2, 4.35, 4.55, 4.8, 5, 5.0688, 5.1, 5.2, 5.3, 5.45, 5.8, 6, 6.25, 6.5, 6.75, 6.95, ladderHeight]) {
     journey.openingHotel!.phase = climbed === ladderHeight ? 'done' : 'climbing';
     journey.openingHotel!.climbed = climbed; system.frame(trinity);
-    body.position.set(trinity.position.x - center.x, trinity.position.y - center.y, trinity.position.z - center.z);
+    body.position.set(trinity.position.x, trinity.position.y - 1, trinity.position.z);
     const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, climbing: climbed === ladderHeight ? undefined : 0, hotelClimb: climbed };
     models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); body.updateMatrixWorld(true);
     let inspected = 0, inside = 0, soles = Infinity;
     rig.root.traverseVisible(mesh => {
       if (!(mesh instanceof THREE.SkinnedMesh)) return;
       mesh.skeleton.update();
+      let penetration = 0;
       for (let vertex = 0; vertex < mesh.geometry.attributes.position.count; vertex++) {
-        mesh.localToWorld(mesh.getVertexPosition(vertex, point)); inspected++;
+        mesh.localToWorld(mesh.getVertexPosition(vertex, point)); point.sub(origin); inspected++;
         if (deck.containsPoint(point)) inside++;
+        const rung = nearestRung(point.y);
+        if (rung.containsPoint(point)) penetration = Math.max(penetration, Math.min(
+          point.x - rung.min.x, rung.max.x - point.x, point.y - rung.min.y, rung.max.y - point.y, point.z - rung.min.z, rung.max.z - point.z));
         soles = Math.min(soles, point.y);
       }
+      if (penetration > .025) overlaps.push(`${climbed}: ${mesh.name} penetrates a rung by ${penetration.toFixed(3)}`);
     });
     assert.ok(inspected > 1000);
     assert.equal(inside, 0, `${climbed}: Trinity intersects the upper deck at ${inside} rendered vertices`);
     if (climbed === ladderHeight) assert.ok(Math.abs(soles - ladderHeight - landing.thickness) < .05, 'the finished shoes must meet the deck');
+    if (climbed <= 3.55) {
+      let palm = Infinity, sole = Infinity;
+      const contact = (mesh: THREE.SkinnedMesh, vertex: number, foot: boolean) => {
+        mesh.localToWorld(mesh.getVertexPosition(vertex, point)); point.sub(origin);
+        const rung = nearestRung(point.y);
+        const distance = rung.distanceToPoint(point);
+        if (foot && point.y >= rung.max.y - .01) sole = Math.min(sole, distance);
+        if (!foot) palm = Math.min(palm, distance);
+      };
+      for (const { skin, hand } of hands) for (const vertex of hand) contact(skin, vertex, false);
+      for (let vertex = 0; vertex < shoes.geometry.attributes.position.count; vertex++) contact(shoes, vertex, true);
+      assert.ok(palm < .025, `${climbed}: neither hand contacts a rung (${palm.toFixed(3)} gap)`);
+      assert.ok(sole < .025, `${climbed}: neither shoe is supported by a rung (${sole.toFixed(3)} gap)`);
+    }
+    if (climbed >= 4.2 && climbed <= 6.5) {
+      let grip = Infinity;
+      for (const { skin, hand } of hands) for (const vertex of hand) {
+        skin.localToWorld(skin.getVertexPosition(vertex, point)); point.sub(origin);
+        for (const rail of handrails) grip = Math.min(grip, rail.distanceToPoint(point));
+        grip = Math.min(grip, rungs.at(-1)!.distanceToPoint(point));
+      }
+      assert.ok(grip < .035, `${climbed}: neither hand supports the transfer (${grip.toFixed(3)} gap)`);
+    }
   }
+  assert.equal(overlaps.length, 0, overlaps.join('\n'));
 });
 
 test('the caller disappears from the booth after the line connects and returns on retry', t => {

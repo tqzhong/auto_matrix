@@ -926,8 +926,9 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   if (input.climbing !== undefined) for (let i = 0; i < 2; i++) {
     const pull = Math.sin(state.climbPhase + i * Math.PI);
     const grip = 1 - (hotelClimb?.transfer ?? smooth(input.officeLadder?.exit ?? 0));
+    const curl = hotelClimb ? 1 - smooth(clamp((hotelClimb.transfer - .76) / .24)) : grip;
     legs[i].hip = mix(legs[i].hip, -.75 + pull * .4, grip); legs[i].knee = mix(legs[i].knee, 1.1 - pull * .6, grip); legs[i].ankle = mix(legs[i].ankle, -.2, grip);
-    arms[i].shoulder = mix(arms[i].shoulder, -2.2 - pull * .55, grip); arms[i].elbow = mix(arms[i].elbow, -.65 + pull * .5, grip); arms[i].grip = mix(arms[i].grip, 1, grip);
+    arms[i].shoulder = mix(arms[i].shoulder, -2.2 - pull * .55, grip); arms[i].elbow = mix(arms[i].elbow, -.65 + pull * .5, grip); arms[i].grip = mix(arms[i].grip, hotelClimb ? .55 : 1, curl);
   }
   if (input.performance === 'touch') {
     if (input.mirrorEntry) for (const [index, arm] of arms.entries()) {
