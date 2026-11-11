@@ -10,6 +10,7 @@ import { crosscutActive, crosscutPhoneRole } from '@auto_matrix/shared';
 import { createLoungeChair } from './LoungeChair.js';
 import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
+import { WellsStreetRenderer } from './WellsStreetRenderer.js';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
 import { OPENING_PHONE, WELLS_BOOTH, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
@@ -356,7 +357,7 @@ export class FilmSetRenderer {
   private garageCar?: THREE.Group;
   private garageGhosts: THREE.Group[] = [];
   private mobil?: MobilStationRenderer;
-  private openingTruck?: THREE.Group;
+  private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
   private openingReceiver?: HardlineHandset;
   private openingCord?: THREE.Line;
@@ -410,7 +411,7 @@ export class FilmSetRenderer {
   }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
-    return id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
+    return id === 'film_wells_phone' || id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
       || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && this.currentScene === 'm1_construct'
@@ -2085,10 +2086,10 @@ export class FilmSetRenderer {
       const broken = Boolean(exit && exit.elapsed >= 1.68 || journey?.scene === 'm1_roofs' && !journey.visiting && journey.openingRoof?.phase === 'escaped');
       this.openingRoofGlass.visible = !broken; this.openingRoofShards.visible = broken;
     }
-    if (this.openingTruck && this.openingBooth && this.openingGlass) {
+    if (this.wellsStreet && this.openingBooth && this.openingGlass) {
       const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
       const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
-      this.openingTruck.position.set(pose.x, 0, pose.z); this.openingTruck.rotation.y = pose.yaw;
+      this.wellsStreet.update(pose);
       const crush = openingBoothCrush(pose);
       for (const part of this.openingBoothParts) {
         const placed = openingBoothPartPose(part.kind, part.x, part.z, pose, crush);
@@ -2442,7 +2443,7 @@ export class FilmSetRenderer {
     }
     // The marker is dark during the Sentinel scan, so the two lights can share a slot.
     this.markerLight.visible = this.marker.visible || (this.stablePointSlots && !this.pods && !empExterior && !this.sentinel?.scanActive);
-    this.markerLight.intensity = this.marker.visible ? 5 : 0;
+    this.markerLight.intensity = this.marker.visible && set?.id !== 'film_wells_phone' ? 5 : 0;
     for (const item of this.moving) item.update(elapsed);
     return set;
   }
@@ -2452,6 +2453,12 @@ export class FilmSetRenderer {
     (this.scene.background as THREE.Color).setHex(palette.sky);
     const fog = this.scene.fog as THREE.FogExp2; fog.color.setHex(palette.sky); fog.density = palette.fog;
     this.scene.environmentIntensity = outdoor.has(this.current.architecture) ? .8 : .6;
+    if (this.current.id === 'film_wells_phone') {
+      fog.color.setHex(0x0d1813); fog.density = .011;
+      (this.scene.background as THREE.Color).copy(fog.color);
+      this.scene.environmentIntensity = .29;
+      return { color: 0xb8c7ad, ambient: .33, sun: .08, fill: .16 };
+    }
     if (this.current.id === 'film_zion_personnel') {
       fog.color.setHex(0x0c1510); fog.density = .003; (this.scene.background as THREE.Color).copy(fog.color);
       this.scene.environmentIntensity = .35;
@@ -2918,6 +2925,71 @@ export class FilmSetRenderer {
       this.box(this.metal, x, 7.7, z, 3.8, .5, 3.1); this.label('TELEPHONE', x, 7.7, z + 1.57, 3.4);
     }
   }
+  private buildWellsBooth(): void {
+    this.metal = this.pbr('metal_plate', 0x87948c, 2, .68, .25);
+    this.black = this.mat(0x1c241f, .7);
+    this.white = this.mat(0xaeb6a4, .76);
+    this.glass = new THREE.MeshPhysicalMaterial({ color: 0xa0b7a6, metalness: .12, roughness: .13,
+      transparent: true, opacity: .24, side: THREE.DoubleSide, depthWrite: false });
+    this.materials.add(this.glass);
+    const frame = this.mat(0x889d8c, .52, .53);
+    const boothZ = OPENING_PHONE.boothZ;
+    this.openingBooth = new THREE.Group(); this.openingBooth.name = 'opening-phone-booth'; this.openingBooth.userData.dynamic = true;
+    this.openingBooth.position.z = boothZ; this.root.add(this.openingBooth);
+    const phoneStart = this.root.children.length;
+    this.openingReceiver = new HardlineHandset(); this.openingReceiver.root.name = 'opening-booth-receiver';
+    this.phone(0, 0, false, this.openingReceiver);
+    const { backboard, post: postBox, pane: paneBox, roof: roofBox } = WELLS_BOOTH;
+    this.box(this.metal, backboard.x, backboard.y, backboard.z, backboard.width, backboard.height, backboard.depth);
+    const phonePart = new THREE.Group(); phonePart.name = 'opening-booth-phone';
+    this.root.children.slice(phoneStart).forEach(child => phonePart.add(child)); this.openingBooth.add(phonePart);
+    this.openingBoothParts.push({ root: phonePart, kind: 'phone', x: 0, z: 0 });
+    const wireGeometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(48 * 3), 3));
+    this.geometries.add(wireGeometry);
+    const wireMaterial = new THREE.LineBasicMaterial({ color: 0x121611 }); this.materials.add(wireMaterial);
+    this.openingCord = new THREE.Line(wireGeometry, wireMaterial); this.openingCord.name = 'opening-phone-cord'; phonePart.add(this.openingCord);
+    for (const { x, z } of WELLS_BOOTH.posts) {
+      const post = new THREE.Group(); post.name = 'opening-booth-post'; post.position.set(x, 0, z);
+      post.add(this.box(frame, 0, postBox.y, 0, postBox.width, postBox.height, postBox.depth)); this.openingBooth.add(post);
+      this.openingBoothParts.push({ root: post, kind: 'post', x, z });
+    }
+    for (const x of WELLS_BOOTH.panes) {
+      const pane = this.box(this.glass, x, paneBox.y, 0, paneBox.width, paneBox.height, paneBox.depth); pane.name = 'opening-booth-intact-pane';
+      this.openingBooth.add(pane); this.openingBoothPanes.push(pane);
+      for (const y of [.78, 2.4, 4.42, 6.83]) pane.add(this.box(frame, 0, y - paneBox.y, 0, .061, .105, paneBox.depth));
+      pane.add(this.box(frame, 0, .54 - paneBox.y, 0, .06, .45, paneBox.depth));
+    }
+    const roofStart = this.root.children.length;
+    this.box(frame, 0, roofBox.y, 0, roofBox.width, roofBox.height, roofBox.depth);
+    const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 80;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#31583c'; ctx.fillRect(0, 0, 512, 80);
+    ctx.fillStyle = '#e4e9d7'; ctx.font = 'bold 70px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('CITY', 229, 42);
+    for (let i = 0; i < 9; i++) ctx.fillRect(330 + i % 3 * 13, 22 + Math.floor(i / 3) * 13, 9, 9);
+    const signMap = new THREE.CanvasTexture(canvas); signMap.colorSpace = THREE.SRGBColorSpace; this.textures.add(signMap);
+    const fascia = new THREE.MeshStandardMaterial({ map: signMap, emissiveMap: signMap, emissive: 0xe9f2e0, emissiveIntensity: .58, roughness: .74 });
+    this.materials.add(fascia);
+    const sign = this.mesh(new THREE.PlaneGeometry(3.25, .44), fascia, 0, roofBox.y, roofBox.depth / 2 + .01);
+    const back = sign.clone(); back.position.z *= -1; back.rotation.y = Math.PI; this.root.add(back);
+    for (const side of [-1, 1]) {
+      const sideSign = sign.clone(); sideSign.position.set(side * (roofBox.width / 2 + .01), roofBox.y, 0);
+      sideSign.rotation.y = side * Math.PI / 2; sideSign.scale.x = .86; this.root.add(sideSign);
+    }
+    const roof = new THREE.Group(); roof.name = 'opening-booth-roof'; roof.position.y = roofBox.y;
+    this.root.children.slice(roofStart).forEach(child => { child.position.y -= roofBox.y; roof.add(child); }); this.openingBooth.add(roof);
+    this.openingBoothParts.push({ root: roof, kind: 'roof', x: 0, z: 0 });
+    this.openingGlass = new THREE.Group(); this.openingGlass.name = 'opening-shattered-glass'; this.openingGlass.userData.dynamic = true;
+    this.openingGlass.visible = false; this.openingGlass.position.z = boothZ; this.root.add(this.openingGlass);
+    for (const side of [-1, 1]) for (let row = 0; row < 4; row++) for (let column = 0; column < 2; column++) for (const triangle of [0, 1]) {
+      const y = .3 + row * 1.75, z = -1.4 + column * 1.4;
+      const points = triangle === 0 ? [[y, z], [y + 1.75, z], [y + 1.75, z + 1.4]] : [[y, z], [y + 1.75, z + 1.4], [y, z + 1.4]];
+      const cy = points.reduce((sum, p) => sum + p[0], 0) / 3, cz = points.reduce((sum, p) => sum + p[1], 0) / 3;
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [0, p[0] - cy, p[1] - cz]), 3)); geometry.computeVertexNormals();
+      const shard = this.mesh(geometry, this.glass, side * 1.8, cy, cz, this.openingGlass); shard.name = 'opening-booth-glass-fragment';
+      this.openingGlassPieces.push({ mesh: shard, origin: shard.position.clone(), side });
+    }
+  }
   private car(x: number, z: number, color = 0x182622, truck = false): THREE.Group {
     const start = this.root.children.length; const paint = this.mat(color, .26, .62);
     const { chassis, windshield, roof, wheels } = WELLS_TRUCK;
@@ -3001,6 +3073,11 @@ export class FilmSetRenderer {
     for (const _ of this.buildSteps(set, preparedLights)) { /* Build immediately for direct entry and restore. */ }
   }
   private *buildSteps(set: FilmSet, preparedLights?: LafayetteRoomLights, staged = false): Generator<void> {
+    if (set.id === 'film_wells_phone') {
+      this.wellsStreet = new WellsStreetRenderer(this.root, set);
+      this.buildWellsBooth();
+      return;
+    }
     const lafayette = set.architecture === 'lafayette';
     this.metal = this.pbr('metal_plate', 0x9caaa9, 3, .7, .28);
     this.wood = this.pbr('old_wood_floor', lafayette ? 0x7d7968 : 0x96826b, lafayette ? 1 : 3, lafayette ? .88 : .85); this.marble = this.pbr('marble_01', 0xbdcbd1, 4, .25);
@@ -4257,60 +4334,7 @@ export class FilmSetRenderer {
           this.cylinder(this.metal, x, WELLS_STREET.poleHeight / 2, z, WELLS_STREET.poleRadius, WELLS_STREET.poleHeight);
           this.lamp(x, WELLS_STREET.poleHeight, z, false);
         }
-        if (set.id === 'film_wells_phone') {
-          this.root.add(new THREE.HemisphereLight(0xc7d6cd, 0x364540, .78));
-          for (const [x, z, color] of [[0, -27, 0xb8d9c8], [14, 2, 0xd3ded0]] as const) {
-            const streetlight = new THREE.PointLight(color, 650, 46, 2); streetlight.position.set(x, 11, z); this.root.add(streetlight);
-          }
-          const boothZ = OPENING_PHONE.boothZ;
-          this.openingBooth = new THREE.Group(); this.openingBooth.name = 'opening-phone-booth'; this.openingBooth.userData.dynamic = true;
-          this.openingBooth.position.z = boothZ; this.root.add(this.openingBooth);
-          const phoneStart = this.root.children.length;
-          this.openingReceiver = new HardlineHandset(); this.openingReceiver.root.name = 'opening-booth-receiver';
-          this.phone(0, 0, false, this.openingReceiver);
-          const { backboard, post: postBox, pane: paneBox, roof: roofBox } = WELLS_BOOTH;
-          this.box(this.metal, backboard.x, backboard.y, backboard.z, backboard.width, backboard.height, backboard.depth);
-          const phonePart = new THREE.Group(); phonePart.name = 'opening-booth-phone';
-          this.root.children.slice(phoneStart).forEach(child => phonePart.add(child)); this.openingBooth.add(phonePart);
-          this.openingBoothParts.push({ root: phonePart, kind: 'phone', x: 0, z: 0 });
-          const wireGeometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(48 * 3), 3));
-          this.geometries.add(wireGeometry);
-          const wireMaterial = new THREE.LineBasicMaterial({ color: 0x121611 }); this.materials.add(wireMaterial);
-          this.openingCord = new THREE.Line(wireGeometry, wireMaterial); this.openingCord.name = 'opening-phone-cord'; phonePart.add(this.openingCord);
-          for (const { x, z } of WELLS_BOOTH.posts) {
-            const post = new THREE.Group(); post.name = 'opening-booth-post'; post.position.set(x, 0, z);
-            post.add(this.box(this.metal, 0, postBox.y, 0, postBox.width, postBox.height, postBox.depth)); this.openingBooth.add(post);
-            this.openingBoothParts.push({ root: post, kind: 'post', x, z });
-          }
-          for (const x of WELLS_BOOTH.panes) {
-            const pane = this.box(this.glass, x, paneBox.y, 0, paneBox.width, paneBox.height, paneBox.depth); pane.name = 'opening-booth-intact-pane';
-            this.openingBooth.add(pane); this.openingBoothPanes.push(pane);
-          }
-          const roofStart = this.root.children.length;
-          this.box(this.metal, 0, roofBox.y, 0, roofBox.width, roofBox.height, roofBox.depth); this.label('TELEPHONE', 0, roofBox.y, 1.57, 3.4);
-          const roof = new THREE.Group(); roof.name = 'opening-booth-roof'; roof.position.y = roofBox.y;
-          this.root.children.slice(roofStart).forEach(child => { child.position.y -= roofBox.y; roof.add(child); }); this.openingBooth.add(roof);
-          this.openingBoothParts.push({ root: roof, kind: 'roof', x: 0, z: 0 });
-          this.openingTruck = this.car(15, 4, 0x555e58, true);
-          this.openingTruck.name = 'opening-garbage-truck'; this.openingTruck.userData.dynamic = true;
-          const cargo = WELLS_TRUCK.cargo;
-          this.openingTruck.add(this.box(this.mat(0x829189, .82, .08), cargo.x, cargo.y, cargo.z, cargo.width, cargo.height, cargo.depth, .15));
-          for (const z of [2, 5, 8, 11]) for (const side of [-1, 1]) this.openingTruck.add(this.box(this.metal, side * 2.86, 4.3, z, .1, 6.6, .14));
-          this.openingTruck.add(this.box(this.black, 0, 2.8, 13.58, 4.5, 3.5, .08));
-          this.openingTruck.add(this.box(this.mat(0xc4a769), 0, 1.1, 13.64, 4.6, .2, .09));
-          const tail = new THREE.MeshBasicMaterial({ color: 0xc9503d, toneMapped: false }); this.materials.add(tail);
-          for (const x of [-2.2, 2.2]) this.openingTruck.add(this.box(tail, x, 1.75, 13.68, .3, .48, .08));
-          this.openingGlass = new THREE.Group(); this.openingGlass.name = 'opening-shattered-glass'; this.openingGlass.userData.dynamic = true;
-          this.openingGlass.visible = false; this.openingGlass.position.z = boothZ; this.root.add(this.openingGlass);
-          for (const side of [-1, 1]) for (let row = 0; row < 4; row++) for (let column = 0; column < 2; column++) for (const triangle of [0, 1]) {
-            const y = .3 + row * 1.75, z = -1.4 + column * 1.4;
-            const points = triangle === 0 ? [[y, z], [y + 1.75, z], [y + 1.75, z + 1.4]] : [[y, z], [y + 1.75, z + 1.4], [y, z + 1.4]];
-            const cy = points.reduce((sum, p) => sum + p[0], 0) / 3, cz = points.reduce((sum, p) => sum + p[1], 0) / 3;
-            const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [0, p[0] - cy, p[1] - cz]), 3)); geometry.computeVertexNormals();
-            const shard = this.mesh(geometry, this.glass, side * 1.8, cy, cz, this.openingGlass); shard.name = 'opening-booth-glass-fragment';
-            this.openingGlassPieces.push({ mesh: shard, origin: shard.position.clone(), side });
-          }
-        } else if (a !== 'rain') this.phone(0, -d * .32, true);
+        if (a !== 'rain') this.phone(0, -d * .32, true);
         if (a === 'rain') {
           // Repeated silhouettes read as the occupied avenue without adding hundreds of animated rigs.
           for (const x of [-w * .31, w * .31]) for (let z = -d / 2 + 5; z < d / 2; z += 4.2) {
@@ -4666,7 +4690,8 @@ export class FilmSetRenderer {
     this.exileDessert = undefined; this.bookDoor = undefined; this.chateauVolley = undefined; this.chateauDoor = undefined;
     this.garageCar = undefined; this.garageGhosts = [];
     this.mobil?.dispose(); this.mobil = undefined;
-    this.openingTruck = undefined; this.openingBooth = undefined; this.openingGlass = undefined;
+    this.wellsStreet?.dispose(); this.wellsStreet = undefined;
+    this.openingBooth = undefined; this.openingGlass = undefined;
     this.openingReceiver?.dispose(); this.openingReceiver = undefined; this.openingCord = undefined;
     this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
