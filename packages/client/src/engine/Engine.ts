@@ -270,7 +270,8 @@ export class Engine {
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
     const neoAtHome = player?.id === meeting?.actor ? this.agentRenderer.getAgentHero('neo') : undefined;
-    const preparingApartment = openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
+    const preparingApartment = this.agentRenderer.prepareWellsCastTextures(this.renderer, openingPhone)
+      || openingHandoff && this.agentRenderer.prepareOpeningApartmentActor()
       || this.voxelRenderer.interiors.prepareApartmentReturn(this.renderer, this.camera, this.scene, this.sandbox?.neoLife, neoAtHome,
       openingHandoff ? [this.agentRenderer.getAgentHero('choi'), this.agentRenderer.getAgentHero('dujour'),
         this.filmSets.goalMarker, this.agentRenderer.getAgentShadow('neo')] : undefined, openingHandoff ? this.lightCulling : undefined);
