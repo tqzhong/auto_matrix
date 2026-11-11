@@ -2,7 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose, type OpeningPursuitGesture } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -121,6 +121,8 @@ export interface MotionInput {
   reloaded?: ReloadedGesture;
   catch?: CatchGesture;
   hotel303?: { phase: 'surrender' | 'dive'; elapsed: number };
+  hotelPursuit?: OpeningPursuitGesture;
+  hotelLookPitch?: number;
   roofExit?: { elapsed: number; origin: { x: number; y: number; z: number } };
   openingRoofLeap?: number;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
@@ -684,6 +686,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     if (!input.ambushEscort) Object.assign(state, newMotion(), { speed: input.speed, phase: (input.wetwall?.progress ?? 0) / 2.8 });
     state.time = input.ambushCall.elapsed;
     input = { ...input, armed: false, turn: 0 };
+    dt = 0;
+  }
+  if (input.hotelPursuit) {
+    const { travel, speed } = input.hotelPursuit;
+    Object.assign(state, newMotion(), { time: travel / OPENING_HOTEL.pursuit.speed, speed, phase: travel / 3.2 });
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.roofExit) {

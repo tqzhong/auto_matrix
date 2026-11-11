@@ -1,4 +1,4 @@
-import type { Vector3 } from '../types/agent.js';
+import type { AgentState, Vector3 } from '../types/agent.js';
 
 export const OPENING_HOTEL = {
   computer: { x: -8, z: 12 },
@@ -15,6 +15,9 @@ export const OPENING_HOTEL = {
   breachSeconds: 1.5,
   diveSeconds: 1.6,
   roomDive: { launch: .33, glass: .344, land: 1.6, reach: 1.81, ready: 2.24 },
+  pursuit: { triggerZ: -4, startZ: 6.8, stopZ: -23.9, spacing: 6.2, speed: 6.2 },
+  officers: [{ id: 'citizen_4', x: -1.6, behind: 3.2 }, { id: 'citizen_14', x: 1.65, behind: 6.3 }],
+  alley: { y: -8, x: 3.6, z: -38.8, front: -26, back: -42, width: 27 },
   magazine: 8,
   police: [[0, -1.5], [-5, -5], [5, -6], [0, -10]] as [number, number][],
   walls: [
@@ -24,12 +27,23 @@ export const OPENING_HOTEL = {
   ],
 } as const;
 
+export type OpeningPursuer = 'agent_brown' | 'smith' | typeof OPENING_HOTEL.officers[number]['id'];
+export type OpeningPursuitCast = Partial<Record<OpeningPursuer, Pick<AgentState,
+  'position' | 'rotation' | 'velocity' | 'currentLocation' | 'isInMatrix' | 'targetPosition' | 'currentPath' | 'currentAction'>>>;
+export interface OpeningPursuitGesture { travel: number; speed: number; lookPitch?: number }
+
+export function openingHotelAlleyGuard(actor?: AgentState | null): actor is AgentState {
+  return actor?.id === 'smith' && actor.currentLocation === 'film_heart_hotel' && actor.status === 'alive' && !actor.controller
+    && (actor.currentAction?.parameters.hotelPursuit as OpeningPursuitGesture | undefined)?.lookPitch !== undefined;
+}
+
 export interface OpeningHotelEncounter {
   phase: 'trace' | 'breach' | 'combat' | 'phone' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
   reloadAt?: number; climbed?: number;
   diveFrom?: { position: Vector3; yaw: number };
+  pursuit?: OpeningPursuitCast;
 }
 
 export function openingHotelGlassTime(hotel: OpeningHotelEncounter): number {

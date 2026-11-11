@@ -149,6 +149,7 @@ export class PlayerControls {
   gunner = false;
   hammerPreparation?: HammerHandover;
   openingHotel?: OpeningHotelEncounter;
+  hotelAlleyGuard?: Vector3;
   climbing = false;
   performing = false;
   private phoneExit = false;
@@ -1497,7 +1498,13 @@ export class PlayerControls {
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
     const hotel = FILM_SETS.film_heart_hotel;
     const hotelOutside = this.openingHotel?.phase === 'dive' && this.position.z < hotel.center.z + OPENING_HOTEL.window.paneZ - .3;
-    if (!this.firstPerson && (hotelClimb !== undefined || hotelOutside)) {
+    if (!this.firstPerson && this.openingHotel?.phase === 'ladder_ready' && this.hotelAlleyGuard) {
+      const { center } = hotel, guard = this.hotelAlleyGuard, mix = THREE.MathUtils.lerp;
+      this.camera.position.set(center.x + 10.9, center.y + 9, center.z - 33.1);
+      this.camera.lookAt(mix(this.position.x, guard.x, .45), mix(this.position.y, guard.y, .45) + 1.25, mix(this.position.z, guard.z, .45));
+      this.camera.fov = this.camera.aspect < .85 ? 72 : 58;
+      this.camera.near = .12; this.camera.updateProjectionMatrix();
+    } else if (!this.firstPerson && (hotelClimb !== undefined || hotelOutside)) {
       const { center, depth } = hotel;
       const { transfer } = openingHotelClimbPose(hotelClimb ?? 0);
       const cover = hotelDive?.cover ?? 0, brace = hotelDive?.brace ?? 0;

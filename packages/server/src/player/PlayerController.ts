@@ -435,6 +435,7 @@ export class PlayerController {
     }
     for (const [socketId, session] of this.sessions) {
       const agent = this.world.agents.get(session.agentId)!;
+      if (running && agent.status === 'alive') this.sandbox?.life.film.openingHotel.pursuitFrame(agent, dt, tick);
       const computer = this.sandbox?.life.computerFrame(agent, running && agent.status === 'alive' ? dt : 0, tick);
       if (this.sandbox?.life.film.openingRoofFrame(agent, running && agent.status === 'alive' ? dt : 0, tick)) {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;

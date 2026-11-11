@@ -81,9 +81,9 @@ test('the 303 exterior fixture clears the performer throughout the ladder route'
   h.sets.root.traverse(object => {
     if (object instanceof THREE.PointLight && object.getWorldPosition(new THREE.Vector3()).z < set.center.z - set.depth / 2) fixtures.push(object);
   });
-  assert.equal(fixtures.length, 1);
-  const point = fixtures[0].getWorldPosition(new THREE.Vector3());
-  for (const climbed of [0, 3.55, 5.8, 6.3, OPENING_HOTEL.ladderHeight]) {
+  assert.equal(fixtures.length, 2);
+  for (const fixture of fixtures) for (const climbed of [0, 3.55, 5.8, 6.3, OPENING_HOTEL.ladderHeight]) {
+    const point = fixture.getWorldPosition(new THREE.Vector3());
     const pose = openingHotelClimbPose(climbed), y = set.center.y + pose.y;
     const body = new THREE.Vector3(set.center.x, THREE.MathUtils.clamp(point.y, y - 1, y + 3.9), set.center.z + pose.z);
     assert.ok(point.distanceTo(body) >= 3.3, `${climbed}: the bare light is inside the performer's path`);

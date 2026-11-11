@@ -219,7 +219,7 @@ test('Trinity’s visible climb holds the 303 rungs and clears the upper platfor
   const { center } = FILM_SETS[scene.set], { ladderHeight, ladderZ, ladderRungs, ladderRails, landing } = OPENING_HOTEL;
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: trinity.id, step: 5, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(scene), openingHotel: { phase: 'climbing', elapsed: 0, lastTick: 0, attempts: 0, disarmed: true, ammo: 0, shots: 0 } };
-  const system = new OpeningHotelSystem(() => ({ neoLife: { journey } }) as unknown as SandboxState);
+  const system = new OpeningHotelSystem(world, () => ({ neoLife: { journey } }) as unknown as SandboxState);
   const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
   const body = new THREE.Group(); body.rotation.y = Math.PI; body.add(rig.root);
   const deck = new THREE.Box3(new THREE.Vector3(-landing.width / 2 + .02, ladderHeight + .02, ladderZ + landing.offsetZ - landing.depth / 2 + .02),

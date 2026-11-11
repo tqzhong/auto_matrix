@@ -788,6 +788,57 @@ test('paused 303 performances retain their complete action and pose through rele
   }
 });
 
+test('the 303 pursuit brings Brown through the corridor and Smith to the alley before the roof chase', () => {
+  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const hotel = FILM_SCENE_BY_ID.m1_room303, center = FILM_SETS[hotel.set].center;
+  const actor = h.actor(), brown = h.world.agents.get('agent_brown')!, smith = h.world.agents.get('smith')!;
+  const officers = OPENING_HOTEL.officers.map(({ id }) => h.world.agents.get(id)!);
+  const originalSmith = structuredClone({ location: smith.currentLocation, position: smith.position, action: smith.currentAction });
+  state.step = 2; state.openingHotel!.phase = 'phone';
+  actor.position = filmPosition(hotel.set, OPENING_HOTEL.phone.x, OPENING_HOTEL.phone.z);
+  h.players.step(.1, true, h.tick()); assert.notEqual(brown.currentLocation, hotel.set);
+  h.command('act'); assert.equal(state.step, 3);
+  actor.position = filmPosition(hotel.set, 0, -7);
+  h.players.step(.05, true, h.tick());
+  assert.equal(brown.currentLocation, hotel.set, 'Brown enters the corridor after Trinity');
+  assert.ok(brown.position.z > actor.position.z + 3);
+  const start = brown.position.z;
+  for (let frame = 0; frame < 10; frame++) h.players.step(.1, true, h.tick());
+  assert.ok(brown.position.z < start - 2 && brown.position.z > actor.position.z, 'Brown closes the distance from behind');
+  assert.ok(officers.every(officer => officer.currentLocation === hotel.set && officer.position.z > brown.position.z + 2), 'the second unit follows Brown through the corridor');
+  assert.notEqual(smith.currentLocation, hotel.set, 'the alley is revealed after the window exit');
+
+  state.step = 4; actor.position = filmPosition(hotel.set, 0, -22);
+  h.command('act'); finishHotelDive(h);
+  assert.equal(state.openingHotel!.phase, 'ladder_ready');
+  assert.equal(smith.currentLocation, hotel.set);
+  assert.ok(smith.position.y < center.y - 5 && smith.position.z < center.z + OPENING_HOTEL.lowerDeck.z - OPENING_HOTEL.lowerDeck.depth / 2);
+  const snapshot = () => structuredClone([brown, smith, ...officers].map(agent => ({ position: agent.position, rotation: agent.rotation, action: agent.currentAction })));
+  const saved = snapshot(); h.players.step(.1, false, h.tick()); h.players.release('film-player', h.tick());
+  h.sandbox.restore(structuredClone(h.sandbox.state)); state = h.sandbox.life.film.state!;
+  h.players.possess('film-player', 'trinity', h.tick());
+  assert.deepEqual(snapshot(), saved, 'pausing, releasing, and restoring retain the pursuit cast');
+
+  h.command('act');
+  for (let frame = 0; frame < 40 && state.openingHotel!.phase === 'climbing'; frame++) {
+    h.players.receiveInput('film-player', { x: 0, z: 0, yaw: Math.PI, jump: false, sprint: false, climb: 1, sequence: frame + 1 });
+    h.players.step(.1, true, h.tick());
+  }
+  assert.equal(state.openingHotel!.phase, 'done'); h.command('next');
+  assert.equal(state.scene, 'm1_roofs'); assert.equal(brown.currentLocation, FILM_SCENE_BY_ID.m1_roofs.set);
+  const roof = FILM_SETS[FILM_SCENE_BY_ID.m1_roofs.set];
+  assert.ok(officers.every(officer => officer.currentLocation === roof.id && officer.position.z > brown.position.z));
+  assert.deepEqual({ location: smith.currentLocation, position: smith.position, action: smith.currentAction }, originalSmith);
+  h.advance(18); assert.equal(state.openingRoof?.phase, 'failed');
+  h.command('retry'); assert.equal(state.openingRoof?.attempts, 1); assert.equal(state.openingRoof?.phase, 'running');
+  assert.deepEqual(state.completed, ['m1_room303']);
+  h.actor().position = filmPosition(roof.id, 0, -30);
+  brown.position = filmPosition(roof.id, 0, -9); state.openingRoof!.crossed = true;
+  officers.forEach(officer => { officer.position.z = roof.center.z + 2; });
+  h.advance(3);
+  assert.ok(officers.every(officer => officer.position.z >= roof.center.z + OPENING_ESCAPE.roofGapNear + 1.49), 'the officers stay on the near roof after Brown jumps');
+});
+
 test('legacy 303 saves reconstruct missing performance actions without affecting a different actor or visiting scene', () => {
   const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!, actor = h.actor();
   Object.assign(state.openingHotel!, { phase: 'dive', elapsed: .8 }); state.step = 4;

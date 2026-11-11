@@ -1353,7 +1353,7 @@ export class CharacterModels {
     rig.torso.position.y = pose.hipHeight;
     rig.torso.position.x = pose.sway; rig.torso.position.z = pose.lunge;
     rig.torso.rotation.set(pose.lean, pose.twist, pose.roll);
-    rig.head.rotation.set(-pose.lean * .6, pose.headTurn, -pose.roll * .5);
+    rig.head.rotation.set(-pose.lean * .6 + (input.hotelLookPitch ?? input.hotelPursuit?.lookPitch ?? 0), pose.headTurn, -pose.roll * .5);
     if (holdsStaff) rig.torso.rotation.y += staffSweep * .42;
     if (input.chateauWeapon) rig.torso.rotation.y += rig.motion.attackAge < .6 ? Math.sin(rig.motion.attackAge / .6 * Math.PI) * .2 : 0;
     if (input.burly?.phase === 'flight' && input.burly.role === 'neo') rig.torso.rotation.x -= .55;

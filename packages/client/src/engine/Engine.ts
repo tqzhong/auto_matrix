@@ -11,6 +11,7 @@ import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
+import { openingHotelAlleyGuard } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
@@ -178,6 +179,8 @@ export class Engine {
       if (state && group) {
         const phone = meeting?.scene === 'm1_phone_escape' && !meeting.visiting && meeting.actor === state.id ? meeting.openingPhone : undefined;
         this.playerControls.openingHotel = meeting?.scene === 'm1_room303' && !meeting.visiting && meeting.actor === state.id ? meeting.openingHotel : undefined;
+        const guard = this.playerControls.openingHotel ? this.agentRenderer.getAgentState('smith') : undefined;
+        this.playerControls.hotelAlleyGuard = openingHotelAlleyGuard(guard) ? guard.position : undefined;
         this.playerControls.update(delta, state, group, this.running, phone?.phase === 'connected' || phone?.phase === 'done'
           || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed);
       }

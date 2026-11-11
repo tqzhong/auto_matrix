@@ -1,5 +1,6 @@
-import { FILM_SETS, OPENING_HOTEL, distance, filmPosition, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelGlassBroken, playerBlocked, rayBox,
-  type AgentState, type CombatImpact, type OpeningHotelEncounter, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelGlassBroken, openingHotelLanded, playerBlocked, rayBox,
+  type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
+import type { WorldState } from '../world/WorldState.js';
 
 const SET = FILM_SETS.film_heart_hotel;
 const muzzle = (position: Vector3): Vector3 => ({ ...position, y: position.y + 2.35 });
@@ -12,15 +13,93 @@ export class OpeningHotelSystem {
   onAdvance?: (text: string, actor: AgentState, tick: number) => void;
   onImpact?: (impact: CombatImpact, tick: number) => void;
   onHit?: (actor: AgentState, target: SandboxThreat, damage: number, tick: number) => void;
-  constructor(private sandbox: () => SandboxState) {}
+  constructor(private world: WorldState, private sandbox: () => SandboxState) {}
   get journey() { return this.sandbox().neoLife?.journey; }
   get state(): OpeningHotelEncounter | undefined { return this.journey?.openingHotel; }
   get enemies(): SandboxThreat[] { return this.sandbox().threats.filter(threat => threat.scene === 'm1_room303'); }
   reset(tick: number, attempts = 0): void {
+    this.restorePursuers(this.state?.pursuit);
     this.journey!.openingHotel = { phase: 'trace', elapsed: 0, lastTick: tick, attempts, disarmed: false, ammo: 0, shots: 0 };
     this.sync();
   }
-  clear(): void { this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:')); }
+  clear(): void {
+    this.restorePursuers(this.state?.pursuit ?? this.journey?.openingRoof?.pursuit);
+    this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:'));
+  }
+  private restorePursuers(cast?: OpeningPursuitCast): void {
+    if (!cast) return;
+    for (const [id, saved] of Object.entries(cast)) {
+      const actor = this.world.agents.get(id);
+      if (!actor || actor.controller || !saved) continue;
+      const action = actor.currentAction?.parameters;
+      if (action?.hotelPursuit || id === 'agent_brown' && actor.currentLocation === 'film_hotel_roofs' && action?.filmPursuit)
+        Object.assign(actor, saved);
+    }
+  }
+  private corridorPursuer(id: OpeningPursuer, cast: OpeningPursuitCast): AgentState | undefined {
+    const actor = this.world.agents.get(id);
+    if (!actor || actor.controller || actor.status !== 'alive') return;
+    if (cast[id]) return actor.currentLocation === SET.id && actor.currentAction?.parameters.hotelPursuit ? actor : undefined;
+    const { position, rotation, velocity, currentLocation, isInMatrix, targetPosition, currentPath, currentAction } = actor;
+    cast[id] = structuredClone({ position, rotation, velocity, currentLocation, isInMatrix, targetPosition, currentPath, currentAction });
+    return actor;
+  }
+  private placePursuer(actor: AgentState, set: string, position: Vector3, yaw: number, dt: number, tick: number, lookPitch?: number): void {
+    const previous = actor.currentLocation === set ? actor.currentAction?.parameters.hotelPursuit as OpeningPursuitGesture | undefined : undefined;
+    const velocity = previous && dt > 0 ? { x: (position.x - actor.position.x) / dt, y: 0, z: (position.z - actor.position.z) / dt } : { x: 0, y: 0, z: 0 };
+    const speed = Math.hypot(velocity.x, velocity.z);
+    if (previous && speed === 0 && previous.speed === 0 && actor.rotation === yaw && distance(actor.position, position) < .001 && previous.lookPitch === lookPitch) return;
+    const gesture: OpeningPursuitGesture = { travel: (previous?.travel ?? 0) + speed * dt, speed, ...(lookPitch === undefined ? {} : { lookPitch }) };
+    actor.position = position; actor.rotation = yaw; actor.velocity = velocity; actor.currentLocation = set; actor.isInMatrix = true;
+    actor.targetPosition = null; actor.currentPath = [];
+    actor.currentAction = { type: speed > .05 ? 'move_to' : 'idle', parameters: { resolved: true, hotelPursuit: gesture }, startedAt: tick, duration: 1e9, progress: 0 };
+  }
+  pursuitFrame(actor: AgentState, dt: number, tick: number): void {
+    const journey = this.journey, state = this.state;
+    if (dt <= 0 || journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id || !state) return;
+    const { pursuit, officers, alley, ladderZ } = OPENING_HOTEL, localZ = actor.position.z - SET.center.z;
+    if (state.phase === 'corridor' ? !state.pursuit && localZ > pursuit.triggerZ : !['dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return;
+    const cast = state.pursuit ??= {};
+    const brown = this.corridorPursuer('agent_brown', cast);
+    if (brown) {
+      const z = brown.currentAction?.parameters.hotelPursuit ? brown.position.z - SET.center.z : pursuit.startZ;
+      const end = state.phase === 'corridor' ? Math.max(pursuit.stopZ, localZ + pursuit.spacing) : pursuit.stopZ;
+      const next = z - Math.min(Math.max(0, z - end), pursuit.speed * dt);
+      this.placePursuer(brown, SET.id, filmPosition(SET.id, 0, next), Math.PI, dt, tick);
+      for (const officer of officers) {
+        const member = this.corridorPursuer(officer.id, cast);
+        if (member) this.placePursuer(member, SET.id, filmPosition(SET.id, officer.x, next + officer.behind), Math.PI, dt, tick);
+      }
+    }
+    if (openingHotelLanded(state) && !cast.smith) {
+      const smith = this.corridorPursuer('smith', cast);
+      if (smith) {
+        const position = filmPosition(SET.id, alley.x, alley.z); position.y += alley.y;
+        this.placePursuer(smith, SET.id, position, Math.atan2(-alley.x, ladderZ - alley.z), 0, tick, -.54);
+      }
+    }
+  }
+  roofPursuers(dt: number, tick: number, entering = false): void {
+    const cast = this.journey?.openingRoof?.pursuit, roof = FILM_SETS.film_hotel_roofs;
+    const brown = this.world.agents.get('agent_brown');
+    if (!cast || brown?.currentLocation !== roof.id) return;
+    if (entering && cast.agent_brown && !brown.controller)
+      brown.currentAction = { type: 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
+    for (const officer of OPENING_HOTEL.officers) {
+      const member = this.world.agents.get(officer.id);
+      if (!cast[officer.id] || !member || member.controller || member.status !== 'alive'
+        || !entering && (member.currentLocation !== roof.id || !member.currentAction?.parameters.hotelPursuit)) continue;
+      const x = Math.max(-roof.width / 2 + 1, Math.min(roof.width / 2 - 1, brown.position.x - roof.center.x + officer.x));
+      const z = Math.min(roof.depth / 2 - 1.3, Math.max(OPENING_ESCAPE.roofGapNear + 1.5, brown.position.z - roof.center.z + officer.behind));
+      const target = filmPosition(roof.id, x, z);
+      const dx = target.x - member.position.x, dz = target.z - member.position.z;
+      const length = Math.hypot(dx, dz), step = entering ? 1 : Math.min(1, OPENING_HOTEL.pursuit.speed * dt / Math.max(.001, length));
+      const next = entering ? target : { x: member.position.x + dx * step, y: target.y, z: member.position.z + dz * step };
+      const yaw = entering ? Math.PI : length > .01 ? Math.atan2(dx, dz) : member.rotation;
+      const blocked = !entering && playerBlocked(next, true, .6, this.sandbox().structures);
+      this.placePursuer(member, roof.id, blocked ? member.position : next, yaw, dt, tick);
+    }
+  }
   sync(): void {
     if (this.journey?.scene !== 'm1_room303' || this.journey.visiting) { this.clear(); return; }
     const barriers: { barrier: { x: number; z: number; width: number; depth: number; height: number }; index: number }[] =
@@ -188,7 +267,8 @@ export class OpeningHotelSystem {
       if (state.elapsed >= ready && dt > 0) {
         state.phase = 'ladder_ready'; state.climbed = 0; delete state.diveFrom;
         this.frame(actor);
-        this.onAdvance?.('Trinity 落到消防平台，伸手抓住横档。按 G 抓稳梯子，再往上爬。', actor, tick);
+        const alleyBlocked = openingHotelAlleyGuard(this.world.agents.get('smith'));
+        this.onAdvance?.(alleyBlocked ? 'Smith 已经封住梯下的巷口。按 G 抓稳梯子，再往屋顶爬。' : 'Trinity 落到消防平台，伸手抓住横档。按 G 抓稳梯子，再往上爬。', actor, tick);
         return;
       }
       const pose = openingHotelDivePose(state.elapsed, state.diveFrom);

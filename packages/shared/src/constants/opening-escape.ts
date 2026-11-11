@@ -1,5 +1,6 @@
 import type { Vector3 } from '../types/agent.js';
 import type { WellsAftermath } from './wells-aftermath.js';
+import type { OpeningPursuitCast } from './opening-hotel.js';
 
 export const OPENING_ESCAPE = {
   roofGapNear: -2,
@@ -82,6 +83,7 @@ export interface OpeningRoofEncounter {
   phase: 'running' | 'failed' | 'escaped'; lastTick: number; attempts: number;
   leap?: { elapsed: number; fromX: number; toX: number };
   crossed?: boolean;
+  pursuit?: OpeningPursuitCast;
 }
 
 export function openingRoofGlassBroken(roof?: OpeningRoofEncounter, exitElapsed = 0): boolean {

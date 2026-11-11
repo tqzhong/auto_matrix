@@ -50,7 +50,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelGlassBroken, openingHotelGlassTime, openingRoofGlassBroken } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingRoofGlassBroken } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -385,6 +385,7 @@ export class FilmSetRenderer {
   private hotel303Glass?: THREE.Group;
   private hotel303Shards?: THREE.Group;
   private hotel303Pistol?: THREE.Group;
+  private hotel303DeskLight?: THREE.PointLight;
   private openingRoofGlass?: THREE.Group;
   private openingRoofShards?: THREE.Group;
   private trainmanChase?: TrainmanChaseRenderer;
@@ -2234,6 +2235,14 @@ export class FilmSetRenderer {
         this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
         if (hotel?.fallen) this.hotel303Pistol.position.set(hotel.fallen.x - this.current!.center.x, .12, hotel.fallen.z - this.current!.center.z);
       }
+      if (this.hotel303DeskLight) {
+        const alley = openingHotelLanded(hotel), light = this.hotel303DeskLight;
+        // Reuse the room's light slot once the performer is outside.
+        light.position.set(alley ? 2.4 : -9.5, alley ? OPENING_HOTEL.alley.y + 5.25 : 4.8,
+          alley ? OPENING_HOTEL.alley.back + 1.15 : OPENING_HOTEL.computer.z);
+        light.intensity = alley ? 125 : 180;
+        light.distance = alley ? 15 : 18;
+      }
     }
     if (this.openingRoofGlass && this.openingRoofShards) {
       const exit = sceneId === 'm1_roofs' && !journey?.visiting ? player?.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
@@ -3439,7 +3448,8 @@ export class FilmSetRenderer {
     this.hotel303Pistol.add(this.box(this.black, 0, .22, 0, 1.05, .17, .24));
     const grip = this.box(this.metal, -.24, .08, .15, .24, .27, .14); grip.rotation.z = -.35; this.hotel303Pistol.add(grip);
     this.hotel303Pistol.add(this.box(this.brass, .35, .33, 0, .13, .12, .16));
-    const computerLight = new THREE.PointLight(0x8fcbb3, 180, 18, 2); computerLight.position.set(-9.5, 4.8, desk.z); this.root.add(computerLight);
+    this.hotel303DeskLight = new THREE.PointLight(0x8fcbb3, 180, 18, 2);
+    this.hotel303DeskLight.position.set(-9.5, 4.8, desk.z); this.root.add(this.hotel303DeskLight);
     const corridorLight = new THREE.PointLight(0xc3b89a, 125, 30, 2); corridorLight.position.set(0, 9, -12); this.root.add(corridorLight);
     for (const z of [-20, -12, -4]) {
       this.box(plaster, -set.width / 2 + .65, 4.6, z, .18, 8.6, 7.2);
@@ -3485,6 +3495,11 @@ export class FilmSetRenderer {
     ladder.add(this.box(this.metal, 0, ladderHeight + landing.thickness / 2, deckZ, landing.width, landing.thickness, landing.depth));
     const exterior = this.pbr('damaged_plaster', 0x73746e, 6);
     this.box(exterior, 0, 8, -42, 27, 16, .5);
+    const alley = OPENING_HOTEL.alley, pavement = this.pbr('damaged_plaster', 0x414942, 9);
+    this.box(pavement, 0, alley.y - .24, (alley.front + alley.back) / 2, alley.width, .48, alley.front - alley.back);
+    this.box(exterior, 0, alley.y / 2, alley.back, alley.width, -alley.y, .5);
+    this.box(plaster, 0, alley.y / 2, alley.front, alley.width, -alley.y, .55);
+    this.box(this.metal, 0, alley.y + .028, alley.back + 1.65, 12, .055, .16);
     for (const x of [-9, -3, 3, 9]) {
       this.box(this.black, x, 9.5, -41.68, 3.2, 5, .12);
       this.box(this.mat(0x6c775e, .7), x, 9.5, -41.6, 2.8, 4.6, .06);
@@ -4899,6 +4914,7 @@ export class FilmSetRenderer {
     this.openingReceiver?.dispose(); this.openingReceiver = undefined; this.openingCord = undefined;
     this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
+    this.hotel303DeskLight = undefined;
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;
     this.helGarage?.dispose(); this.helGarage = undefined;

@@ -1251,7 +1251,7 @@ test('the 303 fire escape camera sees Trinity over the full climb and upper land
   const journey: FilmJourney = { version: 1, scene: scene.id, actor: 'trinity', step: 5, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(scene), openingHotel: hotel };
   const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
-  const system = new OpeningHotelSystem(() => sandbox);
+  const system = new OpeningHotelSystem(new WorldState(), () => sandbox);
   Object.assign(game.state, { id: 'trinity', currentLocation: scene.set });
   try {
     for (const aspect of [16 / 9, .65]) for (const climbed of [ladderHeight, 0, 1.3, 3.6, 5.6, ladderHeight - .1]) {
@@ -1286,6 +1286,39 @@ test('the 303 fire escape camera sees Trinity over the full climb and upper land
     assert.ok(game.camera.getWorldDirection(new THREE.Vector3()).distanceTo(ahead) > .2, 'first-person look must stay free on the ladder');
     game.key('KeyW'); game.step(.1); assert.equal(game.sent.at(-1)?.climb, 1);
     game.key('KeyW', false); game.key('KeyS'); game.step(.1); assert.equal(game.sent.at(-1)?.climb, -1);
+  } finally { renderer.dispose(); }
+});
+
+test('the 303 alley view frames Trinity on the ladder and Smith on real ground below', t => {
+  const game = setup(t, Math.PI), scene = FILM_SCENE_BY_ID.m1_room303;
+  const { center } = FILM_SETS[scene.set], { alley } = OPENING_HOTEL;
+  const smith = { x: center.x + alley.x, y: center.y + alley.y, z: center.z + alley.z };
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const renderer = new FilmSetRenderer(new THREE.Scene());
+  const hotel: OpeningHotelEncounter = { phase: 'ladder_ready', elapsed: 2.24, lastTick: 0, attempts: 0, disarmed: true, ammo: 0, shots: 0 };
+  const journey: FilmJourney = { version: 1, scene: scene.id, actor: 'trinity', step: 5, completed: [], enteredAt: 0,
+    reflections: {}, lastText: '', checkpoint: filmEntry(scene), openingHotel: hotel };
+  const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
+  const system = new OpeningHotelSystem(new WorldState(), () => sandbox);
+  Object.assign(game.state, { id: 'trinity', currentLocation: scene.set }); system.frame(game.state);
+  game.controls.possess(game.state); game.controls.openingHotel = hotel; game.controls.hotelAlleyGuard = smith; game.controls.performing = true;
+  try {
+    renderer.update(game.state, sandbox, 0); renderer.root.updateMatrixWorld(true);
+    for (const aspect of [16 / 9, .65]) {
+      game.camera.aspect = aspect; game.step(.3, 1 / 60, false); game.camera.updateWorldMatrix(true, false);
+      for (const [role, position] of [['Trinity', game.state.position], ['Smith', smith]] as const) for (const height of [-.65, 1.2, 3]) {
+        const point = new THREE.Vector3(position.x, position.y + height, position.z);
+        const projected = point.clone().project(game.camera), ray = point.sub(game.camera.position);
+        assert.ok(Math.abs(projected.x) < .96 && Math.abs(projected.y) < .96 && Math.abs(projected.z) < 1,
+          `${role} must be in frame at ${aspect}/${height}: ${projected.toArray()}`);
+        const hits = new THREE.Raycaster(game.camera.position, ray.clone().normalize(), 0, ray.length() - .14).intersectObject(renderer.root, true)
+          .filter(hit => hit.object instanceof THREE.Mesh && hit.object.castShadow && !hit.object.material.transparent);
+        assert.equal(hits.length, 0, `${role} is hidden behind the set at ${aspect}/${height}: ${hits.map(hit => hit.point.toArray())}`);
+      }
+    }
+    const ground = new THREE.Raycaster(new THREE.Vector3(smith.x, smith.y + 2, smith.z), new THREE.Vector3(0, -1, 0), 0, 4)
+      .intersectObject(renderer.root, true)[0];
+    assert.ok(ground && Math.abs(ground.point.y - smith.y + 1) < .05, 'Smith must stand on the alley pavement');
   } finally { renderer.dispose(); }
 });
 

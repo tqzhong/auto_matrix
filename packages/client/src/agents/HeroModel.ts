@@ -1741,6 +1741,7 @@ export class HeroModels {
     }
     if (input.hotelClimb !== undefined) placeOpeningHotelClimber(rig, input.hotelClimb);
     else if (hotelDive?.grab) placeOpeningHotelClimber(rig, 0, hotelDive.grab);
+    bone('head').rotation.x += input.hotelLookPitch ?? input.hotelPursuit?.lookPitch ?? 0;
     poseSpoonBody(rig, input.spoonLesson);
     if (input.training?.kind === 'red_dress' && input.training.role === 'morpheus' && input.training.attention && !this.redDressGuides.has(rig))
       this.redDressGuides.set(rig, new RedDressPerformance(rig, fightingHands));
