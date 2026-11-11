@@ -699,7 +699,7 @@ export class PlayerController {
         session.vy = 0; session.planar = { x: 0, z: 0 }; session.input.jump = false; session.strike = undefined; session.impulse = undefined; session.palm = undefined; continue;
       }
       if (this.sandbox?.life.film.performing(agent)) {
-        this.sandbox.life.film.openingHotel.frame(agent);
+        this.sandbox.life.film.openingHotel.frame(agent, dt, tick);
         this.sandbox.life.film.truckFrame(agent, dt, tick);
         this.sandbox.life.film.windowFrame(agent, dt, tick);
         this.sandbox.life.film.crossingFrame(agent, dt, tick);

@@ -58,7 +58,11 @@ test('303 sounds follow the line, door, glass and climb through pauses and retri
   assert.deepEqual(h.frame(hotel('dive', .5, 1)), ['glass']);
   assert.deepEqual(h.frame(hotel('dive', 1, 1), { running: false }), []);
   assert.deepEqual(h.frame(hotel('dive', 1, 1)), []);
-  assert.deepEqual(h.frame(hotel('ladder_ready', 0, 1)), ['body']);
+  assert.deepEqual(h.frame(hotel('dive', 1.59, 1)), []);
+  assert.deepEqual(h.frame(hotel('dive', 1.6, 1)), ['body']);
+  assert.deepEqual(h.frame(hotel('dive', 1.68, 1), { running: false }), []);
+  assert.deepEqual(h.frame(hotel('dive', 1.68, 1)), []);
+  assert.deepEqual(h.frame(hotel('ladder_ready', 0, 1)), []);
   assert.deepEqual(h.frame(hotel('climbing', 0, 1)), ['keys']);
   assert.deepEqual(h.frame(hotel('done', 0, 1)), ['keys']);
   assert.deepEqual(h.frame(hotel('done', 0, 1)), []);

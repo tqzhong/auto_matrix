@@ -50,7 +50,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelGlassBroken, openingRoofGlassBroken } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelGlassBroken, openingHotelGlassTime, openingRoofGlassBroken } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -2225,6 +2225,11 @@ export class FilmSetRenderer {
       this.hotel303Door.rotation.y = -opening * 1.35;
       const broken = openingHotelGlassBroken(hotel);
       this.hotel303Glass.visible = !broken; this.hotel303Shards.visible = broken;
+      if (broken && hotel) {
+        const action = player?.id === journey?.actor ? player?.currentAction?.parameters.hotel303 as { phase: string; elapsed: number } | undefined : undefined;
+        const time = action?.phase === 'dive' ? Math.max(hotel.elapsed, action.elapsed) : hotel.elapsed;
+        this.poseHotel303Shards(hotel.phase === 'dive' ? Math.max(0, time - openingHotelGlassTime(hotel)) : Infinity);
+      }
       if (this.hotel303Pistol) {
         this.hotel303Pistol.visible = Boolean(hotel?.fallen && !hotel.disarmed && hotel.phase === 'combat');
         if (hotel?.fallen) this.hotel303Pistol.position.set(hotel.fallen.x - this.current!.center.x, .12, hotel.fallen.z - this.current!.center.z);
@@ -2519,6 +2524,7 @@ export class FilmSetRenderer {
     }
     const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step] ?? (!journey?.visiting && journey && ['m2_seraph','m2_backdoors'].includes(journey.scene) && journey.step >= 2 ? scene?.steps[1] : undefined);
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
+    if (scene?.id === 'm1_room303' && journey?.openingHotel?.phase === 'dive') this.marker.visible = false;
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
     if (journey?.scene === 'm3_bane_questions' && baneInquiryLocked(journey.baneInquiry)) this.marker.visible = false;
@@ -3448,15 +3454,18 @@ export class FilmSetRenderer {
     this.box(this.metal, 0, 7.65, -set.depth / 2 + .34, 8.1, .35, .3);
     for (const x of [-4, 4]) this.box(this.metal, x, 3.8, -set.depth / 2 + .34, .3, 7.6, .3);
     this.hotel303Glass = new THREE.Group(); this.hotel303Glass.name = 'hotel-303-window'; this.hotel303Glass.userData.dynamic = true; this.root.add(this.hotel303Glass);
-    this.hotel303Glass.add(this.box(this.glass, 0, 3.75, -set.depth / 2 + .39, 7.6, 7.2, .08));
+    this.hotel303Glass.add(this.box(this.glass, 0, 3.75, OPENING_HOTEL.window.paneZ, 7.6, 7.2, .08));
     this.hotel303Shards = new THREE.Group(); this.hotel303Shards.name = 'hotel-303-window-shards'; this.hotel303Shards.userData.dynamic = true;
     this.hotel303Shards.visible = false; this.root.add(this.hotel303Shards);
     for (let i = 0; i < 28; i++) {
-      const angle = i * 2.399; const radius = 1.5 + (i % 6) * .42;
-      const shard = this.box(this.glass, Math.sin(angle) * radius, .1 + i % 5 * .16, -set.depth / 2 - .3 - Math.cos(angle) * radius,
-        .12 + i % 3 * .12, .04, .28 + i % 4 * .14); shard.rotation.y = angle; this.hotel303Shards.add(shard);
+      const angle = i * 2.399, radius = .78 + (i % 7) * .4;
+      const x = Math.sin(angle) * radius, y = 3.45 + Math.cos(angle) * radius;
+      const shard = this.box(this.glass, x, y, OPENING_HOTEL.window.paneZ, .12 + i % 3 * .12, .04, .28 + i % 4 * .14);
+      shard.userData.fragment = { x, y, angle, lateral: Math.sin(angle) * 1.35, travel: 3.5 + i % 7 * .3, spin: 2.8 + i % 5 * .42 };
+      this.hotel303Shards.add(shard);
     }
-    this.box(this.metal, 0, -.35, -set.depth / 2 - 4.8, 11, .4, 9);
+    const lowerDeck = OPENING_HOTEL.lowerDeck;
+    this.box(this.metal, 0, lowerDeck.y, lowerDeck.z, lowerDeck.width, lowerDeck.thickness, lowerDeck.depth);
     for (const x of [-5.3, 5.3]) {
       this.box(this.metal, x, 2.15, -set.depth / 2 - 4.8, .16, 4.7, 9);
       for (const z of [-set.depth / 2 - 8, -set.depth / 2 - 5, -set.depth / 2 - 2]) this.box(this.metal, x, 2.4, z, .18, .14, .18);
@@ -3487,6 +3496,20 @@ export class FilmSetRenderer {
     this.box(this.glow, fixtureX, 9.61, fixtureZ - .12, .64, .06, .35);
     const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2);
     escapeLight.position.set(fixtureX, 9.48, fixtureZ - .4); this.root.add(escapeLight);
+  }
+  private poseHotel303Shards(age: number): void {
+    const shards = this.hotel303Shards!;
+    if (shards.userData.age === age) return;
+    shards.userData.age = age;
+    const { lowerDeck, window } = OPENING_HOTEL, floor = lowerDeck.y + lowerDeck.thickness / 2 + .022;
+    const lift = .8, gravity = 7.6;
+    for (const piece of shards.children) {
+      const { x, y, angle, lateral, travel, spin } = piece.userData.fragment;
+      const landing = (lift + Math.sqrt(lift * lift + 4 * gravity * (y - floor))) / (2 * gravity);
+      const time = Math.min(age, landing), tilt = 1 - THREE.MathUtils.smoothstep(time / landing, .75, 1);
+      piece.position.set(x + lateral * time, Math.max(floor, y + lift * time - gravity * time * time), window.paneZ - travel * time);
+      piece.rotation.set((Math.PI / 2 + spin * time) * tilt, angle + spin * time * .6, spin * time * tilt * .4);
+    }
   }
   private *domestic(set: FilmSet): Generator<void> {
     const { architecture: a, width: w, depth: d } = set;

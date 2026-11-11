@@ -1,5 +1,5 @@
 import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_PHONE, WELLS_BOOTH, openingBoothCrush,
-  openingHotelGlassBroken, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
+  openingHotelGlassBroken, openingHotelLanded, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
@@ -23,7 +23,7 @@ function hotelSounds(audio: OpeningSounds, previous: OpeningHotelEncounter, hote
     audio.landlineSound('pickup'); audio.dialogue();
   }
   if (!openingHotelGlassBroken(previous) && openingHotelGlassBroken(hotel)) audio.governmentSound('glass');
-  if (previous.phase === 'dive' && hotel.phase === 'ladder_ready') audio.governmentSound('body');
+  if (previous.phase === 'dive' && !openingHotelLanded(previous) && openingHotelLanded(hotel)) audio.governmentSound('body');
   if (previous.phase === 'ladder_ready' && hotel.phase === 'climbing' || previous.phase === 'climbing' && hotel.phase === 'done')
     audio.interludeSound('keys');
 }

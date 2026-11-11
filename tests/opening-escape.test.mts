@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createHash } from 'node:crypto';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, filmEntry, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, filmEntry, openingHotelClimbPose, openingHotelDivePose, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -44,6 +44,58 @@ test('saved rooftop run-up and dive poses do not depend on earlier walking or co
     assert.deepEqual(advanceMotion(warm, input, 0), cold, `${elapsed}: a cold join must retain the saved exit pose`);
     assert.deepEqual(advanceMotion(warm, input, .1), cold, `${elapsed}: the renderer must not advance the saved exit`);
   }
+});
+
+test('303 bracing and landing lead into the first rung instead of holding an airborne pose', () => {
+  const frame = (elapsed: number) => advanceMotion(newMotion(), {
+    speed: 0, grounded: true, verticalVelocity: 0, turn: 0, hotel303: { phase: 'dive', elapsed },
+  }, 0);
+  const flight = frame(.85), landing = frame(1.72), ready = frame(2.24);
+  assert.ok(flight.lean > .5, 'Trinity leads with her covered head and shoulders in the air');
+  assert.ok(landing.legs.every(leg => leg.knee > .65), 'both knees absorb the landing');
+  assert.ok(landing.hipHeight < flight.hipHeight - .2, 'the landing compresses the body');
+  assert.ok(ready.hipHeight > landing.hipHeight + .25, 'the body rises into the ladder reach');
+});
+
+test('Trinity meets the 303 pane and balcony with the rendered body and reaches the saved rung pose', async t => {
+  const { models, rig } = await actor('trinity'); t.after(() => models.dispose());
+  const { center } = FILM_SETS.film_heart_hotel, { lowerDeck, roomDive, window } = OPENING_HOTEL;
+  const floor = lowerDeck.y + lowerDeck.thickness / 2;
+  const body = new THREE.Group(), point = new THREE.Vector3(); body.add(rig.root);
+  const from = { position: { x: .95, y: 0, z: -22.1 }, yaw: Math.PI - .24 };
+  const sample = (elapsed: number, onLadder = false) => {
+    const root = onLadder ? { ...openingHotelClimbPose(0), x: 0, yaw: Math.PI } : openingHotelDivePose(elapsed, from);
+    body.position.set(center.x + root.x, center.y - 1 + root.y, center.z + root.z); body.rotation.y = root.yaw;
+    const input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0,
+      ...(onLadder ? { hotelClimb: 0 } : { hotel303: { phase: 'dive' as const, elapsed } }) };
+    const motion = newMotion(); models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); body.updateMatrixWorld(true);
+    let leading = Infinity, sole = Infinity, inside = 0;
+    rig.root.traverseVisible(mesh => {
+      if (!(mesh instanceof THREE.SkinnedMesh)) return;
+      mesh.skeleton.update();
+      for (let index = 0; index < mesh.geometry.attributes.position.count; index++) {
+        mesh.localToWorld(mesh.getVertexPosition(index, point));
+        const x = point.x - center.x, y = point.y - center.y + 1, z = point.z - center.z;
+        if (Math.abs(x) < 3.8 && y >= .15 && y <= 7.35) leading = Math.min(leading, z);
+        if (mesh.name === 'shoes01') sole = Math.min(sole, y);
+        if (Math.abs(x) < lowerDeck.width / 2 && Math.abs(z - lowerDeck.z) < lowerDeck.depth / 2
+          && y < floor - .025 && y > floor - lowerDeck.thickness) inside++;
+      }
+    });
+    const bones = ['pelvis', 'wrist_R', 'wrist_L', 'ankle_R', 'ankle_L'].map(name => rig.bones.get(name)!.getWorldPosition(new THREE.Vector3()));
+    return { leading, sole, inside, bones };
+  };
+  assert.ok(sample(roomDive.glass - .015).leading > window.paneZ + .035, 'the intact pane must still be clear of Trinity');
+  assert.ok(Math.abs(sample(roomDive.glass).leading - window.paneZ) < .09, 'the glass breaks as Trinity reaches it');
+  for (const elapsed of [roomDive.launch, roomDive.land]) {
+    const before = sample(elapsed - .001), after = sample(elapsed + .001);
+    assert.ok(before.bones[0].distanceTo(after.bones[0]) < .04, 'pelvis must move continuously through takeoff and landing');
+  }
+  const landing = sample(roomDive.land + .12);
+  assert.ok(Math.abs(landing.sole - floor) < .03, 'the boots must touch the lower platform during the landing');
+  for (const elapsed of [1.6, 1.72, 1.81, 1.9, 2, 2.1, roomDive.ready]) assert.equal(sample(elapsed).inside, 0);
+  const reaching = sample(roomDive.ready), onLadder = sample(roomDive.ready, true);
+  reaching.bones.forEach((bone, i) => assert.ok(bone.distanceTo(onLadder.bones[i]) < 1e-6));
 });
 
 test('the roof exit opens a real window while retaining the wall and an exterior landing', t => {
@@ -146,9 +198,17 @@ test('303 broken glass stays broken while Trinity climbs the visible fire escape
       .intersectObjects(renderer.root.children, true);
     assert.ok(rail.length > 0, 'the upper handrail must be part of the visible ladder');
     assert.equal(glass.visible, false); assert.equal(shards.visible, true);
+    const fragments = () => shards.children.map(piece => piece.position.toArray());
+    const falling = fragments();
+    journey.openingHotel!.elapsed = .95; renderer.update(player, sandbox, .4);
+    assert.ok(fragments().some((point, i) => point[1] < falling[i][1] - .25 && point[2] < falling[i][2] - .15), 'the glass falls out of the window');
+    journey.openingHotel!.elapsed = .7; renderer.update(player, sandbox, .8);
+    assert.deepEqual(fragments(), falling, 'the saved dive clock reconstructs the same fragments');
     journey.openingHotel!.phase = 'ladder_ready'; journey.step = 5;
     renderer.update(player, sandbox, 1);
     assert.equal(glass.visible, false); assert.equal(shards.visible, true);
+    const { lowerDeck } = OPENING_HOTEL, floor = lowerDeck.y + lowerDeck.thickness / 2;
+    assert.ok(fragments().every(point => Math.abs(point[1] - floor) < .04), 'the fragments settle on the lower platform');
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
@@ -180,11 +240,14 @@ test('Trinity’s visible climb holds the 303 rungs and clears the upper platfor
   const point = new THREE.Vector3();
   const nearestRung = (height: number) => rungs[THREE.MathUtils.clamp(Math.round((height - ladderRungs.bottom) / ladderRungs.spacing), 0, rungs.length - 1)];
   const overlaps: string[] = [];
-  for (const climbed of [0, .18, .32, .51, .65, .94, 1.3, 1.62, 2.1, 2.6, 3.25, 3.55, 4.2, 4.35, 4.55, 4.8, 5, 5.0688, 5.1, 5.2, 5.3, 5.45, 5.8, 6, 6.25, 6.5, 6.75, 6.95, ladderHeight]) {
-    journey.openingHotel!.phase = climbed === ladderHeight ? 'done' : 'climbing';
+  const samples = [0, .18, .32, .51, .65, .94, 1.3, 1.62, 2.1, 2.6, 3.25, 3.55, 4.2, 4.35, 4.55, 4.8, 5, 5.0688, 5.1, 5.2, 5.3, 5.45, 5.8, 6, 6.25, 6.5, 6.75, 6.95, ladderHeight]
+    .map(climbed => ({ climbed, waiting: false }));
+  samples.unshift({ climbed: 0, waiting: true });
+  for (const { climbed, waiting } of samples) {
+    journey.openingHotel!.phase = waiting ? 'ladder_ready' : climbed === ladderHeight ? 'done' : 'climbing';
     journey.openingHotel!.climbed = climbed; system.frame(trinity);
     body.position.set(trinity.position.x, trinity.position.y - 1, trinity.position.z);
-    const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, climbing: climbed === ladderHeight ? undefined : 0, hotelClimb: climbed };
+    const motion = newMotion(), input = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, climbing: waiting || climbed === ladderHeight ? undefined : 0, hotelClimb: climbed };
     models.animate(rig, advanceMotion(motion, input, 0), motion, input, 0); body.updateMatrixWorld(true);
     let inspected = 0, inside = 0, soles = Infinity;
     rig.root.traverseVisible(mesh => {
@@ -215,8 +278,9 @@ test('Trinity’s visible climb holds the 303 rungs and clears the upper platfor
       };
       for (const { skin, hand } of hands) for (const vertex of hand) contact(skin, vertex, false);
       for (let vertex = 0; vertex < shoes.geometry.attributes.position.count; vertex++) contact(shoes, vertex, true);
-      assert.ok(palm < .025, `${climbed}: neither hand contacts a rung (${palm.toFixed(3)} gap)`);
-      assert.ok(sole < .025, `${climbed}: neither shoe is supported by a rung (${sole.toFixed(3)} gap)`);
+      const label = waiting ? 'waiting at the ladder' : climbed;
+      assert.ok(palm < .025, `${label}: neither hand contacts a rung (${palm.toFixed(3)} gap)`);
+      assert.ok(sole < .025, `${label}: neither shoe is supported by a rung (${sole.toFixed(3)} gap)`);
     }
     if (climbed >= 4.2 && climbed <= 6.5) {
       let grip = Infinity;

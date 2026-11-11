@@ -55,7 +55,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -1166,6 +1166,7 @@ export class PlayerControls {
     this.motion.reloaded = reloadedGesture;
     this.motion.catch = catchGesture;
     this.motion.hotel303 = state.currentAction?.parameters.hotel303 as MotionInput['hotel303'];
+    const hotelDive = this.openingHotel?.phase === 'dive' && this.motion.hotel303?.phase === 'dive' ? openingHotelDiveMotion(this.motion.hotel303.elapsed) : undefined;
     const hotelClimb = state.currentLocation === 'film_heart_hotel' ? openingHotelClimbed(this.openingHotel) : undefined;
     this.motion.hotelClimb = hotelClimb;
     const roofExit = state.currentAction?.parameters.roofExit as MotionInput['roofExit'];
@@ -1366,7 +1367,7 @@ export class PlayerControls {
     if (this.motion.wakeCall?.phase === 'waking' && this.motion.wakeCall.elapsed > 2.7 && this.motion.morning?.phase !== 'lying') this.motion.speed = 1.45;
     if (this.motion.wakeCall?.phase === 'leaving' && this.motion.wakeCall.elapsed > 1.15 && this.motion.wakeCall.elapsed < 3.05) this.motion.speed = 1.35;
     this.motion.firstPerson = this.firstPerson;
-    this.motion.grounded = dropRoot ? !basementDropPose(basement!.drop!).airborne : wall?.role === 'neo' && wall.phase === 'falling' ? false : Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix, this.structures) + .12;
+    this.motion.grounded = hotelDive ? !hotelDive.airborne : dropRoot ? !basementDropPose(basement!.drop!).airborne : wall?.role === 'neo' && wall.phase === 'falling' ? false : Boolean(this.ride || this.gunner) || this.climbing || this.performing || this.position.y <= groundHeight(this.position, state.isInMatrix, this.structures) + .12;
     this.motion.verticalVelocity = wall?.role === 'neo' && wall.phase === 'falling' ? state.velocity.y : this.vy;
     this.motion.inspecting = Boolean((this.motion.pills || this.motion.interrogation || this.motion.welcome || this.motion.knock !== undefined || this.motion.recovery !== undefined || this.motion.cabin || this.motion.reveal || this.motion.training || this.motion.workday || this.motion.wakeCall || this.motion.sentinel || this.motion.interlude || this.motion.oracleVisit || departureCinematic || this.motion.betrayal || this.motion.rescue || this.motion.government || this.motion.airRescue || escapeCinematic || oneCinematic || this.motion.lobbyEntry) && !this.firstPerson) || Boolean(this.phone && this.performing && this.motion.window === undefined && this.motion.crossing === undefined) || !this.firstPerson && this.spoon !== undefined && this.enabled && this.motion.speed < .25 && this.motion.grounded;
     const attacking = (now - this.lastAttack) / 1000 < MELEE_COMBO[this.attackCombo].duration;
@@ -1494,13 +1495,16 @@ export class PlayerControls {
     const verticalTarget = THREE.MathUtils.lerp(this.cameraTarget.y, target.y, 1 - Math.exp(-8 * delta));
     this.cameraTarget.lerp(target, 1 - Math.exp(-22 * delta)); this.cameraTarget.y = verticalTarget;
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
-    if (!this.firstPerson && hotelClimb !== undefined) {
-      const { center, depth } = FILM_SETS.film_heart_hotel;
-      const { transfer } = openingHotelClimbPose(hotelClimb);
+    const hotel = FILM_SETS.film_heart_hotel;
+    const hotelOutside = this.openingHotel?.phase === 'dive' && this.position.z < hotel.center.z + OPENING_HOTEL.window.paneZ - .3;
+    if (!this.firstPerson && (hotelClimb !== undefined || hotelOutside)) {
+      const { center, depth } = hotel;
+      const { transfer } = openingHotelClimbPose(hotelClimb ?? 0);
+      const cover = hotelDive?.cover ?? 0, brace = hotelDive?.brace ?? 0;
       // Keep the lens outside the window and on Trinity's side of the ladder.
       this.camera.position.set(center.x + 4.15, this.position.y + 1.7, center.z - depth / 2 - 1.25);
-      this.camera.lookAt(this.position.x, this.position.y + THREE.MathUtils.lerp(1.52, 1.15, transfer), this.position.z);
-      this.camera.fov = this.camera.aspect < .85 ? 66 : 62;
+      this.camera.lookAt(this.position.x, this.position.y + THREE.MathUtils.lerp(1.52, 1.15, transfer) - .5 * cover - .22 * brace, this.position.z);
+      this.camera.fov = this.camera.aspect < .85 ? 66 + 7 * cover : 62 + 3 * cover;
       this.camera.near = .12;
       this.camera.updateProjectionMatrix();
     } else if (phoneExit && state.currentLocation === 'film_wells_phone') {

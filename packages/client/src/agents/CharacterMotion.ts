@@ -2,7 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, wellsAftermathPose } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -692,6 +692,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
+  const hotelDive = input.hotel303?.phase === 'dive' && !input.roofExit ? openingHotelDiveMotion(input.hotel303.elapsed) : undefined;
+  if (hotelDive) {
+    const time = input.hotel303!.elapsed, speed = 4.2 * hotelDive.stride;
+    Object.assign(state, newMotion(), { time: time * (1 - hotelDive.grab), phase: time * 1.8, speed });
+    input = { ...input, speed, turn: 0, grounded: !hotelDive.airborne, verticalVelocity: 0, armed: false, seated: false, crouching: false, climbing: undefined };
+    dt = 0;
+  }
   const hotelClimb = input.hotelClimb === undefined ? undefined : openingHotelClimbPose(input.hotelClimb);
   if (input.hotelClimb !== undefined) {
     const time = input.hotelClimb / OPENING_HOTEL.climbSpeed;
@@ -860,7 +867,8 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const governmentBend = government?.bend ?? 0;
   const escapePinned = matrixEscape?.grapple && input.matrixEscape?.role === 'neo' ? matrixEscape.grapple : 0;
   const hipHeight = 1.98 - boardingCrouch * .75 - moving * .08 - run * .12 + bob - state.landing * .20 - guard * .08 - dodging * .3 - crouch * .9 - state.seated * .6 - (input.floorSeated ? .85 : 0) - lobbyDown * 1.5 - governmentBend * .9 - (airRescue?.strain ?? 0) * .32 - (airRescue?.land ?? 0) * .18 - escapePinned * .72 - (matrixEscape?.brace ?? 0) * .55
-    - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38 - (smithFinale?.fallen ?? 0) * 1.38 - mealSeatHeight;
+    - (theOne?.wound ?? 0) * 1.2 - (theOne?.fallen ?? 0) * 1.58 - (theOne?.kiss ?? 0) * .28 - (theOne?.block ?? 0) * .18 - (theOne?.dive ?? 0) * .22 - (theOne?.burst ?? 0) * .28 - (reloaded?.down ?? 0) * 1.5 - (reloaded?.dodge ?? 0) * .38 - (smithFinale?.fallen ?? 0) * 1.38 - mealSeatHeight
+    - (hotelDive?.cover ?? 0) * .12 - (hotelDive?.brace ?? 0) * .42;
   const legs = [0, .5].map(offset => {
     const foot = footTrajectory(state.phase + offset, stride, stance);
     const lift = foot.lift * mix(mix(.22, .55, run), .12, crouchGait) * moving;
@@ -923,12 +931,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[i].shoulder = mix(arms[i].shoulder, -.32, state.seated); arms[i].elbow = mix(arms[i].elbow, -1.1, state.seated); arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .16, state.seated);
   }
   if (input.riding) for (const arm of arms) { arm.shoulder = -.9; arm.elbow = -.65; arm.grip = .8; }
-  if (input.climbing !== undefined) for (let i = 0; i < 2; i++) {
+  if (input.climbing !== undefined || hotelDive?.grab) for (let i = 0; i < 2; i++) {
     const pull = Math.sin(state.climbPhase + i * Math.PI);
-    const grip = 1 - (hotelClimb?.transfer ?? smooth(input.officeLadder?.exit ?? 0));
+    const grip = hotelDive?.grab ?? 1 - (hotelClimb?.transfer ?? smooth(input.officeLadder?.exit ?? 0));
     const curl = hotelClimb ? 1 - smooth(clamp((hotelClimb.transfer - .76) / .24)) : grip;
     legs[i].hip = mix(legs[i].hip, -.75 + pull * .4, grip); legs[i].knee = mix(legs[i].knee, 1.1 - pull * .6, grip); legs[i].ankle = mix(legs[i].ankle, -.2, grip);
-    arms[i].shoulder = mix(arms[i].shoulder, -2.2 - pull * .55, grip); arms[i].elbow = mix(arms[i].elbow, -.65 + pull * .5, grip); arms[i].grip = mix(arms[i].grip, hotelClimb ? .55 : 1, curl);
+    arms[i].shoulder = mix(arms[i].shoulder, -2.2 - pull * .55, grip); arms[i].elbow = mix(arms[i].elbow, -.65 + pull * .5, grip); arms[i].grip = mix(arms[i].grip, hotelClimb || hotelDive ? .55 : 1, curl);
   }
   if (input.performance === 'touch') {
     if (input.mirrorEntry) for (const [index, arm] of arms.entries()) {
@@ -1366,7 +1374,17 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     arms[i].shoulder = -2.55; arms[i].elbow = -.45; arms[i].outward = (i ? 1 : -1) * .42; arms[i].grip = .1;
     legs[i].hip = 0; legs[i].knee = .12;
   }
-  if (input.hotel303?.phase === 'dive') for (let i = 0; i < 2; i++) {
+  if (hotelDive) for (let i = 0; i < 2; i++) {
+    const { cover, brace } = hotelDive;
+    arms[i].shoulder = mix(mix(arms[i].shoulder, -1.68, cover), -.75, brace);
+    arms[i].elbow = mix(mix(arms[i].elbow, -1.32, cover), -.8, brace);
+    arms[i].outward = mix(arms[i].outward, (i ? 1 : -1) * .36, Math.max(cover, brace));
+    arms[i].grip = mix(arms[i].grip, .68, cover);
+    legs[i].hip = mix(mix(legs[i].hip, i ? -.89 : -.4, cover), i ? -.7 : -.83, brace);
+    legs[i].knee = mix(mix(legs[i].knee, i ? 1.48 : .95, cover), i ? 1.27 : 1.42, brace);
+    legs[i].ankle = mix(mix(legs[i].ankle, -.24, cover), -.51, brace);
+    legs[i].ankle = mix(legs[i].ankle, -legs[i].hip - legs[i].knee, hotelDive.support);
+  } else if (input.hotel303?.phase === 'dive') for (let i = 0; i < 2; i++) {
     arms[i].shoulder = -1.35; arms[i].elbow = -.65; arms[i].outward = (i ? 1 : -1) * .38; arms[i].grip = .72;
     legs[i].hip = i ? -.72 : .48; legs[i].knee = i ? 1.12 : .45;
   }
@@ -1393,7 +1411,7 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
   const escapeLean = matrixEscape ? matrixEscape.wall * .75 + matrixEscape.grapple * (input.matrixEscape?.role === 'neo' ? -.82 : .24) - matrixEscape.strike * .32 - matrixEscape.leap * .24 + matrixEscape.brace * .74 : 0;
   const escapeRoll = matrixEscape ? matrixEscape.wall * (input.matrixEscape?.role === 'smith' ? -.68 : .52) + matrixEscape.brace * 1.05 + matrixEscape.transform * Math.sin(input.matrixEscape!.elapsed * 18) * .12 : 0;
   const theOneLean = theOne ? theOne.wound * .92 + theOne.fallen * 1.35 + theOne.kiss * .45 - theOne.revive * .18 + theOne.block * .18 - theOne.dive * .72 + theOne.burst * .32 - theOne.flight * .58 : 0;
-  const hotelLean = input.hotel303?.phase === 'dive' ? -.68 : 0;
+  const hotelLean = hotelDive ? .92 * hotelDive.cover + .38 * hotelDive.brace : input.hotel303?.phase === 'dive' ? -.68 : 0;
   const farewellLean = farewell && input.farewell ? input.farewell.role === 'neo' ? farewell.neo.kneel * .22 : .68 * farewell.trinity.recline : 0;
   const farewellRoll = farewell && input.farewell?.role === 'trinity' ? -.18 * farewell.trinity.recline : 0;
   const deusLean = deus ? deus.seated * .32 - deus.brace * .08 + deus.pulse * .18 : 0;

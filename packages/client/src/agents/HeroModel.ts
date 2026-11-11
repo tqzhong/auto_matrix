@@ -7,7 +7,7 @@ import { truthKneel, truthSeat, spoonLessonSeat, smithFinaleLocked, smithCraterA
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { MORNING, FILM_SETS, OFFICE_WINDOW, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
+import { MORNING, FILM_SETS, OFFICE_WINDOW, OPENING_HOTEL, SENTINEL_TIMING, officeWindowPose, officeCrossingPose, openingHotelDiveMotion, pillPose, lafayetteKnockPose, lafayetteWelcomePose, recoveryBodyPose, recoveryCrewPose, podRescuePose, farewellPose } from '@auto_matrix/shared';
 import type { advanceMotion, MotionInput, MotionState } from './CharacterMotion.js';
 
 import { PillPerformance } from './PillPerformance.js';
@@ -1695,15 +1695,17 @@ export class HeroModels {
     if (input.training?.role === 'neo' && ['jump_fall', 'jump_return'].includes(input.training.kind) && !this.jumps.has(rig)) this.jumps.set(rig, new JumpPerformance(rig, fightingHands));
     this.jumps.get(rig)?.pose(input.training);
     rig.root.updateWorldMatrix(true, true);
-    if (input.hotelClimb !== undefined) placeOpeningHotelClimber(rig, input.hotelClimb);
+    const hotelDive = input.hotel303?.phase === 'dive' && !input.roofExit ? openingHotelDiveMotion(input.hotel303.elapsed) : undefined;
+    const onHotelRung = input.hotelClimb !== undefined && input.hotelClimb < OPENING_HOTEL.ladderHeight;
+    const groundWeight = hotelDive?.support ?? Number(input.grounded);
     if (input.performance === 'touch') placeTrackingFeet(rig, input.mirrorBeat, input.mirrorEntry);
-    if (input.training?.kind !== 'jump_fall' && !input.truckHood && input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && !(input.training && ['download', 'jump_fall', 'jump_return'].includes(input.training.kind) && input.training.role === 'neo') && input.grounded && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
+    if (input.training?.kind !== 'jump_fall' && !input.truckHood && input.epilogue?.kind !== 'neo_carried' && !input.farewell && !(input.truth?.role === 'neo' && input.truth.phase === 'unplug' && (truthSeat(input.truth.elapsed) > 0 || truthKneel(input.truth.elapsed) > 0)) && !(input.training && ['download', 'jump_fall', 'jump_return'].includes(input.training.kind) && input.training.role === 'neo') && groundWeight > 0 && !onHotelRung && !input.meeting && !input.interrogation && !(input.wakeCall?.phase === 'waking' && input.wakeCall.elapsed < 3.2) && !input.riding && input.climbing === undefined && (!input.performance || input.performance === 'connect')) {
       let lowest = Infinity;
       for (const side of ['R', 'L']) {
         this.point.setFromMatrixPosition(bone('ankle_' + side).matrixWorld); rig.root.worldToLocal(this.point);
         lowest = Math.min(lowest, this.point.y - rig.footHeight);
       }
-      pelvis.position.y -= lowest;
+      pelvis.position.y -= lowest * groundWeight;
       // Machine-core deck is .025 above the nominal floor; allow the boot sole's .005 extension.
       if (input.deusPact) pelvis.position.y += .03;
       rig.root.updateWorldMatrix(true, true);
@@ -1737,6 +1739,8 @@ export class HeroModels {
       if (!input.dojoOutfit && !input.realWorld && !input.seated && !input.floorSeated && motion.seated < .01 && !input.performance
         && !input.windingUp && motion.attackAge > 1 && motion.skillAge > 1 && motion.hitAge > .5) placeHotelFeet(rig);
     }
+    if (input.hotelClimb !== undefined) placeOpeningHotelClimber(rig, input.hotelClimb);
+    else if (hotelDive?.grab) placeOpeningHotelClimber(rig, 0, hotelDive.grab);
     poseSpoonBody(rig, input.spoonLesson);
     if (input.training?.kind === 'red_dress' && input.training.role === 'morpheus' && input.training.attention && !this.redDressGuides.has(rig))
       this.redDressGuides.set(rig, new RedDressPerformance(rig, fightingHands));

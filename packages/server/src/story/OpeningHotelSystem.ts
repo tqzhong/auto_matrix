@@ -1,4 +1,4 @@
-import { FILM_SETS, OPENING_HOTEL, distance, filmPosition, openingHotelClimbPose, openingHotelClimbed, playerBlocked, rayBox,
+import { FILM_SETS, OPENING_HOTEL, distance, filmPosition, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelGlassBroken, playerBlocked, rayBox,
   type AgentState, type CombatImpact, type OpeningHotelEncounter, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 
 const SET = FILM_SETS.film_heart_hotel;
@@ -26,8 +26,8 @@ export class OpeningHotelSystem {
     const barriers: { barrier: { x: number; z: number; width: number; depth: number; height: number }; index: number }[] =
       OPENING_HOTEL.walls.map((barrier, index) => ({ barrier, index }));
     if (this.state?.phase === 'trace') barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.doorZ, width: 6.7, depth: .65, height: 8 }, index: 3 });
-    if (!['dive', 'ladder_ready', 'climbing', 'done'].includes(this.state?.phase ?? ''))
-      barriers.push({ barrier: { x: 0, z: -SET.depth / 2 + .4, width: 7.6, depth: .45, height: 8 }, index: 4 });
+    if (!openingHotelGlassBroken(this.state))
+      barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.window.paneZ, width: 7.6, depth: .45, height: 8 }, index: 4 });
     const active = new Set(barriers.map(({ index }) => `film:hotel303:${index}`));
     this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:') || active.has(structure.id));
     barriers.forEach(({ barrier, index }) => {
@@ -132,9 +132,11 @@ export class OpeningHotelSystem {
   dive(actor: AgentState, tick: number): string {
     if (this.state?.phase !== 'corridor') return this.journey!.lastText;
     this.state.phase = 'dive'; this.state.elapsed = 0; this.state.lastTick = tick;
+    const { x, y, z } = actor.position, center = SET.center;
+    this.state.diveFrom = { position: { x: x - center.x, y: y - center.y, z: z - center.z }, yaw: actor.rotation };
     this.sync();
     this.journey!.lastText = 'Trinity 护住头部，冲过走廊尽头的破窗。玻璃碎片落向消防梯。';
-    actor.rotation = Math.PI;
+    this.frame(actor);
     return this.journey!.lastText;
   }
   beginClimb(actor: AgentState): string {
@@ -175,17 +177,27 @@ export class OpeningHotelSystem {
     const pose = openingHotelClimbPose(climbed);
     actor.position = { x: SET.center.x, y: SET.center.y + pose.y, z: SET.center.z + pose.z };
   }
-  frame(actor: AgentState): void {
+  frame(actor: AgentState, dt = 0, tick = this.state?.lastTick ?? 0): void {
     const state = this.state; if (!state) return;
     if (state.phase === 'breach') {
       actor.velocity = { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'surrender', elapsed: state.elapsed } }, startedAt: state.lastTick, duration: 1, progress: 0 };
     } else if (state.phase === 'dive') {
-      const progress = Math.min(1, state.elapsed / OPENING_HOTEL.diveSeconds);
-      actor.position = filmPosition(SET.id, OPENING_HOTEL.window.x, OPENING_HOTEL.window.z - progress * 6);
-      actor.position.y = SET.center.y + Math.sin(progress * Math.PI) * 1.1 - progress * .35;
-      actor.velocity = { x: 0, y: -.35 / OPENING_HOTEL.diveSeconds, z: -6 / OPENING_HOTEL.diveSeconds };
+      const broken = openingHotelGlassBroken(state), { ready } = OPENING_HOTEL.roomDive;
+      state.elapsed = Math.min(ready, state.elapsed + Math.max(0, Math.min(.1, dt)));
+      if (state.elapsed >= ready && dt > 0) {
+        state.phase = 'ladder_ready'; state.climbed = 0; delete state.diveFrom;
+        this.frame(actor);
+        this.onAdvance?.('Trinity 落到消防平台，伸手抓住横档。按 G 抓稳梯子，再往上爬。', actor, tick);
+        return;
+      }
+      const pose = openingHotelDivePose(state.elapsed, state.diveFrom);
+      const next = openingHotelDivePose(state.elapsed + .001, state.diveFrom);
+      actor.position = { x: SET.center.x + pose.x, y: SET.center.y + pose.y, z: SET.center.z + pose.z };
+      actor.rotation = pose.yaw;
+      actor.velocity = { x: (next.x - pose.x) * 1000, y: (next.y - pose.y) * 1000, z: (next.z - pose.z) * 1000 };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'dive', elapsed: state.elapsed } }, startedAt: state.lastTick, duration: 1, progress: 0 };
+      if (!broken && openingHotelGlassBroken(state)) this.sync();
     } else {
       const climbed = openingHotelClimbed(state);
       if (climbed === undefined) return;
@@ -203,15 +215,13 @@ export class OpeningHotelSystem {
     const state = this.state!;
     const dt = Math.min(.5, Math.max(0, tick - state.lastTick) * .5);
     state.lastTick = tick;
-    if (state.phase === 'breach' || state.phase === 'dive') {
+    if (state.phase === 'dive') return true;
+    if (state.phase === 'breach') {
       state.elapsed += dt; this.frame(actor);
-      if (state.phase === 'breach' && state.elapsed >= OPENING_HOTEL.breachSeconds) {
+      if (state.elapsed >= OPENING_HOTEL.breachSeconds) {
         state.phase = 'combat'; state.elapsed = 0; this.journey.fighting = true;
         actor.currentAction = null; this.spawn(actor.id, tick);
         this.journey.lastText = '四名警员冲进 303。领头警员伸手铐人：F 反击、X 躲开瞄准，击倒一人后按 G 夺枪。';
-      } else if (state.phase === 'dive' && state.elapsed >= OPENING_HOTEL.diveSeconds) {
-        state.phase = 'ladder_ready'; state.climbed = 0; this.frame(actor);
-        this.onAdvance?.('Trinity 撞开玻璃，落在消防梯下沿。现在要亲自爬上屋顶。', actor, tick);
       }
       return true;
     }

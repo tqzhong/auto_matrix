@@ -2,7 +2,7 @@ import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
 import { savedChateauAction, savedMountainAction } from './story/ChateauMountainPose.js';
 import { savedBookDoorAction } from './story/BookDoorSystem.js';
 import { savedPersephoneAction } from './story/PersephonePose.js';
-import { SERAPH_DOOR_ROLES, seraphDoorActive } from '@auto_matrix/shared';
+import { SERAPH_DOOR_ROLES, openingHotelGlassBroken, openingHotelLanded, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -274,6 +274,7 @@ const playerTimer = setInterval(() => {
   if (!acceptingPlayers) { lastPlayerStep = now; return; }
   const journey = sandbox.life.film.state;
   const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
+  const hotelGlass = openingHotelGlassBroken(journey?.openingHotel), hotelLanded = openingHotelLanded(journey?.openingHotel);
   const phoneImpact = journey?.openingPhone?.impactElapsed;
   const phoneRemaining = journey?.openingPhone?.remaining, phoneAnswer = journey?.openingPhone?.answer?.elapsed;
   const phoneHit = journey?.openingPhone?.hit?.elapsed;
@@ -293,7 +294,8 @@ const playerTimer = setInterval(() => {
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, simLoop.getTick());
     return;
   }
-  if (current?.scene !== scene || current?.step !== step || current?.actor !== actor) {
+  if (current?.scene !== scene || current?.step !== step || current?.actor !== actor
+    || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded)) {
     // Publish a story boundary with its poses; the next slow simulation tick may never run after a pause.
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
     return;

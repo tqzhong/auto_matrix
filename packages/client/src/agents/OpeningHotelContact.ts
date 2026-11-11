@@ -26,10 +26,10 @@ function plant(upper: THREE.Bone, lower: THREE.Bone, end: THREE.Bone, target: TH
   upper.updateWorldMatrix(false, true);
 }
 
-export function placeOpeningHotelClimber(rig: HeroRig, climbed: number): void {
+export function placeOpeningHotelClimber(rig: HeroRig, climbed: number, weight = 1): void {
   if (climbed >= ladderHeight) return;
   const { y, transfer } = openingHotelClimbPose(climbed);
-  const feet = 1 - smooth(climbed, 5.20, 5.62);
+  const feet = weight * (1 - smooth(climbed, 5.20, 5.62));
   const baseY = center.y - 1, railZ = center.z + ladderZ + rungs.offsetZ;
   const bone = (name: string) => rig.bones.get(name)!;
   // Sit the hips back from the steel while the upper body leans into the climb.
@@ -40,7 +40,7 @@ export function placeOpeningHotelClimber(rig: HeroRig, climbed: number): void {
 
   for (const [i, side] of ['R', 'L'].entries()) {
     const sign = i ? -1 : 1;
-    const hand = 1 - smooth(transfer, i ? .76 : .56, i ? 1 : .9);
+    const hand = weight * (1 - smooth(transfer, i ? .76 : .56, i ? 1 : .9));
     // Half a rung separates the two sides, so one hand and one boot stay planted.
     if (hand) {
       const rung = climbStep(y + 3.8, i * .5);

@@ -58,6 +58,11 @@ function setup() {
   return { world, manager, sandbox, players, command, advance, attacked, actor: () => players.getAgent('film-player')!, tick: () => tick };
 }
 
+function finishHotelDive(h: ReturnType<typeof setup>) {
+  for (let frame = 0; frame < 30 && h.sandbox.life.film.state?.openingHotel?.phase === 'dive'; frame++)
+    h.players.step(.1, true, h.tick());
+}
+
 function finishSecondOracleDeparture(h: ReturnType<typeof setup>) {
   const oracle = h.world.agents.get('oracle')!;
   assert.match(h.command('next'), /先知正在离开/);
@@ -726,7 +731,7 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
   h.command('act'); assert.equal(state.step, 3); assert.match(state.lastText, /Wells/);
   actor.position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[3]); h.advance(); assert.equal(state.step, 4);
   actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
-  h.command('act'); assert.equal(state.openingHotel?.phase, 'dive'); h.advance(4);
+  h.command('act'); assert.equal(state.openingHotel?.phase, 'dive'); finishHotelDive(h);
   assert.equal(state.openingHotel?.phase, 'ladder_ready'); assert.equal(state.step, 5);
   h.command('act'); assert.equal(state.openingHotel?.phase, 'climbing');
   let sequence = 0;
@@ -735,6 +740,31 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
     h.players.step(.1, true, h.tick());
   }
   assert.equal(state.openingHotel?.phase, 'done'); assert.ok(state.completed.includes('m1_room303'));
+});
+
+test('the 303 dive follows the player frame clock from the actual approach position', () => {
+  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!, actor = h.actor();
+  state.step = 4; state.openingHotel!.phase = 'corridor';
+  actor.position = filmPosition('film_heart_hotel', 1, -21.6); actor.rotation = Math.PI - .45;
+  const origin = { ...actor.position };
+  h.command('act'); assert.equal(state.openingHotel!.phase, 'dive');
+  assert.deepEqual(actor.position, origin, 'pressing G must not relocate Trinity');
+  h.players.step(.04, true, h.tick());
+  assert.equal(state.openingHotel!.elapsed, .04, 'the first movement frame advances the dive');
+  assert.ok(distance(actor.position, origin) < .25, 'the first frame leaves from the approach position');
+  assert.equal((actor.currentAction?.parameters.hotel303 as { elapsed: number } | undefined)?.elapsed, .04);
+  h.advance();
+  assert.equal(state.openingHotel!.elapsed, .04, 'the world tick must not advance a player performance a second time');
+  const frozen = structuredClone(actor.position);
+  h.players.step(.08, false, h.tick());
+  assert.equal(state.openingHotel!.elapsed, .04);
+  assert.deepEqual(actor.position, frozen);
+  for (let frame = 0; frame < 70 && state.openingHotel!.phase === 'dive'; frame++) h.players.step(.04, true, h.tick());
+  assert.equal(state.openingHotel!.phase, 'ladder_ready');
+  assert.equal(state.step, 5); assert.deepEqual(state.completed, []);
+  const ready = { ...actor.position };
+  h.command('act');
+  assert.equal(state.openingHotel!.phase, 'climbing'); assert.deepEqual(actor.position, ready);
 });
 
 test('paused 303 performances retain their complete action and pose through release, restore and re-entry', () => {
@@ -832,7 +862,10 @@ test('303 door blocks movement before the breach and the same player controls ca
   assert.ok(Math.hypot(actor.position.x - center.x, actor.position.z - center.z + 5) < 1.1, 'the open door should be walkable');
   const glass = filmPosition('film_heart_hotel', 0, -26.5);
   assert.equal(playerBlocked(glass, true, 1, h.sandbox.state.structures), true, 'the intact window bars early exit');
-  h.sandbox.life.film.state!.openingHotel!.phase = 'dive'; h.sandbox.life.film.openingHotel.sync();
+  const hotel = h.sandbox.life.film.state!.openingHotel!;
+  Object.assign(hotel, { phase: 'dive', elapsed: 0 }); h.sandbox.life.film.openingHotel.sync();
+  assert.equal(playerBlocked(glass, true, 1, h.sandbox.state.structures), true, 'starting the dive leaves the pane intact until contact');
+  hotel.elapsed = .5; h.sandbox.life.film.openingHotel.sync();
   assert.equal(playerBlocked(glass, true, 1, h.sandbox.state.structures), false, 'the broken window opens the exterior platform');
 });
 
@@ -1017,7 +1050,7 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
   walkTo(room.set, 0, 6); walkTo(room.set, 0, -18);
   h.advance(); assert.equal(state.step, 4);
   walkTo(room.set, OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
-  h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'ladder_ready');
+  h.command('act'); finishHotelDive(h); assert.equal(state.openingHotel?.phase, 'ladder_ready');
   h.command('act');
   for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) {
     h.players.receiveInput('film-player', { x: 0, z: 0, yaw: 0, jump: false, sprint: false, climb: 1, sequence: ++sequence });
@@ -4125,7 +4158,7 @@ test('the entire film route completes through interactions, driving and real com
           }
           actor.position = { ...state.openingHotel!.fallen! }; h.command('act'); h.advance();
           assert.equal(state.openingHotel?.disarmed, true);
-        } else if (index === 2 || index === 4) { h.command('act'); if (index === 4) h.advance(4); }
+        } else if (index === 2 || index === 4) { h.command('act'); if (index === 4) finishHotelDive(h); }
         else if (index === 5) {
           h.command('act');
           for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) {
