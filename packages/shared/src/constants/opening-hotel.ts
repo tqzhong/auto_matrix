@@ -1,6 +1,7 @@
 import type { AgentState, Vector3 } from '../types/agent.js';
 
 export const OPENING_HOTEL = {
+  trace: { ring: .28, pickup: 1.35, located: 11.85, room: 13.1, end: 15.3 },
   computer: { x: -8, z: 12 },
   phone: { x: -11, z: 18, width: 2.4, depth: 1.55, height: 2.85,
     stand: { x: -8.6, z: 18 }, receiver: { x: -10.07, y: 3.17, z: 18.15 }, radius: 1.4,
@@ -44,10 +45,30 @@ export interface OpeningHotelEncounter {
   phase: 'trace' | 'breach' | 'combat' | 'phone' | 'answering' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
-  reloadAt?: number; climbed?: number; breachYaw?: number;
+  reloadAt?: number; climbed?: number; breachYaw?: number; traceElapsed?: number;
   callFrom?: { position: Vector3; yaw: number };
   diveFrom?: { position: Vector3; yaw: number };
   pursuit?: OpeningPursuitCast;
+}
+
+export function openingHotelTraceTime(hotel?: OpeningHotelEncounter, actor?: AgentState): number | undefined {
+  if (hotel?.phase !== 'trace' || hotel.traceElapsed === undefined) return;
+  const elapsed = actor?.currentAction?.parameters.openingTrace;
+  return typeof elapsed === 'number' ? elapsed : hotel.traceElapsed;
+}
+
+const traceLines = [
+  { from: OPENING_HOTEL.trace.pickup, speaker: 'Trinity', text: '该准备的都就绪了吗？' },
+  { from: 3.15, speaker: 'Cypher', text: '今晚原本轮不到你盯他。' },
+  { from: 5.05, speaker: 'Cypher', text: '你在意他。你也相信他就是那个人？' },
+  { from: 7.65, speaker: 'Trinity', text: 'Morpheus 信。你有疑问就去问他。' },
+  { from: 9.6, speaker: 'Trinity', text: '等等。你确定这条线没被监听？' },
+  { from: OPENING_HOTEL.trace.located, speaker: 'Cypher', text: '我确定。' },
+] as const;
+
+export function openingHotelTraceLine(elapsed: number) {
+  if (elapsed >= OPENING_HOTEL.trace.room - .25) return;
+  for (let index = traceLines.length - 1; index >= 0; index--) if (elapsed >= traceLines[index].from) return traceLines[index];
 }
 
 export function openingHotelGlassTime(hotel: OpeningHotelEncounter): number {

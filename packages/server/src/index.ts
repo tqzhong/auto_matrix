@@ -2,7 +2,7 @@ import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
 import { savedChateauAction, savedMountainAction } from './story/ChateauMountainPose.js';
 import { savedBookDoorAction } from './story/BookDoorSystem.js';
 import { savedPersephoneAction } from './story/PersephonePose.js';
-import { SERAPH_DOOR_ROLES, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, savedSeatedApartmentAction, seraphDoorActive } from '@auto_matrix/shared';
+import { SERAPH_DOOR_ROLES, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, savedSeatedApartmentAction, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -278,6 +278,7 @@ const playerTimer = setInterval(() => {
   const hotelGlass = openingHotelGlassBroken(journey?.openingHotel), hotelLanded = openingHotelLanded(journey?.openingHotel);
   const hotelDoor = openingHotelDoorHit(journey?.openingHotel), hotelBreach = journey?.openingHotel?.breachYaw !== undefined;
   const hotelCall = journey?.openingHotel?.phase === 'answering' ? journey.openingHotel.elapsed : undefined, hotelText = journey?.lastText;
+  const hotelTrace = openingHotelTraceTime(journey?.openingHotel);
   const phoneImpact = journey?.openingPhone?.impactElapsed;
   const phoneRemaining = journey?.openingPhone?.remaining, phoneAnswer = journey?.openingPhone?.answer?.elapsed;
   const phoneHit = journey?.openingPhone?.hit?.elapsed;
@@ -301,6 +302,7 @@ const playerTimer = setInterval(() => {
   if (current?.scene !== scene || current?.step !== step || current?.actor !== actor
     || current?.scene === 'm1_wake_up' && !current.visiting && current.contact?.chairMotion === 'seated' && current.contact.phase !== contactPhase
     || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded
+      || hotelTrace !== undefined && (openingHotelTraceTime(current.openingHotel) === undefined || current.lastText !== hotelText)
       || openingHotelDoorHit(current.openingHotel) !== hotelDoor || (current.openingHotel?.breachYaw !== undefined) !== hotelBreach
       || openingHotelPhoneHeld(hotelAnswer) !== openingHotelPhoneHeld(hotelCall) || hotelAnswer !== undefined && current.lastText !== hotelText)) {
     // Publish a story boundary with its poses; the next slow simulation tick may never run after a pause.

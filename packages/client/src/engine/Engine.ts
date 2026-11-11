@@ -11,7 +11,7 @@ import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelAlleyGuard } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelAlleyGuard, openingHotelTraceTime } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
@@ -39,6 +39,7 @@ import { garageCarPose, garageRiderPose } from '@auto_matrix/shared';
 import { SUBWAY_POINT_SLOTS } from './MatrixEscapeRenderer.js';
 import { OFFICE_POINT_SLOTS } from './OfficeSetRenderer.js';
 import { PillReflection } from './PillReflection.js';
+import { OpeningTraceRenderer } from './OpeningTraceRenderer.js';
 import { graphicsPixelRatio, readGraphicsQuality, saveGraphicsQuality, type GraphicsQuality } from './GraphicsQuality.js';
 
 export interface FrameProfile {
@@ -103,6 +104,7 @@ export class Engine {
   onProfile?: (frame: FrameProfile) => void;
   private environment: THREE.WebGLRenderTarget;
   private pillReflection = new PillReflection();
+  private openingTrace = new OpeningTraceRenderer();
 
   constructor(container: HTMLElement) {
     this.scene.background = new THREE.Color(0x071410);
@@ -176,18 +178,20 @@ export class Engine {
     const meeting = this.sandbox?.neoLife?.journey;
     this.cameraController.setEnabled(!this.playerControls?.id);
     if (!this.playerControls?.id) this.cameraController.update(delta);
+    let openingTrace: number | undefined;
     if (this.playerControls?.id) {
       const state = this.agentRenderer.getAgentState(this.playerControls.id);
       const group = this.agentRenderer.getAgent(this.playerControls.id);
       if (state && group) {
         const phone = meeting?.scene === 'm1_phone_escape' && !meeting.visiting && meeting.actor === state.id ? meeting.openingPhone : undefined;
         this.playerControls.openingHotel = meeting?.scene === 'm1_room303' && !meeting.visiting && meeting.actor === state.id ? meeting.openingHotel : undefined;
+        openingTrace = openingHotelTraceTime(this.playerControls.openingHotel, state);
         const guard = this.playerControls.openingHotel ? this.agentRenderer.getAgentState('smith') : undefined;
         this.playerControls.hotelAlleyGuard = openingHotelAlleyGuard(guard) ? guard.position : undefined;
         this.playerControls.update(delta, state, group, this.running, phone?.phase === 'connected' || phone?.phase === 'done'
           || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed);
       }
-      this.agentRenderer.setPlayer(this.playerControls.id, this.playerControls.firstPerson);
+      this.agentRenderer.setPlayer(this.playerControls.id, this.playerControls.firstPerson && openingTrace === undefined);
       this.agentRenderer.setPlayerMotion(this.playerControls.motion);
     }
     measure?.('controls');
@@ -414,6 +418,7 @@ export class Engine {
         || (liveMatrixJourney?.scene === 'm1_ledge' && liveMatrixJourney.office?.climbed === undefined)))
         this.agentRenderer.cullOfficeStreetShadows(this.camera, this.lightingSystem.directionalLight, enclosedLiftFloor);
       this.postProcessing.render(filmSet?.id !== 'film_extraction_car');
+      this.openingTrace.render(this.renderer, openingTrace);
     } finally {
       this.voxelRenderer.restoreLiftExterior();
       this.agentRenderer.restoreOfficeStreetShadows();
@@ -863,6 +868,7 @@ export class Engine {
     this.stopOpeningVisit?.();
     window.removeEventListener('resize', this.resize);
     this.pillReflection.dispose();
+    this.openingTrace.dispose();
     this.filmSets.dispose(); this.voxelRenderer.dispose(); this.sandboxRenderer.dispose();
     this.agentRenderer.dispose(); this.cameraController.dispose();
     this.combatEffects.dispose();

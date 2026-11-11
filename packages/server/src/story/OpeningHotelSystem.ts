@@ -1,4 +1,4 @@
-import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, playerBlocked, rayBox,
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelBreachOfficer, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, openingHotelTraceLine, openingHotelTraceTime, playerBlocked, rayBox,
   type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -21,6 +21,10 @@ export class OpeningHotelSystem {
     this.restorePursuers(this.state?.pursuit);
     this.journey!.openingHotel = { phase: 'trace', elapsed: 0, lastTick: tick, attempts, disarmed: false, ammo: 0, shots: 0 };
     this.sync();
+  }
+  startTrace(actor: AgentState): void {
+    this.state!.traceElapsed = 0;
+    this.frame(actor);
   }
   clear(): void {
     this.restorePursuers(this.state?.pursuit ?? this.journey?.openingRoof?.pursuit);
@@ -132,7 +136,7 @@ export class OpeningHotelSystem {
   }
   begin(actor: AgentState, tick: number): string {
     this.ensure(tick);
-    if (this.state?.phase !== 'trace') return this.journey!.lastText;
+    if (this.state?.phase !== 'trace' || openingHotelTraceTime(this.state) !== undefined) return this.journey!.lastText;
     this.state.phase = 'breach'; this.state.elapsed = 0; this.state.lastTick = tick;
     this.state.breachYaw = actor.rotation;
     this.spawn(actor.id, tick, 0);
@@ -260,8 +264,9 @@ export class OpeningHotelSystem {
   }
   restoreFrame(actor: AgentState): boolean {
     const journey = this.journey, state = this.state;
-    if (journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id
-      || !state || !['breach', 'answering', 'dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return false;
+    if (journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id || !state) return false;
+    if (journey.step === 0 && openingHotelTraceTime(state) !== undefined) { this.frame(actor); return true; }
+    if (!['breach', 'answering', 'dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return false;
     const action = actor.currentAction, gesture = action?.parameters.hotel303 as { phase: string; elapsed: number } | undefined;
     const saved = state.phase === 'breach' || state.phase === 'dive' || state.phase === 'answering'
       ? gesture?.phase === (state.phase === 'breach' ? 'surrender' : state.phase === 'answering' ? 'answer' : 'dive') && gesture.elapsed === state.elapsed
@@ -276,7 +281,19 @@ export class OpeningHotelSystem {
   }
   frame(actor: AgentState, dt = 0, tick = this.state?.lastTick ?? 0): void {
     const state = this.state; if (!state) return;
-    if (state.phase === 'breach') {
+    if (this.journey!.step === 0 && state.phase === 'trace' && state.traceElapsed !== undefined) {
+      const trace = OPENING_HOTEL.trace, elapsed = state.traceElapsed + Math.max(0, Math.min(.1, dt));
+      actor.velocity = { x: 0, y: 0, z: 0 };
+      if (elapsed >= trace.end - 1e-6 && dt > 0) {
+        delete state.traceElapsed; actor.currentAction = null;
+        this.journey!.lastText = '线路已被定位。走到桌前按 G 挂断电话。'; return;
+      }
+      state.traceElapsed = elapsed;
+      if (actor.currentAction?.parameters.openingTrace !== elapsed)
+        actor.currentAction = { type: 'idle', parameters: { resolved: true, openingTrace: elapsed }, startedAt: this.journey!.enteredAt, duration: 1, progress: 0 };
+      const line = openingHotelTraceLine(elapsed);
+      this.journey!.lastText = line ? `${line.speaker} · ${line.text}` : elapsed >= trace.room ? 'Heart O’ the City Hotel · 303' : elapsed >= trace.located ? '线路已定位。' : '电话响起。';
+    } else if (state.phase === 'breach') {
       if (dt > 0 && state.breachYaw === undefined) {
         // A paused save from before staging can resume from its existing clock.
         state.breachYaw = actor.rotation;

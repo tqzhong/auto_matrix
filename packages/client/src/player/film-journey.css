@@ -6,6 +6,9 @@ body.film-mobil-scene .game-objective *,body.film-mobil-scene .game-event *,body
 body.film-mobil-scene .game-event { top:135px; }
 body.film-mobil-scene .player-ability,body.film-mobil-scene .game-map,body.film-mobil-scene .sandbox-hotbar { display:none; }
 .film-sequence.mobil-family { bottom:124px; padding:8px 16px; }
+.film-sequence.opening-trace { bottom:14px; width:auto; padding:4px 12px; border:0; background:#050b08ae; }
+.film-sequence.opening-trace p { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+body:has(.film-sequence.opening-trace:not(.hidden)) :is(.game-objective,.game-event,.game-vitals,.game-controls,.game-map,.game-interaction,.sandbox-hotbar,.sandbox-clock,.sandbox-nav,.sandbox-waypoint,.sandbox-interact,.play-tip,.mouse-hint) { display:none; }
 .film-sequence.mobil-reunion { bottom:86px; box-sizing:border-box; width:min(580px,calc(100vw - 36px)); padding:10px 18px; background:#132018ed; }
 .film-sequence.mobil-reunion p { margin:3px 0 6px; font-size:15px; line-height:1.6; }
 body:has(.film-sequence.mobil-reunion:not(.hidden)) :is(.game-objective,.game-event,.game-vitals,.game-controls,.game-interaction,.sandbox-hotbar,.sandbox-waypoint,.play-tip,.mouse-hint) { display:none; }

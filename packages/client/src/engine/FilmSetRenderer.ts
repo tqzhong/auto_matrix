@@ -51,7 +51,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingHotelPhoneHeld, openingRoofGlassBroken } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -2689,7 +2689,7 @@ export class FilmSetRenderer {
     }
     const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step] ?? (!journey?.visiting && journey && ['m2_seraph','m2_backdoors'].includes(journey.scene) && journey.step >= 2 ? scene?.steps[1] : undefined);
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
-    if (scene?.id === 'm1_room303' && ['breach', 'dive', 'answering'].includes(journey?.openingHotel?.phase ?? '')) this.marker.visible = false;
+    if (scene?.id === 'm1_room303' && (openingHotelTraceTime(journey?.openingHotel) !== undefined || ['breach', 'dive', 'answering'].includes(journey?.openingHotel?.phase ?? ''))) this.marker.visible = false;
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
     if (journey?.scene === 'm3_bane_questions' && baneInquiryLocked(journey.baneInquiry)) this.marker.visible = false;

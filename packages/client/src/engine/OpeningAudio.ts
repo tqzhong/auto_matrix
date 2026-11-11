@@ -1,5 +1,5 @@
 import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, openingBoothCrush,
-  openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
+  openingHotelDoorHit, openingHotelGlassBroken, openingHotelLanded, openingHotelTraceTime, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
@@ -11,6 +11,7 @@ export type OpeningAudioState = {
   tick: number;
   height: number;
   roofExit?: number;
+  trace?: number;
   lastRing?: number;
   truck?: { speed: number; level: number };
 };
@@ -83,7 +84,8 @@ export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioS
   const sameAttempt = old && (!hotel || hotel.attempts === old.openingHotel?.attempts)
     && (!roof || roof.attempts === old.openingRoof?.attempts) && (!phone || phone.attempts === old.openingPhone?.attempts);
   const exit = roof ? actor.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
-  const next: OpeningAudioState = { journey, tick, height: actor.position.y, roofExit: exit?.elapsed };
+  const trace = openingHotelTraceTime(hotel, actor);
+  const next: OpeningAudioState = { journey, tick, height: actor.position.y, roofExit: exit?.elapsed, trace };
   if (hotel?.phase === 'phone' || hotel?.phase === 'answering' && hotel.elapsed < OPENING_HOTEL.phone.grasp || phone?.phase === 'running'
     || phone?.phase === 'answering' && (phone.answer?.elapsed ?? 0) < OPENING_PHONE.graspSeconds) {
     next.lastRing = sameAttempt ? before?.lastRing : undefined;
@@ -96,6 +98,12 @@ export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioS
   if (phone) next.truck = truckEngine(phone, actor);
   if (roof?.phase === 'running' && previous?.journey.scene === 'm1_room303') audio.windowSound(true);
   if (!sameAttempt || !before || !old) return next;
+  if (trace !== undefined && before.trace !== undefined) {
+    const beats = OPENING_HOTEL.trace;
+    if (before.trace < beats.ring && trace >= beats.ring) audio.landlineSound('ring');
+    if (before.trace < beats.pickup && trace >= beats.pickup) audio.landlineSound('pickup');
+    if (before.trace < beats.located && trace >= beats.located) audio.phoneSound(true);
+  }
   if (hotel && old.openingHotel) hotelSounds(audio, old.openingHotel, hotel);
   if (roof && old.openingRoof) roofSounds(audio, before, next);
   if (phone && old.openingPhone) wellsSounds(audio, old.openingPhone, phone);

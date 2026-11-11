@@ -55,7 +55,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelTraceTime, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -149,6 +149,7 @@ export class PlayerControls {
   gunner = false;
   hammerPreparation?: HammerHandover;
   openingHotel?: OpeningHotelEncounter;
+  private openingTracePlaying = false;
   hotelAlleyGuard?: Vector3;
   climbing = false;
   performing = false;
@@ -205,6 +206,7 @@ export class PlayerControls {
     this.recoveryLook = undefined; this.recoveryRoll = 0;
     this.custodyBodies = undefined; this.motion.officeCustody = undefined;
     this.meetingYaw = undefined; this.arrestYaw = undefined; this.welcomeShot = undefined; this.performing = false; this.phoneExit = false;
+    this.openingTracePlaying = false;
     this.chairYaw = undefined;
     this.mirrorYaw = undefined; this.motion.mirrorEntry = undefined;
     this.bridgeCaught = undefined;
@@ -1169,6 +1171,7 @@ export class PlayerControls {
     this.motion.theOne = oneGesture;
     this.motion.reloaded = reloadedGesture;
     this.motion.catch = catchGesture;
+    const openingTrace = openingHotelTraceTime(this.openingHotel, state);
     const wasHotelBreach = this.motion.hotel303?.phase === 'surrender';
     this.motion.hotel303 = state.currentAction?.parameters.hotel303 as MotionInput['hotel303'];
     const hotelBreach = this.motion.hotel303?.phase === 'surrender';
@@ -1273,6 +1276,9 @@ export class PlayerControls {
     }
     this.motion.officeLadder = officeLadder;
     this.motion.climbing = dropRoot ? undefined : this.motion.wetwall?.hanging ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : shaftRole !== undefined && shaftRole === this.motion.tvExit?.role ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : this.climbing && !wall ? Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown')) : undefined;
+    if (openingTrace !== undefined) this.performing = true;
+    else if (this.openingTracePlaying) { this.performing = false; this.cameraReady = false; }
+    this.openingTracePlaying = openingTrace !== undefined;
     if (this.firing) this.requestShot();
     const now = performance.now();
     if (!running || !this.enabled || state.status !== 'alive') { this.attackQueuedUntil = 0; this.localJump = false; this.networkJump = false; this.impulse = undefined; }
@@ -1507,7 +1513,14 @@ export class PlayerControls {
     const spoon = this.motion.inspecting && group.getObjectByName('held-spoon');
     const hotel = FILM_SETS.film_heart_hotel;
     const hotelOutside = this.openingHotel?.phase === 'dive' && this.position.z < hotel.center.z + OPENING_HOTEL.window.paneZ - .3;
-    if (!this.firstPerson && hotelBreach) {
+    if (openingTrace !== undefined && openingTrace >= OPENING_HOTEL.trace.room - .45) {
+      const { center } = hotel;
+      const push = THREE.MathUtils.smoothstep(openingTrace, OPENING_HOTEL.trace.room, OPENING_HOTEL.trace.end);
+      this.camera.position.set(center.x - 2.5 - push * 1.1, center.y + 4.7 - push * .4, center.z + 25 - push * 2.2);
+      this.camera.lookAt(center.x - 4.35, center.y + 2.55, center.z + 8.5);
+      this.camera.fov = this.camera.aspect < .85 ? 76 : 50;
+      this.camera.near = .12; this.camera.updateProjectionMatrix();
+    } else if (!this.firstPerson && hotelBreach) {
       const { center } = hotel;
       const portrait = this.camera.aspect < .85;
       const x = this.position.x - center.x - OPENING_HOTEL.computer.x;

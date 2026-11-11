@@ -24,11 +24,12 @@ function fixture() {
   const engine = Object.assign(Object.create(Engine.prototype), { playerControls: { id: 'trinity' }, audio,
     sandboxRenderer: { sync() {} }, updateAtmosphere() {} });
   let lastTick = 20;
-  type Frame = { tick?: number; running?: boolean; owner?: string; y?: number; exit?: number };
-  function frame(journey: FilmJourney, { tick = lastTick, running = true, owner = 'trinity', y, exit }: Frame = {}) {
+  type Frame = { tick?: number; running?: boolean; owner?: string; y?: number; exit?: number; trace?: number };
+  function frame(journey: FilmJourney, { tick = lastTick, running = true, owner = 'trinity', y, exit, trace }: Frame = {}) {
     const scene = FILM_SCENE_BY_ID[journey.scene], entry = filmEntry(scene);
     const actor: AgentState = { ...trinity, currentLocation: scene.set, isInMatrix: true, position: { ...entry, y: y ?? entry.y },
-      currentAction: exit === undefined ? null : { type: 'move_to', parameters: { roofExit: { elapsed: exit } }, startedAt: tick, duration: 1, progress: 0 } };
+      currentAction: trace !== undefined ? { type: 'idle', parameters: { openingTrace: trace }, startedAt: tick, duration: 1, progress: 0 }
+        : exit === undefined ? null : { type: 'move_to', parameters: { roofExit: { elapsed: exit } }, startedAt: tick, duration: 1, progress: 0 } };
     lastTick = tick; engine.running = running; engine.tick = tick; engine.playerControls.id = owner;
     Engine.prototype.setSandbox.call(engine, { ...sandbox.state, neoLife: { ...sandbox.state.neoLife!, journey } }, { trinity: actor, neo });
     return sounds.splice(0);
@@ -40,6 +41,19 @@ function journey(scene: string): FilmJourney {
   return { version: 1, scene, actor: 'trinity', step: 0, completed: [], enteredAt: 0,
     reflections: {}, lastText: '', checkpoint: filmEntry(FILM_SCENE_BY_ID[scene]) };
 }
+
+test('the 303 trace phone uses the fast saved clock and skips cues already past on a cold load', () => {
+  const h = fixture(), j = journey('m1_room303');
+  const trace = { ...j, openingHotel: { phase: 'trace' as const, traceElapsed: 0, elapsed: 0, lastTick: 20, attempts: 0, disarmed: false, ammo: 0, shots: 0 } };
+  assert.deepEqual(h.frame(trace, { trace: .2 }), []);
+  assert.deepEqual(h.frame(trace, { trace: .3 }), ['ring']);
+  assert.deepEqual(h.frame(trace, { trace: 1.2, running: false }), []);
+  assert.deepEqual(h.frame(trace, { trace: 1.35 }), ['pickup']);
+  assert.deepEqual(h.frame(trace, { trace: 1.8 }), []);
+  const cold = fixture(); assert.deepEqual(cold.frame(trace, { trace: 8 }), []);
+  assert.deepEqual(cold.frame(trace, { trace: 11.95 }), ['line-cut']);
+  assert.deepEqual(cold.frame(trace, { trace: 12.6 }), []);
+});
 
 test('303 sounds follow the line, door, glass and climb through pauses and retries', () => {
   const h = fixture(), j = journey('m1_room303');

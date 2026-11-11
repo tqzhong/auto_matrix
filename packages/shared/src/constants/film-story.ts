@@ -1,7 +1,7 @@
 import { seraphDoorZ } from './seraph-door.js';
 import { BOOK_DOOR } from './book-door.js';
 import { OPENING_PHONE } from './opening-escape.js';
-import { OPENING_HOTEL } from './opening-hotel.js';
+import { OPENING_HOTEL, openingHotelTraceTime } from './opening-hotel.js';
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
 import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
@@ -767,7 +767,8 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
-  if (scene.id === 'm1_room303' && !journey?.visiting && journey?.openingHotel?.phase === 'answering') return false;
+  if (scene.id === 'm1_room303' && !journey?.visiting && (journey?.openingHotel?.phase === 'answering'
+    || journey?.step === 0 && openingHotelTraceTime(journey.openingHotel) !== undefined)) return false;
   if (scene.id === 'm1_phone_escape' && !journey?.visiting && journey?.openingPhone && journey.openingPhone.phase !== 'running') return false;
   if (scene.id === 'm3_maggie_discovery') return Boolean(journey?.maggieDiscovery && ['call', 'ready', 'empty', 'report', 'return'].includes(journey.maggieDiscovery.phase)
     && !journey.maggieDiscovery.paused && !journey.maggieDiscovery.unavailable && filmStepNear(scene, step, position, matrix, journey));

@@ -58,6 +58,11 @@ function setup() {
   return { world, manager, sandbox, players, command, advance, attacked, actor: () => players.getAgent('film-player')!, tick: () => tick };
 }
 
+function finishHotelTrace(h: ReturnType<typeof setup>) {
+  for (let frame = 0; frame < 160 && h.sandbox.life.film.state?.openingHotel?.traceElapsed !== undefined; frame++)
+    h.players.step(.1, true, h.tick());
+}
+
 function finishHotelBreach(h: ReturnType<typeof setup>) {
   for (let frame = 0; frame < 30 && h.sandbox.life.film.state?.openingHotel?.phase === 'breach'; frame++)
     h.players.step(.1, true, h.tick());
@@ -676,7 +681,7 @@ test('Hammer patient beds block ordinary walking but leave all three clinical ob
 });
 
 test('remote interactions, premature next and unvisited scene jumps cannot advance the plot', () => {
-  const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
+  const h = setup(); h.command('start'); finishHotelTrace(h); const state = h.sandbox.state.neoLife!.journey!;
   assert.match(h.command('act'), /走近/); assert.equal(state.started, undefined);
   assert.match(h.command('next'), /先完成/); assert.equal(state.scene, FILM_SCENES[0].id);
   assert.match(h.command('visit:m3_dawn'), /完成这个场景/); assert.equal(state.visiting, undefined);
@@ -706,8 +711,37 @@ test('saved scene, active fight, role and completed history restore without rest
   assert.equal(h.sandbox.life.film.state!.scene, 'm1_room303'); assert.equal(h.sandbox.state.threats.length, 4);
 });
 
-test('303 breach stages the four officers through the doorway before handing back control', () => {
+test('a new 303 opening preserves the trace call and then waits for the player to hang up', () => {
   const h = setup(); h.command('start');
+  const state = h.sandbox.life.film.state!, actor = h.actor(), origin = { ...actor.position };
+  assert.equal(state.openingHotel?.traceElapsed, 0);
+  assert.equal(actor.currentAction?.parameters.openingTrace, 0);
+  h.players.receiveInput('film-player', { x: 1, z: 1, yaw: 0, sprint: true, sequence: 1 });
+  for (let i = 0; i < 58; i++) h.players.step(.1, true, h.tick());
+  assert.deepEqual(actor.position, origin);
+  assert.equal(state.step, 0);
+  assert.ok(state.openingHotel!.traceElapsed! > 5);
+  assert.equal(h.command('act'), state.lastText);
+  assert.equal(state.openingHotel!.phase, 'trace');
+  const saved = JSON.parse(JSON.stringify(h.sandbox.state)), action = structuredClone(actor.currentAction);
+  h.players.step(.1, false, 17); h.players.release('film-player', 17);
+  h.sandbox.restore(structuredClone(saved));
+  h.players.possess('film-player', 'trinity', 17);
+  assert.deepEqual(h.sandbox.life.film.state, saved.neoLife!.journey);
+  assert.deepEqual(actor.currentAction, action);
+  finishHotelTrace(h);
+  const resumed = h.sandbox.life.film.state!;
+  assert.equal(resumed.openingHotel?.traceElapsed, undefined);
+  assert.equal(resumed.openingHotel?.phase, 'trace');
+  assert.equal(resumed.step, 0);
+  assert.equal(h.sandbox.state.threats.length, 0);
+  assert.deepEqual(actor.position, origin);
+  actor.position = filmStepPosition(FILM_SCENE_BY_ID.m1_room303, FILM_SCENE_BY_ID.m1_room303.steps[0]);
+  h.command('act'); assert.equal(resumed.openingHotel?.phase, 'breach');
+});
+
+test('303 breach stages the four officers through the doorway before handing back control', () => {
+  const h = setup(); h.command('start'); finishHotelTrace(h);
   const actor = h.actor(), room = FILM_SETS.film_heart_hotel;
   const hotel = h.sandbox.life.film.openingHotel, threshold = room.center.z + OPENING_HOTEL.doorZ;
   actor.position = filmPosition(room.id, OPENING_HOTEL.computer.x, OPENING_HOTEL.computer.z);
@@ -750,7 +784,7 @@ test('303 breach stages the four officers through the doorway before handing bac
 });
 
 test('303 breach saves its timing, then Trinity disarms, shoots and reaches the fire escape in order', () => {
-  const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
+  const h = setup(); h.command('start'); finishHotelTrace(h); let state = h.sandbox.life.film.state!;
   const actor = h.actor(); const hotel = h.sandbox.life.film.openingHotel;
   assert.equal(state.openingHotel?.phase, 'trace');
   assert.ok(h.sandbox.state.structures.some(structure => structure.id === 'film:hotel303:3'));
@@ -965,7 +999,7 @@ test('303 fire escape requires upward input and preserves climbing progress thro
 });
 
 test('303 combat can fail and retry, while disconnect freezes the breached-door sequence', () => {
-  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const h = setup(); h.command('start'); finishHotelTrace(h); const state = h.sandbox.life.film.state!;
   h.actor().position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[0]);
   h.command('act'); h.players.step(.1, true, h.tick()); const elapsed = state.openingHotel!.elapsed;
   h.players.release('film-player', h.tick()); h.advance(20);
@@ -981,7 +1015,7 @@ test('303 combat can fail and retry, while disconnect freezes the breached-door 
 });
 
 test('303 door blocks movement before the breach and the same player controls can cross afterward', () => {
-  const h = setup(); h.command('start'); const center = FILM_SETS.film_heart_hotel.center;
+  const h = setup(); h.command('start'); finishHotelTrace(h); const center = FILM_SETS.film_heart_hotel.center;
   const actor = h.actor(); let sequence = 0;
   const walk = (x: number, z: number, frames = 100) => {
     const target = filmPosition('film_heart_hotel', x, z);
@@ -1149,7 +1183,7 @@ test('Brown leaps across the roof gap instead of running through empty air, and 
 });
 
 test('Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut', () => {
-  const h = setup(); h.command('start'); const state = h.sandbox.life.film.state!;
+  const h = setup(); h.command('start'); finishHotelTrace(h); const state = h.sandbox.life.film.state!;
   const room = FILM_SCENE_BY_ID.m1_room303; const roofs = FILM_SCENE_BY_ID.m1_roofs; const phone = FILM_SCENE_BY_ID.m1_phone_escape;
   let sequence = 0; let jumped = false;
   const move = (x: number, z: number, jump = false) => {
@@ -3856,7 +3890,7 @@ test('Neo holds Smith copies, opens the portal, receives the wounded Keymaker’
 });
 
 test('the entire film route completes through interactions, driving and real combat, then starts a recorded new life', t => {
-  const h = setup(); h.command('start'); const state = h.sandbox.state.neoLife!.journey!;
+  const h = setup(); h.command('start'); finishHotelTrace(h); const state = h.sandbox.state.neoLife!.journey!;
   let sequence = 0;
   for (const scene of FILM_SCENES) {
     assert.equal(state.scene, scene.id); assert.equal(h.actor().id, scene.actor);
