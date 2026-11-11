@@ -19,6 +19,7 @@ function fixture() {
   const compiled = new Map<THREE.Object3D, { isReady(): boolean; getUniforms(): void }>();
   const renderer = {
     properties: {}, info: { programs: [] as { isReady(): boolean; getUniforms(): void }[] },
+    debug: { checkShaderErrors: true }, getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
     extensions: { has: () => supported }, getRenderTarget: () => target,
     setRenderTarget: (value: THREE.WebGLRenderTarget | null) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, view: THREE.Scene) {
@@ -31,7 +32,9 @@ function fixture() {
       if (fail) throw new Error('compile failed');
       work.push('compile:' + batch[0].name);
       if (!compiled.has(batch[0])) {
-        const program = { isReady: () => ready, getUniforms: () => { work.push('bindings:' + batch[0].name); } };
+        const program = { program: {}, isReady: () => ready, getUniforms: () => {
+          assert.equal(renderer.debug.checkShaderErrors, false); work.push('bindings:' + batch[0].name);
+        } };
         compiled.set(batch[0], program); renderer.info.programs.push(program);
       }
     },
@@ -41,6 +44,7 @@ function fixture() {
   }).prepareNormals?.(renderer as unknown as THREE.WebGLRenderer, actor);
   const check = () => {
     assert.equal(target, previousTarget); assert.equal(pass.scene, scene); assert.equal(scene.overrideMaterial, null);
+    assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(light.visible, true); assert.equal(light.layers.mask, 1);
     for (const [mesh, original] of originals) assert.equal(mesh.material, original);
     assert.equal(head.parent, actor); assert.equal(street.parent, scene);

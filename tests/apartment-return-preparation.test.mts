@@ -33,8 +33,10 @@ function fixture() {
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const renderer = {
     properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    autoClear: true, sortObjects: true, render() { work.push('buffers'); },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
     getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    getActiveCubeFace: () => 0, getActiveMipmapLevel: () => 0,
     compile(subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) {
       assert.ok(lights !== scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog);
       assert.ok(eye !== camera && eye.position.distanceTo(home.position) < 20); assert.equal(target?.width, 1);
@@ -134,6 +136,43 @@ test('a successful Wells connection prepares the apartment and the guests before
   assert.ok(normals?.includes(h.street) && normals.includes(model) && normals.includes(h.shirt) && normals.includes(h.root.children[0] as THREE.Mesh));
   h.journey.scene = 'm1_wake_up';
   h.prepare(subjects); assert.equal(h.work.length, count); assert.equal(h.apartment.returnNormalMeshes, undefined);
+});
+
+test('Wells stages the original room, outfit and street buffers without drawing or changing the live scene', t => {
+  const h = fixture(), { renderer, root, street, shirt, journey } = h;
+  const shirtGeometry = shirt.geometry.clone(), shirtMaterial = shirt.material;
+  const room = root.children[0] as THREE.Mesh, roomMaterial = room.material, streetMaterial = street.material;
+  const decoration = new THREE.Object3D(); shirt.add(decoration); shirt.geometry = shirtGeometry;
+  t.after(() => { h.dispose(); shirtGeometry.dispose(); });
+  const buffers = new Set<THREE.BufferGeometry>(), instances = new Set<THREE.InstancedMesh>();
+  Object.assign(renderer, {
+    render(view: THREE.Scene) {
+      assert.notEqual(view, h.scene);
+      assert.equal(renderer.getRenderTarget()?.width, 1);
+      assert.equal(renderer.autoClear, false); assert.equal(renderer.sortObjects, false);
+      assert.ok(view.children.length > 0 && view.children.length <= 4);
+      for (const object of view.children) {
+        assert.ok(object instanceof THREE.Mesh);
+        assert.equal(object.frustumCulled, false); assert.equal(object.visible, true);
+        assert.equal((object.material as THREE.Material).visible, false);
+        assert.deepEqual(object.children, []);
+        buffers.add(object.geometry);
+        if (object instanceof THREE.InstancedMesh) instances.add(object);
+      }
+      h.work.push('buffers');
+    },
+  });
+  h.ready(); h.drain(); assert.equal(buffers.size, 0, 'blue-pill return keeps its existing preparation');
+  journey.scene = 'm1_phone_escape'; journey.openingPhone = { phase: 'connected', remaining: 7, lastTick: 0, attempts: 0 };
+  h.drain();
+  assert.ok(buffers.has(room.geometry) && buffers.has(shirtGeometry), 'the actual room and arriving outfit need resident buffers');
+  assert.ok(instances.has(street), 'the original street batch owns the instance data');
+  assert.equal(room.material, roomMaterial); assert.equal(street.material, streetMaterial); assert.equal(shirt.material, shirtMaterial);
+  assert.equal(room.frustumCulled, true); assert.equal(street.frustumCulled, true); assert.equal(shirt.frustumCulled, true);
+  assert.equal(room.parent, root); assert.equal(street.parent, h.city); assert.equal(shirt.children[0], decoration);
+  assert.equal(renderer.autoClear, true); assert.equal(renderer.sortObjects, true);
+  const count = h.work.length;
+  journey.scene = 'm1_wake_up'; assert.equal(h.prepare(), false); assert.equal(h.work.length, count);
 });
 
 test('Wells prepares large apartment textures in strips and releases a partial upload on early entry', t => {
