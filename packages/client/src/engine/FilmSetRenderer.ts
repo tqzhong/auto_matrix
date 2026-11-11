@@ -56,7 +56,7 @@ import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
 import { OFFICE_POINT_SLOTS, OfficeSetRenderer } from './OfficeSetRenderer.js';
 import { LightCulling } from './LightCulling.js';
-import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
+import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { FreewaySetRenderer } from './FreewaySetRenderer.js';
 import { newFreewayPickup } from '@auto_matrix/shared';
@@ -180,6 +180,12 @@ type OpeningPreparation = {
   lighting?: LightCulling;
   gpu?: THREE.WebGLRenderer['properties'];
   eye: THREE.Camera;
+  roofFirstColors?: ColorSubject[];
+  roofMapsReady?: boolean;
+  roofShadows?: {
+    materials: Set<THREE.MeshDepthMaterial>;
+    layouts: { lighting: LightCulling; eye: THREE.Camera; meshes: THREE.Mesh[] }[];
+  };
 };
 const OFFICE_STREET_COLOR_MESHES = ['Red_dress_satin', 'Red_dress_hair', 'Red_dress_eyes'] as const;
 const OFFICE_DESCENT_ACTORS = [
@@ -1157,7 +1163,7 @@ export class FilmSetRenderer {
     this.prepareColorFrame(renderer, camera, colors);
   }
   prepareOpening(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
-    actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh): void {
+    actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh): void {
     let scene: OpeningPreparation['scene'] | undefined;
     if (journey && !journey.visiting && this.currentScene === journey.scene) {
       if (this.current?.id === 'film_heart_hotel' && journey.scene === 'm1_room303'
@@ -1183,9 +1189,13 @@ export class FilmSetRenderer {
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (prepared.gpu !== renderer.properties) {
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
+      for (const material of prepared.roofShadows?.materials ?? []) {
+        material.dispose(); prepared.room.materials.delete(material);
+      }
+      prepared.roofShadows = undefined; prepared.roofMapsReady = undefined; prepared.roofFirstColors = undefined;
     }
     if (!prepared.colors) {
-      if ([...prepared.room.textures].some(texture => !texture.image)) return;
+      if (scene !== 'm1_roofs' && [...prepared.room.textures].some(texture => !texture.image)) return;
       const colors = this.colorPreparation(prepared.room.root, [], { includeBasic: true });
       const goal = filmStepPosition(next, next.steps[0]);
       for (const light of colors.scene.children) if (light instanceof THREE.PointLight) {
@@ -1194,6 +1204,12 @@ export class FilmSetRenderer {
       colors.meshes.push(this.marker);
       if (shadow) colors.meshes.push(shadow);
       if (prepared.room.openingCord) colors.meshes.push(prepared.room.openingCord);
+      if (scene === 'm1_roofs' && prepared.room.openingRoofGlass) {
+        const first = new Set<ColorSubject>(distantNeo ? [distantNeo] : []);
+        for (const pane of this.colorMeshes([prepared.room.openingRoofGlass], true)) first.add(pane);
+        first.add(this.marker);
+        colors.meshes = [...first, ...colors.meshes.filter(mesh => !first.has(mesh))];
+      }
       prepared.lighting = new LightCulling(colors.scene);
       prepared.lighting.stablePointSlots = prepared.room.stablePointSlots;
       prepared.lighting.minimumPointSlots = prepared.room.minimumPointSlots;
@@ -1209,9 +1225,54 @@ export class FilmSetRenderer {
         if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial && !object.userData.reloadedHidden) meshes.push(object);
       });
       if (!meshes.length) continue;
-      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+      colors.actors.add(group);
+      if (scene === 'm1_roofs') {
+        const hair = id === next.actor ? meshes.find(mesh => mesh.name === 'short04') : undefined;
+        if (hair) colors.meshes.unshift(hair);
+        const body = id === next.actor ? meshes.filter(mesh => ['Anatomical_head_and_hands', 'Fitted_leather_jacket', 'shoes01'].includes(mesh.name)
+          || mesh.name === 'high-poly' && mesh.material.name === 'Eyes') : [];
+        colors.meshes.splice(4, 0, ...body);
+        colors.meshes.push(...meshes.filter(mesh => mesh !== hair && !body.includes(mesh)));
+      } else colors.meshes.unshift(...meshes);
+      this.queueColorTextures(colors.textures, meshes);
     }
-    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+    if (scene === 'm1_roofs' && (prepared.roofFirstColors?.length ?? 0) < 8 && colors.meshes.length) {
+      // Link the entry's expensive color programs while the uploads are still pending.
+      (prepared.roofFirstColors ??= []).push(...colors.meshes.slice(0, 4));
+      this.linkColorBatch(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+      return;
+    }
+    if (scene === 'm1_roofs' && !prepared.roofMapsReady && [...prepared.room.textures].every(texture => texture.image)) {
+      // The roof PBR materials attach their maps only after all three images decode.
+      prepared.roofMapsReady = true;
+      const mapped = this.colorMeshes([prepared.room.root], true).filter(mesh => mesh.material.map);
+      colors.meshes = [...new Set([...mapped, ...colors.meshes])];
+      this.queueColorTextures(colors.textures, mapped);
+    }
+    if (this.prepareColorTexture(renderer, colors.textures)) return;
+    if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+      && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
+    this.prepareColorFrame(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+  }
+  private prepareOpeningRoofShadows(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: OpeningPreparation,
+    colors: CastColorPreparation, hotel: LightCulling, roof: LightCulling): boolean {
+    if (!prepared.roofShadows) {
+      const materials = new Set<THREE.MeshDepthMaterial>();
+      const meshes = shadowCasterProxies([...(prepared.roofFirstColors ?? []), ...colors.meshes], materials);
+      for (const material of materials) prepared.room.materials.add(material);
+      // The first shadow draw uses the previous pass's light counts.
+      prepared.roofShadows = { materials, layouts: meshes.length ? [
+        { lighting: hotel, eye: camera, meshes: meshes.slice() }, { lighting: roof, eye: prepared.eye, meshes },
+      ] : [] };
+    }
+    const layouts = prepared.roofShadows.layouts, layout = layouts[0];
+    if (!layout) return false;
+    const programs = renderer.info.programs, start = programs?.length ?? 0;
+    this.compileColorBatch(renderer, layout.meshes.splice(0, 4),
+      subject => layout.lighting.compileSubject(renderer, layout.eye, subject, undefined, undefined, 'depth'));
+    if (programs) colors.programs.push(...programs.slice(start) as ColorProgram[]);
+    if (!layout.meshes.length) layouts.shift();
+    return true;
   }
   private colorPreparation(root: THREE.Group, actors: THREE.Group[],
     { textureActors = [], includeBasic = false, shadowSun }: { textureActors?: THREE.Group[]; includeBasic?: boolean; shadowSun?: THREE.DirectionalLight } = {}): ColorPreparation {
@@ -1248,16 +1309,19 @@ export class FilmSetRenderer {
       else program.getUniforms();
       return;
     }
-    const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
-    if (batch.length) {
-      this.compileColorBatch(renderer, batch, subject => {
-        if (lighting) lighting.compileSubject(renderer, camera, subject, undefined, undefined, colorState);
-        else renderer.compile(subject, camera, prepared.scene);
-      });
-      if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
-      return;
-    }
-    this.prepareColorTexture(renderer, prepared.textures);
+    if (!this.linkColorBatch(renderer, camera, prepared, lighting, colorState)) this.prepareColorTexture(renderer, prepared.textures);
+  }
+  private linkColorBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
+    colorState: 'live' | 'isolated'): boolean {
+    const batch = prepared.meshes.splice(0, 4);
+    if (!batch.length) return false;
+    const programs = renderer.info.programs, start = programs?.length ?? 0;
+    this.compileColorBatch(renderer, batch, subject => {
+      if (lighting) lighting.compileSubject(renderer, camera, subject, undefined, undefined, colorState);
+      else renderer.compile(subject, camera, prepared.scene);
+    });
+    if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
+    return true;
   }
   private prepareColorTexture(renderer: THREE.WebGLRenderer, textures: Set<THREE.Texture>): boolean {
     for (const texture of textures) {

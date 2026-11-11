@@ -6,9 +6,8 @@ import { apartmentDisc } from '../agents/ApartmentDisc.js';
 import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHandset.js';
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
-import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
+import { cacheReadyProgramLocations, shadowCasterProxies } from './PrepareShaderProgram.js';
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
-import { usesOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
 type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
@@ -342,7 +341,7 @@ export class ApartmentSetRenderer {
       for (const map of maps) if (map) textures.add(map);
     }
     const queue = [...meshes], pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
-    const casters = shadows ? this.returnShadowCasters(meshes, shadows.materials) : [];
+    const casters = shadows ? shadowCasterProxies(meshes, shadows.materials) : [];
     const depthQueue = shadows && casters.length ? [
       { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },
     ] : [];
@@ -387,35 +386,6 @@ export class ApartmentSetRenderer {
         yield;
       }
     } finally { culling.dispose(); target.dispose(); }
-  }
-  private returnShadowCasters(meshes: Iterable<THREE.Mesh | THREE.Line>, materials: Set<THREE.MeshDepthMaterial>): THREE.Mesh[] {
-    const variants = new Map<string, THREE.Mesh>();
-    for (const mesh of meshes) {
-      if (!(mesh instanceof THREE.Mesh) || !mesh.castShadow || mesh.customDepthMaterial || mesh instanceof THREE.BatchedMesh) continue;
-      const surfaces = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      for (const surface of surfaces) {
-        if (!(surface instanceof THREE.MeshStandardMaterial || surface instanceof THREE.MeshBasicMaterial) || !surface.visible
-          || surface.clipShadows && surface.clippingPlanes?.length || 'displacementMap' in surface && surface.displacementMap) continue;
-        const side = surface.shadowSide ?? (surface.side === THREE.FrontSide ? THREE.BackSide : surface.side === THREE.BackSide ? THREE.FrontSide : THREE.DoubleSide);
-        const omitMaps = usesOpaqueShadowDepth(mesh) && surface.alphaTest === 0;
-        const map = omitMaps ? null : surface.map, alphaMap = omitMaps ? null : surface.alphaMap;
-        const skinned = mesh instanceof THREE.SkinnedMesh, instanced = mesh instanceof THREE.InstancedMesh;
-        const morph = mesh.geometry.morphAttributes;
-        const key = [side, map?.channel ?? -1, alphaMap?.channel ?? -1, surface.alphaTest > 0, skinned, instanced,
-          instanced && Boolean(mesh.instanceColor), instanced && Boolean(mesh.morphTexture),
-          morph.position?.length ?? -1, morph.normal?.length ?? -1, morph.color?.length ?? -1].join(',');
-        if (variants.has(key)) continue;
-        const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side, map, alphaMap, alphaTest: surface.alphaTest });
-        prepareSkinnedMaterial(depth); materials.add(depth);
-        let caster: THREE.Mesh;
-        if (instanced) {
-          const proxy = new THREE.InstancedMesh(mesh.geometry, depth, 0);
-          proxy.instanceColor = mesh.instanceColor; proxy.morphTexture = mesh.morphTexture; caster = proxy;
-        } else caster = skinned ? new THREE.SkinnedMesh(mesh.geometry, depth) : new THREE.Mesh(mesh.geometry, depth);
-        variants.set(key, caster);
-      }
-    }
-    return [...variants.values()];
   }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material);

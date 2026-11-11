@@ -8,13 +8,19 @@ import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape') {
+function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', deferRoofMaps = false) {
   const roofs = destination === 'm1_roofs', next = FILM_SCENE_BY_ID[destination];
   const landmark = roofs ? 'opening-roof-window-glass' : 'wells-asphalt';
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
+  let defer = false;
+  const pendingImages: (() => void)[] = [];
   t.mock.method(THREE.TextureLoader.prototype, 'load', (_url: string, load?: (texture: THREE.Texture) => void) => {
-    const texture = new THREE.Texture({ width: 256, height: 256, complete: true }); texture.needsUpdate = true; load?.(texture); return texture;
+    const texture = new THREE.Texture();
+    const ready = () => { texture.image = { width: 256, height: 256, complete: true }; texture.needsUpdate = true; load?.(texture); };
+    if (defer) pendingImages.push(ready);
+    else ready();
+    return texture;
   });
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
   scene.environment = new THREE.Texture(); scene.fog = new THREE.FogExp2();
@@ -30,39 +36,57 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape') {
   };
   const sandbox = { neoLife: { journey }, structures: [] } as unknown as SandboxState;
   film.update(player, sandbox, 0);
+  defer = deferRoofMaps;
   const hero = new THREE.Group(), texture = new THREE.Texture({ width: 2048, height: 2048, complete: true });
   texture.needsUpdate = true; hero.visible = false; scene.add(hero);
   const material = new THREE.MeshStandardMaterial({ map: texture }), geometry = new THREE.BoxGeometry();
-  const skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; hero.add(skin);
+  const skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; skin.castShadow = true; hero.add(skin);
   const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true }), shadow = new THREE.Mesh(geometry, shadowMaterial);
   shadow.visible = false; scene.add(shadow);
+  const lighting = new LightCulling(scene);
+  lighting.minimumPointSlots = film.minimumPointSlots;
+  lighting.stablePointSlots = film.stablePointSlots;
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const work: string[] = [], meshes = new Set<THREE.Object3D>(), roots = new Set<THREE.Object3D>();
+  const depths = new Map<number, THREE.Mesh[]>(), mapped = new Set<THREE.Mesh>();
   let target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
+    shadowMap: { enabled: roofs, type: THREE.PCFSoftShadowMap },
     getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }), getRenderTarget: () => target,
     setRenderTarget: (value: typeof target) => { target = value; },
     compile(subject: THREE.Object3D, eye: THREE.Camera, colors: THREE.Scene) {
-      assert.notEqual(colors, scene); assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
+      assert.notEqual(colors, scene);
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+      assert.ok(batch.length > 0 && batch.length <= 4); assert.equal(target?.width, 1);
+      const lights: THREE.Light[] = []; colors.traverseVisible(object => { if (object instanceof THREE.Light) lights.push(object); });
+      const points = lights.filter(light => light instanceof THREE.PointLight).length;
+      programs.push({ program: {}, isReady: () => true, getUniforms: () => { work.push('bindings'); } }); work.push('compile');
+      if (batch.every(mesh => mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial)) {
+        assert.equal(colors.environment, null); assert.equal(colors.fog, null);
+        depths.set(points, [...(depths.get(points) ?? []), ...batch as THREE.Mesh[]]);
+        return;
+      }
+      assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
       assert.ok(eye.position.distanceTo(new THREE.Vector3().copy(filmEntry(next))) < 20);
       let root: THREE.Object3D | undefined;
       colors.traverseVisible(object => { if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(landmark)) root = object; });
       assert.ok(root); roots.add(root);
       assert.equal(scene.getObjectByName(landmark), undefined, 'the next scene stays detached');
-      const lights: THREE.Light[] = []; colors.traverseVisible(object => { if (object instanceof THREE.Light) lights.push(object); });
-      assert.equal(lights.filter(light => light instanceof THREE.PointLight).length, roofs ? 4 : 7);
+      assert.equal(points, roofs ? 4 : 7);
       assert.equal(lights.filter(light => light instanceof THREE.SpotLight).length, roofs ? 0 : 3);
       assert.equal(lights.filter(light => light instanceof THREE.DirectionalLight && light.castShadow).length, 1);
-      let size = 0; subject.traverse(object => { meshes.add(object); size++; }); assert.ok(size > 0 && size <= 4);
-      assert.equal(target?.width, 1);
-      programs.push({ program: {}, isReady: () => true, getUniforms: () => { work.push('bindings'); } }); work.push('compile');
+      for (const object of batch) {
+        meshes.add(object);
+        if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshStandardMaterial
+          && object.material.normalMap?.image && object.material.roughnessMap?.image) mapped.add(object);
+      }
     },
     initTexture(map: THREE.Texture) { uploaded.set(map, map.version); work.push('texture'); },
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
     const before = work.length, live = film.root.children.slice();
-    film.prepareOpening(gpu, camera, journey, id => id === (roofs ? 'agent_brown' : 'trinity') ? hero : undefined, shadow);
+    film.prepareOpening(gpu, camera, journey, id => id === (roofs ? 'agent_brown' : 'trinity') ? hero : undefined, shadow, lighting);
     assert.ok(work.length - before <= 1, 'preparation has one GPU task per frame');
     assert.deepEqual(film.root.children, live); assert.equal(target, null); assert.equal(gpu.debug.checkShaderErrors, true);
     assert.equal(hero.parent, scene); assert.equal(skin.visible || hero.visible || shadow.visible, false);
@@ -89,8 +113,9 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape') {
     const root = [...roots][0], node = root?.getObjectByName(landmark);
     return (roofs ? node?.children[0] : node) as THREE.Mesh | undefined;
   };
-  t.after(() => { film.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { film, journey, gpu, skin, shadow, material, work, meshes, roots, prepare, drain, enter, nextMesh, livePointSlots,
+  t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
+  return { film, journey, gpu, skin, shadow, material, work, meshes, roots, depths, mapped, prepare, drain, enter, nextMesh, livePointSlots,
+    decodeRoofMaps: () => { defer = false; pendingImages.splice(0).forEach(ready => ready()); },
     replaceGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -111,6 +136,25 @@ for (const next of ['m1_roofs', 'm1_phone_escape'] as const) {
     h.film.update(undefined, undefined, 0); assert.equal(disposed, 1);
   });
 }
+
+test('the 303 cut prepares both shadow layouts while the roof images decode', t => {
+  const h = fixture(t, 'm1_roofs', true); h.drain();
+  assert.deepEqual([...h.depths.keys()].sort((a, b) => a - b), [4, 13]);
+  const cast = new Set<THREE.Material>();
+  for (const proxies of h.depths.values()) {
+    assert.ok(proxies.some(mesh => mesh.geometry === h.nextMesh()!.geometry));
+    const skin = proxies.find(mesh => mesh instanceof THREE.SkinnedMesh && mesh.geometry === h.skin.geometry);
+    assert.ok(skin?.material instanceof THREE.MeshDepthMaterial);
+    assert.equal(skin.material.depthPacking, THREE.RGBADepthPacking); cast.add(skin.material);
+  }
+  assert.equal(h.mapped.size, 0);
+  h.decodeRoofMaps(); h.drain();
+  assert.ok(h.mapped.size > 0, 'prepare the actual roof surfaces after their maps attach');
+  let released = 0;
+  for (const material of cast) material.addEventListener('dispose', () => released++);
+  h.enter(); assert.equal(released, 0, 'keep the linked variants through the cut');
+  h.film.update(undefined, undefined, 0); assert.equal(released, cast.size);
+});
 
 test('a failed roof attempt or visit releases the detached Wells assets exactly once', t => {
   const h = fixture(t, 'm1_phone_escape');

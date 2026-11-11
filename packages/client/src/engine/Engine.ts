@@ -265,7 +265,8 @@ export class Engine {
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney,
-      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.agentRenderer.getAgentShadow('trinity'));
+      id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.agentRenderer.getAgentShadow('trinity'),
+      this.lightCulling, this.agentRenderer.getAgentDistant('neo'));
     this.filmSets.prepareDockEmp(this.renderer, this.camera, meeting);
     const openingPhone = liveMatrixJourney?.scene === 'm1_phone_escape' ? liveMatrixJourney.openingPhone : undefined;
     const openingHandoff = openingPhone?.phase === 'connected' || openingPhone?.phase === 'done';
