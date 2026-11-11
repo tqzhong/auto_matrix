@@ -282,11 +282,12 @@ export class Engine {
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     const openingHotel = liveMatrixJourney?.scene === 'm1_room303' ? liveMatrixJourney.openingHotel : undefined;
     const pursuit = openingHotel?.phase === 'phone' || openingHotel?.phase === 'answering' || openingHotel?.phase === 'corridor';
+    const hotelPreparation = pursuit ? 'pursuit' : openingHotel?.traceHall ? 'hall' : undefined;
     const hotelPolice = pursuit ? [this.agentRenderer.getAgentHero('agent_brown'), ...OPENING_HOTEL.officers.map(({ id }) => this.agentRenderer.getAgentHero(id))]
       .filter((group): group is THREE.Group => group !== undefined) : openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
     const preparingHotelTextures = this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel);
     if (!preparingHotelTextures)
-      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice, openingHotel?.traceHall);
+      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice, hotelPreparation);
     this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
     const resumeRoof = this.matrix && !this.playerControls?.id && meeting?.scene === 'm1_roofs'
       && !meeting.visiting && document.body.classList.contains('landing');
@@ -389,7 +390,7 @@ export class Engine {
     const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
       && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
     const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined;
-    const hotelNormals = openingHotel?.traceHall && !preparingHotelTextures ? this.filmSets.openingHotelHallNormalMeshes : undefined;
+    const hotelNormals = hotelPreparation && !preparingHotelTextures ? this.filmSets.openingHotelNormalMeshes : undefined;
     const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals;
     this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
       openingNormals ?? this.voxelRenderer.interiors.apartmentReturnNormalMeshes);

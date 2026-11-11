@@ -87,7 +87,7 @@ test('303 prepares the real flashlight material while the corridor is still hidd
 
   h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling);
   assert.equal(compiled.length, 0);
-  for (let frame = 0; frame < 3; frame++) h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, undefined, true);
+  for (let frame = 0; frame < 3; frame++) h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, undefined, 'hall');
   assert.equal(compiled.length, 1, 'prepare the flashlight once before the corridor appears');
   assert.ok(compiled[0] === beam && beam.parent === parent && beam.material === material);
   assert.equal(beam.visible, false);
@@ -104,14 +104,44 @@ test('303 makes offstage officer skins available for normal preparation before t
     setRenderTarget() {}, compile() {},
   } as unknown as THREE.WebGLRenderer;
 
-  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], true);
-  const normals = h.sets.openingHotelHallNormalMeshes;
+  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], 'hall');
+  const normals = h.sets.openingHotelNormalMeshes;
   assert.ok(normals?.length === 1 && normals[0] === skin, 'prepare the actual offstage skin for the normal pass');
-  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], true);
-  assert.ok(h.sets.openingHotelHallNormalMeshes === normals);
+  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], 'hall');
+  assert.ok(h.sets.openingHotelNormalMeshes === normals);
   assert.equal(officer.visible, false);
   h.sets.update(undefined, undefined, 0);
-  assert.equal(h.sets.openingHotelHallNormalMeshes, undefined);
+  assert.equal(h.sets.openingHotelNormalMeshes, undefined);
+});
+
+test('303 prepares the pursuing officer uniform, normals and shadows before he enters the corridor', t => {
+  const h = setup(t); h.pose('phone');
+  const officer = new THREE.Group(), skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  const uniform = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ side: THREE.DoubleSide }));
+  skin.castShadow = uniform.castShadow = true;
+  uniform.userData.office = true; uniform.visible = false;
+  officer.add(skin, uniform);
+  t.after(() => { for (const mesh of [skin, uniform]) { mesh.geometry.dispose(); mesh.material.dispose(); } });
+  const compiled: THREE.Mesh[] = [];
+  const gpu = { properties: {}, info: { programs: [] }, extensions: { has: () => true }, getRenderTarget: () => null,
+    shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap }, setRenderTarget() {},
+    compile: (subject: THREE.Object3D) => subject.traverse(object => { if (object instanceof THREE.Mesh) compiled.push(object); }),
+  } as unknown as THREE.WebGLRenderer;
+
+  for (let frame = 0; frame < 6; frame++) h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], 'pursuit');
+  assert.ok(compiled.includes(uniform), 'prepare the real police uniform before the first animation reveals it');
+  const depths = compiled.filter(mesh => mesh.material instanceof THREE.MeshDepthMaterial);
+  assert.equal(depths.length, 2);
+  assert.ok(depths.some(mesh => mesh.geometry === uniform.geometry) && depths.some(mesh => mesh.geometry === skin.geometry));
+  assert.ok(depths.every(mesh => (mesh.material as THREE.MeshDepthMaterial).depthPacking === THREE.RGBADepthPacking));
+  const normals = h.sets.openingHotelNormalMeshes;
+  assert.ok(normals?.includes(skin) && normals.includes(uniform));
+  assert.equal(uniform.visible, false);
+  let released = 0;
+  for (const depth of depths) (depth.material as THREE.MeshDepthMaterial).addEventListener('dispose', () => released++);
+  h.sets.update(undefined, undefined, 0);
+  assert.equal(released, depths.length);
+  assert.equal(h.sets.openingHotelNormalMeshes, undefined);
 });
 
 test('the 303 exterior fixture clears the performer throughout the ladder route', t => {

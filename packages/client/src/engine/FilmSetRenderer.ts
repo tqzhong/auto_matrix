@@ -394,6 +394,7 @@ export class FilmSetRenderer {
   };
   private preparedHotelPolice?: CastColorPreparation & {
     gpu: THREE.WebGLRenderer['properties']; beam?: THREE.Mesh; normalMeshes?: THREE.Mesh[];
+    shadowMeshes: THREE.Mesh[]; shadowMaterials: Set<THREE.MeshDepthMaterial>;
   };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
@@ -434,9 +435,9 @@ export class FilmSetRenderer {
   }
   get active(): FilmSet | undefined { return this.current; }
   get goalMarker(): THREE.Mesh { return this.marker; }
-  get openingHotelHallNormalMeshes(): readonly THREE.Mesh[] | undefined {
+  get openingHotelNormalMeshes(): readonly THREE.Mesh[] | undefined {
     const prepared = this.preparedHotelPolice;
-    if (prepared && !prepared.meshes.length && !prepared.programs.length) return prepared.normalMeshes;
+    if (prepared && !prepared.meshes.length && !prepared.shadowMeshes.length && !prepared.programs.length) return prepared.normalMeshes;
   }
   get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
@@ -1194,33 +1195,46 @@ export class FilmSetRenderer {
     }
     this.prepareColorFrame(renderer, camera, colors);
   }
-  prepareOpeningHotelPolice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, groups?: THREE.Group[], prepareHall = false): void {
-    const beam = prepareHall ? this.hotel303Beam : undefined;
+  prepareOpeningHotelPolice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, groups?: THREE.Group[], stage?: 'hall' | 'pursuit'): void {
+    const beam = stage === 'hall' ? this.hotel303Beam : undefined;
     if (this.currentScene !== 'm1_room303' || (!groups?.length && !beam) || !renderer.extensions.has('KHR_parallel_shader_compile')) {
-      this.preparedHotelPolice = undefined;
+      this.cancelOpeningHotelPolice();
       return;
     }
     let prepared = this.preparedHotelPolice;
     if (!prepared || prepared.gpu !== renderer.properties) {
-      this.preparedHotelPolice = prepared = { gpu: renderer.properties, scene: this.scene, actors: new Set(), meshes: [], programs: [], textures: new Set() };
+      this.cancelOpeningHotelPolice();
+      this.preparedHotelPolice = prepared = { gpu: renderer.properties, scene: this.scene, actors: new Set(), meshes: [], programs: [], textures: new Set(),
+        shadowMeshes: [], shadowMaterials: new Set() };
     }
     if (beam && prepared.beam !== beam) {
       // Link the real material before the hallway comes into view under the trace overlay.
       prepared.beam = beam;
       prepared.meshes.unshift(beam);
     }
+    const prepareShadows = stage === 'pursuit' && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap;
     for (const group of groups ?? []) {
       if (prepared.actors.has(group)) continue;
-      const meshes = this.colorMeshes(beam ? group.children : [group], Boolean(beam));
+      const meshes = this.colorMeshes(stage ? group.children : [group], Boolean(stage));
+      // The offstage officer hasn't animated into his office uniform yet.
+      if (stage === 'pursuit') for (const mesh of group.children) {
+        if (mesh instanceof THREE.Mesh && mesh.userData.office && mesh.material instanceof THREE.MeshStandardMaterial && !meshes.includes(mesh)) meshes.push(mesh);
+      }
       if (!meshes.length) continue;
       prepared.actors.add(group);
       prepared.meshes.push(...meshes);
-      if (beam) {
+      if (stage) {
         const skinned = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh);
         if (skinned.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...skinned];
       }
+      if (prepareShadows) prepared.shadowMeshes.push(...shadowCasterProxies(meshes, prepared.shadowMaterials));
     }
-    this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated');
+    if (this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated')) return;
+    if (prepared.shadowMeshes.length) this.linkColorBatch(renderer, camera, { ...prepared, meshes: prepared.shadowMeshes }, lighting, 'depth');
+  }
+  private cancelOpeningHotelPolice(): void {
+    this.preparedHotelPolice?.shadowMaterials.forEach(material => material.dispose());
+    this.preparedHotelPolice = undefined;
   }
   private openingRoom(scene: OpeningVisitScene, camera: THREE.Camera) {
     const next = FILM_SCENE_BY_ID[scene], set = FILM_SETS[next.set], { x, y, z } = set.center;
@@ -1537,7 +1551,7 @@ export class FilmSetRenderer {
     return this.linkColorBatch(renderer, camera, prepared, lighting, colorState);
   }
   private linkColorBatch(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: ColorPreparation, lighting: LightCulling | undefined,
-    colorState: 'live' | 'isolated'): boolean {
+    colorState: 'live' | 'isolated' | 'depth'): boolean {
     const batch = prepared.meshes.splice(0, 4);
     if (!batch.length) return false;
     const programs = renderer.info.programs, start = programs?.length ?? 0;
@@ -5237,7 +5251,7 @@ export class FilmSetRenderer {
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.hotel303DeskLight = undefined; this.hotel303HallLight = undefined; this.hotel303Beam = undefined;
     this.hotel303Receiver?.dispose(); this.hotel303Receiver = undefined; this.hotel303Cord = undefined;
-    this.preparedHotelPolice = undefined;
+    this.cancelOpeningHotelPolice();
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;
     this.helGarage?.dispose(); this.helGarage = undefined;
