@@ -585,12 +585,13 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
   }
   if (!journey.visiting && scene.id === 'm1_room303' && journey.openingHotel) {
     const hotel = journey.openingHotel; const step = scene.steps[journey.step]; const current = player.id === journey.actor;
-    const close = current && Boolean(step && distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const close = current && Boolean(step && filmStepNear(scene, step, player.position, player.isInMatrix, journey));
     const fallen = hotel.fallen && distance(player.position, hotel.fallen) <= 4;
     const action = !current ? button('resume', '接回 Trinity 的视角')
       : hotel.phase === 'failed' ? button('retry', '从破门检查点重试')
         : !step ? button('next', '爬上屋顶 →')
-          : hotel.phase === 'breach' || hotel.phase === 'dive' ? '<button disabled>演出进行中 · 自动保存</button>'
+          : hotel.phase === 'answering' ? '<button disabled>正在和 Morpheus 通话 · 自动保存</button>'
+            : hotel.phase === 'breach' || hotel.phase === 'dive' ? '<button disabled>演出进行中 · 自动保存</button>'
             : hotel.phase === 'climbing' ? '<p>按 W 沿消防梯上爬，S 可往下退。攀到顶端才进入屋顶追逐。</p>'
               : journey.step === 1 ? hotel.disarmed ? '<p>左键 / T 开火，F 近身还击，X 闪避枪线；清除四名警员后前往电话。</p>'
               : hotel.fallen ? button('act', '夺取警员手枪 · G', !fallen) : '<p>领头警员正在靠近。F 击倒近身警员；红色枪线亮起后按 X。</p>'

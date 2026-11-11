@@ -63,6 +63,11 @@ function finishHotelDive(h: ReturnType<typeof setup>) {
     h.players.step(.1, true, h.tick());
 }
 
+function finishHotelCall(h: ReturnType<typeof setup>) {
+  for (let frame = 0; frame < 80 && h.sandbox.life.film.state?.openingHotel?.phase === 'answering'; frame++)
+    h.players.step(.1, true, h.tick());
+}
+
 function finishSecondOracleDeparture(h: ReturnType<typeof setup>) {
   const oracle = h.world.agents.get('oracle')!;
   assert.match(h.command('next'), /先知正在离开/);
@@ -727,8 +732,8 @@ test('303 breach saves its timing, then Trinity disarms, shoots and reaches the 
   }
   assert.equal(state.openingHotel!.shots, 6); assert.equal(state.openingHotel!.ammo, 2);
   h.advance(); assert.equal(state.openingHotel?.phase, 'phone'); assert.equal(state.step, 2);
-  actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.phone.x, OPENING_HOTEL.phone.z);
-  h.command('act'); assert.equal(state.step, 3); assert.match(state.lastText, /Wells/);
+  actor.position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[2]);
+  h.command('act'); finishHotelCall(h); assert.equal(state.step, 3); assert.match(state.lastText, /Wells/);
   actor.position = filmStepPosition(FILM_SCENES[0], FILM_SCENES[0].steps[3]); h.advance(); assert.equal(state.step, 4);
   actor.position = filmPosition('film_heart_hotel', OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
   h.command('act'); assert.equal(state.openingHotel?.phase, 'dive'); finishHotelDive(h);
@@ -788,6 +793,37 @@ test('paused 303 performances retain their complete action and pose through rele
   }
 });
 
+test('303 completes the phone conversation before unlocking the corridor and restores an in-progress call', () => {
+  const h = setup(); h.command('start');
+  let state = h.sandbox.life.film.state!;
+  const actor = h.actor(), scene = FILM_SCENE_BY_ID.m1_room303;
+  state.step = 2; state.openingHotel!.phase = 'phone';
+  actor.position = filmPosition(scene.set, -9, 18); actor.rotation = 0;
+  const entry = { ...actor.position };
+  h.command('act');
+  assert.equal(state.openingHotel!.phase, 'answering'); assert.equal(state.step, 2);
+  assert.deepEqual(actor.position, entry, 'the first frame starts at the actual player position');
+  h.command('act'); assert.equal(state.openingHotel!.elapsed, 0);
+  let sequence = 0;
+  const frame = () => {
+    h.players.receiveInput('film-player', { x: 1, z: 0, yaw: 0, jump: true, sprint: true, sequence: ++sequence });
+    h.players.step(.1, true, h.tick());
+  };
+  for (let i = 0; i < 30; i++) frame();
+  assert.match(state.lastText, /硬线/);
+  assert.equal(state.step, 2); assert.ok(Math.abs(actor.position.x - entry.x) < 1 && Math.abs(actor.position.z - entry.z) < 1);
+  const snapshot = () => structuredClone({ hotel: state.openingHotel, position: actor.position, rotation: actor.rotation, action: actor.currentAction, text: state.lastText });
+  const before = snapshot();
+  h.players.step(.1, false, h.tick()); assert.deepEqual(snapshot(), before);
+  h.players.release('film-player', h.tick()); h.sandbox.restore(structuredClone(h.sandbox.state));
+  state = h.sandbox.life.film.state!;
+  h.players.possess('film-player', 'trinity', h.tick()); assert.deepEqual(snapshot(), before);
+  let heardExit = false;
+  for (let i = 0; i < 60 && state.step === 2; i++) { frame(); heardExit ||= state.step === 2 && state.lastText.includes('Wells'); }
+  assert.equal(heardExit, true); assert.equal(state.step, 3); assert.equal(state.openingHotel!.phase, 'corridor');
+  assert.match(state.lastText, /Wells/); assert.equal(h.sandbox.life.film.performing(actor), false);
+});
+
 test('the 303 pursuit brings Brown through the corridor and Smith to the alley before the roof chase', () => {
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
   const hotel = FILM_SCENE_BY_ID.m1_room303, center = FILM_SETS[hotel.set].center;
@@ -795,9 +831,9 @@ test('the 303 pursuit brings Brown through the corridor and Smith to the alley b
   const officers = OPENING_HOTEL.officers.map(({ id }) => h.world.agents.get(id)!);
   const originalSmith = structuredClone({ location: smith.currentLocation, position: smith.position, action: smith.currentAction });
   state.step = 2; state.openingHotel!.phase = 'phone';
-  actor.position = filmPosition(hotel.set, OPENING_HOTEL.phone.x, OPENING_HOTEL.phone.z);
+  actor.position = filmStepPosition(hotel, hotel.steps[2]);
   h.players.step(.1, true, h.tick()); assert.notEqual(brown.currentLocation, hotel.set);
-  h.command('act'); assert.equal(state.step, 3);
+  h.command('act'); finishHotelCall(h); assert.equal(state.step, 3);
   actor.position = filmPosition(hotel.set, 0, -7);
   h.players.step(.05, true, h.tick());
   assert.equal(brown.currentLocation, hotel.set, 'Brown enters the corridor after Trinity');
@@ -1071,13 +1107,13 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
     h.players.step(.1, true, h.tick());
     if (sequence % 5 === 0) h.advance();
   };
-  const walkTo = (set: string, x: number, z: number, frames = 100) => {
+  const walkTo = (set: string, x: number, z: number, frames = 100, radius = 2.5) => {
     const target = filmPosition(set, x, z);
-    for (let frame = 0; frame < frames && Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) > 2.5; frame++) {
+    for (let frame = 0; frame < frames && Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) > radius; frame++) {
       const dx = target.x - h.actor().position.x; const dz = target.z - h.actor().position.z;
       const length = Math.hypot(dx, dz); move(dx / length, dz / length);
     }
-    assert.ok(Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) <= 2.5, `cannot reach ${set}: ${x}, ${z}`);
+    assert.ok(Math.hypot(target.x - h.actor().position.x, target.z - h.actor().position.z) <= radius, `cannot reach ${set}: ${x}, ${z}`);
   };
   walkTo(room.set, OPENING_HOTEL.computer.x, OPENING_HOTEL.computer.z);
   h.command('act'); h.advance(4); assert.equal(state.openingHotel?.phase, 'combat');
@@ -1096,8 +1132,8 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
     h.sandbox.life.film.openingHotel.shoot(h.actor(), Math.atan2(target.position.x - h.actor().position.x, target.position.z - h.actor().position.z), 0, h.tick());
   }
   h.advance(); assert.equal(state.step, 2);
-  walkTo(room.set, 0, 6); walkTo(room.set, -8, 18);
-  h.command('act'); assert.equal(state.step, 3);
+  walkTo(room.set, 0, 6); walkTo(room.set, OPENING_HOTEL.phone.stand.x, OPENING_HOTEL.phone.stand.z, 100, 1);
+  h.command('act'); finishHotelCall(h); assert.equal(state.step, 3);
   walkTo(room.set, 0, 6); walkTo(room.set, 0, -18);
   h.advance(); assert.equal(state.step, 4);
   walkTo(room.set, OPENING_HOTEL.window.x, OPENING_HOTEL.window.z);
@@ -4209,7 +4245,7 @@ test('the entire film route completes through interactions, driving and real com
           }
           actor.position = { ...state.openingHotel!.fallen! }; h.command('act'); h.advance();
           assert.equal(state.openingHotel?.disarmed, true);
-        } else if (index === 2 || index === 4) { h.command('act'); if (index === 4) finishHotelDive(h); }
+        } else if (index === 2 || index === 4) { h.command('act'); if (index === 2) finishHotelCall(h); else finishHotelDive(h); }
         else if (index === 5) {
           h.command('act');
           for (let frame = 0; frame < 50 && state.openingHotel?.phase === 'climbing'; frame++) {

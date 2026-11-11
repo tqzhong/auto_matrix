@@ -51,7 +51,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingRoofGlassBroken } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingHotelPhoneHeld, openingRoofGlassBroken } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -402,6 +402,8 @@ export class FilmSetRenderer {
   private hotel303Shards?: THREE.Group;
   private hotel303Pistol?: THREE.Group;
   private hotel303DeskLight?: THREE.PointLight;
+  private hotel303Receiver?: HardlineHandset;
+  private hotel303Cord?: THREE.Line;
   private openingRoofGlass?: THREE.Group;
   private openingRoofShards?: THREE.Group;
   private trainmanChase?: TrainmanChaseRenderer;
@@ -1240,6 +1242,7 @@ export class FilmSetRenderer {
     }
     this.queueColorTextures(colors.textures, colors.meshes.filter((mesh): mesh is ColorMesh => mesh instanceof THREE.Mesh));
     if (room.openingCord) colors.meshes.push(room.openingCord);
+    if (room.hotel303Cord) colors.meshes.push(room.hotel303Cord);
     const lights = new LightCulling(colors.scene);
     lights.minimumPointSlots = room.minimumPointSlots; lights.stablePointSlots = room.stablePointSlots;
     const compile = renderer.extensions.has('KHR_parallel_shader_compile');
@@ -1848,6 +1851,7 @@ export class FilmSetRenderer {
     this.adoptRoomGeometry(room);
     this.hotel303Door = room.hotel303Door; this.hotel303Glass = room.hotel303Glass; this.hotel303Shards = room.hotel303Shards;
     this.hotel303Pistol = room.hotel303Pistol; this.hotel303DeskLight = room.hotel303DeskLight;
+    this.hotel303Receiver = room.hotel303Receiver; this.hotel303Cord = room.hotel303Cord;
     this.openingRoofGlass = room.openingRoofGlass; this.openingRoofShards = room.openingRoofShards;
     this.wellsStreet = room.wellsStreet; room.wellsStreet = undefined;
     this.openingReceiver = room.openingReceiver; room.openingReceiver = undefined;
@@ -2395,6 +2399,7 @@ export class FilmSetRenderer {
         light.intensity = alley ? 125 : 180;
         light.distance = alley ? 15 : 18;
       }
+      this.updateHotelPhone(hotel?.phase === 'answering' ? hotel.elapsed : undefined);
     }
     if (this.openingRoofGlass && this.openingRoofShards) {
       const exit = sceneId === 'm1_roofs' && !journey?.visiting ? player?.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
@@ -2685,7 +2690,7 @@ export class FilmSetRenderer {
     }
     const scene = journey && filmSceneForJourney(journey)!; const step = scene?.steps[journey!.step] ?? (!journey?.visiting && journey && ['m2_seraph','m2_backdoors'].includes(journey.scene) && journey.step >= 2 ? scene?.steps[1] : undefined);
     this.marker.visible = Boolean((set && scene?.set === set.id || scene?.id === 'm1_commute' && player?.isInMatrix) && step && !journey?.visiting && journey?.actor === player?.id);
-    if (scene?.id === 'm1_room303' && journey?.openingHotel?.phase === 'dive') this.marker.visible = false;
+    if (scene?.id === 'm1_room303' && ['dive', 'answering'].includes(journey?.openingHotel?.phase ?? '')) this.marker.visible = false;
     if (scene?.id === 'm1_commute' && sandbox?.neoLife?.lift?.passenger) this.marker.visible = false;
     if (oracleRequestLocked(journey?.scene === 'm3_oracle_request' ? journey.oracleRequest : undefined)) this.marker.visible = false;
     if (journey?.scene === 'm3_bane_questions' && baneInquiryLocked(journey.baneInquiry)) this.marker.visible = false;
@@ -3594,7 +3599,7 @@ export class FilmSetRenderer {
     this.table(-11, desk.z, 3, 2.2, this.metal, 2.75);
     this.crt(-11.1, 3.6, desk.z, .66);
     this.chair(-7.5, desk.z + 2, Math.PI);
-    this.phone(OPENING_HOTEL.phone.x, OPENING_HOTEL.phone.z);
+    this.hotelPhone();
     this.hotel303Pistol = new THREE.Group(); this.hotel303Pistol.name = 'hotel-303-dropped-pistol'; this.hotel303Pistol.userData.dynamic = true;
     this.hotel303Pistol.visible = false; this.root.add(this.hotel303Pistol);
     this.hotel303Pistol.add(this.box(this.black, 0, .22, 0, 1.05, .17, .24));
@@ -3663,6 +3668,37 @@ export class FilmSetRenderer {
     this.box(this.glow, fixtureX, 9.61, fixtureZ - .12, .64, .06, .35);
     const escapeLight = new THREE.PointLight(0xb1be9d, 155, 31, 2);
     escapeLight.position.set(fixtureX, 9.48, fixtureZ - .4); this.root.add(escapeLight);
+  }
+  private hotelPhone(): void {
+    const { x, z, width, depth, height, receiver } = OPENING_HOTEL.phone;
+    this.table(x, z, width, depth, this.wood, height);
+    const base = this.box(this.black, x + .35, 3.065, z + .1, 1.34, .15, 1.05, .06); base.name = 'hotel-303-phone-base';
+    for (let i = 0; i < 12; i++) this.box(this.metal, x + .08 + Math.floor(i / 3) * .12, 3.15, z - .23 + i % 3 * .15, .085, .05, .11);
+    const handset = this.hotel303Receiver = new HardlineHandset();
+    handset.root.name = 'hotel-303-receiver'; handset.root.userData.dynamic = true;
+    handset.root.position.set(receiver.x, receiver.y, receiver.z); handset.root.rotation.x = Math.PI / 2;
+    this.root.add(handset.root);
+    const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(24 * 3), 3));
+    const material = new THREE.LineBasicMaterial({ color: 0x111513 }); this.geometries.add(geometry); this.materials.add(material);
+    this.hotel303Cord = new THREE.Line(geometry, material); this.hotel303Cord.name = 'hotel-303-phone-cord';
+    this.root.add(this.hotel303Cord); this.updateHotelPhone();
+  }
+  private updateHotelPhone(elapsed?: number): void {
+    const receiver = this.hotel303Receiver?.root, cord = this.hotel303Cord;
+    if (!receiver || !cord) return;
+    const phone = OPENING_HOTEL.phone;
+    const hand = openingHotelPhoneHeld(elapsed)
+      ? this.phoneBodies?.('trinity')?.getObjectByName('hardline-handset') : undefined;
+    receiver.visible = !hand?.visible;
+    const from = new THREE.Vector3(phone.x + .68, 3.08, phone.z - .38);
+    const to = hand?.visible ? this.root.worldToLocal(hand.localToWorld(new THREE.Vector3(0, -.31, .07)))
+      : receiver.position.clone().add(new THREE.Vector3(0, -.07, -.31));
+    const points = cord.geometry.attributes.position, point = new THREE.Vector3();
+    for (let i = 0; i < points.count; i++) {
+      const t = i / (points.count - 1); point.lerpVectors(from, to, t); point.y -= Math.sin(Math.PI * t) * .18;
+      points.setXYZ(i, point.x, Math.max(phone.height + .14, point.y), point.z);
+    }
+    points.needsUpdate = true; cord.geometry.computeBoundingSphere();
   }
   private poseHotel303Shards(age: number): void {
     const shards = this.hotel303Shards!;
@@ -5074,6 +5110,7 @@ export class FilmSetRenderer {
     this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.hotel303DeskLight = undefined;
+    this.hotel303Receiver?.dispose(); this.hotel303Receiver = undefined; this.hotel303Cord = undefined;
     this.preparedHotelPolice = undefined;
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;

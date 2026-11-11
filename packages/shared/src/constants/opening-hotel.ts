@@ -2,7 +2,9 @@ import type { AgentState, Vector3 } from '../types/agent.js';
 
 export const OPENING_HOTEL = {
   computer: { x: -8, z: 12 },
-  phone: { x: -11, z: 18 },
+  phone: { x: -11, z: 18, width: 2.4, depth: 1.55, height: 2.85,
+    stand: { x: -8.6, z: 18 }, receiver: { x: -10.07, y: 3.17, z: 18.15 }, radius: 1.4,
+    align: .56, grasp: .96, lift: 1.62, lower: 6.22, release: 6.9, end: 7.24 },
   doorZ: 1,
   window: { x: 0, z: -23, paneZ: -25.61 },
   ladderZ: -30,
@@ -39,10 +41,11 @@ export function openingHotelAlleyGuard(actor?: AgentState | null): actor is Agen
 }
 
 export interface OpeningHotelEncounter {
-  phase: 'trace' | 'breach' | 'combat' | 'phone' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
+  phase: 'trace' | 'breach' | 'combat' | 'phone' | 'answering' | 'corridor' | 'dive' | 'ladder_ready' | 'climbing' | 'done' | 'failed';
   elapsed: number; lastTick: number; attempts: number;
   disarmed: boolean; ammo: number; shots: number; fallen?: Vector3;
   reloadAt?: number; climbed?: number;
+  callFrom?: { position: Vector3; yaw: number };
   diveFrom?: { position: Vector3; yaw: number };
   pursuit?: OpeningPursuitCast;
 }
@@ -66,6 +69,32 @@ export function openingHotelLanded(hotel?: OpeningHotelEncounter): boolean {
 function ease(value: number, start: number, end: number): number {
   const t = Math.max(0, Math.min(1, (value - start) / (end - start)));
   return t * t * (3 - 2 * t);
+}
+
+const hotelPhoneLines = [
+  { from: 1.62, to: 2.65, text: 'Trinity：他们追踪到了这条线路。' },
+  { from: 2.65, to: 4.02, text: 'Morpheus：硬线被切断了。特工正在上来。' },
+  { from: 4.02, to: 5.88, text: 'Morpheus：去 Wells 与 Lake 路口。那里的电话能带你回来。' },
+  { from: 5.88, to: 6.22, text: 'Trinity：明白。' },
+] as const;
+
+export function openingHotelPhoneLine(elapsed: number) {
+  return hotelPhoneLines.find(line => elapsed >= line.from && elapsed < line.to);
+}
+
+export function openingHotelPhoneHeld(elapsed?: number): boolean {
+  return elapsed !== undefined && elapsed >= OPENING_HOTEL.phone.grasp && elapsed < OPENING_HOTEL.phone.release;
+}
+
+export function openingHotelPhonePose(elapsed: number, from?: OpeningHotelEncounter['callFrom']) {
+  const { stand, align, release, end } = OPENING_HOTEL.phone;
+  const start = from?.position ?? { ...stand, y: 0 }, yaw = from?.yaw ?? -Math.PI / 2;
+  const alignWeight = ease(elapsed, 0, align);
+  const away = ease(elapsed, 2.74, 3.55), back = ease(elapsed, 4.94, 6.12);
+  const dx = stand.x - start.x, dz = stand.z - start.z, pace = away - back;
+  const turn = Math.atan2(Math.sin(-Math.PI / 2 - yaw), Math.cos(-Math.PI / 2 - yaw));
+  return { x: start.x + dx * alignWeight + .18 * pace, y: start.y * (1 - alignWeight), z: start.z + dz * alignWeight - .48 * pace,
+    yaw: yaw + turn * alignWeight - .26 * pace - Math.PI / 2 * ease(elapsed, release, end), travel: Math.hypot(dx, dz) * alignWeight + .51 * (away + back) };
 }
 
 export function openingHotelDiveMotion(elapsed: number) {

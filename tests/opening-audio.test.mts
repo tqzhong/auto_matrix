@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_PHONE, filmEntry, openingBoothCrush, openingTruckPose,
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, OPENING_PHONE, filmEntry, openingBoothCrush, openingTruckPose,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter, type WorldEvent } from '@auto_matrix/shared';
 import { Engine } from '../packages/client/src/engine/Engine.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
@@ -53,7 +53,14 @@ test('303 sounds follow the line, door, glass and climb through pauses and retri
   assert.deepEqual(h.frame(hotel('phone', 0, 1)), ['ring']);
   assert.deepEqual(h.frame(hotel('phone', 0, 1), { tick: 26 }), []);
   assert.deepEqual(h.frame(hotel('phone', 0, 1), { tick: 27 }), ['ring']);
-  assert.deepEqual(h.frame(hotel('corridor', 0, 1)), ['pickup', 'dialogue']);
+  const { grasp, release } = OPENING_HOTEL.phone;
+  assert.deepEqual(h.frame(hotel('answering', grasp - .02, 1)), []);
+  assert.deepEqual(h.frame(hotel('answering', grasp, 1)), ['pickup']);
+  assert.deepEqual(h.frame(hotel('answering', 3, 1), { running: false }), []);
+  assert.deepEqual(h.frame(hotel('answering', 3, 1)), []);
+  assert.deepEqual(h.frame(hotel('answering', release, 1)), ['hangup']);
+  assert.deepEqual(h.frame(hotel('corridor', 0, 1)), []);
+  assert.deepEqual(fixture().frame(hotel('answering', 3, 1)), [], 'cold recovery must keep the call quiet until the next cue');
   assert.deepEqual(h.frame(hotel('dive', .35, 1)), []);
   assert.deepEqual(h.frame(hotel('dive', .5, 1)), ['glass']);
   assert.deepEqual(h.frame(hotel('dive', 1, 1), { running: false }), []);

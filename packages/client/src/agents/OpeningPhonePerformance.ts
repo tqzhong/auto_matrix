@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, OPENING_PHONE, type OpeningPhoneAnswer, type OpeningPhoneHit } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_HOTEL, OPENING_PHONE, openingHotelPhoneHeld, type OpeningPhoneAnswer, type OpeningPhoneHit } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { groundCharacter } from './GroundContact.js';
@@ -12,7 +12,6 @@ export function poseOpeningPhone(rig: Pick<CharacterRig, 'root' | 'hero' | 'hand
     return;
   }
   const center = FILM_SETS.film_wells_phone.center, bones = rig.hero.bones;
-  const wrist = bones.get('wrist_R')!, elbow = bones.get('elbow_R')!, shoulder = bones.get('shoulder_R')!;
   rig.root.updateWorldMatrix(true, true);
   const body = rig.root.getWorldQuaternion(new THREE.Quaternion()), up = new THREE.Vector3(0, 1, 0);
   const base = new THREE.Vector3(center.x + OPENING_PHONE.receiver.x, center.y - 1 + OPENING_PHONE.receiver.y, center.z + OPENING_PHONE.receiver.z);
@@ -27,6 +26,35 @@ export function poseOpeningPhone(rig: Pick<CharacterRig, 'root' | 'hero' | 'hand
   const atEar = ear.sub(new THREE.Vector3(0, .31, .1425).applyQuaternion(held));
   const receiver = base.lerp(atEar, lifted);
   const weight = THREE.MathUtils.smoothstep(answer.elapsed, OPENING_PHONE.alignSeconds, OPENING_PHONE.graspSeconds);
+  placeReceiver(rig, receiver, orientation, body, weight, answer.elapsed >= OPENING_PHONE.graspSeconds);
+  if (hit && hit.elapsed > 0) poseOpeningHit(rig, hit, rig.handset.root.visible);
+}
+
+export function poseHotelPhone(rig: Pick<CharacterRig, 'root' | 'hero' | 'handset'>, elapsed?: number): void {
+  if (!rig.hero || !rig.handset || elapsed === undefined) return;
+  const { center } = FILM_SETS.film_heart_hotel, phone = OPENING_HOTEL.phone, smooth = THREE.MathUtils.smoothstep;
+  const { bones } = rig.hero, up = new THREE.Vector3(0, 1, 0);
+  const lifted = smooth(elapsed, phone.grasp, phone.lift) * (1 - smooth(elapsed, phone.lower, phone.release));
+  const weight = smooth(elapsed, phone.align, phone.grasp) * (1 - smooth(elapsed, phone.release, phone.end));
+  const lean = weight * (1 - lifted);
+  const glance = smooth(elapsed, 2.5, 3.2) * (1 - smooth(elapsed, 4.6, 5.9));
+  bones.get('head')!.rotation.y -= .2 * glance;
+  bones.get('head')!.rotation.x += .1 * (1 - lifted);
+  bones.get('spine')!.rotation.x += .2 * lean;
+  bones.get('chest')!.rotation.x += .14 * lean - .07 * lifted * Math.sin(elapsed * 2.6);
+  rig.root.updateWorldMatrix(true, true);
+  const body = rig.root.getWorldQuaternion(new THREE.Quaternion());
+  const held = body.clone().multiply(new THREE.Quaternion().setFromAxisAngle(up, Math.PI / 2));
+  const cradle = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  const receiver = new THREE.Vector3(center.x + phone.receiver.x, center.y - 1 + phone.receiver.y, center.z + phone.receiver.z);
+  const ear = bones.get('head')!.localToWorld(new THREE.Vector3(-.23, -.08, .13));
+  const atEar = ear.sub(new THREE.Vector3(0, .31, .1425).applyQuaternion(held));
+  placeReceiver(rig, receiver.lerp(atEar, lifted), cradle.slerp(held, lifted), body, weight, openingHotelPhoneHeld(elapsed));
+}
+
+function placeReceiver(rig: Pick<CharacterRig, 'hero' | 'handset'>, receiver: THREE.Vector3, orientation: THREE.Quaternion,
+  body: THREE.Quaternion, weight: number, visible: boolean): void {
+  const bones = rig.hero!.bones, wrist = bones.get('wrist_R')!, elbow = bones.get('elbow_R')!, shoulder = bones.get('shoulder_R')!;
   const palm = new THREE.Vector3(0, -.19, .035), target = wrist.localToWorld(palm.clone()).lerp(receiver, weight);
   const hand = wrist.getWorldQuaternion(new THREE.Quaternion()).slerp(orientation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2)), weight);
   const offset = palm.clone().multiply(wrist.getWorldScale(new THREE.Vector3())).applyQuaternion(hand);
@@ -35,12 +63,11 @@ export function poseOpeningPhone(rig: Pick<CharacterRig, 'root' | 'hero' | 'hand
   for (let finger = 1; finger <= 5; finger++) for (let segment = 1; segment <= 3; segment++)
     bones.get(`finger${finger}-${segment}_R`)!.rotation.z = (finger === 1 ? .2 : segment === 1 ? .6 : .75) * weight;
   wrist.updateWorldMatrix(false, true);
-  const prop = rig.handset.root, scale = wrist.getWorldScale(new THREE.Vector3());
+  const prop = rig.handset!.root, scale = wrist.getWorldScale(new THREE.Vector3());
   prop.position.copy(wrist.worldToLocal(receiver.clone()));
   prop.quaternion.copy(wrist.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(orientation));
   prop.scale.set(1 / scale.x, 1 / scale.y, 1 / scale.z);
-  prop.visible = answer.elapsed >= OPENING_PHONE.graspSeconds;
-  if (hit && hit.elapsed > 0) poseOpeningHit(rig, hit, prop.visible);
+  prop.visible = visible;
 }
 
 function poseOpeningHit(rig: Pick<CharacterRig, 'root' | 'hero' | 'handset'>, hit: OpeningPhoneHit, holding: boolean): void {

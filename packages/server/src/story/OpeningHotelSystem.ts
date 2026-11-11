@@ -1,4 +1,4 @@
-import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelGlassBroken, openingHotelLanded, playerBlocked, rayBox,
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, distance, filmPosition, openingHotelAlleyGuard, openingHotelClimbPose, openingHotelClimbed, openingHotelDivePose, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneLine, openingHotelPhonePose, playerBlocked, rayBox,
   type AgentState, type CombatImpact, type OpeningHotelEncounter, type OpeningPursuer, type OpeningPursuitCast, type OpeningPursuitGesture, type SandboxState, type SandboxThreat, type Vector3 } from '@auto_matrix/shared';
 import type { WorldState } from '../world/WorldState.js';
 
@@ -107,6 +107,10 @@ export class OpeningHotelSystem {
     if (this.state?.phase === 'trace') barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.doorZ, width: 6.7, depth: .65, height: 8 }, index: 3 });
     if (!openingHotelGlassBroken(this.state))
       barriers.push({ barrier: { x: 0, z: OPENING_HOTEL.window.paneZ, width: 7.6, depth: .45, height: 8 }, index: 4 });
+    const phone = OPENING_HOTEL.phone, actor = this.world.agents.get(this.journey.actor);
+    // Saves made before the table was solid can walk out of its footprint.
+    if (!actor || Math.abs(actor.position.x - SET.center.x - phone.x) >= phone.width / 2 + 1.1
+      || Math.abs(actor.position.z - SET.center.z - phone.z) >= phone.depth / 2 + 1.1) barriers.push({ barrier: phone, index: 5 });
     const active = new Set(barriers.map(({ index }) => `film:hotel303:${index}`));
     this.sandbox().structures = this.sandbox().structures.filter(structure => !structure.id.startsWith('film:hotel303:') || active.has(structure.id));
     barriers.forEach(({ barrier, index }) => {
@@ -217,6 +221,15 @@ export class OpeningHotelSystem {
     this.frame(actor);
     return this.journey!.lastText;
   }
+  answer(actor: AgentState, tick: number): string {
+    const state = this.state!;
+    if (state.phase !== 'phone') return this.journey!.lastText;
+    const { x, y, z } = actor.position, center = SET.center;
+    state.phase = 'answering'; state.elapsed = 0; state.lastTick = tick;
+    state.callFrom = { position: { x: x - center.x, y: y - center.y, z: z - center.z }, yaw: actor.rotation };
+    this.frame(actor);
+    return this.journey!.lastText;
+  }
   beginClimb(actor: AgentState): string {
     if (this.state?.phase !== 'ladder_ready') return this.journey!.lastText;
     this.state.phase = 'climbing'; this.state.climbed = 0;
@@ -242,10 +255,10 @@ export class OpeningHotelSystem {
   restoreFrame(actor: AgentState): boolean {
     const journey = this.journey, state = this.state;
     if (journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id
-      || !state || !['breach', 'dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return false;
+      || !state || !['breach', 'answering', 'dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return false;
     const action = actor.currentAction, gesture = action?.parameters.hotel303 as { phase: string; elapsed: number } | undefined;
-    const saved = state.phase === 'breach' || state.phase === 'dive'
-      ? gesture?.phase === (state.phase === 'breach' ? 'surrender' : 'dive') && gesture.elapsed === state.elapsed
+    const saved = state.phase === 'breach' || state.phase === 'dive' || state.phase === 'answering'
+      ? gesture?.phase === (state.phase === 'breach' ? 'surrender' : state.phase === 'answering' ? 'answer' : 'dive') && gesture.elapsed === state.elapsed
       : state.phase !== 'done' && action?.parameters.climbing === true;
     if (!saved) this.frame(actor);
     else if (state.phase === 'ladder_ready' || state.phase === 'climbing') this.placeClimber(actor, state.climbed ?? 0);
@@ -260,6 +273,21 @@ export class OpeningHotelSystem {
     if (state.phase === 'breach') {
       actor.velocity = { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'surrender', elapsed: state.elapsed } }, startedAt: state.lastTick, duration: 1, progress: 0 };
+    } else if (state.phase === 'answering') {
+      const phone = OPENING_HOTEL.phone;
+      state.elapsed = Math.min(phone.end, state.elapsed + Math.max(0, Math.min(.1, dt)));
+      const pose = openingHotelPhonePose(state.elapsed, state.callFrom);
+      actor.position = { x: SET.center.x + pose.x, y: SET.center.y + pose.y, z: SET.center.z + pose.z };
+      actor.rotation = pose.yaw; actor.velocity = { x: 0, y: 0, z: 0 };
+      if (state.elapsed >= phone.end && dt > 0) {
+        state.phase = 'corridor'; state.elapsed = 0; delete state.callFrom; actor.currentAction = null;
+        this.onAdvance?.('Wells 与 Lake 的电话还通着。Trinity 放下听筒，穿过走廊找出口。', actor, tick);
+        return;
+      }
+      actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'answer', elapsed: state.elapsed, from: state.callFrom } },
+        startedAt: state.lastTick, duration: 1, progress: 0 };
+      this.journey!.lastText = openingHotelPhoneLine(state.elapsed)?.text
+        ?? (state.elapsed >= phone.lower ? 'Trinity 放下听筒，转向走廊。' : 'Trinity 伸手接起电话。');
     } else if (state.phase === 'dive') {
       const broken = openingHotelGlassBroken(state), { ready } = OPENING_HOTEL.roomDive;
       state.elapsed = Math.min(ready, state.elapsed + Math.max(0, Math.min(.1, dt)));
@@ -294,7 +322,7 @@ export class OpeningHotelSystem {
     const state = this.state!;
     const dt = Math.min(.5, Math.max(0, tick - state.lastTick) * .5);
     state.lastTick = tick;
-    if (state.phase === 'dive') return true;
+    if (state.phase === 'dive' || state.phase === 'answering') return true;
     if (state.phase === 'breach') {
       state.elapsed += dt; this.frame(actor);
       if (state.elapsed >= OPENING_HOTEL.breachSeconds) {
@@ -312,7 +340,7 @@ export class OpeningHotelSystem {
     }
     if (state.reloadAt !== undefined && tick >= state.reloadAt) { state.ammo = OPENING_HOTEL.magazine; delete state.reloadAt; }
     if (!this.enemies.length) {
-      if (state.disarmed) { state.phase = 'phone'; this.onAdvance?.('警员倒下。Trinity 拿起房间电话，向 Morpheus 询问新的安全出口。', actor, tick); }
+      if (state.disarmed) { state.phase = 'phone'; this.onAdvance?.('警员倒下。走到电话桌前，按 G 联络 Morpheus。', actor, tick); }
       else this.journey.lastText = '枪声停了。靠近倒下的警员按 G，拿起掉落的手枪。';
       return true;
     }

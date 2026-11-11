@@ -2,7 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, wellsAftermathPose, type OpeningPursuitGesture } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, openingHotelPhonePose, wellsAftermathPose, type OpeningHotelEncounter, type OpeningPursuitGesture } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -120,7 +120,7 @@ export interface MotionInput {
   theOne?: TheOneGesture;
   reloaded?: ReloadedGesture;
   catch?: CatchGesture;
-  hotel303?: { phase: 'surrender' | 'dive'; elapsed: number };
+  hotel303?: { phase: 'surrender' | 'dive' | 'answer'; elapsed: number; from?: OpeningHotelEncounter['callFrom'] };
   hotelPursuit?: OpeningPursuitGesture;
   hotelLookPitch?: number;
   roofExit?: { elapsed: number; origin: { x: number; y: number; z: number } };
@@ -713,6 +713,13 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     Object.assign(state, newMotion(), { time, climbPhase: time * 5 });
     input = { ...input, speed: 0, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false,
       climbing: input.hotelClimb < OPENING_HOTEL.ladderHeight ? 0 : undefined };
+    dt = 0;
+  }
+  if (input.hotel303?.phase === 'answer') {
+    const { elapsed, from } = input.hotel303, pose = openingHotelPhonePose(elapsed, from);
+    const speed = (openingHotelPhonePose(elapsed + .001, from).travel - pose.travel) * 1000;
+    Object.assign(state, newMotion(), { time: elapsed, speed, phase: pose.travel / 2.8 });
+    input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.openingAnswer || input.openingHit) {

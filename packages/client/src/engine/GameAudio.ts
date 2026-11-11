@@ -1,6 +1,6 @@
 import { MUSIC, MusicDirector, isActionMusic, type MusicCue, type MusicScene } from './Soundtrack.js';
 import { FILM_MUSIC, filmCredit, type FilmTrack } from './OriginalScore.js';
-import { wellsAftermathDialogue } from '@auto_matrix/shared';
+import { openingHotelPhoneLine, wellsAftermathDialogue } from '@auto_matrix/shared';
 
 type Channel = 'music' | 'effects';
 export interface AudioSettings { music: number; effects: number; musicMuted: boolean; effectsMuted: boolean }
@@ -90,6 +90,9 @@ export class GameAudio {
     const crosscut = scene.player?.currentAction?.parameters.crosscut as import('@auto_matrix/shared').CrosscutGesture | undefined;
     if (crosscut?.phase === 'call') this.reading.add('cypher-call'); else this.reading.delete('cypher-call');
     const journey = scene.sandbox?.neoLife?.journey;
+    if (journey?.scene === 'm1_room303' && !journey.visiting && scene.player?.id === journey.actor
+      && journey.openingHotel?.phase === 'answering' && openingHotelPhoneLine(journey.openingHotel.elapsed)) this.reading.add('hotel-conversation');
+    else this.reading.delete('hotel-conversation');
     if (journey?.scene === 'm1_phone_escape' && !journey.visiting && scene.player?.id === journey.actor
       && journey.openingPhone?.phase === 'done' && wellsAftermathDialogue(journey.openingPhone.aftermath?.elapsed ?? 0)) this.reading.add('wells-conversation');
     else this.reading.delete('wells-conversation');

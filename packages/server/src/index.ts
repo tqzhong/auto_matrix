@@ -2,7 +2,7 @@ import { savedSeraphDoorAction } from './story/SeraphDoorSystem.js';
 import { savedChateauAction, savedMountainAction } from './story/ChateauMountainPose.js';
 import { savedBookDoorAction } from './story/BookDoorSystem.js';
 import { savedPersephoneAction } from './story/PersephonePose.js';
-import { SERAPH_DOOR_ROLES, openingHotelGlassBroken, openingHotelLanded, seraphDoorActive } from '@auto_matrix/shared';
+import { SERAPH_DOOR_ROLES, openingHotelGlassBroken, openingHotelLanded, openingHotelPhoneHeld, seraphDoorActive } from '@auto_matrix/shared';
 import express from 'express';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -275,6 +275,7 @@ const playerTimer = setInterval(() => {
   const journey = sandbox.life.film.state;
   const scene = journey?.scene, step = journey?.step, actor = journey?.actor;
   const hotelGlass = openingHotelGlassBroken(journey?.openingHotel), hotelLanded = openingHotelLanded(journey?.openingHotel);
+  const hotelCall = journey?.openingHotel?.phase === 'answering' ? journey.openingHotel.elapsed : undefined, hotelText = journey?.lastText;
   const phoneImpact = journey?.openingPhone?.impactElapsed;
   const phoneRemaining = journey?.openingPhone?.remaining, phoneAnswer = journey?.openingPhone?.answer?.elapsed;
   const phoneHit = journey?.openingPhone?.hit?.elapsed;
@@ -288,6 +289,7 @@ const playerTimer = setInterval(() => {
     sockets.broadcastDelta({ agents: {}, dirtyChunks: {}, events: [], simulation: simulationState() }, simLoop.getTick());
   }
   const current = sandbox.life.film.state;
+  const hotelAnswer = current?.openingHotel?.phase === 'answering' ? current.openingHotel.elapsed : undefined;
   if (current?.scene === 'm1_phone_escape' && !current.visiting && (current.openingPhone?.impactElapsed !== phoneImpact
     || current.openingPhone?.remaining !== phoneRemaining || current.openingPhone?.answer?.elapsed !== phoneAnswer || current.openingPhone?.hit?.elapsed !== phoneHit
     || current.openingPhone?.aftermath?.elapsed !== phoneAftermath || current.openingPhone?.phase === 'done' && current.lastText !== phoneText)) {
@@ -295,7 +297,8 @@ const playerTimer = setInterval(() => {
     return;
   }
   if (current?.scene !== scene || current?.step !== step || current?.actor !== actor
-    || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded)) {
+    || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded
+      || openingHotelPhoneHeld(hotelAnswer) !== openingHotelPhoneHeld(hotelCall) || hotelAnswer !== undefined && current.lastText !== hotelText)) {
     // Publish a story boundary with its poses; the next slow simulation tick may never run after a pause.
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state, timeOfDay: world.timeOfDay, simulation: simulationState() }, simLoop.getTick());
     return;

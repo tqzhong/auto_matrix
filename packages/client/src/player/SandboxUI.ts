@@ -203,6 +203,7 @@ export class SandboxUI {
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
       if (!journey.visiting && journey.scene === 'm1_smith_question' && journey.government?.phase === 'monologue') return;
+      if (!journey.visiting && journey.scene === 'm1_room303' && journey.openingHotel?.phase === 'answering') return;
       if (!journey.visiting && journey.scene === 'm1_phone_escape' && (['answering', 'connected'].includes(journey.openingPhone?.phase ?? '')
         || journey.openingPhone?.phase === 'done' && !wellsAftermathReady(journey.openingPhone))) return;
       if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
@@ -749,7 +750,8 @@ export class SandboxUI {
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = failed ? 'J 手记 · 从破门检查点重试'
         : hotel.phase === 'combat' ? hotel.disarmed ? `四警员突围 · 弹匣 ${hotel.ammo}/8 · 左键 / T 开火 · R 换弹 · X 闪避` : hotel.fallen ? '靠近落枪位置按 G 夺枪 · F 反击 · X 闪避' : 'F 击倒近身警员 · X 闪避枪线'
-          : hotel.phase === 'breach' ? '房门被撞开 · 正在进入突围' : hotel.phase === 'dive' ? '穿窗而出 · 进度自动保存' : hotel.phase === 'ladder_ready' ? '按 G 抓住消防梯' : hotel.phase === 'climbing' ? '按 W 向上攀爬 · S 可退回' : '按 G 完成当前互动';
+          : hotel.phase === 'answering' ? '与 Morpheus 通话 · 进度自动保存' : hotel.phase === 'phone' ? '走到电话桌前按 G'
+            : hotel.phase === 'breach' ? '房门被撞开 · 正在进入突围' : hotel.phase === 'dive' ? '穿窗而出 · 进度自动保存' : hotel.phase === 'ladder_ready' ? '按 G 抓住消防梯' : hotel.phase === 'climbing' ? '按 W 向上攀爬 · S 可退回' : '按 G 完成当前互动';
       document.getElementById('game-objective-copy')!.textContent = failed ? '突围失败 · J 打开手记重试' : this.el('film-sequence-hint').textContent;
     }
     if (!journey.visiting && scene.id === 'm1_roofs' && journey.openingRoof) {

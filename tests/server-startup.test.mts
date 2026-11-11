@@ -19,6 +19,32 @@ import { openingPhoneContact, openingHitPose } from '@auto_matrix/shared';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
 
+test('303 publishes the handset release with Trinity’s pose before finishing the call', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm1_room303'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
+  const { stand, release } = OPENING_HOTEL.phone, elapsed = release - .08;
+  const from = { position: { ...stand, y: 0 }, yaw: -Math.PI / 2 };
+  journey.step = 2; Object.assign(journey.openingHotel, { phase: 'answering', elapsed, callFrom: from, lastTick: f.checkpoint.tick });
+  journey.lastText = 'Trinity 放下听筒，转向走廊。';
+  actor.position = filmPosition('film_heart_hotel', stand.x, stand.z); actor.rotation = from.yaw;
+  actor.currentAction = { type: 'idle', parameters: { resolved: true, hotel303: { phase: 'answer', elapsed, from } },
+    startedAt: f.checkpoint.tick, duration: 1, progress: 0 };
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  await client.command('play_as', { agentId: 'trinity' }, state => Boolean(state.agents.trinity.controller));
+  const marker = client.messages.length;
+  await client.command('resume', {}, state => state.simulation!.running);
+  await new Promise(resolve => setTimeout(resolve, 220));
+  const packets = client.messages.slice(marker).filter(message => message.type === 'world_state_delta');
+  const released = packets.map(message => message.data as Partial<WorldStateFull>).find(delta => {
+    const hotel = delta.sandbox?.neoLife?.journey?.openingHotel;
+    return hotel?.phase === 'answering' && hotel.elapsed >= release;
+  });
+  assert.ok(released, 'the release must arrive before the next half-second world tick');
+  assert.equal(released.agents?.trinity.currentAction?.parameters.hotel303 &&
+    (released.agents.trinity.currentAction.parameters.hotel303 as { elapsed: number }).elapsed, released.sandbox!.neoLife!.journey!.openingHotel!.elapsed);
+  await server.stop();
+});
+
 test('opening hit: fast snapshots continue the falling caller after the truck stops, including a paused real restart', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_phone_escape'), journey = f.checkpoint.sandbox.neoLife.journey, actor = f.checkpoint.agents.trinity;
   journey.step = 1; journey.completed = ['m1_room303', 'm1_roofs'];

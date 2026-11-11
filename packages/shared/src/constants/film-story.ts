@@ -1,6 +1,7 @@
 import { seraphDoorZ } from './seraph-door.js';
 import { BOOK_DOOR } from './book-door.js';
 import { OPENING_PHONE } from './opening-escape.js';
+import { OPENING_HOTEL } from './opening-hotel.js';
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
 import { ZION_ENGINEERING, type EngineeringEncounter } from './zion-engineering.js';
@@ -269,7 +270,7 @@ export const FILM_SCENES: FilmScene[] = [
   scene('m1_room303', 1, 'heart_hotel', 'trinity', '追踪中的房间 303', 'contact', 'opening', '线路被追踪。四名警员正在 303 门外，Trinity 必须脱身、联系 Morpheus，再从走廊破窗离开。', [
     use('挂断被追踪的线路', '警员破门而入，Trinity 举手等待近身机会。', -8, 12, 0),
     fight('反击警员，夺下手枪', 4, 'soldier'),
-    use('接通房间电话，询问安全出口', 'Morpheus 确认硬线已被切断；Wells 与 Lake 的电话是新的出口。', -10, 18, 0),
+    use('走到电话桌前，接通 Morpheus', 'Morpheus 确认硬线已被切断；Wells 与 Lake 的电话是新的出口。', OPENING_HOTEL.phone.stand.x, OPENING_HOTEL.phone.stand.z, 0),
     walk('穿过烧焦的走廊', 0, -18),
     use('跃出破窗，登上消防梯', 'Trinity 穿过碎玻璃，落到窗外消防梯。', 0, -23, 0),
     use('沿消防梯爬上屋顶', 'Trinity 抓住钢梯往上攀，Brown 已在屋顶追来。', 0, -30, 0),
@@ -736,6 +737,10 @@ export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: Fil
   return position;
 }
 export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm1_room303' && step === scene.steps[2] && !journey?.visiting) {
+    const target = filmStepPosition(scene, step, journey);
+    return matrix && position.x >= target.x - .48 && Math.abs(position.y - target.y) < .12 && distance(position, target) <= OPENING_HOTEL.phone.radius;
+  }
   if (scene.id === 'm1_phone_escape') return matrix && Math.abs(position.y - FILM_SETS[scene.set].center.y) < .12
     && distance(position, filmStepPosition(scene, step, journey)) <= OPENING_PHONE.radius;
   if (scene.id === 'm2_burly' && step === scene.steps[0] && Math.abs(position.y - FILM_SETS[scene.set].center.y) > .15) return false;
@@ -762,6 +767,7 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
   return matrix === (FILM_SETS[scene.set].world === 'matrix') && distance(position, filmStepPosition(scene, step, journey)) <= radius;
 }
 export function filmStepActionReady(scene: FilmScene, step: FilmStep, position: Vector3, matrix: boolean, journey?: FilmJourney): boolean {
+  if (scene.id === 'm1_room303' && !journey?.visiting && journey?.openingHotel?.phase === 'answering') return false;
   if (scene.id === 'm1_phone_escape' && !journey?.visiting && journey?.openingPhone && journey.openingPhone.phase !== 'running') return false;
   if (scene.id === 'm3_maggie_discovery') return Boolean(journey?.maggieDiscovery && ['call', 'ready', 'empty', 'report', 'return'].includes(journey.maggieDiscovery.phase)
     && !journey.maggieDiscovery.paused && !journey.maggieDiscovery.unavailable && filmStepNear(scene, step, position, matrix, journey));

@@ -1,10 +1,10 @@
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_PHONE, WELLS_BOOTH, openingBoothCrush,
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, WELLS_BOOTH, openingBoothCrush,
   openingHotelGlassBroken, openingHotelLanded, openingRoofGlassBroken, openingTruckPose, wellsAftermathDoor,
   type AgentState, type FilmJourney, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import type { GameAudio } from './GameAudio.js';
 
 type OpeningSounds = Pick<GameAudio, 'landlineSound' | 'meetingSound' | 'governmentSound' | 'matrixEscapeSound'
-  | 'interludeSound' | 'phoneSound' | 'windowSound' | 'dialogue'>;
+  | 'interludeSound' | 'phoneSound' | 'windowSound'>;
 
 export type OpeningAudioState = {
   journey: FilmJourney;
@@ -19,9 +19,11 @@ function hotelSounds(audio: OpeningSounds, previous: OpeningHotelEncounter, hote
   if (previous.phase === 'trace' && hotel.phase === 'breach') {
     audio.landlineSound('hangup'); audio.meetingSound('door');
   }
-  if (previous.phase === 'phone' && hotel.phase === 'corridor') {
-    audio.landlineSound('pickup'); audio.dialogue();
-  }
+  const phone = OPENING_HOTEL.phone;
+  const before = previous.phase === 'answering' ? previous.elapsed : 0;
+  if (hotel.phase === 'answering' && before < phone.grasp && hotel.elapsed >= phone.grasp) audio.landlineSound('pickup');
+  if (previous.phase === 'answering' && before < phone.release
+    && (hotel.phase === 'answering' && hotel.elapsed >= phone.release || hotel.phase === 'corridor')) audio.landlineSound('hangup');
   if (!openingHotelGlassBroken(previous) && openingHotelGlassBroken(hotel)) audio.governmentSound('glass');
   if (previous.phase === 'dive' && !openingHotelLanded(previous) && openingHotelLanded(hotel)) audio.governmentSound('body');
   if (previous.phase === 'ladder_ready' && hotel.phase === 'climbing' || previous.phase === 'climbing' && hotel.phase === 'done')
@@ -79,7 +81,7 @@ export function updateOpeningAudio(audio: OpeningSounds, previous: OpeningAudioS
     && (!roof || roof.attempts === old.openingRoof?.attempts) && (!phone || phone.attempts === old.openingPhone?.attempts);
   const exit = roof ? actor.currentAction?.parameters.roofExit as { elapsed: number } | undefined : undefined;
   const next: OpeningAudioState = { journey, tick, height: actor.position.y, roofExit: exit?.elapsed };
-  if (hotel?.phase === 'phone' || phone?.phase === 'running'
+  if (hotel?.phase === 'phone' || hotel?.phase === 'answering' && hotel.elapsed < OPENING_HOTEL.phone.grasp || phone?.phase === 'running'
     || phone?.phase === 'answering' && (phone.answer?.elapsed ?? 0) < OPENING_PHONE.graspSeconds) {
     next.lastRing = sameAttempt ? before?.lastRing : undefined;
     if (running && (next.lastRing === undefined || tick - next.lastRing >= 7)) {
