@@ -284,8 +284,9 @@ export class Engine {
     const pursuit = openingHotel?.phase === 'phone' || openingHotel?.phase === 'answering' || openingHotel?.phase === 'corridor';
     const hotelPolice = pursuit ? [this.agentRenderer.getAgentHero('agent_brown'), ...OPENING_HOTEL.officers.map(({ id }) => this.agentRenderer.getAgentHero(id))]
       .filter((group): group is THREE.Group => group !== undefined) : openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
-    if (!this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel))
-      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice);
+    const preparingHotelTextures = this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel);
+    if (!preparingHotelTextures)
+      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice, openingHotel?.traceHall);
     this.sandboxRenderer.showOpeningHotelHall(openingHotelHallTime(openingHotel, openingTrace));
     const resumeRoof = this.matrix && !this.playerControls?.id && meeting?.scene === 'm1_roofs'
       && !meeting.visiting && document.body.classList.contains('landing');
@@ -388,9 +389,10 @@ export class Engine {
     const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
       && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
     const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined;
-    const roofRetryNormals = this.filmSets.openingRoofRetryNormalMeshes;
-    this.postProcessing.prepareNormals(this.renderer, roofRetryNormals ? this.filmSets.root : neoNormals,
-      roofRetryNormals ?? this.voxelRenderer.interiors.apartmentReturnNormalMeshes);
+    const hotelNormals = openingHotel?.traceHall && !preparingHotelTextures ? this.filmSets.openingHotelHallNormalMeshes : undefined;
+    const openingNormals = this.filmSets.openingRoofRetryNormalMeshes ?? hotelNormals;
+    this.postProcessing.prepareNormals(this.renderer, openingNormals ? this.filmSets.root : neoNormals,
+      openingNormals ?? this.voxelRenderer.interiors.apartmentReturnNormalMeshes);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);

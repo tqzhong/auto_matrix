@@ -63,7 +63,7 @@ function setup(t: test.TestContext) {
     gunfire.shot({ source: 'trinity', target: 'hotel-wall', position: { ...from, y: from.y + 8 },
       direction: { x: 0, y: 1, z: 0 }, damage: 0, combo: 0, matrix: true, downed: false, shot: { from, surface: 'body' } });
   };
-  return { sets, culling, gunfire, journey, pose, sample, shot };
+  return { sets, culling, camera, gunfire, journey, pose, sample, shot };
 }
 
 test('303 keeps its lighting layout across the room, corridor, camera and saved phases', t => {
@@ -72,6 +72,46 @@ test('303 keeps its lighting layout across the room, corridor, camera and saved 
     for(const first of [false,true]) for(const yaw of [0,Math.PI/2,Math.PI,-Math.PI/2]) {
       h.pose(phase,.5,first,yaw);assert.equal(h.sample(),13,`${phase}/${first}/${yaw}: room and objective changes must keep the prepared shader layout`);
     }
+});
+
+test('303 prepares the real flashlight material while the corridor is still hidden', t => {
+  const h = setup(t); h.pose('trace');
+  const beam = h.sets.root.getObjectByName('hotel-303-hall-flashlight');
+  assert.ok(beam instanceof THREE.Mesh);
+  const parent = beam.parent, material = beam.material, compiled: THREE.Object3D[] = [];
+  let target: THREE.WebGLRenderTarget | null = null;
+  const gpu = { properties: {}, info: { programs: [] }, extensions: { has: () => true }, getRenderTarget: () => target,
+    setRenderTarget: (next: typeof target) => { target = next; },
+    compile: (subject: THREE.Object3D) => subject.traverse(object => compiled.push(object)),
+  } as unknown as THREE.WebGLRenderer;
+
+  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling);
+  assert.equal(compiled.length, 0);
+  for (let frame = 0; frame < 3; frame++) h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, undefined, true);
+  assert.equal(compiled.length, 1, 'prepare the flashlight once before the corridor appears');
+  assert.ok(compiled[0] === beam && beam.parent === parent && beam.material === material);
+  assert.equal(beam.visible, false);
+  assert.equal(target, null);
+});
+
+test('303 makes offstage officer skins available for normal preparation before the hall appears', t => {
+  const h = setup(t); h.pose('trace');
+  const officer = new THREE.Group(); officer.visible = false;
+  const skin = new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+  officer.add(skin);
+  t.after(() => { skin.geometry.dispose(); skin.material.dispose(); });
+  const gpu = { properties: {}, info: { programs: [] }, extensions: { has: () => true }, getRenderTarget: () => null,
+    setRenderTarget() {}, compile() {},
+  } as unknown as THREE.WebGLRenderer;
+
+  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], true);
+  const normals = h.sets.openingHotelHallNormalMeshes;
+  assert.ok(normals?.length === 1 && normals[0] === skin, 'prepare the actual offstage skin for the normal pass');
+  h.sets.prepareOpeningHotelPolice(gpu, h.camera, h.culling, [officer], true);
+  assert.ok(h.sets.openingHotelHallNormalMeshes === normals);
+  assert.equal(officer.visible, false);
+  h.sets.update(undefined, undefined, 0);
+  assert.equal(h.sets.openingHotelHallNormalMeshes, undefined);
 });
 
 test('the 303 exterior fixture clears the performer throughout the ladder route', t => {
