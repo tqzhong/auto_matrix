@@ -373,6 +373,7 @@ export class FilmSetRenderer {
   private garageGhosts: THREE.Group[] = [];
   private mobil?: MobilStationRenderer;
   private preparedOpening?: OpeningPreparation;
+  private preparedHotelPolice?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
   private openingReceiver?: HardlineHandset;
@@ -1162,6 +1163,22 @@ export class FilmSetRenderer {
       this.queueColorTextures(colors.textures, meshes);
     }
     this.prepareColorFrame(renderer, camera, colors);
+  }
+  prepareOpeningHotelPolice(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, groups?: THREE.Group[]): void {
+    if (this.currentScene !== 'm1_room303' || !groups?.length || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.preparedHotelPolice = undefined;
+      return;
+    }
+    let prepared = this.preparedHotelPolice;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      this.preparedHotelPolice = prepared = { gpu: renderer.properties, scene: this.scene, actors: new Set(), meshes: [], programs: [], textures: new Set() };
+    }
+    for (const group of groups) {
+      if (prepared.actors.has(group)) continue;
+      prepared.actors.add(group);
+      prepared.meshes.push(...this.colorMeshes([group]));
+    }
+    this.prepareColorFrame(renderer, camera, prepared, lighting, 'isolated');
   }
   prepareOpening(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh): void {
@@ -4915,6 +4932,7 @@ export class FilmSetRenderer {
     this.openingBoothParts = []; this.openingBoothPanes = []; this.openingGlassPieces = [];
     this.hotel303Door = undefined; this.hotel303Glass = undefined; this.hotel303Shards = undefined; this.hotel303Pistol = undefined;
     this.hotel303DeskLight = undefined;
+    this.preparedHotelPolice = undefined;
     this.openingRoofGlass = undefined; this.openingRoofShards = undefined;
     this.trainmanChase?.dispose(); this.trainmanChase = undefined;
     this.helGarage?.dispose(); this.helGarage = undefined;

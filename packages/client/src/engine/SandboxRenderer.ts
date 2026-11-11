@@ -4,7 +4,7 @@ import { CharacterModels, weaponMuzzle, type CharacterRig } from '../agents/Char
 import { newMotion, type MotionInput } from '../agents/CharacterMotion.js';
 import type { AgentRenderer, DojoOpponent } from '../agents/AgentRenderer.js';
 import { reach } from '../agents/SpoonPerformance.js';
-import { BURLY, FILM_SETS, OFFICE_AGENT_ROLES, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
+import { BURLY, FILM_SETS, OFFICE_AGENT_ROLES, OPENING_HOTEL, ambushRetreatRoot, basementDropPlayback, basementLauncherRoot, type BasementDropPlayback } from '@auto_matrix/shared';
 import { mouseRoomGuard, MOUSE_ROOM_RETURN, ambushShotRecoil } from '@auto_matrix/shared';
 
 type WorldObject = WorldNode | WorldStructure | WorldIncident;
@@ -16,6 +16,7 @@ export class SandboxRenderer {
   private props = new Map<string, Prop>();
   private enemies = new Map<string, Enemy>();
   private pool: Enemy[] = [];
+  private posedHotelPolice = new WeakSet<Enemy>();
   private models = new CharacterModels();
   private geometries: THREE.BufferGeometry[] = [];
   private textures = new Set<THREE.Texture>();
@@ -165,7 +166,7 @@ export class SandboxRenderer {
           : scene === 'm1_room303' ? { ...base.appearance, clothing: '#222c36' }
           : kind === 'soldier' ? { ...base.appearance, clothing: '#172121' } : base.appearance };
       const officePatrol = kind === 'agent' && (scene === 'm1_boss' || scene === 'm1_office_escape') && OFFICE_AGENT_ROLES.some(id => id === character);
-      if (officePatrol || scene === 'm2_burly' && kind === 'smith' && !character) sharedActor = this.agentRenderer?.createThreatActor(state);
+      if (officePatrol || scene === 'm1_room303' || scene === 'm2_burly' && kind === 'smith' && !character) sharedActor = this.agentRenderer?.createThreatActor(state);
       rig = sharedActor?.rig ?? this.models.create(state); rig.root.position.y = -1; group.add(rig.root);
       if (scene === 'm1_room303') {
         this.mesh(rig.head, this.cylinder, this.dark, [0, .26, -.04], [.34, .16, .31]);
@@ -216,6 +217,29 @@ export class SandboxRenderer {
     if (prepared >= BURLY.initialCopies) return;
     const enemy = this.createEnemy('smith', this.actors, undefined, 'm2_burly');
     if (enemy) this.pool.push(enemy);
+  }
+  prepareOpeningHotelPolice(): THREE.Group[] | undefined {
+    const journey = this.state?.neoLife?.journey;
+    if (journey?.scene !== 'm1_room303' || journey.visiting || !['trace', 'breach'].includes(journey.openingHotel?.phase ?? '')) return;
+    const groups: THREE.Group[] = [];
+    for (const character of OPENING_HOTEL.combatOfficers) {
+      const enemy = this.pool.find(entry => entry.scene === 'm1_room303' && entry.character === character);
+      if (!enemy) {
+        const created = this.actors[character] && this.createEnemy('soldier', this.actors, character, 'm1_room303');
+        if (created) this.pool.push(created);
+        break;
+      }
+      const rig = enemy.rig;
+      if (!rig || !rig.hero && OPENING_HOTEL.officers.some(officer => officer.id === character)) continue;
+      if (!this.posedHotelPolice.has(enemy)) {
+        const input: MotionInput = { speed: 0, grounded: true, verticalVelocity: 0, turn: 0, armed: true, weaponStyle: 'hel_pistol' };
+        if (enemy.sharedActor) enemy.sharedActor.animate(0, input, 4);
+        else this.models.animate(rig, 0, input, 4);
+        this.posedHotelPolice.add(enemy);
+      }
+      groups.push(enemy.group);
+    }
+    return groups;
   }
   prepareOfficePatrols(prepareSmith?: (hero: THREE.Group) => boolean): void {
     const journey = this.state?.neoLife?.journey;

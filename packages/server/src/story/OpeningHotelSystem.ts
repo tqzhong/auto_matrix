@@ -135,9 +135,8 @@ export class OpeningHotelSystem {
     return this.journey!.lastText;
   }
   private spawn(actorId: string, tick: number): void {
-    const characters = ['citizen_4', 'citizen_14', 'citizen_10', 'citizen_13'];
     OPENING_HOTEL.police.forEach(([x, z], index) => this.sandbox().threats.push({ id: `film:${++this.sandbox().serial}`,
-      scene: 'm1_room303', kind: 'soldier', character: characters[index], position: filmPosition(SET.id, x, z), matrix: true,
+      scene: 'm1_room303', kind: 'soldier', character: OPENING_HOTEL.combatOfficers[index], position: filmPosition(SET.id, x, z), matrix: true,
       health: index === 0 ? 42 : 44, maxHealth: index === 0 ? 42 : 44, target: actorId,
       stunUntil: tick + (index === 0 ? 1 : 3), lastStrike: tick + index }));
   }

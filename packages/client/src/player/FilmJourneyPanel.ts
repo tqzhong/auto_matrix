@@ -1,3 +1,4 @@
+import type { FilmJourney, FilmScene } from '@auto_matrix/shared';
 import { bookDoorLocked } from '@auto_matrix/shared';
 import { seraphDoorLocked } from '@auto_matrix/shared';
 import { ZION_MESSAGE, zionMessageLocked } from '@auto_matrix/shared';
@@ -54,6 +55,10 @@ import { truckWeaponsText, truckHoodText } from '@auto_matrix/shared';
 import { MOBIL_FAMILY_QUESTIONS, MOBIL_LUGGAGE, mobilFamilyText, mobilLuggageText, mobilReunionRoot, mobilReunionText } from '@auto_matrix/shared';
 
 const button = (target: string, label: string, disabled = false) => `<button data-action="life" data-target="film:${target}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+function renderFilmAtlas(journey: FilmJourney, scene: FilmScene, unavailable: boolean): string {
+  const escaped = journey.office?.outcome === 'escaped';
+  return `<section class="film-atlas"><h4>三部曲场景手记</h4><p>完成过的场景可以回访。分支未经过的场景不会冒充已经完成。</p>${([1, 2, 3] as const).map(film => `<details ${film === scene.film ? 'open' : ''}><summary>0${film} · ${FILM_NAMES[film]} <small>${FILM_SCENES.filter(s => s.film === film && journey.completed.includes(s.id)).length} / ${FILM_SCENES.filter(s => s.film === film).length}</small></summary><div class="film-atlas-grid">${FILM_SCENES.filter(s => s.film === film).map(s => `<article class="${s.id === scene.id ? 'current' : journey.completed.includes(s.id) ? 'done' : ''}"><small>${CHARACTERS[s.actor]?.nameCn ?? s.actor} · ${journey.completed.includes(s.id) ? '已经历' : s.id === scene.id ? '正在进行' : journey.skipped?.includes(s.id) ? '本轮走了另一条路线' : '尚未经历'}</small><strong>${s.id === 'm1_bug' && escaped ? '确认没有被追踪' : s.id === 'm1_wake_again' && escaped ? '第二次来电' : s.title}</strong><p>${FILM_SETS[s.set].name}</p>${journey.completed.includes(s.id) ? button(`visit:${s.id}`, '回访场景 ↗', unavailable) : ''}</article>`).join('')}</div></details>`).join('')}</section>`;
+}
 export function renderFilmJourney(player: AgentState, sandbox: SandboxState): string {
   const life = sandbox.neoLife!; const journey = life.journey!; const scene = filmSceneForJourney(journey)!;
   if (helGarageActive(journey)) {
@@ -711,8 +716,10 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
     const phase = journey.contact.phase; const step = scene.steps[journey.step];
     const ready = !apartmentLocked(journey) || phase === 'reply';
     const close = player.id === journey.actor && (!step || distance(player.position, filmStepPosition(scene, step)) <= 4);
+    const atlas = journey.completed.length ? renderFilmAtlas(journey, scene, player.id !== journey.actor || player.status !== 'alive'
+      || apartmentLocked(journey) || Boolean(journey.fighting) || journey.started !== undefined) : '';
     const label = phase === 'reply' ? '尝试退出窗口' : step?.label ?? '随他们去夜店';
-    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 白兔来敲门</h3></header><article class="film-now"><div><h3>${label}</h3><p>${journey.lastText}</p><div class="film-controls">${phase === 'noticed' ? `${button('contact:follow', '接受邀请，亲自核对线索', !close)}${button('contact:wait', '暂时回到日常生活', !close)}<small>暂缓不会丢失调查与交易记录。回家后仍可以继续。</small>` : button(step ? 'act' : 'next', ready ? `${label} · G` : '合上手记观看', !close || !ready)}${!step ? '<small>白天出发会等到今晚 20:30；已到夜间则计入 20 分钟路程。</small>' : ''}${player.id !== journey.actor ? button('resume', '继续 Neo 的剧情视角') : ''}</div><details><summary>查看已保存的线索与交易步骤</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article></div>`;
+    return `<div class="film-journal film-contact"><header class="film-heading"><span>THE MATRIX / 01</span><h3>101 · 白兔来敲门</h3></header><article class="film-now"><div><h3>${label}</h3><p>${journey.lastText}</p><div class="film-controls">${phase === 'noticed' ? `${button('contact:follow', '接受邀请，亲自核对线索', !close)}${button('contact:wait', '暂时回到日常生活', !close)}<small>暂缓不会丢失调查与交易记录。回家后仍可以继续。</small>` : button(step ? 'act' : 'next', ready ? `${label} · G` : '合上手记观看', !close || !ready)}${!step ? '<small>白天出发会等到今晚 20:30；已到夜间则计入 20 分钟路程。</small>' : ''}${player.id !== journey.actor ? button('resume', '继续 Neo 的剧情视角') : ''}</div><details><summary>查看已保存的线索与交易步骤</summary><ol class="film-objectives">${scene.steps.map((goal, i) => `<li class="${i < journey.step ? 'done' : i === journey.step ? 'current' : ''}"><b>${i < journey.step ? '✓' : i + 1}</b><span>${goal.label}</span></li>`).join('')}</ol></details></div></article>${atlas}</div>`;
   }
   if (!journey.visiting && scene.id === 'm1_commute') {
     const step = scene.steps[journey.step]; const current = player.id === journey.actor;
@@ -941,6 +948,6 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       ${windowExit && !windowClose && !windowCrossing(journey) ? '<small>先回到已打开的窗口旁，再翻到窄台。</small>' : ''}
       ${journey.finished ? `<p>电影路线到这里结束。下一轮是游戏扩展：带着本轮记忆，重新过 Thomas Anderson 的生活。</p>${button('cycle', '保存记忆，开始下一轮生活 →', !current)}` : ''}
     </div></article>`}
-    <section class="film-atlas"><h4>三部曲场景手记</h4><p>完成过的场景可以回访。分支未经过的场景不会冒充已经完成。</p>${([1, 2, 3] as const).map(film => `<details ${film === scene.film ? 'open' : ''}><summary>0${film} · ${FILM_NAMES[film]} <small>${FILM_SCENES.filter(s => s.film === film && journey.completed.includes(s.id)).length} / ${FILM_SCENES.filter(s => s.film === film).length}</small></summary><div class="film-atlas-grid">${FILM_SCENES.filter(s => s.film === film).map(s => `<article class="${s.id === scene.id ? 'current' : journey.completed.includes(s.id) ? 'done' : ''}"><small>${CHARACTERS[s.actor]?.nameCn ?? s.actor} · ${journey.completed.includes(s.id) ? '已经历' : s.id === scene.id ? '正在进行' : journey.skipped?.includes(s.id) ? '本轮走了另一条路线' : '尚未经历'}</small><strong>${s.id === 'm1_bug' && escaped ? '确认没有被追踪' : s.id === 'm1_wake_again' && escaped ? '第二次来电' : s.title}</strong><p>${FILM_SETS[s.set].name}</p>${journey.completed.includes(s.id) ? button(`visit:${s.id}`, '回访场景 ↗', !current || Boolean(journey.fighting) || journey.ride?.phase === 'riding' || journey.garage?.phase === 'riding' || journey.hammer?.phase === 'riding' || journey.logos?.phase === 'riding' || journey.apu?.phase === 'riding' || journey.office?.climbed !== undefined || performing || journey.started !== undefined) : ''}</article>`).join('')}</div></details>`).join('')}</section>
+    ${renderFilmAtlas(journey, scene, !current || Boolean(journey.fighting) || journey.ride?.phase === 'riding' || journey.garage?.phase === 'riding' || journey.hammer?.phase === 'riding' || journey.logos?.phase === 'riding' || journey.apu?.phase === 'riding' || journey.office?.climbed !== undefined || performing || journey.started !== undefined)}
   </div>`;
 }

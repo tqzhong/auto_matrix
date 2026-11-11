@@ -4,7 +4,7 @@ import { poseResurrectionPair } from './TheOnePerformance.js';
 import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
-import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningPhoneEncounter } from '@auto_matrix/shared';
+import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_HOTEL, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -89,6 +89,7 @@ export class AgentRenderer {
   private playerMotion?: MotionInput;
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
+  private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
   private wellsCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; hero: THREE.Group; steps?: Generator<void> };
   private mouseFloorShapes = new WeakMap<THREE.Object3D, Float32Array>();
   private custody = new OfficeCustodyPerformance();
@@ -219,6 +220,28 @@ export class AgentRenderer {
   getAgentShadow(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.shadow; }
   getAgentDetail(id: string): THREE.Group | undefined { return this.agents.get(id)?.rig.detail; }
   getAgentDistant(id: string): THREE.Mesh | undefined { return this.agents.get(id)?.rig.distant; }
+  prepareOpeningHotelTextures(renderer: THREE.WebGLRenderer, hotel?: OpeningHotelEncounter): boolean {
+    if (!hotel || hotel.phase === 'failed') { this.cancelOpeningHotelTextures(); return false; }
+    const pursuit = !['trace', 'breach', 'combat'].includes(hotel.phase);
+    const officers = OPENING_HOTEL.officers.map(({ id }) => this.getAgentHero(id));
+    const cast = pursuit ? [this.getAgentHero('agent_brown'), ...officers, this.getAgentHero('smith')] : officers;
+    const heroes = cast.filter((hero): hero is THREE.Group => hero !== undefined);
+    if (!heroes.length) { this.cancelOpeningHotelTextures(); return false; }
+    const gpu = renderer.properties;
+    let prepared = this.hotelCastPreparation;
+    if (!prepared || prepared.gpu !== gpu || prepared.pursuit !== pursuit || prepared.heroes.length !== heroes.length
+      || prepared.heroes.some((hero, index) => hero !== heroes[index])) {
+      this.cancelOpeningHotelTextures();
+      const names = ['Anatomical_head_and_hands', 'Office_torso', 'short04', 'Tailored_coat_upper'];
+      this.hotelCastPreparation = prepared = { gpu, pursuit, heroes, steps: this.prepareCastMaps(renderer, heroes, names, true) };
+    }
+    if (prepared.steps?.next().done) prepared.steps = undefined;
+    return prepared.steps !== undefined;
+  }
+  private cancelOpeningHotelTextures(): void {
+    this.hotelCastPreparation?.steps?.return(undefined);
+    this.hotelCastPreparation = undefined;
+  }
   prepareWellsCastTextures(renderer: THREE.WebGLRenderer, phone?: OpeningPhoneEncounter): boolean {
     const beforeCast = phone?.phase === 'answering' || phone?.phase === 'connected' || phone?.phase === 'done' && !phone.aftermath;
     const hero = beforeCast ? this.getAgentHero('agent_jones') : undefined;
@@ -226,21 +249,23 @@ export class AgentRenderer {
     const gpu = renderer.properties;
     if (this.wellsCastPreparation?.gpu !== gpu || this.wellsCastPreparation.hero !== hero) {
       this.cancelWellsCastPreparation();
-      this.wellsCastPreparation = { gpu, hero, steps: this.prepareWellsCastMaps(renderer, hero) };
+      // Jones arrives first and shares these textures with Smith and Brown.
+      this.wellsCastPreparation = { gpu, hero, steps: this.prepareCastMaps(renderer, [hero], ['Anatomical_head_and_hands', 'Tailored_coat_upper']) };
     }
     const prepared = this.wellsCastPreparation;
     if (prepared.steps?.next().done) prepared.steps = undefined;
     return prepared.steps !== undefined;
   }
-  private *prepareWellsCastMaps(renderer: THREE.WebGLRenderer, hero: THREE.Group): Generator<void> {
-    // Jones arrives first and shares these textures with Smith and Brown.
-    for (const name of ['Anatomical_head_and_hands', 'Tailored_coat_upper']) {
+  private *prepareCastMaps(renderer: THREE.WebGLRenderer, heroes: THREE.Group[], names: string[], normalMaps = false): Generator<void> {
+    for (const hero of heroes) for (const name of names) {
       const mesh = hero.getObjectByName(name);
-      const texture = mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map;
-      if (!texture || !texture.version) continue;
-      const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
-      const image = !__webglTexture && bitmapUploadImage(renderer, texture);
-      if (image && (yield* stageBitmapTexture(renderer, texture, image))) yield;
+      if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshStandardMaterial)) continue;
+      for (const texture of normalMaps ? [mesh.material.map, mesh.material.normalMap] : [mesh.material.map]) {
+        if (!texture?.version) continue;
+        const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
+        const image = !__webglTexture && bitmapUploadImage(renderer, texture);
+        if (image && (yield* stageBitmapTexture(renderer, texture, image))) yield;
+      }
     }
   }
   private cancelWellsCastPreparation(): void {
@@ -1440,6 +1465,7 @@ export class AgentRenderer {
     this.agents.delete(id);
   }
   dispose(): void {
+    this.cancelOpeningHotelTextures();
     this.cancelWellsCastPreparation();
     this.cancelOfficeCastTexture();
     this.preparedOfficeActors = undefined;

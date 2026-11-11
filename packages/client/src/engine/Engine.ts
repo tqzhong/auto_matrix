@@ -271,6 +271,10 @@ export class Engine {
     this.lightingSystem.setTime(cinematicSet ? ({ day: 12000, night: 22000, warm: 11000, cold: 10000, white: 12000, storm: 19000, sunrise: 7000 })[cinematicSet.light] : this.timeOfDay);
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
+    const openingHotel = liveMatrixJourney?.scene === 'm1_room303' ? liveMatrixJourney.openingHotel : undefined;
+    const hotelPolice = openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
+    if (!this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel))
+      this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice);
     this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id), this.agentRenderer.getAgentShadow('trinity'),
       this.lightCulling, this.agentRenderer.getAgentDistant('neo'));
