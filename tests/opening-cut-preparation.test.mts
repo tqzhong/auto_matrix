@@ -50,6 +50,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const work: string[] = [], meshes = new Set<THREE.Object3D>(), roots = new Set<THREE.Object3D>();
   const depths = new Map<number, THREE.Mesh[]>(), mapped = new Set<THREE.Mesh>();
+  const roofRetry = () => journey.scene === 'm1_roofs' && !journey.visiting && journey.openingRoof?.phase === 'failed';
   let target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
   const gpu = { properties: properties(), info: { programs }, debug: { checkShaderErrors: true }, extensions: { has: () => true },
@@ -69,13 +70,18 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
         return;
       }
       assert.equal(colors.environment, scene.environment); assert.equal(colors.fog, scene.fog);
-      assert.ok(eye.position.distanceTo(new THREE.Vector3().copy(filmEntry(next))) < 20);
-      let root: THREE.Object3D | undefined;
-      colors.traverseVisible(object => { if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(landmark)) root = object; });
-      assert.ok(root); roots.add(root);
+      if (roofRetry()) {
+        assert.equal(eye, camera);
+        assert.equal(scene.getObjectByName('opening-roof-window-glass')?.parent, film.root);
+      } else {
+        assert.ok(eye.position.distanceTo(new THREE.Vector3().copy(filmEntry(next))) < 20);
+        let root: THREE.Object3D | undefined;
+        colors.traverseVisible(object => { if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(landmark)) root = object; });
+        assert.ok(root); roots.add(root);
+      }
       assert.equal(scene.getObjectByName(landmark), undefined, 'the next scene stays detached');
-      assert.equal(points, roofs ? 4 : 7);
-      assert.equal(lights.filter(light => light instanceof THREE.SpotLight).length, roofs ? 0 : 3);
+      assert.equal(points, roofs || roofRetry() ? 4 : 7);
+      assert.equal(lights.filter(light => light instanceof THREE.SpotLight).length, roofs || roofRetry() ? 0 : 3);
       assert.equal(lights.filter(light => light instanceof THREE.DirectionalLight && light.castShadow).length, 1);
       for (const object of batch) {
         meshes.add(object);
@@ -88,7 +94,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   const prepare = () => {
     const before = work.length, live = film.root.children.slice();
     film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting);
-    assert.ok(work.length - before <= 1, 'preparation has one GPU task per frame');
+    assert.ok(work.length - before <= (roofRetry() ? 2 : 1), 'preparation budgets GPU work per frame');
     assert.deepEqual(film.root.children, live); assert.equal(target, null); assert.equal(gpu.debug.checkShaderErrors, true);
     assert.equal(hero.parent, scene); assert.equal(skin.visible || hero.visible || shadow.visible, false);
   };
@@ -250,6 +256,30 @@ test('a failed roof attempt or visit releases the detached Wells assets exactly 
   let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
   h.journey.openingRoof!.phase = 'failed'; h.prepare(); h.prepare(); assert.equal(disposed, 1);
   h.enter(); assert.notEqual(h.film.root.getObjectByName('wells-asphalt'), mesh);
+});
+
+test('a cold roof failure prepares the live rooftop and Brown before the retry', t => {
+  const h = fixture(t, 'm1_phone_escape');
+  const brown = new THREE.Group(), jacket = new THREE.SkinnedMesh(h.skin.geometry, h.material);
+  brown.visible = false; brown.add(jacket); h.actors.set('agent_brown', brown);
+  h.journey.openingRoof!.phase = 'failed';
+  const saved = structuredClone(h.journey), pane = h.film.root.getObjectByName('opening-roof-window-glass')!.children[0];
+  h.prepare();
+  assert.equal(h.work.length, 0, 'the first failure frame draws before preparing the retry');
+  h.drain();
+  assert.ok(h.meshes.has(jacket), 'Brown uses his existing material after the camera returns to the roof');
+  assert.ok(h.meshes.has(pane) && h.meshes.has(h.film.goalMarker));
+  const normalMeshes = h.film.openingRoofRetryNormalMeshes;
+  assert.ok(normalMeshes?.includes(jacket), 'the same skinned mesh prepares the occlusion pass');
+  h.prepare(); assert.equal(h.film.openingRoofRetryNormalMeshes, normalMeshes);
+  assert.equal(h.work.filter(task => task === 'texture').length, 1);
+  assert.equal(jacket.parent, brown); assert.equal(brown.visible, false);
+  assert.equal(h.film.root.getObjectById(pane.id), pane);
+  assert.deepEqual(h.journey, saved);
+  const tasks = h.work.length;
+  h.journey.openingRoof!.phase = 'running'; h.journey.step = 0;
+  h.drain(); assert.equal(h.work.length, tasks);
+  assert.equal(h.film.openingRoofRetryNormalMeshes, undefined);
 });
 
 test('the roof keeps its shader light count when the exit removes the objective', t => {

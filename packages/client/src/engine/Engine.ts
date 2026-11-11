@@ -384,8 +384,10 @@ export class Engine {
       this.agentRenderer.prepareSmithEntrance(this.renderer, this.camera);
     const preparingLafayetteNormals = liveMatrixJourney?.scene === 'm1_bug' && filmSet?.id === 'film_extraction_car'
       && ['parked', 'exiting', 'outside'].includes(liveMatrixJourney.meeting?.phase ?? '');
-    this.postProcessing.prepareNormals(this.renderer, preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined,
-      this.voxelRenderer.interiors.apartmentReturnNormalMeshes);
+    const neoNormals = preparingLafayetteNormals || openingHandoff && !preparingApartment ? neoAtHome : undefined;
+    const roofRetryNormals = this.filmSets.openingRoofRetryNormalMeshes;
+    this.postProcessing.prepareNormals(this.renderer, roofRetryNormals ? this.filmSets.root : neoNormals,
+      roofRetryNormals ?? this.voxelRenderer.interiors.apartmentReturnNormalMeshes);
     this.particleSystem.update(delta);
     this.combatEffects.update(this.running ? delta * Math.min(1, this.simulationSpeed) : 0);
     this.filmSets.renderTelevisionPreview(this.renderer);

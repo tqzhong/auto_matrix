@@ -51,7 +51,7 @@ import { ambushApproachTarget, ambushEscapeTarget } from '@auto_matrix/shared';
 import { ORACLE_REQUEST, oracleRequestLocked, ORACLE_WAITING_FURNITURE, ORACLE_KITCHEN_CHAIRS, ORACLE_ENTRANCE, ORACLE_ENTRANCE_WALLS, oracleArrivalDoor, oracleArrivalPending, oracleArrivalTarget } from '@auto_matrix/shared';
 import { SpoonModel } from '../agents/SpoonModel.js';
 import { FILM_SETS, FILM_SCENE_BY_ID, OPENING_ESCAPE, openingTruckPose, HEL_ELEVATOR, HEL_DANCE_DOOR, helElevatorLocked, helDanceDoorLocked, PILL_ROOM, MIRROR_SEAT, MIRROR_FACE, MIRROR_TIMING, mirrorSilver, pillLocked, pillPose, lafayetteWelcomeLocked, interludeLocked, type PillGesture, FREEWAY_FINISH, GARAGE, ORACLE_FURNITURE, SERAPH_ORACLE, BURLY, EXILES, CHATEAU, awakeningLocked, trainingLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, OFFICE_RETREAT_WINDOW, filmPosition, filmSetAt, filmObstacles, filmStepPosition, type Vector3, type FilmSet, type FilmJourney, type AgentState, type SandboxState, type CombatImpact } from '@auto_matrix/shared';
-import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelBreachTime, openingHotelDoorAngle, openingHotelGlassBroken, openingHotelGlassTime, openingHotelLanded, openingHotelPhoneHeld, openingHotelTraceTime, openingRoofGlassBroken, type OpeningPursuitCast } from '@auto_matrix/shared';
 import { RELOADED } from '@auto_matrix/shared';
 import { meetingBoardPoint, meetingRoot } from '@auto_matrix/shared';
 import { LOBBY_POINT_SLOTS, LobbySetRenderer } from './LobbySetRenderer.js';
@@ -388,6 +388,9 @@ export class FilmSetRenderer {
   private mobil?: MobilStationRenderer;
   private preparedOpening?: OpeningPreparation;
   private preparedOpeningVisit?: OpeningVisitPreparation;
+  private preparedRoofRetry?: CastColorPreparation & {
+    gpu: THREE.WebGLRenderer['properties']; surfacesReady: boolean; textureUpload?: Generator<void, boolean>; normalMeshes?: THREE.Mesh[];
+  };
   private preparedHotelPolice?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties'] };
   private wellsStreet?: WellsStreetRenderer;
   private openingBooth?: THREE.Group;
@@ -426,6 +429,7 @@ export class FilmSetRenderer {
   }
   get active(): FilmSet | undefined { return this.current; }
   get goalMarker(): THREE.Mesh { return this.marker; }
+  get openingRoofRetryNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.preparedRoofRetry?.normalMeshes; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
@@ -1288,6 +1292,10 @@ export class FilmSetRenderer {
   }
   prepareOpening(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadow?: THREE.Mesh, lighting?: LightCulling, distantNeo?: THREE.Mesh): void {
+    const roof = this.currentScene === 'm1_roofs' && journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
+    if (!this.preparedOpeningVisit && lighting && roof?.phase === 'failed')
+      this.prepareOpeningRoofRetry(renderer, camera, lighting, actor, roof.pursuit, shadow);
+    else this.cancelOpeningRoofRetry();
     if (this.preparedOpeningVisit) return;
     let scene: OpeningPreparation['scene'] | undefined;
     if (journey && !journey.visiting && this.currentScene === journey.scene) {
@@ -1378,7 +1386,40 @@ export class FilmSetRenderer {
       && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
     this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
   }
-  private prepareOpeningColorTexture(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation, textures: Set<THREE.Texture>): boolean {
+  private prepareOpeningRoofRetry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    actor: (id: string) => THREE.Group | undefined, pursuit?: OpeningPursuitCast, shadow?: THREE.Mesh): void {
+    const prepared = this.preparedRoofRetry;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      this.cancelOpeningRoofRetry();
+      this.preparedRoofRetry = { gpu: renderer.properties, scene: this.scene, actors: new Set(),
+        meshes: shadow ? [this.marker, shadow] : [this.marker], programs: [], textures: new Set(), surfacesReady: false };
+      // Let a cold load draw its failure view before preparing the off-camera retry.
+      return;
+    }
+    // A save below the roof can keep the pursuing actors and rooftop out of view until retry.
+    const cast = ['agent_brown', ...OPENING_HOTEL.officers.filter(({ id }) => pursuit?.[id]).map(({ id }) => id)];
+    for (const id of cast) {
+      const group = actor(id);
+      if (!group || prepared.actors.has(group)) continue;
+      const meshes = this.colorMeshes(group.children, true);
+      if (!meshes.length) continue;
+      prepared.actors.add(group);
+      prepared.meshes.unshift(...meshes);
+      this.queueColorTextures(prepared.textures, meshes);
+      const skinned = meshes.filter(mesh => mesh instanceof THREE.SkinnedMesh);
+      if (skinned.length) prepared.normalMeshes = [...(prepared.normalMeshes ?? []), ...skinned];
+    }
+    if (!prepared.surfacesReady && [...this.textures].every(texture => texture.image)) {
+      const surfaces = this.colorMeshes([this.root], true);
+      prepared.meshes.push(...surfaces);
+      this.queueColorTextures(prepared.textures, surfaces);
+      prepared.surfacesReady = true;
+    }
+    if (renderer.extensions.has('KHR_parallel_shader_compile'))
+      this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated');
+    this.prepareOpeningColorTexture(renderer, prepared, prepared.textures);
+  }
+  private prepareOpeningColorTexture(renderer: THREE.WebGLRenderer, prepared: Pick<OpeningPreparation, 'textureUpload'>, textures: Set<THREE.Texture>): boolean {
     if (!prepared.textureUpload) {
       for (const texture of textures) {
         const image = texture.image as { width?: number; complete?: boolean } | null;
@@ -4930,6 +4971,10 @@ export class FilmSetRenderer {
     this.preparedOpening = undefined;
     prepared.textureUpload?.return(false); prepared.lighting?.dispose(); prepared.steps?.return(undefined); prepared.room.dispose();
   }
+  private cancelOpeningRoofRetry(): void {
+    this.preparedRoofRetry?.textureUpload?.return(false);
+    this.preparedRoofRetry = undefined;
+  }
   private cancelOpeningVisit(): void {
     const visit = this.preparedOpeningVisit;
     if (!visit) return;
@@ -5022,6 +5067,7 @@ export class FilmSetRenderer {
     this.preparedOfficeDescent = undefined;
     this.cancelLafayettePreparation();
     this.cancelOpeningPreparation();
+    this.cancelOpeningRoofRetry();
     this.cancelOpeningVisit();
     this.cancelPodPreparation();
     this.cancelSubwayPreparation();
