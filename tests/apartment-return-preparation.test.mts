@@ -3,6 +3,8 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { lifeRoomCenter, type FilmJourney } from '@auto_matrix/shared';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
+import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
+import { prepareOpaqueShadowDepth } from '../packages/client/src/engine/OpaqueShadowDepth.js';
 
 function fixture() {
   const scene = new THREE.Scene(), city = new THREE.Group(), home = new THREE.Group(), root = new THREE.Group(), actor = new THREE.Group();
@@ -50,8 +52,8 @@ function fixture() {
     initTexture(map: THREE.Texture) { assert.equal(map, texture); work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
   const journey = { scene: 'm1_pills', pills: { phase: 'taking', elapsed: 6, choice: 'blue' } } as FilmJourney;
-  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[]) => {
-    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects);
+  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling) => {
+    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects, openingLights);
     assert.ok(work.length - before <= 1, 'one compile, binding completion or texture upload per frame');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible, false); assert.ok(roomLights.every(light => !light.visible));
@@ -132,4 +134,131 @@ test('a successful Wells connection prepares the apartment and the guests before
   assert.ok(normals?.includes(h.street) && normals.includes(model) && normals.includes(h.shirt) && normals.includes(h.root.children[0] as THREE.Mesh));
   h.journey.scene = 'm1_wake_up';
   h.prepare(subjects); assert.equal(h.work.length, count); assert.equal(h.apartment.returnNormalMeshes, undefined);
+});
+
+test('Wells prepares large apartment textures in strips and releases a partial upload on early entry', t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap;
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  const h = fixture(), { renderer, texture } = h;
+  t.after(() => {
+    h.dispose(); texture.dispose();
+    if (previous) globalThis.ImageBitmap = previous;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
+  const image = new Bitmap();
+  texture.image = image; texture.flipY = false; texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
+  const source = texture.source, version = texture.version;
+  type Backing = { rows: number; mipmaps: boolean };
+  const allocations: { texture: THREE.Texture; backing: Backing }[] = [], releases: THREE.Texture[] = [];
+  const bySource = new Map<THREE.Source, Backing>(), gpu = new Map<THREE.Texture, { __webglTexture: Backing; __version: number }>();
+  let unpackRow = 0, bound: Backing | undefined;
+  const gl = {
+    LINK_STATUS: 0x8b82, TEXTURE_2D: 0x0de1, UNPACK_SKIP_ROWS: 0x0cf3, RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+    getProgramParameter: () => true,
+    pixelStorei: (_parameter: number, row: number) => { unpackRow = row; },
+    texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+      _format: number, _type: number, bitmap: Bitmap) {
+      assert.ok(bound); assert.equal(bitmap, image);
+      assert.deepEqual([row, width, height], [unpackRow, 2048, 256]);
+      assert.equal(bound.rows, row);
+      bound.rows += height; h.work.push('strip');
+    },
+    generateMipmap() { assert.ok(bound); assert.equal(bound.rows, 2048); bound.mipmaps = true; },
+  };
+  Object.assign(renderer, {
+    capabilities: { maxTextureSize: 4096 },
+    getContext: () => gl,
+    properties: { get: (map: THREE.Texture) => gpu.get(map) ?? {} },
+    state: { bindTexture: (_target: number, backing: Backing) => { bound = backing; }, unbindTexture: () => { bound = undefined; } },
+    initTexture(map: THREE.Texture) {
+      let backing = bySource.get(map.source);
+      if (!backing) {
+        backing = { rows: map.source.dataReady ? 2048 : 0, mipmaps: map.source.dataReady };
+        bySource.set(map.source, backing); allocations.push({ texture: map, backing });
+        if (map.source.dataReady) h.work.push('texture');
+      }
+      gpu.set(map, { __webglTexture: backing, __version: map.version });
+      map.addEventListener('dispose', () => { gpu.delete(map); releases.push(map); });
+    },
+  });
+  delete h.journey.pills;
+  const start = () => {
+    h.journey.scene = 'm1_phone_escape';
+    h.journey.openingPhone = { phase: 'done', remaining: 7, lastTick: 0, attempts: 0 };
+    const count = allocations.length;
+    for (let frame = 0; frame < 40 && allocations.length === count; frame++) h.prepare();
+    assert.equal(allocations.length, count + 1);
+    const staged = allocations.at(-1)!;
+    assert.equal(staged.backing.rows, 256, 'the first preparation frame must only upload the first strip');
+    assert.equal(staged.texture.colorSpace, texture.colorSpace); assert.equal(staged.texture.anisotropy, texture.anisotropy);
+    assert.equal(texture.source, source); assert.equal(texture.version, version); assert.equal(gpu.has(texture), false);
+    return staged;
+  };
+  h.ready();
+  const interrupted = start();
+  h.journey.scene = 'm1_wake_up'; assert.equal(h.prepare(), false);
+  assert.deepEqual(releases, [interrupted.texture]);
+  assert.equal(gpu.has(interrupted.texture), false); assert.equal(gpu.has(texture), false); assert.equal(texture.source, source);
+
+  const finished = start();
+  for (let rows = 256; rows < image.height; rows += 256) {
+    assert.equal(finished.backing.rows, rows); assert.equal(finished.backing.mipmaps, false);
+    assert.equal(texture.source, source); assert.equal(h.apartment.returnNormalMeshes, undefined);
+    assert.equal(h.prepare(), true);
+  }
+  assert.equal(finished.backing.mipmaps, true);
+  assert.deepEqual(releases, [interrupted.texture, finished.texture]);
+  assert.equal(gpu.get(texture)?.__webglTexture, finished.backing, 'the live material adopts the single populated GPU allocation');
+  assert.equal(allocations.length, 2); assert.equal(texture.image, image);
+  assert.equal(bound, undefined); assert.equal(unpackRow, 0);
+  assert.equal(h.prepare(), false); assert.ok(h.apartment.returnNormalMeshes);
+});
+
+test('Wells prepares both packed shadow layouts and retains their programs for the first two apartment frames', t => {
+  const h = fixture(), { renderer, scene, root, actor, texture, street, journey } = h;
+  const openingLights = new LightCulling(scene), material = new THREE.MeshStandardMaterial({ map: texture, alphaTest: .3, side: THREE.DoubleSide });
+  t.after(() => { h.dispose(); openingLights.dispose(); material.dispose(); texture.dispose(); });
+  const room = root.children[0] as THREE.Mesh;
+  room.castShadow = street.castShadow = true;
+  prepareOpaqueShadowDepth(room);
+  const cutout = new THREE.SkinnedMesh(room.geometry, material);
+  cutout.castShadow = true; prepareOpaqueShadowDepth(cutout); actor.add(cutout);
+  for (let i = 0; i < 3; i++) { const light = new THREE.SpotLight(); light.castShadow = true; scene.add(light); }
+  Object.assign(renderer, { shadowMap: { enabled: true, type: THREE.PCFSoftShadowMap } });
+  const compile = renderer.compile, kinds = new Map<number, Set<string>>(), prepared = new Set<THREE.MeshDepthMaterial>(), disposed: THREE.MeshDepthMaterial[] = [];
+  t.mock.method(renderer, 'compile', (subject: THREE.Object3D, eye: THREE.PerspectiveCamera, lights: THREE.Scene) => {
+    const batch: THREE.Mesh<THREE.BufferGeometry, THREE.MeshDepthMaterial>[] = [];
+    subject.traverse(mesh => { if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshDepthMaterial) batch.push(mesh); });
+    if (!batch.length) return compile.call(renderer, subject, eye, lights);
+    assert.equal(lights.fog, null); assert.equal(lights.environment, null); assert.notEqual(lights, scene);
+    let spots = 0; lights.traverseVisible(light => { if (light instanceof THREE.SpotLight && light.castShadow) spots++; });
+    const seen = kinds.get(spots) ?? new Set(); kinds.set(spots, seen);
+    assert.ok(batch.length <= 4);
+    for (const mesh of batch) {
+      const depth = mesh.material;
+      assert.equal(depth.depthPacking, THREE.RGBADepthPacking);
+      assert.match(depth.customProgramCacheKey(), /:actor-local-skin-v1$/);
+      if (mesh instanceof THREE.SkinnedMesh) {
+        assert.equal(depth.map, texture); assert.equal(depth.alphaTest, .3); assert.equal(depth.side, THREE.DoubleSide);
+        seen.add('cutout');
+      } else {
+        assert.equal(depth.map, null); assert.equal(depth.side, THREE.BackSide);
+        seen.add(mesh instanceof THREE.InstancedMesh ? 'instanced' : 'room');
+      }
+      if (!prepared.has(depth)) { prepared.add(depth); depth.addEventListener('dispose', () => { disposed.push(depth); }); }
+    }
+    h.work.push('depth');
+  });
+  delete journey.pills;
+  journey.scene = 'm1_phone_escape'; journey.openingPhone = { phase: 'done', remaining: 7, lastTick: 0, attempts: 0 };
+  h.ready();
+  const prepare = () => h.prepare(undefined, openingLights);
+  for (let frame = 0; frame < 80 && prepare(); frame++) { /* One GPU job per frame. */ }
+  assert.deepEqual(kinds, new Map([1, 3].map(spots => [spots, new Set(['cutout', 'instanced', 'room'])])));
+  assert.equal(cutout.material, material); assert.equal(room.castShadow && street.castShadow, true);
+  assert.equal(disposed.length, 0);
+  journey.scene = 'm1_wake_up';
+  assert.equal(prepare(), false); assert.equal(prepare(), false); assert.equal(disposed.length, 0);
+  assert.equal(prepare(), false); assert.deepEqual(new Set(disposed), prepared); assert.equal(disposed.length, prepared.size);
 });

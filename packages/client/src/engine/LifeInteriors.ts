@@ -2,6 +2,7 @@ import { MetacortexRenderer } from './MetacortexRenderer.js';
 import * as THREE from 'three';
 import { LIFE_ROOMS, LIFE_TABLE, LIFE_CHAIR, CAFE_COUNTER, CAFE_TABLES, CAFE_CHAIRS, lifeRoomCenter, insideLifeRoom, type ComputerInvestigation, type NeoLifeState, type Vector3 } from '@auto_matrix/shared';
 import { ApartmentSetRenderer } from './ApartmentSetRenderer.js';
+import type { LightCulling } from './LightCulling.js';
 import { officeCustodyActive } from '@auto_matrix/shared';
 
 export class LifeInteriors {
@@ -19,8 +20,8 @@ export class LifeInteriors {
 
   get apartmentReturnNormalMeshes(): readonly THREE.Mesh[] | undefined { return this.apartment.returnNormalMeshes; }
   prepareApartmentReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, life?: NeoLifeState, actor?: THREE.Group,
-    openingObjects?: readonly (THREE.Group | THREE.Mesh | undefined)[]): boolean {
-    return this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor, openingObjects);
+    openingObjects?: readonly (THREE.Group | THREE.Mesh | undefined)[], openingLights?: LightCulling): boolean {
+    return this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor, openingObjects, openingLights);
   }
 
   constructor(parent: THREE.Group) {

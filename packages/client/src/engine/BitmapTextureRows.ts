@@ -35,3 +35,30 @@ export function uploadBitmapRows(renderer: THREE.WebGLRenderer, texture: THREE.T
   }
   return end;
 }
+
+/** Prepare a shared texture offstage so a draw can still upload the original at any time. */
+export function* stageBitmapTexture(renderer: THREE.WebGLRenderer, texture: THREE.Texture, image: ImageBitmap): Generator<void, boolean> {
+  const { source, version } = texture, gpu = renderer.properties;
+  const staging = new THREE.Texture(image, undefined, texture.wrapS, texture.wrapT, texture.magFilter,
+    texture.minFilter, THREE.RGBAFormat, THREE.UnsignedByteType, texture.anisotropy, texture.colorSpace);
+  staging.name = texture.name; staging.internalFormat = texture.internalFormat;
+  staging.generateMipmaps = texture.generateMipmaps; staging.flipY = false; staging.unpackAlignment = texture.unpackAlignment;
+  staging.needsUpdate = true;
+  try {
+    for (let row = 0; row < image.height;) {
+      const { __webglTexture } = renderer.properties.get(texture) as { __webglTexture?: WebGLTexture };
+      if (__webglTexture || gpu !== renderer.properties || texture.version !== version || texture.source !== source || texture.image !== image) return false;
+      const end = uploadBitmapRows(renderer, staging, image, row);
+      if (end === undefined) return false;
+      row = end;
+      if (row < image.height) yield;
+    }
+    // Register the original sampler before releasing the staging reference to its populated allocation.
+    texture.source = staging.source;
+    renderer.initTexture(texture);
+    return true;
+  } catch (error) {
+    if (texture.source === staging.source) texture.needsUpdate = true;
+    throw error;
+  } finally { staging.dispose(); }
+}

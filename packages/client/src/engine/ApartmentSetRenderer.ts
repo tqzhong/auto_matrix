@@ -7,8 +7,11 @@ import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHands
 import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
 import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
+import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
+import { usesOpaqueShadowDepth } from './OpaqueShadowDepth.js';
 
 type ColorProgram = NonNullable<THREE.WebGLRenderer['info']['programs']>[number] & { isReady(): boolean };
+type ReturnShadows = { lighting: LightCulling; materials: Set<THREE.MeshDepthMaterial>; entryFrames: number };
 
 /** Anderson's workroom and the shared landing. Props use the shared interaction layout. */
 export class ApartmentSetRenderer {
@@ -40,7 +43,7 @@ export class ApartmentSetRenderer {
   private roomLights: THREE.Light[] = [];
   private returnPreparation?: {
     gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; opening: boolean;
-    steps?: Generator<void>; normalMeshes?: THREE.Mesh[];
+    steps?: Generator<void>; normalMeshes?: THREE.Mesh[]; shadows?: ReturnShadows;
   };
   constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
@@ -253,32 +256,44 @@ export class ApartmentSetRenderer {
     return this.returnPreparation?.steps ? undefined : this.returnPreparation?.normalMeshes;
   }
   prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group,
-    openingObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = []): boolean {
+    openingObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = [], openingLights?: LightCulling): boolean {
     const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
     const opening = phone?.phase === 'connected' || phone?.phase === 'done';
     const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
+    const previous = this.returnPreparation;
     if ((!opening && !blue) || journey?.visiting || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
-      this.cancelReturnPreparation(); return false;
+      const shadows = previous?.shadows;
+      if (journey?.scene === 'm1_wake_up' && !journey.visiting && previous?.gpu === renderer.properties
+        && shadows?.materials.size && shadows.entryFrames < 2) {
+        // The first shadow draw still sees Wells' light counts. Keep both programs through the next draw.
+        previous.steps?.return(undefined); previous.steps = undefined; previous.normalMeshes = undefined;
+        shadows.entryFrames++;
+      } else this.cancelReturnPreparation();
+      return false;
     }
     const subjects = opening ? [actor, ...openingObjects.filter((object): object is THREE.Group | THREE.Mesh => object !== undefined)] : [actor];
     const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    const previous = this.returnPreparation;
     if (previous?.gpu !== renderer.properties || previous.points !== points || previous.opening !== opening || previous.subjects.length !== subjects.length
       || subjects.some((object, index) => previous.subjects[index] !== object)) {
       this.cancelReturnPreparation();
       const normalMeshes: THREE.Mesh[] | undefined = opening ? [] : undefined;
-      this.returnPreparation = { gpu: renderer.properties, subjects, points, opening, normalMeshes,
-        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, opening, normalMeshes) };
+      const shadows: ReturnShadows | undefined = opening && openingLights && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
+        ? { lighting: openingLights, materials: new Set(), entryFrames: 0 } : undefined;
+      this.returnPreparation = { gpu: renderer.properties, subjects, points, opening, normalMeshes, shadows,
+        steps: this.prepareReturnSteps(renderer, camera, scene, subjects, opening, normalMeshes, shadows) };
     }
     const prepared = this.returnPreparation!;
     if (prepared.steps?.next().done) prepared.steps = undefined;
     return prepared.steps !== undefined;
   }
   private cancelReturnPreparation(): void {
-    this.returnPreparation?.steps?.return(undefined); this.returnPreparation = undefined;
+    const preparation = this.returnPreparation;
+    this.returnPreparation = undefined;
+    preparation?.steps?.return(undefined);
+    preparation?.shadows?.materials.forEach(material => material.dispose());
   }
   private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
-    subjects: (THREE.Group | THREE.Mesh)[], opening: boolean, normalMeshes?: THREE.Mesh[]): Generator<void> {
+    subjects: (THREE.Group | THREE.Mesh)[], opening: boolean, normalMeshes?: THREE.Mesh[], shadows?: ReturnShadows): Generator<void> {
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
@@ -327,33 +342,80 @@ export class ApartmentSetRenderer {
       for (const map of maps) if (map) textures.add(map);
     }
     const queue = [...meshes], pending: ColorProgram[] = [], culling = new LightCulling(lights), target = new THREE.WebGLRenderTarget(1, 1);
+    const casters = shadows ? this.returnShadowCasters(meshes, shadows.materials) : [];
+    const depthQueue = shadows && casters.length ? [
+      { lights: shadows.lighting, eye: camera, meshes: casters.slice() }, { lights: culling, eye, meshes: casters },
+    ] : [];
     target.texture.name = 'apartment-return-preparation';
+    const compile = (batch: (THREE.Mesh | THREE.Line)[], lights: LightCulling, view: THREE.PerspectiveCamera, state: 'live' | 'depth') => {
+      const subject = new THREE.Group(), previous = renderer.getRenderTarget(), programs = renderer.info.programs, start = programs?.length ?? 0;
+      subject.traverse = visit => batch.forEach(visit);
+      try { renderer.setRenderTarget(target); lights.compileSubject(renderer, view, subject, undefined, undefined, state); }
+      finally { renderer.setRenderTarget(previous); }
+      if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+    };
     try {
-      while (queue.length || pending.length || textures.size) {
+      while (queue.length || pending.length || depthQueue.length || textures.size) {
         const programs = renderer.info.programs, ready = pending.findIndex(program => programs?.includes(program) && program.isReady());
         if (ready >= 0) cacheReadyProgramLocations(renderer, pending.splice(ready, 1)[0]);
         else if (queue.length) {
-          const batch = queue.splice(0, 4), subject = new THREE.Group(), previous = renderer.getRenderTarget(), start = programs?.length ?? 0;
+          const batch = queue.splice(0, 4);
           if (opening) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
             if (Array.isArray(mesh.material)) mesh.material.forEach(prepareSkinnedMaterial);
             else prepareSkinnedMaterial(mesh.material);
           }
-          subject.traverse = visit => batch.forEach(visit);
-          try { renderer.setRenderTarget(target); culling.compileSubject(renderer, eye, subject); }
-          finally { renderer.setRenderTarget(previous); }
-          if (programs) pending.push(...programs.slice(start) as ColorProgram[]);
+          compile(batch, culling, eye, 'live');
+        } else if (depthQueue.length) {
+          const depth = depthQueue[0];
+          compile(depth.meshes.splice(0, 4), depth.lights, depth.eye, 'depth');
+          if (!depth.meshes.length) depthQueue.shift();
         } else {
           for (const texture of textures) {
             const image = texture.image as { width?: number; complete?: boolean } | null;
             if (!texture.version || !image || image.complete === false) continue;
             textures.delete(texture);
-            const uploaded = renderer.properties.get(texture) as { __version?: number };
-            if ((image.width ?? 0) >= 1024 && uploaded.__version !== texture.version) { renderer.initTexture(texture); break; }
+            const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
+            if ((image.width ?? 0) < 1024 || uploaded.__version === texture.version) continue;
+            const bitmap = opening && !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
+            if (!bitmap || !(yield* stageBitmapTexture(renderer, texture, bitmap))) {
+              const current = renderer.properties.get(texture) as { __version?: number };
+              if (texture.image && current.__version !== texture.version) renderer.initTexture(texture);
+            }
+            break;
           }
         }
         yield;
       }
     } finally { culling.dispose(); target.dispose(); }
+  }
+  private returnShadowCasters(meshes: Iterable<THREE.Mesh | THREE.Line>, materials: Set<THREE.MeshDepthMaterial>): THREE.Mesh[] {
+    const variants = new Map<string, THREE.Mesh>();
+    for (const mesh of meshes) {
+      if (!(mesh instanceof THREE.Mesh) || !mesh.castShadow || mesh.customDepthMaterial || mesh instanceof THREE.BatchedMesh) continue;
+      const surfaces = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const surface of surfaces) {
+        if (!(surface instanceof THREE.MeshStandardMaterial || surface instanceof THREE.MeshBasicMaterial) || !surface.visible
+          || surface.clipShadows && surface.clippingPlanes?.length || 'displacementMap' in surface && surface.displacementMap) continue;
+        const side = surface.shadowSide ?? (surface.side === THREE.FrontSide ? THREE.BackSide : surface.side === THREE.BackSide ? THREE.FrontSide : THREE.DoubleSide);
+        const omitMaps = usesOpaqueShadowDepth(mesh) && surface.alphaTest === 0;
+        const map = omitMaps ? null : surface.map, alphaMap = omitMaps ? null : surface.alphaMap;
+        const skinned = mesh instanceof THREE.SkinnedMesh, instanced = mesh instanceof THREE.InstancedMesh;
+        const morph = mesh.geometry.morphAttributes;
+        const key = [side, map?.channel ?? -1, alphaMap?.channel ?? -1, surface.alphaTest > 0, skinned, instanced,
+          instanced && Boolean(mesh.instanceColor), instanced && Boolean(mesh.morphTexture),
+          morph.position?.length ?? -1, morph.normal?.length ?? -1, morph.color?.length ?? -1].join(',');
+        if (variants.has(key)) continue;
+        const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side, map, alphaMap, alphaTest: surface.alphaTest });
+        prepareSkinnedMaterial(depth); materials.add(depth);
+        let caster: THREE.Mesh;
+        if (instanced) {
+          const proxy = new THREE.InstancedMesh(mesh.geometry, depth, 0);
+          proxy.instanceColor = mesh.instanceColor; proxy.morphTexture = mesh.morphTexture; caster = proxy;
+        } else caster = skinned ? new THREE.SkinnedMesh(mesh.geometry, depth) : new THREE.Mesh(mesh.geometry, depth);
+        variants.set(key, caster);
+      }
+    }
+    return [...variants.values()];
   }
   private mat(color: number, roughness: number, metalness = 0, source?: string): THREE.MeshStandardMaterial {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness }); this.materials.add(material);

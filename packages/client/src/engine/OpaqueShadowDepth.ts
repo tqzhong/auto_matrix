@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 
+const opaqueCasters = new WeakSet<THREE.Mesh>();
+
+export function usesOpaqueShadowDepth(mesh: THREE.Mesh): boolean { return opaqueCasters.has(mesh); }
+
 /** Skip texture variants of Three's packed depth program for opaque casters. */
 export function prepareOpaqueShadowDepth(mesh: THREE.Mesh): void {
+  opaqueCasters.add(mesh);
   const before = mesh.onBeforeShadow, after = mesh.onAfterShadow;
   let depth: THREE.MeshDepthMaterial | undefined;
   let map: THREE.Texture | null = null, alphaMap: THREE.Texture | null = null;
