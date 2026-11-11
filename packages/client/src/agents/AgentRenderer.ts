@@ -88,6 +88,7 @@ export class AgentRenderer {
   private firstPerson = false;
   private matrix = true;
   private playerMotion?: MotionInput;
+  private openingRoofAttempt?: number;
   private models = new CharacterModels();
   private preparedOpeningApartment = new WeakSet<THREE.Group>();
   private hotelCastPreparation?: { gpu: THREE.WebGLRenderer['properties']; pursuit: boolean; heroes: THREE.Group[]; steps?: Generator<void> };
@@ -547,6 +548,9 @@ export class AgentRenderer {
   }
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney, garageCar?: GarageCarPose): void {
+    const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
+    const roofRestarted = roof?.phase === 'running' && roof.attempts > 0 && roof.attempts !== this.openingRoofAttempt;
+    this.openingRoofAttempt = roof?.attempts;
     const meetingCamera = camera && !(camera instanceof THREE.ArrayCamera) && this.matrix && this.playerId === journey?.actor
       && journey.scene === 'm2_meeting' && !journey.visiting ? camera : undefined;
     if (meetingCamera) {
@@ -741,7 +745,11 @@ export class AgentRenderer {
         const previous = entry.group.position.clone();
         const target = new THREE.Vector3(state.position.x, state.position.y, state.position.z);
         const driver = this.playerId ? this.agents.get(this.playerId) : undefined;
-        if (disarmGesture) { entry.group.position.copy(target); guideHeading = state.rotation; }
+        if (roofRestarted && !state.controller && state.currentLocation === 'film_hotel_roofs'
+          && (id === 'agent_brown' || state.currentAction?.parameters.hotelPursuit)) {
+          // The checkpoint is a cut. The next pursuit updates can interpolate from it.
+          entry.group.position.copy(target); entry.body.rotation.y = guideHeading = state.rotation;
+        } else if (disarmGesture) { entry.group.position.copy(target); guideHeading = state.rotation; }
         else if (reunionGesture) {
           const root = ceasefireReunionPose(reunionGesture, reunionGesture.role), center = FILM_SETS.film_zion_temple.center;
           entry.group.position.set(center.x + root.x, state.position.y, center.z + root.z); guideHeading = root.yaw;

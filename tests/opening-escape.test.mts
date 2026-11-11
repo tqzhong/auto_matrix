@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createHash } from 'node:crypto';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, filmEntry, openingHotelClimbPose, openingHotelDivePose, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, filmEntry, filmPosition, openingHotelClimbPose, openingHotelDivePose, type AgentState, type FilmJourney, type SandboxState } from '@auto_matrix/shared';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
@@ -293,6 +294,47 @@ test('Trinity’s visible climb holds the 303 rungs and clears the upper platfor
     }
   }
   assert.equal(overlaps.length, 0, overlaps.join('\n'));
+});
+
+test('roof retries draw the pursuit at its checkpoint on the first frame and then interpolate movement', t => {
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', () => new Promise(() => {}));
+  const originalDocument = globalThis.document;
+  const context = { createRadialGradient: () => ({ addColorStop() {} }), fillRect() {}, strokeRect() {}, fillText() {},
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {} };
+  globalThis.document = { createElement: () => ({ getContext: () => context }) } as unknown as Document;
+  t.after(() => { globalThis.document = originalDocument; });
+
+  const world = new WorldState(); new AgentManager(world).initializeAllAgents();
+  const roof = FILM_SCENE_BY_ID.m1_roofs, officers = OPENING_HOTEL.officers;
+  const cast = ['agent_brown', ...officers.map(officer => officer.id)];
+  const checkpoint = cast.map((id, index): AgentState => ({
+    ...world.agents.get(id)!, position: filmPosition(roof.set, 0, 43 + index * 2), rotation: Math.PI,
+    currentLocation: roof.set, isInMatrix: true, velocity: { x: 0, y: 0, z: 0 },
+    currentAction: { type: 'idle', parameters: index === 0 ? { filmPursuit: true } : { hotelPursuit: { travel: 7, speed: 0 } },
+      startedAt: 18, duration: 1, progress: 0 },
+  }));
+  for (const speed of [0, 1]) {
+    const renderer = new AgentRenderer(new THREE.Scene()); t.after(() => renderer.dispose());
+    const journey: FilmJourney = { version: 1, scene: roof.id, actor: 'trinity', step: 1, completed: ['m1_room303'], enteredAt: 2,
+      reflections: {}, lastText: '', checkpoint: filmEntry(roof), openingRoof: { phase: 'failed', attempts: 1, lastTick: 18 } };
+    for (const [index, state] of checkpoint.entries())
+      renderer.updateAgent(state.id, { ...state, position: filmPosition(roof.set, 4, 1 + index), rotation: 0 });
+    renderer.update(.016, undefined, speed, 18, journey);
+
+    for (const state of checkpoint) renderer.updateAgent(state.id, state);
+    journey.step = 0; journey.openingRoof = { phase: 'running', attempts: 2, lastTick: 18 };
+    renderer.update(.016, undefined, speed, 18, journey);
+    for (const { id, position, rotation } of checkpoint) {
+      assert.deepEqual(renderer.getAgent(id)!.position.toArray(), [position.x, position.y, position.z]);
+      assert.equal(renderer.getAgentBody(id)!.rotation.y, rotation);
+    }
+    const brown = checkpoint[0], moving = { ...brown.position, z: brown.position.z - 2 };
+    renderer.updateAgent(brown.id, { ...brown, position: moving, velocity: { x: 0, y: 0, z: -4 } });
+    renderer.update(.016, undefined, 1, 19, journey);
+    const drawn = renderer.getAgent(brown.id)!.position.z;
+    assert.ok(drawn > moving.z && drawn < brown.position.z);
+  }
 });
 
 test('the caller disappears from the booth after the line connects and returns on retry', t => {
