@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test, { type TestContext } from 'node:test';
 import * as THREE from 'three';
-import { FILM_SCENE_BY_ID, FILM_SETS, filmEntry, type FilmJourney, type OpeningPhoneEncounter, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_HOTEL, filmEntry, type FilmJourney, type OpeningPhoneEncounter, type SandboxState } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.js';
 import { LightCulling } from '../packages/client/src/engine/LightCulling.js';
@@ -41,6 +41,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   texture.needsUpdate = true; hero.visible = false; scene.add(hero);
   const material = new THREE.MeshStandardMaterial({ map: texture }), geometry = new THREE.BoxGeometry();
   const skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; skin.castShadow = true; hero.add(skin);
+  const actors = new Map([[roofs ? 'agent_brown' : 'trinity', hero]]);
   const shadowMaterial = new THREE.MeshBasicMaterial({ transparent: true }), shadow = new THREE.Mesh(geometry, shadowMaterial);
   shadow.visible = false; scene.add(shadow);
   const lighting = new LightCulling(scene);
@@ -86,7 +87,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
     const before = work.length, live = film.root.children.slice();
-    film.prepareOpening(gpu, camera, journey, id => id === (roofs ? 'agent_brown' : 'trinity') ? hero : undefined, shadow, lighting);
+    film.prepareOpening(gpu, camera, journey, id => actors.get(id), shadow, lighting);
     assert.ok(work.length - before <= 1, 'preparation has one GPU task per frame');
     assert.deepEqual(film.root.children, live); assert.equal(target, null); assert.equal(gpu.debug.checkShaderErrors, true);
     assert.equal(hero.parent, scene); assert.equal(skin.visible || hero.visible || shadow.visible, false);
@@ -116,7 +117,7 @@ function fixture(t: TestContext, destination: 'm1_roofs' | 'm1_phone_escape', de
     return (roofs ? node?.children[0] : node) as THREE.Mesh | undefined;
   };
   t.after(() => { film.dispose(); lighting.dispose(); material.dispose(); geometry.dispose(); shadowMaterial.dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { film, journey, gpu, skin, shadow, material, work, meshes, roots, depths, mapped, prepare, drain, enter, nextMesh, livePointSlots,
+  return { film, journey, gpu, skin, shadow, material, actors, work, meshes, roots, depths, mapped, prepare, drain, enter, nextMesh, livePointSlots,
     requestVisit: () => {
       hero.visible = skin.visible = true;
       return film.beginOpeningVisit(gpu, camera, destination, player.id, [hero], lighting, sun);
@@ -186,6 +187,60 @@ test('the 303 cut prepares both shadow layouts while the roof images decode', t 
   for (const material of cast) material.addEventListener('dispose', () => released++);
   h.enter(); assert.equal(released, 0, 'keep the linked variants through the cut');
   h.film.update(undefined, undefined, 0); assert.equal(released, cast.size);
+});
+
+test('the roof prepares the actual materials of both officers following Brown', t => {
+  const h = fixture(t, 'm1_roofs');
+  const officers = OPENING_HOTEL.officers.map(({ id }) => {
+    const hero = new THREE.Group(), material = new THREE.MeshPhysicalMaterial(), mesh = new THREE.SkinnedMesh(h.skin.geometry, material);
+    t.after(() => material.dispose());
+    hero.visible = false; hero.add(mesh); h.actors.set(id, hero);
+    return { hero, mesh };
+  });
+  h.drain();
+  for (const { hero, mesh } of officers) {
+    assert.ok(h.meshes.has(mesh), 'the live officer material must be linked before the cut');
+    assert.equal(mesh.parent, hero); assert.equal(hero.visible, false);
+    assert.match(mesh.material.customProgramCacheKey(), /actor-local-skin-v1$/);
+  }
+});
+
+test('the roof uploads a large cast texture in strips and releases the partial texture on entry', t => {
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap;
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => {
+    if (previous) globalThis.ImageBitmap = previous;
+    else Reflect.deleteProperty(globalThis, 'ImageBitmap');
+  });
+  const h = fixture(t, 'm1_roofs'), texture = h.material.map!, image = new Bitmap();
+  texture.image = image; texture.flipY = false;
+  const source = texture.source, allocations: THREE.Texture[] = [], releases: THREE.Texture[] = [];
+  const residency = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  const strips: number[] = [];
+  Object.assign(h.gpu, {
+    capabilities: { maxTextureSize: 4096 }, properties: { get: (map: THREE.Texture) => residency.get(map) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true, pixelStorei() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, bitmap: Bitmap) {
+        assert.equal(bitmap, image); assert.deepEqual([row, width, height], [0, 2048, 256]);
+        strips.push(height); h.work.push('strip');
+      },
+    }),
+    initTexture(map: THREE.Texture) {
+      residency.set(map, { __webglTexture: {}, __version: map.version });
+      allocations.push(map); map.addEventListener('dispose', () => releases.push(map));
+      if (map.source.dataReady) h.work.push('texture');
+    },
+  });
+  for (let frame = 0; frame < 250 && !allocations.length; frame++) h.prepare();
+  assert.deepEqual(strips, [256]);
+  assert.equal(allocations.length, 1); assert.notEqual(allocations[0], texture);
+  assert.equal(texture.source, source); assert.equal(residency.has(texture), false);
+  h.enter();
+  assert.deepEqual(releases, allocations); assert.equal(texture.source, source);
+  assert.ok(h.film.root.getObjectByName('opening-roof-window-glass'));
 });
 
 test('a failed roof attempt or visit releases the detached Wells assets exactly once', t => {

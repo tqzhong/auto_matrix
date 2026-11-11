@@ -11,7 +11,7 @@ import { wetwallLocked, sixthLocked, SIXTH } from '@auto_matrix/shared';
 import { reloadedLocked } from '@auto_matrix/shared';
 import { trainmanChaseActive, trainmanChaseLocked, helGarageActive, helGarageLocked } from '@auto_matrix/shared';
 import { morningLocked } from '@auto_matrix/shared';
-import { openingHotelAlleyGuard } from '@auto_matrix/shared';
+import { OPENING_HOTEL, openingHotelAlleyGuard } from '@auto_matrix/shared';
 import { PRIMARY_DEMOLITION } from '@auto_matrix/shared';
 import * as THREE from 'three';
 import type { ComputerInvestigation, OfficeWorkday } from '@auto_matrix/shared';
@@ -274,7 +274,9 @@ export class Engine {
     this.lightingSystem.update(this.elapsed, this.playerControls?.id ? this.camera : undefined,
       Boolean(filmSet?.id === 'film_smith_avenue' || filmSet?.id === 'film_neb_deck' && meeting && !meeting.visiting && ['m1_recovery', 'm1_cabin'].includes(meeting.scene)), this.filmSets.atmosphere());
     const openingHotel = liveMatrixJourney?.scene === 'm1_room303' ? liveMatrixJourney.openingHotel : undefined;
-    const hotelPolice = openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
+    const pursuit = openingHotel?.phase === 'phone' || openingHotel?.phase === 'corridor';
+    const hotelPolice = pursuit ? [this.agentRenderer.getAgentHero('agent_brown'), ...OPENING_HOTEL.officers.map(({ id }) => this.agentRenderer.getAgentHero(id))]
+      .filter((group): group is THREE.Group => group !== undefined) : openingHotel ? this.sandboxRenderer.prepareOpeningHotelPolice() : undefined;
     if (!this.agentRenderer.prepareOpeningHotelTextures(this.renderer, openingHotel))
       this.filmSets.prepareOpeningHotelPolice(this.renderer, this.camera, this.lightCulling, hotelPolice);
     this.filmSets.prepareOpening(this.renderer, this.camera, liveMatrixJourney,

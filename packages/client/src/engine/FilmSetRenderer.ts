@@ -189,6 +189,7 @@ type OpeningPreparation = {
   scene: 'm1_roofs' | 'm1_phone_escape';
   room: FilmSetRenderer;
   steps?: Generator<void>;
+  textureUpload?: Generator<void, boolean>;
   colors?: CastColorPreparation;
   lighting?: LightCulling;
   gpu?: THREE.WebGLRenderer['properties'];
@@ -1305,6 +1306,7 @@ export class FilmSetRenderer {
     }
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (prepared.gpu !== renderer.properties) {
+      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose(); prepared.colors = undefined; prepared.gpu = renderer.properties;
       for (const material of prepared.roofShadows?.materials ?? []) {
         material.dispose(); prepared.room.materials.delete(material);
@@ -1334,7 +1336,9 @@ export class FilmSetRenderer {
       return;
     }
     const colors = prepared.colors;
-    for (const id of [next.actor, ...next.cast]) {
+    const cast = [next.actor, ...next.cast];
+    if (scene === 'm1_roofs') cast.push(...OPENING_HOTEL.officers.map(({ id }) => id));
+    for (const id of cast) {
       const group = actor(id);
       if (!group || colors.actors.has(group)) continue;
       const meshes: ColorMesh[] = [];
@@ -1366,10 +1370,28 @@ export class FilmSetRenderer {
       colors.meshes = [...new Set([...mapped, ...colors.meshes])];
       this.queueColorTextures(colors.textures, mapped);
     }
-    if (this.prepareColorTexture(renderer, colors.textures)) return;
+    if (this.prepareOpeningColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
       && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
-    this.prepareColorFrame(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+    this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
+  }
+  private prepareOpeningColorTexture(renderer: THREE.WebGLRenderer, prepared: OpeningPreparation, textures: Set<THREE.Texture>): boolean {
+    if (!prepared.textureUpload) {
+      for (const texture of textures) {
+        const image = texture.image as { width?: number; complete?: boolean } | null;
+        if (!texture.version || !image || image.complete === false) continue;
+        textures.delete(texture);
+        const uploaded = renderer.properties.get(texture) as { __version?: number; __webglTexture?: WebGLTexture };
+        if ((image.width ?? 0) < 1024 || uploaded.__version === texture.version) continue;
+        const bitmap = !uploaded.__webglTexture && bitmapUploadImage(renderer, texture);
+        if (!bitmap) { renderer.initTexture(texture); return true; }
+        prepared.textureUpload = stageBitmapTexture(renderer, texture, bitmap);
+        break;
+      }
+    }
+    if (!prepared.textureUpload) return false;
+    if (prepared.textureUpload.next().done) prepared.textureUpload = undefined;
+    return true;
   }
   private prepareOpeningRoofShadows(renderer: THREE.WebGLRenderer, camera: THREE.Camera, prepared: OpeningPreparation,
     colors: CastColorPreparation, hotel: LightCulling, roof: LightCulling): boolean {
@@ -2056,7 +2078,10 @@ export class FilmSetRenderer {
       if (preparedVisit) { this.preparedOpeningVisit = undefined; clearTimeout(preparedVisit.release); }
       const preparedOpening = this.preparedOpening && set?.id === this.preparedOpening.room.current?.id
         && sceneId === this.preparedOpening.scene && !journey?.visiting ? this.preparedOpening : undefined;
-      if (preparedOpening) { this.preparedOpening = undefined; preparedOpening.lighting?.dispose(); }
+      if (preparedOpening) {
+        this.preparedOpening = undefined;
+        preparedOpening.textureUpload?.return(false); preparedOpening.lighting?.dispose();
+      }
       const enteringOffice = set?.id === 'film_metacortex_floor' || set?.id === 'film_office_ledge';
       const prepared = enteringOffice ? this.preparedOffice?.renderer : undefined;
       if (prepared) this.preparedOffice = undefined;
@@ -4868,7 +4893,7 @@ export class FilmSetRenderer {
     const prepared = this.preparedOpening;
     if (!prepared) return;
     this.preparedOpening = undefined;
-    prepared.lighting?.dispose(); prepared.steps?.return(undefined); prepared.room.dispose();
+    prepared.textureUpload?.return(false); prepared.lighting?.dispose(); prepared.steps?.return(undefined); prepared.room.dispose();
   }
   private cancelOpeningVisit(): void {
     const visit = this.preparedOpeningVisit;
