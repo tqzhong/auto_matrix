@@ -145,13 +145,15 @@ export class OpeningHotelSystem {
   }
   climbFrame(actor: AgentState, direction: number, dt: number, tick: number): boolean {
     const state = this.state;
-    if (this.journey?.scene !== 'm1_room303' || this.journey.visiting || this.journey.actor !== actor.id || state?.phase !== 'climbing') return false;
+    if (this.journey?.scene !== 'm1_room303' || this.journey.visiting || this.journey.actor !== actor.id || !state) return false;
+    if (state.phase === 'done') { this.frame(actor); return true; }
+    if (state.phase !== 'climbing') return false;
     state.climbed = Math.max(0, Math.min(OPENING_HOTEL.ladderHeight, (state.climbed ?? 0) + direction * Math.min(.1, dt) * OPENING_HOTEL.climbSpeed));
     this.frame(actor);
     actor.velocity = { x: 0, y: direction * OPENING_HOTEL.climbSpeed, z: 0 };
     actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: direction }, startedAt: tick, duration: 1, progress: 0 };
     if (state.climbed >= OPENING_HOTEL.ladderHeight) {
-      state.phase = 'done'; actor.currentAction = null;
+      state.phase = 'done'; this.frame(actor);
       this.onAdvance?.('Trinity 爬上屋顶。Brown 和特工紧追而来，必须继续奔跑。', actor, tick);
     }
     return true;
@@ -159,11 +161,11 @@ export class OpeningHotelSystem {
   restoreFrame(actor: AgentState): boolean {
     const journey = this.journey, state = this.state;
     if (journey?.scene !== 'm1_room303' || journey.visiting || journey.actor !== actor.id
-      || !state || !['breach', 'dive', 'ladder_ready', 'climbing'].includes(state.phase)) return false;
+      || !state || !['breach', 'dive', 'ladder_ready', 'climbing', 'done'].includes(state.phase)) return false;
     const action = actor.currentAction, gesture = action?.parameters.hotel303 as { phase: string; elapsed: number } | undefined;
     const saved = state.phase === 'breach' || state.phase === 'dive'
       ? gesture?.phase === (state.phase === 'breach' ? 'surrender' : 'dive') && gesture.elapsed === state.elapsed
-      : action?.parameters.climbing === true;
+      : state.phase !== 'done' && action?.parameters.climbing === true;
     if (!saved) this.frame(actor);
     return true;
   }
@@ -184,6 +186,13 @@ export class OpeningHotelSystem {
       actor.rotation = Math.PI;
       actor.velocity = { x: 0, y: 0, z: 0 };
       actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, climbing: true, climbDirection: 0 }, startedAt: state.lastTick, duration: 1, progress: 0 };
+    } else if (state.phase === 'done') {
+      const { ladderHeight, ladderZ, landing } = OPENING_HOTEL;
+      actor.position = filmPosition(SET.id, 0, ladderZ + landing.offsetZ);
+      actor.position.y += ladderHeight + landing.thickness;
+      actor.rotation = Math.PI;
+      actor.velocity = { x: 0, y: 0, z: 0 };
+      actor.currentAction = null;
     }
   }
   tick(actor: AgentState, tick: number): boolean {
@@ -205,7 +214,7 @@ export class OpeningHotelSystem {
       }
       return true;
     }
-    if (state.phase === 'ladder_ready' || state.phase === 'climbing') { this.frame(actor); return true; }
+    if (state.phase === 'ladder_ready' || state.phase === 'climbing' || state.phase === 'done') { this.frame(actor); return true; }
     if (state.phase === 'failed') return true;
     if (state.phase !== 'combat') return false;
     if (actor.status !== 'alive' || actor.health <= 0) {

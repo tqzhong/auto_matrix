@@ -23,7 +23,8 @@ function fixture() {
   const outside = new THREE.PointLight(0xffffff, 80, 24); outside.position.set(1650, 6, 786); city.add(outside);
   const landingLight = new THREE.SpotLight(0xffffff, 0, 30); landingLight.castShadow = true; landingLight.visible = false; landingLight.position.copy(home.position); city.add(landingLight);
   const apartment = Object.assign(Object.create(ApartmentSetRenderer.prototype), { root, cityLights: city, roomLights, landingLight }) as ApartmentSetRenderer;
-  const work: string[] = [], batches: THREE.Object3D[][] = [], slots: number[] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  const work: string[] = [], batches: THREE.Object3D[][] = [], slots: number[] = [], views: number[] = [];
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   const camera = new THREE.PerspectiveCamera(58, 16 / 9, .5, 5000); camera.position.set(4737, 88, 4410); camera.updateMatrixWorld();
   const originalCamera = camera.matrixWorld.toArray();
   let ready = false, target: THREE.WebGLRenderTarget | null = null, disposals = 0, uploaded = new WeakMap<THREE.Texture, number>();
@@ -35,6 +36,7 @@ function fixture() {
     compile(subject: THREE.Object3D, eye: THREE.Camera, lights: THREE.Scene) {
       assert.ok(lights !== scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog);
       assert.ok(eye !== camera && eye.position.distanceTo(home.position) < 20); assert.equal(target?.width, 1);
+      views.push(eye.getWorldDirection(new THREE.Vector3()).z);
       const batch: THREE.Object3D[] = []; subject.traverse(o => batch.push(o));
       assert.ok(batch.length > 0 && batch.length <= 4); assert.ok(!batch.includes(hidden)); batches.push(batch);
       const selected: THREE.Light[] = []; lights.traverseVisible(o => { if (o instanceof THREE.Light) selected.push(o); });
@@ -48,18 +50,19 @@ function fixture() {
     initTexture(map: THREE.Texture) { assert.equal(map, texture); work.push('texture'); uploaded.set(map, map.version); },
   } as unknown as THREE.WebGLRenderer;
   const journey = { scene: 'm1_pills', pills: { phase: 'taking', elapsed: 6, choice: 'blue' } } as FilmJourney;
-  const prepare = () => {
-    const before = work.length; apartment.prepareReturn(renderer, camera, scene, journey, actor);
+  const prepare = (objects?: readonly (THREE.Group | THREE.Mesh | undefined)[]) => {
+    const before = work.length, pending = apartment.prepareReturn(renderer, camera, scene, journey, actor, objects);
     assert.ok(work.length - before <= 1, 'one compile, binding completion or texture upload per frame');
     assert.equal(renderer.getRenderTarget(), null); assert.equal(renderer.debug.checkShaderErrors, true);
     assert.equal(city.visible, false); assert.ok(roomLights.every(light => !light.visible));
     assert.equal(landingLight.visible, false); assert.equal(landingLight.intensity, 0);
     assert.equal(arms.visible, false); assert.equal(shirt.visible, false); assert.equal(arms.parent, actor);
     assert.deepEqual(camera.matrixWorld.toArray(), originalCamera);
+    return pending;
   };
   const drain = () => { for (let i = 0; i < 80; i++) prepare(); };
   const cancel = () => { journey.scene = 'm1_mirror'; prepare(); };
-  return { apartment, scene, city, root, actor, roomLights, journey, renderer, texture, work, batches, slots, arms, shirt, street, prepare, drain, cancel,
+  return { apartment, scene, city, root, actor, roomLights, journey, renderer, texture, work, batches, slots, views, arms, shirt, street, prepare, drain, cancel,
     ready: () => { ready = true; }, disposals: () => disposals,
     replaceGpu: () => { uploaded = new WeakMap(); renderer.properties = properties() as THREE.WebGLRenderer['properties']; },
     dispose: () => { cancel(); geometry.dispose(); material.dispose(); basic.dispose(); texture.dispose(); scene.environment!.dispose(); },
@@ -92,4 +95,38 @@ test('daylight changing during the drink prepares the new home light layout', t 
   assert.ok(h.batches.length > night); assert.ok(h.slots.slice(night).every(slots => slots === 8));
   const day = h.batches.length; h.roomLights.slice(5).forEach(light => { light.intensity = 0; }); h.drain();
   assert.ok(h.batches.length > day); assert.ok(h.slots.slice(day).every(slots => slots === 6));
+});
+
+test('a successful Wells connection prepares the apartment and the guests before Neo takes over', t => {
+  const h = fixture(); t.after(h.dispose);
+  const choi = new THREE.Group(), dujour = new THREE.Group();
+  const material = new THREE.MeshStandardMaterial({ map: h.texture }); t.after(() => material.dispose());
+  const model = new THREE.SkinnedMesh(h.arms.geometry, material), otherModel = h.shirt.clone();
+  otherModel.visible = true; choi.add(model); dujour.add(otherModel);
+  const goal = h.arms.clone(), shadow = h.shirt.clone();
+  const subjects = [choi, dujour, goal, shadow];
+  h.journey.scene = 'm1_phone_escape';
+  delete h.journey.pills;
+  h.journey.openingPhone = { phase: 'running', remaining: 8, lastTick: 0, attempts: 0 };
+  h.prepare(subjects); assert.deepEqual(h.work, []);
+  h.journey.openingPhone.phase = 'failed';
+  h.prepare(subjects); assert.deepEqual(h.work, []);
+  h.journey.openingPhone.phase = 'connected';
+  h.journey.visiting = 'm1_phone_escape';
+  h.prepare(subjects); assert.deepEqual(h.work, []);
+  delete h.journey.visiting;
+  assert.equal(h.prepare([choi, undefined, goal, shadow]), true, 'the normals queue must wait while the apartment still has work');
+  assert.ok(h.work.includes('compile'), 'the actual connected call starts preparation before the cut');
+  h.ready(); h.journey.openingPhone.phase = 'done';
+  for (let i = 0; i < 80; i++) h.prepare(subjects);
+  const meshes = h.batches.flat();
+  for (const mesh of [model, otherModel, h.arms, h.shirt, h.street]) assert.ok(meshes.includes(mesh), 'all three actors and the home need prepared materials');
+  assert.ok(meshes.includes(goal) && meshes.includes(shadow), 'prepare the goal ring and contact shadow while they are still hidden');
+  assert.equal(goal.visible || shadow.visible, false);
+  assert.deepEqual({ facesTheDesk: h.views.every(z => z < 0), actorLocalSkin: material.customProgramCacheKey().endsWith(':actor-local-skin-v1') },
+    { facesTheDesk: true, actorLocalSkin: true }, 'the queued programs need the arriving view and the draw-time skin variant');
+  const count = h.work.length;
+  assert.equal(h.prepare(subjects), false); assert.equal(h.work.length, count);
+  h.journey.scene = 'm1_wake_up';
+  h.prepare(subjects); assert.equal(h.work.length, count);
 });

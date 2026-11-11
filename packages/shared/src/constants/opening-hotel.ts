@@ -7,6 +7,7 @@ export const OPENING_HOTEL = {
   window: { x: 0, z: -23 },
   ladderZ: -30,
   ladderHeight: 7,
+  landing: { offsetZ: -1.2, width: 5.4, depth: 4.3, thickness: .24 },
   climbSpeed: 2.4,
   breachSeconds: 1.5,
   diveSeconds: 1.6,

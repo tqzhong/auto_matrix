@@ -1024,6 +1024,17 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
     h.players.step(.1, true, h.tick());
   }
   assert.ok(state.completed.includes(room.id));
+  const landing = { ...h.actor().position };
+  for (let frame = 0; frame < 30; frame++) move(0, -1, frame === 0);
+  assert.deepEqual(h.actor().position, landing, 'holding movement while waiting to continue must leave Trinity on the landing');
+  assert.deepEqual(h.actor().velocity, { x: 0, y: 0, z: 0 });
+  assert.equal(landing.y, FILM_SETS[room.set].center.y + 7.24);
+  assert.equal(groundHeight(landing, true, h.sandbox.state.structures), landing.y);
+  const belowLanding = { ...landing, y: FILM_SETS[room.set].center.y };
+  assert.equal(groundHeight(belowLanding, true, h.sandbox.state.structures), belowLanding.y, 'the upper platform must not lift someone below it');
+  h.players.release('film-player', h.tick());
+  assert.equal(h.players.possess('film-player', 'trinity', h.tick()).agentId, 'trinity');
+  assert.deepEqual(h.actor().position, landing, 'reconnecting before continuing must retain the landing');
   h.command('next'); assert.equal(state.scene, roofs.id);
   for (let frame = 0; frame < 150 && state.openingRoof?.phase === 'running' && state.step < 2; frame++) {
     const localX = h.actor().position.x - FILM_SETS[roofs.set].center.x;
@@ -1053,6 +1064,31 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
   h.advance(4); assert.equal(state.openingPhone?.phase, 'done');
   h.advance(Math.ceil(WELLS_AFTERMATH.seconds * 2) + 1);
   h.command('next'); assert.equal(state.scene, 'm1_wake_up');
+});
+
+test('restoring a completed 303 climb returns Trinity to the upper platform before continuing', () => {
+  const h = setup(); h.command('start');
+  const room = FILM_SCENE_BY_ID.m1_room303, state = h.sandbox.life.film.state!;
+  state.step = room.steps.length; state.completed = [room.id];
+  Object.assign(state.openingHotel!, { phase: 'done', climbed: OPENING_HOTEL.ladderHeight });
+  const oldPosition = filmPosition(room.set, 0, OPENING_HOTEL.ladderZ);
+  const actor = h.actor(); actor.position = oldPosition;
+  h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state)));
+  assert.equal(actor.position.y, oldPosition.y + 7.24, 'an old save below the deck must restore to the completed climb');
+  assert.equal(groundHeight(actor.position, true, h.sandbox.state.structures), actor.position.y);
+  assert.deepEqual(actor.velocity, { x: 0, y: 0, z: 0 });
+  assert.deepEqual(h.sandbox.life.film.state!.completed, [room.id]);
+  const landing = { ...actor.position };
+  h.command(`visit:${room.id}`);
+  assert.equal(h.sandbox.life.film.state!.visiting, room.id, 'the completed 303 scene must still be available to revisit');
+  const visitEntry = { ...actor.position };
+  h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, jump: false, sprint: false, sequence: 1 });
+  h.players.step(.1, true, h.tick());
+  assert.ok(actor.position.z < visitEntry.z, 'the landing hold must not affect free movement on a revisit');
+  h.command('return');
+  assert.deepEqual(actor.position, landing);
+  h.command('next');
+  assert.equal(h.sandbox.life.film.state!.scene, 'm1_roofs');
 });
 
 test('reconnecting a defeated story actor rebuilds at the scene checkpoint instead of their daily home', () => {

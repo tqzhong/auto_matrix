@@ -17,8 +17,9 @@ export class LifeInteriors {
   private materials = new Map<string, THREE.MeshStandardMaterial>();
   private apartment!: ApartmentSetRenderer;
 
-  prepareApartmentReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, life?: NeoLifeState, actor?: THREE.Group): void {
-    this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor);
+  prepareApartmentReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, life?: NeoLifeState, actor?: THREE.Group,
+    openingObjects?: readonly (THREE.Group | THREE.Mesh | undefined)[]): boolean {
+    return this.apartment.prepareReturn(renderer, camera, scene, life?.journey, actor, openingObjects);
   }
 
   constructor(parent: THREE.Group) {

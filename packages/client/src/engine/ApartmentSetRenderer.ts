@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, lifeRoomCenter, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
+import { APARTMENT, APARTMENT_BOOK, APARTMENT_CHAIR, APARTMENT_NETWORK, APARTMENT_ROOM, FILM_SCENE_BY_ID, MORNING, apartmentAfter, apartmentDoor, computerNetworkPull, filmEntry, filmStepPosition, lifeRoomCenter, wakeCallDoor, wakeCallHandsetHeld, type ComputerInvestigation, type FilmJourney, type NeoLifeState } from '@auto_matrix/shared';
 import { apartmentDisc } from '../agents/ApartmentDisc.js';
 import { apartmentHandset, apartmentHandsetPose } from '../agents/ApartmentHandset.js';
+import { prepareSkinnedMaterial } from '../agents/SkinnedPrecision.js';
 import { LightCulling } from './LightCulling.js';
 import { cacheReadyProgramLocations } from './PrepareShaderProgram.js';
 
@@ -37,7 +38,7 @@ export class ApartmentSetRenderer {
   private windowGlass: THREE.MeshStandardMaterial;
   private windowLights: THREE.PointLight[] = [];
   private roomLights: THREE.Light[] = [];
-  private returnPreparation?: { gpu: THREE.WebGLRenderer['properties']; actor: THREE.Group; points: number; steps?: Generator<void> };
+  private returnPreparation?: { gpu: THREE.WebGLRenderer['properties']; subjects: (THREE.Group | THREE.Mesh)[]; points: number; opening: boolean; steps?: Generator<void> };
   constructor(parent: THREE.Group, private cityLights?: THREE.Group) {
     this.root.name = 'anderson-shared-apartment'; parent.add(this.root);
     const wood = this.mat(0x82765b, .88, 0, 'old_wood_floor');
@@ -245,21 +246,31 @@ export class ApartmentSetRenderer {
     this.root.traverse(object => { if (object instanceof THREE.Light && object !== light) this.roomLights.push(object); });
     this.batch(); this.update();
   }
-  prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group): void {
-    if (journey?.scene !== 'm1_pills' || journey.visiting || journey.pills?.phase !== 'taking' || journey.pills.choice !== 'blue'
-      || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) { this.cancelReturnPreparation(); return; }
-    const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
-    if (this.returnPreparation?.gpu !== renderer.properties || this.returnPreparation.actor !== actor || this.returnPreparation.points !== points) {
-      this.cancelReturnPreparation();
-      this.returnPreparation = { gpu: renderer.properties, actor, points, steps: this.prepareReturnSteps(renderer, camera, scene, actor) };
+  prepareReturn(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, journey?: FilmJourney, actor?: THREE.Group,
+    openingObjects: readonly (THREE.Group | THREE.Mesh | undefined)[] = []): boolean {
+    const phone = journey?.scene === 'm1_phone_escape' ? journey.openingPhone : undefined;
+    const opening = phone?.phase === 'connected' || phone?.phase === 'done';
+    const blue = journey?.scene === 'm1_pills' && journey.pills?.phase === 'taking' && journey.pills.choice === 'blue';
+    if ((!opening && !blue) || journey?.visiting || !actor || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelReturnPreparation(); return false;
     }
-    const prepared = this.returnPreparation;
+    const subjects = opening ? [actor, ...openingObjects.filter((object): object is THREE.Group | THREE.Mesh => object !== undefined)] : [actor];
+    const points = this.roomLights.reduce((count, light) => count + Number(light instanceof THREE.PointLight && light.intensity > 0), 0);
+    const previous = this.returnPreparation;
+    if (previous?.gpu !== renderer.properties || previous.points !== points || previous.opening !== opening || previous.subjects.length !== subjects.length
+      || subjects.some((object, index) => previous.subjects[index] !== object)) {
+      this.cancelReturnPreparation();
+      this.returnPreparation = { gpu: renderer.properties, subjects, points, opening, steps: this.prepareReturnSteps(renderer, camera, scene, subjects, opening) };
+    }
+    const prepared = this.returnPreparation!;
     if (prepared.steps?.next().done) prepared.steps = undefined;
+    return prepared.steps !== undefined;
   }
   private cancelReturnPreparation(): void {
     this.returnPreparation?.steps?.return(undefined); this.returnPreparation = undefined;
   }
-  private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene, actor: THREE.Group): Generator<void> {
+  private *prepareReturnSteps(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, scene: THREE.Scene,
+    subjects: (THREE.Group | THREE.Mesh)[], opening: boolean): Generator<void> {
     const lights = new THREE.Scene(); lights.environment = scene.environment; lights.fog = scene.fog;
     for (const light of scene.children) {
       if (light.visible && (light instanceof THREE.DirectionalLight || light instanceof THREE.HemisphereLight)) lights.add(light.clone());
@@ -269,15 +280,32 @@ export class ApartmentSetRenderer {
     for (const source of fixtures) {
       const light = source.clone(); light.visible = true; source.getWorldPosition(light.position); lights.add(light);
     }
-    const center = lifeRoomCenter('neo_apartment')!, eye = camera.clone();
-    eye.position.set(center.x - .8, center.y + 6, center.z - 11.2); eye.lookAt(center.x - .8, center.y + 2.8, center.z);
+    if (opening) {
+      const first = FILM_SCENE_BY_ID.m1_wake_up, goal = filmStepPosition(first, first.steps[0]);
+      const objective = new THREE.PointLight(0xffffff, 1, 5);
+      objective.position.set(goal.x, goal.y + .68, goal.z); lights.add(objective);
+    }
+    const eye = camera.clone();
+    if (opening) {
+      // Neo enters facing the desk. The view at the other side of the room selects different light counts.
+      const entry = filmEntry(FILM_SCENE_BY_ID.m1_wake_up), shoulder = eye.aspect < .8 ? .3 : .8;
+      eye.position.set(entry.x + shoulder, entry.y + 5.6, entry.z + 10.2);
+      eye.lookAt(entry.x + shoulder, entry.y + 1.97, entry.z - 2);
+    } else {
+      const center = lifeRoomCenter('neo_apartment')!;
+      eye.position.set(center.x - .8, center.y + 6, center.z - 11.2); eye.lookAt(center.x - .8, center.y + 2.8, center.z);
+    }
     eye.fov = 57; eye.updateProjectionMatrix(); eye.updateMatrixWorld();
     const frustum = new THREE.Frustum().setFromProjectionMatrix(eye.projectionMatrix.clone().multiply(eye.matrixWorldInverse));
     const meshes = new Set<THREE.Mesh | THREE.Line>(), textures = new Set<THREE.Texture>();
     const collect = (object: THREE.Object3D) => { if (object instanceof THREE.Mesh || object instanceof THREE.Line) meshes.add(object); };
-    this.root.traverseVisible(collect); actor.traverseVisible(collect);
-    // These existing parts become visible again after the pill performance ends.
-    for (const name of ['Tracking_arms', 'Tracking_shirt']) { const part = actor.getObjectByName(name); if (part) collect(part); }
+    this.root.traverseVisible(collect);
+    for (const subject of subjects) {
+      if (subject instanceof THREE.Mesh) meshes.add(subject);
+      else subject.traverseVisible(collect);
+    }
+    // Neo can change to his home shirt and sleeves on the first frame in the room.
+    for (const name of ['Tracking_arms', 'Tracking_shirt']) { const part = subjects[0].getObjectByName(name); if (part) collect(part); }
     for (const object of this.cityLights?.children ?? []) {
       if (!object.visible || !(object instanceof THREE.Mesh || object instanceof THREE.Line)) continue;
       object.updateWorldMatrix(true, false);
@@ -297,6 +325,10 @@ export class ApartmentSetRenderer {
         if (ready >= 0) cacheReadyProgramLocations(renderer, pending.splice(ready, 1)[0]);
         else if (queue.length) {
           const batch = queue.splice(0, 4), subject = new THREE.Group(), previous = renderer.getRenderTarget(), start = programs?.length ?? 0;
+          if (opening) for (const mesh of batch) if (mesh instanceof THREE.SkinnedMesh) {
+            if (Array.isArray(mesh.material)) mesh.material.forEach(prepareSkinnedMaterial);
+            else prepareSkinnedMaterial(mesh.material);
+          }
           subject.traverse = visit => batch.forEach(visit);
           try { renderer.setRenderTarget(target); culling.compileSubject(renderer, eye, subject); }
           finally { renderer.setRenderTarget(previous); }

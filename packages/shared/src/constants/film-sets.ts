@@ -32,6 +32,7 @@ import { LAFAYETTE, hotelContains, hotelBlocked, hotelFloor } from './lafayette.
 import { mountainFloor } from './mountain.js';
 import { TRUCKS } from './trucks.js';
 import { OPENING_ESCAPE } from './opening-escape.js';
+import { OPENING_HOTEL } from './opening-hotel.js';
 import { THE_ONE } from './the-one.js';
 import { HAMMER_ROUTE, HAMMER_COCKPIT, hammerHeight } from './hammer-flight.js';
 import { ORACLE_ENTRANCE } from './oracle.js';
@@ -395,6 +396,12 @@ export function filmGroundHeight(position: Vector3, set: FilmSet, craterDepth = 
   if (set.id === 'film_ambush_house' && position.y - set.center.y < -70) return set.center.y + (position.y - set.center.y < BASEMENT.floor - 2 ? BASEMENT.tunnelFloor : BASEMENT.floor);
   if (set.id === 'film_ambush_house') return set.center.y + (ambushFloor(position.x - set.center.x, position.z - set.center.z, position.y - set.center.y) ?? -AMBUSH_STAIRS.rise * (AMBUSH_STOREYS + 1));
   if (set.id === 'film_hammer_route') return set.center.y + hammerHeight(HAMMER_ROUTE.start) + HAMMER_COCKPIT.floor + 1;
+  if (set.id === 'film_heart_hotel') {
+    const { ladderHeight, ladderZ, landing } = OPENING_HOTEL;
+    const top = set.center.y + ladderHeight + landing.thickness;
+    if (position.y >= top - .2 && Math.abs(position.x - set.center.x) <= landing.width / 2
+      && Math.abs(position.z - set.center.z - ladderZ - landing.offsetZ) <= landing.depth / 2) return top;
+  }
   if (set.id === 'film_hotel_roofs') {
     const z = position.z - set.center.z;
     if (z < OPENING_ESCAPE.roofGapNear && z > OPENING_ESCAPE.roofGapFar) return set.center.y - OPENING_ESCAPE.roofDrop;

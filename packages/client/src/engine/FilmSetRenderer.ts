@@ -390,6 +390,7 @@ export class FilmSetRenderer {
     this.markerLight = new THREE.PointLight(0xf6d99c, 0, 5); scene.add(this.markerLight);
   }
   get active(): FilmSet | undefined { return this.current; }
+  get goalMarker(): THREE.Mesh { return this.marker; }
   get lafayetteStreetHidden(): boolean { return this.approach?.root.visible === false; }
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
@@ -3313,7 +3314,9 @@ export class FilmSetRenderer {
     const ladder = new THREE.Group(); ladder.name = 'hotel-303-fire-escape-ladder'; this.root.add(ladder);
     for (const x of [-.8, .8]) ladder.add(this.box(this.metal, x, OPENING_HOTEL.ladderHeight / 2, OPENING_HOTEL.ladderZ - .4, .16, OPENING_HOTEL.ladderHeight + .6, .18));
     for (let y = .35; y < OPENING_HOTEL.ladderHeight; y += .65) ladder.add(this.box(this.metal, 0, y, OPENING_HOTEL.ladderZ - .4, 1.75, .12, .16));
-    ladder.add(this.box(this.metal, 0, OPENING_HOTEL.ladderHeight + .12, OPENING_HOTEL.ladderZ - 1.2, 5.4, .24, 4.3));
+    const { landing } = OPENING_HOTEL;
+    ladder.add(this.box(this.metal, 0, OPENING_HOTEL.ladderHeight + landing.thickness / 2,
+      OPENING_HOTEL.ladderZ + landing.offsetZ, landing.width, landing.thickness, landing.depth));
     const exterior = this.pbr('damaged_plaster', 0x73746e, 6);
     this.box(exterior, 0, 8, -42, 27, 16, .5);
     for (const x of [-9, -3, 3, 9]) {
