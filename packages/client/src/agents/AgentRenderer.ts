@@ -5,7 +5,7 @@ import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
 import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_HOTEL, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
-import { FILM_SCENES, FILM_SCENE_BY_ID } from '@auto_matrix/shared';
+import { FILM_SCENES, FILM_SCENE_BY_ID, filmSetAt } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -566,6 +566,10 @@ export class AgentRenderer {
   }
 
   update(delta: number, camera?: THREE.Camera, speed = 1, tick = 0, journey?: FilmJourney, garageCar?: GarageCarPose): void {
+    const scene = journey?.visiting ?? journey?.scene;
+    const opening = scene && scene !== 'm1_wake_up' && openingScenes.includes(scene) ? FILM_SCENE_BY_ID[scene] : undefined;
+    const player = this.playerId ? this.agents.get(this.playerId)?.state : undefined;
+    const openingSet = this.matrix && opening && player?.isInMatrix && filmSetAt(player.position, true)?.id === opening.set ? opening.set : undefined;
     const roof = journey?.scene === 'm1_roofs' && !journey.visiting ? journey.openingRoof : undefined;
     const roofRestarted = roof?.phase === 'running' && roof.attempts > 0 && roof.attempts !== this.openingRoofAttempt;
     this.openingRoofAttempt = roof?.attempts;
@@ -694,6 +698,7 @@ export class AgentRenderer {
         && !['neo', 'trinity', 'agent_thompson'].includes(id) && !state.controller;
       const bodyPresent = this.bodyPresent(state);
       entry.group.visible = state.isInMatrix === this.matrix && bodyPresent && !phoneExit && !rescueBystander
+        && (!openingSet || filmSetAt(state.position, state.isInMatrix)?.id === openingSet)
         && (wellsGesture?.role !== 'smith' || wellsGesture.elapsed >= WELLS_AFTERMATH.firstFoot);
       const doorActor = journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.actor === id && state.status === 'alive' && state.currentLocation === 'film_club_hel';
       const fastDoor = doorActor ? (id === this.playerId ? this.playerMotion?.helDoorPush : undefined)
