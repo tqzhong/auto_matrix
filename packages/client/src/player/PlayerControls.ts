@@ -55,6 +55,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
+import { WELLS_AFTERMATH, wellsAftermathPose } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -562,7 +563,7 @@ export class PlayerControls {
       climb: (this.climbing || upperDiggerLocked(this.motion.upperDigger) || dockReloadLocked(this.motion.dockReload) || this.motion.tvExit?.phase === 'emerging') && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
 
-  update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false): void {
+  update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false, wellsElapsed?: number): void {
     if (!this.id) return;
     const sixth = state.currentAction?.parameters.sixth as MotionInput['sixth'];
     if (this.motion.sixth && !sixth) this.performing = false;
@@ -1495,7 +1496,9 @@ export class PlayerControls {
       this.camera.fov = Math.max(57, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(35)) / this.camera.aspect)));
       this.camera.near = .1; this.camera.updateProjectionMatrix();
       const hit = !openingAnswer && openingHit;
-      if (hit) {
+      if (wellsElapsed !== undefined && wellsElapsed >= WELLS_AFTERMATH.bootShot) {
+        this.wellsAftermathCamera(wellsElapsed);
+      } else if (hit) {
         const { origin, direction } = hit, side = origin.x * direction.z >= 0 ? 1 : -1;
         const x = origin.x + direction.x * 13 - direction.z * 9 * side, z = origin.z + direction.z * 13 + direction.x * 9 * side;
         this.camera.position.set(center.x + THREE.MathUtils.clamp(x, 1 - width / 2, width / 2 - 1), center.y + 8,
@@ -3382,6 +3385,29 @@ export class PlayerControls {
     const forward = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(this.yaw) * Math.cos(pitch));
     this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
     this.camera.near = .06; this.camera.updateProjectionMatrix();
+  }
+
+  private wellsAftermathCamera(elapsed: number): void {
+    const { center } = FILM_SETS.film_wells_phone;
+    const { streetShot, conversationShot, receiverShot, receiver } = WELLS_AFTERMATH;
+    const portrait = this.camera.aspect < .85;
+    const setShot = (eye: [number, number, number], aim: [number, number, number], vertical: number, horizontal: number) => {
+      this.camera.fov = Math.max(vertical, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontal / 2)) / this.camera.aspect)));
+      this.camera.updateProjectionMatrix();
+      this.camera.position.set(center.x + eye[0], center.y + eye[1], center.z + eye[2]);
+      this.camera.lookAt(center.x + aim[0], center.y + aim[1], center.z + aim[2]);
+    };
+    if (elapsed >= receiverShot) {
+      setShot([-6.5, -.05, -38.75], [receiver.x, receiver.y - 1, receiver.z], 28, 24);
+    } else if (elapsed >= conversationShot) {
+      setShot([portrait ? -15.85 : -15.1, 4.2, -35.2], [-5.65, 1.12, -34.75], 47, 65);
+    } else if (elapsed >= streetShot) {
+      const smith = wellsAftermathPose({ elapsed, role: 'smith' });
+      setShot([-12.15, 3.25, smith.z - 5.2], [smith.x + 1.8, 1.55, smith.z - 1.25], 44, 63);
+    } else {
+      const lowered = THREE.MathUtils.smoothstep(elapsed, 1.06, 2.24);
+      setShot([-7.8, .18, -25.4], [-2.85 - .6 * lowered, .48 - .89 * lowered, -26.52], 35, 54);
+    }
   }
 
   syncLogosCamera(group: THREE.Group): void {

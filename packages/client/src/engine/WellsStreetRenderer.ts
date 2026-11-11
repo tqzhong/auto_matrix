@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OPENING_PHONE, WELLS_STREET, WELLS_TRUCK, streetLamps, type FilmSet, type openingTruckPose } from '@auto_matrix/shared';
+import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_STREET, WELLS_TRUCK, streetLamps, type FilmSet, type openingTruckPose } from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { UrbanMaterials } from './UrbanMaterials.js';
 
@@ -8,6 +8,7 @@ export class WellsStreetRenderer {
   private root = new THREE.Group();
   private street = new THREE.Group();
   private truck = new THREE.Group();
+  private driverDoor = new THREE.Group();
   private wheels: THREE.Group[] = [];
   private urban = new UrbanMaterials();
   private geometries = new Set<THREE.BufferGeometry>();
@@ -30,8 +31,9 @@ export class WellsStreetRenderer {
     for (const geometry of this.geometries) if (!live.has(geometry)) { geometry.dispose(); this.geometries.delete(geometry); }
   }
 
-  update(pose: ReturnType<typeof openingTruckPose>): void {
+  update(pose: ReturnType<typeof openingTruckPose>, doorAngle = 0): void {
     this.truck.position.set(pose.x, 0, pose.z); this.truck.rotation.y = pose.yaw;
+    this.driverDoor.rotation.y = doorAngle;
     const travel = Math.hypot(pose.x - 15, pose.z - 4);
     const { sidewalkOffset, sidewalkWidth, sidewalkY, sidewalkHeight } = WELLS_STREET;
     const inner = this.set.width * (sidewalkOffset - sidewalkWidth / 2), outer = this.set.width * (sidewalkOffset + sidewalkWidth / 2);
@@ -172,6 +174,21 @@ export class WellsStreetRenderer {
     this.box(this.truck, steel, 0, 1.09, front + .19, chassis.width, .27, .38);
     this.box(this.truck, dark, 0, 1.93, front + .11, 1.93, 1.14, .12);
     for (let i = -4; i <= 4; i++) this.box(this.truck, steel, i * .197, 1.93, front + .04, .053, 1.05, .026);
+    const { door, upperStep, lowerStep } = WELLS_AFTERMATH;
+    this.driverDoor.name = 'wells-driver-door';
+    this.driverDoor.position.set(door.x, 0, door.z); this.truck.add(this.driverDoor);
+    this.box(this.driverDoor, glass, .095, 3.53, .96, .08, 1.04, 1.84);
+    this.box(this.driverDoor, paint, .03, 2.99, .98, .12, .55, 1.96);
+    this.box(this.driverDoor, paint, .03, 4.047, .98, .13, .105, 1.96);
+    for (const z of [.035, 1.925]) this.box(this.driverDoor, paint, .03, 3.54, z, .13, 1.01, .11);
+    this.box(this.driverDoor, steel, -.045, 2.94, 1.61, .11, .085, .28);
+    for (const step of [upperStep, lowerStep])
+      this.box(this.truck, steel, step.x, step.y - .075, step.z, .7, .15, 1.26).name = 'wells-cab-step';
+    for (const edge of [-.49, .49]) {
+      const dx = upperStep.x - lowerStep.x, dy = upperStep.y - lowerStep.y;
+      this.box(this.truck, dark, (lowerStep.x + upperStep.x) / 2, (lowerStep.y + upperStep.y) / 2 - .09, lowerStep.z + edge,
+        .13, Math.hypot(dx, dy), .14).rotation.z = -Math.atan2(dx, dy);
+    }
     const lettering = this.compactorLettering();
     for (const side of [-1, 1]) {
       const lampX = side * 1.5;
@@ -179,8 +196,10 @@ export class WellsStreetRenderer {
       this.box(this.truck, headlamp, lampX, 1.9, front + .055, .62, .46, .05);
       this.box(this.truck, amber, side * 1.79, hood + .04, -6.51, .31, .13, .36);
       this.spot(this.truck, [lampX, 1.9, front], [lampX * .55, .14, front - 25], 0xe2e9ca, 480, 39, .71);
-      this.box(this.truck, glass, side * 1.845, 3.53, -1.24, .08, 1.04, 1.84);
-      this.box(this.truck, paint, side * 1.91, 3, -.31, .1, .5, 3.76);
+      if (side > 0) {
+        this.box(this.truck, glass, 1.845, 3.53, -1.24, .08, 1.04, 1.84);
+        this.box(this.truck, paint, 1.91, 3, -.31, .1, .5, 3.76);
+      } else this.box(this.truck, paint, -1.91, 3, .665, .1, .5, 1.81);
       this.box(this.truck, steel, side * 1.99, 3.34, -2.05, .14, .53, .32);
       this.box(this.truck, steel, side * 1.94, 2.84, -.02, .08, .09, .32);
       for (const z of [2.05, 5.1, 8.1, 11.1]) this.box(this.truck, dark, side * 2.865, 4.25, z, .09, 5.8, .19);

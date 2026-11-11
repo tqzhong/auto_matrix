@@ -5,6 +5,7 @@ import { HEL_BREAKOUT, helDanceDoorDuration, helDanceDoorText } from '@auto_matr
 import { catchDistance } from '@auto_matrix/shared';
 import { sourcePortalActive, sourcePortalLocked, sourcePortalText } from '@auto_matrix/shared';
 import { filmSceneForJourney } from '@auto_matrix/shared';
+import { wellsAftermathReady } from '@auto_matrix/shared';
 import { filmStepNear, mobilFamilyText, mobilLuggageText, mobilReunionRoot, mobilReunionText, MOBIL_LUGGAGE } from '@auto_matrix/shared';
 import { primaryText, TRINITY_RELAY, trinityRelayText, TRINITY_TERMINAL, trinityTerminalActive, trinityTerminalText } from '@auto_matrix/shared';
 import { FREEWAY_HANDOFF, freewayHandoffReady, freewayHandoffText } from '@auto_matrix/shared';
@@ -169,7 +170,8 @@ export class SandboxUI {
     if (journey && journey.actor === this.player?.id) {
       const step = filmSceneForJourney(journey)!.steps[journey.step];
       if (!journey.visiting && journey.scene === 'm1_smith_question' && journey.government?.phase === 'monologue') return;
-      if (!journey.visiting && journey.scene === 'm1_phone_escape' && journey.openingPhone?.phase === 'answering') return;
+      if (!journey.visiting && journey.scene === 'm1_phone_escape' && (['answering', 'connected'].includes(journey.openingPhone?.phase ?? '')
+        || journey.openingPhone?.phase === 'done' && !wellsAftermathReady(journey.openingPhone))) return;
       if (!journey.visiting && journey.scene === 'm3_family' && journey.step === 1 && journey.mobil?.family?.phase !== 'reflection') {
         this.send({ kind: 'life', target: 'film:act' }); return;
       }
@@ -726,13 +728,19 @@ export class SandboxUI {
     if (!journey.visiting && scene.id === 'm1_phone_escape' && journey.openingPhone) {
       const phone = journey.openingPhone; const failed = phone.phase === 'failed';
       const approaching = phone.phase === 'running' || phone.phase === 'answering';
+      const ready = wellsAftermathReady(phone);
       this.el('film-sequence').classList.remove('hidden'); this.el('film-sequence').classList.toggle('urgent', failed || approaching && phone.remaining < 5);
       this.el('film-sequence-line').textContent = journey.lastText;
       this.el('film-sequence-hint').textContent = phone.phase === 'running' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · Shift 奔跑 · 到电话亭按 G`
         : phone.phase === 'answering' ? `取筒接听中 · 卡车撞击前 ${phone.remaining.toFixed(1)} 秒`
-        : failed ? `${phone.hit && !phone.answer ? 'Trinity 遭卡车撞击' : '撤离失败'} · J 手记重试` : phone.phase === 'connected' ? '连接成功 · 卡车正在撞击' : 'Trinity 已安全撤离 · G 继续';
+        : failed ? `${phone.hit && !phone.answer ? 'Trinity 遭卡车撞击' : '撤离失败'} · J 手记重试`
+          : phone.phase === 'connected' ? '连接成功 · 卡车正在撞击' : ready ? 'G 接管 Neo · J 手记' : 'Wells 街 · 特工调查 · 自动保存';
       document.getElementById('game-objective-copy')!.textContent = failed ? '撤离失败 · J 打开手记重试'
-        : approaching ? `卡车将在 ${phone.remaining.toFixed(1)} 秒后撞击电话亭` : 'Trinity 已断开连接';
+        : approaching ? `卡车将在 ${phone.remaining.toFixed(1)} 秒后撞击电话亭` : ready ? '按 G 切到 Neo 的公寓' : 'Trinity 已断开连接';
+      if (!approaching && !failed) {
+        this.el('sandbox-nearby').textContent = ready ? 'G 接管 Neo' : '街口演出 · 自动保存';
+        this.el('sandbox-interact').classList.toggle('hidden', !ready);
+      }
     }
     if (!journey.visiting && scene.id === 'm3_hel_entry' && journey.step === 0) {
       const lift = journey.helElevator, locked = helElevatorLocked(journey);

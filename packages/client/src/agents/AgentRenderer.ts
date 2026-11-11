@@ -4,7 +4,7 @@ import { poseResurrectionPair } from './TheOnePerformance.js';
 import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
-import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, helDanceDoorDuration, helDanceDoorLocked } from '@auto_matrix/shared';
+import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
 import { poseFreewayTransferContact } from './FreewayPickupContact.js';
@@ -612,12 +612,14 @@ export class AgentRenderer {
       const gardenGesture = gardenRole && { ...gardenClock!, role: gardenRole };
       const smithLocked = smithFinaleLocked(state.currentAction?.parameters.smithFinale as MotionInput['smithFinale']);
       if (physical && (this.matrix || !cut || id === 'body:neo' && cut.neoOut || id === 'body:trinity' && cut.trinityOut)) { entry.group.visible = false; continue; }
+      const wellsGesture = state.currentAction?.parameters.wellsAftermath as MotionInput['wellsAftermath'];
       const phoneExit = journey?.scene === 'm1_phone_escape' && !journey.visiting && journey.actor === id && ['connected', 'done'].includes(journey.openingPhone?.phase ?? '');
       const phoneFailed = journey?.scene === 'm1_phone_escape' && !journey.visiting && journey.actor === id && journey.openingPhone?.phase === 'failed' && Boolean(journey.openingPhone.answer || journey.openingPhone.hit);
       const rescueBystander = journey?.scene === 'm2_catch' && !journey.visiting && state.currentLocation === 'film_trinity_roof'
         && !['neo', 'trinity', 'agent_thompson'].includes(id) && !state.controller;
       const bodyPresent = this.bodyPresent(state);
-      entry.group.visible = state.isInMatrix === this.matrix && bodyPresent && !phoneExit && !rescueBystander;
+      entry.group.visible = state.isInMatrix === this.matrix && bodyPresent && !phoneExit && !rescueBystander
+        && (wellsGesture?.role !== 'smith' || wellsGesture.elapsed >= WELLS_AFTERMATH.firstFoot);
       const doorActor = journey?.scene === 'm3_hel_entry' && !journey.visiting && journey.actor === id && state.status === 'alive' && state.currentLocation === 'film_club_hel';
       const fastDoor = doorActor ? (id === this.playerId ? this.playerMotion?.helDoorPush : undefined)
         ?? state.currentAction?.parameters.helDoorPush as MotionInput['helDoorPush'] : undefined;
@@ -743,7 +745,7 @@ export class AgentRenderer {
         else if (state.currentAction?.parameters.openingAnswer || state.currentAction?.parameters.openingHit || state.currentAction?.parameters.bookDoor || state.currentAction?.parameters.seraphDoor || state.currentAction?.parameters.zionMessage || state.currentAction?.parameters.architect || state.currentAction?.parameters.sourcePortal || state.currentAction?.parameters.trinityTerminal || state.currentAction?.parameters.trinityRelay || state.currentAction?.parameters.oracleReception || state.currentAction?.parameters.oracleWaiting || state.currentAction?.parameters.oracleRequest || state.currentAction?.parameters.oracleLast || state.currentAction?.parameters.baneInquiry || state.currentAction?.parameters.hammerBriefing || state.currentAction?.parameters.zionDeployment || state.currentAction?.parameters.maggieDiscovery || state.currentAction?.parameters.logosBane || state.currentAction?.parameters.oracleAbsorption || state.currentAction?.parameters.trainmanChase || state.currentAction?.parameters.helGarage || state.currentAction?.parameters.helElevator || state.currentAction?.parameters.helProtection !== undefined
           || (state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.phase === 'opening'
           || ((state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'])?.seating ?? 0) > 0) entry.group.position.copy(target);
-        else if (state.currentAction?.parameters.freewayRide) entry.group.position.copy(target);
+        else if (state.currentAction?.parameters.freewayRide || wellsGesture) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.mobilReunion || state.currentAction?.parameters.mobilBoarding !== undefined) entry.group.position.copy(target);
         else if (state.currentAction?.parameters.passenger && driver?.state.currentAction?.parameters.riding) {
           target.sub(new THREE.Vector3(driver.state.position.x, driver.state.position.y, driver.state.position.z)).add(driver.group.position);
@@ -775,7 +777,7 @@ export class AgentRenderer {
       const heading = guideHeading ?? (moving && !state.currentAction?.parameters.bookDoor && !state.currentAction?.parameters.seraphDoor && !state.currentAction?.parameters.zionMessage && state.currentAction?.parameters.helProtection === undefined && !state.currentAction?.parameters.helElevator && !state.currentAction?.parameters.helGarage && !state.currentAction?.parameters.trainmanChase && !state.currentAction?.parameters.truckRoad && !state.currentAction?.parameters.freewayHandoff && !state.currentAction?.parameters.freewayPickup && !state.currentAction?.parameters.freewayDriver && !smithLocked && !state.currentAction?.parameters.mirrorEntry && !state.currentAction?.parameters.officeCustody && !state.currentAction?.parameters.oracleLast && !state.currentAction?.parameters.baneInquiry && !state.currentAction?.parameters.hammerBriefing && !state.currentAction?.parameters.zionDeployment && !state.currentAction?.parameters.maggieDiscovery && !state.currentAction?.parameters.logosBane && !state.currentAction?.parameters.oracleAbsorption && !state.currentAction?.parameters.oracleArrival && !state.currentAction?.parameters.oracleReception && !state.currentAction?.parameters.oracleVisit && !state.currentAction?.parameters.oracleDeparture && !state.currentAction?.parameters.club && !state.currentAction?.parameters.upperDigger && !state.currentAction?.parameters.diggers && !state.currentAction?.parameters.dockReload && !state.currentAction?.parameters.dockLastStand && !state.currentAction?.parameters.catch && !state.currentAction?.parameters.truckRescue && !state.currentAction?.parameters.recoveryCrew && state.currentLocation !== 'film_government_lobby' ? Math.atan2(state.velocity.x, state.velocity.z) : state.rotation);
       let difference = heading - entry.body.rotation.y;
       difference = Math.atan2(Math.sin(difference), Math.cos(difference));
-      if (id !== this.playerId && (state.currentAction?.parameters.welcome || state.currentAction?.parameters.roofExit)) { entry.body.rotation.y = state.rotation; difference = 0; }
+      if (id !== this.playerId && (state.currentAction?.parameters.welcome || state.currentAction?.parameters.roofExit || wellsGesture)) { entry.body.rotation.y = state.rotation; difference = 0; }
       if (id !== this.playerId && (state.currentAction?.parameters.helProtection !== undefined || state.currentAction?.parameters.helElevator || state.currentAction?.parameters.helGarage || state.currentAction?.parameters.trainmanChase || state.currentAction?.parameters.mobilReunion || state.currentAction?.parameters.mobilBoarding !== undefined || state.currentAction?.parameters.oracleRequest || state.currentAction?.parameters.oracleLast || state.currentAction?.parameters.baneInquiry || state.currentAction?.parameters.hammerBriefing || state.currentAction?.parameters.zionDeployment || state.currentAction?.parameters.maggieDiscovery || state.currentAction?.parameters.logosBane || state.currentAction?.parameters.oracleAbsorption || state.currentAction?.parameters.architect || state.currentAction?.parameters.sourcePortal || state.currentAction?.parameters.truckRoad || state.currentAction?.parameters.freewayHandoff || state.currentAction?.parameters.freewayPickup || state.currentAction?.parameters.freewayDriver || smithLocked || state.currentAction?.parameters.oracleRestored || state.currentAction?.parameters.epilogue || state.currentAction?.parameters.upperDigger || state.currentAction?.parameters.diggers || state.currentAction?.parameters.dockReload || state.currentAction?.parameters.dockLastStand || state.currentAction?.parameters.dockGate || state.currentAction?.parameters.dockGateCover || state.currentAction?.parameters.dockReunion || state.currentAction?.parameters.dockDeparture || state.currentAction?.parameters.dockEvacuation || state.currentAction?.parameters.shaftSeal || state.currentAction?.parameters.templeDefense || state.currentAction?.parameters.dockBriefing || state.currentAction?.parameters.empOperator || state.currentAction?.parameters.officeCustody && (delta * speed === 0 || (state.currentAction.parameters.officeCustody as MotionInput['officeCustody'])?.street))) { entry.body.rotation.y = heading; difference = 0; }
       const arrival = state.currentAction?.parameters.oracleArrival as MotionInput['oracleArrival'];
       if (id !== this.playerId && clubGesture) entry.body.rotation.y += delta * speed > 0 ? Math.sign(difference) * Math.min(Math.abs(difference), 2.4 * delta * speed) : difference;
@@ -795,6 +797,7 @@ export class AgentRenderer {
         tvExit: state.currentAction?.parameters.tvExit as MotionInput['tvExit'],
         openingAnswer: state.currentAction?.parameters.openingAnswer as MotionInput['openingAnswer'],
         openingHit: state.currentAction?.parameters.openingHit as MotionInput['openingHit'],
+        wellsAftermath: wellsGesture,
         crosscut: state.currentAction?.parameters.crosscut as MotionInput['crosscut'],
         sixth: sixthGesture,
         crouching: state.currentAction?.parameters.crouching === true,

@@ -134,6 +134,7 @@ import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
 import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, openingAnswerPose, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight } from '@auto_matrix/shared';
+import { WELLS_AFTERMATH, wellsAftermathCaption, wellsAftermathPose, wellsAftermathReady, type WellsAftermathGesture, type WellsAgentPlacement } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
 import { nebEscapeLocked } from '@auto_matrix/shared';
@@ -672,14 +673,15 @@ export class FilmStorySystem {
   openingPhoneFrame(actor: AgentState, dt: number, tick: number): boolean {
     const state = this.state, phone = state?.openingPhone;
     if (state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !phone) return false;
-    if (dt > 0 && (phone.phase === 'running' || phone.phase === 'answering' || phone.phase === 'connected'
+    if (dt > 0 && (phone.phase === 'running' || phone.phase === 'answering' || phone.phase === 'connected' || phone.phase === 'done' && !wellsAftermathReady(phone)
       || phone.phase === 'failed' && (phone.hit && (phone.remaining > 0 || phone.hit.elapsed < OPENING_PHONE.hitSeconds)
         || phone.impactElapsed !== undefined && phone.impactElapsed < OPENING_ESCAPE.truckImpactSeconds))) {
       const end = Math.max(phone.lastTick, tick) + Math.min(.1, dt) * 2;
       const elapsed = (end - phone.lastTick) * .5; phone.lastTick = end;
       this.openingPhoneStep(actor, elapsed, tick);
     }
-    return this.openingPhonePose(actor);
+    if (dt === 0 && phone.aftermath) this.wellsAftermathFrame(0);
+    return this.openingPhonePose(actor) || phone.phase === 'done';
   }
   private openingPhonePose(actor: AgentState): boolean {
     const state = this.state, phone = state?.openingPhone;
@@ -697,6 +699,7 @@ export class FilmStorySystem {
   private openingPhoneStep(actor: AgentState, dt: number, tick: number): void {
     if (dt <= 0) return;
     const state = this.state!, phone = state.openingPhone!;
+    if (phone.phase === 'done') { this.wellsAftermathFrame(dt); return; }
     const before = openingTruckPose(phone), beforeTime = OPENING_ESCAPE.phoneSeconds - phone.remaining + (phone.impactElapsed ?? 0);
     const hit = phone.hit;
     let impactTime = dt;
@@ -711,7 +714,7 @@ export class FilmStorySystem {
         if (!hit) state.lastText = '卡车已冲向电话亭，出口来不及接通。J 打开手记，从街口重试。';
       } else if (answer && answer.elapsed >= OPENING_PHONE.answerSeconds - 1e-9) {
         answer.elapsed = OPENING_PHONE.answerSeconds; phone.phase = 'connected'; phone.impactElapsed = 0; phone.impactFrom = phone.remaining;
-        this.advance('Trinity 将听筒接到耳边，信号随即断开。空车撞进玻璃电话亭。', actor, tick);
+        this.advance('Trinity 将听筒接到耳边，信号随即断开。卡车撞进已经空下来的电话亭。', actor, tick);
       }
     }
     if (impactTime > 1e-9) this.openingPhoneImpact(impactTime);
@@ -737,6 +740,42 @@ export class FilmStorySystem {
     if (phone.impactElapsed >= OPENING_ESCAPE.truckImpactSeconds) {
       if (phone.phase === 'connected') phone.phase = 'done';
       else if (!phone.hit || phone.answer) state.lastText = '卡车撞进电话亭，线路被切断。J 打开手记，从街口重试。';
+    }
+  }
+  private wellsAftermathFrame(dt: number): void {
+    const state = this.state!, phone = state.openingPhone!, roles = WELLS_AFTERMATH.roles;
+    if (dt === 0 && !phone.aftermath || dt > 0 && wellsAftermathReady(phone)) return;
+    if (roles.some(id => {
+      const member = this.world.agents.get(id);
+      return !member || member.controller || member.status !== 'alive';
+    })) {
+      if (dt > 0) state.lastText = '街口的特工暂时无法到场，当前进度已保存。';
+      return;
+    }
+    const take = phone.aftermath ??= { elapsed: 0, cast: Object.fromEntries(roles.map(id => {
+      const { position, rotation, velocity, currentLocation, isInMatrix, targetPosition, currentPath, currentAction } = this.world.agents.get(id)!;
+      return [id, structuredClone({ position, rotation, velocity, currentLocation, isInMatrix, targetPosition, currentPath, currentAction })];
+    })) as Record<typeof roles[number], WellsAgentPlacement> };
+    take.elapsed = Math.min(WELLS_AFTERMATH.seconds, take.elapsed + dt);
+    if (dt > 0) state.lastText = wellsAftermathCaption(take.elapsed);
+    for (const role of roles) {
+      const member = this.world.agents.get(role)!;
+      const gesture: WellsAftermathGesture = { elapsed: take.elapsed, role };
+      const saved = member.currentAction?.parameters.wellsAftermath as WellsAftermathGesture | undefined;
+      if (dt === 0 && saved?.role === role && saved.elapsed === gesture.elapsed) continue;
+      const pose = wellsAftermathPose(gesture);
+      member.position = filmPosition('film_wells_phone', pose.x, pose.z); member.position.y += pose.y;
+      member.rotation = pose.yaw; member.currentLocation = 'film_wells_phone'; member.isInMatrix = true;
+      member.targetPosition = null; member.currentPath = []; member.velocity = { x: 0, y: 0, z: 0 };
+      member.currentAction = { type: 'idle', parameters: { resolved: true, wellsAftermath: gesture }, startedAt: state.enteredAt, duration: 1e9, progress: 0 };
+    }
+  }
+  private clearWellsAftermath(): void {
+    const take = this.state?.openingPhone?.aftermath;
+    if (!take) return;
+    for (const role of WELLS_AFTERMATH.roles) {
+      const member = this.world.agents.get(role);
+      if (member && !member.controller && member.currentAction?.parameters.wellsAftermath) Object.assign(member, take.cast[role]);
     }
   }
   private openingPhoneTick(actor: AgentState, tick: number): void {
@@ -6849,6 +6888,8 @@ export class FilmStorySystem {
       if (this.step) return '先完成当前场景中的目标。';
       if (state.scene === 'm2_library' && !this.keymakerAvailable()) return '钥匙匠目前无法同行；营救进度保留，等待他回到队伍。';
       if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'connected') return '信号已经断开。卡车撞过电话亭后再继续 Neo 的故事。';
+      if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'done' && !wellsAftermathReady(state.openingPhone))
+        return '等特工检查电话亭并交谈完，再继续 Neo 的故事。';
       if (state.scene === 'm2_seraph' && !this.near(agent, this.scene.steps.at(-1)!)) return '走近茶馆后门，再跟 Seraph 穿过那把钥匙打开的门。';
       if (state.scene === 'm2_backdoors' && !this.near(agent, this.scene.steps.at(-1)!)) return '走到白色走廊尽头的庭院门，再按 G 通过。';
       if (state.scene === 'm2_bench') {
@@ -7762,6 +7803,7 @@ export class FilmStorySystem {
     delete state.shipLoss;
     delete state.tunnel;
     delete state.openingRoof;
+    this.clearWellsAftermath();
     delete state.openingPhone;
     delete state.openingHotel;
     delete state.bane;

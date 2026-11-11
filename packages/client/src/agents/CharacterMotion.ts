@@ -2,7 +2,7 @@ import { AMBUSH_CALL, TRUCK_ROAD, truthRoot, downloadRoot, DOWNLOAD_INVITATION, 
 import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloadedPose, type CatchGesture, type ReloadedGesture } from '@auto_matrix/shared';
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
-import { openingAnswerPose } from '@auto_matrix/shared';
+import { openingAnswerPose, wellsAftermathPose } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -35,6 +35,7 @@ export interface MotionInput {
   tvExit?: import('@auto_matrix/shared').TvExitGesture | import('@auto_matrix/shared').SubwayExitGesture;
   openingAnswer?: import('@auto_matrix/shared').OpeningPhoneAnswer;
   openingHit?: import('@auto_matrix/shared').OpeningPhoneHit;
+  wellsAftermath?: import('@auto_matrix/shared').WellsAftermathGesture;
   crosscut?: import('@auto_matrix/shared').CrosscutGesture;
   shot?: number;
   crouching?: boolean;
@@ -694,6 +695,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const answer = input.openingAnswer, root = answer && openingAnswerPose(answer), speed = root?.speed ?? 0;
     Object.assign(state, newMotion(), { time: (answer?.elapsed ?? 0) + (input.openingHit?.elapsed ?? 0), speed, phase: (root?.travel ?? 0) / 2.8, skill: undefined });
     input = { ...input, speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
+    dt = 0;
+  }
+  if (input.wellsAftermath) {
+    const root = wellsAftermathPose(input.wellsAftermath);
+    Object.assign(state, newMotion(), { time: input.wellsAftermath.elapsed, speed: root.speed, phase: root.travel / 2.8 });
+    input = { ...input, speed: root.speed, turn: 0, grounded: true, verticalVelocity: 0, armed: false, seated: false };
     dt = 0;
   }
   if (input.welcome) {

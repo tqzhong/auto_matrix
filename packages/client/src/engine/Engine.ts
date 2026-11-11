@@ -174,9 +174,11 @@ export class Engine {
     if (this.playerControls?.id) {
       const state = this.agentRenderer.getAgentState(this.playerControls.id);
       const group = this.agentRenderer.getAgent(this.playerControls.id);
-      if (state && group) this.playerControls.update(delta, state, group, this.running,
-        meeting?.scene === 'm1_phone_escape' && !meeting.visiting && meeting.actor === state.id && (['connected', 'done'].includes(meeting.openingPhone?.phase ?? '')
-          || meeting.openingPhone?.phase === 'failed' && Boolean(meeting.openingPhone.answer || meeting.openingPhone.hit)));
+      if (state && group) {
+        const phone = meeting?.scene === 'm1_phone_escape' && !meeting.visiting && meeting.actor === state.id ? meeting.openingPhone : undefined;
+        this.playerControls.update(delta, state, group, this.running, phone?.phase === 'connected' || phone?.phase === 'done'
+          || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed);
+      }
       this.agentRenderer.setPlayer(this.playerControls.id, this.playerControls.firstPerson);
       this.agentRenderer.setPlayerMotion(this.playerControls.motion);
     }

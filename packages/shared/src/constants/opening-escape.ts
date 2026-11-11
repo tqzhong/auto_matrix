@@ -1,4 +1,5 @@
 import type { Vector3 } from '../types/agent.js';
+import type { WellsAftermath } from './wells-aftermath.js';
 
 export const OPENING_ESCAPE = {
   roofGapNear: -2,
@@ -88,6 +89,7 @@ export interface OpeningPhoneEncounter {
   answer?: OpeningPhoneAnswer;
   hit?: OpeningPhoneHit;
   impactElapsed?: number; impactFrom?: number;
+  aftermath?: WellsAftermath;
 }
 
 export function openingTruckPose(phone: OpeningPhoneEncounter): { x: number; z: number; yaw: number } {

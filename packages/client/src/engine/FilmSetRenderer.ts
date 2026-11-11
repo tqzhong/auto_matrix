@@ -12,7 +12,7 @@ import { BasementSetRenderer } from './BasementSetRenderer.js';
 import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { WellsStreetRenderer } from './WellsStreetRenderer.js';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
-import { OPENING_PHONE, WELLS_BOOTH, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps } from '@auto_matrix/shared';
+import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
 import { steakAge, crewMealAge } from '@auto_matrix/shared';
@@ -2089,7 +2089,7 @@ export class FilmSetRenderer {
     if (this.wellsStreet && this.openingBooth && this.openingGlass) {
       const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
       const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
-      this.wellsStreet.update(pose);
+      this.wellsStreet.update(pose, wellsAftermathDoor(phone?.aftermath?.elapsed));
       const crush = openingBoothCrush(pose);
       for (const part of this.openingBoothParts) {
         const placed = openingBoothPartPose(part.kind, part.x, part.z, pose, crush);
@@ -2107,9 +2107,19 @@ export class FilmSetRenderer {
       });
       if (this.openingReceiver && this.openingCord) {
         const held = Boolean(phone?.answer && phone.answer.elapsed >= OPENING_PHONE.graspSeconds);
-        this.openingReceiver.root.visible = !held;
+        const receiver = this.openingReceiver.root, discarded = Boolean(phone?.aftermath);
+        receiver.visible = discarded || !held;
         const subject = held && !phone?.hit && (phone?.phase === 'answering' || phone?.phase === 'failed') ? this.phoneBodies?.('trinity')?.getObjectByName('hardline-handset') : undefined;
         const parent = this.openingCord.parent!; parent.updateWorldMatrix(true, true);
+        if (discarded) {
+          const { x, y, z } = WELLS_AFTERMATH.receiver;
+          receiver.position.copy(parent.worldToLocal(this.root.localToWorld(new THREE.Vector3(x, y, z))));
+          receiver.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert()
+            .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, .4))));
+        } else {
+          receiver.position.set(OPENING_PHONE.receiver.x, OPENING_PHONE.receiver.y, OPENING_PHONE.receiver.z - OPENING_PHONE.boothZ);
+          receiver.quaternion.identity();
+        }
         const from = new THREE.Vector3(0, 3.1, .4), to = subject
           ? parent.worldToLocal(subject.getWorldPosition(new THREE.Vector3())) : new THREE.Vector3(-.75, held ? 2.8 : 3.7, .55);
         const positions = this.openingCord.geometry.attributes.position, point = new THREE.Vector3();

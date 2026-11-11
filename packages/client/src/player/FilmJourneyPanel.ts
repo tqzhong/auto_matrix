@@ -26,7 +26,7 @@ import { DOCK_RELOAD, dockReloadActive, dockReloadText } from '@auto_matrix/shar
 import { DOCK_GATE, dockGateActive, dockGateText } from '@auto_matrix/shared';
 import { DOCK_LAST_STAND, dockLastStandActive, dockLastStandText } from '@auto_matrix/shared';
 import { nearMetacortexLift, filmStepNear, filmStepActionReady, awakeningDuration } from '@auto_matrix/shared';
-import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText } from '@auto_matrix/shared';
+import { CATCH, RELOADED_FINALE, HEL_COATCHECK, OPENING_ESCAPE, OPENING_HOTEL, catchText, reloadedText, wellsAftermathReady } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, FILM_SETS, FILM_NAMES, ARCHITECT_DOOR_SECONDS, ARCHITECT_ROOM, filmReflections, CHARACTERS, filmStepPosition, distance, dockPowerOffline, oracleActing, helElevatorLocked, helDanceDoorLocked, interrogationLocked, pillLocked, lafayetteWelcomeLocked, phoneLocked, windowOpening, windowCrossing, officeRetreat, officeRetreatReady, awakeningWaiting, trainingLocked, trainingWaiting, theOneLocked, type AgentState, type SandboxState } from '@auto_matrix/shared';
 import './film-journey.css';
 import { ambushEscapeText } from '@auto_matrix/shared';
@@ -602,7 +602,9 @@ export function renderFilmJourney(player: AgentState, sandbox: SandboxState): st
       : filmStepActionReady(scene, step, player.position, player.isInMatrix, journey)));
     const action = !current ? button('resume', '接回 Trinity 的视角') : failed ? button('retry', roof ? '从屋顶入口重试' : '从电话街口重试')
       : phone?.phase === 'answering' ? '<button disabled>正在取筒接听 · 卡车仍在逼近</button>'
-      : !step ? phone?.phase === 'connected' ? '<button disabled>线路已断开 · 卡车正在撞击</button>' : button('next', '继续下一段 →')
+      : !step ? phone?.phase === 'connected' ? '<button disabled>线路已断开 · 卡车正在撞击</button>'
+        : phone?.phase === 'done' && !wellsAftermathReady(phone) ? '<button disabled>特工调查 · 自动保存</button>'
+          : button('next', roof ? '继续下一段 →' : '切到 Neo →')
         : step.kind === 'reach' ? '<p>合上手记，亲自跑到目标。到达后自动记录。</p>' : button('act', `${step.label} · G`, !close);
     const status = roof ? chase?.leap ? 'Brown 正跃过楼间空隙 · 别停下' : 'Brown 就在身后 · Shift 助跑 · 空格越过楼间空隙'
       : phone?.phase === 'running' || phone?.phase === 'answering' ? `卡车撞击前 ${phone.remaining.toFixed(1)} 秒 · ${phone.phase === 'answering' ? '接到耳边才算接通' : '到亭内立即按 G'}` : phone?.phase === 'failed' ? phone.hit && !phone.answer ? 'Trinity 遭卡车撞击，等待重试' : '撤离失败，等待重试' : '连接已断开，Trinity 安全撤离';

@@ -1,4 +1,4 @@
-import { bookDoorLocked } from '@auto_matrix/shared';
+import { WELLS_AFTERMATH, bookDoorLocked } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
@@ -110,6 +110,9 @@ export class PlayerController {
     if (MEETING_CAST.includes(id as typeof MEETING_CAST[number]) && this.sandbox?.life.film.state && meetingLocked(this.sandbox.life.film.state)) return { error: '这个角色正在参与接头检查，结束后可以接入。' };
     if (SENTINEL_CAST.includes(id as typeof SENTINEL_CAST[number]) && this.sandbox?.life.film.state && sentinelActive(this.sandbox.life.film.state) && this.sandbox.life.film.state.sentinel?.phase !== 'ready') return { error: '这个角色正在参与静默潜航，哨兵离开后可以接入。' };
     const interlude = this.sandbox?.life.film.state;
+    if (interlude?.scene === 'm1_phone_escape' && !interlude.visiting && interlude.openingPhone?.phase === 'done'
+      && agent.status === 'alive' && (WELLS_AFTERMATH.roles as readonly string[]).includes(id))
+      return { error: '特工正在检查 Wells 街的电话亭，切到 Neo 后可以接入。' };
     if (id === 'morpheus' && interlude?.scene === 'm1_dejavu' && !interlude.visiting && interlude.ambushEscape?.doff
       && interlude.ambushEscape.doff.elapsed < AMBUSH_DOFF.duration) return { error: 'Morpheus 正在脱下外套，双袖退出后可以接入。' };
     if (interlude?.tvExit?.crosscut && !interlude.visiting && ['m1_tv_exit', 'm1_unplugged'].includes(interlude.scene) && id !== interlude.actor && ['neo', 'trinity', 'apoc', 'switch', 'cypher', 'tank', 'dozer'].includes(id)) return { error: '这个角色正在参与两世界的背叛与撤离，当前片段结束后可以接入。' };

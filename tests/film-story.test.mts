@@ -1,4 +1,4 @@
-import { PILL_TALK_SECONDS, TRAINING_SECONDS, jumpStreetHeight, interludeDuration } from '@auto_matrix/shared';
+import { PILL_TALK_SECONDS, TRAINING_SECONDS, WELLS_AFTERMATH, jumpStreetHeight, interludeDuration } from '@auto_matrix/shared';
 import { FREEWAY_HANDOFF, freewayHandoffReady } from '@auto_matrix/shared';
 import { SOURCE_BRIEFING } from '@auto_matrix/shared';
 import { HAMMER_BRIEFING } from '@auto_matrix/shared';
@@ -1051,6 +1051,7 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
   assert.equal(state.step, 1, state.lastText);
   h.command('act'); assert.equal(state.openingPhone?.phase, 'answering'); h.advance(4); assert.equal(state.openingPhone?.phase, 'connected');
   h.advance(4); assert.equal(state.openingPhone?.phase, 'done');
+  h.advance(Math.ceil(WELLS_AFTERMATH.seconds * 2) + 1);
   h.command('next'); assert.equal(state.scene, 'm1_wake_up');
 });
 
@@ -5093,7 +5094,7 @@ test('the entire film route completes through interactions, driving and real com
       }
     }
     assert.ok(state.completed.includes(scene.id));
-    if (scene.id === 'm1_phone_escape') h.advance(3); // Hold the connected booth shot through the truck impact.
+    if (scene.id === 'm1_phone_escape') h.advance(Math.ceil(WELLS_AFTERMATH.seconds * 2) + 1);
     if (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') h.actor().position = filmStepPosition(scene,scene.steps[1],state);
     if (scene.id === 'm2_bench') finishSecondOracleDeparture(h);
     if (!['m1_bridge', 'm1_bug', 'm1_pills', 'm1_mirror', 'm1_pod', 'm1_recovery', 'm1_cabin', 'm1_construct', 'm1_desert', 'm1_truth_exit', 'm1_truth_return'].includes(scene.id)) h.command('next');

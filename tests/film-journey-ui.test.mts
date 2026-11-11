@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { FILM_SCENE_BY_ID, GOVERNMENT_RESCUE, SENTINEL_POWER, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, GOVERNMENT_RESCUE, SENTINEL_POWER, WELLS_AFTERMATH, filmPosition, filmStepPosition, oracleReceptionRoot, mirrorEntryPose, awakeningDuration, MIRROR_TIMING, type AgentState, type SandboxState } from '@auto_matrix/shared';
 
 test('the Wells journal requires a nearby caller and does not offer another G action during pickup', async () => {
   const output = await build({ entryPoints: ['packages/client/src/player/SandboxUI.ts', 'packages/client/src/player/FilmJourneyPanel.ts'], bundle: true,
@@ -17,6 +17,13 @@ test('the Wells journal requires a nearby caller and does not offer another G ac
   const markup = renderFilmJourney(player, state); assert.match(markup, /正在取筒接听/); assert.doesNotMatch(markup, /data-target="film:act"/);
   const calls: unknown[] = [], ui = Object.assign(Object.create(SandboxUI.prototype), { player, state, open: (panel: string) => calls.push(panel), send: (command: unknown) => calls.push(command) });
   ui.interact(); assert.deepEqual(calls, [], 'another G must not skip the pickup or obscure it with the journal');
+  const journey = state.neoLife!.journey!, phone = journey.openingPhone!;
+  journey.step = 2; phone.phase = 'done';
+  ui.interact(); assert.deepEqual(calls, [], 'G cannot bypass the aftermath in an old crash save');
+  assert.match(renderFilmJourney(player, state), /<button disabled>特工调查/);
+  phone.aftermath = { elapsed: WELLS_AFTERMATH.seconds, cast: {} as NonNullable<typeof phone.aftermath>['cast'] };
+  assert.match(renderFilmJourney(player, state), /data-target="film:next" >切到 Neo/);
+  ui.interact(); assert.deepEqual(calls, [{ kind: 'life', target: 'film:next' }]);
 });
 
 test('the interrogation offers a seated decision and leaves G available for resistance', async t => {

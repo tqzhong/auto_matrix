@@ -277,6 +277,7 @@ const playerTimer = setInterval(() => {
   const phoneImpact = journey?.openingPhone?.impactElapsed;
   const phoneRemaining = journey?.openingPhone?.remaining, phoneAnswer = journey?.openingPhone?.answer?.elapsed;
   const phoneHit = journey?.openingPhone?.hit?.elapsed;
+  const phoneAftermath = journey?.openingPhone?.aftermath?.elapsed, phoneText = journey?.lastText;
   players.step(Math.min(0.1, (now - lastPlayerStep) / 1000), simLoop.isRunning(), simLoop.getTick(), now);
   lastPlayerStep = now;
   const scale = players.timeScale();
@@ -287,7 +288,8 @@ const playerTimer = setInterval(() => {
   }
   const current = sandbox.life.film.state;
   if (current?.scene === 'm1_phone_escape' && !current.visiting && (current.openingPhone?.impactElapsed !== phoneImpact
-    || current.openingPhone?.remaining !== phoneRemaining || current.openingPhone?.answer?.elapsed !== phoneAnswer || current.openingPhone?.hit?.elapsed !== phoneHit)) {
+    || current.openingPhone?.remaining !== phoneRemaining || current.openingPhone?.answer?.elapsed !== phoneAnswer || current.openingPhone?.hit?.elapsed !== phoneHit
+    || current.openingPhone?.aftermath?.elapsed !== phoneAftermath || current.openingPhone?.phase === 'done' && current.lastText !== phoneText)) {
     sockets.broadcastDelta({ ...sync.calculateDelta(world.agents), sandbox: sandbox.state }, simLoop.getTick());
     return;
   }
