@@ -331,7 +331,10 @@ export class FilmSetRenderer {
   };
   private preparedSentinel?: { root: THREE.Group; renderer: SentinelSetRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private preparedConsole?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
-  private preparedRestaurant?: { root: THREE.Group; renderer: CypherRestaurantRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedRestaurant?: {
+    root: THREE.Group; renderer: CypherRestaurantRenderer; gpu?: THREE.WebGLRenderer['properties'];
+    colors?: CastColorPreparation; lighting?: LightCulling; textureUpload?: Generator<void, boolean>;
+  };
   private preparedMeal?: { root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
   private currentScene?: string;
   private dockApuApproach = false;
@@ -1073,6 +1076,7 @@ export class FilmSetRenderer {
     const prepared = this.preparedRestaurant;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
       prepared.colors.meshes.push(this.marker);
@@ -1090,7 +1094,8 @@ export class FilmSetRenderer {
       if (!meshes.length) continue;
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
-    this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+    this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
+    this.prepareStagedColorTexture(renderer, prepared, colors.textures, 4);
   }
   prepareMeal(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
     const encounter = journey?.interlude;
@@ -2349,7 +2354,10 @@ export class FilmSetRenderer {
       const preparedConsole = set?.id === 'film_neb_deck' && sceneId === 'm1_cypher_console' && !journey?.visiting ? this.preparedConsole : undefined;
       if (preparedConsole) { this.preparedConsole = undefined; preparedConsole.lighting?.dispose(); preparedConsole.root.removeFromParent(); }
       const preparedRestaurant = set?.id === 'film_cypher_restaurant' && sceneId === 'm1_steak' && !journey?.visiting ? this.preparedRestaurant : undefined;
-      if (preparedRestaurant) { this.preparedRestaurant = undefined; preparedRestaurant.lighting?.dispose(); preparedRestaurant.root.removeFromParent(); }
+      if (preparedRestaurant) {
+        this.preparedRestaurant = undefined; preparedRestaurant.textureUpload?.return(false);
+        preparedRestaurant.lighting?.dispose(); preparedRestaurant.root.removeFromParent();
+      }
       const preparedMeal = set?.id === 'film_neb_deck' && sceneId === 'm1_meal' && !journey?.visiting ? this.preparedMeal : undefined;
       if (preparedMeal) { this.preparedMeal = undefined; preparedMeal.lighting?.dispose(); preparedMeal.root.removeFromParent(); }
       const preparedMeeting = set?.id === 'film_captains_meeting' && sceneId === 'm2_meeting' && !journey?.visiting ? this.preparedMeetingHall?.renderer : undefined;
@@ -5345,6 +5353,7 @@ export class FilmSetRenderer {
   }
   private cancelRestaurantPreparation(): void {
     const prepared = this.preparedRestaurant; if (!prepared) return;
+    prepared.textureUpload?.return(false);
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedRestaurant = undefined;
   }
   private cancelMealPreparation(): void {
