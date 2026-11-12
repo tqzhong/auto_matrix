@@ -975,7 +975,7 @@ test('the 303 pursuit brings Brown through the corridor and Smith to the alley b
   assert.deepEqual(state.completed, ['m1_room303']);
   h.actor().position = filmPosition(roof.id, 0, -30);
   brown.position = filmPosition(roof.id, 0, -9); state.openingRoof!.crossed = true;
-  officers.forEach(officer => { officer.position.z = roof.center.z + 2; });
+  officers.forEach(officer => { officer.position.z = roof.center.z + OPENING_ESCAPE.roofGapNear + 4; });
   h.advance(3);
   assert.ok(officers.every(officer => officer.position.z >= roof.center.z + OPENING_ESCAPE.roofGapNear + 1.49), 'the officers stay on the near roof after Brown jumps');
 });
@@ -1188,10 +1188,10 @@ test('the rooftop window does not grant immunity when Brown has already reached 
 test('Brown leaps across the roof gap at player-frame speed and resumes a saved shoulder roll', () => {
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
   const roofs = FILM_SCENE_BY_ID.m1_roofs; const center = FILM_SETS[roofs.set].center;
-  Object.assign(state, { scene: roofs.id, step: 1, checkpoint: filmEntry(roofs), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0 } });
+  Object.assign(state, { scene: roofs.id, step: 1, checkpoint: filmEntry(roofs), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0, wideAlley: true } });
   h.actor().currentLocation = roofs.set; h.actor().position = filmPosition(roofs.set, 0, -20);
   const brown = h.world.agents.get('agent_brown')!;
-  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 0);
+  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, OPENING_ESCAPE.roofGapNear + 2);
   h.players.step(.05, true, h.tick());
   assert.equal(state.openingRoof?.leap?.elapsed, .05, 'the leap begins on a player frame before the next world tick');
   for (let frame = 0; frame < 8; frame++) h.players.step(.05, true, h.tick());
@@ -1219,6 +1219,70 @@ test('Brown leaps across the roof gap at player-frame speed and resumes a saved 
   assert.equal(brown.currentAction?.parameters.openingRoofRoll, undefined, 'Brown returns to pursuit after the roll');
   assert.ok(brown.position.z - center.z < OPENING_ESCAPE.roofGapFar && Math.abs(brown.position.y - center.y) < .01);
   assert.equal(state.openingRoof?.phase, 'running');
+});
+
+test('a legacy rooftop save resumes within the wider jump and retains its pursuit progress', () => {
+  const h = setup(); h.command('start');
+  const roofs = FILM_SCENE_BY_ID.m1_roofs, scene = h.sandbox.life.film.state!, player = h.actor();
+  Object.assign(scene, { scene: roofs.id, step: 1, completed: ['m1_room303'], checkpoint: filmEntry(roofs),
+    openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 2 } });
+  delete scene.openingHotel;
+  player.currentLocation = roofs.set; player.currentAction = null;
+  const original = filmPosition(roofs.set, 7.337, -3.118); original.y += .871;
+  player.position = { ...original }; player.rotation = Math.PI; player.velocity = { x: 0, y: 6.91, z: -8.4 };
+  const brown = h.world.agents.get('agent_brown')!;
+  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 32);
+  h.players.release('film-player', h.tick());
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  const restored = h.sandbox.life.film.state!;
+  assert.equal(restored.step, 1);
+  assert.equal(restored.openingRoof?.attempts, 2);
+  assert.deepEqual(restored.completed, ['m1_room303']);
+  assert.ok(player.position.z > original.z && player.position.y > original.y, 'preserve the airborne point of the crossing in the widened space');
+  const resumed = structuredClone({ position: player.position, velocity: player.velocity });
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.deepEqual({ position: player.position, velocity: player.velocity }, resumed, 'a second cold restore must retain the migrated position and momentum');
+  assert.equal(h.players.possess('film-player', player.id, h.tick()).agentId, player.id);
+  for (let frame = 0; frame < 27 && player.velocity.y !== 0; frame++) h.players.step(.05, true, h.tick());
+  assert.ok(player.position.z < filmPosition(roofs.set, 7.337, OPENING_ESCAPE.roofGapFar).z);
+  assert.equal(player.position.y, FILM_SETS[roofs.set].center.y);
+  assert.equal(restored.openingRoof?.phase, 'running');
+});
+
+test('a legacy rooftop save from before the pursuit restores a supported runway', () => {
+  const h = setup(); h.command('start');
+  const roofs = FILM_SCENE_BY_ID.m1_roofs, state = h.sandbox.life.film.state!, actor = h.actor();
+  Object.assign(state, { scene: roofs.id, step: 1, completed: ['m1_room303'], checkpoint: filmPosition(roofs.set, -7, 12) });
+  delete state.openingHotel;
+  actor.currentLocation = roofs.set; actor.position = filmPosition(roofs.set, 0, -4); actor.currentAction = null;
+  actor.velocity = { x: 0, y: 0, z: 0 };
+  h.sandbox.restore(structuredClone(h.sandbox.state));
+  assert.equal(groundHeight(actor.position, true), actor.position.y, 'the old continuous roof must restore onto solid ground');
+  assert.equal(h.sandbox.life.film.state!.step, 1);
+  assert.deepEqual(h.sandbox.life.film.state!.completed, ['m1_room303']);
+});
+
+test('a straight run across the wide opening alley advances past the runway', () => {
+  const h = setup(); h.command('start');
+  const roofs = FILM_SCENE_BY_ID.m1_roofs, { center } = FILM_SETS[roofs.set], state = h.sandbox.life.film.state!, actor = h.actor();
+  Object.assign(state, { scene: roofs.id, step: 0, completed: ['m1_room303'], checkpoint: filmEntry(roofs),
+    openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0, wideAlley: true } });
+  delete state.openingHotel;
+  actor.currentLocation = roofs.set; actor.position = filmEntry(roofs); actor.currentAction = null;
+  const brown = h.world.agents.get('agent_brown')!;
+  brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 43);
+  let jumped = false;
+  for (let frame = 1; frame <= 40; frame++) {
+    const jump = !jumped && actor.position.z - center.z <= OPENING_ESCAPE.roofGapNear + 1.8;
+    jumped ||= jump;
+    h.players.receiveInput('film-player', { x: 0, z: -1, yaw: Math.PI, sprint: true, jump, sequence: frame });
+    h.players.step(.1, true, h.tick());
+    if (frame % 5 === 0) h.advance();
+    if (jumped && actor.position.y === center.y && actor.position.z < center.z + OPENING_ESCAPE.roofGapFar) break;
+  }
+  assert.ok(jumped && actor.position.y === center.y && actor.position.z < center.z + OPENING_ESCAPE.roofGapFar, 'Trinity must actually land across the alley');
+  assert.equal(state.openingRoof?.phase, 'running');
+  assert.equal(state.step, 1, 'the open runway must count when crossing straight without touching the side marker');
 });
 
 test('Trinity can walk from 303 through the roof gap and answer the phone without a player-position shortcut', () => {
@@ -1283,9 +1347,9 @@ test('Trinity can walk from 303 through the roof gap and answer the phone withou
   for (let frame = 0; frame < 150 && state.openingRoof?.phase === 'running' && state.step < 2; frame++) {
     const localX = h.actor().position.x - FILM_SETS[roofs.set].center.x;
     const localZ = h.actor().position.z - FILM_SETS[roofs.set].center.z;
-    const target = state.step === 0 ? { x: -7, z: 12 } : localZ > 2 ? { x: 7, z: 2 } : { x: 7, z: -14 };
+    const target = roofs.steps[state.step];
     const dx = target.x - localX; const dz = target.z - localZ; const length = Math.hypot(dx, dz);
-    const jump = state.step === 1 && !jumped && localZ < -.4 && localZ > -2;
+    const jump = state.step === 1 && !jumped && localZ <= OPENING_ESCAPE.roofGapNear + 1.7 && localZ >= OPENING_ESCAPE.roofGapNear - .5;
     if (jump) jumped = true;
     move(dx / Math.max(.01, length), dz / Math.max(.01, length), jump);
   }

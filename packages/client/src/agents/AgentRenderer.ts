@@ -1088,6 +1088,10 @@ export class AgentRenderer {
       input.zionDeployment = state.currentAction?.parameters.zionDeployment as MotionInput['zionDeployment'];
       input.maggieDiscovery = state.currentAction?.parameters.maggieDiscovery as MotionInput['maggieDiscovery'];
       input.hotelPursuit = hotelPursuit;
+      const { roofJumpForward, roofJumpVertical } = OPENING_ESCAPE;
+      input.openingRoofJump = roof?.phase === 'running' && id === journey?.actor && state.status === 'alive'
+        && (!input.grounded || state.velocity.y > 0) && state.velocity.z <= -roofJumpForward + .1
+        ? (roofJumpVertical - input.verticalVelocity) / (2 * roofJumpVertical) : undefined;
       input.hotelLookPitch = undefined;
       if (hotel && openingHotelAlleyGuard(this.agents.get('smith')?.state)) {
         const look = hotel.phase === 'ladder_ready' ? 1 : hotel.phase === 'dive' && input.hotel303?.phase === 'dive' ? openingHotelDiveMotion(input.hotel303.elapsed).grab

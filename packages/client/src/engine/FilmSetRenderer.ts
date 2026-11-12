@@ -3699,7 +3699,7 @@ export class FilmSetRenderer {
           this.box(this.black, x, y - 1.58, face, 3.1, .15, .26);
         }
       }
-      for (const [x, z, length] of [[-12, 24, 21], [11, 31, 19], [-10, -24, 19], [13, -32, 18]])
+      for (const [x, z, length] of [[-12, 31, 21], [11, 31, 19], [-10, -24, 19], [13, -32, 18]])
         this.box(this.black, x, .009, z, .14, .018, length);
     } else if (set.id === 'film_jump_roofs') {
       this.box(floor, 0, -.3, (-13 + d / 2) / 2, w, .6, d / 2 + 13);
@@ -5049,14 +5049,13 @@ export class FilmSetRenderer {
       }
       if (chase) {
         this.root.add(new THREE.HemisphereLight(0xc7d2c9, 0x36352e, .72));
-        for (const [x, y, z, color, intensity] of [[-7, 8, 14, 0xb8c9bc, 305], [7, 8, -10, 0xa6bab4, 320], [-2.8, 5.2, -55, 0xdfb27d, 325]]) {
+        for (const [x, y, z, color, intensity] of [[-7, 8, OPENING_ESCAPE.roofGapNear + 8, 0xb8c9bc, 305], [7, 8, -10, 0xa6bab4, 320], [-2.8, 5.2, -55, 0xdfb27d, 325]]) {
           const flood = new THREE.PointLight(color, intensity, 34, 2);
           flood.position.set(x, y, z); this.root.add(flood);
         }
-        for (const z of [OPENING_ESCAPE.roofGapNear + 1.5, OPENING_ESCAPE.roofGapFar - 1.5]) {
-          this.box(this.black, 0, .11, z, 7, .04, .2);
-          this.box(this.brass, -3.2, .18, z, .16, .04, .75);
-          this.box(this.brass, 3.2, .18, z, .16, .04, .75);
+        for (const [z, width] of [[OPENING_ESCAPE.roofGapNear + 1.5, 18], [OPENING_ESCAPE.roofGapFar - 1.5, 7]]) {
+          this.box(this.black, 0, .11, z, width, .04, .2);
+          for (const side of [-1, 1]) this.box(this.brass, side * (width / 2 - .3), .18, z, .16, .04, .75);
         }
         for (const z of [OPENING_ESCAPE.roofGapNear, OPENING_ESCAPE.roofGapFar]) this.box(this.mat(0xb7ad83, .75), 0, .18, z, w - 2, .07, .18);
         for (const x of [-6.6, 6.6]) this.box(this.plaster, x, 7.5, -d / 2 + 1, 5.8, 15, 1);

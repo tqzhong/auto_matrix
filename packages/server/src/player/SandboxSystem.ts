@@ -53,6 +53,7 @@ export class SandboxSystem {
     this.life.film.office.phoneFrame(this.world.simulationTick, this.world.agents);
     const neo = this.world.agents.get('neo'); if (neo) this.life.liftFrame(neo, 0, this.world.simulationTick);
     this.life.film.restoreHotelSpace();
+    this.life.film.restoreOpeningRoofSpace();
     this.life.film.restoreAwakeningSpace();
     this.life.film.reconcileCast();
     this.life.film.restoreTrainingSpace();

@@ -126,6 +126,7 @@ export interface MotionInput {
   hotelBreach?: { travel: number; speed: number; impact: number };
   hotelLookPitch?: number;
   roofExit?: OpeningRoofExit;
+  openingRoofJump?: number;
   openingRoofLeap?: number;
   openingRoofRoll?: number;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
@@ -272,6 +273,19 @@ export function architectWalkPose(phase: number, moving: number) {
 }
 
 export function advanceMotion(state: MotionState, input: MotionInput, delta: number, architect = false) {
+  if (input.openingRoofJump !== undefined) {
+    const progress = clamp(input.openingRoofJump);
+    const reach = smooth(clamp(progress / .28)), brace = smooth(clamp((progress - .64) / .36));
+    const tuck = reach * (1 - brace);
+    state.speed = input.speed;
+    state.airborne = 1; state.wasGrounded = false; state.verticalVelocity = input.verticalVelocity; state.landing = 0;
+    const legs = [0, 1].map(i => ({ hip: mix(i ? .42 : -.34, i ? -.2 : -.92, tuck) - brace * .2,
+      knee: .2 + (i ? 1.24 : .66) * tuck + brace * .16, ankle: -.22 + brace * .12 }));
+    const arms = [0, 1].map(i => ({ shoulder: mix(i ? .24 : -.79, i ? -1.32 : -1.85, reach) + brace * .72,
+      elbow: -.58 + reach * .32 - brace * .32, outward: (i ? 1 : -1) * (.15 + reach * .13), grip: .17 }));
+    return { legs, arms, hipHeight: 2.02 - tuck * .22, twist: .13 * tuck, lean: .21 + .37 * tuck,
+      sway: 0, lunge: 0, roll: -.13 * tuck, headTurn: -.08 * tuck, moving: 0, run: 0, airborne: 1, coat: .32, impact: 0, landing: 0 };
+  }
   const theOne = input.theOne && theOnePose(input.theOne);
   if (theOne?.seated) {
     Object.assign(state, newMotion(), { time: input.theOne!.elapsed, seated: 1 });

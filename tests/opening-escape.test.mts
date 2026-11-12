@@ -48,6 +48,16 @@ test('saved rooftop run-up and dive poses do not depend on earlier walking or co
   }
 });
 
+test('the wide roof jump pose renders the same reach on a paused cold frame', () => {
+  const warm = newMotion(), cold = newMotion();
+  const running = { speed: 8.4, grounded: true, verticalVelocity: 0, turn: .8 };
+  for (let frame = 0; frame < 20; frame++) advanceMotion(warm, running, .025);
+  const flight = { speed: 22, grounded: false, verticalVelocity: 4.56, turn: 0, openingRoofJump: .38 };
+  const paused = advanceMotion(cold, flight, 0);
+  assert.ok(paused.arms[0].shoulder < -1 && paused.legs[1].knee > .9, 'the paused silhouette must reach forward and tuck a knee');
+  assert.deepEqual(advanceMotion(warm, flight, .025), paused);
+});
+
 test('303 bracing and landing lead into the first rung instead of holding an airborne pose', () => {
   const frame = (elapsed: number) => advanceMotion(newMotion(), {
     speed: 0, grounded: true, verticalVelocity: 0, turn: 0, hotel303: { phase: 'dive', elapsed },
@@ -160,7 +170,7 @@ test('the roof exit opens a real window while retaining the wall and the stairwe
   } finally { renderer.dispose(); globalThis.document = document; }
 });
 
-test('the opening roof has a raycastable drop and the phone truck follows saved time into a visible impact', t => {
+test('the wide opening alley has a raycastable drop and the phone truck follows saved time into a visible impact', t => {
   t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
   const document = globalThis.document;
   globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }) } as unknown as Document;
@@ -181,12 +191,15 @@ test('the opening roof has a raycastable drop and the phone truck follows saved 
       const ray = new THREE.Raycaster(new THREE.Vector3(roofCenter.x + x, roofCenter.y + 10, roofCenter.z + z), new THREE.Vector3(0, -1, 0));
       return ray.intersectObjects(renderer.root.children, true)[0]?.point.y;
     };
-    assert.ok(Math.abs(surface(10)! - roofCenter.y) < 2, `roof surface: ${surface(10)}`);
+    const runway = OPENING_ESCAPE.roofGapNear + 3;
+    assert.ok(Math.abs(surface(runway)! - roofCenter.y) < 2, `roof surface: ${surface(runway)}`);
     assert.ok(surface(-4)! < roofCenter.y - 20, `gap surface: ${surface(-4)}`);
+    assert.ok(surface(8)! < roofCenter.y - 20, 'the actual drop must continue across the widened alley');
+    assert.ok(groundHeight(filmPosition(roof.set, 0, 8), true) < roofCenter.y - 20, 'rendered edges and collision must match');
     const edge = FILM_SETS[roof.set].width / 2 - .5;
     const gap = (OPENING_ESCAPE.roofGapNear + OPENING_ESCAPE.roofGapFar) / 2;
     for (const x of [-edge, edge]) {
-      assert.ok(surface(10, x)! > roofCenter.y + 1, 'the near building needs its own parapet');
+      assert.ok(surface(runway, x)! > roofCenter.y + 1, 'the near building needs its own parapet');
       assert.ok(surface(gap, x)! < roofCenter.y - 20, 'a parapet must not bridge the drop');
       assert.ok(surface(-14, x)! > roofCenter.y + 1, 'the landing building needs its own parapet');
     }

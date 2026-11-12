@@ -133,7 +133,7 @@ test('the opening roof accepts a jump on the first unsupported step near the edg
   const jump = { ...sprint, jump: true };
   let crossing = stepPlayer(edge.position, edge.verticalVelocity, jump, .05, true, [], edge.horizontalVelocity);
   assert.ok(crossing.verticalVelocity > 0, 'accept a late packet while the player is still at roof height');
-  for (let frame = 0; frame < 15; frame++) {
+  for (let frame = 0; frame < 30 && crossing.verticalVelocity !== 0; frame++) {
     crossing = stepPlayer(crossing.position, crossing.verticalVelocity, sprint, .05, true, [], crossing.horizontalVelocity);
   }
   assert.ok(crossing.position.z < filmPosition('film_hotel_roofs', 7, OPENING_ESCAPE.roofGapFar).z);
@@ -143,6 +143,27 @@ test('the opening roof accepts a jump on the first unsupported step near the edg
   assert.ok(stepPlayer(falling.position, falling.verticalVelocity, jump, .05, true).verticalVelocity < 0);
   const gap = filmPosition('film_hotel_roofs', 7, (OPENING_ESCAPE.roofGapNear + OPENING_ESCAPE.roofGapFar) / 2);
   assert.ok(stepPlayer(gap, 0, jump, .05, true).verticalVelocity < 0);
+});
+
+test('a sprint jump carries across the wide opening alley after releasing the keys', () => {
+  const sprint = { ...input, x: 0, z: -1, yaw: Math.PI, sprint: true, jump: true };
+  const start = filmPosition('film_hotel_roofs', 7, OPENING_ESCAPE.roofGapNear + 1.5);
+  const approach = { x: 0, z: -PLAYER_RUN_SPEED };
+  for (const dt of [.02, .05, .1]) {
+    let flight = stepPlayer(start, 0, sprint, dt, true, [], approach);
+    assert.ok(flight.horizontalVelocity.z < -PLAYER_RUN_SPEED, 'the rooftop sprint must carry farther than an ordinary jump');
+    const idle = { ...sprint, z: 0, sprint: false, jump: false };
+    for (let frame = 0; frame < Math.ceil(2 / dt) && flight.verticalVelocity !== 0; frame++) {
+      flight = stepPlayer(flight.position, flight.verticalVelocity, idle, dt, true, [], flight.horizontalVelocity);
+    }
+    assert.ok(flight.position.z < filmPosition('film_hotel_roofs', 7, OPENING_ESCAPE.roofGapFar).z);
+    assert.equal(flight.position.y, start.y);
+  }
+  const tooEarly = { ...start, z: start.z + 4 };
+  const shortJump = stepPlayer(tooEarly, 0, sprint, .05, true, [], approach);
+  assert.equal(shortJump.horizontalVelocity.z, -PLAYER_RUN_SPEED);
+  const walk = stepPlayer(start, 0, { ...sprint, sprint: false }, .05, true);
+  assert.ok(walk.horizontalVelocity.z > -PLAYER_RUN_SPEED);
 });
 
 test('locomotion accelerates, brakes and removes velocity into a wall', () => {

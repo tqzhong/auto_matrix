@@ -56,7 +56,7 @@ import { APARTMENT, APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartment
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
 import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
-import { OPENING_ROOF_EXIT } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_ROOF_EXIT } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
 
@@ -3278,11 +3278,18 @@ export class PlayerControls {
       const offset = new THREE.Vector3(-Math.sin(this.yaw) * Math.cos(this.pitch), Math.sin(this.pitch) + 0.1, -Math.cos(this.yaw) * Math.cos(this.pitch));
       const wreckCabin = state.currentLocation === 'film_logos_wreck';
       if (wreckCabin) offset.y = Math.sin(this.pitch) * .22 + .1;
+      const roof = FILM_SETS.film_hotel_roofs, roofZ = this.position.z - roof.center.z;
+      const { roofGapNear, roofGapFar } = OPENING_ESCAPE;
+      const alleyView = state.currentLocation === roof.id && this.position.y >= roof.center.y
+        ? THREE.MathUtils.smoothstep(-Math.cos(this.yaw), .45, .9) * THREE.MathUtils.smoothstep(roofZ, roofGapFar - 6, roofGapFar + 4)
+          * (1 - THREE.MathUtils.smoothstep(roofZ, roofGapNear + 1, roofGapNear + 10)) : 0;
+      offset.y += .5 * alleyView;
       // In the ambush aisle the bathroom partition sits to Neo's right.
       const ambushAisle = state.currentLocation === 'film_ambush_house' && this.position.z < FILM_SETS.film_ambush_house.center.z - 4;
       const sixthBathroom = ambushAisle && state.id === 'morpheus' && Math.abs(this.position.y - FILM_SETS.film_ambush_house.center.y - WETWALL_SHAFT.sixth) < 3;
       // The cat passes beside Neo's silhouette, so its low body needs a wider shoulder gap.
       const shoulder = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw)).multiplyScalar(wreckCabin ? -1.35 : sixthBathroom ? 2.6 : doorwayView ? -2.5 : ambushAisle ? -1.1 : this.camera.aspect < .8 ? .3 : .8);
+      shoulder.x -= Math.cos(this.yaw) * (this.camera.aspect < .8 ? 1.4 : 3.4) * alleyView;
       const pivot = this.cameraTarget.clone().add(shoulder);
       const lafayetteWalking = state.currentLocation === 'film_lafayette' && !this.performing;
       const dojoWalking = state.currentLocation === 'film_kungfu_dojo';
@@ -3366,7 +3373,7 @@ export class PlayerControls {
         this.camera.position.y = Math.min(this.camera.position.y, home.y - 1 + headroom - lens - .05);
       }
       const lookAhead = officeFollow ? 2 * THREE.MathUtils.smoothstep(Math.hypot(this.camera.position.x - this.position.x, this.camera.position.z - this.position.z), 1.5, 4.5) : 2;
-      this.camera.lookAt((wreckCabin || officeFollow ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08, Math.cos(this.yaw) * lookAhead)));
+      this.camera.lookAt((wreckCabin || officeFollow ? this.cameraTarget.clone() : sixthBathroom || doorwayView ? pivot.clone().lerp(this.cameraTarget, .6) : pivot.clone()).add(new THREE.Vector3(Math.sin(this.yaw) * lookAhead, -.08 - 1.2 * alleyView, Math.cos(this.yaw) * lookAhead)));
     }
     this.impactAge += delta;
     if (this.impactAge < .18) {

@@ -228,23 +228,34 @@ export function wellsClearPosition(position: Vector3, structures: WorldStructure
 export function stepPlayer(position: Vector3, verticalVelocity: number, input: PlayerInput, dt: number, matrix: boolean, structures: WorldStructure[] = [], horizontalVelocity?: Pick<Vector3, 'x' | 'z'>, speedScale = 1): { position: Vector3; verticalVelocity: number; horizontalVelocity: Pick<Vector3, 'x' | 'z'> } {
   const next = { ...position };
   const length = Math.hypot(input.x, input.z);
+  const scale = length > 1 ? 1 / length : 1;
   const speed = (input.crouch ? PLAYER_WALK_SPEED * .48 : input.sprint ? PLAYER_RUN_SPEED : PLAYER_WALK_SPEED) * speedScale;
   const floor = groundHeight(position, matrix, structures);
+  const roof = FILM_SETS.film_hotel_roofs, localZ = position.z - roof.center.z;
+  const { roofGapNear, roofGapFar, roofDrop, roofJumpWindow, roofJumpVertical, roofJumpForward } = OPENING_ESCAPE;
+  const aboveAlley = matrix && position.y >= roof.center.y && localZ >= roofGapFar - 6 && localZ <= roofGapNear + roofJumpWindow
+    && Math.abs(position.x - roof.center.x) <= roof.width / 2;
   let vy = verticalVelocity;
+  let roofTakeoff = false;
   if (input.jump && !input.crouch && verticalVelocity <= 0) {
-    const roof = FILM_SETS.film_hotel_roofs, localZ = position.z - roof.center.z;
     // The first step past the lip can still be at roof height when a jump packet arrives.
-    const justOffRoof = verticalVelocity === 0 && position.y === roof.center.y && floor === roof.center.y - OPENING_ESCAPE.roofDrop
-      && filmSetAt(position, matrix) === roof && Math.min(OPENING_ESCAPE.roofGapNear - localZ, localZ - OPENING_ESCAPE.roofGapFar) <= .5;
-    if (position.y <= floor + .1 || justOffRoof) vy = PLAYER_JUMP_SPEED;
+    const justOffRoof = aboveAlley && verticalVelocity === 0 && position.y === roof.center.y && floor === roof.center.y - roofDrop
+      && Math.min(roofGapNear - localZ, localZ - roofGapFar) <= .5;
+    if (position.y <= floor + .1 || justOffRoof) {
+      roofTakeoff = aboveAlley && localZ >= roofGapNear - .5 && input.sprint && input.z * scale <= -.8
+        && (!horizontalVelocity || horizontalVelocity.z <= -PLAYER_RUN_SPEED * .7);
+      vy = roofTakeoff ? roofJumpVertical : PLAYER_JUMP_SPEED;
+    }
   }
   const nextY = next.y + vy * dt - .5 * PLAYER_GRAVITY * dt * dt;
   vy -= PLAYER_GRAVITY * dt;
   if (nextY < floor) { next.y = floor; vy = 0; } else next.y = nextY;
-  const scale = length > 1 ? 1 / length : 1;
   const blend = 1 - Math.exp(-(length > .01 ? 10 : 18) * dt);
   const targetX = input.x * scale * speed; const targetZ = input.z * scale * speed;
   const velocity = horizontalVelocity ? { x: horizontalVelocity.x + (targetX - horizontalVelocity.x) * blend, z: horizontalVelocity.z + (targetZ - horizontalVelocity.z) * blend } : { x: targetX, z: targetZ };
+  // Carry the takeoff momentum until touchdown, including after a cold join.
+  if (roofTakeoff || aboveAlley && horizontalVelocity && horizontalVelocity.z <= -roofJumpForward + .1
+    && (verticalVelocity > 0 || position.y > roof.center.y)) velocity.z = -roofJumpForward;
   const x = { ...next, x: next.x + velocity.x * dt };
   if (!playerBlocked(x, matrix, 1.1, structures)) next.x = x.x; else velocity.x = 0;
   const z = { ...next, z: next.z + velocity.z * dt };

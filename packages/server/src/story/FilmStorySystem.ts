@@ -133,7 +133,7 @@ import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
-import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, openingRoofLeapPose, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningRoofEncounter, type OpeningRoofExit } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, PLAYER_GRAVITY, openingRoofLeapPose, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningRoofEncounter, type OpeningRoofExit } from '@auto_matrix/shared';
 import { WELLS_AFTERMATH, wellsAftermathCaption, wellsAftermathPose, wellsAftermathReady, type WellsAftermathGesture, type WellsAgentPlacement } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
@@ -588,6 +588,52 @@ export class FilmStorySystem {
     this.placeEpilogue(agent, tick);
     return trilogyEpilogueLocked(state.epilogue);
   }
+  restoreOpeningRoofSpace(): void {
+    const state = this.state;
+    if (state?.scene !== 'm1_roofs' || state.openingRoof?.wideAlley) return;
+    const scene = FILM_SCENE_BY_ID.m1_roofs, oldRoofHadNoGap = !state.openingRoof;
+    const chase = state.openingRoof ??= { phase: state.step >= scene.steps.length ? 'escaped' : 'running',
+      lastTick: this.world.simulationTick, attempts: 0 };
+    chase.wideAlley = true;
+    const roof = FILM_SETS.film_hotel_roofs, { center } = roof;
+    const { roofGapNear, roofGapFar, roofJumpWindow, roofJumpForward, roofJumpVertical } = OPENING_ESCAPE;
+    const oldNear = -2, entry = filmEntry(scene).z - center.z;
+    const moveWithRoof = (position?: AgentState['position']) => {
+      if (!position) return;
+      const z = position.z - center.z;
+      if (z <= roofGapFar || z >= entry) return;
+      if (oldRoofHadNoGap && z < oldNear && position.y === center.y) {
+        position.z = center.z + (state.step >= 2 ? roofGapFar - 1 : roofGapNear + roofJumpWindow);
+        return;
+      }
+      position.z = center.z + (z < oldNear
+        ? roofGapFar + (z - roofGapFar) * (roofGapNear - roofGapFar) / (oldNear - roofGapFar)
+        : roofGapNear + (z - oldNear) * (entry - roofGapNear) / (entry - oldNear));
+    };
+    moveWithRoof(state.checkpoint);
+    moveWithRoof(state.returnPosition);
+    for (const actor of this.world.agents.values()) {
+      if (actor.currentLocation !== roof.id) continue;
+      if (actor.id === 'agent_brown' && chase.leap) {
+        const pose = openingRoofLeapPose(chase.leap);
+        actor.position = { x: center.x + pose.x, y: center.y + pose.y, z: center.z + pose.z };
+        actor.rotation = pose.yaw;
+        continue;
+      }
+      const z = actor.position.z - center.z, height = actor.position.y - center.y;
+      moveWithRoof(actor.position);
+      if (actor.id !== state.actor || state.visiting || chase.phase !== 'running' || z <= roofGapFar || z > oldNear + roofJumpWindow) continue;
+      if (height === 0 && actor.velocity.y === 0 && z < oldNear && z >= oldNear - .5)
+        actor.position.z = center.z + roofGapNear + (z - oldNear);
+      if (height <= 0 || actor.velocity.z >= 0) continue;
+      const remaining = (actor.velocity.y + Math.sqrt(actor.velocity.y ** 2 + 2 * PLAYER_GRAVITY * height)) / PLAYER_GRAVITY;
+      if (-actor.velocity.z * remaining < z - roofGapFar) continue;
+      // Put a successful old jump on the longer arc at the same fraction of the gap.
+      const elapsed = (center.z + roofGapNear + roofJumpWindow - actor.position.z) / roofJumpForward;
+      actor.position.y = center.y + (roofJumpVertical - PLAYER_GRAVITY * elapsed / 2) * elapsed;
+      actor.velocity = { x: actor.velocity.x, y: roofJumpVertical - PLAYER_GRAVITY * elapsed, z: -roofJumpForward };
+    }
+  }
   openingRoofFrame(actor: AgentState, dt: number, tick: number, startStairwell = false): boolean {
     const state = this.state;
     if (state?.scene !== 'm1_roofs' || state.visiting || state.actor !== actor.id || state.openingRoof?.phase === 'failed') return false;
@@ -633,12 +679,12 @@ export class FilmStorySystem {
   openingRoofPursuitFrame(actor: AgentState, dt: number, tick: number): void {
     const state = this.state;
     if (dt <= 0 || state?.scene !== 'm1_roofs' || state.visiting || state.actor !== actor.id) return;
-    const chase = state.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0 };
+    const chase = state.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0, wideAlley: true };
     this.openingRoofFrames = chase;
     this.openingRoofPursuitStep(actor, chase, dt, tick);
   }
   private openingRoofTick(actor: AgentState, tick: number): void {
-    const chase = this.state!.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0 };
+    const chase = this.state!.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0, wideAlley: true };
     const dt = this.openingRoofFrames === chase ? 0 : Math.min(.5, Math.max(0, tick - chase.lastTick) * .5);
     this.openingRoofFrames = undefined;
     chase.lastTick = tick;
@@ -6660,7 +6706,7 @@ export class FilmStorySystem {
       if (state.scene === 'm1_room303' && (state.openingHotel?.phase === 'failed' || agent.status !== 'alive')) return this.openingHotel.retry(agent, tick);
       if (state.scene === 'm1_roofs' && state.openingRoof?.phase === 'failed') {
         const { attempts, pursuit } = state.openingRoof;
-        state.openingRoof = { phase: 'running', lastTick: tick, attempts: attempts + 1, ...(pursuit ? { pursuit } : {}) };
+        state.openingRoof = { phase: 'running', lastTick: tick, attempts: attempts + 1, wideAlley: true, ...(pursuit ? { pursuit } : {}) };
         state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
         this.place(agent, this.scene, state.checkpoint);
         const brown = this.world.agents.get('agent_brown');
@@ -6669,7 +6715,7 @@ export class FilmStorySystem {
           brown.rotation = Math.PI; brown.currentAction = null;
         }
         this.openingHotel.roofPursuers(0, tick, true);
-        return state.lastText = '回到屋顶入口。Brown 正从身后赶来；穿过通风设施，在楼间空隙前助跑起跳。';
+        return state.lastText = '回到屋顶入口。Brown 正从身后赶来。朝对岸按住 Shift，临近楼沿按空格。';
       }
       if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'failed') {
         state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: state.openingPhone.attempts + 1 };
@@ -7896,7 +7942,7 @@ export class FilmStorySystem {
     if (scene.id === 'm3_reset') state.epilogue = newTrilogyEpilogue('reset');
     if (scene.id === 'm3_dawn') state.epilogue = newTrilogyEpilogue('dawn');
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
-    if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0, ...(roofPursuit ? { pursuit: roofPursuit } : {}) };
+    if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0, wideAlley: true, ...(roofPursuit ? { pursuit: roofPursuit } : {}) };
     if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
     this.restoreWellsSpace();
     if (scene.id === 'm1_mirror' && life.choices.pill === 'red') state.mirrorGuide = { progress: 0, lastTick: tick, done: false, rise: 0 };

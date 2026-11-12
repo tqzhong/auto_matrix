@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { filmPosition, PLAYER_GRAVITY, type WorldEvent } from '@auto_matrix/shared';
+import { filmPosition, OPENING_ESCAPE, PLAYER_GRAVITY, type WorldEvent } from '@auto_matrix/shared';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { PlayerController } from '../packages/server/src/player/PlayerController.js';
@@ -16,7 +16,7 @@ function fixture(frames = 5, jump = true) {
   const sandbox = new SandboxSystem(world, dynamics, 123);
   const create = () => new PlayerController(world, conversations, {} as ActionExecutor, dynamics, sandbox);
   const players = create(), actor = world.agents.get('trinity')!;
-  actor.isInMatrix = true; actor.currentLocation = 'film_hotel_roofs'; actor.position = filmPosition('film_hotel_roofs', 0, 10);
+  actor.isInMatrix = true; actor.currentLocation = 'film_hotel_roofs'; actor.position = filmPosition('film_hotel_roofs', 0, OPENING_ESCAPE.roofGapNear + 10);
   assert.equal(players.possess('old', actor.id, 0).agentId, actor.id);
   players.receiveInput('old', { x: 1, z: 0, yaw: Math.PI / 2, sprint: true, jump, sequence: 1 });
   for (let i = 0; i < frames; i++) players.step(.02, true, 1);

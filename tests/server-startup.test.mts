@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { io } from 'socket.io-client';
 import type { ConversationRecord, ServerMessage, WorldStateFull } from '@auto_matrix/shared';
-import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, FILM_SCENES, farewellPose, CABIN_ROUTE_LENGTH, cabinGuidePose, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
+import { filmPosition, filmStepPosition, FILM_SCENE_BY_ID, FILM_SCENES, farewellPose, CABIN_ROUTE_LENGTH, cabinGuidePose, AWAKENING_SECONDS, awakeningPose, type AwakeningBeat, newSmithFinale, SMITH_FINALE, smithFinalePose, stepSmithFinale, PILL_ROOM, lafayetteKnockRoot, lafayetteWelcomeRoot, OPENING_ESCAPE, OPENING_HOTEL, OFFICE_WINDOW } from '@auto_matrix/shared';
 import { PersistentMemoryManager } from '../packages/server/src/memory/PersistentMemoryManager.js';
 import { interrogationRoot, type InterrogationEncounter } from '@auto_matrix/shared';
 import { CONSTRUCT, constructGuidePose, truthRoot, truthText, type TruthRecovery } from '@auto_matrix/shared';
@@ -124,9 +124,10 @@ test('opening impact: fast snapshots deliver the saved moving crash and preserve
 
 test('airborne motion: real paused restarts keep jump velocity while clearing the old player action', { timeout: 30000 }, async t => {
   const f = await fixture(t, 'm1_roofs'), actor = f.checkpoint.agents.trinity, journey = f.checkpoint.sandbox.neoLife.journey;
-  journey.step = 1; journey.openingRoof = { phase: 'running', lastTick: 1343, attempts: 2 };
-  actor.position = { ...filmPosition('film_hotel_roofs', 7, -1.5), y: 2.18 };
-  actor.velocity = { x: 0, y: 6.94, z: -8.39 }; actor.rotation = Math.PI; actor.controller = 'old-page';
+  journey.step = 1; journey.openingRoof = { phase: 'running', lastTick: 1343, attempts: 2, wideAlley: true };
+  const { roofGapNear, roofGapFar, roofJumpForward } = OPENING_ESCAPE;
+  actor.position = { ...filmPosition('film_hotel_roofs', 7, (roofGapNear + roofGapFar) / 2), y: 6.2 };
+  actor.velocity = { x: 0, y: 6.94, z: -roofJumpForward }; actor.rotation = Math.PI; actor.controller = 'old-page';
   actor.currentAction = { type: 'move_to', parameters: { player: true, resolved: true, crouching: false }, startedAt: 1343, duration: 1, progress: 0 };
   f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
   for (let restart = 0; restart < 2; restart++) {

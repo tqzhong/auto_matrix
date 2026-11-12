@@ -3,9 +3,12 @@ import type { WellsAftermath } from './wells-aftermath.js';
 import type { OpeningPursuitCast } from './opening-hotel.js';
 
 export const OPENING_ESCAPE = {
-  roofGapNear: -2,
+  roofGapNear: 17,
   roofGapFar: -5.8,
   roofDrop: 38,
+  roofJumpWindow: 2.6,
+  roofJumpVertical: 19,
+  roofJumpForward: 22,
   pursuerSpeed: 6.4,
   pursuerLeapSeconds: 1.1,
   pursuerLeapHeight: 3.2,
@@ -102,6 +105,7 @@ export function openingRoofLeapPose(leap: OpeningRoofLeap) {
 
 export interface OpeningRoofEncounter {
   phase: 'running' | 'failed' | 'escaped'; lastTick: number; attempts: number;
+  wideAlley?: true;
   leap?: OpeningRoofLeap;
   crossed?: boolean;
   pursuit?: OpeningPursuitCast;

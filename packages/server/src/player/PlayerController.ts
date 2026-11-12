@@ -1,4 +1,4 @@
-import { WELLS_AFTERMATH, bookDoorLocked, savedSeatedApartmentAction } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, WELLS_AFTERMATH, bookDoorLocked, savedSeatedApartmentAction } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
 import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
@@ -742,8 +742,9 @@ export class PlayerController {
       const carrying = this.sandbox?.life.film.dockEvacuation.active(agent) && this.sandbox.life.film.state?.dockEvacuation?.phase === 'carrying';
       const boost = carrying ? .5 : custody ? OFFICE_CUSTODY.speed / PLAYER_WALK_SPEED : agent.activeEffects.some(effect => ['speed_blur', 'agent_dodge', 'phase_shift'].includes(effect.visualEffect)) ? 1.8 : 1;
       const attackScale = session.impulse || session.stagger > 0 ? 0 : session.strike ? .4 : 1;
+      const roofMomentum = agent.currentLocation === 'film_hotel_roofs' && session.planar.z <= -OPENING_ESCAPE.roofJumpForward + .1;
       const movement = stepPlayer(previous, session.vy, { ...input, x: input.x * attackScale, z: input.z * attackScale,
-        ...(custody || carrying ? { sprint: false, jump: false, crouch: false } : {}) }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale ? undefined : session.planar, boost);
+        ...(custody || carrying ? { sprint: false, jump: false, crouch: false } : {}) }, Math.min(dt, 0.1), agent.isInMatrix, this.sandbox?.state.structures, stale && !roofMomentum ? undefined : session.planar, boost);
       agent.position = movement.position; session.vy = movement.verticalVelocity; session.planar = movement.horizontalVelocity; session.input.jump = false;
       const speech = this.sandbox?.life.film.state;
       if (speech?.actor === agent.id && agent.currentLocation === 'film_zion_temple' && zionTempleSpeechActive(speech) && Math.hypot(input.x, input.z) <= .05) {
