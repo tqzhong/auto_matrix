@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, filmEntry, openingRoofLeapPose, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, OPENING_ROOF_EXIT, filmEntry, openingRoofLeapPose, openingRoofStairPose, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
@@ -12,6 +12,53 @@ import { PlayerControls } from '../packages/client/src/player/PlayerControls.js'
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { actor } from './helpers/fighting-hand-fixture.mts';
+
+test('Trinity covers the broken stairwell window with one pistol after the roll', async t => {
+  const source = await actor('trinity'), asset = await source.models['load']('trinity');
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.mock.method(THREE.TextureLoader.prototype, 'load', () => new THREE.Texture());
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ getContext: () => ({
+    fillRect() {}, strokeRect() {}, fillText() {}, createRadialGradient: () => ({ addColorStop() {} }),
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+  }) }) } });
+  const scene = new THREE.Scene(), renderer = new AgentRenderer(scene), world = new WorldState();
+  t.after(() => { renderer.dispose(); source.models.dispose(); if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); });
+  new AgentManager(world).initializeAllAgents();
+  const trinity = world.agents.get('trinity')!, film = FILM_SCENE_BY_ID.m1_roofs, { center } = FILM_SETS[film.set];
+  const camera = new THREE.PerspectiveCamera(); camera.position.set(center.x + 3, center.y + 3, center.z + OPENING_ROOF_EXIT.restZ);
+  const origin = filmEntry(film), journey = { scene: film.id, actor: 'trinity', step: 2, completed: ['m1_room303'] } as FilmJourney;
+  Object.assign(trinity, { currentLocation: film.set, isInMatrix: true, position: origin });
+  renderer.updateAgent('trinity', trinity);
+  for (let frame = 0; frame < 8; frame++) await new Promise(resolve => setImmediate(resolve));
+  const body = renderer.getAgentBody('trinity')!, group = renderer.getAgent('trinity')!, hero = renderer.getAgentHero('trinity');
+  assert.ok(hero, 'check the delivered Trinity model');
+  const draw = (elapsed: number) => {
+    const pose = openingRoofStairPose(elapsed);
+    trinity.position = { x: center.x, y: center.y + pose.y, z: center.z + pose.z }; trinity.rotation = pose.yaw;
+    trinity.currentAction = { type: 'move_to', parameters: { resolved: true, roofExit: { elapsed, origin, stairwell: true } }, startedAt: 7, duration: 1e9, progress: 0 };
+    renderer.updateAgent('trinity', trinity);
+    group.position.set(trinity.position.x, trinity.position.y, trinity.position.z); body.rotation.y = trinity.rotation;
+    renderer.update(0, camera, 7, 0, journey); scene.updateMatrixWorld(true);
+    const guns: THREE.Object3D[] = [];
+    hero.traverseVisible(node => { if (node.getObjectByName('hel-pistol-grip')?.parent === node) guns.push(node); });
+    return guns;
+  };
+  assert.equal(draw(OPENING_ROOF_EXIT.rollEnd - .35).length, 0, 'keep both hands clear while rolling');
+  const guns = draw(OPENING_ROOF_EXIT.rollEnd + .7);
+  assert.equal(guns.length, 1, 'Trinity must draw a single pistol for the look back');
+  const pistol = guns[0], direction = new THREE.Vector3(0, 0, 1).applyQuaternion(pistol.getWorldQuaternion(new THREE.Quaternion()));
+  const window = new THREE.Vector3(center.x, center.y - 1 + 4.1, center.z + OPENING_ROOF_EXIT.paneZ);
+  const towardWindow = window.sub(pistol.getWorldPosition(new THREE.Vector3())).normalize();
+  assert.ok(direction.dot(towardWindow) > .98, 'the pistol follows the actual window rather than the stair rail');
+  const descent = draw(OPENING_ROOF_EXIT.walk + .4);
+  assert.deepEqual(descent, [pistol], 'keep the same pistol while lowering the arm');
+  const lowered = new THREE.Vector3(0, 0, 1).applyQuaternion(pistol.getWorldQuaternion(new THREE.Quaternion()));
+  assert.ok(lowered.angleTo(direction) > .5, 'Trinity lowers the pistol as she leaves the landing');
+  trinity.currentAction = null; renderer.updateAgent('trinity', trinity); renderer.update(0, camera, 7, 0, journey);
+  assert.equal(pistol.visible, false, 'clear the stairwell performance when its saved action ends');
+  assert.deepEqual(draw(OPENING_ROOF_EXIT.rollEnd + .7), [pistol], 'reuse the same prop on a replay');
+});
 
 test('Brown’s shoulder roll clears the rooftop and ends in a single-knee recovery', async t => {
   const source = await actor('smith'), asset = await source.models['load']('smith');

@@ -46,7 +46,7 @@ import { TruckWeaponProps, poseTruckWeapons } from './TruckWeaponPerformance.js'
 import { poseTruckHood } from './TruckHoodPerformance.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BURLY, oracleCookieOwner, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
+import { BURLY, OPENING_ROOF_EXIT, oracleCookieOwner, type AgentState, type RescueLoadout, type ChateauWeapon } from '@auto_matrix/shared';
 import { poseSpoonHands } from './SpoonPerformance.js';
 import { placeAmbushFeet } from './HotelFootPlacement.js';
 import { poseOracleReception, poseOracleWaiting } from './OracleReceptionPerformance.js';
@@ -71,7 +71,7 @@ import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
 import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerformance.js';
 import { poseHotelPhone, poseOpeningPhone } from './OpeningPhonePerformance.js';
-import { poseOpeningRoofExit, poseOpeningRoofLanding } from './OpeningRoofPerformance.js';
+import { poseOpeningRoofExit, poseOpeningRoofLanding, poseOpeningRoofLookback } from './OpeningRoofPerformance.js';
 import { poseWellsAftermath } from './WellsAftermathPerformance.js';
 import { crosscutPalm, poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
 import { poseTheOneBody } from './TheOnePerformance.js';
@@ -157,6 +157,7 @@ export interface CharacterRig {
   zionVariant?: { hero?: HeroRig; fallback: THREE.Object3D[]; realWorld: boolean };
   smithProjection?: { hero?: HeroRig; loading: boolean; visible: boolean; fallback: Map<THREE.Object3D, boolean> };
   weapons?: THREE.Group[];
+  roofPistol?: THREE.Group;
   spoon?: SpoonModel;
   dockCargo?: DockCargoModel;
   phone?: PhoneModel;
@@ -1126,6 +1127,7 @@ export class CharacterModels {
       if (gun.userData.freewayShot && !pickupArmed) { gun.position.set(0, rig.hero ? -.08 : -.77, .03); gun.rotation.set(0, 0, 0); delete gun.userData.freewayShot; }
       gun.visible = Boolean(armed);
     });
+    if (rig.roofPistol) rig.roofPistol.visible = false;
     if (input.dockGateCover && !rig.gateBolt) {
       rig.gateBolt = this.mesh(rig.root, this.geometry(new THREE.CylinderGeometry(.025, .045, 1, 6)),
         this.material(new THREE.MeshBasicMaterial({ color: 0xb8e7ff, toneMapped: false })), [0, 0, 0]);
@@ -1325,6 +1327,16 @@ export class CharacterModels {
       poseOpeningPhone(rig, input.openingAnswer, input.openingHit);
       poseHotelPhone(rig, hotelCall);
       poseOpeningRoofExit(rig.hero, input.roofExit);
+      if (input.roofExit?.stairwell) {
+        if (!rig.roofPistol) {
+          rig.roofPistol = createHelPistol(this.material(new THREE.MeshStandardMaterial({ color: 0x242b2c, metalness: .75, roughness: .28 })));
+          rig.roofPistol.name = 'opening-roof-pistol';
+          rig.roofPistol.traverse(object => { if (object instanceof THREE.Mesh) this.geometries.add(object.geometry); });
+          rig.hero.bones.get('wrist_R')!.add(rig.roofPistol);
+        }
+        rig.roofPistol.visible = input.roofExit.elapsed >= OPENING_ROOF_EXIT.rollEnd;
+        if (rig.roofPistol.visible) poseOpeningRoofLookback(rig, rig.roofPistol, input.roofExit.elapsed);
+      }
       poseOpeningRoofLanding(rig.hero, input.openingRoofRoll);
       poseWellsAftermath(rig, input.wellsAftermath);
       if (holdsStaff && rig.staff) {

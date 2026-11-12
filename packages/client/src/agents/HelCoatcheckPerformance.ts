@@ -50,7 +50,7 @@ export function poseHelProtection(rig: CharacterRig, attendant?: THREE.Object3D,
   rig.root.updateMatrixWorld(true);
 }
 
-export function poseHelPistol(rig: CharacterRig, pitch = 0, trainingGrip = false): void {
+export function poseHelPistol(rig: CharacterRig, pitch = 0, trainingGrip = false, gun = rig.weapons?.[0]): void {
   const shoulder = rig.hero?.bones.get('shoulder_R') ?? rig.shoulders[0];
   const elbow = rig.hero?.bones.get('elbow_R') ?? rig.elbows[0];
   const wrist = rig.hero?.bones.get('wrist_R') ?? rig.mobilWrists?.[0];
@@ -61,7 +61,6 @@ export function poseHelPistol(rig: CharacterRig, pitch = 0, trainingGrip = false
   const aim = Math.max(-1.35, Math.min(1.35, pitch)), orientation = rotation.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), aim));
   // The shipped right palm faces +X and rests on the side of the grip.
   const handRotation = orientation.clone();
-  const gun = rig.weapons?.[0];
   if (rig.hero && gun?.userData.helPistol) {
     const middle = rig.hero.rest.get('finger3-1_R')!, index = rig.hero.rest.get('finger2-1_R')!;
     gun.position.set(.148, middle.y + .055, index.z + .045);

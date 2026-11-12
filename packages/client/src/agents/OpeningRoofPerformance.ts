@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, openingRoofStairHeight, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
+import type { CharacterRig } from './CharacterModel.js';
+import { poseHelPistol } from './HelCoatcheckPerformance.js';
 import { heroSolePoints } from './HotelFootPlacement.js';
 
 const { lerp, smoothstep } = THREE.MathUtils;
@@ -76,6 +78,20 @@ export function poseOpeningRoofLanding(rig: HeroRig, progress?: number): void {
     ankle.rotation.x = lerp(ankle.rotation.x, lerp(left ? -.26 : -.57, left ? -.03 : -1.15, kneel), weight);
   }
   supportTuckedPose(rig, (_x, z) => z <= OPENING_ESCAPE.roofGapFar ? 0 : undefined, -.32 * weight, rollContacts);
+}
+
+export function poseOpeningRoofLookback(rig: CharacterRig, gun: THREE.Group, elapsed: number): void {
+  if (!rig.hero) return;
+  const { bones } = rig.hero, { center } = FILM_SETS.film_hotel_roofs;
+  const eye = bones.get('head')!.getWorldPosition(new THREE.Vector3());
+  const pitch = -Math.atan2(center.y - 1 + 4.1 - eye.y, Math.hypot(center.x - eye.x, center.z + OPENING_ROOF_EXIT.paneZ - eye.z));
+  const weight = smoothstep(elapsed, rollEnd, rollEnd + .55) * (1 - smoothstep(elapsed, rise, walk));
+  const restingArm = weight < 1 ? ['shoulder_R', 'elbow_R', 'wrist_R'].map(name => {
+    const joint = bones.get(name)!;
+    return [joint, joint.quaternion.clone()] as const;
+  }) : [];
+  poseHelPistol(rig, pitch, false, gun);
+  for (const [joint, rest] of restingArm) joint.quaternion.slerp(rest, 1 - weight);
 }
 
 function supportTuckedPose(rig: HeroRig, floorAt: (x: number, z: number) => number | undefined, minimum: number,
