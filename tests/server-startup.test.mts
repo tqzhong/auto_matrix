@@ -16,6 +16,7 @@ import { MIRROR_TRINITY, MIRROR_TIMING, mirrorTime, mirrorSilver } from '@auto_m
 import { CheckpointStore } from '../packages/server/src/world/CheckpointStore.js';
 import { openingPhoneContact, openingHitPose } from '@auto_matrix/shared';
 import { garageCarPose, garageRiderPose, newGarageEscape, stepGarageEscape } from '@auto_matrix/shared';
+import { CATCH, catchRoot, catchText, newCatch, type CatchEncounter } from '@auto_matrix/shared';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fingerprint = (data: string) => createHash('sha256').update(data).digest('hex');
@@ -41,6 +42,44 @@ test('a paused moving garage checkpoint keeps Trinity’s driving action tick on
   assert.deepEqual(attached.agents.trinity.currentAction, action);
   assert.deepEqual(attached.agents.trinity.position, actor.position);
   await server.stop();
+});
+
+test('a paused Trinity revival keeps both action clocks through disconnect and cold restart', { timeout: 30000 }, async t => {
+  const f = await fixture(t, 'm2_catch'), journey = f.checkpoint.sandbox.neoLife.journey;
+  const revival: CatchEncounter = { ...newCatch(2), phase: 'reviving', elapsed: .724, focus: CATCH.extraction, beats: 3,
+    checkpoint: 'pulse', carImpact: true };
+  journey.step = 3; journey.catch = revival; journey.lastText = catchText(revival);
+  const roles = ['neo', 'trinity'] as const;
+  for (const role of roles) {
+    const actor = f.checkpoint.agents[role], pose = catchRoot(revival, role);
+    actor.position = filmPosition('film_trinity_roof', pose.x, pose.z); actor.position.y += pose.y;
+    actor.rotation = pose.yaw; actor.currentLocation = 'film_trinity_roof'; actor.isInMatrix = true;
+    actor.velocity = { x: 0, y: 0, z: 0 }; actor.targetPosition = null; actor.currentPath = [];
+    actor.currentAction = { type: 'idle', parameters: { resolved: true, catch: { ...revival, role } },
+      startedAt: f.checkpoint.tick - 1, duration: 1e9, progress: 0 };
+  }
+  journey.checkpoint = { ...f.checkpoint.agents.neo.position };
+  f.checkpoint.simulation = { running: false, speed: 1 }; await writeFile(f.file, JSON.stringify(f.checkpoint));
+  const check = (state: WorldStateFull) => {
+    assert.equal(state.simulation!.running, false); assert.equal(state.simulation!.tick, f.checkpoint.tick);
+    assert.deepEqual(state.sandbox!.neoLife!.journey!.catch, revival);
+    for (const role of roles) for (const field of ['position', 'rotation', 'velocity', 'currentAction'] as const)
+      assert.deepEqual(state.agents[role][field], f.checkpoint.agents[role][field], `${role}: ${field}`);
+  };
+  const server = start(t, f.directory, 'normal'); await server.waitFor('STARTUP_LISTENING'); const client = await controls(t, server);
+  check(await client.world());
+  check(await client.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+  client.socket.disconnect();
+  const deadline = Date.now() + 5000;
+  while ((await client.world()).agents.neo.controller) {
+    assert.ok(Date.now() < deadline, 'the paused actor must be released'); await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  check(await client.world()); await server.stop();
+
+  const restored = start(t, f.directory, 'normal'); await restored.waitFor('STARTUP_LISTENING'); const next = await controls(t, restored);
+  check(await next.world());
+  check(await next.command('play_as', { agentId: 'neo' }, state => Boolean(state.agents.neo.controller)));
+  await restored.stop();
 });
 
 test('303 publishes the handset release with Trinity’s pose before finishing the call', { timeout: 30000 }, async t => {

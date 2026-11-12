@@ -1,7 +1,7 @@
 import { OPENING_ESCAPE, WELLS_AFTERMATH, bookDoorLocked, savedSeatedApartmentAction } from '@auto_matrix/shared';
 import { AMBUSH_DOFF, metacortexLiftLocked, lafayetteKnocking, lafayetteWelcomeLocked } from '@auto_matrix/shared';
 import { OFFICE_CUSTODY, PLAYER_WALK_SPEED, officeCustodyActive, windowOpening, windowCrossing } from '@auto_matrix/shared';
-import { RELOADED, HEL_COATCHECK } from '@auto_matrix/shared';
+import { RELOADED, HEL_COATCHECK, type CatchGesture } from '@auto_matrix/shared';
 import { LOCATIONS, heldPhone, pillLocked, lobbyLocked, governmentLocked, airRescueLocked, filmSetAt, FILM_SETS, FILM_CAST, NEO_CAST, neoSkillUnlocked, insideLifeRoom, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, rescueLoadout, rescueLocked, COMBAT_SKILLS, playerSkills, dodgeDirection, combatDisplace, groundHeight, meleeReach, distance, locationEntrance, playerBlocked, stepPlayer, type AgentState, type PlayerInput, type SandboxCommand, type SkillCast, type Vector3, type CombatSkillId, type WorldStructure } from '@auto_matrix/shared';
 import type { SandboxSystem } from './SandboxSystem.js';
 import type { WorldState } from '../world/WorldState.js';
@@ -41,6 +41,14 @@ export function airbornePlayer(agent: AgentState, structures: WorldStructure[] =
 export function savedFilmCombatAction(journey: FilmJourney, action: AgentState['currentAction'], paused: boolean): boolean {
   return Boolean(!journey.visiting && action && (action.type === 'idle' || paused && action.type === 'move_to')
     && (journey.matrixEscape && action.parameters.matrixEscape || journey.theOne && action.parameters.theOne));
+}
+
+function savedCatchPose(journey: FilmJourney | undefined, agent: AgentState): boolean {
+  const encounter = journey?.catch, action = agent.currentAction;
+  const pose = action?.parameters.catch as CatchGesture | undefined;
+  return Boolean(journey?.scene === 'm2_catch' && !journey.visiting && journey.actor === agent.id && agent.status === 'alive'
+    && encounter && encounter.phase !== 'done' && action?.type === 'idle' && action.duration === 1e9 && action.parameters.resolved === true
+    && pose?.role === agent.id && pose.phase === encounter.phase && pose.attempt === encounter.attempt && pose.elapsed === encounter.elapsed);
 }
 
 export function savedAwakeningIdle(journey: FilmJourney, action: AgentState['currentAction']): boolean {
@@ -221,7 +229,7 @@ export class PlayerController {
       const clear = wells ? wellsClearPosition(agent.position, this.sandbox?.state.structures) : undefined;
       agent.position = clear ?? locationEntrance(agent.currentLocation);
     }
-    const restoredPose = restoredWells || this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
+    const restoredPose = restoredWells || savedCatchPose(interlude, agent) || this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
       || interlude?.actor === id && savedSeatedApartmentAction(interlude.contact, agent.currentAction, id)
       || !this.running && (savedOfficeCustodyAction(this.sandbox?.life.film.state, agent) || savedOfficeCrouchAction(this.sandbox?.life.film.state, agent))
       || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
@@ -331,7 +339,7 @@ export class PlayerController {
       this.conversations.interrupt(agent.id, this.world.agents, tick);
       delete agent.controller;
       const journey = this.sandbox?.life.film.state;
-      const restoredPose = this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
+      const restoredPose = savedCatchPose(journey, agent) || this.sandbox?.life.film.freewayPickup.frame(agent, {}, 0, tick)
         || journey?.actor === agent.id && savedSeatedApartmentAction(journey.contact, agent.currentAction, agent.id)
         || !this.running && (savedOfficeCustodyAction(journey, agent) || savedOfficeCrouchAction(journey, agent))
         || this.sandbox?.life.film.workdayFrame(agent, 0, tick)
