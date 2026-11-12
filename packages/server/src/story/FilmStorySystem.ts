@@ -1583,7 +1583,7 @@ export class FilmStorySystem {
         reunion.elapsed = Math.min(MOBIL_REUNION.exit, reunion.elapsed + dt);
         reunion.trinity.x = 10.85 - 5.05 * reunion.elapsed / MOBIL_REUNION.exit;
         if (reunion.elapsed >= MOBIL_REUNION.exit) { reunion.phase = 'approaching'; reunion.elapsed = 0; }
-      } else if (reunion.phase === 'approaching' || reunion.phase === 'ready') {
+      } else if (dt > 0 && (reunion.phase === 'approaching' || reunion.phase === 'ready')) {
         const dx = actor.position.x - center.x - reunion.trinity.x, dz = actor.position.z - center.z - reunion.trinity.z;
         const gap = Math.hypot(dx, dz), walk = Math.min(Math.max(0, gap - MOBIL_REUNION.gap), MOBIL_REUNION.speed * dt);
         if (gap > .01) {

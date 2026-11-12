@@ -65,6 +65,30 @@ test('Trinity can reunite with Neo at his actual platform position instead of a 
   h.command('act'); assert.equal(h.journey.mobil!.reunion?.phase, 'embracing');
 });
 
+test('the saved Mobil approach keeps Trinity facing the same direction through repeated zero-time restores', () => {
+  const h = setup();
+  h.actor.position = filmPosition('film_mobil_station', .2137, -21.908923822478);
+  h.frame(6.55);
+  const trinity = h.world.agents.get('trinity')!;
+  assert.equal(h.journey.mobil!.reunion!.phase, 'approaching');
+  // The last player step changed Neo's position after Trinity's approach frame.
+  h.actor.position.z += .125;
+  const snapshot = () => ({ reunion: h.sandbox.life.film.state!.mobil!.reunion,
+    position: trinity.position, rotation: trinity.rotation, velocity: trinity.velocity, action: trinity.currentAction });
+  const paused = structuredClone(snapshot());
+  h.frame(.05, false);
+  assert.deepEqual(snapshot(), paused);
+  h.players.release('reunion-player', h.tick());
+  const released = structuredClone(snapshot()), saved = JSON.stringify(h.sandbox.state);
+  assert.equal(released.rotation, paused.rotation, 'disconnect cannot turn Trinity toward the new position');
+  h.sandbox.restore(JSON.parse(saved));
+  assert.deepEqual(snapshot(), released);
+  h.players.possess('reunion-player', 'neo', h.tick());
+  assert.deepEqual(snapshot(), released);
+  h.frame(.2);
+  assert.ok(trinity.position.x < released.position.x, 'Trinity keeps walking after play resumes');
+});
+
 test('a reunion freezes on pause, release, occupation or a missing partner without healing or reviving', () => {
   const h = setup(); h.frame(9); h.advance(); h.command('act'); h.frame(.4);
   const saved = structuredClone(h.journey.mobil), trinity = h.world.agents.get('trinity')!;
