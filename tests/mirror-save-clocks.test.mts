@@ -76,6 +76,27 @@ test('pod, rescue, recovery and reveal actions keep their clocks through paused 
   }
 });
 
+test('a paused pod rescue keeps the patient and boarding crew motion through release and re-entry', () => {
+  for (const elapsed of [3.65, 8.2]) {
+    const h = fixture(elapsed, 'rescue');
+    h.players.step(.1, true, 1401);
+    const motion = () => h.performers.map(actor => ({ position: actor.position, rotation: actor.rotation, velocity: actor.velocity, action: actor.currentAction }));
+    const before = structuredClone(motion()), saved = structuredClone(h.sandbox.state);
+    assert.ok(elapsed < 4 ? before[0].velocity.y > 0 : before[0].velocity.y < 0);
+    if (elapsed > 8) assert.ok(before.slice(1).every(actor => Math.hypot(actor.velocity.x, actor.velocity.z) > .1));
+    h.players.step(0, false, 1401);
+    assert.deepEqual(motion(), before, `${elapsed}: pausing retains the current rescue pose and motion`);
+    h.players.release('mirror-player', 1401);
+    assert.deepEqual(motion(), before, `${elapsed}: releasing keeps the motion from the last live frame`);
+    h.sandbox.restore(saved);
+    h.players.possess('mirror-player', 'neo', 1401);
+    assert.deepEqual(motion(), before, `${elapsed}: restoring the same rescue clock keeps the saved pose and motion`);
+    h.players.step(.1, true, 1402);
+    assert.ok(h.sandbox.life.film.state!.awakening!.elapsed > saved.neoLife!.journey!.awakening!.elapsed);
+    assert.notDeepEqual(h.neo.position, before[0].position);
+  }
+});
+
 test('awakening restore rebuilds absent or unrelated actions for Neo and the current supporting cast', () => {
   for (const kind of ['disconnect', 'rescue', 'recovery', 'cabin', 'core'] as const) {
     const h = fixture(3.2, kind), expected = h.actions().map(action => action!.parameters);

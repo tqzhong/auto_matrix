@@ -4759,7 +4759,7 @@ export class FilmStorySystem {
     }
     const savedActions = dt === 0 ? [agent, trinity, morpheus, ...bedside.map(id => this.world.agents.get(id))]
       .filter((actor): actor is AgentState => Boolean(actor)).map(actor => ({ actor, action: actor.currentAction })) : undefined;
-    const pose = awakeningPose(beat); const previous = agent.position;
+    const pose = awakeningPose(beat); const previous = agent.position, previousVelocity = agent.velocity;
     agent.position = filmPosition(this.scene!.set, pose.x, pose.z); agent.position.y += pose.y;
     agent.rotation = pose.yaw ?? (beat?.kind === 'cabin' ? cabinBodyPose(beat.elapsed).yaw : beat?.kind === 'core' ? CABIN.chair.yaw
       : beat?.kind === 'construct' ? CONSTRUCT_REVEAL.neo.yaw : beat?.kind === 'desert' ? DESERT_REVEAL.neo.yaw : Math.PI);
@@ -4777,10 +4777,11 @@ export class FilmStorySystem {
       trinity.currentAction = { type: 'idle', parameters: { mirrorCrew: mirrorTime(beat) }, startedAt: tick, duration: 1, progress: 0 };
     if (beat?.kind === 'rescue') for (const role of ['morpheus', 'trinity'] as const) {
       const crew = this.world.agents.get(role); if (!crew || crew.controller) continue;
-      const gesture = { elapsed: beat.elapsed, role, ...(beat.kind === 'rescue' ? { boarding: true } : {}) };
+      const gesture = { elapsed: beat.elapsed, role, boarding: true };
       const root = recoveryCrewPose(gesture); const before = crew.position;
       crew.position = filmPosition(this.scene!.set, root.x, root.z); crew.rotation = root.yaw;
-      crew.velocity = dt > 0 ? { x: (crew.position.x - before.x) / dt, y: 0, z: (crew.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
+      const savedMotion = dt === 0 && isDeepStrictEqual(crew.currentAction?.parameters.recoveryCrew, gesture) && isDeepStrictEqual(crew.position, before);
+      if (!savedMotion) crew.velocity = dt > 0 ? { x: (crew.position.x - before.x) / dt, y: 0, z: (crew.position.z - before.z) / dt } : { x: 0, y: 0, z: 0 };
       crew.currentLocation = this.scene!.set; crew.isInMatrix = false;
       crew.currentAction = { type: root.support > 0 || Math.hypot(crew.velocity.x, crew.velocity.z) < .1 ? 'idle' : 'move_to',
         parameters: { resolved: true, recoveryCrew: gesture }, startedAt: tick, duration: 1, progress: 0 };
@@ -4807,7 +4808,10 @@ export class FilmStorySystem {
     }
     if (savedActions) for (const { actor, action } of savedActions) {
       if (actor.currentAction && action?.type === actor.currentAction.type
-        && JSON.stringify(action.parameters) === JSON.stringify(actor.currentAction.parameters)) actor.currentAction = action;
+        && JSON.stringify(action.parameters) === JSON.stringify(actor.currentAction.parameters)) {
+        actor.currentAction = action;
+        if (beat?.kind === 'rescue' && actor === agent && isDeepStrictEqual(agent.position, previous)) agent.velocity = previousVelocity;
+      }
     }
     state.lastText = occupied ? `${beat?.kind === 'rescue' ? '救援' : '恢复'}暂停在当前动作：${this.world.agents.get(occupied)?.name ?? occupied} 正由另一位玩家控制。`
       : morpheus?.controller ? '揭示暂停在当前画面：Morpheus 正由另一位玩家控制。'
