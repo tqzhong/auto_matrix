@@ -47,12 +47,14 @@ function fixture(t: TestContext) {
   } as unknown as THREE.WebGLRenderer;
   const prepare = () => {
     const count = work.length; film.prepareGovernment(gpu, camera, journey, id => bodies.get(id), id => heroes.get(id), sun);
-    assert.ok(work.length - count <= 1, 'prepare one small batch, ready binding or large texture per frame');
+    const frame = work.slice(count), strips = frame.filter(item => item === 'strip').length;
+    assert.ok(strips ? frame.length === strips && strips <= 2 : frame.length <= 1,
+      'prepare a bounded upload or a small program batch per frame');
     assert.equal(parent.visible, false); assert.equal(hero.parent, parent); assert.equal(skin.parent, hero); assert.equal(skin.visible, false); assert.equal(later.visible, false); assert.equal(target, null);
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { film, journey, gpu, heroes, bodies, geometry, material, skin, coarse, later, work, batches, roots, prepare, drain,
+  return { film, journey, gpu, heroes, bodies, geometry, material, texture, skin, coarse, later, work, batches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
@@ -64,6 +66,42 @@ test('cleared lobby preparation queues the future interrogation office, hidden c
   const late = new THREE.Group(), guard = new THREE.Mesh(h.geometry, h.material); guard.visible = false; late.add(guard); h.heroes.set('agent_brown', late);
   const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(guard), 'late delivered security cast must be accepted');
   const after = h.batches.length; h.newGpu(); h.drain(); assert.ok(h.batches.length > after); assert.equal(h.roots.size, 1, 'a new GPU reuses the same authored office');
+});
+
+test('clearing the lobby stages the interrogation maps a few strips at a time and releases interrupted uploads', t => {
+  const h = fixture(t);
+  class Bitmap { width = 2048; height = 2048; }
+  const previous = globalThis.ImageBitmap, bitmap = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previous) globalThis.ImageBitmap = previous; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  h.texture.image = bitmap; h.texture.flipY = false;
+  const source = h.texture.source, rows: number[] = [], released: THREE.Texture[] = [];
+  const resident = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  Object.assign(h.gpu, {
+    capabilities: { maxTextureSize: 4096 }, properties: { get: (map: THREE.Texture) => resident.get(map) ?? {} },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true, pixelStorei() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.equal(image, bitmap); assert.deepEqual([width, height], [2048, 256]); rows.push(row); h.work.push('strip');
+      }, generateMipmap() {} }),
+    initTexture(map: THREE.Texture) {
+      resident.set(map, { __webglTexture: {}, __version: map.version });
+      map.addEventListener('dispose', () => released.push(map));
+      if (map.source.dataReady && map.source === source) h.work.push('texture');
+    },
+  });
+  h.prepare();
+  assert.deepEqual(rows, [0, 256], 'start the offstage upload without passing the whole bitmap to initTexture');
+  assert.equal(resident.has(h.texture), false);
+  h.journey.visiting = 'm1_lobby'; h.prepare();
+  assert.equal(released.length, 1); assert.notEqual(released[0], h.texture); assert.equal(h.texture.source, source);
+
+  delete h.journey.visiting;
+  h.prepare();
+  for (let frame = 0; frame < 3; frame++) h.prepare();
+  assert.deepEqual(rows.slice(2), [0, 256, 512, 768, 1024, 1280, 1536, 1792]);
+  assert.ok(resident.has(h.texture)); assert.equal(released.length, 2);
 });
 
 test('cancelling or visiting releases the offstage office once without changing the live scene', t => {

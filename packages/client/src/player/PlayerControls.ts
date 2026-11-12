@@ -40,7 +40,7 @@ import { dockArrivalPoint, dockReunionLocked, dockReunionRoot } from '@auto_matr
 import { dockBriefingLocked } from '@auto_matrix/shared';
 import { dockEvacuationLocked, shaftSealLocked, shaftSealLever, DOCK_EVACUATION, SHAFT_SEAL } from '@auto_matrix/shared';
 import { spoonLessonSeat, oracleDepartureLocked, pillPose } from '@auto_matrix/shared';
-import { FILM_SETS, OFFICE_CONTACT, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, MATRIX_ESCAPE, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, subwayCrewRoot, THE_ONE, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
+import { FILM_SETS, OFFICE_CONTACT, LOBBY_ENTRY, LOBBY_FIRE_INTERVAL, RESCUE, PILL_ROOM, PILL_TIMING, MIRROR_SEAT, MIRROR_TIMING, groundHeight, playerBlocked, stepPlayer, MELEE_COMBO, COMBO_WINDOW, DOJO_COMBO_WINDOW, COMBAT_SKILLS, combatDisplace, PLAYER_WALK_SPEED, meleeReach, trainingRoot, MATRIX_ESCAPE, matrixEscapePhaseLocked, matrixEscapePose, matrixEscapeRoot, subwayCrewRoot, THE_ONE, theOnePhaseLocked, theOnePose, theOneRoot, sentinelMachinePose, type OfficePhone, type AwakeningPose, type FilmJourney, type FreewayRide, type AgentState, type PlayerInput, type Vector3, type WorldStructure, type CombatImpact, type SkillCast, type RescueLoadout } from '@auto_matrix/shared';
 import { lafayetteWelcomeCamera } from './LafayetteWelcomeCamera.js';
 import { ceasefireCamera, ceasefireWitnessTarget } from './CeasefireCamera.js';
 import { gardenCamera } from './GardenCamera.js';
@@ -2024,10 +2024,11 @@ export class PlayerControls {
         this.camera.position.copy(eye); this.camera.lookAt(eye.clone().add(forward));
       } else {
         const center = FILM_SETS.film_government_lobby.center; const origin = new THREE.Vector3(center.x, center.y - 1, center.z);
-        const alarm = THREE.MathUtils.smoothstep(gesture.elapsed, 1.8, 3.1);
-        const ideal = new THREE.Vector3(this.camera.aspect < .85 ? 8.2 : 10.8, 5.1, 31)
-          .lerp(new THREE.Vector3(this.camera.aspect < .85 ? 7.2 : 9.2, 4.75, 26.8), alarm).add(origin);
-        const focus = new THREE.Vector3(0, 3.35, 24).lerp(new THREE.Vector3(0, 3.8, 20.8), alarm).add(origin);
+        const alarm = THREE.MathUtils.smoothstep(gesture.elapsed, LOBBY_ENTRY.alarmAt, LOBBY_ENTRY.drawAt);
+        const portrait = this.camera.aspect < .85;
+        const ideal = new THREE.Vector3(portrait ? 12.5 : 8.5, 5.7, 26.65)
+          .lerp(new THREE.Vector3(portrait ? 12.9 : 9.2, 4.85, 26.45), alarm).add(origin);
+        const focus = new THREE.Vector3(0, 2.6, 24).lerp(new THREE.Vector3(0, 2.4, 23.3), alarm).add(origin);
         if (resetCamera || gesture.elapsed < .12) this.camera.position.copy(ideal); else this.camera.position.lerp(ideal, 1 - Math.exp(-8 * delta));
         this.camera.lookAt(focus);
       }

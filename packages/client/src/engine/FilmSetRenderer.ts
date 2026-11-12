@@ -376,7 +376,8 @@ export class FilmSetRenderer {
   private sentinel?: SentinelSetRenderer;
   private restaurant?: CypherRestaurantRenderer;
   private government?: GovernmentSetRenderer;
-  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_helicopter' | 'm1_rooftop_rescue'; root: THREE.Group; renderer: GovernmentSetRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
+  private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_helicopter' | 'm1_rooftop_rescue'; root: THREE.Group; renderer: GovernmentSetRenderer;
+    colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean> };
   private matrixEscape?: MatrixEscapeRenderer;
   private preparedSubway?: { root: THREE.Group; renderer: MatrixEscapeRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation };
@@ -698,6 +699,7 @@ export class FilmSetRenderer {
     const prepared = this.preparedGovernment;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
     if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
       prepared.lighting?.dispose();
       prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true, shadowSun }), actors: new Set() };
       // These entrances hide the objective light, unlike the preceding elevator or cockpit.
@@ -720,7 +722,9 @@ export class FilmSetRenderer {
       }
     }
     colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
-    if (!this.prepareColorTexture(renderer, colors.textures)) this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+    const preparingTexture = questioning ? this.prepareStagedColorTexture(renderer, prepared, colors.textures, 2)
+      : this.prepareColorTexture(renderer, colors.textures);
+    if (!preparingTexture) this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated');
   }
   prepareInterrogation(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadowSun: THREE.DirectionalLight): void {
@@ -2368,7 +2372,10 @@ export class FilmSetRenderer {
       const preparedLobby = set?.id === 'film_government_lobby' && sceneId === 'm1_lobby' && !journey?.visiting ? this.preparedLobby : undefined;
       if (preparedLobby) { this.preparedLobby = undefined; preparedLobby.lighting?.dispose(); preparedLobby.root.removeFromParent(); }
       const preparedGovernment = set?.id === this.preparedGovernment?.renderer.setId && sceneId === this.preparedGovernment?.scene && !journey?.visiting ? this.preparedGovernment : undefined;
-      if (preparedGovernment) { this.preparedGovernment = undefined; preparedGovernment.lighting?.dispose(); preparedGovernment.root.removeFromParent(); }
+      if (preparedGovernment) {
+        this.preparedGovernment = undefined; preparedGovernment.textureUpload?.return(false);
+        preparedGovernment.lighting?.dispose(); preparedGovernment.root.removeFromParent();
+      }
       const preparedSubway = set?.id === 'film_subway_platform' && sceneId === 'm1_subway' && !journey?.visiting ? this.preparedSubway?.renderer : undefined;
       if (preparedSubway) { this.preparedSubway?.lighting?.dispose(); this.preparedSubway?.root.removeFromParent(); this.preparedSubway = undefined; }
       const preparedOneDeck = set?.id === 'film_neb_deck' && (sceneId === 'm1_death' || sceneId === 'm1_return') && !journey?.visiting ? this.preparedOneDeck : undefined;
@@ -5413,6 +5420,7 @@ export class FilmSetRenderer {
   }
   private cancelGovernmentPreparation(): void {
     const prepared = this.preparedGovernment; if (!prepared) return;
+    prepared.textureUpload?.return(false);
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedGovernment = undefined;
   }
   private cancelInterrogationPreparation(): void {

@@ -13,6 +13,8 @@ import { OPENING_HOTEL, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { PodSetRenderer } from '../packages/client/src/engine/PodSetRenderer.js';
 import { ApartmentSetRenderer } from '../packages/client/src/engine/ApartmentSetRenderer.js';
 import { NebDeckRenderer } from '../packages/client/src/engine/NebDeckRenderer.js';
+import { LobbySetRenderer } from '../packages/client/src/engine/LobbySetRenderer.js';
+import { LOBBY_COLUMNS, LOBBY_ENTRY } from '@auto_matrix/shared';
 import { CREW_MEAL, crewMealPose, interludeRoot, type InterludeGesture } from '@auto_matrix/shared';
 import { AmbushSetRenderer } from '../packages/client/src/engine/AmbushSetRenderer.js';
 import { MachineCoreRenderer } from '../packages/client/src/engine/MachineCoreRenderer.js';
@@ -1203,11 +1205,37 @@ test('the dock APU gunner sees past the frame, can turn the aim and fire from bo
 
 test('the lobby checkpoint has a readable authored camera and V returns to Neo eye height', t => {
   const game = setup(t, Math.PI); const center = FILM_SETS.film_government_lobby.center;
-  game.state.currentLocation = 'film_government_lobby'; game.state.position = filmPosition('film_government_lobby', 1.4, 25.5);
-  game.state.currentAction = { type: 'idle', parameters: { lobbyEntry: { phase: 'checkpoint', elapsed: 3.8, role: 'neo' }, armed: true }, startedAt: 0, duration: 1, progress: 0 };
-  game.controls.possess(game.state); game.step(.5);
-  const guard = new THREE.Vector3(center.x, center.y + 2.8, center.z + 20.8).project(game.camera);
-  assert.ok(Math.abs(guard.x) < .85 && Math.abs(guard.y) < .85, 'the alarm shot keeps the checkpoint guard in frame');
+  t.mock.method(game.document, 'createElement', () => ({ getContext: () => ({
+    createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData() {},
+  }) }));
+  const stage = new THREE.Group(); stage.position.set(center.x, center.y - 1, center.z);
+  const lobby = new LobbySetRenderer(stage, FILM_SETS.film_government_lobby); t.after(() => lobby.dispose());
+  const { neo } = LOBBY_ENTRY.roots;
+  game.state.currentLocation = 'film_government_lobby'; game.state.position = filmPosition('film_government_lobby', neo.x, neo.z);
+  const lobbyEntry = { phase: 'checkpoint' as const, elapsed: 0, role: 'neo' };
+  game.state.currentAction = { type: 'idle', parameters: { lobbyEntry, armed: true }, startedAt: 0, duration: 1, progress: 0 };
+  const journey = { scene: 'm1_lobby', step: 1, lobby: { phase: 'checkpoint', elapsed: 0, ammo: 24, wave: 0,
+    columns: Array(LOBBY_COLUMNS.length).fill(0), allyShotAt: -10, shots: 0, kills: 0 } } as FilmJourney;
+  for (const aspect of [16 / 9, .72]) {
+    game.camera.aspect = aspect; game.camera.updateProjectionMatrix(); game.controls.possess(game.state);
+    for (const elapsed of [.2, 1.7, 2.5, 3.8, 6.8]) {
+      lobbyEntry.elapsed = journey.lobby!.elapsed = elapsed; game.step(.6);
+      lobby.update(journey, elapsed);
+      stage.updateMatrixWorld(true); game.camera.updateMatrixWorld(true);
+      const eye = game.camera.position.clone().sub(stage.position);
+      assert.ok(!LOBBY_COLUMNS.some(c => Math.abs(c.x - eye.x) < c.width / 2 && Math.abs(c.z - eye.z) < c.depth / 2 && eye.y < c.height),
+        `the checkpoint camera enters a stone column at ${elapsed}s/${aspect}`);
+      for (const [role, { x, z }] of Object.entries(LOBBY_ENTRY.roots)) {
+        const y = role === 'guard' && elapsed > LOBBY_ENTRY.drawAt + 1.15 ? .8 : 3.75;
+        const target = new THREE.Vector3(x, y, z).add(stage.position), sight = target.clone().sub(game.camera.position);
+        const blocked = new THREE.Raycaster(game.camera.position, sight.clone().normalize(), .01, sight.length() - .1).intersectObject(stage, true)[0];
+        assert.ok(!blocked, `the lobby blocks ${role} at ${elapsed}s/${aspect}`);
+        const screen = target.project(game.camera);
+        assert.ok(Math.abs(screen.x) < .94 && Math.abs(screen.y) < .9 && screen.z > -1 && screen.z < 1,
+          `${role} leaves the checkpoint frame at ${elapsed}s/${aspect}: ${screen.toArray()}`);
+      }
+    }
+  }
   const locked = game.group.position.clone(); game.key('KeyW'); game.step(.35); assert.deepEqual(game.group.position, locked, 'the entry performance owns movement until weapons are drawn');
   game.key('KeyW', false); game.key('KeyV'); game.key('KeyV', false); game.step(.1);
   assert.ok(game.camera.position.distanceTo(new THREE.Vector3(game.state.position.x, game.state.position.y + 2.99, game.state.position.z)) < .06);
