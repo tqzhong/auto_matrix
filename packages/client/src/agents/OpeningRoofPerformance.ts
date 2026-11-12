@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, OPENING_HOTEL, OPENING_ROOF_EXIT, openingRoofStairHeight, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, openingRoofStairHeight, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
 import type { HeroRig } from './HeroModel.js';
 import { heroSolePoints } from './HotelFootPlacement.js';
 
@@ -8,6 +8,8 @@ const { land, rollEnd, rise, walk } = OPENING_ROOF_EXIT;
 const takeoff = land - OPENING_HOTEL.diveSeconds;
 const contactPoints = [['head', .32], ['spine', .28], ['chest', .32], ['elbow_L', .16], ['elbow_R', .16],
   ['wrist_L', .13], ['wrist_R', .13], ['knee_L', .17], ['knee_R', .17], ['ankle_L', .22], ['ankle_R', .22]] as const;
+const rollContacts = [...contactPoints, ['finger2-3_L', .12], ['finger3-3_L', .12],
+  ['finger2-3_R', .12], ['finger3-3_R', .12]] as const;
 
 export function poseOpeningRoofExit(rig: HeroRig, exit?: OpeningRoofExit): void {
   if (!exit?.stairwell || exit.elapsed < takeoff) return;
@@ -46,12 +48,44 @@ export function poseOpeningRoofExit(rig: HeroRig, exit?: OpeningRoofExit): void 
   if (flying) return;
 
   // Keep the tucked joints clear of the sloped run of the treads as the body turns.
+  supportTuckedPose(rig, (x, z) => openingRoofStairHeight(x, z, true), -.3 * weight);
+}
+
+export function poseOpeningRoofLanding(rig: HeroRig, progress?: number): void {
+  if (progress === undefined || progress >= 1) return;
+  const spin = smoothstep(progress, .04, .68), tuck = Math.sin(spin * Math.PI);
+  const weight = smoothstep(progress, 0, .12) * (1 - smoothstep(progress, .76, 1));
+  const kneel = smoothstep(progress, .54, .73);
+  const { bones } = rig, pelvis = bones.get('pelvis')!;
+  pelvis.position.y = lerp(pelvis.position.y, 1.17 - .21 * tuck, weight);
+  pelvis.rotation.x += spin * Math.PI * 2 + .53 * weight;
+  pelvis.rotation.z -= .56 * tuck;
+  bones.get('spine')!.rotation.x += .27 * weight;
+  bones.get('chest')!.rotation.y += .23 * tuck;
+  bones.get('head')!.rotation.x += .36 * weight;
+  for (const side of ['L', 'R'] as const) {
+    const left = side === 'L', shoulder = bones.get(`shoulder_${side}`)!, elbow = bones.get(`elbow_${side}`)!;
+    shoulder.rotation.x = lerp(shoulder.rotation.x, (left ? -.72 : -.38) - 1.02 * tuck, weight);
+    shoulder.rotation.z = lerp(shoulder.rotation.z, (left ? -1 : 1) * .27, weight);
+    elbow.rotation.x = lerp(elbow.rotation.x, -.65 - .65 * tuck, weight);
+    const hip = bones.get(`hip_${side}`)!, knee = bones.get(`knee_${side}`)!, ankle = bones.get(`ankle_${side}`)!;
+    const thigh = lerp((left ? -1.17 : -.28) - .53 * tuck, left ? -2.02 : -.46, kneel);
+    const shin = lerp((left ? 1.15 : 1.81) + .52 * tuck, left ? 1.52 : 1.5, kneel);
+    hip.rotation.x = lerp(hip.rotation.x, thigh, weight);
+    knee.rotation.x = lerp(knee.rotation.x, shin, weight);
+    ankle.rotation.x = lerp(ankle.rotation.x, lerp(left ? -.26 : -.57, left ? -.03 : -1.15, kneel), weight);
+  }
+  supportTuckedPose(rig, (_x, z) => z <= OPENING_ESCAPE.roofGapFar ? 0 : undefined, -.32 * weight, rollContacts);
+}
+
+function supportTuckedPose(rig: HeroRig, floorAt: (x: number, z: number) => number | undefined, minimum: number,
+  contacts: ReadonlyArray<readonly [string, number]> = contactPoints): void {
   rig.root.updateWorldMatrix(true, true);
-  const { center } = FILM_SETS.film_hotel_roofs, point = new THREE.Vector3();
+  const { center } = FILM_SETS.film_hotel_roofs, point = new THREE.Vector3(), { bones } = rig;
   let lift = -Infinity;
-  for (const [name, radius] of contactPoints) {
+  for (const [name, radius] of contacts) {
     point.setFromMatrixPosition(bones.get(name)!.matrixWorld);
-    const floor = openingRoofStairHeight(point.x - center.x, point.z - center.z, true);
+    const floor = floorAt(point.x - center.x, point.z - center.z);
     if (floor !== undefined) lift = Math.max(lift, center.y - 1 + floor + radius - point.y);
   }
   const soles = heroSolePoints(rig);
@@ -59,9 +93,9 @@ export function poseOpeningRoofExit(rig: HeroRig, exit?: OpeningRoofExit): void 
     const ankle = bones.get(`ankle_${side}`)!;
     for (const vertex of soles[index]) {
       point.copy(vertex).applyMatrix4(ankle.matrixWorld);
-      const floor = openingRoofStairHeight(point.x - center.x, point.z - center.z, true);
+      const floor = floorAt(point.x - center.x, point.z - center.z);
       if (floor !== undefined) lift = Math.max(lift, center.y - 1 + floor + .01 - point.y);
     }
   }
-  if (Number.isFinite(lift)) pelvis.position.y += Math.max(-.3 * weight, lift);
+  if (Number.isFinite(lift)) bones.get('pelvis')!.position.y += Math.max(minimum, lift);
 }

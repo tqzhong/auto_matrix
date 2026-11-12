@@ -9,6 +9,8 @@ export const OPENING_ESCAPE = {
   pursuerSpeed: 6.4,
   pursuerLeapSeconds: 1.1,
   pursuerLeapHeight: 3.2,
+  pursuerRollSeconds: .9,
+  pursuerRollDistance: 2.4,
   phoneSeconds: 15,
   truckImpactSeconds: 1.35,
 } as const;
@@ -79,9 +81,28 @@ export function openingAnswerPose(answer: OpeningPhoneAnswer) {
     yaw: answer.yaw + turn * blend, travel: travel * blend, speed: travel * 6 * t * (1 - t) / OPENING_PHONE.alignSeconds };
 }
 
+export interface OpeningRoofLeap {
+  elapsed: number;
+  fromX: number;
+  toX: number;
+}
+
+export function openingRoofLeapPose(leap: OpeningRoofLeap) {
+  const { pursuerLeapSeconds, pursuerLeapHeight, pursuerRollSeconds, pursuerRollDistance, roofGapNear, roofGapFar } = OPENING_ESCAPE;
+  const flight = Math.min(1, leap.elapsed / pursuerLeapSeconds);
+  const roll = flight < 1 ? undefined : Math.min(1, (leap.elapsed - pursuerLeapSeconds) / pursuerRollSeconds);
+  const takeoff = roofGapNear + 2, landing = roofGapFar - 1;
+  const dx = leap.toX - leap.fromX, dz = landing - takeoff;
+  const yaw = Math.atan2(dx, dz);
+  const travel = roll === undefined ? 0 : pursuerRollDistance * roll * (2 - roll);
+  return { flight, roll, yaw, x: leap.fromX + dx * flight + Math.sin(yaw) * travel,
+    y: flight < 1 ? Math.sin(flight * Math.PI) * pursuerLeapHeight : 0,
+    z: takeoff + dz * flight + Math.cos(yaw) * travel };
+}
+
 export interface OpeningRoofEncounter {
   phase: 'running' | 'failed' | 'escaped'; lastTick: number; attempts: number;
-  leap?: { elapsed: number; fromX: number; toX: number };
+  leap?: OpeningRoofLeap;
   crossed?: boolean;
   pursuit?: OpeningPursuitCast;
 }

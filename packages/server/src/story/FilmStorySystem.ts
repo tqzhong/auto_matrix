@@ -133,7 +133,7 @@ import { gardenPose, SUNRISE_GARDEN } from '@auto_matrix/shared';
 import { newApuRun, stepApuRun } from '@auto_matrix/shared';
 import { APU_RIG, DOCK_GUNNERY, dockGunneryAngles, newDockGunnery, fireDockGunnery, stepDockGunnery } from '@auto_matrix/shared';
 import { TRUCKS, truckApproachPose, truckRescuePose } from '@auto_matrix/shared';
-import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningRoofExit } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_HOTEL, OPENING_PHONE, OPENING_ROOF_EXIT, openingRoofLeapPose, openingRoofStairPose, openingAnswerPose, openingHotelTraceTime, openingPhoneContact, openingHitPose, openingTruckPose, wellsStreetStructures, wellsTruckContact, wellsHitRoute, wellsSidewalkHeight, type OpeningRoofEncounter, type OpeningRoofExit } from '@auto_matrix/shared';
 import { WELLS_AFTERMATH, wellsAftermathCaption, wellsAftermathPose, wellsAftermathReady, type WellsAftermathGesture, type WellsAgentPlacement } from '@auto_matrix/shared';
 import { OpeningHotelSystem } from './OpeningHotelSystem.js';
 import { NebEscapeSystem } from './NebEscapeSystem.js';
@@ -150,6 +150,7 @@ export function savedWorkdayIdle(workday: OfficeWorkday | undefined, action: Age
 }
 
 export class FilmStorySystem {
+  private openingRoofFrames?: OpeningRoofEncounter;
   private helElevatorFrames = false;
   private helDanceDoorFrames = false;
   private helDisarmFrames = false;
@@ -629,13 +630,23 @@ export class FilmStorySystem {
       : 'Trinity 冲过对面的窗户，落上上层平台，继续赶往 Wells 与 Lake 的出口。', actor, tick);
     return true;
   }
+  openingRoofPursuitFrame(actor: AgentState, dt: number, tick: number): void {
+    const state = this.state;
+    if (dt <= 0 || state?.scene !== 'm1_roofs' || state.visiting || state.actor !== actor.id) return;
+    const chase = state.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0 };
+    this.openingRoofFrames = chase;
+    this.openingRoofPursuitStep(actor, chase, dt, tick);
+  }
   private openingRoofTick(actor: AgentState, tick: number): void {
-    const state = this.state!;
-    state.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0 };
-    const chase = state.openingRoof;
-    const dt = Math.min(.5, Math.max(0, tick - chase.lastTick) * .5);
+    const chase = this.state!.openingRoof ??= { phase: 'running', lastTick: tick, attempts: 0 };
+    const dt = this.openingRoofFrames === chase ? 0 : Math.min(.5, Math.max(0, tick - chase.lastTick) * .5);
+    this.openingRoofFrames = undefined;
     chase.lastTick = tick;
+    if (dt > 0) this.openingRoofPursuitStep(actor, chase, dt, tick);
+  }
+  private openingRoofPursuitStep(actor: AgentState, chase: OpeningRoofEncounter, dt: number, tick: number): void {
     if (chase.phase !== 'running') return;
+    const state = this.state!;
     if (actor.position.y < FILM_SETS.film_hotel_roofs.center.y - 7) {
       chase.phase = 'failed'; delete state.started;
       state.lastText = 'Trinity 没能跨过楼间空隙。J 打开手记，从屋顶入口重试。'; return;
@@ -644,7 +655,8 @@ export class FilmStorySystem {
     if (!brown || brown.currentLocation !== this.scene!.set) return;
     const roof = FILM_SETS.film_hotel_roofs;
     const exit = actor.currentAction?.parameters.roofExit as OpeningRoofExit | undefined;
-    if (exit?.stairwell && actor.position.z < roof.center.z + OPENING_ROOF_EXIT.paneZ - .15) {
+    const inside = exit?.stairwell && actor.position.z < roof.center.z + OPENING_ROOF_EXIT.paneZ - .15;
+    if (inside && !chase.leap) {
       if (!brown.controller && brown.currentAction?.type !== 'idle') {
         brown.velocity = { x: 0, y: 0, z: 0 };
         brown.currentAction = { type: 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
@@ -659,23 +671,23 @@ export class FilmStorySystem {
       chase.leap = { elapsed: (takeoff - localZ) / (takeoff - landing) * OPENING_ESCAPE.pursuerLeapSeconds,
         fromX: brown.position.x - roof.center.x, toX: brown.position.x - roof.center.x };
     }
-    if (!brown.controller && dt > 0) {
+    if (!brown.controller) {
       if (!chase.crossed && !chase.leap && actor.position.z - roof.center.z < OPENING_ESCAPE.roofGapFar && localZ <= takeoff + .1) {
         chase.leap = { elapsed: 0, fromX: brown.position.x - roof.center.x,
           toX: Math.max(-roof.width / 2 + 4, Math.min(roof.width / 2 - 4, actor.position.x - roof.center.x)) };
       }
       if (chase.leap) {
         const leap = chase.leap;
-        leap.elapsed = Math.min(OPENING_ESCAPE.pursuerLeapSeconds, leap.elapsed + dt);
-        const progress = leap.elapsed / OPENING_ESCAPE.pursuerLeapSeconds;
-        const before = { ...brown.position };
-        brown.position.x = roof.center.x + leap.fromX + (leap.toX - leap.fromX) * progress;
-        brown.position.z = roof.center.z + takeoff + (landing - takeoff) * progress;
-        brown.position.y = roof.center.y + Math.sin(progress * Math.PI) * OPENING_ESCAPE.pursuerLeapHeight;
-        brown.rotation = Math.atan2(leap.toX - leap.fromX, landing - takeoff);
+        const duration = OPENING_ESCAPE.pursuerLeapSeconds + OPENING_ESCAPE.pursuerRollSeconds;
+        leap.elapsed = Math.min(duration, leap.elapsed + dt);
+        const pose = openingRoofLeapPose(leap), before = brown.position;
+        brown.position = { x: roof.center.x + pose.x, y: roof.center.y + pose.y, z: roof.center.z + pose.z };
+        brown.rotation = pose.yaw;
         brown.velocity = { x: (brown.position.x - before.x) / dt, y: (brown.position.y - before.y) / dt, z: (brown.position.z - before.z) / dt };
-        brown.currentAction = { type: 'move_to', parameters: { resolved: true, filmPursuit: true, openingRoofLeap: progress }, startedAt: tick, duration: 1, progress: 0 };
-        if (progress >= 1) { chase.crossed = true; delete chase.leap; }
+        brown.currentAction = { type: 'move_to', parameters: { resolved: true, filmPursuit: true,
+          ...(pose.roll === undefined ? { openingRoofLeap: pose.flight } : { openingRoofRoll: pose.roll }) }, startedAt: tick, duration: 1, progress: 0 };
+        if (pose.roll !== undefined) chase.crossed = true;
+        if (leap.elapsed >= duration) delete chase.leap;
       } else {
         const dx = actor.position.x - brown.position.x;
         const dz = (chase.crossed ? actor.position.z : Math.max(actor.position.z, roof.center.z + takeoff)) - brown.position.z;
@@ -684,12 +696,12 @@ export class FilmStorySystem {
           brown.position.x += dx / length * travel; brown.position.z += dz / length * travel;
           brown.rotation = Math.atan2(dx, dz);
         }
-        brown.velocity = { x: dt ? dx / Math.max(length, .01) * travel / dt : 0, y: 0, z: dt ? dz / Math.max(length, .01) * travel / dt : 0 };
+        brown.velocity = { x: dx / Math.max(length, .01) * travel / dt, y: 0, z: dz / Math.max(length, .01) * travel / dt };
         brown.currentAction = { type: travel > .01 ? 'move_to' : 'idle', parameters: { resolved: true, filmPursuit: true }, startedAt: tick, duration: 1, progress: 0 };
       }
     }
-    if (dt > 0) this.openingHotel.roofPursuers(dt, tick);
-    if (distance(actor.position, brown.position) < 2.7) {
+    this.openingHotel.roofPursuers(dt, tick);
+    if (!inside && distance(actor.position, brown.position) < 2.7) {
       chase.phase = 'failed'; delete state.started;
       state.lastText = 'Brown 追上了 Trinity。J 打开手记，从屋顶入口重试。';
     }

@@ -3,7 +3,7 @@ import { trinityRelaySeat, cabinSeat, constructGuidePose, podRescuePose, reloade
 import { deusPactLocked, deusPactPose, farewellPose, smithFinaleLocked, smithFinalePose, trilogyEpilogueLocked } from '@auto_matrix/shared';
 import { mirrorEntryPose, SPOON_LESSON } from '@auto_matrix/shared';
 import { OPENING_HOTEL, openingAnswerPose, openingHotelClimbPose, openingHotelDiveMotion, openingHotelPhonePose, wellsAftermathPose, type OpeningHotelEncounter, type OpeningPursuitGesture } from '@auto_matrix/shared';
-import { OPENING_ROOF_EXIT, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
+import { OPENING_ESCAPE, OPENING_ROOF_EXIT, openingRoofStairPose, type OpeningRoofExit } from '@auto_matrix/shared';
 import { HEL_DOOR_PUSH, helDanceDoorGrip } from '@auto_matrix/shared';
 import { hammerHandoverPose } from '@auto_matrix/shared';
 import { interludeAge, interludeSeated, crewMealSeat, crewMealPose, CREW_MEAL } from '@auto_matrix/shared';
@@ -127,6 +127,7 @@ export interface MotionInput {
   hotelLookPitch?: number;
   roofExit?: OpeningRoofExit;
   openingRoofLeap?: number;
+  openingRoofRoll?: number;
   burly?: import('@auto_matrix/shared').BurlyEncounter & { role: 'neo' | 'smith' };
   chateauWeapon?: import('@auto_matrix/shared').ChateauWeapon;
   mountainFlight?: import('@auto_matrix/shared').MountainFlight;
@@ -705,6 +706,12 @@ export function advanceMotion(state: MotionState, input: MotionInput, delta: num
     const travel = stairs ? Math.max(0, OPENING_ROOF_EXIT.restZ - stairs.z) : elapsed * speed;
     Object.assign(state, newMotion(), { time: elapsed, speed, phase: travel / 2.8, skill: undefined });
     input = { ...input, speed, turn: 0, grounded: !input.hotel303, verticalVelocity: 0, armed: false, seated: false };
+    dt = 0;
+  }
+  if (input.openingRoofRoll !== undefined) {
+    const elapsed = input.openingRoofRoll * OPENING_ESCAPE.pursuerRollSeconds;
+    Object.assign(state, newMotion(), { time: elapsed, speed: input.speed, phase: elapsed * 1.9 });
+    input = { ...input, grounded: true, turn: 0, verticalVelocity: 0 };
     dt = 0;
   }
   const hotelDive = input.hotel303?.phase === 'dive' && !input.roofExit ? openingHotelDiveMotion(input.hotel303.elapsed) : undefined;

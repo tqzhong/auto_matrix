@@ -1185,26 +1185,38 @@ test('the rooftop window does not grant immunity when Brown has already reached 
   assert.equal(h.actor().currentAction?.parameters.roofExit, undefined, 'retry must clear the failed exit');
 });
 
-test('Brown leaps across the roof gap instead of running through empty air, and the leap survives a save', () => {
+test('Brown leaps across the roof gap at player-frame speed and resumes a saved shoulder roll', () => {
   const h = setup(); h.command('start'); let state = h.sandbox.life.film.state!;
   const roofs = FILM_SCENE_BY_ID.m1_roofs; const center = FILM_SETS[roofs.set].center;
   Object.assign(state, { scene: roofs.id, step: 1, checkpoint: filmEntry(roofs), openingRoof: { phase: 'running', lastTick: h.tick(), attempts: 0 } });
   h.actor().currentLocation = roofs.set; h.actor().position = filmPosition(roofs.set, 0, -20);
   const brown = h.world.agents.get('agent_brown')!;
   brown.currentLocation = roofs.set; brown.position = filmPosition(roofs.set, 0, 0);
-  h.advance();
+  h.players.step(.05, true, h.tick());
+  assert.equal(state.openingRoof?.leap?.elapsed, .05, 'the leap begins on a player frame before the next world tick');
+  for (let frame = 0; frame < 8; frame++) h.players.step(.05, true, h.tick());
   assert.ok(brown.position.z - center.z < OPENING_ESCAPE.roofGapNear && brown.position.z - center.z > OPENING_ESCAPE.roofGapFar);
   assert.ok(brown.position.y > center.y + 1, 'Brown must be visibly airborne over the void');
   assert.ok(state.openingRoof?.leap && brown.currentAction?.parameters.openingRoofLeap);
   const elapsed = state.openingRoof!.leap!.elapsed;
+  h.advance();
+  assert.equal(state.openingRoof?.leap?.elapsed, elapsed, 'the world tick must not advance the same leap twice');
   h.players.release('film-player', h.tick()); h.advance(20);
   assert.equal(state.openingRoof?.leap?.elapsed, elapsed, 'disconnect pauses the crossing');
   h.players.possess('film-player', 'trinity', h.tick());
   h.sandbox.restore(JSON.parse(JSON.stringify(h.sandbox.state))); state = h.sandbox.life.film.state!;
   assert.equal(state.openingRoof?.leap?.elapsed, elapsed);
-  h.advance(3);
+  for (let frame = 0; frame < 8; frame++) h.players.step(.1, true, h.tick());
   assert.equal(state.openingRoof?.crossed, true);
+  assert.ok(brown.currentAction?.parameters.openingRoofRoll !== undefined, 'touchdown leads into the shoulder roll');
+  const rolling = structuredClone({ leap: state.openingRoof?.leap, position: brown.position, action: brown.currentAction });
+  h.players.step(.1, false, h.tick()); h.players.release('film-player', h.tick());
+  h.sandbox.restore(structuredClone(h.sandbox.state)); h.players.possess('film-player', 'trinity', h.tick());
+  state = h.sandbox.life.film.state!;
+  assert.deepEqual({ leap: state.openingRoof?.leap, position: brown.position, action: brown.currentAction }, rolling);
+  for (let frame = 0; frame < 12; frame++) h.players.step(.1, true, h.tick());
   assert.equal(state.openingRoof?.leap, undefined);
+  assert.equal(brown.currentAction?.parameters.openingRoofRoll, undefined, 'Brown returns to pursuit after the roll');
   assert.ok(brown.position.z - center.z < OPENING_ESCAPE.roofGapFar && Math.abs(brown.position.y - center.y) < .01);
   assert.equal(state.openingRoof?.phase, 'running');
 });

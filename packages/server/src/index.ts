@@ -279,6 +279,7 @@ const playerTimer = setInterval(() => {
   const hotelDoor = openingHotelDoorHit(journey?.openingHotel), hotelBreach = journey?.openingHotel?.breachYaw !== undefined;
   const hotelCall = journey?.openingHotel?.phase === 'answering' ? journey.openingHotel.elapsed : undefined, hotelText = journey?.lastText;
   const hotelTrace = openingHotelTraceTime(journey?.openingHotel);
+  const roofPhase = journey?.openingRoof?.phase;
   const phoneImpact = journey?.openingPhone?.impactElapsed;
   const phoneRemaining = journey?.openingPhone?.remaining, phoneAnswer = journey?.openingPhone?.answer?.elapsed;
   const phoneHit = journey?.openingPhone?.hit?.elapsed;
@@ -301,6 +302,7 @@ const playerTimer = setInterval(() => {
   }
   if (current?.scene !== scene || current?.step !== step || current?.actor !== actor
     || current?.scene === 'm1_wake_up' && !current.visiting && current.contact?.chairMotion === 'seated' && current.contact.phase !== contactPhase
+    || current?.scene === 'm1_roofs' && !current.visiting && current.openingRoof?.phase !== roofPhase
     || current?.scene === 'm1_room303' && !current.visiting && (openingHotelGlassBroken(current.openingHotel) !== hotelGlass || openingHotelLanded(current.openingHotel) !== hotelLanded
       || hotelTrace !== undefined && (openingHotelTraceTime(current.openingHotel) === undefined || current.lastText !== hotelText)
       || openingHotelDoorHit(current.openingHotel) !== hotelDoor || (current.openingHotel?.breachYaw !== undefined) !== hotelBreach
@@ -364,8 +366,11 @@ const playerTimer = setInterval(() => {
     const crew = [...world.agents.entries()].filter(([id]) => id === current.actor || id === 'keymaker' || id === 'persephone' && Boolean(current.bookDoor));
     sockets.broadcastDelta({ agents: Object.fromEntries(crew), dirtyChunks: {}, events: [], sandbox: sandbox.state }, simLoop.getTick()); return;
   }
-  const hotelPursuit = current?.scene === 'm1_room303' && !current.visiting;
-  const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller || hotelPursuit && agent.currentAction?.parameters.hotelPursuit || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger || current?.scene === 'm2_trucks' && !current.visiting && current.trucks?.phase === 'rescue' && agent.currentAction?.parameters.truckRescue || (current?.scene === 'm3_rain' || current?.scene === 'm3_surrender') && !current.visiting && ['neo', 'smith'].includes(agent.id) && agent.currentAction?.parameters.smithFinale);
+  const roofPursuit = current?.scene === 'm1_roofs' && !current.visiting;
+  const hotelPursuit = roofPursuit || current?.scene === 'm1_room303' && !current.visiting;
+  const controlled = [...world.agents.entries()].filter(([, agent]) => agent.controller
+    || hotelPursuit && agent.currentAction?.parameters.hotelPursuit || roofPursuit && agent.currentAction?.parameters.filmPursuit
+    || agent.currentAction?.parameters.workday && sandbox.life.film.state?.scene === 'm1_boss' || agent.currentAction?.parameters.hotelGuide && sandbox.life.film.state?.hotel || agent.currentAction?.parameters.welcome && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.meeting && ['m1_bridge', 'm1_bug'].includes(sandbox.life.film.state?.scene ?? '') || agent.currentAction?.parameters.pills && sandbox.life.film.state?.scene === 'm1_pills' || agent.currentAction?.parameters.interrogation && sandbox.life.film.state?.scene === 'm1_interrogation' || (sandbox.life.film.state?.ride?.phase === 'riding' || sandbox.life.film.state?.hammer?.phase === 'riding' || sandbox.life.film.state?.logos?.phase === 'riding') && agent.currentAction?.parameters.passenger || current?.scene === 'm2_trucks' && !current.visiting && current.trucks?.phase === 'rescue' && agent.currentAction?.parameters.truckRescue || (current?.scene === 'm3_rain' || current?.scene === 'm3_surrender') && !current.visiting && ['neo', 'smith'].includes(agent.id) && agent.currentAction?.parameters.smithFinale);
   if (controlled.length || simLoop.isRunning()) sockets.broadcastDelta({ agents: Object.fromEntries(controlled), dirtyChunks: {}, events: [], traffic: sandbox.state.traffic }, simLoop.getTick());
 }, 50);
 

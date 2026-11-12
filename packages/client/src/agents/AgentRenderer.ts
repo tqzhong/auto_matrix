@@ -4,7 +4,7 @@ import { poseResurrectionPair } from './TheOnePerformance.js';
 import { poseHammerPatient } from './HammerPatientPerformance.js';
 import { poseHelProtection } from './HelCoatcheckPerformance.js';
 import type { HelCoatcheckEncounter } from '@auto_matrix/shared';
-import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_HOTEL, OPENING_ROOF_EXIT, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
+import { AIR_RESCUE, HEL_DISARM, HEL_TRIO, OPENING_ESCAPE, OPENING_HOTEL, OPENING_ROOF_EXIT, WELLS_AFTERMATH, helDanceDoorDuration, helDanceDoorLocked, openingHotelAlleyGuard, openingHotelClimbed, openingHotelDiveMotion, type OpeningHotelEncounter, type OpeningPhoneEncounter } from '@auto_matrix/shared';
 import { FILM_SCENES, FILM_SCENE_BY_ID, filmSetAt } from '@auto_matrix/shared';
 import { contactMobilStrike } from './MobilRefusalPerformance.js';
 import { contactMobilFamily } from './MobilFamilyPerformance.js';
@@ -67,6 +67,7 @@ interface Entry {
   ambushGuide?: { stairCat?: true; retreat?: true; role: AmbushEscort['role']; from: number; to: number; progress: number; elapsed: number };
   wetwallGuide?: { phase: WetwallPhase; from: number; to: number; progress: number; elapsed: number };
   clubGuide?: { phase: ClubPhase; from: number; to: number; progress: number; elapsed: number };
+  openingRoofElapsed?: number;
   sixthElapsed?: number;
   bathroomElapsed?: number;
   hammerPilot?: boolean;
@@ -754,6 +755,16 @@ export class AgentRenderer {
         basement = { ...basement, drop: entry.basementDropClock.age, landing: basementDropPose(entry.basementDropClock.age).landing };
       } else entry.basementDropClock = undefined;
       const dropRoot = basement?.drop !== undefined && basement.start ? basementDropRoot(basement.role, basement.start, basement.drop) : undefined;
+      const roofPursuit = roof && id === 'agent_brown' && !state.controller && state.currentAction?.parameters.filmPursuit;
+      const flight = roofPursuit ? state.currentAction?.parameters.openingRoofLeap as number | undefined : undefined;
+      const roll = roofPursuit ? state.currentAction?.parameters.openingRoofRoll as number | undefined : undefined;
+      const { pursuerLeapSeconds, pursuerRollSeconds } = OPENING_ESCAPE;
+      const reported = roll !== undefined ? pursuerLeapSeconds + roll * pursuerRollSeconds
+        : flight !== undefined ? flight * pursuerLeapSeconds : undefined;
+      // Follow the latest player-frame snapshot with at most one interpolation interval of delay.
+      entry.openingRoofElapsed = reported === undefined || speed === 0 ? reported
+        : Math.min(reported, Math.max(reported - .075, (entry.openingRoofElapsed ?? reported) + delta));
+      const roofElapsed = entry.openingRoofElapsed ?? 0;
       if (sixthRoot?.hidden) entry.body.visible = entry.marker.visible = entry.label.visible = false;
       let garageSeat = garageCar && (id === 'trinity' || id === 'morpheus' || id === 'keymaker')
         && state.currentLocation === 'film_chateau_garage' && state.status === 'alive' && (!state.controller || id === this.playerId)
@@ -775,6 +786,10 @@ export class AgentRenderer {
           && (id === 'agent_brown' || state.currentAction?.parameters.hotelPursuit)) {
           // The checkpoint is a cut. The next pursuit updates can interpolate from it.
           entry.group.position.copy(target); entry.body.rotation.y = guideHeading = state.rotation;
+        } else if (roofPursuit) {
+          if (!speed || previous.distanceTo(target) > 8) entry.group.position.copy(target);
+          else entry.group.position.lerp(target, 1 - Math.exp(-16 * delta));
+          if (flight === undefined || flight >= 1) entry.group.position.y = target.y;
         } else if (disarmGesture) { entry.group.position.copy(target); guideHeading = state.rotation; }
         else if (reunionGesture) {
           const root = ceasefireReunionPose(reunionGesture, reunionGesture.role), center = FILM_SETS.film_zion_temple.center;
@@ -948,7 +963,8 @@ export class AgentRenderer {
         catch: state.currentAction?.parameters.catch as MotionInput['catch'],
         hotel303: state.currentAction?.parameters.hotel303 as MotionInput['hotel303'],
         roofExit: state.currentAction?.parameters.roofExit as MotionInput['roofExit'],
-        openingRoofLeap: state.currentAction?.parameters.openingRoofLeap as number | undefined,
+        openingRoofLeap: flight === undefined ? undefined : roofElapsed / pursuerLeapSeconds,
+        openingRoofRoll: roll === undefined ? undefined : Math.max(0, (roofElapsed - pursuerLeapSeconds) / pursuerRollSeconds),
         burly: state.currentAction?.parameters.burly as MotionInput['burly'],
         chateauWeapon: state.currentAction?.parameters.chateauWeapon as MotionInput['chateauWeapon'],
         mountainFlight: state.currentAction?.parameters.mountainFlight as MotionInput['mountainFlight'],

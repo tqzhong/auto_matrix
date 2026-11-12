@@ -71,7 +71,7 @@ import { poseSixthFloor } from './SixthFloorPerformance.js';
 import { poseBathroom } from './BathroomPerformance.js';
 import { poseBasement, poseBasementLauncher, poseHardline } from './BasementPerformance.js';
 import { poseHotelPhone, poseOpeningPhone } from './OpeningPhonePerformance.js';
-import { poseOpeningRoofExit } from './OpeningRoofPerformance.js';
+import { poseOpeningRoofExit, poseOpeningRoofLanding } from './OpeningRoofPerformance.js';
 import { poseWellsAftermath } from './WellsAftermathPerformance.js';
 import { poseCrosscut, poseCrosscutContact } from './CrosscutPerformance.js';
 import { poseTheOneBody } from './TheOnePerformance.js';
@@ -1325,6 +1325,7 @@ export class CharacterModels {
       poseOpeningPhone(rig, input.openingAnswer, input.openingHit);
       poseHotelPhone(rig, hotelCall);
       poseOpeningRoofExit(rig.hero, input.roofExit);
+      poseOpeningRoofLanding(rig.hero, input.openingRoofRoll);
       poseWellsAftermath(rig, input.wellsAftermath);
       if (holdsStaff) {
         rig.hero.bones.get('shoulder_R')!.rotation.x -= .7 + staffSweep * .5;

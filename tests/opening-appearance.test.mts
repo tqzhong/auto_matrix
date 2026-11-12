@@ -2,14 +2,54 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
-import { FILM_SCENE_BY_ID, filmEntry, type FilmJourney } from '@auto_matrix/shared';
+import { FILM_SCENE_BY_ID, FILM_SETS, OPENING_ESCAPE, filmEntry, openingRoofLeapPose, type FilmJourney } from '@auto_matrix/shared';
 import { AgentRenderer } from '../packages/client/src/agents/AgentRenderer.js';
 import type { CharacterRig } from '../packages/client/src/agents/CharacterModel.js';
 import { HeroModels } from '../packages/client/src/agents/HeroModel.js';
+import { advanceMotion, newMotion } from '../packages/client/src/agents/CharacterMotion.js';
+import { poseOpeningRoofLanding } from '../packages/client/src/agents/OpeningRoofPerformance.js';
 import { PlayerControls } from '../packages/client/src/player/PlayerControls.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { actor } from './helpers/fighting-hand-fixture.mts';
+
+test('Brown’s shoulder roll clears the rooftop and ends in a single-knee recovery', async t => {
+  const source = await actor('smith'), asset = await source.models['load']('smith');
+  const models = new HeroModels(new THREE.Texture(), new THREE.Texture());
+  t.mock.method(GLTFLoader.prototype, 'loadAsync', async () => asset);
+  t.after(() => { models.dispose(); source.models.dispose(); });
+  const brown = (await models.create('smith', 'agent_brown'))!;
+  const { center } = FILM_SETS.film_hotel_roofs, floor = center.y - 1;
+  const body = new THREE.Group(), point = new THREE.Vector3(), motion = newMotion();
+  body.add(brown.root);
+  for (const progress of [.06, .18, .31, .42, .53, .65, .76, .9, .99]) {
+    const { pursuerLeapSeconds, pursuerRollSeconds, pursuerRollDistance } = OPENING_ESCAPE;
+    const root = openingRoofLeapPose({ fromX: -1, toX: 3, elapsed: pursuerLeapSeconds + progress * pursuerRollSeconds });
+    body.position.set(center.x + root.x, floor + root.y, center.z + root.z);
+    body.rotation.y = root.yaw;
+    const input = { speed: pursuerRollDistance * 2 * (1 - progress) / pursuerRollSeconds,
+      grounded: true, verticalVelocity: 0, turn: 0, openingRoofRoll: progress };
+    models.animate(brown, advanceMotion(motion, input, 0), motion, input, 0);
+    poseOpeningRoofLanding(brown, progress);
+    body.updateMatrixWorld(true);
+    let clearance = Infinity, nearest = '';
+    brown.root.traverseVisible(mesh => {
+      if (!(mesh instanceof THREE.SkinnedMesh)) return;
+      mesh.skeleton.update();
+      for (let vertex = 0; vertex < mesh.geometry.attributes.position.count; vertex++) {
+        mesh.localToWorld(mesh.getVertexPosition(vertex, point));
+        if (point.z > center.z + OPENING_ESCAPE.roofGapFar || point.y - floor >= clearance) continue;
+        clearance = point.y - floor; nearest = mesh.name;
+      }
+    });
+    assert.ok(clearance > -.09 && clearance < .36, `${progress}: ${nearest} is ${clearance} units from the roof`);
+    if (progress === .76) {
+      const left = brown.bones.get('knee_L')!.getWorldPosition(point).y;
+      const right = brown.bones.get('knee_R')!.getWorldPosition(point).y;
+      assert.ok(left - right > .3, 'one knee supports the rise while the other is raised');
+    }
+  }
+});
 
 test('cold hero rigs assemble on separate frames and disposal cancels a queued rig', async t => {
   const source = await actor('smith'), asset = await source.models['load']('smith');
