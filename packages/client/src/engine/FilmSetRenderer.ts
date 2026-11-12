@@ -174,6 +174,16 @@ type ColorPreparation = {
   textures: Set<THREE.Texture>;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
+const CLUB_POINT_SLOTS = 5;
+type ClubPreparation = {
+  root: THREE.Group;
+  renderer: ClubSetRenderer;
+  gpu?: THREE.WebGLRenderer['properties'];
+  colors?: CastColorPreparation;
+  lighting?: LightCulling;
+  textureUpload?: Generator<void, boolean>;
+  crowdQueued?: boolean;
+};
 const OPENING_VISITS = ['m1_room303', 'm1_roofs', 'm1_phone_escape'] as const;
 type OpeningVisitScene = typeof OPENING_VISITS[number];
 export function openingVisitScene(scene: string): scene is OpeningVisitScene {
@@ -290,6 +300,7 @@ export class FilmSetRenderer {
     crew: readonly (THREE.Group | undefined)[]; eightMeshes?: ColorMesh[]; fourMeshes?: ColorMesh[];
   };
   private club?: ClubSetRenderer;
+  private preparedClub?: ClubPreparation;
   private freeway?: FreewaySetRenderer;
   private preparedFreeway?: { renderer: FreewaySetRenderer; colors?: CastColorPreparation };
   private pods?: PodSetRenderer;
@@ -445,6 +456,7 @@ export class FilmSetRenderer {
   get minimumPointSlots(): number {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
     if (this.ambush) return AMBUSH_POINT_SLOTS;
+    if (this.club) return CLUB_POINT_SLOTS;
     // Seven fixtures, the objective and the player plus four police muzzle flashes.
     if (this.current?.id === 'film_heart_hotel' && this.currentScene === 'm1_room303') return 13;
     // The three rooftop floods keep their program when the objective goes dark.
@@ -464,7 +476,7 @@ export class FilmSetRenderer {
   }
   get stablePointSlots(): boolean {
     const id = this.current?.id;
-    return id === 'film_wells_phone' || id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
+    return id === 'film_wells_phone' || id === 'film_power_plant_pods' || id === 'film_adams_bridge' || id === 'film_extraction_car' || Boolean(this.club || this.sentinel || this.restaurant || this.lobby || this.mobil || this.desert)
       || Boolean(this.basement || this.tvRepair || this.architectRoom || this.catchSet || this.trainmanChase)
       || id === 'film_neb_deck' && this.currentScene === 'm1_meal'
       || id === 'film_white_construct' && this.currentScene === 'm1_construct'
@@ -767,6 +779,55 @@ export class FilmSetRenderer {
       colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
+  }
+  prepareClub(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
+    actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = []): void {
+    if (this.current?.id !== 'film_anderson_flat' || journey?.scene !== 'm1_wake_up' || journey.visiting
+      || !['handover', 'invitation', 'inspecting', 'noticed', 'accepted'].includes(journey.contact?.phase ?? '')) {
+      this.cancelClubPreparation(); return;
+    }
+    if (!this.preparedClub) {
+      const root = new THREE.Group(), club = new ClubSetRenderer(root);
+      this.preparedClub = { root, renderer: club };
+      void club.ready.catch(error => console.error('夜店人群加载失败', error));
+    }
+    const prepared = this.preparedClub;
+    if (!prepared.colors || prepared.gpu !== renderer.properties) {
+      prepared.textureUpload?.return(false); prepared.textureUpload = undefined;
+      prepared.lighting?.dispose(); prepared.gpu = renderer.properties;
+      prepared.colors = { ...this.colorPreparation(prepared.root, [], { includeBasic: true }), actors: new Set() };
+      prepared.colors.meshes.push(this.marker, ...shadows.filter((mesh): mesh is THREE.Mesh => mesh !== undefined));
+      prepared.lighting = new LightCulling(prepared.colors.scene);
+      prepared.lighting.minimumPointSlots = CLUB_POINT_SLOTS; prepared.lighting.stablePointSlots = true;
+      prepared.crowdQueued = prepared.renderer.crowdSources.length > 0;
+    }
+    const colors = prepared.colors;
+    for (const id of ['neo', 'trinity']) {
+      const group = actor(id);
+      if (!group || colors.actors.has(group)) continue;
+      const meshes: ColorMesh[] = [];
+      group.traverse(object => {
+        if (!(object instanceof THREE.Mesh) || !(object.material instanceof THREE.MeshStandardMaterial || object.material instanceof THREE.MeshBasicMaterial)) return;
+        const { office, tracking, patientBody, reloadedHidden, clubJacket, wristSkin } = object.userData;
+        if (office || tracking || patientBody || reloadedHidden || id === 'trinity' && (clubJacket || wristSkin)) return;
+        meshes.push(object);
+      });
+      if (!meshes.length) continue;
+      colors.actors.add(group); colors.meshes.unshift(...meshes); this.queueColorTextures(colors.textures, meshes);
+    }
+    if (!prepared.crowdQueued) {
+      const crowd = prepared.renderer.crowdSources;
+      if (crowd.length) {
+        prepared.crowdQueued = true;
+        const meshes = this.colorMeshes(crowd, true), crowdTextures = new Set<THREE.Texture>();
+        this.queueColorTextures(crowdTextures, meshes);
+        colors.meshes.push(...meshes);
+        colors.textures = new Set([...crowdTextures, ...colors.textures]);
+      }
+    }
+    if (renderer.extensions.has('KHR_parallel_shader_compile')
+      && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
+    this.prepareOpeningColorTexture(renderer, prepared, colors.textures);
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
@@ -2200,6 +2261,11 @@ export class FilmSetRenderer {
       if (preparedOneDeck) this.preparedOneDeck = undefined;
       const preparedTruthReturn = set?.id === 'film_neb_deck' && sceneId === this.preparedTruthReturn?.scene && !journey?.visiting ? this.preparedTruthReturn : undefined;
       if (preparedTruthReturn) { this.preparedTruthReturn = undefined; preparedTruthReturn.lighting?.dispose(); preparedTruthReturn.root.removeFromParent(); }
+      const preparedClub = set?.id === 'film_white_rabbit_club' && sceneId === 'm1_club' && !journey?.visiting ? this.preparedClub : undefined;
+      if (preparedClub) {
+        this.preparedClub = undefined; preparedClub.textureUpload?.return(false);
+        preparedClub.lighting?.dispose(); preparedClub.root.removeFromParent();
+      }
       const preparedDojo = set?.id === 'film_kungfu_dojo' && sceneId === 'm1_dojo' && !journey?.visiting ? this.preparedDojo : undefined;
       if (preparedDojo) { this.preparedDojo = undefined; preparedDojo.lighting?.dispose(); preparedDojo.root.removeFromParent(); }
       const preparedJump = set?.id === 'film_jump_roofs' && sceneId === 'm1_jump' && !journey?.visiting ? this.preparedJump : undefined;
@@ -2250,7 +2316,11 @@ export class FilmSetRenderer {
           this.office = prepared ?? new OfficeSetRenderer(this.root, set);
           prepared?.attach(this.root, set);
         }
-        else if (set.id === 'film_white_rabbit_club') { this.club = new ClubSetRenderer(this.root); void this.club.ready.catch(error => console.error('夜店人群加载失败', error)); }
+        else if (set.id === 'film_white_rabbit_club') {
+          this.club = preparedClub?.renderer ?? new ClubSetRenderer(this.root);
+          if (preparedClub) this.root.add(preparedClub.root);
+          else void this.club.ready.catch(error => console.error('夜店人群加载失败', error));
+        }
         else if (set.id === 'film_government_office' || set.id === 'film_government_roof') {
           this.government = preparedGovernment?.renderer ?? new GovernmentSetRenderer(this.root, set.id);
           if (preparedGovernment) this.root.add(preparedGovernment.root);
@@ -5172,6 +5242,11 @@ export class FilmSetRenderer {
     const prepared = this.preparedTruthReturn; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.deck.dispose(); this.preparedTruthReturn = undefined;
   }
+  private cancelClubPreparation(): void {
+    const prepared = this.preparedClub; if (!prepared) return;
+    this.preparedClub = undefined; prepared.textureUpload?.return(false); prepared.lighting?.dispose();
+    prepared.root.removeFromParent(); prepared.renderer.dispose();
+  }
   private cancelDojoPreparation(): void {
     const prepared = this.preparedDojo; if (!prepared) return;
     prepared.lighting?.dispose(); prepared.root.removeFromParent(); prepared.renderer.dispose(); this.preparedDojo = undefined;
@@ -5251,6 +5326,7 @@ export class FilmSetRenderer {
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();
     this.cancelTruthReturnPreparation();
+    this.cancelClubPreparation();
     this.cancelDojoPreparation();
     this.cancelJumpPreparation();
     this.cancelRedDressPreparation();

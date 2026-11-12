@@ -16,6 +16,9 @@ export class ClubSetRenderer {
   private disposed = false;
   readonly ready: Promise<void>;
 
+  // The two source rigs cover all geometry and maps. The other dancers only change tints.
+  get crowdSources(): THREE.Group[] { return this.dancers.slice(0, 2).map(({ root }) => root); }
+
   constructor(parent: THREE.Group) {
     this.root.name = 'white-rabbit-club'; parent.add(this.root);
     const wall = this.mat(0x737766, .91, 0, 'damaged_plaster', 3);
