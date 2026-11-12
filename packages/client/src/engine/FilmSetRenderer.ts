@@ -174,6 +174,12 @@ type ColorPreparation = {
   textures: Set<THREE.Texture>;
 };
 type CastColorPreparation = ColorPreparation & { actors: Set<THREE.Group> };
+const DOWNLOAD_WALK_CAST = {
+  morpheus: ['Anatomical_head_and_hands', 'Tailored_trousers', 'shoes01', 'high-poly', 'morpheus-hammer-sweater', 'morpheus-hammer-collar'],
+  apoc: ['Close-cut_scalp_undercoat', 'Swept_individual_hair_strands'],
+  trinity: ['Anatomical_head_and_hands', 'short04'],
+  mouse: ['Anatomical_head_and_hands'],
+};
 const CLUB_POINT_SLOTS = 5;
 type ClubPreparation = {
   root: THREE.Group;
@@ -308,6 +314,7 @@ export class FilmSetRenderer {
   private preparedPods?: PodSetRenderer;
   private neb?: NebDeckRenderer;
   private preparedTruthReturn?: { scene: 'm1_truth_return' | 'm1_jump_return'; root: THREE.Group; deck: NebDeckRenderer; gpu?: THREE.WebGLRenderer['properties']; colors?: CastColorPreparation; lighting?: LightCulling };
+  private preparedDownloadWalk?: CastColorPreparation & { gpu: THREE.WebGLRenderer['properties']; textureUpload?: Generator<void, boolean> };
   private sourceBriefing?: SourceBriefingRenderer;
   private primaryDemolition?: PrimaryDemolitionRenderer;
   private trinityTerminal?: TrinityTerminalRenderer;
@@ -808,6 +815,39 @@ export class FilmSetRenderer {
     }
     this.prepareColorFrame(renderer, camera, colors, prepared.lighting, 'isolated');
   }
+  prepareDownloadWalk(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
+    journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
+    if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
+      || journey.downloadSetup?.phase !== 'waking' || !renderer.extensions.has('KHR_parallel_shader_compile')) {
+      this.cancelDownloadWalkPreparation(); return;
+    }
+    let prepared = this.preparedDownloadWalk;
+    if (!prepared || prepared.gpu !== renderer.properties) {
+      this.cancelDownloadWalkPreparation();
+      const curtain = this.root.getObjectByName('neb-medical-curtain');
+      this.preparedDownloadWalk = prepared = { gpu: renderer.properties, scene: this.scene, actors: new Set(),
+        meshes: curtain instanceof THREE.Mesh ? [curtain] : [], programs: [], textures: new Set() };
+    }
+    // The view turns into the corridor when Neo stands up, exposing the deck crew together.
+    for (const [id, names] of Object.entries(DOWNLOAD_WALK_CAST)) {
+      const group = actor(id); if (!group || prepared.actors.has(group)) continue;
+      const meshes: ColorMesh[] = [];
+      for (const name of names) {
+        const mesh = group.getObjectByName(name);
+        if (mesh instanceof THREE.Mesh && mesh.material instanceof THREE.MeshStandardMaterial) meshes.push(mesh);
+      }
+      if (!meshes.length) continue;
+      prepared.actors.add(group);
+      prepared.meshes.push(...meshes);
+      this.queueColorTextures(prepared.textures, meshes);
+    }
+    if (!this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated'))
+      this.prepareStagedColorTexture(renderer, prepared, prepared.textures);
+  }
+  private cancelDownloadWalkPreparation(): void {
+    this.preparedDownloadWalk?.textureUpload?.return(false);
+    this.preparedDownloadWalk = undefined;
+  }
   prepareClub(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined,
     actor: (id: string) => THREE.Group | undefined, shadows: (THREE.Mesh | undefined)[] = []): void {
     if (this.current?.id !== 'film_anderson_flat' || journey?.scene !== 'm1_wake_up' || journey.visiting
@@ -855,7 +895,7 @@ export class FilmSetRenderer {
     }
     if (renderer.extensions.has('KHR_parallel_shader_compile')
       && this.prepareColorProgram(renderer, camera, colors, prepared.lighting, 'isolated')) return;
-    this.prepareOpeningColorTexture(renderer, prepared, colors.textures);
+    this.prepareStagedColorTexture(renderer, prepared, colors.textures);
   }
   prepareDojo(renderer: THREE.WebGLRenderer, camera: THREE.Camera, journey: FilmJourney | undefined, actor: (id: string) => THREE.Group | undefined): void {
     if (this.current?.id !== 'film_neb_deck' || this.currentScene !== 'm1_download' || journey?.scene !== 'm1_download' || journey.visiting
@@ -1510,7 +1550,7 @@ export class FilmSetRenderer {
       colors.meshes = [...new Set([...mapped, ...colors.meshes])];
       this.queueColorTextures(colors.textures, mapped);
     }
-    if (!resumeRoof && this.prepareOpeningColorTexture(renderer, prepared, colors.textures)) return;
+    if (!resumeRoof && this.prepareStagedColorTexture(renderer, prepared, colors.textures)) return;
     if (scene === 'm1_roofs' && lighting && prepared.lighting && renderer.shadowMap.enabled && renderer.shadowMap.type !== THREE.VSMShadowMap
       && this.prepareOpeningRoofShadows(renderer, camera, prepared, colors, lighting, prepared.lighting)) return;
     this.prepareColorProgram(renderer, prepared.eye, colors, prepared.lighting, 'isolated');
@@ -1526,7 +1566,7 @@ export class FilmSetRenderer {
         textures.add(mesh.material.map);
     }
     const ready = textures.size === 2;
-    if (!this.prepareOpeningColorTexture(renderer, prepared, textures)) prepared.roofEntryTexturesReady = ready;
+    if (!this.prepareStagedColorTexture(renderer, prepared, textures)) prepared.roofEntryTexturesReady = ready;
   }
   private prepareOpeningRoofRetry(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling,
     actor: (id: string) => THREE.Group | undefined, pursuit?: OpeningPursuitCast, shadow?: THREE.Mesh): void {
@@ -1559,9 +1599,9 @@ export class FilmSetRenderer {
     }
     if (renderer.extensions.has('KHR_parallel_shader_compile'))
       this.prepareColorProgram(renderer, camera, prepared, lighting, 'isolated');
-    this.prepareOpeningColorTexture(renderer, prepared, prepared.textures);
+    this.prepareStagedColorTexture(renderer, prepared, prepared.textures);
   }
-  private prepareOpeningColorTexture(renderer: THREE.WebGLRenderer, prepared: Pick<OpeningPreparation, 'textureUpload'>, textures: Set<THREE.Texture>): boolean {
+  private prepareStagedColorTexture(renderer: THREE.WebGLRenderer, prepared: { textureUpload?: Generator<void, boolean> }, textures: Set<THREE.Texture>): boolean {
     if (!prepared.textureUpload) {
       for (const texture of textures) {
         const image = texture.image as { width?: number; complete?: boolean } | null;
@@ -5351,6 +5391,7 @@ export class FilmSetRenderer {
     this.cancelSubwayPreparation();
     this.cancelOneDeckPreparation();
     this.cancelTruthReturnPreparation();
+    this.cancelDownloadWalkPreparation();
     this.cancelClubPreparation();
     this.cancelDojoPreparation();
     this.cancelJumpPreparation();

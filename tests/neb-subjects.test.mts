@@ -116,3 +116,81 @@ test('truth return and the download keep seventeen light slots across the core a
   assert.deepEqual(counts, Array(10).fill(17), 'moving between rooms must reuse the colour layout');
   h.draw('m1_meal'); assert.equal(h.renderer.minimumPointSlots, 0, 'other ship chapters keep their existing light policies');
 });
+
+test('the training wake prepares the crew and curtain before the corridor view in bounded batches', t => {
+  const h = fixture(t), scene = h.renderer.root.parent as THREE.Scene;
+  const journey = { scene: 'm1_download', downloadSetup: { phase: 'waking', elapsed: 6.2, progress: 0 } } as FilmJourney;
+  h.draw(journey.scene, journey);
+  const curtain = h.renderer.root.getObjectByName('neb-medical-curtain')!;
+  const geometry = new THREE.BoxGeometry(), map = new THREE.Texture({ width: 2048, height: 2048 }); map.needsUpdate = true;
+  const material = new THREE.MeshStandardMaterial({ map });
+  const crew = new Map<string, THREE.Group>(), morpheus = new THREE.Group(); crew.set('morpheus', morpheus);
+  morpheus.visible = false; scene.add(morpheus);
+  const surfaces = ['Anatomical_head_and_hands', 'morpheus-hammer-sweater', 'morpheus-hammer-collar', 'high-poly', 'shoes01', 'Tailored_trousers']
+    .map(name => { const mesh = new THREE.SkinnedMesh(geometry, material); mesh.name = name; morpheus.add(mesh); return mesh; });
+  const unneeded = new THREE.Mesh(geometry, material); morpheus.add(unneeded);
+  const lighting = new LightCulling(scene), camera = new THREE.PerspectiveCamera(); lighting.minimumPointSlots = h.renderer.minimumPointSlots;
+  t.after(() => { lighting.dispose(); geometry.dispose(); material.dispose(); map.dispose(); });
+  const work: string[] = [], linked: THREE.Object3D[] = [];
+  const programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
+  let target: THREE.WebGLRenderTarget | null = null, version: number | undefined;
+  const gpu = {
+    info: { programs }, extensions: { has: () => true }, properties: { get: () => ({ __version: version }) }, debug: { checkShaderErrors: true },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true }),
+    getRenderTarget: () => target, setRenderTarget: (value: typeof target) => { target = value; },
+    compile(subject: THREE.Group, eye: THREE.Camera, lights: THREE.Scene) {
+      assert.equal(eye, camera); assert.notEqual(lights, scene); assert.equal(lights.environment, scene.environment); assert.equal(lights.fog, scene.fog);
+      assert.equal(target?.width, 1);
+      let points = 0; lights.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; }); assert.equal(points, 17);
+      const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object));
+      assert.ok(batch.length > 0 && batch.length <= 4); linked.push(...batch); work.push('compile');
+      programs.push({ program: {}, isReady: () => true, getUniforms: () => { assert.equal(gpu.debug.checkShaderErrors, false); work.push('bindings'); } });
+    },
+    initTexture(texture: THREE.Texture) { assert.equal(texture, map); version = texture.version; work.push('texture'); },
+  } as unknown as THREE.WebGLRenderer;
+  const prepare = () => {
+    const count = work.length; h.renderer.prepareDownloadWalk(gpu, camera, lighting, journey, id => crew.get(id));
+    assert.ok(work.length - count <= 1); assert.equal(target, null); assert.equal(morpheus.visible, false);
+    assert.equal(surfaces[1].parent, morpheus); assert.equal(gpu.debug.checkShaderErrors, true);
+  };
+  journey.visiting = 'm1_download'; prepare(); assert.deepEqual(work, []); delete journey.visiting;
+  for (let i = 0; i < 16; i++) prepare();
+  for (const mesh of [curtain, ...surfaces]) assert.ok(linked.includes(mesh), 'prepare the actual surface before it enters the view');
+  assert.ok(!linked.includes(unneeded)); assert.equal(work.filter(op => op === 'texture').length, 1);
+  const apoc = new THREE.Group(), groom = new THREE.SkinnedMesh(geometry, material); groom.name = 'Swept_individual_hair_strands';
+  apoc.add(groom); crew.set('apoc', apoc);
+  for (let i = 0; i < 16; i++) prepare(); assert.ok(linked.includes(groom), 'prepare actors that load during the wake');
+  const count = work.length; for (let i = 0; i < 16; i++) prepare(); assert.equal(work.length, count);
+  const beforeReset = linked.length; version = undefined;
+  gpu.properties = { get: () => ({ __version: version }) } as unknown as THREE.WebGLRenderer['properties'];
+  for (let i = 0; i < 16; i++) prepare(); assert.ok(linked.slice(beforeReset).includes(curtain));
+  assert.equal(work.filter(op => op === 'texture').length, 2);
+  const afterReset = work.length; journey.downloadSetup!.phase = 'walk'; prepare(); assert.equal(work.length, afterReset);
+
+  class Bitmap { width = 2048; height = 2048; }
+  const previousBitmap = globalThis.ImageBitmap, bitmap = new Bitmap();
+  globalThis.ImageBitmap = Bitmap as unknown as typeof ImageBitmap;
+  t.after(() => { if (previousBitmap) globalThis.ImageBitmap = previousBitmap; else Reflect.deleteProperty(globalThis, 'ImageBitmap'); });
+  map.image = bitmap; map.flipY = false; map.needsUpdate = true;
+  const strips: number[] = [], allocations: THREE.Texture[] = [], released: THREE.Texture[] = [];
+  const residency = new WeakMap<THREE.Texture, { __webglTexture: object; __version: number }>();
+  Object.assign(gpu, {
+    properties: { get: (texture: THREE.Texture) => residency.get(texture) ?? {} }, capabilities: { maxTextureSize: 4096 },
+    state: { bindTexture() {}, unbindTexture() {} },
+    getContext: () => ({ LINK_STATUS: 0x8b82, getProgramParameter: () => true, pixelStorei() {},
+      texSubImage2D(_target: number, _level: number, _x: number, row: number, width: number, height: number,
+        _format: number, _type: number, image: Bitmap) {
+        assert.equal(image, bitmap); assert.deepEqual([row, width, height], [0, 2048, 256]); strips.push(height); work.push('strip');
+      } }),
+    initTexture(texture: THREE.Texture) {
+      residency.set(texture, { __webglTexture: {}, __version: texture.version });
+      allocations.push(texture); texture.addEventListener('dispose', () => released.push(texture));
+      if (texture.source.dataReady) work.push('texture');
+    },
+  });
+  journey.downloadSetup!.phase = 'waking';
+  for (let i = 0; i < 16 && !allocations.length; i++) prepare();
+  assert.deepEqual(strips, [256], 'upload one strip of the large crew texture before drawing it');
+  assert.equal(allocations.length, 1); assert.notEqual(allocations[0], map); assert.equal(residency.has(map), false);
+  journey.downloadSetup!.phase = 'walk'; prepare(); assert.deepEqual(released, allocations);
+});

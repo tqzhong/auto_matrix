@@ -333,6 +333,8 @@ export class Engine {
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentDetail(id));
     this.filmSets.prepareTruthReturn(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
       id => this.agentRenderer.getAgentHero(id) ?? this.agentRenderer.getAgentBody(id));
+    this.filmSets.prepareDownloadWalk(this.renderer, this.camera, this.lightCulling, player?.id === meeting?.actor ? meeting : undefined,
+      id => this.agentRenderer.getAgentHero(id));
     this.filmSets.prepareClub(this.renderer, this.camera, liveMatrixJourney, id => this.agentRenderer.getAgentHero(id),
       [this.agentRenderer.getAgentShadow('neo'), this.agentRenderer.getAgentShadow('trinity')]);
     this.filmSets.prepareDojo(this.renderer, this.camera, player?.id === meeting?.actor ? meeting : undefined,
