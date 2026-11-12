@@ -1079,11 +1079,13 @@ test('Trinity must answer the Wells phone before the truck arrives; the countdow
   assert.equal(state.step, 0); assert.match(h.command('next'), /先完成/);
   h.command('retry');
   assert.equal(state.openingPhone?.phase, 'running'); assert.equal(state.openingPhone?.attempts, 1);
+  assert.equal(state.openingPhone?.curbside, true);
   assert.deepEqual(h.actor().position, filmEntry(scene));
-  h.actor().position = filmStepPosition(scene, scene.steps[0]); h.advance();
+  h.actor().position = filmStepPosition(scene, scene.steps[0], state); h.advance();
   assert.equal(state.step, 1);
   h.command('act');
   assert.equal(state.openingPhone?.phase, 'answering');
+  assert.equal(state.openingPhone?.answer?.curbside, true);
   assert.equal(state.completed.includes(scene.id), false, 'the receiver must reach the ear before disconnecting');
   h.advance(4);
   assert.equal(state.openingPhone?.phase, 'connected');

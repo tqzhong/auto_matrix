@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, WELLS_AFTERMATH, wellsAftermathPose, type WellsAftermathGesture } from '@auto_matrix/shared';
+import { FILM_SETS, WELLS_AFTERMATH, WELLS_CURB, wellsAftermathPose, type WellsAftermathGesture } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 
@@ -23,6 +23,7 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
   if (role !== 'smith' || elapsed >= 2.48) return;
 
   const center = FILM_SETS.film_wells_phone.center, truckZ = center.z - 26, streetY = center.y - 1;
+  const truckLift = gesture.curbside ? WELLS_CURB.truckLift : 0, sidewalk = gesture.curbside ? WELLS_CURB.height : 0;
   const { upperStep, lowerStep } = WELLS_AFTERMATH;
   const stepping = 1 - smooth(elapsed, 2.15, 2.48), brace = smooth(elapsed, .72, 1.05) * (1 - smooth(elapsed, 1.65, 2.12));
   const pelvis = bones.get('pelvis')!;
@@ -35,8 +36,9 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
     new THREE.Vector3(center.x + point.x, streetY + point.y + hero.footHeight, truckZ + point.z + offset);
   for (const side of ['L', 'R'] as const) {
     const lead = side === 'L';
-    const upper = platform(upperStep, lead ? .28 : -.27), lower = platform(lowerStep, .25);
-    const floor = platform({ x: lead ? -3.95 : -3.79, y: 0, z: lead ? -.02 : -.93 }, 0);
+    const upper = platform({ ...upperStep, y: upperStep.y + truckLift }, lead ? .28 : -.27);
+    const lower = platform({ ...lowerStep, y: lowerStep.y + truckLift }, .25);
+    const floor = platform({ x: lead ? -3.95 : -3.79, y: sidewalk, z: lead ? -.02 : -.93 }, 0);
     const step = smooth(elapsed, lead ? 1.28 : 1.64, lead ? 1.91 : 2.25);
     const foot = (lead ? upper.lerp(lower, smooth(elapsed, .81, 1.18)) : upper).lerp(floor, step);
     foot.y += Math.sin(Math.PI * step) * .15;
@@ -48,7 +50,7 @@ export function poseWellsAftermath(rig: CharacterRig, gesture?: WellsAftermathGe
   }
   if (brace > 0) {
     const upper = bones.get('shoulder_R')!, lower = bones.get('elbow_R')!, hand = bones.get('wrist_R')!;
-    const support = new THREE.Vector3(center.x - 2.09, streetY + 3.37, truckZ - .13);
+    const support = new THREE.Vector3(center.x - 2.09, streetY + 3.37 + truckLift, truckZ - .13);
     const target = hand.getWorldPosition(new THREE.Vector3()).lerp(support, brace);
     const orientation = hand.getWorldQuaternion(new THREE.Quaternion());
     reach(upper, lower, hand.position, target, new THREE.Vector3(-.46, -.2, -.48));

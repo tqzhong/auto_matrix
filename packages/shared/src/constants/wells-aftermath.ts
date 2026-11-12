@@ -1,5 +1,5 @@
 import type { AgentState } from '../types/agent.js';
-import type { OpeningPhoneEncounter } from './opening-escape.js';
+import { WELLS_CURB, type OpeningPhoneEncounter } from './opening-escape.js';
 
 export const WELLS_AFTERMATH = {
   roles: ['smith', 'agent_jones', 'agent_brown'],
@@ -22,7 +22,7 @@ export interface WellsAftermath {
   elapsed: number;
   cast: Record<WellsAgent, WellsAgentPlacement>;
 }
-export interface WellsAftermathGesture { elapsed: number; role: WellsAgent }
+export interface WellsAftermathGesture { elapsed: number; role: WellsAgent; curbside?: true }
 
 const dialogue = [
   { from: 4.8, to: 6.3, role: 'smith', text: 'Smith：亭里没人。' },
@@ -53,7 +53,7 @@ export function wellsAftermathDoor(elapsed: number | undefined): number {
   return -1.15 * transition(elapsed, .38, 1.08) * (1 - transition(elapsed, 2.65, 3.45));
 }
 
-export function wellsAftermathPose({ elapsed, role }: WellsAftermathGesture) {
+export function wellsAftermathPose({ elapsed, role, curbside }: WellsAftermathGesture) {
   const smith = role === 'smith', jones = role === 'agent_jones';
   const leave = smith ? transition(elapsed, .86, 2.25) : 1;
   const from = smith ? { x: -3.95, z: -26.35 } : { x: jones ? -5.5 : -8.8, z: jones ? -15.4 : -13.9 };
@@ -71,7 +71,9 @@ export function wellsAftermathPose({ elapsed, role }: WellsAftermathGesture) {
   const attention = line ? transition(elapsed, line.from, line.from + .24) * (1 - transition(elapsed, line.to - .3, line.to)) : 0;
   const listen = line && line.role !== role ? (line.role === 'agent_brown' ? .32 : -.25) * attention : 0;
   const inspect = smith ? transition(elapsed, 4.18, 5.05) * (1 - transition(elapsed, 5.75, 6.53)) : 0;
-  return { x, y: smith ? 1.55 * (1 - leave) : 0, z,
+  const floor = curbside ? WELLS_CURB.height * transition(z, WELLS_CURB.edgeZ + .75, WELLS_CURB.edgeZ) : 0;
+  const cab = 1.55 + (curbside ? WELLS_CURB.truckLift : 0);
+  return { x, y: smith ? cab * (1 - leave) + floor * leave : floor, z,
     yaw: smith && elapsed < start ? -Math.PI / 2 + (heading + Math.PI / 2) * transition(elapsed, 1.82, start)
       : heading + turn * arrive - (smith ? 2.27 * transition(elapsed, 5.6, 6.75) : 0),
     speed: length * 6 * step * (1 - step) / (stop - start), travel: length * walk, inspect, listen,

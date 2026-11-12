@@ -1,12 +1,13 @@
 import type { Vector3 } from '../types/agent.js';
 import type { WorldStructure } from '../types/sandbox.js';
-import { OPENING_ESCAPE, OPENING_PHONE, openingHitPose, openingTruckPose, type OpeningPhoneEncounter, type OpeningPhoneHit } from './opening-escape.js';
+import { OPENING_ESCAPE, OPENING_PHONE, WELLS_CURB, openingHitPose, openingTruckPose, type OpeningPhoneEncounter, type OpeningPhoneHit } from './opening-escape.js';
 
 type TruckPose = ReturnType<typeof openingTruckPose>;
 type Box = Vector3 & { width: number; height: number; depth: number };
 type BoothPart = 'post' | 'phone' | 'roof';
 
 export const WELLS_STREET = {
+  width: 48,
   bodyRadius: .72,
   bodyHeight: 5.7,
   sidewalkOffset: .34,
@@ -17,6 +18,13 @@ export const WELLS_STREET = {
   poleHeight: 14,
 } as const;
 
+const sidewalkInner = WELLS_STREET.sidewalkOffset - WELLS_STREET.sidewalkWidth / 2;
+export const WELLS_CURBSIDE = {
+  sidewalk: { x: 0, y: WELLS_CURB.height / 2, z: (WELLS_CURB.edgeZ + WELLS_CURB.wallZ) / 2,
+    width: 2 * WELLS_STREET.width * sidewalkInner, height: WELLS_CURB.height, depth: WELLS_CURB.edgeZ - WELLS_CURB.wallZ },
+  wall: { x: 0, y: 7.3, z: WELLS_CURB.wallZ - 1.2, width: WELLS_STREET.width + .56, height: 14.6, depth: 2.4 },
+} as const;
+
 export function streetLamps(width: number, depth: number): { x: number; z: number }[] {
   const lamps: { x: number; z: number }[] = [];
   for (const side of [-1, 1]) for (let z = -depth / 2 + 8; z < depth / 2; z += 23)
@@ -24,7 +32,8 @@ export function streetLamps(width: number, depth: number): { x: number; z: numbe
   return lamps;
 }
 
-export function wellsSidewalkHeight(width: number, x: number): number {
+export function wellsSidewalkHeight(width: number, x: number, z?: number, curbside?: true): number {
+  if (curbside && z !== undefined && z <= WELLS_CURB.edgeZ && z >= WELLS_CURB.wallZ && Math.abs(x) <= width * sidewalkInner) return WELLS_CURB.height;
   return Math.abs(Math.abs(x) - width * WELLS_STREET.sidewalkOffset) <= width * WELLS_STREET.sidewalkWidth / 2
     ? WELLS_STREET.sidewalkY + WELLS_STREET.sidewalkHeight / 2 : 0;
 }
@@ -46,19 +55,35 @@ export const WELLS_TRUCK = {
   roof: { x: 0, y: 4.2, z: -.5, width: 3.9, height: .18, depth: 4.2 },
   cargo: { x: 0, y: 4.3, z: 7, width: 5.65, height: 7.05, depth: 13.05 },
   wheels: [-2.1, 2.1].flatMap(x => [-2.9, 2.9].map(z => ({ x, y: 1.2, z, width: .6, height: 2, depth: 2 }))),
+  axles: [-2.9, 6.3, 9.04],
 } as const;
 
-const truckHull: Box[] = [
+const truckBody: Box[] = [
   WELLS_TRUCK.chassis, WELLS_TRUCK.windshield, WELLS_TRUCK.roof,
   // The ribs and tail fittings extend beyond the cargo shell.
   { ...WELLS_TRUCK.cargo, width: 5.82, z: 7.0975, depth: 13.245 },
-  ...WELLS_TRUCK.wheels,
 ];
+const truckHull = [...truckBody, ...WELLS_TRUCK.wheels];
+const curbsideTruckHull = [...truckBody, ...[-2.1, 2.1].flatMap(x => WELLS_TRUCK.axles.map(z => ({ ...WELLS_TRUCK.wheels[0], x, y: 1, z })))];
 
 const smoothstep = (value: number, min: number, max: number): number => {
   const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
   return t * t * (3 - 2 * t);
 };
+const curbRise = (z: number) => smoothstep(-z, -WELLS_CURB.edgeZ - .65, -WELLS_CURB.edgeZ + .55);
+
+export function wellsWheelLift(width: number, x: number, z: number, curbside?: true): number {
+  const side = Math.abs(x), inner = width * sidewalkInner, outer = width * (WELLS_STREET.sidewalkOffset + WELLS_STREET.sidewalkWidth / 2);
+  const sidewalk = smoothstep(side, inner - .4, inner + .25) * (1 - smoothstep(side, outer - .25, outer + .4));
+  const end = curbside && side <= inner ? curbRise(z) * WELLS_CURB.height : 0;
+  return Math.max(sidewalk * (WELLS_STREET.sidewalkY + WELLS_STREET.sidewalkHeight / 2), end);
+}
+
+export function wellsTruckLift(truck: TruckPose): number {
+  if (!truck.curbside) return 0;
+  const axle = truck.z + Math.cos(truck.yaw) * WELLS_TRUCK.axles[0], offset = Math.sin(truck.yaw) * 2.1;
+  return WELLS_CURB.truckLift * (curbRise(axle + offset) + curbRise(axle - offset)) / 2;
+}
 
 function boothPenetration(truck: TruckPose, x: number, z: number): number {
   const dx = x - truck.x, dz = OPENING_PHONE.boothZ + z - truck.z, sin = Math.sin(truck.yaw), cos = Math.cos(truck.yaw);
@@ -69,7 +94,9 @@ export function openingBoothCrush(truck: TruckPose): number {
   return Math.max(...WELLS_BOOTH.posts.map(({ x, z }) => boothPenetration(truck, x, z)));
 }
 
-export function openingBoothPartPose(kind: BoothPart, x: number, z: number, truck: TruckPose, crush: number) {
+type BoothPose = Vector3 & { pitch: number; yaw: number; roll: number };
+
+export function openingBoothPartPose(kind: BoothPart, x: number, z: number, truck: TruckPose, crush: number): BoothPose {
   if (kind === 'roof') {
     const fall = smoothstep(crush, .35, 3.5);
     return { x: -1.1 * fall, y: WELLS_BOOTH.roof.y + (.72 - WELLS_BOOTH.roof.y) * fall + Math.sin(Math.PI * fall) * .4,
@@ -77,12 +104,17 @@ export function openingBoothPartPose(kind: BoothPart, x: number, z: number, truc
   }
   const phone = kind === 'phone', push = boothPenetration(truck, x, z + (phone ? WELLS_BOOTH.backboard.z : 0));
   const fall = smoothstep(push, 0, phone ? 2.1 : 1.7), side = Math.sign(x), travel = push + (phone ? .45 : .28) * fall;
-  return { x: x - Math.sin(truck.yaw) * travel + side * .65 * fall, y: (phone ? .78 : .16) * fall, z: z - Math.cos(truck.yaw) * travel,
+  const pose = { x: x - Math.sin(truck.yaw) * travel + side * .65 * fall, y: (phone ? .78 : .16) * fall, z: z - Math.cos(truck.yaw) * travel,
     pitch: -(phone ? 1.5 : 1.47) * fall, yaw: 0, roll: phone ? .04 * fall : -side * .12 * fall };
+  if (truck.curbside && !phone && fall > 0) {
+    const post = boothPartBox({ ...WELLS_BOOTH.post, x: 0, z: 0 }, pose);
+    pose.z += Math.max(0, WELLS_CURB.wallZ - (post.z - post.depth / 2));
+  }
+  return pose;
 }
 
 /** Fit the sloping wreckage with boxes in street coordinates. The render uses the same XYZ rotations. */
-function boothPartBox(box: Box, pose: ReturnType<typeof openingBoothPartPose>): Box {
+function boothPartBox(box: Box, pose: BoothPose): Box {
   const a = Math.cos(pose.pitch), b = Math.sin(pose.pitch), c = Math.cos(pose.yaw), d = Math.sin(pose.yaw);
   const e = Math.cos(pose.roll), f = Math.sin(pose.roll);
   const transform = (i: number, j: number, k: number) => ({
@@ -97,21 +129,31 @@ function boothPartBox(box: Box, pose: ReturnType<typeof openingBoothPartPose>): 
 }
 
 export function wellsStreetStructures(center: Vector3, phone?: OpeningPhoneEncounter): WorldStructure[] {
-  const truck = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
+  const truck = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0, curbside: true });
   const result: WorldStructure[] = [];
   const add = (id: string, box: Box, yaw = 0) => result.push({ id: `film:wells:${id}`, kind: 'barricade', owner: 'matrix', matrix: true, health: 1,
     position: { x: center.x + box.x, y: center.y - 1 + box.y, z: center.z + box.z },
     film: { scene: 'm1_phone_escape', width: box.width, height: box.height, depth: box.depth, yaw } });
   const sin = Math.sin(truck.yaw), cos = Math.cos(truck.yaw);
-  truckHull.forEach((box, i) => add(`truck:${i}`, { ...box, x: truck.x + cos * box.x + sin * box.z, z: truck.z - sin * box.x + cos * box.z }, truck.yaw));
+  const lift = wellsTruckLift(truck);
+  (truck.curbside ? curbsideTruckHull : truckHull).forEach((box, i) => {
+    const x = truck.x + cos * box.x + sin * box.z, z = truck.z - sin * box.x + cos * box.z;
+    const y = box.y + (truck.curbside && i >= truckBody.length ? wellsWheelLift(WELLS_STREET.width, x, z, true) : lift);
+    add(`truck:${i}`, { ...box, x, y, z }, truck.yaw);
+  });
+  if (truck.curbside) {
+    add('sidewalk', WELLS_CURBSIDE.sidewalk);
+    add('wall', WELLS_CURBSIDE.wall);
+  }
   const crush = openingBoothCrush(truck);
+  const booth = (id: string, box: Box) => add(id, { ...box, y: box.y + (truck.curbside ? WELLS_CURB.height : 0) });
   const phonePart = openingBoothPartPose('phone', 0, 0, truck, crush);
-  add('cabinet', boothPartBox(WELLS_BOOTH.cabinet, phonePart));
-  add('backboard', boothPartBox(WELLS_BOOTH.backboard, phonePart));
-  add('roof', boothPartBox({ ...WELLS_BOOTH.roof, x: 0, y: 0, z: 0 }, openingBoothPartPose('roof', 0, 0, truck, crush)));
+  booth('cabinet', boothPartBox(WELLS_BOOTH.cabinet, phonePart));
+  booth('backboard', boothPartBox(WELLS_BOOTH.backboard, phonePart));
+  booth('roof', boothPartBox({ ...WELLS_BOOTH.roof, x: 0, y: 0, z: 0 }, openingBoothPartPose('roof', 0, 0, truck, crush)));
   WELLS_BOOTH.posts.forEach(({ x, z }, i) =>
-    add(`post:${i}`, boothPartBox({ ...WELLS_BOOTH.post, x: 0, z: 0 }, openingBoothPartPose('post', x, z, truck, crush))));
-  if (crush <= WELLS_BOOTH.glassBreakCrush) WELLS_BOOTH.panes.forEach((x, i) => add(`pane:${i}`, { ...WELLS_BOOTH.pane, x, z: OPENING_PHONE.boothZ }));
+    booth(`post:${i}`, boothPartBox({ ...WELLS_BOOTH.post, x: 0, z: 0 }, openingBoothPartPose('post', x, z, truck, crush))));
+  if (crush <= WELLS_BOOTH.glassBreakCrush) WELLS_BOOTH.panes.forEach((x, i) => booth(`pane:${i}`, { ...WELLS_BOOTH.pane, x, z: OPENING_PHONE.boothZ }));
   return result;
 }
 
@@ -133,13 +175,14 @@ function volumeBlocked(point: Vector3, margin: number, bottom: number, top: numb
 
 export function wellsColliderBlocked(point: Vector3, radius: number, solid: WorldStructure): boolean {
   const body = radius > .5, margin = Math.min(radius, WELLS_STREET.bodyRadius);
+  if (body && solid.id === 'film:wells:sidewalk') return false;
   const bottom = point.y - (body ? 1 : margin), top = point.y + (body ? WELLS_STREET.bodyHeight - 1 : margin);
   return volumeBlocked(point, margin, bottom, top, solid);
 }
 
 export function wellsColliderFloor(point: Vector3, solid: WorldStructure): number {
   const box = solid.film!, top = solid.position.y + box.height / 2 + 1;
-  if (point.y < top - 1e-8) return -Infinity;
+  if (point.y < top - 1e-8 && solid.id !== 'film:wells:sidewalk') return -Infinity;
   const { x, z } = localXZ(point, solid.position, box.yaw ?? 0);
   return Math.abs(x) <= box.width / 2 && Math.abs(z) <= box.depth / 2 ? top : -Infinity;
 }
@@ -148,11 +191,15 @@ export function wellsColliderFloor(point: Vector3, solid: WorldStructure): numbe
 export function wellsTruckContact(before: TruckPose, after: TruckPose, origin: Vector3, yaw: number, dt: number): OpeningPhoneHit | undefined {
   const distance = Math.hypot(after.x - before.x, after.z - before.z) + 14 * Math.abs(after.yaw - before.yaw);
   if (distance < 1e-8) return;
+  const hull = after.curbside ? curbsideTruckHull : truckHull;
   const contact = (t: number) => {
     const angle = before.yaw + (after.yaw - before.yaw) * t;
-    const local = localXZ(origin, { x: before.x + (after.x - before.x) * t, z: before.z + (after.z - before.z) * t }, angle);
-    for (const box of truckHull) {
-      if (origin.y >= box.y + box.height / 2 || origin.y + WELLS_STREET.bodyHeight <= box.y - box.height / 2) continue;
+    const pose = { x: before.x + (after.x - before.x) * t, z: before.z + (after.z - before.z) * t, yaw: angle, curbside: after.curbside };
+    const local = localXZ(origin, pose, angle), lift = wellsTruckLift(pose);
+    for (const [i, box] of hull.entries()) {
+      const y = box.y + (pose.curbside && i >= truckBody.length ? wellsWheelLift(WELLS_STREET.width,
+        pose.x + Math.cos(angle) * box.x + Math.sin(angle) * box.z, pose.z - Math.sin(angle) * box.x + Math.cos(angle) * box.z, true) : lift);
+      if (origin.y >= y + box.height / 2 || origin.y + WELLS_STREET.bodyHeight <= y - box.height / 2) continue;
       const gap = boxGap(local.x - box.x, local.z - box.z, box.width, box.depth);
       if (Math.hypot(gap.x, gap.z) <= WELLS_STREET.bodyRadius) return { gap, local, angle };
     }
@@ -173,13 +220,13 @@ export function wellsTruckContact(before: TruckPose, after: TruckPose, origin: V
 }
 
 /** A deflection must clear the rest of the truck's turn as well as the first contact. */
-export function wellsHitRoute(hit: OpeningPhoneHit, width: number, depth: number): OpeningPhoneHit {
+export function wellsHitRoute(hit: OpeningPhoneHit, width: number, depth: number, curbside?: true): OpeningPhoneHit {
   const end = Math.max(OPENING_PHONE.hitSeconds, OPENING_ESCAPE.phoneSeconds + OPENING_ESCAPE.truckImpactSeconds - hit.at);
   const lamps = streetLamps(width, depth), samples = [];
   for (let time = .08; ; time = Math.min(end, time + .12)) {
     const elapsed = Math.min(time, OPENING_PHONE.hitSeconds), approach = OPENING_ESCAPE.phoneSeconds - hit.at - time;
     const solids = wellsStreetStructures({ x: 0, y: 1, z: 0 }, {
-      phase: 'failed', remaining: Math.max(0, approach), impactElapsed: Math.max(0, -approach), lastTick: 0, attempts: 0,
+      phase: 'failed', remaining: Math.max(0, approach), impactElapsed: Math.max(0, -approach), lastTick: 0, attempts: 0, curbside,
     });
     const radius = WELLS_STREET.bodyRadius + 1.23 * smoothstep(elapsed, .24, 1.05);
     const height = WELLS_STREET.bodyHeight - 4.1 * smoothstep(elapsed, .2, 1);
@@ -191,11 +238,11 @@ export function wellsHitRoute(hit: OpeningPhoneHit, width: number, depth: number
   for (const turn of [0, -Math.PI / 6, Math.PI / 6, -Math.PI / 3, Math.PI / 3, -Math.PI / 2, Math.PI / 2]) {
     const candidate = { ...hit, direction: { x: Math.sin(yaw + turn), z: Math.cos(yaw + turn) } };
     const landing = openingHitPose({ ...candidate, elapsed: OPENING_PHONE.hitSeconds });
-    const route = { ...candidate, landingY: wellsSidewalkHeight(width, landing.x) };
+    const route = { ...candidate, landingY: wellsSidewalkHeight(width, landing.x, landing.z, curbside) };
     let blocked = 0;
     for (const { elapsed, solids, radius, height } of samples) {
       const pose = openingHitPose({ ...route, elapsed });
-      const floor = Math.max(pose.y, wellsSidewalkHeight(width, pose.x));
+      const floor = Math.max(pose.y, wellsSidewalkHeight(width, pose.x, pose.z, curbside));
       if (Math.abs(pose.x) + radius > width / 2 - .6 || Math.abs(pose.z) + radius > depth / 2 - .6
         || lamps.some(lamp => Math.hypot(pose.x - lamp.x, pose.z - lamp.z) <= radius + WELLS_STREET.poleRadius)
         || solids.some(s => volumeBlocked(pose, radius, floor, floor + height, s))) blocked++;

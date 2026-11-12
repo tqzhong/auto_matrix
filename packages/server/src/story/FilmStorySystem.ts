@@ -781,7 +781,7 @@ export class FilmStorySystem {
     if (state?.scene !== 'm1_phone_escape' || state.visiting || state.actor !== actor.id || !(phone?.answer || phone?.hit)) return false;
     if (!phone.hit) { const contact = openingPhoneContact(phone); if (contact) phone.hit = contact; }
     const pose = phone.hit ? openingHitPose(phone.hit) : openingAnswerPose(phone.answer!);
-    const floor = phone.hit && !phone.answer ? wellsSidewalkHeight(FILM_SETS.film_wells_phone.width, pose.x) : pose.y;
+    const floor = phone.hit && !phone.answer ? wellsSidewalkHeight(FILM_SETS.film_wells_phone.width, pose.x, pose.z, phone.curbside) : pose.y;
     actor.position = filmPosition(this.scene!.set, pose.x, pose.z); actor.position.y += Math.max(pose.y, floor); actor.rotation = pose.yaw;
     actor.velocity = 'velocity' in pose ? { ...pose.velocity, y: pose.y < floor ? 0 : pose.velocity.y } : { x: 0, y: 0, z: 0 }; actor.targetPosition = null;
     actor.currentAction = { type: 'idle', parameters: { resolved: true,
@@ -819,7 +819,7 @@ export class FilmStorySystem {
       const contact = wellsTruckContact(before, after, origin, actor.rotation, dt);
       if (contact) {
         contact.at += beforeTime;
-        phone.hit = wellsHitRoute(contact, width, depth);
+        phone.hit = wellsHitRoute(contact, width, depth, phone.curbside);
         phone.phase = 'failed'; phone.impactElapsed ??= 0; phone.impactFrom ??= 0; delete state.started;
         state.lastText = 'Trinity 遭卡车撞击，无法接起电话。J 打开手记，从街口重试。';
       }
@@ -854,9 +854,9 @@ export class FilmStorySystem {
     if (dt > 0) state.lastText = wellsAftermathCaption(take.elapsed);
     for (const role of roles) {
       const member = this.world.agents.get(role)!;
-      const gesture: WellsAftermathGesture = { elapsed: take.elapsed, role };
+      const gesture: WellsAftermathGesture = { elapsed: take.elapsed, role, ...(phone.curbside ? { curbside: true } : {}) };
       const saved = member.currentAction?.parameters.wellsAftermath as WellsAftermathGesture | undefined;
-      if (dt === 0 && saved?.role === role && saved.elapsed === gesture.elapsed) continue;
+      if (dt === 0 && saved?.role === role && saved.elapsed === gesture.elapsed && saved.curbside === gesture.curbside) continue;
       const pose = wellsAftermathPose(gesture);
       member.position = filmPosition('film_wells_phone', pose.x, pose.z); member.position.y += pose.y;
       member.rotation = pose.yaw; member.currentLocation = 'film_wells_phone'; member.isInMatrix = true;
@@ -874,7 +874,7 @@ export class FilmStorySystem {
   }
   private openingPhoneTick(actor: AgentState, tick: number): void {
     const state = this.state!;
-    state.openingPhone ??= { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
+    state.openingPhone ??= { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0, curbside: true };
     const phone = state.openingPhone;
     const dt = Math.min(.5, Math.max(0, tick - phone.lastTick) * .5);
     phone.lastTick = Math.max(phone.lastTick, tick);
@@ -6735,7 +6735,9 @@ export class FilmStorySystem {
         return state.lastText = '回到屋顶入口。Brown 正从身后赶来。朝对岸按住 Shift，临近楼沿按空格。';
       }
       if (state.scene === 'm1_phone_escape' && state.openingPhone?.phase === 'failed') {
-        state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: state.openingPhone.attempts + 1 };
+        const { attempts, curbside } = state.openingPhone;
+        state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: attempts + 1,
+          ...(curbside ? { curbside: true } : {}) };
         state.step = 0; state.checkpoint = filmEntry(this.scene); delete state.started;
         this.place(agent, this.scene, state.checkpoint);
         this.restoreWellsSpace();
@@ -7572,7 +7574,8 @@ export class FilmStorySystem {
       if (!this.near(agent, this.step!) || Math.abs(agent.velocity.y) > .1) return '先进入电话亭，站稳并走近听筒，再按 G 接起。';
       const center = FILM_SETS[this.scene!.set].center;
       phone.phase = 'answering'; phone.lastTick = tick;
-      phone.answer = { elapsed: 0, origin: { x: agent.position.x - center.x, y: agent.position.y - center.y, z: agent.position.z - center.z }, yaw: agent.rotation };
+      phone.answer = { elapsed: 0, origin: { x: agent.position.x - center.x, y: agent.position.y - center.y, z: agent.position.z - center.z }, yaw: agent.rotation,
+        ...(phone.curbside ? { curbside: true } : {}) };
       this.openingPhonePose(agent);
       return state.lastText = 'Trinity 转向话机，伸手取下听筒。卡车仍在逼近。';
     }
@@ -7960,7 +7963,7 @@ export class FilmStorySystem {
     if (scene.id === 'm3_dawn') state.epilogue = newTrilogyEpilogue('dawn');
     if (scene.id === 'm1_room303') this.openingHotel.reset(tick);
     if (scene.id === 'm1_roofs') state.openingRoof = { phase: 'running', lastTick: tick, attempts: 0, wideAlley: true, ...(roofPursuit ? { pursuit: roofPursuit } : {}) };
-    if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0 };
+    if (scene.id === 'm1_phone_escape') state.openingPhone = { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: tick, attempts: 0, curbside: true };
     this.restoreWellsSpace();
     if (scene.id === 'm1_mirror' && life.choices.pill === 'red') state.mirrorGuide = { progress: 0, lastTick: tick, done: false, rise: 0 };
     if (scene.id === 'm3_mobil') state.mobil = { phase: 'waiting', elapsed: 0, lastTick: tick, loops: 0 };

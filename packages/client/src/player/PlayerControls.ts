@@ -55,7 +55,7 @@ import { officeClipboardPoint } from '@auto_matrix/shared';
 import { APARTMENT, APARTMENT_BOOK, APARTMENT_NETWORK, APARTMENT_ROOM, apartmentAtComputer, apartmentContactLocked, apartmentComputerPose, apartmentBookCrouch, CABIN, cabinSeat, computerCheckLocked, computerNetworkPull, MORNING, POD_RESCUE, podRescuePose, podBreatherPose, recoveryBodyPose, recoveryCrewPose } from '@auto_matrix/shared';
 import { mirrorEntryPose } from '@auto_matrix/shared';
 import { ambushCat } from '@auto_matrix/shared';
-import { OPENING_HOTEL, WELLS_AFTERMATH, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
+import { OPENING_HOTEL, WELLS_AFTERMATH, WELLS_CURB, openingHotelClimbed, openingHotelClimbPose, openingHotelDiveMotion, openingHotelHallTime, openingHotelTraceTime, openingHotelTraceTiming, wellsAftermathPose, type OpeningHotelEncounter } from '@auto_matrix/shared';
 import { OPENING_ESCAPE, OPENING_ROOF_EXIT } from '@auto_matrix/shared';
 import { wetwallPose, sixthPose, bathroomFightRoot, WETWALL, WETWALL_SHAFT, type WetwallPhase } from '@auto_matrix/shared';
 import { BASEMENT, TV_EXIT, basementBlocked, basementDropPose, basementDropRoot, basementDropPlayback, tvExitEmergeRoot, tvExitEmergingRole, type BasementDropPlayback } from '@auto_matrix/shared';
@@ -579,7 +579,7 @@ export class PlayerControls {
       climb: (this.climbing || upperDiggerLocked(this.motion.upperDigger) || dockReloadLocked(this.motion.dockReload) || this.motion.tvExit?.phase === 'emerging') && this.enabled ? forward : 0, focus: this.enabled && this.running && this.keys.has('KeyG'), sequence: ++this.sequence };
   }
 
-  update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false, wellsElapsed?: number): void {
+  update(delta: number, state: AgentState, group: THREE.Group, running: boolean, phoneExit = false, wellsElapsed?: number, wellsCurbside?: true): void {
     if (!this.id) return;
     const sixth = state.currentAction?.parameters.sixth as MotionInput['sixth'];
     if (this.motion.sixth && !sixth) this.performing = false;
@@ -1592,17 +1592,20 @@ export class PlayerControls {
       this.camera.fov = Math.max(57, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(35)) / this.camera.aspect)));
       this.camera.near = .1; this.camera.updateProjectionMatrix();
       const hit = !openingAnswer && openingHit;
+      const rise = wellsCurbside ? WELLS_CURB.height : 0;
       if (wellsElapsed !== undefined && wellsElapsed >= WELLS_AFTERMATH.bootShot) {
-        this.wellsAftermathCamera(wellsElapsed);
+        this.wellsAftermathCamera(wellsElapsed, wellsCurbside);
       } else if (hit) {
         const { origin, direction } = hit, side = origin.x * direction.z >= 0 ? 1 : -1;
         const x = origin.x + direction.x * 13 - direction.z * 9 * side, z = origin.z + direction.z * 13 + direction.x * 9 * side;
-        this.camera.position.set(center.x + THREE.MathUtils.clamp(x, 1 - width / 2, width / 2 - 1), center.y + 8,
-          center.z + THREE.MathUtils.clamp(z, 1 - depth / 2, depth / 2 - 1));
-        this.camera.lookAt(center.x + origin.x + direction.x * 2.8, center.y + 2.5, center.z + origin.z + direction.z * 2.8);
+        const nearWall = wellsCurbside ? WELLS_CURB.wallZ + .65 : 1 - depth / 2;
+        this.camera.position.set(center.x + THREE.MathUtils.clamp(x, 1 - width / 2, width / 2 - 1), center.y + 8 + rise,
+          center.z + THREE.MathUtils.clamp(z, nearWall, depth / 2 - 1));
+        this.camera.lookAt(center.x + origin.x + direction.x * 2.8, center.y + 2.5 + rise, center.z + origin.z + direction.z * 2.8);
       } else {
-        this.camera.position.set(center.x - 17, center.y + 7, center.z - 45);
-        this.camera.lookAt(center.x + 3, center.y + 2.5, center.z - 26.5);
+        const z = wellsCurbside ? WELLS_CURB.wallZ + 2.1 : -45;
+        this.camera.position.set(center.x - 17, center.y + 7 + rise, center.z + z);
+        this.camera.lookAt(center.x + 3, center.y + 2.5 + rise, center.z - 26.5);
       }
     } else if (alarmView) {
       // A separate room view; Neo retains his position, movement and first-person look.
@@ -3527,15 +3530,16 @@ export class PlayerControls {
     this.camera.near = .06; this.camera.updateProjectionMatrix();
   }
 
-  private wellsAftermathCamera(elapsed: number): void {
+  private wellsAftermathCamera(elapsed: number, curbside?: true): void {
     const { center } = FILM_SETS.film_wells_phone;
     const { streetShot, conversationShot, receiverShot, receiver } = WELLS_AFTERMATH;
     const portrait = this.camera.aspect < .85;
+    const rise = curbside ? elapsed < streetShot ? WELLS_CURB.truckLift : WELLS_CURB.height : 0;
     const setShot = (eye: [number, number, number], aim: [number, number, number], vertical: number, horizontal: number) => {
       this.camera.fov = Math.max(vertical, THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontal / 2)) / this.camera.aspect)));
       this.camera.updateProjectionMatrix();
-      this.camera.position.set(center.x + eye[0], center.y + eye[1], center.z + eye[2]);
-      this.camera.lookAt(center.x + aim[0], center.y + aim[1], center.z + aim[2]);
+      this.camera.position.set(center.x + eye[0], center.y + eye[1] + rise, center.z + (curbside ? Math.max(eye[2], WELLS_CURB.wallZ + .65) : eye[2]));
+      this.camera.lookAt(center.x + aim[0], center.y + aim[1] + rise, center.z + aim[2]);
     };
     if (elapsed >= receiverShot) {
       const close = THREE.MathUtils.smoothstep(elapsed, receiverShot, WELLS_AFTERMATH.seconds);
@@ -3545,7 +3549,7 @@ export class PlayerControls {
     } else if (elapsed >= conversationShot) {
       setShot([portrait ? -15.85 : -15.1, 4.2, -35.2], [-5.65, 1.12, -34.75], 47, 65);
     } else if (elapsed >= streetShot) {
-      const smith = wellsAftermathPose({ elapsed, role: 'smith' });
+      const smith = wellsAftermathPose({ elapsed, role: 'smith', curbside });
       setShot([-12.15, 3.25, smith.z - 5.2], [smith.x + 1.8, 1.55, smith.z - 1.25], 44, 63);
     } else {
       const lowered = THREE.MathUtils.smoothstep(elapsed, 1.06, 2.24);

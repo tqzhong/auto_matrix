@@ -63,7 +63,7 @@ export interface FilmSet {
 const definitions: Omit<FilmSet, 'id' | 'center'>[] = [
   { name: '城市之心旅馆 · 303', film: [1], architecture: 'hotel', world: 'matrix', width: 34, depth: 52, height: 12, light: 'night', detail: '303 / 烧旧墙纸、窄走廊、电话与电脑' },
   { name: '旅馆屋顶与后楼梯间', film: [1], architecture: 'rooftop', world: 'matrix', width: 54, depth: 100, height: 24, light: 'night', detail: '砖墙、相邻屋顶、暖光窗口与后楼梯间' },
-  { name: 'Wells & Lake · 电话亭', film: [1], architecture: 'street', world: 'matrix', width: 48, depth: 94, height: 24, light: 'night', detail: '桥下路口、卡车车灯、玻璃电话亭' },
+  { name: 'Wells & Lake · 电话亭', film: [1], architecture: 'street', world: 'matrix', width: WELLS_STREET.width, depth: 94, height: 24, light: 'night', detail: '桥下路口、卡车车灯、玻璃电话亭' },
   { name: 'Anderson 公寓 · 101', film: [1], architecture: 'apartment', world: 'matrix', width: APARTMENT_ROOM.width, depth: APARTMENT_ROOM.depth, height: 11, light: 'night', detail: 'CRT 屏幕、线缆、唱片、101 门牌' },
   { name: '地下夜店 · 白兔', film: [1], architecture: 'club', world: 'matrix', width: 42, depth: 56, height: 14, light: 'night', detail: '人群剪影、工业柱网、低照度舞池' },
   { name: 'Metacortex · 办公层', film: [1], architecture: 'office', world: 'matrix', width: 54, depth: 66, height: 13, light: 'day', detail: '隔间、百叶窗、快递、玻璃主管办公室' },

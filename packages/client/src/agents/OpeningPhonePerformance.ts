@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FILM_SETS, OPENING_HOTEL, OPENING_PHONE, openingHotelPhoneHeld, type OpeningPhoneAnswer, type OpeningPhoneHit } from '@auto_matrix/shared';
+import { FILM_SETS, OPENING_HOTEL, OPENING_PHONE, WELLS_CURB, openingHotelPhoneHeld, type OpeningPhoneAnswer, type OpeningPhoneHit } from '@auto_matrix/shared';
 import type { CharacterRig } from './CharacterModel.js';
 import { reach } from './SpoonPerformance.js';
 import { groundCharacter } from './GroundContact.js';
@@ -14,7 +14,8 @@ export function poseOpeningPhone(rig: Pick<CharacterRig, 'root' | 'hero' | 'hand
   const center = FILM_SETS.film_wells_phone.center, bones = rig.hero.bones;
   rig.root.updateWorldMatrix(true, true);
   const body = rig.root.getWorldQuaternion(new THREE.Quaternion()), up = new THREE.Vector3(0, 1, 0);
-  const base = new THREE.Vector3(center.x + OPENING_PHONE.receiver.x, center.y - 1 + OPENING_PHONE.receiver.y, center.z + OPENING_PHONE.receiver.z);
+  const receiverY = OPENING_PHONE.receiver.y + (answer.curbside ? WELLS_CURB.height : 0);
+  const base = new THREE.Vector3(center.x + OPENING_PHONE.receiver.x, center.y - 1 + receiverY, center.z + OPENING_PHONE.receiver.z);
   if (hit) {
     base.sub(new THREE.Vector3(center.x + hit.origin.x, center.y - 1 + hit.origin.y, center.z + hit.origin.z)).applyAxisAngle(up, -hit.yaw);
     rig.root.localToWorld(base);

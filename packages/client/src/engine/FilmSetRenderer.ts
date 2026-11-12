@@ -13,7 +13,7 @@ import { TvRepairRenderer } from './TvRepairRenderer.js';
 import { WellsStreetRenderer } from './WellsStreetRenderer.js';
 import { bitmapUploadImage, stageBitmapTexture } from './BitmapTextureRows.js';
 import { HardlineHandset } from '../agents/HardlineHandset.js';
-import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor } from '@auto_matrix/shared';
+import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_BOOTH, WELLS_CURB, WELLS_STREET, WELLS_TRUCK, openingBoothCrush, openingBoothPartPose, streetLamps, wellsAftermathDoor } from '@auto_matrix/shared';
 import { basementLocked, tvExitLocked } from '@auto_matrix/shared';
 import { SENTINEL_POWER } from '@auto_matrix/shared';
 import { steakAge, crewMealAge } from '@auto_matrix/shared';
@@ -2763,8 +2763,10 @@ export class FilmSetRenderer {
     }
     if (this.wellsStreet && this.openingBooth && this.openingGlass) {
       const phone = sceneId === 'm1_phone_escape' && !journey?.visiting ? journey?.openingPhone : undefined;
-      const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0 });
+      const pose = openingTruckPose(phone ?? { phase: 'running', remaining: OPENING_ESCAPE.phoneSeconds, lastTick: 0, attempts: 0, curbside: true });
       this.wellsStreet.update(pose, wellsAftermathDoor(phone?.aftermath?.elapsed));
+      const sidewalk = pose.curbside ? WELLS_CURB.height : 0;
+      this.openingBooth.position.y = this.openingGlass.position.y = sidewalk;
       const crush = openingBoothCrush(pose);
       for (const part of this.openingBoothParts) {
         const placed = openingBoothPartPose(part.kind, part.x, part.z, pose, crush);
@@ -2775,9 +2777,11 @@ export class FilmSetRenderer {
       for (const pane of this.openingBoothPanes) pane.visible = !broken;
       this.openingGlass.visible = broken;
       this.openingGlassPieces.forEach(({ mesh, origin, side }, i) => {
+        const z = origin.z - (crush + 2 + i % 7 * .45) * scatter;
+        const bounds = mesh.geometry.boundingSphere!;
         mesh.position.set(origin.x + side * (1.7 + i % 5 * .35) * scatter,
           THREE.MathUtils.lerp(origin.y, .08, scatter) + Math.sin(Math.PI * scatter) * (.35 + i % 4 * .18),
-          origin.z - (crush + 2 + i % 7 * .45) * scatter);
+          pose.curbside ? Math.max(z, WELLS_CURB.wallZ - OPENING_PHONE.boothZ + bounds.radius + bounds.center.length()) : z);
         mesh.rotation.set(Math.sin(Math.PI * scatter) * (i % 3 - 1) * .6, i * 2.399 * scatter, side * Math.PI / 2 * scatter);
       });
       if (this.openingReceiver && this.openingCord) {
@@ -2788,7 +2792,7 @@ export class FilmSetRenderer {
         const parent = this.openingCord.parent!; parent.updateWorldMatrix(true, true);
         if (discarded) {
           const { x, y, z } = WELLS_AFTERMATH.receiver;
-          receiver.position.copy(parent.worldToLocal(this.root.localToWorld(new THREE.Vector3(x, y, z))));
+          receiver.position.copy(parent.worldToLocal(this.root.localToWorld(new THREE.Vector3(x, y + sidewalk, z))));
           receiver.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert()
             .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, .4))));
         } else {
@@ -3684,6 +3688,7 @@ export class FilmSetRenderer {
       const points = triangle === 0 ? [[y, z], [y + 1.75, z], [y + 1.75, z + 1.4]] : [[y, z], [y + 1.75, z + 1.4], [y, z + 1.4]];
       const cy = points.reduce((sum, p) => sum + p[0], 0) / 3, cz = points.reduce((sum, p) => sum + p[1], 0) / 3;
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [0, p[0] - cy, p[1] - cz]), 3)); geometry.computeVertexNormals();
+      geometry.computeBoundingSphere();
       const shard = this.mesh(geometry, this.glass, side * 1.8, cy, cz, this.openingGlass); shard.name = 'opening-booth-glass-fragment';
       this.openingGlassPieces.push({ mesh: shard, origin: shard.position.clone(), side });
     }

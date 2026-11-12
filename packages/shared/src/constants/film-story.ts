@@ -1,6 +1,6 @@
 import { seraphDoorZ } from './seraph-door.js';
 import { BOOK_DOOR } from './book-door.js';
-import { OPENING_ESCAPE, OPENING_PHONE, OPENING_ROOF_EXIT } from './opening-escape.js';
+import { OPENING_ESCAPE, OPENING_PHONE, OPENING_ROOF_EXIT, WELLS_CURB } from './opening-escape.js';
 import { OPENING_HOTEL, openingHotelTraceTime } from './opening-hotel.js';
 import { CATCH } from './reloaded-catch.js';
 import { ZION_BOARDING } from './zion-homecoming.js';
@@ -627,6 +627,9 @@ export function oracleActing(journey: FilmJourney): boolean {
       || oracleDepartureLocked(journey.oracle?.departure) || Boolean(journey.oracle?.consultation && !['waiting', 'done'].includes(journey.oracle.consultation.phase))));
 }
 export function filmStepPosition(scene: FilmScene, step: FilmStep, journey?: FilmJourney): Vector3 {
+  if (scene.id === 'm1_phone_escape' && (journey?.visiting || journey?.openingPhone?.curbside)) {
+    const position = filmPosition(scene.set, step.x, step.z); position.y += WELLS_CURB.height; return position;
+  }
   if (scene.id === 'm2_library' && step === scene.steps[2]) return filmPosition(scene.set,BOOK_DOOR.anchor.x,BOOK_DOOR.anchor.z);
   if (!journey?.visiting && journey?.scene === scene.id && journey.step >= 2 && (scene.id === 'm2_seraph' || scene.id === 'm2_backdoors') && step === scene.steps[1]) return filmPosition(scene.set,0,seraphDoorZ(scene.id)+.2);
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
@@ -747,8 +750,10 @@ export function filmStepNear(scene: FilmScene, step: FilmStep, position: Vector3
     return matrix && Math.abs(position.y - center.y) < .12 && Math.abs(position.x - center.x) < width / 2
       && z >= -depth / 2 && (z <= roofGapFar || z >= roofGapNear && z <= step.z + 2);
   }
-  if (scene.id === 'm1_phone_escape') return matrix && Math.abs(position.y - FILM_SETS[scene.set].center.y) < .12
-    && distance(position, filmStepPosition(scene, step, journey)) <= OPENING_PHONE.radius;
+  if (scene.id === 'm1_phone_escape') {
+    const target = filmStepPosition(scene, step, journey);
+    return matrix && Math.abs(position.y - target.y) < .12 && distance(position, target) <= OPENING_PHONE.radius;
+  }
   if (scene.id === 'm2_burly' && step === scene.steps[0] && Math.abs(position.y - FILM_SETS[scene.set].center.y) > .15) return false;
   if (['m3_defense', 'm3_sun'].includes(scene.id) && !journey?.visiting) {
     const flight = journey?.logos ?? journey?.logosEntry ?? newLogosFlight(scene.id === 'm3_defense' ? 'defense' : 'sun');

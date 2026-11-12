@@ -1,5 +1,8 @@
 import * as THREE from 'three';
-import { OPENING_PHONE, WELLS_AFTERMATH, WELLS_STREET, WELLS_TRUCK, streetLamps, type FilmSet, type openingTruckPose } from '@auto_matrix/shared';
+import {
+  OPENING_PHONE, WELLS_AFTERMATH, WELLS_CURBSIDE, WELLS_STREET, WELLS_TRUCK, streetLamps, wellsTruckLift, wellsWheelLift,
+  type FilmSet, type openingTruckPose,
+} from '@auto_matrix/shared';
 import { batchStaticGeometry } from './StaticGeometry.js';
 import { UrbanMaterials } from './UrbanMaterials.js';
 
@@ -7,6 +10,7 @@ import { UrbanMaterials } from './UrbanMaterials.js';
 export class WellsStreetRenderer {
   private root = new THREE.Group();
   private street = new THREE.Group();
+  private curbside = new THREE.Group();
   private truck = new THREE.Group();
   private driverDoor = new THREE.Group();
   private wheels: THREE.Group[] = [];
@@ -20,7 +24,7 @@ export class WellsStreetRenderer {
     // The enclosing film set must leave this renderer's resource batches intact.
     this.root.userData.dynamic = true;
     this.truck.name = 'opening-garbage-truck';
-    this.root.add(this.street, this.truck); parent.add(this.root);
+    this.street.add(this.curbside); this.root.add(this.street, this.truck); parent.add(this.root);
     this.buildStreet(set.width, set.depth);
     this.buildTruck();
     const fixed = new Set<THREE.Mesh>();
@@ -32,16 +36,15 @@ export class WellsStreetRenderer {
   }
 
   update(pose: ReturnType<typeof openingTruckPose>, doorAngle = 0): void {
-    this.truck.position.set(pose.x, 0, pose.z); this.truck.rotation.y = pose.yaw;
+    this.curbside.visible = pose.curbside === true;
+    const lift = wellsTruckLift(pose);
+    this.truck.position.set(pose.x, lift, pose.z); this.truck.rotation.y = pose.yaw;
     this.driverDoor.rotation.y = doorAngle;
     const travel = Math.hypot(pose.x - 15, pose.z - 4);
-    const { sidewalkOffset, sidewalkWidth, sidewalkY, sidewalkHeight } = WELLS_STREET;
-    const inner = this.set.width * (sidewalkOffset - sidewalkWidth / 2), outer = this.set.width * (sidewalkOffset + sidewalkWidth / 2);
     const sin = Math.sin(pose.yaw), cos = Math.cos(pose.yaw);
     for (const wheel of this.wheels) {
-      const x = Math.abs(pose.x + cos * wheel.position.x + sin * wheel.position.z);
-      const curb = THREE.MathUtils.smoothstep(x, inner - .4, inner + .25) * (1 - THREE.MathUtils.smoothstep(x, outer - .25, outer + .4));
-      wheel.position.y = 1 + curb * (sidewalkY + sidewalkHeight / 2);
+      const x = pose.x + cos * wheel.position.x + sin * wheel.position.z, z = pose.z - sin * wheel.position.x + cos * wheel.position.z;
+      wheel.position.y = 1 + wellsWheelLift(this.set.width, x, z, pose.curbside) - lift;
       wheel.rotation.x = -travel;
     }
   }
@@ -78,6 +81,12 @@ export class WellsStreetRenderer {
     }
 
     const brick = this.brickMaterial();
+    const { sidewalk, wall } = WELLS_CURBSIDE;
+    const slab = this.box(this.curbside, concrete, sidewalk.x, sidewalk.y, sidewalk.z, sidewalk.width, sidewalk.height, sidewalk.depth);
+    slab.name = 'wells-booth-sidewalk';
+    const uv = slab.geometry.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * sidewalk.width / pavingWidth, uv.getY(i) * sidewalk.depth / walkwayLength);
+    this.masonry(new THREE.BoxGeometry(wall.width, wall.height, wall.depth), brick, wall.x, wall.y, wall.z, this.curbside).name = 'wells-booth-wall';
     // The lower service block follows the curb. Recessed bays and upper
     // warehouses continue into the railway cutting beyond the playable street.
     for (const side of [-1, 1]) {
@@ -207,7 +216,7 @@ export class WellsStreetRenderer {
       this.mesh(this.truck, new THREE.PlaneGeometry(6.2, 1.36), lettering, side * (cargo.width / 2 + .008), 4.74, 7.15).rotation.y = side * Math.PI / 2;
       this.box(this.truck, tail, side * 2.2, 1.76, 13.64, .33, .39, .1);
       this.box(this.truck, amber, side * 2.63, 6.65, 11.92, .17, .27, .34);
-      for (const z of [WELLS_TRUCK.wheels[0].z, 6.3, 9.04]) {
+      for (const z of WELLS_TRUCK.axles) {
         const wheel = new THREE.Group(); wheel.position.set(side * 2.1, 1, z); this.truck.add(wheel); this.wheels.push(wheel);
         this.mesh(wheel, new THREE.CylinderGeometry(1, 1, .6, 24), rubber, 0, 0, 0).rotation.z = Math.PI / 2;
         this.mesh(wheel, new THREE.CylinderGeometry(.62, .62, .09, 20), steel, side * .303, 0, 0).rotation.z = Math.PI / 2;
@@ -249,12 +258,12 @@ export class WellsStreetRenderer {
     material.map = map; return material;
   }
 
-  private masonry(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
+  private masonry(geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, parent = this.street): THREE.Mesh {
     const { position, normal, uv } = geometry.attributes;
     for (let i = 0; i < uv.count; i++) uv.setXY(i,
       (Math.abs(normal.getX(i)) > .65 ? position.getZ(i) + z : position.getX(i) + x) / 6.2,
       (position.getY(i) + y) / 3.6);
-    return this.mesh(this.street, geometry, material, x, y, z);
+    return this.mesh(parent, geometry, material, x, y, z);
   }
 
   private profile(material: THREE.Material, width: number, points: [number, number][]): THREE.Mesh {
@@ -274,7 +283,7 @@ export class WellsStreetRenderer {
   }
   private mesh(parent: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number): THREE.Mesh {
     this.geometries.add(geometry);
-    const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); mesh.castShadow = parent !== this.street; mesh.receiveShadow = true;
+    const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); mesh.castShadow = parent !== this.street && parent !== this.curbside; mesh.receiveShadow = true;
     parent.add(mesh); return mesh;
   }
   private box(parent: THREE.Group, material: THREE.Material, x: number, y: number, z: number, width: number, height: number, depth: number): THREE.Mesh {

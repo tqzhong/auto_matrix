@@ -32,8 +32,10 @@ export const OPENING_PHONE = {
   hitSpeed: 8,
 } as const;
 
+export const WELLS_CURB = { edgeZ: -23.35, wallZ: -41, height: .425, truckLift: .255 } as const;
+
 export interface OpeningPhoneAnswer {
-  elapsed: number; origin: Vector3; yaw: number;
+  elapsed: number; origin: Vector3; yaw: number; curbside?: true;
 }
 
 export interface OpeningPhoneHit {
@@ -80,7 +82,8 @@ export function openingAnswerPose(answer: OpeningPhoneAnswer) {
   const t = Math.max(0, Math.min(1, answer.elapsed / OPENING_PHONE.alignSeconds)), blend = t * t * (3 - 2 * t);
   const dx = OPENING_PHONE.stand.x - answer.origin.x, dz = OPENING_PHONE.stand.z - answer.origin.z;
   const travel = Math.hypot(dx, dz), turn = Math.atan2(Math.sin(Math.PI - answer.yaw), Math.cos(Math.PI - answer.yaw));
-  return { x: answer.origin.x + dx * blend, y: answer.origin.y, z: answer.origin.z + dz * blend,
+  const y = answer.curbside ? answer.origin.y + (WELLS_CURB.height - answer.origin.y) * blend : answer.origin.y;
+  return { x: answer.origin.x + dx * blend, y, z: answer.origin.z + dz * blend,
     yaw: answer.yaw + turn * blend, travel: travel * blend, speed: travel * 6 * t * (1 - t) / OPENING_PHONE.alignSeconds };
 }
 
@@ -163,13 +166,14 @@ export function openingRoofGlassBroken(roof?: OpeningRoofEncounter, exitElapsed 
 
 export interface OpeningPhoneEncounter {
   phase: 'running' | 'answering' | 'failed' | 'connected' | 'done'; remaining: number; lastTick: number; attempts: number;
+  curbside?: true;
   answer?: OpeningPhoneAnswer;
   hit?: OpeningPhoneHit;
   impactElapsed?: number; impactFrom?: number;
   aftermath?: WellsAftermath;
 }
 
-export function openingTruckPose(phone: OpeningPhoneEncounter): { x: number; z: number; yaw: number } {
+export function openingTruckPose(phone: OpeningPhoneEncounter): { x: number; z: number; yaw: number; curbside?: true } {
   // The countdown ends just short of contact; the saved impact then crosses the booth.
   const approach = .86 * (1 - Math.max(0, Math.min(1, phone.remaining / OPENING_ESCAPE.phoneSeconds)));
   const impact = phone.phase === 'done' || phone.phase === 'failed' && phone.impactElapsed === undefined ? 1
@@ -177,5 +181,6 @@ export function openingTruckPose(phone: OpeningPhoneEncounter): { x: number; z: 
     ? Math.max(0, Math.min(1, (phone.impactElapsed ?? 0) / OPENING_ESCAPE.truckImpactSeconds)) : 0;
   const progress = approach + (1 - approach) * impact;
   const turn = Math.pow(progress, 1.55);
-  return { x: 15 * (1 - turn), z: 4 - 30 * turn, yaw: Math.PI / 2 * (1 - turn) };
+  const pose = { x: 15 * (1 - turn), z: 4 - 30 * turn, yaw: Math.PI / 2 * (1 - turn) };
+  return phone.curbside ? { ...pose, curbside: true } : pose;
 }

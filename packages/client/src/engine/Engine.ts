@@ -190,7 +190,7 @@ export class Engine {
         const guard = this.playerControls.openingHotel ? this.agentRenderer.getAgentState('smith') : undefined;
         this.playerControls.hotelAlleyGuard = openingHotelAlleyGuard(guard) ? guard.position : undefined;
         this.playerControls.update(delta, state, group, this.running, phone?.phase === 'connected' || phone?.phase === 'done'
-          || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed);
+          || phone?.phase === 'failed' && Boolean(phone.answer || phone.hit), phone?.aftermath?.elapsed, phone?.curbside);
       }
       this.agentRenderer.setPlayer(this.playerControls.id, this.playerControls.firstPerson && openingTrace === undefined);
       this.agentRenderer.setPlayerMotion(this.playerControls.motion);
