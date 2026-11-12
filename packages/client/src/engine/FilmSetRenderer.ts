@@ -379,7 +379,7 @@ export class FilmSetRenderer {
   private preparedGovernment?: { scene: 'm1_smith_question' | 'm1_bullet_dodge' | 'm1_helicopter' | 'm1_rooftop_rescue'; root: THREE.Group; renderer: GovernmentSetRenderer;
     colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean> };
   private matrixEscape?: MatrixEscapeRenderer;
-  private preparedMatrixEscape?: { root: THREE.Group; renderer: MatrixEscapeRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean> };
+  private preparedMatrixEscape?: { root: THREE.Group; renderer: MatrixEscapeRenderer | TheOneRenderer; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling; textureUpload?: Generator<void, boolean> };
   private preparedOneDeck?: { root: THREE.Group; deck: NebDeckRenderer; overlay: TheOneRenderer; colors?: CastColorPreparation };
   private theOne?: TheOneRenderer;
   private reloaded?: ReloadedOpeningRenderer;
@@ -762,15 +762,17 @@ export class FilmSetRenderer {
     const escape = journey.matrixEscape;
     const city = this.currentScene === 'm1_subway' && this.current?.id === 'film_subway_platform' && journey.scene === 'm1_subway'
       && (escape?.phase === 'done' || escape?.phase === 'body_swap' && escape.elapsed >= .6);
-    if (journey.visiting || !subway && !city) {
+    const hotel = this.currentScene === 'm1_city_chase' && this.current?.id === 'film_escape_streets' && journey.scene === 'm1_city_chase'
+      && (escape?.phase === 'door' || escape?.phase === 'done');
+    if (journey.visiting || !subway && !city && !hotel) {
       this.cancelMatrixEscapePreparation();
       return;
     }
-    const set = subway ? 'film_subway_platform' : 'film_escape_streets';
+    const set = hotel ? 'film_heart_hotel' : subway ? 'film_subway_platform' : 'film_escape_streets';
     if (this.preparedMatrixEscape?.renderer.setId !== set) {
       this.cancelMatrixEscapePreparation();
       const root = new THREE.Group();
-      this.preparedMatrixEscape = { root, renderer: new MatrixEscapeRenderer(root, set) };
+      this.preparedMatrixEscape = { root, renderer: set === 'film_heart_hotel' ? new TheOneRenderer(root, set) : new MatrixEscapeRenderer(root, set) };
     }
     const prepared = this.preparedMatrixEscape;
     if (!renderer.extensions.has('KHR_parallel_shader_compile')) return;
@@ -787,7 +789,7 @@ export class FilmSetRenderer {
         this.queueColorTextures(prepared.colors.textures, debris);
         let points = 0; prepared.colors.scene.traverseVisible(object => { if (object instanceof THREE.PointLight) points++; });
         for (; points < SUBWAY_POINT_SLOTS; points++) prepared.colors.scene.add(new THREE.PointLight(0xffffff, 0, 1));
-      } else {
+      } else if (city) {
         // Tank's briefing starts with only the street's own point light.
         for (const light of prepared.colors.scene.children) if (light instanceof THREE.PointLight) light.visible = false;
       }
@@ -795,7 +797,8 @@ export class FilmSetRenderer {
       prepared.gpu = renderer.properties;
     }
     const colors = prepared.colors, meshes = new Set<ColorMesh>();
-    const cast = subway ? [...FILM_SCENE_BY_ID.m1_subway.cast, 'morpheus', 'trinity'] : FILM_SCENE_BY_ID.m1_city_chase.cast;
+    // Prepare Neo's entry under the hotel's eight stable point-light slots.
+    const cast = city ? FILM_SCENE_BY_ID.m1_city_chase.cast : subway ? [...FILM_SCENE_BY_ID.m1_subway.cast, 'morpheus', 'trinity'] : [];
     for (const id of ['neo', ...cast]) {
       for (const group of [body(id), hero(id)]) {
         if (!group || colors.actors.has(group)) continue;
@@ -2390,7 +2393,7 @@ export class FilmSetRenderer {
         this.preparedGovernment = undefined; preparedGovernment.textureUpload?.return(false);
         preparedGovernment.lighting?.dispose(); preparedGovernment.root.removeFromParent();
       }
-      const preparedEscape = (sceneId === 'm1_subway' || sceneId === 'm1_city_chase')
+      const preparedEscape = (sceneId === 'm1_subway' || sceneId === 'm1_city_chase' || sceneId === 'm1_death')
         && set?.id === this.preparedMatrixEscape?.renderer.setId && !journey?.visiting ? this.preparedMatrixEscape : undefined;
       if (preparedEscape) {
         this.preparedMatrixEscape = undefined; preparedEscape.textureUpload?.return(false);
@@ -2481,10 +2484,15 @@ export class FilmSetRenderer {
         else if (set.id === 'film_trainman_subway' && !preparedSecondOracle) this.trainmanChase = new TrainmanChaseRenderer(this.root);
         else if (set.id === 'film_hel_garage') this.helGarage = new HelGarageRenderer(this.root, player!);
         else if (sceneId === 'm1_subway' && set.id === 'film_subway_platform' || sceneId === 'm1_city_chase' && set.id === 'film_escape_streets') {
-          this.matrixEscape = preparedEscape?.renderer ?? new MatrixEscapeRenderer(this.root, set.id);
-          preparedEscape?.renderer.attach(this.root);
+          if (preparedEscape?.renderer instanceof MatrixEscapeRenderer) {
+            this.matrixEscape = preparedEscape.renderer; this.matrixEscape.attach(this.root);
+          } else this.matrixEscape = new MatrixEscapeRenderer(this.root, set.id);
         }
-        else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) this.theOne = new TheOneRenderer(this.root, set.id);
+        else if (['m1_death', 'm1_return', 'm1_final_call'].includes(sceneId ?? '') && (set.id === 'film_heart_hotel' || set.id === 'film_final_phone')) {
+          if (preparedEscape?.renderer instanceof TheOneRenderer) {
+            this.theOne = preparedEscape.renderer; this.root.add(preparedEscape.root);
+          } else this.theOne = new TheOneRenderer(this.root, set.id);
+        }
         else if (['m2_dream', 'm2_meeting'].includes(sceneId ?? '') && (set.id === 'film_trinity_roof' || set.id === 'film_captains_meeting')) {
           this.reloaded = preparedMeeting ?? new ReloadedOpeningRenderer(this.root, set.id);
           if (preparedMeeting) this.root.add(preparedMeeting.group);

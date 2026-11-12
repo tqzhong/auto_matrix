@@ -6,10 +6,20 @@ import { FilmSetRenderer } from '../packages/client/src/engine/FilmSetRenderer.j
 import { AgentManager } from '../packages/server/src/agents/AgentManager.js';
 import { WorldState } from '../packages/server/src/world/WorldState.js';
 
-function fixture(t: TestContext, mode: 'roof' | 'subway' | 'city') {
-  const roof = mode === 'roof', city = mode === 'city';
-  const targetSet = roof ? 'film_government_roof' : city ? 'film_escape_streets' : 'film_subway_platform';
-  const landmark = roof ? 'government-roof-deck' : city ? 'matrix-city-room-303-door' : 'matrix-subway-track';
+const cases = {
+  roof: { scene: 'm1_helicopter', from: 'film_government_office', to: 'film_government_roof', next: 'm1_rooftop_rescue',
+    landmark: 'government-roof-deck', points: 4, shadows: 2, body: 'morpheus', late: 'trinity' },
+  subway: { scene: 'm1_rooftop_rescue', from: 'film_government_roof', to: 'film_subway_platform', next: 'm1_subway',
+    landmark: 'matrix-subway-track', points: 12, shadows: 1, body: 'citizen_13', late: 'trinity' },
+  city: { scene: 'm1_subway', from: 'film_subway_platform', to: 'film_escape_streets', next: 'm1_city_chase',
+    landmark: 'matrix-city-room-303-door', points: 1, shadows: 2, body: 'smith', late: 'citizen_14' },
+  hotel: { scene: 'm1_city_chase', from: 'film_escape_streets', to: 'film_heart_hotel', next: 'm1_death',
+    landmark: 'one-room-303-door', points: 8, shadows: 1, body: 'neo', late: 'neo' },
+} as const;
+
+function fixture(t: TestContext, mode: keyof typeof cases) {
+  const roof = mode === 'roof', city = mode === 'city', hotel = mode === 'hotel';
+  const plan = cases[mode], { landmark } = plan;
   const previous = globalThis.document;
   globalThis.document = { createElement: () => ({ getContext: () => ({
     createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }), putImageData() {},
@@ -18,12 +28,13 @@ function fixture(t: TestContext, mode: 'roof' | 'subway' | 'city') {
   const scene = new THREE.Scene(), film = new FilmSetRenderer(scene), camera = new THREE.PerspectiveCamera();
   scene.environment = new THREE.Texture(); scene.fog = new THREE.FogExp2();
   const sun = new THREE.DirectionalLight(); sun.castShadow = true; scene.add(sun, new THREE.DirectionalLight(), new THREE.HemisphereLight());
-  const sceneId = roof ? 'm1_helicopter' : city ? 'm1_subway' : 'm1_rooftop_rescue';
-  Object.assign(film, { current: FILM_SETS[roof ? 'film_government_office' : city ? 'film_subway_platform' : 'film_government_roof'], currentScene: sceneId });
-  const journey = { scene: sceneId, actor: 'neo', step: 1,
-    airRescue: city ? undefined : { kind: roof ? 'office' : 'roof', phase: roof ? 'catching' : 'pulling', elapsed: 0, attempt: 0 },
+  Object.assign(film, { current: FILM_SETS[plan.from], currentScene: plan.scene });
+  const journey = { scene: plan.scene, actor: 'neo', step: hotel ? 2 : 1,
+    airRescue: roof || mode === 'subway' ? { kind: roof ? 'office' : 'roof', phase: roof ? 'catching' : 'pulling', elapsed: 0, attempt: 0 } : undefined,
     matrixEscape: city ? { kind: 'subway', phase: 'body_swap', elapsed: 1, attempt: 0, host: 'citizen_13',
-      checkpoint: 'tracks', hits: 0, dodges: 0, pursuit: 0, segment: 1, possessions: 1, resolved: [] } : undefined,
+      checkpoint: 'tracks', hits: 0, dodges: 0, pursuit: 0, segment: 1, possessions: 1, resolved: [] }
+      : hotel ? { kind: 'city', phase: 'door', elapsed: .65, attempt: 0, checkpoint: 'street', hits: 0,
+        dodges: 0, pursuit: 0, segment: 2, possessions: 2, resolved: [] } : undefined,
   } as FilmJourney;
   const parent = new THREE.Group(), hero = new THREE.Group(), body = new THREE.Group(), geometry = new THREE.BoxGeometry();
   parent.visible = false; parent.add(hero, body); scene.add(parent);
@@ -31,7 +42,7 @@ function fixture(t: TestContext, mode: 'roof' | 'subway' | 'city') {
   const material = new THREE.MeshStandardMaterial({ map: texture }), skin = new THREE.SkinnedMesh(geometry, material); skin.visible = false; hero.add(skin);
   const later = new THREE.Mesh(geometry, material); later.userData.reloadedHidden = true; later.visible = false; hero.add(later);
   const coarse = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true })); body.add(coarse);
-  const heroes = new Map([['neo', hero]]), bodies = new Map([[roof ? 'morpheus' : city ? 'smith' : 'citizen_13', body]]), roots = new Set<THREE.Object3D>();
+  const heroes = new Map([['neo', hero]]), bodies = new Map<string, THREE.Group>([[plan.body, body]]), roots = new Set<THREE.Object3D>();
   const work: string[] = [], batches: THREE.Object3D[][] = [], programs: { program: object; isReady(): boolean; getUniforms(): void }[] = [];
   let ready = false, target: THREE.WebGLRenderTarget | null = null, uploaded = new WeakMap<THREE.Texture, number>();
   const properties = () => ({ get: (map: THREE.Texture) => ({ __version: uploaded.get(map) }) });
@@ -45,7 +56,7 @@ function fixture(t: TestContext, mode: 'roof' | 'subway' | 'city') {
         if (object instanceof THREE.DirectionalLight && object.castShadow) shadows++;
         if (object instanceof THREE.Group && object.parent instanceof THREE.Scene && object.getObjectByName(landmark)) root = object;
       });
-      assert.equal(points, roof ? 4 : city ? 1 : 12); assert.equal(shadows, roof || city ? 2 : 1); assert.ok(root); roots.add(root);
+      assert.equal(points, plan.points); assert.equal(shadows, plan.shadows); assert.ok(root); roots.add(root);
       assert.equal(scene.children.includes(root), false, 'the future set must stay offstage');
 
       const meshes: THREE.Object3D[] = []; subject.traverse(object => meshes.push(object)); assert.ok(meshes.length && meshes.length <= 4);
@@ -64,38 +75,45 @@ function fixture(t: TestContext, mode: 'roof' | 'subway' | 'city') {
   };
   const drain = () => { for (let i = 0; i < 1000; i++) prepare(); };
   t.after(() => { film.dispose(); geometry.dispose(); material.dispose(); (coarse.material as THREE.Material).dispose(); texture.dispose(); scene.environment!.dispose(); globalThis.document = previous; });
-  return { target: targetSet, landmark, film, journey, gpu, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, roots, prepare, drain,
+  return { target: plan.to, landmark, film, journey, gpu, heroes, bodies, geometry, material, skin, coarse, later, texture, work, batches, roots, prepare, drain,
     ready: () => { ready = true; }, newGpu: () => { uploaded = new WeakMap(); gpu.properties = properties() as THREE.WebGLRenderer['properties']; } };
 }
 
-for (const mode of ['roof', 'subway', 'city'] as const) {
+for (const mode of ['roof', 'subway', 'city', 'hotel'] as const) {
   test(`${mode} preparation includes hidden and late cast in bounded batches with the next lighting`, t => {
     const h = fixture(t, mode); h.ready();
     if (mode === 'city') {
       h.journey.matrixEscape!.phase = 'train_window'; h.prepare(); assert.equal(h.work.length, 0);
       h.journey.matrixEscape!.phase = 'body_swap';
     }
+    if (mode === 'hotel') {
+      h.journey.matrixEscape!.phase = 'door_ready'; h.prepare(); assert.equal(h.work.length, 0);
+      h.journey.matrixEscape!.phase = 'door';
+    }
     h.drain();
-    assert.ok(h.batches.flat().includes(h.skin)); assert.ok(h.batches.flat().includes(h.coarse)); assert.equal(h.batches.flat().includes(h.later), false);
+    assert.ok(h.batches.flat().includes(h.skin), 'the next scene must prepare the actual skinned actor');
+    assert.ok(h.batches.flat().includes(h.coarse)); assert.equal(h.batches.flat().includes(h.later), false);
     assert.equal(h.work.filter(value => value === 'texture').length, 1); assert.equal(h.roots.size, 1);
     const count = h.work.length; h.drain(); assert.equal(h.work.length, count);
-    const late = new THREE.Group(), mesh = new THREE.Mesh(h.geometry, h.material); mesh.visible = false; late.add(mesh); h.heroes.set(mode === 'city' ? 'citizen_14' : 'trinity', late);
+    const late = new THREE.Group(), mesh = new THREE.Mesh(h.geometry, h.material); mesh.visible = false; late.add(mesh); h.heroes.set(cases[mode].late, late);
     const before = h.batches.length; h.drain(); assert.ok(h.batches.slice(before).flat().includes(mesh));
     const after = h.batches.length; h.newGpu(); h.drain(); assert.ok(h.batches.length > after); assert.equal(h.roots.size, 1);
   });
   test(`${mode} cancellation and visiting release the future room once`, t => {
     const h = fixture(t, mode); h.journey.visiting = h.journey.scene; h.prepare(); assert.equal(h.work.length, 0); delete h.journey.visiting;
-    h.ready(); h.drain(); const root = [...h.roots][0], mesh = root.getObjectByName(h.landmark) as THREE.Mesh;
+    h.ready(); h.drain(); const root = [...h.roots][0]; assert.ok(root);
+    const mesh = root.getObjectByName(h.landmark) as THREE.Mesh;
     let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
     h.journey.scene = 'm1_guns'; h.prepare(); assert.ok(root.parent === null); assert.equal(disposed, 1); h.prepare(); assert.equal(disposed, 1);
   });
   test(`${mode} entry adopts the same geometry at its authored world position`, t => {
-    const h = fixture(t, mode); h.ready(); h.drain(); const root = [...h.roots][0], mesh = root.getObjectByName(h.landmark) as THREE.Mesh;
+    const h = fixture(t, mode); h.ready(); h.drain(); const root = [...h.roots][0]; assert.ok(root);
+    const mesh = root.getObjectByName(h.landmark) as THREE.Mesh;
     root.updateMatrixWorld(true); const local = mesh.getWorldPosition(new THREE.Vector3()), center = FILM_SETS[h.target].center;
     let disposed = 0; mesh.geometry.addEventListener('dispose', () => disposed++);
     const world = new WorldState(); new AgentManager(world).initializeAllAgents(); const neo = world.agents.get('neo')!;
     neo.position = filmPosition(h.target); neo.currentLocation = h.target; neo.isInMatrix = true;
-    const journey = { ...h.journey, scene: mode === 'roof' ? 'm1_rooftop_rescue' : mode === 'city' ? 'm1_city_chase' : 'm1_subway', step: 0, completed: [],
+    const journey = { ...h.journey, scene: cases[mode].next, step: 0, completed: [],
       airRescue: mode === 'roof' ? { kind: 'roof', phase: 'ready', elapsed: 0, attempt: 0, grip: 1, braces: 0, misses: 0, resolved: [] } : undefined,
       matrixEscape: mode === 'city' ? { ...h.journey.matrixEscape!, kind: 'city', phase: 'ready', elapsed: 0, checkpoint: 'street' } : undefined,
     } as FilmJourney;
