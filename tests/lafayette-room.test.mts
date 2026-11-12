@@ -94,6 +94,8 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
     checkpoint: { ...neo.position }, lastText: '', hotel: { progress: 0 } };
   const sandbox = { neoLife: { journey } } as SandboxState;
   assert.equal(renderer.update(neo, sandbox, 0, neo.position)?.id, 'film_lafayette');
+  lighting.minimumPointSlots = renderer.minimumPointSlots;
+  assert.equal(lighting.minimumPointSlots, 16, 'the live lower floors reserve the same slots through camera turns');
   const { approach, hotel } = renderer as unknown as { approach: { root: THREE.Group }; hotel: { lights: THREE.PointLight[] } };
   const before = hotel.lights.map(light => light.position.toArray());
   const actors = [new THREE.Group(), new THREE.Group()] as const;
@@ -137,7 +139,7 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
     assert.deepEqual(pointLights(), groundLights);
     assert.equal(lighting.enabled, true);
   }
-  assert.deepEqual(groundBatches, [8, 4, 16], 'the second-floor turn can also expose the full sixteen-light layout');
+  assert.deepEqual(groundBatches, [16, 16, 16], 'every ground batch prepares the layout used by the live view');
   assert.deepEqual(bindings, [], 'unfinished programs must not block the frame');
   secondReady = true;
   renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 1, actors);
@@ -145,7 +147,7 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   firstReady = true;
   renderer.prepareLafayetteGround(groundWebgl, eye, lighting, journey, 1, actors);
   assert.deepEqual(bindings, [2, 1], 'only one binding preparation runs in a frame');
-  assert.deepEqual(groundBatches, [8, 4, 16], 'binding preparation occupies its own frame');
+  assert.deepEqual(groundBatches, [16, 16, 16], 'binding preparation occupies its own frame');
   assert.equal(debug.checkShaderErrors, true);
   const batches: THREE.Object3D[][] = [];
   let landingReady = false;
@@ -157,6 +159,7 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
       assert.equal(target.fog, scene.fog);
       assert.equal(target.environment, scene.environment);
       assert.equal(approach.root.visible, false);
+      assert.equal(lighting.minimumPointSlots, 0, 'the next floor prepares without the lower-floor reserve');
       assert.equal(camera.position.y, eye.position.y + LAFAYETTE.rise);
       assert.equal(hotel.lights[0].position.y, before[0][1] + LAFAYETTE.rise);
       const batch: THREE.Object3D[] = []; subject.traverse(object => batch.push(object)); batches.push(batch);
@@ -168,6 +171,7 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   for (let i = 0; i < 2; i++) {
     renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
     assert.equal(renderer.lafayetteStreetHidden, false);
+    assert.equal(lighting.minimumPointSlots, 16);
     assert.deepEqual(hotel.lights.map(light => light.position.toArray()), before);
   }
   assert.deepEqual(batches.map(batch => batch.length), [4, 4]);
@@ -183,6 +187,7 @@ test('Lafayette prepares the ground and third-floor light layouts without changi
   assert.equal(batches.length, 2, 'landing binding preparation also runs without a compile');
   neo.position.y = 15; renderer.update(neo, sandbox, 0, neo.position);
   assert.equal(renderer.lafayetteStreetHidden, true);
+  assert.equal(renderer.minimumPointSlots, 0);
   renderer.prepareLafayetteLanding(webgl, eye, lighting, journey, neo.position.y, actors);
   assert.equal(batches.length, 2);
 });

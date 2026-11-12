@@ -246,6 +246,7 @@ const SECOND_ORACLE_CUTS: Partial<Record<string, { scene: string; step: number }
 };
 const LAFAYETTE_SECOND_FLOOR_Y = 1 + LAFAYETTE.rise;
 const LAFAYETTE_THIRD_FLOOR_Y = 1 + 2 * LAFAYETTE.rise;
+const LAFAYETTE_STREET_POINT_SLOTS = 16;
 
 /** Only the current film set is resident; static meshes are merged by material.
  * Texture/geometry ownership is scoped to a set and released on every transition. */
@@ -293,7 +294,7 @@ export class FilmSetRenderer {
   private preparedLafayette?: LafayettePreparation;
   private preparedSecondOracle?: { scene: string; room: FilmSetRenderer; steps?: Generator<void>; colors?: CastColorPreparation; gpu?: THREE.WebGLRenderer['properties']; lighting?: LightCulling };
   private courtyardCastColors?: CastColorPreparation;
-  private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[]; pointSlots: 8 | 4 | 16 };
+  private preparedLafayetteGround?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedLafayetteLanding?: { meshes: ColorMesh[]; programs: ColorProgram[] };
   private preparedLafayetteUpper?: ColorPreparation & {
     gpu: THREE.WebGLRenderer['properties']; neo: THREE.Group; trinity: THREE.Group; sceneId: FilmJourney['scene'];
@@ -458,6 +459,7 @@ export class FilmSetRenderer {
     // Keep the prepared layout while the shaft and sixth-floor lamps are revealed.
     if (this.ambush) return AMBUSH_POINT_SLOTS;
     if (this.club) return CLUB_POINT_SLOTS;
+    if (this.currentScene === 'm1_pills' && this.approach?.root.visible) return LAFAYETTE_STREET_POINT_SLOTS;
     // Seven fixtures, the objective and the player plus four police muzzle flashes.
     if (this.current?.id === 'film_heart_hotel' && this.currentScene === 'm1_room303') return 13;
     // The three rooftop floods keep their program when the objective goes dark.
@@ -2082,34 +2084,18 @@ export class FilmSetRenderer {
     const street = this.approach?.root, hotel = this.hotel, [neo, trinity] = actors;
     if (!street?.visible || !hotel || journey.scene !== 'm1_pills' || journey.visiting || height >= LAFAYETTE_SECOND_FLOOR_Y
       || !neo || !trinity || !renderer.extensions.has('KHR_parallel_shader_compile')) return;
-    const prepared = this.preparedLafayetteGround ??= { meshes: this.colorMeshes([neo, trinity, hotel.root, street]), programs: [], pointSlots: 8 };
+    const prepared = this.preparedLafayetteGround ??= { meshes: this.colorMeshes([neo, trinity, hotel.root, street]), programs: [] };
     const programs = renderer.info.programs;
     const ready = prepared.programs.findIndex(program => programs?.includes(program) && program.isReady());
     if (ready >= 0) {
       cacheReadyProgramLocations(renderer, prepared.programs.splice(ready, 1)[0]);
       return;
     }
-    const batch = prepared.meshes.slice(0, 4);
+    const batch = prepared.meshes.splice(0, 4);
     if (!batch.length) return;
-    // Turns at the entrance and second floor can use all three layouts. Keep live frustum selection.
-    const slots = prepared.pointSlots;
-    const pointLights: THREE.PointLight[] = [];
-    this.scene.traverseVisible(object => {
-      if (object instanceof THREE.PointLight && !object.castShadow) pointLights.push(object);
-    });
-    if (pointLights.length < slots) return;
-    const hidden = pointLights.slice(slots), enabled = lighting.enabled, start = programs?.length ?? 0;
-    try {
-      for (const light of hidden) light.visible = false;
-      lighting.enabled = false;
-      this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
-      if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
-    } finally {
-      lighting.enabled = enabled;
-      for (const light of hidden) light.visible = true;
-    }
-    if (slots === 16) prepared.meshes.splice(0, batch.length);
-    prepared.pointSlots = slots === 8 ? 4 : slots === 4 ? 16 : 8;
+    const start = programs?.length ?? 0;
+    this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, camera, subject, undefined, undefined, 'isolated'));
+    if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
   }
   prepareLafayetteLanding(renderer: THREE.WebGLRenderer, camera: THREE.Camera, lighting: LightCulling, journey: FilmJourney,
     height: number, actors: readonly [THREE.Group | undefined, THREE.Group | undefined]): void {
@@ -2126,13 +2112,16 @@ export class FilmSetRenderer {
     const batch = prepared.meshes.splice(0, 4), start = programs?.length ?? 0;
     if (!batch.length) return;
     const eye = camera.clone(); eye.position.y += LAFAYETTE.rise;
+    const lowerPointSlots = lighting.minimumPointSlots;
     try {
       street.visible = false;
+      lighting.minimumPointSlots = 0;
       hotel.updateLights(height - 1 + LAFAYETTE.rise);
       this.compileColorBatch(renderer, batch, subject => lighting.compileSubject(renderer, eye, subject, undefined, undefined, 'isolated'));
       if (programs) prepared.programs.push(...programs.slice(start) as ColorProgram[]);
     } finally {
       street.visible = true;
+      lighting.minimumPointSlots = lowerPointSlots;
       hotel.updateLights(height - 1);
     }
   }
